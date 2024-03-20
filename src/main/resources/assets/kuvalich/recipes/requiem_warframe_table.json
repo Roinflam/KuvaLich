@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ADA",
+    "ACA",
+    "BBB"
+  ],
+  "key": {
+    "A": {
+      "item": "kuvalich:riven_sliver"
+    },
+    "B": {
+      "item": "minecraft:obsidian"
+    },
+    "C": {
+      "item": "kuvalich:requiem_evolve"
+    },
+    "D": {
+      "item": "kuvalich:lich_reliquary"
+    }
+  },
+  "result": {
+    "item": "kuvalich:requiem_warframe_table",
+    "count": 1
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AAA",
+    "ABA",
+    "BBB"
+  ],
+  "key": {
+    "A": {
+      "item": "kuvalich:requiem_gem"
+    },
+    "B": {
+      "item": "minecraft:obsidian"
+    }
+  },
+  "result": {
+    "item": "kuvalich:requiem_gate",
+    "count": 1
+  }
+}

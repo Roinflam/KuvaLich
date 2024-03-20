@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ADA",
+    "ACA",
+    "BBB"
+  ],
+  "key": {
+    "A": {
+      "item": "kuvalich:requiem_gem"
+    },
+    "B": {
+      "item": "minecraft:obsidian"
+    },
+    "C": {
+      "item": "kuvalich:requiem_recast"
+    },
+    "D": {
+      "item": "kuvalich:lich_reliquary"
+    }
+  },
+  "result": {
+    "item": "kuvalich:requiem_evolve",
+    "count": 1
+  }
+}
