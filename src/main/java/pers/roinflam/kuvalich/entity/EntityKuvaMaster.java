@@ -41,12 +41,12 @@ public class EntityKuvaMaster extends KuvaBase {
 
     @Override
     protected float getTickHeal() {
-        return Math.max(1 / 20.0f, (this.getMaxHealth() - this.getHealth()) * 0.05f / 20);
+        return Math.max(2f, (this.getMaxHealth() - this.getHealth()) * 0.02f);
     }
 
     @Override
     protected float getHasTargetTickHeal() {
-        return Math.max(20 / 20.0f, (this.getMaxHealth() - this.getHealth()) * 0.07f);
+        return Math.max(4f, (this.getMaxHealth() - this.getHealth()) * 0.04f);
     }
 
     @Override
@@ -79,11 +79,11 @@ public class EntityKuvaMaster extends KuvaBase {
         super.applyEntityAttributes();
         this.setAbsorptionAmount(200);
         this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(200);
-        this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(18);
+        this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(13);
         this.getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).setBaseValue(0.65);
         this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(0.35);
         this.getEntityAttribute(SharedMonsterAttributes.FOLLOW_RANGE).setBaseValue(64);
-        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(15);
+        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(8);
     }
 
     @Override
@@ -104,20 +104,19 @@ public class EntityKuvaMaster extends KuvaBase {
                         entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(KuvaLichItems.LICH_RELIQUARY));
                         world.spawnEntity(entityItem);
 
-                        entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(KuvaLichItems.RivenSliver, RandomUtil.getInt(2, 4)));
+                        entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(KuvaLichItems.RivenSliver, RandomUtil.getInt(4, 8)));
                         world.spawnEntity(entityItem);
 
-                        entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(KuvaLichItems.KUVA, RandomUtil.getInt(16, 32)));
+                        entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(KuvaLichItems.KUVA, RandomUtil.getInt(32, 64)));
                         world.spawnEntity(entityItem);
 
-                        if (RandomUtil.percentageChance(25)) {
+                        if (RandomUtil.percentageChance(50)) {
                             entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), RandomUtil.percentageChance(75) ? ItemPrimeModule.getRandomModule() : WarframePrimeModule.getRandomModule());
                             world.spawnEntity(entityItem);
-                        } else if (RandomUtil.percentageChance(25)) {
+                        } else {
                             entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), RandomUtil.percentageChance(75) ? ItemRivenModule.getRandomModule() : WarframeRivenModule.getRandomModule());
                             world.spawnEntity(entityItem);
                         }
-
 
                         if (requiemCard.getMinimumLevelWeapon() < ConfigKuvaLich.minimumLevel) {
                             requiemCard.setMinimumLevelWeapon(Math.min(ConfigKuvaLich.minimumLevel, requiemCard.getMinimumLevelWeapon() + randomNum));
@@ -135,6 +134,16 @@ public class EntityKuvaMaster extends KuvaBase {
                         }
 
                         return;
+                    }
+                    if (requiemCard.isFirstCorrectAnswer()) {
+                        @NotNull TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.firstCorrect");
+                        textComponentString.getStyle().setColor(TextFormatting.RED);
+                        player.sendMessage(textComponentString);
+                        if (requiemCard.isTwoCorrectAnswer()) {
+                            textComponentString = new TextComponentTranslation("message.kuvalich.secondCorrect");
+                            textComponentString.getStyle().setColor(TextFormatting.RED);
+                            player.sendMessage(textComponentString);
+                        }
                     }
                     requiemCard.setKuvaLevel(requiemCard.getKuvaLevel() + 1);
                     @NotNull TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.failedToDecrypt", requiemCard.getKuvaLevel());

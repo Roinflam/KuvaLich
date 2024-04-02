@@ -197,6 +197,22 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         return false;
     }
 
+    public boolean isFirstCorrectAnswer() {
+        if (unlockedCardStatus > 0 && isReadyCard()) {
+            @NotNull RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
+            return one.getID() == oneAnswer;
+        }
+        return false;
+    }
+
+    public boolean isTwoCorrectAnswer() {
+        if (unlockedCardStatus > 0 && isReadyCard()) {
+            @NotNull RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
+            return two.getID() == twoAnswer;
+        }
+        return false;
+    }
+
     public int getLockCard(int level) {
         if (level == 1) {
             return oneAnswer;

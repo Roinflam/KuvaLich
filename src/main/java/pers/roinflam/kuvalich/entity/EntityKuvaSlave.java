@@ -42,12 +42,12 @@ public class EntityKuvaSlave extends KuvaBase {
 
     @Override
     protected float getTickHeal() {
-        return Math.max(1 / 20.0f, (this.getMaxHealth() - this.getHealth()) * 0.03f / 20);
+        return Math.max(1f, (this.getMaxHealth() - this.getHealth()) * 0.01f);
     }
 
     @Override
     protected float getHasTargetTickHeal() {
-        return Math.max(20 / 20.0f, (this.getMaxHealth() - this.getHealth()) * 0.05f);
+        return Math.max(2f, (this.getMaxHealth() - this.getHealth()) * 0.02f);
     }
 
     @Override
@@ -71,13 +71,13 @@ public class EntityKuvaSlave extends KuvaBase {
     @Override
     protected void applyEntityAttributes() {
         super.applyEntityAttributes();
-        this.setAbsorptionAmount(120);
-        this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(120);
-        this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(11);
+        this.setAbsorptionAmount(100);
+        this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(100);
+        this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(8);
         this.getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).setBaseValue(0.4);
         this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(0.35);
         this.getEntityAttribute(SharedMonsterAttributes.FOLLOW_RANGE).setBaseValue(32);
-        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(8);
+        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(4);
     }
 
     @Override
@@ -102,11 +102,11 @@ public class EntityKuvaSlave extends KuvaBase {
                     world.spawnEntity(entityItem);
                 }
 
-                if (RandomUtil.percentageChance(5)) {
-                    entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(KuvaLichItems.KUVA, RandomUtil.getInt(1, 8)));
+                if (RandomUtil.percentageChance(10)) {
+                    entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(KuvaLichItems.KUVA, RandomUtil.getInt(2, 8)));
                     world.spawnEntity(entityItem);
                 }
-                if (RandomUtil.percentageChance(1)) {
+                if (RandomUtil.percentageChance(10)) {
                     entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), new ItemStack(KuvaLichItems.RivenSliver, 1));
                     world.spawnEntity(entityItem);
                 }

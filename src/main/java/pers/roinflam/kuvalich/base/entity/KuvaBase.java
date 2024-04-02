@@ -56,15 +56,10 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
             if (damageSource.getTrueSource() instanceof KuvaBase) {
                 @org.jetbrains.annotations.Nullable KuvaBase kuvaBase = (KuvaBase) damageSource.getTrueSource();
                 evt.setAmount(evt.getAmount() + evt.getAmount() * (kuvaBase.getBattleTick() / 20) * ConfigKuvaLich.battleBoost);
-                if (evt.getEntityLiving() instanceof EntityPlayer) {
-                    EntityPlayer entityPlayer = (EntityPlayer) evt.getEntityLiving();
-                    @org.jetbrains.annotations.Nullable RequiemCard requiemCard = entityPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-                    evt.setAmount(evt.getAmount() + evt.getAmount() * requiemCard.getKuvaLevel() * ConfigKuvaLich.increaseDamage);
-                }
             } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
                 @org.jetbrains.annotations.Nullable EntityPlayer entityPlayer = (EntityPlayer) evt.getSource().getTrueSource();
                 @org.jetbrains.annotations.Nullable RequiemCard requiemCard = entityPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-                evt.setAmount(evt.getAmount() - evt.getAmount() * Math.min(0.99f, requiemCard.getKuvaLevel() * ConfigKuvaLich.reducedDamage));
+                evt.setAmount(evt.getAmount() - evt.getAmount() * Math.min(0.999f, requiemCard.getKuvaLevel() * ConfigKuvaLich.reducedDamage));
 
                 if (KuvaWeapon.hasType(entityPlayer.getHeldItem(entityPlayer.getActiveHand()))) {
                     evt.setAmount(evt.getAmount() * 0.25f);
@@ -79,6 +74,10 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
                 if (damageSource.isMagicDamage() && !damageSource.isProjectile()) {
                     evt.setAmount(evt.getAmount() * 0.75f);
                 }
+            } else if (evt.getEntityLiving() instanceof EntityPlayer) {
+                EntityPlayer entityPlayer = (EntityPlayer) evt.getEntityLiving();
+                @org.jetbrains.annotations.Nullable RequiemCard requiemCard = entityPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+                evt.setAmount(evt.getAmount() + evt.getAmount() * requiemCard.getKuvaLevel() * ConfigKuvaLich.increaseDamage);
             }
         }
     }

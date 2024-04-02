@@ -11,7 +11,7 @@ public class ConfigKuvaLich {
 
     @Config.Comment("Set the maximum number of progress points gained per kill.")
     @Config.RangeInt(min = 0)
-    public static int maxDecryptionProgress = 8;
+    public static int maxDecryptionProgress = 5;
 
     @Config.Comment("Set the number of points needed to decrypt the first stage.")
     @Config.RangeInt(min = 1)
@@ -35,11 +35,11 @@ public class ConfigKuvaLich {
 
     @Config.Comment("Set the reduced damage dealt to Kuva Slave and Kuva Master after each decryption failure. (99% damage reduction max)")
     @Config.RangeDouble(min = 0)
-    public static float reducedDamage = 0.3f;
+    public static float reducedDamage = 0.1f;
 
     @Config.Comment("Set the damage inflicted by the Kuva Slave and Kuva Master on the player to increase after each failed decryption.")
     @Config.RangeDouble(min = 0)
-    public static float increaseDamage = 0.45f;
+    public static float increaseDamage = 0.25f;
 
     @Config.Comment("Set the base level of all weapons. When the weapon level is this value, the value is the original attribute performance, etc. If it is lower than it can be judged as inferior equipment, if it is higher than it is excellent equipment.")
     @Config.RangeInt(min = 0)

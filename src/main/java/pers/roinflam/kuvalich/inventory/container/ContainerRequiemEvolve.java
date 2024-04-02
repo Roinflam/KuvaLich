@@ -196,14 +196,20 @@ public class ContainerRequiemEvolve extends Container {
     public void onContainerClosed(@NotNull EntityPlayer playerIn) {
         if (!playerIn.world.isRemote) {
             if (!weapon.getStackInSlot(0).isEmpty()) {
-                world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), weapon.getStackInSlot(0)));
+                if (!this.mergeItemStack(weapon.getStackInSlot(0), 3, 3 + 36, true)) {
+                    world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), weapon.getStackInSlot(0)));
+                }
             }
             if (!material.getStackInSlot(0).isEmpty()) {
-                world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), material.getStackInSlot(0)));
+                if (!this.mergeItemStack(material.getStackInSlot(0), 3, 3 + 36, true)) {
+                    world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), material.getStackInSlot(0)));
+                }
             }
             if (!evolve && !cycle) {
                 if (!result.getStackInSlot(0).isEmpty()) {
-                    world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), result.getStackInSlot(0)));
+                    if (!this.mergeItemStack(result.getStackInSlot(0), 3, 3 + 36, true)) {
+                        world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), result.getStackInSlot(0)));
+                    }
                 }
             }
         }

@@ -18,6 +18,19 @@ version = '1.0.0'
 group = 'pers.roinflam.kuvalich' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'KuvaLich-1.12.2'
 
+processResources {
+    inputs.property "version", project.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version':project.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
 minecraft {

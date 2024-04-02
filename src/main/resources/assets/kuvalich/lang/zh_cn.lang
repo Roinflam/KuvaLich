@@ -360,4 +360,5 @@ message.kuvalich.failedToDecrypt=成功击杀玄骸，但谜语（或顺序）�
 message.kuvalich.minimumLevelWeapon=解密成功，当前解密获得武器等级下限提升至%s级！
 message.kuvalich.maximumLevelWeapon=解密成功，当前解密获得武器等级上限提升至%s级！
 message.kuvalich.requiemRiddleAnswer=当前谜语的答案为 %s / %s / %s
-message.kuvalich.requiemRiddleNotAnswer=当前谜语无解！请解密任意一个答案再使用！
+message.kuvalich.firstCorrect=解密失败，第一个答案正确！
+message.kuvalich.secondCorrect=解密失败，第二个答案正确！

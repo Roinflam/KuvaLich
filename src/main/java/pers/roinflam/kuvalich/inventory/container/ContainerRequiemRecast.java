@@ -127,16 +127,24 @@ public class ContainerRequiemRecast extends Container {
     public void onContainerClosed(@NotNull EntityPlayer playerIn) {
         if (!playerIn.world.isRemote) {
             if (!card.getStackInSlot(0).isEmpty()) {
-                world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), card.getStackInSlot(0)));
+                if (!this.mergeItemStack(card.getStackInSlot(0), 4, 4 + 36, true)) {
+                    world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), card.getStackInSlot(0)));
+                }
             }
             if (!card.getStackInSlot(1).isEmpty()) {
-                world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), card.getStackInSlot(1)));
+                if (!this.mergeItemStack(card.getStackInSlot(1), 4, 4 + 36, true)) {
+                    world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), card.getStackInSlot(1)));
+                }
             }
             if (!card.getStackInSlot(2).isEmpty()) {
-                world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), card.getStackInSlot(2)));
+                if (!this.mergeItemStack(card.getStackInSlot(2), 4, 4 + 36, true)) {
+                    world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), card.getStackInSlot(2)));
+                }
             }
             if (!card.getStackInSlot(3).isEmpty()) {
-                world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), card.getStackInSlot(3)));
+                if (!this.mergeItemStack(card.getStackInSlot(3), 4, 4 + 36, true)) {
+                    world.spawnEntity(new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), card.getStackInSlot(3)));
+                }
             }
         }
         super.onContainerClosed(playerIn);

@@ -20,7 +20,7 @@ public class KuvaLichEntities {
             .name(EntityKuvaSlave.NAME)
             .tracker(64, 1, true)
             .egg(0X4B0082, 0xDC143C)
-            .spawn(EnumCreatureType.MONSTER, 75, 1, 2, EntityKuvaSlave.BIOMES)
+            .spawn(EnumCreatureType.MONSTER, 15, 1, 1, EntityKuvaSlave.BIOMES)
             .build();
 
     public static final EntityEntry KUVA_MASTER = EntityEntryBuilder.create()
@@ -29,7 +29,7 @@ public class KuvaLichEntities {
             .name(EntityKuvaMaster.NAME)
             .tracker(64, 1, true)
             .egg(0X9d00ff, 0X91001b)
-            .spawn(EnumCreatureType.MONSTER, 25, 1, 1, EntityKuvaSlave.BIOMES)
+            .spawn(EnumCreatureType.MONSTER, 3, 1, 1, EntityKuvaSlave.BIOMES)
             .build();
 
     static {
