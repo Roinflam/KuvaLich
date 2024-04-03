@@ -23,6 +23,7 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
@@ -38,6 +39,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.config.ConfigKuvaLich;
 import pers.roinflam.kuvalich.init.KuvaLichPotion;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.render.damagedisplay.DamageInfo;
@@ -70,56 +72,56 @@ public class ItemModule {
                     }
                 }
 
-                evt.getToolTip().add(index++, TextFormatting.WHITE + "" + TextFormatting.BOLD + I18n.format("item.module"));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.damage") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "damage") * 100) + "%");
+                evt.getToolTip().add(index++, TextFormatting.WHITE + String.valueOf(TextFormatting.BOLD) + I18n.format("item.module"));
+                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.damage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "damage") * 100) + "%");
                 if (attributes.getOrDefault("meleeDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.meleeDamage") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("meleeDamage") * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.meleeDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("meleeDamage") * 100) + "%");
                 }
                 if (attributes.getOrDefault("remoteDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.remoteDamage") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("remoteDamage") * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.remoteDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("remoteDamage") * 100) + "%");
                 }
                 if (attributes.getOrDefault("arrowDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.arrowDamage") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("arrowDamage") * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.arrowDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("arrowDamage") * 100) + "%");
                 }
                 if (attributes.getOrDefault("projectileDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.projectileDamage") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("projectileDamage") * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.projectileDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("projectileDamage") * 100) + "%");
                 }
                 if (attributes.getOrDefault("magicDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.magicDamage") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("magicDamage") * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.magicDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("magicDamage") * 100) + "%");
                 }
                 if (attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.baseDamageWhenNotCriticalStrike") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("baseDamageWhenNotCriticalStrike") * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.baseDamageWhenNotCriticalStrike") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("baseDamageWhenNotCriticalStrike") * 100) + "%");
                 }
                 if (attributes.getOrDefault("attackRange", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.attackRange") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + String.format("%.1f", attributes.get("attackRange")) + "m");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.attackRange") + " " + TextFormatting.GRAY + TextFormatting.BOLD + String.format("%.1f", attributes.get("attackRange")) + "m");
                 }
                 if (attributes.getOrDefault("bursting_radius", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.bursting_radius") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + String.format("%.1f", 1 + attributes.get("bursting_radius") * 2) + "m");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.bursting_radius") + " " + TextFormatting.GRAY + TextFormatting.BOLD + String.format("%.1f", 1 + attributes.get("bursting_radius") * 2) + "m");
                 }
                 if (attributes.getOrDefault("attackSpeed", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.attackSpeed") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + String.format("%.1f", attributes.get("attackSpeed") * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.attackSpeed") + " " + TextFormatting.GRAY + TextFormatting.BOLD + String.format("%.1f", attributes.get("attackSpeed") * 100) + "%");
                 }
                 if (attributes.getOrDefault("firing_rate", 0.0) != 0) {
                     if (itemStack.getItem() instanceof ItemBow) {
-                        evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.firing_rate") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("firing_rate") * 2 * 100) + "%");
+                        evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.firing_rate") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("firing_rate") * 2 * 100) + "%");
                     } else {
-                        evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.firing_rate") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("firing_rate") * 100) + "%");
+                        evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.firing_rate") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("firing_rate") * 100) + "%");
                     }
                 }
                 double baseCriticalStrikeProbability = getBaseAttribute(itemStack, "criticalStrikeProbability");
                 double meleeCriticalStrikeProbability = baseCriticalStrikeProbability * (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
                 double remoteCriticalStrikeProbability = baseCriticalStrikeProbability * (1 + attributes.getOrDefault("remoteCriticalStrikeProbability", 0.0));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.criticalStrikeProbability") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + "" + (int) (meleeCriticalStrikeProbability * 100) + "% / " + (int) (remoteCriticalStrikeProbability * 100) + "%");
+                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.criticalStrikeProbability") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (meleeCriticalStrikeProbability * 100) + "% / " + (int) (remoteCriticalStrikeProbability * 100) + "%");
                 double baseCriticalStrikeMultiplier = getBaseAttribute(itemStack, "criticalStrikeMultiplier");
                 double meleeCriticalStrikeMultiplier = baseCriticalStrikeMultiplier * (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
                 double remoteCriticalStrikeMultiplier = baseCriticalStrikeMultiplier * (1 + attributes.getOrDefault("remoteCriticalStrikeMultiplier", 0.0));
                 evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.criticalStrikeMultiplier") + " " + TextFormatting.GRAY + "x" + TextFormatting.BOLD + String.format("%.1f", meleeCriticalStrikeMultiplier) + " / x" + String.format("%.1f", remoteCriticalStrikeMultiplier));
                 if (attributes.getOrDefault("multishot", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.multishot") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (attributes.get("multishot") * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.multishot") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("multishot") * 100) + "%");
                 }
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerChance") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "triggerChance") * (1 + attributes.getOrDefault("triggerChance", 0.0)) * 100) + "%");
+                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerChance") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "triggerChance") * (1 + attributes.getOrDefault("triggerChance", 0.0)) * 100) + "%");
                 if (attributes.getOrDefault("triggerTime", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerTime") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) ((1 + attributes.get("triggerTime")) * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerTime") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) ((1 + attributes.get("triggerTime")) * 100) + "%");
                 }
 
                 double elementDamage = 0;
@@ -131,30 +133,29 @@ public class ItemModule {
                 elementDamage += attributes.getOrDefault("puncture", 0.0);
                 elementDamage += attributes.getOrDefault("impact", 0.0);
                 if (elementDamage != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerDamage") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (elementDamage * 100) + "%");
+                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (elementDamage * 100) + "%");
                 }
 
                 HashMap<String, String> elements = getTriggerElements(itemStack);
                 if (elements.size() > 0) {
                     String triggerElements = TextFormatting.WHITE + I18n.format("item.module.triggerType") + " ";
                     for (String element : elements.keySet()) {
-                        triggerElements += KuvaWeapon.getColor(element) + "" + TextFormatting.BOLD + I18n.format("kuvaweapon.type." + element) + elements.get(element) + " ";
+                        triggerElements += KuvaWeapon.getColor(element) + String.valueOf(TextFormatting.BOLD) + I18n.format("kuvaweapon.type." + element) + elements.get(element) + " ";
                     }
                     evt.getToolTip().add(index++, triggerElements);
                 }
 
-                evt.getToolTip().add(index++, TextFormatting.GOLD + "" + TextFormatting.BOLD + I18n.format("kuvaweapon.item_module_info"));
+                evt.getToolTip().add(index++, TextFormatting.GOLD + String.valueOf(TextFormatting.BOLD) + I18n.format("kuvaweapon.item_module_info"));
                 List<ItemStack> itemStacks = getModules(itemStack);
-                for (int i = 0; i < itemStacks.size(); i++) {
-                    ItemStack module = itemStacks.get(i);
+                for (ItemStack module : itemStacks) {
                     evt.getToolTip().add(index++, TextFormatting.WHITE + " - " + module.getDisplayName() + " ");
                 }
             } else {
-                evt.getToolTip().add(index++, TextFormatting.WHITE + "" + TextFormatting.BOLD + I18n.format("item.base"));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.damage") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "damage") * 100) + "%");
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.criticalStrikeProbability") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "criticalStrikeProbability") * 100) + "%");
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.criticalStrikeMultiplier") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + "x" + getBaseAttribute(itemStack, "criticalStrikeMultiplier"));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.triggerChance") + " " + TextFormatting.GRAY + "" + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "triggerChance") * 100) + "%");
+                evt.getToolTip().add(index++, TextFormatting.WHITE + String.valueOf(TextFormatting.BOLD) + I18n.format("item.base"));
+                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.damage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "damage") * 100) + "%");
+                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.criticalStrikeProbability") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "criticalStrikeProbability") * 100) + "%");
+                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.criticalStrikeMultiplier") + " " + TextFormatting.GRAY + TextFormatting.BOLD + "x" + getBaseAttribute(itemStack, "criticalStrikeMultiplier"));
+                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.triggerChance") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "triggerChance") * 100) + "%");
             }
         }
     }
@@ -248,10 +249,12 @@ public class ItemModule {
 //    }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onLivingHurt(@Nonnull LivingHurtEvent evt) {
-//        System.out.println(evt.getAmount() + ":LivingHurtEvent:LOWEST");
+    public static void onLivingDamage(@Nonnull LivingDamageEvent evt) {
         DamageSource damageSource = evt.getSource();
         if (!evt.getEntityLiving().getEntityWorld().isRemote && (damageSource.getImmediateSource() instanceof EntityPlayer || damageSource.getTrueSource() instanceof EntityPlayer)) {
+            if (!ConfigKuvaLich.damagePriority) {
+                return;
+            }
             EntityPlayer entityPlayer;
             if (damageSource.getImmediateSource() instanceof EntityPlayer) {
                 entityPlayer = (EntityPlayer) damageSource.getImmediateSource();
@@ -265,13 +268,10 @@ public class ItemModule {
                 if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
                     EntityLivingBase hurter = evt.getEntityLiving();
                     double baseDamage = 1;
-//                    System.out.println("基础伤害：" + baseDamage);
+
                     double criticalStrikeProbability = getBaseAttribute(weapon, "criticalStrikeProbability") * 100 * EntityLivingUtil.getTicksSinceLastSwing(entityPlayer);
                     double criticalStrikeMultiplier = getBaseAttribute(weapon, "criticalStrikeMultiplier");
                     double triggerChance = getBaseAttribute(weapon, "triggerChance") * 100;
-//                    System.out.println("基础暴击几率：" + criticalStrikeProbability);
-//                    System.out.println("基础暴击倍率：" + criticalStrikeMultiplier);
-//                    System.out.println("基础触发几率：" + triggerChance);
                     HashMap<String, Double> attributes = new HashMap<>();
                     List<ItemStack> modules = getModules(weapon);
                     for (ItemStack module : modules) {
@@ -280,7 +280,6 @@ public class ItemModule {
                         }
                     }
                     if (damageSource.getImmediateSource() instanceof EntityPlayer) {
-//                        System.out.println(attributes.getOrDefault("meleeDamage", 0.0));
                         baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
                         criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
                         if (entityPlayer.isSprinting()) {
@@ -319,11 +318,6 @@ public class ItemModule {
                         triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0));
                     }
 
-//                    System.out.println("伤害：" + baseDamage);
-//                    System.out.println("暴击几率：" + criticalStrikeProbability);
-//                    System.out.println("暴击倍率：" + criticalStrikeMultiplier);
-//                    System.out.println("触发几率：" + triggerChance);
-
                     double elementDamage = 0;
                     elementDamage += attributes.getOrDefault("fire", 0.0);
                     elementDamage += attributes.getOrDefault("ice", 0.0);
@@ -342,8 +336,6 @@ public class ItemModule {
                             elementDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
                         }
                     }
-
-//                    System.out.println("元素伤害：" + elementDamage);
 
                     int color = DamageInfo.DamageColor.WHITE.getColor();
                     if (criticalStrikeProbability > 300) {
@@ -376,10 +368,8 @@ public class ItemModule {
                             baseDamage += attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0);
                         }
                     }
-//                    System.out.println("普通伤害：" + baseDamage);
                     float damage = evt.getAmount();
                     damage = (float) (damage * baseDamage + damage * elementDamage);
-//                    System.out.println("歧视前伤害：" + damage);
                     if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.UNDEFINED)) {
                         damage *= 1 + (attributes.getOrDefault("bane_of_undefined", 0.0));
                     } else if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.UNDEAD)) {
@@ -389,7 +379,6 @@ public class ItemModule {
                     } else {
                         damage *= 1 + (attributes.getOrDefault("bane_of_illager", 0.0));
                     }
-//                    System.out.println("歧视后伤害：" + damage);
 
                     double triggerTime = 1 + (attributes.getOrDefault("triggerTime", 0.0));
                     if (triggerChance > 100) {
@@ -403,7 +392,7 @@ public class ItemModule {
                     } else if (RandomUtil.percentageChance(triggerChance)) {
                         damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
                     }
-//                    System.out.println("属性后伤害：" + damage);
+
                     damage = Math.max(damage, 0);
                     evt.setAmount(damage);
 
@@ -412,6 +401,178 @@ public class ItemModule {
                     double offsetZ = (Math.random() - 0.5) * hurter.width;
                     Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
                     KuvaLich.network.sendTo(new DamagePacket(damage, position, color), (EntityPlayerMP) entityPlayer);
+                } else if (ConfigKuvaLich.damageDisplay) {
+                    EntityLivingBase hurter = evt.getEntityLiving();
+                    double offsetX = (Math.random() - 0.5) * hurter.width;
+                    double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
+                    double offsetZ = (Math.random() - 0.5) * hurter.width;
+                    Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
+                    KuvaLich.network.sendTo(new DamagePacket(evt.getAmount(), position, DamageInfo.DamageColor.WHITE.getColor()), (EntityPlayerMP) entityPlayer);
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onLivingHurt(@Nonnull LivingHurtEvent evt) {
+        DamageSource damageSource = evt.getSource();
+        if (!evt.getEntityLiving().getEntityWorld().isRemote && (damageSource.getImmediateSource() instanceof EntityPlayer || damageSource.getTrueSource() instanceof EntityPlayer)) {
+            if (ConfigKuvaLich.damagePriority) {
+                return;
+            }
+            EntityPlayer entityPlayer;
+            if (damageSource.getImmediateSource() instanceof EntityPlayer) {
+                entityPlayer = (EntityPlayer) damageSource.getImmediateSource();
+            } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
+                entityPlayer = (EntityPlayer) damageSource.getTrueSource();
+            } else {
+                entityPlayer = null;
+            }
+            if (entityPlayer != null && EntityLivingUtil.getTicksSinceLastSwing(entityPlayer) >= 0.25) {
+                ItemStack weapon = entityPlayer.getHeldItemMainhand();
+                if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
+                    EntityLivingBase hurter = evt.getEntityLiving();
+                    double baseDamage = 1;
+
+                    double criticalStrikeProbability = getBaseAttribute(weapon, "criticalStrikeProbability") * 100 * EntityLivingUtil.getTicksSinceLastSwing(entityPlayer);
+                    double criticalStrikeMultiplier = getBaseAttribute(weapon, "criticalStrikeMultiplier");
+                    double triggerChance = getBaseAttribute(weapon, "triggerChance") * 100;
+                    HashMap<String, Double> attributes = new HashMap<>();
+                    List<ItemStack> modules = getModules(weapon);
+                    for (ItemStack module : modules) {
+                        for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
+                            attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
+                        }
+                    }
+                    if (damageSource.getImmediateSource() instanceof EntityPlayer) {
+                        baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
+                        criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
+                        if (entityPlayer.isSprinting()) {
+                            criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0) + attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0));
+                        } else {
+                            criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
+                        }
+                    } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
+                        baseDamage += attributes.getOrDefault("remoteDamage", 0.0);
+                        criticalStrikeProbability *= (1 + attributes.getOrDefault("remoteCriticalStrikeProbability", 0.0));
+                        criticalStrikeMultiplier *= (1 + attributes.getOrDefault("remoteCriticalStrikeMultiplier", 0.0));
+                        if (damageSource.getImmediateSource() instanceof EntityArrow) {
+                            baseDamage += attributes.getOrDefault("arrowDamage", 0.0);
+                        } else if (damageSource.getImmediateSource() instanceof IProjectile) {
+                            baseDamage += attributes.getOrDefault("projectileDamage", 0.0);
+                        }
+                        double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
+                        if (!damageSource.isExplosion()) {
+                            if (range > 1) {
+                                @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, range, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(entityPlayer));
+                                for (@Nonnull EntityLivingBase entityLivingBase : entities) {
+                                    entityLivingBase.attackEntityFrom(DamageSource.causePlayerDamage(entityPlayer).setExplosion(), evt.getAmount() * 0.5f);
+                                }
+                            }
+                        } else if (range < 0) {
+                            evt.setCanceled(true);
+                            return;
+                        }
+                    }
+                    if (damageSource.isMagicDamage()) {
+                        baseDamage += attributes.getOrDefault("magicDamage", 0.0);
+                    }
+                    if (entityPlayer.isSprinting()) {
+                        triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
+                    } else {
+                        triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0));
+                    }
+
+                    double elementDamage = 0;
+                    elementDamage += attributes.getOrDefault("fire", 0.0);
+                    elementDamage += attributes.getOrDefault("ice", 0.0);
+                    elementDamage += attributes.getOrDefault("poison", 0.0);
+                    elementDamage += attributes.getOrDefault("electricity", 0.0);
+                    elementDamage += attributes.getOrDefault("slash", 0.0);
+                    elementDamage += attributes.getOrDefault("puncture", 0.0);
+                    elementDamage += attributes.getOrDefault("impact", 0.0);
+
+                    if (getBaseAttribute(weapon, "damage") > 0) {
+                        if (getBaseAttribute(weapon, "damage") >= 1) {
+                            baseDamage *= getBaseAttribute(weapon, "damage");
+                            elementDamage *= getBaseAttribute(weapon, "damage");
+                        } else {
+                            baseDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
+                            elementDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
+                        }
+                    }
+
+                    int color = DamageInfo.DamageColor.WHITE.getColor();
+                    if (criticalStrikeProbability > 300) {
+                        baseDamage *= criticalStrikeMultiplier * 3;
+                        color = DamageInfo.DamageColor.RED.getColor();
+                    } else if (criticalStrikeProbability > 200) {
+                        if (RandomUtil.percentageChance(criticalStrikeProbability - 200)) {
+                            baseDamage *= criticalStrikeMultiplier * 3;
+                            color = DamageInfo.DamageColor.RED.getColor();
+                        } else {
+                            baseDamage *= criticalStrikeMultiplier * 2;
+                            color = DamageInfo.DamageColor.ORANGE.getColor();
+                        }
+                    } else if (criticalStrikeProbability > 100) {
+                        if (RandomUtil.percentageChance(criticalStrikeProbability - 100)) {
+                            baseDamage *= criticalStrikeMultiplier * 2;
+                            color = DamageInfo.DamageColor.ORANGE.getColor();
+                        } else {
+                            baseDamage *= criticalStrikeMultiplier;
+                            color = DamageInfo.DamageColor.YELLOW.getColor();
+                        }
+                    } else {
+                        if (RandomUtil.percentageChance(criticalStrikeProbability)) {
+                            baseDamage *= criticalStrikeMultiplier;
+                            color = DamageInfo.DamageColor.YELLOW.getColor();
+                        } else {
+                            if (hurter.getAbsorptionAmount() > 0) {
+                                color = DamageInfo.DamageColor.BLUE.getColor();
+                            }
+                            baseDamage += attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0);
+                        }
+                    }
+                    float damage = evt.getAmount();
+                    damage = (float) (damage * baseDamage + damage * elementDamage);
+                    if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.UNDEFINED)) {
+                        damage *= 1 + (attributes.getOrDefault("bane_of_undefined", 0.0));
+                    } else if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.UNDEAD)) {
+                        damage *= 1 + (attributes.getOrDefault("bane_of_undead", 0.0));
+                    } else if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.ARTHROPOD)) {
+                        damage *= 1 + (attributes.getOrDefault("bane_of_arthropod", 0.0));
+                    } else {
+                        damage *= 1 + (attributes.getOrDefault("bane_of_illager", 0.0));
+                    }
+
+                    double triggerTime = 1 + (attributes.getOrDefault("triggerTime", 0.0));
+                    if (triggerChance > 100) {
+                        int number = (int) triggerTime / 100;
+                        for (int i = 0; i < number; i++) {
+                            damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
+                        }
+                        if (RandomUtil.percentageChance(triggerChance - number * 100)) {
+                            damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
+                        }
+                    } else if (RandomUtil.percentageChance(triggerChance)) {
+                        damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
+                    }
+
+                    damage = Math.max(damage, 0);
+                    evt.setAmount(damage);
+
+                    double offsetX = (Math.random() - 0.5) * hurter.width;
+                    double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
+                    double offsetZ = (Math.random() - 0.5) * hurter.width;
+                    Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
+                    KuvaLich.network.sendTo(new DamagePacket(damage, position, color), (EntityPlayerMP) entityPlayer);
+                } else if (ConfigKuvaLich.damageDisplay) {
+                    EntityLivingBase hurter = evt.getEntityLiving();
+                    double offsetX = (Math.random() - 0.5) * hurter.width;
+                    double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
+                    double offsetZ = (Math.random() - 0.5) * hurter.width;
+                    Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
+                    KuvaLich.network.sendTo(new DamagePacket(evt.getAmount(), position, DamageInfo.DamageColor.WHITE.getColor()), (EntityPlayerMP) entityPlayer);
                 }
             }
         }
@@ -799,7 +960,7 @@ public class ItemModule {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 1.5 : 1;
                 LivingKnockBackEvent livingKnockBackEvent;
                 if (attacker instanceof EntityPlayer) {
-                    livingKnockBackEvent = ForgeHooks.onLivingKnockBack(hurter, attacker, 1.25f * EntityLivingUtil.getTicksSinceLastSwing((EntityPlayer) attacker), (hurter.posX - attacker.posX) / 6, (hurter.posZ - attacker.posZ) / 6);
+                    livingKnockBackEvent = ForgeHooks.onLivingKnockBack(hurter, attacker, 1.25f * EntityLivingUtil.getTicksSinceLastSwing(attacker), (hurter.posX - attacker.posX) / 6, (hurter.posZ - attacker.posZ) / 6);
                 } else {
                     livingKnockBackEvent = ForgeHooks.onLivingKnockBack(hurter, attacker, 1.25f, (hurter.posX - attacker.posX) / 6, (hurter.posZ - attacker.posZ) / 6);
                 }

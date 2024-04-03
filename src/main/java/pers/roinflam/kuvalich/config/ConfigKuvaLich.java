@@ -29,6 +29,12 @@ public class ConfigKuvaLich {
     @Config.RangeDouble(min = 1)
     public static double masterPotionMultiplier = 5;
 
+    @Config.Comment("Set whether to display all damage.")
+    public static boolean damageDisplay = false;
+
+    @Config.Comment("Set the priority of damage modification. If it is true, the priority will be the last modification.")
+    public static boolean damagePriority = true;
+
     @Config.Comment("Set damage boost per second for both Kuva Slave and Kuva Master in battle.")
     @Config.RangeDouble(min = 0)
     public static float battleBoost = 0.075f;
