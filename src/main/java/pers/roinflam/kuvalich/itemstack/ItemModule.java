@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.itemstack;
 
+import javafx.util.Pair;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityLivingBase;
@@ -190,44 +191,79 @@ public class ItemModule {
         return kuvalichModule.getDouble(attributeType);
     }
 
+    /**
+     * 为武器设置基础属性
+     * 这个方法生成武器的四个基本属性：伤害、暴击几率、暴击倍率和触发几率
+     * 包含两种罕见的"彩蛋"武器类型，以及常规武器的属性生成逻辑
+     *
+     * @param itemStack 要设置属性的武器物品堆
+     */
     public static void setBaseAttribute(ItemStack itemStack) {
         @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
         @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
         @NotNull NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
-        double damage = RandomUtil.getInt(80, 120) / 100.0;
-        if (RandomUtil.percentageChance(75)) {
-            damage = 1;
-        }
-        double criticalStrikeProbability = RandomUtil.getInt(5, 20) / 100.0;
-        if (RandomUtil.percentageChance(25)) {
-            criticalStrikeProbability = RandomUtil.getInt(15, 33) / 100.0;
-        }
-        double criticalStrikeMultiplier = RandomUtil.getInt(15, 22) / 10.0;
-        if (criticalStrikeProbability >= 0.25) {
-            criticalStrikeMultiplier = RandomUtil.getInt(20, 33) / 10.0;
-            damage = RandomUtil.getInt(60, 100) / 100.0;
-        } else if (criticalStrikeProbability <= 0.1) {
-            if (RandomUtil.percentageChance(5)) {
-                criticalStrikeMultiplier = RandomUtil.getInt(33, 100) / 10.0;
-                damage = RandomUtil.getInt(60, 100) / 100.0;
-            } else {
-                criticalStrikeMultiplier = RandomUtil.getInt(12, 20) / 10.0;
+        // 彩蛋武器生成（共0.2%的几率）
+        if (RandomUtil.percentageChance(0.1)) {
+            // 超级武器：所有属性都很高（0.1%几率）
+            weaponModule.setDouble("damage", RandomUtil.getInt(150, 200) / 100.0);  // 伤害：1.5-2.0
+            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(40, 60) / 100.0);  // 暴击率：40%-60%
+            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(30, 40) / 10.0);  // 暴击倍率：3.0-4.0
+            weaponModule.setDouble("triggerChance", RandomUtil.getInt(30, 40) / 100.0);  // 触发几率：30%-40%
+        } else if (RandomUtil.percentageChance(0.1)) {
+            // 超弱武器：所有属性都很低（0.1%几率）
+            weaponModule.setDouble("damage", RandomUtil.getInt(50, 80) / 100.0);  // 伤害：0.5-0.8
+            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(5, 10) / 100.0);  // 暴击率：5%-10%
+            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(12, 15) / 10.0);  // 暴击倍率：1.2-1.5
+            weaponModule.setDouble("triggerChance", RandomUtil.getInt(5, 10) / 100.0);  // 触发几率：5%-10%
+        } else {
+            // 正常武器生成逻辑（99.8%几率）
+
+            // 生成基础伤害
+            double damage = RandomUtil.getInt(80, 120) / 100.0;  // 伤害范围：0.8-1.2
+            if (RandomUtil.percentageChance(60)) {
+                damage = 1.0;  // 60%几率将伤害设为1.0，保持平衡
             }
-        }
-        double triggerChance = RandomUtil.getInt(10, 25) / 100.0;
-        if (criticalStrikeProbability > 0.2 && RandomUtil.percentageChance(75)) {
-            triggerChance = RandomUtil.getInt(2, 5) / 100.0;
-        } else if (criticalStrikeProbability <= 0.12 && RandomUtil.percentageChance(75)) {
-            criticalStrikeMultiplier = RandomUtil.getInt(20, 50) / 10.0;
-            damage = RandomUtil.getInt(100, 140) / 100.0;
+
+            // 生成暴击几率
+            double criticalStrikeProbability = RandomUtil.getInt(10, 25) / 100.0;  // 基础暴击率：10%-25%
+            if (RandomUtil.percentageChance(30)) {
+                criticalStrikeProbability = RandomUtil.getInt(25, 40) / 100.0;  // 30%几率获得更高暴击率：25%-40%
+            }
+
+            // 生成暴击倍率
+            double criticalStrikeMultiplier = RandomUtil.getInt(18, 25) / 10.0;  // 基础暴击倍率：1.8-2.5
+            if (criticalStrikeProbability >= 0.3) {
+                // 高暴击率武器获得更高的暴击倍率，但伤害略低
+                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;  // 暴击倍率：2.5-3.0
+                damage = RandomUtil.getInt(80, 90) / 100.0;  // 伤害降低到：0.8-0.9
+            } else if (criticalStrikeProbability <= 0.15) {
+                // 低暴击率武器有小概率获得极高的暴击倍率，但伤害更低
+                if (RandomUtil.percentageChance(10)) {
+                    criticalStrikeMultiplier = RandomUtil.getInt(30, 35) / 10.0;  // 暴击倍率：3.0-3.5
+                    damage = RandomUtil.getInt(70, 80) / 100.0;  // 伤害进一步降低到：0.7-0.8
+                }
+            }
+
+            // 生成触发几率
+            double triggerChance = RandomUtil.getInt(5, 20) / 100.0;  // 基础触发几率：5%-20%
+            if (criticalStrikeProbability > 0.3 && RandomUtil.percentageChance(60)) {
+                // 高暴击率武器有60%几率获得极低的触发几率
+                triggerChance = RandomUtil.getInt(1, 5) / 100.0;  // 触发几率降低到：1%-5%
+            } else if (criticalStrikeProbability <= 0.15 && RandomUtil.percentageChance(60)) {
+                // 低暴击率武器有60%几率获得更高的暴击倍率和伤害
+                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;  // 暴击倍率提高到：2.5-3.0
+                damage = RandomUtil.getInt(110, 120) / 100.0;  // 伤害提高到：1.1-1.2
+            }
+
+            // 将生成的属性设置到武器上
+            weaponModule.setDouble("damage", damage);
+            weaponModule.setDouble("criticalStrikeProbability", criticalStrikeProbability);
+            weaponModule.setDouble("criticalStrikeMultiplier", criticalStrikeMultiplier);
+            weaponModule.setDouble("triggerChance", triggerChance);
         }
 
-        weaponModule.setDouble("damage", damage);
-        weaponModule.setDouble("criticalStrikeProbability", criticalStrikeProbability);
-        weaponModule.setDouble("criticalStrikeMultiplier", criticalStrikeMultiplier);
-        weaponModule.setDouble("triggerChance", triggerChance);
-
+        // 将属性模块保存到物品的NBT数据中
         tag.setTag(Reference.MOD_ID + "_weaponModules", weaponModule);
         nbtTagCompound.setTag("tag", tag);
         itemStack.setTagCompound(tag);
@@ -715,144 +751,142 @@ public class ItemModule {
 
 
     public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
-        List<String> usableElement = new ArrayList<>();
+        Map<String, Double> elementValues = new LinkedHashMap<>();
 
-        List<ItemStack> modules = getModules(weapon);
-        for (ItemStack module : modules) {
-            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                if (entry.getValue() > 0) {
-                    switch (entry.getKey()) {
-                        case "fire":
-                            usableElement.add("fire");
-                            break;
-                        case "ice":
-                            usableElement.add("ice");
-                            break;
-                        case "poison":
-                            usableElement.add("poison");
-                            break;
-                        case "electricity":
-                            usableElement.add("electricity");
-                            break;
-                        case "slash":
-                            usableElement.add("slash");
-                            break;
-                        case "puncture":
-                            usableElement.add("puncture");
-                            break;
-                        case "impact":
-                            usableElement.add("impact");
-                            break;
-                    }
-                }
-            }
-        }
-        for (ItemStack module : modules) {
-            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                if (entry.getValue() < 0) {
-                    usableElement.remove(entry.getKey());
-                }
-            }
-        }
-
+        // 首先检查赤毒武器属性
         if (KuvaWeapon.hasType(weapon)) {
-            usableElement.add(KuvaWeapon.getType(weapon));
-        }
-        if (usableElement.contains("fire") && usableElement.contains("ice")) {
-            usableElement.add("explosion");
-        }
-        if (usableElement.contains("fire") && usableElement.contains("poison")) {
-            usableElement.add("gas");
-        }
-        if (usableElement.contains("fire") && usableElement.contains("poison")) {
-            usableElement.add("radiation");
-        }
-        if (usableElement.contains("ice") && usableElement.contains("poison")) {
-            usableElement.add("virus");
-        }
-        if (usableElement.contains("ice") && usableElement.contains("electricity")) {
-            usableElement.add("magnetic");
-        }
-        if (usableElement.contains("poison") && usableElement.contains("electricity")) {
-            usableElement.add("corrosion");
+            String kuvaType = KuvaWeapon.getType(weapon);
+            elementValues.put(kuvaType, 1.0);
+            System.out.println("Kuva weapon type: " + kuvaType);
         }
 
-        HashMap<String, String> hashMap = new HashMap<>();
-        for (String element : usableElement) {
-            if (!hashMap.containsKey(element)) {
-                hashMap.put(element, (int) ((double) Collections.frequency(usableElement, element) / usableElement.size() * 100) + "%");
+        // 获取模组列表并按顺序处理
+        List<ItemStack> modules = getModules(weapon);
+        for (int i = 0; i < modules.size(); i++) {
+            ItemStack module = modules.get(i);
+            Set<Map.Entry<String, Double>> moduleAttributes = ModuleBase.getAttributes(module);
+            for (Map.Entry<String, Double> entry : moduleAttributes) {
+                String key = entry.getKey();
+                double value = entry.getValue();
+                if (isElemental(key) || isPhysical(key)) {
+                    elementValues.merge(key, value, Double::sum);
+                    System.out.println("Updated element: " + key + " with value: " + elementValues.get(key) + " at slot " + i);
+                }
             }
         }
-        return hashMap;
+
+        System.out.println("Original element values: " + elementValues);
+
+        // 移除总和为负或零的元素
+        elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
+
+        System.out.println("Element values after removing negatives: " + elementValues);
+
+        // 元素组合
+        Map<String, Double> combinedElements = new LinkedHashMap<>();
+        for (Map.Entry<String, Double> entry : elementValues.entrySet()) {
+            String currentElement = entry.getKey();
+            double currentValue = entry.getValue();
+
+            boolean combined = false;
+            for (String existingElement : new ArrayList<>(combinedElements.keySet())) {
+                String compoundElement = getCompoundElement(existingElement, currentElement);
+                if (compoundElement != null) {
+                    double existingValue = combinedElements.remove(existingElement);
+                    combinedElements.put(compoundElement, existingValue + currentValue);
+                    System.out.println("Combined " + existingElement + " and " + currentElement + " into " + compoundElement);
+                    combined = true;
+                    break;
+                }
+            }
+
+            if (!combined) {
+                combinedElements.put(currentElement, currentValue);
+            }
+        }
+
+        System.out.println("Combined element list: " + combinedElements);
+
+        // 计算总值和百分比
+        double totalValue = combinedElements.values().stream().mapToDouble(Double::doubleValue).sum();
+        HashMap<String, String> result = new HashMap<>();
+        for (Map.Entry<String, Double> entry : combinedElements.entrySet()) {
+            double percentage = (entry.getValue() / totalValue) * 100;
+            result.put(entry.getKey(), String.format("%.0f%%", percentage));
+        }
+
+        System.out.println("Final result: " + result);
+
+        return result;
+    }
+
+    private static boolean isElemental(String element) {
+        return element.equals("fire") || element.equals("ice") ||
+                element.equals("poison") || element.equals("electricity");
+    }
+
+    private static boolean isPhysical(String element) {
+        return element.equals("slash") || element.equals("puncture") || element.equals("impact");
+    }
+
+    private static int findNextElemental(List<AbstractMap.SimpleEntry<String, Double>> list, int startIndex) {
+        for (int i = startIndex; i < list.size(); i++) {
+            if (isElemental(list.get(i).getKey())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static String getCompoundElement(String first, String second) {
+        System.out.println("Attempting to fuse: " + first + " and " + second);
+        if ((first.equals("fire") && second.equals("poison")) ||
+                (first.equals("poison") && second.equals("fire"))) {
+            return "gas";
+        } else if ((first.equals("fire") && second.equals("electricity")) ||
+                (first.equals("electricity") && second.equals("fire"))) {
+            return "radiation";
+        } else if ((first.equals("ice") && second.equals("electricity")) ||
+                (first.equals("electricity") && second.equals("ice"))) {
+            return "magnetic";
+        } else if ((first.equals("poison") && second.equals("electricity")) ||
+                (first.equals("electricity") && second.equals("poison"))) {
+            return "corrosion";
+        } else if ((first.equals("fire") && second.equals("ice")) ||
+                (first.equals("ice") && second.equals("fire"))) {
+            return "explosion";
+        } else if ((first.equals("poison") && second.equals("ice")) ||
+                (first.equals("ice") && second.equals("poison"))) {
+            return "virus";
+        }
+        return null;
     }
 
     public static String getTriggerElement(ItemStack weapon) {
-        List<String> usableElement = new ArrayList<>();
-
-        List<ItemStack> modules = getModules(weapon);
-        for (ItemStack module : modules) {
-            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                if (entry.getValue() > 0) {
-                    switch (entry.getKey()) {
-                        case "fire":
-                            usableElement.add("fire");
-                            break;
-                        case "ice":
-                            usableElement.add("ice");
-                            break;
-                        case "poison":
-                            usableElement.add("poison");
-                            break;
-                        case "electricity":
-                            usableElement.add("electricity");
-                            break;
-                        case "slash":
-                            usableElement.add("slash");
-                            break;
-                        case "puncture":
-                            usableElement.add("puncture");
-                            break;
-                        case "impact":
-                            usableElement.add("impact");
-                            break;
-                    }
-                }
-            }
-        }
-        for (ItemStack module : modules) {
-            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                if (entry.getValue() < 0) {
-                    usableElement.remove(entry.getKey());
-                }
-            }
-        }
-
-        if (KuvaWeapon.hasType(weapon)) {
-            usableElement.add(KuvaWeapon.getType(weapon));
-        }
-        if (usableElement.contains("fire") && usableElement.contains("ice")) {
-            usableElement.add("explosion");
-        }
-        if (usableElement.contains("fire") && usableElement.contains("poison")) {
-            usableElement.add("gas");
-        }
-        if (usableElement.contains("fire") && usableElement.contains("poison")) {
-            usableElement.add("radiation");
-        }
-        if (usableElement.contains("ice") && usableElement.contains("poison")) {
-            usableElement.add("virus");
-        }
-        if (usableElement.contains("ice") && usableElement.contains("electricity")) {
-            usableElement.add("magnetic");
-        }
-        if (usableElement.contains("poison") && usableElement.contains("electricity")) {
-            usableElement.add("corrosion");
-        }
-        if (usableElement.size() > 0) {
-            return usableElement.get(RandomUtil.getInt(0, usableElement.size() - 1));
-        } else {
+        HashMap<String, String> elements = getTriggerElements(weapon);
+        if (elements.isEmpty()) {
             return null;
         }
+
+        // 将元素和它们的概率值放入一个列表中
+        List<Map.Entry<String, Double>> elementList = new ArrayList<>();
+        for (Map.Entry<String, String> entry : elements.entrySet()) {
+            double probability = Double.parseDouble(entry.getValue().replace("%", "")) / 100.0;
+            elementList.add(new AbstractMap.SimpleEntry<>(entry.getKey(), probability));
+        }
+
+        // 根据概率随机选择一个元素
+        double random = Math.random();
+        double cumulativeProbability = 0.0;
+        for (Map.Entry<String, Double> entry : elementList) {
+            cumulativeProbability += entry.getValue();
+            if (random <= cumulativeProbability) {
+                return entry.getKey();
+            }
+        }
+
+        // 如果由于舍入误差没有选中元素，返回最后一个
+        return elementList.get(elementList.size() - 1).getKey();
     }
 
     public static float triggerElementEffect(DamageSource damageSource, EntityLivingBase hurter, EntityPlayer
@@ -923,7 +957,7 @@ public class ItemModule {
                     damage = damage + damage * 0.25f * (amplifier + 1);
                 }
 
-                float slashDamage = (float) (damage * 0.35f);
+                float slashDamage = (float) (damage * 0.035f);
                 new SynchronizationTask(20, 20) {
                     private int time = 0;
 

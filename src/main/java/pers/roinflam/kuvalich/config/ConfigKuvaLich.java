@@ -82,4 +82,28 @@ public class ConfigKuvaLich {
     @Config.Comment("Setting a numerical limit for weapon upgrades via Requiem Evolve.")
     @Config.RangeInt(min = 0)
     public static int upgradeLimit = 999;
+
+    @Config.Comment("Set the spawn weight for Kuva Lich")
+    @Config.RangeInt(min = 1)
+    public static int kuvaLichSpawnWeight = 5;
+
+    @Config.Comment("Set the minimum spawn count for Kuva Lich")
+    @Config.RangeInt(min = 1)
+    public static int kuvaLichMinSpawnCount = 1;
+
+    @Config.Comment("Set the maximum spawn count for Kuva Lich")
+    @Config.RangeInt(min = 1)
+    public static int kuvaLichMaxSpawnCount = 1;
+
+    @Config.Comment("Set the spawn weight for Kuva Slave")
+    @Config.RangeInt(min = 1)
+    public static int kuvaSlaveSpawnWeight = 10;
+
+    @Config.Comment("Set the minimum spawn count for Kuva Slave")
+    @Config.RangeInt(min = 1)
+    public static int kuvaSlaveMinSpawnCount = 1;
+
+    @Config.Comment("Set the maximum spawn count for Kuva Slave")
+    @Config.RangeInt(min = 1)
+    public static int kuvaSlaveMaxSpawnCount = 3;
 }

@@ -5,8 +5,8 @@ import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.common.registry.EntityEntryBuilder;
 import pers.roinflam.kuvalich.entity.EntityKuvaMaster;
 import pers.roinflam.kuvalich.entity.EntityKuvaSlave;
+import pers.roinflam.kuvalich.config.ConfigKuvaLich;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +20,11 @@ public class KuvaLichEntities {
             .name(EntityKuvaSlave.NAME)
             .tracker(64, 1, true)
             .egg(0X4B0082, 0xDC143C)
-            .spawn(EnumCreatureType.MONSTER, 15, 1, 1, EntityKuvaSlave.BIOMES)
+            .spawn(EnumCreatureType.MONSTER,
+                    ConfigKuvaLich.kuvaSlaveSpawnWeight,
+                    ConfigKuvaLich.kuvaSlaveMinSpawnCount,
+                    ConfigKuvaLich.kuvaSlaveMaxSpawnCount,
+                    EntityKuvaSlave.BIOMES)
             .build();
 
     public static final EntityEntry KUVA_MASTER = EntityEntryBuilder.create()
@@ -29,13 +33,15 @@ public class KuvaLichEntities {
             .name(EntityKuvaMaster.NAME)
             .tracker(64, 1, true)
             .egg(0X9d00ff, 0X91001b)
-            .spawn(EnumCreatureType.MONSTER, 3, 1, 1, EntityKuvaSlave.BIOMES)
+            .spawn(EnumCreatureType.MONSTER,
+                    ConfigKuvaLich.kuvaLichSpawnWeight,
+                    ConfigKuvaLich.kuvaLichMinSpawnCount,
+                    ConfigKuvaLich.kuvaLichMaxSpawnCount,
+                    EntityKuvaSlave.BIOMES)
             .build();
 
     static {
         ENTITIES.add(KUVA_SLAVE);
         ENTITIES.add(KUVA_MASTER);
     }
-
-
 }
