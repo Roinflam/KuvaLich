@@ -757,7 +757,6 @@ public class ItemModule {
         if (KuvaWeapon.hasType(weapon)) {
             String kuvaType = KuvaWeapon.getType(weapon);
             elementValues.put(kuvaType, 1.0);
-            System.out.println("Kuva weapon type: " + kuvaType);
         }
 
         // 获取模组列表并按顺序处理
@@ -770,17 +769,12 @@ public class ItemModule {
                 double value = entry.getValue();
                 if (isElemental(key) || isPhysical(key)) {
                     elementValues.merge(key, value, Double::sum);
-                    System.out.println("Updated element: " + key + " with value: " + elementValues.get(key) + " at slot " + i);
                 }
             }
         }
 
-        System.out.println("Original element values: " + elementValues);
-
         // 移除总和为负或零的元素
         elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
-
-        System.out.println("Element values after removing negatives: " + elementValues);
 
         // 元素组合
         Map<String, Double> combinedElements = new LinkedHashMap<>();
@@ -794,7 +788,6 @@ public class ItemModule {
                 if (compoundElement != null) {
                     double existingValue = combinedElements.remove(existingElement);
                     combinedElements.put(compoundElement, existingValue + currentValue);
-                    System.out.println("Combined " + existingElement + " and " + currentElement + " into " + compoundElement);
                     combined = true;
                     break;
                 }
@@ -805,8 +798,6 @@ public class ItemModule {
             }
         }
 
-        System.out.println("Combined element list: " + combinedElements);
-
         // 计算总值和百分比
         double totalValue = combinedElements.values().stream().mapToDouble(Double::doubleValue).sum();
         HashMap<String, String> result = new HashMap<>();
@@ -814,8 +805,6 @@ public class ItemModule {
             double percentage = (entry.getValue() / totalValue) * 100;
             result.put(entry.getKey(), String.format("%.0f%%", percentage));
         }
-
-        System.out.println("Final result: " + result);
 
         return result;
     }
@@ -839,7 +828,6 @@ public class ItemModule {
     }
 
     private static String getCompoundElement(String first, String second) {
-        System.out.println("Attempting to fuse: " + first + " and " + second);
         if ((first.equals("fire") && second.equals("poison")) ||
                 (first.equals("poison") && second.equals("fire"))) {
             return "gas";
@@ -895,7 +883,6 @@ public class ItemModule {
         if (type == null) {
             return (float) damage;
         }
-//        System.out.println(type);
         switch (type) {
             case "fire": {
                 damageSource.setFireDamage();
