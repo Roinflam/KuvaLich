@@ -1,22 +1,19 @@
 buildscript {
     repositories {
         maven { url = 'https://files.minecraftforge.net/maven' }
-        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
         jcenter()
         mavenCentral()
     }
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
-        classpath 'org.spongepowered:mixingradle:0.7.+'
     }
 }
 
 apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = '1.0.2'
+version = '2.0.0'
 group = 'pers.roinflam.kuvalich'
 archivesBaseName = 'KuvaLich-1.12.2'
 
@@ -30,60 +27,44 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
             property 'forge.logging.console.level', 'debug'
-            args '--tweakClass', 'org.spongepowered.asm.launch.MixinTweaker'
         }
 
         server {
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
             property 'forge.logging.console.level', 'debug'
-            args '--tweakClass', 'org.spongepowered.asm.launch.MixinTweaker'
         }
     }
 }
 
 repositories {
-    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-    mavenCentral()
+    maven {
+        // Baubles 仓库
+        name = "Progwml6 maven"
+        url = "https://dvs1.progwml6.com/files/maven/"
+    }
+    maven {
+        // CurseForge Maven (备用)
+        name = "CurseMaven"
+        url = "https://cursemaven.com"
+    }
 }
 
 dependencies {
-    implementation 'org.jetbrains:annotations:20.1.0'
     minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2855'
+
     compile fileTree(dir: 'dependencies', include: '*.jar')
-
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-    compile 'org.spongepowered:mixin:0.8.5'
-}
-
-mixin {
-    add sourceSets.main, "mixins.kuvalich.refmap.json"
-}
-
-processResources {
-    inputs.property "version", project.version
-
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-        expand 'version':project.version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
 }
 
 jar {
     manifest {
         attributes([
-                "Specification-Title": "kuvalich",
-                "Specification-Vendor": "kuvalich",
-                "Specification-Version": "1",
-                "Implementation-Title": project.name,
-                "Implementation-Version": "${version}",
-                "Implementation-Vendor" :"kuvalich",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
-                "MixinConfigs": "mixins.kuvalich.json"
+                "Specification-Title"     : "BattleCorrection",
+                "Specification-Vendor"    : "Roinflam",
+                "Specification-Version"   : "1",
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : "${version}",
+                "Implementation-Vendor"   : "Roinflam",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
@@ -106,5 +87,18 @@ publishing {
 sourceSets {
     main {
         output.resourcesDir = output.classesDir
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version': project.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
     }
 }
