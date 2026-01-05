@@ -19,8 +19,8 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.blocks.capability.CapabilityRegistryHandler;
@@ -37,7 +37,7 @@ public class WarframeModule {
 
     public static List<ItemStack> getModules(EntityPlayer entityPlayer) {
         List<ItemStack> itemStacks = new ArrayList<>();
-        @Nullable WarframeModules warframeModules = entityPlayer.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
+        WarframeModules warframeModules = entityPlayer.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
         itemStacks.add(warframeModules.getOne());
         itemStacks.add(warframeModules.getTwo());
         itemStacks.add(warframeModules.getThree());
@@ -160,7 +160,7 @@ public class WarframeModule {
     }
 
     @SubscribeEvent
-    public static void onBreakSpeed(PlayerEvent.@NotNull BreakSpeed evt) {
+    public static void onBreakSpeed(PlayerEvent.BreakSpeed evt) {
         EntityPlayer entityPlayer = evt.getEntityPlayer();
         if (entityPlayer.swingingHand != null) {
             HashMap<String, Double> attributes = new HashMap<>();

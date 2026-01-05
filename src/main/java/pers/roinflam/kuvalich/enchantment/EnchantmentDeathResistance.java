@@ -4,18 +4,18 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnumEnchantmentType;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraftforge.fml.common.Mod;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
 
 @Mod.EventBusSubscriber
 public class EnchantmentDeathResistance extends EnchantmentBase {
 
-    public EnchantmentDeathResistance(@NotNull Rarity rarityIn, @NotNull EnumEnchantmentType typeIn, EntityEquipmentSlot @NotNull [] slots) {
+    public EnchantmentDeathResistance(Rarity rarityIn, EnumEnchantmentType typeIn, EntityEquipmentSlot [] slots) {
         super(rarityIn, typeIn, slots, "death_resistance");
     }
 
-    public static @NotNull Enchantment getEnchantment() {
+    public static Enchantment getEnchantment() {
         return KuvaLichEnchantments.DEATH_RESISTANCE;
     }
 

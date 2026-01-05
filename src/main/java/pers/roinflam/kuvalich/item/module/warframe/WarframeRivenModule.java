@@ -13,7 +13,7 @@ import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
@@ -33,7 +33,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
     private static final String[] SUFFIXES = {"cron", "ata", "icor", "tis", "tron", "cak", "nus", "vex", "mira", "ton", "sera", "phix", "gara", "luxe", "moto", "zora", "fyre", "glacia", "volt", "terra", "aqua", "nebula", "stellar", "cosmo", "sol", "lunar", "astral", "void", "nether", "ether", "flux", "halo", "vortex", "quantum", "sigma", "omega", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu", "nu", "xi", "omicron", "pi", "rho", "sigma", "tau", "upsilon", "phi", "chi", "psi", "omega", "alpha", "beta", "axion", "baryon", "charm", "dynami", "electro", "fluxi", "gyro", "halo", "ioni", "joule", "kineti", "lepto", "mytho", "neuro", "omni", "penta", "quanta", "retro", "syntho", "tri", "umbra", "vecta", "wyrm", "xero", "yield", "zephyr", "ara", "bolo", "ceta", "dome", "ergo", "foti", "glow", "hype", "ille", "juno", "kilo", "lima", "mote", "nano", "oxi", "pico", "quark", "rune", "solo", "tome", "uni", "volo", "watt", "xene", "yotta", "zetta"};
 
 
-    public WarframeRivenModule(@NotNull String name) {
+    public WarframeRivenModule(String name) {
         super(name);
     }
 
@@ -174,9 +174,9 @@ public class WarframeRivenModule extends WarframeModuleBase {
     }
 
     public static void setCycle(ItemStack itemStack, int cycleNumber) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         kuvalichModule.setInteger("Cycle", cycleNumber);
         tag.setTag(Reference.MOD_ID + "_modules", kuvalichModule);
@@ -185,17 +185,17 @@ public class WarframeRivenModule extends WarframeModuleBase {
     }
 
     public static int getCycle(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         return kuvalichModule.getInteger("Cycle");
     }
 
     private static void setTrend(ItemStack itemStack, int trend) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         kuvalichModule.setInteger("Trend", trend);
         tag.setTag(Reference.MOD_ID + "_modules", kuvalichModule);
@@ -204,16 +204,16 @@ public class WarframeRivenModule extends WarframeModuleBase {
     }
 
     public static int getTrend(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         return kuvalichModule.getInteger("Trend");
     }
 
     @Override
-    public @NotNull ActionResult<ItemStack> onItemRightClick(World worldIn, @NotNull EntityPlayer playerIn, EnumHand handIn) {
-        @NotNull ItemStack itemstack = playerIn.getHeldItem(handIn);
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
+        ItemStack itemstack = playerIn.getHeldItem(handIn);
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
             ItemStack module = initModule();
 
@@ -227,7 +227,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
     }
 
     @Override
-    public @NotNull EnumRarity getRarity(@NotNull ItemStack stack) {
+    public EnumRarity getRarity(ItemStack stack) {
         return EnumRarity.EPIC;
     }
 

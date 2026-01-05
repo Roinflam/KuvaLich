@@ -10,7 +10,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.tabs.KuvaLichTab;
 import pers.roinflam.kuvalich.utils.IHasModel;
@@ -30,15 +30,15 @@ public abstract class RequiemCardBase extends Item implements IHasModel {
         this.setMaxDamage(3);
     }
 
-    public static @NotNull Item getCard(int id) {
-        RequiemCardBase @NotNull [] requiemCard = new RequiemCardBase[]{KuvaLichItems.KHRA_CARD, KuvaLichItems.JAHU_CARD, KuvaLichItems.FASS_CARD, KuvaLichItems.LOHK_CARD, KuvaLichItems.NETRA_CARD, KuvaLichItems.VOME_CARD, KuvaLichItems.XATA_CARD, KuvaLichItems.RIS_CARD};
+    public static Item getCard(int id) {
+        RequiemCardBase [] requiemCard = new RequiemCardBase[]{KuvaLichItems.KHRA_CARD, KuvaLichItems.JAHU_CARD, KuvaLichItems.FASS_CARD, KuvaLichItems.LOHK_CARD, KuvaLichItems.NETRA_CARD, KuvaLichItems.VOME_CARD, KuvaLichItems.XATA_CARD, KuvaLichItems.RIS_CARD};
         return requiemCard[id];
     }
 
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public static void onItemTooltip(@NotNull ItemTooltipEvent evt) {
-        @NotNull ItemStack itemStack = evt.getItemStack();
+    public static void onItemTooltip(ItemTooltipEvent evt) {
+        ItemStack itemStack = evt.getItemStack();
         Item item = itemStack.getItem();
         if (item instanceof RequiemCardBase) {
             evt.getToolTip().add(1, TextFormatting.DARK_GRAY + "" + TextFormatting.ITALIC + I18n.format(item.getUnlocalizedName() + ".first_tooltip"));

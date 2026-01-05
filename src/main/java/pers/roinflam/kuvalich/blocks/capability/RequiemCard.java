@@ -8,8 +8,6 @@ import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaLich;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -52,17 +50,17 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.@NotNull Clone evt) {
+    public static void onPlayerClone(PlayerEvent.Clone evt) {
         Entity entity = evt.getEntity();
         if (!entity.world.isRemote && entity instanceof EntityPlayer) {
-            @NotNull EntityPlayer entityPlayer = (EntityPlayer) entity;
-            @Nullable RequiemCard requiemCard = entityPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-            @Nullable RequiemCard originalRequiemCard = evt.getOriginal().getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+            EntityPlayer entityPlayer = (EntityPlayer) entity;
+            RequiemCard requiemCard = entityPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+            RequiemCard originalRequiemCard = evt.getOriginal().getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
             requiemCard.clone(originalRequiemCard);
         }
     }
 
-    public void clone(@NotNull RequiemCard requiemCard) {
+    public void clone(RequiemCard requiemCard) {
         this.setOneCard(requiemCard.getOneCard());
         this.setTwoCard(requiemCard.getTwoCard());
         this.setThreeCard(requiemCard.getThreeCard());
@@ -189,9 +187,9 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     public boolean isCorrectAnswer() {
         if (unlockedCardStatus > 0 && isReadyCard()) {
-            @NotNull RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
-            @NotNull RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
-            @NotNull RequiemCardBase three = (RequiemCardBase) threeCard.getItem();
+            RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
+            RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
+            RequiemCardBase three = (RequiemCardBase) threeCard.getItem();
             return one.getID() == oneAnswer && two.getID() == twoAnswer && three.getID() == threeAnswer;
         }
         return false;
@@ -199,7 +197,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     public boolean isFirstCorrectAnswer() {
         if (unlockedCardStatus > 0 && isReadyCard()) {
-            @NotNull RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
+            RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
             return one.getID() == oneAnswer;
         }
         return false;
@@ -207,7 +205,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     public boolean isTwoCorrectAnswer() {
         if (unlockedCardStatus > 0 && isReadyCard()) {
-            @NotNull RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
+            RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
             return two.getID() == twoAnswer;
         }
         return false;
@@ -346,8 +344,8 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     @Override
-    public @NotNull NBTTagCompound serializeNBT() {
-        @NotNull NBTTagCompound nbtTagCompound = new NBTTagCompound();
+    public NBTTagCompound serializeNBT() {
+        NBTTagCompound nbtTagCompound = new NBTTagCompound();
         nbtTagCompound.setTag("oneCard", oneCard.serializeNBT());
         nbtTagCompound.setTag("twoCard", twoCard.serializeNBT());
         nbtTagCompound.setTag("threeCard", threeCard.serializeNBT());
@@ -366,7 +364,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     @Override
-    public void deserializeNBT(@NotNull NBTTagCompound nbt) {
+    public void deserializeNBT(NBTTagCompound nbt) {
         this.oneCard = new ItemStack(nbt.getCompoundTag("oneCard"));
         this.twoCard = new ItemStack(nbt.getCompoundTag("twoCard"));
         this.threeCard = new ItemStack(nbt.getCompoundTag("threeCard"));

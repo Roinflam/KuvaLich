@@ -13,7 +13,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.entity.KuvaBase;
 import pers.roinflam.kuvalich.blocks.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.blocks.capability.RequiemCard;
@@ -85,11 +85,11 @@ public class EntityKuvaSlave extends KuvaBase {
         if (!world.isRemote) {
             this.experienceValue = RandomUtil.getInt(10, 50);
             if (cause.getTrueSource() instanceof EntityPlayer) {
-                @Nullable EntityPlayer player = (EntityPlayer) cause.getTrueSource();
-                @org.jetbrains.annotations.Nullable RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+                EntityPlayer player = (EntityPlayer) cause.getTrueSource();
+               RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
                 int addPotion = RandomUtil.getInt(ConfigKuvaLich.minDecryptionProgress, ConfigKuvaLich.maxDecryptionProgress);
 
-                @NotNull BlockPos blockPos = this.getPosition();
+                BlockPos blockPos = this.getPosition();
                 EntityItem entityItem;
                 if (RandomUtil.percentageChance(15)) {
                     entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), RandomUtil.percentageChance(75) ? ItemCommonModule.getRandomModule() : WarframeCommonModule.getRandomModule());
@@ -113,11 +113,11 @@ public class EntityKuvaSlave extends KuvaBase {
 
                 if (requiemCard.addPotion(addPotion)) {
                     boolean max = requiemCard.getPointsRequired() == -1;
-                    @NotNull TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.getPoints", addPotion, max ? "Max" : requiemCard.getDecryptionProgress(), max ? "Max" : requiemCard.getPointsRequired());
+                    TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.getPoints", addPotion, max ? "Max" : requiemCard.getDecryptionProgress(), max ? "Max" : requiemCard.getPointsRequired());
                     textComponentString.getStyle().setColor(TextFormatting.RED);
                     player.sendMessage(textComponentString);
                 } else {
-                    @NotNull TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.maxLevel");
+                    TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.maxLevel");
                     textComponentString.getStyle().setColor(TextFormatting.RED);
                     player.sendMessage(textComponentString);
                 }

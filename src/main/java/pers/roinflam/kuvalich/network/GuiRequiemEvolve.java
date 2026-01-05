@@ -8,7 +8,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.inventory.container.ContainerRequiemEvolve;
 import pers.roinflam.kuvalich.inventory.container.ContainerRequiemRecast;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -17,7 +17,7 @@ import pers.roinflam.kuvalich.utils.Reference;
 public class GuiRequiemEvolve extends GuiContainer {
     private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID + ":textures/gui/container/requiem_evolve.png");
 
-    public GuiRequiemEvolve(@NotNull EntityPlayer entityPlayer, @NotNull World world, @NotNull BlockPos pos) {
+    public GuiRequiemEvolve(EntityPlayer entityPlayer, World world, BlockPos pos) {
         super(new ContainerRequiemEvolve(entityPlayer, world, pos));
         this.xSize = 176;
         this.ySize = 185;

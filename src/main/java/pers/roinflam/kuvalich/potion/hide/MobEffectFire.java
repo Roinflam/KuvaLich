@@ -6,7 +6,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.potion.hide.HideBase;
 
 import javax.annotation.Nonnull;
@@ -21,7 +21,7 @@ public class MobEffectFire extends HideBase {
     }
 
     @Override
-    public void performEffect(@NotNull EntityLivingBase entityLivingBaseIn, int amplifier) {
+    public void performEffect(EntityLivingBase entityLivingBaseIn, int amplifier) {
         if(entityLivingBaseIn.getAbsorptionAmount() > 0){
             entityLivingBaseIn.attackEntityFrom(DamageSource.IN_FIRE, entityLivingBaseIn.getMaxHealth() * 0.01875f);
         } else {

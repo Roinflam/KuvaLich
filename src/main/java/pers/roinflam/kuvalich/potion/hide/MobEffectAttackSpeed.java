@@ -3,7 +3,7 @@ package pers.roinflam.kuvalich.potion.hide;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.util.DamageSource;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.potion.hide.HideBase;
 
 

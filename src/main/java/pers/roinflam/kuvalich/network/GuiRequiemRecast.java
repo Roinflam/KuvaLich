@@ -9,8 +9,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaLich;
 import pers.roinflam.kuvalich.inventory.container.ContainerRequiemGate;
@@ -21,7 +21,7 @@ import pers.roinflam.kuvalich.utils.Reference;
 public class GuiRequiemRecast extends GuiContainer {
     private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID + ":textures/gui/container/requiem_recast.png");
 
-    public GuiRequiemRecast(@NotNull EntityPlayer entityPlayer, @NotNull World world, @NotNull BlockPos pos) {
+    public GuiRequiemRecast(EntityPlayer entityPlayer, World world, BlockPos pos) {
         super(new ContainerRequiemRecast(entityPlayer, world, pos));
         this.xSize = 176;
         this.ySize = 166;

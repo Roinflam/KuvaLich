@@ -1,12 +1,12 @@
 package pers.roinflam.kuvalich.base.potion.hide;
 
 import net.minecraft.potion.PotionEffect;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.potion.PotionBase;
 
 public abstract class HideBase extends PotionBase {
 
-    protected HideBase(boolean isBadEffectIn, int liquidColorIn, @NotNull String name) {
+    protected HideBase(boolean isBadEffectIn, int liquidColorIn, String name) {
         super(isBadEffectIn, liquidColorIn, name);
     }
 

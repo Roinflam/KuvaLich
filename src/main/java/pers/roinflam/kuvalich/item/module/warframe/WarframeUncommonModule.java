@@ -10,7 +10,7 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
@@ -23,7 +23,7 @@ import java.util.List;
 public class WarframeUncommonModule extends WarframeModuleBase {
     public static List<ItemStack> itemStackList = new ArrayList<ItemStack>();
 
-    public WarframeUncommonModule(@NotNull String name) {
+    public WarframeUncommonModule(String name) {
         super(name);
     }
 
@@ -140,8 +140,8 @@ public class WarframeUncommonModule extends WarframeModuleBase {
     }
 
     @Override
-    public @NotNull ActionResult<ItemStack> onItemRightClick(World worldIn, @NotNull EntityPlayer playerIn, EnumHand handIn) {
-        @NotNull ItemStack itemstack = playerIn.getHeldItem(handIn);
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
+        ItemStack itemstack = playerIn.getHeldItem(handIn);
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
             ItemStack module = itemStackList.get(RandomUtil.getInt(0, itemStackList.size() - 1));
 
@@ -155,7 +155,7 @@ public class WarframeUncommonModule extends WarframeModuleBase {
     }
 
     @Override
-    public @NotNull EnumRarity getRarity(@NotNull ItemStack stack) {
+    public EnumRarity getRarity(ItemStack stack) {
         return EnumRarity.UNCOMMON;
     }
 

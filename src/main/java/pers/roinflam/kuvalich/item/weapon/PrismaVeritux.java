@@ -11,7 +11,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaWeapon;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
@@ -25,15 +25,15 @@ import javax.annotation.Nullable;
 @Mod.EventBusSubscriber
 public class PrismaVeritux extends KuvaWeaponBase {
 
-    public PrismaVeritux(@NotNull String name) {
+    public PrismaVeritux(String name) {
         super(name);
     }
 
     @Override
     public ItemStack getBaseAttribute(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
         double damage = RandomUtil.getInt(80, 120) / 100.0;
         if (RandomUtil.percentageChance(95)) {
@@ -55,14 +55,14 @@ public class PrismaVeritux extends KuvaWeaponBase {
     }
 
     @SubscribeEvent
-    public static void onLivingHurt(@NotNull LivingHurtEvent evt) {
+    public static void onLivingHurt(LivingHurtEvent evt) {
         if (!evt.getEntity().world.isRemote) {
             DamageSource damageSource = evt.getSource();
             if (damageSource.getImmediateSource() instanceof EntityLivingBase) {
                 EntityLivingBase hurter = evt.getEntityLiving();
-                @Nullable EntityLivingBase attacker = (EntityLivingBase) damageSource.getImmediateSource();
+                EntityLivingBase attacker = (EntityLivingBase) damageSource.getImmediateSource();
                 if (!attacker.getHeldItem(attacker.getActiveHand()).isEmpty()) {
-                    @NotNull ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
+                    ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
                     if (itemStack.getItem() instanceof PrismaVeritux) {
                         if (attacker instanceof EntityPlayer) {
                             if (EntityLivingUtil.getTicksSinceLastSwing((EntityPlayer) attacker) != 1) {
@@ -90,17 +90,17 @@ public class PrismaVeritux extends KuvaWeaponBase {
     }
 
     @Override
-    public double getAttackDamageAmount(@NotNull ItemStack itemStack) {
+    public double getAttackDamageAmount(ItemStack itemStack) {
         return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackDamagePrismaVeritux));
     }
 
     @Override
-    public double getAttackSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getAttackSpeedAmount(ItemStack itemStack) {
         return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackSpeedPrismaVeritux));
     }
 
     @Override
-    public double getMovementSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getMovementSpeedAmount(ItemStack itemStack) {
         return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack, 1 + ConfigKuvaWeapon.movementSpeedPrismaVeritux));
     }
 

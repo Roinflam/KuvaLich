@@ -5,7 +5,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.fml.common.Mod;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.tabs.KuvaLichTab;
 import pers.roinflam.kuvalich.utils.IHasModel;
@@ -30,17 +30,17 @@ public abstract class ModuleBase extends Item implements IHasModel {
     public abstract boolean isWarframe();
 
     public static boolean isRandom(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         return kuvalichModule.getBoolean("Random");
     }
 
     public static void setRandom(ItemStack itemStack, boolean random) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         kuvalichModule.setBoolean("Random", random);
         tag.setTag(Reference.MOD_ID + "_modules", kuvalichModule);
@@ -53,17 +53,17 @@ public abstract class ModuleBase extends Item implements IHasModel {
 //    }
 
 //    public static String getItemStackModuleType(ItemStack itemStack) {
-//        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-//        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-//        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+//        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+//        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+//        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 //
 //        return kuvalichModule.getString("moduleType");
 //    }
 
     public static Set<Map.Entry<String, Double>> getAttributes(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         Map<String, Double> attributeMap = new LinkedHashMap<>();
 
@@ -76,9 +76,9 @@ public abstract class ModuleBase extends Item implements IHasModel {
     }
 
     public static void addAttributes(ItemStack itemStack, String attributeType, double attributeValue) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         NBTTagList attributeList = kuvalichModule.getTagList("attributeList", 10);
 
@@ -94,9 +94,9 @@ public abstract class ModuleBase extends Item implements IHasModel {
     }
 
     public static void setType(ItemStack itemStack, String type) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         kuvalichModule.setString("type", type);
         tag.setTag(Reference.MOD_ID + "_modules", kuvalichModule);
@@ -105,9 +105,9 @@ public abstract class ModuleBase extends Item implements IHasModel {
     }
 
     public static String getType(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
 
         return kuvalichModule.getString("type");
     }

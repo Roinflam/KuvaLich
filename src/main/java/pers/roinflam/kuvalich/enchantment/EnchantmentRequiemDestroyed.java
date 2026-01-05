@@ -17,7 +17,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
@@ -36,22 +36,22 @@ import java.util.Random;
 @Mod.EventBusSubscriber
 public class EnchantmentRequiemDestroyed extends EnchantmentBase {
 
-    public EnchantmentRequiemDestroyed(@NotNull Rarity rarityIn, @NotNull EnumEnchantmentType typeIn, EntityEquipmentSlot @NotNull [] slots) {
+    public EnchantmentRequiemDestroyed(Rarity rarityIn, EnumEnchantmentType typeIn, EntityEquipmentSlot [] slots) {
         super(rarityIn, typeIn, slots, "requiem_destroyed");
         KuvaLichEnchantments.ENCHANTMENTS.add(this);
     }
 
-    public static @NotNull Enchantment getEnchantment() {
+    public static Enchantment getEnchantment() {
         return KuvaLichEnchantments.REQUIEM_DESTROYED;
     }
 
     @SubscribeEvent
-    public static void onBreakSpeed(PlayerEvent.@NotNull BreakSpeed evt) {
-        @NotNull Block block = evt.getState().getBlock();
+    public static void onBreakSpeed(PlayerEvent.BreakSpeed evt) {
+        Block block = evt.getState().getBlock();
         if (block.equals(KuvaLichBlocks.REQUIEM_ORE) || block.equals(KuvaLichBlocks.REQUIEM_GATE) || block.equals(KuvaLichBlocks.REQUIEM_RECAST) || block.equals(KuvaLichBlocks.REQUIEM_EVOLVE)) {
             EntityPlayer entityPlayer = evt.getEntityPlayer();
             if (entityPlayer.swingingHand != null) {
-                @NotNull ItemStack itemStack = entityPlayer.getHeldItem(entityPlayer.swingingHand);
+                ItemStack itemStack = entityPlayer.getHeldItem(entityPlayer.swingingHand);
                 if (!itemStack.isEmpty()) {
                     int bonusLevel = EnchantmentHelper.getEnchantmentLevel(getEnchantment(), itemStack);
                     if (bonusLevel > 0) {
@@ -67,11 +67,11 @@ public class EnchantmentRequiemDestroyed extends EnchantmentBase {
 
 
     @SubscribeEvent
-    public static void onBreak(BlockEvent.@NotNull BreakEvent evt) {
-        @NotNull Block block = evt.getState().getBlock();
+    public static void onBreak(BlockEvent.BreakEvent evt) {
+        Block block = evt.getState().getBlock();
         if (block.equals(KuvaLichBlocks.REQUIEM_ORE)) {
             EntityPlayer entityPlayer = evt.getPlayer();
-            @NotNull ItemStack itemStack = entityPlayer.getHeldItem(entityPlayer.getActiveHand());
+            ItemStack itemStack = entityPlayer.getHeldItem(entityPlayer.getActiveHand());
             if (!itemStack.isEmpty()) {
                 if (EnchantmentHelper.getEnchantmentLevel(KuvaLichEnchantments.REQUIEM_DESTROYED, itemStack) > 0) {
                     evt.setExpToDrop(evt.getExpToDrop() * 2);
@@ -81,16 +81,16 @@ public class EnchantmentRequiemDestroyed extends EnchantmentBase {
     }
 
     @SubscribeEvent
-    public static void onHarvestDrops(BlockEvent.@NotNull HarvestDropsEvent evt) {
-        @NotNull Block block = evt.getState().getBlock();
+    public static void onHarvestDrops(BlockEvent.HarvestDropsEvent evt) {
+        Block block = evt.getState().getBlock();
         if (block.equals(KuvaLichBlocks.REQUIEM_ORE)) {
             EntityPlayer entityPlayer = evt.getHarvester();
-            @NotNull ItemStack itemStack = entityPlayer.getHeldItem(entityPlayer.getActiveHand());
+            ItemStack itemStack = entityPlayer.getHeldItem(entityPlayer.getActiveHand());
             if (!itemStack.isEmpty()) {
                 if (EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, itemStack) <= 0) {
                     int level = EnchantmentHelper.getEnchantmentLevel(KuvaLichEnchantments.REQUIEM_DESTROYED, itemStack);
                     if (level > 0 ? RandomUtil.percentageChance(75) : RandomUtil.percentageChance(Math.max(25 - 2.5 * EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, itemStack), 5))) {
-                        Item @NotNull [] items = new Item[]{
+                        Item [] items = new Item[]{
                                 KuvaLichItems.FASS_CARD,
                                 KuvaLichItems.JAHU_CARD,
                                 KuvaLichItems.KHRA_CARD,
@@ -103,7 +103,7 @@ public class EnchantmentRequiemDestroyed extends EnchantmentBase {
                         evt.getDrops().add(new ItemStack(items[new Random().nextInt(8)], 1, block.damageDropped(evt.getState())));
 
                         World world = evt.getWorld();
-                        @NotNull BlockPos blockPos = evt.getPos();
+                        BlockPos blockPos = evt.getPos();
                         EntityItem entityItem;
                         if (RandomUtil.percentageChance(15)) {
                             entityItem = new EntityItem(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), RandomUtil.percentageChance(75) ? ItemCommonModule.getRandomModule() : WarframeCommonModule.getRandomModule());

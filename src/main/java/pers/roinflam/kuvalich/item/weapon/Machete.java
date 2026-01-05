@@ -15,7 +15,7 @@ import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaWeapon;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
@@ -30,7 +30,7 @@ import java.util.Collection;
 @Mod.EventBusSubscriber
 public class Machete extends KuvaWeaponBase {
 
-    public Machete(@NotNull String name) {
+    public Machete(String name) {
         super(name);
     }
 
@@ -38,9 +38,9 @@ public class Machete extends KuvaWeaponBase {
     public static void onLivingDrops(LivingDropsEvent evt) {
         if (!evt.getEntityLiving().world.isRemote && evt.getSource().getImmediateSource() instanceof EntityPlayer) {
             if ((evt.getEntityLiving() instanceof EntityAnimal || evt.getEntityLiving() instanceof EntityMob) && evt.getEntityLiving().isNonBoss()) {
-                @Nullable EntityPlayer entityPlayer = (EntityPlayer) evt.getSource().getImmediateSource();
+                EntityPlayer entityPlayer = (EntityPlayer) evt.getSource().getImmediateSource();
                 if (!entityPlayer.getHeldItem(entityPlayer.getActiveHand()).isEmpty()) {
-                    @NotNull ItemStack itemStack = entityPlayer.getHeldItem(entityPlayer.getActiveHand());
+                    ItemStack itemStack = entityPlayer.getHeldItem(entityPlayer.getActiveHand());
                     if (itemStack.getItem() instanceof Machete) {
                         Collection<EntityItem> drops = evt.getDrops();
                         for (EntityItem drop : drops) {
@@ -57,9 +57,9 @@ public class Machete extends KuvaWeaponBase {
 
     @Override
     public ItemStack getBaseAttribute(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
         double damage = RandomUtil.getInt(80, 120) / 100.0;
         if (RandomUtil.percentageChance(95)) {
@@ -81,17 +81,17 @@ public class Machete extends KuvaWeaponBase {
     }
 
     @Override
-    public double getAttackDamageAmount(@NotNull ItemStack itemStack) {
+    public double getAttackDamageAmount(ItemStack itemStack) {
         return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackDamageMachete));
     }
 
     @Override
-    public double getAttackSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getAttackSpeedAmount(ItemStack itemStack) {
         return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackSpeedMachete, 2));
     }
 
     @Override
-    public double getMovementSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getMovementSpeedAmount(ItemStack itemStack) {
         return Math.max(0, KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.movementSpeedPennant, 2));
     }
 

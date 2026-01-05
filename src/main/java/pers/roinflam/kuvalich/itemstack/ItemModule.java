@@ -37,7 +37,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaLich;
@@ -60,8 +60,8 @@ public class ItemModule {
 
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public static void onItemTooltip(@NotNull ItemTooltipEvent evt) {
-        @NotNull ItemStack itemStack = evt.getItemStack();
+    public static void onItemTooltip(ItemTooltipEvent evt) {
+        ItemStack itemStack = evt.getItemStack();
         if (hasBase(itemStack)) {
             List<ItemStack> modules = getModules(itemStack);
             int index = 1;
@@ -163,9 +163,9 @@ public class ItemModule {
 
     public static List<ItemStack> getModules(ItemStack weaponItemStack) {
         List<ItemStack> itemStacks = new ArrayList<>();
-        @NotNull NBTTagCompound nbtTagCompound = weaponItemStack.copy().serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        NBTTagCompound nbtTagCompound = weaponItemStack.copy().serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
         NBTTagList itemList = weaponModule.getTagList("modules", 10);
         for (int i = 0; i < 8; i++) {
             NBTTagCompound itemTag = itemList.getCompoundTagAt(i);
@@ -178,92 +178,92 @@ public class ItemModule {
     }
 
     public static boolean hasBase(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
         return tag.hasKey(Reference.MOD_ID + "_weaponModules");
     }
 
     public static double getBaseAttribute(ItemStack itemStack, String attributeType) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
         return kuvalichModule.getDouble(attributeType);
     }
 
     /**
-     * ÎªÎäÆ÷ÉèÖÃ»ù´¡ÊôĞÔ
-     * Õâ¸ö·½·¨Éú³ÉÎäÆ÷µÄËÄ¸ö»ù±¾ÊôĞÔ£ºÉËº¦¡¢±©»÷¼¸ÂÊ¡¢±©»÷±¶ÂÊºÍ´¥·¢¼¸ÂÊ
-     * °üº¬Á½ÖÖº±¼ûµÄ"²Êµ°"ÎäÆ÷ÀàĞÍ£¬ÒÔ¼°³£¹æÎäÆ÷µÄÊôĞÔÉú³ÉÂß¼­
+     * ä¸ºæ­¦å™¨è®¾ç½®åŸºç¡€å±æ€§
+     * è¿™ä¸ªæ–¹æ³•ç”Ÿæˆæ­¦å™¨çš„å››ä¸ªåŸºæœ¬å±æ€§ï¼šä¼¤å®³ã€æš´å‡»å‡ ç‡ã€æš´å‡»å€ç‡å’Œè§¦å‘å‡ ç‡
+     * åŒ…å«ä¸¤ç§ç½•è§çš„"å½©è›‹"æ­¦å™¨ç±»å‹ï¼Œä»¥åŠå¸¸è§„æ­¦å™¨çš„å±æ€§ç”Ÿæˆé€»è¾‘
      *
-     * @param itemStack ÒªÉèÖÃÊôĞÔµÄÎäÆ÷ÎïÆ·¶Ñ
+     * @param itemStack è¦è®¾ç½®å±æ€§çš„æ­¦å™¨ç‰©å“å †
      */
     public static void setBaseAttribute(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
-        // ²Êµ°ÎäÆ÷Éú³É£¨¹²0.2%µÄ¼¸ÂÊ£©
+        // å½©è›‹æ­¦å™¨ç”Ÿæˆï¼ˆå…±0.2%çš„å‡ ç‡ï¼‰
         if (RandomUtil.percentageChance(0.1)) {
-            // ³¬¼¶ÎäÆ÷£ºËùÓĞÊôĞÔ¶¼ºÜ¸ß£¨0.1%¼¸ÂÊ£©
-            weaponModule.setDouble("damage", RandomUtil.getInt(150, 200) / 100.0);  // ÉËº¦£º1.5-2.0
-            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(40, 60) / 100.0);  // ±©»÷ÂÊ£º40%-60%
-            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(30, 40) / 10.0);  // ±©»÷±¶ÂÊ£º3.0-4.0
-            weaponModule.setDouble("triggerChance", RandomUtil.getInt(30, 40) / 100.0);  // ´¥·¢¼¸ÂÊ£º30%-40%
+            // è¶…çº§æ­¦å™¨ï¼šæ‰€æœ‰å±æ€§éƒ½å¾ˆé«˜ï¼ˆ0.1%å‡ ç‡ï¼‰
+            weaponModule.setDouble("damage", RandomUtil.getInt(150, 200) / 100.0);  // ä¼¤å®³ï¼š1.5-2.0
+            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(40, 60) / 100.0);  // æš´å‡»ç‡ï¼š40%-60%
+            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(30, 40) / 10.0);  // æš´å‡»å€ç‡ï¼š3.0-4.0
+            weaponModule.setDouble("triggerChance", RandomUtil.getInt(30, 40) / 100.0);  // è§¦å‘å‡ ç‡ï¼š30%-40%
         } else if (RandomUtil.percentageChance(0.1)) {
-            // ³¬ÈõÎäÆ÷£ºËùÓĞÊôĞÔ¶¼ºÜµÍ£¨0.1%¼¸ÂÊ£©
-            weaponModule.setDouble("damage", RandomUtil.getInt(50, 80) / 100.0);  // ÉËº¦£º0.5-0.8
-            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(5, 10) / 100.0);  // ±©»÷ÂÊ£º5%-10%
-            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(12, 15) / 10.0);  // ±©»÷±¶ÂÊ£º1.2-1.5
-            weaponModule.setDouble("triggerChance", RandomUtil.getInt(5, 10) / 100.0);  // ´¥·¢¼¸ÂÊ£º5%-10%
+            // è¶…å¼±æ­¦å™¨ï¼šæ‰€æœ‰å±æ€§éƒ½å¾ˆä½ï¼ˆ0.1%å‡ ç‡ï¼‰
+            weaponModule.setDouble("damage", RandomUtil.getInt(50, 80) / 100.0);  // ä¼¤å®³ï¼š0.5-0.8
+            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(5, 10) / 100.0);  // æš´å‡»ç‡ï¼š5%-10%
+            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(12, 15) / 10.0);  // æš´å‡»å€ç‡ï¼š1.2-1.5
+            weaponModule.setDouble("triggerChance", RandomUtil.getInt(5, 10) / 100.0);  // è§¦å‘å‡ ç‡ï¼š5%-10%
         } else {
-            // Õı³£ÎäÆ÷Éú³ÉÂß¼­£¨99.8%¼¸ÂÊ£©
+            // æ­£å¸¸æ­¦å™¨ç”Ÿæˆé€»è¾‘ï¼ˆ99.8%å‡ ç‡ï¼‰
 
-            // Éú³É»ù´¡ÉËº¦
-            double damage = RandomUtil.getInt(80, 120) / 100.0;  // ÉËº¦·¶Î§£º0.8-1.2
+            // ç”ŸæˆåŸºç¡€ä¼¤å®³
+            double damage = RandomUtil.getInt(80, 120) / 100.0;  // ä¼¤å®³èŒƒå›´ï¼š0.8-1.2
             if (RandomUtil.percentageChance(60)) {
-                damage = 1.0;  // 60%¼¸ÂÊ½«ÉËº¦ÉèÎª1.0£¬±£³ÖÆ½ºâ
+                damage = 1.0;  // 60%å‡ ç‡å°†ä¼¤å®³è®¾ä¸º1.0ï¼Œä¿æŒå¹³è¡¡
             }
 
-            // Éú³É±©»÷¼¸ÂÊ
-            double criticalStrikeProbability = RandomUtil.getInt(10, 25) / 100.0;  // »ù´¡±©»÷ÂÊ£º10%-25%
+            // ç”Ÿæˆæš´å‡»å‡ ç‡
+            double criticalStrikeProbability = RandomUtil.getInt(10, 25) / 100.0;  // åŸºç¡€æš´å‡»ç‡ï¼š10%-25%
             if (RandomUtil.percentageChance(30)) {
-                criticalStrikeProbability = RandomUtil.getInt(25, 40) / 100.0;  // 30%¼¸ÂÊ»ñµÃ¸ü¸ß±©»÷ÂÊ£º25%-40%
+                criticalStrikeProbability = RandomUtil.getInt(25, 40) / 100.0;  // 30%å‡ ç‡è·å¾—æ›´é«˜æš´å‡»ç‡ï¼š25%-40%
             }
 
-            // Éú³É±©»÷±¶ÂÊ
-            double criticalStrikeMultiplier = RandomUtil.getInt(18, 25) / 10.0;  // »ù´¡±©»÷±¶ÂÊ£º1.8-2.5
+            // ç”Ÿæˆæš´å‡»å€ç‡
+            double criticalStrikeMultiplier = RandomUtil.getInt(18, 25) / 10.0;  // åŸºç¡€æš´å‡»å€ç‡ï¼š1.8-2.5
             if (criticalStrikeProbability >= 0.3) {
-                // ¸ß±©»÷ÂÊÎäÆ÷»ñµÃ¸ü¸ßµÄ±©»÷±¶ÂÊ£¬µ«ÉËº¦ÂÔµÍ
-                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;  // ±©»÷±¶ÂÊ£º2.5-3.0
-                damage = RandomUtil.getInt(80, 90) / 100.0;  // ÉËº¦½µµÍµ½£º0.8-0.9
+                // é«˜æš´å‡»ç‡æ­¦å™¨è·å¾—æ›´é«˜çš„æš´å‡»å€ç‡ï¼Œä½†ä¼¤å®³ç•¥ä½
+                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;  // æš´å‡»å€ç‡ï¼š2.5-3.0
+                damage = RandomUtil.getInt(80, 90) / 100.0;  // ä¼¤å®³é™ä½åˆ°ï¼š0.8-0.9
             } else if (criticalStrikeProbability <= 0.15) {
-                // µÍ±©»÷ÂÊÎäÆ÷ÓĞĞ¡¸ÅÂÊ»ñµÃ¼«¸ßµÄ±©»÷±¶ÂÊ£¬µ«ÉËº¦¸üµÍ
+                // ä½æš´å‡»ç‡æ­¦å™¨æœ‰å°æ¦‚ç‡è·å¾—æé«˜çš„æš´å‡»å€ç‡ï¼Œä½†ä¼¤å®³æ›´ä½
                 if (RandomUtil.percentageChance(10)) {
-                    criticalStrikeMultiplier = RandomUtil.getInt(30, 35) / 10.0;  // ±©»÷±¶ÂÊ£º3.0-3.5
-                    damage = RandomUtil.getInt(70, 80) / 100.0;  // ÉËº¦½øÒ»²½½µµÍµ½£º0.7-0.8
+                    criticalStrikeMultiplier = RandomUtil.getInt(30, 35) / 10.0;  // æš´å‡»å€ç‡ï¼š3.0-3.5
+                    damage = RandomUtil.getInt(70, 80) / 100.0;  // ä¼¤å®³è¿›ä¸€æ­¥é™ä½åˆ°ï¼š0.7-0.8
                 }
             }
 
-            // Éú³É´¥·¢¼¸ÂÊ
-            double triggerChance = RandomUtil.getInt(5, 20) / 100.0;  // »ù´¡´¥·¢¼¸ÂÊ£º5%-20%
+            // ç”Ÿæˆè§¦å‘å‡ ç‡
+            double triggerChance = RandomUtil.getInt(5, 20) / 100.0;  // åŸºç¡€è§¦å‘å‡ ç‡ï¼š5%-20%
             if (criticalStrikeProbability > 0.3 && RandomUtil.percentageChance(60)) {
-                // ¸ß±©»÷ÂÊÎäÆ÷ÓĞ60%¼¸ÂÊ»ñµÃ¼«µÍµÄ´¥·¢¼¸ÂÊ
-                triggerChance = RandomUtil.getInt(1, 5) / 100.0;  // ´¥·¢¼¸ÂÊ½µµÍµ½£º1%-5%
+                // é«˜æš´å‡»ç‡æ­¦å™¨æœ‰60%å‡ ç‡è·å¾—æä½çš„è§¦å‘å‡ ç‡
+                triggerChance = RandomUtil.getInt(1, 5) / 100.0;  // è§¦å‘å‡ ç‡é™ä½åˆ°ï¼š1%-5%
             } else if (criticalStrikeProbability <= 0.15 && RandomUtil.percentageChance(60)) {
-                // µÍ±©»÷ÂÊÎäÆ÷ÓĞ60%¼¸ÂÊ»ñµÃ¸ü¸ßµÄ±©»÷±¶ÂÊºÍÉËº¦
-                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;  // ±©»÷±¶ÂÊÌá¸ßµ½£º2.5-3.0
-                damage = RandomUtil.getInt(110, 120) / 100.0;  // ÉËº¦Ìá¸ßµ½£º1.1-1.2
+                // ä½æš´å‡»ç‡æ­¦å™¨æœ‰60%å‡ ç‡è·å¾—æ›´é«˜çš„æš´å‡»å€ç‡å’Œä¼¤å®³
+                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;  // æš´å‡»å€ç‡æé«˜åˆ°ï¼š2.5-3.0
+                damage = RandomUtil.getInt(110, 120) / 100.0;  // ä¼¤å®³æé«˜åˆ°ï¼š1.1-1.2
             }
 
-            // ½«Éú³ÉµÄÊôĞÔÉèÖÃµ½ÎäÆ÷ÉÏ
+            // å°†ç”Ÿæˆçš„å±æ€§è®¾ç½®åˆ°æ­¦å™¨ä¸Š
             weaponModule.setDouble("damage", damage);
             weaponModule.setDouble("criticalStrikeProbability", criticalStrikeProbability);
             weaponModule.setDouble("criticalStrikeMultiplier", criticalStrikeMultiplier);
             weaponModule.setDouble("triggerChance", triggerChance);
         }
 
-        // ½«ÊôĞÔÄ£¿é±£´æµ½ÎïÆ·µÄNBTÊı¾İÖĞ
+        // å°†å±æ€§æ¨¡å—ä¿å­˜åˆ°ç‰©å“çš„NBTæ•°æ®ä¸­
         tag.setTag(Reference.MOD_ID + "_weaponModules", weaponModule);
         nbtTagCompound.setTag("tag", tag);
         itemStack.setTagCompound(tag);
@@ -648,11 +648,11 @@ public class ItemModule {
     }
 
     @SubscribeEvent
-    public static void onAttackEntity(@NotNull AttackEntityEvent evt) {
+    public static void onAttackEntity(AttackEntityEvent evt) {
         if (!evt.getEntity().world.isRemote) {
             if (evt.getTarget() instanceof EntityLivingBase) {
                 EntityLivingBase hurter = (EntityLivingBase) evt.getTarget();
-                @Nullable EntityPlayer entityPlayer = evt.getEntityPlayer();
+                EntityPlayer entityPlayer = evt.getEntityPlayer();
                 if (!entityPlayer.getHeldItem(entityPlayer.getActiveHand()).isEmpty()) {
                     ItemStack weapon = entityPlayer.getHeldItemMainhand();
                     if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
@@ -753,13 +753,13 @@ public class ItemModule {
     public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
         Map<String, Double> elementValues = new LinkedHashMap<>();
 
-        // Ê×ÏÈ¼ì²é³à¶¾ÎäÆ÷ÊôĞÔ
+        // é¦–å…ˆæ£€æŸ¥èµ¤æ¯’æ­¦å™¨å±æ€§
         if (KuvaWeapon.hasType(weapon)) {
             String kuvaType = KuvaWeapon.getType(weapon);
             elementValues.put(kuvaType, 1.0);
         }
 
-        // »ñÈ¡Ä£×éÁĞ±í²¢°´Ë³Ğò´¦Àí
+        // è·å–æ¨¡ç»„åˆ—è¡¨å¹¶æŒ‰é¡ºåºå¤„ç†
         List<ItemStack> modules = getModules(weapon);
         for (int i = 0; i < modules.size(); i++) {
             ItemStack module = modules.get(i);
@@ -773,10 +773,10 @@ public class ItemModule {
             }
         }
 
-        // ÒÆ³ı×ÜºÍÎª¸º»òÁãµÄÔªËØ
+        // ç§»é™¤æ€»å’Œä¸ºè´Ÿæˆ–é›¶çš„å…ƒç´ 
         elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
 
-        // ÔªËØ×éºÏ
+        // å…ƒç´ ç»„åˆ
         Map<String, Double> combinedElements = new LinkedHashMap<>();
         for (Map.Entry<String, Double> entry : elementValues.entrySet()) {
             String currentElement = entry.getKey();
@@ -798,7 +798,7 @@ public class ItemModule {
             }
         }
 
-        // ¼ÆËã×ÜÖµºÍ°Ù·Ö±È
+        // è®¡ç®—æ€»å€¼å’Œç™¾åˆ†æ¯”
         double totalValue = combinedElements.values().stream().mapToDouble(Double::doubleValue).sum();
         HashMap<String, String> result = new HashMap<>();
         for (Map.Entry<String, Double> entry : combinedElements.entrySet()) {
@@ -856,14 +856,14 @@ public class ItemModule {
             return null;
         }
 
-        // ½«ÔªËØºÍËüÃÇµÄ¸ÅÂÊÖµ·ÅÈëÒ»¸öÁĞ±íÖĞ
+        // å°†å…ƒç´ å’Œå®ƒä»¬çš„æ¦‚ç‡å€¼æ”¾å…¥ä¸€ä¸ªåˆ—è¡¨ä¸­
         List<Map.Entry<String, Double>> elementList = new ArrayList<>();
         for (Map.Entry<String, String> entry : elements.entrySet()) {
             double probability = Double.parseDouble(entry.getValue().replace("%", "")) / 100.0;
             elementList.add(new AbstractMap.SimpleEntry<>(entry.getKey(), probability));
         }
 
-        // ¸ù¾İ¸ÅÂÊËæ»úÑ¡ÔñÒ»¸öÔªËØ
+        // æ ¹æ®æ¦‚ç‡éšæœºé€‰æ‹©ä¸€ä¸ªå…ƒç´ 
         double random = Math.random();
         double cumulativeProbability = 0.0;
         for (Map.Entry<String, Double> entry : elementList) {
@@ -873,7 +873,7 @@ public class ItemModule {
             }
         }
 
-        // Èç¹ûÓÉÓÚÉáÈëÎó²îÃ»ÓĞÑ¡ÖĞÔªËØ£¬·µ»Ø×îºóÒ»¸ö
+        // å¦‚æœç”±äºèˆå…¥è¯¯å·®æ²¡æœ‰é€‰ä¸­å…ƒç´ ï¼Œè¿”å›æœ€åä¸€ä¸ª
         return elementList.get(elementList.size() - 1).getKey();
     }
 

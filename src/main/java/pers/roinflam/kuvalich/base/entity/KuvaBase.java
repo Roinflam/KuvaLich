@@ -21,7 +21,7 @@ import net.minecraft.world.biome.Biome;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.blocks.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.blocks.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ConfigKuvaLich;
@@ -130,12 +130,12 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
     private final AnimationFactory factory = new AnimationFactory(this);
     protected int battleTick = 0;
 
-    public KuvaBase(@NotNull World worldIn) {
+    public KuvaBase(World worldIn) {
         super(worldIn);
     }
 
     @SubscribeEvent
-    public static void onLivingHurt(@NotNull LivingHurtEvent evt) {
+    public static void onLivingHurt(LivingHurtEvent evt) {
         if (evt.getEntity().world.isRemote) return;
 
         DamageSource damageSource = evt.getSource();
@@ -185,7 +185,7 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
     }
 
     @Override
-    public @NotNull EnumCreatureAttribute getCreatureAttribute() {
+    public EnumCreatureAttribute getCreatureAttribute() {
         return EnumCreatureAttribute.UNDEAD;
     }
 
@@ -231,7 +231,7 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
     }
 
     @Override
-    public void setAttackTarget(@Nullable EntityLivingBase target) {
+    public void setAttackTarget(EntityLivingBase target) {
         boolean hasTarget = target != null && target.isEntityAlive();
         this.getDataManager().set(HAS_TARGET, hasTarget);
         super.setAttackTarget(target);

@@ -17,7 +17,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
 import pers.roinflam.kuvalich.blocks.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.blocks.capability.RequiemCard;
@@ -40,8 +40,8 @@ public class RequiemRiddle extends Item implements IHasModel {
 
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public static void onItemTooltip(@NotNull ItemTooltipEvent evt) {
-        @NotNull ItemStack itemStack = evt.getItemStack();
+    public static void onItemTooltip(ItemTooltipEvent evt) {
+        ItemStack itemStack = evt.getItemStack();
         Item item = itemStack.getItem();
         if (item instanceof RequiemRiddle) {
             evt.getToolTip().add(1, TextFormatting.DARK_GRAY + "" + TextFormatting.ITALIC + I18n.format(item.getUnlocalizedName() + ".tooltip"));
@@ -53,20 +53,20 @@ public class RequiemRiddle extends Item implements IHasModel {
     }
 
     @Override
-    public @NotNull ActionResult<ItemStack> onItemRightClick(World worldIn, @NotNull EntityPlayer playerIn, EnumHand handIn) {
-        @NotNull ItemStack itemstack = playerIn.getHeldItem(handIn);
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
+        ItemStack itemstack = playerIn.getHeldItem(handIn);
         if (!worldIn.isRemote) {
-            @org.jetbrains.annotations.Nullable RequiemCard requiemCard = playerIn.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+           RequiemCard requiemCard = playerIn.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
 
             if (requiemCard.getOneAnswer() == -1 || requiemCard.getTwoAnswer() == -1 || requiemCard.getThreeAnswer() == -1) {
-                @NotNull TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.requiemRiddleNotAnswer", requiemCard.getKuvaLevel());
+                TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.requiemRiddleNotAnswer", requiemCard.getKuvaLevel());
                 textComponentString.getStyle().setColor(TextFormatting.RED);
                 playerIn.sendMessage(textComponentString);
 
                 playerIn.resetCooldown();
                 playerIn.getCooldownTracker().setCooldown(itemstack.getItem(), 200);
             } else {
-                @NotNull TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.requiemRiddleAnswer", getCardName(requiemCard.getOneAnswer()), getCardName(requiemCard.getTwoAnswer()), getCardName(requiemCard.getThreeAnswer()));
+                TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.requiemRiddleAnswer", getCardName(requiemCard.getOneAnswer()), getCardName(requiemCard.getTwoAnswer()), getCardName(requiemCard.getThreeAnswer()));
                 textComponentString.getStyle().setColor(TextFormatting.GOLD);
                 playerIn.sendMessage(textComponentString);
 

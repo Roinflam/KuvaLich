@@ -10,8 +10,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaLich;
 import pers.roinflam.kuvalich.config.ConfigKuvaWeapon;
@@ -26,16 +26,16 @@ import java.util.List;
 public class KuvaWeapon {
     private final static List<String> damageType = new ArrayList<String>(Arrays.asList("fire", "poison", "ice", "electricity", "impact", "magnetic", "radiation"));
 
-    public static @NotNull ItemStack getItem(@NotNull Item item, int min, int max) {
+    public static ItemStack getItem(Item item, int min, int max) {
         return getItem(item, damageType.get(RandomUtil.getInt(0, 6)), RandomUtil.getInt(min, max));
     }
 
-    public static @NotNull ItemStack getItem(@NotNull Item item, @NotNull String type, int number) {
-        @NotNull ItemStack itemStack = new ItemStack(item);
+    public static ItemStack getItem(Item item, String type, int number) {
+        ItemStack itemStack = new ItemStack(item);
 
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
 
         kuvalich.setString("Type", type);
         kuvalich.setInteger("Number", number);
@@ -53,18 +53,18 @@ public class KuvaWeapon {
     }
 
 
-    public static @NotNull String getType(@NotNull ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
+    public static String getType(ItemStack itemStack) {
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
 
         return kuvalich.getString("Type");
     }
 
-    public static void setType(@NotNull ItemStack itemStack, String type) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
+    public static void setType(ItemStack itemStack, String type) {
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
 
         kuvalich.setString("Type", type);
 
@@ -74,14 +74,14 @@ public class KuvaWeapon {
         itemStack.deserializeNBT(nbtTagCompound);
     }
 
-    public static boolean isElementalWeapon(@NotNull ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
+    public static boolean isElementalWeapon(ItemStack itemStack) {
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
         return kuvalich.hasKey("Type") && kuvalich.hasKey("Number");
     }
 
-    public static @NotNull TextFormatting getColor(int number) {
+    public static TextFormatting getColor(int number) {
         if (number < ConfigKuvaLich.benchmarkLevel * 0.77777) {
             return TextFormatting.GRAY;
         } else if (number < ConfigKuvaLich.benchmarkLevel) {
@@ -95,7 +95,7 @@ public class KuvaWeapon {
         }
     }
 
-    public static @Nullable TextFormatting getColor(@NotNull String type) {
+    public static TextFormatting getColor(String type) {
         switch (type) {
             case "fire": {
                 return TextFormatting.DARK_RED;
@@ -142,18 +142,18 @@ public class KuvaWeapon {
         }
     }
 
-    public static int getNumber(@NotNull ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
+    public static int getNumber(ItemStack itemStack) {
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
 
         return kuvalich.getInteger("Number");
     }
 
-    public static void setNumber(@NotNull ItemStack itemStack, int number) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
+    public static void setNumber(ItemStack itemStack, int number) {
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound kuvalich = tag.getCompoundTag(Reference.MOD_ID);
 
         kuvalich.setInteger("Number", number);
 
@@ -164,17 +164,17 @@ public class KuvaWeapon {
     }
 
     public static boolean hasType(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound kuvalich = nbtTagCompound.getCompoundTag("tag").getCompoundTag(Reference.MOD_ID);
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound kuvalich = nbtTagCompound.getCompoundTag("tag").getCompoundTag(Reference.MOD_ID);
         return kuvalich.hasKey("Type") && kuvalich.hasKey("Number");
     }
 
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public static void onItemTooltip(@NotNull ItemTooltipEvent evt) {
-        @NotNull ItemStack itemStack = evt.getItemStack();
+    public static void onItemTooltip(ItemTooltipEvent evt) {
+        ItemStack itemStack = evt.getItemStack();
         if (hasType(itemStack)) {
-            @NotNull String type = getType(itemStack);
+            String type = getType(itemStack);
             int number = getNumber(itemStack);
             if (!damageType.contains(type)) {
                 type = "unknown";
@@ -183,15 +183,15 @@ public class KuvaWeapon {
         }
     }
 
-    public static float getMagnification(@NotNull ItemStack itemStack) {
+    public static float getMagnification(ItemStack itemStack) {
         return (float) ((getNumber(itemStack) - ConfigKuvaLich.benchmarkLevel) / 100.0f * ConfigKuvaWeapon.attributeMultiplier);
     }
 
-    public static float getMagnification(@NotNull ItemStack itemStack, double number) {
+    public static float getMagnification(ItemStack itemStack, double number) {
         return (float) (number + number * getMagnification(itemStack));
     }
 
-    public static float getMagnification(@NotNull ItemStack itemStack, double number, double magnification) {
+    public static float getMagnification(ItemStack itemStack, double number, double magnification) {
         return (float) (number + number * (float) ((getNumber(itemStack) - ConfigKuvaLich.benchmarkLevel) / 100.0f * ConfigKuvaWeapon.attributeMultiplier / magnification));
     }
 

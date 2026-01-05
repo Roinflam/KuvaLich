@@ -8,7 +8,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaWeapon;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
@@ -25,9 +25,9 @@ public class DestrezaPrime extends KuvaWeaponBase {
 
     @Override
     public ItemStack getBaseAttribute(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
         double damage = RandomUtil.getInt(80, 120) / 100.0;
         if (RandomUtil.percentageChance(95)) {
@@ -48,18 +48,18 @@ public class DestrezaPrime extends KuvaWeaponBase {
         return itemStack;
     }
 
-    public DestrezaPrime(@NotNull String name) {
+    public DestrezaPrime(String name) {
         super(name);
     }
 
     @SubscribeEvent
-    public static void onAttackEntity(@NotNull AttackEntityEvent evt) {
+    public static void onAttackEntity(AttackEntityEvent evt) {
         if (!evt.getEntity().world.isRemote) {
             if (evt.getTarget() instanceof EntityLivingBase) {
                 EntityLivingBase hurter = (EntityLivingBase) evt.getTarget();
-                @Nullable EntityPlayer attacker = evt.getEntityPlayer();
+                EntityPlayer attacker = evt.getEntityPlayer();
                 if (!attacker.getHeldItem(attacker.getActiveHand()).isEmpty()) {
-                    @NotNull ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
+                    ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
                     if (itemStack.getItem() instanceof DestrezaPrime) {
                         if (EntityLivingUtil.getTicksSinceLastSwing(attacker) <= 0.66) {
                             return;
@@ -75,17 +75,17 @@ public class DestrezaPrime extends KuvaWeaponBase {
     }
 
     @Override
-    public double getAttackDamageAmount(@NotNull ItemStack itemStack) {
+    public double getAttackDamageAmount(ItemStack itemStack) {
         return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackDamageDestrezaPrime));
     }
 
     @Override
-    public double getAttackSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getAttackSpeedAmount(ItemStack itemStack) {
         return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackSpeedDestrezaPrime));
     }
 
     @Override
-    public double getMovementSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getMovementSpeedAmount(ItemStack itemStack) {
         return Math.max(0, KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.movementSpeedDestrezaPrime));
     }
 

@@ -9,8 +9,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaLich;
 import pers.roinflam.kuvalich.inventory.container.ContainerRequiemGate;
@@ -20,7 +20,7 @@ import pers.roinflam.kuvalich.utils.Reference;
 public class GuiRequiemGate extends GuiContainer {
     private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID + ":textures/gui/container/requiem_gate.png");
 
-    public GuiRequiemGate(@NotNull EntityPlayer entityPlayer, @NotNull World world, @NotNull BlockPos pos) {
+    public GuiRequiemGate(EntityPlayer entityPlayer, World world, BlockPos pos) {
         super(new ContainerRequiemGate(entityPlayer, world, pos));
         this.xSize = 176;
         this.ySize = 166;
@@ -94,11 +94,11 @@ public class GuiRequiemGate extends GuiContainer {
         }
     }
 
-    private void drawCard(@NotNull ItemStack itemStack, int x, int y) {
+    private void drawCard(ItemStack itemStack, int x, int y) {
         GlStateManager.translate(0.0F, 0.0F, 32.0F);
         this.zLevel = 200.0F;
         this.itemRender.zLevel = 200.0F;
-        net.minecraft.client.gui.@Nullable FontRenderer font = itemStack.getItem().getFontRenderer(itemStack);
+        net.minecraft.client.gui.FontRenderer font = itemStack.getItem().getFontRenderer(itemStack);
         if (font == null) {
             font = fontRenderer;
         }

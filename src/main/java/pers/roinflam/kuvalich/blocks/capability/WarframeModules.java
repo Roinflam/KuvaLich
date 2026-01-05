@@ -8,8 +8,6 @@ import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @Mod.EventBusSubscriber
 public class WarframeModules implements INBTSerializable<NBTTagCompound> {
@@ -98,7 +96,7 @@ public class WarframeModules implements INBTSerializable<NBTTagCompound> {
         this.eight = eight;
     }
 
-    public void clone(@NotNull WarframeModules warframeModules) {
+    public void clone(WarframeModules warframeModules) {
         this.setOne(warframeModules.getOne());
         this.setTwo(warframeModules.getTwo());
         this.setThree(warframeModules.getThree());
@@ -110,8 +108,8 @@ public class WarframeModules implements INBTSerializable<NBTTagCompound> {
     }
 
     @Override
-    public @NotNull NBTTagCompound serializeNBT() {
-        @NotNull NBTTagCompound nbtTagCompound = new NBTTagCompound();
+    public NBTTagCompound serializeNBT() {
+        NBTTagCompound nbtTagCompound = new NBTTagCompound();
         nbtTagCompound.setTag("one", getOne().serializeNBT());
         nbtTagCompound.setTag("two", getTwo().serializeNBT());
         nbtTagCompound.setTag("three", getThree().serializeNBT());
@@ -124,18 +122,18 @@ public class WarframeModules implements INBTSerializable<NBTTagCompound> {
     }
 
     @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.@NotNull Clone evt) {
+    public static void onPlayerClone(PlayerEvent.Clone evt) {
         Entity entity = evt.getEntity();
         if (!entity.world.isRemote && entity instanceof EntityPlayer) {
-            @NotNull EntityPlayer entityPlayer = (EntityPlayer) entity;
-            @Nullable WarframeModules warframeModules = entityPlayer.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
-            @Nullable WarframeModules originalWarframeModules = evt.getOriginal().getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
+            EntityPlayer entityPlayer = (EntityPlayer) entity;
+            WarframeModules warframeModules = entityPlayer.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
+            WarframeModules originalWarframeModules = evt.getOriginal().getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
             warframeModules.clone(originalWarframeModules);
         }
     }
 
     @Override
-    public void deserializeNBT(@NotNull NBTTagCompound nbt) {
+    public void deserializeNBT(NBTTagCompound nbt) {
         this.one = new ItemStack(nbt.getCompoundTag("one"));
         this.two = new ItemStack(nbt.getCompoundTag("two"));
         this.three = new ItemStack(nbt.getCompoundTag("three"));

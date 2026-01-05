@@ -2,7 +2,7 @@ package pers.roinflam.kuvalich.tabs;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 
 public class KuvaLichTab extends CreativeTabs {
@@ -17,7 +17,7 @@ public class KuvaLichTab extends CreativeTabs {
     }
 
     @Override
-    public @NotNull ItemStack getTabIconItem() {
+    public ItemStack getTabIconItem() {
         return new ItemStack(KuvaLichBlocks.REQUIEM_GATE.getItemBlock());
     }
 }

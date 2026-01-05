@@ -1,7 +1,7 @@
 package pers.roinflam.kuvalich.potion.hide;
 
 import net.minecraft.entity.EntityLivingBase;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.potion.hide.HideBase;
 
 
@@ -11,7 +11,7 @@ public class MobEffectPoison extends HideBase {
     }
 
     @Override
-    public void performEffect(@NotNull EntityLivingBase entityLivingBaseIn, int amplifier) {
+    public void performEffect(EntityLivingBase entityLivingBaseIn, int amplifier) {
         entityLivingBaseIn.setHealth(entityLivingBaseIn.getHealth() - entityLivingBaseIn.getMaxHealth() * 0.0375f);
     }
 

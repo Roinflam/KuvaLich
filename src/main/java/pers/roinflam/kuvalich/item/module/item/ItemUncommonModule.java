@@ -12,7 +12,7 @@
     import net.minecraft.util.text.TextFormatting;
     import net.minecraft.util.text.translation.I18n;
     import net.minecraft.world.World;
-    import org.jetbrains.annotations.NotNull;
+    
     import pers.roinflam.kuvalich.base.item.ItemModuleBase;
     import pers.roinflam.kuvalich.base.item.ModuleBase;
     import pers.roinflam.kuvalich.init.KuvaLichItems;
@@ -24,7 +24,7 @@
     public class ItemUncommonModule extends ItemModuleBase {
         public static List<ItemStack> itemStackList = new ArrayList<ItemStack>();
 
-        public ItemUncommonModule(@NotNull String name) {
+        public ItemUncommonModule(String name) {
             super(name);
         }
 
@@ -252,8 +252,8 @@
         }
 
         @Override
-        public @NotNull ActionResult<ItemStack> onItemRightClick(World worldIn, @NotNull EntityPlayer playerIn, EnumHand handIn) {
-            @NotNull ItemStack itemstack = playerIn.getHeldItem(handIn);
+        public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
+            ItemStack itemstack = playerIn.getHeldItem(handIn);
             if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
                 ItemStack module = itemStackList.get(RandomUtil.getInt(0, itemStackList.size() - 1));
 
@@ -267,7 +267,7 @@
         }
 
         @Override
-        public @NotNull EnumRarity getRarity(@NotNull ItemStack stack) {
+        public EnumRarity getRarity(ItemStack stack) {
             return EnumRarity.UNCOMMON;
         }
 

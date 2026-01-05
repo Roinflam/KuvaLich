@@ -11,7 +11,7 @@ import net.minecraftforge.event.entity.player.CriticalHitEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaWeapon;
 import pers.roinflam.kuvalich.init.KuvaLichPotion;
@@ -26,15 +26,15 @@ import javax.annotation.Nullable;
 @Mod.EventBusSubscriber
 public class ArcaTitron extends KuvaWeaponBase {
 
-    public ArcaTitron(@NotNull String name) {
+    public ArcaTitron(String name) {
         super(name);
     }
 
     @Override
     public ItemStack getBaseAttribute(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
         double damage = RandomUtil.getInt(80, 120) / 100.0;
         if (RandomUtil.percentageChance(95)) {
@@ -56,14 +56,14 @@ public class ArcaTitron extends KuvaWeaponBase {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onLivingDeath(@NotNull LivingDeathEvent evt) {
+    public static void onLivingDeath(LivingDeathEvent evt) {
         if (!evt.getEntity().world.isRemote) {
             DamageSource damageSource = evt.getSource();
             if (damageSource.getImmediateSource() instanceof EntityLivingBase) {
                 EntityLivingBase hurter = evt.getEntityLiving();
-                @Nullable EntityLivingBase attacker = (EntityLivingBase) damageSource.getImmediateSource();
+                EntityLivingBase attacker = (EntityLivingBase) damageSource.getImmediateSource();
                 if (!attacker.getHeldItem(attacker.getActiveHand()).isEmpty()) {
-                    @NotNull ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
+                    ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
                     if (itemStack.getItem() instanceof ArcaTitron) {
                         if (attacker.getActivePotionEffect(KuvaLichPotion.ARCA_TITRON) != null) {
                             attacker.addPotionEffect(new PotionEffect(KuvaLichPotion.ARCA_TITRON, (int) KuvaWeapon.getMagnification(itemStack, 400), Math.min(9, attacker.getActivePotionEffect(KuvaLichPotion.ARCA_TITRON).getAmplifier() + 1)));
@@ -81,10 +81,10 @@ public class ArcaTitron extends KuvaWeaponBase {
         if (!evt.getEntity().world.isRemote) {
             if (evt.getTarget() instanceof EntityLivingBase) {
                 EntityLivingBase hurter = (EntityLivingBase) evt.getTarget();
-                @Nullable EntityPlayer attacker = evt.getEntityPlayer();
+                EntityPlayer attacker = evt.getEntityPlayer();
                 if (attacker.getActivePotionEffect(KuvaLichPotion.ARCA_TITRON) != null) {
                     if (!attacker.getHeldItem(attacker.getActiveHand()).isEmpty()) {
-                        @NotNull ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
+                        ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
                         if (itemStack.getItem() instanceof ArcaTitron) {
                             int level = (attacker.getActivePotionEffect(KuvaLichPotion.ARCA_TITRON).getAmplifier() + 1);
                             evt.setDamageModifier(evt.getDamageModifier() + KuvaWeapon.getMagnification(itemStack, evt.getDamageModifier() * level * 0.05f));
@@ -102,17 +102,17 @@ public class ArcaTitron extends KuvaWeaponBase {
     }
 
     @Override
-    public double getAttackDamageAmount(@NotNull ItemStack itemStack) {
+    public double getAttackDamageAmount(ItemStack itemStack) {
         return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackDamageArcaTitron));
     }
 
     @Override
-    public double getAttackSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getAttackSpeedAmount(ItemStack itemStack) {
         return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackSpeedArcaTitron, 2));
     }
 
     @Override
-    public double getMovementSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getMovementSpeedAmount(ItemStack itemStack) {
         return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack, 1 + ConfigKuvaWeapon.movementSpeedArcaTitron, 2));
     }
 

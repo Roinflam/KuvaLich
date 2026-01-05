@@ -6,12 +6,12 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.potion.PotionBase;
 
 public abstract class IconBase extends PotionBase {
 
-    protected IconBase(boolean isBadEffectIn, int liquidColorIn, @NotNull String name) {
+    protected IconBase(boolean isBadEffectIn, int liquidColorIn, String name) {
         super(isBadEffectIn, liquidColorIn, name);
     }
 

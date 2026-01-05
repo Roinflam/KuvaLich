@@ -19,22 +19,22 @@ public class EntityUtil {
     }
 
     @Nonnull
-    public static <T extends Entity> List<T> getNearbyEntities(@Nonnull Class<? extends T> clazz, @Nonnull Entity entity, double range, @Nullable Predicate<? super T> predicate) {
+    public static <T extends Entity> List<T> getNearbyEntities(@Nonnull Class<? extends T> clazz, @Nonnull Entity entity, double range, Predicate<? super T> predicate) {
         return getNearbyEntities(clazz, entity, range, range, range, predicate);
     }
 
     @Nonnull
-    public static <T extends Entity> List<T> getNearbyEntities(@Nonnull Class<? extends T> clazz, @Nonnull Entity entity, double width, double height, @Nullable Predicate<? super T> predicate) {
+    public static <T extends Entity> List<T> getNearbyEntities(@Nonnull Class<? extends T> clazz, @Nonnull Entity entity, double width, double height, Predicate<? super T> predicate) {
         return getNearbyEntities(clazz, entity, width, width, height, predicate);
     }
 
     @Nonnull
-    public static <T extends Entity> List<T> getNearbyEntities(@Nonnull Class<? extends T> clazz, @Nonnull Entity entity, double x, double z, double y, @Nullable Predicate<? super T> predicate) {
+    public static <T extends Entity> List<T> getNearbyEntities(@Nonnull Class<? extends T> clazz, @Nonnull Entity entity, double x, double z, double y, Predicate<? super T> predicate) {
         return getNearbyEntities(clazz, entity.world, entity.getPosition(), x, z, y, predicate);
     }
 
     @Nonnull
-    public static <T extends Entity> List<T> getNearbyEntities(@Nonnull Class<? extends T> clazz, @Nonnull World world, @Nonnull BlockPos blockPos, double x, double z, double y, @Nullable Predicate<? super T> predicate) {
+    public static <T extends Entity> List<T> getNearbyEntities(@Nonnull Class<? extends T> clazz, @Nonnull World world, @Nonnull BlockPos blockPos, double x, double z, double y, Predicate<? super T> predicate) {
         @Nonnull AxisAlignedBB axisAlignedBB = new AxisAlignedBB(blockPos.getX() - x, blockPos.getY() - y, blockPos.getZ() - z, blockPos.getX() + x, blockPos.getY() + y, blockPos.getZ() + z);
         return world.getEntitiesWithinAABB(clazz, axisAlignedBB, predicate);
     }

@@ -11,7 +11,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ConfigKuvaWeapon;
@@ -30,15 +30,15 @@ import javax.annotation.Nullable;
 @Mod.EventBusSubscriber
 public class GuandaoPrime extends KuvaWeaponBase {
 
-    public GuandaoPrime(@NotNull String name) {
+    public GuandaoPrime(String name) {
         super(name);
     }
 
     @Override
     public ItemStack getBaseAttribute(ItemStack itemStack) {
-        @NotNull NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        @NotNull NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        @NotNull NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
         double damage = RandomUtil.getInt(80, 120) / 100.0;
         if (RandomUtil.percentageChance(95)) {
@@ -60,14 +60,14 @@ public class GuandaoPrime extends KuvaWeaponBase {
     }
 
     @SubscribeEvent
-    public static void onLivingDamage(@NotNull LivingDamageEvent evt) {
+    public static void onLivingDamage(LivingDamageEvent evt) {
         if (!evt.getEntity().world.isRemote) {
             DamageSource damageSource = evt.getSource();
             if (damageSource.getImmediateSource() instanceof EntityLivingBase) {
                 EntityLivingBase hurter = evt.getEntityLiving();
-                @Nullable EntityLivingBase attacker = (EntityLivingBase) damageSource.getImmediateSource();
+                EntityLivingBase attacker = (EntityLivingBase) damageSource.getImmediateSource();
                 if (!attacker.getHeldItem(attacker.getActiveHand()).isEmpty()) {
-                    @NotNull ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
+                    ItemStack itemStack = attacker.getHeldItem(attacker.getActiveHand());
                     if (itemStack.getItem() instanceof GuandaoPrime) {
                         if (attacker instanceof EntityPlayer) {
                             if (EntityLivingUtil.getTicksSinceLastSwing((EntityPlayer) attacker) != 1) {
@@ -113,17 +113,17 @@ public class GuandaoPrime extends KuvaWeaponBase {
     }
 
     @Override
-    public double getAttackDamageAmount(@NotNull ItemStack itemStack) {
+    public double getAttackDamageAmount(ItemStack itemStack) {
         return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackDamageGuandaoPrime, 2));
     }
 
     @Override
-    public double getAttackSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getAttackSpeedAmount(ItemStack itemStack) {
         return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.attackSpeedGuandaoPrime));
     }
 
     @Override
-    public double getMovementSpeedAmount(@NotNull ItemStack itemStack) {
+    public double getMovementSpeedAmount(ItemStack itemStack) {
         return Math.max(0, KuvaWeapon.getMagnification(itemStack, ConfigKuvaWeapon.movementSpeedGuandaoPrime));
     }
 

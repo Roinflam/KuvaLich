@@ -48,7 +48,7 @@ public class EntityLivingUtil {
         }
     }
 
-    public static void kill(@Nullable EntityLivingBase entityLivingBase, @Nonnull DamageSource damageSource) {
+    public static void kill(EntityLivingBase entityLivingBase, @Nonnull DamageSource damageSource) {
         if (entityLivingBase != null) {
             entityLivingBase.attackEntityFrom(damageSource, entityLivingBase.getMaxHealth());
             if (entityLivingBase.isEntityAlive()) {

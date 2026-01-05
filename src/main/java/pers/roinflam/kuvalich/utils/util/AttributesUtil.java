@@ -10,8 +10,8 @@ import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -140,14 +140,14 @@ public class AttributesUtil {
         return (float) number;
     }
 
-    public static @NotNull Multimap<String, AttributeModifier> getAnyAttributeModifiers(@NotNull ItemStack itemStack) {
-        @NotNull Multimap<String, AttributeModifier> multimap = HashMultimap.create();
-        @Nullable NBTTagCompound nbtTagCompound = itemStack.getTagCompound();
+    public static Multimap<String, AttributeModifier> getAnyAttributeModifiers(ItemStack itemStack) {
+        Multimap<String, AttributeModifier> multimap = HashMultimap.create();
+        NBTTagCompound nbtTagCompound = itemStack.getTagCompound();
         if (itemStack.hasTagCompound() && nbtTagCompound.hasKey("AttributeModifiers", 9)) {
-            @NotNull NBTTagList nbttaglist = nbtTagCompound.getTagList("AttributeModifiers", 10);
+            NBTTagList nbttaglist = nbtTagCompound.getTagList("AttributeModifiers", 10);
             for (int i = nbttaglist.tagCount() - 1; i >= 0; --i) {
-                @NotNull NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
-                @Nullable AttributeModifier attributemodifier = SharedMonsterAttributes.readAttributeModifierFromNBT(nbttagcompound);
+                NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
+                AttributeModifier attributemodifier = SharedMonsterAttributes.readAttributeModifierFromNBT(nbttagcompound);
                 multimap.put(nbttagcompound.getString("AttributeName"), attributemodifier);
             }
         }

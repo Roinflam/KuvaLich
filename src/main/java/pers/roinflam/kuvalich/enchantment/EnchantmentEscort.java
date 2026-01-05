@@ -10,28 +10,28 @@ import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
 
 @Mod.EventBusSubscriber
 public class EnchantmentEscort extends EnchantmentBase {
 
-    public EnchantmentEscort(@NotNull Rarity rarityIn, @NotNull EnumEnchantmentType typeIn, EntityEquipmentSlot @NotNull [] slots) {
+    public EnchantmentEscort(Rarity rarityIn, EnumEnchantmentType typeIn, EntityEquipmentSlot [] slots) {
         super(rarityIn, typeIn, slots, "escort");
     }
 
-    public static @NotNull Enchantment getEnchantment() {
+    public static Enchantment getEnchantment() {
         return KuvaLichEnchantments.ESCORT;
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
-    public static void onLivingHurt(@NotNull LivingDamageEvent evt) {
+    public static void onLivingHurt(LivingDamageEvent evt) {
         if (!evt.getEntity().world.isRemote) {
             EntityLivingBase hurter = evt.getEntityLiving();
             if (hurter.getMaxHealth() == hurter.getHealth()) {
                 int bonusLevel = 0;
-                for (@NotNull ItemStack itemStack : hurter.getArmorInventoryList()) {
+                for (ItemStack itemStack : hurter.getArmorInventoryList()) {
                     if (!itemStack.isEmpty()) {
                         bonusLevel = Math.max(bonusLevel, EnchantmentHelper.getEnchantmentLevel(getEnchantment(), itemStack));
                     }

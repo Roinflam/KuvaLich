@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
+
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.IHasModel;
 import pers.roinflam.kuvalich.utils.util.ItemUtil;
@@ -29,8 +29,8 @@ public class LichReliquary extends Item implements IHasModel {
 
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public static void onItemTooltip(@NotNull ItemTooltipEvent evt) {
-        @NotNull ItemStack itemStack = evt.getItemStack();
+    public static void onItemTooltip(ItemTooltipEvent evt) {
+        ItemStack itemStack = evt.getItemStack();
         Item item = itemStack.getItem();
         if (item instanceof LichReliquary) {
             evt.getToolTip().add(1, TextFormatting.DARK_GRAY + "" + TextFormatting.ITALIC + I18n.format(item.getUnlocalizedName() + ".tooltip"));

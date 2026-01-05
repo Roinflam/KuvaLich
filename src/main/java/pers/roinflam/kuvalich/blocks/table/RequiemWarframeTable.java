@@ -28,7 +28,7 @@ import java.util.List;
 
 public class RequiemWarframeTable extends Block implements IHasModel, IHasItem {
 
-    @Nullable
+    
     private final ItemBlock itemBlock;
 
     public RequiemWarframeTable(@Nonnull String name, @Nonnull Material material, @Nonnull CreativeTabs creativeTabs) {
@@ -58,7 +58,7 @@ public class RequiemWarframeTable extends Block implements IHasModel, IHasItem {
     }
 
     @Override
-    public void addCollisionBoxToList(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull AxisAlignedBB entityBox, @Nonnull List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean isActualState) {
+    public void addCollisionBoxToList(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull AxisAlignedBB entityBox, @Nonnull List<AxisAlignedBB> collidingBoxes, Entity entityIn, boolean isActualState) {
         if (!isActualState) {
             state = state.getActualState(worldIn, pos);
         }
@@ -80,7 +80,7 @@ public class RequiemWarframeTable extends Block implements IHasModel, IHasItem {
         return true;
     }
 
-    @Nullable
+    
     @Override
     public ItemBlock getItemBlock() {
         return itemBlock;
