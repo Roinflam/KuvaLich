@@ -1,5 +1,3 @@
-// 文件：WarframeModuleBase.java
-// 路径：src/main/java/pers/roinflam/kuvalich/base/item/WarframeModuleBase.java
 package pers.roinflam.kuvalich.base.item;
 
 import net.minecraft.client.resources.I18n;
@@ -12,6 +10,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 
 import javax.annotation.Nonnull;
@@ -19,13 +18,27 @@ import java.util.*;
 
 @Mod.EventBusSubscriber
 public abstract class WarframeModuleBase extends ModuleBase {
-    // 使用不可变Set提升性能
+
     public static final Set<String> WARFRAME_ATTRIBUTE_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(
                     "health", "shield", "armor", "sprintSpeed", "shieldRecoveryRate",
                     "shieldRecoveryDelay", "knockbackResistance", "fireProtection",
                     "electricProtection", "homologousProtection", "reachDistance",
-                    "diggingSpeed", "responseRate", "itemDropMultiplier"
+                    "diggingSpeed", "responseRate", "itemDropMultiplier",
+
+                    // 战甲击杀叠加词条（执刑官系列）
+                    "killStackHealth",
+                    "killStackShield",
+                    "killStackArmor",
+                    "killStackSprintSpeed",
+                    "killStackShieldRecoveryRate",
+                    "killStackShieldRecoveryDelay",
+                    "killStackFireProtection",
+                    "killStackElectricProtection",
+                    "killStackHomologousProtection",
+                    "killStackResponseRate",
+                    "killStackItemDropMultiplier",
+                    "killStackDiggingSpeed"
             ))
     );
 
@@ -61,16 +74,22 @@ public abstract class WarframeModuleBase extends ModuleBase {
     private static void addAttributeTooltips(ItemTooltipEvent evt, ItemStack itemStack, Item item) {
         int number = 1;
 
-        // Warframe Riven模组特殊处理
         if (item instanceof WarframeRivenModule) {
             number = addRivenTooltips(evt, itemStack, number);
         }
 
-        // 添加属性列表
         for (Map.Entry<String, Double> attributeTag : ModuleBase.getAttributes(itemStack)) {
             String prefix = attributeTag.getValue() >= 0 ? "+" : "";
             int percentage = (int) (attributeTag.getValue() * 100);
-            String attributeName = I18n.format("kuvaweapon.warframe_attribute_type." + attributeTag.getKey());
+            String attributeKey = attributeTag.getKey();
+
+            String attributeName;
+            if (attributeKey.startsWith("killStack")) {
+                int maxStacks = getMaxStacksForAttribute(attributeKey);
+                attributeName = I18n.format("kuvaweapon.warframe_attribute_type." + attributeKey, maxStacks);
+            } else {
+                attributeName = I18n.format("kuvaweapon.warframe_attribute_type." + attributeKey);
+            }
 
             TextFormatting color = getModuleColor(item);
             evt.getToolTip().add(number++, color + prefix + percentage + "% " + attributeName);
@@ -80,12 +99,45 @@ public abstract class WarframeModuleBase extends ModuleBase {
     }
 
     /**
+     * 获取击杀叠加词条的最大层数（从配置读取）
+     */
+    private static int getMaxStacksForAttribute(String attributeKey) {
+        switch (attributeKey) {
+            case "killStackHealth":
+                return ModConfig.KUVA_LICH.maxStacksHealth;
+            case "killStackShield":
+                return ModConfig.KUVA_LICH.maxStacksShield;
+            case "killStackArmor":
+                return ModConfig.KUVA_LICH.maxStacksArmor;
+            case "killStackSprintSpeed":
+                return ModConfig.KUVA_LICH.maxStacksSprintSpeed;
+            case "killStackShieldRecoveryRate":
+                return ModConfig.KUVA_LICH.maxStacksShieldRecoveryRate;
+            case "killStackShieldRecoveryDelay":
+                return ModConfig.KUVA_LICH.maxStacksShieldRecoveryDelay;
+            case "killStackFireProtection":
+                return ModConfig.KUVA_LICH.maxStacksFireProtection;
+            case "killStackElectricProtection":
+                return ModConfig.KUVA_LICH.maxStacksElectricProtection;
+            case "killStackHomologousProtection":
+                return ModConfig.KUVA_LICH.maxStacksHomologousProtection;
+            case "killStackResponseRate":
+                return ModConfig.KUVA_LICH.maxStacksResponseRate;
+            case "killStackItemDropMultiplier":
+                return ModConfig.KUVA_LICH.maxStacksItemDropMultiplier;
+            case "killStackDiggingSpeed":
+                return ModConfig.KUVA_LICH.maxStacksDiggingSpeed;
+            default:
+                return 0;
+        }
+    }
+
+    /**
      * 添加Riven模组提示
      */
     private static int addRivenTooltips(ItemTooltipEvent evt, ItemStack itemStack, int startIndex) {
         int trend = WarframeRivenModule.getTrend(itemStack);
 
-        // 优化：使用StringBuilder
         StringBuilder trendBar = new StringBuilder(5);
         for (int i = 0; i < trend; i++) {
             trendBar.append("●");

@@ -4,15 +4,15 @@
 enchantment.experience_collector=经验之运
 enchantment.kuvalich.experience_collector.desc=提高挖掘矿石获得的经验
 enchantment.requiem_destroyed=灭骸
-enchantment.kuvalich.requiem_destroyed.desc=快速挖掘安魂、玄骸类方块,并使安魂矿石能更高概率掉落安魂卡
+enchantment.kuvalich.requiem_destroyed.desc=快速挖掘安魂、玄骸类方块，并使安魂矿石能更高概率掉落安魂卡
 enchantment.lethal=斩杀
 enchantment.kuvalich.lethal.desc=基于目标已损失生命值增加伤害
 enchantment.firststrike=先攻
-enchantment.kuvalich.firststrike.desc=对未受伤的目标造成巨额伤害,并获得额外伤害10%%的经验
+enchantment.kuvalich.firststrike.desc=对未受伤的目标造成巨额伤害，并获得额外伤害10%%的经验
 enchantment.escort=护卫
-enchantment.kuvalich.escort.desc=每级降低满血时受到的25%%伤害,至多75%%
+enchantment.kuvalich.escort.desc=每级降低满血时受到的25%%伤害，至多75%%
 enchantment.death_resistance=死亡抵抗
-enchantment.kuvalich.death_resistance.desc=牺牲经验值抵抗致命伤害,牺牲的数值基于附魔等级与伤害值
+enchantment.kuvalich.death_resistance.desc=牺牲经验值抵抗致命伤害，牺牲的数值基于附魔等级与伤害值
 
 # ========================================
 # 基础物品 - 安魂卡片
@@ -134,14 +134,14 @@ kuvaweapon.item_attribute_type.bursting_radius=爆炸半径 提高远程攻击�
 # ========================================
 # 武器属性类型 - 击杀叠加词条
 # ========================================
-kuvaweapon.item_attribute_type.killStackBaseDamage=目标身上每一种负面效果可增加基础伤害 击杀时获取,最多叠加%d次
-kuvaweapon.item_attribute_type.killStackMultishot=多重射击 击杀时获取,最多叠加%d次
-kuvaweapon.item_attribute_type.killStackMeleeCriticalMultiplier=近战暴击伤害 击杀时获取,最多叠加%d次
-kuvaweapon.item_attribute_type.killStackTriggerChance=触发几率 击杀时获取,最多叠加%d次
-kuvaweapon.item_attribute_type.killStackAttackRange=攻击范围 击杀时获取,最多叠加%d次
-kuvaweapon.item_attribute_type.killStackAttackSpeed=攻击速度 击杀时获取,最多叠加%d次
-kuvaweapon.item_attribute_type.killStackBurstingRadius=爆炸半径 提高远程攻击时目标对周围伤害的范围 击杀时获取,最多叠加%d次
-kuvaweapon.item_attribute_type.killStackFiringRate=射速(弓类效果加倍) 击杀时获取,最多叠加%d次
+kuvaweapon.item_attribute_type.killStackBaseDamage=目标身上每一种负面效果可增加基础伤害 击杀时获取，最多叠加%d次
+kuvaweapon.item_attribute_type.killStackMultishot=多重射击 击杀时获取，最多叠加%d次
+kuvaweapon.item_attribute_type.killStackMeleeCriticalMultiplier=近战暴击伤害 击杀时获取，最多叠加%d次
+kuvaweapon.item_attribute_type.killStackTriggerChance=触发几率 击杀时获取，最多叠加%d次
+kuvaweapon.item_attribute_type.killStackAttackRange=攻击范围 击杀时获取，最多叠加%d次
+kuvaweapon.item_attribute_type.killStackAttackSpeed=攻击速度 击杀时获取，最多叠加%d次
+kuvaweapon.item_attribute_type.killStackBurstingRadius=爆炸半径 提高远程攻击时目标对周围伤害的范围 击杀时获取，最多叠加%d次
+kuvaweapon.item_attribute_type.killStackFiringRate=射速(弓类效果加倍) 击杀时获取，最多叠加%d次
 
 # ========================================
 # 战甲属性类型
@@ -160,6 +160,22 @@ kuvaweapon.warframe_attribute_type.reachDistance=挖掘距离
 kuvaweapon.warframe_attribute_type.diggingSpeed=挖掘速度
 kuvaweapon.warframe_attribute_type.responseRate=恢复生命值倍率
 kuvaweapon.warframe_attribute_type.itemDropMultiplier=战利品掉落倍率
+
+# ========================================
+# 战甲属性类型 - 击杀叠加词条（执刑官系列）
+# ========================================
+kuvaweapon.warframe_attribute_type.killStackHealth=生命值 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackShield=护盾容量 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackArmor=护甲 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackSprintSpeed=冲刺速度 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackShieldRecoveryRate=护盾恢复 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackShieldRecoveryDelay=护盾恢复延迟 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackFireProtection=火焰抗性 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackElectricProtection=电击抗性 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackHomologousProtection=同源抗性 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackResponseRate=恢复生命值倍率 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackItemDropMultiplier=战利品掉落倍率 击杀时获取，最多叠加%d次
+kuvaweapon.warframe_attribute_type.killStackDiggingSpeed=挖掘速度 击杀时获取，最多叠加%d次
 
 # ========================================
 # 武器基础面板属性
@@ -331,14 +347,14 @@ kuvaweapon.item_module.fission_shot_prime=§b裂变射击 Prime
 # ========================================
 # 武器模组 - 镀层系列(Prime品质)
 # ========================================
-kuvaweapon.item_module.galvanized_chamber=§b镀层 分裂膛室
-kuvaweapon.item_module.galvanized_aptitude=§b镀层 武器才能
-kuvaweapon.item_module.galvanized_steel=§b镀层 斩铁
-kuvaweapon.item_module.galvanized_reach=§b镀层 剑风
-kuvaweapon.item_module.galvanized_fury=§b镀层 狂暴
-kuvaweapon.item_module.galvanized_firestorm=§b镀层 烈焰风暴
-kuvaweapon.item_module.galvanized_speed_trigger=§b镀层 灵敏扳机
-kuvaweapon.item_module.galvanized_continuous_misery=§b镀层无尽苦难
+kuvaweapon.item_module.galvanized_chamber=§7镀层 分裂膛室
+kuvaweapon.item_module.galvanized_aptitude=§7镀层 武器才能
+kuvaweapon.item_module.galvanized_steel=§7镀层 斩铁
+kuvaweapon.item_module.galvanized_reach=§7镀层 剑风
+kuvaweapon.item_module.galvanized_fury=§7镀层 狂暴
+kuvaweapon.item_module.galvanized_firestorm=§7镀层 烈焰风暴
+kuvaweapon.item_module.galvanized_speed_trigger=§7镀层 灵敏扳机
+kuvaweapon.item_module.galvanized_continuous_misery=§7镀层无尽苦难
 
 # ========================================
 # 模组装备提示
@@ -412,23 +428,39 @@ kuvaweapon.warframe_module.charged_armor_prime=§b充能装甲 Prime
 kuvaweapon.warframe_module.treasure_thief_prime=§b密藏小偷 Prime
 
 # ========================================
+# 战甲模组 - 执刑官系列(Prime品质)
+# ========================================
+kuvaweapon.warframe_module.executioner_vitality=§c执刑官 生命力
+kuvaweapon.warframe_module.executioner_redirection=§c执刑官 蓄能重划
+kuvaweapon.warframe_module.executioner_steel_fiber=§c执刑官 钢铁纤维
+kuvaweapon.warframe_module.executioner_rush=§c执刑官 冲刺
+kuvaweapon.warframe_module.executioner_vigor=§c执刑官 活力
+kuvaweapon.warframe_module.executioner_fast_deflection=§c执刑官 快速充能
+kuvaweapon.warframe_module.executioner_flame_repellent=§c执刑官 火焰防护
+kuvaweapon.warframe_module.executioner_lightning_rod=§c执刑官 避雷针
+kuvaweapon.warframe_module.executioner_deep_friendship=§c执刑官 情同手足
+kuvaweapon.warframe_module.executioner_treasure_hunter=§c执刑官 密藏猎人
+kuvaweapon.warframe_module.executioner_digging_power=§c执刑官 碎岩者之力
+kuvaweapon.warframe_module.executioner_rejuvenation=§c执刑官 返老还童
+
+# ========================================
 # 物品描述与提示文本
 # ========================================
 item.requiem_gem.tooltip=人们总是不知自身为何而战
 item.requiem_riddle.tooltip=忘却那深渊的故乡吧(使用后可直接查看谜语答案)
 item.kuva.tooltip=双子女皇所渴望的神秘红色液体
 item.riven_sliver.tooltip=奇特之物
-item.lich_reliquary.tooltip=抬头吧,而后悔悟吧,我们是多么渺小
+item.lich_reliquary.tooltip=抬头吧，而后悔悟吧，我们是多么渺小
 
 # ========================================
 # 安魂卡片描述 - 第一段
 # ========================================
-item.lohk.first_tooltip=来自沉思之渊的视线,落在了我们身上
+item.lohk.first_tooltip=来自沉思之渊的视线，落在了我们身上
 item.xata.first_tooltip=它的使者都是天上掉落的星星
 item.jahu.first_tooltip=物质法则缺乏约束力
-item.vome.first_tooltip=面对疯狂的宇宙,法律选择了臣服
-item.ris.first_tooltip=光明的太空之中,飘荡着焦黑的星辰
-item.fass.first_tooltip=挣扎吧,呻吟吧,这就是我们的国度
+item.vome.first_tooltip=面对疯狂的宇宙，法律选择了臣服
+item.ris.first_tooltip=光明的太空之中，飘荡着焦黑的星辰
+item.fass.first_tooltip=挣扎吧，呻吟吧，这就是我们的国度
 item.netra.first_tooltip=腐朽的大军以震颤之音散布亵渎的言语
 item.khra.first_tooltip=对于从相切位面演化出的宇宙来说
 
@@ -440,9 +472,9 @@ item.xata.second_tooltip=天和地都在燃烧
 item.jahu.second_tooltip=因为太阳和爱都已退散
 item.vome.second_tooltip=而那些坚定之人则去乞求
 item.ris.second_tooltip=他们只会观察、指责、否认
-item.fass.second_tooltip=在这乱世之中,等待失败者的只有死亡
+item.fass.second_tooltip=在这乱世之中，等待失败者的只有死亡
 item.netra.second_tooltip=执行那可怕的计划
-item.khra.second_tooltip=我们是开拓者,也是终结者
+item.khra.second_tooltip=我们是开拓者，也是终结者
 
 # ========================================
 # 赤毒武器列表
@@ -500,6 +532,38 @@ config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount=赤毒奴仆最小生成数
 config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount=赤毒奴仆最大生成数
 
 # ========================================
+# 配置界面 - 武器击杀叠层配置
+# ========================================
+config.kuvalich.kuvalich.weaponKillStackSettings=武器击杀叠层系统配置
+config.kuvalich.kuvalich.weaponStackDecayTicks=武器叠层衰减时间(ticks)
+config.kuvalich.kuvalich.maxStacksBaseDamage=基础伤害叠层最大层数
+config.kuvalich.kuvalich.maxStacksMultishot=多重射击叠层最大层数
+config.kuvalich.kuvalich.maxStacksMeleeCritMult=近战暴击伤害叠层最大层数
+config.kuvalich.kuvalich.maxStacksTriggerChance=触发几率叠层最大层数
+config.kuvalich.kuvalich.maxStacksAttackRange=攻击范围叠层最大层数
+config.kuvalich.kuvalich.maxStacksAttackSpeed=攻击速度叠层最大层数
+config.kuvalich.kuvalich.maxStacksBurstingRadius=爆炸半径叠层最大层数
+config.kuvalich.kuvalich.maxStacksFiringRate=射速叠层最大层数
+
+# ========================================
+# 配置界面 - 战甲击杀叠层配置
+# ========================================
+config.kuvalich.kuvalich.warframeKillStackSettings=战甲击杀叠层系统配置
+config.kuvalich.kuvalich.warframeStackDecayTicks=战甲叠层衰减时间(ticks)
+config.kuvalich.kuvalich.maxStacksHealth=生命值叠层最大层数
+config.kuvalich.kuvalich.maxStacksShield=护盾容量叠层最大层数
+config.kuvalich.kuvalich.maxStacksArmor=护甲叠层最大层数
+config.kuvalich.kuvalich.maxStacksSprintSpeed=冲刺速度叠层最大层数
+config.kuvalich.kuvalich.maxStacksShieldRecoveryRate=护盾恢复叠层最大层数
+config.kuvalich.kuvalich.maxStacksShieldRecoveryDelay=护盾恢复延迟叠层最大层数
+config.kuvalich.kuvalich.maxStacksFireProtection=火焰抗性叠层最大层数
+config.kuvalich.kuvalich.maxStacksElectricProtection=电击抗性叠层最大层数
+config.kuvalich.kuvalich.maxStacksHomologousProtection=同源抗性叠层最大层数
+config.kuvalich.kuvalich.maxStacksResponseRate=恢复生命值倍率叠层最大层数
+config.kuvalich.kuvalich.maxStacksItemDropMultiplier=战利品掉落倍率叠层最大层数
+config.kuvalich.kuvalich.maxStacksDiggingSpeed=挖掘速度叠层最大层数
+
+# ========================================
 # 配置界面 - 武器属性配置
 # ========================================
 config.kuvalich.kuvaweapon.attributeMultiplier=武器属性倍率
@@ -551,24 +615,12 @@ attribute.name.generic.reachDistance=范围扩展
 # ========================================
 # 游戏内消息提示
 # ========================================
-message.kuvalich.getPoints=你的解密进度增加了%s点,目前解密进度为 %s/%s,注意界面显示的不一定是正确的顺序!
-message.kuvalich.maxLevel=你已经解密出所有答案,请按照顺序摆放卡片,击杀赤毒玄骸进行解密!
-message.kuvalich.failedToDecrypt=成功击杀玄骸,但谜语(或顺序)错误解密失败,让玄骸达到%s级。
-message.kuvalich.minimumLevelWeapon=解密成功,当前解密获得武器等级下限提升至%s级!
-message.kuvalich.maximumLevelWeapon=解密成功,当前解密获得武器等级上限提升至%s级!
+message.kuvalich.getPoints=你的解密进度增加了%s点，目前解密进度为 %s/%s，注意界面显示的不一定是正确的顺序!
+message.kuvalich.maxLevel=你已经解密出所有答案，请按照顺序摆放卡片，击杀赤毒玄骸进行解密!
+message.kuvalich.failedToDecrypt=成功击杀玄骸，但谜语(或顺序)错误解密失败，让玄骸达到%s级。
+message.kuvalich.minimumLevelWeapon=解密成功，当前解密获得武器等级下限提升至%s级!
+message.kuvalich.maximumLevelWeapon=解密成功，当前解密获得武器等级上限提升至%s级!
 message.kuvalich.requiemRiddleAnswer=当前谜语的答案为 %s / %s / %s
-message.kuvalich.firstCorrect=解密失败,第一个答案正确!
-message.kuvalich.secondCorrect=解密失败,第二个答案正确!
+message.kuvalich.firstCorrect=解密失败，第一个答案正确!
+message.kuvalich.secondCorrect=解密失败，第二个答案正确!
 message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current riddle! Please decrypt any answer before using it!
-
-# ========== 配置文件翻译 ==========
-# 击杀叠层配置
-config.kuvalich.kuvalich.killStackSettings=击杀叠层系统配置
-config.kuvalich.kuvalich.maxStacksBaseDamage=基础伤害叠层最大层数
-config.kuvalich.kuvalich.maxStacksMultishot=多重射击叠层最大层数
-config.kuvalich.kuvalich.maxStacksMeleeCritMult=近战暴击伤害叠层最大层数
-config.kuvalich.kuvalich.maxStacksTriggerChance=触发几率叠层最大层数
-config.kuvalich.kuvalich.maxStacksAttackRange=攻击范围叠层最大层数
-config.kuvalich.kuvalich.maxStacksAttackSpeed=攻击速度叠层最大层数
-config.kuvalich.kuvalich.maxStacksBurstingRadius=爆炸半径叠层最大层数
-config.kuvalich.kuvalich.maxStacksFiringRate=射速叠层最大层数

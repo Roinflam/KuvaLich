@@ -21,25 +21,17 @@ import pers.roinflam.kuvalich.utils.Reference;
 @Config(modid = Reference.MOD_ID, name = Reference.MOD_ID)
 public final class ModConfig {
 
-    // ========== 赤毒玄骸系统配置 ==========
-
     @Config.Name("Kuva Lich System")
     @Config.Comment("赤毒玄骸系统相关配置 / Kuva Lich System Configuration")
     @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich")
     public static KuvaLichConfig KUVA_LICH = new KuvaLichConfig();
-
-    // ========== 赤毒武器配置 ==========
 
     @Config.Name("Kuva Weapon Attributes")
     @Config.Comment("赤毒武器基础属性配置 / Kuva Weapon Base Attributes")
     @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon")
     public static KuvaWeaponConfig KUVA_WEAPON = new KuvaWeaponConfig();
 
-    // ========== 赤毒玄骸系统配置类 ==========
-
     public static class KuvaLichConfig {
-
-        // ===== 调试配置 =====
 
         @Config.Comment({
                 "═══════════════════════════════════════════════════════════════",
@@ -53,8 +45,6 @@ public final class ModConfig {
         })
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.enableDetailedLogging")
         public boolean enableDetailedLogging = false;
-
-        // ===== 解密进度配置 =====
 
         @Config.Comment({
                 "每次击杀获得的最小解密进度 / Minimum Decryption Progress Per Kill",
@@ -73,8 +63,6 @@ public final class ModConfig {
         @Config.RangeInt(min = 0)
         public int maxDecryptionProgress = 5;
 
-        // ===== 解密阶段配置 =====
-
         @Config.Comment("第一阶段解密所需点数 / First Stage Requirement")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.firstStage")
         @Config.RangeInt(min = 1)
@@ -89,8 +77,6 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.thirdStage")
         @Config.RangeInt(min = 1)
         public int thirdStage = 120;
-
-        // ===== 战斗倍率配置 =====
 
         @Config.Comment("击杀赤毒玄骸的额外点数倍率 / Master Kill Point Multiplier")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.masterPotionMultiplier")
@@ -119,8 +105,6 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.increaseDamage")
         @Config.RangeDouble(min = 0)
         public float increaseDamage = 0.25f;
-
-        // ===== 武器等级配置 =====
 
         @Config.Comment("武器等级基准 / Weapon Level Benchmark")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.benchmarkLevel")
@@ -167,16 +151,19 @@ public final class ModConfig {
         @Config.RangeInt(min = 0)
         public int upgradeLimit = 999;
 
-        // ===== 击杀叠层配置 =====
-
         @Config.Comment({
                 "═══════════════════════════════════════════════════════════════",
-                "击杀叠层系统配置 / Kill Stack System Configuration",
-                "控制所有击杀叠加效果的最大层数 / Control max stacks for all kill stack effects",
+                "武器击杀叠层系统配置 / Weapon Kill Stack System Configuration",
+                "控制所有武器击杀叠加效果的最大层数 / Control max stacks for weapon kill stack effects",
                 "═══════════════════════════════════════════════════════════════"
         })
-        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.killStackSettings")
-        public String killStackSettings = "═══ Kill Stack Settings ═══";
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.weaponKillStackSettings")
+        public String weaponKillStackSettings = "═══ Weapon Kill Stack Settings ═══";
+
+        @Config.Comment("武器叠层持续时间(ticks) / Weapon Stack Decay Time (ticks)\n200 ticks = 10秒")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.weaponStackDecayTicks")
+        @Config.RangeInt(min = 20, max = 6000)
+        public int weaponStackDecayTicks = 200;
 
         @Config.Comment("基础伤害叠层最大层数 / Base Damage Max Stacks")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksBaseDamage")
@@ -218,7 +205,80 @@ public final class ModConfig {
         @Config.RangeInt(min = 1, max = 100)
         public int maxStacksFiringRate = 10;
 
-        // ===== 生成配置 =====
+        @Config.Comment({
+                "═══════════════════════════════════════════════════════════════",
+                "战甲击杀叠层系统配置 / Warframe Kill Stack System Configuration",
+                "控制所有战甲击杀叠加效果的最大层数 / Control max stacks for warframe kill stack effects",
+                "战甲叠层特点：20层上限，20秒掉一层，适合持久战 / 20 max stacks, 20s decay per stack",
+                "═══════════════════════════════════════════════════════════════"
+        })
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.warframeKillStackSettings")
+        public String warframeKillStackSettings = "═══ Warframe Kill Stack Settings ═══";
+
+        @Config.Comment("战甲叠层持续时间(ticks) / Warframe Stack Decay Time (ticks)\n400 ticks = 20秒")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.warframeStackDecayTicks")
+        @Config.RangeInt(min = 20, max = 6000)
+        public int warframeStackDecayTicks = 400;
+
+        @Config.Comment("生命值叠层最大层数 / Health Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksHealth")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksHealth = 20;
+
+        @Config.Comment("护盾容量叠层最大层数 / Shield Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksShield")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksShield = 20;
+
+        @Config.Comment("护甲叠层最大层数 / Armor Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksArmor")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksArmor = 20;
+
+        @Config.Comment("冲刺速度叠层最大层数 / Sprint Speed Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksSprintSpeed")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksSprintSpeed = 20;
+
+        @Config.Comment("护盾恢复速率叠层最大层数 / Shield Recovery Rate Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksShieldRecoveryRate")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksShieldRecoveryRate = 20;
+
+        @Config.Comment("护盾恢复延迟叠层最大层数 / Shield Recovery Delay Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksShieldRecoveryDelay")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksShieldRecoveryDelay = 20;
+
+        @Config.Comment("火焰抗性叠层最大层数 / Fire Protection Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksFireProtection")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksFireProtection = 20;
+
+        @Config.Comment("电击抗性叠层最大层数 / Electric Protection Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksElectricProtection")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksElectricProtection = 20;
+
+        @Config.Comment("同源抗性叠层最大层数 / Homologous Protection Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksHomologousProtection")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksHomologousProtection = 20;
+
+        @Config.Comment("恢复生命值倍率叠层最大层数 / Response Rate Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksResponseRate")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksResponseRate = 20;
+
+        @Config.Comment("战利品掉落倍率叠层最大层数 / Item Drop Multiplier Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksItemDropMultiplier")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksItemDropMultiplier = 20;
+
+        @Config.Comment("挖掘速度叠层最大层数 / Digging Speed Max Stacks")
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksDiggingSpeed")
+        @Config.RangeInt(min = 1, max = 100)
+        public int maxStacksDiggingSpeed = 20;
 
         @Config.Comment("赤毒玄骸生成权重 / Kuva Lich Spawn Weight")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.kuvaLichSpawnWeight")
@@ -251,16 +311,12 @@ public final class ModConfig {
         public int kuvaSlaveMaxSpawnCount = 3;
     }
 
-    // ========== 赤毒武器配置类 ==========
-
     public static class KuvaWeaponConfig {
 
         @Config.Comment("武器属性倍率 / Weapon Attribute Multiplier")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attributeMultiplier")
         @Config.RangeDouble(min = 0)
         public double attributeMultiplier = 1.5;
-
-        // ===== Kuva Shildeg (赤毒希尔德) =====
 
         @Config.Comment("赤毒希尔德 - 基础攻击伤害 / Kuva Shildeg - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageKuvaShildeg")
@@ -277,8 +333,6 @@ public final class ModConfig {
         @Config.RangeDouble(min = 0)
         public double movementSpeedKuvaShildeg = -0.2;
 
-        // ===== Pennant (尖幡) =====
-
         @Config.Comment("尖幡 - 基础攻击伤害 / Pennant - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamagePennant")
         @Config.RangeDouble(min = 0)
@@ -293,8 +347,6 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.movementSpeedPennant")
         @Config.RangeDouble(min = 0)
         public double movementSpeedPennant = 0.025;
-
-        // ===== Guandao Prime (关刀Prime) =====
 
         @Config.Comment("关刀Prime - 基础攻击伤害 / Guandao Prime - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageGuandaoPrime")
@@ -311,8 +363,6 @@ public final class ModConfig {
         @Config.RangeDouble(min = 0)
         public double movementSpeedGuandaoPrime = 0.075;
 
-        // ===== Paracesis (心智之殁) =====
-
         @Config.Comment("心智之殁 - 基础攻击伤害 / Paracesis - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageParacesis")
         @Config.RangeDouble(min = 0)
@@ -327,8 +377,6 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.movementSpeedParacesis")
         @Config.RangeDouble(min = 0)
         public double movementSpeedParacesis = -0.1;
-
-        // ===== Arca Titron (弧电振子锤) =====
 
         @Config.Comment("弧电振子锤 - 基础攻击伤害 / Arca Titron - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageArcaTitron")
@@ -345,8 +393,6 @@ public final class ModConfig {
         @Config.RangeDouble(min = 0)
         public double movementSpeedArcaTitron = -0.15;
 
-        // ===== Reaper Prime (收割者Prime) =====
-
         @Config.Comment("收割者Prime - 基础攻击伤害 / Reaper Prime - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageReaperPrime")
         @Config.RangeDouble(min = 0)
@@ -361,8 +407,6 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.movementSpeedReaperPrime")
         @Config.RangeDouble(min = 0)
         public double movementSpeedReaperPrime = 0.05;
-
-        // ===== Vitrica (金璃剑) =====
 
         @Config.Comment("金璃剑 - 基础攻击伤害 / Vitrica - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageVitrica")
@@ -379,8 +423,6 @@ public final class ModConfig {
         @Config.RangeDouble(min = 0)
         public double movementSpeedVitrica = -0.2;
 
-        // ===== Gram Prime (格拉姆Prime) =====
-
         @Config.Comment("格拉姆Prime - 基础攻击伤害 / Gram Prime - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageGramPrime")
         @Config.RangeDouble(min = 0)
@@ -395,8 +437,6 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.movementSpeedGramPrime")
         @Config.RangeDouble(min = 0)
         public double movementSpeedGramPrime = -0.15;
-
-        // ===== Sancti Magistar (圣洁执法者) =====
 
         @Config.Comment("圣洁执法者 - 基础攻击伤害 / Sancti Magistar - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageSanctiMagistar")
@@ -413,8 +453,6 @@ public final class ModConfig {
         @Config.RangeDouble(min = 0)
         public double movementSpeedSanctiMagistar = -0.075;
 
-        // ===== Destreza Prime (技巧之剑Prime) =====
-
         @Config.Comment("技巧之剑Prime - 基础攻击伤害 / Destreza Prime - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageDestrezaPrime")
         @Config.RangeDouble(min = 0)
@@ -429,8 +467,6 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.movementSpeedDestrezaPrime")
         @Config.RangeDouble(min = 0)
         public double movementSpeedDestrezaPrime = 0.125;
-
-        // ===== Prisma Veritux (棱晶真理巨剑) =====
 
         @Config.Comment("棱晶真理巨剑 - 基础攻击伤害 / Prisma Veritux - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamagePrismaVeritux")
@@ -447,8 +483,6 @@ public final class ModConfig {
         @Config.RangeDouble(min = 0)
         public double movementSpeedPrismaVeritux = -0.6;
 
-        // ===== Machete (马谢特砍刀) =====
-
         @Config.Comment("马谢特砍刀 - 基础攻击伤害 / Machete - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageMachete")
         @Config.RangeDouble(min = 0)
@@ -463,8 +497,6 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.movementSpeedMachete")
         @Config.RangeDouble(min = 0)
         public double movementSpeedMachete = 0.025;
-
-        // ===== Caustacyst (灼蚀变体镰) =====
 
         @Config.Comment("灼蚀变体镰 - 基础攻击伤害 / Caustacyst - Base Attack Damage")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvaweapon.attackDamageCaustacyst")
@@ -482,14 +514,6 @@ public final class ModConfig {
         public double movementSpeedCaustacyst = 0.125;
     }
 
-    // ========== 配置同步机制 ==========
-
-    /**
-     * 配置变更事件监听器
-     * 当配置在游戏内修改时自动同步
-     *
-     * @param evt 配置变更事件
-     */
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent evt) {

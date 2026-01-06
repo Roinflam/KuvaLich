@@ -14,7 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 击杀叠加效果管理器
  *
- * 管理所有击杀叠层效果，每10秒衰减一层
+ * 管理所有击杀叠层效果：
+ * - 武器叠层：10秒/层衰减
+ * - 战甲叠层：20秒/层衰减
  * 最大层数从配置文件读取，支持运行时修改
  *
  * @author RoinFlam
@@ -27,6 +29,7 @@ public class KillStackManager {
      * 每种类型的最大层数从配置文件动态读取
      */
     public enum StackType {
+        // ========== 武器叠层（10秒/层） ==========
         BASE_DAMAGE,           // 基础伤害（根据目标负面效果数量加成）
         MULTISHOT,             // 多重射击
         MELEE_CRIT_MULT,       // 近战暴击伤害
@@ -34,7 +37,21 @@ public class KillStackManager {
         ATTACK_RANGE,          // 攻击范围
         ATTACK_SPEED,          // 攻击速度
         BURSTING_RADIUS,       // 爆炸半径
-        FIRING_RATE;           // 射速
+        FIRING_RATE,           // 射速
+
+        // ========== 战甲叠层（20秒/层） ==========
+        WARFRAME_HEALTH,                    // 生命值
+        WARFRAME_SHIELD,                    // 护盾容量
+        WARFRAME_ARMOR,                     // 护甲
+        WARFRAME_SPRINT_SPEED,              // 冲刺速度
+        WARFRAME_SHIELD_RECOVERY_RATE,      // 护盾恢复速率
+        WARFRAME_SHIELD_RECOVERY_DELAY,     // 护盾恢复延迟
+        WARFRAME_FIRE_PROTECTION,           // 火焰抗性
+        WARFRAME_ELECTRIC_PROTECTION,       // 电击抗性
+        WARFRAME_HOMOLOGOUS_PROTECTION,     // 同源抗性
+        WARFRAME_RESPONSE_RATE,             // 恢复生命值倍率
+        WARFRAME_ITEM_DROP_MULTIPLIER,      // 战利品掉落倍率
+        WARFRAME_DIGGING_SPEED;             // 挖掘速度
 
         /**
          * 获取该类型的最大层数（从配置文件读取）
@@ -42,6 +59,7 @@ public class KillStackManager {
          */
         public int getMaxStacks() {
             switch (this) {
+                // 武器叠层
                 case BASE_DAMAGE:
                     return ModConfig.KUVA_LICH.maxStacksBaseDamage;
                 case MULTISHOT:
@@ -58,8 +76,72 @@ public class KillStackManager {
                     return ModConfig.KUVA_LICH.maxStacksBurstingRadius;
                 case FIRING_RATE:
                     return ModConfig.KUVA_LICH.maxStacksFiringRate;
+
+                // 战甲叠层
+                case WARFRAME_HEALTH:
+                    return ModConfig.KUVA_LICH.maxStacksHealth;
+                case WARFRAME_SHIELD:
+                    return ModConfig.KUVA_LICH.maxStacksShield;
+                case WARFRAME_ARMOR:
+                    return ModConfig.KUVA_LICH.maxStacksArmor;
+                case WARFRAME_SPRINT_SPEED:
+                    return ModConfig.KUVA_LICH.maxStacksSprintSpeed;
+                case WARFRAME_SHIELD_RECOVERY_RATE:
+                    return ModConfig.KUVA_LICH.maxStacksShieldRecoveryRate;
+                case WARFRAME_SHIELD_RECOVERY_DELAY:
+                    return ModConfig.KUVA_LICH.maxStacksShieldRecoveryDelay;
+                case WARFRAME_FIRE_PROTECTION:
+                    return ModConfig.KUVA_LICH.maxStacksFireProtection;
+                case WARFRAME_ELECTRIC_PROTECTION:
+                    return ModConfig.KUVA_LICH.maxStacksElectricProtection;
+                case WARFRAME_HOMOLOGOUS_PROTECTION:
+                    return ModConfig.KUVA_LICH.maxStacksHomologousProtection;
+                case WARFRAME_RESPONSE_RATE:
+                    return ModConfig.KUVA_LICH.maxStacksResponseRate;
+                case WARFRAME_ITEM_DROP_MULTIPLIER:
+                    return ModConfig.KUVA_LICH.maxStacksItemDropMultiplier;
+                case WARFRAME_DIGGING_SPEED:
+                    return ModConfig.KUVA_LICH.maxStacksDiggingSpeed;
+
                 default:
-                    return 5; // 默认值（正常情况不会用到）
+                    return 5;
+            }
+        }
+
+        /**
+         * 获取该类型的衰减时间（从配置文件读取）
+         * @return 衰减时间（ticks）
+         */
+        public int getDecayTicks() {
+            switch (this) {
+                // 武器叠层：使用weaponStackDecayTicks配置
+                case BASE_DAMAGE:
+                case MULTISHOT:
+                case MELEE_CRIT_MULT:
+                case TRIGGER_CHANCE:
+                case ATTACK_RANGE:
+                case ATTACK_SPEED:
+                case BURSTING_RADIUS:
+                case FIRING_RATE:
+                    return ModConfig.KUVA_LICH.weaponStackDecayTicks;
+
+                // 战甲叠层：使用warframeStackDecayTicks配置
+                case WARFRAME_HEALTH:
+                case WARFRAME_SHIELD:
+                case WARFRAME_ARMOR:
+                case WARFRAME_SPRINT_SPEED:
+                case WARFRAME_SHIELD_RECOVERY_RATE:
+                case WARFRAME_SHIELD_RECOVERY_DELAY:
+                case WARFRAME_FIRE_PROTECTION:
+                case WARFRAME_ELECTRIC_PROTECTION:
+                case WARFRAME_HOMOLOGOUS_PROTECTION:
+                case WARFRAME_RESPONSE_RATE:
+                case WARFRAME_ITEM_DROP_MULTIPLIER:
+                case WARFRAME_DIGGING_SPEED:
+                    return ModConfig.KUVA_LICH.warframeStackDecayTicks;
+
+                default:
+                    return 200;
             }
         }
     }
@@ -70,7 +152,7 @@ public class KillStackManager {
     private static class StackData {
         int stacks;                // 当前层数
         int ticksUntilDecay;       // 距离下次衰减的tick数
-        final StackType stackType; // 叠层类型（用于动态获取最大层数）
+        final StackType stackType; // 叠层类型（用于动态获取最大层数和衰减时间）
 
         /**
          * 构造函数
@@ -78,7 +160,7 @@ public class KillStackManager {
          */
         StackData(StackType stackType) {
             this.stacks = 0;
-            this.ticksUntilDecay = 200; // 10秒（200 ticks = 10 seconds）
+            this.ticksUntilDecay = stackType.getDecayTicks();
             this.stackType = stackType;
         }
 
@@ -90,7 +172,7 @@ public class KillStackManager {
             if (stacks < stackType.getMaxStacks()) {
                 stacks++;
             }
-            ticksUntilDecay = 200; // 重置衰减计时
+            ticksUntilDecay = stackType.getDecayTicks();
         }
 
         /**
@@ -99,13 +181,13 @@ public class KillStackManager {
          */
         boolean tick() {
             if (stacks <= 0) {
-                return true; // 已经没有层数，可以移除
+                return true;
             }
 
             ticksUntilDecay--;
             if (ticksUntilDecay <= 0) {
                 stacks--;
-                ticksUntilDecay = 200; // 重置衰减计时
+                ticksUntilDecay = stackType.getDecayTicks();
             }
 
             return stacks <= 0;
@@ -131,19 +213,16 @@ public class KillStackManager {
 
         UUID playerUUID = player.getUniqueID();
 
-        // 获取或创建玩家的叠层数据
         Map<StackType, StackData> playerData = PLAYER_STACKS.computeIfAbsent(
                 playerUUID,
                 k -> new HashMap<>()
         );
 
-        // 获取或创建该类型的叠层数据
         StackData stackData = playerData.computeIfAbsent(
                 stackType,
                 k -> new StackData(stackType)
         );
 
-        // 添加层数
         stackData.addStack();
     }
 
@@ -198,7 +277,8 @@ public class KillStackManager {
 
     /**
      * 玩家Tick事件 - 处理叠层衰减
-     * 每10秒减少1层，直至归零
+     * 武器叠层：每10秒（默认）减少1层
+     * 战甲叠层：每20秒（默认）减少1层
      */
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent evt) {
@@ -214,13 +294,11 @@ public class KillStackManager {
             return;
         }
 
-        // 更新所有叠层
         playerData.entrySet().removeIf(entry -> {
             StackData stackData = entry.getValue();
-            return stackData.tick(); // 如果完全衰减，移除该类型
+            return stackData.tick();
         });
 
-        // 如果玩家所有叠层都衰减完了，移除玩家数据
         if (playerData.isEmpty()) {
             PLAYER_STACKS.remove(playerUUID);
         }

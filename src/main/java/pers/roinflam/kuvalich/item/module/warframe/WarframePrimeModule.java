@@ -136,6 +136,127 @@ public class WarframePrimeModule extends WarframeModuleBase {
             ItemModuleBase.setType(itemStack, "treasure_thief");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
+
+            // ========== 执刑官系列MOD（12个） ==========
+
+            // 1. 执刑官 生命力 (Executioner Vitality)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_vitality");
+            ItemModuleBase.addAttributes(itemStack, "health", 1.0001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackHealth", 0.08501f);
+            ItemModuleBase.setType(itemStack, "vitality");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 2. 执刑官 蓄能重划 (Executioner Redirection)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_redirection");
+            ItemModuleBase.addAttributes(itemStack, "shield", 1.0001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackShield", 0.04001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackShieldRecoveryRate", 0.02501f);
+            ItemModuleBase.setType(itemStack, "redirection");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 3. 执刑官 钢铁纤维 (Executioner Steel Fiber)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_steel_fiber");
+            ItemModuleBase.addAttributes(itemStack, "armor", 1.0001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackArmor", 0.08501f);
+            ItemModuleBase.setType(itemStack, "steel_fiber");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 4. 执刑官 冲刺 (Executioner Rush)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_rush");
+            ItemModuleBase.addAttributes(itemStack, "sprintSpeed", 0.3001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackSprintSpeed", 0.02501f);
+            ItemModuleBase.setType(itemStack, "rush");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 5. 执刑官 活力 (Executioner Vigor)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_vigor");
+            ItemModuleBase.addAttributes(itemStack, "shield", 0.5001f);
+            ItemModuleBase.addAttributes(itemStack, "health", 0.5001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackShield", 0.03251f);
+            ItemModuleBase.addAttributes(itemStack, "killStackHealth", 0.03251f);
+            ItemModuleBase.setType(itemStack, "vigor");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 6. 执刑官 快速充能 (Executioner Fast Deflection)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_fast_deflection");
+            ItemModuleBase.addAttributes(itemStack, "shieldRecoveryRate", 0.9001f);
+            ItemModuleBase.addAttributes(itemStack, "shieldRecoveryDelay", -0.4501f);
+            ItemModuleBase.addAttributes(itemStack, "killStackShieldRecoveryRate", 0.02501f);
+            ItemModuleBase.addAttributes(itemStack, "killStackShieldRecoveryDelay", -0.02001f);
+            ItemModuleBase.setType(itemStack, "fast_deflection");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 7. 执刑官 火焰防护 (Executioner Flame Repellent)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_flame_repellent");
+            ItemModuleBase.addAttributes(itemStack, "fireProtection", 0.6001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackFireProtection", 0.02501f);
+            ItemModuleBase.setType(itemStack, "flame_repellent");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 8. 执刑官 避雷针 (Executioner Lightning Rod)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_lightning_rod");
+            ItemModuleBase.addAttributes(itemStack, "electricProtection", 0.6001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackElectricProtection", 0.02501f);
+            ItemModuleBase.setType(itemStack, "lightning_rod");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 9. 执刑官 情同手足 (Executioner Deep Friendship)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_deep_friendship");
+            ItemModuleBase.addAttributes(itemStack, "homologousProtection", 0.3001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackHomologousProtection", 0.03001f);
+            ItemModuleBase.setType(itemStack, "deep_friendship");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 10. 执刑官 密藏猎人 (Executioner Treasure Hunter)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_treasure_hunter");
+            ItemModuleBase.addAttributes(itemStack, "itemDropMultiplier", 0.6001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackItemDropMultiplier", 0.03501f);
+            ItemModuleBase.setType(itemStack, "treasure_hunter");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 11. 执刑官 碎岩者之力 (Executioner Digging Power)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_digging_power");
+            ItemModuleBase.addAttributes(itemStack, "diggingSpeed", 0.6001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackDiggingSpeed", 0.02501f);
+            ItemModuleBase.setType(itemStack, "digging_power");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 12. 执刑官 返老还童 (Executioner Rejuvenation)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.executioner_rejuvenation");
+            ItemModuleBase.addAttributes(itemStack, "health", 0.3001f);
+            ItemModuleBase.addAttributes(itemStack, "shield", 0.3001f);
+            ItemModuleBase.addAttributes(itemStack, "responseRate", 0.3001f);
+            ItemModuleBase.addAttributes(itemStack, "shieldRecoveryRate", 0.3001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackHealth", 0.02001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackShield", 0.02001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackResponseRate", 0.02001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackShieldRecoveryRate", 0.02001f);
+            ItemModuleBase.setType(itemStack, "rejuvenation");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
         }
     }
 
