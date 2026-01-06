@@ -1,6 +1,7 @@
 package pers.roinflam.kuvalich.itemstack;
 
-import javafx.util.Pair;
+import pers.roinflam.kuvalich.itemstack.KillStackManager;
+import pers.roinflam.kuvalich.itemstack.KillStackManager.StackType;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityLivingBase;
@@ -40,7 +41,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
-import pers.roinflam.kuvalich.config.ConfigKuvaLich;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichPotion;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.render.damagedisplay.DamageInfo;
@@ -52,7 +53,6 @@ import pers.roinflam.kuvalich.utils.util.EntityPlayerUtil;
 import pers.roinflam.kuvalich.utils.util.EntityUtil;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 @Mod.EventBusSubscriber
@@ -268,27 +268,12 @@ public class ItemModule {
         nbtTagCompound.setTag("tag", tag);
         itemStack.setTagCompound(tag);
     }
-//
-//    @SubscribeEvent(priority = EventPriority.HIGHEST)
-//    public static void LivingDamageEvent(@Nonnull LivingDamageEvent evt) {
-//        System.out.println(evt.getAmount() + ":LivingDamageEvent:HIGHEST");
-//    }
-//
-//    @SubscribeEvent(priority = EventPriority.LOWEST)
-//    public static void LivingDamageEvents(@Nonnull LivingDamageEvent evt) {
-//        System.out.println(evt.getAmount() + ":LivingDamageEvent:LOWEST");
-//    }
-//
-//    @SubscribeEvent(priority = EventPriority.HIGHEST)
-//    public static void onLivingHurts(@Nonnull LivingHurtEvent evt) {
-//        System.out.println(evt.getAmount() + ":LivingHurtEvent:HIGHEST");
-//    }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDamage(@Nonnull LivingDamageEvent evt) {
         DamageSource damageSource = evt.getSource();
         if (!evt.getEntityLiving().getEntityWorld().isRemote && (damageSource.getImmediateSource() instanceof EntityPlayer || damageSource.getTrueSource() instanceof EntityPlayer)) {
-            if (!ConfigKuvaLich.damagePriority) {
+            if (!ModConfig.KUVA_LICH.damagePriority) {
                 return;
             }
             EntityPlayer entityPlayer;
@@ -315,9 +300,21 @@ public class ItemModule {
                             attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                         }
                     }
+
+                    // ✅ 应用击杀叠层效果
+                    applyKillStackEffects(entityPlayer, weapon, attributes, hurter);
+
                     if (damageSource.getImmediateSource() instanceof EntityPlayer) {
                         baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
                         criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
+
+                        // ✅ 应用近战暴击伤害叠层
+                        if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
+                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.MELEE_CRIT_MULT);
+                            double stackValue = attributes.get("killStackMeleeCriticalMultiplier");
+                            criticalStrikeMultiplier *= (1 + stackValue * stacks);
+                        }
+
                         if (entityPlayer.isSprinting()) {
                             criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0) + attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0));
                         } else {
@@ -332,7 +329,15 @@ public class ItemModule {
                         } else if (damageSource.getImmediateSource() instanceof IProjectile) {
                             baseDamage += attributes.getOrDefault("projectileDamage", 0.0);
                         }
+
+                        // ✅ 应用爆炸半径叠层
                         double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
+                        if (attributes.containsKey("killStackBurstingRadius")) {
+                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.BURSTING_RADIUS);
+                            double stackValue = attributes.get("killStackBurstingRadius");
+                            range += stackValue * stacks * 2;
+                        }
+
                         if (!damageSource.isExplosion()) {
                             if (range > 1) {
                                 @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, range, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(entityPlayer));
@@ -348,10 +353,18 @@ public class ItemModule {
                     if (damageSource.isMagicDamage()) {
                         baseDamage += attributes.getOrDefault("magicDamage", 0.0);
                     }
+
+                    // ✅ 应用触发几率叠层
                     if (entityPlayer.isSprinting()) {
                         triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
                     } else {
                         triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0));
+                    }
+
+                    if (attributes.containsKey("killStackTriggerChance")) {
+                        int stacks = KillStackManager.getStacks(entityPlayer, StackType.TRIGGER_CHANCE);
+                        double stackValue = attributes.get("killStackTriggerChance");
+                        triggerChance *= (1 + stackValue * stacks);
                     }
 
                     double elementDamage = 0;
@@ -437,7 +450,12 @@ public class ItemModule {
                     double offsetZ = (Math.random() - 0.5) * hurter.width;
                     Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
                     KuvaLich.network.sendTo(new DamagePacket(damage, position, color), (EntityPlayerMP) entityPlayer);
-                } else if (ConfigKuvaLich.damageDisplay) {
+
+                    // ✅ 击杀检测
+                    if (hurter.getHealth() - damage <= 0) {
+                        addKillStacks(entityPlayer, weapon);
+                    }
+                } else if (ModConfig.KUVA_LICH.damageDisplay) {
                     EntityLivingBase hurter = evt.getEntityLiving();
                     double offsetX = (Math.random() - 0.5) * hurter.width;
                     double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
@@ -453,7 +471,7 @@ public class ItemModule {
     public static void onLivingHurt(@Nonnull LivingHurtEvent evt) {
         DamageSource damageSource = evt.getSource();
         if (!evt.getEntityLiving().getEntityWorld().isRemote && (damageSource.getImmediateSource() instanceof EntityPlayer || damageSource.getTrueSource() instanceof EntityPlayer)) {
-            if (ConfigKuvaLich.damagePriority) {
+            if (ModConfig.KUVA_LICH.damagePriority) {
                 return;
             }
             EntityPlayer entityPlayer;
@@ -480,9 +498,21 @@ public class ItemModule {
                             attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                         }
                     }
+
+                    // ✅ 应用击杀叠层效果
+                    applyKillStackEffects(entityPlayer, weapon, attributes, hurter);
+
                     if (damageSource.getImmediateSource() instanceof EntityPlayer) {
                         baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
                         criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
+
+                        // ✅ 应用近战暴击伤害叠层
+                        if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
+                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.MELEE_CRIT_MULT);
+                            double stackValue = attributes.get("killStackMeleeCriticalMultiplier");
+                            criticalStrikeMultiplier *= (1 + stackValue * stacks);
+                        }
+
                         if (entityPlayer.isSprinting()) {
                             criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0) + attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0));
                         } else {
@@ -497,7 +527,15 @@ public class ItemModule {
                         } else if (damageSource.getImmediateSource() instanceof IProjectile) {
                             baseDamage += attributes.getOrDefault("projectileDamage", 0.0);
                         }
+
+                        // ✅ 应用爆炸半径叠层
                         double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
+                        if (attributes.containsKey("killStackBurstingRadius")) {
+                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.BURSTING_RADIUS);
+                            double stackValue = attributes.get("killStackBurstingRadius");
+                            range += stackValue * stacks * 2;
+                        }
+
                         if (!damageSource.isExplosion()) {
                             if (range > 1) {
                                 @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, range, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(entityPlayer));
@@ -513,10 +551,18 @@ public class ItemModule {
                     if (damageSource.isMagicDamage()) {
                         baseDamage += attributes.getOrDefault("magicDamage", 0.0);
                     }
+
+                    // ✅ 应用触发几率叠层
                     if (entityPlayer.isSprinting()) {
                         triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
                     } else {
                         triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0));
+                    }
+
+                    if (attributes.containsKey("killStackTriggerChance")) {
+                        int stacks = KillStackManager.getStacks(entityPlayer, StackType.TRIGGER_CHANCE);
+                        double stackValue = attributes.get("killStackTriggerChance");
+                        triggerChance *= (1 + stackValue * stacks);
                     }
 
                     double elementDamage = 0;
@@ -602,7 +648,12 @@ public class ItemModule {
                     double offsetZ = (Math.random() - 0.5) * hurter.width;
                     Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
                     KuvaLich.network.sendTo(new DamagePacket(damage, position, color), (EntityPlayerMP) entityPlayer);
-                } else if (ConfigKuvaLich.damageDisplay) {
+
+                    // ✅ 击杀检测
+                    if (hurter.getHealth() - damage <= 0) {
+                        addKillStacks(entityPlayer, weapon);
+                    }
+                } else if (ModConfig.KUVA_LICH.damageDisplay) {
                     EntityLivingBase hurter = evt.getEntityLiving();
                     double offsetX = (Math.random() - 0.5) * hurter.width;
                     double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
@@ -610,6 +661,125 @@ public class ItemModule {
                     Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
                     KuvaLich.network.sendTo(new DamagePacket(evt.getAmount(), position, DamageInfo.DamageColor.WHITE.getColor()), (EntityPlayerMP) entityPlayer);
                 }
+            }
+        }
+    }
+
+    /**
+     * 添加击杀叠层
+     */
+    private static void addKillStacks(EntityPlayer player, ItemStack weapon) {
+        if (player == null || weapon.isEmpty() || !ItemModule.hasBase(weapon)) {
+            return;
+        }
+
+        HashMap<String, Double> attributes = new HashMap<>();
+        List<ItemStack> modules = getModules(weapon);
+        for (ItemStack module : modules) {
+            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
+                attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
+            }
+        }
+
+        // 检查并添加各种击杀叠层
+        if (attributes.containsKey("killStackBaseDamage")) {
+            KillStackManager.addStack(player, StackType.BASE_DAMAGE);
+        }
+        if (attributes.containsKey("killStackMultishot")) {
+            KillStackManager.addStack(player, StackType.MULTISHOT);
+        }
+        if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
+            KillStackManager.addStack(player, StackType.MELEE_CRIT_MULT);
+        }
+        if (attributes.containsKey("killStackTriggerChance")) {
+            KillStackManager.addStack(player, StackType.TRIGGER_CHANCE);
+        }
+        if (attributes.containsKey("killStackAttackRange")) {
+            KillStackManager.addStack(player, StackType.ATTACK_RANGE);
+        }
+        if (attributes.containsKey("killStackAttackSpeed")) {
+            KillStackManager.addStack(player, StackType.ATTACK_SPEED);
+        }
+        if (attributes.containsKey("killStackBurstingRadius")) {
+            KillStackManager.addStack(player, StackType.BURSTING_RADIUS);
+        }
+        if (attributes.containsKey("killStackFiringRate")) {
+            KillStackManager.addStack(player, StackType.FIRING_RATE);
+        }
+    }
+
+    /**
+     * 应用击杀叠层效果到属性Map
+     */
+    private static void applyKillStackEffects(EntityPlayer player, ItemStack weapon,
+                                              HashMap<String, Double> attributes,
+                                              EntityLivingBase target) {
+        if (!ItemModule.hasBase(weapon)) {
+            return;
+        }
+
+        // ✅ 基础伤害叠层（根据目标负面效果数量）
+        if (attributes.containsKey("killStackBaseDamage")) {
+            int stacks = KillStackManager.getStacks(player, StackType.BASE_DAMAGE);
+            if (stacks > 0) {
+                double stackValue = attributes.get("killStackBaseDamage");
+
+                // 计算目标身上的负面效果数量
+                int debuffCount = 0;
+                for (net.minecraft.potion.PotionEffect effect : target.getActivePotionEffects()) {
+                    if (effect.getPotion().isBadEffect()) {
+                        debuffCount++;
+                    }
+                }
+
+                // 每层叠加 × 每个负面效果
+                if (debuffCount > 0) {
+                    double bonusDamage = stackValue * stacks * debuffCount;
+                    double currentMeleeDamage = attributes.getOrDefault("meleeDamage", 0.0);
+                    double currentRemoteDamage = attributes.getOrDefault("remoteDamage", 0.0);
+                    attributes.put("meleeDamage", currentMeleeDamage + bonusDamage);
+                    attributes.put("remoteDamage", currentRemoteDamage + bonusDamage);
+                }
+            }
+        }
+
+        // ✅ 多重射击叠层
+        if (attributes.containsKey("killStackMultishot")) {
+            int stacks = KillStackManager.getStacks(player, StackType.MULTISHOT);
+            if (stacks > 0) {
+                double stackValue = attributes.get("killStackMultishot");
+                double currentMultishot = attributes.getOrDefault("multishot", 0.0);
+                attributes.put("multishot", currentMultishot + stackValue * stacks);
+            }
+        }
+
+        // ✅ 攻击速度叠层
+        if (attributes.containsKey("killStackAttackSpeed")) {
+            int stacks = KillStackManager.getStacks(player, StackType.ATTACK_SPEED);
+            if (stacks > 0) {
+                double stackValue = attributes.get("killStackAttackSpeed");
+                double currentSpeed = attributes.getOrDefault("attackSpeed", 0.0);
+                attributes.put("attackSpeed", currentSpeed + stackValue * stacks);
+            }
+        }
+
+        // ✅ 攻击范围叠层
+        if (attributes.containsKey("killStackAttackRange")) {
+            int stacks = KillStackManager.getStacks(player, StackType.ATTACK_RANGE);
+            if (stacks > 0) {
+                double stackValue = attributes.get("killStackAttackRange");
+                double currentRange = attributes.getOrDefault("attackRange", 0.0);
+                attributes.put("attackRange", currentRange + stackValue * stacks);
+            }
+        }
+
+        // ✅ 射速叠层
+        if (attributes.containsKey("killStackFiringRate")) {
+            int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
+            if (stacks > 0) {
+                double stackValue = attributes.get("killStackFiringRate");
+                double currentFiringRate = attributes.getOrDefault("firing_rate", 0.0);
+                attributes.put("firing_rate", currentFiringRate + stackValue * stacks);
             }
         }
     }
@@ -630,6 +800,17 @@ public class ItemModule {
                                     attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                                 }
                             }
+
+                            // ✅ 应用攻击速度叠层
+                            if (attributes.containsKey("killStackAttackSpeed")) {
+                                int stacks = KillStackManager.getStacks(entityPlayer, StackType.ATTACK_SPEED);
+                                if (stacks > 0) {
+                                    double stackValue = attributes.get("killStackAttackSpeed");
+                                    double currentSpeed = attributes.getOrDefault("attackSpeed", 0.0);
+                                    attributes.put("attackSpeed", currentSpeed + stackValue * stacks);
+                                }
+                            }
+
                             double attackSpeed = attributes.getOrDefault("attackSpeed", 0.0);
                             if (attackSpeed >= 0.1) {
                                 int level = (int) (attackSpeed / 0.1) - 1;
@@ -666,10 +847,18 @@ public class ItemModule {
                                 attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                             }
                         }
+
+                        // ✅ 应用攻击范围叠层
                         double range = attributes.getOrDefault("attackRange", 0.0);
                         if (entityPlayer.isSprinting()) {
                             range += attributes.getOrDefault("dashAttackRange", 0.0);
                         }
+                        if (attributes.containsKey("killStackAttackRange")) {
+                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.ATTACK_RANGE);
+                            double stackValue = attributes.get("killStackAttackRange");
+                            range += stackValue * stacks;
+                        }
+
                         if (range > 0) {
                             @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, range, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(entityPlayer));
                             for (@Nonnull EntityLivingBase entityLivingBase : entities) {
@@ -685,39 +874,6 @@ public class ItemModule {
         }
     }
 
-//    @SubscribeEvent
-//    public static void onLivingUpdate(@Nonnull LivingEvent.LivingUpdateEvent evt) {
-//        if (evt.getEntityLiving() instanceof EntityPlayer && evt.getEntityLiving().isHandActive()) {
-//            EntityPlayer entityPlayer = (EntityPlayer) evt.getEntityLiving();
-//            ItemStack weapon = entityPlayer.getHeldItem(entityPlayer.getActiveHand());
-//            if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
-//                HashMap<String, Double> attributes = new HashMap<>();
-//                List<ItemStack> modules = getModules(weapon);
-//                for (ItemStack module : modules) {
-//                    for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-//                        attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
-//                    }
-//                }
-//                double firingRate = attributes.getOrDefault("firing_rate", 0.0);
-//                System.out.println(firingRate + ":LivingUpdateEvent");
-//                if (firingRate != 0) {
-////                    if (weapon.getItem() instanceof ItemBow) {
-////                        firingRate *= 2;
-////                    }
-//                    if (firingRate > 1) {
-//                        int number = (int) (firingRate);
-//                        for (int i = 0; i < number; i++) {
-//                            EntityLivingUtil.updateHeld(entityPlayer);
-//                        }
-//                        if (RandomUtil.percentageChance((firingRate - number) * 100)) {
-//                            EntityLivingUtil.updateHeld(entityPlayer);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-
     @SubscribeEvent
     public static void onLivingEntityUseItem(@Nonnull LivingEntityUseItemEvent.Tick evt) {
         EntityLivingBase entityLivingBase = evt.getEntityLiving();
@@ -730,6 +886,20 @@ public class ItemModule {
                     attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                 }
             }
+
+            // ✅ 应用射速叠层
+            if (entityLivingBase instanceof EntityPlayer) {
+                EntityPlayer player = (EntityPlayer) entityLivingBase;
+                if (attributes.containsKey("killStackFiringRate")) {
+                    int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
+                    if (stacks > 0) {
+                        double stackValue = attributes.get("killStackFiringRate");
+                        double currentFiringRate = attributes.getOrDefault("firing_rate", 0.0);
+                        attributes.put("firing_rate", currentFiringRate + stackValue * stacks);
+                    }
+                }
+            }
+
             double firingRate = 1 + attributes.getOrDefault("firing_rate", 0.0) * (weapon.getItem() instanceof ItemBow ? 2 : 1);
             if (firingRate != 0) {
                 if (firingRate < 1) {
@@ -749,17 +919,14 @@ public class ItemModule {
         }
     }
 
-
     public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
         Map<String, Double> elementValues = new LinkedHashMap<>();
 
-        // 首先检查赤毒武器属性
         if (KuvaWeapon.hasType(weapon)) {
             String kuvaType = KuvaWeapon.getType(weapon);
             elementValues.put(kuvaType, 1.0);
         }
 
-        // 获取模组列表并按顺序处理
         List<ItemStack> modules = getModules(weapon);
         for (int i = 0; i < modules.size(); i++) {
             ItemStack module = modules.get(i);
@@ -773,10 +940,8 @@ public class ItemModule {
             }
         }
 
-        // 移除总和为负或零的元素
         elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
 
-        // 元素组合
         Map<String, Double> combinedElements = new LinkedHashMap<>();
         for (Map.Entry<String, Double> entry : elementValues.entrySet()) {
             String currentElement = entry.getKey();
@@ -798,7 +963,6 @@ public class ItemModule {
             }
         }
 
-        // 计算总值和百分比
         double totalValue = combinedElements.values().stream().mapToDouble(Double::doubleValue).sum();
         HashMap<String, String> result = new HashMap<>();
         for (Map.Entry<String, Double> entry : combinedElements.entrySet()) {
@@ -816,15 +980,6 @@ public class ItemModule {
 
     private static boolean isPhysical(String element) {
         return element.equals("slash") || element.equals("puncture") || element.equals("impact");
-    }
-
-    private static int findNextElemental(List<AbstractMap.SimpleEntry<String, Double>> list, int startIndex) {
-        for (int i = startIndex; i < list.size(); i++) {
-            if (isElemental(list.get(i).getKey())) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     private static String getCompoundElement(String first, String second) {
@@ -856,14 +1011,12 @@ public class ItemModule {
             return null;
         }
 
-        // 将元素和它们的概率值放入一个列表中
         List<Map.Entry<String, Double>> elementList = new ArrayList<>();
         for (Map.Entry<String, String> entry : elements.entrySet()) {
             double probability = Double.parseDouble(entry.getValue().replace("%", "")) / 100.0;
             elementList.add(new AbstractMap.SimpleEntry<>(entry.getKey(), probability));
         }
 
-        // 根据概率随机选择一个元素
         double random = Math.random();
         double cumulativeProbability = 0.0;
         for (Map.Entry<String, Double> entry : elementList) {
@@ -873,7 +1026,6 @@ public class ItemModule {
             }
         }
 
-        // 如果由于舍入误差没有选中元素，返回最后一个
         return elementList.get(elementList.size() - 1).getKey();
     }
 
@@ -1070,7 +1222,15 @@ public class ItemModule {
                         attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                     }
                 }
+
+                // ✅ 应用多重射击叠层
                 double multishot = attributes.getOrDefault("multishot", 0.0);
+                if (attributes.containsKey("killStackMultishot")) {
+                    int stacks = KillStackManager.getStacks(entityPlayer, StackType.MULTISHOT);
+                    double stackValue = attributes.get("killStackMultishot");
+                    multishot += stackValue * stacks;
+                }
+
                 if (multishot > 0) {
                     int charge = evt.getCharge();
                     float velocity = getBowVelocity(charge);

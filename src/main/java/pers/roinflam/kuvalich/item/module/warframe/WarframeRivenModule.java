@@ -106,7 +106,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
             negativeTrendMagnification *= 1.5;
         }
 
-        List<String> warframeAttributeType = new ArrayList<>(WarframeModuleBase.warframeAttributeType);
+        List<String> warframeAttributeType = new ArrayList<>(WarframeModuleBase.WARFRAME_ATTRIBUTE_TYPES);
         Collections.shuffle(warframeAttributeType);
 
         List<String> hasAttributeType = new ArrayList<>();

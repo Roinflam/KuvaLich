@@ -19,8 +19,8 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
-import pers.roinflam.kuvalich.blocks.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.blocks.capability.RequiemCard;
+import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.IHasModel;
 import pers.roinflam.kuvalich.utils.util.ItemUtil;

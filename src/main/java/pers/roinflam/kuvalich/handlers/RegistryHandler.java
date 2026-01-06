@@ -2,26 +2,19 @@ package pers.roinflam.kuvalich.handlers;
 
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelRegistryEvent;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 
 import pers.roinflam.kuvalich.KuvaLich;
-import pers.roinflam.kuvalich.blocks.capability.provider.RequiemCardProvider;
-import pers.roinflam.kuvalich.blocks.capability.provider.WarframeModuleProvider;
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.IHasModel;
-import pers.roinflam.kuvalich.utils.Reference;
 
 @Mod.EventBusSubscriber
 public class RegistryHandler {
@@ -60,12 +53,7 @@ public class RegistryHandler {
         }
     }
 
-    @SubscribeEvent
-    public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> evt) {
-        if (evt.getObject() instanceof EntityPlayer) {
-            evt.addCapability(new ResourceLocation(Reference.MOD_ID + ":requiem_card"), new RequiemCardProvider());
-            evt.addCapability(new ResourceLocation(Reference.MOD_ID + ":warframe_module"), new WarframeModuleProvider());
-        }
-    }
-
+    // ❌ 删除这个方法，避免重复注册
+    // @SubscribeEvent
+    // public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> evt) { ... }
 }

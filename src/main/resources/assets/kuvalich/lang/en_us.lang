@@ -364,7 +364,7 @@ message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current ridd
 message.kuvalich.firstCorrect=Decryption failed, the first answer is correct!
 message.kuvalich.secondCorrect=Decryption failed, the second answer is correct!
 
-# ConfigKuvaLich Configuration Translations
+# ModConfig.KUVA_LICH Configuration Translations
 config.kuvalich.kuvalich.enableDetailedLogging=Enable Detailed Debug Logging
 config.kuvalich.kuvalich.minDecryptionProgress=Minimum Decryption Progress
 config.kuvalich.kuvalich.maxDecryptionProgress=Maximum Decryption Progress
@@ -393,7 +393,7 @@ config.kuvalich.kuvalich.kuvaSlaveSpawnWeight=Kuva Slave Spawn Weight
 config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount=Kuva Slave Minimum Spawn Count
 config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount=Kuva Slave Maximum Spawn Count
 
-# ConfigKuvaWeapon Configuration Translations
+# ModConfig.KUVA_WEAPON Configuration Translations
 config.kuvalich.kuvaweapon.attributeMultiplier=Weapon Attribute Multiplier
 config.kuvalich.kuvaweapon.attackDamageKuvaShildeg=Kuva Shildeg - Attack Damage
 config.kuvalich.kuvaweapon.attackSpeedKuvaShildeg=Kuva Shildeg - Attack Speed
@@ -434,3 +434,6 @@ config.kuvalich.kuvaweapon.movementSpeedMachete=Machete - Movement Speed
 config.kuvalich.kuvaweapon.attackDamageCaustacyst=Caustacyst - Attack Damage
 config.kuvalich.kuvaweapon.attackSpeedCaustacyst=Caustacyst - Attack Speed
 config.kuvalich.kuvaweapon.movementSpeedCaustacyst=Caustacyst - Movement Speed
+
+config.kuvalich.kuvalich=Kuva Lich System
+config.kuvalich.kuvaweapon=Kuva Weapon Attributes

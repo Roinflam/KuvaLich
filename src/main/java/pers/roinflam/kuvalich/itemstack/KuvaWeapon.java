@@ -13,8 +13,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
-import pers.roinflam.kuvalich.config.ConfigKuvaLich;
-import pers.roinflam.kuvalich.config.ConfigKuvaWeapon;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
@@ -82,13 +81,13 @@ public class KuvaWeapon {
     }
 
     public static TextFormatting getColor(int number) {
-        if (number < ConfigKuvaLich.benchmarkLevel * 0.77777) {
+        if (number < ModConfig.KUVA_LICH.benchmarkLevel * 0.77777) {
             return TextFormatting.GRAY;
-        } else if (number < ConfigKuvaLich.benchmarkLevel) {
+        } else if (number < ModConfig.KUVA_LICH.benchmarkLevel) {
             return TextFormatting.AQUA;
-        } else if (number < ConfigKuvaLich.benchmarkLevel * 1.22222) {
+        } else if (number < ModConfig.KUVA_LICH.benchmarkLevel * 1.22222) {
             return TextFormatting.DARK_PURPLE;
-        } else if (number < ConfigKuvaLich.benchmarkLevel * 1.33333) {
+        } else if (number < ModConfig.KUVA_LICH.benchmarkLevel * 1.33333) {
             return TextFormatting.GOLD;
         } else {
             return TextFormatting.RED;
@@ -184,7 +183,7 @@ public class KuvaWeapon {
     }
 
     public static float getMagnification(ItemStack itemStack) {
-        return (float) ((getNumber(itemStack) - ConfigKuvaLich.benchmarkLevel) / 100.0f * ConfigKuvaWeapon.attributeMultiplier);
+        return (float) ((getNumber(itemStack) - ModConfig.KUVA_LICH.benchmarkLevel) / 100.0f * ModConfig.KUVA_WEAPON.attributeMultiplier);
     }
 
     public static float getMagnification(ItemStack itemStack, double number) {
@@ -192,7 +191,7 @@ public class KuvaWeapon {
     }
 
     public static float getMagnification(ItemStack itemStack, double number, double magnification) {
-        return (float) (number + number * (float) ((getNumber(itemStack) - ConfigKuvaLich.benchmarkLevel) / 100.0f * ConfigKuvaWeapon.attributeMultiplier / magnification));
+        return (float) (number + number * (float) ((getNumber(itemStack) - ModConfig.KUVA_LICH.benchmarkLevel) / 100.0f * ModConfig.KUVA_WEAPON.attributeMultiplier / magnification));
     }
 
 }

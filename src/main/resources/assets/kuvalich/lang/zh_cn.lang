@@ -1,16 +1,22 @@
+# ========================================
+# 附魔系统
+# ========================================
 enchantment.experience_collector=经验之运
 enchantment.kuvalich.experience_collector.desc=提高挖掘矿石获得的经验
 enchantment.requiem_destroyed=灭骸
-enchantment.kuvalich.requiem_destroyed.desc=快速挖掘安魂、玄骸类方块，并使安魂矿石能更高概率掉落安魂卡
+enchantment.kuvalich.requiem_destroyed.desc=快速挖掘安魂、玄骸类方块,并使安魂矿石能更高概率掉落安魂卡
 enchantment.lethal=斩杀
 enchantment.kuvalich.lethal.desc=基于目标已损失生命值增加伤害
 enchantment.firststrike=先攻
-enchantment.kuvalich.firststrike.desc=对未受伤的目标造成巨额伤害，并获得额外伤害10%%的经验
+enchantment.kuvalich.firststrike.desc=对未受伤的目标造成巨额伤害,并获得额外伤害10%%的经验
 enchantment.escort=护卫
-enchantment.kuvalich.escort.desc=每级降低满血时受到的25%%伤害，至多75%%
+enchantment.kuvalich.escort.desc=每级降低满血时受到的25%%伤害,至多75%%
 enchantment.death_resistance=死亡抵抗
-enchantment.kuvalich.death_resistance.desc=牺牲经验值抵抗致命伤害，牺牲的数值基于附魔等级与伤害值
+enchantment.kuvalich.death_resistance.desc=牺牲经验值抵抗致命伤害,牺牲的数值基于附魔等级与伤害值
 
+# ========================================
+# 基础物品 - 安魂卡片
+# ========================================
 item.fass.name=FASS
 item.jahu.name=JAHU
 item.khra.name=KHRA
@@ -19,14 +25,24 @@ item.netra.name=NETRA
 item.ris.name=RIS
 item.vome.name=VOME
 item.xata.name=XATA
+
+# ========================================
+# 基础物品 - 材料与道具
+# ========================================
 item.requiem_gem.name=安魂宝石
 item.requiem_riddle.name=安魂谜语
 item.lich_reliquary.name=玄骸之遗
 item.kuva.name=赤毒
 item.riven_sliver.name=裂罅碎块
 
+# ========================================
+# 创造模式物品栏
+# ========================================
 itemGroup.kuvalich_tab=赤毒玄骸
 
+# ========================================
+# 方块系统
+# ========================================
 tile.requiem_ore.name=安魂矿石
 tile.experience_ore.name=经验矿石
 tile.requiem_gate.name=灭骸之扉
@@ -35,9 +51,15 @@ tile.requiem_evolve.name=安魂之融
 tile.requiem_weapon_table.name=安魂之武器军械库
 tile.requiem_warframe_table.name=安魂之战甲军械库
 
+# ========================================
+# 实体系统
+# ========================================
 entity.kuva_slave.name=赤毒奴仆
 entity.kuva_master.name=赤毒玄骸
 
+# ========================================
+# 武器元素伤害类型
+# ========================================
 kuvaweapon.type=元素伤害
 kuvaweapon.type.fire=火焰
 kuvaweapon.type.poison=毒素
@@ -54,6 +76,9 @@ kuvaweapon.type.explosion=爆炸
 kuvaweapon.type.gas=毒气
 kuvaweapon.type.unknown=未知
 
+# ========================================
+# 武器模组 - 通用信息
+# ========================================
 kuvaweapon.item_type_random.name=§d未揭示的物品模组
 kuvaweapon.item_type_random.tooltip=+??%% ???
 kuvaweapon.item_type.tooltip=装备此模组在物品中以获取属性加成
@@ -61,6 +86,9 @@ kuvaweapon.item_type_riven_random.name=§5未揭示的裂罅模组
 kuvaweapon.item_type_riven_trend.tooltip=裂罅倾向性
 kuvaweapon.item_type_riven_cycle.tooltip=裂罅循环次数
 
+# ========================================
+# 战甲模组 - 通用信息
+# ========================================
 kuvaweapon.warframe_type_random.name=§d未揭示的战甲模组
 kuvaweapon.warframe_type_random.tooltip=+??%% ???
 kuvaweapon.warframe_type.tooltip=装备此模组在战甲中以获取属性加成
@@ -68,6 +96,9 @@ kuvaweapon.warframe_type_riven_random.name=§5未揭示的裂罅模组
 kuvaweapon.warframe_type_riven_trend.tooltip=裂罅倾向性
 kuvaweapon.warframe_type_riven_cycle.tooltip=裂罅循环次数
 
+# ========================================
+# 武器属性类型
+# ========================================
 kuvaweapon.item_attribute_type.meleeDamage=近战伤害
 kuvaweapon.item_attribute_type.remoteDamage=远程伤害
 kuvaweapon.item_attribute_type.arrowDamage=箭矢伤害
@@ -100,6 +131,21 @@ kuvaweapon.item_attribute_type.dashTriggerChance=触发几率 在冲刺攻击时
 kuvaweapon.item_attribute_type.baseDamageWhenNotCriticalStrike=伤害 在未暴击时
 kuvaweapon.item_attribute_type.bursting_radius=爆炸半径 提高远程攻击时目标对周围伤害的范围
 
+# ========================================
+# 武器属性类型 - 击杀叠加词条
+# ========================================
+kuvaweapon.item_attribute_type.killStackBaseDamage=目标身上每一种负面效果可增加基础伤害 击杀时获取,最多叠加%d次
+kuvaweapon.item_attribute_type.killStackMultishot=多重射击 击杀时获取,最多叠加%d次
+kuvaweapon.item_attribute_type.killStackMeleeCriticalMultiplier=近战暴击伤害 击杀时获取,最多叠加%d次
+kuvaweapon.item_attribute_type.killStackTriggerChance=触发几率 击杀时获取,最多叠加%d次
+kuvaweapon.item_attribute_type.killStackAttackRange=攻击范围 击杀时获取,最多叠加%d次
+kuvaweapon.item_attribute_type.killStackAttackSpeed=攻击速度 击杀时获取,最多叠加%d次
+kuvaweapon.item_attribute_type.killStackBurstingRadius=爆炸半径 提高远程攻击时目标对周围伤害的范围 击杀时获取,最多叠加%d次
+kuvaweapon.item_attribute_type.killStackFiringRate=射速(弓类效果加倍) 击杀时获取,最多叠加%d次
+
+# ========================================
+# 战甲属性类型
+# ========================================
 kuvaweapon.warframe_attribute_type.health=生命值
 kuvaweapon.warframe_attribute_type.shield=护盾容量
 kuvaweapon.warframe_attribute_type.armor=护甲
@@ -115,12 +161,18 @@ kuvaweapon.warframe_attribute_type.diggingSpeed=挖掘速度
 kuvaweapon.warframe_attribute_type.responseRate=恢复生命值倍率
 kuvaweapon.warframe_attribute_type.itemDropMultiplier=战利品掉落倍率
 
+# ========================================
+# 武器基础面板属性
+# ========================================
 item.base=基础面板属性
 item.base.damage=基础伤害
 item.base.criticalStrikeProbability=暴击几率
 item.base.criticalStrikeMultiplier=暴击倍率
 item.base.triggerChance=触发几率
 
+# ========================================
+# 武器最终面板属性
+# ========================================
 item.module=最终面板属性
 item.module.damage=基础伤害
 item.module.meleeDamage=近战伤害
@@ -141,6 +193,9 @@ item.module.triggerDamage=元素伤害
 item.module.triggerTime=触发时间
 item.module.triggerType=触发属性
 
+# ========================================
+# 武器模组 - 按品质分类
+# ========================================
 item.item_common_module.name=青铜模组
 item.item_uncommon_module.name=白银模组
 item.item_rare_module.name=黄金模组
@@ -149,6 +204,9 @@ item.item_riven_module.name=裂罅模组
 item.item_riven_module_cycle_melee.name=近战裂罅
 item.item_riven_module_cycle_remote.name=远程裂罅
 
+# ========================================
+# 战甲模组 - 按品质分类
+# ========================================
 item.warframe_common_module.name=青铜模组
 item.warframe_uncommon_module.name=白银模组
 item.warframe_rare_module.name=黄金模组
@@ -156,6 +214,9 @@ item.warframe_prime_module.name=Prime模组
 item.warframe_riven_module.name=裂罅模组
 item.warframe_riven_module_cycle_melee.name=战甲裂罅
 
+# ========================================
+# 武器模组 - 青铜品质(黄色)
+# ========================================
 kuvaweapon.item_module.pressure_point=§e压迫点
 kuvaweapon.item_module.reach=§e剑风
 kuvaweapon.item_module.true_steel=§e斩铁
@@ -180,6 +241,9 @@ kuvaweapon.item_module.magical_growth=§e魔力增生
 kuvaweapon.item_module.magic_missile=§e魔力飞弹
 kuvaweapon.item_module.pandora_star=§e潘多拉之星
 
+# ========================================
+# 武器模组 - 白银品质(蓝色)
+# ========================================
 kuvaweapon.item_module.serration=§9膛线
 kuvaweapon.item_module.speed_trigger=§9灵敏扳机
 kuvaweapon.item_module.molten_impact=§9熔岩冲击
@@ -208,6 +272,9 @@ kuvaweapon.item_module.serrated_rounds=§9锯刃弹头
 kuvaweapon.item_module.devastated=§9满目疮痍
 kuvaweapon.item_module.fission_shot=§9裂变射击
 
+# ========================================
+# 武器模组 - 黄金品质(金色)
+# ========================================
 kuvaweapon.item_module.split_chamber=§6分裂膛室
 kuvaweapon.item_module.vital_sense=§6弱点感应
 kuvaweapon.item_module.high_voltage=§6高压电流
@@ -240,6 +307,9 @@ kuvaweapon.item_module.rain_of_arrows=§6箭如雨下
 kuvaweapon.item_module.joy_of_fire=§6火之高兴
 kuvaweapon.item_module.frostmourne=§6霜之哀伤
 
+# ========================================
+# 武器模组 - Prime品质(青色)
+# ========================================
 kuvaweapon.item_module.pressure_point_prime=§b压迫点 Prime
 kuvaweapon.item_module.reach_prime=§b剑风 Prime
 kuvaweapon.item_module.heavy_trauma_prime=§b重创 Prime
@@ -258,8 +328,26 @@ kuvaweapon.item_module.cryo_rounds_prime=§b低温弹头 Prime
 kuvaweapon.item_module.fierce_bow_prime=§b烈弓 Prime
 kuvaweapon.item_module.fission_shot_prime=§b裂变射击 Prime
 
+# ========================================
+# 武器模组 - 镀层系列(Prime品质)
+# ========================================
+kuvaweapon.item_module.galvanized_chamber=§b镀层 分裂膛室
+kuvaweapon.item_module.galvanized_aptitude=§b镀层 武器才能
+kuvaweapon.item_module.galvanized_steel=§b镀层 斩铁
+kuvaweapon.item_module.galvanized_reach=§b镀层 剑风
+kuvaweapon.item_module.galvanized_fury=§b镀层 狂暴
+kuvaweapon.item_module.galvanized_firestorm=§b镀层 烈焰风暴
+kuvaweapon.item_module.galvanized_speed_trigger=§b镀层 灵敏扳机
+kuvaweapon.item_module.galvanized_continuous_misery=§b镀层无尽苦难
+
+# ========================================
+# 模组装备提示
+# ========================================
 kuvaweapon.item_module_info=已装备以下模组:
 
+# ========================================
+# 战甲模组 - 青铜品质(黄色)
+# ========================================
 kuvaweapon.warframe_module.vitality=§e生命力
 kuvaweapon.warframe_module.redirection=§e蓄能重划
 kuvaweapon.warframe_module.steel_fiber=§e钢铁纤维
@@ -275,6 +363,9 @@ kuvaweapon.warframe_module.beast_of_burden=§e社畜
 kuvaweapon.warframe_module.bones=§e骸骨
 kuvaweapon.warframe_module.maliwan=§e马里旺
 
+# ========================================
+# 战甲模组 - 白银品质(蓝色)
+# ========================================
 kuvaweapon.warframe_module.rush=§9冲刺
 kuvaweapon.warframe_module.augur_accord=§9预言 协约
 kuvaweapon.warframe_module.fast_deflection=§9快速充能
@@ -288,6 +379,9 @@ kuvaweapon.warframe_module.treasure_thief=§9密藏小偷
 kuvaweapon.warframe_module.stand_your_ground=§9不动如山
 kuvaweapon.warframe_module.athena=§9雅典娜
 
+# ========================================
+# 战甲模组 - 黄金品质(金色)
+# ========================================
 kuvaweapon.warframe_module.sure_footed=§6顶天立地
 kuvaweapon.warframe_module.vigor=§6活力
 kuvaweapon.warframe_module.armored_agility=§6灵活装甲
@@ -303,6 +397,9 @@ kuvaweapon.warframe_module.rapid_recovery=§6急速复原
 kuvaweapon.warframe_module.eden_6=§6伊甸六号
 kuvaweapon.warframe_module.sacrificial_blaze=§6以我残躯化烈火
 
+# ========================================
+# 战甲模组 - Prime品质(青色)
+# ========================================
 kuvaweapon.warframe_module.vitality_prime=§b生命力 Prime
 kuvaweapon.warframe_module.redirection_prime=§b蓄能重划 Prime
 kuvaweapon.warframe_module.steel_fiber_prime=§b钢铁纤维 Prime
@@ -314,28 +411,42 @@ kuvaweapon.warframe_module.overclock_prime=§b超频 Prime
 kuvaweapon.warframe_module.charged_armor_prime=§b充能装甲 Prime
 kuvaweapon.warframe_module.treasure_thief_prime=§b密藏小偷 Prime
 
+# ========================================
+# 物品描述与提示文本
+# ========================================
 item.requiem_gem.tooltip=人们总是不知自身为何而战
-item.requiem_riddle.tooltip=忘却那深渊的故乡吧（使用后可直接查看谜语答案）
+item.requiem_riddle.tooltip=忘却那深渊的故乡吧(使用后可直接查看谜语答案)
 item.kuva.tooltip=双子女皇所渴望的神秘红色液体
 item.riven_sliver.tooltip=奇特之物
-item.lich_reliquary.tooltip=抬头吧，而后悔悟吧，我们是多么渺小
-item.lohk.first_tooltip=来自沉思之渊的视线，落在了我们身上
-item.lohk.second_tooltip=其源头为不明之物
-item.xata.first_tooltip=它的使者都是天上掉落的星星
-item.xata.second_tooltip=天和地都在燃烧
-item.jahu.first_tooltip=物质法则缺乏约束力
-item.jahu.second_tooltip=因为太阳和爱都已退散
-item.vome.first_tooltip=面对疯狂的宇宙，法律选择了臣服
-item.vome.second_tooltip=而那些坚定之人则去乞求
-item.ris.first_tooltip=光明的太空之中，飘荡着焦黑的星辰
-item.ris.second_tooltip=他们只会观察、指责、否认
-item.fass.first_tooltip=挣扎吧，呻吟吧，这就是我们的国度
-item.fass.second_tooltip=在这乱世之中，等待失败者的只有死亡
-item.netra.first_tooltip=腐朽的大军以震颤之音散布亵渎的言语
-item.netra.second_tooltip=执行那可怕的计划
-item.khra.first_tooltip=对于从相切位面演化出的宇宙来说
-item.khra.second_tooltip=我们是开拓者，也是终结者
+item.lich_reliquary.tooltip=抬头吧,而后悔悟吧,我们是多么渺小
 
+# ========================================
+# 安魂卡片描述 - 第一段
+# ========================================
+item.lohk.first_tooltip=来自沉思之渊的视线,落在了我们身上
+item.xata.first_tooltip=它的使者都是天上掉落的星星
+item.jahu.first_tooltip=物质法则缺乏约束力
+item.vome.first_tooltip=面对疯狂的宇宙,法律选择了臣服
+item.ris.first_tooltip=光明的太空之中,飘荡着焦黑的星辰
+item.fass.first_tooltip=挣扎吧,呻吟吧,这就是我们的国度
+item.netra.first_tooltip=腐朽的大军以震颤之音散布亵渎的言语
+item.khra.first_tooltip=对于从相切位面演化出的宇宙来说
+
+# ========================================
+# 安魂卡片描述 - 第二段
+# ========================================
+item.lohk.second_tooltip=其源头为不明之物
+item.xata.second_tooltip=天和地都在燃烧
+item.jahu.second_tooltip=因为太阳和爱都已退散
+item.vome.second_tooltip=而那些坚定之人则去乞求
+item.ris.second_tooltip=他们只会观察、指责、否认
+item.fass.second_tooltip=在这乱世之中,等待失败者的只有死亡
+item.netra.second_tooltip=执行那可怕的计划
+item.khra.second_tooltip=我们是开拓者,也是终结者
+
+# ========================================
+# 赤毒武器列表
+# ========================================
 item.kuva_shildeg.name=赤毒希尔德
 item.pennant.name=尖幡
 item.guandao_prime.name=关刀Prime
@@ -350,21 +461,16 @@ item.prisma_veritux.name=棱晶真理巨剑
 item.machete.name=马谢特砍刀
 item.caustacyst.name=灼蚀变体镰
 
+# ========================================
+# 配置界面 - 主分类
+# ========================================
 config.kuvalich.kuvalich.tooltip=赤毒玄骸
+config.kuvalich.kuvalich=赤毒玄骸系统
+config.kuvalich.kuvaweapon=赤毒武器属性
 
-attribute.name.generic.reachDistance=范围扩展
-
-message.kuvalich.getPoints=你的解密进度增加了%s点，目前解密进度为 %s/%s，注意界面显示的不一定是正确的顺序！
-message.kuvalich.maxLevel=你已经解密出所有答案，请按照顺序摆放卡片，击杀赤毒玄骸进行解密！
-message.kuvalich.failedToDecrypt=成功击杀玄骸，但谜语（或顺序）错误解密失败，让玄骸达到%s级。
-message.kuvalich.minimumLevelWeapon=解密成功，当前解密获得武器等级下限提升至%s级！
-message.kuvalich.maximumLevelWeapon=解密成功，当前解密获得武器等级上限提升至%s级！
-message.kuvalich.requiemRiddleAnswer=当前谜语的答案为 %s / %s / %s
-message.kuvalich.firstCorrect=解密失败，第一个答案正确！
-
-message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current riddle! Please decrypt any answer before using it!message.kuvalich.secondCorrect=解密失败，第二个答案正确！
-
-# ConfigKuvaLich 配置项翻译
+# ========================================
+# 配置界面 - 玄骸系统配置
+# ========================================
 config.kuvalich.kuvalich.enableDetailedLogging=启用详细调试日志
 config.kuvalich.kuvalich.minDecryptionProgress=最小解密进度
 config.kuvalich.kuvalich.maxDecryptionProgress=最大解密进度
@@ -393,7 +499,9 @@ config.kuvalich.kuvalich.kuvaSlaveSpawnWeight=赤毒奴仆生成权重
 config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount=赤毒奴仆最小生成数
 config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount=赤毒奴仆最大生成数
 
-# ConfigKuvaWeapon 配置项翻译
+# ========================================
+# 配置界面 - 武器属性配置
+# ========================================
 config.kuvalich.kuvaweapon.attributeMultiplier=武器属性倍率
 config.kuvalich.kuvaweapon.attackDamageKuvaShildeg=赤毒希尔德-攻击伤害
 config.kuvalich.kuvaweapon.attackSpeedKuvaShildeg=赤毒希尔德-攻击速度
@@ -434,3 +542,33 @@ config.kuvalich.kuvaweapon.movementSpeedMachete=马谢特砍刀-移动速度
 config.kuvalich.kuvaweapon.attackDamageCaustacyst=灼蚀变体镰-攻击伤害
 config.kuvalich.kuvaweapon.attackSpeedCaustacyst=灼蚀变体镰-攻击速度
 config.kuvalich.kuvaweapon.movementSpeedCaustacyst=灼蚀变体镰-移动速度
+
+# ========================================
+# 属性类型
+# ========================================
+attribute.name.generic.reachDistance=范围扩展
+
+# ========================================
+# 游戏内消息提示
+# ========================================
+message.kuvalich.getPoints=你的解密进度增加了%s点,目前解密进度为 %s/%s,注意界面显示的不一定是正确的顺序!
+message.kuvalich.maxLevel=你已经解密出所有答案,请按照顺序摆放卡片,击杀赤毒玄骸进行解密!
+message.kuvalich.failedToDecrypt=成功击杀玄骸,但谜语(或顺序)错误解密失败,让玄骸达到%s级。
+message.kuvalich.minimumLevelWeapon=解密成功,当前解密获得武器等级下限提升至%s级!
+message.kuvalich.maximumLevelWeapon=解密成功,当前解密获得武器等级上限提升至%s级!
+message.kuvalich.requiemRiddleAnswer=当前谜语的答案为 %s / %s / %s
+message.kuvalich.firstCorrect=解密失败,第一个答案正确!
+message.kuvalich.secondCorrect=解密失败,第二个答案正确!
+message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current riddle! Please decrypt any answer before using it!
+
+# ========== 配置文件翻译 ==========
+# 击杀叠层配置
+config.kuvalich.kuvalich.killStackSettings=击杀叠层系统配置
+config.kuvalich.kuvalich.maxStacksBaseDamage=基础伤害叠层最大层数
+config.kuvalich.kuvalich.maxStacksMultishot=多重射击叠层最大层数
+config.kuvalich.kuvalich.maxStacksMeleeCritMult=近战暴击伤害叠层最大层数
+config.kuvalich.kuvalich.maxStacksTriggerChance=触发几率叠层最大层数
+config.kuvalich.kuvalich.maxStacksAttackRange=攻击范围叠层最大层数
+config.kuvalich.kuvalich.maxStacksAttackSpeed=攻击速度叠层最大层数
+config.kuvalich.kuvalich.maxStacksBurstingRadius=爆炸半径叠层最大层数
+config.kuvalich.kuvalich.maxStacksFiringRate=射速叠层最大层数

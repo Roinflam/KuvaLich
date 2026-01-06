@@ -3,9 +3,9 @@ package pers.roinflam.kuvalich.init;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.common.registry.EntityEntryBuilder;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.EntityKuvaMaster;
 import pers.roinflam.kuvalich.entity.EntityKuvaSlave;
-import pers.roinflam.kuvalich.config.ConfigKuvaLich;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +21,9 @@ public class KuvaLichEntities {
             .tracker(64, 1, true)
             .egg(0X4B0082, 0xDC143C)
             .spawn(EnumCreatureType.MONSTER,
-                    ConfigKuvaLich.kuvaSlaveSpawnWeight,
-                    ConfigKuvaLich.kuvaSlaveMinSpawnCount,
-                    ConfigKuvaLich.kuvaSlaveMaxSpawnCount,
+                    ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight,
+                    ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount,
+                    ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount,
                     EntityKuvaSlave.BIOMES)
             .build();
 
@@ -34,9 +34,9 @@ public class KuvaLichEntities {
             .tracker(64, 1, true)
             .egg(0X9d00ff, 0X91001b)
             .spawn(EnumCreatureType.MONSTER,
-                    ConfigKuvaLich.kuvaLichSpawnWeight,
-                    ConfigKuvaLich.kuvaLichMinSpawnCount,
-                    ConfigKuvaLich.kuvaLichMaxSpawnCount,
+                    ModConfig.KUVA_LICH.kuvaLichSpawnWeight,
+                    ModConfig.KUVA_LICH.kuvaLichMinSpawnCount,
+                    ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount,
                     EntityKuvaSlave.BIOMES)
             .build();
 

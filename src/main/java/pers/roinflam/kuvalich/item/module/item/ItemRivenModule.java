@@ -131,7 +131,7 @@ public class ItemRivenModule extends ItemModuleBase {
             negativeTrendMagnification *= 1.5;
         }
 
-        List<String> itemAttributeType = new ArrayList<>(ItemModuleBase.itemAttributeType);
+        List<String> itemAttributeType = new ArrayList<>(ItemModuleBase.ITEM_ATTRIBUTE_TYPES);
         Collections.shuffle(itemAttributeType);
 
         List<String> hasAttributeType = new ArrayList<>();
@@ -142,11 +142,29 @@ public class ItemRivenModule extends ItemModuleBase {
                 break;
             }
             if (isMelee) {
-                if (attributeType.equals("remoteDamage") || attributeType.equals("arrowDamage") || attributeType.equals("projectileDamage") || attributeType.equals("multishot") || attributeType.equals("remoteCriticalStrikeProbability") || attributeType.equals("remoteCriticalStrikeMultiplier") || attributeType.equals("firing_rate") || attributeType.equals("bursting_radius")) {
+                // 近战武器排除的属性
+                if (attributeType.equals("remoteDamage") || attributeType.equals("arrowDamage") ||
+                        attributeType.equals("projectileDamage") || attributeType.equals("multishot") ||
+                        attributeType.equals("remoteCriticalStrikeProbability") ||
+                        attributeType.equals("remoteCriticalStrikeMultiplier") ||
+                        attributeType.equals("firing_rate") || attributeType.equals("bursting_radius") ||
+                        // ✅ 排除远程击杀叠加词条
+                        attributeType.equals("killStackMultishot") ||
+                        attributeType.equals("killStackBurstingRadius") ||
+                        attributeType.equals("killStackFiringRate")) {
                     continue;
                 }
             } else {
-                if (attributeType.equals("meleeDamage") || attributeType.equals("attackSpeed") || attributeType.equals("attackRange") || attributeType.equals("meleeCriticalStrikeProbability") || attributeType.equals("meleeCriticalStrikeMultiplier") || attributeType.equals("dashMeleeCriticalStrikeProbability") || attributeType.equals("dashAttackRange") || attributeType.equals("dashTriggerChance")) {
+                // 远程武器排除的属性
+                if (attributeType.equals("meleeDamage") || attributeType.equals("attackSpeed") ||
+                        attributeType.equals("attackRange") || attributeType.equals("meleeCriticalStrikeProbability") ||
+                        attributeType.equals("meleeCriticalStrikeMultiplier") ||
+                        attributeType.equals("dashMeleeCriticalStrikeProbability") ||
+                        attributeType.equals("dashAttackRange") || attributeType.equals("dashTriggerChance") ||
+                        // ✅ 排除近战击杀叠加词条
+                        attributeType.equals("killStackMeleeCriticalMultiplier") ||
+                        attributeType.equals("killStackAttackRange") ||
+                        attributeType.equals("killStackAttackSpeed")) {
                     continue;
                 }
             }
@@ -216,10 +234,12 @@ public class ItemRivenModule extends ItemModuleBase {
         if (attributeType.equals("remoteCriticalStrikeMultiplier")) {
             return 1.2;
         }
-        if (attributeType.equals("bane_of_undefined") || attributeType.equals("bane_of_undead") || attributeType.equals("bane_of_arthropod") || attributeType.equals("bane_of_illager")) {
+        if (attributeType.equals("bane_of_undefined") || attributeType.equals("bane_of_undead") ||
+                attributeType.equals("bane_of_arthropod") || attributeType.equals("bane_of_illager")) {
             return 0.45;
         }
-        if (attributeType.equals("fire") || attributeType.equals("ice") || attributeType.equals("poison") || attributeType.equals("electricity")) {
+        if (attributeType.equals("fire") || attributeType.equals("ice") ||
+                attributeType.equals("poison") || attributeType.equals("electricity")) {
             return 0.9;
         }
         if (attributeType.equals("firing_rate")) {
@@ -228,13 +248,7 @@ public class ItemRivenModule extends ItemModuleBase {
         if (attributeType.equals("triggerTime")) {
             return 1.0;
         }
-        if (attributeType.equals("slash")) {
-            return 1.2;
-        }
-        if (attributeType.equals("puncture")) {
-            return 1.2;
-        }
-        if (attributeType.equals("impact")) {
+        if (attributeType.equals("slash") || attributeType.equals("puncture") || attributeType.equals("impact")) {
             return 1.2;
         }
         if (attributeType.equals("dashMeleeCriticalStrikeProbability")) {
@@ -252,6 +266,33 @@ public class ItemRivenModule extends ItemModuleBase {
         if (attributeType.equals("bursting_radius")) {
             return 0.34;
         }
+
+        // ✅ 新增：击杀叠加词条基础数值
+        if (attributeType.equals("killStackBaseDamage")) {
+            return 0.04;  // 每层4%基础伤害
+        }
+        if (attributeType.equals("killStackMultishot")) {
+            return 0.30;  // 每层30%多重射击
+        }
+        if (attributeType.equals("killStackMeleeCriticalMultiplier")) {
+            return 0.30;  // 每层30%近战暴击伤害
+        }
+        if (attributeType.equals("killStackTriggerChance")) {
+            return 0.30;  // 每层30%触发几率
+        }
+        if (attributeType.equals("killStackAttackRange")) {
+            return 0.50;  // 每层50%攻击范围
+        }
+        if (attributeType.equals("killStackAttackSpeed")) {
+            return 0.08;  // 每层8%攻击速度
+        }
+        if (attributeType.equals("killStackBurstingRadius")) {
+            return 0.08;  // 每层8%爆炸半径
+        }
+        if (attributeType.equals("killStackFiringRate")) {
+            return 0.08;  // 每层8%射速
+        }
+
         return 0;
     }
 

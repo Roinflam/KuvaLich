@@ -1,3 +1,5 @@
+// 文件：KuvaBase.java
+// 路径：src/main/java/pers/roinflam/kuvalich/base/entity/KuvaBase.java
 package pers.roinflam.kuvalich.base.entity;
 
 import com.google.common.base.Predicate;
@@ -22,9 +24,9 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import pers.roinflam.kuvalich.blocks.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.blocks.capability.RequiemCard;
-import pers.roinflam.kuvalich.config.ConfigKuvaLich;
+import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.capability.RequiemCard;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
 import software.bernie.geckolib3.core.IAnimatable;
 import software.bernie.geckolib3.core.IAnimationTickable;
@@ -36,92 +38,32 @@ import software.bernie.geckolib3.core.manager.AnimationData;
 import software.bernie.geckolib3.core.manager.AnimationFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-/**
- * KuvaBase 是 KuvaLich mod 中特殊怪物实体的抽象基类。
- * 这个类继承自 Minecraft 的 EntityMob，并实现了 IAnimatable 和 IAnimationTickable 接口以支持高级实体动画。
- * <p>
- * 特性：
- * - 不死族属性
- * - 自定义 AI 行为
- * - 动态战斗状态追踪
- * - 自我治疗能力
- * - 特殊的伤害处理机制
- * - 使用 GeckoLib 的高级动画系统
- * <p>
- * 生成群系：
- * KuvaBase 实体可以在大多数主流群系中生成，包括但不限于：
- * - 各种类型的森林（普通、桦木、针叶林等）
- * - 平原和草原
- * - 沙漠和沙漠丘陵
- * - 丛林和丛林边缘
- * - 沼泽
- * - 各种山地和丘陵
- * - 海滩
- * - 河流
- * <p>
- * 被排除的特殊群系：
- * - 蘑菇岛
- * - 末地
- * - 下界
- * - 深海
- * - 冰刺平原
- * <p>
- * 注意：实际生成可能受到其他因素影响，如温度和潮湿度。
- */
 @Mod.EventBusSubscriber
 public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimationTickable {
+    private static final float ARROW_DAMAGE_MULTIPLIER = 1.25f;
+    private static final float PROJECTILE_DAMAGE_MULTIPLIER = 0.75f;
+    private static final float MAGIC_DAMAGE_MULTIPLIER = 0.75f;
+    private static final float KUVA_WEAPON_DAMAGE_MULTIPLIER = 0.25f;
 
-    /**
-     * 实体可以生成的生物群系
-     */
     public static final Biome[] BIOMES = {
-            // 森林类群系
             Biomes.FOREST, Biomes.FOREST_HILLS, Biomes.BIRCH_FOREST, Biomes.BIRCH_FOREST_HILLS,
             Biomes.ROOFED_FOREST, Biomes.TAIGA, Biomes.TAIGA_HILLS, Biomes.REDWOOD_TAIGA,
-            Biomes.REDWOOD_TAIGA_HILLS,
-
-            // 平原和草原
-            Biomes.PLAINS, Biomes.SAVANNA, Biomes.SAVANNA_PLATEAU,
-
-            // 沙漠
-            Biomes.DESERT, Biomes.DESERT_HILLS,
-
-            // 丛林
-            Biomes.JUNGLE, Biomes.JUNGLE_HILLS, Biomes.JUNGLE_EDGE,
-
-            // 沼泽
-            Biomes.SWAMPLAND,
-
-            // 山地和丘陵
-            Biomes.EXTREME_HILLS, Biomes.EXTREME_HILLS_WITH_TREES,
-
-            // 海滩
-            Biomes.BEACH, Biomes.STONE_BEACH, Biomes.COLD_BEACH,
-
-            // 河流
-            Biomes.RIVER,
-
-            // 寒冷群系
-            Biomes.ICE_PLAINS, Biomes.COLD_TAIGA, Biomes.COLD_TAIGA_HILLS,
-
-            // 温和海洋（但不包括深海）
-            Biomes.OCEAN,
-
-            // 蘑菇群系的边缘（如果你想让它们在靠近蘑菇岛的地方出现）
-            Biomes.MUSHROOM_ISLAND_SHORE,
-
-            // 各种变种群系
-            Biomes.MUTATED_FOREST, Biomes.MUTATED_TAIGA, Biomes.MUTATED_SWAMPLAND,
-            Biomes.MUTATED_ICE_FLATS, Biomes.MUTATED_JUNGLE, Biomes.MUTATED_JUNGLE_EDGE,
-            Biomes.MUTATED_BIRCH_FOREST, Biomes.MUTATED_BIRCH_FOREST_HILLS,
-            Biomes.MUTATED_ROOFED_FOREST, Biomes.MUTATED_REDWOOD_TAIGA,
-            Biomes.MUTATED_REDWOOD_TAIGA_HILLS, Biomes.MUTATED_EXTREME_HILLS,
-            Biomes.MUTATED_SAVANNA, Biomes.MUTATED_SAVANNA_ROCK
+            Biomes.REDWOOD_TAIGA_HILLS, Biomes.PLAINS, Biomes.SAVANNA, Biomes.SAVANNA_PLATEAU,
+            Biomes.DESERT, Biomes.DESERT_HILLS, Biomes.JUNGLE, Biomes.JUNGLE_HILLS, Biomes.JUNGLE_EDGE,
+            Biomes.SWAMPLAND, Biomes.EXTREME_HILLS, Biomes.EXTREME_HILLS_WITH_TREES,
+            Biomes.BEACH, Biomes.STONE_BEACH, Biomes.COLD_BEACH, Biomes.RIVER,
+            Biomes.ICE_PLAINS, Biomes.COLD_TAIGA, Biomes.COLD_TAIGA_HILLS, Biomes.OCEAN,
+            Biomes.MUSHROOM_ISLAND_SHORE, Biomes.MUTATED_FOREST, Biomes.MUTATED_TAIGA,
+            Biomes.MUTATED_SWAMPLAND, Biomes.MUTATED_ICE_FLATS, Biomes.MUTATED_JUNGLE,
+            Biomes.MUTATED_JUNGLE_EDGE, Biomes.MUTATED_BIRCH_FOREST, Biomes.MUTATED_BIRCH_FOREST_HILLS,
+            Biomes.MUTATED_ROOFED_FOREST, Biomes.MUTATED_REDWOOD_TAIGA, Biomes.MUTATED_REDWOOD_TAIGA_HILLS,
+            Biomes.MUTATED_EXTREME_HILLS, Biomes.MUTATED_SAVANNA, Biomes.MUTATED_SAVANNA_ROCK
     };
 
-    private static final DataParameter<Boolean> HAS_TARGET = EntityDataManager.createKey(KuvaBase.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> HAS_TARGET =
+            EntityDataManager.createKey(KuvaBase.class, DataSerializers.BOOLEAN);
+
     private static final Predicate<EntityMob> VALID_TARGET_PREDICATE =
             entityMob -> entityMob != null && IMob.VISIBLE_MOB_SELECTOR.apply(entityMob)
                     && !(entityMob instanceof EntityCreeper)
@@ -136,52 +78,79 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
 
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent evt) {
-        if (evt.getEntity().world.isRemote) return;
+        // 服务端处理
+        if (evt.getEntity() == null || evt.getEntity().world.isRemote) {
+            return;
+        }
 
         DamageSource damageSource = evt.getSource();
+        if (damageSource == null) {
+            return;
+        }
+
         EntityLivingBase target = evt.getEntityLiving();
+        if (target == null) {
+            return;
+        }
 
         if (damageSource.getTrueSource() instanceof KuvaBase) {
-            handleKuvaBaseDamage(evt, (KuvaBase) damageSource.getTrueSource());
+            applyKuvaBaseDamageBonus(evt, (KuvaBase) damageSource.getTrueSource());
         } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
-            handlePlayerDamage(evt, (EntityPlayer) damageSource.getTrueSource());
+            applyPlayerDamageModifier(evt, (EntityPlayer) damageSource.getTrueSource());
         }
 
         if (target instanceof KuvaBase) {
-            handleDamageToKuvaBase(evt, damageSource);
+            applyKuvaBaseDefense(evt, damageSource);
         } else if (target instanceof EntityPlayer) {
-            handleDamageToPlayer(evt, (EntityPlayer) target);
+            applyPlayerDefense(evt, (EntityPlayer) target);
         }
     }
 
-    private static void handleKuvaBaseDamage(LivingHurtEvent evt, KuvaBase kuvaBase) {
-        evt.setAmount(evt.getAmount() * (1 + (kuvaBase.getBattleTick() / 20f) * ConfigKuvaLich.battleBoost));
+    private static void applyKuvaBaseDamageBonus(LivingHurtEvent evt, KuvaBase kuvaBase) {
+        float multiplier = 1.0f + (kuvaBase.getBattleTick() / 20f) * ModConfig.KUVA_LICH.battleBoost;
+        evt.setAmount(evt.getAmount() * multiplier);
     }
 
-    private static void handlePlayerDamage(LivingHurtEvent evt, EntityPlayer player) {
+    private static void applyPlayerDamageModifier(LivingHurtEvent evt, EntityPlayer player) {
         RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-        float reduction = Math.min(0.999f, requiemCard.getKuvaLevel() * ConfigKuvaLich.reducedDamage);
-        evt.setAmount(evt.getAmount() * (1 - reduction));
+        if (requiemCard == null) {
+            return;
+        }
+
+        float reduction = Math.min(0.999f, requiemCard.getKuvaLevel() * ModConfig.KUVA_LICH.reducedDamage);
+        float damage = evt.getAmount() * (1.0f - reduction);
 
         if (KuvaWeapon.hasType(player.getHeldItem(player.getActiveHand()))) {
-            evt.setAmount(evt.getAmount() * 0.25f);
+            damage *= KUVA_WEAPON_DAMAGE_MULTIPLIER;
         }
+
+        evt.setAmount(damage);
     }
 
-    private static void handleDamageToKuvaBase(LivingHurtEvent evt, DamageSource damageSource) {
+    private static void applyKuvaBaseDefense(LivingHurtEvent evt, DamageSource damageSource) {
+        float damage = evt.getAmount();
+
         if (damageSource.getImmediateSource() instanceof EntityArrow) {
-            evt.setAmount(evt.getAmount() * 1.25f);
+            damage *= ARROW_DAMAGE_MULTIPLIER;
         } else if (damageSource.isProjectile()) {
-            evt.setAmount(evt.getAmount() * 0.75f);
+            damage *= PROJECTILE_DAMAGE_MULTIPLIER;
         }
+
         if (damageSource.isMagicDamage() && !damageSource.isProjectile()) {
-            evt.setAmount(evt.getAmount() * 0.75f);
+            damage *= MAGIC_DAMAGE_MULTIPLIER;
         }
+
+        evt.setAmount(damage);
     }
 
-    private static void handleDamageToPlayer(LivingHurtEvent evt, EntityPlayer player) {
+    private static void applyPlayerDefense(LivingHurtEvent evt, EntityPlayer player) {
         RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-        evt.setAmount(evt.getAmount() * (1 + requiemCard.getKuvaLevel() * ConfigKuvaLich.increaseDamage));
+        if (requiemCard == null) {
+            return;
+        }
+
+        float multiplier = 1.0f + requiemCard.getKuvaLevel() * ModConfig.KUVA_LICH.increaseDamage;
+        evt.setAmount(evt.getAmount() * multiplier);
     }
 
     @Override
@@ -246,10 +215,12 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
     @Override
     public void onLivingUpdate() {
         super.onLivingUpdate();
+
         if (!this.world.isRemote) {
             updateTargetStatus();
             handleHealing();
         }
+
         updateBattleTick();
     }
 
@@ -260,9 +231,15 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
     }
 
     private void handleHealing() {
-        if (world.getTotalWorldTime() % 20 == 0 && this.getHealth() < this.getMaxHealth()) {
-            this.heal(this.getDataManager().get(HAS_TARGET) ? getHasTargetTickHeal() : getTickHeal());
+        if (world.getTotalWorldTime() % 20 != 0 || this.getHealth() >= this.getMaxHealth()) {
+            return;
         }
+
+        float healAmount = this.getDataManager().get(HAS_TARGET)
+                ? getHasTargetTickHeal()
+                : getTickHeal();
+
+        this.heal(healAmount);
     }
 
     private void updateBattleTick() {
@@ -275,7 +252,10 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
 
     @Override
     public boolean attackEntityFrom(@Nonnull DamageSource source, float amount) {
-        return source.damageType.equalsIgnoreCase("fall") ? false : super.attackEntityFrom(source, amount);
+        if ("fall".equalsIgnoreCase(source.damageType)) {
+            return false;
+        }
+        return super.attackEntityFrom(source, amount);
     }
 
     @Override
@@ -311,17 +291,6 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
         return battleTick;
     }
 
-    /**
-     * 获取普通状态下的治疗量。
-     *
-     * @return 每 tick 的治疗量
-     */
     protected abstract float getTickHeal();
-
-    /**
-     * 获取有目标状态下的治疗量。
-     *
-     * @return 每 tick 的治疗量
-     */
     protected abstract float getHasTargetTickHeal();
 }

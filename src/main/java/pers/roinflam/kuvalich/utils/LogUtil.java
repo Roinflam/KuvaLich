@@ -1,16 +1,15 @@
-﻿package pers.roinflam.kuvalich.utils;
+package pers.roinflam.kuvalich.utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import pers.roinflam.kuvalich.config.ConfigKuvaLich;
+import pers.roinflam.kuvalich.config.ModConfig;
 
 /**
  * 日志工具类 - 双层日志系统
  *
  * 普通日志：始终输出（info/warn/error）
  * 详细日志：受配置控制（debug系列）
- *
- * @author RoinFlam
+
  */
 public class LogUtil {
     private static final Logger LOGGER = LogManager.getLogger(Reference.MOD_ID);
@@ -58,7 +57,7 @@ public class LogUtil {
      * @param message 调试消息
      */
     public static void debug(String message) {
-        if (ConfigKuvaLich.enableDetailedLogging) {
+        if (ModConfig.KUVA_LICH.enableDetailedLogging) {
             LOGGER.info("[详细] " + message);
         }
     }
@@ -74,7 +73,7 @@ public class LogUtil {
      */
     public static void debugCalculation(String type, String entity,
                                         double base, double modifier, double result) {
-        if (ConfigKuvaLich.enableDetailedLogging) {
+        if (ModConfig.KUVA_LICH.enableDetailedLogging) {
             LOGGER.info(String.format("[详细][%s] 实体: %s, 基础: %.2f, 修正: %.2f, 结果: %.2f",
                     type, entity, base, modifier, result));
         }
@@ -88,7 +87,7 @@ public class LogUtil {
      * @param details 详细信息
      */
     public static void debugEvent(String event, String entity, String details) {
-        if (ConfigKuvaLich.enableDetailedLogging) {
+        if (ModConfig.KUVA_LICH.enableDetailedLogging) {
             LOGGER.info(String.format("[详细][事件] %s - 实体: %s, 详情: %s",
                     event, entity, details));
         }
@@ -102,7 +101,7 @@ public class LogUtil {
      * @param details 详细信息
      */
     public static void debugItem(String action, String item, String details) {
-        if (ConfigKuvaLich.enableDetailedLogging) {
+        if (ModConfig.KUVA_LICH.enableDetailedLogging) {
             LOGGER.info(String.format("[详细][物品] %s - 物品: %s, 详情: %s",
                     action, item, details));
         }
@@ -116,7 +115,7 @@ public class LogUtil {
      * @param details 详细信息
      */
     public static void debugDecryption(String stage, int progress, String details) {
-        if (ConfigKuvaLich.enableDetailedLogging) {
+        if (ModConfig.KUVA_LICH.enableDetailedLogging) {
             LOGGER.info(String.format("[详细][解密] 阶段: %s, 进度: %d, 详情: %s",
                     stage, progress, details));
         }

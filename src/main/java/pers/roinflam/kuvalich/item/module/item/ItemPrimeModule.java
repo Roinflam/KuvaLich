@@ -166,6 +166,79 @@ public class ItemPrimeModule extends ItemModuleBase {
             ItemModuleBase.setType(itemStack, "fury");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
+
+
+            // 镀层分裂膛室 Galvanized Chamber
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_chamber");
+            ItemModuleBase.addAttributes(itemStack, "multishot", 0.80001f);              // +80%多重射击
+            ItemModuleBase.addAttributes(itemStack, "killStackMultishot", 0.30001f);     // 击杀时：+30%多重射击
+            ItemModuleBase.setType(itemStack, "galvanized_chamber");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 镀层武器才能 Galvanized Aptitude
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_aptitude");
+            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.80001f);           // +80%触发几率
+            ItemModuleBase.addAttributes(itemStack, "killStackBaseDamage", 0.04001f);     // 击杀时：目标身上每一种负面效果+4%基础伤害
+            ItemModuleBase.setType(itemStack, "weapon_aptitude");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 镀层斩铁 Galvanized Steel
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_steel");
+            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", 1.10001f);      // +110%近战暴击几率
+            ItemModuleBase.addAttributes(itemStack, "killStackMeleeCriticalMultiplier", 0.30001f);    // 击杀时：+30%近战暴击伤害
+            ItemModuleBase.setType(itemStack, "true_steel");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 镀层剑风 Galvanized Reach
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_reach");
+            ItemModuleBase.addAttributes(itemStack, "attackRange", 1.10001f);            // +110%攻击范围
+            ItemModuleBase.addAttributes(itemStack, "killStackAttackRange", 0.50001f);   // 击杀时：+50%攻击范围
+            ItemModuleBase.setType(itemStack, "reach");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 镀层狂暴 Galvanized Fury
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_fury");
+            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.30001f);            // +30%攻击速度
+            ItemModuleBase.addAttributes(itemStack, "killStackAttackSpeed", 0.08001f);   // 击杀时：+8%攻击速度
+            ItemModuleBase.setType(itemStack, "fury");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 镀层烈焰风暴 Galvanized Firestorm
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_firestorm");
+            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.24001f);              // +24%爆炸半径
+            ItemModuleBase.addAttributes(itemStack, "killStackBurstingRadius", 0.08001f);      // 击杀时：+8%爆炸半径
+            ItemModuleBase.setType(itemStack, "firestorm");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 镀层灵敏扳机 Galvanized Speed Trigger
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_speed_trigger");
+            ItemModuleBase.addAttributes(itemStack, "firing_rate", 0.60001f);              // +60%射速（弓类效果加倍）
+            ItemModuleBase.addAttributes(itemStack, "killStackFiringRate", 0.08001f);      // 击杀时：+8%射速（弓类效果加倍）
+            ItemModuleBase.setType(itemStack, "speed_trigger");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 镀层无尽苦难 Galvanized Continuous Misery
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_continuous_misery");
+            ItemModuleBase.addAttributes(itemStack, "triggerTime", 1.0001f);              // +100%触发时间
+            ItemModuleBase.addAttributes(itemStack, "killStackTriggerChance", 0.30001f);  // 击杀时：+30%触发几率(4层满=120%)
+            ItemModuleBase.setType(itemStack, "continuous_misery");  // 使用普通版type，产生冲突
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
         }
     }
 

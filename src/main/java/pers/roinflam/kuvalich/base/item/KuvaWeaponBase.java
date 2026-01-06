@@ -10,11 +10,12 @@ import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.NonNullList;
 import net.minecraftforge.common.util.EnumHelper;
 import net.minecraftforge.fml.common.Mod;
 
-import pers.roinflam.kuvalich.config.ConfigKuvaLich;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
 import pers.roinflam.kuvalich.tabs.KuvaLichTab;
@@ -50,7 +51,7 @@ public abstract class KuvaWeaponBase extends ItemSword implements IHasModel {
     @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
         if (this.isInCreativeTab(tab)) {
-            items.add(KuvaWeapon.getItem(this, ConfigKuvaLich.baseMinimumLevel, ConfigKuvaLich.maximumLevel));
+            items.add(KuvaWeapon.getItem(this, ModConfig.KUVA_LICH.baseMinimumLevel, ModConfig.KUVA_LICH.maximumLevel));
         }
     }
 
@@ -108,5 +109,35 @@ public abstract class KuvaWeaponBase extends ItemSword implements IHasModel {
 
     public int getMaxHealthOperation() {
         return 0;
+    }
+
+    /**
+     * 统一设置武器基础属性（减少重复代码）
+     *
+     * @param itemStack 武器物品堆栈
+     * @param damage 基础伤害倍率
+     * @param critProb 暴击概率
+     * @param critMult 暴击倍率
+     * @param triggerChance 触发概率
+     * @return 设置后的物品堆栈
+     */
+    protected ItemStack setBaseWeaponAttribute(ItemStack itemStack,
+                                               double damage,
+                                               double critProb,
+                                               double critMult,
+                                               double triggerChance) {
+        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
+        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
+        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+
+        weaponModule.setDouble("damage", damage);
+        weaponModule.setDouble("criticalStrikeProbability", critProb);
+        weaponModule.setDouble("criticalStrikeMultiplier", critMult);
+        weaponModule.setDouble("triggerChance", triggerChance);
+
+        tag.setTag(Reference.MOD_ID + "_weaponModules", weaponModule);
+        nbtTagCompound.setTag("tag", tag);
+        itemStack.setTagCompound(tag);
+        return itemStack;
     }
 }

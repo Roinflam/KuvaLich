@@ -1,4 +1,6 @@
-package pers.roinflam.kuvalich.blocks.capability;
+// 文件：RequiemCard.java
+// 路径：src/main/java/pers/roinflam/kuvalich/blocks/capability/RequiemCard.java
+package pers.roinflam.kuvalich.capability;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -9,7 +11,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
-import pers.roinflam.kuvalich.config.ConfigKuvaLich;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
 @Mod.EventBusSubscriber
@@ -31,36 +33,31 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     private int minimumLevelWeapon;
     private int maximumLevelWeapon;
 
-
     public RequiemCard() {
-        this.oneCard = ItemStack.EMPTY;
-        this.twoCard = ItemStack.EMPTY;
-        this.threeCard = ItemStack.EMPTY;
-        this.oneRiddle = -1;
-        this.twoRiddle = -1;
-        this.threeRiddle = -1;
-        this.oneAnswer = -1;
-        this.twoAnswer = -1;
-        this.threeAnswer = -1;
-        this.unlockedCardStatus = 0;
-        this.decryptionProgress = 0;
-        this.kuvaLevel = 0;
-        this.minimumLevelWeapon = ConfigKuvaLich.baseMinimumLevel;
-        this.maximumLevelWeapon = ConfigKuvaLich.baseMaximumLevel;
+        reset();
     }
 
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone evt) {
         Entity entity = evt.getEntity();
-        if (!entity.world.isRemote && entity instanceof EntityPlayer) {
-            EntityPlayer entityPlayer = (EntityPlayer) entity;
-            RequiemCard requiemCard = entityPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-            RequiemCard originalRequiemCard = evt.getOriginal().getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+        if (entity == null || entity.world.isRemote || !(entity instanceof EntityPlayer)) {
+            return;
+        }
+
+        EntityPlayer entityPlayer = (EntityPlayer) entity;
+        RequiemCard requiemCard = entityPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+        RequiemCard originalRequiemCard = evt.getOriginal().getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+
+        if (requiemCard != null && originalRequiemCard != null) {
             requiemCard.clone(originalRequiemCard);
         }
     }
 
     public void clone(RequiemCard requiemCard) {
+        if (requiemCard == null) {
+            return;
+        }
+
         this.setOneCard(requiemCard.getOneCard());
         this.setTwoCard(requiemCard.getTwoCard());
         this.setThreeCard(requiemCard.getThreeCard());
@@ -98,7 +95,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     public void setOneCard(ItemStack oneCard) {
-        this.oneCard = oneCard;
+        this.oneCard = oneCard != null ? oneCard : ItemStack.EMPTY;
     }
 
     public ItemStack getTwoCard() {
@@ -106,7 +103,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     public void setTwoCard(ItemStack twoCard) {
-        this.twoCard = twoCard;
+        this.twoCard = twoCard != null ? twoCard : ItemStack.EMPTY;
     }
 
     public int getOneAnswer() {
@@ -146,7 +143,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     public void setThreeCard(ItemStack threeCard) {
-        this.threeCard = threeCard;
+        this.threeCard = threeCard != null ? threeCard : ItemStack.EMPTY;
     }
 
     public int getOneRiddle() {
@@ -186,127 +183,107 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     public boolean isCorrectAnswer() {
-        if (unlockedCardStatus > 0 && isReadyCard()) {
-            RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
-            RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
-            RequiemCardBase three = (RequiemCardBase) threeCard.getItem();
-            return one.getID() == oneAnswer && two.getID() == twoAnswer && three.getID() == threeAnswer;
+        if (unlockedCardStatus <= 0 || !isReadyCard()) {
+            return false;
         }
-        return false;
+
+        RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
+        RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
+        RequiemCardBase three = (RequiemCardBase) threeCard.getItem();
+
+        return one.getID() == oneAnswer && two.getID() == twoAnswer && three.getID() == threeAnswer;
     }
 
     public boolean isFirstCorrectAnswer() {
-        if (unlockedCardStatus > 0 && isReadyCard()) {
-            RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
-            return one.getID() == oneAnswer;
+        if (unlockedCardStatus <= 0 || !isReadyCard()) {
+            return false;
         }
-        return false;
+
+        RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
+        return one.getID() == oneAnswer;
     }
 
     public boolean isTwoCorrectAnswer() {
-        if (unlockedCardStatus > 0 && isReadyCard()) {
-            RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
-            return two.getID() == twoAnswer;
+        if (unlockedCardStatus <= 0 || !isReadyCard()) {
+            return false;
         }
-        return false;
+
+        RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
+        return two.getID() == twoAnswer;
     }
 
     public int getLockCard(int level) {
-        if (level == 1) {
-            return oneAnswer;
+        switch (level) {
+            case 1: return oneAnswer;
+            case 2: return twoAnswer;
+            case 3: return threeAnswer;
+            default: return -1;
         }
-        if (level == 2) {
-            return twoAnswer;
-        }
-        if (level == 3) {
-            return threeAnswer;
-        }
-        return -1;
     }
 
     public int getPointsRequired() {
         switch (unlockedCardStatus) {
-            case 0: {
-                return ConfigKuvaLich.firstStage;
-            }
-            case 1: {
-                return ConfigKuvaLich.secondStage;
-            }
-            case 2: {
-                return ConfigKuvaLich.thirdStage;
-            }
-            default: {
-                return -1;
-            }
+            case 0: return ModConfig.KUVA_LICH.firstStage;
+            case 1: return ModConfig.KUVA_LICH.secondStage;
+            case 2: return ModConfig.KUVA_LICH.thirdStage;
+            default: return -1;
         }
     }
 
     public boolean addPotion(int potion) {
         switch (unlockedCardStatus) {
-            case 0: {
-                decryptionProgress += potion;
-                if (decryptionProgress >= ConfigKuvaLich.firstStage) {
-                    int one, two, three;
-                    do {
-                        one = RandomUtil.getInt(0, 7);
-                        two = RandomUtil.getInt(0, 7);
-                        three = RandomUtil.getInt(0, 7);
-                    } while (one == two || one == three || two == three);
-                    this.oneAnswer = one;
-                    this.twoAnswer = two;
-                    this.threeAnswer = three;
-                    unlockedCardStatus += 1;
-                    decryptionProgress -= ConfigKuvaLich.firstStage;
-                    addCard(unlockedCardStatus);
-                }
-                return true;
-            }
-            case 1: {
-                decryptionProgress += potion;
-                if (decryptionProgress >= ConfigKuvaLich.secondStage) {
-                    unlockedCardStatus += 1;
-                    decryptionProgress -= ConfigKuvaLich.secondStage;
-                    addCard(unlockedCardStatus);
-                }
-                return true;
-            }
-            case 2: {
-                decryptionProgress += potion;
-                if (decryptionProgress >= ConfigKuvaLich.thirdStage) {
-                    unlockedCardStatus += 1;
-                    decryptionProgress = 0;
-                    addCard(unlockedCardStatus);
-                }
-                return true;
-            }
-            default: {
+            case 0:
+                return processStage(potion, ModConfig.KUVA_LICH.firstStage);
+            case 1:
+                return processStage(potion, ModConfig.KUVA_LICH.secondStage);
+            case 2:
+                return processStage(potion, ModConfig.KUVA_LICH.thirdStage);
+            default:
                 return false;
-            }
         }
     }
 
+    /**
+     * 处理阶段进度
+     */
+    private boolean processStage(int potion, int threshold) {
+        decryptionProgress += potion;
+
+        if (decryptionProgress >= threshold) {
+            if (unlockedCardStatus == 0) {
+                generateAnswers();
+            }
+
+            unlockedCardStatus++;
+            decryptionProgress -= threshold;
+            addCard(unlockedCardStatus);
+        }
+
+        return true;
+    }
+
+    /**
+     * 生成答案
+     */
+    private void generateAnswers() {
+        int one, two, three;
+        do {
+            one = RandomUtil.getInt(0, 7);
+            two = RandomUtil.getInt(0, 7);
+            three = RandomUtil.getInt(0, 7);
+        } while (one == two || one == three || two == three);
+
+        this.oneAnswer = one;
+        this.twoAnswer = two;
+        this.threeAnswer = three;
+    }
+
     public void reset() {
-        if (oneCard.getItemDamage() < 2) {
-            oneCard.setItemDamage(oneCard.getItemDamage() + 1);
-        } else {
-            if (oneCard.isItemStackDamageable()) {
-                this.oneCard = ItemStack.EMPTY;
-            }
-        }
-        if (twoCard.getItemDamage() < 2) {
-            twoCard.setItemDamage(twoCard.getItemDamage() + 1);
-        } else {
-            if (twoCard.isItemStackDamageable()) {
-                this.twoCard = ItemStack.EMPTY;
-            }
-        }
-        if (threeCard.getItemDamage() < 2) {
-            threeCard.setItemDamage(threeCard.getItemDamage() + 1);
-        } else {
-            if (threeCard.isItemStackDamageable()) {
-                this.threeCard = ItemStack.EMPTY;
-            }
-        }
+        // 降低卡片耐久度
+        degradeCard(oneCard);
+        degradeCard(twoCard);
+        degradeCard(threeCard);
+
         this.oneRiddle = -1;
         this.twoRiddle = -1;
         this.threeRiddle = -1;
@@ -318,53 +295,74 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         this.kuvaLevel = 0;
     }
 
+    /**
+     * 降低卡片耐久度
+     */
+    private void degradeCard(ItemStack card) {
+        if (card == null || card.isEmpty()) {
+            return;
+        }
+
+        if (card.getItemDamage() < 2) {
+            card.setItemDamage(card.getItemDamage() + 1);
+        } else if (card.isItemStackDamageable()) {
+            card = ItemStack.EMPTY;
+        }
+    }
+
     public void addCard(int level) {
-        if (!isUnlockAll()) {
-            while (true) {
-                int id = getLockCard(level);
-                int slot = RandomUtil.getInt(0, 2);
-                if (slot == 0) {
-                    if (oneRiddle == -1) {
-                        oneRiddle = id;
-                        return;
-                    }
-                } else if (slot == 1) {
-                    if (twoRiddle == -1) {
-                        twoRiddle = id;
-                        return;
-                    }
-                } else if (slot == 2) {
-                    if (threeRiddle == -1) {
-                        threeRiddle = id;
-                        return;
-                    }
-                }
+        if (isUnlockAll()) {
+            return;
+        }
+
+        int id = getLockCard(level);
+        if (id == -1) {
+            return;
+        }
+
+        // 随机选择槽位
+        while (true) {
+            int slot = RandomUtil.getInt(0, 2);
+
+            if (slot == 0 && oneRiddle == -1) {
+                oneRiddle = id;
+                return;
+            } else if (slot == 1 && twoRiddle == -1) {
+                twoRiddle = id;
+                return;
+            } else if (slot == 2 && threeRiddle == -1) {
+                threeRiddle = id;
+                return;
             }
         }
     }
 
     @Override
     public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbtTagCompound = new NBTTagCompound();
-        nbtTagCompound.setTag("oneCard", oneCard.serializeNBT());
-        nbtTagCompound.setTag("twoCard", twoCard.serializeNBT());
-        nbtTagCompound.setTag("threeCard", threeCard.serializeNBT());
-        nbtTagCompound.setInteger("oneRiddle", oneRiddle);
-        nbtTagCompound.setInteger("twoRiddle", twoRiddle);
-        nbtTagCompound.setInteger("threeRiddle", threeRiddle);
-        nbtTagCompound.setInteger("oneAnswer", oneAnswer);
-        nbtTagCompound.setInteger("twoAnswer", twoAnswer);
-        nbtTagCompound.setInteger("threeAnswer", threeAnswer);
-        nbtTagCompound.setInteger("unlockedCardStatus", unlockedCardStatus);
-        nbtTagCompound.setInteger("decryptionProgress", decryptionProgress);
-        nbtTagCompound.setInteger("kuvaLevel", kuvaLevel);
-        nbtTagCompound.setInteger("minimumLevelWeapon", minimumLevelWeapon);
-        nbtTagCompound.setInteger("maximumLevelWeapon", maximumLevelWeapon);
-        return nbtTagCompound;
+        NBTTagCompound nbt = new NBTTagCompound();
+        nbt.setTag("oneCard", oneCard.serializeNBT());
+        nbt.setTag("twoCard", twoCard.serializeNBT());
+        nbt.setTag("threeCard", threeCard.serializeNBT());
+        nbt.setInteger("oneRiddle", oneRiddle);
+        nbt.setInteger("twoRiddle", twoRiddle);
+        nbt.setInteger("threeRiddle", threeRiddle);
+        nbt.setInteger("oneAnswer", oneAnswer);
+        nbt.setInteger("twoAnswer", twoAnswer);
+        nbt.setInteger("threeAnswer", threeAnswer);
+        nbt.setInteger("unlockedCardStatus", unlockedCardStatus);
+        nbt.setInteger("decryptionProgress", decryptionProgress);
+        nbt.setInteger("kuvaLevel", kuvaLevel);
+        nbt.setInteger("minimumLevelWeapon", minimumLevelWeapon);
+        nbt.setInteger("maximumLevelWeapon", maximumLevelWeapon);
+        return nbt;
     }
 
     @Override
     public void deserializeNBT(NBTTagCompound nbt) {
+        if (nbt == null) {
+            return;
+        }
+
         this.oneCard = new ItemStack(nbt.getCompoundTag("oneCard"));
         this.twoCard = new ItemStack(nbt.getCompoundTag("twoCard"));
         this.threeCard = new ItemStack(nbt.getCompoundTag("threeCard"));

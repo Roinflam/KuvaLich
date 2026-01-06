@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.blocks.capability.provider;
+package pers.roinflam.kuvalich.capability.provider;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
@@ -6,8 +6,8 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 
 
-import pers.roinflam.kuvalich.blocks.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.blocks.capability.WarframeModules;
+import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.capability.WarframeModules;
 
 public class WarframeModuleProvider implements ICapabilitySerializable<NBTTagCompound> {
     private final WarframeModules instance;
