@@ -39,6 +39,7 @@ public class KuvaLichItems {
     public static final Caustacyst CAUSTACYST = new Caustacyst("caustacyst");
     public static final Item REQUIEM_GEM = new RequiemGem("requiem_gem", KuvaLichTab.getTab());
     public static final Item REQUIEM_RIDDLE = new RequiemRiddle("requiem_riddle", KuvaLichTab.getTab());
+    public static final Item REQUIEM_ULTIMATUM = new RequiemUltimatum("requiem_ultimatum", KuvaLichTab.getTab());
     public static final Item LICH_RELIQUARY = new LichReliquary("lich_reliquary", KuvaLichTab.getTab());
     public static final Item KUVA = new Kuva("kuva", KuvaLichTab.getTab());
     public static final Item RivenSliver = new RivenSliver("riven_sliver", KuvaLichTab.getTab());

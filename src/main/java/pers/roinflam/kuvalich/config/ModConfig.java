@@ -47,6 +47,15 @@ public final class ModConfig {
         public boolean enableDetailedLogging = false;
 
         @Config.Comment({
+                "安魂通牒掉落几率(%) / Requiem Ultimatum Drop Chance (%)",
+                "成功破解赤毒玄骸后掉落安魂通牒的几率",
+                "Drop chance of Requiem Ultimatum after successful decryption"
+        })
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.requiemUltimatumDropChance")
+        @Config.RangeDouble(min = 0, max = 100)
+        public double requiemUltimatumDropChance = 25.0;
+
+        @Config.Comment({
                 "每次击杀获得的最小解密进度 / Minimum Decryption Progress Per Kill",
                 "• 1 = 非常慢 / Very slow",
                 "• 3 = 正常(默认) / Normal (default)",

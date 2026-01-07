@@ -33,6 +33,7 @@ item.kuva.name=赤毒
 item.lich_reliquary.name=玄骸之遗
 item.requiem_gem.name=安魂宝石
 item.requiem_riddle.name=安魂谜语
+item.requiem_ultimatum.name=安魂通牒
 item.riven_sliver.name=裂罅碎块
 
 # ========================================
@@ -309,6 +310,7 @@ kuvaweapon.item_module.collision_force=§6冲击巨力
 kuvaweapon.item_module.creeping_bullseye=§6匍匐靶心
 kuvaweapon.item_module.critical_delay=§6关键延迟
 kuvaweapon.item_module.eldest_elemental_envoy=§6大元素使
+kuvaweapon.item_module.elemental_strike=§6元素打击
 kuvaweapon.item_module.firestorm=§6烈焰风暴
 kuvaweapon.item_module.frostmourne=§6霜之哀伤
 kuvaweapon.item_module.hammer_shot=§6重锤射击
@@ -323,9 +325,11 @@ kuvaweapon.item_module.katana_energy=§6宽刃剑气
 kuvaweapon.item_module.maiming_strike=§6致残突击
 kuvaweapon.item_module.malignant_force=§6致命火力
 kuvaweapon.item_module.rain_of_arrows=§6箭如雨下
+kuvaweapon.item_module.reflex_coil=§6反射线圈
 kuvaweapon.item_module.rending_strike=§6撕裂打击
 kuvaweapon.item_module.residual_epidemic=§6残疫
 kuvaweapon.item_module.rime_rounds=§6白霜弹头
+kuvaweapon.item_module.split_chamber=§6分裂膛室
 kuvaweapon.item_module.spoiled_strike=§6腐坏打击
 kuvaweapon.item_module.sundering_strike=§6破甲
 kuvaweapon.item_module.tainted_mag=§6腐败弹匣
@@ -476,6 +480,7 @@ kuvaweapon.item_module_info=已装备以下模组:
 # ========================================
 # 战甲模组 - 青铜品质(黄色)
 # ========================================
+kuvaweapon.warframe_module.aviator=§e飞行员
 kuvaweapon.warframe_module.beast_of_burden=§e社畜
 kuvaweapon.warframe_module.bones=§e骸骨
 kuvaweapon.warframe_module.charged_armor=§e充能装甲
@@ -484,14 +489,13 @@ kuvaweapon.warframe_module.gladiator_aegis=§e角斗士 圣盾
 kuvaweapon.warframe_module.inspire=§e振奋
 kuvaweapon.warframe_module.lightning_rod=§e避雷针
 kuvaweapon.warframe_module.maliwan=§e马里旺
+kuvaweapon.warframe_module.mobilize=§e跃动信号
 kuvaweapon.warframe_module.plated_armor=§e镀层 甲壳
 kuvaweapon.warframe_module.redirection=§e蓄能重划
 kuvaweapon.warframe_module.steel_fiber=§e钢铁纤维
 kuvaweapon.warframe_module.vigilante_vigor=§e私法 活力
 kuvaweapon.warframe_module.vitality=§e生命力
 kuvaweapon.warframe_module.wild=§e狂野之心
-kuvaweapon.warframe_module.mobilize=§e跃动信号
-kuvaweapon.warframe_module.aviator=§e飞行员
 
 # ========================================
 # 战甲模组 - 白银品质(蓝色)
@@ -564,6 +568,7 @@ item.kuva.tooltip=双子女皇所渴望的神秘红色液体
 item.lich_reliquary.tooltip=抬头吧,而后悔悟吧,我们是多么渺小
 item.requiem_gem.tooltip=人们总是不知自身为何而战
 item.requiem_riddle.tooltip=忘却那深渊的故乡吧(使用后可直接查看谜语答案)
+item.requiem_ultimatum.tooltip=使用后召唤一个赤毒玄骸。小心使用
 item.riven_sliver.tooltip=奇特之物
 
 # ========================================
@@ -640,6 +645,7 @@ config.kuvalich.kuvalich.minDecryptionProgress=最小解密进度
 config.kuvalich.kuvalich.minimumLevel=绝对最低武器等级
 config.kuvalich.kuvalich.minimumLevelCapIncrease=最小等级下限提升
 config.kuvalich.kuvalich.reducedDamage=失败后伤害削减
+config.kuvalich.kuvalich.requiemUltimatumDropChance=安魂通牒掉落几率
 config.kuvalich.kuvalich.secondStage=第二阶段所需点数
 config.kuvalich.kuvalich.thirdStage=第三阶段所需点数
 config.kuvalich.kuvalich.upgradeLimit=武器升级次数上限

@@ -1,5 +1,3 @@
-// 文件：EntityKuvaMaster.java
-// 路径：src/main/java/pers/roinflam/kuvalich/entity/EntityKuvaMaster.java
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.entity.Entity;
@@ -31,6 +29,12 @@ import pers.roinflam.kuvalich.utils.util.EntityUtil;
 
 import javax.annotation.Nonnull;
 
+/**
+ * 赤毒玄骸实体类
+ *
+ * 高级敌对生物，拥有AOE攻击能力
+ * 击杀后可获得高级战利品和解密进度
+ */
 public class EntityKuvaMaster extends KuvaBase {
     public static final String NAME = "kuva_master";
     public static final String ID = Reference.MOD_ID + ":" + NAME;
@@ -86,6 +90,9 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 攻击周围实体（AOE）
+     *
+     * @param damage 伤害值
+     * @param excludeEntity 排除的实体（主目标）
      */
     private void attackNearbyEntities(float damage, Entity excludeEntity) {
         for (EntityLivingBase nearby : EntityUtil.getNearbyEntities(
@@ -100,6 +107,8 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 应用击退效果
+     *
+     * @param target 目标实体
      */
     private void applyKnockback(Entity target) {
         target.motionX *= KNOCKBACK_MULTIPLIER;
@@ -137,6 +146,8 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 处理玩家击杀
+     *
+     * @param player 击杀玩家
      */
     private void handlePlayerKill(EntityPlayer player) {
         RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
@@ -162,6 +173,10 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 处理成功破解
+     *
+     * @param player 玩家
+     * @param requiemCard 安魂卡片数据
+     * @param pos 掉落位置
      */
     private void handleSuccessfulDecryption(EntityPlayer player, RequiemCard requiemCard, BlockPos pos) {
         requiemCard.reset();
@@ -182,12 +197,19 @@ public class EntityKuvaMaster extends KuvaBase {
         // 掉落高级模组
         dropAdvancedModule(pos);
 
+        // 掉落安魂通牒（可配置几率）
+        if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.requiemUltimatumDropChance)) {
+            spawnItem(pos, new ItemStack(KuvaLichItems.REQUIEM_ULTIMATUM, 1));
+        }
+
         // 提升武器等级上限
-        upgradWeaponLevelCap(player, requiemCard);
+        upgradeWeaponLevelCap(player, requiemCard);
     }
 
     /**
      * 掉落高级模组
+     *
+     * @param pos 掉落位置
      */
     private void dropAdvancedModule(BlockPos pos) {
         ItemStack module;
@@ -205,8 +227,11 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 提升武器等级上限
+     *
+     * @param player 玩家
+     * @param requiemCard 安魂卡片数据
      */
-    private void upgradWeaponLevelCap(EntityPlayer player, RequiemCard requiemCard) {
+    private void upgradeWeaponLevelCap(EntityPlayer player, RequiemCard requiemCard) {
         int randomNum = RandomUtil.getInt(
                 ModConfig.KUVA_LICH.minimumLevelCapIncrease,
                 ModConfig.KUVA_LICH.maximumLevelCapIncrease
@@ -229,6 +254,9 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 处理破解失败
+     *
+     * @param player 玩家
+     * @param requiemCard 安魂卡片数据
      */
     private void handleFailedDecryption(EntityPlayer player, RequiemCard requiemCard) {
         if (requiemCard.isFirstCorrectAnswer()) {
@@ -244,6 +272,9 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 给予解密进度
+     *
+     * @param player 玩家
+     * @param requiemCard 安魂卡片数据
      */
     private void giveDecryptionProgress(EntityPlayer player, RequiemCard requiemCard) {
         int addPotion = RandomUtil.getInt(
@@ -264,7 +295,11 @@ public class EntityKuvaMaster extends KuvaBase {
     }
 
     /**
-     * 发送消息给玩家
+     * 发送消息给玩家（默认绿色）
+     *
+     * @param player 玩家
+     * @param key 本地化键
+     * @param args 参数
      */
     private void sendMessage(EntityPlayer player, String key, Object... args) {
         sendMessage(player, key, TextFormatting.GREEN, args);
@@ -272,6 +307,11 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 发送带颜色的消息给玩家
+     *
+     * @param player 玩家
+     * @param key 本地化键
+     * @param color 文本颜色
+     * @param args 参数
      */
     private void sendMessage(EntityPlayer player, String key, TextFormatting color, Object... args) {
         TextComponentTranslation message = new TextComponentTranslation(key, args);
@@ -281,6 +321,9 @@ public class EntityKuvaMaster extends KuvaBase {
 
     /**
      * 生成掉落物
+     *
+     * @param pos 掉落位置
+     * @param itemStack 物品堆
      */
     private void spawnItem(BlockPos pos, ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
