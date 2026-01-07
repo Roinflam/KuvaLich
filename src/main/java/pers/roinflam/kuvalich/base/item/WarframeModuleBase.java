@@ -27,6 +27,11 @@ public abstract class WarframeModuleBase extends ModuleBase {
                     "diggingSpeed", "responseRate", "itemDropMultiplier",
                     "jumpBoost", "fallProtection",
 
+                    // ✅ 新增：固定上限属性（锁定为固定值，不是百分比加成）
+                    "fixedHealth",    // 固定生命值上限
+                    "fixedShield",    // 固定护盾容量上限
+                    "fixedArmor",     // 固定护甲上限
+
                     // 战甲击杀叠加词条（执刑官系列）
                     "killStackHealth",
                     "killStackShield",
@@ -80,20 +85,35 @@ public abstract class WarframeModuleBase extends ModuleBase {
         }
 
         for (Map.Entry<String, Double> attributeTag : ModuleBase.getAttributes(itemStack)) {
-            String prefix = attributeTag.getValue() >= 0 ? "+" : "";
-            int percentage = (int) (attributeTag.getValue() * 100);
             String attributeKey = attributeTag.getKey();
+            double value = attributeTag.getValue();
 
-            String attributeName;
-            if (attributeKey.startsWith("killStack")) {
-                int maxStacks = getMaxStacksForAttribute(attributeKey);
-                attributeName = I18n.format("kuvaweapon.warframe_attribute_type." + attributeKey, maxStacks);
+            // ✅ 固定属性显示为固定数值，不显示百分比
+            if (attributeKey.equals("fixedHealth") ||
+                    attributeKey.equals("fixedShield") ||
+                    attributeKey.equals("fixedArmor")) {
+
+                String attributeName = I18n.format("kuvaweapon.warframe_attribute_type." + attributeKey);
+                TextFormatting color = getModuleColor(item);
+
+                // 显示为固定值（不显示百分号）
+                evt.getToolTip().add(number++, color + "+" + (int) value + " " + attributeName);
             } else {
-                attributeName = I18n.format("kuvaweapon.warframe_attribute_type." + attributeKey);
-            }
+                // 原有的百分比显示逻辑
+                String prefix = value >= 0 ? "+" : "";
+                int percentage = (int) (value * 100);
+                String attributeName;
 
-            TextFormatting color = getModuleColor(item);
-            evt.getToolTip().add(number++, color + prefix + percentage + "% " + attributeName);
+                if (attributeKey.startsWith("killStack")) {
+                    int maxStacks = getMaxStacksForAttribute(attributeKey);
+                    attributeName = I18n.format("kuvaweapon.warframe_attribute_type." + attributeKey, maxStacks);
+                } else {
+                    attributeName = I18n.format("kuvaweapon.warframe_attribute_type." + attributeKey);
+                }
+
+                TextFormatting color = getModuleColor(item);
+                evt.getToolTip().add(number++, color + prefix + percentage + "% " + attributeName);
+            }
         }
 
         evt.getToolTip().add(number, TextFormatting.WHITE + I18n.format("kuvaweapon.warframe_type.tooltip"));

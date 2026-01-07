@@ -641,3 +641,10 @@ kuvaweapon.item_attribute_type.virus=病毒伤害
 # 新金卡模组
 kuvaweapon.item_module.nuclear_control_breakthrough=§6核控突破
 kuvaweapon.item_module.rapid_nuclide=§6迅发核素
+
+# ========================================
+# 战甲属性类型 - 固定上限属性
+# ========================================
+kuvaweapon.warframe_attribute_type.fixedHealth=固定生命值
+kuvaweapon.warframe_attribute_type.fixedShield=固定护盾容量
+kuvaweapon.warframe_attribute_type.fixedArmor=固定护甲

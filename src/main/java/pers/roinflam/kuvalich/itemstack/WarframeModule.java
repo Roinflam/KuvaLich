@@ -1,5 +1,8 @@
 package pers.roinflam.kuvalich.itemstack;
 
+import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.passive.EntityAnimal;
@@ -37,6 +40,7 @@ import java.util.*;
  * 提供玩家模组装备系统，包括：
  * - 护盾系统（吸收伤害 + 自动恢复）
  * - 属性加成（生命、护甲、移速、挖掘速度、跳跃高度等）
+ * - 固定上限属性（fixedHealth、fixedShield、fixedArmor）- 绝对锁定上限值
  * - 元素抗性（火焰、闪电、同类伤害、摔落伤害）- 依次乘算机制
  * - 掉落增幅
  * - 战甲击杀叠层系统（执刑官系列MOD）
@@ -44,6 +48,12 @@ import java.util.*;
  * 乘算机制：
  * - 多个抗性模组依次相乘：50%抗性 × 30%抗性 = 受到35%伤害（减伤65%）
  * - 击杀叠层抗性同样依次乘算：先加总单层加成，再与基础抗性相乘
+ * <p>
+ * 固定上限机制（绝对锁定）：
+ * - 装备 +3 和 +5 固定生命值模组 → 生命上限绝对锁定为 8 血（不是 20+8）
+ * - 固定生命值加总 ≤1 时，锁定为 1 血（最低保护）
+ * - 固定护盾/护甲加总 ≤0 时，不生效（最低为0）
+ * - 如果没有固定属性模组，则使用原生属性（百分比加成）
  */
 @Mod.EventBusSubscriber
 public class WarframeModule {
@@ -53,6 +63,12 @@ public class WarframeModule {
      * 受伤后进入冷却，冷却期间不恢复护盾
      */
     public static HashMap<UUID, Integer> cooldingHashMap = new HashMap<>();
+
+    /**
+     * 固定属性 AttributeModifier 的 UUID（用于识别和移除）
+     */
+    private static final UUID FIXED_HEALTH_MODIFIER_UUID = UUID.fromString("a1b2c3d4-1111-2222-3333-444444444444");
+    private static final UUID FIXED_ARMOR_MODIFIER_UUID = UUID.fromString("a1b2c3d4-5555-6666-7777-888888888888");
 
     /**
      * 乘算属性类型定义
@@ -83,7 +99,6 @@ public class WarframeModule {
         List<ItemStack> itemStacks = new ArrayList<>();
         WarframeModules warframeModules = entityPlayer.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
 
-        // ✅ 只添加有效的ItemStack
         addIfValid(itemStacks, warframeModules.getOne());
         addIfValid(itemStacks, warframeModules.getTwo());
         addIfValid(itemStacks, warframeModules.getThree());
@@ -106,14 +121,15 @@ public class WarframeModule {
     }
 
     /**
-     * ✅ 收集玩家所有模组属性（区分加算和乘算）
+     * ✅ 收集玩家所有模组属性（区分加算、乘算、固定上限）
      * <p>
      * 加算属性：生命、护甲、移速等 - 直接相加
      * 乘算属性：抗性、延迟等 - 依次相乘
+     * 固定上限：fixedHealth、fixedShield、fixedArmor - 直接相加（用于绝对锁定）
      * <p>
      * 示例：
      * - 50%火抗 + 30%火抗 = 1.0 × (1-0.5) × (1-0.3) = 0.35 倍伤害（减伤65%）
-     * - -60%延迟 + -40%延迟 = 1.0 × (1-0.6) × (1-0.4) = 0.24 倍延迟（延迟2.4秒）
+     * - +3固定生命 + +5固定生命 = 8点生命上限（绝对锁定为8血）
      */
     private static HashMap<String, Double> collectAttributes(EntityPlayer player) {
         HashMap<String, Double> attributes = new HashMap<>();
@@ -134,6 +150,7 @@ public class WarframeModule {
                 double value = entry.getValue();
 
                 if (MULTIPLICATIVE_ATTRIBUTES.contains(key)) {
+                    // 乘算属性
                     if (key.equals("shieldRecoveryDelay")) {
                         multiplicativeAttributes.put(key,
                                 multiplicativeAttributes.get(key) * (1.0 + value));
@@ -141,10 +158,15 @@ public class WarframeModule {
                         multiplicativeAttributes.put(key,
                                 multiplicativeAttributes.get(key) * (1.0 - value));
                     }
+                } else if (key.equals("fixedHealth") || key.equals("fixedShield") || key.equals("fixedArmor")) {
+                    // ✅ 固定上限属性：直接相加（用于绝对锁定）
+                    attributes.put(key, attributes.getOrDefault(key, 0.0) + value);
                 } else if (KILL_STACK_PROTECTION_ATTRIBUTES.contains(key)) {
+                    // 击杀叠层抗性：加算
                     attributes.put(key,
                             attributes.getOrDefault(key, 0.0) + value);
                 } else {
+                    // 普通加算属性
                     attributes.put(key,
                             attributes.getOrDefault(key, 0.0) + value);
                 }
@@ -414,18 +436,14 @@ public class WarframeModule {
         HashMap<String, Double> attributes = new HashMap<>();
         List<ItemStack> modules = getModules(player);
 
-        int moduleIndex = 0;
         for (ItemStack module : modules) {
-            moduleIndex++;
             if (module == null || module.isEmpty()) {
                 continue;
             }
 
-            boolean hasKillStack = false;
             for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
                 String key = entry.getKey();
                 if (key.startsWith("killStack")) {
-                    hasKillStack = true;
                     double oldValue = attributes.getOrDefault(key, 0.0);
                     double newValue = oldValue + entry.getValue();
                     attributes.put(key, newValue);
@@ -539,9 +557,87 @@ public class WarframeModule {
     }
 
     /**
+     * ✅ 应用固定生命值上限（绝对锁定）
+     * 使用 AttributeModifier 直接修改最大生命值属性
+     *
+     * @param player 玩家
+     * @param fixedHealth 固定生命值（加总后的值）
+     */
+    private static void applyFixedHealthCap(EntityPlayer player, double fixedHealth) {
+        IAttributeInstance maxHealthAttribute = player.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH);
+
+        // 移除旧的修改器
+        AttributeModifier oldModifier = maxHealthAttribute.getModifier(FIXED_HEALTH_MODIFIER_UUID);
+        if (oldModifier != null) {
+            maxHealthAttribute.removeModifier(oldModifier);
+        }
+
+        if (fixedHealth > 0) {
+            // ✅ 固定生命值最低为 1
+            double cappedHealth = Math.max(1.0, fixedHealth);
+
+            // 计算需要的操作值：目标值 = 基础值 + 操作值
+            // 操作值 = 目标值 - 基础值
+            double baseHealth = maxHealthAttribute.getBaseValue(); // 获取当前基础生命值（通常是20）
+            double operation = cappedHealth - baseHealth; // 例如：8 - 20 = -12
+
+            // 创建新的修改器（Operation 0 = ADD）
+            AttributeModifier newModifier = new AttributeModifier(
+                    FIXED_HEALTH_MODIFIER_UUID,
+                    "Warframe Fixed Health Cap",
+                    operation,
+                    0 // Operation 0: 基础值 + 操作值
+            );
+
+            maxHealthAttribute.applyModifier(newModifier);
+
+            // 如果当前生命值超过新上限，调整到上限
+            if (player.getHealth() > cappedHealth) {
+                player.setHealth((float) cappedHealth);
+            }
+        }
+    }
+
+    /**
+     * ✅ 应用固定护甲上限（绝对锁定）
+     * 使用 AttributeModifier 直接修改护甲属性
+     *
+     * @param player 玩家
+     * @param fixedArmor 固定护甲值（加总后的值）
+     */
+    private static void applyFixedArmorCap(EntityPlayer player, double fixedArmor) {
+        IAttributeInstance armorAttribute = player.getEntityAttribute(SharedMonsterAttributes.ARMOR);
+
+        // 移除旧的修改器
+        AttributeModifier oldModifier = armorAttribute.getModifier(FIXED_ARMOR_MODIFIER_UUID);
+        if (oldModifier != null) {
+            armorAttribute.removeModifier(oldModifier);
+        }
+
+        if (fixedArmor > 0) {
+            // ✅ 固定护甲最低为 0
+            double cappedArmor = Math.max(0.0, fixedArmor);
+
+            // ✅ 修复：获取当前总护甲值（包括装备）
+            double currentTotalArmor = armorAttribute.getAttributeValue();
+            double operation = cappedArmor - currentTotalArmor;
+
+            // 创建新的修改器（Operation 0 = ADD）
+            AttributeModifier newModifier = new AttributeModifier(
+                    FIXED_ARMOR_MODIFIER_UUID,
+                    "Warframe Fixed Armor Cap",
+                    operation,
+                    0
+            );
+
+            armorAttribute.applyModifier(newModifier);
+        }
+    }
+
+    /**
      * 玩家Tick事件
      * 每秒处理：护盾恢复
-     * 每0.25秒处理：属性药水效果、挖掘速度同步
+     * 每0.25秒处理：属性药水效果、挖掘速度同步、固定上限应用
      */
     @SubscribeEvent
     public static void onPlayerTick(@Nonnull TickEvent.PlayerTickEvent evt) {
@@ -564,40 +660,96 @@ public class WarframeModule {
                             applyWarframeKillStackEffects(entityPlayer, attributes);
 
                             double shield = attributes.getOrDefault("shield", 0.0);
-                            if (shield > 0 && entityPlayer.getAbsorptionAmount() < (int) (
-                                    entityPlayer.getMaxHealth() * shield / 2)) {
-                                double shieldRecoveryRate = 1 + attributes.getOrDefault("shieldRecoveryRate", 0.0);
-                                entityPlayer.setAbsorptionAmount((float) Math.min(
-                                        (int) (entityPlayer.getMaxHealth() * shield / 2),
-                                        entityPlayer.getAbsorptionAmount() + entityPlayer.getMaxHealth() * shield / 2 * 0.01 * shieldRecoveryRate
-                                ));
+
+                            // ✅ 如果有固定护盾，使用固定护盾容量
+                            double fixedShield = attributes.getOrDefault("fixedShield", 0.0);
+                            if (fixedShield > 0) {
+                                // 固定护盾容量（最低为0）
+                                double cappedShield = Math.max(0.0, fixedShield);
+
+                                // ✅ 修复：强制锁定护盾值
+                                if (cappedShield > 0) {
+                                    float currentShield = entityPlayer.getAbsorptionAmount();
+
+                                    // 如果护盾低于上限，恢复护盾
+                                    if (currentShield < cappedShield) {
+                                        double shieldRecoveryRate = 1 + attributes.getOrDefault("shieldRecoveryRate", 0.0);
+                                        entityPlayer.setAbsorptionAmount((float) Math.min(
+                                                cappedShield,
+                                                currentShield + cappedShield * 0.01 * shieldRecoveryRate
+                                        ));
+                                    }
+                                    // ✅ 如果护盾超过上限，强制降到上限
+                                    else if (currentShield > cappedShield) {
+                                        entityPlayer.setAbsorptionAmount((float) cappedShield);
+                                    }
+                                }
+                            } else if (shield > 0) {
+                                // 使用百分比护盾
+                                if (entityPlayer.getAbsorptionAmount() < (int) (entityPlayer.getMaxHealth() * shield / 2)) {
+                                    double shieldRecoveryRate = 1 + attributes.getOrDefault("shieldRecoveryRate", 0.0);
+                                    entityPlayer.setAbsorptionAmount((float) Math.min(
+                                            (int) (entityPlayer.getMaxHealth() * shield / 2),
+                                            entityPlayer.getAbsorptionAmount() + entityPlayer.getMaxHealth() * shield / 2 * 0.01 * shieldRecoveryRate
+                                    ));
+                                }
                             }
                         }
                     }
 
-                    // ========== 每0.25秒处理：属性药水效果 + 挖掘速度同步 ==========
+                    // ========== 每0.25秒处理：属性药水效果 + 挖掘速度同步 + 固定上限 ==========
                     if (entityPlayer.getEntityWorld().getTotalWorldTime() % 5 == 0) {
                         HashMap<String, Double> attributes = collectAttributes(entityPlayer);
                         applyWarframeKillStackEffects(entityPlayer, attributes);
 
-                        double health = attributes.getOrDefault("health", 0.0);
-                        if (health >= 0.1) {
-                            int level = (int) (health / 0.1) - 1;
-                            entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.HEALTH, 6, level));
-                        } else if (health <= -0.1) {
-                            int level = (int) (-health / 0.1) - 1;
-                            level = Math.min(level, 8);
-                            entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.NEGATIVE_HEALTH, 6, level));
+                        // ✅ 应用固定生命值上限（绝对锁定）
+                        double fixedHealth = attributes.getOrDefault("fixedHealth", 0.0);
+                        if (fixedHealth > 0) {
+                            applyFixedHealthCap(entityPlayer, fixedHealth);
+                        } else {
+                            // 如果没有固定生命值，移除修改器（恢复原生属性）
+                            IAttributeInstance maxHealthAttribute = entityPlayer.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH);
+                            AttributeModifier oldModifier = maxHealthAttribute.getModifier(FIXED_HEALTH_MODIFIER_UUID);
+                            if (oldModifier != null) {
+                                maxHealthAttribute.removeModifier(oldModifier);
+                            }
+
+                            // 应用百分比生命值加成
+                            double health = attributes.getOrDefault("health", 0.0);
+                            if (health >= 0.1) {
+                                int level = (int) (health / 0.1) - 1;
+                                entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.HEALTH, 6, level));
+                            } else if (health <= -0.1) {
+                                int level = (int) (-health / 0.1) - 1;
+                                level = Math.min(level, 8);
+                                entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.NEGATIVE_HEALTH, 6, level));
+                            }
                         }
 
-                        double armor = attributes.getOrDefault("armor", 0.0);
-                        if (armor >= 0.1) {
-                            int level = (int) (armor / 0.1) - 1;
-                            entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.ARMOR, 6, level));
-                        } else if (armor <= -0.1) {
-                            int level = (int) (-armor / 0.1) - 1;
-                            entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.NEGATIVE_ARMOR, 6, level));
+                        // ✅ 应用固定护甲上限（绝对锁定）
+                        double fixedArmor = attributes.getOrDefault("fixedArmor", 0.0);
+                        if (fixedArmor > 0) {
+                            applyFixedArmorCap(entityPlayer, fixedArmor);
+                        } else {
+                            // 如果没有固定护甲，移除修改器（恢复原生属性）
+                            IAttributeInstance armorAttribute = entityPlayer.getEntityAttribute(SharedMonsterAttributes.ARMOR);
+                            AttributeModifier oldModifier = armorAttribute.getModifier(FIXED_ARMOR_MODIFIER_UUID);
+                            if (oldModifier != null) {
+                                armorAttribute.removeModifier(oldModifier);
+                            }
+
+                            // 应用百分比护甲加成
+                            double armor = attributes.getOrDefault("armor", 0.0);
+                            if (armor >= 0.1) {
+                                int level = (int) (armor / 0.1) - 1;
+                                entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.ARMOR, 6, level));
+                            } else if (armor <= -0.1) {
+                                int level = (int) (-armor / 0.1) - 1;
+                                entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.NEGATIVE_ARMOR, 6, level));
+                            }
                         }
+
+                        // ========== 其他属性处理 ==========
 
                         double sprintSpeed = attributes.getOrDefault("sprintSpeed", 0.0);
                         if (sprintSpeed >= 0.1) {

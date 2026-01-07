@@ -32,7 +32,6 @@ public class WarframeRivenModule extends WarframeModuleBase {
 
     private static final String[] SUFFIXES = {"cron", "ata", "icor", "tis", "tron", "cak", "nus", "vex", "mira", "ton", "sera", "phix", "gara", "luxe", "moto", "zora", "fyre", "glacia", "volt", "terra", "aqua", "nebula", "stellar", "cosmo", "sol", "lunar", "astral", "void", "nether", "ether", "flux", "halo", "vortex", "quantum", "sigma", "omega", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu", "nu", "xi", "omicron", "pi", "rho", "sigma", "tau", "upsilon", "phi", "chi", "psi", "omega", "alpha", "beta", "axion", "baryon", "charm", "dynami", "electro", "fluxi", "gyro", "halo", "ioni", "joule", "kineti", "lepto", "mytho", "neuro", "omni", "penta", "quanta", "retro", "syntho", "tri", "umbra", "vecta", "wyrm", "xero", "yield", "zephyr", "ara", "bolo", "ceta", "dome", "ergo", "foti", "glow", "hype", "ille", "juno", "kilo", "lima", "mote", "nano", "oxi", "pico", "quark", "rune", "solo", "tome", "uni", "volo", "watt", "xene", "yotta", "zetta"};
 
-
     public WarframeRivenModule(String name) {
         super(name);
     }
@@ -42,7 +41,6 @@ public class WarframeRivenModule extends WarframeModuleBase {
         String suffix = SUFFIXES[RandomUtil.getInt(0, SUFFIXES.length - 1)];
         return prefix + "-" + suffix;
     }
-
 
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE);
@@ -107,6 +105,12 @@ public class WarframeRivenModule extends WarframeModuleBase {
         }
 
         List<String> warframeAttributeType = new ArrayList<>(WarframeModuleBase.WARFRAME_ATTRIBUTE_TYPES);
+
+        // ✅ 紫卡不能刷出固定属性
+        warframeAttributeType.remove("fixedHealth");
+        warframeAttributeType.remove("fixedShield");
+        warframeAttributeType.remove("fixedArmor");
+
         Collections.shuffle(warframeAttributeType);
 
         List<String> hasAttributeType = new ArrayList<>();
@@ -141,7 +145,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
 
     /**
      * 获取战甲属性的基础数值
-     * ✅ 已添加击杀叠层属性支持（单层加成值，与执刑官系列一致）
+     * ✅ 固定属性返回0（紫卡不能刷出）
      */
     public static double getBaseAttributeValue(String attributeType) {
         // ========== 基础属性 ==========
@@ -175,77 +179,56 @@ public class WarframeRivenModule extends WarframeModuleBase {
         if (attributeType.equals("itemDropMultiplier")) {
             return 0.9;
         }
-
-        // ========== 击杀叠层属性（执刑官系列单层加成值）==========
-
-        // 生命值叠层
-        if (attributeType.equals("killStackHealth")) {
-            return 0.08;
-        }
-
-        // 护盾容量叠层
-        if (attributeType.equals("killStackShield")) {
-            return 0.08;
-        }
-
-        // 护甲叠层
-        if (attributeType.equals("killStackArmor")) {
-            return 0.08;
-        }
-
-        // 冲刺速度叠层
-        if (attributeType.equals("killStackSprintSpeed")) {
-            return 0.02;
-        }
-
-        // 护盾恢复速率叠层
-        if (attributeType.equals("killStackShieldRecoveryRate")) {
-            return 0.02;
-        }
-
-        // 护盾恢复延迟叠层
-        if (attributeType.equals("killStackShieldRecoveryDelay")) {
-            return -0.02;
-        }
-
-        // 火焰抗性叠层
-        if (attributeType.equals("killStackFireProtection")) {
-            return 0.02;
-        }
-
-        // 电击抗性叠层
-        if (attributeType.equals("killStackElectricProtection")) {
-            return 0.02;
-        }
-
-        // 同源抗性叠层
-        if (attributeType.equals("killStackHomologousProtection")) {
-            return 0.03;
-        }
-
-        // 恢复生命值倍率叠层
-        if (attributeType.equals("killStackResponseRate")) {
-            return 0.02;
-        }
-
-        // 战利品掉落倍率叠层
-        if (attributeType.equals("killStackItemDropMultiplier")) {
-            return 0.03;
-        }
-
-        // 挖掘速度叠层
-        if (attributeType.equals("killStackDiggingSpeed")) {
-            return 0.02;
-        }
-
-        // ✅ 新增：跳跃高度（与移速类似）
         if (attributeType.equals("jumpBoost")) {
             return 2.0;
         }
-
-        // ✅ 新增：摔落抗性（与火焰抗性类似）
         if (attributeType.equals("fallProtection")) {
             return 0.4;
+        }
+
+        // ✅ 固定属性返回0（紫卡不能刷出）
+        if (attributeType.equals("fixedHealth") ||
+                attributeType.equals("fixedShield") ||
+                attributeType.equals("fixedArmor")) {
+            return 0;
+        }
+
+        // ========== 击杀叠层属性（执刑官系列单层加成值）==========
+        if (attributeType.equals("killStackHealth")) {
+            return 0.08;
+        }
+        if (attributeType.equals("killStackShield")) {
+            return 0.08;
+        }
+        if (attributeType.equals("killStackArmor")) {
+            return 0.08;
+        }
+        if (attributeType.equals("killStackSprintSpeed")) {
+            return 0.02;
+        }
+        if (attributeType.equals("killStackShieldRecoveryRate")) {
+            return 0.02;
+        }
+        if (attributeType.equals("killStackShieldRecoveryDelay")) {
+            return -0.02;
+        }
+        if (attributeType.equals("killStackFireProtection")) {
+            return 0.02;
+        }
+        if (attributeType.equals("killStackElectricProtection")) {
+            return 0.02;
+        }
+        if (attributeType.equals("killStackHomologousProtection")) {
+            return 0.03;
+        }
+        if (attributeType.equals("killStackResponseRate")) {
+            return 0.02;
+        }
+        if (attributeType.equals("killStackItemDropMultiplier")) {
+            return 0.03;
+        }
+        if (attributeType.equals("killStackDiggingSpeed")) {
+            return 0.02;
         }
 
         return 0;
