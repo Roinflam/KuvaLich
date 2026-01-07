@@ -141,6 +141,14 @@ public class ItemRivenModule extends ItemModuleBase {
             if (add >= number) {
                 break;
             }
+
+            // Riven紫卡不能洗出复合元素词条
+            if (attributeType.equals("gas") || attributeType.equals("radiation") ||
+                    attributeType.equals("magnetic") || attributeType.equals("corrosion") ||
+                    attributeType.equals("explosion") || attributeType.equals("virus")) {
+                continue;
+            }
+
             if (isMelee) {
                 // 近战武器排除的属性
                 if (attributeType.equals("remoteDamage") || attributeType.equals("arrowDamage") ||
@@ -148,7 +156,7 @@ public class ItemRivenModule extends ItemModuleBase {
                         attributeType.equals("remoteCriticalStrikeProbability") ||
                         attributeType.equals("remoteCriticalStrikeMultiplier") ||
                         attributeType.equals("firing_rate") || attributeType.equals("bursting_radius") ||
-                        // ✅ 排除远程击杀叠加词条
+                        // 排除远程击杀叠加词条
                         attributeType.equals("killStackMultishot") ||
                         attributeType.equals("killStackBurstingRadius") ||
                         attributeType.equals("killStackFiringRate")) {
@@ -161,7 +169,7 @@ public class ItemRivenModule extends ItemModuleBase {
                         attributeType.equals("meleeCriticalStrikeMultiplier") ||
                         attributeType.equals("dashMeleeCriticalStrikeProbability") ||
                         attributeType.equals("dashAttackRange") || attributeType.equals("dashTriggerChance") ||
-                        // ✅ 排除近战击杀叠加词条
+                        // 排除近战击杀叠加词条
                         attributeType.equals("killStackMeleeCriticalMultiplier") ||
                         attributeType.equals("killStackAttackRange") ||
                         attributeType.equals("killStackAttackSpeed")) {
@@ -181,6 +189,14 @@ public class ItemRivenModule extends ItemModuleBase {
                 if (hasAttributeType.contains(attributeType)) {
                     continue;
                 }
+
+                // Riven紫卡不能洗出复合元素词条（包括负面）
+                if (attributeType.equals("gas") || attributeType.equals("radiation") ||
+                        attributeType.equals("magnetic") || attributeType.equals("corrosion") ||
+                        attributeType.equals("explosion") || attributeType.equals("virus")) {
+                    continue;
+                }
+
                 if (isMelee) {
                     if (attributeType.equals("remoteDamage") || attributeType.equals("arrowDamage") || attributeType.equals("projectileDamage") || attributeType.equals("multishot") || attributeType.equals("remoteCriticalStrikeProbability") || attributeType.equals("remoteCriticalStrikeMultiplier") || attributeType.equals("firing_rate") || attributeType.equals("bursting_radius")) {
                         continue;
@@ -267,7 +283,14 @@ public class ItemRivenModule extends ItemModuleBase {
             return 0.34;
         }
 
-        // ✅ 新增：击杀叠加词条基础数值
+        // 复合元素基础数值
+        if (attributeType.equals("gas") || attributeType.equals("radiation") ||
+                attributeType.equals("magnetic") || attributeType.equals("corrosion") ||
+                attributeType.equals("explosion") || attributeType.equals("virus")) {
+            return 0.6;
+        }
+
+        // 击杀叠加词条基础数值
         if (attributeType.equals("killStackBaseDamage")) {
             return 0.04;  // 每层4%基础伤害
         }

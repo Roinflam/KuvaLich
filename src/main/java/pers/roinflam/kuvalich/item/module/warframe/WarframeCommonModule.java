@@ -147,6 +147,22 @@ public class WarframeCommonModule extends WarframeModuleBase {
             ItemModuleBase.setType(itemStack, "maliwan");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
+
+            // ✅ 新增：跃动信号 - 200%跳跃高度
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.mobilize");
+            ItemModuleBase.addAttributes(itemStack, "jumpBoost", 2.0001f);
+            ItemModuleBase.setType(itemStack, "mobilize");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // ✅ 新增：飞行员 - 40%摔落抗性
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.warframe_module.aviator");
+            ItemModuleBase.addAttributes(itemStack, "fallProtection", 0.4001f);
+            ItemModuleBase.setType(itemStack, "aviator");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
         }
     }
 

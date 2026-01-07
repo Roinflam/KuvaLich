@@ -133,6 +133,13 @@ public class ItemModule {
                 elementDamage += attributes.getOrDefault("slash", 0.0);
                 elementDamage += attributes.getOrDefault("puncture", 0.0);
                 elementDamage += attributes.getOrDefault("impact", 0.0);
+                // 添加复合元素到总伤害计算
+                elementDamage += attributes.getOrDefault("gas", 0.0);
+                elementDamage += attributes.getOrDefault("radiation", 0.0);
+                elementDamage += attributes.getOrDefault("magnetic", 0.0);
+                elementDamage += attributes.getOrDefault("corrosion", 0.0);
+                elementDamage += attributes.getOrDefault("explosion", 0.0);
+                elementDamage += attributes.getOrDefault("virus", 0.0);
                 if (elementDamage != 0) {
                     evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (elementDamage * 100) + "%");
                 }
@@ -301,14 +308,14 @@ public class ItemModule {
                         }
                     }
 
-                    // ✅ 应用击杀叠层效果
+                    // 应用击杀叠层效果
                     applyKillStackEffects(entityPlayer, weapon, attributes, hurter);
 
                     if (damageSource.getImmediateSource() instanceof EntityPlayer) {
                         baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
                         criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
 
-                        // ✅ 应用近战暴击伤害叠层
+                        // 应用近战暴击伤害叠层
                         if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
                             int stacks = KillStackManager.getStacks(entityPlayer, StackType.MELEE_CRIT_MULT);
                             double stackValue = attributes.get("killStackMeleeCriticalMultiplier");
@@ -330,7 +337,7 @@ public class ItemModule {
                             baseDamage += attributes.getOrDefault("projectileDamage", 0.0);
                         }
 
-                        // ✅ 应用爆炸半径叠层
+                        // 应用爆炸半径叠层
                         double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
                         if (attributes.containsKey("killStackBurstingRadius")) {
                             int stacks = KillStackManager.getStacks(entityPlayer, StackType.BURSTING_RADIUS);
@@ -354,7 +361,7 @@ public class ItemModule {
                         baseDamage += attributes.getOrDefault("magicDamage", 0.0);
                     }
 
-                    // ✅ 应用触发几率叠层
+                    // 应用触发几率叠层
                     if (entityPlayer.isSprinting()) {
                         triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
                     } else {
@@ -375,6 +382,13 @@ public class ItemModule {
                     elementDamage += attributes.getOrDefault("slash", 0.0);
                     elementDamage += attributes.getOrDefault("puncture", 0.0);
                     elementDamage += attributes.getOrDefault("impact", 0.0);
+                    // 添加复合元素到伤害计算
+                    elementDamage += attributes.getOrDefault("gas", 0.0);
+                    elementDamage += attributes.getOrDefault("radiation", 0.0);
+                    elementDamage += attributes.getOrDefault("magnetic", 0.0);
+                    elementDamage += attributes.getOrDefault("corrosion", 0.0);
+                    elementDamage += attributes.getOrDefault("explosion", 0.0);
+                    elementDamage += attributes.getOrDefault("virus", 0.0);
 
                     if (getBaseAttribute(weapon, "damage") > 0) {
                         if (getBaseAttribute(weapon, "damage") >= 1) {
@@ -451,7 +465,7 @@ public class ItemModule {
                     Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
                     KuvaLich.network.sendTo(new DamagePacket(damage, position, color), (EntityPlayerMP) entityPlayer);
 
-                    // ✅ 击杀检测
+                    // 击杀检测
                     if (hurter.getHealth() - damage <= 0) {
                         addKillStacks(entityPlayer, weapon);
                     }
@@ -499,14 +513,14 @@ public class ItemModule {
                         }
                     }
 
-                    // ✅ 应用击杀叠层效果
+                    // 应用击杀叠层效果
                     applyKillStackEffects(entityPlayer, weapon, attributes, hurter);
 
                     if (damageSource.getImmediateSource() instanceof EntityPlayer) {
                         baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
                         criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
 
-                        // ✅ 应用近战暴击伤害叠层
+                        // 应用近战暴击伤害叠层
                         if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
                             int stacks = KillStackManager.getStacks(entityPlayer, StackType.MELEE_CRIT_MULT);
                             double stackValue = attributes.get("killStackMeleeCriticalMultiplier");
@@ -528,7 +542,7 @@ public class ItemModule {
                             baseDamage += attributes.getOrDefault("projectileDamage", 0.0);
                         }
 
-                        // ✅ 应用爆炸半径叠层
+                        // 应用爆炸半径叠层
                         double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
                         if (attributes.containsKey("killStackBurstingRadius")) {
                             int stacks = KillStackManager.getStacks(entityPlayer, StackType.BURSTING_RADIUS);
@@ -552,7 +566,7 @@ public class ItemModule {
                         baseDamage += attributes.getOrDefault("magicDamage", 0.0);
                     }
 
-                    // ✅ 应用触发几率叠层
+                    // 应用触发几率叠层
                     if (entityPlayer.isSprinting()) {
                         triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
                     } else {
@@ -573,6 +587,13 @@ public class ItemModule {
                     elementDamage += attributes.getOrDefault("slash", 0.0);
                     elementDamage += attributes.getOrDefault("puncture", 0.0);
                     elementDamage += attributes.getOrDefault("impact", 0.0);
+                    // 添加复合元素到伤害计算
+                    elementDamage += attributes.getOrDefault("gas", 0.0);
+                    elementDamage += attributes.getOrDefault("radiation", 0.0);
+                    elementDamage += attributes.getOrDefault("magnetic", 0.0);
+                    elementDamage += attributes.getOrDefault("corrosion", 0.0);
+                    elementDamage += attributes.getOrDefault("explosion", 0.0);
+                    elementDamage += attributes.getOrDefault("virus", 0.0);
 
                     if (getBaseAttribute(weapon, "damage") > 0) {
                         if (getBaseAttribute(weapon, "damage") >= 1) {
@@ -649,7 +670,7 @@ public class ItemModule {
                     Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
                     KuvaLich.network.sendTo(new DamagePacket(damage, position, color), (EntityPlayerMP) entityPlayer);
 
-                    // ✅ 击杀检测
+                    // 击杀检测
                     if (hurter.getHealth() - damage <= 0) {
                         addKillStacks(entityPlayer, weapon);
                     }
@@ -718,7 +739,7 @@ public class ItemModule {
             return;
         }
 
-        // ✅ 基础伤害叠层（根据目标负面效果数量）
+        // 基础伤害叠层（根据目标负面效果数量）
         if (attributes.containsKey("killStackBaseDamage")) {
             int stacks = KillStackManager.getStacks(player, StackType.BASE_DAMAGE);
             if (stacks > 0) {
@@ -743,7 +764,7 @@ public class ItemModule {
             }
         }
 
-        // ✅ 多重射击叠层
+        // 多重射击叠层
         if (attributes.containsKey("killStackMultishot")) {
             int stacks = KillStackManager.getStacks(player, StackType.MULTISHOT);
             if (stacks > 0) {
@@ -753,7 +774,7 @@ public class ItemModule {
             }
         }
 
-        // ✅ 攻击速度叠层
+        // 攻击速度叠层
         if (attributes.containsKey("killStackAttackSpeed")) {
             int stacks = KillStackManager.getStacks(player, StackType.ATTACK_SPEED);
             if (stacks > 0) {
@@ -763,7 +784,7 @@ public class ItemModule {
             }
         }
 
-        // ✅ 攻击范围叠层
+        // 攻击范围叠层
         if (attributes.containsKey("killStackAttackRange")) {
             int stacks = KillStackManager.getStacks(player, StackType.ATTACK_RANGE);
             if (stacks > 0) {
@@ -773,7 +794,7 @@ public class ItemModule {
             }
         }
 
-        // ✅ 射速叠层
+        // 射速叠层
         if (attributes.containsKey("killStackFiringRate")) {
             int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
             if (stacks > 0) {
@@ -801,7 +822,7 @@ public class ItemModule {
                                 }
                             }
 
-                            // ✅ 应用攻击速度叠层
+                            // 应用攻击速度叠层
                             if (attributes.containsKey("killStackAttackSpeed")) {
                                 int stacks = KillStackManager.getStacks(entityPlayer, StackType.ATTACK_SPEED);
                                 if (stacks > 0) {
@@ -848,7 +869,7 @@ public class ItemModule {
                             }
                         }
 
-                        // ✅ 应用攻击范围叠层
+                        // 应用攻击范围叠层
                         double range = attributes.getOrDefault("attackRange", 0.0);
                         if (entityPlayer.isSprinting()) {
                             range += attributes.getOrDefault("dashAttackRange", 0.0);
@@ -887,7 +908,7 @@ public class ItemModule {
                 }
             }
 
-            // ✅ 应用射速叠层
+            // 应用射速叠层
             if (entityLivingBase instanceof EntityPlayer) {
                 EntityPlayer player = (EntityPlayer) entityLivingBase;
                 if (attributes.containsKey("killStackFiringRate")) {
@@ -919,6 +940,10 @@ public class ItemModule {
         }
     }
 
+    /**
+     * 获取触发元素列表及其比例
+     * 处理基础元素融合和复合元素叠加
+     */
     public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
         Map<String, Double> elementValues = new LinkedHashMap<>();
 
@@ -934,12 +959,14 @@ public class ItemModule {
             for (Map.Entry<String, Double> entry : moduleAttributes) {
                 String key = entry.getKey();
                 double value = entry.getValue();
-                if (isElemental(key) || isPhysical(key)) {
+                // 收集所有元素类型（基础元素、物理伤害、复合元素）
+                if (isElemental(key) || isPhysical(key) || isCompound(key)) {
                     elementValues.merge(key, value, Double::sum);
                 }
             }
         }
 
+        // 移除负数值的元素
         elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
 
         Map<String, Double> combinedElements = new LinkedHashMap<>();
@@ -947,12 +974,25 @@ public class ItemModule {
             String currentElement = entry.getKey();
             double currentValue = entry.getValue();
 
+            // 如果是复合元素，直接累加到结果中，不参与融合
+            if (isCompound(currentElement)) {
+                combinedElements.merge(currentElement, currentValue, Double::sum);
+                continue;
+            }
+
             boolean combined = false;
+            // 尝试与已有的基础元素融合
             for (String existingElement : new ArrayList<>(combinedElements.keySet())) {
+                // 跳过复合元素，不与其融合
+                if (isCompound(existingElement)) {
+                    continue;
+                }
+
                 String compoundElement = getCompoundElement(existingElement, currentElement);
                 if (compoundElement != null) {
                     double existingValue = combinedElements.remove(existingElement);
-                    combinedElements.put(compoundElement, existingValue + currentValue);
+                    // 关键修复：使用merge而不是put，避免覆盖已存在的复合元素
+                    combinedElements.merge(compoundElement, existingValue + currentValue, Double::sum);
                     combined = true;
                     break;
                 }
@@ -963,6 +1003,7 @@ public class ItemModule {
             }
         }
 
+        // 计算各元素的百分比
         double totalValue = combinedElements.values().stream().mapToDouble(Double::doubleValue).sum();
         HashMap<String, String> result = new HashMap<>();
         for (Map.Entry<String, Double> entry : combinedElements.entrySet()) {
@@ -973,15 +1014,33 @@ public class ItemModule {
         return result;
     }
 
+    /**
+     * 判断是否为基础元素
+     */
     private static boolean isElemental(String element) {
         return element.equals("fire") || element.equals("ice") ||
                 element.equals("poison") || element.equals("electricity");
     }
 
+    /**
+     * 判断是否为物理伤害类型
+     */
     private static boolean isPhysical(String element) {
         return element.equals("slash") || element.equals("puncture") || element.equals("impact");
     }
 
+    /**
+     * 判断是否为复合元素
+     */
+    private static boolean isCompound(String element) {
+        return element.equals("gas") || element.equals("radiation") ||
+                element.equals("magnetic") || element.equals("corrosion") ||
+                element.equals("explosion") || element.equals("virus");
+    }
+
+    /**
+     * 获取两个基础元素融合后的复合元素
+     */
     private static String getCompoundElement(String first, String second) {
         if ((first.equals("fire") && second.equals("poison")) ||
                 (first.equals("poison") && second.equals("fire"))) {
@@ -1223,7 +1282,7 @@ public class ItemModule {
                     }
                 }
 
-                // ✅ 应用多重射击叠层
+                // 应用多重射击叠层
                 double multishot = attributes.getOrDefault("multishot", 0.0);
                 if (attributes.containsKey("killStackMultishot")) {
                     int stacks = KillStackManager.getStacks(entityPlayer, StackType.MULTISHOT);

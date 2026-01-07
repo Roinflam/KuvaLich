@@ -139,7 +139,12 @@ public class WarframeRivenModule extends WarframeModuleBase {
         return itemStack;
     }
 
+    /**
+     * 获取战甲属性的基础数值
+     * ✅ 已添加击杀叠层属性支持（单层加成值，与执刑官系列一致）
+     */
     public static double getBaseAttributeValue(String attributeType) {
+        // ========== 基础属性 ==========
         if (attributeType.equals("health") || attributeType.equals("shield") || attributeType.equals("armor")) {
             return 1.65;
         }
@@ -170,6 +175,79 @@ public class WarframeRivenModule extends WarframeModuleBase {
         if (attributeType.equals("itemDropMultiplier")) {
             return 0.9;
         }
+
+        // ========== 击杀叠层属性（执刑官系列单层加成值）==========
+
+        // 生命值叠层
+        if (attributeType.equals("killStackHealth")) {
+            return 0.08;
+        }
+
+        // 护盾容量叠层
+        if (attributeType.equals("killStackShield")) {
+            return 0.08;
+        }
+
+        // 护甲叠层
+        if (attributeType.equals("killStackArmor")) {
+            return 0.08;
+        }
+
+        // 冲刺速度叠层
+        if (attributeType.equals("killStackSprintSpeed")) {
+            return 0.02;
+        }
+
+        // 护盾恢复速率叠层
+        if (attributeType.equals("killStackShieldRecoveryRate")) {
+            return 0.02;
+        }
+
+        // 护盾恢复延迟叠层
+        if (attributeType.equals("killStackShieldRecoveryDelay")) {
+            return -0.02;
+        }
+
+        // 火焰抗性叠层
+        if (attributeType.equals("killStackFireProtection")) {
+            return 0.02;
+        }
+
+        // 电击抗性叠层
+        if (attributeType.equals("killStackElectricProtection")) {
+            return 0.02;
+        }
+
+        // 同源抗性叠层
+        if (attributeType.equals("killStackHomologousProtection")) {
+            return 0.03;
+        }
+
+        // 恢复生命值倍率叠层
+        if (attributeType.equals("killStackResponseRate")) {
+            return 0.02;
+        }
+
+        // 战利品掉落倍率叠层
+        if (attributeType.equals("killStackItemDropMultiplier")) {
+            return 0.03;
+        }
+
+        // 挖掘速度叠层
+        if (attributeType.equals("killStackDiggingSpeed")) {
+            return 0.02;
+        }
+
+        // ✅ 新增：跳跃高度（与移速类似）
+        if (attributeType.equals("jumpBoost")) {
+            return 2.0;
+        }
+
+        // ✅ 新增：摔落抗性（与火焰抗性类似）
+        if (attributeType.equals("fallProtection")) {
+            return 0.4;
+        }
+
         return 0;
     }
 

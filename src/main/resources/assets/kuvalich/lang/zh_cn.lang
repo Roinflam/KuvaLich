@@ -624,3 +624,20 @@ message.kuvalich.requiemRiddleAnswer=当前谜语的答案为 %s / %s / %s
 message.kuvalich.firstCorrect=解密失败，第一个答案正确!
 message.kuvalich.secondCorrect=解密失败，第二个答案正确!
 message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current riddle! Please decrypt any answer before using it!
+
+kuvaweapon.warframe_attribute_type.jumpBoost=跳跃高度
+kuvaweapon.warframe_attribute_type.fallProtection=摔落抗性
+kuvaweapon.warframe_module.mobilize=§e跃动信号
+kuvaweapon.warframe_module.aviator=§e飞行员
+
+# 复合元素属性类型
+kuvaweapon.item_attribute_type.gas=毒气伤害
+kuvaweapon.item_attribute_type.radiation=辐射伤害
+kuvaweapon.item_attribute_type.magnetic=磁力伤害
+kuvaweapon.item_attribute_type.corrosion=腐蚀伤害
+kuvaweapon.item_attribute_type.explosion=爆炸伤害
+kuvaweapon.item_attribute_type.virus=病毒伤害
+
+# 新金卡模组
+kuvaweapon.item_module.nuclear_control_breakthrough=§6核控突破
+kuvaweapon.item_module.rapid_nuclide=§6迅发核素

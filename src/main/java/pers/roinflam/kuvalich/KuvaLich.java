@@ -1,5 +1,3 @@
-// 文件：KuvaLich.java
-// 路径：src/main/java/pers/roinflam/kuvalich/KuvaLich.java
 package pers.roinflam.kuvalich;
 
 import net.minecraft.world.DimensionType;

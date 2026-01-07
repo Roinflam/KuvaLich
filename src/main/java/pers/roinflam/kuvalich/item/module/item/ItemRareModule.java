@@ -292,6 +292,24 @@ public class ItemRareModule extends ItemModuleBase {
             ItemModuleBase.setType(itemStack, "joy_of_fire");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
+
+            // ∫ÀøÿÕª∆∆ - ∑¯…‰…À∫¶+60%£¨∂‡÷ÿ…‰ª˜+30%
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.nuclear_control_breakthrough");
+            ItemModuleBase.addAttributes(itemStack, "radiation", 0.60001f);
+            ItemModuleBase.addAttributes(itemStack, "multishot", 0.30001f);
+            ItemModuleBase.setType(itemStack, "nuclear_control_breakthrough");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // —∏∑¢∫ÀÀÿ - ∑¯…‰…À∫¶+60%£¨…‰ÀŸ+40%
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.rapid_nuclide");
+            ItemModuleBase.addAttributes(itemStack, "radiation", 0.60001f);
+            ItemModuleBase.addAttributes(itemStack, "firing_rate", 0.40001f);
+            ItemModuleBase.setType(itemStack, "rapid_nuclide");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
         }
     }
 

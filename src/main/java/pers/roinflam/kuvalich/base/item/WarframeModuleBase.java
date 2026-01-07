@@ -25,6 +25,7 @@ public abstract class WarframeModuleBase extends ModuleBase {
                     "shieldRecoveryDelay", "knockbackResistance", "fireProtection",
                     "electricProtection", "homologousProtection", "reachDistance",
                     "diggingSpeed", "responseRate", "itemDropMultiplier",
+                    "jumpBoost", "fallProtection",
 
                     // 战甲击杀叠加词条（执刑官系列）
                     "killStackHealth",

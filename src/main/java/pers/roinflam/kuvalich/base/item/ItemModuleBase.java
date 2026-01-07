@@ -30,7 +30,9 @@ public abstract class ItemModuleBase extends ModuleBase {
                     "slash", "puncture", "impact", "dashMeleeCriticalStrikeProbability",
                     "dashAttackRange", "dashTriggerChance", "baseDamageWhenNotCriticalStrike",
                     "bursting_radius",
-                    // ✅ 新增：击杀叠加词条
+                    // 复合元素词条
+                    "gas", "radiation", "magnetic", "corrosion", "explosion", "virus",
+                    // 击杀叠加词条
                     "killStackBaseDamage",              // 击杀时：目标身上每一种负面效果可增加基础伤害
                     "killStackMultishot",               // 击杀时：多重射击
                     "killStackMeleeCriticalMultiplier", // 击杀时：近战暴击伤害
@@ -88,7 +90,7 @@ public abstract class ItemModuleBase extends ModuleBase {
             // 获取翻译文本
             String attributeName;
 
-            // ✅ 如果是击杀叠加词条，传入最大层数参数（使用 %d 占位符）
+            // 如果是击杀叠加词条，传入最大层数参数（使用 %d 占位符）
             if (attributeKey.startsWith("killStack")) {
                 int maxStacks = getMaxStacksForAttribute(attributeKey);
                 attributeName = I18n.format("kuvaweapon.item_attribute_type." + attributeKey, maxStacks);
@@ -138,7 +140,7 @@ public abstract class ItemModuleBase extends ModuleBase {
     private static int addRivenTooltips(ItemTooltipEvent evt, ItemStack itemStack, int startIndex) {
         int trend = ItemRivenModule.getTrend(itemStack);
 
-        // ✅ 使用 ASCII 字符避免 GBK 乱码：[*] 表示已激活，[ ] 表示未激活
+        // 使用 ASCII 字符避免 GBK 乱码：[*] 表示已激活，[ ] 表示未激活
         StringBuilder trendBar = new StringBuilder(15);
         for (int i = 0; i < trend; i++) {
             trendBar.append("[*]");
