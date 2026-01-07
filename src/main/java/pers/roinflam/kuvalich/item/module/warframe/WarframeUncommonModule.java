@@ -1,5 +1,3 @@
-// 文件：WarframeUncommonModule.java
-// 路径：src/main/java/pers/roinflam/kuvalich/item/module/warframe/WarframeUncommonModule.java
 package pers.roinflam.kuvalich.item.module.warframe;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -17,6 +15,7 @@ import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
 import java.util.ArrayList;
@@ -39,109 +38,70 @@ public class WarframeUncommonModule extends WarframeModuleBase {
     @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
         if (this.isInCreativeTab(tab)) {
-            ItemStack itemStack = getRandomModule();
-            items.add(itemStack);
+            // 随机模组始终显示
+            items.add(getRandomModule());
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.rush");
-            ItemModuleBase.addAttributes(itemStack, "sprintSpeed", 0.3001f);
-            ItemModuleBase.setType(itemStack, "rush");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 冲刺
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.rush", "rush",
+                    new Object[]{"sprintSpeed", 0.3001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.augur_accord");
-            ItemModuleBase.addAttributes(itemStack, "shield", 0.7001f);
-            ItemModuleBase.setType(itemStack, "augur_accord");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 占卜师契约
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.augur_accord", "augur_accord",
+                    new Object[]{"shield", 0.7001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.fast_deflection");
-            ItemModuleBase.addAttributes(itemStack, "shieldRecoveryRate", 0.9001f);
-            ItemModuleBase.addAttributes(itemStack, "shieldRecoveryDelay", -0.45001f);
-            ItemModuleBase.setType(itemStack, "fast_deflection");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 快速充能
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.fast_deflection", "fast_deflection",
+                    new Object[]{"shieldRecoveryRate", 0.9001f, "shieldRecoveryDelay", -0.45001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.gladiator_resolve");
-            ItemModuleBase.addAttributes(itemStack, "health", 0.4001f);
-            ItemModuleBase.setType(itemStack, "gladiator_resolve");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 角斗士决心
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.gladiator_resolve", "gladiator_resolve",
+                    new Object[]{"health", 0.4001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.carnis_carapace");
-            ItemModuleBase.addAttributes(itemStack, "armor", 1.1001f);
-            ItemModuleBase.addAttributes(itemStack, "health", 0.4001f);
-            ItemModuleBase.setType(itemStack, "carnis_carapace");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 肉食甲壳
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.carnis_carapace", "carnis_carapace",
+                    new Object[]{"armor", 1.1001f, "health", 0.4001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.saxum_carapace");
-            ItemModuleBase.addAttributes(itemStack, "armor", 1.1001f);
-            ItemModuleBase.addAttributes(itemStack, "health", 0.4001f);
-            ItemModuleBase.setType(itemStack, "saxum_carapace");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 巨岩甲壳
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.saxum_carapace", "saxum_carapace",
+                    new Object[]{"armor", 1.1001f, "health", 0.4001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.digging_hand");
-            ItemModuleBase.addAttributes(itemStack, "reachDistance", 0.3001f);
-            ItemModuleBase.setType(itemStack, "digging_hand");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 挖掘之手
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.digging_hand", "digging_hand",
+                    new Object[]{"reachDistance", 0.3001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.digging_power");
-            ItemModuleBase.addAttributes(itemStack, "diggingSpeed", 0.6001f);
-            ItemModuleBase.setType(itemStack, "digging_power");
-            // ✅ 添加挖掘速度冲突标签
-            ItemModuleBase.setConflictTags(itemStack, "digging_speed");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 挖掘之力
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.digging_power", "digging_power",
+                    new Object[]{"diggingSpeed", 0.6001f},
+                    "digging_speed");
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.rejuvenator");
-            ItemModuleBase.addAttributes(itemStack, "responseRate", 1.0001f);
-            ItemModuleBase.addAttributes(itemStack, "health", -0.5001f);
-            ItemModuleBase.setType(itemStack, "rejuvenator");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 复苏者
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.rejuvenator", "rejuvenator",
+                    new Object[]{"responseRate", 1.0001f, "health", -0.5001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.treasure_thief");
-            ItemModuleBase.addAttributes(itemStack, "itemDropMultiplier", 0.9001f);
-            ItemModuleBase.addAttributes(itemStack, "health", -0.6001f);
-            ItemModuleBase.addAttributes(itemStack, "shield", -1.2001f);
-            ItemModuleBase.setType(itemStack, "treasure_thief");
-            // ✅ 添加掉落倍率冲突标签
-            ItemModuleBase.setConflictTags(itemStack, "item_drop_multiplier");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 宝藏盗贼
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.treasure_thief", "treasure_thief",
+                    new Object[]{"itemDropMultiplier", 0.9001f, "health", -0.6001f, "shield", -1.2001f},
+                    "item_drop_multiplier");
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.stand_your_ground");
-            ItemModuleBase.addAttributes(itemStack, "health", 0.9001f);
-            ItemModuleBase.addAttributes(itemStack, "armor", 0.6001f);
-            ItemModuleBase.addAttributes(itemStack, "knockbackResistance", 0.4501f);
-            ItemModuleBase.addAttributes(itemStack, "sprintSpeed", -0.3001f);
-            ItemModuleBase.setType(itemStack, "stand_your_ground");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 坚守阵地
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.stand_your_ground", "stand_your_ground",
+                    new Object[]{"health", 0.9001f, "armor", 0.6001f, "knockbackResistance", 0.4501f, "sprintSpeed", -0.3001f});
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.warframe_module.athena");
-            ItemModuleBase.addAttributes(itemStack, "health", 1.2001f);
-            ItemModuleBase.addAttributes(itemStack, "armor", 0.9001f);
-            ItemModuleBase.addAttributes(itemStack, "responseRate", 0.6001f);
-            ItemModuleBase.addAttributes(itemStack, "shieldRecoveryRate", -0.9001f);
-            ItemModuleBase.addAttributes(itemStack, "shieldRecoveryDelay", -0.9001f);
-            ItemModuleBase.setType(itemStack, "redirection");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 雅典娜
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.athena", "redirection",
+                    new Object[]{"health", 1.2001f, "armor", 0.9001f, "responseRate", 0.6001f, "shieldRecoveryRate", -0.9001f, "shieldRecoveryDelay", -0.9001f});
         }
     }
 
@@ -149,7 +109,14 @@ public class WarframeUncommonModule extends WarframeModuleBase {
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
         ItemStack itemstack = playerIn.getHeldItem(handIn);
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
-            ItemStack module = itemStackList.get(RandomUtil.getInt(0, itemStackList.size() - 1));
+            // 过滤掉被禁用的模组
+            List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
+
+            if (availableModules.isEmpty()) {
+                return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
+            }
+
+            ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
 
             EntityItem entityItem = new EntityItem(worldIn, playerIn.posX, playerIn.posY, playerIn.posZ, module);
             worldIn.spawnEntity(entityItem);

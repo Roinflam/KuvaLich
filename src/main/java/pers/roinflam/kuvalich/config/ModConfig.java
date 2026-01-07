@@ -1,3 +1,4 @@
+// ModConfig.java
 package pers.roinflam.kuvalich.config;
 
 import net.minecraftforge.common.config.Config;
@@ -19,6 +20,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  */
 @Mod.EventBusSubscriber
 @Config(modid = Reference.MOD_ID, name = Reference.MOD_ID)
+@Config.LangKey("config." + Reference.MOD_ID + ".title")
 public final class ModConfig {
 
     @Config.Name("Kuva Lich System")

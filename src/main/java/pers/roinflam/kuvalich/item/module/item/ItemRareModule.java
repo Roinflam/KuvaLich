@@ -14,6 +14,7 @@ import net.minecraft.world.World;
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
 import java.util.ArrayList;
@@ -36,593 +37,331 @@ public class ItemRareModule extends ItemModuleBase {
     @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
         if (this.isInCreativeTab(tab)) {
-            ItemStack itemStack = getRandomModule();
-            items.add(itemStack);
+            // 随机模组始终显示
+            items.add(getRandomModule());
 
             // ========== 原有MOD ==========
 
-            // kuvaweapon.item_module.split_chamber (分裂膛室)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.split_chamber");
-            ItemModuleBase.addAttributes(itemStack, "multishot", 0.90001f);
-            ItemModuleBase.setType(itemStack, "split_chamber");
-            ItemModuleBase.setConflictTags(itemStack, "multishot");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 分裂膛室
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.split_chamber", "split_chamber",
+                    new Object[]{"multishot", 0.90001f},
+                    "multishot");
 
-            // kuvaweapon.item_module.vital_sense (要害感知)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.vital_sense");
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeMultiplier", 1.2001f);
-            ItemModuleBase.setType(itemStack, "vital_sense");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_mult");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 要害感知
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.vital_sense", "vital_sense",
+                    new Object[]{"remoteCriticalStrikeMultiplier", 1.2001f},
+                    "remote_crit_mult");
 
-            // kuvaweapon.item_module.spoiled_strike (腐蚀打击)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.spoiled_strike");
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 1.00001f);
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", -0.20001f);
-            ItemModuleBase.setType(itemStack, "spoiled_strike");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 腐蚀打击
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.spoiled_strike", "spoiled_strike",
+                    new Object[]{"meleeDamage", 1.00001f, "attackSpeed", -0.20001f});
 
-            // kuvaweapon.item_module.heavy_caliber (重口径)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.heavy_caliber");
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeMultiplier", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.60001f);
-            ItemModuleBase.setType(itemStack, "heavy_caliber");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_mult", "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 重口径
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.heavy_caliber", "heavy_caliber",
+                    new Object[]{"remoteDamage", 0.90001f, "remoteCriticalStrikeMultiplier", 0.90001f, "firing_rate", -0.60001f},
+                    "remote_crit_mult", "firing_rate");
 
-            // kuvaweapon.item_module.firestorm (火焰风暴)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.firestorm");
-            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.60001f);
-            ItemModuleBase.setType(itemStack, "firestorm");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 火焰风暴
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.firestorm", "firestorm",
+                    new Object[]{"bursting_radius", 0.60001f});
 
-            // kuvaweapon.item_module.critical_delay (暴击延迟)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.critical_delay");
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 2.00001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.20001f);
-            ItemModuleBase.setType(itemStack, "critical_delay");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_chance", "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 暴击延迟
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.critical_delay", "critical_delay",
+                    new Object[]{"remoteCriticalStrikeProbability", 2.00001f, "firing_rate", -0.20001f},
+                    "remote_crit_chance", "firing_rate");
 
-            // kuvaweapon.item_module.vile_acceleration (邪恶加速)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.vile_acceleration");
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", -0.15001f);
-            ItemModuleBase.setType(itemStack, "vile_acceleration");
-            ItemModuleBase.setConflictTags(itemStack, "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 邪恶加速
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.vile_acceleration", "vile_acceleration",
+                    new Object[]{"firing_rate", 0.90001f, "remoteDamage", -0.15001f},
+                    "firing_rate");
 
-            // kuvaweapon.item_module.hollow_point (空尖弹)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.hollow_point");
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 1.50001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", -0.15001f);
-            ItemModuleBase.setType(itemStack, "hollow_point");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 空尖弹
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.hollow_point", "hollow_point",
+                    new Object[]{"remoteCriticalStrikeProbability", 1.50001f, "remoteDamage", -0.15001f},
+                    "remote_crit_chance");
 
-            // kuvaweapon.item_module.hammer_shot (榔头射击)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.hammer_shot");
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeMultiplier", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.60001f);
-            ItemModuleBase.setType(itemStack, "hammer_shot");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_mult");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 榔头射击
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.hammer_shot", "hammer_shot",
+                    new Object[]{"remoteCriticalStrikeMultiplier", 0.60001f, "triggerChance", 0.60001f},
+                    "remote_crit_mult");
 
-            // kuvaweapon.item_module.creeping_bullseye (蔓延靶心)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.creeping_bullseye");
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 1.87501f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.36001f);
-            ItemModuleBase.setType(itemStack, "creeping_bullseye");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_chance", "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 蔓延靶心
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.creeping_bullseye", "creeping_bullseye",
+                    new Object[]{"remoteCriticalStrikeProbability", 1.87501f, "firing_rate", -0.36001f},
+                    "remote_crit_chance", "firing_rate");
 
-            // kuvaweapon.item_module.katana_energy (武士刀能量)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.katana_energy");
-            ItemModuleBase.addAttributes(itemStack, "attackRange", 1.65001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 0.60001f);
-            ItemModuleBase.setType(itemStack, "katana_energy");
-            ItemModuleBase.setConflictTags(itemStack, "attack_range");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 武士刀能量
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.katana_energy", "katana_energy",
+                    new Object[]{"attackRange", 1.65001f, "meleeDamage", 0.60001f},
+                    "attack_range");
 
-            // kuvaweapon.item_module.reflex_coil (反射线圈)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.reflex_coil");
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", 0.60001f);
-            ItemModuleBase.setType(itemStack, "reflex_coil");
-            ItemModuleBase.setConflictTags(itemStack, "melee_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 反射线圈
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.reflex_coil", "reflex_coil",
+                    new Object[]{"attackSpeed", 0.60001f, "meleeCriticalStrikeProbability", 0.60001f},
+                    "melee_crit_chance");
 
-            // kuvaweapon.item_module.elemental_strike (元素打击)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.elemental_strike");
-            ItemModuleBase.addAttributes(itemStack, "fire", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "ice", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "poison", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "electricity", 0.60001f);
-            ItemModuleBase.setType(itemStack, "elemental_strike");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 元素打击
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.elemental_strike", "elemental_strike",
+                    new Object[]{"fire", 0.60001f, "ice", 0.60001f, "poison", 0.60001f, "electricity", 0.60001f});
 
             // ========== 新增MOD（黄金级别）==========
 
-            // 15. kuvaweapon.item_module.plague_herald (瘟疫使者)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.plague_herald");
-            ItemModuleBase.addAttributes(itemStack, "gas", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerTime", 0.75001f);
-            ItemModuleBase.setType(itemStack, "plague_herald");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 瘟疫使者
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.plague_herald", "plague_herald",
+                    new Object[]{"gas", 0.90001f, "triggerTime", 0.75001f});
 
-            // 16. kuvaweapon.item_module.nuclear_storm (核子风暴)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.nuclear_storm");
-            ItemModuleBase.addAttributes(itemStack, "radiation", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "multishot", 0.60001f);
-            ItemModuleBase.setType(itemStack, "nuclear_storm");
-            ItemModuleBase.setConflictTags(itemStack, "multishot");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 核子风暴
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.nuclear_storm", "nuclear_storm",
+                    new Object[]{"radiation", 0.90001f, "multishot", 0.60001f},
+                    "multishot");
 
-            // 17. kuvaweapon.item_module.magnetic_overlord (磁暴领主)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.magnetic_overlord");
-            ItemModuleBase.addAttributes(itemStack, "magnetic", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", 0.75001f);
-            ItemModuleBase.setType(itemStack, "magnetic_overlord");
-            ItemModuleBase.setConflictTags(itemStack, "melee_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 磁暴领主
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.magnetic_overlord", "magnetic_overlord",
+                    new Object[]{"magnetic", 0.90001f, "meleeCriticalStrikeProbability", 0.75001f},
+                    "melee_crit_chance");
 
-            // 18. kuvaweapon.item_module.corrosion_king (剥皮者)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.corrosion_king");
-            ItemModuleBase.addAttributes(itemStack, "corrosion", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "slash", 0.75001f);
-            ItemModuleBase.setType(itemStack, "corrosion_king");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 剥皮者
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.corrosion_king", "corrosion_king",
+                    new Object[]{"corrosion", 1.20001f, "slash", 0.75001f});
 
-            // 19. kuvaweapon.item_module.doomsday_arrow (末日箭矢)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.doomsday_arrow");
-            ItemModuleBase.addAttributes(itemStack, "explosion", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "arrowDamage", 1.20001f);
-            ItemModuleBase.setType(itemStack, "doomsday_arrow");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 末日箭矢
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.doomsday_arrow", "doomsday_arrow",
+                    new Object[]{"explosion", 0.90001f, "arrowDamage", 1.20001f});
 
-            // 20. kuvaweapon.item_module.viral_tyrant (病入膏肓)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.viral_tyrant");
-            ItemModuleBase.addAttributes(itemStack, "virus", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "puncture", 0.75001f);
-            ItemModuleBase.setType(itemStack, "viral_tyrant");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 病入膏肓
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.viral_tyrant", "viral_tyrant",
+                    new Object[]{"virus", 1.20001f, "puncture", 0.75001f});
 
-            // 21. kuvaweapon.item_module.meltdown_protocol (熔毁协议)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.meltdown_protocol");
-            ItemModuleBase.addAttributes(itemStack, "radiation", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.10001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.30001f);
-            ItemModuleBase.setType(itemStack, "meltdown_protocol");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 熔毁协议
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.meltdown_protocol", "meltdown_protocol",
+                    new Object[]{"radiation", 0.90001f, "bursting_radius", 0.10001f, "triggerChance", 0.30001f});
 
-            // 22. kuvaweapon.item_module.biohazard (0号实验)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.biohazard");
-            ItemModuleBase.addAttributes(itemStack, "gas", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.30001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerTime", 0.40001f);
-            ItemModuleBase.setType(itemStack, "biohazard");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 0号实验
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.biohazard", "biohazard",
+                    new Object[]{"gas", 0.90001f, "triggerChance", 0.30001f, "triggerTime", 0.40001f});
 
-            // 23. kuvaweapon.item_module.em_storm (电磁风暴)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.em_storm");
-            ItemModuleBase.addAttributes(itemStack, "magnetic", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeMultiplier", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.30001f);
-            ItemModuleBase.setType(itemStack, "em_storm");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_mult", "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 电磁风暴
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.em_storm", "em_storm",
+                    new Object[]{"magnetic", 0.90001f, "remoteCriticalStrikeMultiplier", 0.90001f, "firing_rate", -0.30001f},
+                    "remote_crit_mult", "firing_rate");
 
-            // 24. kuvaweapon.item_module.corrosive_erosion (腐蚀熔蚀)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.corrosive_erosion");
-            ItemModuleBase.addAttributes(itemStack, "corrosion", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "puncture", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", -0.30001f);
-            ItemModuleBase.setType(itemStack, "corrosive_erosion");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 腐蚀熔蚀
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.corrosive_erosion", "corrosive_erosion",
+                    new Object[]{"corrosion", 0.90001f, "puncture", 0.90001f, "attackSpeed", -0.30001f});
 
-            // 25. kuvaweapon.item_module.scorched_earth (燃尽天际)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.scorched_earth");
-            ItemModuleBase.addAttributes(itemStack, "explosion", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "multishot", 0.75001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", -0.25001f);
-            ItemModuleBase.setType(itemStack, "scorched_earth");
-            ItemModuleBase.setConflictTags(itemStack, "multishot");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 燃尽天际
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.scorched_earth", "scorched_earth",
+                    new Object[]{"explosion", 0.90001f, "multishot", 0.75001f, "remoteDamage", -0.25001f},
+                    "multishot");
 
-            // 26. kuvaweapon.item_module.pandemic_outbreak (病毒切)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.pandemic_outbreak");
-            ItemModuleBase.addAttributes(itemStack, "virus", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "slash", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", 0.60001f);
-            ItemModuleBase.setType(itemStack, "pandemic_outbreak");
-            ItemModuleBase.setConflictTags(itemStack, "melee_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 病毒切
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.pandemic_outbreak", "pandemic_outbreak",
+                    new Object[]{"virus", 0.90001f, "slash", 0.60001f, "meleeCriticalStrikeProbability", 0.60001f},
+                    "melee_crit_chance");
 
-            // 27. kuvaweapon.item_module.berserkers_oath (狂战士誓约)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.berserkers_oath");
-            ItemModuleBase.addAttributes(itemStack, "dashMeleeCriticalStrikeProbability", 3.00001f);
-            ItemModuleBase.addAttributes(itemStack, "dashAttackRange", 5.00001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", -0.90001f);
-            ItemModuleBase.setType(itemStack, "berserkers_oath");
-            ItemModuleBase.setConflictTags(itemStack, "dash_crit_chance", "dash_range");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 狂战士誓约
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.berserkers_oath", "berserkers_oath",
+                    new Object[]{"dashMeleeCriticalStrikeProbability", 3.00001f, "dashAttackRange", 5.00001f, "meleeDamage", -0.90001f},
+                    "dash_crit_chance", "dash_range");
 
-            // 28. kuvaweapon.item_module.predators_mark (掠食者印记)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.predators_mark");
-            ItemModuleBase.addAttributes(itemStack, "dashMeleeCriticalStrikeProbability", 1.65001f);
-            ItemModuleBase.addAttributes(itemStack, "puncture", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerTime", -0.40001f);
-            ItemModuleBase.setType(itemStack, "predators_mark");
-            ItemModuleBase.setConflictTags(itemStack, "dash_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 掠食者印记
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.predators_mark", "predators_mark",
+                    new Object[]{"dashMeleeCriticalStrikeProbability", 1.65001f, "puncture", 0.90001f, "triggerTime", -0.40001f},
+                    "dash_crit_chance");
 
-            // 29. kuvaweapon.item_module.reapers_scythe (死神镰刀)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.reapers_scythe");
-            ItemModuleBase.addAttributes(itemStack, "multishot", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 0.80001f);
-            ItemModuleBase.setType(itemStack, "reapers_scythe");
-            ItemModuleBase.setConflictTags(itemStack, "multishot", "remote_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 死神镰刀
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.reapers_scythe", "reapers_scythe",
+                    new Object[]{"multishot", 0.60001f, "remoteCriticalStrikeProbability", 0.80001f},
+                    "multishot", "remote_crit_chance");
 
-            // 30. kuvaweapon.item_module.hunters_code (猎人法则)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.hunters_code");
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeMultiplier", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "slash", 0.90001f);
-            ItemModuleBase.setType(itemStack, "hunters_code");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_mult");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 猎人法则
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.hunters_code", "hunters_code",
+                    new Object[]{"remoteCriticalStrikeMultiplier", 0.60001f, "slash", 0.90001f},
+                    "remote_crit_mult");
 
-            // 31. kuvaweapon.item_module.gladiators_glory (角斗士荣耀)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.gladiators_glory");
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeMultiplier", 2.00001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", -0.45001f);
-            ItemModuleBase.setType(itemStack, "gladiators_glory");
-            ItemModuleBase.setConflictTags(itemStack, "melee_crit_mult", "melee_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 角斗士荣耀
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.gladiators_glory", "gladiators_glory",
+                    new Object[]{"meleeCriticalStrikeMultiplier", 2.00001f, "meleeCriticalStrikeProbability", -0.45001f},
+                    "melee_crit_mult", "melee_crit_chance");
 
-            // 32. kuvaweapon.item_module.iron_oath (钢铁誓言)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.iron_oath");
-            ItemModuleBase.addAttributes(itemStack, "baseDamageWhenNotCriticalStrike", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "puncture", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", -0.45001f);
-            ItemModuleBase.setType(itemStack, "iron_oath");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 钢铁誓言
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.iron_oath", "iron_oath",
+                    new Object[]{"baseDamageWhenNotCriticalStrike", 2.40001f, "puncture", 0.90001f, "meleeCriticalStrikeProbability", -0.45001f});
 
-            // 33. kuvaweapon.item_module.ultimate_violence (暴力终末)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.ultimate_violence");
-            ItemModuleBase.addAttributes(itemStack, "baseDamageWhenNotCriticalStrike", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "impact", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", -0.45001f);
-            ItemModuleBase.setType(itemStack, "ultimate_violence");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 暴力终末
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.ultimate_violence", "ultimate_violence",
+                    new Object[]{"baseDamageWhenNotCriticalStrike", 2.40001f, "impact", 0.90001f, "remoteCriticalStrikeProbability", -0.45001f});
 
-            // 34. kuvaweapon.item_module.catastrophe (灾厄降临)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.catastrophe");
-            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.15001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerTime", 0.60001f);
-            ItemModuleBase.setType(itemStack, "catastrophe");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 灾厄降临
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.catastrophe", "catastrophe",
+                    new Object[]{"bursting_radius", 0.15001f, "triggerChance", 0.60001f, "triggerTime", 0.60001f});
 
-            // 35. kuvaweapon.item_module.arcane_torrent (奥术洪流)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.arcane_torrent");
-            ItemModuleBase.addAttributes(itemStack, "magicDamage", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "multishot", 0.75001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.35001f);
-            ItemModuleBase.setType(itemStack, "arcane_torrent");
-            ItemModuleBase.setConflictTags(itemStack, "multishot", "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 奥术洪流
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.arcane_torrent", "arcane_torrent",
+                    new Object[]{"magicDamage", 2.40001f, "multishot", 0.75001f, "firing_rate", -0.35001f},
+                    "multishot", "firing_rate");
 
-            // 36. kuvaweapon.item_module.mystic_apocalypse (秘法终末)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.mystic_apocalypse");
-            ItemModuleBase.addAttributes(itemStack, "arrowDamage", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "magicDamage", 1.35001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.45001f);
-            ItemModuleBase.setType(itemStack, "mystic_apocalypse");
-            ItemModuleBase.setConflictTags(itemStack, "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 秘法终末
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.mystic_apocalypse", "mystic_apocalypse",
+                    new Object[]{"arrowDamage", 2.40001f, "magicDamage", 1.35001f, "firing_rate", -0.45001f},
+                    "firing_rate");
 
-            // 37. kuvaweapon.item_module.dual_legend (双刃传奇)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.dual_legend");
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 2.20001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", 2.20001f);
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", -0.25001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.25001f);
-            ItemModuleBase.setType(itemStack, "dual_legend");
-            ItemModuleBase.setConflictTags(itemStack, "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 双刃传奇
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.dual_legend", "dual_legend",
+                    new Object[]{"meleeDamage", 2.20001f, "remoteDamage", 2.20001f, "attackSpeed", -0.25001f, "firing_rate", -0.25001f},
+                    "firing_rate");
 
-            // 38. kuvaweapon.item_module.dual_disaster (双重灾难)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.dual_disaster");
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", 2.00001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 2.00001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", -0.35001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", -0.35001f);
-            ItemModuleBase.setType(itemStack, "dual_disaster");
-            ItemModuleBase.setConflictTags(itemStack, "melee_crit_chance", "remote_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 双重灾难
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.dual_disaster", "dual_disaster",
+                    new Object[]{"meleeCriticalStrikeProbability", 2.00001f, "remoteCriticalStrikeProbability", 2.00001f, "meleeDamage", -0.35001f, "remoteDamage", -0.35001f},
+                    "melee_crit_chance", "remote_crit_chance");
 
-            // 39. kuvaweapon.item_module.arcane_domination (秘法主宰)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.arcane_domination");
-            ItemModuleBase.addAttributes(itemStack, "magicDamage", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", -0.45001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", -0.45001f);
-            ItemModuleBase.setType(itemStack, "arcane_domination");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 秘法主宰
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.arcane_domination", "arcane_domination",
+                    new Object[]{"magicDamage", 2.40001f, "triggerChance", 0.90001f, "meleeDamage", -0.45001f, "remoteDamage", -0.45001f});
 
-            // 40. kuvaweapon.item_module.blood_frenzy (血之狂舞)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.blood_frenzy");
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.75001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeMultiplier", -0.60001f);
-            ItemModuleBase.setType(itemStack, "blood_frenzy");
-            ItemModuleBase.setConflictTags(itemStack, "melee_crit_chance", "melee_crit_mult");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 血之狂舞
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.blood_frenzy", "blood_frenzy",
+                    new Object[]{"meleeCriticalStrikeProbability", 2.40001f, "attackSpeed", 0.75001f, "meleeCriticalStrikeMultiplier", -0.60001f},
+                    "melee_crit_chance", "melee_crit_mult");
 
-            // 41. kuvaweapon.item_module.crying_wounds (裂口)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.crying_wounds");
-            ItemModuleBase.addAttributes(itemStack, "slash", 1.65001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 1.35001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", -0.50001f);
-            ItemModuleBase.setType(itemStack, "crying_wounds");
-            ItemModuleBase.setConflictTags(itemStack, "melee_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 裂口
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.crying_wounds", "crying_wounds",
+                    new Object[]{"slash", 1.65001f, "triggerChance", 1.35001f, "meleeCriticalStrikeProbability", -0.50001f},
+                    "melee_crit_chance");
 
-            // 42. kuvaweapon.item_module.legendary_shot (神射传说)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.legendary_shot");
-            ItemModuleBase.addAttributes(itemStack, "arrowDamage", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 1.80001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.60001f);
-            ItemModuleBase.setType(itemStack, "legendary_shot");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_chance", "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 神射传说
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.legendary_shot", "legendary_shot",
+                    new Object[]{"arrowDamage", 2.40001f, "remoteCriticalStrikeProbability", 1.80001f, "firing_rate", -0.60001f},
+                    "remote_crit_chance", "firing_rate");
 
-            // 43. kuvaweapon.item_module.ballistic_master (弹道大师)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.ballistic_master");
-            ItemModuleBase.addAttributes(itemStack, "projectileDamage", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeMultiplier", 1.80001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.60001f);
-            ItemModuleBase.setType(itemStack, "ballistic_master");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_mult", "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 弹道大师
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.ballistic_master", "ballistic_master",
+                    new Object[]{"projectileDamage", 2.40001f, "remoteCriticalStrikeMultiplier", 1.80001f, "firing_rate", -0.60001f},
+                    "remote_crit_mult", "firing_rate");
 
-            // 44. kuvaweapon.item_module.condition_outbreak (异况超量)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.condition_outbreak");
-            ItemModuleBase.addAttributes(itemStack, "killStackBaseDamage", 0.08f);
-            ItemModuleBase.setType(itemStack, "condition_outbreak");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 异况超量
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.condition_outbreak", "condition_outbreak",
+                    new Object[]{"killStackBaseDamage", 0.08f});
 
-            // 45. kuvaweapon.item_module.slaughter_feast (屠戮盛宴)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.slaughter_feast");
-            ItemModuleBase.addAttributes(itemStack, "bane_of_undefined", 0.25001f);
-            ItemModuleBase.addAttributes(itemStack, "bane_of_undead", 0.25001f);
-            ItemModuleBase.addAttributes(itemStack, "bane_of_arthropod", 0.25001f);
-            ItemModuleBase.addAttributes(itemStack, "bane_of_illager", 0.25001f);
-            ItemModuleBase.setType(itemStack, "slaughter_feast");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 屠戮盛宴
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.slaughter_feast", "slaughter_feast",
+                    new Object[]{"bane_of_undefined", 0.25001f, "bane_of_undead", 0.25001f, "bane_of_arthropod", 0.25001f, "bane_of_illager", 0.25001f});
 
-            // 46. kuvaweapon.item_module.chain_catastrophe (连锁灾难)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.chain_catastrophe");
-            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.44001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.75001f);
-            ItemModuleBase.addAttributes(itemStack, "multishot", -0.75001f);
-            ItemModuleBase.setType(itemStack, "chain_catastrophe");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 连锁灾难
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.chain_catastrophe", "chain_catastrophe",
+                    new Object[]{"bursting_radius", 0.44001f, "triggerChance", 0.75001f, "multishot", -0.75001f});
 
-            // 47. kuvaweapon.item_module.radiation_lord (辐射君主)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.radiation_lord");
-            ItemModuleBase.addAttributes(itemStack, "radiation", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeMultiplier", 0.90001f);
-            ItemModuleBase.setType(itemStack, "radiation_lord");
-            ItemModuleBase.setConflictTags(itemStack, "remote_crit_mult");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 辐射君主
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.radiation_lord", "radiation_lord",
+                    new Object[]{"radiation", 1.20001f, "remoteCriticalStrikeMultiplier", 0.90001f},
+                    "remote_crit_mult");
 
-            // 48. kuvaweapon.item_module.corrosion_tide (腐蚀狂潮)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.corrosion_tide");
-            ItemModuleBase.addAttributes(itemStack, "corrosion", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 0.60001f);
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.30001f);
-            ItemModuleBase.setType(itemStack, "corrosion_tide");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 腐蚀狂潮
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.corrosion_tide", "corrosion_tide",
+                    new Object[]{"corrosion", 0.60001f, "meleeDamage", 0.60001f, "attackSpeed", 0.30001f});
 
-            // 49. kuvaweapon.item_module.toxic_cloud (毒气扩散)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.toxic_cloud");
-            ItemModuleBase.addAttributes(itemStack, "gas", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.15001f);
-            ItemModuleBase.setType(itemStack, "toxic_cloud");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 毒气扩散
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.toxic_cloud", "toxic_cloud",
+                    new Object[]{"gas", 1.20001f, "bursting_radius", 0.15001f});
 
-            // 50. kuvaweapon.item_module.magnetic_collapse (磁场崩溃)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.magnetic_collapse");
-            ItemModuleBase.addAttributes(itemStack, "magnetic", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "triggerTime", 0.90001f);
-            ItemModuleBase.setType(itemStack, "magnetic_collapse");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 磁场崩溃
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.magnetic_collapse", "magnetic_collapse",
+                    new Object[]{"magnetic", 1.20001f, "triggerTime", 0.90001f});
 
-            // 51. kuvaweapon.item_module.apocalypse_split (末日分裂)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.apocalypse_split");
-            ItemModuleBase.addAttributes(itemStack, "explosion", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "arrowDamage", 1.35001f);
-            ItemModuleBase.addAttributes(itemStack, "multishot", 0.30001f);
-            ItemModuleBase.setType(itemStack, "apocalypse_split");
-            ItemModuleBase.setConflictTags(itemStack, "multishot");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 末日分裂
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.apocalypse_split", "apocalypse_split",
+                    new Object[]{"explosion", 0.90001f, "arrowDamage", 1.35001f, "multishot", 0.30001f},
+                    "multishot");
 
-            // 52. kuvaweapon.item_module.viral_vector (病毒轨迹)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.viral_vector");
-            ItemModuleBase.addAttributes(itemStack, "virus", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "projectileDamage", 1.20001f);
-            ItemModuleBase.setType(itemStack, "viral_vector");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 病毒轨迹
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.viral_vector", "viral_vector",
+                    new Object[]{"virus", 1.20001f, "projectileDamage", 1.20001f});
 
-            // 53. kuvaweapon.item_module.melee_fury (近战狂怒)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.melee_fury");
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", -0.60001f);
-            ItemModuleBase.setType(itemStack, "melee_fury");
-            ItemModuleBase.setConflictTags(itemStack, "melee_crit_chance");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 近战狂怒
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.melee_fury", "melee_fury",
+                    new Object[]{"meleeDamage", 2.40001f, "attackSpeed", 0.90001f, "meleeCriticalStrikeProbability", -0.60001f},
+                    "melee_crit_chance");
 
-            // 54. kuvaweapon.item_module.ranged_fury (远程狂怒)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.ranged_fury");
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", 2.40001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", -0.60001f);
-            ItemModuleBase.setType(itemStack, "ranged_fury");
-            ItemModuleBase.setConflictTags(itemStack, "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 远程狂怒
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.ranged_fury", "ranged_fury",
+                    new Object[]{"remoteDamage", 2.40001f, "firing_rate", 0.90001f, "remoteCriticalStrikeProbability", -0.60001f},
+                    "firing_rate");
 
-            // 55. kuvaweapon.item_module.predatory_hybrid (掠食双修)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.predatory_hybrid");
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", 1.05001f);
-            ItemModuleBase.addAttributes(itemStack, "dashMeleeCriticalStrikeProbability", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "dashAttackRange", 3.00001f);
-            ItemModuleBase.setType(itemStack, "predatory_hybrid");
-            ItemModuleBase.setConflictTags(itemStack, "dash_crit_chance", "dash_range");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 掠食双修
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.predatory_hybrid", "predatory_hybrid",
+                    new Object[]{"remoteDamage", 1.05001f, "dashMeleeCriticalStrikeProbability", 1.20001f, "dashAttackRange", 3.00001f},
+                    "dash_crit_chance", "dash_range");
 
-            // 56. kuvaweapon.item_module.bombardment (狂轰滥炸)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.bombardment");
-            ItemModuleBase.addAttributes(itemStack, "multishot", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "dashMeleeCriticalStrikeProbability", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", -0.25001f);
-            ItemModuleBase.setType(itemStack, "bombardment");
-            ItemModuleBase.setConflictTags(itemStack, "multishot", "dash_crit_chance", "firing_rate");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 狂轰滥炸
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.bombardment", "bombardment",
+                    new Object[]{"multishot", 1.20001f, "dashMeleeCriticalStrikeProbability", 1.20001f, "firing_rate", -0.25001f},
+                    "multishot", "dash_crit_chance", "firing_rate");
 
-            // 57. kuvaweapon.item_module.elemental_fusion (元素融合)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.elemental_fusion");
-            ItemModuleBase.addAttributes(itemStack, "fire", 0.30001f);
-            ItemModuleBase.addAttributes(itemStack, "poison", 0.30001f);
-            ItemModuleBase.addAttributes(itemStack, "ice", 0.30001f);
-            ItemModuleBase.addAttributes(itemStack, "electricity", 0.30001f);
-            ItemModuleBase.setType(itemStack, "elemental_fusion");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 元素融合
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.elemental_fusion", "elemental_fusion",
+                    new Object[]{"fire", 0.30001f, "poison", 0.30001f, "ice", 0.30001f, "electricity", 0.30001f});
 
-            // 58. kuvaweapon.item_module.physical_triad (虐杀原形)
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.physical_triad");
-            ItemModuleBase.addAttributes(itemStack, "slash", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "puncture", 0.90001f);
-            ItemModuleBase.addAttributes(itemStack, "impact", 0.90001f);
-            ItemModuleBase.setType(itemStack, "physical_triad");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
+            // 虐杀原形
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.physical_triad", "physical_triad",
+                    new Object[]{"slash", 0.90001f, "puncture", 0.90001f, "impact", 0.90001f});
         }
     }
 
@@ -630,7 +369,14 @@ public class ItemRareModule extends ItemModuleBase {
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
         ItemStack itemstack = playerIn.getHeldItem(handIn);
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
-            ItemStack module = itemStackList.get(RandomUtil.getInt(0, itemStackList.size() - 1));
+            // 过滤掉被禁用的模组
+            List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
+
+            if (availableModules.isEmpty()) {
+                return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
+            }
+
+            ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
 
             EntityItem entityItem = new EntityItem(worldIn, playerIn.posX, playerIn.posY, playerIn.posZ, module);
             worldIn.spawnEntity(entityItem);

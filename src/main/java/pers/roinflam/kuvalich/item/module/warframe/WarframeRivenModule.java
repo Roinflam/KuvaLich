@@ -17,6 +17,7 @@ import net.minecraft.world.World;
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -31,6 +32,12 @@ public class WarframeRivenModule extends WarframeModuleBase {
     private static final String[] PREFIXES = {"Croni", "Sati", "Vexi", "Locti", "Magna", "Crita", "Geli", "Rupti", "Arma", "Venxi", "Furi", "Praesi", "Nexi", "Draco", "Spira", "Phasa", "Lunari", "Solara", "Terron", "Aquix", "Ventra", "Ignis", "Frosti", "Voltic", "Plasma", "Ethera", "Radi", "Mortal", "Divin", "Spectra", "Celest", "Infern", "Obliv", "Eclip", "Cosmi", "Stella", "Astron", "Nebula", "Galax", "Orbit", "Nova", "Lunar", "Solar", "Comet", "Astro", "Stellar", "Void", "Quantum", "Gluon", "Gravi", "Photon", "Pulsar", "Quark", "Radian", "Sigma", "Tau", "Upsilon", "Vecti", "Warp", "Xenon", "Yotta", "Zetta", "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega", "Axion", "Baryon", "Charm", "Dynami", "Electro", "Fluxi", "Gyro", "Halo", "Ioni", "Joule", "Kineti", "Lepto", "Mytho", "Neuro", "Omni", "Penta", "Quanta", "Retro", "Syntho", "Tri", "Umbra", "Vecta", "Wyrm", "Xero", "Yield", "Zephyr"};
 
     private static final String[] SUFFIXES = {"cron", "ata", "icor", "tis", "tron", "cak", "nus", "vex", "mira", "ton", "sera", "phix", "gara", "luxe", "moto", "zora", "fyre", "glacia", "volt", "terra", "aqua", "nebula", "stellar", "cosmo", "sol", "lunar", "astral", "void", "nether", "ether", "flux", "halo", "vortex", "quantum", "sigma", "omega", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu", "nu", "xi", "omicron", "pi", "rho", "sigma", "tau", "upsilon", "phi", "chi", "psi", "omega", "alpha", "beta", "axion", "baryon", "charm", "dynami", "electro", "fluxi", "gyro", "halo", "ioni", "joule", "kineti", "lepto", "mytho", "neuro", "omni", "penta", "quanta", "retro", "syntho", "tri", "umbra", "vecta", "wyrm", "xero", "yield", "zephyr", "ara", "bolo", "ceta", "dome", "ergo", "foti", "glow", "hype", "ille", "juno", "kilo", "lima", "mote", "nano", "oxi", "pico", "quark", "rune", "solo", "tome", "uni", "volo", "watt", "xene", "yotta", "zetta"};
+
+    /**
+     * 战甲Riven模组的固定type值
+     * 用于配置文件禁用检查
+     */
+    public static final String RIVEN_TYPE = "riven_warframe_module";
 
     public WarframeRivenModule(String name) {
         super(name);
@@ -49,7 +56,21 @@ public class WarframeRivenModule extends WarframeModuleBase {
         return itemStack;
     }
 
+    /**
+     * 检查战甲Riven模组是否被禁用
+     *
+     * @return true表示被禁用
+     */
+    public static boolean isRivenDisabled() {
+        return ModuleConfig.isTypeDisabled(RIVEN_TYPE);
+    }
+
     public static ItemStack initModule() {
+        // 检查是否被禁用
+        if (isRivenDisabled()) {
+            return ItemStack.EMPTY;
+        }
+
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE);
         itemStack.setStackDisplayName(TextFormatting.DARK_PURPLE + I18n.translateToLocal("item.warframe_type_riven_random.name") + " " + generateRivenName());
         if (RandomUtil.percentageChance(2.5)) {
@@ -64,6 +85,11 @@ public class WarframeRivenModule extends WarframeModuleBase {
     }
 
     public static ItemStack cycleModule(int trend, int cycleNumber) {
+        // 检查是否被禁用
+        if (isRivenDisabled()) {
+            return ItemStack.EMPTY;
+        }
+
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE);
         itemStack.setStackDisplayName(TextFormatting.DARK_PURPLE + "Warframe " + generateRivenName());
         setTrend(itemStack, trend);
@@ -106,7 +132,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
 
         List<String> warframeAttributeType = new ArrayList<>(WarframeModuleBase.WARFRAME_ATTRIBUTE_TYPES);
 
-        // ✅ 紫卡不能刷出固定属性
+        // 紫卡不能刷出固定属性
         warframeAttributeType.remove("fixedHealth");
         warframeAttributeType.remove("fixedShield");
         warframeAttributeType.remove("fixedArmor");
@@ -140,12 +166,16 @@ public class WarframeRivenModule extends WarframeModuleBase {
                 break;
             }
         }
+
+        // 设置战甲Riven专用type
+        ModuleBase.setType(itemStack, RIVEN_TYPE);
+
         return itemStack;
     }
 
     /**
      * 获取战甲属性的基础数值
-     * ✅ 固定属性返回0（紫卡不能刷出）
+     * 固定属性返回0（紫卡不能刷出）
      */
     public static double getBaseAttributeValue(String attributeType) {
         // ========== 基础属性 ==========
@@ -186,7 +216,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
             return 0.4;
         }
 
-        // ✅ 固定属性返回0（紫卡不能刷出）
+        // 固定属性返回0（紫卡不能刷出）
         if (attributeType.equals("fixedHealth") ||
                 attributeType.equals("fixedShield") ||
                 attributeType.equals("fixedArmor")) {
@@ -276,7 +306,17 @@ public class WarframeRivenModule extends WarframeModuleBase {
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
         ItemStack itemstack = playerIn.getHeldItem(handIn);
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
+            // 检查Riven是否被禁用
+            if (isRivenDisabled()) {
+                return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
+            }
+
             ItemStack module = initModule();
+
+            // 如果返回空物品，说明被禁用了
+            if (module.isEmpty()) {
+                return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
+            }
 
             EntityItem entityItem = new EntityItem(worldIn, playerIn.posX, playerIn.posY, playerIn.posZ, module);
             worldIn.spawnEntity(entityItem);
@@ -295,8 +335,11 @@ public class WarframeRivenModule extends WarframeModuleBase {
     @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
         if (this.isInCreativeTab(tab)) {
-            ItemStack itemStack = getRandomModule();
-            items.add(itemStack);
+            // 只有未被禁用时才显示随机Riven
+            if (!isRivenDisabled()) {
+                ItemStack itemStack = getRandomModule();
+                items.add(itemStack);
+            }
         }
     }
 

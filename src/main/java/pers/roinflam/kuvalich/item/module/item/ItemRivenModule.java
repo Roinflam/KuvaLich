@@ -16,6 +16,7 @@ import net.minecraft.world.World;
 
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -32,6 +33,11 @@ public class ItemRivenModule extends ItemModuleBase {
 
     private static final String[] SUFFIXES = {"cron", "ata", "icor", "tis", "tron", "cak", "nus", "vex", "mira", "ton", "sera", "phix", "gara", "luxe", "moto", "zora", "fyre", "glacia", "volt", "terra", "aqua", "nebula", "stellar", "cosmo", "sol", "lunar", "astral", "void", "nether", "ether", "flux", "halo", "vortex", "quantum", "sigma", "omega", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu", "nu", "xi", "omicron", "pi", "rho", "sigma", "tau", "upsilon", "phi", "chi", "psi", "omega", "alpha", "beta", "axion", "baryon", "charm", "dynami", "electro", "fluxi", "gyro", "halo", "ioni", "joule", "kineti", "lepto", "mytho", "neuro", "omni", "penta", "quanta", "retro", "syntho", "tri", "umbra", "vecta", "wyrm", "xero", "yield", "zephyr", "ara", "bolo", "ceta", "dome", "ergo", "foti", "glow", "hype", "ille", "juno", "kilo", "lima", "mote", "nano", "oxi", "pico", "quark", "rune", "solo", "tome", "uni", "volo", "watt", "xene", "yotta", "zetta"};
 
+    /**
+     * Riven模组的固定type值
+     * 用于配置文件禁用检查
+     */
+    public static final String RIVEN_TYPE = "riven_weapon_module";
 
     public ItemRivenModule(String name) {
         super(name);
@@ -43,7 +49,6 @@ public class ItemRivenModule extends ItemModuleBase {
         return prefix + "-" + suffix;
     }
 
-
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_RIVEN_MODULE);
         itemStack.setStackDisplayName(TextFormatting.DARK_PURPLE + I18n.translateToLocal("kuvaweapon.item_type_riven_random.name"));
@@ -51,7 +56,21 @@ public class ItemRivenModule extends ItemModuleBase {
         return itemStack;
     }
 
+    /**
+     * 检查武器Riven模组是否被禁用
+     *
+     * @return true表示被禁用
+     */
+    public static boolean isRivenDisabled() {
+        return ModuleConfig.isTypeDisabled(RIVEN_TYPE);
+    }
+
     public static ItemStack initModule() {
+        // 检查是否被禁用
+        if (isRivenDisabled()) {
+            return ItemStack.EMPTY;
+        }
+
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_RIVEN_MODULE);
         itemStack.setStackDisplayName(TextFormatting.DARK_PURPLE + I18n.translateToLocal("item.item_type_riven_random.name") + " " + generateRivenName());
         if (RandomUtil.percentageChance(2.5)) {
@@ -86,6 +105,11 @@ public class ItemRivenModule extends ItemModuleBase {
     }
 
     public static ItemStack cycleModule(int trend, int cycleNumber, boolean isMelee) {
+        // 检查是否被禁用
+        if (isRivenDisabled()) {
+            return ItemStack.EMPTY;
+        }
+
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_RIVEN_MODULE);
         if (isMelee) {
             itemStack.setStackDisplayName(TextFormatting.DARK_PURPLE + "MeleeRiven " + generateRivenName());
@@ -217,7 +241,7 @@ public class ItemRivenModule extends ItemModuleBase {
             }
         }
 
-        ItemModuleBase.setType(itemStack, "riven_weapon_module");
+        ItemModuleBase.setType(itemStack, RIVEN_TYPE);
 
         return itemStack;
     }
@@ -295,28 +319,28 @@ public class ItemRivenModule extends ItemModuleBase {
 
         // 击杀叠加词条基础数值
         if (attributeType.equals("killStackBaseDamage")) {
-            return 0.04;  // 每层4%基础伤害
+            return 0.04;
         }
         if (attributeType.equals("killStackMultishot")) {
-            return 0.30;  // 每层30%多重射击
+            return 0.30;
         }
         if (attributeType.equals("killStackMeleeCriticalMultiplier")) {
-            return 0.30;  // 每层30%近战暴击伤害
+            return 0.30;
         }
         if (attributeType.equals("killStackTriggerChance")) {
-            return 0.30;  // 每层30%触发几率
+            return 0.30;
         }
         if (attributeType.equals("killStackAttackRange")) {
-            return 0.50;  // 每层50%攻击范围
+            return 0.50;
         }
         if (attributeType.equals("killStackAttackSpeed")) {
-            return 0.08;  // 每层8%攻击速度
+            return 0.08;
         }
         if (attributeType.equals("killStackBurstingRadius")) {
-            return 0.08;  // 每层8%爆炸半径
+            return 0.08;
         }
         if (attributeType.equals("killStackFiringRate")) {
-            return 0.08;  // 每层8%射速
+            return 0.08;
         }
 
         return 0;
@@ -364,7 +388,17 @@ public class ItemRivenModule extends ItemModuleBase {
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
         ItemStack itemstack = playerIn.getHeldItem(handIn);
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
+            // 检查Riven是否被禁用
+            if (isRivenDisabled()) {
+                return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
+            }
+
             ItemStack module = initModule();
+
+            // 如果返回空物品，说明被禁用了
+            if (module.isEmpty()) {
+                return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
+            }
 
             EntityItem entityItem = new EntityItem(worldIn, playerIn.posX, playerIn.posY, playerIn.posZ, module);
             worldIn.spawnEntity(entityItem);
@@ -383,8 +417,11 @@ public class ItemRivenModule extends ItemModuleBase {
     @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
         if (this.isInCreativeTab(tab)) {
-            ItemStack itemStack = getRandomModule();
-            items.add(itemStack);
+            // 只有未被禁用时才显示随机Riven
+            if (!isRivenDisabled()) {
+                ItemStack itemStack = getRandomModule();
+                items.add(itemStack);
+            }
         }
     }
 

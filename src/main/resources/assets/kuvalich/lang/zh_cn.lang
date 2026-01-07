@@ -613,121 +613,6 @@ item.sancti_magistar.name=圣洁执法者
 item.vitrica.name=金璃剑
 
 # ========================================
-# 配置界面 - 主分类
-# ========================================
-config.kuvalich.kuvalich=赤毒玄骸系统
-config.kuvalich.kuvalich.tooltip=赤毒玄骸
-config.kuvalich.kuvaweapon=赤毒武器属性
-
-# ========================================
-# 配置界面 - 玄骸系统配置
-# ========================================
-config.kuvalich.kuvalich.baseMaximumLevel=基础最高武器等级
-config.kuvalich.kuvalich.baseMinimumLevel=基础最低武器等级
-config.kuvalich.kuvalich.battleBoost=战斗伤害提升速率
-config.kuvalich.kuvalich.benchmarkLevel=武器等级基准
-config.kuvalich.kuvalich.damageDisplay=显示所有伤害
-config.kuvalich.kuvalich.damagePriority=伤害修正优先级
-config.kuvalich.kuvalich.enableDetailedLogging=启用详细调试日志
-config.kuvalich.kuvalich.firstStage=第一阶段所需点数
-config.kuvalich.kuvalich.increaseDamage=失败后敌人伤害提升
-config.kuvalich.kuvalich.kuvaLichMaxSpawnCount=赤毒玄骸最大生成数
-config.kuvalich.kuvalich.kuvaLichMinSpawnCount=赤毒玄骸最小生成数
-config.kuvalich.kuvalich.kuvaLichSpawnWeight=赤毒玄骸生成权重
-config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount=赤毒奴仆最大生成数
-config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount=赤毒奴仆最小生成数
-config.kuvalich.kuvalich.kuvaSlaveSpawnWeight=赤毒奴仆生成权重
-config.kuvalich.kuvalich.masterPotionMultiplier=玄骸击杀点数倍率
-config.kuvalich.kuvalich.maxDecryptionProgress=最大解密进度
-config.kuvalich.kuvalich.maximumLevel=绝对最高武器等级
-config.kuvalich.kuvalich.maximumLevelCapIncrease=最大等级上限提升
-config.kuvalich.kuvalich.minDecryptionProgress=最小解密进度
-config.kuvalich.kuvalich.minimumLevel=绝对最低武器等级
-config.kuvalich.kuvalich.minimumLevelCapIncrease=最小等级下限提升
-config.kuvalich.kuvalich.reducedDamage=失败后伤害削减
-config.kuvalich.kuvalich.requiemUltimatumDropChance=安魂通牒掉落几率
-config.kuvalich.kuvalich.secondStage=第二阶段所需点数
-config.kuvalich.kuvalich.thirdStage=第三阶段所需点数
-config.kuvalich.kuvalich.upgradeLimit=武器升级次数上限
-config.kuvalich.kuvalich.upgradeMultiplier=武器升级倍率
-
-# ========================================
-# 配置界面 - 武器击杀叠层配置
-# ========================================
-config.kuvalich.kuvalich.maxStacksAttackRange=攻击范围叠层最大层数
-config.kuvalich.kuvalich.maxStacksAttackSpeed=攻击速度叠层最大层数
-config.kuvalich.kuvalich.maxStacksBaseDamage=基础伤害叠层最大层数
-config.kuvalich.kuvalich.maxStacksBurstingRadius=爆炸半径叠层最大层数
-config.kuvalich.kuvalich.maxStacksFiringRate=射速叠层最大层数
-config.kuvalich.kuvalich.maxStacksMeleeCritMult=近战暴击伤害叠层最大层数
-config.kuvalich.kuvalich.maxStacksMultishot=多重射击叠层最大层数
-config.kuvalich.kuvalich.maxStacksTriggerChance=触发几率叠层最大层数
-config.kuvalich.kuvalich.weaponKillStackSettings=武器击杀叠层系统配置
-config.kuvalich.kuvalich.weaponStackDecayTicks=武器叠层衰减时间(ticks)
-
-# ========================================
-# 配置界面 - 战甲击杀叠层配置
-# ========================================
-config.kuvalich.kuvalich.maxStacksArmor=护甲叠层最大层数
-config.kuvalich.kuvalich.maxStacksDiggingSpeed=挖掘速度叠层最大层数
-config.kuvalich.kuvalich.maxStacksElectricProtection=电击抗性叠层最大层数
-config.kuvalich.kuvalich.maxStacksFireProtection=火焰抗性叠层最大层数
-config.kuvalich.kuvalich.maxStacksHealth=生命值叠层最大层数
-config.kuvalich.kuvalich.maxStacksHomologousProtection=同源抗性叠层最大层数
-config.kuvalich.kuvalich.maxStacksItemDropMultiplier=战利品掉落倍率叠层最大层数
-config.kuvalich.kuvalich.maxStacksResponseRate=恢复生命值倍率叠层最大层数
-config.kuvalich.kuvalich.maxStacksShield=护盾容量叠层最大层数
-config.kuvalich.kuvalich.maxStacksShieldRecoveryDelay=护盾恢复延迟叠层最大层数
-config.kuvalich.kuvalich.maxStacksShieldRecoveryRate=护盾恢复叠层最大层数
-config.kuvalich.kuvalich.maxStacksSprintSpeed=冲刺速度叠层最大层数
-config.kuvalich.kuvalich.warframeKillStackSettings=战甲击杀叠层系统配置
-config.kuvalich.kuvalich.warframeStackDecayTicks=战甲叠层衰减时间(ticks)
-
-# ========================================
-# 配置界面 - 武器属性配置
-# ========================================
-config.kuvalich.kuvaweapon.attackDamageArcaTitron=弧电振子锤-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageCaustacyst=灼蚀变体镰-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageDestrezaPrime=技巧之剑Prime-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageGramPrime=格拉姆Prime-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageGuandaoPrime=关刀Prime-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageKuvaShildeg=赤毒希尔德-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageMachete=马谢特砍刀-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageParacesis=心智之殁-攻击伤害
-config.kuvalich.kuvaweapon.attackDamagePennant=尖幡-攻击伤害
-config.kuvalich.kuvaweapon.attackDamagePrismaVeritux=棱晶真理巨剑-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageReaperPrime=收割者Prime-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageSanctiMagistar=圣洁执法者-攻击伤害
-config.kuvalich.kuvaweapon.attackDamageVitrica=金璃剑-攻击伤害
-config.kuvalich.kuvaweapon.attackSpeedArcaTitron=弧电振子锤-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedCaustacyst=灼蚀变体镰-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedDestrezaPrime=技巧之剑Prime-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedGramPrime=格拉姆Prime-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedGuandaoPrime=关刀Prime-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedKuvaShildeg=赤毒希尔德-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedMachete=马谢特砍刀-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedParacesis=心智之殁-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedPennant=尖幡-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedPrismaVeritux=棱晶真理巨剑-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedReaperPrime=收割者Prime-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedSanctiMagistar=圣洁执法者-攻击速度
-config.kuvalich.kuvaweapon.attackSpeedVitrica=金璃剑-攻击速度
-config.kuvalich.kuvaweapon.attributeMultiplier=武器属性倍率
-config.kuvalich.kuvaweapon.movementSpeedArcaTitron=弧电振子锤-移动速度
-config.kuvalich.kuvaweapon.movementSpeedCaustacyst=灼蚀变体镰-移动速度
-config.kuvalich.kuvaweapon.movementSpeedDestrezaPrime=技巧之剑Prime-移动速度
-config.kuvalich.kuvaweapon.movementSpeedGramPrime=格拉姆Prime-移动速度
-config.kuvalich.kuvaweapon.movementSpeedGuandaoPrime=关刀Prime-移动速度
-config.kuvalich.kuvaweapon.movementSpeedKuvaShildeg=赤毒希尔德-移动速度
-config.kuvalich.kuvaweapon.movementSpeedMachete=马谢特砍刀-移动速度
-config.kuvalich.kuvaweapon.movementSpeedParacesis=心智之殁-移动速度
-config.kuvalich.kuvaweapon.movementSpeedPennant=尖幡-移动速度
-config.kuvalich.kuvaweapon.movementSpeedPrismaVeritux=棱晶真理巨剑-移动速度
-config.kuvalich.kuvaweapon.movementSpeedReaperPrime=收割者Prime-移动速度
-config.kuvalich.kuvaweapon.movementSpeedSanctiMagistar=圣洁执法者-移动速度
-config.kuvalich.kuvaweapon.movementSpeedVitrica=金璃剑-移动速度
-
-# ========================================
 # 属性类型
 # ========================================
 attribute.name.generic.reachDistance=范围扩展
@@ -744,3 +629,245 @@ message.kuvalich.minimumLevelWeapon=解密成功,当前解密获得武器等级�
 message.kuvalich.requiemRiddleAnswer=当前谜语的答案为 %s / %s / %s
 message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current riddle! Please decrypt any answer before using it!
 message.kuvalich.secondCorrect=解密失败,第二个答案正确!
+
+# ═══════════════════════════════════════════════════════════════
+# 配置界面国际化
+# ═══════════════════════════════════════════════════════════════
+
+# ========== 主配置标题 ==========
+config.kuvalich.title=赤毒玄骸
+config.kuvalich.title.tooltip=赤毒玄骸系统相关配置
+
+# ========== 模组管理配置标题 ==========
+config.kuvalich.modules.title=模组管理
+config.kuvalich.modules.title.tooltip=管理模组的启用与禁用
+
+# ========== 配置分类 ==========
+config.kuvalich.kuvalich=玄骸系统
+config.kuvalich.kuvalich.tooltip=赤毒玄骸核心系统配置
+config.kuvalich.kuvaweapon=赤毒武器
+config.kuvalich.kuvaweapon.tooltip=赤毒武器基础属性配置
+
+# ========== 模组管理 ==========
+config.kuvalich.modules.disabledModuleTypes=禁用的模组类型
+config.kuvalich.modules.disabledModuleTypes.tooltip=填入模组的type值即可禁止该类型的所有模组
+
+# ========== 玄骸系统配置 ==========
+config.kuvalich.kuvalich.enableDetailedLogging=启用详细调试日志
+config.kuvalich.kuvalich.enableDetailedLogging.tooltip=启用后会在日志中记录所有详细信息
+config.kuvalich.kuvalich.requiemUltimatumDropChance=安魂通牒掉落几率(%%)
+config.kuvalich.kuvalich.requiemUltimatumDropChance.tooltip=成功破解赤毒玄骸后掉落安魂通牒的几率
+config.kuvalich.kuvalich.minDecryptionProgress=最小解密进度
+config.kuvalich.kuvalich.minDecryptionProgress.tooltip=每次击杀获得的最小解密进度
+config.kuvalich.kuvalich.maxDecryptionProgress=最大解密进度
+config.kuvalich.kuvalich.maxDecryptionProgress.tooltip=每次击杀获得的最大解密进度
+config.kuvalich.kuvalich.firstStage=第一阶段解密点数
+config.kuvalich.kuvalich.firstStage.tooltip=第一阶段解密所需点数
+config.kuvalich.kuvalich.secondStage=第二阶段解密点数
+config.kuvalich.kuvalich.secondStage.tooltip=第二阶段解密所需点数
+config.kuvalich.kuvalich.thirdStage=第三阶段解密点数
+config.kuvalich.kuvalich.thirdStage.tooltip=第三阶段解密所需点数
+config.kuvalich.kuvalich.masterPotionMultiplier=击杀玄骸额外点数倍率
+config.kuvalich.kuvalich.masterPotionMultiplier.tooltip=击杀赤毒玄骸获得的额外解密点数倍率
+config.kuvalich.kuvalich.damageDisplay=显示伤害数字
+config.kuvalich.kuvalich.damageDisplay.tooltip=是否显示所有伤害数字
+config.kuvalich.kuvalich.damagePriority=伤害修正优先级
+config.kuvalich.kuvalich.damagePriority.tooltip=伤害修正的优先级设置
+config.kuvalich.kuvalich.battleBoost=战斗伤害提升
+config.kuvalich.kuvalich.battleBoost.tooltip=战斗中每秒伤害提升比例
+config.kuvalich.kuvalich.reducedDamage=解密失败伤害削减
+config.kuvalich.kuvalich.reducedDamage.tooltip=每次解密失败后对玄骸造成的伤害削减
+config.kuvalich.kuvalich.increaseDamage=解密失败敌人伤害提升
+config.kuvalich.kuvalich.increaseDamage.tooltip=每次解密失败后玄骸对你造成的伤害提升
+config.kuvalich.kuvalich.benchmarkLevel=武器等级基准
+config.kuvalich.kuvalich.benchmarkLevel.tooltip=武器等级计算的基准值
+config.kuvalich.kuvalich.baseMinimumLevel=基础最低武器等级
+config.kuvalich.kuvalich.baseMinimumLevel.tooltip=武器可以获得的基础最低等级
+config.kuvalich.kuvalich.baseMaximumLevel=基础最高武器等级
+config.kuvalich.kuvalich.baseMaximumLevel.tooltip=武器可以获得的基础最高等级
+config.kuvalich.kuvalich.minimumLevelCapIncrease=最小等级下限提升
+config.kuvalich.kuvalich.minimumLevelCapIncrease.tooltip=每次升级时最小等级下限的提升量
+config.kuvalich.kuvalich.maximumLevelCapIncrease=最大等级上限提升
+config.kuvalich.kuvalich.maximumLevelCapIncrease.tooltip=每次升级时最大等级上限的提升量
+config.kuvalich.kuvalich.minimumLevel=绝对最低武器等级
+config.kuvalich.kuvalich.minimumLevel.tooltip=武器可以达到的绝对最低等级
+config.kuvalich.kuvalich.maximumLevel=绝对最高武器等级
+config.kuvalich.kuvalich.maximumLevel.tooltip=武器可以达到的绝对最高等级
+config.kuvalich.kuvalich.upgradeMultiplier=武器升级倍率
+config.kuvalich.kuvalich.upgradeMultiplier.tooltip=安魂之融武器升级时的属性倍率
+config.kuvalich.kuvalich.upgradeLimit=武器升级次数上限
+config.kuvalich.kuvalich.upgradeLimit.tooltip=武器可以升级的最大次数
+
+# ========== 武器击杀叠层系统 ==========
+config.kuvalich.kuvalich.weaponKillStackSettings=武器击杀叠层设置
+config.kuvalich.kuvalich.weaponKillStackSettings.tooltip=控制所有武器击杀叠加效果的配置
+config.kuvalich.kuvalich.weaponStackDecayTicks=武器叠层持续时间
+config.kuvalich.kuvalich.weaponStackDecayTicks.tooltip=武器叠层效果的持续时间(ticks)，200=10秒
+config.kuvalich.kuvalich.maxStacksBaseDamage=基础伤害最大层数
+config.kuvalich.kuvalich.maxStacksBaseDamage.tooltip=基础伤害叠层的最大层数
+config.kuvalich.kuvalich.maxStacksMultishot=多重射击最大层数
+config.kuvalich.kuvalich.maxStacksMultishot.tooltip=多重射击叠层的最大层数
+config.kuvalich.kuvalich.maxStacksMeleeCritMult=近战暴击伤害最大层数
+config.kuvalich.kuvalich.maxStacksMeleeCritMult.tooltip=近战暴击伤害叠层的最大层数
+config.kuvalich.kuvalich.maxStacksTriggerChance=触发几率最大层数
+config.kuvalich.kuvalich.maxStacksTriggerChance.tooltip=触发几率叠层的最大层数
+config.kuvalich.kuvalich.maxStacksAttackRange=攻击范围最大层数
+config.kuvalich.kuvalich.maxStacksAttackRange.tooltip=攻击范围叠层的最大层数
+config.kuvalich.kuvalich.maxStacksAttackSpeed=攻击速度最大层数
+config.kuvalich.kuvalich.maxStacksAttackSpeed.tooltip=攻击速度叠层的最大层数
+config.kuvalich.kuvalich.maxStacksBurstingRadius=爆炸半径最大层数
+config.kuvalich.kuvalich.maxStacksBurstingRadius.tooltip=爆炸半径叠层的最大层数
+config.kuvalich.kuvalich.maxStacksFiringRate=射速最大层数
+config.kuvalich.kuvalich.maxStacksFiringRate.tooltip=射速叠层的最大层数
+
+# ========== 战甲击杀叠层系统 ==========
+config.kuvalich.kuvalich.warframeKillStackSettings=战甲击杀叠层设置
+config.kuvalich.kuvalich.warframeKillStackSettings.tooltip=控制所有战甲击杀叠加效果的配置
+config.kuvalich.kuvalich.warframeStackDecayTicks=战甲叠层持续时间
+config.kuvalich.kuvalich.warframeStackDecayTicks.tooltip=战甲叠层效果的持续时间(ticks)，400=20秒
+config.kuvalich.kuvalich.maxStacksHealth=生命值最大层数
+config.kuvalich.kuvalich.maxStacksHealth.tooltip=生命值叠层的最大层数
+config.kuvalich.kuvalich.maxStacksShield=护盾容量最大层数
+config.kuvalich.kuvalich.maxStacksShield.tooltip=护盾容量叠层的最大层数
+config.kuvalich.kuvalich.maxStacksArmor=护甲最大层数
+config.kuvalich.kuvalich.maxStacksArmor.tooltip=护甲叠层的最大层数
+config.kuvalich.kuvalich.maxStacksSprintSpeed=冲刺速度最大层数
+config.kuvalich.kuvalich.maxStacksSprintSpeed.tooltip=冲刺速度叠层的最大层数
+config.kuvalich.kuvalich.maxStacksShieldRecoveryRate=护盾恢复速率最大层数
+config.kuvalich.kuvalich.maxStacksShieldRecoveryRate.tooltip=护盾恢复速率叠层的最大层数
+config.kuvalich.kuvalich.maxStacksShieldRecoveryDelay=护盾恢复延迟最大层数
+config.kuvalich.kuvalich.maxStacksShieldRecoveryDelay.tooltip=护盾恢复延迟叠层的最大层数
+config.kuvalich.kuvalich.maxStacksFireProtection=火焰抗性最大层数
+config.kuvalich.kuvalich.maxStacksFireProtection.tooltip=火焰抗性叠层的最大层数
+config.kuvalich.kuvalich.maxStacksElectricProtection=电击抗性最大层数
+config.kuvalich.kuvalich.maxStacksElectricProtection.tooltip=电击抗性叠层的最大层数
+config.kuvalich.kuvalich.maxStacksHomologousProtection=同源抗性最大层数
+config.kuvalich.kuvalich.maxStacksHomologousProtection.tooltip=同源抗性叠层的最大层数
+config.kuvalich.kuvalich.maxStacksResponseRate=生命恢复倍率最大层数
+config.kuvalich.kuvalich.maxStacksResponseRate.tooltip=生命恢复倍率叠层的最大层数
+config.kuvalich.kuvalich.maxStacksItemDropMultiplier=战利品掉落最大层数
+config.kuvalich.kuvalich.maxStacksItemDropMultiplier.tooltip=战利品掉落倍率叠层的最大层数
+config.kuvalich.kuvalich.maxStacksDiggingSpeed=挖掘速度最大层数
+config.kuvalich.kuvalich.maxStacksDiggingSpeed.tooltip=挖掘速度叠层的最大层数
+
+# ========== 生成设置 ==========
+config.kuvalich.kuvalich.kuvaLichSpawnWeight=赤毒玄骸生成权重
+config.kuvalich.kuvalich.kuvaLichSpawnWeight.tooltip=赤毒玄骸的生成权重
+config.kuvalich.kuvalich.kuvaLichMinSpawnCount=赤毒玄骸最小生成数量
+config.kuvalich.kuvalich.kuvaLichMinSpawnCount.tooltip=赤毒玄骸的最小生成数量
+config.kuvalich.kuvalich.kuvaLichMaxSpawnCount=赤毒玄骸最大生成数量
+config.kuvalich.kuvalich.kuvaLichMaxSpawnCount.tooltip=赤毒玄骸的最大生成数量
+config.kuvalich.kuvalich.kuvaSlaveSpawnWeight=赤毒奴仆生成权重
+config.kuvalich.kuvalich.kuvaSlaveSpawnWeight.tooltip=赤毒奴仆的生成权重
+config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount=赤毒奴仆最小生成数量
+config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount.tooltip=赤毒奴仆的最小生成数量
+config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount=赤毒奴仆最大生成数量
+config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount.tooltip=赤毒奴仆的最大生成数量
+
+# ========== 赤毒武器配置 ==========
+config.kuvalich.kuvaweapon.attributeMultiplier=武器属性倍率
+config.kuvalich.kuvaweapon.attributeMultiplier.tooltip=所有赤毒武器的属性倍率
+
+# 赤毒希尔德
+config.kuvalich.kuvaweapon.attackDamageKuvaShildeg=赤毒希尔德 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageKuvaShildeg.tooltip=赤毒希尔德的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedKuvaShildeg=赤毒希尔德 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedKuvaShildeg.tooltip=赤毒希尔德的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedKuvaShildeg=赤毒希尔德 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedKuvaShildeg.tooltip=赤毒希尔德的移动速度修正
+
+# 尖幡
+config.kuvalich.kuvaweapon.attackDamagePennant=尖幡 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamagePennant.tooltip=尖幡的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedPennant=尖幡 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedPennant.tooltip=尖幡的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedPennant=尖幡 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedPennant.tooltip=尖幡的移动速度修正
+
+# 关刀Prime
+config.kuvalich.kuvaweapon.attackDamageGuandaoPrime=关刀Prime - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageGuandaoPrime.tooltip=关刀Prime的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedGuandaoPrime=关刀Prime - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedGuandaoPrime.tooltip=关刀Prime的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedGuandaoPrime=关刀Prime - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedGuandaoPrime.tooltip=关刀Prime的移动速度修正
+
+# 心智之殁
+config.kuvalich.kuvaweapon.attackDamageParacesis=心智之殁 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageParacesis.tooltip=心智之殁的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedParacesis=心智之殁 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedParacesis.tooltip=心智之殁的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedParacesis=心智之殁 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedParacesis.tooltip=心智之殁的移动速度修正
+
+# 弧电振子锤
+config.kuvalich.kuvaweapon.attackDamageArcaTitron=弧电振子锤 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageArcaTitron.tooltip=弧电振子锤的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedArcaTitron=弧电振子锤 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedArcaTitron.tooltip=弧电振子锤的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedArcaTitron=弧电振子锤 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedArcaTitron.tooltip=弧电振子锤的移动速度修正
+
+# 收割者Prime
+config.kuvalich.kuvaweapon.attackDamageReaperPrime=收割者Prime - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageReaperPrime.tooltip=收割者Prime的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedReaperPrime=收割者Prime - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedReaperPrime.tooltip=收割者Prime的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedReaperPrime=收割者Prime - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedReaperPrime.tooltip=收割者Prime的移动速度修正
+
+# 金璃剑
+config.kuvalich.kuvaweapon.attackDamageVitrica=金璃剑 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageVitrica.tooltip=金璃剑的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedVitrica=金璃剑 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedVitrica.tooltip=金璃剑的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedVitrica=金璃剑 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedVitrica.tooltip=金璃剑的移动速度修正
+
+# 格拉姆Prime
+config.kuvalich.kuvaweapon.attackDamageGramPrime=格拉姆Prime - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageGramPrime.tooltip=格拉姆Prime的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedGramPrime=格拉姆Prime - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedGramPrime.tooltip=格拉姆Prime的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedGramPrime=格拉姆Prime - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedGramPrime.tooltip=格拉姆Prime的移动速度修正
+
+# 圣洁执法者
+config.kuvalich.kuvaweapon.attackDamageSanctiMagistar=圣洁执法者 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageSanctiMagistar.tooltip=圣洁执法者的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedSanctiMagistar=圣洁执法者 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedSanctiMagistar.tooltip=圣洁执法者的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedSanctiMagistar=圣洁执法者 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedSanctiMagistar.tooltip=圣洁执法者的移动速度修正
+
+# 技巧之剑Prime
+config.kuvalich.kuvaweapon.attackDamageDestrezaPrime=技巧之剑Prime - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageDestrezaPrime.tooltip=技巧之剑Prime的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedDestrezaPrime=技巧之剑Prime - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedDestrezaPrime.tooltip=技巧之剑Prime的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedDestrezaPrime=技巧之剑Prime - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedDestrezaPrime.tooltip=技巧之剑Prime的移动速度修正
+
+# 棱晶真理巨剑
+config.kuvalich.kuvaweapon.attackDamagePrismaVeritux=棱晶真理巨剑 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamagePrismaVeritux.tooltip=棱晶真理巨剑的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedPrismaVeritux=棱晶真理巨剑 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedPrismaVeritux.tooltip=棱晶真理巨剑的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedPrismaVeritux=棱晶真理巨剑 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedPrismaVeritux.tooltip=棱晶真理巨剑的移动速度修正
+
+# 马谢特砍刀
+config.kuvalich.kuvaweapon.attackDamageMachete=马谢特砍刀 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageMachete.tooltip=马谢特砍刀的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedMachete=马谢特砍刀 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedMachete.tooltip=马谢特砍刀的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedMachete=马谢特砍刀 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedMachete.tooltip=马谢特砍刀的移动速度修正
+
+# 灼蚀变体镰
+config.kuvalich.kuvaweapon.attackDamageCaustacyst=灼蚀变体镰 - 攻击伤害
+config.kuvalich.kuvaweapon.attackDamageCaustacyst.tooltip=灼蚀变体镰的基础攻击伤害
+config.kuvalich.kuvaweapon.attackSpeedCaustacyst=灼蚀变体镰 - 攻击速度
+config.kuvalich.kuvaweapon.attackSpeedCaustacyst.tooltip=灼蚀变体镰的基础攻击速度
+config.kuvalich.kuvaweapon.movementSpeedCaustacyst=灼蚀变体镰 - 移动速度
+config.kuvalich.kuvaweapon.movementSpeedCaustacyst.tooltip=灼蚀变体镰的移动速度修正
