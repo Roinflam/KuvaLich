@@ -11,6 +11,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.WarframeModules;
@@ -19,17 +20,6 @@ import pers.roinflam.kuvalich.utils.LogUtil;
 
 import javax.annotation.Nonnull;
 
-/**
- * 安魂之战甲军械库容器类（支持Shift快速移动）
- *
- * 功能：
- * 1. 从玩家Capability加载已装备的模组
- * 2. 模组放入/取出时立刻同步到玩家Capability
- * 3. ✅ 支持Shift+点击快速移动（双向）
- * 4. 防止装备重复模组
- * 5. 防止装备多个裂罅模组
-
- */
 public class ContainerRequiemWarframeTable extends Container {
     private final World world;
     private final BlockPos pos;
@@ -42,16 +32,13 @@ public class ContainerRequiemWarframeTable extends Container {
 
         module = new ItemStackHandler(8);
 
-        // 添加模组槽位 - 上排4个
         for (int i = 0; i < 4; i++) {
             this.addSlotToContainer(new ModuleSlot(entityPlayer, module, i, 18 + 41 * i, 12));
         }
-        // 添加模组槽位 - 下排4个
         for (int i = 0; i < 4; i++) {
             this.addSlotToContainer(new ModuleSlot(entityPlayer, module, i + 4, 18 + 41 * i, 39));
         }
 
-        // 从玩家Capability加载模组
         try {
             WarframeModules warframeModules = entityPlayer.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
 
@@ -73,7 +60,6 @@ public class ContainerRequiemWarframeTable extends Container {
             LogUtil.error("加载战甲模组时发生错误", e);
         }
 
-        // 添加玩家背包槽位
         InventoryPlayer inventoryPlayer = entityPlayer.inventory;
         for (int i = 0; i < 9; i++) {
             this.addSlotToContainer(new Slot(inventoryPlayer, i, 8 + 18 * i, 122));
@@ -83,13 +69,6 @@ public class ContainerRequiemWarframeTable extends Container {
         }
     }
 
-    /**
-     * 快速转移物品（Shift+点击）
-     *
-     * ✅ 支持双向快速移动：
-     * - 从背包到容器：自动放入模组槽
-     * - 从容器到背包：取出模组并同步Capability
-     */
     @Override
     public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
@@ -102,24 +81,18 @@ public class ContainerRequiemWarframeTable extends Container {
         ItemStack slotStack = slot.getStack();
         itemstack = slotStack.copy();
 
-        // ========== 从容器转移到背包 ==========
         if (index < 8) {
             LogUtil.debug("从战甲模组槽位" + index + "转移到背包: " + slotStack.getDisplayName());
 
-            // ✅ 转移到背包
             if (!this.mergeItemStack(slotStack, 8, 8 + 36, true)) {
                 LogUtil.debug("背包已满，无法转移");
                 return ItemStack.EMPTY;
             }
 
-            // ✅ 转移后触发槽位变化，会自动调用 onSlotChanged -> 同步Capability
             slot.onSlotChange(slotStack, itemstack);
 
             LogUtil.debug("战甲模组转移成功，已触发同步");
-        }
-        // ========== 从背包转移到容器 ==========
-        else {
-            // 只有战甲模组才能放入
+        } else {
             if (itemstack.getItem() instanceof WarframeModuleBase) {
                 boolean success = false;
                 for (int i = 0; i < 8; i++) {
@@ -139,19 +112,16 @@ public class ContainerRequiemWarframeTable extends Container {
             }
         }
 
-        // 更新槽位状态
         if (slotStack.isEmpty()) {
             slot.putStack(ItemStack.EMPTY);
         } else {
             slot.onSlotChanged();
         }
 
-        // 如果物品数量没变化，说明转移失败
         if (slotStack.getCount() == itemstack.getCount()) {
             return ItemStack.EMPTY;
         }
 
-        // 通知槽位物品被取走
         slot.onTake(playerIn, slotStack);
 
         return itemstack;
@@ -164,7 +134,6 @@ public class ContainerRequiemWarframeTable extends Container {
                 WarframeModules warframeModules = playerIn.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
 
                 if (warframeModules != null) {
-                    // 遍历所有槽位，检查并处理非法物品
                     for (int i = 0; i < 8; i++) {
                         ItemStack stack = module.getStackInSlot(i);
 
@@ -180,7 +149,6 @@ public class ContainerRequiemWarframeTable extends Container {
                         }
                     }
 
-                    // 保存合法的模组到Capability
                     warframeModules.setOne(module.getStackInSlot(0));
                     warframeModules.setTwo(module.getStackInSlot(1));
                     warframeModules.setThree(module.getStackInSlot(2));
@@ -206,9 +174,6 @@ public class ContainerRequiemWarframeTable extends Container {
         return playerIn.world.equals(this.world) && playerIn.getDistanceSq(this.pos) <= 64;
     }
 
-    /**
-     * 战甲模组槽位类
-     */
     public class ModuleSlot extends SlotItemHandler {
         public int index;
         public EntityPlayer entityPlayer;
@@ -247,14 +212,19 @@ public class ContainerRequiemWarframeTable extends Container {
                 return false;
             }
 
+            // ✅ 使用新的冲突检测系统
             for (int i = 0; i < 8; i++) {
                 if (i != index) {
                     ItemStack existingStack = module.getStackInSlot(i);
                     if (!existingStack.isEmpty()) {
+                        // 紫卡特殊处理（只能装一个）
                         if (itemStack.getItem() instanceof WarframeRivenModule &&
                                 existingStack.getItem() instanceof WarframeRivenModule) {
                             return false;
-                        } else if (WarframeModuleBase.getType(existingStack).equals(WarframeModuleBase.getType(itemStack))) {
+                        }
+
+                        // ✅ 双向冲突检测（type + 冲突标签）
+                        if (ModuleBase.hasConflict(existingStack, itemStack)) {
                             return false;
                         }
                     }
@@ -284,10 +254,6 @@ public class ContainerRequiemWarframeTable extends Container {
             }
         }
 
-        /**
-         * ✅ 覆盖 onSlotChanged 方法
-         * Shift+点击转移时会调用此方法
-         */
         @Override
         public void onSlotChanged() {
             super.onSlotChanged();

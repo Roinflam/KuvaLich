@@ -9,8 +9,6 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
 
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
@@ -41,202 +39,318 @@ public class ItemPrimeModule extends ItemModuleBase {
             ItemStack itemStack = getRandomModule();
             items.add(itemStack);
 
+            // ========== 原有MOD ==========
+
+            // kuvaweapon.item_module.pressure_point_prime (压力点Prime)
             itemStack = new ItemStack(this);
             itemStack.setTranslatableName("kuvaweapon.item_module.pressure_point_prime");
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 1.6501f);
+            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 1.65001f);
             ItemModuleBase.setType(itemStack, "pressure_point");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
+            // kuvaweapon.item_module.reach_prime (攻击范围Prime)
             itemStack = new ItemStack(this);
             itemStack.setTranslatableName("kuvaweapon.item_module.reach_prime");
-            ItemModuleBase.addAttributes(itemStack, "attackRange", 3.0001f);
+            ItemModuleBase.addAttributes(itemStack, "attackRange", 1.65001f);
             ItemModuleBase.setType(itemStack, "reach");
+            ItemModuleBase.setConflictTags(itemStack, "attack_range");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.heavy_trauma_prime");
-            ItemModuleBase.addAttributes(itemStack, "impact", 1.65001f);
-            ItemModuleBase.setType(itemStack, "heavy_trauma");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.fever_strike_prime");
-            ItemModuleBase.addAttributes(itemStack, "poison", 1.6501f);
-            ItemModuleBase.setType(itemStack, "fever_strike");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.bane_of_undefined_prime");
-            ItemModuleBase.addAttributes(itemStack, "bane_of_undefined", 0.5501f);
-            ItemModuleBase.setType(itemStack, "bane_of_undefined");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.bane_of_undead_prime");
-            ItemModuleBase.addAttributes(itemStack, "bane_of_undead", 0.5501f);
-            ItemModuleBase.setType(itemStack, "bane_of_undead");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.bane_of_arthropod_prime");
-            ItemModuleBase.addAttributes(itemStack, "bane_of_arthropod", 0.5501f);
-            ItemModuleBase.setType(itemStack, "bane_of_arthropod");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.bane_of_illager_prime");
-            ItemModuleBase.addAttributes(itemStack, "bane_of_illager", 0.5501f);
-            ItemModuleBase.setType(itemStack, "bane_of_illager");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.magic_swordsman_prime");
-            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 1.2001f);
-            ItemModuleBase.addAttributes(itemStack, "magicDamage", 1.65001f);
-            ItemModuleBase.setType(itemStack, "magic_swordsman");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.eldest_elemental_envoy_prime");
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", 1.20001f);
-            ItemModuleBase.addAttributes(itemStack, "magicDamage", 1.65001f);
-            ItemModuleBase.setType(itemStack, "eldest_elemental_envoy");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.malicious_prime");
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 1.6501f);
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", -0.6001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", -0.6001f);
-            ItemModuleBase.setType(itemStack, "malicious");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.persuasion_prime");
-            ItemModuleBase.addAttributes(itemStack, "baseDamageWhenNotCriticalStrike", 1.65001f);
-            ItemModuleBase.setType(itemStack, "persuasion");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.firestorm_prime");
-            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.44001f);
-            ItemModuleBase.setType(itemStack, "firestorm");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.cryo_rounds_prime");
-            ItemModuleBase.addAttributes(itemStack, "projectileDamage", 1.65001f);
-            ItemModuleBase.addAttributes(itemStack, "ice", 0.90001f);
-            ItemModuleBase.setType(itemStack, "cryo_rounds");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.fierce_bow_prime");
-            ItemModuleBase.addAttributes(itemStack, "arrowDamage", 1.65001f);
-            ItemModuleBase.addAttributes(itemStack, "multishot", 0.90001f);
-            ItemModuleBase.setType(itemStack, "fierce_bow");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.fission_shot_prime");
-            ItemModuleBase.addAttributes(itemStack, "multishot", 1.65001f);
-            ItemModuleBase.addAttributes(itemStack, "remoteDamage", -0.6001f);
-            ItemModuleBase.setType(itemStack, "fission_shot");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
+            // kuvaweapon.item_module.fury_prime (狂怒Prime)
             itemStack = new ItemStack(this);
             itemStack.setTranslatableName("kuvaweapon.item_module.fury_prime");
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.5501f);
+            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.55001f);
             ItemModuleBase.setType(itemStack, "fury");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
-
-            // 镀层分裂膛室 Galvanized Chamber
+            // kuvaweapon.item_module.galvanized_chamber (镀层分裂膛室)
             itemStack = new ItemStack(this);
             itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_chamber");
-            ItemModuleBase.addAttributes(itemStack, "multishot", 0.80001f);              // +80%多重射击
-            ItemModuleBase.addAttributes(itemStack, "killStackMultishot", 0.30001f);     // 击杀时：+30%多重射击
-            ItemModuleBase.setType(itemStack, "galvanized_chamber");
+            ItemModuleBase.addAttributes(itemStack, "multishot", 0.80001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackMultishot", 0.30001f);
+            ItemModuleBase.setType(itemStack, "split_chamber");
+            ItemModuleBase.setConflictTags(itemStack, "multishot");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
-            // 镀层武器才能 Galvanized Aptitude
+            // kuvaweapon.item_module.galvanized_steel (镀层真钢)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_steel");
+            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", 1.10001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackMeleeCriticalMultiplier", 0.30001f);
+            ItemModuleBase.setType(itemStack, "true_steel");
+            ItemModuleBase.setConflictTags(itemStack, "melee_crit_chance");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // kuvaweapon.item_module.galvanized_reach (镀层攻击范围)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_reach");
+            ItemModuleBase.addAttributes(itemStack, "attackRange", 0.80001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackAttackRange", 0.30001f);
+            ItemModuleBase.setType(itemStack, "reach");
+            ItemModuleBase.setConflictTags(itemStack, "attack_range");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // kuvaweapon.item_module.galvanized_fury (镀层狂怒)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_fury");
+            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.30001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackAttackSpeed", 0.10001f);
+            ItemModuleBase.setType(itemStack, "fury");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // kuvaweapon.item_module.galvanized_aptitude (镀层武器资质)
             itemStack = new ItemStack(this);
             itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_aptitude");
-            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.80001f);           // +80%触发几率
-            ItemModuleBase.addAttributes(itemStack, "killStackBaseDamage", 0.04001f);     // 击杀时：目标身上每一种负面效果+4%基础伤害
+            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.60001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackTriggerChance", 0.30001f);
             ItemModuleBase.setType(itemStack, "weapon_aptitude");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
-            // 镀层斩铁 Galvanized Steel
+            // kuvaweapon.item_module.galvanized_speed_trigger (镀层速度触发)
             itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_steel");
-            ItemModuleBase.addAttributes(itemStack, "meleeCriticalStrikeProbability", 1.10001f);      // +110%近战暴击几率
-            ItemModuleBase.addAttributes(itemStack, "killStackMeleeCriticalMultiplier", 0.30001f);    // 击杀时：+30%近战暴击伤害
-            ItemModuleBase.setType(itemStack, "true_steel");
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_speed_trigger");
+            ItemModuleBase.addAttributes(itemStack, "firing_rate", 0.40001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackFiringRate", 0.20001f);
+            ItemModuleBase.setType(itemStack, "speed_trigger");
+            ItemModuleBase.setConflictTags(itemStack, "firing_rate");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
-            // 镀层剑风 Galvanized Reach
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_reach");
-            ItemModuleBase.addAttributes(itemStack, "attackRange", 1.10001f);            // +110%攻击范围
-            ItemModuleBase.addAttributes(itemStack, "killStackAttackRange", 0.50001f);   // 击杀时：+50%攻击范围
-            ItemModuleBase.setType(itemStack, "reach");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            // 镀层狂暴 Galvanized Fury
-            itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_fury");
-            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.30001f);            // +30%攻击速度
-            ItemModuleBase.addAttributes(itemStack, "killStackAttackSpeed", 0.08001f);   // 击杀时：+8%攻击速度
-            ItemModuleBase.setType(itemStack, "fury");
-            items.add(itemStack);
-            itemStackList.add(itemStack.copy());
-
-            // 镀层烈焰风暴 Galvanized Firestorm
+            // kuvaweapon.item_module.galvanized_firestorm (镀层火焰风暴)
             itemStack = new ItemStack(this);
             itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_firestorm");
-            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.24001f);              // +24%爆炸半径
-            ItemModuleBase.addAttributes(itemStack, "killStackBurstingRadius", 0.08001f);      // 击杀时：+8%爆炸半径
+            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.40001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackBurstingRadius", 0.20001f);
             ItemModuleBase.setType(itemStack, "firestorm");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
-            // 镀层灵敏扳机 Galvanized Speed Trigger
+            // ========== 新增Prime MOD ==========
+
+            // 59. kuvaweapon.item_module.predatory_instinct_prime (掠食本能Prime)
             itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_speed_trigger");
-            ItemModuleBase.addAttributes(itemStack, "firing_rate", 0.60001f);              // +60%射速（弓类效果加倍）
-            ItemModuleBase.addAttributes(itemStack, "killStackFiringRate", 0.08001f);      // 击杀时：+8%射速（弓类效果加倍）
-            ItemModuleBase.setType(itemStack, "speed_trigger");
+            itemStack.setTranslatableName("kuvaweapon.item_module.predatory_instinct_prime");
+            ItemModuleBase.addAttributes(itemStack, "dashMeleeCriticalStrikeProbability", 2.00001f);
+            ItemModuleBase.addAttributes(itemStack, "dashAttackRange", 5.00001f);
+            ItemModuleBase.setType(itemStack, "predatory_instinct");
+            ItemModuleBase.setConflictTags(itemStack, "dash_crit_chance", "dash_range");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
-            // 镀层无尽苦难 Galvanized Continuous Misery
+            // 60. kuvaweapon.item_module.hunters_moment_prime (猎杀时刻Prime)
             itemStack = new ItemStack(this);
-            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_continuous_misery");
-            ItemModuleBase.addAttributes(itemStack, "triggerTime", 1.0001f);              // +100%触发时间
-            ItemModuleBase.addAttributes(itemStack, "killStackTriggerChance", 0.30001f);  // 击杀时：+30%触发几率(4层满=120%)
-            ItemModuleBase.setType(itemStack, "continuous_misery");  // 使用普通版type，产生冲突
+            itemStack.setTranslatableName("kuvaweapon.item_module.hunters_moment_prime");
+            ItemModuleBase.addAttributes(itemStack, "dashMeleeCriticalStrikeProbability", 2.00001f);
+            ItemModuleBase.addAttributes(itemStack, "dashTriggerChance", 2.40001f);
+            ItemModuleBase.setType(itemStack, "hunters_moment");
+            ItemModuleBase.setConflictTags(itemStack, "dash_crit_chance", "dash_trigger");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 61. kuvaweapon.item_module.violent_aesthetic_prime (非暴力美学Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.violent_aesthetic_prime");
+            ItemModuleBase.addAttributes(itemStack, "baseDamageWhenNotCriticalStrike", 3.00001f);
+            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.40001f);
+            ItemModuleBase.setType(itemStack, "violent_aesthetic");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 62. kuvaweapon.item_module.infection_protocol_prime (感染协议Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.infection_protocol_prime");
+            ItemModuleBase.addAttributes(itemStack, "triggerChance", 1.65001f);
+            ItemModuleBase.addAttributes(itemStack, "triggerTime", 1.35001f);
+            ItemModuleBase.setType(itemStack, "infection_protocol");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 63. kuvaweapon.item_module.dual_covenant_prime (双重契约Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.dual_covenant_prime");
+            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 2.20001f);
+            ItemModuleBase.addAttributes(itemStack, "remoteDamage", 2.20001f);
+            ItemModuleBase.setType(itemStack, "dual_covenant");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 64. kuvaweapon.item_module.mystic_archery_prime (秘法弓术Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.mystic_archery_prime");
+            ItemModuleBase.addAttributes(itemStack, "arrowDamage", 2.55001f);
+            ItemModuleBase.addAttributes(itemStack, "magicDamage", 1.65001f);
+            ItemModuleBase.setType(itemStack, "mystic_archery");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 65. kuvaweapon.item_module.arcane_ballistics_prime (奥能轨迹Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.arcane_ballistics_prime");
+            ItemModuleBase.addAttributes(itemStack, "projectileDamage", 2.55001f);
+            ItemModuleBase.addAttributes(itemStack, "magicDamage", 1.65001f);
+            ItemModuleBase.setType(itemStack, "arcane_ballistics");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 66. kuvaweapon.item_module.reapers_scythe_prime (死神镰刀Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.reapers_scythe_prime");
+            ItemModuleBase.addAttributes(itemStack, "multishot", 1.20001f);
+            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 1.60001f);
+            ItemModuleBase.setType(itemStack, "reapers_scythe");
+            ItemModuleBase.setConflictTags(itemStack, "multishot", "remote_crit_chance");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 67. kuvaweapon.item_module.hunters_code_prime (猎人法则Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.hunters_code_prime");
+            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeMultiplier", 1.20001f);
+            ItemModuleBase.addAttributes(itemStack, "slash", 1.65001f);
+            ItemModuleBase.setType(itemStack, "hunters_code");
+            ItemModuleBase.setConflictTags(itemStack, "remote_crit_mult");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 68. kuvaweapon.item_module.corrosion_king_prime (剥皮者Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.corrosion_king_prime");
+            ItemModuleBase.addAttributes(itemStack, "corrosion", 1.65001f);
+            ItemModuleBase.addAttributes(itemStack, "slash", 1.25001f);
+            ItemModuleBase.setType(itemStack, "corrosion_king");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 69. kuvaweapon.item_module.plague_herald_prime (瘟疫使者Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.plague_herald_prime");
+            ItemModuleBase.addAttributes(itemStack, "gas", 1.65001f);
+            ItemModuleBase.addAttributes(itemStack, "triggerTime", 1.35001f);
+            ItemModuleBase.setType(itemStack, "plague_herald");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 70. kuvaweapon.item_module.nuclear_storm_prime (核子风暴Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.nuclear_storm_prime");
+            ItemModuleBase.addAttributes(itemStack, "radiation", 1.65001f);
+            ItemModuleBase.addAttributes(itemStack, "multishot", 0.90001f);
+            ItemModuleBase.setType(itemStack, "nuclear_storm");
+            ItemModuleBase.setConflictTags(itemStack, "multishot");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 71. kuvaweapon.item_module.magnetic_overlord_prime (磁暴领主Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.magnetic_overlord_prime");
+            ItemModuleBase.addAttributes(itemStack, "magnetic", 1.65001f);
+            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 1.35001f);
+            ItemModuleBase.setType(itemStack, "magnetic_overlord");
+            ItemModuleBase.setConflictTags(itemStack, "remote_crit_chance");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 72. kuvaweapon.item_module.catastrophe_prime (灾厄降临Prime)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.catastrophe_prime");
+            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.33001f);
+            ItemModuleBase.addAttributes(itemStack, "triggerChance", 1.20001f);
+            ItemModuleBase.addAttributes(itemStack, "triggerTime", 1.20001f);
+            ItemModuleBase.setType(itemStack, "catastrophe");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // ========== 新增镀层MOD ==========
+
+            // 73. kuvaweapon.item_module.galvanized_predatory_instinct (镀层掠食本能)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_predatory_instinct");
+            ItemModuleBase.addAttributes(itemStack, "dashMeleeCriticalStrikeProbability", 1.20001f);
+            ItemModuleBase.addAttributes(itemStack, "dashAttackRange", 3.00001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackAttackRange", 0.50001f);
+            ItemModuleBase.setType(itemStack, "predatory_instinct");
+            ItemModuleBase.setConflictTags(itemStack, "dash_crit_chance", "dash_range");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 74. kuvaweapon.item_module.galvanized_hunters_moment (镀层猎杀时刻)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_hunters_moment");
+            ItemModuleBase.addAttributes(itemStack, "dashMeleeCriticalStrikeProbability", 1.20001f);
+            ItemModuleBase.addAttributes(itemStack, "dashTriggerChance", 1.35001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackTriggerChance", 0.30001f);
+            ItemModuleBase.setType(itemStack, "hunters_moment");
+            ItemModuleBase.setConflictTags(itemStack, "dash_crit_chance", "dash_trigger");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 75. kuvaweapon.item_module.galvanized_violent_aesthetic (镀层暴力美学)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_violent_aesthetic");
+            ItemModuleBase.addAttributes(itemStack, "baseDamageWhenNotCriticalStrike", 2.00001f);
+            ItemModuleBase.addAttributes(itemStack, "attackSpeed", 0.75001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackAttackSpeed", 0.10001f);
+            ItemModuleBase.setType(itemStack, "violent_aesthetic");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 76. kuvaweapon.item_module.galvanized_infection_protocol (镀层感染协议)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_infection_protocol");
+            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.90001f);
+            ItemModuleBase.addAttributes(itemStack, "triggerTime", 0.75001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackTriggerChance", 0.30001f);
+            ItemModuleBase.setType(itemStack, "infection_protocol");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 77. kuvaweapon.item_module.galvanized_dual_covenant (镀层双重契约)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_dual_covenant");
+            ItemModuleBase.addAttributes(itemStack, "meleeDamage", 1.20001f);
+            ItemModuleBase.addAttributes(itemStack, "remoteDamage", 1.20001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackMeleeCriticalMultiplier", 0.50001f);
+            ItemModuleBase.setType(itemStack, "dual_covenant");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 78. kuvaweapon.item_module.galvanized_reapers_scythe (镀层死神镰刀)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_reapers_scythe");
+            ItemModuleBase.addAttributes(itemStack, "multishot", 0.60001f);
+            ItemModuleBase.addAttributes(itemStack, "remoteCriticalStrikeProbability", 0.80001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackMultishot", 0.30001f);
+            ItemModuleBase.setType(itemStack, "reapers_scythe");
+            ItemModuleBase.setConflictTags(itemStack, "multishot", "remote_crit_chance");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 79. kuvaweapon.item_module.galvanized_shockwave_domain (镀层震荡领域)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_shockwave_domain");
+            ItemModuleBase.addAttributes(itemStack, "bursting_radius", 0.24001f);
+            ItemModuleBase.addAttributes(itemStack, "triggerTime", 0.75001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackBurstingRadius", 0.05001f);
+            ItemModuleBase.setType(itemStack, "shockwave_domain");
+            items.add(itemStack);
+            itemStackList.add(itemStack.copy());
+
+            // 80. kuvaweapon.item_module.galvanized_death_barrage (镀层死亡弹幕)
+            itemStack = new ItemStack(this);
+            itemStack.setTranslatableName("kuvaweapon.item_module.galvanized_death_barrage");
+            ItemModuleBase.addAttributes(itemStack, "multishot", 0.45001f);
+            ItemModuleBase.addAttributes(itemStack, "triggerChance", 0.75001f);
+            ItemModuleBase.addAttributes(itemStack, "killStackMultishot", 0.25001f);
+            ItemModuleBase.setType(itemStack, "death_barrage");
+            ItemModuleBase.setConflictTags(itemStack, "multishot");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
         }

@@ -216,6 +216,9 @@ public class ItemRivenModule extends ItemModuleBase {
                 break;
             }
         }
+
+        ItemModuleBase.setType(itemStack, "riven_weapon_module");
+
         return itemStack;
     }
 

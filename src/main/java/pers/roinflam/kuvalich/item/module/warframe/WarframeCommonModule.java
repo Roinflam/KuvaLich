@@ -1,3 +1,5 @@
+// 文件：WarframeCommonModule.java
+// 路径：src/main/java/pers/roinflam/kuvalich/item/module/warframe/WarframeCommonModule.java
 package pers.roinflam.kuvalich.item.module.warframe;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -128,6 +130,7 @@ public class WarframeCommonModule extends WarframeModuleBase {
             ItemModuleBase.addAttributes(itemStack, "diggingSpeed", 0.6001f);
             ItemModuleBase.addAttributes(itemStack, "health", -0.6001f);
             ItemModuleBase.setType(itemStack, "beast_of_burden");
+            // ✅ 不添加conflictTags（复合型模组，提供多个属性）
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
@@ -145,6 +148,8 @@ public class WarframeCommonModule extends WarframeModuleBase {
             ItemModuleBase.addAttributes(itemStack, "reachDistance", -0.3001f);
             ItemModuleBase.addAttributes(itemStack, "diggingSpeed", -0.6001f);
             ItemModuleBase.setType(itemStack, "maliwan");
+            // ✅ 添加掉落倍率冲突标签（虽然是复合型，但掉落是核心功能）
+            ItemModuleBase.setConflictTags(itemStack, "item_drop_multiplier");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 

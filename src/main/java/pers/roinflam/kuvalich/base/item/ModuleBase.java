@@ -4,6 +4,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.Mod;
 
@@ -19,13 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber
 public abstract class ModuleBase extends Item implements IHasModel {
-    private static final Set<String> MODULE_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList("common", "uncommon", "rare", "prime", "riven"))
-    );
-
-    // 🔧 优化：添加缓存大小限制和更精细的控制
-    private static final int MAX_CACHE_SIZE = 1000; // 最多缓存1000个物品
-    private static final long CACHE_DURATION_MS = 30000; // 30秒过期
+    private static final int MAX_CACHE_SIZE = 1000;
+    private static final long CACHE_DURATION_MS = 30000;
     private static final Map<Integer, CacheEntry> ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
 
     private static class CacheEntry {
@@ -50,11 +46,12 @@ public abstract class ModuleBase extends Item implements IHasModel {
 
     public abstract boolean isWarframe();
 
+    // ========== 原有方法 ==========
+
     public static boolean isRandom(ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
             return false;
         }
-
         NBTTagCompound tag = itemStack.getSubCompound(Reference.MOD_ID + "_modules");
         return tag != null && tag.getBoolean("Random");
     }
@@ -63,7 +60,6 @@ public abstract class ModuleBase extends Item implements IHasModel {
         if (itemStack == null || itemStack.isEmpty()) {
             return;
         }
-
         NBTTagCompound kuvalichModule = itemStack.getOrCreateSubCompound(Reference.MOD_ID + "_modules");
         kuvalichModule.setBoolean("Random", random);
         invalidateCache(itemStack);
@@ -75,14 +71,11 @@ public abstract class ModuleBase extends Item implements IHasModel {
         }
 
         int cacheKey = getCacheKey(itemStack);
-
-        // 检查缓存
         CacheEntry cached = ATTRIBUTE_CACHE.get(cacheKey);
         if (cached != null && !cached.isExpired()) {
             return cached.attributes;
         }
 
-        // 缓存未命中，从NBT读取
         NBTTagCompound kuvalich = itemStack.getSubCompound(Reference.MOD_ID + "_modules");
         if (kuvalich == null) {
             return Collections.emptySet();
@@ -101,17 +94,14 @@ public abstract class ModuleBase extends Item implements IHasModel {
 
         Set<Map.Entry<String, Double>> result = attributeMap.entrySet();
 
-        // 🔧 优化：检查缓存大小，超过限制时清理
         if (ATTRIBUTE_CACHE.size() >= MAX_CACHE_SIZE) {
             cleanExpiredCache();
-            // 如果清理后还是满的，清理最老的一半
             if (ATTRIBUTE_CACHE.size() >= MAX_CACHE_SIZE) {
                 cleanOldestCache();
             }
         }
 
         ATTRIBUTE_CACHE.put(cacheKey, new CacheEntry(result));
-
         return result;
     }
 
@@ -136,7 +126,6 @@ public abstract class ModuleBase extends Item implements IHasModel {
         if (itemStack == null || itemStack.isEmpty()) {
             return;
         }
-
         NBTTagCompound kuvalichModule = itemStack.getOrCreateSubCompound(Reference.MOD_ID + "_modules");
         kuvalichModule.setString("type", type);
         invalidateCache(itemStack);
@@ -146,10 +135,100 @@ public abstract class ModuleBase extends Item implements IHasModel {
         if (itemStack == null || itemStack.isEmpty()) {
             return "";
         }
-
         NBTTagCompound kuvalichModule = itemStack.getSubCompound(Reference.MOD_ID + "_modules");
         return kuvalichModule != null ? kuvalichModule.getString("type") : "";
     }
+
+    // ========== ✅ 冲突标签系统 ==========
+
+    /**
+     * 设置MOD的冲突标签（可设置多个，双向互斥）
+     * @param itemStack 物品堆
+     * @param tags 冲突标签List，例如 Arrays.asList("melee_crit_chance", "melee_damage")
+     */
+    public static void setConflictTags(ItemStack itemStack, List<String> tags) {
+        if (itemStack == null || itemStack.isEmpty() || tags == null || tags.isEmpty()) {
+            return;
+        }
+
+        NBTTagCompound kuvalichModule = itemStack.getOrCreateSubCompound(Reference.MOD_ID + "_modules");
+        NBTTagList tagList = new NBTTagList();
+
+        for (String tag : tags) {
+            if (tag != null && !tag.isEmpty()) {
+                tagList.appendTag(new NBTTagString(tag));
+            }
+        }
+
+        kuvalichModule.setTag("conflictTags", tagList);
+        invalidateCache(itemStack);
+    }
+
+    /**
+     * 便捷方法：直接传入可变参数
+     */
+    public static void setConflictTags(ItemStack itemStack, String... tags) {
+        setConflictTags(itemStack, Arrays.asList(tags));
+    }
+
+    /**
+     * 获取MOD的所有冲突标签
+     * @param itemStack 物品堆
+     * @return 冲突标签列表
+     */
+    public static List<String> getConflictTags(ItemStack itemStack) {
+        if (itemStack == null || itemStack.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        NBTTagCompound kuvalichModule = itemStack.getSubCompound(Reference.MOD_ID + "_modules");
+        if (kuvalichModule == null || !kuvalichModule.hasKey("conflictTags")) {
+            return Collections.emptyList();
+        }
+
+        NBTTagList tagList = kuvalichModule.getTagList("conflictTags", Constants.NBT.TAG_STRING);
+        List<String> result = new ArrayList<>();
+
+        for (int i = 0; i < tagList.tagCount(); i++) {
+            result.add(tagList.getStringTagAt(i));
+        }
+
+        return result;
+    }
+
+    /**
+     * 检查两个MOD是否冲突（双向检测）
+     * @param stack1 第一个MOD
+     * @param stack2 第二个MOD
+     * @return true=冲突，false=不冲突
+     */
+    public static boolean hasConflict(ItemStack stack1, ItemStack stack2) {
+        if (stack1 == null || stack1.isEmpty() || stack2 == null || stack2.isEmpty()) {
+            return false;
+        }
+
+        // ========== 1. 检查type冲突（原有逻辑）==========
+        String type1 = getType(stack1);
+        String type2 = getType(stack2);
+        if (!type1.isEmpty() && !type2.isEmpty() && type1.equals(type2)) {
+            return true;
+        }
+
+        // ========== 2. 检查冲突标签（双向）==========
+        List<String> tags1 = getConflictTags(stack1);
+        List<String> tags2 = getConflictTags(stack2);
+
+        // 双向检测：只要有任意一个标签相同就冲突
+        for (String tag1 : tags1) {
+            if (tags2.contains(tag1)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ========== 缓存管理 ==========
 
     private static int getCacheKey(ItemStack itemStack) {
         NBTTagCompound nbt = itemStack.getTagCompound();
@@ -160,16 +239,10 @@ public abstract class ModuleBase extends Item implements IHasModel {
         ATTRIBUTE_CACHE.remove(getCacheKey(itemStack));
     }
 
-    /**
-     * 清理过期缓存
-     */
     public static void cleanExpiredCache() {
         ATTRIBUTE_CACHE.entrySet().removeIf(entry -> entry.getValue().isExpired());
     }
 
-    /**
-     * 🔧 新增：清理最老的一半缓存
-     */
     private static void cleanOldestCache() {
         if (ATTRIBUTE_CACHE.isEmpty()) return;
 
@@ -182,9 +255,6 @@ public abstract class ModuleBase extends Item implements IHasModel {
         }
     }
 
-    /**
-     * 🔧 新增：获取缓存统计信息（用于调试）
-     */
     public static String getCacheStats() {
         long expired = ATTRIBUTE_CACHE.values().stream().filter(CacheEntry::isExpired).count();
         return String.format("缓存总数: %d, 过期: %d, 有效: %d, 容量: %d%%",

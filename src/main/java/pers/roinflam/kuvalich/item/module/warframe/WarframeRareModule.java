@@ -1,3 +1,5 @@
+// 文件：WarframeRareModule.java
+// 路径：src/main/java/pers/roinflam/kuvalich/item/module/warframe/WarframeRareModule.java
 package pers.roinflam.kuvalich.item.module.warframe;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -95,6 +97,8 @@ public class WarframeRareModule extends WarframeModuleBase {
             itemStack.setTranslatableName("kuvaweapon.warframe_module.treasure_hunter");
             ItemModuleBase.addAttributes(itemStack, "itemDropMultiplier", 0.6001f);
             ItemModuleBase.setType(itemStack, "treasure_hunter");
+            // ✅ 添加掉落倍率冲突标签
+            ItemModuleBase.setConflictTags(itemStack, "item_drop_multiplier");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
@@ -110,6 +114,7 @@ public class WarframeRareModule extends WarframeModuleBase {
             ItemModuleBase.addAttributes(itemStack, "reachDistance", 0.201f);
             ItemModuleBase.addAttributes(itemStack, "diggingSpeed", 0.401f);
             ItemModuleBase.setType(itemStack, "pal");
+            // ✅ 不添加conflictTags（复合型模组）
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
@@ -134,7 +139,7 @@ public class WarframeRareModule extends WarframeModuleBase {
             itemStack.setTranslatableName("kuvaweapon.warframe_module.narrow_minded");
             ItemModuleBase.addAttributes(itemStack, "diggingSpeed", 0.9001f);
             ItemModuleBase.addAttributes(itemStack, "reachDistance", -0.6001f);
-            ItemModuleBase.setType(itemStack, "overextended");
+            ItemModuleBase.setType(itemStack, "overextended"); // ✅ 注意：与overextended相同type，会冲突
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
@@ -164,7 +169,9 @@ public class WarframeRareModule extends WarframeModuleBase {
             ItemModuleBase.addAttributes(itemStack, "diggingSpeed", 0.6001f);
             ItemModuleBase.addAttributes(itemStack, "reachDistance", 0.3001f);
             ItemModuleBase.addAttributes(itemStack, "health", -0.9001f);
-            ItemModuleBase.setType(itemStack, "treasure_thief");
+            ItemModuleBase.setType(itemStack, "treasure_thief"); // ✅ 与treasure_thief同type
+            // ✅ 添加掉落倍率冲突标签（虽然type已经会冲突，但为了完整性还是加上）
+            ItemModuleBase.setConflictTags(itemStack, "item_drop_multiplier");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
@@ -174,7 +181,7 @@ public class WarframeRareModule extends WarframeModuleBase {
             ItemModuleBase.addAttributes(itemStack, "armor", 0.9001f);
             ItemModuleBase.addAttributes(itemStack, "sprintSpeed", 0.4501f);
             ItemModuleBase.addAttributes(itemStack, "health", -0.6001f);
-            ItemModuleBase.setType(itemStack, "flame_repellent");
+            ItemModuleBase.setType(itemStack, "flame_repellent"); // ✅ 与flame_repellent同type
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
         }

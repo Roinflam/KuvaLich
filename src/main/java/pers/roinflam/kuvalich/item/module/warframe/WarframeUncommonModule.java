@@ -1,3 +1,5 @@
+// 文件：WarframeUncommonModule.java
+// 路径：src/main/java/pers/roinflam/kuvalich/item/module/warframe/WarframeUncommonModule.java
 package pers.roinflam.kuvalich.item.module.warframe;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -96,6 +98,8 @@ public class WarframeUncommonModule extends WarframeModuleBase {
             itemStack.setTranslatableName("kuvaweapon.warframe_module.digging_power");
             ItemModuleBase.addAttributes(itemStack, "diggingSpeed", 0.6001f);
             ItemModuleBase.setType(itemStack, "digging_power");
+            // ✅ 添加挖掘速度冲突标签
+            ItemModuleBase.setConflictTags(itemStack, "digging_speed");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 
@@ -113,6 +117,8 @@ public class WarframeUncommonModule extends WarframeModuleBase {
             ItemModuleBase.addAttributes(itemStack, "health", -0.6001f);
             ItemModuleBase.addAttributes(itemStack, "shield", -1.2001f);
             ItemModuleBase.setType(itemStack, "treasure_thief");
+            // ✅ 添加掉落倍率冲突标签
+            ItemModuleBase.setConflictTags(itemStack, "item_drop_multiplier");
             items.add(itemStack);
             itemStackList.add(itemStack.copy());
 

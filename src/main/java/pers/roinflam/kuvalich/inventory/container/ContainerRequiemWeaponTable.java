@@ -16,6 +16,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
+import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.item.module.item.ItemRivenModule;
 import pers.roinflam.kuvalich.itemstack.ItemModule;
 import pers.roinflam.kuvalich.utils.LogUtil;
@@ -23,15 +24,6 @@ import pers.roinflam.kuvalich.utils.Reference;
 
 import javax.annotation.Nonnull;
 
-/**
- * 安魂之武器军械库容器类（完全修复版）
- *
- * 修复内容：
- * - ✅ 修复Shift取出武器后残影BUG（强制同步客户端）
- * - ✅ 武器取出时正确清空所有模组槽
- * - ✅ 模组变动立刻同步武器NBT
-
- */
 public class ContainerRequiemWeaponTable extends Container {
     private final World world;
     private final BlockPos pos;
@@ -68,9 +60,6 @@ public class ContainerRequiemWeaponTable extends Container {
         LogUtil.debugEvent("武器军械库容器创建", entityPlayer.getName(), "位置: " + pos.toString());
     }
 
-    /**
-     * ✅ 修复：正确处理武器取出，清空模组，同步客户端
-     */
     @Override
     public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
@@ -83,32 +72,24 @@ public class ContainerRequiemWeaponTable extends Container {
         ItemStack slotStack = slot.getStack();
         itemstack = slotStack.copy();
 
-        // ========== 从容器转移到背包 ==========
         if (index < 9) {
-            // ✅ 武器槽（索引8）被Shift取出
             if (index == 8) {
                 LogUtil.debug("Shift取出武器: " + slotStack.getDisplayName());
 
-                // 转移武器到背包
                 if (!this.mergeItemStack(slotStack, 9, 9 + 36, true)) {
                     LogUtil.debug("背包已满，无法转移武器");
                     return ItemStack.EMPTY;
                 }
 
-                // ✅ 关键：清空所有模组槽
                 if (!world.isRemote) {
                     LogUtil.debug("武器被取出，清空所有模组槽");
                     for (int i = 0; i < 8; i++) {
                         this.getSlot(i).putStack(ItemStack.EMPTY);
                         this.module.setStackInSlot(i, ItemStack.EMPTY);
                     }
-
-                    // ✅ 强制同步所有槽位到客户端
                     this.detectAndSendChanges();
                 }
-            }
-            // 模组槽（索引0-7）
-            else {
+            } else {
                 LogUtil.debug("从模组槽位" + index + "转移到背包: " + slotStack.getDisplayName());
 
                 if (!this.mergeItemStack(slotStack, 9, 9 + 36, true)) {
@@ -118,9 +99,7 @@ public class ContainerRequiemWeaponTable extends Container {
 
                 slot.onSlotChange(slotStack, itemstack);
             }
-        }
-        // ========== 从背包转移到容器 ==========
-        else {
+        } else {
             boolean transferred = false;
 
             if (itemstack.getItem() instanceof ItemModuleBase) {
@@ -158,9 +137,6 @@ public class ContainerRequiemWeaponTable extends Container {
         return itemstack;
     }
 
-    /**
-     * ✅ 保留原有的点击逻辑
-     */
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, EntityPlayer player) {
         if (!player.world.isRemote && slotId == 8) {
@@ -320,14 +296,19 @@ public class ContainerRequiemWeaponTable extends Container {
                 return false;
             }
 
+            // ✅ 使用新的冲突检测系统
             for (int i = 0; i < 8; i++) {
                 if (i != index) {
                     ItemStack existingStack = module.getStackInSlot(i);
                     if (!existingStack.isEmpty()) {
+                        // 紫卡特殊处理（只能装一个）
                         if (itemStack.getItem() instanceof ItemRivenModule &&
                                 existingStack.getItem() instanceof ItemRivenModule) {
                             return false;
-                        } else if (ItemModuleBase.getType(existingStack).equals(ItemModuleBase.getType(itemStack))) {
+                        }
+
+                        // ✅ 双向冲突检测（type + 冲突标签）
+                        if (ModuleBase.hasConflict(existingStack, itemStack)) {
                             return false;
                         }
                     }
