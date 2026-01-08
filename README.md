@@ -267,6 +267,7 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 **Developer:** Roinflam  
 **Inspired by:** Digital Extremes - Warframe
+**Special Thanks:** 建议重开
 
 </details>
 
@@ -522,8 +523,8 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 ### 👤 制作人员
 
 **开发者：** Roinflam  
-**灵感来源：** Digital Extremes - Warframe（星际战甲）
-
+**灵感来源：** Digital Extremes - Warframe（星际战甲）  
+**特别鸣谢：** 白狐大小姐
 </details>
 
 ---
