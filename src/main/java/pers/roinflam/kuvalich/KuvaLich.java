@@ -1,3 +1,5 @@
+// 文件名：KuvaLich.java
+// 路径：src/main/java/pers/roinflam/kuvalich/KuvaLich.java
 package pers.roinflam.kuvalich;
 
 import net.minecraft.world.DimensionType;
@@ -10,8 +12,10 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
+
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
@@ -25,8 +29,15 @@ import software.bernie.geckolib3.GeckoLib;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/**
+ * 赤毒玄骸模组主类
+ * Kuva Lich Mod Main Class
+ *
+ * @author RoinFlam
+ */
 @Mod(modid = Reference.MOD_ID, useMetadata = true)
 public class KuvaLich {
+
     @Mod.Instance
     public static KuvaLich instance;
 
@@ -35,17 +46,24 @@ public class KuvaLich {
 
     public static SimpleNetworkWrapper network;
 
+    /**
+     * 预初始化阶段
+     * Pre-initialization phase
+     */
     @Mod.EventHandler
     public static void preInit(FMLPreInitializationEvent evt) {
         LogUtil.info("赤毒玄骸模组开始预初始化...");
 
         try {
+            // 初始化GeckoLib动画库
             GeckoLib.initialize();
             LogUtil.debug("GeckoLib动画库初始化成功");
 
+            // 注册网络处理器
             NetworkRegistryHandler.register();
             LogUtil.debug("网络处理器注册成功");
 
+            // 注册Capability系统
             CapabilityRegistryHandler.register();
             LogUtil.debug("Capability系统注册成功");
 
@@ -55,18 +73,22 @@ public class KuvaLich {
             network.registerMessage(DiggingSpeedPacket.Handler.class, DiggingSpeedPacket.class, 1, Side.CLIENT);
             LogUtil.debug("网络消息包注册成功");
 
-            // 注册世界生成器
+            // 注册世界生成器 - 安魂矿石
             GameRegistry.registerWorldGenerator(
                     new WorldGenBase(DimensionType.OVERWORLD, KuvaLichBlocks.REQUIEM_ORE.getDefaultState(), 1, 28, 2, 4, 1, 4),
                     3
             );
             LogUtil.debug("安魂矿石世界生成器注册成功");
 
+            // 注册世界生成器 - 经验矿石
             GameRegistry.registerWorldGenerator(
                     new WorldGenBase(DimensionType.OVERWORLD, KuvaLichBlocks.EXPERIENCE_ORE.getDefaultState(), 1, 128, 2, 4, 2, 8),
                     3
             );
             LogUtil.debug("经验矿石世界生成器注册成功");
+
+            // ========== 初始化自定义模组系统 / Initialize Custom Module System ==========
+            CustomModuleManager.getInstance().initialize();
 
             LogUtil.info("赤毒玄骸模组预初始化完成");
         } catch (Exception e) {
@@ -75,11 +97,19 @@ public class KuvaLich {
         }
     }
 
+    /**
+     * 初始化阶段
+     * Initialization phase
+     */
     @Mod.EventHandler
     public static void init(FMLInitializationEvent evt) {
         LogUtil.debug("赤毒玄骸模组初始化阶段");
     }
 
+    /**
+     * 后初始化阶段
+     * Post-initialization phase
+     */
     @Mod.EventHandler
     public static void postInit(FMLPostInitializationEvent evt) {
         LogUtil.debug("赤毒玄骸模组后初始化阶段");

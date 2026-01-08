@@ -1,3 +1,5 @@
+// 文件名：ItemRareModule.java
+// 路径：src/main/java/pers/roinflam/kuvalich/item/module/item/ItemRareModule.java
 package pers.roinflam.kuvalich.item.module.item;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -13,6 +15,7 @@ import net.minecraft.world.World;
 
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -20,13 +23,26 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 黄金级武器模组
+ * Rare (Gold) tier weapon module
+ */
 public class ItemRareModule extends ItemModuleBase {
+
+    /**
+     * 静态模组列表，用于随机获取
+     * Static module list for random obtaining
+     */
     public static List<ItemStack> itemStackList = new ArrayList<ItemStack>();
 
     public ItemRareModule(String name) {
         super(name);
     }
 
+    /**
+     * 获取随机模组物品
+     * Get random module item
+     */
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_RARE_MODULE);
         itemStack.setTranslatableName("kuvaweapon.item_type_random.name");
@@ -362,6 +378,9 @@ public class ItemRareModule extends ItemModuleBase {
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.physical_triad", "physical_triad",
                     new Object[]{"slash", 0.90001f, "puncture", 0.90001f, "impact", 0.90001f});
+
+            // ========== 自定义模组 / Custom Modules ==========
+            CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, EnumRarity.RARE);
         }
     }
 
@@ -371,6 +390,9 @@ public class ItemRareModule extends ItemModuleBase {
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
             // 过滤掉被禁用的模组
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
+
+            // ========== 添加自定义模组到随机池 / Add custom modules to random pool ==========
+            CustomModuleManager.getInstance().addCustomItemModulesToRandomList(availableModules, EnumRarity.RARE);
 
             if (availableModules.isEmpty()) {
                 return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);

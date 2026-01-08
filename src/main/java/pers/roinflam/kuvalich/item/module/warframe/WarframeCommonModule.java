@@ -1,3 +1,5 @@
+// 文件名：WarframeCommonModule.java
+// 路径：src/main/java/pers/roinflam/kuvalich/item/module/warframe/WarframeCommonModule.java
 package pers.roinflam.kuvalich.item.module.warframe;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -14,6 +16,7 @@ import net.minecraft.world.World;
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -21,13 +24,26 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 青铜级战甲模组
+ * Common (Bronze) tier warframe module
+ */
 public class WarframeCommonModule extends WarframeModuleBase {
+
+    /**
+     * 静态模组列表，用于随机获取
+     * Static module list for random obtaining
+     */
     public static List<ItemStack> itemStackList = new ArrayList<ItemStack>();
 
     public WarframeCommonModule(String name) {
         super(name);
     }
 
+    /**
+     * 获取随机模组物品
+     * Get random module item
+     */
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_COMMON_MODULE);
         itemStack.setTranslatableName("kuvaweapon.warframe_type_random.name");
@@ -121,6 +137,9 @@ public class WarframeCommonModule extends WarframeModuleBase {
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.warframe_module.aviator", "aviator",
                     new Object[]{"fallProtection", 0.4001f});
+
+            // ========== 自定义模组 / Custom Modules ==========
+            CustomModuleManager.getInstance().addCustomWarframeModulesToCreativeTab(items, EnumRarity.COMMON);
         }
     }
 
@@ -130,6 +149,9 @@ public class WarframeCommonModule extends WarframeModuleBase {
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
             // 过滤掉被禁用的模组
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
+
+            // ========== 添加自定义模组到随机池 / Add custom modules to random pool ==========
+            CustomModuleManager.getInstance().addCustomWarframeModulesToRandomList(availableModules, EnumRarity.COMMON);
 
             if (availableModules.isEmpty()) {
                 return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);

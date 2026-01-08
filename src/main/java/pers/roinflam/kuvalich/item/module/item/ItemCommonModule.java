@@ -1,3 +1,5 @@
+// 文件名：ItemCommonModule.java
+// 路径：src/main/java/pers/roinflam/kuvalich/item/module/item/ItemCommonModule.java
 package pers.roinflam.kuvalich.item.module.item;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -13,6 +15,7 @@ import net.minecraft.world.World;
 
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -20,13 +23,26 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 青铜级武器模组
+ * Common (Bronze) tier weapon module
+ */
 public class ItemCommonModule extends ItemModuleBase {
+
+    /**
+     * 静态模组列表，用于随机获取
+     * Static module list for random obtaining
+     */
     public static List<ItemStack> itemStackList = new ArrayList<ItemStack>();
 
     public ItemCommonModule(String name) {
         super(name);
     }
 
+    /**
+     * 获取随机模组物品
+     * Get random module item
+     */
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_COMMON_MODULE);
         itemStack.setTranslatableName("kuvaweapon.item_type_random.name");
@@ -40,6 +56,9 @@ public class ItemCommonModule extends ItemModuleBase {
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
             // 过滤掉被禁用的模组
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
+
+            // ========== 添加自定义模组到随机池 / Add custom modules to random pool ==========
+            CustomModuleManager.getInstance().addCustomItemModulesToRandomList(availableModules, EnumRarity.COMMON);
 
             if (availableModules.isEmpty()) {
                 return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
@@ -213,6 +232,9 @@ public class ItemCommonModule extends ItemModuleBase {
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.ballistics_expert", "ballistics_expert",
                     new Object[]{"projectileDamage", 1.25001f});
+
+            // ========== 自定义模组 / Custom Modules ==========
+            CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, EnumRarity.COMMON);
         }
     }
 

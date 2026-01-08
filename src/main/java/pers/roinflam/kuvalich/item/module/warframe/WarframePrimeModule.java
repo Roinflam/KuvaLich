@@ -1,3 +1,5 @@
+// 文件名：WarframePrimeModule.java
+// 路径：src/main/java/pers/roinflam/kuvalich/item/module/warframe/WarframePrimeModule.java
 package pers.roinflam.kuvalich.item.module.warframe;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -14,6 +16,7 @@ import net.minecraft.world.World;
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -21,13 +24,26 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Prime级战甲模组
+ * Prime (Epic) tier warframe module
+ */
 public class WarframePrimeModule extends WarframeModuleBase {
+
+    /**
+     * 静态模组列表，用于随机获取
+     * Static module list for random obtaining
+     */
     public static List<ItemStack> itemStackList = new ArrayList<ItemStack>();
 
     public WarframePrimeModule(String name) {
         super(name);
     }
 
+    /**
+     * 获取随机模组物品
+     * Get random module item
+     */
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_PRIME_MODULE);
         itemStack.setTranslatableName("kuvaweapon.warframe_type_random.name");
@@ -41,6 +57,9 @@ public class WarframePrimeModule extends WarframeModuleBase {
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
             // 过滤掉被禁用的模组
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
+
+            // ========== 添加自定义模组到随机池 / Add custom modules to random pool ==========
+            CustomModuleManager.getInstance().addCustomWarframeModulesToRandomList(availableModules, EnumRarity.EPIC);
 
             if (availableModules.isEmpty()) {
                 return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
@@ -185,6 +204,9 @@ public class WarframePrimeModule extends WarframeModuleBase {
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.warframe_module.executioner_rejuvenation", "rejuvenation",
                     new Object[]{"health", 0.3001f, "shield", 0.3001f, "responseRate", 0.3001f, "shieldRecoveryRate", 0.3001f, "killStackHealth", 0.02001f, "killStackShield", 0.02001f, "killStackResponseRate", 0.02001f, "killStackShieldRecoveryRate", 0.02001f});
+
+            // ========== 自定义模组 / Custom Modules ==========
+            CustomModuleManager.getInstance().addCustomWarframeModulesToCreativeTab(items, EnumRarity.EPIC);
         }
     }
 

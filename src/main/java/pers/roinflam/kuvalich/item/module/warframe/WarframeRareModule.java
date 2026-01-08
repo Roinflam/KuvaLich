@@ -1,3 +1,5 @@
+// 文件名：WarframeRareModule.java
+// 路径：src/main/java/pers/roinflam/kuvalich/item/module/warframe/WarframeRareModule.java
 package pers.roinflam.kuvalich.item.module.warframe;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -14,6 +16,7 @@ import net.minecraft.world.World;
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -21,13 +24,26 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 黄金级战甲模组
+ * Rare (Gold) tier warframe module
+ */
 public class WarframeRareModule extends WarframeModuleBase {
+
+    /**
+     * 静态模组列表，用于随机获取
+     * Static module list for random obtaining
+     */
     public static List<ItemStack> itemStackList = new ArrayList<ItemStack>();
 
     public WarframeRareModule(String name) {
         super(name);
     }
 
+    /**
+     * 获取随机模组物品
+     * Get random module item
+     */
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RARE_MODULE);
         itemStack.setTranslatableName("kuvaweapon.warframe_type_random.name");
@@ -41,6 +57,9 @@ public class WarframeRareModule extends WarframeModuleBase {
         if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
             // 过滤掉被禁用的模组
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
+
+            // ========== 添加自定义模组到随机池 / Add custom modules to random pool ==========
+            CustomModuleManager.getInstance().addCustomWarframeModulesToRandomList(availableModules, EnumRarity.RARE);
 
             if (availableModules.isEmpty()) {
                 return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
@@ -139,6 +158,9 @@ public class WarframeRareModule extends WarframeModuleBase {
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.warframe_module.sacrificial_blaze", "flame_repellent",
                     new Object[]{"fireProtection", 0.9001f, "armor", 0.9001f, "sprintSpeed", 0.4501f, "health", -0.6001f});
+
+            // ========== 自定义模组 / Custom Modules ==========
+            CustomModuleManager.getInstance().addCustomWarframeModulesToCreativeTab(items, EnumRarity.RARE);
         }
     }
 
