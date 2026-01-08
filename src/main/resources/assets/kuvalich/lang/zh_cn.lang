@@ -634,6 +634,7 @@ message.kuvalich.minimumLevelWeapon=解密成功,当前解密获得武器等级�
 message.kuvalich.requiemRiddleAnswer=当前谜语的答案为 %s / %s / %s
 message.kuvalich.requiemRiddleNotAnswer=当前谜语尚无解答！请先解密任意一个答案后再使用！
 message.kuvalich.secondCorrect=解密失败,第二个答案正确!
+message.kuvalich.confiscation.stolen=你的 %s 被赤毒玄骸掠夺了，请成功解密击杀玄骸夺回自己的物品！
 
 # ========================================
 # 物品没收系统 - 没收时嘲讽语录

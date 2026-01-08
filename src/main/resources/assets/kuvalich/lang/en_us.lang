@@ -633,6 +633,7 @@ message.kuvalich.minimumLevelWeapon=Decryption successful! Minimum weapon level 
 message.kuvalich.requiemRiddleAnswer=Current riddle answer is %s / %s / %s
 message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current riddle! Please decrypt any answer before using it!
 message.kuvalich.secondCorrect=Decryption failed, second answer correct!
+message.kuvalich.confiscation.stolen=Your %s was seized by the Kuva Lich! Decrypt and kill the Lich to reclaim your belongings!
 
 # ========================================
 # Item Confiscation System - Confiscation Taunts

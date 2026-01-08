@@ -1,4 +1,3 @@
-// 路径：src/main/java/pers/roinflam/kuvalich/event/ConfiscationHandler.java
 package pers.roinflam.kuvalich.event;
 
 import net.minecraft.entity.item.EntityItem;
@@ -88,6 +87,9 @@ public class ConfiscationHandler {
 
         // 发送嘲讽消息
         sendConfiscationMessage(player);
+
+        // 发送被没收物品的提示消息
+        sendStolenItemMessage(player, itemStack);
     }
 
     /**
@@ -102,4 +104,30 @@ public class ConfiscationHandler {
         message.getStyle().setColor(TextFormatting.DARK_RED);
         player.sendMessage(message);
     }
+
+    /**
+     * 发送被没收物品的提示消息
+     *
+     * @param player    玩家
+     * @param itemStack 被没收的物品
+     */
+    private static void sendStolenItemMessage(EntityPlayer player, ItemStack itemStack) {
+        // 获取物品显示名称（优先自定义名称，否则使用翻译名）
+        String itemName = itemStack.getDisplayName();
+        int count = itemStack.getCount();
+
+        // 构建物品名称字符串（数量大于1时添加数量后缀）
+        String itemDisplay;
+        if (count > 1) {
+            itemDisplay = itemName + "x" + count;
+        } else {
+            itemDisplay = itemName;
+        }
+
+        // 发送提示消息
+        TextComponentTranslation message = new TextComponentTranslation("message.kuvalich.confiscation.stolen", itemDisplay);
+        message.getStyle().setColor(TextFormatting.RED);
+        player.sendMessage(message);
+    }
+
 }
