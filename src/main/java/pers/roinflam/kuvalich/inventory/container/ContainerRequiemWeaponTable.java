@@ -1,3 +1,5 @@
+// 文件：ContainerRequiemWeaponTable.java
+// 路径：src/main/java/pers/roinflam/kuvalich/inventory/container/ContainerRequiemWeaponTable.java
 package pers.roinflam.kuvalich.inventory.container;
 
 import net.minecraft.entity.item.EntityItem;
@@ -33,6 +35,9 @@ public class ContainerRequiemWeaponTable extends Container {
     public ItemStackHandler weapon = null;
     private boolean synchronize = false;
 
+    /** 模组槽位限制NBT键名 */
+    private static final String MODULE_LIMIT_KEY = "moduleLimit";
+
     public ContainerRequiemWeaponTable(EntityPlayer entityPlayer, World world, BlockPos pos) {
         this.world = world;
         this.pos = pos;
@@ -58,6 +63,48 @@ public class ContainerRequiemWeaponTable extends Container {
         }
 
         LogUtil.debugEvent("武器军械库容器创建", entityPlayer.getName(), "位置: " + pos.toString());
+    }
+
+    /**
+     * 获取当前武器的模组槽位限制
+     * 读取武器NBT中的 moduleLimit 值，范围0-8，默认8（无限制）
+     *
+     * @return 允许使用的槽位数量（0-8）
+     */
+    public int getModuleLimit() {
+        ItemStack weaponStack = weapon.getStackInSlot(0);
+
+        // 没有武器时，所有槽位都不可用
+        if (weaponStack == null || weaponStack.isEmpty()) {
+            return 0;
+        }
+
+        // 检查武器是否有NBT
+        NBTTagCompound tag = weaponStack.getTagCompound();
+        if (tag == null) {
+            // 没有NBT，默认全部解锁
+            return 8;
+        }
+
+        // 检查是否有 moduleLimit 键
+        if (!tag.hasKey(MODULE_LIMIT_KEY)) {
+            // 没有该键，默认全部解锁
+            return 8;
+        }
+
+        // 读取值并限制在0-8范围内
+        int limit = tag.getInteger(MODULE_LIMIT_KEY);
+        return Math.max(0, Math.min(8, limit));
+    }
+
+    /**
+     * 检查指定槽位是否已解锁
+     *
+     * @param slotIndex 槽位索引（0-7）
+     * @return 是否已解锁
+     */
+    public boolean isSlotUnlocked(int slotIndex) {
+        return slotIndex < getModuleLimit();
     }
 
     @Override
@@ -103,7 +150,9 @@ public class ContainerRequiemWeaponTable extends Container {
             boolean transferred = false;
 
             if (itemstack.getItem() instanceof ItemModuleBase) {
-                for (int i = 0; i < 8; i++) {
+                // 只尝试放入已解锁的槽位
+                int limit = getModuleLimit();
+                for (int i = 0; i < limit; i++) {
                     if (this.mergeItemStack(slotStack, i, i + 1, false)) {
                         transferred = true;
                         break;
@@ -202,7 +251,14 @@ public class ContainerRequiemWeaponTable extends Container {
                     return;
                 }
 
-                LogUtil.debugEvent("武器放入军械库", "武器", weaponItemStack.getDisplayName());
+                // 读取武器的槽位限制
+                int limit = 8;
+                NBTTagCompound weaponTag = weaponItemStack.getTagCompound();
+                if (weaponTag != null && weaponTag.hasKey(MODULE_LIMIT_KEY)) {
+                    limit = Math.max(0, Math.min(8, weaponTag.getInteger(MODULE_LIMIT_KEY)));
+                }
+
+                LogUtil.debugEvent("武器放入军械库", "武器", weaponItemStack.getDisplayName() + " (槽位限制: " + limit + ")");
 
                 NBTTagCompound nbtTagCompound = weaponItemStack.serializeNBT();
                 if (!nbtTagCompound.hasKey("tag")) {
@@ -227,7 +283,8 @@ public class ContainerRequiemWeaponTable extends Container {
                 int loadedCount = 0;
                 ContainerRequiemWeaponTable.this.synchronize = true;
 
-                for (int i = 0; i < Math.min(8, itemList.tagCount()); i++) {
+                // 只加载在槽位限制范围内的模组
+                for (int i = 0; i < Math.min(limit, Math.min(8, itemList.tagCount())); i++) {
                     NBTTagCompound itemTag = itemList.getCompoundTagAt(i);
                     ItemStack stack = new ItemStack(itemTag);
                     if (!stack.isEmpty()) {
@@ -238,7 +295,7 @@ public class ContainerRequiemWeaponTable extends Container {
                 }
 
                 ContainerRequiemWeaponTable.this.synchronize = false;
-                LogUtil.debugEvent("模组加载完成", weaponItemStack.getDisplayName(), "成功加载 " + loadedCount + " 个模组");
+                LogUtil.debugEvent("模组加载完成", weaponItemStack.getDisplayName(), "成功加载 " + loadedCount + " 个模组（限制: " + limit + "）");
 
             } catch (Exception e) {
                 LogUtil.error("武器放入军械库时发生错误", e);
@@ -286,6 +343,13 @@ public class ContainerRequiemWeaponTable extends Container {
             if (weapon.getStackInSlot(0).isEmpty()) {
                 return false;
             }
+
+            // ✅ 检查槽位是否已解锁
+            if (!isSlotUnlocked(index)) {
+                LogUtil.debug("槽位 " + index + " 未解锁，当前限制: " + getModuleLimit());
+                return false;
+            }
+
             if (!(itemStack.getItem() instanceof ItemModuleBase)) {
                 return false;
             }
@@ -296,7 +360,7 @@ public class ContainerRequiemWeaponTable extends Container {
                 return false;
             }
 
-            // ✅ 使用新的冲突检测系统
+            // 使用冲突检测系统
             for (int i = 0; i < 8; i++) {
                 if (i != index) {
                     ItemStack existingStack = module.getStackInSlot(i);
@@ -307,7 +371,7 @@ public class ContainerRequiemWeaponTable extends Container {
                             return false;
                         }
 
-                        // ✅ 双向冲突检测（type + 冲突标签）
+                        // 双向冲突检测（type + 冲突标签）
                         if (ModuleBase.hasConflict(existingStack, itemStack)) {
                             return false;
                         }
