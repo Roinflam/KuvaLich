@@ -1,11 +1,12 @@
-// 文件：RequiemCard.java
-// 路径：src/main/java/pers/roinflam/kuvalich/blocks/capability/RequiemCard.java
+// 路径：src/main/java/pers/roinflam/kuvalich/capability/RequiemCard.java
 package pers.roinflam.kuvalich.capability;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -13,6 +14,9 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Mod.EventBusSubscriber
 public class RequiemCard implements INBTSerializable<NBTTagCompound> {
@@ -33,8 +37,12 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     private int minimumLevelWeapon;
     private int maximumLevelWeapon;
 
+    // 被玄骸没收的物品列表
+    private List<ItemStack> confiscatedItems;
+
     public RequiemCard() {
         reset();
+        this.confiscatedItems = new ArrayList<>();
     }
 
     @SubscribeEvent
@@ -72,6 +80,8 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         this.setKuvaLevel(requiemCard.getKuvaLevel());
         this.setMinimumLevelWeapon(requiemCard.getMinimumLevelWeapon());
         this.setMaximumLevelWeapon(requiemCard.getMaximumLevelWeapon());
+        // 克隆没收物品列表
+        this.confiscatedItems = new ArrayList<>(requiemCard.getConfiscatedItems());
     }
 
     public int getUnlockedCardStatus() {
@@ -168,6 +178,16 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     public void setThreeRiddle(int threeRiddle) {
         this.threeRiddle = threeRiddle;
+    }
+
+    /**
+     * 检查是否有任意一个谜语被解开
+     * 用于判断是否触发没收机制
+     *
+     * @return 是否有谜语被解开
+     */
+    public boolean hasAnyRiddleUnlocked() {
+        return oneRiddle != -1 || twoRiddle != -1 || threeRiddle != -1;
     }
 
     public boolean isUnlockAll() {
@@ -293,6 +313,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         this.unlockedCardStatus = 0;
         this.decryptionProgress = 0;
         this.kuvaLevel = 0;
+        // 注意：reset时不清空没收物品，因为解密成功时需要先掉落再reset
     }
 
     /**
@@ -337,6 +358,57 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         }
     }
 
+    // ==================== 没收物品相关方法 ====================
+
+    /**
+     * 获取被没收的物品列表
+     *
+     * @return 没收物品列表的副本
+     */
+    public List<ItemStack> getConfiscatedItems() {
+        return new ArrayList<>(confiscatedItems);
+    }
+
+    /**
+     * 添加被没收的物品
+     *
+     * @param itemStack 要没收的物品
+     */
+    public void addConfiscatedItem(ItemStack itemStack) {
+        if (itemStack != null && !itemStack.isEmpty()) {
+            confiscatedItems.add(itemStack.copy());
+        }
+    }
+
+    /**
+     * 清空没收物品列表并返回所有物品
+     *
+     * @return 被没收的所有物品
+     */
+    public List<ItemStack> clearAndGetConfiscatedItems() {
+        List<ItemStack> items = new ArrayList<>(confiscatedItems);
+        confiscatedItems.clear();
+        return items;
+    }
+
+    /**
+     * 检查是否有被没收的物品
+     *
+     * @return 是否有没收物品
+     */
+    public boolean hasConfiscatedItems() {
+        return !confiscatedItems.isEmpty();
+    }
+
+    /**
+     * 获取被没收物品的数量
+     *
+     * @return 没收物品数量
+     */
+    public int getConfiscatedItemCount() {
+        return confiscatedItems.size();
+    }
+
     @Override
     public NBTTagCompound serializeNBT() {
         NBTTagCompound nbt = new NBTTagCompound();
@@ -354,6 +426,16 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         nbt.setInteger("kuvaLevel", kuvaLevel);
         nbt.setInteger("minimumLevelWeapon", minimumLevelWeapon);
         nbt.setInteger("maximumLevelWeapon", maximumLevelWeapon);
+
+        // 序列化没收物品列表
+        NBTTagList confiscatedList = new NBTTagList();
+        for (ItemStack item : confiscatedItems) {
+            if (!item.isEmpty()) {
+                confiscatedList.appendTag(item.serializeNBT());
+            }
+        }
+        nbt.setTag("confiscatedItems", confiscatedList);
+
         return nbt;
     }
 
@@ -377,6 +459,18 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         this.kuvaLevel = nbt.getInteger("kuvaLevel");
         this.minimumLevelWeapon = nbt.getInteger("minimumLevelWeapon");
         this.maximumLevelWeapon = nbt.getInteger("maximumLevelWeapon");
+
+        // 反序列化没收物品列表
+        this.confiscatedItems = new ArrayList<>();
+        if (nbt.hasKey("confiscatedItems", Constants.NBT.TAG_LIST)) {
+            NBTTagList confiscatedList = nbt.getTagList("confiscatedItems", Constants.NBT.TAG_COMPOUND);
+            for (int i = 0; i < confiscatedList.tagCount(); i++) {
+                ItemStack item = new ItemStack(confiscatedList.getCompoundTagAt(i));
+                if (!item.isEmpty()) {
+                    confiscatedItems.add(item);
+                }
+            }
+        }
     }
 
     public int getMinimumLevelWeapon() {

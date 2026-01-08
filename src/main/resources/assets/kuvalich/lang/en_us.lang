@@ -1,16 +1,26 @@
-enchantment.experience_collector=Experience Collector
-enchantment.kuvalich.experience_collector.desc=Increases the experience gained from mining ores
-enchantment.requiem_destroyed=Requiem Destroyed
-enchantment.kuvalich.requiem_destroyed.desc=Quickly mine Requiem and Necrotic blocks, and increase the drop rate of Requiem cards from Requiem ores
-enchantment.lethal=Lethal
-enchantment.kuvalich.lethal.desc=Increases damage based on the target's lost health points
-enchantment.firststrike=First Strike
-enchantment.kuvalich.firststrike.desc=Deals significant damage to unharmed targets, gaining additional experience equal to 10%% of the damage
-enchantment.escort=Escort
-enchantment.kuvalich.escort.desc=Each level reduces damage taken at full health by 25%%, up to a maximum of 75%%
-enchantment.death_resistance=Death Resistance
-enchantment.kuvalich.death_resistance.desc=Sacrifice experience points to resist fatal damage, the amount sacrificed depends on enchantment level and received damage
+# ═══════════════════════════════════════════════════════════════
+# Kuva Lich Mod - English (US) Language File
+# ═══════════════════════════════════════════════════════════════
 
+# ========================================
+# Enchantment System
+# ========================================
+enchantment.death_resistance=Death Resistance
+enchantment.kuvalich.death_resistance.desc=Sacrifice experience to resist fatal damage, based on enchantment level and damage value
+enchantment.escort=Escort
+enchantment.kuvalich.escort.desc=Reduces 25%% damage taken at full health per level, up to 75%%
+enchantment.experience_collector=Fortune of Experience
+enchantment.kuvalich.experience_collector.desc=Increases experience gained from mining ores
+enchantment.firststrike=First Strike
+enchantment.kuvalich.firststrike.desc=Deal massive damage to uninjured targets and gain 10%% of damage as experience
+enchantment.lethal=Lethal
+enchantment.kuvalich.lethal.desc=Increases damage based on target's missing health
+enchantment.requiem_destroyed=Lich Destroyer
+enchantment.kuvalich.requiem_destroyed.desc=Quickly mine Requiem and Lich blocks, increases Requiem card drop chance from Requiem ore
+
+# ========================================
+# Basic Items - Requiem Cards
+# ========================================
 item.fass.name=FASS
 item.jahu.name=JAHU
 item.khra.name=KHRA
@@ -19,421 +29,885 @@ item.netra.name=NETRA
 item.ris.name=RIS
 item.vome.name=VOME
 item.xata.name=XATA
+
+# ========================================
+# Basic Items - Materials and Tools
+# ========================================
+item.kuva.name=Kuva
+item.lich_reliquary.name=Lich Reliquary
 item.requiem_gem.name=Requiem Gem
 item.requiem_riddle.name=Requiem Riddle
-item.lich_reliquary.name=Lich Reliquary
-item.kuva.name=Kuva
+item.requiem_ultimatum.name=Requiem Ultimatum
 item.riven_sliver.name=Riven Sliver
 
+# ========================================
+# Creative Tab
+# ========================================
 itemGroup.kuvalich_tab=Kuva Lich
 
-tile.requiem_ore.name=Requiem Ore
+# ========================================
+# Block System
+# ========================================
 tile.experience_ore.name=Experience Ore
-tile.requiem_gate.name=Requiem Gate
-tile.requiem_recast.name=Requiem Recast
 tile.requiem_evolve.name=Requiem Evolve
-tile.requiem_weapon_table.name=Requiem Weapon Table
-tile.requiem_warframe_table.name=Requiem Warframe Table
+tile.requiem_gate.name=Requiem Gate
+tile.requiem_ore.name=Requiem Ore
+tile.requiem_recast.name=Requiem Recast
+tile.requiem_warframe_table.name=Requiem Warframe Arsenal
+tile.requiem_weapon_table.name=Requiem Weapon Arsenal
 
-entity.kuva_slave.name=Kuva Slave
-entity.kuva_master.name=Kuva Master
+# ========================================
+# Entity System
+# ========================================
+entity.kuva_master.name=Kuva Lich
+entity.kuva_slave.name=Kuva Thrall
 
+# ========================================
+# Weapon Elemental Damage Types
+# ========================================
 kuvaweapon.type=Elemental Damage
-kuvaweapon.type.fire=Fire
-kuvaweapon.type.poison=Poison
-kuvaweapon.type.ice=Ice
-kuvaweapon.type.electricity=Electricity
-kuvaweapon.type.slash=Slash
-kuvaweapon.type.puncture=Puncture
+kuvaweapon.type.corrosion=Corrosive
+kuvaweapon.type.electricity=Electric
+kuvaweapon.type.explosion=Blast
+kuvaweapon.type.fire=Heat
+kuvaweapon.type.gas=Gas
+kuvaweapon.type.ice=Cold
 kuvaweapon.type.impact=Impact
 kuvaweapon.type.magnetic=Magnetic
+kuvaweapon.type.poison=Toxin
+kuvaweapon.type.puncture=Puncture
 kuvaweapon.type.radiation=Radiation
-kuvaweapon.type.virus=Virus
-kuvaweapon.type.corrosion=Corrosion
-kuvaweapon.type.explosion=Explosion
-kuvaweapon.type.gas=Gas
+kuvaweapon.type.slash=Slash
 kuvaweapon.type.unknown=Unknown
+kuvaweapon.type.virus=Viral
 
-kuvaweapon.item_type_random.name=§dUndisclosed Item Mod
+# ========================================
+# Weapon Mods - General Info
+# ========================================
+kuvaweapon.item_type.tooltip=Equip this mod in weapon to gain attribute bonuses
+kuvaweapon.item_type_random.name=§dUnveiled Weapon Mod
 kuvaweapon.item_type_random.tooltip=+??%% ???
-kuvaweapon.item_type.tooltip=Equip this mod to the item for attribute bonuses
-kuvaweapon.item_type_riven_random.name=§5Undisclosed Riven Mod
-kuvaweapon.item_type_riven_trend.tooltip=Riven Trend
-kuvaweapon.item_type_riven_cycle.tooltip=Riven Cycle
+kuvaweapon.item_type_riven_cycle.tooltip=Riven Cycle Count
+kuvaweapon.item_type_riven_random.name=§5Unveiled Riven Mod
+kuvaweapon.item_type_riven_trend.tooltip=Riven Disposition
 
-kuvaweapon.warframe_type_random.name=§dUndisclosed Warframe Mod
+# ========================================
+# Warframe Mods - General Info
+# ========================================
+kuvaweapon.warframe_type.tooltip=Equip this mod in warframe to gain attribute bonuses
+kuvaweapon.warframe_type_random.name=§dUnveiled Warframe Mod
 kuvaweapon.warframe_type_random.tooltip=+??%% ???
-kuvaweapon.warframe_type.tooltip=Equip this mod to the warframe for attribute bonuses
-kuvaweapon.warframe_type_riven_random.name=§5Undisclosed Riven Mod
-kuvaweapon.warframe_type_riven_trend.tooltip=Riven Trend
-kuvaweapon.warframe_type_riven_cycle.tooltip=Riven Cycle
+kuvaweapon.warframe_type_riven_cycle.tooltip=Riven Cycle Count
+kuvaweapon.warframe_type_riven_random.name=§5Unveiled Riven Mod
+kuvaweapon.warframe_type_riven_trend.tooltip=Riven Disposition
 
-kuvaweapon.item_attribute_type.meleeDamage=Melee Damage
-kuvaweapon.item_attribute_type.remoteDamage=Remote Damage
+# ========================================
+# Weapon Attribute Types - Basic
+# ========================================
 kuvaweapon.item_attribute_type.arrowDamage=Arrow Damage
-kuvaweapon.item_attribute_type.projectileDamage=Projectile Damage
-kuvaweapon.item_attribute_type.magicDamage=Magic Damage
-kuvaweapon.item_attribute_type.multishot=Multishot
-kuvaweapon.item_attribute_type.attackSpeed=Attack Speed
 kuvaweapon.item_attribute_type.attackRange=Attack Range
-kuvaweapon.item_attribute_type.triggerChance=Trigger Chance
-kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability=Melee Critical Strike Probability
-kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier=Melee Critical Strike Multiplier
-kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability=Remote Critical Strike Probability
-kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier=Remote Critical Strike Multiplier
-kuvaweapon.item_attribute_type.bane_of_undefined=Damage to Undefined
-kuvaweapon.item_attribute_type.bane_of_undead=Damage to Undead
+kuvaweapon.item_attribute_type.attackSpeed=Attack Speed
 kuvaweapon.item_attribute_type.bane_of_arthropod=Damage to Arthropods
 kuvaweapon.item_attribute_type.bane_of_illager=Damage to Illagers
-kuvaweapon.item_attribute_type.fire=Fire Damage
-kuvaweapon.item_attribute_type.ice=Ice Damage
-kuvaweapon.item_attribute_type.poison=Poison Damage
-kuvaweapon.item_attribute_type.electricity=Electricity Damage
-kuvaweapon.item_attribute_type.slash=Slash Damage
-kuvaweapon.item_attribute_type.puncture=Puncture Damage
+kuvaweapon.item_attribute_type.bane_of_undead=Damage to Undead
+kuvaweapon.item_attribute_type.bane_of_undefined=Damage to Unique Creatures
+kuvaweapon.item_attribute_type.baseDamageWhenNotCriticalStrike=Damage when not Critical
+kuvaweapon.item_attribute_type.bursting_radius=Blast Radius increases AoE damage range for ranged attacks
+kuvaweapon.item_attribute_type.corrosion=Corrosive Damage
+kuvaweapon.item_attribute_type.dashAttackRange=Attack Range while Sprinting
+kuvaweapon.item_attribute_type.dashMeleeCriticalStrikeProbability=Critical Chance while Sprinting
+kuvaweapon.item_attribute_type.dashTriggerChance=Status Chance while Sprinting
+kuvaweapon.item_attribute_type.electricity=Electric Damage
+kuvaweapon.item_attribute_type.explosion=Blast Damage
+kuvaweapon.item_attribute_type.fire=Heat Damage
+kuvaweapon.item_attribute_type.firing_rate=Fire Rate (doubled for bows)
+kuvaweapon.item_attribute_type.gas=Gas Damage
+kuvaweapon.item_attribute_type.ice=Cold Damage
 kuvaweapon.item_attribute_type.impact=Impact Damage
-kuvaweapon.item_attribute_type.firing_rate=Firing Rate
-kuvaweapon.item_attribute_type.triggerTime=Trigger Time
-kuvaweapon.item_attribute_type.dashMeleeCriticalStrikeProbability=Dash Melee Critical Strike Probability
-kuvaweapon.item_attribute_type.dashAttackRange=Dash Attack Range
-kuvaweapon.item_attribute_type.dashTriggerChance=Dash Trigger Chance
-kuvaweapon.item_attribute_type.baseDamageWhenNotCriticalStrike=Base Damage When Not Critical Strike
-kuvaweapon.item_attribute_type.bursting_radius=Bursting Radius
+kuvaweapon.item_attribute_type.magicDamage=Magic Damage
+kuvaweapon.item_attribute_type.magnetic=Magnetic Damage
+kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier=Melee Critical Damage
+kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability=Melee Critical Chance
+kuvaweapon.item_attribute_type.meleeDamage=Melee Damage
+kuvaweapon.item_attribute_type.multishot=Multishot
+kuvaweapon.item_attribute_type.poison=Toxin Damage
+kuvaweapon.item_attribute_type.projectileDamage=Projectile Damage
+kuvaweapon.item_attribute_type.puncture=Puncture Damage
+kuvaweapon.item_attribute_type.radiation=Radiation Damage
+kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier=Ranged Critical Damage
+kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability=Ranged Critical Chance
+kuvaweapon.item_attribute_type.remoteDamage=Ranged Damage
+kuvaweapon.item_attribute_type.slash=Slash Damage
+kuvaweapon.item_attribute_type.triggerChance=Status Chance
+kuvaweapon.item_attribute_type.triggerTime=Status Duration
+kuvaweapon.item_attribute_type.virus=Viral Damage
 
-kuvaweapon.warframe_attribute_type.health=Health
-kuvaweapon.warframe_attribute_type.shield=Shield Capacity
+# ========================================
+# Weapon Attribute Types - Kill Stack
+# ========================================
+kuvaweapon.item_attribute_type.killStackAttackRange=Attack Range on Kill, stacks up to %d times
+kuvaweapon.item_attribute_type.killStackAttackSpeed=Attack Speed on Kill, stacks up to %d times
+kuvaweapon.item_attribute_type.killStackBaseDamage=Base Damage per debuff on target on Kill, stacks up to %d times
+kuvaweapon.item_attribute_type.killStackBurstingRadius=Blast Radius increases AoE damage range for ranged attacks on Kill, stacks up to %d times
+kuvaweapon.item_attribute_type.killStackFiringRate=Fire Rate (doubled for bows) on Kill, stacks up to %d times
+kuvaweapon.item_attribute_type.killStackMeleeCriticalMultiplier=Melee Critical Damage on Kill, stacks up to %d times
+kuvaweapon.item_attribute_type.killStackMultishot=Multishot on Kill, stacks up to %d times
+kuvaweapon.item_attribute_type.killStackTriggerChance=Status Chance on Kill, stacks up to %d times
+
+# ========================================
+# Warframe Attribute Types - Basic
+# ========================================
 kuvaweapon.warframe_attribute_type.armor=Armor
-kuvaweapon.warframe_attribute_type.sprintSpeed=Sprint Speed
-kuvaweapon.warframe_attribute_type.shieldRecoveryRate=Shield Recovery Rate
-kuvaweapon.warframe_attribute_type.shieldRecoveryDelay=Shield Recovery Delay
-kuvaweapon.warframe_attribute_type.knockbackResistance=Knockback Resistance
-kuvaweapon.warframe_attribute_type.fireProtection=Fire Resistance
+kuvaweapon.warframe_attribute_type.diggingSpeed=Mining Speed
 kuvaweapon.warframe_attribute_type.electricProtection=Electric Resistance
+kuvaweapon.warframe_attribute_type.fallProtection=Fall Resistance
+kuvaweapon.warframe_attribute_type.fireProtection=Heat Resistance
+kuvaweapon.warframe_attribute_type.fixedArmor=Fixed Armor
+kuvaweapon.warframe_attribute_type.fixedHealth=Fixed Health
+kuvaweapon.warframe_attribute_type.fixedShield=Fixed Shield Capacity
+kuvaweapon.warframe_attribute_type.health=Health
 kuvaweapon.warframe_attribute_type.homologousProtection=Homologous Resistance
-kuvaweapon.warframe_attribute_type.reachDistance=Reach Distance
-kuvaweapon.warframe_attribute_type.diggingSpeed=Digging Speed
-kuvaweapon.warframe_attribute_type.responseRate=Health Regeneration Rate
 kuvaweapon.warframe_attribute_type.itemDropMultiplier=Loot Drop Multiplier
+kuvaweapon.warframe_attribute_type.jumpBoost=Jump Height
+kuvaweapon.warframe_attribute_type.knockbackResistance=Knockback Resistance Chance
+kuvaweapon.warframe_attribute_type.reachDistance=Mining Distance
+kuvaweapon.warframe_attribute_type.responseRate=Health Recovery Multiplier
+kuvaweapon.warframe_attribute_type.shield=Shield Capacity
+kuvaweapon.warframe_attribute_type.shieldRecoveryDelay=Shield Recovery Delay
+kuvaweapon.warframe_attribute_type.shieldRecoveryRate=Shield Recovery
+kuvaweapon.warframe_attribute_type.sprintSpeed=Sprint Speed
 
-item.base=Base Attributes
+# ========================================
+# Warframe Attribute Types - Kill Stack (Executioner Series)
+# ========================================
+kuvaweapon.warframe_attribute_type.killStackArmor=Armor on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackDiggingSpeed=Mining Speed on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackElectricProtection=Electric Resistance on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackFireProtection=Heat Resistance on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackHealth=Health on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackHomologousProtection=Homologous Resistance on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackItemDropMultiplier=Loot Drop Multiplier on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackResponseRate=Health Recovery Multiplier on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackShield=Shield Capacity on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackShieldRecoveryDelay=Shield Recovery Delay on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackShieldRecoveryRate=Shield Recovery on Kill, stacks up to %d times
+kuvaweapon.warframe_attribute_type.killStackSprintSpeed=Sprint Speed on Kill, stacks up to %d times
+
+# ========================================
+# Weapon Base Panel Attributes
+# ========================================
+item.base=Base Panel Attributes
+item.base.criticalStrikeMultiplier=Critical Multiplier
+item.base.criticalStrikeProbability=Critical Chance
 item.base.damage=Base Damage
-item.base.criticalStrikeProbability=Critical Strike Chance
-item.base.criticalStrikeMultiplier=Critical Strike Multiplier
-item.base.triggerChance=Trigger Chance
+item.base.triggerChance=Status Chance
 
+# ========================================
+# Weapon Final Panel Attributes
+# ========================================
 item.module=Final Panel Attributes
-item.module.damage=Base Damage
-item.module.meleeDamage=Melee Damage
-item.module.remoteDamage=Remote Damage
 item.module.arrowDamage=Arrow Damage
-item.module.projectileDamage=Projectile Damage
-item.module.magicDamage=Magic Damage
-item.module.baseDamageWhenNotCriticalStrike=Damage When Not Critical
 item.module.attackRange=Attack Range
-item.module.bursting_radius=Burst Radius
-item.module.multishot=Multishot
 item.module.attackSpeed=Attack Speed
-item.module.firing_rate=Firing Rate
-item.module.criticalStrikeProbability=Critical Strike Chance
-item.module.criticalStrikeMultiplier=Critical Strike Multiplier
-item.module.triggerChance=Trigger Chance
+item.module.baseDamageWhenNotCriticalStrike=Damage when not Critical
+item.module.bursting_radius=Blast Radius
+item.module.criticalStrikeMultiplier=Critical Multiplier
+item.module.criticalStrikeProbability=Critical Chance
+item.module.damage=Base Damage
+item.module.firing_rate=Fire Rate
+item.module.magicDamage=Magic Damage
+item.module.meleeDamage=Melee Damage
+item.module.multishot=Multishot
+item.module.projectileDamage=Projectile Damage
+item.module.remoteDamage=Ranged Damage
+item.module.triggerChance=Status Chance
 item.module.triggerDamage=Elemental Damage
-item.module.triggerTime=Trigger Time
-item.module.triggerType=Trigger Type
+item.module.triggerTime=Status Duration
+item.module.triggerType=Status Type
 
-item.item_common_module.name=Bronze Module
-item.item_uncommon_module.name=Silver Module
-item.item_rare_module.name=Gold Module
-item.item_prime_module.name=Prime Module
-item.item_riven_module.name=Riven Module
+# ========================================
+# Weapon Mods - By Rarity
+# ========================================
+item.item_common_module.name=Bronze Mod
+item.item_prime_module.name=Prime Mod
+item.item_rare_module.name=Gold Mod
+item.item_riven_module.name=Riven Mod
 item.item_riven_module_cycle_melee.name=Melee Riven
-item.item_riven_module_cycle_remote.name=Remote Riven
+item.item_riven_module_cycle_remote.name=Ranged Riven
+item.item_uncommon_module.name=Silver Mod
 
-item.warframe_common_module.name=Bronze Module
-item.warframe_uncommon_module.name=Silver Module
-item.warframe_rare_module.name=Gold Module
-item.warframe_prime_module.name=Prime Module
-item.warframe_riven_module.name=Riven Module
+# ========================================
+# Warframe Mods - By Rarity
+# ========================================
+item.warframe_common_module.name=Bronze Mod
+item.warframe_prime_module.name=Prime Mod
+item.warframe_rare_module.name=Gold Mod
+item.warframe_riven_module.name=Riven Mod
 item.warframe_riven_module_cycle_melee.name=Warframe Riven
+item.warframe_uncommon_module.name=Silver Mod
 
-kuvaweapon.item_module.pressure_point=§ePressure Point
-kuvaweapon.item_module.reach=§eReach
-kuvaweapon.item_module.true_steel=§eTrue Steel
-kuvaweapon.item_module.organ_shatter=§eOrgan Shatter
-kuvaweapon.item_module.point_strike=§ePoint Strike
-kuvaweapon.item_module.continuous_misery=§eContinuous Misery
-kuvaweapon.item_module.sawtooth_clip=§eSawtooth Clip
-kuvaweapon.item_module.argon_crystal_shoot=§eArgon Crystal Shoot
+# ========================================
+# Weapon Mods - Bronze Rarity (Yellow)
+# ========================================
+kuvaweapon.item_module.arcane_crystal_shoot=§eArgon Crystal Shot
 kuvaweapon.item_module.argon_crystal_wrath=§eArgon Crystal Wrath
-kuvaweapon.item_module.elemental_argon_crystal_wrath=§eElemental Pressure Point
 kuvaweapon.item_module.chainsaw_from_hell=§eChainsaw from Hell
-kuvaweapon.item_module.tear=§eTear
-kuvaweapon.item_module.disaster_shoot=§eDisaster Shoot
-kuvaweapon.item_module.malicious=§eMalicious
-kuvaweapon.item_module.single_point_breakthrough=§eSingle Point Breakthrough
-kuvaweapon.item_module.lesion_blow=§eLesion Blow
-kuvaweapon.item_module.persuasion=§ePersuasion
-kuvaweapon.item_module.touches_of_extension=§eTouches of Extension
+kuvaweapon.item_module.continuous_misery=§eContinuous Misery
+kuvaweapon.item_module.disaster_shoot=§eDisaster Shot
+kuvaweapon.item_module.elemental_argon_crystal_wrath=§eElemental Pressure Point
 kuvaweapon.item_module.fierce_bow=§eFierce Bow
-kuvaweapon.item_module.phantom_arrow=§ePhantom Arrow
+kuvaweapon.item_module.lesion_blow=§eLesion Blow
 kuvaweapon.item_module.magical_growth=§eMagical Growth
 kuvaweapon.item_module.magic_missile=§eMagic Missile
+kuvaweapon.item_module.malicious=§eMalicious
+kuvaweapon.item_module.organ_shatter=§eOrgan Shatter
 kuvaweapon.item_module.pandora_star=§ePandora Star
+kuvaweapon.item_module.persuasion=§ePersuasion
+kuvaweapon.item_module.phantom_arrow=§ePhantom Arrow
+kuvaweapon.item_module.point_strike=§ePoint Strike
+kuvaweapon.item_module.pressure_point=§ePressure Point
+kuvaweapon.item_module.reach=§eReach
+kuvaweapon.item_module.sawtooth_clip=§eSawtooth Clip
+kuvaweapon.item_module.single_point_breakthrough=§eSingle Point Breakthrough
+kuvaweapon.item_module.tear=§eTear
+kuvaweapon.item_module.touches_of_extension=§eTouches of Extension
+kuvaweapon.item_module.true_steel=§eTrue Steel
 
-kuvaweapon.item_module.serration=§9Serration
-kuvaweapon.item_module.speed_trigger=§9Speed Trigger
-kuvaweapon.item_module.molten_impact=§9Molten Impact
-kuvaweapon.item_module.shocking_touch=§9Shocking Touch 
-kuvaweapon.item_module.fever_strike=§9Fever Strike
-kuvaweapon.item_module.north_wind=§9North Wind
-kuvaweapon.item_module.bane_of_undefined=§9Bane of Undefined
+# ========================================
+# Weapon Mods - Silver Rarity (Blue)
+# ========================================
+kuvaweapon.item_module.arrow_electricity=§9Electric Arrow
+kuvaweapon.item_module.arrow_fire=§9Fire Arrow
+kuvaweapon.item_module.arrow_ice=§9Ice Arrow
+kuvaweapon.item_module.arrow_poison=§9Poison Arrow
+kuvaweapon.item_module.bane_of_arthropod=§9Bane of Arthropods
+kuvaweapon.item_module.bane_of_illager=§9Bane of Illagers
 kuvaweapon.item_module.bane_of_undead=§9Bane of Undead
-kuvaweapon.item_module.bane_of_arthropod=§9Bane of Arthropod
-kuvaweapon.item_module.bane_of_illager=§9Bane of Illager
-kuvaweapon.item_module.weapon_aptitude=§9Weapon Aptitude
-kuvaweapon.item_module.fury=§9Fury
-kuvaweapon.item_module.roundhouse_chop=§9Roundhouse Chop
-kuvaweapon.item_module.magic_swordsman=§9Magic Swordsman
-kuvaweapon.item_module.triple_whammy=§9Triple Whammy
-kuvaweapon.item_module.small_caliber=§9Small Caliber
-kuvaweapon.item_module.stream=§9Stream
-kuvaweapon.item_module.sure_shot=§9Sure Shot
-kuvaweapon.item_module.arrow_fire=§9Arrow Fire
-kuvaweapon.item_module.arrow_ice=§9Arrow Ice
-kuvaweapon.item_module.arrow_poison=§9Arrow Poison
-kuvaweapon.item_module.arrow_electricity=§9Arrow Electricity
+kuvaweapon.item_module.bane_of_undefined=§9Bane of Unique Creatures
 kuvaweapon.item_module.cryo_rounds=§9Cryo Rounds
-kuvaweapon.item_module.spring_loaded_chamber=§9Spring-Loaded Chamber
-kuvaweapon.item_module.serrated_rounds=§9Serrated Rounds
 kuvaweapon.item_module.devastated=§9Devastated
+kuvaweapon.item_module.fever_strike=§9Fever Strike
 kuvaweapon.item_module.fission_shot=§9Fission Shot
+kuvaweapon.item_module.fury=§9Fury
+kuvaweapon.item_module.magic_swordsman=§9Magic Swordsman
+kuvaweapon.item_module.molten_impact=§9Molten Impact
+kuvaweapon.item_module.north_wind=§9North Wind
+kuvaweapon.item_module.roundhouse_chop=§9Roundhouse Chop
+kuvaweapon.item_module.serrated_rounds=§9Serrated Rounds
+kuvaweapon.item_module.serration=§9Serration
+kuvaweapon.item_module.shocking_touch=§9Shocking Touch
+kuvaweapon.item_module.small_caliber=§9Small Caliber
+kuvaweapon.item_module.speed_trigger=§9Speed Trigger
+kuvaweapon.item_module.spring_loaded_chamber=§9Spring Loaded Chamber
+kuvaweapon.item_module.stream=§9Stream Strike
+kuvaweapon.item_module.sure_shot=§9Sure Shot
+kuvaweapon.item_module.triple_whammy=§9Triple Whammy
+kuvaweapon.item_module.weapon_aptitude=§9Weapon Aptitude
 
-kuvaweapon.item_module.split_chamber=§6Split Chamber
-kuvaweapon.item_module.vital_sense=§6Vital Sense
-kuvaweapon.item_module.high_voltage=§6High Voltage
-kuvaweapon.item_module.rime_rounds=§6Rime Rounds
-kuvaweapon.item_module.thermite_rounds=§6Thermite Rounds
-kuvaweapon.item_module.malignant_force=§6Malignant Force
-kuvaweapon.item_module.hammer_shot=§6Hammer Shot
-kuvaweapon.item_module.critical_delay=§6Critical Delay
-kuvaweapon.item_module.vile_acceleration=§6Vile Acceleration
-kuvaweapon.item_module.spoiled_strike=§6Spoiled Strike
-kuvaweapon.item_module.hollow_point=§6Hollow Point
-kuvaweapon.item_module.jagged_edge=§6Jagged Edge
-kuvaweapon.item_module.buzz_kill=§6Buzz Kill
-kuvaweapon.item_module.rending_strike=§6Rending Strike
-kuvaweapon.item_module.heavy_trauma=§6Heavy Trauma
-kuvaweapon.item_module.collision_force=§6Collision Force
-kuvaweapon.item_module.sundering_strike=§6Sundering Strike
-kuvaweapon.item_module.auger_strike=§6Auger Strike
+# ========================================
+# Weapon Mods - Gold Rarity
+# ========================================
 kuvaweapon.item_module.accelerated_blast=§6Accelerated Blast
-kuvaweapon.item_module.katana_energy=§6Katana Energy
-kuvaweapon.item_module.heavy_caliber=§6Heavy Caliber
-kuvaweapon.item_module.eldest_elemental_envoy=§6Eldest Elemental Envoy
-kuvaweapon.item_module.infinity_blade=§6Infinity Blade
-kuvaweapon.item_module.residual_epidemic=§6Residual Epidemic
-kuvaweapon.item_module.maiming_strike=§6Maiming Strike
+kuvaweapon.item_module.auger_strike=§6Auger Strike
+kuvaweapon.item_module.buzz_kill=§6Buzz Kill
+kuvaweapon.item_module.collision_force=§6Collision Force
 kuvaweapon.item_module.creeping_bullseye=§6Creeping Bullseye
-kuvaweapon.item_module.tainted_mag=§6Tainted Mag
+kuvaweapon.item_module.critical_delay=§6Critical Delay
+kuvaweapon.item_module.eldest_elemental_envoy=§6Eldest Elemental Envoy
+kuvaweapon.item_module.elemental_strike=§6Elemental Strike
 kuvaweapon.item_module.firestorm=§6Firestorm
-kuvaweapon.item_module.rain_of_arrows=§6Rain of Arrows
-kuvaweapon.item_module.joy_of_fire=§6Joy of Fire
 kuvaweapon.item_module.frostmourne=§6Frostmourne
+kuvaweapon.item_module.hammer_shot=§6Hammer Shot
+kuvaweapon.item_module.heavy_caliber=§6Heavy Caliber
+kuvaweapon.item_module.heavy_trauma=§6Heavy Trauma
+kuvaweapon.item_module.high_voltage=§6High Voltage
+kuvaweapon.item_module.hollow_point=§6Hollow Point
+kuvaweapon.item_module.infinity_blade=§6Infinity Blade
+kuvaweapon.item_module.jagged_edge=§6Jagged Edge
+kuvaweapon.item_module.joy_of_fire=§6Joy of Fire
+kuvaweapon.item_module.katana_energy=§6Katana Energy
+kuvaweapon.item_module.maiming_strike=§6Maiming Strike
+kuvaweapon.item_module.malignant_force=§6Malignant Force
+kuvaweapon.item_module.rain_of_arrows=§6Rain of Arrows
+kuvaweapon.item_module.reflex_coil=§6Reflex Coil
+kuvaweapon.item_module.rending_strike=§6Rending Strike
+kuvaweapon.item_module.residual_epidemic=§6Residual Epidemic
+kuvaweapon.item_module.rime_rounds=§6Rime Rounds
+kuvaweapon.item_module.split_chamber=§6Split Chamber
+kuvaweapon.item_module.spoiled_strike=§6Spoiled Strike
+kuvaweapon.item_module.sundering_strike=§6Sundering Strike
+kuvaweapon.item_module.tainted_mag=§6Tainted Mag
+kuvaweapon.item_module.thermite_rounds=§6Thermite Rounds
+kuvaweapon.item_module.vile_acceleration=§6Vile Acceleration
+kuvaweapon.item_module.vital_sense=§6Vital Sense
 
-kuvaweapon.item_module.pressure_point_prime=§bPressure Point Prime
-kuvaweapon.item_module.reach_prime=§bReach Prime
-kuvaweapon.item_module.heavy_trauma_prime=§bHeavy Trauma Prime
-kuvaweapon.item_module.fever_strike_prime=§bFever Strike Prime
-kuvaweapon.item_module.bane_of_undefined_prime=§bBane of Undefined Prime
+# ========================================
+# Weapon Mods - Prime Rarity (Cyan)
+# ========================================
+kuvaweapon.item_module.bane_of_arthropod_prime=§bBane of Arthropods Prime
+kuvaweapon.item_module.bane_of_illager_prime=§bBane of Illagers Prime
 kuvaweapon.item_module.bane_of_undead_prime=§bBane of Undead Prime
-kuvaweapon.item_module.bane_of_arthropod_prime=§bBane of Arthropod Prime
-kuvaweapon.item_module.bane_of_illager_prime=§bBane of Illager Prime
-kuvaweapon.item_module.fury_prime=§bFury Prime
-kuvaweapon.item_module.magic_swordsman_prime=§bMagic Swordsman Prime
+kuvaweapon.item_module.bane_of_undefined_prime=§bBane of Unique Creatures Prime
+kuvaweapon.item_module.cryo_rounds_prime=§bCryo Rounds Prime
 kuvaweapon.item_module.eldest_elemental_envoy_prime=§bEldest Elemental Envoy Prime
+kuvaweapon.item_module.fever_strike_prime=§bFever Strike Prime
+kuvaweapon.item_module.fierce_bow_prime=§bFierce Bow Prime
+kuvaweapon.item_module.firestorm_prime=§bFirestorm Prime
+kuvaweapon.item_module.fission_shot_prime=§bFission Shot Prime
+kuvaweapon.item_module.fury_prime=§bFury Prime
+kuvaweapon.item_module.heavy_trauma_prime=§bHeavy Trauma Prime
+kuvaweapon.item_module.magic_swordsman_prime=§bMagic Swordsman Prime
 kuvaweapon.item_module.malicious_prime=§bMalicious Prime
 kuvaweapon.item_module.persuasion_prime=§bPersuasion Prime
-kuvaweapon.item_module.firestorm_prime=§bFirestorm Prime
-kuvaweapon.item_module.cryo_rounds_prime=§bCryo Rounds Prime
-kuvaweapon.item_module.fierce_bow_prime=§bFierce Bow Prime
-kuvaweapon.item_module.fission_shot_prime=§bFission Shot Prime
+kuvaweapon.item_module.pressure_point_prime=§bPressure Point Prime
+kuvaweapon.item_module.reach_prime=§bReach Prime
 
-kuvaweapon.item_module_info=Equipped with the following modules:
+# ========================================
+# Weapon Mods - Galvanized Series (Prime Rarity)
+# ========================================
+kuvaweapon.item_module.galvanized_aptitude=§7Galvanized Aptitude
+kuvaweapon.item_module.galvanized_chamber=§7Galvanized Chamber
+kuvaweapon.item_module.galvanized_continuous_misery=§7Galvanized Continuous Misery
+kuvaweapon.item_module.galvanized_firestorm=§7Galvanized Firestorm
+kuvaweapon.item_module.galvanized_fury=§7Galvanized Fury
+kuvaweapon.item_module.galvanized_reach=§7Galvanized Reach
+kuvaweapon.item_module.galvanized_speed_trigger=§7Galvanized Speed Trigger
+kuvaweapon.item_module.galvanized_steel=§7Galvanized Steel
 
-kuvaweapon.warframe_module.vitality=§eVitality
-kuvaweapon.warframe_module.redirection=§eRedirection
-kuvaweapon.warframe_module.steel_fiber=§eSteel Fiber
-kuvaweapon.warframe_module.flame_repellent=§eFlame Repellent
-kuvaweapon.warframe_module.lightning_rod=§eLightning Rod
-kuvaweapon.warframe_module.vigilante_vigor=§eVigilante Vigor
-kuvaweapon.warframe_module.gladiator_aegis=§eGladiator Aegis
-kuvaweapon.warframe_module.inspire=§eInspire
-kuvaweapon.warframe_module.wild=§eWild
-kuvaweapon.warframe_module.charged_armor=§eCharged Armor
-kuvaweapon.warframe_module.plated_armor=§ePlated Armor
+# ========================================
+# Weapon Mods - Bronze Rarity (New)
+# ========================================
+kuvaweapon.item_module.arcane_potential=§6Arcane Potential
+kuvaweapon.item_module.ballistics_expert=§6Ballistics Expert
+kuvaweapon.item_module.marksmans_gift=§6Marksman's Gift
+
+# ========================================
+# Weapon Mods - Silver Rarity (New)
+# ========================================
+kuvaweapon.item_module.arcane_ballistics=§9Arcane Ballistics
+kuvaweapon.item_module.berserker_rage=§9Berserker Rage
+kuvaweapon.item_module.death_barrage=§9Death Barrage
+kuvaweapon.item_module.dual_covenant=§9Dual Covenant
+kuvaweapon.item_module.hunters_moment=§9Hunter's Moment
+kuvaweapon.item_module.infection_protocol=§9Infection Protocol
+kuvaweapon.item_module.mystic_archery=§9Mystic Archery
+kuvaweapon.item_module.predatory_instinct=§9Predatory Instinct
+kuvaweapon.item_module.shockwave_domain=§9Shockwave Domain
+kuvaweapon.item_module.suppressive_fire=§9Suppressive Fire
+kuvaweapon.item_module.violent_aesthetic=§9Violent Aesthetic
+
+# ========================================
+# Weapon Mods - Gold Rarity (New)
+# ========================================
+kuvaweapon.item_module.apocalypse_split=§eApocalypse Split
+kuvaweapon.item_module.arcane_domination=§eArcane Domination
+kuvaweapon.item_module.arcane_torrent=§eArcane Torrent
+kuvaweapon.item_module.ballistic_master=§eBallistic Master
+kuvaweapon.item_module.berserkers_oath=§eBerserker's Oath
+kuvaweapon.item_module.biohazard=§eBiohazard
+kuvaweapon.item_module.blood_frenzy=§eBlood Frenzy
+kuvaweapon.item_module.bombardment=§eBombardment
+kuvaweapon.item_module.catastrophe=§eCatastrophe
+kuvaweapon.item_module.chain_catastrophe=§eChain Catastrophe
+kuvaweapon.item_module.condition_outbreak=§eCondition Outbreak
+kuvaweapon.item_module.corrosion_king=§eCorrosion King
+kuvaweapon.item_module.corrosion_tide=§eCorrosion Tide
+kuvaweapon.item_module.corrosive_erosion=§eCorrosive Erosion
+kuvaweapon.item_module.crying_wounds=§eCrying Wounds
+kuvaweapon.item_module.doomsday_arrow=§eDoomsday Arrow
+kuvaweapon.item_module.dual_disaster=§eDual Disaster
+kuvaweapon.item_module.dual_legend=§eDual Legend
+kuvaweapon.item_module.elemental_fusion=§eElemental Fusion
+kuvaweapon.item_module.em_storm=§eEM Storm
+kuvaweapon.item_module.gladiators_glory=§eGladiator's Glory
+kuvaweapon.item_module.hunters_code=§eHunter's Code
+kuvaweapon.item_module.iron_oath=§eIron Oath
+kuvaweapon.item_module.legendary_shot=§eLegendary Shot
+kuvaweapon.item_module.magnetic_collapse=§eMagnetic Collapse
+kuvaweapon.item_module.magnetic_overlord=§eMagnetic Overlord
+kuvaweapon.item_module.melee_fury=§eMelee Fury
+kuvaweapon.item_module.meltdown_protocol=§eMeltdown Protocol
+kuvaweapon.item_module.mystic_apocalypse=§eMystic Apocalypse
+kuvaweapon.item_module.nuclear_control_breakthrough=§6Nuclear Control Breakthrough
+kuvaweapon.item_module.nuclear_storm=§eNuclear Storm
+kuvaweapon.item_module.pandemic_outbreak=§ePandemic Outbreak
+kuvaweapon.item_module.physical_triad=§ePhysical Triad
+kuvaweapon.item_module.plague_herald=§ePlague Herald
+kuvaweapon.item_module.predatory_hybrid=§ePredatory Hybrid
+kuvaweapon.item_module.predators_mark=§ePredator's Mark
+kuvaweapon.item_module.ranged_fury=§eRanged Fury
+kuvaweapon.item_module.rapid_nuclide=§6Rapid Nuclide
+kuvaweapon.item_module.radiation_lord=§eRadiation Lord
+kuvaweapon.item_module.reapers_scythe=§eReaper's Scythe
+kuvaweapon.item_module.scorched_earth=§eScorched Earth
+kuvaweapon.item_module.slaughter_feast=§eSlaughter Feast
+kuvaweapon.item_module.toxic_cloud=§eToxic Cloud
+kuvaweapon.item_module.ultimate_violence=§eUltimate Violence
+kuvaweapon.item_module.viral_tyrant=§eViral Tyrant
+kuvaweapon.item_module.viral_vector=§eViral Vector
+
+# ========================================
+# Weapon Mods - Prime Rarity (New)
+# ========================================
+kuvaweapon.item_module.arcane_ballistics_prime=§bArcane Ballistics Prime
+kuvaweapon.item_module.catastrophe_prime=§bCatastrophe Prime
+kuvaweapon.item_module.corrosion_king_prime=§bCorrosion King Prime
+kuvaweapon.item_module.dual_covenant_prime=§bDual Covenant Prime
+kuvaweapon.item_module.hunters_code_prime=§bHunter's Code Prime
+kuvaweapon.item_module.hunters_moment_prime=§bHunter's Moment Prime
+kuvaweapon.item_module.infection_protocol_prime=§bInfection Protocol Prime
+kuvaweapon.item_module.magnetic_overlord_prime=§bMagnetic Overlord Prime
+kuvaweapon.item_module.mystic_archery_prime=§bMystic Archery Prime
+kuvaweapon.item_module.nuclear_storm_prime=§bNuclear Storm Prime
+kuvaweapon.item_module.plague_herald_prime=§bPlague Herald Prime
+kuvaweapon.item_module.predatory_instinct_prime=§bPredatory Instinct Prime
+kuvaweapon.item_module.reapers_scythe_prime=§bReaper's Scythe Prime
+kuvaweapon.item_module.violent_aesthetic_prime=§bViolent Aesthetic Prime
+
+# ========================================
+# Weapon Mods - Galvanized Series (New)
+# ========================================
+kuvaweapon.item_module.galvanized_death_barrage=§7Galvanized Death Barrage
+kuvaweapon.item_module.galvanized_dual_covenant=§7Galvanized Dual Covenant
+kuvaweapon.item_module.galvanized_hunters_moment=§7Galvanized Hunter's Moment
+kuvaweapon.item_module.galvanized_infection_protocol=§7Galvanized Infection Protocol
+kuvaweapon.item_module.galvanized_predatory_instinct=§7Galvanized Predatory Instinct
+kuvaweapon.item_module.galvanized_reapers_scythe=§7Galvanized Reaper's Scythe
+kuvaweapon.item_module.galvanized_shockwave_domain=§7Galvanized Shockwave Domain
+kuvaweapon.item_module.galvanized_violent_aesthetic=§7Galvanized Violent Aesthetic
+
+# ========================================
+# Mod Equipment Tips
+# ========================================
+kuvaweapon.item_module_info=Equipped Mods:
+
+# ========================================
+# Warframe Mods - Bronze Rarity (Yellow)
+# ========================================
+kuvaweapon.warframe_module.aviator=§eAviator
 kuvaweapon.warframe_module.beast_of_burden=§eBeast of Burden
 kuvaweapon.warframe_module.bones=§eBones
+kuvaweapon.warframe_module.charged_armor=§eCharged Armor
+kuvaweapon.warframe_module.flame_repellent=§eFlame Repellent
+kuvaweapon.warframe_module.gladiator_aegis=§eGladiator Aegis
+kuvaweapon.warframe_module.inspire=§eInspire
+kuvaweapon.warframe_module.lightning_rod=§eLightning Rod
 kuvaweapon.warframe_module.maliwan=§eMaliwan
+kuvaweapon.warframe_module.mobilize=§eMobilize
+kuvaweapon.warframe_module.plated_armor=§eGalvanized Carapace
+kuvaweapon.warframe_module.redirection=§eRedirection
+kuvaweapon.warframe_module.steel_fiber=§eSteel Fiber
+kuvaweapon.warframe_module.vigilante_vigor=§eVigilante Vigor
+kuvaweapon.warframe_module.vitality=§eVitality
+kuvaweapon.warframe_module.wild=§eWild Heart
 
-kuvaweapon.warframe_module.rush=§9Rush
+# ========================================
+# Warframe Mods - Silver Rarity (Blue)
+# ========================================
+kuvaweapon.warframe_module.athena=§9Athena
 kuvaweapon.warframe_module.augur_accord=§9Augur Accord
+kuvaweapon.warframe_module.carnis_carapace=§9Carnis Carapace
+kuvaweapon.warframe_module.digging_hand=§9Miner's Hand
+kuvaweapon.warframe_module.digging_power=§9Miner's Power
 kuvaweapon.warframe_module.fast_deflection=§9Fast Deflection
 kuvaweapon.warframe_module.gladiator_resolve=§9Gladiator Resolve
-kuvaweapon.warframe_module.carnis_carapace=§9Carnis Carapace
+kuvaweapon.warframe_module.rejuvenator=§9Moonstone Rejuvenator
+kuvaweapon.warframe_module.rush=§9Rush
 kuvaweapon.warframe_module.saxum_carapace=§9Saxum Carapace
-kuvaweapon.warframe_module.digging_hand=§9Digging Hand
-kuvaweapon.warframe_module.digging_power=§9Digging Power
-kuvaweapon.warframe_module.rejuvenator=§9Rejuvenator
-kuvaweapon.warframe_module.treasure_thief=§9Treasure Thief
 kuvaweapon.warframe_module.stand_your_ground=§9Stand Your Ground
-kuvaweapon.warframe_module.athena=§9Athena
+kuvaweapon.warframe_module.treasure_thief=§9Treasure Thief
 
-kuvaweapon.warframe_module.sure_footed=§6Sure Footed
-kuvaweapon.warframe_module.vigor=§6Vigor
+# ========================================
+# Warframe Mods - Gold Rarity
+# ========================================
 kuvaweapon.warframe_module.armored_agility=§6Armored Agility
-kuvaweapon.warframe_module.fortitude=§6Fortitude
-kuvaweapon.warframe_module.treasure_hunter=§6Treasure Hunter
 kuvaweapon.warframe_module.deep_friendship=§6Deep Friendship
-kuvaweapon.warframe_module.pal=§6Pal
+kuvaweapon.warframe_module.eden_6=§6Eden-6
+kuvaweapon.warframe_module.fortitude=§6Fortitude
+kuvaweapon.warframe_module.narrow_minded=§6Narrow Minded
 kuvaweapon.warframe_module.overclock=§6Overclock
 kuvaweapon.warframe_module.overextended=§6Overextended
-kuvaweapon.warframe_module.narrow_minded=§6Narrow Minded
-kuvaweapon.warframe_module.rejuvenation=§6Rejuvenation
+kuvaweapon.warframe_module.pal=§6Pal
 kuvaweapon.warframe_module.rapid_recovery=§6Rapid Recovery
-kuvaweapon.warframe_module.eden_6=§6Eden 6
+kuvaweapon.warframe_module.rejuvenation=§6Rejuvenation
 kuvaweapon.warframe_module.sacrificial_blaze=§6Sacrificial Blaze
+kuvaweapon.warframe_module.sure_footed=§6Sure Footed
+kuvaweapon.warframe_module.treasure_hunter=§6Treasure Hunter
+kuvaweapon.warframe_module.vigor=§6Vigor
 
-kuvaweapon.warframe_module.vitality_prime=§bVitality Prime
+# ========================================
+# Warframe Mods - Prime Rarity (Cyan)
+# ========================================
+kuvaweapon.warframe_module.charged_armor_prime=§bCharged Armor Prime
+kuvaweapon.warframe_module.inspire_prime=§bInspire Prime
+kuvaweapon.warframe_module.overclock_prime=§bOverclock Prime
 kuvaweapon.warframe_module.redirection_prime=§bRedirection Prime
 kuvaweapon.warframe_module.steel_fiber_prime=§bSteel Fiber Prime
-kuvaweapon.warframe_module.vigor_prime=§bVigor Prime
-kuvaweapon.warframe_module.inspire_prime=§bInspire Prime
 kuvaweapon.warframe_module.sure_footed_prime=§bSure Footed Prime
 kuvaweapon.warframe_module.treasure_hunter_prime=§bTreasure Hunter Prime
-kuvaweapon.warframe_module.overclock_prime=§bOverclock Prime
-kuvaweapon.warframe_module.charged_armor_prime=§bCharged Armor Prime
 kuvaweapon.warframe_module.treasure_thief_prime=§bTreasure Thief Prime
+kuvaweapon.warframe_module.vigor_prime=§bVigor Prime
+kuvaweapon.warframe_module.vitality_prime=§bVitality Prime
 
-item.requiem_gem.tooltip=People always fight without knowing why
-item.requiem_riddle.tooltip=Forget the homeland of the abyss (Use to directly view the answer to the riddle)
+# ========================================
+# Warframe Mods - Executioner Series (Prime Rarity)
+# ========================================
+kuvaweapon.warframe_module.executioner_deep_friendship=§cExecutioner Deep Friendship
+kuvaweapon.warframe_module.executioner_digging_power=§cExecutioner Miner's Power
+kuvaweapon.warframe_module.executioner_fast_deflection=§cExecutioner Fast Deflection
+kuvaweapon.warframe_module.executioner_flame_repellent=§cExecutioner Flame Repellent
+kuvaweapon.warframe_module.executioner_lightning_rod=§cExecutioner Lightning Rod
+kuvaweapon.warframe_module.executioner_redirection=§cExecutioner Redirection
+kuvaweapon.warframe_module.executioner_rejuvenation=§cExecutioner Rejuvenation
+kuvaweapon.warframe_module.executioner_rush=§cExecutioner Rush
+kuvaweapon.warframe_module.executioner_steel_fiber=§cExecutioner Steel Fiber
+kuvaweapon.warframe_module.executioner_treasure_hunter=§cExecutioner Treasure Hunter
+kuvaweapon.warframe_module.executioner_vigor=§cExecutioner Vigor
+kuvaweapon.warframe_module.executioner_vitality=§cExecutioner Vitality
+
+# ========================================
+# Item Descriptions and Tooltips
+# ========================================
 item.kuva.tooltip=The mysterious red liquid coveted by the Twin Queens
-item.riven_sliver.tooltip=An oddity
-item.lich_reliquary.tooltip=Look up, then comprehend, how insignificant we are
-item.lohk.first_tooltip=The gaze from the abyss of contemplation falls upon us
+item.lich_reliquary.tooltip=Look up and repent, for how small we are
+item.requiem_gem.tooltip=People never know what they fight for
+item.requiem_riddle.tooltip=Forget the homeland of the abyss (Use to reveal riddle answer)
+item.requiem_ultimatum.tooltip=Use to summon a Kuva Lich. Use with caution
+item.riven_sliver.tooltip=A peculiar object
+
+# ========================================
+# Requiem Card Descriptions - First Line
+# ========================================
+item.fass.first_tooltip=Struggle and moan, this is our domain
+item.jahu.first_tooltip=Laws of matter lack binding force
+item.khra.first_tooltip=For universes evolved from tangent planes
+item.lohk.first_tooltip=Gazes from the abyss of contemplation fall upon us
+item.netra.first_tooltip=The decaying army spreads blasphemous words with trembling sound
+item.ris.first_tooltip=In the bright space float charred stars
+item.vome.first_tooltip=Facing the mad universe, law chose to submit
+item.xata.first_tooltip=Its messengers are all stars fallen from the sky
+
+# ========================================
+# Requiem Card Descriptions - Second Line
+# ========================================
+item.fass.second_tooltip=In these troubled times, only death awaits the defeated
+item.jahu.second_tooltip=For the sun and love have both retreated
+item.khra.second_tooltip=We are pioneers and also terminators
 item.lohk.second_tooltip=Its source is unknown
-item.xata.first_tooltip=Its messengers are the stars that fall from the sky
-item.xata.second_tooltip=Both heaven and earth are burning
-item.jahu.first_tooltip=The laws of matter lack constraint
-item.jahu.second_tooltip=For both the sun and love have receded
-item.vome.first_tooltip=Faced with a mad universe, the law chooses to submit
-item.vome.second_tooltip=And those steadfast seek supplication
-item.ris.first_tooltip=In the bright cosmos, float the scorched stars
-item.ris.second_tooltip=They only observe, criticize, deny
-item.fass.first_tooltip=Struggle, groan, this is our realm
-item.fass.second_tooltip=In this chaos, only death awaits the defeated
-item.netra.first_tooltip=The decaying army spreads blasphemous words with a tremulous sound
-item.netra.second_tooltip=To execute that dreadful plan
-item.khra.first_tooltip=For the universe that evolved from intersecting planes
-item.khra.second_tooltip=We are pioneers, and also the terminators
+item.netra.second_tooltip=Executing that terrible plan
+item.ris.second_tooltip=They only observe, accuse, and deny
+item.vome.second_tooltip=While the steadfast go to beg
+item.xata.second_tooltip=Heaven and earth are both burning
 
-item.kuva_shildeg.name=Kuva Shildeg
-item.pennant.name=Pennant
-item.guandao_prime.name=Guandao Prime
-item.paracesis.name=Paracesis
+# ========================================
+# Kuva Weapons List
+# ========================================
 item.arca_titron.name=Arca Titron
-item.reaper_prime.name=Reaper Prime
-item.vitrica.name=Vitrica
-item.gram_prime.name=Gram Prime
-item.sancti_magistar.name=Sancti Magistar
-item.destreza_prime.name=Destreza Prime
-item.prisma_veritux.name=Prisma Veritux
-item.machete.name=Machete
 item.caustacyst.name=Caustacyst
+item.destreza_prime.name=Destreza Prime
+item.gram_prime.name=Gram Prime
+item.guandao_prime.name=Guandao Prime
+item.kuva_shildeg.name=Kuva Shildeg
+item.machete.name=Machete
+item.paracesis.name=Paracesis
+item.pennant.name=Pennant
+item.prisma_veritux.name=Prisma Veritux
+item.reaper_prime.name=Reaper Prime
+item.sancti_magistar.name=Sancti Magistar
+item.vitrica.name=Vitrica
 
-config.kuvalich.kuvalich.tooltip=Kuva Lich
-
+# ========================================
+# Attribute Types
+# ========================================
 attribute.name.generic.reachDistance=Reach Distance
 
-message.kuvalich.getPoints=Your decryption progress has increased by %s points, the current progress is %s/%s. Note that the order displayed on the interface may not be correct!
-message.kuvalich.maxLevel=You have decrypted all the answers, please arrange the cards in order and kill the Kuva Lich to decrypt!
-message.kuvalich.failedToDecrypt=Successfully killed the Lich, but the decryption failed due to the incorrect riddle (or order), allowing the Lich to reach level %s.
-message.kuvalich.minimumLevelWeapon=Decryption successful, the minimum level for the decrypted weapon is now %s!
-message.kuvalich.maximumLevelWeapon=Decryption successful, the maximum level for the decrypted weapon is now %s!
-message.kuvalich.requiemRiddleAnswer=The current answer to the riddle is %s / %s / %s
+# ========================================
+# In-game Messages
+# ========================================
+message.kuvalich.failedToDecrypt=Lich killed but decryption failed due to wrong riddle (or order), Lich reached level %s.
+message.kuvalich.firstCorrect=Decryption failed, first answer correct!
+message.kuvalich.getPoints=Your decryption progress increased by %s points, current progress %s/%s. Note: displayed order may not be correct!
+message.kuvalich.maxLevel=All answers decrypted! Place cards in correct order and kill Kuva Lich to decrypt!
+message.kuvalich.maximumLevelWeapon=Decryption successful! Maximum weapon level cap increased to %s!
+message.kuvalich.minimumLevelWeapon=Decryption successful! Minimum weapon level cap increased to %s!
+message.kuvalich.requiemRiddleAnswer=Current riddle answer is %s / %s / %s
 message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current riddle! Please decrypt any answer before using it!
-message.kuvalich.firstCorrect=Decryption failed, the first answer is correct!
-message.kuvalich.secondCorrect=Decryption failed, the second answer is correct!
+message.kuvalich.secondCorrect=Decryption failed, second answer correct!
 
-# ModConfig.KUVA_LICH Configuration Translations
-config.kuvalich.kuvalich.enableDetailedLogging=Enable Detailed Debug Logging
+# ========================================
+# Item Confiscation System - Confiscation Taunts
+# ========================================
+message.kuvalich.confiscation.wallet=Wallet feeling a little light, Friend? Heh heh heh heh.
+message.kuvalich.confiscation.tax=Operating in MY sector, Friend? Time to pay the idiot tax.
+message.kuvalich.confiscation.something=I think I have something of yours? AHAHAHAHAHAHAHA!
+message.kuvalich.confiscation.closer=Bravo. You're getting closer. I really thought you'd be on me by now.
+message.kuvalich.confiscation.yoink=Yoink! What was yours is now mine. Bye-bye.
+message.kuvalich.confiscation.sector=All who pass through my Sector must pay the tax. You are no exception, my little Adversary.
+message.kuvalich.confiscation.tithe=Adversary: I have taken my tithe, as is my right as holder of this Sector.
+message.kuvalich.confiscation.coin=I take your coin as easily as I take your life, your power, your joy.
+message.kuvalich.confiscation.accepted=Tithe accepted. You may go.
+
+# ========================================
+# Item Confiscation System - Death Lines on Successful Decryption
+# ========================================
+message.kuvalich.death.hurts=Won't lie, this literally always hurts.
+message.kuvalich.death.fair=Well, fair's fair. HRK!
+message.kuvalich.death.nexttime=Until next time, friend.
+message.kuvalich.death.winsome=You win some, you lose some HORKK!
+message.kuvalich.death.comeon=Oh come o- AHHHHH-.
+message.kuvalich.death.forgive=My Queens, forgive me.
+message.kuvalich.death.failed=I have failed.
+message.kuvalich.death.unacceptable=Unacceptable.
+
+# ========================================
+# Item Confiscation System - Return Items Message
+# ========================================
+message.kuvalich.confiscation.return=Your %d previously confiscated items have dropped from the Lich!
+
+# ═══════════════════════════════════════════════════════════════
+# Configuration GUI Localization
+# ═══════════════════════════════════════════════════════════════
+
+# ========== Main Config Title ==========
+config.kuvalich.title=Kuva Lich
+config.kuvalich.title.tooltip=Kuva Lich System Configuration
+
+# ========== Module Management Config Title ==========
+config.kuvalich.modules.title=Module Management
+config.kuvalich.modules.title.tooltip=Enable and disable modules
+
+# ========== Config Categories ==========
+config.kuvalich.kuvalich=Lich System
+config.kuvalich.kuvalich.tooltip=Kuva Lich Core System Configuration
+config.kuvalich.kuvaweapon=Kuva Weapons
+config.kuvalich.kuvaweapon.tooltip=Kuva Weapon Base Attributes Configuration
+
+# ========== Module Management ==========
+config.kuvalich.modules.disabledModuleTypes=Disabled Module Types
+config.kuvalich.modules.disabledModuleTypes.tooltip=Enter module type values to disable all modules of that type
+
+# ========== Lich System Config ==========
+config.kuvalich.kuvalich.enableDetailedLogging=Enable Detailed Logging
+config.kuvalich.kuvalich.enableDetailedLogging.tooltip=Enable to log all detailed information
+config.kuvalich.kuvalich.requiemUltimatumDropChance=Requiem Ultimatum Drop Chance (%%)
+config.kuvalich.kuvalich.requiemUltimatumDropChance.tooltip=Drop chance of Requiem Ultimatum after successful decryption
 config.kuvalich.kuvalich.minDecryptionProgress=Minimum Decryption Progress
+config.kuvalich.kuvalich.minDecryptionProgress.tooltip=Minimum decryption progress gained per kill
 config.kuvalich.kuvalich.maxDecryptionProgress=Maximum Decryption Progress
-config.kuvalich.kuvalich.firstStage=First Stage Required Points
-config.kuvalich.kuvalich.secondStage=Second Stage Required Points
-config.kuvalich.kuvalich.thirdStage=Third Stage Required Points
-config.kuvalich.kuvalich.masterPotionMultiplier=Kuva Master Kill Point Multiplier
-config.kuvalich.kuvalich.damageDisplay=Display All Damage
+config.kuvalich.kuvalich.maxDecryptionProgress.tooltip=Maximum decryption progress gained per kill
+config.kuvalich.kuvalich.firstStage=First Stage Points
+config.kuvalich.kuvalich.firstStage.tooltip=Points required for first stage decryption
+config.kuvalich.kuvalich.secondStage=Second Stage Points
+config.kuvalich.kuvalich.secondStage.tooltip=Points required for second stage decryption
+config.kuvalich.kuvalich.thirdStage=Third Stage Points
+config.kuvalich.kuvalich.thirdStage.tooltip=Points required for third stage decryption
+config.kuvalich.kuvalich.masterPotionMultiplier=Lich Kill Bonus Multiplier
+config.kuvalich.kuvalich.masterPotionMultiplier.tooltip=Bonus decryption points multiplier for killing Kuva Lich
+config.kuvalich.kuvalich.damageDisplay=Display Damage Numbers
+config.kuvalich.kuvalich.damageDisplay.tooltip=Whether to display all damage numbers
 config.kuvalich.kuvalich.damagePriority=Damage Modification Priority
-config.kuvalich.kuvalich.battleBoost=Battle Damage Boost Rate
-config.kuvalich.kuvalich.reducedDamage=Damage Reduction After Failure
-config.kuvalich.kuvalich.increaseDamage=Enemy Damage Increase After Failure
+config.kuvalich.kuvalich.damagePriority.tooltip=Priority setting for damage modifications
+config.kuvalich.kuvalich.battleBoost=Battle Damage Boost
+config.kuvalich.kuvalich.battleBoost.tooltip=Damage boost per second during combat
+config.kuvalich.kuvalich.reducedDamage=Failed Decryption Damage Reduction
+config.kuvalich.kuvalich.reducedDamage.tooltip=Damage reduction against Lich per failed decryption
+config.kuvalich.kuvalich.increaseDamage=Failed Decryption Enemy Damage Increase
+config.kuvalich.kuvalich.increaseDamage.tooltip=Lich damage increase per failed decryption
 config.kuvalich.kuvalich.benchmarkLevel=Weapon Level Benchmark
+config.kuvalich.kuvalich.benchmarkLevel.tooltip=Benchmark value for weapon level calculation
 config.kuvalich.kuvalich.baseMinimumLevel=Base Minimum Weapon Level
+config.kuvalich.kuvalich.baseMinimumLevel.tooltip=Base minimum level weapons can obtain
 config.kuvalich.kuvalich.baseMaximumLevel=Base Maximum Weapon Level
+config.kuvalich.kuvalich.baseMaximumLevel.tooltip=Base maximum level weapons can obtain
 config.kuvalich.kuvalich.minimumLevelCapIncrease=Minimum Level Cap Increase
+config.kuvalich.kuvalich.minimumLevelCapIncrease.tooltip=Minimum level cap increase per upgrade
 config.kuvalich.kuvalich.maximumLevelCapIncrease=Maximum Level Cap Increase
+config.kuvalich.kuvalich.maximumLevelCapIncrease.tooltip=Maximum level cap increase per upgrade
 config.kuvalich.kuvalich.minimumLevel=Absolute Minimum Weapon Level
+config.kuvalich.kuvalich.minimumLevel.tooltip=Absolute minimum level weapons can reach
 config.kuvalich.kuvalich.maximumLevel=Absolute Maximum Weapon Level
+config.kuvalich.kuvalich.maximumLevel.tooltip=Absolute maximum level weapons can reach
 config.kuvalich.kuvalich.upgradeMultiplier=Weapon Upgrade Multiplier
+config.kuvalich.kuvalich.upgradeMultiplier.tooltip=Attribute multiplier for Requiem Evolve weapon upgrades
 config.kuvalich.kuvalich.upgradeLimit=Weapon Upgrade Limit
+config.kuvalich.kuvalich.upgradeLimit.tooltip=Maximum number of weapon upgrades
+
+# ========== Item Confiscation System Config ==========
+config.kuvalich.kuvalich.confiscationSettings=Item Confiscation Settings
+config.kuvalich.kuvalich.confiscationSettings.tooltip=Configuration for Lich item confiscation system
+config.kuvalich.kuvalich.confiscationChance=Item Confiscation Chance
+config.kuvalich.kuvalich.confiscationChance.tooltip=Chance of item being confiscated when picked up after decrypting riddle (%%), set to 0 to disable
+
+# ========== Weapon Kill Stack System ==========
+config.kuvalich.kuvalich.weaponKillStackSettings=Weapon Kill Stack Settings
+config.kuvalich.kuvalich.weaponKillStackSettings.tooltip=Configuration for all weapon kill stack effects
+config.kuvalich.kuvalich.weaponStackDecayTicks=Weapon Stack Duration
+config.kuvalich.kuvalich.weaponStackDecayTicks.tooltip=Duration of weapon stack effects (ticks), 200=10 seconds
+config.kuvalich.kuvalich.maxStacksBaseDamage=Base Damage Max Stacks
+config.kuvalich.kuvalich.maxStacksBaseDamage.tooltip=Maximum stacks for base damage
+config.kuvalich.kuvalich.maxStacksMultishot=Multishot Max Stacks
+config.kuvalich.kuvalich.maxStacksMultishot.tooltip=Maximum stacks for multishot
+config.kuvalich.kuvalich.maxStacksMeleeCritMult=Melee Crit Damage Max Stacks
+config.kuvalich.kuvalich.maxStacksMeleeCritMult.tooltip=Maximum stacks for melee critical damage
+config.kuvalich.kuvalich.maxStacksTriggerChance=Status Chance Max Stacks
+config.kuvalich.kuvalich.maxStacksTriggerChance.tooltip=Maximum stacks for status chance
+config.kuvalich.kuvalich.maxStacksAttackRange=Attack Range Max Stacks
+config.kuvalich.kuvalich.maxStacksAttackRange.tooltip=Maximum stacks for attack range
+config.kuvalich.kuvalich.maxStacksAttackSpeed=Attack Speed Max Stacks
+config.kuvalich.kuvalich.maxStacksAttackSpeed.tooltip=Maximum stacks for attack speed
+config.kuvalich.kuvalich.maxStacksBurstingRadius=Blast Radius Max Stacks
+config.kuvalich.kuvalich.maxStacksBurstingRadius.tooltip=Maximum stacks for blast radius
+config.kuvalich.kuvalich.maxStacksFiringRate=Fire Rate Max Stacks
+config.kuvalich.kuvalich.maxStacksFiringRate.tooltip=Maximum stacks for fire rate
+
+# ========== Warframe Kill Stack System ==========
+config.kuvalich.kuvalich.warframeKillStackSettings=Warframe Kill Stack Settings
+config.kuvalich.kuvalich.warframeKillStackSettings.tooltip=Configuration for all warframe kill stack effects
+config.kuvalich.kuvalich.warframeStackDecayTicks=Warframe Stack Duration
+config.kuvalich.kuvalich.warframeStackDecayTicks.tooltip=Duration of warframe stack effects (ticks), 400=20 seconds
+config.kuvalich.kuvalich.maxStacksHealth=Health Max Stacks
+config.kuvalich.kuvalich.maxStacksHealth.tooltip=Maximum stacks for health
+config.kuvalich.kuvalich.maxStacksShield=Shield Capacity Max Stacks
+config.kuvalich.kuvalich.maxStacksShield.tooltip=Maximum stacks for shield capacity
+config.kuvalich.kuvalich.maxStacksArmor=Armor Max Stacks
+config.kuvalich.kuvalich.maxStacksArmor.tooltip=Maximum stacks for armor
+config.kuvalich.kuvalich.maxStacksSprintSpeed=Sprint Speed Max Stacks
+config.kuvalich.kuvalich.maxStacksSprintSpeed.tooltip=Maximum stacks for sprint speed
+config.kuvalich.kuvalich.maxStacksShieldRecoveryRate=Shield Recovery Rate Max Stacks
+config.kuvalich.kuvalich.maxStacksShieldRecoveryRate.tooltip=Maximum stacks for shield recovery rate
+config.kuvalich.kuvalich.maxStacksShieldRecoveryDelay=Shield Recovery Delay Max Stacks
+config.kuvalich.kuvalich.maxStacksShieldRecoveryDelay.tooltip=Maximum stacks for shield recovery delay
+config.kuvalich.kuvalich.maxStacksFireProtection=Heat Resistance Max Stacks
+config.kuvalich.kuvalich.maxStacksFireProtection.tooltip=Maximum stacks for heat resistance
+config.kuvalich.kuvalich.maxStacksElectricProtection=Electric Resistance Max Stacks
+config.kuvalich.kuvalich.maxStacksElectricProtection.tooltip=Maximum stacks for electric resistance
+config.kuvalich.kuvalich.maxStacksHomologousProtection=Homologous Resistance Max Stacks
+config.kuvalich.kuvalich.maxStacksHomologousProtection.tooltip=Maximum stacks for homologous resistance
+config.kuvalich.kuvalich.maxStacksResponseRate=Health Recovery Multiplier Max Stacks
+config.kuvalich.kuvalich.maxStacksResponseRate.tooltip=Maximum stacks for health recovery multiplier
+config.kuvalich.kuvalich.maxStacksItemDropMultiplier=Loot Drop Max Stacks
+config.kuvalich.kuvalich.maxStacksItemDropMultiplier.tooltip=Maximum stacks for loot drop multiplier
+config.kuvalich.kuvalich.maxStacksDiggingSpeed=Mining Speed Max Stacks
+config.kuvalich.kuvalich.maxStacksDiggingSpeed.tooltip=Maximum stacks for mining speed
+
+# ========== Spawn Settings ==========
 config.kuvalich.kuvalich.kuvaLichSpawnWeight=Kuva Lich Spawn Weight
+config.kuvalich.kuvalich.kuvaLichSpawnWeight.tooltip=Spawn weight of Kuva Lich
 config.kuvalich.kuvalich.kuvaLichMinSpawnCount=Kuva Lich Minimum Spawn Count
+config.kuvalich.kuvalich.kuvaLichMinSpawnCount.tooltip=Minimum spawn count of Kuva Lich
 config.kuvalich.kuvalich.kuvaLichMaxSpawnCount=Kuva Lich Maximum Spawn Count
-config.kuvalich.kuvalich.kuvaSlaveSpawnWeight=Kuva Slave Spawn Weight
-config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount=Kuva Slave Minimum Spawn Count
-config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount=Kuva Slave Maximum Spawn Count
+config.kuvalich.kuvalich.kuvaLichMaxSpawnCount.tooltip=Maximum spawn count of Kuva Lich
+config.kuvalich.kuvalich.kuvaSlaveSpawnWeight=Kuva Thrall Spawn Weight
+config.kuvalich.kuvalich.kuvaSlaveSpawnWeight.tooltip=Spawn weight of Kuva Thrall
+config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount=Kuva Thrall Minimum Spawn Count
+config.kuvalich.kuvalich.kuvaSlaveMinSpawnCount.tooltip=Minimum spawn count of Kuva Thrall
+config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount=Kuva Thrall Maximum Spawn Count
+config.kuvalich.kuvalich.kuvaSlaveMaxSpawnCount.tooltip=Maximum spawn count of Kuva Thrall
 
-# ModConfig.KUVA_WEAPON Configuration Translations
+# ========== Kuva Weapon Config ==========
 config.kuvalich.kuvaweapon.attributeMultiplier=Weapon Attribute Multiplier
-config.kuvalich.kuvaweapon.attackDamageKuvaShildeg=Kuva Shildeg - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedKuvaShildeg=Kuva Shildeg - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedKuvaShildeg=Kuva Shildeg - Movement Speed
-config.kuvalich.kuvaweapon.attackDamagePennant=Pennant - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedPennant=Pennant - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedPennant=Pennant - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageGuandaoPrime=Guandao Prime - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedGuandaoPrime=Guandao Prime - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedGuandaoPrime=Guandao Prime - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageParacesis=Paracesis - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedParacesis=Paracesis - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedParacesis=Paracesis - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageArcaTitron=Arca Titron - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedArcaTitron=Arca Titron - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedArcaTitron=Arca Titron - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageReaperPrime=Reaper Prime - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedReaperPrime=Reaper Prime - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedReaperPrime=Reaper Prime - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageVitrica=Vitrica - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedVitrica=Vitrica - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedVitrica=Vitrica - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageGramPrime=Gram Prime - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedGramPrime=Gram Prime - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedGramPrime=Gram Prime - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageSanctiMagistar=Sancti Magistar - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedSanctiMagistar=Sancti Magistar - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedSanctiMagistar=Sancti Magistar - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageDestrezaPrime=Destreza Prime - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedDestrezaPrime=Destreza Prime - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedDestrezaPrime=Destreza Prime - Movement Speed
-config.kuvalich.kuvaweapon.attackDamagePrismaVeritux=Prisma Veritux - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedPrismaVeritux=Prisma Veritux - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedPrismaVeritux=Prisma Veritux - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageMachete=Machete - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedMachete=Machete - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedMachete=Machete - Movement Speed
-config.kuvalich.kuvaweapon.attackDamageCaustacyst=Caustacyst - Attack Damage
-config.kuvalich.kuvaweapon.attackSpeedCaustacyst=Caustacyst - Attack Speed
-config.kuvalich.kuvaweapon.movementSpeedCaustacyst=Caustacyst - Movement Speed
+config.kuvalich.kuvaweapon.attributeMultiplier.tooltip=Attribute multiplier for all Kuva weapons
 
-config.kuvalich.kuvalich=Kuva Lich System
-config.kuvalich.kuvaweapon=Kuva Weapon Attributes
+# Kuva Shildeg
+config.kuvalich.kuvaweapon.attackDamageKuvaShildeg=Kuva Shildeg - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageKuvaShildeg.tooltip=Base attack damage of Kuva Shildeg
+config.kuvalich.kuvaweapon.attackSpeedKuvaShildeg=Kuva Shildeg - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedKuvaShildeg.tooltip=Base attack speed of Kuva Shildeg
+config.kuvalich.kuvaweapon.movementSpeedKuvaShildeg=Kuva Shildeg - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedKuvaShildeg.tooltip=Movement speed modifier of Kuva Shildeg
+
+# Pennant
+config.kuvalich.kuvaweapon.attackDamagePennant=Pennant - Attack Damage
+config.kuvalich.kuvaweapon.attackDamagePennant.tooltip=Base attack damage of Pennant
+config.kuvalich.kuvaweapon.attackSpeedPennant=Pennant - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedPennant.tooltip=Base attack speed of Pennant
+config.kuvalich.kuvaweapon.movementSpeedPennant=Pennant - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedPennant.tooltip=Movement speed modifier of Pennant
+
+# Guandao Prime
+config.kuvalich.kuvaweapon.attackDamageGuandaoPrime=Guandao Prime - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageGuandaoPrime.tooltip=Base attack damage of Guandao Prime
+config.kuvalich.kuvaweapon.attackSpeedGuandaoPrime=Guandao Prime - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedGuandaoPrime.tooltip=Base attack speed of Guandao Prime
+config.kuvalich.kuvaweapon.movementSpeedGuandaoPrime=Guandao Prime - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedGuandaoPrime.tooltip=Movement speed modifier of Guandao Prime
+
+# Paracesis
+config.kuvalich.kuvaweapon.attackDamageParacesis=Paracesis - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageParacesis.tooltip=Base attack damage of Paracesis
+config.kuvalich.kuvaweapon.attackSpeedParacesis=Paracesis - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedParacesis.tooltip=Base attack speed of Paracesis
+config.kuvalich.kuvaweapon.movementSpeedParacesis=Paracesis - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedParacesis.tooltip=Movement speed modifier of Paracesis
+
+# Arca Titron
+config.kuvalich.kuvaweapon.attackDamageArcaTitron=Arca Titron - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageArcaTitron.tooltip=Base attack damage of Arca Titron
+config.kuvalich.kuvaweapon.attackSpeedArcaTitron=Arca Titron - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedArcaTitron.tooltip=Base attack speed of Arca Titron
+config.kuvalich.kuvaweapon.movementSpeedArcaTitron=Arca Titron - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedArcaTitron.tooltip=Movement speed modifier of Arca Titron
+
+# Reaper Prime
+config.kuvalich.kuvaweapon.attackDamageReaperPrime=Reaper Prime - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageReaperPrime.tooltip=Base attack damage of Reaper Prime
+config.kuvalich.kuvaweapon.attackSpeedReaperPrime=Reaper Prime - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedReaperPrime.tooltip=Base attack speed of Reaper Prime
+config.kuvalich.kuvaweapon.movementSpeedReaperPrime=Reaper Prime - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedReaperPrime.tooltip=Movement speed modifier of Reaper Prime
+
+# Vitrica
+config.kuvalich.kuvaweapon.attackDamageVitrica=Vitrica - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageVitrica.tooltip=Base attack damage of Vitrica
+config.kuvalich.kuvaweapon.attackSpeedVitrica=Vitrica - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedVitrica.tooltip=Base attack speed of Vitrica
+config.kuvalich.kuvaweapon.movementSpeedVitrica=Vitrica - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedVitrica.tooltip=Movement speed modifier of Vitrica
+
+# Gram Prime
+config.kuvalich.kuvaweapon.attackDamageGramPrime=Gram Prime - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageGramPrime.tooltip=Base attack damage of Gram Prime
+config.kuvalich.kuvaweapon.attackSpeedGramPrime=Gram Prime - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedGramPrime.tooltip=Base attack speed of Gram Prime
+config.kuvalich.kuvaweapon.movementSpeedGramPrime=Gram Prime - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedGramPrime.tooltip=Movement speed modifier of Gram Prime
+
+# Sancti Magistar
+config.kuvalich.kuvaweapon.attackDamageSanctiMagistar=Sancti Magistar - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageSanctiMagistar.tooltip=Base attack damage of Sancti Magistar
+config.kuvalich.kuvaweapon.attackSpeedSanctiMagistar=Sancti Magistar - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedSanctiMagistar.tooltip=Base attack speed of Sancti Magistar
+config.kuvalich.kuvaweapon.movementSpeedSanctiMagistar=Sancti Magistar - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedSanctiMagistar.tooltip=Movement speed modifier of Sancti Magistar
+
+# Destreza Prime
+config.kuvalich.kuvaweapon.attackDamageDestrezaPrime=Destreza Prime - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageDestrezaPrime.tooltip=Base attack damage of Destreza Prime
+config.kuvalich.kuvaweapon.attackSpeedDestrezaPrime=Destreza Prime - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedDestrezaPrime.tooltip=Base attack speed of Destreza Prime
+config.kuvalich.kuvaweapon.movementSpeedDestrezaPrime=Destreza Prime - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedDestrezaPrime.tooltip=Movement speed modifier of Destreza Prime
+
+# Prisma Veritux
+config.kuvalich.kuvaweapon.attackDamagePrismaVeritux=Prisma Veritux - Attack Damage
+config.kuvalich.kuvaweapon.attackDamagePrismaVeritux.tooltip=Base attack damage of Prisma Veritux
+config.kuvalich.kuvaweapon.attackSpeedPrismaVeritux=Prisma Veritux - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedPrismaVeritux.tooltip=Base attack speed of Prisma Veritux
+config.kuvalich.kuvaweapon.movementSpeedPrismaVeritux=Prisma Veritux - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedPrismaVeritux.tooltip=Movement speed modifier of Prisma Veritux
+
+# Machete
+config.kuvalich.kuvaweapon.attackDamageMachete=Machete - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageMachete.tooltip=Base attack damage of Machete
+config.kuvalich.kuvaweapon.attackSpeedMachete=Machete - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedMachete.tooltip=Base attack speed of Machete
+config.kuvalich.kuvaweapon.movementSpeedMachete=Machete - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedMachete.tooltip=Movement speed modifier of Machete
+
+# Caustacyst
+config.kuvalich.kuvaweapon.attackDamageCaustacyst=Caustacyst - Attack Damage
+config.kuvalich.kuvaweapon.attackDamageCaustacyst.tooltip=Base attack damage of Caustacyst
+config.kuvalich.kuvaweapon.attackSpeedCaustacyst=Caustacyst - Attack Speed
+config.kuvalich.kuvaweapon.attackSpeedCaustacyst.tooltip=Base attack speed of Caustacyst
+config.kuvalich.kuvaweapon.movementSpeedCaustacyst=Caustacyst - Movement Speed
+config.kuvalich.kuvaweapon.movementSpeedCaustacyst.tooltip=Movement speed modifier of Caustacyst

@@ -1,3 +1,4 @@
+// 路径：src/main/java/pers/roinflam/kuvalich/entity/EntityKuvaMaster.java
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.entity.Entity;
@@ -28,6 +29,7 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.EntityUtil;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * 赤毒玄骸实体类
@@ -52,6 +54,18 @@ public class EntityKuvaMaster extends KuvaBase {
     private static final float SELF_KNOCKBACK_MULTIPLIER = 1.15f;
     private static final float HEAL_PER_ATTACK = 0.2f;
     private static final float AOE_RADIUS = 3.0f;
+
+    // 解密成功时的死亡语录key
+    private static final String[] DEATH_MESSAGES = {
+            "message.kuvalich.death.hurts",
+            "message.kuvalich.death.fair",
+            "message.kuvalich.death.nexttime",
+            "message.kuvalich.death.winsome",
+            "message.kuvalich.death.comeon",
+            "message.kuvalich.death.forgive",
+            "message.kuvalich.death.failed",
+            "message.kuvalich.death.unacceptable"
+    };
 
     public EntityKuvaMaster(@Nonnull World worldIn) {
         super(worldIn);
@@ -179,6 +193,12 @@ public class EntityKuvaMaster extends KuvaBase {
      * @param pos 掉落位置
      */
     private void handleSuccessfulDecryption(EntityPlayer player, RequiemCard requiemCard, BlockPos pos) {
+        // 发送死亡语录
+        sendDeathMessage(player);
+
+        // 先掉落被没收的物品
+        dropConfiscatedItems(player, requiemCard, pos);
+
         requiemCard.reset();
 
         // 掉落Kuva武器
@@ -204,6 +224,45 @@ public class EntityKuvaMaster extends KuvaBase {
 
         // 提升武器等级上限
         upgradeWeaponLevelCap(player, requiemCard);
+    }
+
+    /**
+     * 掉落被没收的物品
+     *
+     * @param player 玩家
+     * @param requiemCard 安魂卡片数据
+     * @param pos 掉落位置
+     */
+    private void dropConfiscatedItems(EntityPlayer player, RequiemCard requiemCard, BlockPos pos) {
+        if (!requiemCard.hasConfiscatedItems()) {
+            return;
+        }
+
+        // 发送返还物品提示
+        int itemCount = requiemCard.getConfiscatedItemCount();
+        TextComponentTranslation message = new TextComponentTranslation("message.kuvalich.confiscation.return", itemCount);
+        message.getStyle().setColor(TextFormatting.DARK_RED);
+        player.sendMessage(message);
+
+        // 获取并清空没收物品列表
+        List<ItemStack> confiscatedItems = requiemCard.clearAndGetConfiscatedItems();
+
+        // 掉落所有被没收的物品
+        for (ItemStack item : confiscatedItems) {
+            spawnItem(pos, item);
+        }
+    }
+
+    /**
+     * 发送死亡语录
+     *
+     * @param player 玩家
+     */
+    private void sendDeathMessage(EntityPlayer player) {
+        String messageKey = DEATH_MESSAGES[RandomUtil.getInt(0, DEATH_MESSAGES.length - 1)];
+        TextComponentTranslation message = new TextComponentTranslation(messageKey);
+        message.getStyle().setColor(TextFormatting.DARK_RED);
+        player.sendMessage(message);
     }
 
     /**

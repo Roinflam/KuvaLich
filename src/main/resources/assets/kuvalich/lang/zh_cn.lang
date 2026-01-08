@@ -1,3 +1,8 @@
+# ═══════════════════════════════════════════════════════════════
+# 赤毒玄骸模组 - 简体中文语言文件
+# Kuva Lich Mod - Simplified Chinese Language File
+# ═══════════════════════════════════════════════════════════════
+
 # ========================================
 # 附魔系统
 # ========================================
@@ -627,8 +632,38 @@ message.kuvalich.maxLevel=你已经解密出所有答案,请按照顺序摆放�
 message.kuvalich.maximumLevelWeapon=解密成功,当前解密获得武器等级上限提升至%s级!
 message.kuvalich.minimumLevelWeapon=解密成功,当前解密获得武器等级下限提升至%s级!
 message.kuvalich.requiemRiddleAnswer=当前谜语的答案为 %s / %s / %s
-message.kuvalich.requiemRiddleNotAnswer=There is no solution to the current riddle! Please decrypt any answer before using it!
+message.kuvalich.requiemRiddleNotAnswer=当前谜语尚无解答！请先解密任意一个答案后再使用！
 message.kuvalich.secondCorrect=解密失败,第二个答案正确!
+
+# ========================================
+# 物品没收系统 - 没收时嘲讽语录
+# ========================================
+message.kuvalich.confiscation.wallet=朋友，你的钱包有点薄？呵呵呵呵。
+message.kuvalich.confiscation.tax=想要经过我的领地，朋友？是时候留下买路财了。
+message.kuvalich.confiscation.something=我想我这有你的东西？啊哈哈哈哈！
+message.kuvalich.confiscation.closer=好极了。你越来越靠近了。我觉得你现在应该能追上我了。
+message.kuvalich.confiscation.yoink=哟！你曾经所拥有的现在都是我的了。再见。
+message.kuvalich.confiscation.sector=所有从我星区通过的人都必须留下买路财。你也不例外，我的小对手。
+message.kuvalich.confiscation.tithe=我的对手：我负责征税，这是我作为这个星区的控制者所享有的权利。
+message.kuvalich.confiscation.coin=我取走你的硬币，就像我取走你的性命、你的力量和你的喜悦一样轻而易举。
+message.kuvalich.confiscation.accepted=征税已接受。你可以走了。
+
+# ========================================
+# 物品没收系统 - 解密成功时死亡语录
+# ========================================
+message.kuvalich.death.hurts=我没有骗你，这就是字面意义上的一直很疼。
+message.kuvalich.death.fair=呃，还算公平吧，哼！
+message.kuvalich.death.nexttime=再会，朋友。
+message.kuvalich.death.winsome=有得必有失，嚯！
+message.kuvalich.death.comeon=噢，来吧——啊啊啊！
+message.kuvalich.death.forgive=二位女皇，请原谅我。
+message.kuvalich.death.failed=我失败了。
+message.kuvalich.death.unacceptable=不能接受。
+
+# ========================================
+# 物品没收系统 - 返还物品提示
+# ========================================
+message.kuvalich.confiscation.return=你之前被没收的 %d 件物品已从玄骸那里掉落！
 
 # ═══════════════════════════════════════════════════════════════
 # 配置界面国际化
@@ -697,6 +732,12 @@ config.kuvalich.kuvalich.upgradeMultiplier=武器升级倍率
 config.kuvalich.kuvalich.upgradeMultiplier.tooltip=安魂之融武器升级时的属性倍率
 config.kuvalich.kuvalich.upgradeLimit=武器升级次数上限
 config.kuvalich.kuvalich.upgradeLimit.tooltip=武器可以升级的最大次数
+
+# ========== 物品没收系统配置 ==========
+config.kuvalich.kuvalich.confiscationSettings=物品没收系统设置
+config.kuvalich.kuvalich.confiscationSettings.tooltip=控制玄骸没收物品机制的配置
+config.kuvalich.kuvalich.confiscationChance=物品没收概率
+config.kuvalich.kuvalich.confiscationChance.tooltip=玩家解密谜语后捡起物品被没收的概率(%%),设为0禁用
 
 # ========== 武器击杀叠层系统 ==========
 config.kuvalich.kuvalich.weaponKillStackSettings=武器击杀叠层设置

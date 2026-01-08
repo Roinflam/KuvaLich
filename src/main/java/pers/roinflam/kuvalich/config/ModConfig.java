@@ -49,6 +49,17 @@ public final class ModConfig {
         public boolean enableDetailedLogging = false;
 
         @Config.Comment({
+                "物品没收概率(%) / Item Confiscation Chance (%)",
+                "玩家解密谜语后捡起物品被没收的概率",
+                "设为0则完全禁用没收机制",
+                "Chance of item being confiscated when picked up",
+                "Set to 0 to disable confiscation completely"
+        })
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.confiscationChance")
+        @Config.RangeDouble(min = 0, max = 100)
+        public double confiscationChance = 50.0;
+
+        @Config.Comment({
                 "安魂通牒掉落几率(%) / Requiem Ultimatum Drop Chance (%)",
                 "成功破解赤毒玄骸后掉落安魂通牒的几率",
                 "Drop chance of Requiem Ultimatum after successful decryption"
