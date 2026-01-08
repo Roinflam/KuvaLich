@@ -187,7 +187,7 @@ public final class ModConfig {
         @Config.RangeInt(min = 20, max = 6000)
         public int weaponStackDecayTicks = 200;
 
-        @Config.Comment("基础伤害叠层最大层数 / Base Damage Max Stacks")
+        @Config.Comment("基础伤害叠层最大层数 x 目标身上的每种异常状态 / Base Damage Max Stacks")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksBaseDamage")
         @Config.RangeInt(min = 1, max = 100)
         public int maxStacksBaseDamage = 20;

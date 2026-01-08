@@ -197,8 +197,7 @@ public class ItemUncommonModule extends ItemModuleBase {
             // 裂变射击
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.fission_shot", "fission_shot",
-                    new Object[]{"multishot", 1.20001f, "remoteDamage", -0.6001f},
-                    "multishot");
+                    new Object[]{"multishot", 1.20001f, "remoteDamage", -0.6001f});
 
             // ========== 新增MOD（白银级别）==========
 
@@ -247,8 +246,7 @@ public class ItemUncommonModule extends ItemModuleBase {
             // 火力压制
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.suppressive_fire", "suppressive_fire",
-                    new Object[]{"remoteDamage", 1.35001f, "firing_rate", 0.30001f},
-                    "firing_rate");
+                    new Object[]{"remoteDamage", 1.35001f, "firing_rate", 0.30001f});
 
             // 震荡领域
             ModuleRegistryHelper.register(this, items, itemStackList,

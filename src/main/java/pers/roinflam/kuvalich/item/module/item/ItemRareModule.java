@@ -95,8 +95,7 @@ public class ItemRareModule extends ItemModuleBase {
             // 邪恶加速
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.vile_acceleration", "vile_acceleration",
-                    new Object[]{"firing_rate", 0.90001f, "remoteDamage", -0.15001f},
-                    "firing_rate");
+                    new Object[]{"firing_rate", 0.90001f, "remoteDamage", -0.15001f});
 
             // 空尖弹
             ModuleRegistryHelper.register(this, items, itemStackList,
@@ -191,8 +190,7 @@ public class ItemRareModule extends ItemModuleBase {
             // 燃尽天际
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.scorched_earth", "scorched_earth",
-                    new Object[]{"explosion", 0.90001f, "multishot", 0.75001f, "remoteDamage", -0.25001f},
-                    "multishot");
+                    new Object[]{"explosion", 0.90001f, "multishot", 0.75001f, "remoteDamage", -0.25001f});
 
             // 病毒切
             ModuleRegistryHelper.register(this, items, itemStackList,
@@ -260,14 +258,12 @@ public class ItemRareModule extends ItemModuleBase {
             // 双刃传奇
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.dual_legend", "dual_legend",
-                    new Object[]{"meleeDamage", 2.20001f, "remoteDamage", 2.20001f, "attackSpeed", -0.25001f, "firing_rate", -0.25001f},
-                    "firing_rate");
+                    new Object[]{"meleeDamage", 2.20001f, "remoteDamage", 2.20001f, "attackSpeed", -0.25001f, "firing_rate", -0.25001f});
 
             // 双重灾难
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.dual_disaster", "dual_disaster",
-                    new Object[]{"meleeCriticalStrikeProbability", 2.00001f, "remoteCriticalStrikeProbability", 2.00001f, "meleeDamage", -0.35001f, "remoteDamage", -0.35001f},
-                    "melee_crit_chance", "remote_crit_chance");
+                    new Object[]{"meleeCriticalStrikeProbability", 2.00001f, "remoteCriticalStrikeProbability", 2.00001f, "meleeDamage", -0.35001f, "remoteDamage", -0.35001f});
 
             // 秘法主宰
             ModuleRegistryHelper.register(this, items, itemStackList,
@@ -348,14 +344,12 @@ public class ItemRareModule extends ItemModuleBase {
             // 近战狂怒
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.melee_fury", "melee_fury",
-                    new Object[]{"meleeDamage", 2.40001f, "attackSpeed", 0.90001f, "meleeCriticalStrikeProbability", -0.60001f},
-                    "melee_crit_chance");
+                    new Object[]{"meleeDamage", 2.40001f, "attackSpeed", 0.90001f, "meleeCriticalStrikeProbability", -0.60001f});
 
             // 远程狂怒
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.ranged_fury", "ranged_fury",
-                    new Object[]{"remoteDamage", 2.40001f, "firing_rate", 0.90001f, "remoteCriticalStrikeProbability", -0.60001f},
-                    "firing_rate");
+                    new Object[]{"remoteDamage", 2.40001f, "firing_rate", 0.90001f, "remoteCriticalStrikeProbability", -0.60001f});
 
             // 掠食双修
             ModuleRegistryHelper.register(this, items, itemStackList,

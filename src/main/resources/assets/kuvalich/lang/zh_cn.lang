@@ -744,8 +744,8 @@ config.kuvalich.kuvalich.weaponKillStackSettings=武器击杀叠层设置
 config.kuvalich.kuvalich.weaponKillStackSettings.tooltip=控制所有武器击杀叠加效果的配置
 config.kuvalich.kuvalich.weaponStackDecayTicks=武器叠层持续时间
 config.kuvalich.kuvalich.weaponStackDecayTicks.tooltip=武器叠层效果的持续时间(ticks)，200=10秒
-config.kuvalich.kuvalich.maxStacksBaseDamage=基础伤害最大层数
-config.kuvalich.kuvalich.maxStacksBaseDamage.tooltip=基础伤害叠层的最大层数
+config.kuvalich.kuvalich.maxStacksBaseDamage=基础伤害 x 目标身上的每种异常状态最大层数
+config.kuvalich.kuvalich.maxStacksBaseDamage.tooltip=基础伤害 x 目标身上的每种异常状态叠层的最大层数
 config.kuvalich.kuvalich.maxStacksMultishot=多重射击最大层数
 config.kuvalich.kuvalich.maxStacksMultishot.tooltip=多重射击叠层的最大层数
 config.kuvalich.kuvalich.maxStacksMeleeCritMult=近战暴击伤害最大层数
