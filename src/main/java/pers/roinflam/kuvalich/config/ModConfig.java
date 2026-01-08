@@ -57,7 +57,7 @@ public final class ModConfig {
         })
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.confiscationChance")
         @Config.RangeDouble(min = 0, max = 100)
-        public double confiscationChance = 50.0;
+        public double confiscationChance = 1.0;
 
         @Config.Comment({
                 "安魂通牒掉落几率(%) / Requiem Ultimatum Drop Chance (%)",
