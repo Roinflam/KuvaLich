@@ -249,7 +249,7 @@ item.warframe_uncommon_module.name=Silver Mod
 # ========================================
 # Weapon Mods - Bronze Rarity (Yellow)
 # ========================================
-kuvaweapon.item_module.arcane_crystal_shoot=§eArgon Crystal Shot
+kuvaweapon.item_module.argon_crystal_shoot=§eArgon Crystal Shot
 kuvaweapon.item_module.argon_crystal_wrath=§eArgon Crystal Wrath
 kuvaweapon.item_module.chainsaw_from_hell=§eChainsaw from Hell
 kuvaweapon.item_module.continuous_misery=§eContinuous Misery
@@ -732,6 +732,8 @@ config.kuvalich.kuvalich.upgradeMultiplier=Weapon Upgrade Multiplier
 config.kuvalich.kuvalich.upgradeMultiplier.tooltip=Attribute multiplier for Requiem Evolve weapon upgrades
 config.kuvalich.kuvalich.upgradeLimit=Weapon Upgrade Limit
 config.kuvalich.kuvalich.upgradeLimit.tooltip=Maximum number of weapon upgrades
+config.kuvalich.kuvalich.shieldBaseMultiplier=Shield Base Multiplier
+config.kuvalich.kuvalich.shieldBaseMultiplier.tooltip=Shield Capacity = Max Health × Shield Bonus × This Multiplier\n• 0.5 = 50%% of health (default)\n• 1.0 = 100%% of health
 
 # ========== Item Confiscation System Config ==========
 config.kuvalich.kuvalich.confiscationSettings=Item Confiscation Settings
@@ -912,3 +914,10 @@ config.kuvalich.kuvaweapon.attackSpeedCaustacyst=Caustacyst - Attack Speed
 config.kuvalich.kuvaweapon.attackSpeedCaustacyst.tooltip=Base attack speed of Caustacyst
 config.kuvalich.kuvaweapon.movementSpeedCaustacyst=Caustacyst - Movement Speed
 config.kuvalich.kuvaweapon.movementSpeedCaustacyst.tooltip=Movement speed modifier of Caustacyst
+
+item.custommodule.common.name=§eCustom Module
+item.custommodule.uncommon.name=§9Custom Module
+item.custommodule.rare.name=§6Custom Module
+item.custommodule.prime.name=§bCustom Module
+item.custommodule.galvanized.name=§7Custom Module
+item.custommodule.executioner.name=§cCustom Module

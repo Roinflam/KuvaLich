@@ -28,6 +28,7 @@ import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.WarframeModules;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichPotion;
 import pers.roinflam.kuvalich.network.message.DiggingSpeedPacket;
 
@@ -686,11 +687,12 @@ public class WarframeModule {
                                 }
                             } else if (shield > 0) {
                                 // 使用百分比护盾
-                                if (entityPlayer.getAbsorptionAmount() < (int) (entityPlayer.getMaxHealth() * shield / 2)) {
+                                double shieldMultiplier = ModConfig.KUVA_LICH.shieldBaseMultiplier;
+                                if (entityPlayer.getAbsorptionAmount() < (int) (entityPlayer.getMaxHealth() * shield * shieldMultiplier)) {
                                     double shieldRecoveryRate = 1 + attributes.getOrDefault("shieldRecoveryRate", 0.0);
                                     entityPlayer.setAbsorptionAmount((float) Math.min(
-                                            (int) (entityPlayer.getMaxHealth() * shield / 2),
-                                            entityPlayer.getAbsorptionAmount() + entityPlayer.getMaxHealth() * shield / 2 * 0.01 * shieldRecoveryRate
+                                            (int) (entityPlayer.getMaxHealth() * shield * shieldMultiplier),
+                                            entityPlayer.getAbsorptionAmount() + entityPlayer.getMaxHealth() * shield * shieldMultiplier * 0.01 * shieldRecoveryRate
                                     ));
                                 }
                             }

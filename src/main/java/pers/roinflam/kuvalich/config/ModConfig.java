@@ -171,7 +171,7 @@ public final class ModConfig {
         @Config.Comment("武器升级次数上限 / Weapon Upgrade Limit")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.upgradeLimit")
         @Config.RangeInt(min = 0)
-        public int upgradeLimit = 999;
+        public int upgradeLimit = 60;
 
         @Config.Comment({
                 "═══════════════════════════════════════════════════════════════",
@@ -246,6 +246,17 @@ public final class ModConfig {
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksHealth")
         @Config.RangeInt(min = 1, max = 100)
         public int maxStacksHealth = 20;
+
+        @Config.Comment({
+                "护盾基础值倍率 / Shield Base Multiplier",
+                "护盾容量 = 生命值上限 × 护盾加成 × 此倍率",
+                "Shield Capacity = Max Health × Shield Bonus × This Multiplier",
+                "• 0.5 = 50% 生命值(默认) / 50% of health (default)",
+                "• 1.0 = 100% 生命值 / 100% of health"
+        })
+        @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.shieldBaseMultiplier")
+        @Config.RangeDouble(min = 0, max = 10)
+        public double shieldBaseMultiplier = 0.5;
 
         @Config.Comment("护盾容量叠层最大层数 / Shield Max Stacks")
         @Config.LangKey("config." + Reference.MOD_ID + ".kuvalich.maxStacksShield")

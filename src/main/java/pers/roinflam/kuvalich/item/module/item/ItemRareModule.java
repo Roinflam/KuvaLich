@@ -124,13 +124,13 @@ public class ItemRareModule extends ItemModuleBase {
             // 反射线圈
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.reflex_coil", "reflex_coil",
-                    new Object[]{"attackSpeed", 0.60001f, "meleeCriticalStrikeProbability", 0.60001f},
+                    new Object[]{"attackSpeed", 0.20001f, "meleeCriticalStrikeProbability", 0.60001f},
                     "melee_crit_chance");
 
             // 元素打击
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.elemental_strike", "elemental_strike",
-                    new Object[]{"fire", 0.60001f, "ice", 0.60001f, "poison", 0.60001f, "electricity", 0.60001f});
+                    new Object[]{"fire", 0.30001f, "ice", 0.30001f, "poison", 0.30001f, "electricity", 0.30001f});
 
             // ========== 新增MOD（黄金级别）==========
 
@@ -302,7 +302,7 @@ public class ItemRareModule extends ItemModuleBase {
             // 屠戮盛宴
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.slaughter_feast", "slaughter_feast",
-                    new Object[]{"bane_of_undefined", 0.25001f, "bane_of_undead", 0.25001f, "bane_of_arthropod", 0.25001f, "bane_of_illager", 0.25001f});
+                    new Object[]{"bane_of_undefined", 0.2f, "bane_of_undead", 0.2f, "bane_of_arthropod", 0.2f, "bane_of_illager", 0.2f});
 
             // 连锁灾难
             ModuleRegistryHelper.register(this, items, itemStackList,

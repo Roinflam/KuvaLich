@@ -250,7 +250,7 @@ item.warframe_uncommon_module.name=白银模组
 # ========================================
 # 武器模组 - 青铜品质(黄色)
 # ========================================
-kuvaweapon.item_module.arcane_crystal_shoot=§e氩晶射击
+kuvaweapon.item_module.argon_crystal_shoot=§e氩晶射击
 kuvaweapon.item_module.argon_crystal_wrath=§e氩晶之怒
 kuvaweapon.item_module.chainsaw_from_hell=§e地狱链锯
 kuvaweapon.item_module.continuous_misery=§e无尽苦难
@@ -378,9 +378,9 @@ kuvaweapon.item_module.galvanized_steel=§7镀层 斩铁
 # ========================================
 # 武器模组 - 青铜品质(新增)
 # ========================================
-kuvaweapon.item_module.arcane_potential=§6奥术潜能
-kuvaweapon.item_module.ballistics_expert=§6弹道专家
-kuvaweapon.item_module.marksmans_gift=§6神射天赋
+kuvaweapon.item_module.arcane_potential=§e奥术潜能
+kuvaweapon.item_module.ballistics_expert=§e弹道专家
+kuvaweapon.item_module.marksmans_gift=§e神射天赋
 
 # ========================================
 # 武器模组 - 白银品质(新增)
@@ -400,52 +400,52 @@ kuvaweapon.item_module.violent_aesthetic=§9非暴力美学
 # ========================================
 # 武器模组 - 黄金品质(新增)
 # ========================================
-kuvaweapon.item_module.apocalypse_split=§e末日分裂
-kuvaweapon.item_module.arcane_domination=§e秘法主宰
-kuvaweapon.item_module.arcane_torrent=§e奥术洪流
-kuvaweapon.item_module.ballistic_master=§e弹道大师
-kuvaweapon.item_module.berserkers_oath=§e狂战士誓约
-kuvaweapon.item_module.biohazard=§e0号实验
-kuvaweapon.item_module.blood_frenzy=§e血之狂舞
-kuvaweapon.item_module.bombardment=§e狂轰滥炸
-kuvaweapon.item_module.catastrophe=§e灾厄降临
-kuvaweapon.item_module.chain_catastrophe=§e连锁灾难
-kuvaweapon.item_module.condition_outbreak=§e异况超量
-kuvaweapon.item_module.corrosion_king=§e剥皮者
-kuvaweapon.item_module.corrosion_tide=§e腐蚀狂潮
-kuvaweapon.item_module.corrosive_erosion=§e腐蚀熔蚀
-kuvaweapon.item_module.crying_wounds=§e裂口
-kuvaweapon.item_module.doomsday_arrow=§e末日箭矢
-kuvaweapon.item_module.dual_disaster=§e双重灾难
-kuvaweapon.item_module.dual_legend=§e双刃传奇
-kuvaweapon.item_module.elemental_fusion=§e元素融合
-kuvaweapon.item_module.em_storm=§e电磁风暴
-kuvaweapon.item_module.gladiators_glory=§e角斗士荣耀
-kuvaweapon.item_module.hunters_code=§e猎人法则
-kuvaweapon.item_module.iron_oath=§e钢铁誓言
-kuvaweapon.item_module.legendary_shot=§e神射传说
-kuvaweapon.item_module.magnetic_collapse=§e磁场崩溃
-kuvaweapon.item_module.magnetic_overlord=§e磁暴领主
-kuvaweapon.item_module.melee_fury=§e近战狂怒
-kuvaweapon.item_module.meltdown_protocol=§e熔毁协议
-kuvaweapon.item_module.mystic_apocalypse=§e秘法终末
+kuvaweapon.item_module.apocalypse_split=§6末日分裂
+kuvaweapon.item_module.arcane_domination=§6秘法主宰
+kuvaweapon.item_module.arcane_torrent=§6奥术洪流
+kuvaweapon.item_module.ballistic_master=§6弹道大师
+kuvaweapon.item_module.berserkers_oath=§6狂战士誓约
+kuvaweapon.item_module.biohazard=§60号实验
+kuvaweapon.item_module.blood_frenzy=§6血之狂舞
+kuvaweapon.item_module.bombardment=§6狂轰滥炸
+kuvaweapon.item_module.catastrophe=§6灾厄降临
+kuvaweapon.item_module.chain_catastrophe=§6连锁灾难
+kuvaweapon.item_module.condition_outbreak=§6异况超量
+kuvaweapon.item_module.corrosion_king=§6剥皮者
+kuvaweapon.item_module.corrosion_tide=§6腐蚀狂潮
+kuvaweapon.item_module.corrosive_erosion=§6腐蚀熔蚀
+kuvaweapon.item_module.crying_wounds=§6裂口
+kuvaweapon.item_module.doomsday_arrow=§6末日箭矢
+kuvaweapon.item_module.dual_disaster=§6双重灾难
+kuvaweapon.item_module.dual_legend=§6双刃传奇
+kuvaweapon.item_module.elemental_fusion=§6元素融合
+kuvaweapon.item_module.em_storm=§6电磁风暴
+kuvaweapon.item_module.gladiators_glory=§6角斗士荣耀
+kuvaweapon.item_module.hunters_code=§6猎人法则
+kuvaweapon.item_module.iron_oath=§6钢铁誓言
+kuvaweapon.item_module.legendary_shot=§6神射传说
+kuvaweapon.item_module.magnetic_collapse=§6磁场崩溃
+kuvaweapon.item_module.magnetic_overlord=§6磁暴领主
+kuvaweapon.item_module.melee_fury=§6近战狂怒
+kuvaweapon.item_module.meltdown_protocol=§6熔毁协议
+kuvaweapon.item_module.mystic_apocalypse=§6秘法终末
 kuvaweapon.item_module.nuclear_control_breakthrough=§6核控突破
-kuvaweapon.item_module.nuclear_storm=§e核子风暴
-kuvaweapon.item_module.pandemic_outbreak=§e病毒切
-kuvaweapon.item_module.physical_triad=§e虐杀原形
-kuvaweapon.item_module.plague_herald=§e瘟疫使者
-kuvaweapon.item_module.predatory_hybrid=§e掠食双修
-kuvaweapon.item_module.predators_mark=§e掠食者印记
-kuvaweapon.item_module.ranged_fury=§e远程狂怒
+kuvaweapon.item_module.nuclear_storm=§6核子风暴
+kuvaweapon.item_module.pandemic_outbreak=§6病毒切
+kuvaweapon.item_module.physical_triad=§6虐杀原形
+kuvaweapon.item_module.plague_herald=§6瘟疫使者
+kuvaweapon.item_module.predatory_hybrid=§6掠食双修
+kuvaweapon.item_module.predators_mark=§6掠食者印记
+kuvaweapon.item_module.ranged_fury=§6远程狂怒
 kuvaweapon.item_module.rapid_nuclide=§6迅发核素
-kuvaweapon.item_module.radiation_lord=§e辐射君主
-kuvaweapon.item_module.reapers_scythe=§e死神镰刀
-kuvaweapon.item_module.scorched_earth=§e燃尽天际
-kuvaweapon.item_module.slaughter_feast=§e屠戮盛宴
-kuvaweapon.item_module.toxic_cloud=§e毒气扩散
-kuvaweapon.item_module.ultimate_violence=§e暴力终末
-kuvaweapon.item_module.viral_tyrant=§e病入膏肓
-kuvaweapon.item_module.viral_vector=§e病毒轨迹
+kuvaweapon.item_module.radiation_lord=§6辐射君主
+kuvaweapon.item_module.reapers_scythe=§6死神镰刀
+kuvaweapon.item_module.scorched_earth=§6燃尽天际
+kuvaweapon.item_module.slaughter_feast=§6屠戮盛宴
+kuvaweapon.item_module.toxic_cloud=§6毒气扩散
+kuvaweapon.item_module.ultimate_violence=§6暴力终末
+kuvaweapon.item_module.viral_tyrant=§6病入膏肓
+kuvaweapon.item_module.viral_vector=§6病毒轨迹
 
 # ========================================
 # 武器模组 - Prime品质(新增)
@@ -733,6 +733,8 @@ config.kuvalich.kuvalich.upgradeMultiplier=武器升级倍率
 config.kuvalich.kuvalich.upgradeMultiplier.tooltip=安魂之融武器升级时的属性倍率
 config.kuvalich.kuvalich.upgradeLimit=武器升级次数上限
 config.kuvalich.kuvalich.upgradeLimit.tooltip=武器可以升级的最大次数
+config.kuvalich.kuvalich.shieldBaseMultiplier=护盾基础值倍率
+config.kuvalich.kuvalich.shieldBaseMultiplier.tooltip=护盾容量 = 生命值上限 × 护盾加成 × 此倍率\n• 0.5 = 50%% 生命值(默认)\n• 1.0 = 100%% 生命值
 
 # ========== 物品没收系统配置 ==========
 config.kuvalich.kuvalich.confiscationSettings=物品没收系统设置
@@ -913,3 +915,10 @@ config.kuvalich.kuvaweapon.attackSpeedCaustacyst=灼蚀变体镰 - 攻击速度
 config.kuvalich.kuvaweapon.attackSpeedCaustacyst.tooltip=灼蚀变体镰的基础攻击速度
 config.kuvalich.kuvaweapon.movementSpeedCaustacyst=灼蚀变体镰 - 移动速度
 config.kuvalich.kuvaweapon.movementSpeedCaustacyst.tooltip=灼蚀变体镰的移动速度修正
+
+item.custommodule.common.name=§e自定义模组
+item.custommodule.uncommon.name=§9自定义模组
+item.custommodule.rare.name=§6自定义模组
+item.custommodule.prime.name=§b自定义模组
+item.custommodule.galvanized.name=§7自定义模组
+item.custommodule.executioner.name=§c自定义模组

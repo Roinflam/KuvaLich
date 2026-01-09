@@ -78,7 +78,7 @@ public class WarframePrimeModule extends WarframeModuleBase {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.RARE;
+        return EnumRarity.EPIC;
     }
 
     @Override

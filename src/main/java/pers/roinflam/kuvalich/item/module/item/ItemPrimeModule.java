@@ -140,7 +140,7 @@ public class ItemPrimeModule extends ItemModuleBase {
             // 双重契约Prime
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.dual_covenant_prime", "dual_covenant",
-                    new Object[]{"meleeDamage", 2.20001f, "remoteDamage", 2.20001f});
+                    new Object[]{"meleeDamage", 1.65001f, "remoteDamage", 1.65001f});
 
             // 秘法弓术Prime
             ModuleRegistryHelper.register(this, items, itemStackList,
@@ -208,7 +208,7 @@ public class ItemPrimeModule extends ItemModuleBase {
             // 镀层暴力美学
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.galvanized_violent_aesthetic", "violent_aesthetic",
-                    new Object[]{"baseDamageWhenNotCriticalStrike", 2.00001f, "attackSpeed", 0.75001f, "killStackAttackSpeed", 0.10001f});
+                    new Object[]{"baseDamageWhenNotCriticalStrike", 2.50001f, "attackSpeed", 0.25001f, "killStackAttackSpeed", 0.10001f});
 
             // 镀层感染协议
             ModuleRegistryHelper.register(this, items, itemStackList,
