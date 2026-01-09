@@ -200,8 +200,8 @@ public class ItemModule {
 
     /**
      * 为武器设置基础属性
-     * 这个方法生成武器的四个基本属性：伤害、暴击几率、暴击倍率和触发几率
-     * 包含两种罕见的"彩蛋"武器类型，以及常规武器的属性生成逻辑
+     * 生成武器的四个基本属性：伤害、暴击几率、暴击倍率和触发几率
+     * 包含两种稀有彩蛋武器类型（各0.1%几率），以及常规武器的属性生成逻辑
      *
      * @param itemStack 要设置属性的武器物品堆
      */
@@ -210,57 +210,65 @@ public class ItemModule {
         NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
         NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
 
-        // 彩蛋武器生成（共0.2%的几率）
+        // 彩蛋武器生成（总概率0.2%）
         if (RandomUtil.percentageChance(0.1)) {
             // 超级武器：所有属性都很高（0.1%几率）
-            weaponModule.setDouble("damage", RandomUtil.getInt(150, 200) / 100.0);  // 伤害：1.5-2.0
+            weaponModule.setDouble("damage", RandomUtil.getInt(150, 200) / 100.0);       // 伤害：1.5-2.0
             weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(40, 60) / 100.0);  // 暴击率：40%-60%
-            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(30, 40) / 10.0);  // 暴击倍率：3.0-4.0
-            weaponModule.setDouble("triggerChance", RandomUtil.getInt(30, 40) / 100.0);  // 触发几率：30%-40%
+            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(30, 40) / 10.0);    // 暴击倍率：3.0-4.0
+            weaponModule.setDouble("triggerChance", RandomUtil.getInt(40, 80) / 100.0);  // 触发几率：40%-80%
         } else if (RandomUtil.percentageChance(0.1)) {
             // 超弱武器：所有属性都很低（0.1%几率）
-            weaponModule.setDouble("damage", RandomUtil.getInt(50, 80) / 100.0);  // 伤害：0.5-0.8
-            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(5, 10) / 100.0);  // 暴击率：5%-10%
-            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(12, 15) / 10.0);  // 暴击倍率：1.2-1.5
-            weaponModule.setDouble("triggerChance", RandomUtil.getInt(5, 10) / 100.0);  // 触发几率：5%-10%
+            weaponModule.setDouble("damage", RandomUtil.getInt(50, 80) / 100.0);         // 伤害：0.5-0.8
+            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(5, 10) / 100.0);   // 暴击率：5%-10%
+            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(12, 15) / 10.0);    // 暴击倍率：1.2-1.5
+            weaponModule.setDouble("triggerChance", RandomUtil.getInt(10, 15) / 100.0);  // 触发几率：10%-15%
         } else {
-            // 正常武器生成逻辑（99.8%几率）
+            // 常规武器生成逻辑（99.8%几率）
 
-            // 生成基础伤害
-            double damage = RandomUtil.getInt(80, 120) / 100.0;  // 伤害范围：0.8-1.2
+            // 1. 伤害生成：基础范围0.8-1.2，60%概率固定为1.0
+            double damage = RandomUtil.getInt(80, 120) / 100.0;
             if (RandomUtil.percentageChance(60)) {
-                damage = 1.0;  // 60%几率将伤害设为1.0，保持平衡
+                damage = 1.0;
             }
 
-            // 生成暴击几率
-            double criticalStrikeProbability = RandomUtil.getInt(10, 25) / 100.0;  // 基础暴击率：10%-25%
+            // 2. 暴击几率生成：基础10%-25%，30%概率获得更高暴击率25%-40%
+            double criticalStrikeProbability = RandomUtil.getInt(10, 25) / 100.0;
             if (RandomUtil.percentageChance(30)) {
-                criticalStrikeProbability = RandomUtil.getInt(25, 40) / 100.0;  // 30%几率获得更高暴击率：25%-40%
+                criticalStrikeProbability = RandomUtil.getInt(25, 40) / 100.0;
             }
 
-            // 生成暴击倍率
-            double criticalStrikeMultiplier = RandomUtil.getInt(18, 25) / 10.0;  // 基础暴击倍率：1.8-2.5
+            // 3. 暴击倍率生成：基础1.2-2.0，根据暴击率调整
+            double criticalStrikeMultiplier = RandomUtil.getInt(12, 20) / 10.0;
+
+            // 4. 触发几率生成：基础5%-30%
+            double triggerChance = RandomUtil.getInt(5, 30) / 100.0;
+
+            // 属性关联调整
             if (criticalStrikeProbability >= 0.3) {
-                // 高暴击率武器获得更高的暴击倍率，但伤害略低
-                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;  // 暴击倍率：2.5-3.0
-                damage = RandomUtil.getInt(80, 90) / 100.0;  // 伤害降低到：0.8-0.9
-            } else if (criticalStrikeProbability <= 0.15) {
-                // 低暴击率武器有小概率获得极高的暴击倍率，但伤害更低
-                if (RandomUtil.percentageChance(10)) {
-                    criticalStrikeMultiplier = RandomUtil.getInt(30, 35) / 10.0;  // 暴击倍率：3.0-3.5
-                    damage = RandomUtil.getInt(70, 80) / 100.0;  // 伤害进一步降低到：0.7-0.8
-                }
-            }
+                // 高暴击率武器：提高暴击倍率，降低伤害
+                criticalStrikeMultiplier = RandomUtil.getInt(20, 30) / 10.0;  // 暴击倍率：2.0-3.0
+                damage = RandomUtil.getInt(70, 80) / 100.0;                    // 伤害：0.7-0.8
 
-            // 生成触发几率
-            double triggerChance = RandomUtil.getInt(5, 20) / 100.0;  // 基础触发几率：5%-20%
-            if (criticalStrikeProbability > 0.3 && RandomUtil.percentageChance(60)) {
-                // 高暴击率武器有60%几率获得极低的触发几率
-                triggerChance = RandomUtil.getInt(1, 5) / 100.0;  // 触发几率降低到：1%-5%
-            } else if (criticalStrikeProbability <= 0.15 && RandomUtil.percentageChance(60)) {
-                // 低暴击率武器有60%几率获得更高的暴击倍率和伤害
-                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;  // 暴击倍率提高到：2.5-3.0
-                damage = RandomUtil.getInt(110, 120) / 100.0;  // 伤害提高到：1.1-1.2
+                // 80%概率获得极低触发几率
+                if (RandomUtil.percentageChance(80)) {
+                    triggerChance = RandomUtil.getInt(1, 5) / 100.0;           // 触发几率：1%-5%
+                }
+            } else if (criticalStrikeProbability <= 0.15) {
+                // 低暴击率武器
+                if (RandomUtil.percentageChance(10)) {
+                    // 10%概率获得极高暴击倍率，但伤害更低
+                    criticalStrikeMultiplier = RandomUtil.getInt(25, 35) / 10.0;  // 暴击倍率：2.5-3.5
+                    damage = RandomUtil.getInt(60, 70) / 100.0;                    // 伤害：0.6-0.7
+                } else if (RandomUtil.percentageChance(60)) {
+                    // 60%概率获得中等暴击倍率和较高伤害
+                    criticalStrikeMultiplier = RandomUtil.getInt(15, 30) / 10.0;   // 暴击倍率：1.5-3.0
+                    damage = RandomUtil.getInt(100, 120) / 100.0;                  // 伤害：1.0-1.2
+                } else if (RandomUtil.percentageChance(40)) {
+                    // 40%概率获得较高触发几率和伤害
+                    triggerChance = RandomUtil.getInt(15, 50) / 100.0;            // 触发几率：15%-50%
+                    damage = RandomUtil.getInt(110, 130) / 100.0;                 // 伤害：1.1-1.3
+                }
             }
 
             // 将生成的属性设置到武器上
