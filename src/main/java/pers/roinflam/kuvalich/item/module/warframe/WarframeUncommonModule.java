@@ -119,6 +119,11 @@ public class WarframeUncommonModule extends WarframeModuleBase {
                     "kuvaweapon.warframe_module.athena", "redirection",
                     new Object[]{"health", 1.2001f, "armor", 0.9001f, "responseRate", 0.6001f, "shieldRecoveryRate", -0.9001f, "shieldRecoveryDelay", -0.9001f});
 
+            // 寄生护甲
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.parasitic_armor", "shield_lock",
+                    new Object[]{"responseRate", 1.3001f, "armor", 2.7001f, "shield", -3.5001f},
+                    "shield_lock");
             // ========== 自定义模组 / Custom Modules ==========
             CustomModuleManager.getInstance().addCustomWarframeModulesToCreativeTab(items, EnumRarity.UNCOMMON);
         }

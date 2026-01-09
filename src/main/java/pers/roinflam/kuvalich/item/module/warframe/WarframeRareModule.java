@@ -159,6 +159,23 @@ public class WarframeRareModule extends WarframeModuleBase {
                     "kuvaweapon.warframe_module.sacrificial_blaze", "flame_repellent",
                     new Object[]{"fireProtection", 0.9001f, "armor", 0.9001f, "sprintSpeed", 0.4501f, "health", -0.6001f});
 
+            // 协奏
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.concerto", "health_lock",
+                    new Object[]{"shieldRecoveryDelay", -1.0001f, "shieldRecoveryRate", 1.0001f, "fixedHealth", 20.0001f, "health", -3.5001f},
+                    "health_lock");
+
+            // 库娃的优雅
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.kovas_elegance", "kovas_elegance",
+                    new Object[]{"fallProtection", 1.0001f, "health", -0.9001f});
+
+            // 力场护盾
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.warframe_module.force_field_shield", "armor_lock",
+                    new Object[]{"fixedShield", 60.0001f, "shieldRecoveryRate", 2.0001f, "armor", -2.2001f},
+                    "armor_lock");
+
             // ========== 自定义模组 / Custom Modules ==========
             CustomModuleManager.getInstance().addCustomWarframeModulesToCreativeTab(items, EnumRarity.RARE);
         }

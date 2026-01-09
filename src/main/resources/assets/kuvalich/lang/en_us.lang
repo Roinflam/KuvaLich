@@ -445,6 +445,14 @@ kuvaweapon.item_module.toxic_cloud=§eToxic Cloud
 kuvaweapon.item_module.ultimate_violence=§eUltimate Violence
 kuvaweapon.item_module.viral_tyrant=§eViral Tyrant
 kuvaweapon.item_module.viral_vector=§eViral Vector
+kuvaweapon.item_module.critical_rebuild=§6Critical Rebuild
+kuvaweapon.item_module.pioneer=§6Pioneer
+kuvaweapon.item_module.yoke_reinforcement=§6Yoke Reinforcement
+kuvaweapon.item_module.destruction_attrition=§6Destruction Attrition
+kuvaweapon.item_module.focused_hindrance=§6Focused Hindrance
+kuvaweapon.item_module.chaotic_hindrance=§6Chaotic Hindrance
+kuvaweapon.item_module.heart_burn=§6Heart Burn
+kuvaweapon.item_module.sniper_correction=§6Sniper Correction
 
 # ========================================
 # Weapon Mods - Prime Rarity (New)
@@ -463,6 +471,7 @@ kuvaweapon.item_module.plague_herald_prime=§bPlague Herald Prime
 kuvaweapon.item_module.predatory_instinct_prime=§bPredatory Instinct Prime
 kuvaweapon.item_module.reapers_scythe_prime=§bReaper's Scythe Prime
 kuvaweapon.item_module.violent_aesthetic_prime=§bViolent Aesthetic Prime
+kuvaweapon.item_module.destruction_attrition_prime=§bDestruction Attrition Prime
 
 # ========================================
 # Weapon Mods - Galvanized Series (New)
@@ -516,6 +525,7 @@ kuvaweapon.warframe_module.rush=§9Rush
 kuvaweapon.warframe_module.saxum_carapace=§9Saxum Carapace
 kuvaweapon.warframe_module.stand_your_ground=§9Stand Your Ground
 kuvaweapon.warframe_module.treasure_thief=§9Treasure Thief
+kuvaweapon.warframe_module.parasitic_armor=§9Parasitic Armor
 
 # ========================================
 # Warframe Mods - Gold Rarity
@@ -534,6 +544,9 @@ kuvaweapon.warframe_module.sacrificial_blaze=§6Sacrificial Blaze
 kuvaweapon.warframe_module.sure_footed=§6Sure Footed
 kuvaweapon.warframe_module.treasure_hunter=§6Treasure Hunter
 kuvaweapon.warframe_module.vigor=§6Vigor
+kuvaweapon.warframe_module.concerto=§6Concerto
+kuvaweapon.warframe_module.kovas_elegance=§6Kuva's Elegance
+kuvaweapon.warframe_module.force_field_shield=§6Force Field Shield
 
 # ========================================
 # Warframe Mods - Prime Rarity (Cyan)

@@ -446,6 +446,14 @@ kuvaweapon.item_module.toxic_cloud=§6毒气扩散
 kuvaweapon.item_module.ultimate_violence=§6暴力终末
 kuvaweapon.item_module.viral_tyrant=§6病入膏肓
 kuvaweapon.item_module.viral_vector=§6病毒轨迹
+kuvaweapon.item_module.critical_rebuild=§6临界重构
+kuvaweapon.item_module.pioneer=§6先锋
+kuvaweapon.item_module.yoke_reinforcement=§6负轭增援
+kuvaweapon.item_module.destruction_attrition=§6毁灭损耗
+kuvaweapon.item_module.focused_hindrance=§6集中妨害
+kuvaweapon.item_module.chaotic_hindrance=§6混乱妨害
+kuvaweapon.item_module.heart_burn=§6急火攻心
+kuvaweapon.item_module.sniper_correction=§6狙击修正
 
 # ========================================
 # 武器模组 - Prime品质(新增)
@@ -464,6 +472,7 @@ kuvaweapon.item_module.plague_herald_prime=§b瘟疫使者 Prime
 kuvaweapon.item_module.predatory_instinct_prime=§b掠食本能 Prime
 kuvaweapon.item_module.reapers_scythe_prime=§b死神镰刀 Prime
 kuvaweapon.item_module.violent_aesthetic_prime=§b非暴力美学 Prime
+kuvaweapon.item_module.destruction_attrition_prime=§b毁灭损耗 Prime
 
 # ========================================
 # 武器模组 - 镀层系列(新增)
@@ -517,6 +526,7 @@ kuvaweapon.warframe_module.rush=§9冲刺
 kuvaweapon.warframe_module.saxum_carapace=§9重岩者 壳甲
 kuvaweapon.warframe_module.stand_your_ground=§9不动如山
 kuvaweapon.warframe_module.treasure_thief=§9密藏小偷
+kuvaweapon.warframe_module.parasitic_armor=§9寄生护甲
 
 # ========================================
 # 战甲模组 - 黄金品质(金色)
@@ -535,6 +545,9 @@ kuvaweapon.warframe_module.sacrificial_blaze=§6以我残躯化烈火
 kuvaweapon.warframe_module.sure_footed=§6顶天立地
 kuvaweapon.warframe_module.treasure_hunter=§6密藏猎人
 kuvaweapon.warframe_module.vigor=§6活力
+kuvaweapon.warframe_module.concerto=§6协奏
+kuvaweapon.warframe_module.kovas_elegance=§6库娃的优雅
+kuvaweapon.warframe_module.force_field_shield=§6力场护盾
 
 # ========================================
 # 战甲模组 - Prime品质(青色)

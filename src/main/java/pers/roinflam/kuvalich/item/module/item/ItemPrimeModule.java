@@ -237,6 +237,14 @@ public class ItemPrimeModule extends ItemModuleBase {
                     new Object[]{"multishot", 0.45001f, "triggerChance", 0.75001f, "killStackMultishot", 0.25001f},
                     "multishot");
 
+            // 毁灭损耗 Prime
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.destruction_attrition_prime", "critical_rebuild",
+                    new Object[]{"baseDamageWhenNotCriticalStrike", 20.0001f,
+                            "meleeCriticalStrikeProbability", 1.4001f, "remoteCriticalStrikeProbability", 1.4001f,
+                            "meleeCriticalStrikeMultiplier", -3.0001f, "remoteCriticalStrikeMultiplier", -3.0001f},
+                    "critical_rebuild");
+
             // ========== 自定义模组 / Custom Modules ==========
             CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, EnumRarity.EPIC);
         }

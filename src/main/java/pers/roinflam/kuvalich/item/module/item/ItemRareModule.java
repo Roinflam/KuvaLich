@@ -12,7 +12,6 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
-
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
@@ -291,7 +290,7 @@ public class ItemRareModule extends ItemModuleBase {
             // 弹道大师
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.ballistic_master", "ballistic_master",
-                    new Object[]{"projectileDamage", 2.40001f, "remoteCriticalStrikeMultiplier", 1.80001f, "firing_rate", -0.60001f},
+                    new Object[]{"projectileDamage", 2.40001f, "remoteCriticalStrikeMultiplier", 1.80001f, "firing_rate", -1.20001f},
                     "remote_crit_mult", "firing_rate");
 
             // 异况超量
@@ -312,7 +311,7 @@ public class ItemRareModule extends ItemModuleBase {
             // 辐射君主
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.radiation_lord", "radiation_lord",
-                    new Object[]{"radiation", 1.20001f, "remoteCriticalStrikeMultiplier", 0.90001f},
+                    new Object[]{"radiation", 1.20001f, "remoteCriticalStrikeMultiplier", 0.30001f},
                     "remote_crit_mult");
 
             // 腐蚀狂潮
@@ -372,6 +371,57 @@ public class ItemRareModule extends ItemModuleBase {
             ModuleRegistryHelper.register(this, items, itemStackList,
                     "kuvaweapon.item_module.physical_triad", "physical_triad",
                     new Object[]{"slash", 0.90001f, "puncture", 0.90001f, "impact", 0.90001f});
+
+            // 临界重构
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.critical_rebuild", "critical_rebuild",
+                    new Object[]{"meleeCriticalStrikeMultiplier", 2.2001f, "remoteCriticalStrikeMultiplier", 2.2001f,
+                            "meleeCriticalStrikeProbability", -0.5001f, "remoteCriticalStrikeProbability", -0.5001f,
+                            "baseDamageWhenNotCriticalStrike", -2.2001f},
+                    "critical_rebuild");
+
+            // 先锋
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.pioneer", "pioneer",
+                    new Object[]{"meleeCriticalStrikeMultiplier", 2.2001f, "meleeCriticalStrikeProbability", 1.5001f,
+                            "killStackAttackSpeed", -0.3001f},
+                    "pioneer");
+
+            // 负轭增援
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.yoke_reinforcement", "yoke_reinforcement",
+                    new Object[]{"meleeDamage", 2.7001f, "attackSpeed", -0.75001f, "killStackAttackSpeed", 0.6001f},
+                    "yoke_reinforcement");
+
+            // 毁灭损耗
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.destruction_attrition", "critical_rebuild",
+                    new Object[]{"baseDamageWhenNotCriticalStrike", 12.5001f,
+                            "meleeCriticalStrikeProbability", 1.0001f, "remoteCriticalStrikeProbability", 1.0001f,
+                            "meleeCriticalStrikeMultiplier", -3.0001f, "remoteCriticalStrikeMultiplier", -3.0001f},
+                    "critical_rebuild");
+
+            // 集中妨害
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.focused_hindrance", "hinder",
+                    new Object[]{"magnetic", 0.15001f, "corrosion", 0.15001f, "virus", 0.15001f},
+                    "hinder");
+
+            // 混乱妨害
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.chaotic_hindrance", "hinder",
+                    new Object[]{"radiation", 0.15001f, "gas", 0.15001f, "explosion", 0.15001f},
+                    "hinder");
+
+            // 急火攻心
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.heart_burn", "heart_burn",
+                    new Object[]{"triggerChance", 2.0001f, "triggerTime", -0.75001f});
+
+            // 狙击修正
+            ModuleRegistryHelper.register(this, items, itemStackList,
+                    "kuvaweapon.item_module.sniper_correction", "sniper_correction",
+                    new Object[]{"remoteCriticalStrikeProbability", 2.0001f, "remoteCriticalStrikeMultiplier", -0.55001f});
 
             // ========== 自定义模组 / Custom Modules ==========
             CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, EnumRarity.RARE);
