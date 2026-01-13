@@ -134,7 +134,7 @@ public class ItemRareModule extends ItemModuleBase {
                 "kuvaweapon.item_module.elemental_strike", "elemental_strike",
                 new Object[]{"fire", 0.60001f, "ice", 0.60001f, "poison", 0.60001f, "electricity", 0.60001f});
 
-        // ========== 新增MOD(黄金级别)==========
+        // ========== 新增MOD（黄金级别）==========
 
         // 瘟疫使者
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), items, itemStackList,
@@ -194,7 +194,7 @@ public class ItemRareModule extends ItemModuleBase {
                 "kuvaweapon.item_module.scorched_earth", "scorched_earth",
                 new Object[]{"explosion", 0.90001f, "multishot", 0.75001f, "remoteDamage", -0.25001f});
 
-        // 病毒切割
+        // 病毒切
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), items, itemStackList,
                 "kuvaweapon.item_module.pandemic_outbreak", "pandemic_outbreak",
                 new Object[]{"virus", 0.90001f, "slash", 0.60001f, "meleeCriticalStrikeProbability", 0.60001f},

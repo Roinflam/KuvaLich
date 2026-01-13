@@ -188,7 +188,7 @@ public class ItemCommonModule extends ItemModuleBase {
                 "kuvaweapon.item_module.pandora_star", "pandora_star",
                 new Object[]{"triggerTime", 3.00001f, "triggerChance", -1.50001f});
 
-        // ========== 新增MOD(青铜级别)==========
+        // ========== 新增MOD（青铜级别）==========
 
         // 奥术潜能
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), items, itemStackList,

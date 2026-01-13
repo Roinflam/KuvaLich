@@ -108,7 +108,6 @@ public class EntityLivingUtil {
      */
     public static void kill(@Nullable LivingEntity livingEntity, @Nonnull DamageSource damageSource) {
         if (livingEntity != null) {
-            livingEntity.hurt(damageSource, livingEntity.getMaxHealth() * 100);
             if (livingEntity.isAlive()) {
                 livingEntity.die(damageSource);
                 livingEntity.setHealth(0);

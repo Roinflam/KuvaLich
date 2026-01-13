@@ -13,10 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.item.ArrowItem;
-import net.minecraft.world.item.BowItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Explosion;
@@ -463,7 +460,7 @@ public class ItemModule {
 
             Vec3 position = new Vec3(
                     hurter.getX() + offsetX,
-                    entityY + entityHeight * (-0.2 + Math.random() * 0.6),
+                    entityY + entityHeight * (-0.2 + Math.random() * 0.4),
                     hurter.getZ() + offsetZ
             );
 
@@ -488,7 +485,7 @@ public class ItemModule {
 
             Vec3 position = new Vec3(
                     hurter.getX() + offsetX,
-                    entityY + entityHeight * (-0.2 + Math.random() * 0.6),
+                    entityY + entityHeight * (-0.2 + Math.random() * 0.4),
                     hurter.getZ() + offsetZ
             );
 
@@ -906,7 +903,7 @@ public class ItemModule {
                     damage = damage + damage * 0.25f * (amplifier + 1);
                 }
 
-                float slashDamage = (float) (damage * 0.035f);
+                float slashDamage = (float) (damage * 0.35f);
                 new SynchronizationTask(20, 20) {
                     private int time = 0;
 
@@ -917,10 +914,18 @@ public class ItemModule {
                             return;
                         }
 
-                        double offsetX = (Math.random() - 0.5) * hurter.getBbWidth();
-                        double offsetY = hurter.getBbHeight() * 0.25 + (Math.random() * hurter.getBbHeight() * 0.75);
-                        double offsetZ = (Math.random() - 0.5) * hurter.getBbWidth();
-                        Vec3 position = new Vec3(hurter.getX() + offsetX, hurter.getY() + offsetY, hurter.getZ() + offsetZ);
+                        double entityWidth = hurter.getBbWidth();
+                        double entityHeight = hurter.getBbHeight();  // ✅ 使用实体总高度
+                        double entityY = hurter.getY();
+
+                        double offsetX = (Math.random() - 0.5) * entityWidth * 1.2;
+                        double offsetZ = (Math.random() - 0.5) * entityWidth * 1.2;
+
+                        Vec3 position = new Vec3(
+                                hurter.getX() + offsetX,
+                                entityY + entityHeight * (-0.2 + Math.random() * 0.4),
+                                hurter.getZ() + offsetZ
+                        );
 
                         KuvaLich.network.send(
                                 PacketDistributor.PLAYER.with(() -> (ServerPlayer) attacker),
@@ -1026,6 +1031,127 @@ public class ItemModule {
             }
         }
         return (float) damage;
+    }
+
+    @SubscribeEvent
+    public static void onLivingEntityUseItemTick(@Nonnull LivingEntityUseItemEvent.Tick evt) {
+        LivingEntity entity = evt.getEntity();
+
+        if (!(entity instanceof Player)) {
+            return;
+        }
+
+        Player player = (Player) entity;
+        ItemStack usingItem = evt.getItem();
+
+        if (usingItem.isEmpty()) {
+            return;
+        }
+
+        ItemStack weapon = player.getMainHandItem();
+        if (weapon.isEmpty() || !ItemModule.hasBase(weapon)) {
+            return;
+        }
+
+        HashMap<String, Double> attributes = new HashMap<>();
+        List<ItemStack> modules = getModules(weapon);
+        for (ItemStack module : modules) {
+            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
+                attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
+            }
+        }
+
+        double firingRate = attributes.getOrDefault("firing_rate", 0.0);
+
+        if (attributes.containsKey("killStackFiringRate")) {
+            int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
+            double stackValue = attributes.get("killStackFiringRate");
+            firingRate += stackValue * stacks;
+        }
+
+        // ✅ 弓和弩都翻倍
+        if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) {
+            firingRate *= 2.0;
+        }
+
+        if (Math.abs(firingRate) < 0.001) {
+            return;
+        }
+
+        if (firingRate < 0) {
+            double slowRate = Math.abs(firingRate);
+
+            if (slowRate >= 1.0) {
+                evt.setDuration(evt.getDuration() + 1);
+                return;
+            }
+
+            if (RandomUtil.percentageChance(slowRate * 100)) {
+                evt.setDuration(evt.getDuration() + 1);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLivingTickForFiringRate(@Nonnull LivingEvent.LivingTickEvent evt) {
+        LivingEntity entity = evt.getEntity();
+
+        if (!(entity instanceof Player)) {
+            return;
+        }
+
+        Player player = (Player) entity;
+
+        if (!entity.isUsingItem()) {
+            return;
+        }
+
+        ItemStack usingItem = entity.getUseItem();
+
+        if (usingItem.isEmpty()) {
+            return;
+        }
+
+        ItemStack weapon = player.getMainHandItem();
+        if (weapon.isEmpty() || !ItemModule.hasBase(weapon)) {
+            return;
+        }
+
+        HashMap<String, Double> attributes = new HashMap<>();
+        List<ItemStack> modules = getModules(weapon);
+        for (ItemStack module : modules) {
+            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
+                attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
+            }
+        }
+
+        double firingRate = attributes.getOrDefault("firing_rate", 0.0);
+
+        if (attributes.containsKey("killStackFiringRate")) {
+            int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
+            double stackValue = attributes.get("killStackFiringRate");
+            firingRate += stackValue * stacks;
+        }
+
+        // ✅ 弓和弩都翻倍
+        if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) {
+            firingRate *= 2.0;
+        }
+
+        if (firingRate <= 0) {
+            return;
+        }
+
+        int extraUpdates = (int) firingRate;
+
+        for (int i = 0; i < extraUpdates; i++) {
+            EntityLivingUtil.updateHeld(entity);
+        }
+
+        double fractionalPart = firingRate - extraUpdates;
+        if (fractionalPart > 0 && RandomUtil.percentageChance(fractionalPart * 100)) {
+            EntityLivingUtil.updateHeld(entity);
+        }
     }
 
     @SubscribeEvent

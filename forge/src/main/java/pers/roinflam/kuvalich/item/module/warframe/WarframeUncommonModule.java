@@ -62,65 +62,64 @@ public class WarframeUncommonModule extends WarframeModuleBase {
         // 冲刺
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.rush", "rush",
-                new Object[]{"sprintSpeed", 0.2001f});
+                new Object[]{"sprintSpeed", 0.3001f});
 
-        // 增幅器协议
+        // 占卜师契约
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.augur_accord", "augur_accord",
-                new Object[]{"shield", 0.8001f, "armor", 0.4001f});
+                new Object[]{"shield", 0.7001f});
 
         // 快速充能
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.fast_deflection", "fast_deflection",
-                new Object[]{"shieldRecoveryRate", 0.9001f, "shieldRecoveryDelay", -0.4501f});
+                new Object[]{"shieldRecoveryRate", 0.9001f, "shieldRecoveryDelay", -0.45001f});
 
         // 角斗士决心
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.gladiator_resolve", "gladiator_resolve",
-                new Object[]{"health", 1.2001f, "armor", 0.9001f, "shield", -0.9001f});
+                new Object[]{"health", 0.4001f});
 
-        // 肉甲壳
+        // 肉食甲壳
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.carnis_carapace", "carnis_carapace",
-                new Object[]{"health", 1.0001f, "shield", -0.6001f});
+                new Object[]{"armor", 1.1001f, "health", 0.4001f});
 
-        // 石甲壳
+        // 巨岩甲壳
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.saxum_carapace", "saxum_carapace",
-                new Object[]{"armor", 1.0001f, "shield", -0.6001f});
+                new Object[]{"armor", 1.1001f, "health", 0.4001f});
 
         // 挖掘之手
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.digging_hand", "digging_hand",
-                new Object[]{"reachDistance", 0.3001f},
-                "reach_distance");
+                new Object[]{"reachDistance", 0.3001f});
 
-        // 碎岩者之力
+        // 挖掘之力
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.digging_power", "digging_power",
                 new Object[]{"diggingSpeed", 0.6001f},
                 "digging_speed");
 
-        // 回春
+        // 复苏者
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.rejuvenator", "rejuvenator",
-                new Object[]{"responseRate", 1.2001f, "health", -0.6001f, "shield", -0.9001f});
+                new Object[]{"responseRate", 1.0001f, "health", -0.5001f});
 
         // 宝藏盗贼
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.treasure_thief", "treasure_thief",
-                new Object[]{"itemDropMultiplier", 0.9001f, "health", -0.6001f, "shield", -0.9001f},
+                new Object[]{"itemDropMultiplier", 0.9001f, "health", -0.6001f, "shield", -1.2001f},
                 "item_drop_multiplier");
 
-        // 屹立不倒
+        // 坚守阵地
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
                 "kuvaweapon.warframe_module.stand_your_ground", "stand_your_ground",
                 new Object[]{"health", 0.9001f, "armor", 0.6001f, "knockbackResistance", 0.4501f, "sprintSpeed", -0.3001f});
 
         // 雅典娜
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), items, itemStackList,
-                "kuvaweapon.warframe_module.athena", "athena",
-                new Object[]{"shield", 1.2001f, "shieldRecoveryRate", 0.9001f, "health", -0.9001f, "responseRate", -0.9001f});
+                "kuvaweapon.warframe_module.athena", "redirection",
+                new Object[]{"health", 1.2001f, "armor", 0.9001f, "responseRate", 0.6001f, "shieldRecoveryRate", -0.9001f, "shieldRecoveryDelay", -0.9001f});
 
         // ========== 自定义模组 / Custom Modules ==========
         CustomModuleManager.getInstance().addCustomWarframeModulesToCreativeTab(items, Rarity.UNCOMMON);

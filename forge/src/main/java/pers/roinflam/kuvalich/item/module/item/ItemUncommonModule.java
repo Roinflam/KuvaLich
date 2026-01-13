@@ -201,7 +201,7 @@ public class ItemUncommonModule extends ItemModuleBase {
                 "kuvaweapon.item_module.fission_shot", "fission_shot",
                 new Object[]{"multishot", 1.20001f, "remoteDamage", -0.6001f});
 
-        // ========== 新增MOD(白银级别)==========
+        // ========== 新增MOD（白银级别）==========
 
         // 掠食本能
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), items, itemStackList,

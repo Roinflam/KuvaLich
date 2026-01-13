@@ -1,3 +1,5 @@
+// 文件：CapabilityRegistryHandler.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/capability/CapabilityRegistryHandler.java
 package pers.roinflam.kuvalich.capability;
 
 import net.minecraft.resources.ResourceLocation;
@@ -27,8 +29,8 @@ import pers.roinflam.kuvalich.utils.Reference;
  *
  * 事件总线说明：
  * Event bus notes:
- * - registerCapabilities: 在MOD事件总线上，通过KuvaLich主类手动注册
- * - attachCapabilities/onPlayerClone: 在Forge事件总线上，通过@Mod.EventBusSubscriber自动注册
+ * - registerCapabilities: 在MOD事件总线上,通过KuvaLich主类手动注册
+ * - attachCapabilities/onPlayerClone: 在Forge事件总线上,通过@Mod.EventBusSubscriber自动注册
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CapabilityRegistryHandler {
@@ -72,11 +74,11 @@ public class CapabilityRegistryHandler {
 
         // 注册RequiemCard
         event.register(RequiemCard.class);
-        LogUtil.info("已注册 RequiemCard Capability");  // ✅ 改为 info
+        LogUtil.info("已注册 RequiemCard Capability");
 
         // 注册WarframeModules
         event.register(WarframeModules.class);
-        LogUtil.info("已注册 WarframeModules Capability");  // ✅ 改为 info
+        LogUtil.info("已注册 WarframeModules Capability");
 
         LogUtil.info("Capabilities注册完成");
     }
@@ -87,36 +89,71 @@ public class CapabilityRegistryHandler {
      *
      * 用于在玩家死亡后保留Capability数据
      * Used to preserve Capability data after player death
+     *
+     * 修复说明（2025-01-14）：
+     * Fix notes:
+     * 1. 添加reviveCaps()调用以恢复死亡玩家的Capability访问权限
+     * 2. 添加isWasDeath()检查,只在真正死亡时克隆数据
+     * 3. 添加异常处理,确保克隆失败不会导致游戏崩溃
+     * 4. 添加invalidateCaps()调用,确保旧实体的Capability被正确清理
      */
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
+        // 基础检查：确保是服务端的玩家实体
+        // Basic checks: ensure it's a server-side player entity
         Entity entity = event.getEntity();
         if (entity == null || entity.level().isClientSide || !(entity instanceof Player)) {
+            return;
+        }
+
+        // ✅ 新增：只在死亡时克隆,避免从末地返回等情况误触发
+        // Only clone on death, avoid triggering on end portal return etc.
+        if (!event.isWasDeath()) {
+            LogUtil.debug("玩家 " + entity.getName().getString() + " 触发克隆事件但非死亡,跳过Capability克隆");
             return;
         }
 
         Player player = (Player) entity;
         Player original = event.getOriginal();
 
-        // 克隆RequiemCard数据
-        // Clone RequiemCard data
-        player.getCapability(REQUIEM_CARD).ifPresent(newCap -> {
-            original.getCapability(REQUIEM_CARD).ifPresent(oldCap -> {
-                newCap.clone(oldCap);
-                LogUtil.debug("已克隆玩家 " + player.getName().getString() + " 的RequiemCard数据");
-                // ✅ 这里可以保持 debug，因为游戏运行时配置已加载
-            });
-        });
+        // ✅ 关键修复：恢复旧实体的Capability访问权限
+        // Critical fix: Revive old entity's Capability access
+        // 说明：玩家死亡后,Minecraft会自动调用invalidateCaps()使所有Capability失效
+        // Note: After player death, Minecraft automatically calls invalidateCaps() to invalidate all Capabilities
+        // 必须先调用reviveCaps()临时恢复访问权限,才能读取旧数据
+        // Must call reviveCaps() first to temporarily restore access before reading old data
+        original.reviveCaps();
 
-        // 克隆WarframeModules数据
-        // Clone WarframeModules data
-        player.getCapability(WARFRAME_MODULES).ifPresent(newCap -> {
-            original.getCapability(WARFRAME_MODULES).ifPresent(oldCap -> {
-                newCap.clone(oldCap);
-                LogUtil.debug("已克隆玩家 " + player.getName().getString() + " 的WarframeModules数据");
-                // ✅ 这里可以保持 debug，因为游戏运行时配置已加载
+        try {
+            // 克隆RequiemCard数据（安魂卡片、谜语进度、没收物品等）
+            // Clone RequiemCard data (requiem cards, riddle progress, confiscated items, etc.)
+            player.getCapability(REQUIEM_CARD).ifPresent(newCap -> {
+                original.getCapability(REQUIEM_CARD).ifPresent(oldCap -> {
+                    newCap.clone(oldCap);
+                    LogUtil.info("✓ 已克隆玩家 " + player.getName().getString() + " 的RequiemCard数据");
+                });
             });
-        });
+
+            // 克隆WarframeModules数据（战甲模组8个槽位）
+            // Clone WarframeModules data (8 warframe module slots)
+            player.getCapability(WARFRAME_MODULES).ifPresent(newCap -> {
+                original.getCapability(WARFRAME_MODULES).ifPresent(oldCap -> {
+                    newCap.clone(oldCap);
+                    LogUtil.info("✓ 已克隆玩家 " + player.getName().getString() + " 的WarframeModules数据");
+                });
+            });
+
+        } catch (Exception e) {
+            // 捕获克隆过程中的任何异常,避免导致游戏崩溃
+            // Catch any exceptions during cloning to avoid game crash
+            LogUtil.error("克隆玩家Capability数据时出错: " + player.getName().getString(), e);
+        } finally {
+            // ✅ 新增：确保旧实体的Capability被正确失效
+            // Ensure old entity's Capabilities are properly invalidated
+            // 说明：克隆完成后必须再次失效,确保资源正确释放,防止内存泄漏
+            // Note: Must invalidate again after cloning to ensure proper resource cleanup and prevent memory leaks
+            original.invalidateCaps();
+        }
     }
 
     /**

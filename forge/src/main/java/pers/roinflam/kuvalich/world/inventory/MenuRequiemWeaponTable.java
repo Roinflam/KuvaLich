@@ -25,8 +25,8 @@ import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
- * 武器军械库菜单（1.20.1版本，业务逻辑100%不变）
- * Weapon Table Menu (1.20.1 version, business logic 100% unchanged)
+ * 武器军械库菜单（1.20.1版本，已修复无限刷模组bug）
+ * Weapon Table Menu (1.20.1 version, duplication bug fixed)
  */
 public class MenuRequiemWeaponTable extends AbstractContainerMenu {
 
@@ -265,8 +265,8 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
     }
 
     /**
-     * 武器槽位类（业务逻辑100%不变）
-     * Weapon slot class (business logic 100% unchanged)
+     * 武器槽位类（已修复无限刷模组bug）
+     * Weapon slot class (duplication bug fixed)
      */
     public static class WeaponSlot extends SlotItemHandler {
         private final MenuRequiemWeaponTable menu;
@@ -293,7 +293,16 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
         @Override
         public void set(@NotNull ItemStack weaponItemStack) {
             try {
+                // ⭐⭐⭐ 关键修复：武器被移除时，清空所有模组槽位，防止无限复制bug
+                // Critical fix: Clear all module slots when weapon is removed to prevent duplication bug
                 if (weaponItemStack == null || weaponItemStack.isEmpty()) {
+                    if (!menu.level.isClientSide && !menu.synchronize) {
+                        LogUtil.debugEvent("武器从军械库移除", "清空模组", "清空所有8个模组槽位");
+                        for (int i = 0; i < 8; i++) {
+                            menu.getSlot(i).set(ItemStack.EMPTY);
+                            menu.moduleHandler.setStackInSlot(i, ItemStack.EMPTY);
+                        }
+                    }
                     super.set(weaponItemStack);
                     return;
                 }

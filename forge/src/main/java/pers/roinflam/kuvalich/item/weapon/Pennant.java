@@ -128,7 +128,7 @@ public class Pennant extends KuvaWeaponBase {
 
                             Vec3 position = new Vec3(
                                     hurter.getX() + offsetX,
-                                    entityY + entityHeight * (-0.2 + Math.random() * 0.6),
+                                    entityY + entityHeight * (-0.2 + Math.random() * 0.4),
                                     hurter.getZ() + offsetZ
                             );
 
