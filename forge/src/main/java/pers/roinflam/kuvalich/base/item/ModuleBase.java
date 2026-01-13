@@ -1,25 +1,25 @@
 package pers.roinflam.kuvalich.base.item;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraftforge.common.util.Constants;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.common.Mod;
-
-import pers.roinflam.kuvalich.init.KuvaLichItems;
-import pers.roinflam.kuvalich.tabs.KuvaLichTab;
-import pers.roinflam.kuvalich.utils.IHasModel;
 import pers.roinflam.kuvalich.utils.Reference;
-import pers.roinflam.kuvalich.utils.util.ItemUtil;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 模组基类（1.20.1版本，业务逻辑100%不变）
+ * Module Base Class (1.20.1 version, business logic 100% unchanged)
+ */
 @Mod.EventBusSubscriber
-public abstract class ModuleBase extends Item implements IHasModel {
+public abstract class ModuleBase extends Item {
+
     private static final int MAX_CACHE_SIZE = 1000;
     private static final long CACHE_DURATION_MS = 30000;
     private static final Map<Integer, CacheEntry> ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
@@ -38,21 +38,23 @@ public abstract class ModuleBase extends Item implements IHasModel {
         }
     }
 
-    public ModuleBase(@Nonnull String name) {
-        ItemUtil.registerItem(this, name, KuvaLichTab.getTab());
-        setMaxStackSize(1);
-        KuvaLichItems.ITEMS.add(this);
+    /**
+     * 1.20.1构造函数：只接收Properties，不需要name参数
+     * 1.20.1 constructor: only accepts Properties, no name parameter needed
+     */
+    public ModuleBase(@Nonnull Item.Properties properties) {
+        super(properties.stacksTo(1)); // 设置最大堆叠数为1 / Set max stack size to 1
     }
 
     public abstract boolean isWarframe();
 
-    // ========== 原有方法 ==========
+    // ========== 原有方法（API已更新）==========
 
     public static boolean isRandom(ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
             return false;
         }
-        NBTTagCompound tag = itemStack.getSubCompound(Reference.MOD_ID + "_modules");
+        CompoundTag tag = itemStack.getTagElement(Reference.MOD_ID + "_modules");
         return tag != null && tag.getBoolean("Random");
     }
 
@@ -60,8 +62,8 @@ public abstract class ModuleBase extends Item implements IHasModel {
         if (itemStack == null || itemStack.isEmpty()) {
             return;
         }
-        NBTTagCompound kuvalichModule = itemStack.getOrCreateSubCompound(Reference.MOD_ID + "_modules");
-        kuvalichModule.setBoolean("Random", random);
+        CompoundTag kuvalichModule = itemStack.getOrCreateTagElement(Reference.MOD_ID + "_modules");
+        kuvalichModule.putBoolean("Random", random);
         invalidateCache(itemStack);
     }
 
@@ -76,16 +78,16 @@ public abstract class ModuleBase extends Item implements IHasModel {
             return cached.attributes;
         }
 
-        NBTTagCompound kuvalich = itemStack.getSubCompound(Reference.MOD_ID + "_modules");
+        CompoundTag kuvalich = itemStack.getTagElement(Reference.MOD_ID + "_modules");
         if (kuvalich == null) {
             return Collections.emptySet();
         }
 
         Map<String, Double> attributeMap = new LinkedHashMap<>();
-        NBTTagList attributeList = kuvalich.getTagList("attributeList", Constants.NBT.TAG_COMPOUND);
+        ListTag attributeList = kuvalich.getList("attributeList", Tag.TAG_COMPOUND);
 
-        for (int i = 0; i < attributeList.tagCount(); i++) {
-            NBTTagCompound attributeTag = attributeList.getCompoundTagAt(i);
+        for (int i = 0; i < attributeList.size(); i++) {
+            CompoundTag attributeTag = attributeList.getCompound(i);
             attributeMap.put(
                     attributeTag.getString("attributeType"),
                     attributeTag.getDouble("attributeValue")
@@ -110,15 +112,15 @@ public abstract class ModuleBase extends Item implements IHasModel {
             return;
         }
 
-        NBTTagCompound kuvalichModule = itemStack.getOrCreateSubCompound(Reference.MOD_ID + "_modules");
-        NBTTagList attributeList = kuvalichModule.getTagList("attributeList", Constants.NBT.TAG_COMPOUND);
+        CompoundTag kuvalichModule = itemStack.getOrCreateTagElement(Reference.MOD_ID + "_modules");
+        ListTag attributeList = kuvalichModule.getList("attributeList", Tag.TAG_COMPOUND);
 
-        NBTTagCompound attributeTag = new NBTTagCompound();
-        attributeTag.setString("attributeType", attributeType);
-        attributeTag.setDouble("attributeValue", attributeValue);
-        attributeList.appendTag(attributeTag);
+        CompoundTag attributeTag = new CompoundTag();
+        attributeTag.putString("attributeType", attributeType);
+        attributeTag.putDouble("attributeValue", attributeValue);
+        attributeList.add(attributeTag);
 
-        kuvalichModule.setTag("attributeList", attributeList);
+        kuvalichModule.put("attributeList", attributeList);
         invalidateCache(itemStack);
     }
 
@@ -126,8 +128,8 @@ public abstract class ModuleBase extends Item implements IHasModel {
         if (itemStack == null || itemStack.isEmpty()) {
             return;
         }
-        NBTTagCompound kuvalichModule = itemStack.getOrCreateSubCompound(Reference.MOD_ID + "_modules");
-        kuvalichModule.setString("type", type);
+        CompoundTag kuvalichModule = itemStack.getOrCreateTagElement(Reference.MOD_ID + "_modules");
+        kuvalichModule.putString("type", type);
         invalidateCache(itemStack);
     }
 
@@ -135,73 +137,54 @@ public abstract class ModuleBase extends Item implements IHasModel {
         if (itemStack == null || itemStack.isEmpty()) {
             return "";
         }
-        NBTTagCompound kuvalichModule = itemStack.getSubCompound(Reference.MOD_ID + "_modules");
+        CompoundTag kuvalichModule = itemStack.getTagElement(Reference.MOD_ID + "_modules");
         return kuvalichModule != null ? kuvalichModule.getString("type") : "";
     }
 
-    // ========== ✅ 冲突标签系统 ==========
+    // ========== ✅ 冲突标签系统（API已更新）==========
 
-    /**
-     * 设置MOD的冲突标签（可设置多个，双向互斥）
-     * @param itemStack 物品堆
-     * @param tags 冲突标签List，例如 Arrays.asList("melee_crit_chance", "melee_damage")
-     */
     public static void setConflictTags(ItemStack itemStack, List<String> tags) {
         if (itemStack == null || itemStack.isEmpty() || tags == null || tags.isEmpty()) {
             return;
         }
 
-        NBTTagCompound kuvalichModule = itemStack.getOrCreateSubCompound(Reference.MOD_ID + "_modules");
-        NBTTagList tagList = new NBTTagList();
+        CompoundTag kuvalichModule = itemStack.getOrCreateTagElement(Reference.MOD_ID + "_modules");
+        ListTag tagList = new ListTag();
 
         for (String tag : tags) {
             if (tag != null && !tag.isEmpty()) {
-                tagList.appendTag(new NBTTagString(tag));
+                tagList.add(StringTag.valueOf(tag));
             }
         }
 
-        kuvalichModule.setTag("conflictTags", tagList);
+        kuvalichModule.put("conflictTags", tagList);
         invalidateCache(itemStack);
     }
 
-    /**
-     * 便捷方法：直接传入可变参数
-     */
     public static void setConflictTags(ItemStack itemStack, String... tags) {
         setConflictTags(itemStack, Arrays.asList(tags));
     }
 
-    /**
-     * 获取MOD的所有冲突标签
-     * @param itemStack 物品堆
-     * @return 冲突标签列表
-     */
     public static List<String> getConflictTags(ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
             return Collections.emptyList();
         }
 
-        NBTTagCompound kuvalichModule = itemStack.getSubCompound(Reference.MOD_ID + "_modules");
-        if (kuvalichModule == null || !kuvalichModule.hasKey("conflictTags")) {
+        CompoundTag kuvalichModule = itemStack.getTagElement(Reference.MOD_ID + "_modules");
+        if (kuvalichModule == null || !kuvalichModule.contains("conflictTags")) {
             return Collections.emptyList();
         }
 
-        NBTTagList tagList = kuvalichModule.getTagList("conflictTags", Constants.NBT.TAG_STRING);
+        ListTag tagList = kuvalichModule.getList("conflictTags", Tag.TAG_STRING);
         List<String> result = new ArrayList<>();
 
-        for (int i = 0; i < tagList.tagCount(); i++) {
-            result.add(tagList.getStringTagAt(i));
+        for (int i = 0; i < tagList.size(); i++) {
+            result.add(tagList.getString(i));
         }
 
         return result;
     }
 
-    /**
-     * 检查两个MOD是否冲突（双向检测）
-     * @param stack1 第一个MOD
-     * @param stack2 第二个MOD
-     * @return true=冲突，false=不冲突
-     */
     public static boolean hasConflict(ItemStack stack1, ItemStack stack2) {
         if (stack1 == null || stack1.isEmpty() || stack2 == null || stack2.isEmpty()) {
             return false;
@@ -218,7 +201,6 @@ public abstract class ModuleBase extends Item implements IHasModel {
         List<String> tags1 = getConflictTags(stack1);
         List<String> tags2 = getConflictTags(stack2);
 
-        // 双向检测：只要有任意一个标签相同就冲突
         for (String tag1 : tags1) {
             if (tags2.contains(tag1)) {
                 return true;
@@ -231,7 +213,7 @@ public abstract class ModuleBase extends Item implements IHasModel {
     // ========== 缓存管理 ==========
 
     private static int getCacheKey(ItemStack itemStack) {
-        NBTTagCompound nbt = itemStack.getTagCompound();
+        CompoundTag nbt = itemStack.getTag();
         return nbt != null ? nbt.hashCode() : 0;
     }
 

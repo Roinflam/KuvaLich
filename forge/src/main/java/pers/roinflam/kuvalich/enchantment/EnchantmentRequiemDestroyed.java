@@ -1,24 +1,21 @@
-// 文件：EnchantmentRequiemDestroyed.java
-// 路径：src/main/java/pers/roinflam/kuvalich/enchantment/EnchantmentRequiemDestroyed.java
 package pers.roinflam.kuvalich.enchantment;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.EnumEnchantmentType;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Enchantments;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentCategory;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
@@ -30,11 +27,22 @@ import pers.roinflam.kuvalich.item.module.item.ItemUncommonModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeCommonModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRareModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeUncommonModule;
+import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
-@Mod.EventBusSubscriber
+/**
+ * 灭骸附魔
+ * Requiem Destroyed Enchantment
+ *
+ * 效果：
+ * 1. 大幅加快安魂方块的挖掘速度
+ * 2. 增加安魂矿石的经验掉落
+ * 3. 增加安魂卡片和模组的掉落几率
+ */
+@Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class EnchantmentRequiemDestroyed extends EnchantmentBase {
-    // 常量定义
+
+    // 常量定义 / Constants
     private static final int MIN_ENCHANTABILITY = 35;
     private static final float FAST_BREAK_SPEED = 300.0f;
     private static final float SLOW_BREAK_SPEED = 1.0f;
@@ -48,22 +56,37 @@ public class EnchantmentRequiemDestroyed extends EnchantmentBase {
     private static final int COMMON_MODULE_CHANCE = 15;
     private static final int UNCOMMON_MODULE_CHANCE = 10;
     private static final int RARE_MODULE_CHANCE = 5;
-    private static final int MODULE_TYPE_CHANCE = 75; // 75%掉落武器模组，25%掉落战甲模组
+    private static final int MODULE_TYPE_CHANCE = 75;
 
-    private static final Item[] REQUIEM_CARDS = {
-            KuvaLichItems.FASS_CARD, KuvaLichItems.JAHU_CARD, KuvaLichItems.KHRA_CARD,
-            KuvaLichItems.LOHK_CARD, KuvaLichItems.NETRA_CARD, KuvaLichItems.RIS_CARD,
-            KuvaLichItems.VOME_CARD, KuvaLichItems.XATA_CARD
-    };
-
-    public EnchantmentRequiemDestroyed(Rarity rarityIn, EnumEnchantmentType typeIn, EntityEquipmentSlot[] slots) {
-        super(rarityIn, typeIn, slots, "requiem_destroyed");
+    public EnchantmentRequiemDestroyed() {
+        super(Enchantment.Rarity.VERY_RARE,
+                EnchantmentCategory.DIGGER,
+                new net.minecraft.world.entity.EquipmentSlot[]{net.minecraft.world.entity.EquipmentSlot.MAINHAND},
+                "requiem_destroyed");
     }
 
-    public static Enchantment getEnchantment() {
-        return KuvaLichEnchantments.REQUIEM_DESTROYED;
+    /**
+     * ✅ 获取随机安魂卡片（延迟初始化）
+     * Get random Requiem Card (lazy initialization)
+     */
+    private static Item getRandomRequiemCard() {
+        Item[] cards = {
+                KuvaLichItems.FASS_CARD.get(),
+                KuvaLichItems.JAHU_CARD.get(),
+                KuvaLichItems.KHRA_CARD.get(),
+                KuvaLichItems.LOHK_CARD.get(),
+                KuvaLichItems.NETRA_CARD.get(),
+                KuvaLichItems.RIS_CARD.get(),
+                KuvaLichItems.VOME_CARD.get(),
+                KuvaLichItems.XATA_CARD.get()
+        };
+        return cards[RandomUtil.getInt(0, cards.length - 1)];
     }
 
+    /**
+     * 修改挖掘速度
+     * Modify break speed
+     */
     @SubscribeEvent
     public static void onBreakSpeed(PlayerEvent.BreakSpeed evt) {
         Block block = evt.getState().getBlock();
@@ -71,83 +94,77 @@ public class EnchantmentRequiemDestroyed extends EnchantmentBase {
             return;
         }
 
-        EntityPlayer player = evt.getEntityPlayer();
-        if (player == null || player.swingingHand == null) {
+        Player player = evt.getEntity();
+        if (player == null) {
             return;
         }
 
-        ItemStack tool = player.getHeldItem(player.swingingHand);
-        if (tool == null || tool.isEmpty()) {
+        ItemStack tool = player.getMainHandItem();
+        if (tool.isEmpty()) {
             return;
         }
 
-        int enchantLevel = EnchantmentHelper.getEnchantmentLevel(getEnchantment(), tool);
+        int enchantLevel = EnchantmentHelper.getItemEnchantmentLevel(
+                KuvaLichEnchantments.REQUIEM_DESTROYED.get(), tool);
 
         if (enchantLevel > 0) {
             evt.setNewSpeed(FAST_BREAK_SPEED);
         } else {
-            IBlockState state = evt.getState();
+            BlockState state = evt.getState();
             float defaultSpeed = tool.getDestroySpeed(state);
             evt.setNewSpeed(Math.min(defaultSpeed, SLOW_BREAK_SPEED));
         }
     }
 
+    /**
+     * 方块破坏事件（1.20.1中用于处理掉落物和经验）
+     * Block break event (used for handling drops and experience in 1.20.1)
+     */
     @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent evt) {
         Block block = evt.getState().getBlock();
-        if (!block.equals(KuvaLichBlocks.REQUIEM_ORE)) {
+        if (!block.equals(KuvaLichBlocks.REQUIEM_ORE.get())) {
             return;
         }
 
-        EntityPlayer player = evt.getPlayer();
-        if (player == null) {
+        Player player = evt.getPlayer();
+        if (player == null || player.level().isClientSide) {
             return;
         }
 
-        ItemStack tool = player.getHeldItem(player.getActiveHand());
-        if (tool == null || tool.isEmpty()) {
+        ItemStack tool = player.getMainHandItem();
+        if (tool.isEmpty()) {
             return;
         }
 
-        if (EnchantmentHelper.getEnchantmentLevel(getEnchantment(), tool) > 0) {
+        // 检查是否有精准采集 / Check for silk touch
+        if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, tool) > 0) {
+            return;
+        }
+
+        int enchantLevel = EnchantmentHelper.getItemEnchantmentLevel(
+                KuvaLichEnchantments.REQUIEM_DESTROYED.get(), tool);
+        int fortuneLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, tool);
+
+        // 增加经验掉落 / Increase experience drop
+        if (enchantLevel > 0) {
             evt.setExpToDrop(evt.getExpToDrop() * EXP_MULTIPLIER);
         }
-    }
 
-    @SubscribeEvent
-    public static void onHarvestDrops(BlockEvent.HarvestDropsEvent evt) {
-        Block block = evt.getState().getBlock();
-        if (!block.equals(KuvaLichBlocks.REQUIEM_ORE)) {
-            return;
-        }
-
-        EntityPlayer player = evt.getHarvester();
-        if (player == null) {
-            return;
-        }
-
-        ItemStack tool = player.getHeldItem(player.getActiveHand());
-        if (tool == null || tool.isEmpty()) {
-            return;
-        }
-
-        // 检查是否有精准采集
-        if (EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, tool) > 0) {
-            return;
-        }
-
-        int enchantLevel = EnchantmentHelper.getEnchantmentLevel(getEnchantment(), tool);
-        int fortuneLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, tool);
-
+        // 处理额外掉落物 / Handle extra drops
         if (shouldDropCard(enchantLevel, fortuneLevel)) {
-            dropRequiemCard(evt);
-            dropModules(evt);
-            dropKuvaResources(evt);
+            ServerLevel world = (ServerLevel) player.level();
+            BlockPos pos = evt.getPos();
+
+            dropRequiemCard(world, pos);
+            dropModules(world, pos);
+            dropKuvaResources(world, pos);
         }
     }
 
     /**
      * 检查是否应该掉落卡片
+     * Check if should drop card
      */
     private static boolean shouldDropCard(int enchantLevel, int fortuneLevel) {
         if (enchantLevel > 0) {
@@ -160,20 +177,18 @@ public class EnchantmentRequiemDestroyed extends EnchantmentBase {
 
     /**
      * 掉落安魂卡片
+     * Drop Requiem Card
      */
-    private static void dropRequiemCard(BlockEvent.HarvestDropsEvent evt) {
-        Item card = REQUIEM_CARDS[RandomUtil.getInt(0, REQUIEM_CARDS.length - 1)];
-        Block block = evt.getState().getBlock();
-        evt.getDrops().add(new ItemStack(card, 1, block.damageDropped(evt.getState())));
+    private static void dropRequiemCard(ServerLevel world, BlockPos pos) {
+        Item card = getRandomRequiemCard(); // ✅ 使用方法替代静态数组
+        spawnItem(world, pos, new ItemStack(card, 1));
     }
 
     /**
      * 掉落模组
+     * Drop modules
      */
-    private static void dropModules(BlockEvent.HarvestDropsEvent evt) {
-        World world = evt.getWorld();
-        BlockPos pos = evt.getPos();
-
+    private static void dropModules(ServerLevel world, BlockPos pos) {
         double roll = Math.random() * 100;
         ItemStack module = null;
 
@@ -198,42 +213,46 @@ public class EnchantmentRequiemDestroyed extends EnchantmentBase {
 
     /**
      * 掉落Kuva资源
+     * Drop Kuva resources
      */
-    private static void dropKuvaResources(BlockEvent.HarvestDropsEvent evt) {
-        World world = evt.getWorld();
-        BlockPos pos = evt.getPos();
+    private static void dropKuvaResources(ServerLevel world, BlockPos pos) {
+        // 掉落Riven碎片 / Drop Riven Sliver
+        spawnItem(world, pos, new ItemStack(KuvaLichItems.RIVEN_SLIVER.get(), 1));
 
-        // 掉落Riven碎片
-        spawnItem(world, pos, new ItemStack(KuvaLichItems.RivenSliver, 1));
-
-        // 掉落Kuva
-        spawnItem(world, pos, new ItemStack(KuvaLichItems.KUVA, RandomUtil.getInt(2, 4)));
+        // 掉落Kuva / Drop Kuva
+        spawnItem(world, pos, new ItemStack(KuvaLichItems.KUVA.get(), RandomUtil.getInt(2, 4)));
     }
 
     /**
      * 生成掉落物
+     * Spawn item
      */
-    private static void spawnItem(World world, BlockPos pos, ItemStack itemStack) {
+    private static void spawnItem(ServerLevel world, BlockPos pos, ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
             return;
         }
 
-        EntityItem entityItem = new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), itemStack);
-        world.spawnEntity(entityItem);
+        ItemEntity entityItem = new ItemEntity(world,
+                pos.getX() + 0.5,
+                pos.getY() + 0.5,
+                pos.getZ() + 0.5,
+                itemStack);
+        world.addFreshEntity(entityItem);
     }
 
     /**
      * 检查是否为安魂方块
+     * Check if is Requiem block
      */
     private static boolean isRequiemBlock(Block block) {
-        return block.equals(KuvaLichBlocks.REQUIEM_ORE)
-                || block.equals(KuvaLichBlocks.REQUIEM_GATE)
-                || block.equals(KuvaLichBlocks.REQUIEM_RECAST)
-                || block.equals(KuvaLichBlocks.REQUIEM_EVOLVE);
+        return block.equals(KuvaLichBlocks.REQUIEM_ORE.get())
+                || block.equals(KuvaLichBlocks.REQUIEM_GATE.get())
+                || block.equals(KuvaLichBlocks.REQUIEM_RECAST.get())
+                || block.equals(KuvaLichBlocks.REQUIEM_EVOLVE.get());
     }
 
     @Override
-    public int getMinEnchantability(int enchantmentLevel) {
+    public int getMinCost(int enchantmentLevel) {
         return MIN_ENCHANTABILITY;
     }
 }

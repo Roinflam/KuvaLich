@@ -1,47 +1,49 @@
 package pers.roinflam.kuvalich.init;
 
-import net.minecraft.entity.EnumCreatureType;
-import net.minecraftforge.fml.common.registry.EntityEntry;
-import net.minecraftforge.fml.common.registry.EntityEntryBuilder;
-import pers.roinflam.kuvalich.config.ModConfig;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 import pers.roinflam.kuvalich.entity.EntityKuvaMaster;
 import pers.roinflam.kuvalich.entity.EntityKuvaSlave;
+import pers.roinflam.kuvalich.utils.Reference;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/**
+ * 实体注册类（尺寸修正版）
+ * Entity registration class (size corrected)
+ */
 public class KuvaLichEntities {
 
-    public static final List<EntityEntry> ENTITIES = new ArrayList<EntityEntry>();
+    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
+            DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Reference.MOD_ID);
 
-    public static final EntityEntry KUVA_SLAVE = EntityEntryBuilder.create()
-            .entity(EntityKuvaSlave.class)
-            .id(EntityKuvaSlave.ID, 0)
-            .name(EntityKuvaSlave.NAME)
-            .tracker(64, 1, true)
-            .egg(0X4B0082, 0xDC143C)
-            .spawn(EnumCreatureType.MONSTER,
-                    ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight,
-                    ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount,
-                    ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount,
-                    EntityKuvaSlave.BIOMES)
-            .build();
+    /**
+     * 赤毒奴仆
+     * Kuva Slave
+     *
+     * 原代码尺寸：1.5F x 2.9F
+     * Original size: 1.5F x 2.9F
+     */
+    public static final RegistryObject<EntityType<EntityKuvaSlave>> KUVA_SLAVE = ENTITY_TYPES.register("kuva_slave",
+            () -> EntityType.Builder.of(EntityKuvaSlave::new, MobCategory.MONSTER)
+                    .sized(1.5F, 2.9F)  // ✅ 修正尺寸
+                    .clientTrackingRange(8)
+                    .updateInterval(3)
+                    .build("kuva_slave"));
 
-    public static final EntityEntry KUVA_MASTER = EntityEntryBuilder.create()
-            .entity(EntityKuvaMaster.class)
-            .id(EntityKuvaMaster.ID, 1)
-            .name(EntityKuvaMaster.NAME)
-            .tracker(64, 1, true)
-            .egg(0X9d00ff, 0X91001b)
-            .spawn(EnumCreatureType.MONSTER,
-                    ModConfig.KUVA_LICH.kuvaLichSpawnWeight,
-                    ModConfig.KUVA_LICH.kuvaLichMinSpawnCount,
-                    ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount,
-                    EntityKuvaSlave.BIOMES)
-            .build();
-
-    static {
-        ENTITIES.add(KUVA_SLAVE);
-        ENTITIES.add(KUVA_MASTER);
-    }
+    /**
+     * 赤毒玄骸
+     * Kuva Master
+     *
+     * 原代码尺寸：1.75F x 3.4F
+     * Original size: 1.75F x 3.4F
+     */
+    public static final RegistryObject<EntityType<EntityKuvaMaster>> KUVA_MASTER = ENTITY_TYPES.register("kuva_master",
+            () -> EntityType.Builder.of(EntityKuvaMaster::new, MobCategory.MONSTER)
+                    .sized(1.75F, 3.4F)  // ✅ 修正尺寸
+                    .clientTrackingRange(10)
+                    .updateInterval(3)
+                    .fireImmune()
+                    .build("kuva_master"));
 }

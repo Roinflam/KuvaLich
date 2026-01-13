@@ -5,8 +5,8 @@
     128
   ],
   "textures": {
-    "0": "kuvalich:blocks/requiem_evolve",
-    "particle": "kuvalich:blocks/requiem_evolve"
+    "0": "kuvalich:block/requiem_evolve",
+    "particle": "kuvalich:block/requiem_evolve"
   },
   "elements": [
     {

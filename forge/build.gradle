@@ -3,6 +3,18 @@ plugins {
     id 'com.github.johnrengelman.shadow'
 }
 
+// ========== 添加这个仓库配置块 ==========
+repositories {
+    maven {
+        name = "GeckoLib"
+        url = "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/"
+        content {
+            includeGroupByRegex("software\\.bernie.*")
+            includeGroup("com.eliotlash.mclib")
+        }
+    }
+}
+
 // Loom 的 Forge 平台特有配置
 loom {
     forge {
@@ -47,8 +59,13 @@ dependencies {
     // ==================== API 依赖（按需启用） ====================
 
     // GeckoLib：高级动画库，支持复杂实体/物品/方块动画
-    // 使用 fg.deobf() 进行反混淆处理
-    modApi 'software.bernie.geckolib:geckolib-forge-1.20.1:4.4'
+    include 'software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2'
+    modImplementation 'software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2'
+    forgeRuntimeLibrary 'com.eliotlash.mclib:mclib:20'
+
+    //     Cloth Config：配置界面 API，用于创建游戏内配置菜单
+    modApi "me.shedaniel.cloth:cloth-config-forge:11.1.136"
+    include "me.shedaniel.cloth:cloth-config-forge:11.1.136"
 
     // ==================== Common 模块（必需） ====================
 
@@ -63,7 +80,7 @@ dependencies {
     // 加载 forge/dependencies/ 文件夹里的所有 jar 文件
     // 适合放一些没有发布到 Maven 仓库的库
     fileTree(dir: 'dependencies', include: '*.jar').each { File file ->
-        implementation files(file)
+        modApi(files(file))
     }
 }
 

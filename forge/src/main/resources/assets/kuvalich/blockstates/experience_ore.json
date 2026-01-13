@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "kuvalich:experience_ore"
+      "model": "kuvalich:block/experience_ore"
     }
   }
 }

@@ -1,126 +1,80 @@
 package pers.roinflam.kuvalich.base.potion.hide;
 
-import net.minecraft.potion.PotionEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
 import pers.roinflam.kuvalich.base.potion.PotionBase;
+
+import java.util.function.Consumer;
 
 /**
  * 隐藏药水效果基类
+ * Hidden potion effect base class
  *
  * 用于创建完全隐藏的药水效果（不显示在界面上）
- *
- * 特性：
- * 1. 不在物品栏显示
- * 2. 不在HUD显示
- * 3. 不显示粒子效果
- * 4. 玩家完全感知不到（除非通过其他方式检测）
- *
- * 使用场景：
- * - 内部状态标记（如：免疫某种伤害）
- * - 被动效果（如：持续改变属性）
- * - 隐藏的增益/减益
- * - 游戏机制标记
- *
- * 示例用法：
- * ```java
- * public class MobEffectIce extends HideBase {
- *     public MobEffectIce() {
- *         super(true, 0xFF00FFFF, "ice");
- *         // 减速效果
- *         this.registerPotionAttributeModifier(
- *             SharedMonsterAttributes.MOVEMENT_SPEED,
- *             "uuid-here",
- *             -0.15,
- *             2
- *         );
- *     }
- * }
- * ```
- *
- * 注意事项：
- * - 虽然不显示图标，但效果仍然有效
- * - 可以通过命令 /effect 检测到
- * - 可以通过代码 entity.getActivePotionEffect(this) 检测到
- * - 属性修改器仍然会生效
-
+ * Used to create completely hidden potion effects (not shown in UI)
  */
 public abstract class HideBase extends PotionBase {
 
-    /**
-     * 构造隐藏药水效果
-     *
-     * @param isBadEffectIn 是否为负面效果
-     *                      - true: 负面效果（用于免疫判断等）
-     *                      - false: 正面效果
-     * @param liquidColorIn 药水液体颜色（虽然不显示，但仍需要设置）
-     *                      - 用于药水瓶等物品的颜色
-     * @param name 药水注册名
-     */
     protected HideBase(boolean isBadEffectIn, int liquidColorIn, String name) {
         super(isBadEffectIn, liquidColorIn, name);
     }
 
-    /**
-     * 效果触发时机
-     *
-     * 对于隐藏效果，默认每tick都准备好执行
-     * 但由于performEffect()为空，实际不会有任何操作
-     *
-     * 子类可以重写此方法来控制执行频率：
-     * ```java
-     * @Override
-     * public boolean isReady(int duration, int amplifier) {
-     *     return duration % 20 == 0; // 改为每秒执行
-     * }
-     * ```
-     *
-     * @param duration 剩余持续时间（tick）
-     * @param amplifier 效果等级
-     * @return true - 默认始终准备好
-     */
     @Override
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return true;
     }
 
     /**
-     * 是否渲染效果图标
-     *
-     * 控制是否在以下位置显示：
-     * - 物品栏界面（E键界面）
-     * - HUD（屏幕右上角）
-     * - 药水效果列表
-     *
-     * @param effect 药水效果实例
-     * @return false - 永不渲染
+     * 初始化客户端扩展，控制效果在GUI中的渲染
+     * Initialize client extensions to control effect rendering in GUI
      */
     @Override
-    public boolean shouldRender(PotionEffect effect) {
-        return false;
+    public void initializeClient(Consumer<IClientMobEffectExtensions> consumer) {
+        consumer.accept(new IClientMobEffectExtensions() {
+            /**
+             * 控制是否在物品栏中渲染效果
+             * Control whether to render effect in inventory
+             *
+             * @return false表示不渲染 / false means don't render
+             */
+            @Override
+            public boolean isVisibleInInventory(MobEffectInstance instance) {
+                return false;
+            }
+
+            /**
+             * 控制是否在HUD中渲染效果（屏幕右上角）
+             * Control whether to render effect in HUD (top right of screen)
+             *
+             * @return false表示不渲染 / false means don't render
+             */
+            @Override
+            public boolean isVisibleInGui(MobEffectInstance instance) {
+                return false;
+            }
+        });
     }
 
     /**
-     * 是否在物品栏显示文本
+     * 创建隐藏的效果实例（不显示粒子和图标）
+     * Create hidden effect instance (no particles and no icon)
      *
-     * 控制是否显示效果名称和持续时间
-     *
-     * @param effect 药水效果实例
-     * @return false - 不显示文本
+     * @param duration 持续时间(tick) / duration in ticks
+     * @param amplifier 效果等级 / amplifier level
+     * @return 完全隐藏的效果实例 / completely hidden effect instance
      */
-    @Override
-    public boolean shouldRenderInvText(PotionEffect effect) {
-        return false;
+    public MobEffectInstance createInstance(int duration, int amplifier) {
+        return new MobEffectInstance(this, duration, amplifier, false, false, false);
     }
 
     /**
-     * 是否在HUD显示
+     * 创建隐藏的效果实例（默认等级0）
+     * Create hidden effect instance (default amplifier 0)
      *
-     * 控制是否在屏幕右上角显示图标
-     *
-     * @param effect 药水效果实例
-     * @return false - 不在HUD显示
+     * @param duration 持续时间(tick) / duration in ticks
+     * @return 完全隐藏的效果实例 / completely hidden effect instance
      */
-    @Override
-    public boolean shouldRenderHUD(PotionEffect effect) {
-        return false;
+    public MobEffectInstance createInstance(int duration) {
+        return createInstance(duration, 0);
     }
 }

@@ -5,8 +5,8 @@
     128
   ],
   "textures": {
-    "0": "kuvalich:blocks/requiem_recast",
-    "particle": "kuvalich:blocks/requiem_recast"
+    "0": "kuvalich:block/requiem_recast",
+    "particle": "kuvalich:block/requiem_recast"
   },
   "elements": [
     {

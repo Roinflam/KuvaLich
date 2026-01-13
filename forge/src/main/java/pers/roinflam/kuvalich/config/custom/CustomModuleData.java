@@ -1,5 +1,3 @@
-// 文件名：CustomModuleData.java
-// 路径：src/main/java/pers/roinflam/kuvalich/config/custom/CustomModuleData.java
 package pers.roinflam.kuvalich.config.custom;
 
 import java.util.ArrayList;
@@ -9,9 +7,9 @@ import java.util.Map;
 
 /**
  * 自定义模组数据结构
- * 用于JSON序列化/反序列化
+ * Custom module data structure
  *
- * Custom Module Data Structure
+ * 用于JSON序列化/反序列化
  * Used for JSON serialization/deserialization
  */
 public class CustomModuleData {

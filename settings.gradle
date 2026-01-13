@@ -1,6 +1,5 @@
 pluginManagement {
     repositories {
-        maven { url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/' }
         maven { url "https://maven.fabricmc.net/" }      // Fabric 相关
         maven { url "https://maven.architectury.dev/" }  // Architectury
         maven { url "https://maven.minecraftforge.net/" } // Forge

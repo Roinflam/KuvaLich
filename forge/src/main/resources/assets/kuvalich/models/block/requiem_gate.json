@@ -5,8 +5,8 @@
     128
   ],
   "textures": {
-    "0": "kuvalich:blocks/requiem_gate",
-    "particle": "kuvalich:blocks/requiem_gate"
+    "0": "kuvalich:block/requiem_gate",
+    "particle": "kuvalich:block/requiem_gate"
   },
   "elements": [
     {

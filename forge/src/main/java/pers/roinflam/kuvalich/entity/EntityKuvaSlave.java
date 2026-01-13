@@ -1,44 +1,32 @@
-// 文件：EntityKuvaSlave.java
-// 路径：src/main/java/pers/roinflam/kuvalich/entity/EntityKuvaSlave.java
 package pers.roinflam.kuvalich.entity;
 
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Enchantments;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.World;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.base.entity.KuvaBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
-import pers.roinflam.kuvalich.item.module.item.ItemCommonModule;
-import pers.roinflam.kuvalich.item.module.item.ItemRareModule;
-import pers.roinflam.kuvalich.item.module.item.ItemUncommonModule;
-import pers.roinflam.kuvalich.item.module.warframe.WarframeCommonModule;
-import pers.roinflam.kuvalich.item.module.warframe.WarframeRareModule;
-import pers.roinflam.kuvalich.item.module.warframe.WarframeUncommonModule;
-import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.item.module.item.*;
+import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
-import javax.annotation.Nonnull;
-
 public class EntityKuvaSlave extends KuvaBase {
-    public static final String NAME = "kuva_slave";
-    public static final String ID = Reference.MOD_ID + ":" + NAME;
 
-    // 常量定义
-    private static final float SIZE_WIDTH = 1.5F;
-    private static final float SIZE_HEIGHT = 2.9F;
     private static final float BASE_HEAL_MULTIPLIER = 0.01f;
     private static final float TARGET_HEAL_MULTIPLIER = 0.02f;
     private static final float MIN_HEAL_NO_TARGET = 1.0f;
@@ -49,9 +37,18 @@ public class EntityKuvaSlave extends KuvaBase {
     private static final float SELF_KNOCKBACK_MULTIPLIER = 1.15f;
     private static final float HEAL_PER_ATTACK = 0.1f;
 
-    public EntityKuvaSlave(@Nonnull World worldIn) {
-        super(worldIn);
-        this.setSize(SIZE_WIDTH, SIZE_HEIGHT);
+    public EntityKuvaSlave(EntityType<? extends Monster> entityType, Level level) {
+        super(entityType, level);
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return Monster.createMonsterAttributes()
+                .add(Attributes.MAX_HEALTH, 100.0)
+                .add(Attributes.ATTACK_DAMAGE, 8.0)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.4)
+                .add(Attributes.MOVEMENT_SPEED, 0.35)
+                .add(Attributes.FOLLOW_RANGE, 32.0)
+                .add(Attributes.ARMOR, 4.0);
     }
 
     @Override
@@ -65,14 +62,14 @@ public class EntityKuvaSlave extends KuvaBase {
     }
 
     @Override
-    public boolean attackEntityAsMob(@Nonnull Entity entityIn) {
-        this.playSound(SoundEvents.ENTITY_IRONGOLEM_ATTACK, 1.0F, 1.0F);
+    public boolean doHurtTarget(@NotNull Entity target) {
+        this.playSound(SoundEvents.IRON_GOLEM_ATTACK, 1.0F, 1.0F);
 
-        float attackDamage = (float) this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue();
-        float finalDamage = attackDamage * this.world.getDifficulty().getDifficultyId() * ATTACK_DAMAGE_MULTIPLIER;
+        float attackDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        float finalDamage = attackDamage * this.level().getDifficulty().getId() * ATTACK_DAMAGE_MULTIPLIER;
 
-        if (entityIn.attackEntityFrom(DamageSource.causeMobDamage(this).setDifficultyScaled(), finalDamage)) {
-            applyKnockback(entityIn);
+        if (target.hurt(this.damageSources().mobAttack(this), finalDamage)) {
+            applyKnockback(target);
             this.heal(attackDamage * HEAL_PER_ATTACK);
             return true;
         }
@@ -80,128 +77,89 @@ public class EntityKuvaSlave extends KuvaBase {
         return false;
     }
 
-    /**
-     * 应用击退效果
-     */
     private void applyKnockback(Entity target) {
-        target.motionX *= KNOCKBACK_MULTIPLIER;
-        target.motionY *= VERTICAL_KNOCKBACK;
-        target.motionZ *= KNOCKBACK_MULTIPLIER;
+        target.setDeltaMovement(
+                target.getDeltaMovement().x * KNOCKBACK_MULTIPLIER,
+                target.getDeltaMovement().y * VERTICAL_KNOCKBACK,
+                target.getDeltaMovement().z * KNOCKBACK_MULTIPLIER
+        );
 
-        this.motionX = target.motionX * SELF_KNOCKBACK_MULTIPLIER;
-        this.motionY = target.motionY * SELF_KNOCKBACK_MULTIPLIER;
-        this.motionZ = target.motionZ * SELF_KNOCKBACK_MULTIPLIER;
+        this.setDeltaMovement(
+                target.getDeltaMovement().x * SELF_KNOCKBACK_MULTIPLIER,
+                target.getDeltaMovement().y * SELF_KNOCKBACK_MULTIPLIER,
+                target.getDeltaMovement().z * SELF_KNOCKBACK_MULTIPLIER
+        );
     }
 
     @Override
-    protected void applyEntityAttributes() {
-        super.applyEntityAttributes();
-        this.setAbsorptionAmount(100);
-        this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(100);
-        this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(8);
-        this.getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).setBaseValue(0.4);
-        this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(0.35);
-        this.getEntityAttribute(SharedMonsterAttributes.FOLLOW_RANGE).setBaseValue(32);
-        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(4);
-    }
-
-    @Override
-    public void onDeath(@Nonnull DamageSource cause) {
-        if (!world.isRemote) {
-            this.experienceValue = RandomUtil.getInt(10, 50);
-
-            if (cause.getTrueSource() instanceof EntityPlayer) {
-                handlePlayerKill((EntityPlayer) cause.getTrueSource());
+    public void die(@NotNull DamageSource damageSource) {
+        if (!level().isClientSide) {
+            if (damageSource.getEntity() instanceof Player player) {
+                handlePlayerKill(player);
             }
         }
-        super.onDeath(cause);
+        super.die(damageSource);
     }
 
-    /**
-     * 处理玩家击杀奖励
-     */
-    private void handlePlayerKill(EntityPlayer player) {
-        RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-        if (requiemCard == null) {
-            return;
-        }
-
-        // 给予解密进度
-        giveDecryptionProgress(player, requiemCard);
-
-        // 掉落物品
-        dropLoot(player);
+    private void handlePlayerKill(Player player) {
+        player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+            giveDecryptionProgress(player, requiemCard);
+            dropLoot(player);
+        });
     }
 
-    /**
-     * 给予解密进度
-     */
-    private void giveDecryptionProgress(EntityPlayer player, RequiemCard requiemCard) {
-        int addPotion = RandomUtil.getInt(ModConfig.KUVA_LICH.minDecryptionProgress, ModConfig.KUVA_LICH.maxDecryptionProgress);
+    private void giveDecryptionProgress(Player player, pers.roinflam.kuvalich.capability.RequiemCard requiemCard) {
+        int addPotion = RandomUtil.getInt(
+                ModConfig.KUVA_LICH.minDecryptionProgress.get(),
+                ModConfig.KUVA_LICH.maxDecryptionProgress.get()
+        );
 
         if (requiemCard.addPotion(addPotion)) {
             boolean max = requiemCard.getPointsRequired() == -1;
-            TextComponentTranslation message = new TextComponentTranslation(
+            player.sendSystemMessage(Component.translatable(
                     "message.kuvalich.getPoints",
                     addPotion,
                     max ? "Max" : requiemCard.getDecryptionProgress(),
                     max ? "Max" : requiemCard.getPointsRequired()
-            );
-            message.getStyle().setColor(TextFormatting.RED);
-            player.sendMessage(message);
+            ));
         } else {
-            TextComponentTranslation message = new TextComponentTranslation("message.kuvalich.maxLevel");
-            message.getStyle().setColor(TextFormatting.RED);
-            player.sendMessage(message);
+            player.sendSystemMessage(Component.translatable("message.kuvalich.maxLevel"));
         }
     }
 
-    /**
-     * 掉落战利品
-     */
-    private void dropLoot(EntityPlayer player) {
-        BlockPos pos = this.getPosition();
+    private void dropLoot(Player player) {
+        BlockPos pos = this.blockPosition();
 
-        // 掉落模组
         dropModule(pos);
 
-        // 掉落Kuva
         if (RandomUtil.percentageChance(10)) {
-            spawnItem(pos, new ItemStack(KuvaLichItems.KUVA, RandomUtil.getInt(2, 8)));
+            spawnItem(pos, new ItemStack(KuvaLichItems.KUVA.get(), RandomUtil.getInt(2, 8)));
         }
 
-        // 掉落Riven碎片
         if (RandomUtil.percentageChance(10)) {
-            spawnItem(pos, new ItemStack(KuvaLichItems.RivenSliver, 1));
+            spawnItem(pos, new ItemStack(KuvaLichItems.RIVEN_SLIVER.get(), 1));
         }
 
-        // 掉落安魂宝石（受抢夺附魔影响）
-        int lootingLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.LOOTING, player.getHeldItemMainhand());
+        int lootingLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MOB_LOOTING, player.getMainHandItem());
         if (RandomUtil.percentageChance(25 + 2.5 * lootingLevel)) {
-            spawnItem(pos, new ItemStack(KuvaLichItems.REQUIEM_GEM, 1));
+            spawnItem(pos, new ItemStack(KuvaLichItems.REQUIEM_GEM.get(), 1));
         }
     }
 
-    /**
-     * 掉落模组
-     */
     private void dropModule(BlockPos pos) {
         double roll = Math.random() * 100;
 
         if (roll < 15) {
-            // 15% 掉落普通模组
             ItemStack module = RandomUtil.percentageChance(75)
                     ? ItemCommonModule.getRandomModule()
                     : WarframeCommonModule.getRandomModule();
             spawnItem(pos, module);
         } else if (roll < 25) {
-            // 10% 掉落稀有模组
             ItemStack module = RandomUtil.percentageChance(75)
                     ? ItemUncommonModule.getRandomModule()
                     : WarframeUncommonModule.getRandomModule();
             spawnItem(pos, module);
         } else if (roll < 30) {
-            // 5% 掉落史诗模组
             ItemStack module = RandomUtil.percentageChance(75)
                     ? ItemRareModule.getRandomModule()
                     : WarframeRareModule.getRandomModule();
@@ -209,15 +167,18 @@ public class EntityKuvaSlave extends KuvaBase {
         }
     }
 
-    /**
-     * 生成掉落物
-     */
     private void spawnItem(BlockPos pos, ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
             return;
         }
 
-        EntityItem entityItem = new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), itemStack);
-        world.spawnEntity(entityItem);
+        ItemEntity entityItem = new ItemEntity(level(), pos.getX(), pos.getY(), pos.getZ(), itemStack);
+        level().addFreshEntity(entityItem);
+    }
+
+    @Override
+    public @NotNull EntityType<?> getType() {
+        // ✅ 修正：调用正确的注册类
+        return KuvaLichEntities.KUVA_SLAVE.get();
     }
 }

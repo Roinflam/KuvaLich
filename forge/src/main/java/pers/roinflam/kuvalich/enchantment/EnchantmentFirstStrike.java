@@ -1,25 +1,32 @@
-// 文件：EnchantmentFirstStrike.java
-// 路径：src/main/java/pers/roinflam/kuvalich/enchantment/EnchantmentFirstStrike.java
 package pers.roinflam.kuvalich.enchantment;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.EnumEnchantmentType;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentCategory;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
+import pers.roinflam.kuvalich.utils.Reference;
 
-@Mod.EventBusSubscriber
+/**
+ * 先攻附魔
+ * First Strike Enchantment
+ *
+ * 效果：对满血敌人造成额外伤害，并获得经验
+ * Effect: Deal extra damage to enemies at full health and gain experience
+ */
+@Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class EnchantmentFirstStrike extends EnchantmentBase {
-    // 常量定义
+
+    // 常量定义 / Constants
     private static final int MAX_LEVEL = 3;
     private static final int BASE_ENCHANTABILITY = 25;
     private static final int ENCHANTABILITY_PER_LEVEL = 10;
@@ -29,71 +36,72 @@ public class EnchantmentFirstStrike extends EnchantmentBase {
     private static final float EXPERIENCE_MULTIPLIER = 0.1f;
     private static final float MAX_EXPERIENCE_CAP = 0.33f;
 
-    public EnchantmentFirstStrike(Rarity rarityIn, EnumEnchantmentType typeIn, EntityEquipmentSlot[] slots) {
-        super(rarityIn, typeIn, slots, "firststrike");
-    }
-
-    public static Enchantment getEnchantment() {
-        return KuvaLichEnchantments.FIRST_STRIKE;
+    public EnchantmentFirstStrike() {
+        super(Enchantment.Rarity.VERY_RARE,
+                EnchantmentCategory.WEAPON,
+                new EquipmentSlot[]{EquipmentSlot.MAINHAND},
+                "first_strike");
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingHurt(LivingHurtEvent evt) {
-        if (evt.getEntity() == null || evt.getEntity().world.isRemote) {
+        if (evt.getEntity().level().isClientSide) {
             return;
         }
 
-        if (!(evt.getSource().getImmediateSource() instanceof EntityLivingBase)) {
+        if (!(evt.getSource().getDirectEntity() instanceof LivingEntity)) {
             return;
         }
 
-        EntityLivingBase attacker = (EntityLivingBase) evt.getSource().getImmediateSource();
-        ItemStack weapon = attacker.getHeldItemMainhand();
+        LivingEntity attacker = (LivingEntity) evt.getSource().getDirectEntity();
+        ItemStack weapon = attacker.getMainHandItem();
 
-        if (weapon == null || weapon.isEmpty()) {
+        if (weapon.isEmpty()) {
             return;
         }
 
-        int enchantLevel = EnchantmentHelper.getEnchantmentLevel(getEnchantment(), weapon);
+        int enchantLevel = EnchantmentHelper.getItemEnchantmentLevel(
+                KuvaLichEnchantments.FIRST_STRIKE.get(), weapon);
         if (enchantLevel <= 0) {
             return;
         }
 
-        EntityLivingBase target = evt.getEntityLiving();
+        LivingEntity target = evt.getEntity();
         if (target == null || target.getHealth() != target.getMaxHealth()) {
             return;
         }
 
-        // 计算首击伤害
+        // 计算首击伤害 / Calculate first strike damage
         float damageMultiplier = BASE_DAMAGE_MULTIPLIER + (enchantLevel - 1) * DAMAGE_MULTIPLIER_PER_LEVEL;
         float bonusDamage = evt.getAmount() * (damageMultiplier - 1.0f);
         float finalDamage = evt.getAmount() + bonusDamage;
 
-        // 检查是否会秒杀
+        // 检查是否会秒杀 / Check if it will be lethal
         boolean isLethal = finalDamage >= target.getMaxHealth() * MAX_DAMAGE_CAP;
 
         if (!isLethal) {
-            // 不秒杀时限制伤害上限
+            // 不秒杀时限制伤害上限 / Limit damage if not lethal
             finalDamage = Math.min(target.getMaxHealth() * MAX_DAMAGE_CAP, finalDamage);
         }
 
         evt.setAmount(finalDamage);
 
-        // 给予玩家经验
-        if (attacker instanceof EntityPlayer) {
-            giveExperience((EntityPlayer) attacker, target, bonusDamage, enchantLevel);
+        // 给予玩家经验 / Give player experience
+        if (attacker instanceof Player) {
+            giveExperience((Player) attacker, target, bonusDamage, enchantLevel);
         }
     }
 
     /**
      * 给予玩家经验
+     * Give player experience
      */
-    private static void giveExperience(EntityPlayer player, EntityLivingBase target, float bonusDamage, int level) {
+    private static void giveExperience(Player player, LivingEntity target, float bonusDamage, int level) {
         float baseExp = bonusDamage + bonusDamage * (level - 1) * DAMAGE_MULTIPLIER_PER_LEVEL;
         float maxExp = target.getMaxHealth() * MAX_EXPERIENCE_CAP;
 
         int experience = (int) Math.min(maxExp, baseExp * EXPERIENCE_MULTIPLIER);
-        player.addExperience(experience);
+        player.giveExperiencePoints(experience);
     }
 
     @Override
@@ -102,7 +110,7 @@ public class EnchantmentFirstStrike extends EnchantmentBase {
     }
 
     @Override
-    public int getMinEnchantability(int enchantmentLevel) {
+    public int getMinCost(int enchantmentLevel) {
         return BASE_ENCHANTABILITY + (enchantmentLevel - 1) * ENCHANTABILITY_PER_LEVEL;
     }
 }

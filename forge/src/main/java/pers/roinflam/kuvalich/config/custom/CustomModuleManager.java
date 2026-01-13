@@ -1,13 +1,13 @@
-// CustomModuleManager.java
-
 package pers.roinflam.kuvalich.config.custom;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minecraft.item.EnumRarity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
+
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
@@ -21,9 +21,9 @@ import java.util.Map;
 
 /**
  * 自定义模组管理器
+ * Custom module manager
+ *
  * 负责加载、解析、注册自定义模组
- * <p>
- * Custom Module Manager
  * Responsible for loading, parsing, and registering custom modules
  */
 public class CustomModuleManager {
@@ -86,10 +86,10 @@ public class CustomModuleManager {
 
     /**
      * 初始化自定义模组系统
-     * 在FMLPreInitializationEvent中调用
-     * <p>
      * Initialize custom module system
-     * Call in FMLPreInitializationEvent
+     *
+     * 在FMLCommonSetupEvent中调用
+     * Call in FMLCommonSetupEvent
      */
     public void initialize() {
         LogUtil.info("[自定义模组] 开始加载自定义模组配置...");
@@ -119,21 +119,11 @@ public class CustomModuleManager {
 
         if (configFile.exists()) {
             // 读取现有配置
-            try {
-                // 先读取文件内容，去掉注释后再解析
-                String jsonContent = readAndStripComments(configFile);
-                configData = GSON.fromJson(jsonContent, CustomModuleData.class);
-
-                // 防止解析结果为null
-                if (configData == null) {
-                    LogUtil.warn("[自定义模组] 配置文件内容为空，使用默认配置");
-                    LogUtil.warn("[CustomModule] Config file is empty, using default");
-                    configData = CustomModuleData.createDefault();
-                    saveConfig();
-                } else {
-                    LogUtil.info("[自定义模组] 成功读取配置文件");
-                    LogUtil.info("[CustomModule] Config file loaded successfully");
-                }
+            try (InputStreamReader reader = new InputStreamReader(
+                    new FileInputStream(configFile), StandardCharsets.UTF_8)) {
+                configData = GSON.fromJson(reader, CustomModuleData.class);
+                LogUtil.info("[自定义模组] 成功读取配置文件");
+                LogUtil.info("[CustomModule] Config file loaded successfully");
             } catch (Exception e) {
                 LogUtil.error("[自定义模组] 读取配置文件失败，将使用默认配置", e);
                 LogUtil.error("[CustomModule] Failed to load config, using default", e);
@@ -147,122 +137,6 @@ public class CustomModuleManager {
             configData = CustomModuleData.createDefault();
             saveConfig();
         }
-    }
-
-    /**
-     * 读取文件并去除注释
-     * 支持 // 单行注释和 /* * / 多行注释
-     * 正确处理字符串内的特殊字符，不会误删字符串内容
-     * <p>
-     * Read file and strip comments
-     * Supports // single-line and /* * / multi-line comments
-     * Correctly handles special characters inside strings
-     *
-     * @param file 要读取的文件 / File to read
-     * @return 去除注释后的JSON字符串 / JSON string with comments removed
-     * @throws IOException 读取失败时抛出 / Thrown when read fails
-     */
-    private String readAndStripComments(File file) throws IOException {
-        // 先读取整个文件内容
-        StringBuilder fileContent = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                fileContent.append(line).append("\n");
-            }
-        }
-
-        String content = fileContent.toString();
-        StringBuilder result = new StringBuilder();
-
-        boolean inString = false;           // 是否在字符串内
-        boolean inSingleLineComment = false; // 是否在单行注释内
-        boolean inMultiLineComment = false;  // 是否在多行注释内
-
-        int i = 0;
-        while (i < content.length()) {
-            char c = content.charAt(i);
-            char next = (i + 1 < content.length()) ? content.charAt(i + 1) : '\0';
-
-            // ========== 处理换行符 ==========
-            if (c == '\n') {
-                if (inSingleLineComment) {
-                    // 单行注释结束
-                    inSingleLineComment = false;
-                }
-                if (!inMultiLineComment) {
-                    result.append(c);
-                }
-                i++;
-                continue;
-            }
-
-            // ========== 在单行注释内，跳过直到换行 ==========
-            if (inSingleLineComment) {
-                i++;
-                continue;
-            }
-
-            // ========== 在多行注释内，寻找结束标记 */ ==========
-            if (inMultiLineComment) {
-                if (c == '*' && next == '/') {
-                    inMultiLineComment = false;
-                    i += 2; // 跳过 */
-                } else {
-                    i++;
-                }
-                continue;
-            }
-
-            // ========== 在字符串内 ==========
-            if (inString) {
-                result.append(c);
-                if (c == '\\' && next != '\0') {
-                    // 转义字符，下一个字符直接追加，不做判断
-                    result.append(next);
-                    i += 2;
-                } else if (c == '"') {
-                    // 字符串结束（JSON只用双引号）
-                    inString = false;
-                    i++;
-                } else {
-                    i++;
-                }
-                continue;
-            }
-
-            // ========== 不在字符串、不在注释内 ==========
-
-            // 检查字符串开始
-            if (c == '"') {
-                inString = true;
-                result.append(c);
-                i++;
-                continue;
-            }
-
-            // 检查注释开始
-            if (c == '/') {
-                if (next == '/') {
-                    // 单行注释开始
-                    inSingleLineComment = true;
-                    i += 2;
-                    continue;
-                } else if (next == '*') {
-                    // 多行注释开始
-                    inMultiLineComment = true;
-                    i += 2;
-                    continue;
-                }
-            }
-
-            // 普通字符，直接追加
-            result.append(c);
-            i++;
-        }
-
-        return result.toString();
     }
 
     /**
@@ -313,8 +187,6 @@ public class CustomModuleManager {
         sb.append("//   - \"uncommon\": 白银 / Silver\n");
         sb.append("//   - \"rare\": 黄金 / Gold\n");
         sb.append("//   - \"prime\": Prime\n");
-        sb.append("//   - \"galvanized\": 镀层 / Galvanized\n");
-        sb.append("//   - \"executioner\": 执行官 / Executioner\n");
         sb.append("//\n");
         sb.append("// type: 模组类型，同类型不能共存 / Module type, same type cannot coexist\n");
         sb.append("//\n");
@@ -544,8 +416,8 @@ public class CustomModuleManager {
 
         // ========== 处理颜色代码并设置显示名称 / Process color codes and set display name ==========
         String displayName = translateColorCodes(entry.name);
-        stack.setStackDisplayName(displayName);
-        stack.setTranslatableName("item.custommodule." + entry.rarity.toLowerCase() + ".name");
+        // 1.20.1中使用setHoverName
+        stack.setHoverName(Component.literal(displayName));
 
         // 添加属性
         for (Map.Entry<String, Double> attr : entry.attributes.entrySet()) {
@@ -596,33 +468,21 @@ public class CustomModuleManager {
      */
     private Item getModuleItem(String category, String rarity) {
         if ("item".equalsIgnoreCase(category)) {
-            switch (rarity.toLowerCase()) {
-                case "common":
-                    return KuvaLichItems.ITEM_COMMON_MODULE;
-                case "uncommon":
-                    return KuvaLichItems.ITEM_UNCOMMON_MODULE;
-                case "rare":
-                    return KuvaLichItems.ITEM_RARE_MODULE;
-                case "prime":
-                case "galvanized":
-                    return KuvaLichItems.ITEM_PRIME_MODULE;
-                default:
-                    return null;
-            }
+            return switch (rarity.toLowerCase()) {
+                case "common" -> KuvaLichItems.ITEM_COMMON_MODULE.get();
+                case "uncommon" -> KuvaLichItems.ITEM_UNCOMMON_MODULE.get();
+                case "rare" -> KuvaLichItems.ITEM_RARE_MODULE.get();
+                case "prime" -> KuvaLichItems.ITEM_PRIME_MODULE.get();
+                default -> null;
+            };
         } else if ("warframe".equalsIgnoreCase(category)) {
-            switch (rarity.toLowerCase()) {
-                case "common":
-                    return KuvaLichItems.WARFRAME_COMMON_MODULE;
-                case "uncommon":
-                    return KuvaLichItems.WARFRAME_UNCOMMON_MODULE;
-                case "rare":
-                    return KuvaLichItems.WARFRAME_RARE_MODULE;
-                case "prime":
-                case "executioner":
-                    return KuvaLichItems.WARFRAME_PRIME_MODULE;
-                default:
-                    return null;
-            }
+            return switch (rarity.toLowerCase()) {
+                case "common" -> KuvaLichItems.WARFRAME_COMMON_MODULE.get();
+                case "uncommon" -> KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get();
+                case "rare" -> KuvaLichItems.WARFRAME_RARE_MODULE.get();
+                case "prime" -> KuvaLichItems.WARFRAME_PRIME_MODULE.get();
+                default -> null;
+            };
         }
         return null;
     }
@@ -634,35 +494,17 @@ public class CustomModuleManager {
     private void cacheModule(CustomModuleData.ModuleEntry entry, ItemStack stack) {
         if ("item".equalsIgnoreCase(entry.category)) {
             switch (entry.rarity.toLowerCase()) {
-                case "common":
-                    customItemCommonModules.add(stack);
-                    break;
-                case "uncommon":
-                    customItemUncommonModules.add(stack);
-                    break;
-                case "rare":
-                    customItemRareModules.add(stack);
-                    break;
-                case "prime":
-                case "galvanized":
-                    customItemPrimeModules.add(stack);
-                    break;
+                case "common" -> customItemCommonModules.add(stack);
+                case "uncommon" -> customItemUncommonModules.add(stack);
+                case "rare" -> customItemRareModules.add(stack);
+                case "prime" -> customItemPrimeModules.add(stack);
             }
         } else if ("warframe".equalsIgnoreCase(entry.category)) {
             switch (entry.rarity.toLowerCase()) {
-                case "common":
-                    customWarframeCommonModules.add(stack);
-                    break;
-                case "uncommon":
-                    customWarframeUncommonModules.add(stack);
-                    break;
-                case "rare":
-                    customWarframeRareModules.add(stack);
-                    break;
-                case "prime":
-                case "executioner":
-                    customWarframePrimeModules.add(stack);
-                    break;
+                case "common" -> customWarframeCommonModules.add(stack);
+                case "uncommon" -> customWarframeUncommonModules.add(stack);
+                case "rare" -> customWarframeRareModules.add(stack);
+                case "prime" -> customWarframePrimeModules.add(stack);
             }
         }
 
@@ -690,38 +532,26 @@ public class CustomModuleManager {
      * 获取自定义武器模组（用于创造物品栏和随机获取）
      * Get custom item modules (for creative tab and random obtaining)
      */
-    public List<ItemStack> getCustomItemModules(EnumRarity rarity) {
-        switch (rarity) {
-            case COMMON:
-                return new ArrayList<>(customItemCommonModules);
-            case UNCOMMON:
-                return new ArrayList<>(customItemUncommonModules);
-            case RARE:
-                return new ArrayList<>(customItemRareModules);
-            case EPIC:
-                return new ArrayList<>(customItemPrimeModules);
-            default:
-                return new ArrayList<>();
-        }
+    public List<ItemStack> getCustomItemModules(Rarity rarity) {
+        return switch (rarity) {
+            case COMMON -> new ArrayList<>(customItemCommonModules);
+            case UNCOMMON -> new ArrayList<>(customItemUncommonModules);
+            case RARE -> new ArrayList<>(customItemRareModules);
+            case EPIC -> new ArrayList<>(customItemPrimeModules);
+        };
     }
 
     /**
      * 获取自定义战甲模组（用于创造物品栏和随机获取）
      * Get custom warframe modules (for creative tab and random obtaining)
      */
-    public List<ItemStack> getCustomWarframeModules(EnumRarity rarity) {
-        switch (rarity) {
-            case COMMON:
-                return new ArrayList<>(customWarframeCommonModules);
-            case UNCOMMON:
-                return new ArrayList<>(customWarframeUncommonModules);
-            case RARE:
-                return new ArrayList<>(customWarframeRareModules);
-            case EPIC:
-                return new ArrayList<>(customWarframePrimeModules);
-            default:
-                return new ArrayList<>();
-        }
+    public List<ItemStack> getCustomWarframeModules(Rarity rarity) {
+        return switch (rarity) {
+            case COMMON -> new ArrayList<>(customWarframeCommonModules);
+            case UNCOMMON -> new ArrayList<>(customWarframeUncommonModules);
+            case RARE -> new ArrayList<>(customWarframeRareModules);
+            case EPIC -> new ArrayList<>(customWarframePrimeModules);
+        };
     }
 
     /**
@@ -731,7 +561,7 @@ public class CustomModuleManager {
      * @param items  创造物品栏列表 / Creative tab item list
      * @param rarity 稀有度 / Rarity
      */
-    public void addCustomItemModulesToCreativeTab(NonNullList<ItemStack> items, EnumRarity rarity) {
+    public void addCustomItemModulesToCreativeTab(List<ItemStack> items, Rarity rarity) {
         for (ItemStack stack : getCustomItemModules(rarity)) {
             items.add(stack.copy());
         }
@@ -744,7 +574,7 @@ public class CustomModuleManager {
      * @param items  创造物品栏列表 / Creative tab item list
      * @param rarity 稀有度 / Rarity
      */
-    public void addCustomWarframeModulesToCreativeTab(NonNullList<ItemStack> items, EnumRarity rarity) {
+    public void addCustomWarframeModulesToCreativeTab(List<ItemStack> items, Rarity rarity) {
         for (ItemStack stack : getCustomWarframeModules(rarity)) {
             items.add(stack.copy());
         }
@@ -757,7 +587,7 @@ public class CustomModuleManager {
      * @param moduleList 模组列表 / Module list
      * @param rarity     稀有度 / Rarity
      */
-    public void addCustomItemModulesToRandomList(List<ItemStack> moduleList, EnumRarity rarity) {
+    public void addCustomItemModulesToRandomList(List<ItemStack> moduleList, Rarity rarity) {
         for (ItemStack stack : getCustomItemModules(rarity)) {
             moduleList.add(stack.copy());
         }
@@ -770,7 +600,7 @@ public class CustomModuleManager {
      * @param moduleList 模组列表 / Module list
      * @param rarity     稀有度 / Rarity
      */
-    public void addCustomWarframeModulesToRandomList(List<ItemStack> moduleList, EnumRarity rarity) {
+    public void addCustomWarframeModulesToRandomList(List<ItemStack> moduleList, Rarity rarity) {
         for (ItemStack stack : getCustomWarframeModules(rarity)) {
             moduleList.add(stack.copy());
         }

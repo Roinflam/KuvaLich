@@ -1,15 +1,16 @@
 package pers.roinflam.kuvalich.capability;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraftforge.common.util.Constants;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.common.util.LazyOptional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -18,73 +19,44 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 赤毒卡片能力类
- * 用于存储玩家的赤毒卡片数据和解密进度
+ * 安魂卡片Capability
+ * Requiem Card Capability
+ *
+ * 存储玩家的安魂卡片数据、解密进度、没收物品等
+ * Stores player's requiem card data, decryption progress, confiscated items, etc.
  */
-@Mod.EventBusSubscriber
-public class RequiemCard implements INBTSerializable<NBTTagCompound> {
-    // 三个卡片槽位
+public class RequiemCard {
+
     private ItemStack oneCard;
     private ItemStack twoCard;
     private ItemStack threeCard;
 
-    // 三个谜语槽位（已解锁的卡片ID）
     private int oneRiddle;
     private int twoRiddle;
     private int threeRiddle;
 
-    // 三个答案槽位（正确的卡片ID）
     private int oneAnswer;
     private int twoAnswer;
     private int threeAnswer;
 
-    // 解锁状态和解密进度
     private int unlockedCardStatus;
     private int decryptionProgress;
 
-    // 库瓦等级相关
     private int kuvaLevel;
     private int minimumLevelWeapon;
     private int maximumLevelWeapon;
 
-    // 被玄骸没收的物品列表
+    /** 被玄骸没收的物品列表 / Confiscated items list */
     private List<ItemStack> confiscatedItems;
 
-    /**
-     * 构造函数
-     * 初始化所有字段为默认值
-     */
     public RequiemCard() {
         reset();
         this.confiscatedItems = new ArrayList<>();
     }
 
     /**
-     * 玩家克隆事件监听器
-     * 用于在玩家死亡重生时保留能力数据
-     *
-     * @param evt 玩家克隆事件
-     */
-    @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.Clone evt) {
-        Entity entity = evt.getEntity();
-        if (entity == null || entity.world.isRemote || !(entity instanceof EntityPlayer)) {
-            return;
-        }
-
-        EntityPlayer entityPlayer = (EntityPlayer) entity;
-        RequiemCard requiemCard = entityPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-        RequiemCard originalRequiemCard = evt.getOriginal().getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-
-        if (requiemCard != null && originalRequiemCard != null) {
-            requiemCard.clone(originalRequiemCard);
-        }
-    }
-
-    /**
-     * 克隆能力数据
-     *
-     * @param requiemCard 要克隆的源数据
+     * 克隆数据
+     * Clone data
      */
     public void clone(RequiemCard requiemCard) {
         if (requiemCard == null) {
@@ -105,131 +77,61 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         this.setKuvaLevel(requiemCard.getKuvaLevel());
         this.setMinimumLevelWeapon(requiemCard.getMinimumLevelWeapon());
         this.setMaximumLevelWeapon(requiemCard.getMaximumLevelWeapon());
+
         // 克隆没收物品列表
+        // Clone confiscated items list
         this.confiscatedItems = new ArrayList<>(requiemCard.getConfiscatedItems());
     }
 
     // ==================== Getters and Setters ====================
 
-    public int getUnlockedCardStatus() {
-        return unlockedCardStatus;
-    }
+    public int getUnlockedCardStatus() { return unlockedCardStatus; }
+    public void setUnlockedCardStatus(int level) { this.unlockedCardStatus = level; }
 
-    public void setUnlockedCardStatus(int level) {
-        this.unlockedCardStatus = level;
-    }
+    public int getDecryptionProgress() { return decryptionProgress; }
+    public void setDecryptionProgress(int decryptionProgress) { this.decryptionProgress = decryptionProgress; }
 
-    public int getDecryptionProgress() {
-        return decryptionProgress;
-    }
+    public ItemStack getOneCard() { return oneCard; }
+    public void setOneCard(ItemStack oneCard) { this.oneCard = oneCard != null ? oneCard : ItemStack.EMPTY; }
 
-    public void setDecryptionProgress(int decryptionProgress) {
-        this.decryptionProgress = decryptionProgress;
-    }
+    public ItemStack getTwoCard() { return twoCard; }
+    public void setTwoCard(ItemStack twoCard) { this.twoCard = twoCard != null ? twoCard : ItemStack.EMPTY; }
 
-    public ItemStack getOneCard() {
-        return oneCard;
-    }
+    public ItemStack getThreeCard() { return threeCard; }
+    public void setThreeCard(ItemStack threeCard) { this.threeCard = threeCard != null ? threeCard : ItemStack.EMPTY; }
 
-    public void setOneCard(ItemStack oneCard) {
-        this.oneCard = oneCard != null ? oneCard : ItemStack.EMPTY;
-    }
+    public int getOneAnswer() { return oneAnswer; }
+    public void setOneAnswer(int oneAnswer) { this.oneAnswer = oneAnswer; }
 
-    public ItemStack getTwoCard() {
-        return twoCard;
-    }
+    public int getTwoAnswer() { return twoAnswer; }
+    public void setTwoAnswer(int twoAnswer) { this.twoAnswer = twoAnswer; }
 
-    public void setTwoCard(ItemStack twoCard) {
-        this.twoCard = twoCard != null ? twoCard : ItemStack.EMPTY;
-    }
+    public int getThreeAnswer() { return threeAnswer; }
+    public void setThreeAnswer(int threeAnswer) { this.threeAnswer = threeAnswer; }
 
-    public ItemStack getThreeCard() {
-        return threeCard;
-    }
+    public int getKuvaLevel() { return kuvaLevel; }
+    public void setKuvaLevel(int kuvaLevel) { this.kuvaLevel = kuvaLevel; }
 
-    public void setThreeCard(ItemStack threeCard) {
-        this.threeCard = threeCard != null ? threeCard : ItemStack.EMPTY;
-    }
+    public int getOneRiddle() { return oneRiddle; }
+    public void setOneRiddle(int oneRiddle) { this.oneRiddle = oneRiddle; }
 
-    public int getOneRiddle() {
-        return oneRiddle;
-    }
+    public int getTwoRiddle() { return twoRiddle; }
+    public void setTwoRiddle(int twoRiddle) { this.twoRiddle = twoRiddle; }
 
-    public void setOneRiddle(int oneRiddle) {
-        this.oneRiddle = oneRiddle;
-    }
+    public int getThreeRiddle() { return threeRiddle; }
+    public void setThreeRiddle(int threeRiddle) { this.threeRiddle = threeRiddle; }
 
-    public int getTwoRiddle() {
-        return twoRiddle;
-    }
+    public int getMinimumLevelWeapon() { return minimumLevelWeapon; }
+    public void setMinimumLevelWeapon(int minimumLevelWeapon) { this.minimumLevelWeapon = minimumLevelWeapon; }
 
-    public void setTwoRiddle(int twoRiddle) {
-        this.twoRiddle = twoRiddle;
-    }
+    public int getMaximumLevelWeapon() { return maximumLevelWeapon; }
+    public void setMaximumLevelWeapon(int maximumLevelWeapon) { this.maximumLevelWeapon = maximumLevelWeapon; }
 
-    public int getThreeRiddle() {
-        return threeRiddle;
-    }
-
-    public void setThreeRiddle(int threeRiddle) {
-        this.threeRiddle = threeRiddle;
-    }
-
-    public int getOneAnswer() {
-        return oneAnswer;
-    }
-
-    public void setOneAnswer(int oneAnswer) {
-        this.oneAnswer = oneAnswer;
-    }
-
-    public int getTwoAnswer() {
-        return twoAnswer;
-    }
-
-    public void setTwoAnswer(int twoAnswer) {
-        this.twoAnswer = twoAnswer;
-    }
-
-    public int getThreeAnswer() {
-        return threeAnswer;
-    }
-
-    public void setThreeAnswer(int threeAnswer) {
-        this.threeAnswer = threeAnswer;
-    }
-
-    public int getKuvaLevel() {
-        return kuvaLevel;
-    }
-
-    public void setKuvaLevel(int kuvaLevel) {
-        this.kuvaLevel = kuvaLevel;
-    }
-
-    public int getMinimumLevelWeapon() {
-        return minimumLevelWeapon;
-    }
-
-    public void setMinimumLevelWeapon(int minimumLevelWeapon) {
-        this.minimumLevelWeapon = minimumLevelWeapon;
-    }
-
-    public int getMaximumLevelWeapon() {
-        return maximumLevelWeapon;
-    }
-
-    public void setMaximumLevelWeapon(int maximumLevelWeapon) {
-        this.maximumLevelWeapon = maximumLevelWeapon;
-    }
-
-    // ==================== 状态检查方法 ====================
+    // ==================== 逻辑方法 / Logic Methods ====================
 
     /**
      * 检查是否有任意一个谜语被解开
-     * 用于判断是否触发没收机制
-     *
-     * @return 是否有谜语被解开
+     * Check if any riddle is unlocked
      */
     public boolean hasAnyRiddleUnlocked() {
         return oneRiddle != -1 || twoRiddle != -1 || threeRiddle != -1;
@@ -237,36 +139,31 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     /**
      * 检查是否所有谜语都已解开
-     *
-     * @return 是否全部解开
+     * Check if all riddles are unlocked
      */
     public boolean isUnlockAll() {
         return oneRiddle != -1 && twoRiddle != -1 && threeRiddle != -1;
     }
 
     /**
-     * 检查是否包含指定ID的卡片
-     *
-     * @param id 卡片ID
-     * @return 是否包含
+     * 检查是否包含指定卡片
+     * Check if contains specified card
      */
     public boolean containCard(int id) {
         return oneRiddle == id || twoRiddle == id || threeRiddle == id;
     }
 
     /**
-     * 检查是否三个卡片槽位都已放置卡片
-     *
-     * @return 是否准备就绪
+     * 检查卡片槽位是否已准备好
+     * Check if card slots are ready
      */
     public boolean isReadyCard() {
         return !oneCard.isEmpty() && !twoCard.isEmpty() && !threeCard.isEmpty();
     }
 
     /**
-     * 检查当前卡片排列是否为正确答案
-     *
-     * @return 是否正确
+     * 检查答案是否完全正确
+     * Check if answer is completely correct
      */
     public boolean isCorrectAnswer() {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
@@ -281,9 +178,8 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     /**
-     * 检查第一个卡片是否正确
-     *
-     * @return 是否正确
+     * 检查第一个答案是否正确
+     * Check if first answer is correct
      */
     public boolean isFirstCorrectAnswer() {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
@@ -295,9 +191,8 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     /**
-     * 检查第二个卡片是否正确
-     *
-     * @return 是否正确
+     * 检查第二个答案是否正确
+     * Check if second answer is correct
      */
     public boolean isTwoCorrectAnswer() {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
@@ -309,10 +204,8 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     /**
-     * 获取指定等级的锁定卡片ID
-     *
-     * @param level 等级（1-3）
-     * @return 卡片ID，如果等级无效则返回-1
+     * 获取指定等级的锁定卡片
+     * Get locked card for specified level
      */
     public int getLockCard(int level) {
         switch (level) {
@@ -324,35 +217,30 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     /**
-     * 获取当前阶段所需的点数
-     *
-     * @return 所需点数，如果阶段无效则返回-1
+     * 获取当前阶段所需点数
+     * Get points required for current stage
      */
     public int getPointsRequired() {
         switch (unlockedCardStatus) {
-            case 0: return ModConfig.KUVA_LICH.firstStage;
-            case 1: return ModConfig.KUVA_LICH.secondStage;
-            case 2: return ModConfig.KUVA_LICH.thirdStage;
+            case 0: return ModConfig.KUVA_LICH.firstStage.get();
+            case 1: return ModConfig.KUVA_LICH.secondStage.get();
+            case 2: return ModConfig.KUVA_LICH.thirdStage.get();
             default: return -1;
         }
     }
 
-    // ==================== 进度处理方法 ====================
-
     /**
-     * 添加解密点数
-     *
-     * @param potion 点数
-     * @return 是否添加成功
+     * 添加药水进度
+     * Add potion progress
      */
     public boolean addPotion(int potion) {
         switch (unlockedCardStatus) {
             case 0:
-                return processStage(potion, ModConfig.KUVA_LICH.firstStage);
+                return processStage(potion, ModConfig.KUVA_LICH.firstStage.get());
             case 1:
-                return processStage(potion, ModConfig.KUVA_LICH.secondStage);
+                return processStage(potion, ModConfig.KUVA_LICH.secondStage.get());
             case 2:
-                return processStage(potion, ModConfig.KUVA_LICH.thirdStage);
+                return processStage(potion, ModConfig.KUVA_LICH.thirdStage.get());
             default:
                 return false;
         }
@@ -360,16 +248,12 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     /**
      * 处理阶段进度
-     *
-     * @param potion 添加的点数
-     * @param threshold 阶段阈值
-     * @return 是否处理成功
+     * Process stage progress
      */
     private boolean processStage(int potion, int threshold) {
         decryptionProgress += potion;
 
         if (decryptionProgress >= threshold) {
-            // 第一阶段完成时生成答案
             if (unlockedCardStatus == 0) {
                 generateAnswers();
             }
@@ -383,7 +267,8 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
     }
 
     /**
-     * 生成随机的三个不重复答案
+     * 生成随机答案
+     * Generate random answers
      */
     private void generateAnswers() {
         int one, two, three;
@@ -400,56 +285,61 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     /**
      * 重置所有数据
-     * 注意：不会清空没收物品列表
+     * Reset all data
      */
     public void reset() {
-        // 降低卡片耐久度
-        degradeCard(oneCard);
-        degradeCard(twoCard);
-        degradeCard(threeCard);
+        // 降低卡片耐久度（在清空前处理）
+        // Degrade card durability (process before clearing)
+        if (oneCard != null && !oneCard.isEmpty()) {
+            degradeCardDurability(oneCard);
+        }
+        if (twoCard != null && !twoCard.isEmpty()) {
+            degradeCardDurability(twoCard);
+        }
+        if (threeCard != null && !threeCard.isEmpty()) {
+            degradeCardDurability(threeCard);
+        }
 
-        // 重置卡片槽位（修复：确保初始化为EMPTY而不是null）
+        // 初始化ItemStack字段为EMPTY（防止null）
+        // Initialize ItemStack fields to EMPTY (prevent null)
         this.oneCard = ItemStack.EMPTY;
         this.twoCard = ItemStack.EMPTY;
         this.threeCard = ItemStack.EMPTY;
 
-        // 重置谜语和答案
         this.oneRiddle = -1;
         this.twoRiddle = -1;
         this.threeRiddle = -1;
         this.oneAnswer = -1;
         this.twoAnswer = -1;
         this.threeAnswer = -1;
-
-        // 重置进度
         this.unlockedCardStatus = 0;
         this.decryptionProgress = 0;
         this.kuvaLevel = 0;
-
-        // 注意：reset时不清空没收物品，因为解密成功时需要先掉落再reset
+        // 注意：reset时不清空没收物品
+        // Note: don't clear confiscated items on reset
     }
 
     /**
-     * 降低卡片耐久度
-     *
-     * @param card 要降低耐久的卡片
+     * 降低卡片耐久度（仅修改耐久，不清空）
+     * Degrade card durability (only modify durability, don't clear)
      */
-    private void degradeCard(ItemStack card) {
-        if (card == null || card.isEmpty()) {
+    private void degradeCardDurability(ItemStack card) {
+        if (card == null || card.isEmpty() || !card.isDamageableItem()) {
             return;
         }
 
-        if (card.getItemDamage() < 2) {
-            card.setItemDamage(card.getItemDamage() + 1);
-        } else if (card.isItemStackDamageable()) {
-            card = ItemStack.EMPTY;
+        if (card.getDamageValue() < card.getMaxDamage() - 1) {
+            card.setDamageValue(card.getDamageValue() + 1);
+        } else {
+            // 已达到最大损坏，标记为损坏
+            // Reached max damage, mark as damaged
+            card.setDamageValue(card.getMaxDamage());
         }
     }
 
     /**
-     * 添加解锁的卡片到随机槽位
-     *
-     * @param level 当前等级
+     * 添加卡片到随机槽位
+     * Add card to random slot
      */
     public void addCard(int level) {
         if (isUnlockAll()) {
@@ -461,7 +351,8 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
             return;
         }
 
-        // 随机选择一个空槽位
+        // 随机选择槽位
+        // Randomly select slot
         while (true) {
             int slot = RandomUtil.getInt(0, 2);
 
@@ -478,12 +369,11 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
         }
     }
 
-    // ==================== 没收物品相关方法 ====================
+    // ==================== 没收物品相关方法 / Confiscated Items Methods ====================
 
     /**
      * 获取被没收的物品列表
-     *
-     * @return 没收物品列表的副本
+     * Get confiscated items list
      */
     public List<ItemStack> getConfiscatedItems() {
         return new ArrayList<>(confiscatedItems);
@@ -491,8 +381,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     /**
      * 添加被没收的物品
-     *
-     * @param itemStack 要没收的物品
+     * Add confiscated item
      */
     public void addConfiscatedItem(ItemStack itemStack) {
         if (itemStack != null && !itemStack.isEmpty()) {
@@ -502,8 +391,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     /**
      * 清空没收物品列表并返回所有物品
-     *
-     * @return 被没收的所有物品
+     * Clear and get all confiscated items
      */
     public List<ItemStack> clearAndGetConfiscatedItems() {
         List<ItemStack> items = new ArrayList<>(confiscatedItems);
@@ -513,8 +401,7 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     /**
      * 检查是否有被没收的物品
-     *
-     * @return 是否有没收物品
+     * Check if has confiscated items
      */
     public boolean hasConfiscatedItems() {
         return !confiscatedItems.isEmpty();
@@ -522,101 +409,123 @@ public class RequiemCard implements INBTSerializable<NBTTagCompound> {
 
     /**
      * 获取被没收物品的数量
-     *
-     * @return 没收物品数量
+     * Get confiscated item count
      */
     public int getConfiscatedItemCount() {
         return confiscatedItems.size();
     }
 
-    // ==================== NBT序列化 ====================
+    // ==================== NBT序列化 / NBT Serialization ====================
 
     /**
-     * 序列化为NBT
-     *
-     * @return NBT数据
+     * 序列化到NBT
+     * Serialize to NBT
      */
-    @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
+    public CompoundTag serializeNBT() {
+        CompoundTag nbt = new CompoundTag();
 
-        // 修复：添加空值检查，防止NullPointerException
-        nbt.setTag("oneCard", oneCard != null ? oneCard.serializeNBT() : ItemStack.EMPTY.serializeNBT());
-        nbt.setTag("twoCard", twoCard != null ? twoCard.serializeNBT() : ItemStack.EMPTY.serializeNBT());
-        nbt.setTag("threeCard", threeCard != null ? threeCard.serializeNBT() : ItemStack.EMPTY.serializeNBT());
+        // 添加null检查，确保安全序列化
+        // Add null check to ensure safe serialization
+        nbt.put("oneCard", (oneCard != null ? oneCard : ItemStack.EMPTY).save(new CompoundTag()));
+        nbt.put("twoCard", (twoCard != null ? twoCard : ItemStack.EMPTY).save(new CompoundTag()));
+        nbt.put("threeCard", (threeCard != null ? threeCard : ItemStack.EMPTY).save(new CompoundTag()));
 
-        // 序列化谜语和答案
-        nbt.setInteger("oneRiddle", oneRiddle);
-        nbt.setInteger("twoRiddle", twoRiddle);
-        nbt.setInteger("threeRiddle", threeRiddle);
-        nbt.setInteger("oneAnswer", oneAnswer);
-        nbt.setInteger("twoAnswer", twoAnswer);
-        nbt.setInteger("threeAnswer", threeAnswer);
-
-        // 序列化进度
-        nbt.setInteger("unlockedCardStatus", unlockedCardStatus);
-        nbt.setInteger("decryptionProgress", decryptionProgress);
-
-        // 序列化等级相关
-        nbt.setInteger("kuvaLevel", kuvaLevel);
-        nbt.setInteger("minimumLevelWeapon", minimumLevelWeapon);
-        nbt.setInteger("maximumLevelWeapon", maximumLevelWeapon);
+        nbt.putInt("oneRiddle", oneRiddle);
+        nbt.putInt("twoRiddle", twoRiddle);
+        nbt.putInt("threeRiddle", threeRiddle);
+        nbt.putInt("oneAnswer", oneAnswer);
+        nbt.putInt("twoAnswer", twoAnswer);
+        nbt.putInt("threeAnswer", threeAnswer);
+        nbt.putInt("unlockedCardStatus", unlockedCardStatus);
+        nbt.putInt("decryptionProgress", decryptionProgress);
+        nbt.putInt("kuvaLevel", kuvaLevel);
+        nbt.putInt("minimumLevelWeapon", minimumLevelWeapon);
+        nbt.putInt("maximumLevelWeapon", maximumLevelWeapon);
 
         // 序列化没收物品列表
-        NBTTagList confiscatedList = new NBTTagList();
+        // Serialize confiscated items list
+        ListTag confiscatedList = new ListTag();
         for (ItemStack item : confiscatedItems) {
             if (!item.isEmpty()) {
-                confiscatedList.appendTag(item.serializeNBT());
+                confiscatedList.add(item.save(new CompoundTag()));
             }
         }
-        nbt.setTag("confiscatedItems", confiscatedList);
+        nbt.put("confiscatedItems", confiscatedList);
 
         return nbt;
     }
 
     /**
      * 从NBT反序列化
-     *
-     * @param nbt NBT数据
+     * Deserialize from NBT
      */
-    @Override
-    public void deserializeNBT(NBTTagCompound nbt) {
+    public void deserializeNBT(CompoundTag nbt) {
         if (nbt == null) {
             return;
         }
 
-        // 反序列化卡片
-        this.oneCard = new ItemStack(nbt.getCompoundTag("oneCard"));
-        this.twoCard = new ItemStack(nbt.getCompoundTag("twoCard"));
-        this.threeCard = new ItemStack(nbt.getCompoundTag("threeCard"));
+        this.oneCard = ItemStack.of(nbt.getCompound("oneCard"));
+        this.twoCard = ItemStack.of(nbt.getCompound("twoCard"));
+        this.threeCard = ItemStack.of(nbt.getCompound("threeCard"));
 
-        // 反序列化谜语和答案
-        this.oneRiddle = nbt.getInteger("oneRiddle");
-        this.twoRiddle = nbt.getInteger("twoRiddle");
-        this.threeRiddle = nbt.getInteger("threeRiddle");
-        this.oneAnswer = nbt.getInteger("oneAnswer");
-        this.twoAnswer = nbt.getInteger("twoAnswer");
-        this.threeAnswer = nbt.getInteger("threeAnswer");
-
-        // 反序列化进度
-        this.unlockedCardStatus = nbt.getInteger("unlockedCardStatus");
-        this.decryptionProgress = nbt.getInteger("decryptionProgress");
-
-        // 反序列化等级相关
-        this.kuvaLevel = nbt.getInteger("kuvaLevel");
-        this.minimumLevelWeapon = nbt.getInteger("minimumLevelWeapon");
-        this.maximumLevelWeapon = nbt.getInteger("maximumLevelWeapon");
+        this.oneRiddle = nbt.getInt("oneRiddle");
+        this.twoRiddle = nbt.getInt("twoRiddle");
+        this.threeRiddle = nbt.getInt("threeRiddle");
+        this.oneAnswer = nbt.getInt("oneAnswer");
+        this.twoAnswer = nbt.getInt("twoAnswer");
+        this.threeAnswer = nbt.getInt("threeAnswer");
+        this.unlockedCardStatus = nbt.getInt("unlockedCardStatus");
+        this.decryptionProgress = nbt.getInt("decryptionProgress");
+        this.kuvaLevel = nbt.getInt("kuvaLevel");
+        this.minimumLevelWeapon = nbt.getInt("minimumLevelWeapon");
+        this.maximumLevelWeapon = nbt.getInt("maximumLevelWeapon");
 
         // 反序列化没收物品列表
+        // Deserialize confiscated items list
         this.confiscatedItems = new ArrayList<>();
-        if (nbt.hasKey("confiscatedItems", Constants.NBT.TAG_LIST)) {
-            NBTTagList confiscatedList = nbt.getTagList("confiscatedItems", Constants.NBT.TAG_COMPOUND);
-            for (int i = 0; i < confiscatedList.tagCount(); i++) {
-                ItemStack item = new ItemStack(confiscatedList.getCompoundTagAt(i));
+        if (nbt.contains("confiscatedItems", Tag.TAG_LIST)) {
+            ListTag confiscatedList = nbt.getList("confiscatedItems", Tag.TAG_COMPOUND);
+            for (int i = 0; i < confiscatedList.size(); i++) {
+                ItemStack item = ItemStack.of(confiscatedList.getCompound(i));
                 if (!item.isEmpty()) {
                     confiscatedItems.add(item);
                 }
             }
+        }
+    }
+
+    // ==================== Provider内部类 / Provider Inner Class ====================
+
+    /**
+     * Capability Provider
+     */
+    public static class Provider implements ICapabilityProvider, INBTSerializable<CompoundTag> {
+
+        private final RequiemCard instance = new RequiemCard();
+        private final LazyOptional<RequiemCard> optional = LazyOptional.of(() -> instance);
+
+        @NotNull
+        @Override
+        public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+            return CapabilityRegistryHandler.REQUIEM_CARD.orEmpty(cap, optional);
+        }
+
+        @Override
+        public CompoundTag serializeNBT() {
+            return instance.serializeNBT();
+        }
+
+        @Override
+        public void deserializeNBT(CompoundTag nbt) {
+            instance.deserializeNBT(nbt);
+        }
+
+        /**
+         * 使LazyOptional失效
+         * Invalidate LazyOptional
+         */
+        public void invalidate() {
+            optional.invalidate();
         }
     }
 }

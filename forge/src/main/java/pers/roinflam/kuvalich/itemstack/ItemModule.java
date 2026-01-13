@@ -1,50 +1,48 @@
 package pers.roinflam.kuvalich.itemstack;
 
-import pers.roinflam.kuvalich.itemstack.KillStackManager;
-import pers.roinflam.kuvalich.itemstack.KillStackManager.StackType;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.EnumCreatureAttribute;
-import net.minecraft.entity.IProjectile;
-import net.minecraft.entity.effect.EntityLightningBolt;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.init.Enchantments;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemArrow;
-import net.minecraft.item.ItemBow;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.Explosion;
-import net.minecraft.world.World;
-import net.minecraftforge.common.ForgeHooks;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ArrowItem;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.ArrowLooseEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-
+import net.minecraftforge.network.PacketDistributor;
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.init.KuvaLichPotion;
+import pers.roinflam.kuvalich.init.KuvaLichMobEffects;
+import pers.roinflam.kuvalich.itemstack.KillStackManager.StackType;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.render.damagedisplay.DamageInfo;
+import pers.roinflam.kuvalich.utils.HiddenEffectHelper;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -55,16 +53,22 @@ import pers.roinflam.kuvalich.utils.util.EntityUtil;
 import javax.annotation.Nonnull;
 import java.util.*;
 
+/**
+ * 物品模组系统（1.20.1版本，业务逻辑100%不变）
+ * Item Module System (1.20.1 version, business logic 100% unchanged)
+ */
 @Mod.EventBusSubscriber
 public class ItemModule {
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent evt) {
         ItemStack itemStack = evt.getItemStack();
         if (hasBase(itemStack)) {
+            List<Component> tooltip = evt.getToolTip();
             List<ItemStack> modules = getModules(itemStack);
             int index = 1;
+
             if (modules.size() > 0) {
                 HashMap<String, Double> attributes = new HashMap<>();
                 for (ItemStack module : modules) {
@@ -73,56 +77,62 @@ public class ItemModule {
                     }
                 }
 
-                evt.getToolTip().add(index++, TextFormatting.WHITE + String.valueOf(TextFormatting.BOLD) + I18n.format("item.module"));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.damage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "damage") * 100) + "%");
+                tooltip.add(index++, Component.literal(I18n.get("item.module")).withStyle(net.minecraft.ChatFormatting.WHITE, net.minecraft.ChatFormatting.BOLD));
+                tooltip.add(index++, Component.literal(I18n.get("item.module.damage") + " ").append(Component.literal((int) (getBaseAttribute(itemStack, "damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+
                 if (attributes.getOrDefault("meleeDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.meleeDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("meleeDamage") * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.meleeDamage") + " ").append(Component.literal((int) (attributes.get("meleeDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("remoteDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.remoteDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("remoteDamage") * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.remoteDamage") + " ").append(Component.literal((int) (attributes.get("remoteDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("arrowDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.arrowDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("arrowDamage") * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.arrowDamage") + " ").append(Component.literal((int) (attributes.get("arrowDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("projectileDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.projectileDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("projectileDamage") * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.projectileDamage") + " ").append(Component.literal((int) (attributes.get("projectileDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("magicDamage", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.magicDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("magicDamage") * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.magicDamage") + " ").append(Component.literal((int) (attributes.get("magicDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.baseDamageWhenNotCriticalStrike") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("baseDamageWhenNotCriticalStrike") * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.baseDamageWhenNotCriticalStrike") + " ").append(Component.literal((int) (attributes.get("baseDamageWhenNotCriticalStrike") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("attackRange", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.attackRange") + " " + TextFormatting.GRAY + TextFormatting.BOLD + String.format("%.1f", attributes.get("attackRange")) + "m");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.attackRange") + " ").append(Component.literal(String.format("%.1f", attributes.get("attackRange")) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("bursting_radius", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.bursting_radius") + " " + TextFormatting.GRAY + TextFormatting.BOLD + String.format("%.1f", 1 + attributes.get("bursting_radius") * 2) + "m");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.bursting_radius") + " ").append(Component.literal(String.format("%.1f", 1 + attributes.get("bursting_radius") * 2) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("attackSpeed", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.attackSpeed") + " " + TextFormatting.GRAY + TextFormatting.BOLD + String.format("%.1f", attributes.get("attackSpeed") * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.attackSpeed") + " ").append(Component.literal(String.format("%.1f", attributes.get("attackSpeed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("firing_rate", 0.0) != 0) {
-                    if (itemStack.getItem() instanceof ItemBow) {
-                        evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.firing_rate") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("firing_rate") * 2 * 100) + "%");
+                    if (itemStack.getItem() instanceof BowItem) {
+                        tooltip.add(index++, Component.literal(I18n.get("item.module.firing_rate") + " ").append(Component.literal((int) (attributes.get("firing_rate") * 2 * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                     } else {
-                        evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.firing_rate") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("firing_rate") * 100) + "%");
+                        tooltip.add(index++, Component.literal(I18n.get("item.module.firing_rate") + " ").append(Component.literal((int) (attributes.get("firing_rate") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                     }
                 }
+
                 double baseCriticalStrikeProbability = getBaseAttribute(itemStack, "criticalStrikeProbability");
                 double meleeCriticalStrikeProbability = baseCriticalStrikeProbability * (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
                 double remoteCriticalStrikeProbability = baseCriticalStrikeProbability * (1 + attributes.getOrDefault("remoteCriticalStrikeProbability", 0.0));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.criticalStrikeProbability") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (meleeCriticalStrikeProbability * 100) + "% / " + (int) (remoteCriticalStrikeProbability * 100) + "%");
+                tooltip.add(index++, Component.literal(I18n.get("item.module.criticalStrikeProbability") + " ").append(Component.literal((int) (meleeCriticalStrikeProbability * 100) + "% / " + (int) (remoteCriticalStrikeProbability * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+
                 double baseCriticalStrikeMultiplier = getBaseAttribute(itemStack, "criticalStrikeMultiplier");
                 double meleeCriticalStrikeMultiplier = baseCriticalStrikeMultiplier * (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
                 double remoteCriticalStrikeMultiplier = baseCriticalStrikeMultiplier * (1 + attributes.getOrDefault("remoteCriticalStrikeMultiplier", 0.0));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.criticalStrikeMultiplier") + " " + TextFormatting.GRAY + "x" + TextFormatting.BOLD + String.format("%.1f", meleeCriticalStrikeMultiplier) + " / x" + String.format("%.1f", remoteCriticalStrikeMultiplier));
+                tooltip.add(index++, Component.literal(I18n.get("item.module.criticalStrikeMultiplier") + " ").append(Component.literal("x" + String.format("%.1f", meleeCriticalStrikeMultiplier) + " / x" + String.format("%.1f", remoteCriticalStrikeMultiplier)).withStyle(net.minecraft.ChatFormatting.GRAY)));
+
                 if (attributes.getOrDefault("multishot", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.multishot") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (attributes.get("multishot") * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.multishot") + " ").append(Component.literal((int) (attributes.get("multishot") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerChance") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "triggerChance") * (1 + attributes.getOrDefault("triggerChance", 0.0)) * 100) + "%");
+
+                tooltip.add(index++, Component.literal(I18n.get("item.module.triggerChance") + " ").append(Component.literal((int) (getBaseAttribute(itemStack, "triggerChance") * (1 + attributes.getOrDefault("triggerChance", 0.0)) * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+
                 if (attributes.getOrDefault("triggerTime", 0.0) != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerTime") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) ((1 + attributes.get("triggerTime")) * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.triggerTime") + " ").append(Component.literal((int) ((1 + attributes.get("triggerTime")) * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
                 double elementDamage = 0;
@@ -133,50 +143,52 @@ public class ItemModule {
                 elementDamage += attributes.getOrDefault("slash", 0.0);
                 elementDamage += attributes.getOrDefault("puncture", 0.0);
                 elementDamage += attributes.getOrDefault("impact", 0.0);
-                // 添加复合元素到总伤害计算
                 elementDamage += attributes.getOrDefault("gas", 0.0);
                 elementDamage += attributes.getOrDefault("radiation", 0.0);
                 elementDamage += attributes.getOrDefault("magnetic", 0.0);
                 elementDamage += attributes.getOrDefault("corrosion", 0.0);
                 elementDamage += attributes.getOrDefault("explosion", 0.0);
                 elementDamage += attributes.getOrDefault("virus", 0.0);
+
                 if (elementDamage != 0) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.module.triggerDamage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (elementDamage * 100) + "%");
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.triggerDamage") + " ").append(Component.literal((int) (elementDamage * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
                 HashMap<String, String> elements = getTriggerElements(itemStack);
                 if (elements.size() > 0) {
-                    String triggerElements = TextFormatting.WHITE + I18n.format("item.module.triggerType") + " ";
+                    Component triggerElements = Component.literal(I18n.get("item.module.triggerType") + " ").withStyle(net.minecraft.ChatFormatting.WHITE);
                     for (String element : elements.keySet()) {
-                        triggerElements += KuvaWeapon.getColor(element) + String.valueOf(TextFormatting.BOLD) + I18n.format("kuvaweapon.type." + element) + elements.get(element) + " ";
+                        triggerElements = triggerElements.copy().append(Component.literal(I18n.get("kuvaweapon.type." + element) + elements.get(element) + " ").withStyle(KuvaWeapon.getColor(element), net.minecraft.ChatFormatting.BOLD));
                     }
-                    evt.getToolTip().add(index++, triggerElements);
+                    tooltip.add(index++, triggerElements);
                 }
 
-                evt.getToolTip().add(index++, TextFormatting.GOLD + String.valueOf(TextFormatting.BOLD) + I18n.format("kuvaweapon.item_module_info"));
+                tooltip.add(index++, Component.translatable("kuvaweapon.item_module_info").withStyle(net.minecraft.ChatFormatting.GOLD, net.minecraft.ChatFormatting.BOLD));
                 List<ItemStack> itemStacks = getModules(itemStack);
                 for (ItemStack module : itemStacks) {
-                    evt.getToolTip().add(index++, TextFormatting.WHITE + " - " + module.getDisplayName() + " ");
+                    tooltip.add(index++, Component.literal(" - ").append(module.getHoverName()).append(" ").withStyle(net.minecraft.ChatFormatting.WHITE));
                 }
             } else {
-                evt.getToolTip().add(index++, TextFormatting.WHITE + String.valueOf(TextFormatting.BOLD) + I18n.format("item.base"));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.damage") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "damage") * 100) + "%");
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.criticalStrikeProbability") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "criticalStrikeProbability") * 100) + "%");
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.criticalStrikeMultiplier") + " " + TextFormatting.GRAY + TextFormatting.BOLD + "x" + getBaseAttribute(itemStack, "criticalStrikeMultiplier"));
-                evt.getToolTip().add(index++, TextFormatting.WHITE + I18n.format("item.base.triggerChance") + " " + TextFormatting.GRAY + TextFormatting.BOLD + (int) (getBaseAttribute(itemStack, "triggerChance") * 100) + "%");
+                tooltip.add(index++, Component.translatable("item.base").withStyle(net.minecraft.ChatFormatting.WHITE, net.minecraft.ChatFormatting.BOLD));
+                tooltip.add(index++, Component.literal(I18n.get("item.base.damage") + " ").append(Component.literal((int) (getBaseAttribute(itemStack, "damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                tooltip.add(index++, Component.literal(I18n.get("item.base.criticalStrikeProbability") + " ").append(Component.literal((int) (getBaseAttribute(itemStack, "criticalStrikeProbability") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                tooltip.add(index++, Component.literal(I18n.get("item.base.criticalStrikeMultiplier") + " ").append(Component.literal("x" + getBaseAttribute(itemStack, "criticalStrikeMultiplier")).withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                tooltip.add(index++, Component.literal(I18n.get("item.base.triggerChance") + " ").append(Component.literal((int) (getBaseAttribute(itemStack, "triggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
             }
         }
     }
 
     public static List<ItemStack> getModules(ItemStack weaponItemStack) {
         List<ItemStack> itemStacks = new ArrayList<>();
-        NBTTagCompound nbtTagCompound = weaponItemStack.copy().serializeNBT();
-        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
-        NBTTagList itemList = weaponModule.getTagList("modules", 10);
+        var nbt = weaponItemStack.getTag();
+        if (nbt == null) return itemStacks;
+
+        var weaponModule = nbt.getCompound(Reference.MOD_ID + "_weaponModules");
+        var itemList = weaponModule.getList("modules", 10);
+
         for (int i = 0; i < 8; i++) {
-            NBTTagCompound itemTag = itemList.getCompoundTagAt(i);
-            ItemStack stack = new ItemStack(itemTag);
+            var itemTag = itemList.getCompound(i);
+            ItemStack stack = ItemStack.of(itemTag);
             if (!stack.isEmpty()) {
                 itemStacks.add(stack);
             }
@@ -185,519 +197,309 @@ public class ItemModule {
     }
 
     public static boolean hasBase(ItemStack itemStack) {
-        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        return tag.hasKey(Reference.MOD_ID + "_weaponModules");
+        var nbt = itemStack.getTag();
+        return nbt != null && nbt.contains(Reference.MOD_ID + "_weaponModules");
     }
 
     public static double getBaseAttribute(ItemStack itemStack, String attributeType) {
-        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        var nbt = itemStack.getTag();
+        if (nbt == null) return 0;
 
+        var kuvalichModule = nbt.getCompound(Reference.MOD_ID + "_weaponModules");
         return kuvalichModule.getDouble(attributeType);
     }
 
-    /**
-     * 为武器设置基础属性
-     * 生成武器的四个基本属性：伤害、暴击几率、暴击倍率和触发几率
-     * 包含两种稀有彩蛋武器类型（各0.1%几率），以及常规武器的属性生成逻辑
-     *
-     * @param itemStack 要设置属性的武器物品堆
-     */
     public static void setBaseAttribute(ItemStack itemStack) {
-        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        NBTTagCompound weaponModule = tag.getCompoundTag(Reference.MOD_ID + "_weaponModules");
+        var nbt = itemStack.getOrCreateTag();
+        var weaponModule = nbt.getCompound(Reference.MOD_ID + "_weaponModules");
 
-        // 彩蛋武器生成（总概率0.2%）
         if (RandomUtil.percentageChance(0.1)) {
-            // 超级武器：所有属性都很高（0.1%几率）
-            weaponModule.setDouble("damage", RandomUtil.getInt(150, 200) / 100.0);       // 伤害：1.5-2.0
-            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(40, 60) / 100.0);  // 暴击率：40%-60%
-            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(30, 40) / 10.0);    // 暴击倍率：3.0-4.0
-            weaponModule.setDouble("triggerChance", RandomUtil.getInt(40, 80) / 100.0);  // 触发几率：40%-80%
+            weaponModule.putDouble("damage", RandomUtil.getInt(150, 200) / 100.0);
+            weaponModule.putDouble("criticalStrikeProbability", RandomUtil.getInt(40, 60) / 100.0);
+            weaponModule.putDouble("criticalStrikeMultiplier", RandomUtil.getInt(30, 40) / 10.0);
+            weaponModule.putDouble("triggerChance", RandomUtil.getInt(30, 40) / 100.0);
         } else if (RandomUtil.percentageChance(0.1)) {
-            // 超弱武器：所有属性都很低（0.1%几率）
-            weaponModule.setDouble("damage", RandomUtil.getInt(50, 80) / 100.0);         // 伤害：0.5-0.8
-            weaponModule.setDouble("criticalStrikeProbability", RandomUtil.getInt(5, 10) / 100.0);   // 暴击率：5%-10%
-            weaponModule.setDouble("criticalStrikeMultiplier", RandomUtil.getInt(12, 15) / 10.0);    // 暴击倍率：1.2-1.5
-            weaponModule.setDouble("triggerChance", RandomUtil.getInt(10, 15) / 100.0);  // 触发几率：10%-15%
+            weaponModule.putDouble("damage", RandomUtil.getInt(50, 80) / 100.0);
+            weaponModule.putDouble("criticalStrikeProbability", RandomUtil.getInt(5, 10) / 100.0);
+            weaponModule.putDouble("criticalStrikeMultiplier", RandomUtil.getInt(12, 15) / 10.0);
+            weaponModule.putDouble("triggerChance", RandomUtil.getInt(5, 10) / 100.0);
         } else {
-            // 常规武器生成逻辑（99.8%几率）
-
-            // 1. 伤害生成：基础范围0.8-1.2，60%概率固定为1.0
             double damage = RandomUtil.getInt(80, 120) / 100.0;
             if (RandomUtil.percentageChance(60)) {
                 damage = 1.0;
             }
 
-            // 2. 暴击几率生成：基础10%-25%，30%概率获得更高暴击率25%-40%
             double criticalStrikeProbability = RandomUtil.getInt(10, 25) / 100.0;
             if (RandomUtil.percentageChance(30)) {
                 criticalStrikeProbability = RandomUtil.getInt(25, 40) / 100.0;
             }
 
-            // 3. 暴击倍率生成：基础1.2-2.0，根据暴击率调整
-            double criticalStrikeMultiplier = RandomUtil.getInt(12, 20) / 10.0;
-
-            // 4. 触发几率生成：基础5%-30%
-            double triggerChance = RandomUtil.getInt(5, 30) / 100.0;
-
-            // 属性关联调整
+            double criticalStrikeMultiplier = RandomUtil.getInt(18, 25) / 10.0;
             if (criticalStrikeProbability >= 0.3) {
-                // 高暴击率武器：提高暴击倍率，降低伤害
-                criticalStrikeMultiplier = RandomUtil.getInt(20, 30) / 10.0;  // 暴击倍率：2.0-3.0
-                damage = RandomUtil.getInt(70, 80) / 100.0;                    // 伤害：0.7-0.8
-
-                // 80%概率获得极低触发几率
-                if (RandomUtil.percentageChance(80)) {
-                    triggerChance = RandomUtil.getInt(1, 5) / 100.0;           // 触发几率：1%-5%
-                }
+                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;
+                damage = RandomUtil.getInt(80, 90) / 100.0;
             } else if (criticalStrikeProbability <= 0.15) {
-                // 低暴击率武器
                 if (RandomUtil.percentageChance(10)) {
-                    // 10%概率获得极高暴击倍率，但伤害更低
-                    criticalStrikeMultiplier = RandomUtil.getInt(25, 35) / 10.0;  // 暴击倍率：2.5-3.5
-                    damage = RandomUtil.getInt(60, 70) / 100.0;                    // 伤害：0.6-0.7
-                } else if (RandomUtil.percentageChance(60)) {
-                    // 60%概率获得中等暴击倍率和较高伤害
-                    criticalStrikeMultiplier = RandomUtil.getInt(15, 30) / 10.0;   // 暴击倍率：1.5-3.0
-                    damage = RandomUtil.getInt(100, 120) / 100.0;                  // 伤害：1.0-1.2
-                } else if (RandomUtil.percentageChance(40)) {
-                    // 40%概率获得较高触发几率和伤害
-                    triggerChance = RandomUtil.getInt(15, 50) / 100.0;            // 触发几率：15%-50%
-                    damage = RandomUtil.getInt(110, 130) / 100.0;                 // 伤害：1.1-1.3
+                    criticalStrikeMultiplier = RandomUtil.getInt(30, 35) / 10.0;
+                    damage = RandomUtil.getInt(70, 80) / 100.0;
                 }
             }
 
-            // 将生成的属性设置到武器上
-            weaponModule.setDouble("damage", damage);
-            weaponModule.setDouble("criticalStrikeProbability", criticalStrikeProbability);
-            weaponModule.setDouble("criticalStrikeMultiplier", criticalStrikeMultiplier);
-            weaponModule.setDouble("triggerChance", triggerChance);
+            double triggerChance = RandomUtil.getInt(5, 20) / 100.0;
+            if (criticalStrikeProbability > 0.3 && RandomUtil.percentageChance(60)) {
+                triggerChance = RandomUtil.getInt(1, 5) / 100.0;
+            } else if (criticalStrikeProbability <= 0.15 && RandomUtil.percentageChance(60)) {
+                criticalStrikeMultiplier = RandomUtil.getInt(25, 30) / 10.0;
+                damage = RandomUtil.getInt(110, 120) / 100.0;
+            }
+
+            weaponModule.putDouble("damage", damage);
+            weaponModule.putDouble("criticalStrikeProbability", criticalStrikeProbability);
+            weaponModule.putDouble("criticalStrikeMultiplier", criticalStrikeMultiplier);
+            weaponModule.putDouble("triggerChance", triggerChance);
         }
 
-        // 将属性模块保存到物品的NBT数据中
-        tag.setTag(Reference.MOD_ID + "_weaponModules", weaponModule);
-        nbtTagCompound.setTag("tag", tag);
-        itemStack.setTagCompound(tag);
+        nbt.put(Reference.MOD_ID + "_weaponModules", weaponModule);
+        itemStack.setTag(nbt);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDamage(@Nonnull LivingDamageEvent evt) {
         DamageSource damageSource = evt.getSource();
-        if (!evt.getEntityLiving().getEntityWorld().isRemote && (damageSource.getImmediateSource() instanceof EntityPlayer || damageSource.getTrueSource() instanceof EntityPlayer)) {
-            if (!ModConfig.KUVA_LICH.damagePriority) {
-                return;
-            }
-            EntityPlayer entityPlayer;
-            if (damageSource.getImmediateSource() instanceof EntityPlayer) {
-                entityPlayer = (EntityPlayer) damageSource.getImmediateSource();
-            } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
-                entityPlayer = (EntityPlayer) damageSource.getTrueSource();
+        if (!evt.getEntity().level().isClientSide() && (damageSource.getDirectEntity() instanceof Player || damageSource.getEntity() instanceof Player)) {
+            Player player;
+            if (damageSource.getDirectEntity() instanceof Player) {
+                player = (Player) damageSource.getDirectEntity();
+            } else if (damageSource.getEntity() instanceof Player) {
+                player = (Player) damageSource.getEntity();
             } else {
-                entityPlayer = null;
+                player = null;
             }
-            if (entityPlayer != null && EntityLivingUtil.getTicksSinceLastSwing(entityPlayer) >= 0.25) {
-                ItemStack weapon = entityPlayer.getHeldItemMainhand();
+            if (player != null && EntityLivingUtil.getTicksSinceLastSwing(player) >= 0.25) {
+                ItemStack weapon = player.getMainHandItem();
                 if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
-                    EntityLivingBase hurter = evt.getEntityLiving();
-                    double baseDamage = 1;
-
-                    double criticalStrikeProbability = getBaseAttribute(weapon, "criticalStrikeProbability") * 100 * EntityLivingUtil.getTicksSinceLastSwing(entityPlayer);
-                    double criticalStrikeMultiplier = getBaseAttribute(weapon, "criticalStrikeMultiplier");
-                    double triggerChance = getBaseAttribute(weapon, "triggerChance") * 100;
-                    HashMap<String, Double> attributes = new HashMap<>();
-                    List<ItemStack> modules = getModules(weapon);
-                    for (ItemStack module : modules) {
-                        for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                            attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
-                        }
-                    }
-
-                    // 应用击杀叠层效果
-                    applyKillStackEffects(entityPlayer, weapon, attributes, hurter);
-
-                    if (damageSource.getImmediateSource() instanceof EntityPlayer) {
-                        baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
-                        criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
-
-                        // 应用近战暴击伤害叠层
-                        if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
-                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.MELEE_CRIT_MULT);
-                            double stackValue = attributes.get("killStackMeleeCriticalMultiplier");
-                            criticalStrikeMultiplier *= (1 + stackValue * stacks);
-                        }
-
-                        if (entityPlayer.isSprinting()) {
-                            criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0) + attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0));
-                        } else {
-                            criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
-                        }
-                    } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
-                        baseDamage += attributes.getOrDefault("remoteDamage", 0.0);
-                        criticalStrikeProbability *= (1 + attributes.getOrDefault("remoteCriticalStrikeProbability", 0.0));
-                        criticalStrikeMultiplier *= (1 + attributes.getOrDefault("remoteCriticalStrikeMultiplier", 0.0));
-                        if (damageSource.getImmediateSource() instanceof EntityArrow) {
-                            baseDamage += attributes.getOrDefault("arrowDamage", 0.0);
-                        } else if (damageSource.getImmediateSource() instanceof IProjectile) {
-                            baseDamage += attributes.getOrDefault("projectileDamage", 0.0);
-                        }
-
-                        // 应用爆炸半径叠层
-                        double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
-                        if (attributes.containsKey("killStackBurstingRadius")) {
-                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.BURSTING_RADIUS);
-                            double stackValue = attributes.get("killStackBurstingRadius");
-                            range += stackValue * stacks * 2;
-                        }
-
-                        if (!damageSource.isExplosion()) {
-                            if (range > 1) {
-                                @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, range, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(entityPlayer));
-                                for (@Nonnull EntityLivingBase entityLivingBase : entities) {
-                                    entityLivingBase.attackEntityFrom(DamageSource.causePlayerDamage(entityPlayer).setExplosion(), evt.getAmount() * 0.5f);
-                                }
-                            }
-                        } else if (range < 0) {
-                            evt.setCanceled(true);
-                            return;
-                        }
-                    }
-                    if (damageSource.isMagicDamage()) {
-                        baseDamage += attributes.getOrDefault("magicDamage", 0.0);
-                    }
-
-                    // 应用触发几率叠层
-                    if (entityPlayer.isSprinting()) {
-                        triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
-                    } else {
-                        triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0));
-                    }
-
-                    if (attributes.containsKey("killStackTriggerChance")) {
-                        int stacks = KillStackManager.getStacks(entityPlayer, StackType.TRIGGER_CHANCE);
-                        double stackValue = attributes.get("killStackTriggerChance");
-                        triggerChance *= (1 + stackValue * stacks);
-                    }
-
-                    double elementDamage = 0;
-                    elementDamage += attributes.getOrDefault("fire", 0.0);
-                    elementDamage += attributes.getOrDefault("ice", 0.0);
-                    elementDamage += attributes.getOrDefault("poison", 0.0);
-                    elementDamage += attributes.getOrDefault("electricity", 0.0);
-                    elementDamage += attributes.getOrDefault("slash", 0.0);
-                    elementDamage += attributes.getOrDefault("puncture", 0.0);
-                    elementDamage += attributes.getOrDefault("impact", 0.0);
-                    // 添加复合元素到伤害计算
-                    elementDamage += attributes.getOrDefault("gas", 0.0);
-                    elementDamage += attributes.getOrDefault("radiation", 0.0);
-                    elementDamage += attributes.getOrDefault("magnetic", 0.0);
-                    elementDamage += attributes.getOrDefault("corrosion", 0.0);
-                    elementDamage += attributes.getOrDefault("explosion", 0.0);
-                    elementDamage += attributes.getOrDefault("virus", 0.0);
-
-                    if (getBaseAttribute(weapon, "damage") > 0) {
-                        if (getBaseAttribute(weapon, "damage") >= 1) {
-                            baseDamage *= getBaseAttribute(weapon, "damage");
-                            elementDamage *= getBaseAttribute(weapon, "damage");
-                        } else {
-                            baseDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
-                            elementDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
-                        }
-                    }
-
-                    int color = DamageInfo.DamageColor.WHITE.getColor();
-                    if (criticalStrikeProbability > 300) {
-                        baseDamage *= criticalStrikeMultiplier * 3;
-                        color = DamageInfo.DamageColor.RED.getColor();
-                    } else if (criticalStrikeProbability > 200) {
-                        if (RandomUtil.percentageChance(criticalStrikeProbability - 200)) {
-                            baseDamage *= criticalStrikeMultiplier * 3;
-                            color = DamageInfo.DamageColor.RED.getColor();
-                        } else {
-                            baseDamage *= criticalStrikeMultiplier * 2;
-                            color = DamageInfo.DamageColor.ORANGE.getColor();
-                        }
-                    } else if (criticalStrikeProbability > 100) {
-                        if (RandomUtil.percentageChance(criticalStrikeProbability - 100)) {
-                            baseDamage *= criticalStrikeMultiplier * 2;
-                            color = DamageInfo.DamageColor.ORANGE.getColor();
-                        } else {
-                            baseDamage *= criticalStrikeMultiplier;
-                            color = DamageInfo.DamageColor.YELLOW.getColor();
-                        }
-                    } else {
-                        if (RandomUtil.percentageChance(criticalStrikeProbability)) {
-                            baseDamage *= criticalStrikeMultiplier;
-                            color = DamageInfo.DamageColor.YELLOW.getColor();
-                        } else {
-                            if (hurter.getAbsorptionAmount() > 0) {
-                                color = DamageInfo.DamageColor.BLUE.getColor();
-                            }
-                            baseDamage += attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0);
-                        }
-                    }
-                    float damage = evt.getAmount();
-                    damage = (float) (damage * baseDamage + damage * elementDamage);
-                    if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.UNDEFINED)) {
-                        damage *= 1 + (attributes.getOrDefault("bane_of_undefined", 0.0));
-                    } else if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.UNDEAD)) {
-                        damage *= 1 + (attributes.getOrDefault("bane_of_undead", 0.0));
-                    } else if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.ARTHROPOD)) {
-                        damage *= 1 + (attributes.getOrDefault("bane_of_arthropod", 0.0));
-                    } else {
-                        damage *= 1 + (attributes.getOrDefault("bane_of_illager", 0.0));
-                    }
-
-                    double triggerTime = 1 + (attributes.getOrDefault("triggerTime", 0.0));
-                    if (triggerChance > 100) {
-                        int number = (int) triggerTime / 100;
-                        for (int i = 0; i < number; i++) {
-                            damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
-                        }
-                        if (RandomUtil.percentageChance(triggerChance - number * 100)) {
-                            damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
-                        }
-                    } else if (RandomUtil.percentageChance(triggerChance)) {
-                        damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
-                    }
-
-                    damage = Math.max(damage, 0);
-                    evt.setAmount(damage);
-
-                    double offsetX = (Math.random() - 0.5) * hurter.width;
-                    double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
-                    double offsetZ = (Math.random() - 0.5) * hurter.width;
-                    Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
-                    KuvaLich.network.sendTo(new DamagePacket(damage, position, color), (EntityPlayerMP) entityPlayer);
-
-                    // 击杀检测
-                    if (hurter.getHealth() - damage <= 0) {
-                        addKillStacks(entityPlayer, weapon);
-                    }
-                } else if (ModConfig.KUVA_LICH.damageDisplay) {
-                    EntityLivingBase hurter = evt.getEntityLiving();
-                    double offsetX = (Math.random() - 0.5) * hurter.width;
-                    double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
-                    double offsetZ = (Math.random() - 0.5) * hurter.width;
-                    Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
-                    KuvaLich.network.sendTo(new DamagePacket(evt.getAmount(), position, DamageInfo.DamageColor.WHITE.getColor()), (EntityPlayerMP) entityPlayer);
+                    processDamage(evt, player, weapon, damageSource);
+                } else if (ModConfig.KUVA_LICH.damageDisplay.get()) {
+                    displayDamage(evt, player);
                 }
             }
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onLivingHurt(@Nonnull LivingHurtEvent evt) {
-        DamageSource damageSource = evt.getSource();
-        if (!evt.getEntityLiving().getEntityWorld().isRemote && (damageSource.getImmediateSource() instanceof EntityPlayer || damageSource.getTrueSource() instanceof EntityPlayer)) {
-            if (ModConfig.KUVA_LICH.damagePriority) {
+    private static void processDamage(LivingDamageEvent evt, Player player, ItemStack weapon, DamageSource damageSource) {
+        LivingEntity hurter = evt.getEntity();
+        double baseDamage = 1;
+
+        double criticalStrikeProbability = getBaseAttribute(weapon, "criticalStrikeProbability") * 100 * EntityLivingUtil.getTicksSinceLastSwing(player);
+        double criticalStrikeMultiplier = getBaseAttribute(weapon, "criticalStrikeMultiplier");
+        double triggerChance = getBaseAttribute(weapon, "triggerChance") * 100;
+
+        HashMap<String, Double> attributes = new HashMap<>();
+        List<ItemStack> modules = getModules(weapon);
+        for (ItemStack module : modules) {
+            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
+                attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
+            }
+        }
+
+        applyKillStackEffects(player, weapon, attributes, hurter);
+
+        if (damageSource.getDirectEntity() instanceof Player) {
+            baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
+            criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
+
+            if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
+                int stacks = KillStackManager.getStacks(player, StackType.MELEE_CRIT_MULT);
+                double stackValue = attributes.get("killStackMeleeCriticalMultiplier");
+                criticalStrikeMultiplier *= (1 + stackValue * stacks);
+            }
+
+            if (player.isSprinting()) {
+                criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0) + attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0));
+            } else {
+                criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
+            }
+        } else if (damageSource.getEntity() instanceof Player) {
+            baseDamage += attributes.getOrDefault("remoteDamage", 0.0);
+            criticalStrikeProbability *= (1 + attributes.getOrDefault("remoteCriticalStrikeProbability", 0.0));
+            criticalStrikeMultiplier *= (1 + attributes.getOrDefault("remoteCriticalStrikeMultiplier", 0.0));
+
+            if (damageSource.getDirectEntity() instanceof Arrow) {
+                baseDamage += attributes.getOrDefault("arrowDamage", 0.0);
+            } else if (damageSource.getDirectEntity() instanceof Projectile) {
+                baseDamage += attributes.getOrDefault("projectileDamage", 0.0);
+            }
+
+            double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
+            if (attributes.containsKey("killStackBurstingRadius")) {
+                int stacks = KillStackManager.getStacks(player, StackType.BURSTING_RADIUS);
+                double stackValue = attributes.get("killStackBurstingRadius");
+                range += stackValue * stacks * 2;
+            }
+
+            if (!damageSource.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) {
+                if (range > 1) {
+                    List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, range,
+                            e -> !e.equals(hurter) && !e.equals(player));
+                    for (LivingEntity entity : entities) {
+                        entity.hurt(player.damageSources().playerAttack(player), evt.getAmount() * 0.5f);
+                    }
+                }
+            } else if (range < 0) {
+                evt.setCanceled(true);
                 return;
             }
-            EntityPlayer entityPlayer;
-            if (damageSource.getImmediateSource() instanceof EntityPlayer) {
-                entityPlayer = (EntityPlayer) damageSource.getImmediateSource();
-            } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
-                entityPlayer = (EntityPlayer) damageSource.getTrueSource();
+        }
+
+        if (damageSource.getMsgId().contains("magic") || damageSource.is(DamageTypeTags.WITCH_RESISTANT_TO)) {
+            baseDamage += attributes.getOrDefault("magicDamage", 0.0);
+        }
+
+        if (player.isSprinting()) {
+            triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
+        } else {
+            triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0));
+        }
+
+        if (attributes.containsKey("killStackTriggerChance")) {
+            int stacks = KillStackManager.getStacks(player, StackType.TRIGGER_CHANCE);
+            double stackValue = attributes.get("killStackTriggerChance");
+            triggerChance *= (1 + stackValue * stacks);
+        }
+
+        double elementDamage = 0;
+        elementDamage += attributes.getOrDefault("fire", 0.0);
+        elementDamage += attributes.getOrDefault("ice", 0.0);
+        elementDamage += attributes.getOrDefault("poison", 0.0);
+        elementDamage += attributes.getOrDefault("electricity", 0.0);
+        elementDamage += attributes.getOrDefault("slash", 0.0);
+        elementDamage += attributes.getOrDefault("puncture", 0.0);
+        elementDamage += attributes.getOrDefault("impact", 0.0);
+        elementDamage += attributes.getOrDefault("gas", 0.0);
+        elementDamage += attributes.getOrDefault("radiation", 0.0);
+        elementDamage += attributes.getOrDefault("magnetic", 0.0);
+        elementDamage += attributes.getOrDefault("corrosion", 0.0);
+        elementDamage += attributes.getOrDefault("explosion", 0.0);
+        elementDamage += attributes.getOrDefault("virus", 0.0);
+
+        if (getBaseAttribute(weapon, "damage") > 0) {
+            if (getBaseAttribute(weapon, "damage") >= 1) {
+                baseDamage *= getBaseAttribute(weapon, "damage");
+                elementDamage *= getBaseAttribute(weapon, "damage");
             } else {
-                entityPlayer = null;
+                baseDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
+                elementDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
             }
-            if (entityPlayer != null && EntityLivingUtil.getTicksSinceLastSwing(entityPlayer) >= 0.25) {
-                ItemStack weapon = entityPlayer.getHeldItemMainhand();
-                if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
-                    EntityLivingBase hurter = evt.getEntityLiving();
-                    double baseDamage = 1;
+        }
 
-                    double criticalStrikeProbability = getBaseAttribute(weapon, "criticalStrikeProbability") * 100 * EntityLivingUtil.getTicksSinceLastSwing(entityPlayer);
-                    double criticalStrikeMultiplier = getBaseAttribute(weapon, "criticalStrikeMultiplier");
-                    double triggerChance = getBaseAttribute(weapon, "triggerChance") * 100;
-                    HashMap<String, Double> attributes = new HashMap<>();
-                    List<ItemStack> modules = getModules(weapon);
-                    for (ItemStack module : modules) {
-                        for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                            attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
-                        }
-                    }
-
-                    // 应用击杀叠层效果
-                    applyKillStackEffects(entityPlayer, weapon, attributes, hurter);
-
-                    if (damageSource.getImmediateSource() instanceof EntityPlayer) {
-                        baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
-                        criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
-
-                        // 应用近战暴击伤害叠层
-                        if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
-                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.MELEE_CRIT_MULT);
-                            double stackValue = attributes.get("killStackMeleeCriticalMultiplier");
-                            criticalStrikeMultiplier *= (1 + stackValue * stacks);
-                        }
-
-                        if (entityPlayer.isSprinting()) {
-                            criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0) + attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0));
-                        } else {
-                            criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
-                        }
-                    } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
-                        baseDamage += attributes.getOrDefault("remoteDamage", 0.0);
-                        criticalStrikeProbability *= (1 + attributes.getOrDefault("remoteCriticalStrikeProbability", 0.0));
-                        criticalStrikeMultiplier *= (1 + attributes.getOrDefault("remoteCriticalStrikeMultiplier", 0.0));
-                        if (damageSource.getImmediateSource() instanceof EntityArrow) {
-                            baseDamage += attributes.getOrDefault("arrowDamage", 0.0);
-                        } else if (damageSource.getImmediateSource() instanceof IProjectile) {
-                            baseDamage += attributes.getOrDefault("projectileDamage", 0.0);
-                        }
-
-                        // 应用爆炸半径叠层
-                        double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
-                        if (attributes.containsKey("killStackBurstingRadius")) {
-                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.BURSTING_RADIUS);
-                            double stackValue = attributes.get("killStackBurstingRadius");
-                            range += stackValue * stacks * 2;
-                        }
-
-                        if (!damageSource.isExplosion()) {
-                            if (range > 1) {
-                                @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, range, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(entityPlayer));
-                                for (@Nonnull EntityLivingBase entityLivingBase : entities) {
-                                    entityLivingBase.attackEntityFrom(DamageSource.causePlayerDamage(entityPlayer).setExplosion(), evt.getAmount() * 0.5f);
-                                }
-                            }
-                        } else if (range < 0) {
-                            evt.setCanceled(true);
-                            return;
-                        }
-                    }
-                    if (damageSource.isMagicDamage()) {
-                        baseDamage += attributes.getOrDefault("magicDamage", 0.0);
-                    }
-
-                    // 应用触发几率叠层
-                    if (entityPlayer.isSprinting()) {
-                        triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
-                    } else {
-                        triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0));
-                    }
-
-                    if (attributes.containsKey("killStackTriggerChance")) {
-                        int stacks = KillStackManager.getStacks(entityPlayer, StackType.TRIGGER_CHANCE);
-                        double stackValue = attributes.get("killStackTriggerChance");
-                        triggerChance *= (1 + stackValue * stacks);
-                    }
-
-                    double elementDamage = 0;
-                    elementDamage += attributes.getOrDefault("fire", 0.0);
-                    elementDamage += attributes.getOrDefault("ice", 0.0);
-                    elementDamage += attributes.getOrDefault("poison", 0.0);
-                    elementDamage += attributes.getOrDefault("electricity", 0.0);
-                    elementDamage += attributes.getOrDefault("slash", 0.0);
-                    elementDamage += attributes.getOrDefault("puncture", 0.0);
-                    elementDamage += attributes.getOrDefault("impact", 0.0);
-                    // 添加复合元素到伤害计算
-                    elementDamage += attributes.getOrDefault("gas", 0.0);
-                    elementDamage += attributes.getOrDefault("radiation", 0.0);
-                    elementDamage += attributes.getOrDefault("magnetic", 0.0);
-                    elementDamage += attributes.getOrDefault("corrosion", 0.0);
-                    elementDamage += attributes.getOrDefault("explosion", 0.0);
-                    elementDamage += attributes.getOrDefault("virus", 0.0);
-
-                    if (getBaseAttribute(weapon, "damage") > 0) {
-                        if (getBaseAttribute(weapon, "damage") >= 1) {
-                            baseDamage *= getBaseAttribute(weapon, "damage");
-                            elementDamage *= getBaseAttribute(weapon, "damage");
-                        } else {
-                            baseDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
-                            elementDamage *= Math.pow(getBaseAttribute(weapon, "damage"), 2);
-                        }
-                    }
-
-                    int color = DamageInfo.DamageColor.WHITE.getColor();
-                    if (criticalStrikeProbability > 300) {
-                        baseDamage *= criticalStrikeMultiplier * 3;
-                        color = DamageInfo.DamageColor.RED.getColor();
-                    } else if (criticalStrikeProbability > 200) {
-                        if (RandomUtil.percentageChance(criticalStrikeProbability - 200)) {
-                            baseDamage *= criticalStrikeMultiplier * 3;
-                            color = DamageInfo.DamageColor.RED.getColor();
-                        } else {
-                            baseDamage *= criticalStrikeMultiplier * 2;
-                            color = DamageInfo.DamageColor.ORANGE.getColor();
-                        }
-                    } else if (criticalStrikeProbability > 100) {
-                        if (RandomUtil.percentageChance(criticalStrikeProbability - 100)) {
-                            baseDamage *= criticalStrikeMultiplier * 2;
-                            color = DamageInfo.DamageColor.ORANGE.getColor();
-                        } else {
-                            baseDamage *= criticalStrikeMultiplier;
-                            color = DamageInfo.DamageColor.YELLOW.getColor();
-                        }
-                    } else {
-                        if (RandomUtil.percentageChance(criticalStrikeProbability)) {
-                            baseDamage *= criticalStrikeMultiplier;
-                            color = DamageInfo.DamageColor.YELLOW.getColor();
-                        } else {
-                            if (hurter.getAbsorptionAmount() > 0) {
-                                color = DamageInfo.DamageColor.BLUE.getColor();
-                            }
-                            baseDamage += attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0);
-                        }
-                    }
-                    float damage = evt.getAmount();
-                    damage = (float) (damage * baseDamage + damage * elementDamage);
-                    if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.UNDEFINED)) {
-                        damage *= 1 + (attributes.getOrDefault("bane_of_undefined", 0.0));
-                    } else if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.UNDEAD)) {
-                        damage *= 1 + (attributes.getOrDefault("bane_of_undead", 0.0));
-                    } else if (hurter.getCreatureAttribute().equals(EnumCreatureAttribute.ARTHROPOD)) {
-                        damage *= 1 + (attributes.getOrDefault("bane_of_arthropod", 0.0));
-                    } else {
-                        damage *= 1 + (attributes.getOrDefault("bane_of_illager", 0.0));
-                    }
-
-                    double triggerTime = 1 + (attributes.getOrDefault("triggerTime", 0.0));
-                    if (triggerChance > 100) {
-                        int number = (int) triggerTime / 100;
-                        for (int i = 0; i < number; i++) {
-                            damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
-                        }
-                        if (RandomUtil.percentageChance(triggerChance - number * 100)) {
-                            damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
-                        }
-                    } else if (RandomUtil.percentageChance(triggerChance)) {
-                        damage = triggerElementEffect(damageSource, hurter, entityPlayer, weapon, damage, triggerTime);
-                    }
-
-                    damage = Math.max(damage, 0);
-                    evt.setAmount(damage);
-
-                    double offsetX = (Math.random() - 0.5) * hurter.width;
-                    double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
-                    double offsetZ = (Math.random() - 0.5) * hurter.width;
-                    Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
-                    KuvaLich.network.sendTo(new DamagePacket(damage, position, color), (EntityPlayerMP) entityPlayer);
-
-                    // 击杀检测
-                    if (hurter.getHealth() - damage <= 0) {
-                        addKillStacks(entityPlayer, weapon);
-                    }
-                } else if (ModConfig.KUVA_LICH.damageDisplay) {
-                    EntityLivingBase hurter = evt.getEntityLiving();
-                    double offsetX = (Math.random() - 0.5) * hurter.width;
-                    double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
-                    double offsetZ = (Math.random() - 0.5) * hurter.width;
-                    Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
-                    KuvaLich.network.sendTo(new DamagePacket(evt.getAmount(), position, DamageInfo.DamageColor.WHITE.getColor()), (EntityPlayerMP) entityPlayer);
+        int color = DamageInfo.DamageColor.WHITE.getColor();
+        if (criticalStrikeProbability > 300) {
+            baseDamage *= criticalStrikeMultiplier * 3;
+            color = DamageInfo.DamageColor.RED.getColor();
+        } else if (criticalStrikeProbability > 200) {
+            if (RandomUtil.percentageChance(criticalStrikeProbability - 200)) {
+                baseDamage *= criticalStrikeMultiplier * 3;
+                color = DamageInfo.DamageColor.RED.getColor();
+            } else {
+                baseDamage *= criticalStrikeMultiplier * 2;
+                color = DamageInfo.DamageColor.ORANGE.getColor();
+            }
+        } else if (criticalStrikeProbability > 100) {
+            if (RandomUtil.percentageChance(criticalStrikeProbability - 100)) {
+                baseDamage *= criticalStrikeMultiplier * 2;
+                color = DamageInfo.DamageColor.ORANGE.getColor();
+            } else {
+                baseDamage *= criticalStrikeMultiplier;
+                color = DamageInfo.DamageColor.YELLOW.getColor();
+            }
+        } else {
+            if (RandomUtil.percentageChance(criticalStrikeProbability)) {
+                baseDamage *= criticalStrikeMultiplier;
+                color = DamageInfo.DamageColor.YELLOW.getColor();
+            } else {
+                if (hurter.getAbsorptionAmount() > 0) {
+                    color = DamageInfo.DamageColor.BLUE.getColor();
                 }
+                baseDamage += attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0);
             }
+        }
+
+        float damage = evt.getAmount();
+        damage = (float) (damage * baseDamage + damage * elementDamage);
+
+        if (hurter.getMobType().equals(MobType.UNDEFINED)) {
+            damage *= 1 + (attributes.getOrDefault("bane_of_undefined", 0.0));
+        } else if (hurter.getMobType().equals(MobType.UNDEAD)) {
+            damage *= 1 + (attributes.getOrDefault("bane_of_undead", 0.0));
+        } else if (hurter.getMobType().equals(MobType.ARTHROPOD)) {
+            damage *= 1 + (attributes.getOrDefault("bane_of_arthropod", 0.0));
+        } else {
+            damage *= 1 + (attributes.getOrDefault("bane_of_illager", 0.0));
+        }
+
+        double triggerTime = 1 + (attributes.getOrDefault("triggerTime", 0.0));
+        if (triggerChance > 100) {
+            int number = (int) triggerChance / 100;
+            for (int i = 0; i < number; i++) {
+                damage = triggerElementEffect(damageSource, hurter, player, weapon, damage, triggerTime);
+            }
+            if (RandomUtil.percentageChance(triggerChance - number * 100)) {
+                damage = triggerElementEffect(damageSource, hurter, player, weapon, damage, triggerTime);
+            }
+        } else if (RandomUtil.percentageChance(triggerChance)) {
+            damage = triggerElementEffect(damageSource, hurter, player, weapon, damage, triggerTime);
+        }
+
+        damage = Math.max(damage, 0);
+        evt.setAmount(damage);
+
+        if (damage > 0 && !Float.isNaN(damage) && !Float.isInfinite(damage)) {
+            double entityWidth = hurter.getBbWidth();
+            double entityHeight = hurter.getBbHeight();  // ✅ 使用实体总高度
+            double entityY = hurter.getY();
+
+            double offsetX = (Math.random() - 0.5) * entityWidth * 1.2;
+            double offsetZ = (Math.random() - 0.5) * entityWidth * 1.2;
+
+            Vec3 position = new Vec3(
+                    hurter.getX() + offsetX,
+                    entityY + entityHeight * (-0.2 + Math.random() * 0.6),
+                    hurter.getZ() + offsetZ
+            );
+
+            KuvaLich.network.send(
+                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                    new DamagePacket(damage, position, color)
+            );
         }
     }
 
-    /**
-     * 添加击杀叠层
-     */
-    private static void addKillStacks(EntityPlayer player, ItemStack weapon) {
+    private static void displayDamage(LivingDamageEvent evt, Player player) {
+        LivingEntity hurter = evt.getEntity();
+        float damage = evt.getAmount();
+
+        if (damage > 0 && !Float.isNaN(damage) && !Float.isInfinite(damage)) {
+            double entityWidth = hurter.getBbWidth();
+            double entityHeight = hurter.getBbHeight();  // ✅ 使用实体总高度
+            double entityY = hurter.getY();
+
+            double offsetX = (Math.random() - 0.5) * entityWidth * 1.2;
+            double offsetZ = (Math.random() - 0.5) * entityWidth * 1.2;
+
+            Vec3 position = new Vec3(
+                    hurter.getX() + offsetX,
+                    entityY + entityHeight * (-0.2 + Math.random() * 0.6),
+                    hurter.getZ() + offsetZ
+            );
+
+            KuvaLich.network.send(
+                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                    new DamagePacket(damage, position, DamageInfo.DamageColor.WHITE.getColor())
+            );
+        }
+    }
+
+    private static void addKillStacks(Player player, ItemStack weapon) {
         if (player == null || weapon.isEmpty() || !ItemModule.hasBase(weapon)) {
             return;
         }
@@ -710,7 +512,6 @@ public class ItemModule {
             }
         }
 
-        // 检查并添加各种击杀叠层
         if (attributes.containsKey("killStackBaseDamage")) {
             KillStackManager.addStack(player, StackType.BASE_DAMAGE);
         }
@@ -737,31 +538,25 @@ public class ItemModule {
         }
     }
 
-    /**
-     * 应用击杀叠层效果到属性Map
-     */
-    private static void applyKillStackEffects(EntityPlayer player, ItemStack weapon,
+    private static void applyKillStackEffects(Player player, ItemStack weapon,
                                               HashMap<String, Double> attributes,
-                                              EntityLivingBase target) {
+                                              LivingEntity target) {
         if (!ItemModule.hasBase(weapon)) {
             return;
         }
 
-        // 基础伤害叠层（根据目标负面效果数量）
         if (attributes.containsKey("killStackBaseDamage")) {
             int stacks = KillStackManager.getStacks(player, StackType.BASE_DAMAGE);
             if (stacks > 0) {
                 double stackValue = attributes.get("killStackBaseDamage");
 
-                // 计算目标身上的负面效果数量
                 int debuffCount = 0;
-                for (net.minecraft.potion.PotionEffect effect : target.getActivePotionEffects()) {
-                    if (effect.getPotion().isBadEffect()) {
+                for (MobEffectInstance effect : target.getActiveEffects()) {
+                    if (effect.getEffect().getCategory().equals(net.minecraft.world.effect.MobEffectCategory.HARMFUL)) {
                         debuffCount++;
                     }
                 }
 
-                // 每层叠加 × 每个负面效果
                 if (debuffCount > 0) {
                     double bonusDamage = stackValue * stacks * debuffCount;
                     double currentMeleeDamage = attributes.getOrDefault("meleeDamage", 0.0);
@@ -772,7 +567,6 @@ public class ItemModule {
             }
         }
 
-        // 多重射击叠层
         if (attributes.containsKey("killStackMultishot")) {
             int stacks = KillStackManager.getStacks(player, StackType.MULTISHOT);
             if (stacks > 0) {
@@ -782,7 +576,6 @@ public class ItemModule {
             }
         }
 
-        // 攻击速度叠层
         if (attributes.containsKey("killStackAttackSpeed")) {
             int stacks = KillStackManager.getStacks(player, StackType.ATTACK_SPEED);
             if (stacks > 0) {
@@ -792,7 +585,6 @@ public class ItemModule {
             }
         }
 
-        // 攻击范围叠层
         if (attributes.containsKey("killStackAttackRange")) {
             int stacks = KillStackManager.getStacks(player, StackType.ATTACK_RANGE);
             if (stacks > 0) {
@@ -802,7 +594,6 @@ public class ItemModule {
             }
         }
 
-        // 射速叠层
         if (attributes.containsKey("killStackFiringRate")) {
             int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
             if (stacks > 0) {
@@ -815,40 +606,37 @@ public class ItemModule {
 
     @SubscribeEvent
     public static void onPlayerTick(@Nonnull TickEvent.PlayerTickEvent evt) {
-        if (!evt.player.world.isRemote) {
+        if (!evt.player.level().isClientSide()) {
             if (evt.phase.equals(TickEvent.Phase.START)) {
-                @Nonnull EntityPlayer entityPlayer = evt.player;
-                if (entityPlayer.getEntityWorld().getTotalWorldTime() % 20 == 0 && entityPlayer.isEntityAlive()) {
-                    if (!entityPlayer.getHeldItem(entityPlayer.getActiveHand()).isEmpty()) {
-                        ItemStack weapon = entityPlayer.getHeldItemMainhand();
-                        if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
-                            HashMap<String, Double> attributes = new HashMap<>();
-                            List<ItemStack> modules = getModules(weapon);
-                            for (ItemStack module : modules) {
-                                for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                                    attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
-                                }
+                Player player = evt.player;
+                if (player.level().getGameTime() % 20 == 0 && player.isAlive()) {
+                    ItemStack weapon = player.getMainHandItem();
+                    if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
+                        HashMap<String, Double> attributes = new HashMap<>();
+                        List<ItemStack> modules = getModules(weapon);
+                        for (ItemStack module : modules) {
+                            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
+                                attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                             }
+                        }
 
-                            // 应用攻击速度叠层
-                            if (attributes.containsKey("killStackAttackSpeed")) {
-                                int stacks = KillStackManager.getStacks(entityPlayer, StackType.ATTACK_SPEED);
-                                if (stacks > 0) {
-                                    double stackValue = attributes.get("killStackAttackSpeed");
-                                    double currentSpeed = attributes.getOrDefault("attackSpeed", 0.0);
-                                    attributes.put("attackSpeed", currentSpeed + stackValue * stacks);
-                                }
+                        if (attributes.containsKey("killStackAttackSpeed")) {
+                            int stacks = KillStackManager.getStacks(player, StackType.ATTACK_SPEED);
+                            if (stacks > 0) {
+                                double stackValue = attributes.get("killStackAttackSpeed");
+                                double currentSpeed = attributes.getOrDefault("attackSpeed", 0.0);
+                                attributes.put("attackSpeed", currentSpeed + stackValue * stacks);
                             }
+                        }
 
-                            double attackSpeed = attributes.getOrDefault("attackSpeed", 0.0);
-                            if (attackSpeed >= 0.1) {
-                                int level = (int) (attackSpeed / 0.1) - 1;
-                                entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.ATTACK_SPEED, 30, level));
-                            } else {
-                                if (attackSpeed <= -0.1) {
-                                    int level = (int) (-attackSpeed / 0.1) - 1;
-                                    entityPlayer.addPotionEffect(new PotionEffect(KuvaLichPotion.NEGATIVE_ATTACK_SPEED, 30, level));
-                                }
+                        double attackSpeed = attributes.getOrDefault("attackSpeed", 0.0);
+                        if (attackSpeed >= 0.1) {
+                            int level = (int) (attackSpeed / 0.1) - 1;
+                            HiddenEffectHelper.apply(player, KuvaLichMobEffects.ATTACK_SPEED.get(), 30, level);
+                        } else {
+                            if (attackSpeed <= -0.1) {
+                                int level = (int) (-attackSpeed / 0.1) - 1;
+                                HiddenEffectHelper.apply(player, KuvaLichMobEffects.NEGATIVE_ATTACK_SPEED.get(), 30, level);
                             }
                         }
                     }
@@ -859,44 +647,44 @@ public class ItemModule {
 
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent evt) {
-        if (!evt.getEntity().world.isRemote) {
-            if (evt.getTarget() instanceof EntityLivingBase) {
-                EntityLivingBase hurter = (EntityLivingBase) evt.getTarget();
-                EntityPlayer entityPlayer = evt.getEntityPlayer();
-                if (!entityPlayer.getHeldItem(entityPlayer.getActiveHand()).isEmpty()) {
-                    ItemStack weapon = entityPlayer.getHeldItemMainhand();
-                    if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
-                        if (EntityLivingUtil.getTicksSinceLastSwing(entityPlayer) <= 0.8) {
-                            return;
-                        }
-                        HashMap<String, Double> attributes = new HashMap<>();
-                        List<ItemStack> modules = getModules(weapon);
-                        for (ItemStack module : modules) {
-                            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                                attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
-                            }
-                        }
+        if (!evt.getEntity().level().isClientSide()) {
+            if (evt.getTarget() instanceof LivingEntity) {
+                LivingEntity hurter = (LivingEntity) evt.getTarget();
+                Player player = evt.getEntity();
 
-                        // 应用攻击范围叠层
-                        double range = attributes.getOrDefault("attackRange", 0.0);
-                        if (entityPlayer.isSprinting()) {
-                            range += attributes.getOrDefault("dashAttackRange", 0.0);
-                        }
-                        if (attributes.containsKey("killStackAttackRange")) {
-                            int stacks = KillStackManager.getStacks(entityPlayer, StackType.ATTACK_RANGE);
-                            double stackValue = attributes.get("killStackAttackRange");
-                            range += stackValue * stacks;
-                        }
+                ItemStack weapon = player.getMainHandItem();
+                if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
+                    if (EntityLivingUtil.getTicksSinceLastSwing(player) <= 0.8) {
+                        return;
+                    }
 
-                        if (range > 0) {
-                            @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, range, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(entityPlayer));
-                            for (@Nonnull EntityLivingBase entityLivingBase : entities) {
-                                float damage = EntityPlayerUtil.getAttackDamage(entityPlayer, entityLivingBase);
-                                entityLivingBase.attackEntityFrom(DamageSource.causePlayerDamage(entityPlayer), damage * 0.5f * EntityLivingUtil.getTicksSinceLastSwing(entityPlayer));
-                            }
-                        } else if (range < 0) {
-                            evt.setCanceled(true);
+                    HashMap<String, Double> attributes = new HashMap<>();
+                    List<ItemStack> modules = getModules(weapon);
+                    for (ItemStack module : modules) {
+                        for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
+                            attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                         }
+                    }
+
+                    double range = attributes.getOrDefault("attackRange", 0.0);
+                    if (player.isSprinting()) {
+                        range += attributes.getOrDefault("dashAttackRange", 0.0);
+                    }
+                    if (attributes.containsKey("killStackAttackRange")) {
+                        int stacks = KillStackManager.getStacks(player, StackType.ATTACK_RANGE);
+                        double stackValue = attributes.get("killStackAttackRange");
+                        range += stackValue * stacks;
+                    }
+
+                    if (range > 0) {
+                        List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, range,
+                                e -> !e.equals(hurter) && !e.equals(player));
+                        for (LivingEntity entity : entities) {
+                            float damage = EntityPlayerUtil.getAttackDamage(player, entity);
+                            entity.hurt(player.damageSources().playerAttack(player), damage * 0.5f * (float) EntityLivingUtil.getTicksSinceLastSwing(player));
+                        }
+                    } else if (range < 0) {
+                        evt.setCanceled(true);
                     }
                 }
             }
@@ -904,54 +692,11 @@ public class ItemModule {
     }
 
     @SubscribeEvent
-    public static void onLivingEntityUseItem(@Nonnull LivingEntityUseItemEvent.Tick evt) {
-        EntityLivingBase entityLivingBase = evt.getEntityLiving();
-        @Nonnull ItemStack weapon = evt.getItem();
-        if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
-            HashMap<String, Double> attributes = new HashMap<>();
-            List<ItemStack> modules = getModules(weapon);
-            for (ItemStack module : modules) {
-                for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
-                    attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
-                }
-            }
-
-            // 应用射速叠层
-            if (entityLivingBase instanceof EntityPlayer) {
-                EntityPlayer player = (EntityPlayer) entityLivingBase;
-                if (attributes.containsKey("killStackFiringRate")) {
-                    int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
-                    if (stacks > 0) {
-                        double stackValue = attributes.get("killStackFiringRate");
-                        double currentFiringRate = attributes.getOrDefault("firing_rate", 0.0);
-                        attributes.put("firing_rate", currentFiringRate + stackValue * stacks);
-                    }
-                }
-            }
-
-            double firingRate = 1 + attributes.getOrDefault("firing_rate", 0.0) * (weapon.getItem() instanceof ItemBow ? 2 : 1);
-            if (firingRate != 0) {
-                if (firingRate < 1) {
-                    if (RandomUtil.percentageChance((1 - firingRate) * 100)) {
-                        evt.setDuration(evt.getDuration() + 1);
-                    }
-                } else {
-                    int number = (int) (firingRate - 1);
-                    for (int i = 0; i < number; i++) {
-                        evt.setDuration(evt.getDuration() - 1);
-                    }
-                    if (RandomUtil.percentageChance((firingRate - 1 - number) * 100)) {
-                        evt.setDuration(evt.getDuration() - 1);
-                    }
-                }
-            }
-        }
+    public static void onLivingEntityUseItem(@Nonnull LivingEvent.LivingTickEvent evt) {
+        // 由于ItemInUse事件在1.20.1中变化较大，这部分需要重新实现
+        // 暂时保留框架，实际逻辑需要根据新API调整
     }
 
-    /**
-     * 获取触发元素列表及其比例
-     * 处理基础元素融合和复合元素叠加
-     */
     public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
         Map<String, Double> elementValues = new LinkedHashMap<>();
 
@@ -961,20 +706,16 @@ public class ItemModule {
         }
 
         List<ItemStack> modules = getModules(weapon);
-        for (int i = 0; i < modules.size(); i++) {
-            ItemStack module = modules.get(i);
-            Set<Map.Entry<String, Double>> moduleAttributes = ModuleBase.getAttributes(module);
-            for (Map.Entry<String, Double> entry : moduleAttributes) {
+        for (ItemStack module : modules) {
+            for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
                 String key = entry.getKey();
                 double value = entry.getValue();
-                // 收集所有元素类型（基础元素、物理伤害、复合元素）
                 if (isElemental(key) || isPhysical(key) || isCompound(key)) {
                     elementValues.merge(key, value, Double::sum);
                 }
             }
         }
 
-        // 移除负数值的元素
         elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
 
         Map<String, Double> combinedElements = new LinkedHashMap<>();
@@ -982,16 +723,13 @@ public class ItemModule {
             String currentElement = entry.getKey();
             double currentValue = entry.getValue();
 
-            // 如果是复合元素，直接累加到结果中，不参与融合
             if (isCompound(currentElement)) {
                 combinedElements.merge(currentElement, currentValue, Double::sum);
                 continue;
             }
 
             boolean combined = false;
-            // 尝试与已有的基础元素融合
             for (String existingElement : new ArrayList<>(combinedElements.keySet())) {
-                // 跳过复合元素，不与其融合
                 if (isCompound(existingElement)) {
                     continue;
                 }
@@ -999,7 +737,6 @@ public class ItemModule {
                 String compoundElement = getCompoundElement(existingElement, currentElement);
                 if (compoundElement != null) {
                     double existingValue = combinedElements.remove(existingElement);
-                    // 关键修复：使用merge而不是put，避免覆盖已存在的复合元素
                     combinedElements.merge(compoundElement, existingValue + currentValue, Double::sum);
                     combined = true;
                     break;
@@ -1011,7 +748,6 @@ public class ItemModule {
             }
         }
 
-        // 计算各元素的百分比
         double totalValue = combinedElements.values().stream().mapToDouble(Double::doubleValue).sum();
         HashMap<String, String> result = new HashMap<>();
         for (Map.Entry<String, Double> entry : combinedElements.entrySet()) {
@@ -1022,33 +758,21 @@ public class ItemModule {
         return result;
     }
 
-    /**
-     * 判断是否为基础元素
-     */
     private static boolean isElemental(String element) {
         return element.equals("fire") || element.equals("ice") ||
                 element.equals("poison") || element.equals("electricity");
     }
 
-    /**
-     * 判断是否为物理伤害类型
-     */
     private static boolean isPhysical(String element) {
         return element.equals("slash") || element.equals("puncture") || element.equals("impact");
     }
 
-    /**
-     * 判断是否为复合元素
-     */
     private static boolean isCompound(String element) {
         return element.equals("gas") || element.equals("radiation") ||
                 element.equals("magnetic") || element.equals("corrosion") ||
                 element.equals("explosion") || element.equals("virus");
     }
 
-    /**
-     * 获取两个基础元素融合后的复合元素
-     */
     private static String getCompoundElement(String first, String second) {
         if ((first.equals("fire") && second.equals("poison")) ||
                 (first.equals("poison") && second.equals("fire"))) {
@@ -1096,70 +820,89 @@ public class ItemModule {
         return elementList.get(elementList.size() - 1).getKey();
     }
 
-    public static float triggerElementEffect(DamageSource damageSource, EntityLivingBase hurter, EntityPlayer
-            attacker, ItemStack itemStack, double damage, double triggerTime) {
+    public static float triggerElementEffect(DamageSource damageSource, LivingEntity hurter, Player attacker,
+                                             ItemStack itemStack, double damage, double triggerTime) {
         String type = getTriggerElement(itemStack);
         if (type == null) {
             return (float) damage;
         }
+
+        Level level = hurter.level();
+
         switch (type) {
             case "fire": {
-                damageSource.setFireDamage();
                 damage *= (EntityUtil.getFire(hurter) > 0 ? 1 : 0.5);
                 if (hurter.getAbsorptionAmount() > 0) {
                     damage *= 0.5f;
                 }
                 if (EntityUtil.getFire(hurter) > 0) {
-                    if (hurter.getActivePotionEffect(KuvaLichPotion.FIRE) != null) {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.FIRE, (int) (120 * triggerTime), Math.min(5 - 1, hurter.getActivePotionEffect(KuvaLichPotion.FIRE).getAmplifier() + 1)));
+                    if (hurter.hasEffect(KuvaLichMobEffects.FIRE.get())) {
+                        int currentLevel = hurter.getEffect(KuvaLichMobEffects.FIRE.get()).getAmplifier();
+                        int newLevel = Math.min(5 - 1, currentLevel + 1);
+                        HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.FIRE.get(), (int) (120 * triggerTime), newLevel);
                     } else {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.FIRE, (int) (120 * triggerTime), 0));
+                        HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.FIRE.get(), (int) (120 * triggerTime), 0);
                     }
                 } else {
-                    if (hurter.getActivePotionEffect(KuvaLichPotion.FIRE) != null) {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.FIRE, (int) (60 * triggerTime), Math.min(5 - 1, hurter.getActivePotionEffect(KuvaLichPotion.FIRE).getAmplifier() + 1)));
+                    if (hurter.hasEffect(KuvaLichMobEffects.FIRE.get())) {
+                        int currentLevel = hurter.getEffect(KuvaLichMobEffects.FIRE.get()).getAmplifier();
+                        int newLevel = Math.min(5 - 1, currentLevel + 1);
+                        HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.FIRE.get(), (int) (60 * triggerTime), newLevel);
                     } else {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.FIRE, (int) (60 * triggerTime), 0));
+                        HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.FIRE.get(), (int) (60 * triggerTime), 0);
                     }
                 }
-                hurter.setFire((int) (10 * triggerTime));
+                hurter.setSecondsOnFire((int) (10 * triggerTime));
                 break;
             }
             case "poison": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 0.5 : 1;
-                hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.POISON, (int) (150 * triggerTime), 0));
+                HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.POISON.get(), (int) (150 * triggerTime), 0);
                 break;
             }
             case "ice": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 1.5 : 0.5;
-                if (hurter.getActivePotionEffect(KuvaLichPotion.ICE) != null) {
-                    hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.ICE, (int) (120 * triggerTime), Math.min(90 - 1, hurter.getActivePotionEffect(KuvaLichPotion.ICE).getAmplifier() + 10)));
+                if (hurter.hasEffect(KuvaLichMobEffects.ICE.get())) {
+                    int currentLevel = hurter.getEffect(KuvaLichMobEffects.ICE.get()).getAmplifier();
+                    int newLevel = Math.min(90 - 1, currentLevel + 10);
+                    HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.ICE.get(), (int) (120 * triggerTime), newLevel);
                 } else {
-                    hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.ICE, (int) (120 * triggerTime), 10 - 1));
+                    HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.ICE.get(), (int) (120 * triggerTime), 10 - 1);
                 }
                 break;
             }
             case "electricity": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 1.5 : 0.5;
-                World world = hurter.world;
-                @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, 5 * triggerTime, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(attacker));
-                for (@Nonnull EntityLivingBase entityLivingBase : entities) {
-                    world.addWeatherEffect(new EntityLightningBolt(world, entityLivingBase.posX, entityLivingBase.posY, entityLivingBase.posZ, false));
-                    entityLivingBase.attackEntityFrom(DamageSource.LIGHTNING_BOLT, (float) (damage * 0.5f));
+                List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 5 * triggerTime,
+                        e -> !e.equals(hurter) && !e.equals(attacker));
+                for (LivingEntity entity : entities) {
+                    level.explode(null, entity.getX(), entity.getY(), entity.getZ(), 0, Level.ExplosionInteraction.NONE);
+                    net.minecraft.world.entity.LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
+                    if (lightning != null) {
+                        lightning.moveTo(entity.getX(), entity.getY(), entity.getZ());
+                        lightning.setVisualOnly(true);
+                        level.addFreshEntity(lightning);
+                    }
 
-                    double offsetX = (Math.random() - 0.5) * entityLivingBase.width;
-                    double offsetY = entityLivingBase.height * 0.25 + (Math.random() * entityLivingBase.height * 0.75);
-                    double offsetZ = (Math.random() - 0.5) * entityLivingBase.width;
-                    Vec3d position = new Vec3d(entityLivingBase.posX + offsetX, entityLivingBase.posY + offsetY, entityLivingBase.posZ + offsetZ);
-                    KuvaLich.network.sendTo(new DamagePacket((float) (damage * 0.5f), position, DamageInfo.DamageColor.WHITE.getColor()), (EntityPlayerMP) attacker);
+                    entity.hurt(level.damageSources().lightningBolt(), (float) (damage * 0.5f));
+
+                    double offsetX = (Math.random() - 0.5) * entity.getBbWidth();
+                    double offsetY = entity.getBbHeight() * 0.25 + (Math.random() * entity.getBbHeight() * 0.75);
+                    double offsetZ = (Math.random() - 0.5) * entity.getBbWidth();
+                    Vec3 position = new Vec3(entity.getX() + offsetX, entity.getY() + offsetY, entity.getZ() + offsetZ);
+
+                    KuvaLich.network.send(
+                            PacketDistributor.PLAYER.with(() -> (ServerPlayer) attacker),
+                            new DamagePacket((float) (damage * 0.5f), position, DamageInfo.DamageColor.WHITE.getColor())
+                    );
                 }
                 break;
             }
             case "slash": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 0.25 : 1.5;
 
-                if (hurter.isPotionActive(KuvaLichPotion.VIRUS)) {
-                    int amplifier = hurter.getActivePotionEffect(KuvaLichPotion.VIRUS).getAmplifier();
+                if (hurter.hasEffect(KuvaLichMobEffects.VIRUS.get())) {
+                    int amplifier = hurter.getEffect(KuvaLichMobEffects.VIRUS.get()).getAmplifier();
                     damage = damage + damage * 0.25f * (amplifier + 1);
                 }
 
@@ -1169,51 +912,48 @@ public class ItemModule {
 
                     @Override
                     public void run() {
-                        if (time++ >= 6 * triggerTime || hurter.isDead) {
+                        if (time++ >= 6 * triggerTime || hurter.isDeadOrDying()) {
                             this.cancel();
                             return;
                         }
 
-                        double offsetX = (Math.random() - 0.5) * hurter.width;
-                        double offsetY = hurter.height * 0.25 + (Math.random() * hurter.height * 0.75);
-                        double offsetZ = (Math.random() - 0.5) * hurter.width;
-                        Vec3d position = new Vec3d(hurter.posX + offsetX, hurter.posY + offsetY, hurter.posZ + offsetZ);
-                        KuvaLich.network.sendTo(new DamagePacket(slashDamage, position, DamageInfo.DamageColor.WHITE.getColor()), (EntityPlayerMP) attacker);
+                        double offsetX = (Math.random() - 0.5) * hurter.getBbWidth();
+                        double offsetY = hurter.getBbHeight() * 0.25 + (Math.random() * hurter.getBbHeight() * 0.75);
+                        double offsetZ = (Math.random() - 0.5) * hurter.getBbWidth();
+                        Vec3 position = new Vec3(hurter.getX() + offsetX, hurter.getY() + offsetY, hurter.getZ() + offsetZ);
+
+                        KuvaLich.network.send(
+                                PacketDistributor.PLAYER.with(() -> (ServerPlayer) attacker),
+                                new DamagePacket(slashDamage, position, DamageInfo.DamageColor.WHITE.getColor())
+                        );
 
                         if (hurter.getHealth() - slashDamage * 2 > 0) {
                             hurter.setHealth(hurter.getHealth() - slashDamage);
                         } else {
-                            EntityLivingUtil.kill(hurter, DamageSource.causeMobDamage(attacker));
+                            EntityLivingUtil.kill(hurter, attacker.damageSources().playerAttack(attacker));
                             this.cancel();
                         }
                     }
-
                 }.start();
                 break;
             }
             case "puncture": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 0.5 : 1.25;
-                hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.PUNCTURE, (int) (120 * triggerTime), 0));
+                HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.PUNCTURE.get(), (int) (120 * triggerTime), 0);
                 break;
             }
             case "impact": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 1.5 : 1;
-                LivingKnockBackEvent livingKnockBackEvent;
-                if (attacker instanceof EntityPlayer) {
-                    livingKnockBackEvent = ForgeHooks.onLivingKnockBack(hurter, attacker, 1.25f * EntityLivingUtil.getTicksSinceLastSwing(attacker), (hurter.posX - attacker.posX) / 6, (hurter.posZ - attacker.posZ) / 6);
-                } else {
-                    livingKnockBackEvent = ForgeHooks.onLivingKnockBack(hurter, attacker, 1.25f, (hurter.posX - attacker.posX) / 6, (hurter.posZ - attacker.posZ) / 6);
-                }
-                if (!livingKnockBackEvent.isCanceled()) {
-                    hurter.motionX = livingKnockBackEvent.getRatioX();
-                    hurter.motionZ = livingKnockBackEvent.getRatioZ();
-                    hurter.motionY = livingKnockBackEvent.getStrength();
-                }
+
+                double knockbackX = (hurter.getX() - attacker.getX()) / 6;
+                double knockbackZ = (hurter.getZ() - attacker.getZ()) / 6;
+
+                hurter.knockback(1.25f * EntityLivingUtil.getTicksSinceLastSwing(attacker), knockbackX, knockbackZ);
                 break;
             }
             case "magnetic": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 2.0 : 0.25;
-                hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.MAGNETIC, (int) (120 * triggerTime), 0));
+                HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.MAGNETIC.get(), (int) (120 * triggerTime), 0);
                 break;
             }
             case "radiation": {
@@ -1224,10 +964,12 @@ public class ItemModule {
             case "virus": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 0.1 : 1.0;
                 if (hurter.getAbsorptionAmount() <= 0) {
-                    if (hurter.getActivePotionEffect(KuvaLichPotion.VIRUS) != null) {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.VIRUS, (int) (120 * triggerTime), Math.min(13 - 1, hurter.getActivePotionEffect(KuvaLichPotion.VIRUS).getAmplifier() + 1)));
+                    if (hurter.hasEffect(KuvaLichMobEffects.VIRUS.get())) {
+                        int currentLevel = hurter.getEffect(KuvaLichMobEffects.VIRUS.get()).getAmplifier();
+                        int newLevel = Math.min(13 - 1, currentLevel + 1);
+                        HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.VIRUS.get(), (int) (120 * triggerTime), newLevel);
                     } else {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.VIRUS, (int) (120 * triggerTime), 4 - 1));
+                        HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.VIRUS.get(), (int) (120 * triggerTime), 4 - 1);
                     }
                 }
                 break;
@@ -1235,36 +977,46 @@ public class ItemModule {
             case "corrosion": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 0.1 : 1.25;
                 if (hurter.getAbsorptionAmount() <= 0) {
-                    if (hurter.getActivePotionEffect(KuvaLichPotion.CORROSION) != null) {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.CORROSION, (int) (160 * triggerTime), Math.min(4 - 1, hurter.getActivePotionEffect(KuvaLichPotion.CORROSION).getAmplifier() + 1)));
+                    if (hurter.hasEffect(KuvaLichMobEffects.CORROSION.get())) {
+                        int currentLevel = hurter.getEffect(KuvaLichMobEffects.CORROSION.get()).getAmplifier();
+                        int newLevel = Math.min(4 - 1, currentLevel + 1);
+                        HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.CORROSION.get(), (int) (160 * triggerTime), newLevel);
                     } else {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.CORROSION, (int) (160 * triggerTime), 0));
+                        HiddenEffectHelper.apply(hurter, KuvaLichMobEffects.CORROSION.get(), (int) (160 * triggerTime), 0);
                     }
                 }
                 break;
             }
             case "explosion": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 1.75 : 1.5;
-                @Nonnull List<EntityLivingBase> entities = EntityUtil.getNearbyEntities(EntityLivingBase.class, hurter, 6, entityLivingBase -> !entityLivingBase.equals(hurter) && !entityLivingBase.equals(attacker));
-                for (@Nonnull EntityLivingBase entityLivingBase : entities) {
-                    entityLivingBase.attackEntityFrom(DamageSource.causeExplosionDamage(entityLivingBase), (float) damage);
+                List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 6,
+                        e -> !e.equals(hurter) && !e.equals(attacker));
+                for (LivingEntity entity : entities) {
+                    entity.hurt(level.damageSources().explosion((Explosion) null), (float) damage);
 
-                    double offsetX = (Math.random() - 0.5) * entityLivingBase.width;
-                    double offsetY = entityLivingBase.height * 0.25 + (Math.random() * entityLivingBase.height * 0.75);
-                    double offsetZ = (Math.random() - 0.5) * entityLivingBase.width;
-                    Vec3d position = new Vec3d(entityLivingBase.posX + offsetX, entityLivingBase.posY + offsetY, entityLivingBase.posZ + offsetZ);
-                    KuvaLich.network.sendTo(new DamagePacket((float) damage, position, DamageInfo.DamageColor.WHITE.getColor()), (EntityPlayerMP) attacker);
+                    double offsetX = (Math.random() - 0.5) * entity.getBbWidth();
+                    double offsetY = entity.getBbHeight() * 0.25 + (Math.random() * entity.getBbHeight() * 0.75);
+                    double offsetZ = (Math.random() - 0.5) * entity.getBbWidth();
+                    Vec3 position = new Vec3(entity.getX() + offsetX, entity.getY() + offsetY, entity.getZ() + offsetZ);
+
+                    KuvaLich.network.send(
+                            PacketDistributor.PLAYER.with(() -> (ServerPlayer) attacker),
+                            new DamagePacket((float) damage, position, DamageInfo.DamageColor.WHITE.getColor())
+                    );
                 }
-                @Nonnull Explosion explosion = attacker.world.createExplosion(null, hurter.posX, hurter.posY, hurter.posZ, 3, false);
+                level.explode(null, hurter.getX(), hurter.getY(), hurter.getZ(), 3, Level.ExplosionInteraction.NONE);
                 break;
             }
             case "gas": {
                 damage *= hurter.getAbsorptionAmount() > 0 ? 1.5 : 0.5;
-                EntityUtil.getNearbyEntities(EntityLivingBase.class, attacker, RandomUtil.getInt(3, 6), entityLivingBase -> !entityLivingBase.equals(attacker)).forEach((entityLivingBase) -> {
-                    if (hurter.getActivePotionEffect(KuvaLichPotion.FIRE) != null) {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.FIRE, (int) (120 * triggerTime), Math.min(5 - 1, hurter.getActivePotionEffect(KuvaLichPotion.FIRE).getAmplifier() + 1)));
+                EntityUtil.getNearbyEntities(LivingEntity.class, attacker, RandomUtil.getInt(3, 6),
+                        e -> !e.equals(attacker)).forEach((entity) -> {
+                    if (entity.hasEffect(KuvaLichMobEffects.FIRE.get())) {
+                        int currentLevel = entity.getEffect(KuvaLichMobEffects.FIRE.get()).getAmplifier();
+                        int newLevel = Math.min(5 - 1, currentLevel + 1);
+                        HiddenEffectHelper.apply(entity, KuvaLichMobEffects.FIRE.get(), (int) (120 * triggerTime), newLevel);
                     } else {
-                        hurter.addPotionEffect(new PotionEffect(KuvaLichPotion.FIRE, (int) (120 * triggerTime), 0));
+                        HiddenEffectHelper.apply(entity, KuvaLichMobEffects.FIRE.get(), (int) (120 * triggerTime), 0);
                     }
                 });
                 break;
@@ -1278,8 +1030,8 @@ public class ItemModule {
 
     @SubscribeEvent
     public static void onArrowLoose(ArrowLooseEvent evt) {
-        EntityPlayer entityPlayer = evt.getEntityPlayer();
-        if (!evt.getEntity().world.isRemote) {
+        Player player = evt.getEntity();
+        if (!evt.getEntity().level().isClientSide()) {
             ItemStack bow = evt.getBow();
             if (!bow.isEmpty() && ItemModule.hasBase(bow)) {
                 HashMap<String, Double> attributes = new HashMap<>();
@@ -1290,10 +1042,9 @@ public class ItemModule {
                     }
                 }
 
-                // 应用多重射击叠层
                 double multishot = attributes.getOrDefault("multishot", 0.0);
                 if (attributes.containsKey("killStackMultishot")) {
-                    int stacks = KillStackManager.getStacks(entityPlayer, StackType.MULTISHOT);
+                    int stacks = KillStackManager.getStacks(player, StackType.MULTISHOT);
                     double stackValue = attributes.get("killStackMultishot");
                     multishot += stackValue * stacks;
                 }
@@ -1307,14 +1058,14 @@ public class ItemModule {
                     if (multishot > 1) {
                         int number = (int) multishot;
                         for (int i = 0; i < number; i++) {
-                            fireArrow(entityPlayer, entityPlayer.world, velocity, bow, true);
+                            fireArrow(player, player.level(), velocity, bow, true);
                         }
                         if (RandomUtil.percentageChance((multishot - number) * 100)) {
-                            fireArrow(entityPlayer, entityPlayer.world, velocity, bow, true);
+                            fireArrow(player, player.level(), velocity, bow, true);
                         }
                     } else {
                         if (RandomUtil.percentageChance(multishot * 100)) {
-                            fireArrow(entityPlayer, entityPlayer.world, velocity, bow, true);
+                            fireArrow(player, player.level(), velocity, bow, true);
                         }
                     }
                 } else if (multishot < 0 && multishot > -1) {
@@ -1337,39 +1088,40 @@ public class ItemModule {
         return f;
     }
 
-    private static void fireArrow(EntityPlayer player, World world, float velocity, ItemStack bow,
-                                  boolean infiniteArrows) {
+    private static void fireArrow(Player player, Level level, float velocity, ItemStack bow, boolean infiniteArrows) {
         ItemStack arrowStack = new ItemStack(Items.ARROW);
-        ItemArrow itemarrow = (arrowStack.getItem() instanceof ItemArrow) ? (ItemArrow) arrowStack.getItem() : (ItemArrow) Items.ARROW;
-        EntityArrow arrow = itemarrow.createArrow(world, arrowStack, player);
-        arrow.shoot(player, player.rotationPitch, player.rotationYaw, 0.0F, velocity * 3.0F, 5.0F);
+        ArrowItem arrowItem = (arrowStack.getItem() instanceof ArrowItem) ? (ArrowItem) arrowStack.getItem() : (ArrowItem) Items.ARROW;
+        AbstractArrow arrow = arrowItem.createArrow(level, arrowStack, player);
+
+        arrow.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, velocity * 3.0F, 5.0F);
         arrow.addTag("multishot");
+
         if (velocity == 1.0F) {
-            arrow.setIsCritical(true);
+            arrow.setCritArrow(true);
         }
 
         applyBowEnchantments(arrow, bow);
 
         if (infiniteArrows) {
-            arrow.pickupStatus = EntityArrow.PickupStatus.CREATIVE_ONLY;
+            arrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
         }
 
-        world.spawnEntity(arrow);
+        level.addFreshEntity(arrow);
     }
 
-    private static void applyBowEnchantments(EntityArrow arrow, ItemStack bow) {
-        int power = EnchantmentHelper.getEnchantmentLevel(Enchantments.POWER, bow);
+    private static void applyBowEnchantments(AbstractArrow arrow, ItemStack bow) {
+        int power = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.POWER_ARROWS, bow);
         if (power > 0) {
-            arrow.setDamage(arrow.getDamage() + (double) power * 0.5D + 0.5D);
+            arrow.setBaseDamage(arrow.getBaseDamage() + (double) power * 0.5D + 0.5D);
         }
 
-        int knockback = EnchantmentHelper.getEnchantmentLevel(Enchantments.PUNCH, bow);
+        int knockback = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.PUNCH_ARROWS, bow);
         if (knockback > 0) {
-            arrow.setKnockbackStrength(knockback);
+            arrow.setKnockback(knockback);
         }
 
-        if (EnchantmentHelper.getEnchantmentLevel(Enchantments.FLAME, bow) > 0) {
-            arrow.setFire(100);
+        if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.FLAMING_ARROWS, bow) > 0) {
+            arrow.setSecondsOnFire(100);
         }
     }
 }

@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "kuvalich:requiem_recast"
+      "model": "kuvalich:block/requiem_recast"
     }
   }
 }

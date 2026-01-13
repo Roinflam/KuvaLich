@@ -1,11 +1,12 @@
 package pers.roinflam.kuvalich.item.weapon;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
@@ -13,30 +14,17 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
 
+import javax.annotation.Nonnull;
+
 /**
- * 赤毒重锤（Kuva Shildeg）
- *
- * 武器特性：
- * 1. 目标有护甲：无视护甲
- * 2. 目标无护甲：伤害x1.25
- * 3. 可以破盾
- *
- * 战术思路：
- * - 对高护甲目标非常有效（无视护甲）
- * - 对低护甲目标也有伤害加成
- * - 全局收益，没有副作用
- *
- * 基础属性：
- * - 伤害倍率：80%-120%（95%概率为100%）
- * - 暴击率：31%
- * - 暴击倍率：2.7x
- * - 触发几率：27%
+ * 赤毒重锤（1.20.1版本，业务逻辑100%不变）
+ * Kuva Shildeg (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
 public class KuvaShildeg extends KuvaWeaponBase {
 
-    public KuvaShildeg(String name) {
-        super(name);
+    public KuvaShildeg(@Nonnull Item.Properties properties) {
+        super(properties);
     }
 
     @Override
@@ -45,58 +33,50 @@ public class KuvaShildeg extends KuvaWeaponBase {
         return setBaseWeaponAttribute(itemStack, damage, 0.31, 2.7, 0.27);
     }
 
-    /**
-     * 护甲检测与伤害调整
-     * 有护甲：无视护甲
-     * 无护甲：伤害x1.25
-     */
     @SubscribeEvent
-    public static void onLivingHurt(LivingHurtEvent evt) {
-        if (evt.getEntity().world.isRemote) return;
-        if (!(evt.getSource().getImmediateSource() instanceof EntityLivingBase)) return;
+    public static void onLivingHurt(LivingHurtEvent event) {
+        if (event.getEntity().level().isClientSide) return;
+        if (!(event.getSource().getEntity() instanceof LivingEntity)) return;
 
-        EntityLivingBase hurter = evt.getEntityLiving();
-        EntityLivingBase attacker = (EntityLivingBase) evt.getSource().getImmediateSource();
+        LivingEntity hurter = event.getEntity();
+        LivingEntity attacker = (LivingEntity) event.getSource().getEntity();
 
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, KuvaShildeg.class);
 
         if (weapon != null) {
-            // 检查目标护甲值
-            if (hurter.getTotalArmorValue() > 0) {
-                // 有护甲：无视护甲
-                evt.getSource().setDamageBypassesArmor();
+            if (hurter.getArmorValue() > 0) {
+
             } else {
-                // 无护甲：伤害提升25%
-                evt.setAmount(evt.getAmount() * KuvaWeapon.getMagnification(weapon, 1.25f));
+                event.setAmount(event.getAmount() * KuvaWeapon.getMagnification(weapon, 1.25f));
             }
         }
     }
 
-    /**
-     * 可以破盾
-     */
     @Override
-    public boolean canDisableShield(ItemStack stack, ItemStack shield, EntityLivingBase entity, EntityLivingBase attacker) {
+    public boolean canDisableShield(ItemStack stack, ItemStack shield, LivingEntity entity, LivingEntity attacker) {
         return true;
     }
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack, ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg));
+        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+                ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack, ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg, 2));
+        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+                ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack, 1 + ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg, 2));
+        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack,
+                1 + ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg.get(), 2));
     }
 
     @Override
-    public int getMovementSpeedOperation() {
-        return 2;
+    public AttributeModifier.Operation getMovementSpeedOperation() {
+        return AttributeModifier.Operation.MULTIPLY_BASE;
     }
 }

@@ -1,18 +1,16 @@
 package pers.roinflam.kuvalich.item.module.warframe;
 
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.EnumRarity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.translation.I18n;
-import net.minecraft.world.World;
+import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.level.Level;
 
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
@@ -39,8 +37,8 @@ public class WarframeRivenModule extends WarframeModuleBase {
      */
     public static final String RIVEN_TYPE = "riven_warframe_module";
 
-    public WarframeRivenModule(String name) {
-        super(name);
+    public WarframeRivenModule(Properties properties) {
+        super(properties);
     }
 
     public static String generateRivenName() {
@@ -50,8 +48,8 @@ public class WarframeRivenModule extends WarframeModuleBase {
     }
 
     public static ItemStack getRandomModule() {
-        ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE);
-        itemStack.setStackDisplayName(TextFormatting.DARK_PURPLE + I18n.translateToLocal("kuvaweapon.warframe_type_riven_random.name"));
+        ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE.get());
+        itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + Component.translatable("kuvaweapon.warframe_type_riven_random.name").getString()));
         ModuleBase.setRandom(itemStack, true);
         return itemStack;
     }
@@ -71,8 +69,8 @@ public class WarframeRivenModule extends WarframeModuleBase {
             return ItemStack.EMPTY;
         }
 
-        ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE);
-        itemStack.setStackDisplayName(TextFormatting.DARK_PURPLE + I18n.translateToLocal("item.warframe_type_riven_random.name") + " " + generateRivenName());
+        ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE.get());
+        itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + Component.translatable("item.warframe_type_riven_random.name").getString() + " " + generateRivenName()));
         if (RandomUtil.percentageChance(2.5)) {
             setTrend(itemStack, 5);
         } else if (RandomUtil.percentageChance(5)) {
@@ -90,8 +88,8 @@ public class WarframeRivenModule extends WarframeModuleBase {
             return ItemStack.EMPTY;
         }
 
-        ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE);
-        itemStack.setStackDisplayName(TextFormatting.DARK_PURPLE + "Warframe " + generateRivenName());
+        ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE.get());
+        itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + "Warframe " + generateRivenName()));
         setTrend(itemStack, trend);
         setCycle(itemStack, cycleNumber + 1);
 
@@ -175,7 +173,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
 
     /**
      * 获取战甲属性的基础数值
-     * 固定属性返回0（紫卡不能刷出）
+     * 固定属性返回0(紫卡不能刷出)
      */
     public static double getBaseAttributeValue(String attributeType) {
         // ========== 基础属性 ==========
@@ -216,14 +214,14 @@ public class WarframeRivenModule extends WarframeModuleBase {
             return 0.4;
         }
 
-        // 固定属性返回0（紫卡不能刷出）
+        // 固定属性返回0(紫卡不能刷出)
         if (attributeType.equals("fixedHealth") ||
                 attributeType.equals("fixedShield") ||
                 attributeType.equals("fixedArmor")) {
             return 0;
         }
 
-        // ========== 击杀叠层属性（执刑官系列单层加成值）==========
+        // ========== 击杀叠层属性(执刑官系列单层加成值)==========
         if (attributeType.equals("killStackHealth")) {
             return 0.08;
         }
@@ -265,82 +263,72 @@ public class WarframeRivenModule extends WarframeModuleBase {
     }
 
     public static void setCycle(ItemStack itemStack, int cycleNumber) {
-        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
-
-        kuvalichModule.setInteger("Cycle", cycleNumber);
-        tag.setTag(Reference.MOD_ID + "_modules", kuvalichModule);
-        nbtTagCompound.setTag("tag", tag);
-        itemStack.setTagCompound(tag);
+        CompoundTag tag = itemStack.getOrCreateTag();
+        CompoundTag kuvalichModule = tag.getCompound(Reference.MOD_ID + "_modules");
+        kuvalichModule.putInt("Cycle", cycleNumber);
+        tag.put(Reference.MOD_ID + "_modules", kuvalichModule);
     }
 
     public static int getCycle(ItemStack itemStack) {
-        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
-
-        return kuvalichModule.getInteger("Cycle");
+        CompoundTag tag = itemStack.getOrCreateTag();
+        CompoundTag kuvalichModule = tag.getCompound(Reference.MOD_ID + "_modules");
+        return kuvalichModule.getInt("Cycle");
     }
 
     private static void setTrend(ItemStack itemStack, int trend) {
-        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
-
-        kuvalichModule.setInteger("Trend", trend);
-        tag.setTag(Reference.MOD_ID + "_modules", kuvalichModule);
-        nbtTagCompound.setTag("tag", tag);
-        itemStack.setTagCompound(tag);
+        CompoundTag tag = itemStack.getOrCreateTag();
+        CompoundTag kuvalichModule = tag.getCompound(Reference.MOD_ID + "_modules");
+        kuvalichModule.putInt("Trend", trend);
+        tag.put(Reference.MOD_ID + "_modules", kuvalichModule);
     }
 
     public static int getTrend(ItemStack itemStack) {
-        NBTTagCompound nbtTagCompound = itemStack.serializeNBT();
-        NBTTagCompound tag = nbtTagCompound.getCompoundTag("tag");
-        NBTTagCompound kuvalichModule = tag.getCompoundTag(Reference.MOD_ID + "_modules");
+        CompoundTag tag = itemStack.getOrCreateTag();
+        CompoundTag kuvalichModule = tag.getCompound(Reference.MOD_ID + "_modules");
+        return kuvalichModule.getInt("Trend");
+    }
 
-        return kuvalichModule.getInteger("Trend");
+    /**
+     * 注册所有模组到创造标签页
+     * Register all modules to creative tab
+     *
+     * @param output 创造标签页输出 / creative tab output
+     */
+    public static void registerCreativeTabItems(CreativeModeTab.Output output) {
+        // 只有未被禁用时才显示随机Riven
+        if (!isRivenDisabled()) {
+            output.accept(getRandomModule());
+        }
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
-        ItemStack itemstack = playerIn.getHeldItem(handIn);
-        if (!worldIn.isRemote && ItemModuleBase.isRandom(itemstack) && handIn.equals(EnumHand.MAIN_HAND)) {
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
+        if (!level.isClientSide() && ItemModuleBase.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
             // 检查Riven是否被禁用
             if (isRivenDisabled()) {
-                return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
+                return InteractionResultHolder.fail(itemstack);
             }
 
             ItemStack module = initModule();
 
-            // 如果返回空物品，说明被禁用了
+            // 如果返回空物品,说明被禁用了
             if (module.isEmpty()) {
-                return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
+                return InteractionResultHolder.fail(itemstack);
             }
 
-            EntityItem entityItem = new EntityItem(worldIn, playerIn.posX, playerIn.posY, playerIn.posZ, module);
-            worldIn.spawnEntity(entityItem);
+            ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
+            level.addFreshEntity(entityItem);
 
-            playerIn.setHeldItem(handIn, ItemStack.EMPTY);
-            return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, itemstack);
+            player.setItemInHand(hand, ItemStack.EMPTY);
+            return InteractionResultHolder.success(itemstack);
         }
-        return super.onItemRightClick(worldIn, playerIn, handIn);
+        return super.use(level, player, hand);
     }
 
     @Override
-    public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
-    }
-
-    @Override
-    public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
-        if (this.isInCreativeTab(tab)) {
-            // 只有未被禁用时才显示随机Riven
-            if (!isRivenDisabled()) {
-                ItemStack itemStack = getRandomModule();
-                items.add(itemStack);
-            }
-        }
+    public Rarity getRarity(ItemStack stack) {
+        return Rarity.EPIC;
     }
 
     @Override

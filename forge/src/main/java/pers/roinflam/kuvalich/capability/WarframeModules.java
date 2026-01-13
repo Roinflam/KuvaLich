@@ -1,18 +1,24 @@
-// 文件：WarframeModules.java
-// 路径：src/main/java/pers/roinflam/kuvalich/blocks/capability/WarframeModules.java
 package pers.roinflam.kuvalich.capability;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.common.util.LazyOptional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-@Mod.EventBusSubscriber
-public class WarframeModules implements INBTSerializable<NBTTagCompound> {
+/**
+ * 战甲模组Capability
+ * Warframe Modules Capability
+ *
+ * 存储玩家的战甲模组数据（8个槽位）
+ * Stores player's warframe module data (8 slots)
+ */
+public class WarframeModules {
+
     private ItemStack one;
     private ItemStack two;
     private ItemStack three;
@@ -28,6 +34,7 @@ public class WarframeModules implements INBTSerializable<NBTTagCompound> {
 
     /**
      * 重置所有槽位
+     * Reset all slots
      */
     private void resetAll() {
         this.one = ItemStack.EMPTY;
@@ -40,7 +47,8 @@ public class WarframeModules implements INBTSerializable<NBTTagCompound> {
         this.eight = ItemStack.EMPTY;
     }
 
-    // Getters and Setters
+    // ==================== Getters and Setters ====================
+
     public ItemStack getOne() { return one; }
     public void setOne(ItemStack one) { this.one = one != null ? one : ItemStack.EMPTY; }
 
@@ -65,6 +73,10 @@ public class WarframeModules implements INBTSerializable<NBTTagCompound> {
     public ItemStack getEight() { return eight; }
     public void setEight(ItemStack eight) { this.eight = eight != null ? eight : ItemStack.EMPTY; }
 
+    /**
+     * 克隆数据
+     * Clone data
+     */
     public void clone(WarframeModules warframeModules) {
         if (warframeModules == null) {
             return;
@@ -80,49 +92,78 @@ public class WarframeModules implements INBTSerializable<NBTTagCompound> {
         this.setEight(warframeModules.getEight());
     }
 
-    @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setTag("one", getOne().serializeNBT());
-        nbt.setTag("two", getTwo().serializeNBT());
-        nbt.setTag("three", getThree().serializeNBT());
-        nbt.setTag("four", getFour().serializeNBT());
-        nbt.setTag("five", getFive().serializeNBT());
-        nbt.setTag("six", getSix().serializeNBT());
-        nbt.setTag("seven", getSeven().serializeNBT());
-        nbt.setTag("eight", getEight().serializeNBT());
+    // ==================== NBT序列化 / NBT Serialization ====================
+
+    /**
+     * 序列化到NBT
+     * Serialize to NBT
+     */
+    public CompoundTag serializeNBT() {
+        CompoundTag nbt = new CompoundTag();
+
+        nbt.put("one", getOne().save(new CompoundTag()));
+        nbt.put("two", getTwo().save(new CompoundTag()));
+        nbt.put("three", getThree().save(new CompoundTag()));
+        nbt.put("four", getFour().save(new CompoundTag()));
+        nbt.put("five", getFive().save(new CompoundTag()));
+        nbt.put("six", getSix().save(new CompoundTag()));
+        nbt.put("seven", getSeven().save(new CompoundTag()));
+        nbt.put("eight", getEight().save(new CompoundTag()));
+
         return nbt;
     }
 
-    @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.Clone evt) {
-        Entity entity = evt.getEntity();
-        if (entity == null || entity.world.isRemote || !(entity instanceof EntityPlayer)) {
-            return;
-        }
-
-        EntityPlayer entityPlayer = (EntityPlayer) entity;
-        WarframeModules warframeModules = entityPlayer.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
-        WarframeModules originalWarframeModules = evt.getOriginal().getCapability(CapabilityRegistryHandler.WARFRAME_MODULES, null);
-
-        if (warframeModules != null && originalWarframeModules != null) {
-            warframeModules.clone(originalWarframeModules);
-        }
-    }
-
-    @Override
-    public void deserializeNBT(NBTTagCompound nbt) {
+    /**
+     * 从NBT反序列化
+     * Deserialize from NBT
+     */
+    public void deserializeNBT(CompoundTag nbt) {
         if (nbt == null) {
             return;
         }
 
-        this.one = new ItemStack(nbt.getCompoundTag("one"));
-        this.two = new ItemStack(nbt.getCompoundTag("two"));
-        this.three = new ItemStack(nbt.getCompoundTag("three"));
-        this.four = new ItemStack(nbt.getCompoundTag("four"));
-        this.five = new ItemStack(nbt.getCompoundTag("five"));
-        this.six = new ItemStack(nbt.getCompoundTag("six"));
-        this.seven = new ItemStack(nbt.getCompoundTag("seven"));
-        this.eight = new ItemStack(nbt.getCompoundTag("eight"));
+        this.one = ItemStack.of(nbt.getCompound("one"));
+        this.two = ItemStack.of(nbt.getCompound("two"));
+        this.three = ItemStack.of(nbt.getCompound("three"));
+        this.four = ItemStack.of(nbt.getCompound("four"));
+        this.five = ItemStack.of(nbt.getCompound("five"));
+        this.six = ItemStack.of(nbt.getCompound("six"));
+        this.seven = ItemStack.of(nbt.getCompound("seven"));
+        this.eight = ItemStack.of(nbt.getCompound("eight"));
+    }
+
+    // ==================== Provider内部类 / Provider Inner Class ====================
+
+    /**
+     * Capability Provider
+     */
+    public static class Provider implements ICapabilityProvider, INBTSerializable<CompoundTag> {
+
+        private final WarframeModules instance = new WarframeModules();
+        private final LazyOptional<WarframeModules> optional = LazyOptional.of(() -> instance);
+
+        @NotNull
+        @Override
+        public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+            return CapabilityRegistryHandler.WARFRAME_MODULES.orEmpty(cap, optional);
+        }
+
+        @Override
+        public CompoundTag serializeNBT() {
+            return instance.serializeNBT();
+        }
+
+        @Override
+        public void deserializeNBT(CompoundTag nbt) {
+            instance.deserializeNBT(nbt);
+        }
+
+        /**
+         * 使LazyOptional失效
+         * Invalidate LazyOptional
+         */
+        public void invalidate() {
+            optional.invalidate();
+        }
     }
 }

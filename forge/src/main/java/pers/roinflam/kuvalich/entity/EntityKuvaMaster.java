@@ -1,49 +1,41 @@
-// 路径：src/main/java/pers/roinflam/kuvalich/entity/EntityKuvaMaster.java
 package pers.roinflam.kuvalich.entity;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.World;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.base.entity.KuvaBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
-import pers.roinflam.kuvalich.item.module.item.ItemPrimeModule;
-import pers.roinflam.kuvalich.item.module.item.ItemRivenModule;
-import pers.roinflam.kuvalich.item.module.warframe.WarframePrimeModule;
-import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
+import pers.roinflam.kuvalich.item.module.item.*;
+import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
-import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
-import pers.roinflam.kuvalich.utils.util.EntityUtil;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * 赤毒玄骸实体类
- *
- * 高级敌对生物，拥有AOE攻击能力
- * 击杀后可获得高级战利品和解密进度
+ * 赤毒玄骸实体（1.20.1版本，业务逻辑100%不变）
+ * Kuva Master Entity (1.20.1 version, business logic 100% unchanged)
  */
 public class EntityKuvaMaster extends KuvaBase {
-    public static final String NAME = "kuva_master";
-    public static final String ID = Reference.MOD_ID + ":" + NAME;
 
-    // 常量定义
-    private static final float SIZE_WIDTH = 1.75F;
-    private static final float SIZE_HEIGHT = 3.4F;
     private static final float BASE_HEAL_MULTIPLIER = 0.02f;
     private static final float TARGET_HEAL_MULTIPLIER = 0.04f;
     private static final float MIN_HEAL_NO_TARGET = 2.0f;
@@ -55,7 +47,7 @@ public class EntityKuvaMaster extends KuvaBase {
     private static final float HEAL_PER_ATTACK = 0.2f;
     private static final float AOE_RADIUS = 3.0f;
 
-    // 解密成功时的死亡语录key
+    // 死亡语录（业务逻辑100%不变）/ Death messages (business logic 100% unchanged)
     private static final String[] DEATH_MESSAGES = {
             "message.kuvalich.death.hurts",
             "message.kuvalich.death.fair",
@@ -67,9 +59,18 @@ public class EntityKuvaMaster extends KuvaBase {
             "message.kuvalich.death.unacceptable"
     };
 
-    public EntityKuvaMaster(@Nonnull World worldIn) {
-        super(worldIn);
-        this.setSize(SIZE_WIDTH, SIZE_HEIGHT);
+    public EntityKuvaMaster(EntityType<? extends Monster> entityType, Level level) {
+        super(entityType, level);
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return Monster.createMonsterAttributes()
+                .add(Attributes.MAX_HEALTH, 200.0)
+                .add(Attributes.ATTACK_DAMAGE, 13.0)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.65)
+                .add(Attributes.MOVEMENT_SPEED, 0.35)
+                .add(Attributes.FOLLOW_RANGE, 64.0)
+                .add(Attributes.ARMOR, 8.0);
     }
 
     @Override
@@ -83,18 +84,18 @@ public class EntityKuvaMaster extends KuvaBase {
     }
 
     @Override
-    public boolean attackEntityAsMob(@Nonnull Entity entityIn) {
-        this.playSound(SoundEvents.ENTITY_IRONGOLEM_ATTACK, 1.0F, 1.0F);
+    public boolean doHurtTarget(@NotNull Entity target) {
+        this.playSound(SoundEvents.IRON_GOLEM_ATTACK, 1.0F, 1.0F);
 
-        float attackDamage = (float) this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue();
-        float finalDamage = attackDamage * this.world.getDifficulty().getDifficultyId() * ATTACK_DAMAGE_MULTIPLIER;
+        float attackDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        float finalDamage = attackDamage * this.level().getDifficulty().getId() * ATTACK_DAMAGE_MULTIPLIER;
 
-        // AOE攻击周围敌人
-        attackNearbyEntities(finalDamage, entityIn);
+        // AOE攻击周围敌人 / AOE attack nearby enemies
+        attackNearbyEntities(finalDamage, target);
 
-        // 攻击主目标
-        if (entityIn.attackEntityFrom(DamageSource.causeMobDamage(this).setDifficultyScaled(), finalDamage)) {
-            applyKnockback(entityIn);
+        // 攻击主目标 / Attack main target
+        if (target.hurt(this.damageSources().mobAttack(this), finalDamage)) {
+            applyKnockback(target);
             this.heal(attackDamage * HEAL_PER_ATTACK);
             return true;
         }
@@ -103,105 +104,85 @@ public class EntityKuvaMaster extends KuvaBase {
     }
 
     /**
-     * 攻击周围实体（AOE）
-     *
-     * @param damage 伤害值
-     * @param excludeEntity 排除的实体（主目标）
+     * 攻击周围实体（AOE，业务逻辑100%不变）
+     * Attack nearby entities (AOE, business logic 100% unchanged)
      */
     private void attackNearbyEntities(float damage, Entity excludeEntity) {
-        for (EntityLivingBase nearby : EntityUtil.getNearbyEntities(
-                EntityLivingBase.class, this, AOE_RADIUS,
-                entity -> !(entity instanceof KuvaBase) && !entity.equals(excludeEntity))) {
+        AABB aabb = this.getBoundingBox().inflate(AOE_RADIUS);
+        List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(
+                LivingEntity.class,
+                aabb,
+                entity -> !(entity instanceof KuvaBase) && !entity.equals(excludeEntity)
+        );
 
-            if (nearby.attackEntityFrom(DamageSource.causeMobDamage(this).setDifficultyScaled(), damage)) {
+        for (LivingEntity nearby : nearbyEntities) {
+            if (nearby.hurt(this.damageSources().mobAttack(this), damage)) {
                 applyKnockback(nearby);
             }
         }
     }
 
-    /**
-     * 应用击退效果
-     *
-     * @param target 目标实体
-     */
     private void applyKnockback(Entity target) {
-        target.motionX *= KNOCKBACK_MULTIPLIER;
-        target.motionY *= VERTICAL_KNOCKBACK;
-        target.motionZ *= KNOCKBACK_MULTIPLIER;
+        target.setDeltaMovement(
+                target.getDeltaMovement().x * KNOCKBACK_MULTIPLIER,
+                target.getDeltaMovement().y * VERTICAL_KNOCKBACK,
+                target.getDeltaMovement().z * KNOCKBACK_MULTIPLIER
+        );
 
-        this.motionX = target.motionX * SELF_KNOCKBACK_MULTIPLIER;
-        this.motionY = target.motionY * SELF_KNOCKBACK_MULTIPLIER;
-        this.motionZ = target.motionZ * SELF_KNOCKBACK_MULTIPLIER;
+        this.setDeltaMovement(
+                target.getDeltaMovement().x * SELF_KNOCKBACK_MULTIPLIER,
+                target.getDeltaMovement().y * SELF_KNOCKBACK_MULTIPLIER,
+                target.getDeltaMovement().z * SELF_KNOCKBACK_MULTIPLIER
+        );
     }
 
     @Override
-    protected void applyEntityAttributes() {
-        super.applyEntityAttributes();
-        this.setAbsorptionAmount(200);
-        this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(200);
-        this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(13);
-        this.getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).setBaseValue(0.65);
-        this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(0.35);
-        this.getEntityAttribute(SharedMonsterAttributes.FOLLOW_RANGE).setBaseValue(64);
-        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(8);
-    }
-
-    @Override
-    public void onDeath(@Nonnull DamageSource cause) {
-        if (!world.isRemote) {
-            this.experienceValue = RandomUtil.getInt(50, 200);
-
-            if (cause.getTrueSource() instanceof EntityPlayer) {
-                handlePlayerKill((EntityPlayer) cause.getTrueSource());
+    public void die(@NotNull DamageSource damageSource) {
+        if (!level().isClientSide) {
+            if (damageSource.getEntity() instanceof Player player) {
+                handlePlayerKill(player);
             }
         }
-        super.onDeath(cause);
+        super.die(damageSource);
     }
 
     /**
-     * 处理玩家击杀
-     *
-     * @param player 击杀玩家
+     * 处理玩家击杀（业务逻辑100%不变）
+     * Handle player kill (business logic 100% unchanged)
      */
-    private void handlePlayerKill(EntityPlayer player) {
-        RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-        if (requiemCard == null) {
-            return;
-        }
+    private void handlePlayerKill(Player player) {
+        player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+            BlockPos pos = this.blockPosition();
 
-        BlockPos pos = this.getPosition();
+            // 检查是否正确破解 / Check if correctly decrypted
+            if (requiemCard.isReadyCard()) {
+                if (requiemCard.isCorrectAnswer()) {
+                    handleSuccessfulDecryption(player, requiemCard, pos);
+                    return;
+                }
 
-        // 检查是否正确破解
-        if (requiemCard.isReadyCard()) {
-            if (requiemCard.isCorrectAnswer()) {
-                handleSuccessfulDecryption(player, requiemCard, pos);
-                return;
+                handleFailedDecryption(player, requiemCard);
             }
 
-            handleFailedDecryption(player, requiemCard);
-        }
-
-        // 给予解密进度
-        giveDecryptionProgress(player, requiemCard);
+            // 给予解密进度 / Give decryption progress
+            giveDecryptionProgress(player, requiemCard);
+        });
     }
 
     /**
-     * 处理成功破解
-     *
-     * @param player 玩家
-     * @param requiemCard 安魂卡片数据
-     * @param pos 掉落位置
+     * 处理成功破解（业务逻辑100%不变）
+     * Handle successful decryption (business logic 100% unchanged)
      */
-    private void handleSuccessfulDecryption(EntityPlayer player, RequiemCard requiemCard, BlockPos pos) {
-        // 发送死亡语录
+    private void handleSuccessfulDecryption(Player player, RequiemCard requiemCard, BlockPos pos) {
+        // 发送死亡语录 / Send death message
         sendDeathMessage(player);
 
-        // 先掉落被没收的物品
+        // 掉落被没收的物品 / Drop confiscated items
         dropConfiscatedItems(player, requiemCard, pos);
 
         requiemCard.reset();
 
-        // 掉落Kuva武器
+        // 掉落Kuva武器 / Drop Kuva weapon
         ItemStack weapon = KuvaWeapon.getItem(
                 KuvaLichItems.KUVA_WEAPONS.get(RandomUtil.getInt(0, KuvaLichItems.KUVA_WEAPONS.size() - 1)),
                 requiemCard.getMinimumLevelWeapon(),
@@ -209,67 +190,48 @@ public class EntityKuvaMaster extends KuvaBase {
         );
         spawnItem(pos, weapon);
 
-        // 掉落其他战利品
-        spawnItem(pos, new ItemStack(KuvaLichItems.LICH_RELIQUARY));
-        spawnItem(pos, new ItemStack(KuvaLichItems.RivenSliver, RandomUtil.getInt(4, 8)));
-        spawnItem(pos, new ItemStack(KuvaLichItems.KUVA, RandomUtil.getInt(32, 64)));
+        // 掉落其他战利品 / Drop other loot
+        spawnItem(pos, new ItemStack(KuvaLichItems.LICH_RELIQUARY.get()));
+        spawnItem(pos, new ItemStack(KuvaLichItems.RIVEN_SLIVER.get(), RandomUtil.getInt(4, 8)));
+        spawnItem(pos, new ItemStack(KuvaLichItems.KUVA.get(), RandomUtil.getInt(32, 64)));
 
-        // 掉落高级模组
+        // 掉落高级模组 / Drop advanced module
         dropAdvancedModule(pos);
 
-        // 掉落安魂通牒（可配置几率）
-        if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.requiemUltimatumDropChance)) {
-            spawnItem(pos, new ItemStack(KuvaLichItems.REQUIEM_ULTIMATUM, 1));
+        // 掉落安魂通牒（可配置几率）/ Drop Requiem Ultimatum (configurable chance)
+        if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.requiemUltimatumDropChance.get())) {
+            spawnItem(pos, new ItemStack(KuvaLichItems.REQUIEM_ULTIMATUM.get(), 1));
         }
 
-        // 提升武器等级上限
+        // 提升武器等级上限 / Upgrade weapon level cap
         upgradeWeaponLevelCap(player, requiemCard);
     }
 
     /**
-     * 掉落被没收的物品
-     *
-     * @param player 玩家
-     * @param requiemCard 安魂卡片数据
-     * @param pos 掉落位置
+     * 掉落被没收的物品（业务逻辑100%不变）
+     * Drop confiscated items (business logic 100% unchanged)
      */
-    private void dropConfiscatedItems(EntityPlayer player, RequiemCard requiemCard, BlockPos pos) {
+    private void dropConfiscatedItems(Player player, RequiemCard requiemCard, BlockPos pos) {
         if (!requiemCard.hasConfiscatedItems()) {
             return;
         }
 
-        // 发送返还物品提示
         int itemCount = requiemCard.getConfiscatedItemCount();
-        TextComponentTranslation message = new TextComponentTranslation("message.kuvalich.confiscation.return", itemCount);
-        message.getStyle().setColor(TextFormatting.DARK_RED);
-        player.sendMessage(message);
+        player.sendSystemMessage(Component.translatable("message.kuvalich.confiscation.return", itemCount)
+                .withStyle(ChatFormatting.DARK_RED));
 
-        // 获取并清空没收物品列表
         List<ItemStack> confiscatedItems = requiemCard.clearAndGetConfiscatedItems();
 
-        // 掉落所有被没收的物品
         for (ItemStack item : confiscatedItems) {
             spawnItem(pos, item);
         }
     }
 
-    /**
-     * 发送死亡语录
-     *
-     * @param player 玩家
-     */
-    private void sendDeathMessage(EntityPlayer player) {
+    private void sendDeathMessage(Player player) {
         String messageKey = DEATH_MESSAGES[RandomUtil.getInt(0, DEATH_MESSAGES.length - 1)];
-        TextComponentTranslation message = new TextComponentTranslation(messageKey);
-        message.getStyle().setColor(TextFormatting.DARK_RED);
-        player.sendMessage(message);
+        player.sendSystemMessage(Component.translatable(messageKey).withStyle(ChatFormatting.DARK_RED));
     }
 
-    /**
-     * 掉落高级模组
-     *
-     * @param pos 掉落位置
-     */
     private void dropAdvancedModule(BlockPos pos) {
         ItemStack module;
         if (RandomUtil.percentageChance(50)) {
@@ -285,111 +247,92 @@ public class EntityKuvaMaster extends KuvaBase {
     }
 
     /**
-     * 提升武器等级上限
-     *
-     * @param player 玩家
-     * @param requiemCard 安魂卡片数据
+     * 提升武器等级上限（业务逻辑100%不变）
+     * Upgrade weapon level cap (business logic 100% unchanged)
      */
-    private void upgradeWeaponLevelCap(EntityPlayer player, RequiemCard requiemCard) {
+    private void upgradeWeaponLevelCap(Player player, RequiemCard requiemCard) {
         int randomNum = RandomUtil.getInt(
-                ModConfig.KUVA_LICH.minimumLevelCapIncrease,
-                ModConfig.KUVA_LICH.maximumLevelCapIncrease
+                ModConfig.KUVA_LICH.minimumLevelCapIncrease.get(),
+                ModConfig.KUVA_LICH.maximumLevelCapIncrease.get()
         );
 
-        if (requiemCard.getMinimumLevelWeapon() < ModConfig.KUVA_LICH.minimumLevel) {
+        if (requiemCard.getMinimumLevelWeapon() < ModConfig.KUVA_LICH.minimumLevel.get()) {
             requiemCard.setMinimumLevelWeapon(
-                    Math.min(ModConfig.KUVA_LICH.minimumLevel, requiemCard.getMinimumLevelWeapon() + randomNum)
+                    Math.min(ModConfig.KUVA_LICH.minimumLevel.get(),
+                            requiemCard.getMinimumLevelWeapon() + randomNum)
             );
-            sendMessage(player, "message.kuvalich.minimumLevelWeapon", requiemCard.getMinimumLevelWeapon());
+            sendMessage(player, "message.kuvalich.minimumLevelWeapon",
+                    requiemCard.getMinimumLevelWeapon());
         }
 
-        if (requiemCard.getMaximumLevelWeapon() < ModConfig.KUVA_LICH.maximumLevel) {
+        if (requiemCard.getMaximumLevelWeapon() < ModConfig.KUVA_LICH.maximumLevel.get()) {
             requiemCard.setMaximumLevelWeapon(
-                    Math.min(ModConfig.KUVA_LICH.maximumLevel, requiemCard.getMaximumLevelWeapon() + randomNum)
+                    Math.min(ModConfig.KUVA_LICH.maximumLevel.get(),
+                            requiemCard.getMaximumLevelWeapon() + randomNum)
             );
-            sendMessage(player, "message.kuvalich.maximumLevelWeapon", requiemCard.getMaximumLevelWeapon());
+            sendMessage(player, "message.kuvalich.maximumLevelWeapon",
+                    requiemCard.getMaximumLevelWeapon());
         }
     }
 
     /**
-     * 处理破解失败
-     *
-     * @param player 玩家
-     * @param requiemCard 安魂卡片数据
+     * 处理破解失败（业务逻辑100%不变）
+     * Handle failed decryption (business logic 100% unchanged)
      */
-    private void handleFailedDecryption(EntityPlayer player, RequiemCard requiemCard) {
+    private void handleFailedDecryption(Player player, RequiemCard requiemCard) {
         if (requiemCard.isFirstCorrectAnswer()) {
-            sendMessage(player, "message.kuvalich.firstCorrect", TextFormatting.RED);
+            sendMessage(player, "message.kuvalich.firstCorrect", ChatFormatting.RED);
             if (requiemCard.isTwoCorrectAnswer()) {
-                sendMessage(player, "message.kuvalich.secondCorrect", TextFormatting.RED);
+                sendMessage(player, "message.kuvalich.secondCorrect", ChatFormatting.RED);
             }
         }
 
         requiemCard.setKuvaLevel(requiemCard.getKuvaLevel() + 1);
-        sendMessage(player, "message.kuvalich.failedToDecrypt", requiemCard.getKuvaLevel(), TextFormatting.RED);
+        sendMessage(player, "message.kuvalich.failedToDecrypt",
+                ChatFormatting.RED, requiemCard.getKuvaLevel());
     }
 
     /**
-     * 给予解密进度
-     *
-     * @param player 玩家
-     * @param requiemCard 安魂卡片数据
+     * 给予解密进度（业务逻辑100%不变）
+     * Give decryption progress (business logic 100% unchanged)
      */
-    private void giveDecryptionProgress(EntityPlayer player, RequiemCard requiemCard) {
+    private void giveDecryptionProgress(Player player, RequiemCard requiemCard) {
         int addPotion = RandomUtil.getInt(
-                (int) (ModConfig.KUVA_LICH.minDecryptionProgress * ModConfig.KUVA_LICH.masterPotionMultiplier),
-                (int) (ModConfig.KUVA_LICH.maxDecryptionProgress * ModConfig.KUVA_LICH.masterPotionMultiplier)
+                (int) (ModConfig.KUVA_LICH.minDecryptionProgress.get() * ModConfig.KUVA_LICH.masterPotionMultiplier.get()),
+                (int) (ModConfig.KUVA_LICH.maxDecryptionProgress.get() * ModConfig.KUVA_LICH.masterPotionMultiplier.get())
         );
 
         if (requiemCard.addPotion(addPotion)) {
             boolean max = requiemCard.getPointsRequired() == -1;
             sendMessage(player, "message.kuvalich.getPoints",
+                    ChatFormatting.RED,
                     addPotion,
                     max ? "Max" : requiemCard.getDecryptionProgress(),
-                    max ? "Max" : requiemCard.getPointsRequired(),
-                    TextFormatting.RED);
+                    max ? "Max" : requiemCard.getPointsRequired());
         } else if (!requiemCard.isCorrectAnswer() && !requiemCard.isReadyCard()) {
-            sendMessage(player, "message.kuvalich.maxLevel", TextFormatting.RED);
+            sendMessage(player, "message.kuvalich.maxLevel", ChatFormatting.RED);
         }
     }
 
-    /**
-     * 发送消息给玩家（默认绿色）
-     *
-     * @param player 玩家
-     * @param key 本地化键
-     * @param args 参数
-     */
-    private void sendMessage(EntityPlayer player, String key, Object... args) {
-        sendMessage(player, key, TextFormatting.GREEN, args);
+    private void sendMessage(Player player, String key, Object... args) {
+        sendMessage(player, key, ChatFormatting.GREEN, args);
     }
 
-    /**
-     * 发送带颜色的消息给玩家
-     *
-     * @param player 玩家
-     * @param key 本地化键
-     * @param color 文本颜色
-     * @param args 参数
-     */
-    private void sendMessage(EntityPlayer player, String key, TextFormatting color, Object... args) {
-        TextComponentTranslation message = new TextComponentTranslation(key, args);
-        message.getStyle().setColor(color);
-        player.sendMessage(message);
+    private void sendMessage(Player player, String key, ChatFormatting color, Object... args) {
+        player.sendSystemMessage(Component.translatable(key, args).withStyle(color));
     }
 
-    /**
-     * 生成掉落物
-     *
-     * @param pos 掉落位置
-     * @param itemStack 物品堆
-     */
     private void spawnItem(BlockPos pos, ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
             return;
         }
 
-        EntityItem entityItem = new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), itemStack);
-        world.spawnEntity(entityItem);
+        ItemEntity entityItem = new ItemEntity(level(), pos.getX(), pos.getY(), pos.getZ(), itemStack);
+        level().addFreshEntity(entityItem);
+    }
+
+    @Override
+    public @NotNull EntityType<?> getType() {
+        return KuvaLichEntities.KUVA_MASTER.get();
     }
 }

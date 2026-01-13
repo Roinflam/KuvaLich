@@ -1,103 +1,116 @@
 package pers.roinflam.kuvalich.item;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.EnumRarity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.World;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-
+import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.entity.EntityKuvaMaster;
-import pers.roinflam.kuvalich.init.KuvaLichItems;
-import pers.roinflam.kuvalich.utils.IHasModel;
-import pers.roinflam.kuvalich.utils.util.ItemUtil;
+import pers.roinflam.kuvalich.init.KuvaLichEntities;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
- * 安魂通牒
+ * 安魂通牒（1.20.1版本，业务逻辑100%不变）
+ * Requiem Ultimatum (1.20.1 version, business logic 100% unchanged)
  *
  * 使用后可召唤赤毒玄骸
- * 成功破解赤毒玄骸后有概率获得
+ * Use to summon Kuva Lich
  */
-@Mod.EventBusSubscriber
-public class RequiemUltimatum extends Item implements IHasModel {
+@Mod.EventBusSubscriber(value = Dist.CLIENT)
+public class RequiemUltimatum extends Item {
 
-    public RequiemUltimatum(@Nonnull String name, @Nonnull CreativeTabs creativeTabs) {
-        ItemUtil.registerItem(this, name, creativeTabs);
-        setMaxStackSize(1);
-        KuvaLichItems.ITEMS.add(this);
+    public RequiemUltimatum(@Nonnull Item.Properties properties) {
+        super(properties.stacksTo(1));
     }
 
-    @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public static void onItemTooltip(ItemTooltipEvent evt) {
-        ItemStack itemStack = evt.getItemStack();
+    public static void onItemTooltip(ItemTooltipEvent event) {
+        ItemStack itemStack = event.getItemStack();
         Item item = itemStack.getItem();
+
         if (item instanceof RequiemUltimatum) {
-            evt.getToolTip().add(1, TextFormatting.DARK_GRAY + "" + TextFormatting.ITALIC +
-                    I18n.format(item.getUnlocalizedName() + ".tooltip"));
+            List<Component> tooltip = event.getToolTip();
+            tooltip.add(1, Component.translatable(item.getDescriptionId() + ".tooltip")
+                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
         }
     }
 
-    @Nonnull
+    /**
+     * 右键空气使用（1.20.1新API）
+     * Use on air (1.20.1 new API)
+     */
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, @Nonnull EnumHand handIn) {
-        ItemStack itemstack = playerIn.getHeldItem(handIn);
+    public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
 
-        if (!worldIn.isRemote) {
-            // 在玩家面前生成赤毒玄骸
-            BlockPos spawnPos = playerIn.getPosition().offset(playerIn.getHorizontalFacing(), 3);
-            EntityKuvaMaster kuvaMaster = new EntityKuvaMaster(worldIn);
-            kuvaMaster.setPosition(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
-            worldIn.spawnEntity(kuvaMaster);
+        if (!level.isClientSide) {
+            // 在玩家面前生成赤毒玄骸 / Spawn Kuva Lich in front of player
+            BlockPos spawnPos = player.blockPosition().relative(player.getDirection(), 3);
 
-            if (!playerIn.capabilities.isCreativeMode) {
+            EntityKuvaMaster kuvaMaster = new EntityKuvaMaster(KuvaLichEntities.KUVA_MASTER.get(), level);
+            kuvaMaster.setPos(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
+            level.addFreshEntity(kuvaMaster);
+
+            if (!player.getAbilities().instabuild) {
                 itemstack.shrink(1);
             }
         }
 
-        return new ActionResult<>(EnumActionResult.SUCCESS, itemstack);
+        return InteractionResultHolder.success(itemstack);
     }
 
-    @Nonnull
+    /**
+     * 右键方块使用（1.20.1新API）
+     * Use on block (1.20.1 new API)
+     */
     @Override
-    public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos, EnumHand hand,
-                                      EnumFacing facing, float hitX, float hitY, float hitZ) {
-        if (worldIn.isRemote) {
-            return EnumActionResult.SUCCESS;
+    public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
+        Level level = context.getLevel();
+
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
         }
 
-        ItemStack itemstack = player.getHeldItem(hand);
+        Player player = context.getPlayer();
+        if (player == null) {
+            return InteractionResult.FAIL;
+        }
 
-        // 在点击的方块上方生成赤毒玄骸
-        BlockPos spawnPos = pos.offset(facing);
-        EntityKuvaMaster kuvaMaster = new EntityKuvaMaster(worldIn);
-        kuvaMaster.setPosition(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
-        worldIn.spawnEntity(kuvaMaster);
+        ItemStack itemstack = context.getItemInHand();
+        BlockPos pos = context.getClickedPos();
+        Direction facing = context.getClickedFace();
 
-        if (!player.capabilities.isCreativeMode) {
+        // 在点击的方块上方生成赤毒玄骸 / Spawn Kuva Lich above clicked block
+        BlockPos spawnPos = pos.relative(facing);
+
+        EntityKuvaMaster kuvaMaster = new EntityKuvaMaster(KuvaLichEntities.KUVA_MASTER.get(), level);
+        kuvaMaster.setPos(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
+        level.addFreshEntity(kuvaMaster);
+
+        if (!player.getAbilities().instabuild) {
             itemstack.shrink(1);
         }
 
-        return EnumActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
-    @Nonnull
     @Override
-    public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
+    public @NotNull Rarity getRarity(@NotNull ItemStack stack) {
+        return Rarity.EPIC;
     }
 }

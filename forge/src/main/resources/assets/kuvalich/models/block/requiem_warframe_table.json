@@ -5,8 +5,8 @@
     128
   ],
   "textures": {
-    "0": "kuvalich:blocks/requiem_warframe_table",
-    "particle": "kuvalich:blocks/requiem_warframe_table"
+    "0": "kuvalich:block/requiem_warframe_table",
+    "particle": "kuvalich:block/requiem_warframe_table"
   },
   "elements": [
     {

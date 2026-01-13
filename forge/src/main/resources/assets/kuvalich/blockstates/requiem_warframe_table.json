@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "kuvalich:requiem_warframe_table"
+      "model": "kuvalich:block/requiem_warframe_table"
     }
   }
 }

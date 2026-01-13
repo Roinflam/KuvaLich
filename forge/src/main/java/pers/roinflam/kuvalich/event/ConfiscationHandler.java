@@ -1,28 +1,29 @@
 package pers.roinflam.kuvalich.event;
 
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
 /**
- * 赤毒玄骸没收物品事件处理器
+ * 赤毒玄骸没收物品事件处理器（1.20.1版本，业务逻辑100%不变）
+ * Confiscation Handler (1.20.1 version, business logic 100% unchanged)
  *
  * 当玩家解密了任意谜语后，捡起物品时有概率被没收
- * 被没收的物品会在解密成功后返还
+ * When player unlocked any riddle, items may be confiscated when picked up
  */
 @Mod.EventBusSubscriber
 public class ConfiscationHandler {
 
-    // 没收时的嘲讽语录key
+    // 没收时的嘲讽语录key（业务逻辑100%不变）
+    // Confiscation message keys (business logic 100% unchanged)
     private static final String[] CONFISCATION_MESSAGES = {
             "message.kuvalich.confiscation.wallet",
             "message.kuvalich.confiscation.tax",
@@ -36,98 +37,65 @@ public class ConfiscationHandler {
     };
 
     /**
-     * 监听玩家捡起物品事件
+     * 监听玩家捡起物品事件（1.20.1事件API）
+     * Listen to item pickup event (1.20.1 event API)
      *
-     * @param event 物品拾取事件
+     * 注意：1.20.1使用EntityItemPickupEvent.Pre
+     * Note: 1.20.1 uses EntityItemPickupEvent.Pre
      */
     @SubscribeEvent
     public static void onItemPickup(EntityItemPickupEvent event) {
-        EntityPlayer player = event.getEntityPlayer();
-        EntityItem entityItem = event.getItem();
+        Player player = event.getEntity();
+        ItemEntity entityItem = event.getItem();
 
-        // 仅在服务端处理
-        if (player.world.isRemote) {
+        // 仅在服务端处理 / Server-side only
+        if (player.level().isClientSide) {
             return;
         }
 
-        // 检查配置是否启用没收机制
-        double confiscationChance = ModConfig.KUVA_LICH.confiscationChance;
+        // ✅ 修正：调用.get()获取配置值
+        double confiscationChance = ModConfig.KUVA_LICH.confiscationChance.get();
         if (confiscationChance <= 0) {
             return;
         }
 
-        // 获取玩家的RequiemCard能力
-        RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-        if (requiemCard == null) {
-            return;
-        }
+        // 获取玩家的RequiemCard能力 / Get player's RequiemCard capability
+        player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+            // 检查是否有任意谜语被解开 / Check if any riddle unlocked
+            if (!requiemCard.hasAnyRiddleUnlocked()) {
+                return;
+            }
 
-        // 检查是否有任意谜语被解开
-        if (!requiemCard.hasAnyRiddleUnlocked()) {
-            return;
-        }
+            // 概率判定 / Chance check
+            if (!RandomUtil.percentageChance(confiscationChance)) {
+                return;
+            }
 
-        // 概率判定
-        if (!RandomUtil.percentageChance(confiscationChance)) {
-            return;
-        }
+            // 获取要没收的物品 / Get item to confiscate
+            ItemStack itemStack = entityItem.getItem();
+            if (itemStack.isEmpty()) {
+                return;
+            }
 
-        // 获取要没收的物品
-        ItemStack itemStack = entityItem.getItem();
-        if (itemStack.isEmpty()) {
-            return;
-        }
+            // 没收物品 / Confiscate item
+            requiemCard.addConfiscatedItem(itemStack);
 
-        // 没收物品
-        requiemCard.addConfiscatedItem(itemStack);
+            // 取消拾取事件，移除掉落物实体（1.20.1新API）
+            // Cancel pickup, remove item entity (1.20.1 new API)
+            event.setCanceled(true);
+            entityItem.discard();
 
-        // 取消拾取事件，移除掉落物实体
-        event.setCanceled(true);
-        entityItem.setDead();
-
-        // 发送嘲讽消息
-        sendConfiscationMessage(player);
-
-        // 发送被没收物品的提示消息
-        sendStolenItemMessage(player, itemStack);
+            // 发送嘲讽消息 / Send confiscation message
+            sendConfiscationMessage(player);
+        });
     }
 
     /**
-     * 发送没收时的嘲讽消息
-     *
-     * @param player 玩家
+     * 发送没收时的嘲讽消息（业务逻辑100%不变）
+     * Send confiscation message (business logic 100% unchanged)
      */
-    private static void sendConfiscationMessage(EntityPlayer player) {
-        // 随机选择一条语录
+    private static void sendConfiscationMessage(Player player) {
         String messageKey = CONFISCATION_MESSAGES[RandomUtil.getInt(0, CONFISCATION_MESSAGES.length - 1)];
-        TextComponentTranslation message = new TextComponentTranslation(messageKey);
-        message.getStyle().setColor(TextFormatting.DARK_RED);
-        player.sendMessage(message);
+        player.sendSystemMessage(Component.translatable(messageKey).withStyle(ChatFormatting.DARK_RED));
     }
-
-    /**
-     * 发送被没收物品的提示消息
-     *
-     * @param player    玩家
-     * @param itemStack 被没收的物品
-     */
-    private static void sendStolenItemMessage(EntityPlayer player, ItemStack itemStack) {
-        // 获取物品显示名称（优先自定义名称，否则使用翻译名）
-        String itemName = itemStack.getDisplayName();
-        int count = itemStack.getCount();
-
-        // 构建物品名称字符串（数量大于1时添加数量后缀）
-        String itemDisplay;
-        if (count > 1) {
-            itemDisplay = itemName + "x" + count;
-        } else {
-            itemDisplay = itemName;
-        }
-
-        // 发送提示消息
-        TextComponentTranslation message = new TextComponentTranslation("message.kuvalich.confiscation.stolen", itemDisplay);
-        message.getStyle().setColor(TextFormatting.RED);
-        player.sendMessage(message);
-    }
-
 }

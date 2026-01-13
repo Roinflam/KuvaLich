@@ -1,83 +1,99 @@
 package pers.roinflam.kuvalich.item;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.EnumRarity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.World;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-
+import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.base.item.RequiemCardBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.capability.RequiemCard;
-import pers.roinflam.kuvalich.init.KuvaLichItems;
-import pers.roinflam.kuvalich.utils.IHasModel;
-import pers.roinflam.kuvalich.utils.util.ItemUtil;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
-@Mod.EventBusSubscriber
-public class RequiemRiddle extends Item implements IHasModel {
+/**
+ * 安魂谜语（1.20.1版本，业务逻辑100%不变）
+ * Requiem Riddle (1.20.1 version, business logic 100% unchanged)
+ *
+ * 使用后可直接查看谜语答案
+ * Use to directly view riddle answers
+ */
+@Mod.EventBusSubscriber(value = Dist.CLIENT)
+public class RequiemRiddle extends Item {
 
-    public RequiemRiddle(@Nonnull String name, @Nonnull CreativeTabs creativeTabs) {
-        ItemUtil.registerItem(this, name, creativeTabs);
-
-        setMaxStackSize(1);
-
-        KuvaLichItems.ITEMS.add(this);
+    public RequiemRiddle(@Nonnull Item.Properties properties) {
+        super(properties.stacksTo(1));
     }
 
-    @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public static void onItemTooltip(ItemTooltipEvent evt) {
-        ItemStack itemStack = evt.getItemStack();
+    public static void onItemTooltip(ItemTooltipEvent event) {
+        ItemStack itemStack = event.getItemStack();
         Item item = itemStack.getItem();
+
         if (item instanceof RequiemRiddle) {
-            evt.getToolTip().add(1, TextFormatting.DARK_GRAY + "" + TextFormatting.ITALIC + I18n.format(item.getUnlocalizedName() + ".tooltip"));
+            List<Component> tooltip = event.getToolTip();
+            tooltip.add(1, Component.translatable(item.getDescriptionId() + ".tooltip")
+                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
         }
     }
 
-    private TextComponentTranslation getCardName(int id) {
-        return new TextComponentTranslation(RequiemCardBase.getCard(id).getUnlocalizedName() + ".name");
+    /**
+     * 获取卡片名称组件（业务逻辑100%不变）
+     * Get card name component (business logic 100% unchanged)
+     */
+    private Component getCardName(int id) {
+        return Component.translatable(RequiemCardBase.getCard(id).getDescriptionId());
     }
 
+    /**
+     * 右键使用物品（1.20.1新API）
+     * Use item on right click (1.20.1 new API)
+     */
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
-        ItemStack itemstack = playerIn.getHeldItem(handIn);
-        if (!worldIn.isRemote) {
-           RequiemCard requiemCard = playerIn.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
+    public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
 
-            if (requiemCard.getOneAnswer() == -1 || requiemCard.getTwoAnswer() == -1 || requiemCard.getThreeAnswer() == -1) {
-                TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.requiemRiddleNotAnswer", requiemCard.getKuvaLevel());
-                textComponentString.getStyle().setColor(TextFormatting.RED);
-                playerIn.sendMessage(textComponentString);
+        if (!level.isClientSide) {
+            player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+                if (requiemCard.getOneAnswer() == -1 ||
+                        requiemCard.getTwoAnswer() == -1 ||
+                        requiemCard.getThreeAnswer() == -1) {
 
-                playerIn.resetCooldown();
-                playerIn.getCooldownTracker().setCooldown(itemstack.getItem(), 200);
-            } else {
-                TextComponentTranslation textComponentString = new TextComponentTranslation("message.kuvalich.requiemRiddleAnswer", getCardName(requiemCard.getOneAnswer()), getCardName(requiemCard.getTwoAnswer()), getCardName(requiemCard.getThreeAnswer()));
-                textComponentString.getStyle().setColor(TextFormatting.GOLD);
-                playerIn.sendMessage(textComponentString);
+                    // 尚未解密完成 / Not yet fully decrypted
+                    player.sendSystemMessage(Component.translatable(
+                            "message.kuvalich.requiemRiddleNotAnswer",
+                            requiemCard.getKuvaLevel()
+                    ).withStyle(ChatFormatting.RED));
 
-                itemstack.shrink(1);
-            }
+                    player.getCooldowns().addCooldown(itemstack.getItem(), 200);
+                } else {
+                    // 显示答案 / Show answers
+                    player.sendSystemMessage(Component.translatable(
+                            "message.kuvalich.requiemRiddleAnswer",
+                            getCardName(requiemCard.getOneAnswer()),
+                            getCardName(requiemCard.getTwoAnswer()),
+                            getCardName(requiemCard.getThreeAnswer())
+                    ).withStyle(ChatFormatting.GOLD));
+
+                    itemstack.shrink(1);
+                }
+            });
         }
-        return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, itemstack);
+
+        return InteractionResultHolder.success(itemstack);
     }
 
     @Override
-    public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
+    public @NotNull Rarity getRarity(@NotNull ItemStack stack) {
+        return Rarity.EPIC;
     }
 }

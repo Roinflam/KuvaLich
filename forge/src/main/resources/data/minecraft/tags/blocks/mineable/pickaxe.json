@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "kuvalich:requiem_ore",
+    "kuvalich:experience_ore",
+    "kuvalich:requiem_gate",
+    "kuvalich:requiem_recast",
+    "kuvalich:requiem_evolve",
+    "kuvalich:requiem_weapon_table",
+    "kuvalich:requiem_warframe_table"
+  ]
+}

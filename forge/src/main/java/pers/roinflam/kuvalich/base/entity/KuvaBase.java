@@ -1,222 +1,191 @@
-// 文件：KuvaBase.java
-// 路径：src/main/java/pers/roinflam/kuvalich/base/entity/KuvaBase.java
 package pers.roinflam.kuvalich.base.entity;
 
-import com.google.common.base.Predicate;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.EnumCreatureAttribute;
-import net.minecraft.entity.ai.*;
-import net.minecraft.entity.monster.EntityCreeper;
-import net.minecraft.entity.monster.EntityMob;
-import net.minecraft.entity.monster.IMob;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.init.Biomes;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.network.datasync.DataParameter;
-import net.minecraft.network.datasync.DataSerializers;
-import net.minecraft.network.datasync.EntityDataManager;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-
+import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.IAnimationTickable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
-import javax.annotation.Nonnull;
-
+/**
+ * 赤毒玄骸基类（1.20.1版本，配置值修正）
+ * Kuva Lich Base Class (1.20.1 version, config values fixed)
+ */
 @Mod.EventBusSubscriber
-public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimationTickable {
+public abstract class KuvaBase extends Monster implements GeoEntity {
+
     private static final float ARROW_DAMAGE_MULTIPLIER = 1.25f;
     private static final float PROJECTILE_DAMAGE_MULTIPLIER = 0.75f;
     private static final float MAGIC_DAMAGE_MULTIPLIER = 0.75f;
     private static final float KUVA_WEAPON_DAMAGE_MULTIPLIER = 0.25f;
 
-    public static final Biome[] BIOMES = {
-            Biomes.FOREST, Biomes.FOREST_HILLS, Biomes.BIRCH_FOREST, Biomes.BIRCH_FOREST_HILLS,
-            Biomes.ROOFED_FOREST, Biomes.TAIGA, Biomes.TAIGA_HILLS, Biomes.REDWOOD_TAIGA,
-            Biomes.REDWOOD_TAIGA_HILLS, Biomes.PLAINS, Biomes.SAVANNA, Biomes.SAVANNA_PLATEAU,
-            Biomes.DESERT, Biomes.DESERT_HILLS, Biomes.JUNGLE, Biomes.JUNGLE_HILLS, Biomes.JUNGLE_EDGE,
-            Biomes.SWAMPLAND, Biomes.EXTREME_HILLS, Biomes.EXTREME_HILLS_WITH_TREES,
-            Biomes.BEACH, Biomes.STONE_BEACH, Biomes.COLD_BEACH, Biomes.RIVER,
-            Biomes.ICE_PLAINS, Biomes.COLD_TAIGA, Biomes.COLD_TAIGA_HILLS, Biomes.OCEAN,
-            Biomes.MUSHROOM_ISLAND_SHORE, Biomes.MUTATED_FOREST, Biomes.MUTATED_TAIGA,
-            Biomes.MUTATED_SWAMPLAND, Biomes.MUTATED_ICE_FLATS, Biomes.MUTATED_JUNGLE,
-            Biomes.MUTATED_JUNGLE_EDGE, Biomes.MUTATED_BIRCH_FOREST, Biomes.MUTATED_BIRCH_FOREST_HILLS,
-            Biomes.MUTATED_ROOFED_FOREST, Biomes.MUTATED_REDWOOD_TAIGA, Biomes.MUTATED_REDWOOD_TAIGA_HILLS,
-            Biomes.MUTATED_EXTREME_HILLS, Biomes.MUTATED_SAVANNA, Biomes.MUTATED_SAVANNA_ROCK
-    };
+    private static final EntityDataAccessor<Boolean> HAS_TARGET =
+            SynchedEntityData.defineId(KuvaBase.class, EntityDataSerializers.BOOLEAN);
 
-    private static final DataParameter<Boolean> HAS_TARGET =
-            EntityDataManager.createKey(KuvaBase.class, DataSerializers.BOOLEAN);
+    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
 
-    private static final Predicate<EntityMob> VALID_TARGET_PREDICATE =
-            entityMob -> entityMob != null && IMob.VISIBLE_MOB_SELECTOR.apply(entityMob)
-                    && !(entityMob instanceof EntityCreeper)
-                    && !(entityMob instanceof KuvaBase);
-
-    private final AnimationFactory factory = new AnimationFactory(this);
     protected int battleTick = 0;
 
-    public KuvaBase(World worldIn) {
-        super(worldIn);
+    public KuvaBase(EntityType<? extends Monster> entityType, Level level) {
+        super(entityType, level);
     }
 
     @SubscribeEvent
-    public static void onLivingHurt(LivingHurtEvent evt) {
-        // 服务端处理
-        if (evt.getEntity() == null || evt.getEntity().world.isRemote) {
+    public static void onLivingHurt(LivingHurtEvent event) {
+        if (event.getEntity() == null || event.getEntity().level().isClientSide) {
             return;
         }
 
-        DamageSource damageSource = evt.getSource();
+        DamageSource damageSource = event.getSource();
         if (damageSource == null) {
             return;
         }
 
-        EntityLivingBase target = evt.getEntityLiving();
+        LivingEntity target = event.getEntity();
         if (target == null) {
             return;
         }
 
-        if (damageSource.getTrueSource() instanceof KuvaBase) {
-            applyKuvaBaseDamageBonus(evt, (KuvaBase) damageSource.getTrueSource());
-        } else if (damageSource.getTrueSource() instanceof EntityPlayer) {
-            applyPlayerDamageModifier(evt, (EntityPlayer) damageSource.getTrueSource());
+        if (damageSource.getEntity() instanceof KuvaBase kuvaBase) {
+            applyKuvaBaseDamageBonus(event, kuvaBase);
+        } else if (damageSource.getEntity() instanceof Player player) {
+            applyPlayerDamageModifier(event, player);
         }
 
         if (target instanceof KuvaBase) {
-            applyKuvaBaseDefense(evt, damageSource);
-        } else if (target instanceof EntityPlayer) {
-            applyPlayerDefense(evt, (EntityPlayer) target);
+            applyKuvaBaseDefense(event, damageSource);
+        } else if (target instanceof Player player) {
+            applyPlayerDefense(event, player);
         }
     }
 
-    private static void applyKuvaBaseDamageBonus(LivingHurtEvent evt, KuvaBase kuvaBase) {
-        float multiplier = 1.0f + (kuvaBase.getBattleTick() / 20f) * ModConfig.KUVA_LICH.battleBoost;
-        evt.setAmount(evt.getAmount() * multiplier);
+    private static void applyKuvaBaseDamageBonus(LivingHurtEvent event, KuvaBase kuvaBase) {
+        // ✅ 修正：调用.get()获取配置值
+        float multiplier = (float) (1.0f + (kuvaBase.getBattleTick() / 20f) * ModConfig.KUVA_LICH.battleBoost.get());
+        event.setAmount(event.getAmount() * multiplier);
     }
 
-    private static void applyPlayerDamageModifier(LivingHurtEvent evt, EntityPlayer player) {
-        RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-        if (requiemCard == null) {
-            return;
-        }
+    private static void applyPlayerDamageModifier(LivingHurtEvent event, Player player) {
+        player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+            // ✅ 修正：调用.get()获取配置值
+            float reduction = (float) Math.min(0.999f, requiemCard.getKuvaLevel() * ModConfig.KUVA_LICH.reducedDamage.get());
+            float damage = event.getAmount() * (1.0f - reduction);
 
-        float reduction = Math.min(0.999f, requiemCard.getKuvaLevel() * ModConfig.KUVA_LICH.reducedDamage);
-        float damage = evt.getAmount() * (1.0f - reduction);
+            if (KuvaWeapon.hasType(player.getItemInHand(player.getUsedItemHand()))) {
+                damage *= KUVA_WEAPON_DAMAGE_MULTIPLIER;
+            }
 
-        if (KuvaWeapon.hasType(player.getHeldItem(player.getActiveHand()))) {
-            damage *= KUVA_WEAPON_DAMAGE_MULTIPLIER;
-        }
-
-        evt.setAmount(damage);
+            event.setAmount(damage);
+        });
     }
 
-    private static void applyKuvaBaseDefense(LivingHurtEvent evt, DamageSource damageSource) {
-        float damage = evt.getAmount();
+    private static void applyKuvaBaseDefense(LivingHurtEvent event, DamageSource damageSource) {
+        float damage = event.getAmount();
 
-        if (damageSource.getImmediateSource() instanceof EntityArrow) {
+        if (damageSource.getDirectEntity() instanceof AbstractArrow) {
             damage *= ARROW_DAMAGE_MULTIPLIER;
-        } else if (damageSource.isProjectile()) {
+        } else if (damageSource.is(net.minecraft.tags.DamageTypeTags.IS_PROJECTILE)) {
             damage *= PROJECTILE_DAMAGE_MULTIPLIER;
         }
 
-        if (damageSource.isMagicDamage() && !damageSource.isProjectile()) {
+        if (damageSource.is(net.minecraft.tags.DamageTypeTags.WITCH_RESISTANT_TO) &&
+                !damageSource.is(net.minecraft.tags.DamageTypeTags.IS_PROJECTILE)) {
             damage *= MAGIC_DAMAGE_MULTIPLIER;
         }
 
-        evt.setAmount(damage);
+        event.setAmount(damage);
     }
 
-    private static void applyPlayerDefense(LivingHurtEvent evt, EntityPlayer player) {
-        RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD, null);
-        if (requiemCard == null) {
-            return;
-        }
-
-        float multiplier = 1.0f + requiemCard.getKuvaLevel() * ModConfig.KUVA_LICH.increaseDamage;
-        evt.setAmount(evt.getAmount() * multiplier);
-    }
-
-    @Override
-    public EnumCreatureAttribute getCreatureAttribute() {
-        return EnumCreatureAttribute.UNDEAD;
+    private static void applyPlayerDefense(LivingHurtEvent event, Player player) {
+        player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+            // ✅ 修正：调用.get()获取配置值
+            float multiplier = (float) (1.0f + requiemCard.getKuvaLevel() * ModConfig.KUVA_LICH.increaseDamage.get());
+            event.setAmount(event.getAmount() * multiplier);
+        });
     }
 
     @Override
-    public void registerControllers(@Nonnull AnimationData data) {
-        data.addAnimationController(new AnimationController<>(this, "controller", 0, this::predicate));
+    public @NotNull MobType getMobType() {
+        return MobType.UNDEAD;
     }
 
     @Override
-    public AnimationFactory getFactory() {
-        return this.factory;
-    }
-
-    @Nonnull
-    private <E extends IAnimatable> PlayState predicate(@Nonnull AnimationEvent<E> event) {
-        AnimationController<?> controller = event.getController();
-        AnimationBuilder builder = new AnimationBuilder();
-
-        if (this.isSwingInProgress) {
-            builder.addAnimation("attack", true);
-        } else if (event.isMoving()) {
-            builder.addAnimation(this.getDataManager().get(HAS_TARGET) ? "run" : "walk", true);
-        } else {
-            builder.addAnimation("stay", true);
-        }
-
-        controller.setAnimation(builder);
-        return PlayState.CONTINUE;
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "controller", 0, state -> {
+            if (this.swinging) {
+                return state.setAndContinue(RawAnimation.begin().thenPlay("attack"));
+            } else if (state.isMoving()) {
+                String animation = this.entityData.get(HAS_TARGET) ? "run" : "walk";
+                return state.setAndContinue(RawAnimation.begin().thenLoop(animation));
+            } else {
+                return state.setAndContinue(RawAnimation.begin().thenLoop("stay"));
+            }
+        }));
     }
 
     @Override
-    protected void initEntityAI() {
-        this.tasks.addTask(0, new EntityAISwimming(this));
-        this.tasks.addTask(1, new EntityAIWanderAvoidWater(this, 0.7));
-        this.tasks.addTask(2, new EntityAIWatchClosest(this, EntityMob.class, 32));
-        this.tasks.addTask(3, new EntityAIAttackMelee(this, 1, true));
-        this.tasks.addTask(4, new EntityAIWander(this, 0.7));
-        this.tasks.addTask(5, new EntityAILookIdle(this));
-
-        this.targetTasks.addTask(0, new EntityAIHurtByTarget(this, true));
-        this.targetTasks.addTask(1, new EntityAINearestAttackableTarget<>(this, EntityPlayer.class, 32, true, true, null));
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget<>(this, EntityMob.class, 16, true, true, VALID_TARGET_PREDICATE));
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return this.animationCache;
     }
 
     @Override
-    public void setAttackTarget(EntityLivingBase target) {
-        boolean hasTarget = target != null && target.isEntityAlive();
-        this.getDataManager().set(HAS_TARGET, hasTarget);
-        super.setAttackTarget(target);
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new WaterAvoidingRandomStrollGoal(this, 0.7));
+        this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Monster.class, 32.0F));
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.0, true));
+        this.goalSelector.addGoal(4, new RandomStrollGoal(this, 0.7));
+        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
+
+        this.targetSelector.addGoal(0, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 16, true, true,
+                entity -> !(entity instanceof Creeper) && !(entity instanceof KuvaBase)));
     }
 
     @Override
-    protected void entityInit() {
-        super.entityInit();
-        this.getDataManager().register(HAS_TARGET, false);
+    public void setTarget(LivingEntity target) {
+        boolean hasTarget = target != null && target.isAlive();
+        this.entityData.set(HAS_TARGET, hasTarget);
+        super.setTarget(target);
     }
 
     @Override
-    public void onLivingUpdate() {
-        super.onLivingUpdate();
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(HAS_TARGET, false);
+    }
 
-        if (!this.world.isRemote) {
+    @Override
+    public void aiStep() {
+        super.aiStep();
+
+        if (!this.level().isClientSide) {
             updateTargetStatus();
             handleHealing();
         }
@@ -225,17 +194,17 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
     }
 
     private void updateTargetStatus() {
-        EntityLivingBase target = this.getAttackTarget();
-        boolean hasTarget = target != null && target.isEntityAlive();
-        this.getDataManager().set(HAS_TARGET, hasTarget);
+        LivingEntity target = this.getTarget();
+        boolean hasTarget = target != null && target.isAlive();
+        this.entityData.set(HAS_TARGET, hasTarget);
     }
 
     private void handleHealing() {
-        if (world.getTotalWorldTime() % 20 != 0 || this.getHealth() >= this.getMaxHealth()) {
+        if (level().getGameTime() % 20 != 0 || this.getHealth() >= this.getMaxHealth()) {
             return;
         }
 
-        float healAmount = this.getDataManager().get(HAS_TARGET)
+        float healAmount = this.entityData.get(HAS_TARGET)
                 ? getHasTargetTickHeal()
                 : getTickHeal();
 
@@ -243,7 +212,7 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
     }
 
     private void updateBattleTick() {
-        if (this.getDataManager().get(HAS_TARGET)) {
+        if (this.entityData.get(HAS_TARGET)) {
             battleTick++;
         } else if (battleTick > 0) {
             battleTick--;
@@ -251,40 +220,42 @@ public abstract class KuvaBase extends EntityMob implements IAnimatable, IAnimat
     }
 
     @Override
-    public boolean attackEntityFrom(@Nonnull DamageSource source, float amount) {
-        if ("fall".equalsIgnoreCase(source.damageType)) {
+    public boolean hurt(@NotNull DamageSource source, float amount) {
+        if (source.is(net.minecraft.tags.DamageTypeTags.IS_FALL)) {
             return false;
         }
-        return super.attackEntityFrom(source, amount);
+        return super.hurt(source, amount);
     }
 
     @Override
     protected SoundEvent getAmbientSound() {
-        return SoundEvents.ENTITY_WITHER_SKELETON_AMBIENT;
+        return SoundEvents.WITHER_SKELETON_AMBIENT;
     }
 
     @Override
-    protected SoundEvent getHurtSound(@Nonnull DamageSource damageSourceIn) {
-        return SoundEvents.ENTITY_WITHER_SKELETON_HURT;
+    protected SoundEvent getHurtSound(@NotNull DamageSource damageSource) {
+        return SoundEvents.WITHER_SKELETON_HURT;
     }
 
     @Override
     protected SoundEvent getDeathSound() {
-        return SoundEvents.ENTITY_WITHER_SKELETON_DEATH;
+        return SoundEvents.WITHER_SKELETON_DEATH;
     }
 
     protected SoundEvent getStepSound() {
-        return SoundEvents.ENTITY_IRONGOLEM_STEP;
+        return SoundEvents.IRON_GOLEM_STEP;
     }
 
     @Override
-    public void tick() {
-        super.onUpdate();
+    public void addAdditionalSaveData(@NotNull CompoundTag compound) {
+        super.addAdditionalSaveData(compound);
+        compound.putInt("BattleTick", this.battleTick);
     }
 
     @Override
-    public int tickTimer() {
-        return ticksExisted;
+    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+        super.readAdditionalSaveData(compound);
+        this.battleTick = compound.getInt("BattleTick");
     }
 
     public int getBattleTick() {

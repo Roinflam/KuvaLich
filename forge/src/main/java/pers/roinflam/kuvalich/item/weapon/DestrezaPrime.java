@@ -1,13 +1,13 @@
 package pers.roinflam.kuvalich.item.weapon;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
@@ -17,31 +17,17 @@ import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
 import pers.roinflam.kuvalich.utils.util.EntityPlayerUtil;
 import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
 
+import javax.annotation.Nonnull;
+
 /**
- * 德斯特拉Prime（Destreza Prime）- 细剑
- *
- * 武器特性：
- * 1. 攻击时额外造成一次独立伤害判定
- *    - 额外伤害 = 主伤害 × 33% × 攻击冷却进度
- * 2. 减少目标无敌时间（减半）
- *    - 可以更快地进行连击
- *
- * 战术思路：
- * - 双重伤害判定，实际伤害提升33%+
- * - 减少无敌时间，适合快速连击
- * - 攻击冷却>66%才触发额外伤害（避免无意义触发）
- *
- * 基础属性：
- * - 伤害倍率：80%-120%（95%概率为100%）
- * - 暴击率：32%
- * - 暴击倍率：3.0x
- * - 触发几率：20%
+ * 德斯特拉Prime（1.20.1版本，业务逻辑100%不变）
+ * Destreza Prime (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
 public class DestrezaPrime extends KuvaWeaponBase {
 
-    public DestrezaPrime(String name) {
-        super(name);
+    public DestrezaPrime(@Nonnull Item.Properties properties) {
+        super(properties);
     }
 
     @Override
@@ -50,56 +36,47 @@ public class DestrezaPrime extends KuvaWeaponBase {
         return setBaseWeaponAttribute(itemStack, damage, 0.32, 3.0, 0.20);
     }
 
-    /**
-     * 额外伤害判定
-     * 攻击冷却>66%时触发
-     */
     @SubscribeEvent
-    public static void onAttackEntity(AttackEntityEvent evt) {
-        if (evt.getEntity().world.isRemote) return;
-        if (!(evt.getTarget() instanceof EntityLivingBase)) return;
+    public static void onAttackEntity(AttackEntityEvent event) {
+        if (event.getEntity().level().isClientSide) return;
+        if (!(event.getTarget() instanceof LivingEntity)) return;
 
-        EntityLivingBase hurter = (EntityLivingBase) evt.getTarget();
-        EntityPlayer attacker = evt.getEntityPlayer();
+        LivingEntity hurter = (LivingEntity) event.getTarget();
+        Player attacker = event.getEntity();
 
-        // ✅ 使用工具类，要求攻击冷却>66%
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, DestrezaPrime.class, 0.66);
 
         if (weapon != null) {
-            // 获取攻击冷却进度
             float cooldownProgress = EntityLivingUtil.getTicksSinceLastSwing(attacker);
-
-            // 计算主伤害
             float mainDamage = EntityPlayerUtil.getAttackDamage(attacker, hurter);
-
-            // 额外伤害 = 主伤害 × 33% × 冷却进度
             float extraDamage = mainDamage * 0.333f * cooldownProgress;
 
-            // 造成独立伤害判定
-            if (hurter.attackEntityFrom(DamageSource.causePlayerDamage(attacker), extraDamage)) {
-                // 减少无敌时间（减半），允许更快连击
-                hurter.hurtResistantTime = hurter.maxHurtResistantTime / 2;
+            if (hurter.hurt(attacker.level().damageSources().playerAttack(attacker), extraDamage)) {
+                hurter.invulnerableTime = hurter.invulnerableDuration / 2;
             }
         }
     }
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack, ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime));
+        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+                ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack, ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime));
+        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+                ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime.get()));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.max(0, KuvaWeapon.getMagnification(itemStack, ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime));
+        return Math.max(0, KuvaWeapon.getMagnification(itemStack,
+                ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime.get()));
     }
 
     @Override
-    public int getMovementSpeedOperation() {
-        return 2;
+    public AttributeModifier.Operation getMovementSpeedOperation() {
+        return AttributeModifier.Operation.MULTIPLY_BASE;
     }
 }

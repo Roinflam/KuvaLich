@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "kuvalich:requiem_weapon_table"
+      "model": "kuvalich:block/requiem_weapon_table"
     }
   }
 }

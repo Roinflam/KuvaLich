@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "kuvalich:requiem_gate"
+      "model": "kuvalich:block/requiem_gate"
     }
   }
 }
