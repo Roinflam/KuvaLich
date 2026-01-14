@@ -26,20 +26,13 @@ import java.util.List;
  */
 public class WarframeRareModule extends WarframeModuleBase {
 
-    /**
-     * 静态模组列表,用于随机获取
-     * Static module list for random obtaining
-     */
     public static List<ItemStack> itemStackList = new ArrayList<>();
+    private static boolean isInitialized = false;
 
     public WarframeRareModule(Properties properties) {
         super(properties);
     }
 
-    /**
-     * 获取随机模组物品
-     * Get random module item
-     */
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RARE_MODULE.get());
         itemStack.setHoverName(net.minecraft.network.chat.Component.translatable("kuvaweapon.warframe_type_random.name"));
@@ -47,94 +40,98 @@ public class WarframeRareModule extends WarframeModuleBase {
         return itemStack;
     }
 
-    /**
-     * 注册所有模组到创造标签页
-     * Register all modules to creative tab
-     *
-     * @param output 创造标签页输出 / creative tab output
-     */
-    public static void registerCreativeTabItems(CreativeModeTab.Output output) {
-        List<ItemStack> items = new ArrayList<>();
+    private static synchronized void ensureInitialized() {
+        if (!isInitialized) {
+            initializeModuleList();
+            isInitialized = true;
+        }
+    }
 
-        // 随机模组始终显示
-        items.add(getRandomModule());
+    private static void initializeModuleList() {
+        itemStackList.clear();
 
         // 稳如泰山
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.sure_footed", "sure_footed",
                 new Object[]{"knockbackResistance", 0.6001f});
 
         // 活力
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.vigor", "vigor",
                 new Object[]{"shield", 0.5001f, "health", 0.5001f});
 
         // 装甲敏捷
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.armored_agility", "armored_agility",
                 new Object[]{"sprintSpeed", 0.15001f, "armor", 0.4001f});
 
         // 刚毅
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.fortitude", "fortitude",
                 new Object[]{"knockbackResistance", 0.4001f, "shieldRecoveryRate", 1.0001f});
 
         // 密藏猎人
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.treasure_hunter", "treasure_hunter",
                 new Object[]{"itemDropMultiplier", 0.6001f},
                 "item_drop_multiplier");
 
         // 情同手足
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.deep_friendship", "deep_friendship",
                 new Object[]{"homologousProtection", 0.3001f});
 
         // 朋友
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.pal", "pal",
                 new Object[]{"reachDistance", 0.201f, "diggingSpeed", 0.401f});
 
         // 超频
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.overclock", "overclock",
                 new Object[]{"sprintSpeed", 0.3001f, "shieldRecoveryRate", 0.6001f, "shield", -0.9001f});
 
         // 过度延伸
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.overextended", "overextended",
                 new Object[]{"reachDistance", 0.9001f, "diggingSpeed", -0.6001f});
 
         // 心胸狭窄
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.narrow_minded", "overextended",
                 new Object[]{"diggingSpeed", 0.9001f, "reachDistance", -0.6001f});
 
         // 返老还童
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.rejuvenation", "rejuvenation",
                 new Object[]{"health", 0.3001f, "shield", 0.3001f, "responseRate", 0.3001f, "shieldRecoveryRate", 0.3001f});
 
         // 快速恢复
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.rapid_recovery", "rapid_recovery",
                 new Object[]{"responseRate", 0.6001f, "shieldRecoveryRate", 0.6001f, "health", -0.3001f, "shield", -0.3001f});
 
         // 伊甸6号
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.eden_6", "treasure_thief",
                 new Object[]{"itemDropMultiplier", 0.9001f, "diggingSpeed", 0.6001f, "reachDistance", 0.3001f, "health", -0.9001f},
                 "item_drop_multiplier");
 
         // 献祭烈焰
-        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), items, itemStackList,
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.sacrificial_blaze", "flame_repellent",
                 new Object[]{"fireProtection", 0.9001f, "armor", 0.9001f, "sprintSpeed", 0.4501f, "health", -0.6001f});
+    }
 
-        // ========== 自定义模组 / Custom Modules ==========
+    public static void registerCreativeTabItems(CreativeModeTab.Output output) {
+        if (itemStackList.isEmpty()) {
+            initializeModuleList();
+        }
+
+        List<ItemStack> items = new ArrayList<>();
+        items.add(getRandomModule());
+        items.addAll(itemStackList);
         CustomModuleManager.getInstance().addCustomWarframeModulesToCreativeTab(items, Rarity.RARE);
-
-        // 将所有物品添加到创造标签页
         items.forEach(output::accept);
     }
 
@@ -142,10 +139,8 @@ public class WarframeRareModule extends WarframeModuleBase {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
         if (!level.isClientSide() && ItemModuleBase.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
-            // 过滤掉被禁用的模组
+            ensureInitialized();
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
-
-            // ========== 添加自定义模组到随机池 / Add custom modules to random pool ==========
             CustomModuleManager.getInstance().addCustomWarframeModulesToRandomList(availableModules, Rarity.RARE);
 
             if (availableModules.isEmpty()) {
@@ -153,10 +148,8 @@ public class WarframeRareModule extends WarframeModuleBase {
             }
 
             ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
-
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);
-
             player.setItemInHand(hand, ItemStack.EMPTY);
             return InteractionResultHolder.success(itemstack);
         }

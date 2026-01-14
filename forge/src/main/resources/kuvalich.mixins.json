@@ -2,7 +2,7 @@
   "required": true,
   "package": "pers.roinflam.kuvalich.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "battlecorrection.refmap.json",
+  "refmap": "kuvalich.refmap.json",
   "mixins": [
   ],
   "client": [

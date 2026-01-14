@@ -137,10 +137,10 @@ public abstract class ItemModuleBase extends ModuleBase {
 
         StringBuilder trendBar = new StringBuilder(15);
         for (int i = 0; i < trend; i++) {
-            trendBar.append("[*]");
+            trendBar.append("●");
         }
         for (int i = trend; i < 5; i++) {
-            trendBar.append("[ ]");
+            trendBar.append("○");
         }
 
         tooltip.add(startIndex++,

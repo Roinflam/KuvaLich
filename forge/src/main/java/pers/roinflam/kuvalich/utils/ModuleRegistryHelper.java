@@ -27,7 +27,7 @@ public class ModuleRegistryHelper {
      * Automatically check if disabled
      *
      * @param item 模组物品实例 / module item instance
-     * @param items 创造栏物品列表 / creative tab item list
+     * @param items 创造栏物品列表（可为null，仅用于初始化时）/ creative tab item list (can be null, only for initialization)
      * @param itemStackList 静态模组列表（用于随机获取）/ static module list (for random access)
      * @param translationKey 翻译键 / translation key
      * @param type 模组类型 / module type
@@ -56,7 +56,7 @@ public class ModuleRegistryHelper {
         for (int i = 0; i < attributes.length; i += 2) {
             String attrName = (String) attributes[i];
             float attrValue = ((Number) attributes[i + 1]).floatValue();
-            ItemModuleBase.addAttributes(   itemStack, attrName, attrValue);
+            ItemModuleBase.addAttributes(itemStack, attrName, attrValue);
         }
 
         ItemModuleBase.setType(itemStack, type);
@@ -66,7 +66,15 @@ public class ModuleRegistryHelper {
             ItemModuleBase.setConflictTags(itemStack, conflictTags);
         }
 
-        items.add(itemStack);
+        // ✅ 修复：添加 null 检查
+        // 只有在 items 不为 null 时才添加（用于创造栏）
+        // Only add to items if not null (for creative tab)
+        if (items != null) {
+            items.add(itemStack);
+        }
+
+        // 始终添加到静态列表（用于随机获取）
+        // Always add to static list (for random access)
         itemStackList.add(itemStack.copy());
     }
 
