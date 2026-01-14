@@ -3,8 +3,8 @@
 # ⚔️ Kuva Lich | 赤毒玄骸
 
 [![CurseForge Downloads](https://cf.way2muchnoise.eu/full_kuvalich_downloads.svg?badge_style=for_the_badge)](https://www.curseforge.com/minecraft/mc-mods/kuvalich)
-[![MCMOD](https://img.shields.io/badge/MCMOD-14140-red?style=for-the-badge)](https://www.mcmod.cn/class/14140.html)
-[![MC Version](https://img.shields.io/badge/Minecraft-1.12.2-brightgreen?style=for-the-badge&logo=minecraft)](https://minecraft.net)
+[![MCMOD](https://img.shields.io/badge/MCMOD-14140-red?style=for_the_badge)](https://www.mcmod.cn/class/14140.html)
+[![MC Version](https://img.shields.io/badge/Minecraft-1.20.1-brightgreen?style=for-the-badge&logo=minecraft)](https://minecraft.net)
 [![Forge](https://img.shields.io/badge/Forge-Latest-orange?style=for-the-badge)](https://files.minecraftforge.net/)
 
 [![GitHub](https://img.shields.io/badge/GitHub-Roinflam-181717?style=for-the-badge&logo=github)](https://github.com/Roinflam)
@@ -21,7 +21,7 @@
 
 ### 📖 About
 
-**Kuva Lich** is a Warframe-inspired RPG combat mod for Minecraft 1.12.2. It brings the Kuva Lich system from Warframe into Minecraft, allowing you to battle Kuva Liches, equip various mods on your weapons, and experience the joy of Riven rolling! When your favorite weapon lacks damage, you can install various mods to transform it into a top-tier weapon!
+**Kuva Lich** is a Warframe-inspired RPG combat mod for Minecraft 1.20.1. It brings the Kuva Lich system from Warframe into Minecraft, allowing you to battle Kuva Liches, equip various mods on your weapons, and experience the joy of Riven rolling! When your favorite weapon lacks damage, you can install various mods to transform it into a top-tier weapon!
 
 > 📝 **Terminology:** In this document, "Mod" refers to Minecraft's unofficial content extensions, while "mods" refers to in-game augment systems inspired by Warframe.
 
@@ -39,8 +39,8 @@
 
 ### 📥 Installation
 
-1. **Download Minecraft Forge** for 1.12.2 (latest version recommended)
-   - [Download Forge →](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.12.2.html)
+1. **Download Minecraft Forge** for 1.20.1 (latest version recommended)
+   - [Download Forge →](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.20.1.html)
 
 2. **Download Kuva Lich** from MCMOD
    - [Download Mod →](https://www.mcmod.cn/class/14140.html)
@@ -206,8 +206,8 @@
 
 | Component | Version |
 |-----------|---------|
-| Minecraft | 1.12.2 |
-| Forge | Latest for 1.12.2 |
+| Minecraft | 1.20.1 |
+| Forge | Latest for 1.20.1 |
 | Java | 8 or higher |
 | GeckoLib | Required ([Download](https://www.curseforge.com/minecraft/mc-mods/geckolib)) |
 
@@ -278,9 +278,9 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 ### 📖 关于模组
 
-**赤毒玄骸**是一个为 Minecraft 1.12.2 制作的《星际战甲》风格 RPG 战斗模组。它将《Warframe》中的玄骸系统带入 Minecraft，让你可以对战赤毒玄骸，给武器装上各式各样的模组，更能体验洗紫卡的快乐！当你喜欢的武器苦于伤害面板太低时，可以给它装上各种模组让它变成趁手的顶尖武器！
+**赤毒玄骸**是一个为 Minecraft 1.20.1 制作的《星际战甲》风格 RPG 战斗模组。它将《Warframe》中的玄骸系统带入 Minecraft,让你可以对战赤毒玄骸,给武器装上各式各样的模组,更能体验洗紫卡的快乐!当你喜欢的武器苦于伤害面板太低时,可以给它装上各种模组让它变成趁手的顶尖武器!
 
-> 📝 **术语说明：**在本文档中，"Mod"指 Minecraft 的非官方内容拓展，而"模组"指本 Mod 根据《Warframe》中增幅器制作的游戏内容。
+> 📝 **术语说明:**在本文档中,"Mod"指 Minecraft 的非官方内容拓展,而"模组"指本 Mod 根据《Warframe》中增幅器制作的游戏内容。
 
 ### ✨ 特色功能
 
@@ -288,7 +288,7 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 - ⚔️ **13 种赤毒武器** - 关刀Prime、心智之殁、格拉姆Prime 等
 - 🔧 **武器模组系统** - 青铜、白银、黄金、Prime、镀层、裂罅等品质
 - 🛡️ **战甲模组系统** - 护甲、生命、护盾等多种属性加成
-- 💀 **玄骸系统** - 击杀赤毒奴仆获取解密进度，挑战赤毒玄骸
+- 💀 **玄骸系统** - 击杀赤毒奴仆获取解密进度,挑战赤毒玄骸
 - 🌟 **14 种元素类型** - 火焰、冰冻、电击、毒素、辐射、病毒、腐蚀等
 - ✨ **6 种独特附魔** - 死亡抵抗、护卫、先攻、斩杀、灭骸等
 - 🏗️ **功能方块** - 安魂之融、灭骸之扉、武器/战甲军械库
@@ -296,8 +296,8 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 ### 📥 安装方法
 
-1. **下载 Minecraft Forge** 1.12.2 版本（推荐最新版）
-   - [下载 Forge →](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.12.2.html)
+1. **下载 Minecraft Forge** 1.20.1 版本(推荐最新版)
+   - [下载 Forge →](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.20.1.html)
 
 2. **下载赤毒玄骸**从 MCMOD
    - [下载模组 →](https://www.mcmod.cn/class/14140.html)
@@ -306,7 +306,7 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
    - 将 `.jar` 文件放入 `.minecraft/mods/` 文件夹
    - 使用 Forge 启动游戏
 
-4. **完成！**开始你的星际战甲风格冒险吧！
+4. **完成!**开始你的星际战甲风格冒险吧!
 
 ### 🎯 武器属性系统
 
@@ -322,7 +322,7 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 | **魔法伤害** | 魔法攻击的额外伤害 |
 | **攻击速度** | 提高攻击速度 |
 | **攻击范围** | 提高近战攻击范围 |
-| **射速** | 提高拉弓速度（弓类效果加倍） |
+| **射速** | 提高拉弓速度(弓类效果加倍) |
 
 </details>
 
@@ -359,11 +359,11 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 | 属性 | 描述 |
 |------|------|
-| **攻击范围叠加** | 击杀时获取攻击范围加成，最多叠加X次 |
-| **攻击速度叠加** | 击杀时获取攻击速度加成，最多叠加X次 |
-| **多重射击叠加** | 击杀时获取多重射击加成，最多叠加X次 |
-| **触发几率叠加** | 击杀时获取触发几率加成，最多叠加X次 |
-| **暴击伤害叠加** | 击杀时获取暴击伤害加成，最多叠加X次 |
+| **攻击范围叠加** | 击杀时获取攻击范围加成,最多叠加X次 |
+| **攻击速度叠加** | 击杀时获取攻击速度加成,最多叠加X次 |
+| **多重射击叠加** | 击杀时获取多重射击加成,最多叠加X次 |
+| **触发几率叠加** | 击杀时获取触发几率加成,最多叠加X次 |
+| **暴击伤害叠加** | 击杀时获取暴击伤害加成,最多叠加X次 |
 
 </details>
 
@@ -441,8 +441,8 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 | 选项 | 描述 |
 |------|------|
-| **武器叠层持续时间** | 武器叠层效果持续时间（200=10秒） |
-| **战甲叠层持续时间** | 战甲叠层效果持续时间（400=20秒） |
+| **武器叠层持续时间** | 武器叠层效果持续时间(200=10秒) |
+| **战甲叠层持续时间** | 战甲叠层效果持续时间(400=20秒) |
 | **各属性最大层数** | 各类属性的最大叠加层数 |
 
 </details>
@@ -463,10 +463,10 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 | 组件 | 版本 |
 |------|------|
-| Minecraft | 1.12.2 |
-| Forge | 1.12.2 最新版 |
+| Minecraft | 1.20.1 |
+| Forge | 1.20.1 最新版 |
 | Java | 8 或更高 |
-| GeckoLib | 必需（[下载](https://www.curseforge.com/minecraft/mc-mods/geckolib)） |
+| GeckoLib | 必需([下载](https://www.curseforge.com/minecraft/mc-mods/geckolib)) |
 
 ### 🤝 兼容性
 
@@ -482,34 +482,34 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 ### ❓ 常见问题
 
 <details>
-<summary><b>没玩过《Warframe》可以玩吗？</b></summary>
+<summary><b>没玩过《Warframe》可以玩吗?</b></summary>
 
-完全可以！只是玩过星际战甲的玩家会更熟悉这里的玩法机制。
-
-</details>
-
-<details>
-<summary><b>所有武器都能安装模组吗？</b></summary>
-
-是的！不仅本 Mod 和原版物品，其他所有 Mod 的武器也可以安装模组，包括拔刀剑、枪械、巫术法杖等都能获得属性加成！
+完全可以!只是玩过星际战甲的玩家会更熟悉这里的玩法机制。
 
 </details>
 
 <details>
-<summary><b>模组数值会不会太超模？</b></summary>
+<summary><b>所有武器都能安装模组吗?</b></summary>
 
-模组数值基于《Warframe》原数值创作，单张模组不会特别超标。高品质模组（如 Prime）较难获取，需要投入大量时间。
+是的!不仅本 Mod 和原版物品,其他所有 Mod 的武器也可以安装模组,包括拔刀剑、枪械、巫术法杖等都能获得属性加成!
 
 </details>
 
 <details>
-<summary><b>该怎么开始玩？</b></summary>
+<summary><b>模组数值会不会太超模?</b></summary>
+
+模组数值基于《Warframe》原数值创作,单张模组不会特别超标。高品质模组(如 Prime)较难获取,需要投入大量时间。
+
+</details>
+
+<details>
+<summary><b>该怎么开始玩?</b></summary>
 
 1. 给镐子附魔"灭骸"后破坏安魂矿石
 2. 击杀赤毒奴仆增加解密进度
 3. 在灭骸之扉查看解密出来的答案
 4. 摆放正确卡片顺序击杀赤毒玄骸
-5. 获得赤毒专属武器和 Prime/裂罅模组！
+5. 获得赤毒专属武器和 Prime/裂罅模组!
 
 </details>
 
@@ -522,9 +522,9 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 ### 👤 制作人员
 
-**开发者：** Roinflam  
-**灵感来源：** Digital Extremes - Warframe（星际战甲）  
-**特别鸣谢：** 白狐大小姐
+**开发者:** Roinflam  
+**灵感来源:** Digital Extremes - Warframe(星际战甲)  
+**特别鸣谢:** 白狐大小姐
 </details>
 
 ---
@@ -533,7 +533,7 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 **Made with ❤️ for Warframe & Minecraft fans**
 
-*"抬头吧，而后悔悟吧，我们是多么渺小"*
+*"抬头吧,而后悔悟吧,我们是多么渺小"*
 
 [![MCMOD](https://img.shields.io/badge/View_on-MCMOD-red?style=for-the-badge)](https://www.mcmod.cn/class/14140.html)
 
