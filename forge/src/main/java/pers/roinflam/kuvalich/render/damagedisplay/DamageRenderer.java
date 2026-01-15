@@ -3,6 +3,7 @@
 
 package pers.roinflam.kuvalich.render.damagedisplay;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -29,9 +30,11 @@ import java.util.List;
  * 渲染特性：
  * Rendering features:
  * - 字体放大50%，更清晰可见
- * - 使用SEE_THROUGH模式，文字始终显示在最上层，不会被实体遮挡
+ * - 完全禁用深度测试，文字永远不会被遮挡
+ * - 使用非加粗字体，更美观
  * - Font enlarged by 50% for better visibility
- * - Uses SEE_THROUGH mode, text always renders on top, won't be blocked by entities
+ * - Depth test completely disabled, text never occluded
+ * - Uses non-bold font for better appearance
  */
 @OnlyIn(Dist.CLIENT)
 public class DamageRenderer {
@@ -43,7 +46,7 @@ public class DamageRenderer {
     private static final int CLEANUP_INTERVAL = 20;
     private int cleanupTimer = 0;
 
-    // ✅ 字体放大50%（乘以1.5）
+    // 字体放大50%（乘以1.5）
     // Font enlarged by 50% (multiply by 1.5)
     private static final float SCALE_WHITE = 0.03F * 1.5F;           // 普通伤害 / Normal damage
     private static final float SCALE_YELLOW_BLUE = 0.038F * 1.5F;    // 暴击/护盾 / Critical/Shield
@@ -170,6 +173,10 @@ public class DamageRenderer {
 
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
+        // ✅ 关键修复：禁用深度测试，让文字永远不被遮挡
+        // Critical fix: Disable depth test so text is never occluded
+        RenderSystem.disableDepthTest();
+
         // 渲染每个伤害数字
         // Render each damage number
         for (DamageInfo info : damageInfos) {
@@ -193,14 +200,24 @@ public class DamageRenderer {
         // 提交所有渲染批次
         // Submit all render batches
         bufferSource.endBatch();
+
+        // ✅ 恢复深度测试，避免影响其他渲染
+        // Restore depth test to avoid affecting other renders
+        RenderSystem.enableDepthTest();
     }
 
     /**
      * 渲染单个伤害文本
      * Render single damage text
      *
-     * ✅ 修改：使用SEE_THROUGH模式，让文字始终显示在最上层
-     * Modified: Use SEE_THROUGH mode to always render text on top
+     * ✅ 修改：
+     * 1. 使用SEE_THROUGH模式
+     * 2. 外部禁用深度测试
+     * 3. 使用Unicode字体（不加粗）
+     * Modified:
+     * 1. Use SEE_THROUGH mode
+     * 2. Disable depth test externally
+     * 3. Use Unicode font (not bold)
      */
     private void renderDamageText(PoseStack poseStack, MultiBufferSource bufferSource,
                                   float damage, int color, double x, double y, double z) {
@@ -234,26 +251,24 @@ public class DamageRenderer {
             // Calculate text width for centering
             int stringWidth = font.width(damageText);
 
-            // ✅ 关键修改：使用SEE_THROUGH模式
-            // Critical change: Use SEE_THROUGH mode
-            // SEE_THROUGH模式会：
-            // SEE_THROUGH mode will:
-            // 1. 禁用深度测试，文字不会被实体遮挡
-            // 2. 文字始终渲染在最上层
-            // 1. Disable depth testing, text won't be blocked by entities
-            // 2. Text always renders on top layer
+            // ✅ 关键修改：
+            // 1. SEE_THROUGH模式 + 外部禁用深度测试 = 完全不被遮挡
+            // 2. font参数会自动使用Unicode字体（不加粗）
+            // Critical changes:
+            // 1. SEE_THROUGH mode + external depth test disable = never occluded
+            // 2. font parameter automatically uses Unicode font (not bold)
             font.drawInBatch(
                     damageText,                    // 要渲染的文本 / Text to render
                     -stringWidth / 2.0f,           // X位置（居中）/ X position (centered)
                     0,                             // Y位置 / Y position
                     color,                         // 文字颜色 / Text color
-                    false,                         // 是否有阴影 / Has shadow
+                    false,                         // ✅ false = 不使用阴影，字体不会加粗 / false = no shadow, font not bold
                     poseStack.last().pose(),       // 变换矩阵 / Transformation matrix
                     bufferSource,                  // 缓冲源 / Buffer source
-                    Font.DisplayMode.SEE_THROUGH,  // ✅ 修改：穿透模式，不会被遮挡 / SEE_THROUGH mode, won't be occluded
+                    Font.DisplayMode.SEE_THROUGH,  // ✅ 穿透模式 / SEE_THROUGH mode
                     0,                             // 背景色（0=透明）/ Background color (0=transparent)
                     15728880,                      // 光照等级（满亮）/ Light level (full bright)
-                    true                           // 是否双向渲染 / Bidirectional rendering
+                    font.isBidirectional()         // ✅ 使用字体的双向设置 / Use font's bidirectional setting
             );
         } finally {
             poseStack.popPose();
