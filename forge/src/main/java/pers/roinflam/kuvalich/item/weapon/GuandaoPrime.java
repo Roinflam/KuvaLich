@@ -1,7 +1,6 @@
 package pers.roinflam.kuvalich.item.weapon;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
@@ -10,15 +9,12 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
-import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.init.KuvaLichMobEffects;
+import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
+import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
-import pers.roinflam.kuvalich.render.damagedisplay.DamageInfo;
-import pers.roinflam.kuvalich.utils.HiddenEffectHelper;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
@@ -28,8 +24,8 @@ import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
 import javax.annotation.Nonnull;
 
 /**
- * 关刀Prime（1.20.1版本，业务逻辑100%不变）
- * Guandao Prime (1.20.1 version, business logic 100% unchanged)
+ * 关刀Prime（1.20.1版本，使用动态属性系统）
+ * Guandao Prime (1.20.1 version, using dynamic attribute system)
  */
 @Mod.EventBusSubscriber
 public class GuandaoPrime extends KuvaWeaponBase {
@@ -55,15 +51,17 @@ public class GuandaoPrime extends KuvaWeaponBase {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, GuandaoPrime.class);
 
         if (weapon != null) {
-            MobEffectInstance existingEffect = attacker.getEffect(KuvaLichMobEffects.GUANDAO_PRIME.get());
-            int currentLevel = existingEffect != null ? existingEffect.getAmplifier() : 5;
+            // ✅ 替换为动态属性系统（简化处理）
+            int currentLevel = DynamicAttributeManager.has(attacker, DynamicAttributes.GUANDAO_PRIME)
+                    ? 10
+                    : 5;
 
-            // ✅ 使用 HiddenEffectHelper
-            HiddenEffectHelper.apply(
+            DynamicAttributeManager.apply(
                     attacker,
-                    KuvaLichMobEffects.GUANDAO_PRIME.get(),
-                    (int) KuvaWeapon.getMagnification(weapon, 100),
-                    currentLevel + 5
+                    DynamicAttributes.GUANDAO_PRIME.createInstance(
+                            (int) KuvaWeapon.getMagnification(weapon, 100),
+                            currentLevel + 5
+                    )
             );
 
             float baseDamage = event.getAmount();
@@ -82,7 +80,7 @@ public class GuandaoPrime extends KuvaWeaponBase {
 
                     if (attacker instanceof ServerPlayer) {
                         double entityWidth = hurter.getBbWidth();
-                        double entityHeight = hurter.getBbHeight();  // ✅ 使用实体总高度
+                        double entityHeight = hurter.getBbHeight();
                         double entityY = hurter.getY();
 
                         double offsetX = (Math.random() - 0.5) * entityWidth * 1.2;
@@ -94,14 +92,11 @@ public class GuandaoPrime extends KuvaWeaponBase {
                                 hurter.getZ() + offsetZ
                         );
 
-                        KuvaLich.network.send(
-                                PacketDistributor.PLAYER.with(() -> (ServerPlayer) attacker),
-                                new DamagePacket(dotDamage, position, DamageInfo.DamageColor.WHITE.getColor())
-                        );
+                        DamagePacket.sendToPlayer((ServerPlayer) attacker, dotDamage, position, "§f");
                     }
 
-                    if (hurter.getHealth() - dotDamage * 2 > 0) {
-                        hurter.setHealth(hurter.getHealth() - dotDamage);
+                    if (hurter.getHealth() - dotDamage > 0.01f) {
+                        EntityLivingUtil.damageHealthDirectly(hurter, dotDamage);
                     } else {
                         EntityLivingUtil.kill(hurter, attacker.level().damageSources().indirectMagic(attacker, attacker));
                         this.cancel();

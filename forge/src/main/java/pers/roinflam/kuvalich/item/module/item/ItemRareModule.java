@@ -140,7 +140,7 @@ public class ItemRareModule extends ItemModuleBase {
         // 元素打击
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.elemental_strike", "elemental_strike",
-                new Object[]{"fire", 0.60001f, "ice", 0.60001f, "poison", 0.60001f, "electricity", 0.60001f});
+                new Object[]{"fire", 0.30001f, "ice", 0.30001f, "poison", 0.30001f, "electricity", 0.30001f});
 
         // ========== 新增MOD（黄金级别）==========
 
@@ -362,11 +362,6 @@ public class ItemRareModule extends ItemModuleBase {
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.elemental_fusion", "elemental_fusion",
                 new Object[]{"fire", 0.30001f, "poison", 0.30001f, "ice", 0.30001f, "electricity", 0.30001f});
-
-        // 虐杀原形
-        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
-                "kuvaweapon.item_module.physical_triad", "physical_triad",
-                new Object[]{"slash", 0.90001f, "puncture", 0.90001f, "impact", 0.90001f});
     }
 
     /**

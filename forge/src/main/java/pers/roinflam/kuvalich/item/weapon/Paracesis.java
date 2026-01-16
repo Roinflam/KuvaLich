@@ -83,8 +83,8 @@ public class Paracesis extends KuvaWeaponBase {
                         return;
                     }
 
-                    if (hurter.getHealth() - dotDamage * 2 > 0) {
-                        hurter.setHealth(hurter.getHealth() - dotDamage);
+                    if (hurter.getHealth() - dotDamage > 0.01f) {
+                        EntityLivingUtil.damageHealthDirectly(hurter, dotDamage);
                     } else {
                         EntityLivingUtil.kill(hurter, attacker.level().damageSources().indirectMagic(attacker, attacker));
                         this.cancel();

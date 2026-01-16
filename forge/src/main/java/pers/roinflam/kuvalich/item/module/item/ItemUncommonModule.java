@@ -122,7 +122,7 @@ public class ItemUncommonModule extends ItemModuleBase {
         // 三重打击
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.triple_whammy", "triple_whammy",
-                new Object[]{"slash", 0.60001f, "puncture", 0.60001f, "impact", 0.60001f});
+                new Object[]{"slash", 0.30001f, "puncture", 0.30001f, "impact", 0.30001f});
 
         // 小口径 - 移除冲突标签(有负面效果)
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,

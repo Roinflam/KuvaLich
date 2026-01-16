@@ -23,14 +23,15 @@ import java.util.function.Supplier;
  */
 public class DiggingSpeedPacket {
 
-    private final float speedMultiplier;
+    /**
+     * 速度增量（0.9 表示增加 90% 速度）
+     * Speed increment (0.9 means 90% speed increase)
+     */
+    private final float speedIncrement;
 
     /**
-     * 客户端缓存（UUID → 挖掘速度倍率）
-     * Client cache (UUID → digging speed multiplier)
-     *
-     * 注意：1.20.1中需要手动管理缓存清理
-     * Note: Cache cleanup must be managed manually in 1.20.1
+     * 客户端缓存（UUID → 挖掘速度增量）
+     * Client cache (UUID → digging speed increment)
      */
     private static final Map<UUID, Float> CLIENT_CACHE = new ConcurrentHashMap<>();
 
@@ -38,10 +39,10 @@ public class DiggingSpeedPacket {
      * 构造挖掘速度包
      * Construct digging speed packet
      *
-     * @param speedMultiplier 速度倍率 / speed multiplier
+     * @param speedIncrement 速度增量（0.9 = +90%）/ speed increment (0.9 = +90%)
      */
-    public DiggingSpeedPacket(float speedMultiplier) {
-        this.speedMultiplier = speedMultiplier;
+    public DiggingSpeedPacket(float speedIncrement) {
+        this.speedIncrement = speedIncrement;
     }
 
     /**
@@ -49,7 +50,7 @@ public class DiggingSpeedPacket {
      * Encode to byte buffer
      */
     public static void encode(DiggingSpeedPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeFloat(packet.speedMultiplier);
+        buffer.writeFloat(packet.speedIncrement);
     }
 
     /**
@@ -57,8 +58,8 @@ public class DiggingSpeedPacket {
      * Decode from byte buffer
      */
     public static DiggingSpeedPacket decode(FriendlyByteBuf buffer) {
-        float speedMultiplier = buffer.readFloat();
-        return new DiggingSpeedPacket(speedMultiplier);
+        float speedIncrement = buffer.readFloat();
+        return new DiggingSpeedPacket(speedIncrement);
     }
 
     /**
@@ -89,21 +90,21 @@ public class DiggingSpeedPacket {
             return;
         }
 
-        // 更新客户端缓存
-        // Update client cache
+        // 更新客户端缓存（存储增量值，如 0.9 表示 +90%）
+        // Update client cache (store increment value, e.g. 0.9 means +90%)
         UUID playerUUID = mc.player.getUUID();
-        CLIENT_CACHE.put(playerUUID, packet.speedMultiplier);
+        CLIENT_CACHE.put(playerUUID, packet.speedIncrement);
     }
 
     /**
-     * 获取玩家的挖掘速度倍率
-     * Get player's digging speed multiplier
+     * 获取玩家的挖掘速度增量
+     * Get player's digging speed increment
      *
      * @param playerUUID 玩家UUID / player UUID
-     * @return 速度倍率，默认1.0 / speed multiplier, default 1.0
+     * @return 速度增量，默认0.0（无加成）/ speed increment, default 0.0 (no bonus)
      */
-    public static float getDiggingSpeed(UUID playerUUID) {
-        return CLIENT_CACHE.getOrDefault(playerUUID, 1.0f);
+    public static float getDiggingSpeedIncrement(UUID playerUUID) {
+        return CLIENT_CACHE.getOrDefault(playerUUID, 0.0f);
     }
 
     /**

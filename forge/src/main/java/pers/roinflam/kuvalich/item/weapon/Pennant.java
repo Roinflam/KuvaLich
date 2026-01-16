@@ -132,14 +132,10 @@ public class Pennant extends KuvaWeaponBase {
                                     hurter.getZ() + offsetZ
                             );
 
-                            // ✅ 正确的网络包发送方式
-                            KuvaLich.network.send(
-                                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                                    new DamagePacket(damage, position, DamageInfo.DamageColor.WHITE.getColor())
-                            );
+                            DamagePacket.sendToPlayer((ServerPlayer) player, damage, position, "§f");
 
-                            if (hurter.getHealth() - damage * 2 > 0) {
-                                hurter.setHealth(hurter.getHealth() - damage);
+                            if (hurter.getHealth() - damage > 0.01f) {
+                                EntityLivingUtil.damageHealthDirectly(hurter, damage);
                             } else {
                                 // ✅ 使用indirectMagic
                                 EntityLivingUtil.kill(hurter, level.damageSources().indirectMagic(player, player));

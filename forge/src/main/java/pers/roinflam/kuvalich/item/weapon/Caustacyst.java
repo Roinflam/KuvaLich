@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich.item.weapon;
 
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
@@ -10,9 +9,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.init.KuvaLichMobEffects;
+import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
+import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
-import pers.roinflam.kuvalich.utils.HiddenEffectHelper;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
@@ -20,8 +19,8 @@ import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
 import javax.annotation.Nonnull;
 
 /**
- * 腐蚀镰刀（1.20.1版本，业务逻辑100%不变）
- * Caustacyst (1.20.1 version, business logic 100% unchanged)
+ * 腐蚀镰刀（1.20.1版本，使用动态属性系统）
+ * Caustacyst (1.20.1 version, using dynamic attribute system)
  */
 @Mod.EventBusSubscriber
 public class Caustacyst extends KuvaWeaponBase {
@@ -50,21 +49,23 @@ public class Caustacyst extends KuvaWeaponBase {
             String weaponType = KuvaWeapon.getType(weapon);
 
             if (weaponType.equalsIgnoreCase("poison")) {
-                // ✅ 使用 HiddenEffectHelper
-                HiddenEffectHelper.apply(
+                // ✅ 替换为动态属性系统
+                DynamicAttributeManager.apply(
                         hurter,
-                        KuvaLichMobEffects.POISON.get(),
-                        (int) KuvaWeapon.getMagnification(weapon, 150),
-                        1
+                        DynamicAttributes.VIRUS.createInstance(
+                                (int) KuvaWeapon.getMagnification(weapon, 150),
+                                9
+                        )
                 );
             } else {
                 event.setAmount(KuvaWeapon.getMagnification(weapon, event.getAmount() * 0.75f));
-                // ✅ 使用 HiddenEffectHelper
-                HiddenEffectHelper.apply(
+                // ✅ 替换为动态属性系统
+                DynamicAttributeManager.apply(
                         hurter,
-                        KuvaLichMobEffects.POISON.get(),
-                        (int) KuvaWeapon.getMagnification(weapon, 150),
-                        0
+                        DynamicAttributes.VIRUS.createInstance(
+                                (int) KuvaWeapon.getMagnification(weapon, 150),
+                                0
+                        )
                 );
             }
         }

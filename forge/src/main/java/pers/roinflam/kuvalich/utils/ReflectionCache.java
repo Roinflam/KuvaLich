@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.utils;
 
+import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
@@ -16,6 +17,7 @@ public class ReflectionCache {
     // ===== 字段缓存 =====
     private static Field noJumpDelayField = null;
     private static Field useItemRemainingField = null;
+    private static EntityDataAccessor<Float> dataHealthId = null;  // ⭐ 新增
 
     // ===== 方法缓存 =====
     private static Method updatingUsingItemMethod = null;
@@ -25,6 +27,7 @@ public class ReflectionCache {
     private static boolean noJumpDelayAvailable = false;
     private static boolean useItemRemainingAvailable = false;
     private static boolean updatingUsingItemAvailable = false;
+    private static boolean dataHealthIdAvailable = false;  // ⭐ 新增
 
     static {
         initialize();
@@ -65,6 +68,19 @@ public class ReflectionCache {
             useItemRemainingAvailable = false;
         }
 
+        // ⭐ 获取 DATA_HEALTH_ID 字段
+        // MCP名: DATA_HEALTH_ID, SRG名: f_20961_
+        try {
+            Field healthField = ObfuscationReflectionHelper.findField(LivingEntity.class, "f_20961_");
+            healthField.setAccessible(true);
+            dataHealthId = (EntityDataAccessor<Float>) healthField.get(null);
+            dataHealthIdAvailable = true;
+            LogUtil.info("✓ 成功获取 DATA_HEALTH_ID 字段");
+        } catch (Exception e) {
+            LogUtil.error("✗ 无法获取 DATA_HEALTH_ID 字段", e);
+            dataHealthIdAvailable = false;
+        }
+
         // 获取 updatingUsingItem 方法
         // MCP名: updatingUsingItem, SRG名: m_21329_
         try {
@@ -83,7 +99,8 @@ public class ReflectionCache {
         LogUtil.info("反射缓存初始化完成 - 可用功能: " +
                 (noJumpDelayAvailable ? "跳跃 " : "") +
                 (useItemRemainingAvailable ? "物品使用 " : "") +
-                (updatingUsingItemAvailable ? "物品更新" : ""));
+                (updatingUsingItemAvailable ? "物品更新 " : "") +
+                (dataHealthIdAvailable ? "真伤扣血" : ""));
     }
 
     /**
@@ -184,6 +201,14 @@ public class ReflectionCache {
         return false;
     }
 
+    /**
+     * 获取 DATA_HEALTH_ID
+     * 用于直接操作实体血量,绕过 setHealth 方法
+     */
+    public static EntityDataAccessor<Float> getDataHealthId() {
+        return dataHealthId;
+    }
+
     // ===== 状态检查方法 =====
 
     public static boolean isNoJumpDelayAvailable() {
@@ -196,5 +221,9 @@ public class ReflectionCache {
 
     public static boolean isUpdatingUsingItemAvailable() {
         return updatingUsingItemAvailable;
+    }
+
+    public static boolean isDataHealthIdAvailable() {
+        return dataHealthIdAvailable;
     }
 }

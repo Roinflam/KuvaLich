@@ -1,3 +1,5 @@
+// 文件：NetworkRegistryHandler.java（保持不变）
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/network/NetworkRegistryHandler.java
 package pers.roinflam.kuvalich.network;
 
 import net.minecraft.resources.ResourceLocation;
@@ -46,7 +48,7 @@ public class NetworkRegistryHandler {
         // Register packets
         registerMessages();
 
-        LogUtil.info("网络通道注册成功，共注册 " + messageId + " 个消息包");
+        LogUtil.info("网络通道注册成功,共注册 " + messageId + " 个消息包");
     }
 
     /**

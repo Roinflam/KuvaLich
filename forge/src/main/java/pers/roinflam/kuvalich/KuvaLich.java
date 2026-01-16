@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich;
 
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -51,9 +52,6 @@ public class KuvaLich {
 
         // 注册物品 / Register items
         KuvaLichItems.ITEMS.register(modEventBus);
-
-        // 注册药水效果 / Register mob effects
-        KuvaLichMobEffects.MOB_EFFECTS.register(modEventBus);
 
         // 注册附魔 / Register enchantments
         KuvaLichEnchantments.ENCHANTMENTS.register(modEventBus);

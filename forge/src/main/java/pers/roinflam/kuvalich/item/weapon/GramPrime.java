@@ -49,7 +49,7 @@ public class GramPrime extends KuvaWeaponBase {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, GramPrime.class, 0.75);
 
         if (weapon != null) {
-            float cooldownProgress = EntityLivingUtil.getTicksSinceLastSwing(attacker);
+            float cooldownProgress = attacker.getAttackStrengthScale(0.5F);
 
             @Nonnull List<LivingEntity> entities = EntityUtil.getNearbyEntities(
                     LivingEntity.class, hurter,

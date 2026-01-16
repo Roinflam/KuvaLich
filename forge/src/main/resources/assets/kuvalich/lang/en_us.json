@@ -519,7 +519,6 @@
   "kuvaweapon.item_module.persuasion": "§ePersuasion",
   "kuvaweapon.item_module.persuasion_prime": "§bPersuasion Prime",
   "kuvaweapon.item_module.phantom_arrow": "§ePhantom Arrow",
-  "kuvaweapon.item_module.physical_triad": "§ePhysical Triad",
   "kuvaweapon.item_module.plague_herald": "§ePlague Herald",
   "kuvaweapon.item_module.plague_herald_prime": "§bPlague Herald Prime",
   "kuvaweapon.item_module.point_strike": "§ePoint Strike",
@@ -727,6 +726,19 @@
   "message.kuvalich.secondCorrect": "Decryption failed, second answer is correct!",
 
   "_comment_mob_effects": "========== Mob Effects ==========",
+
+  "_comment_config_shield": "========== Shield System ==========",
+
+  "config.kuvalich.category.shield": "Shield System",
+
+  "config.kuvalich.shieldCapMultiplier": "Shield Cap Multiplier",
+  "config.kuvalich.shieldCapMultiplier.tooltip": "Shield capacity multiplier based on max health\n§70.5§r = 0.5x multiplier (default)\nFormula: Shield Cap = Max Health × Shield Attribute × This Multiplier\n§7Example:§r When shield attribute=1.0, multiplier=0.5\nShield cap is 50%% of max health\n§7Example:§r When shield attribute=2.0, multiplier=0.5\nShield cap is 100%% of max health",
+
+  "config.kuvalich.enableDamageNumbers": "Enable Damage Numbers",
+  "config.kuvalich.enableDamageNumbers.tooltip": "Enable floating damage text display\n§7true§r = Enabled (default)\n§7false§r = Disabled and no packets sent\nWhen disabled, no network resources are consumed",
+
+  "config.kuvalich.enableTrueDamage": "Enable True Damage System",
+  "config.kuvalich.enableTrueDamage.tooltip": "Enable true damage system (bypass setHealth and damage reduction)\n§7true§r = Enabled (default)\n§7false§r = Use standard setHealth method\nWhen enabled, will find and cache the real health field of entities\nThis bypasses custom health systems like Apollyon\nWhen disabled, uses standard setHealth method",
 
   "effect.kuvalich.ice": "Frozen",
   "effect.kuvalich.fire": "Burning",

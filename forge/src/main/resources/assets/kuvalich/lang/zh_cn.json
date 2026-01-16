@@ -730,7 +730,6 @@
   "kuvaweapon.item_module.nuclear_control_breakthrough": "§6核控突破",
   "kuvaweapon.item_module.nuclear_storm": "§e核子风暴",
   "kuvaweapon.item_module.pandemic_outbreak": "§e病毒切",
-  "kuvaweapon.item_module.physical_triad": "§e虐杀原形",
   "kuvaweapon.item_module.plague_herald": "§e瘟疫使者",
   "kuvaweapon.item_module.predatory_hybrid": "§e掠食双修",
   "kuvaweapon.item_module.predators_mark": "§e掠食者印记",
@@ -882,6 +881,19 @@
   "kuvaweapon.item_module_info": "已装备以下模组:",
 
   "_comment_mob_effects": "========== 药水效果 / Mob Effects ==========",
+
+  "_comment_config_shield": "========== 护盾系统 ==========",
+
+  "config.kuvalich.category.shield": "护盾系统",
+
+  "config.kuvalich.shieldCapMultiplier": "护盾上限倍率",
+  "config.kuvalich.shieldCapMultiplier.tooltip": "护盾上限基于最大生命值的倍率\n§70.5§r = 0.5倍(默认)\n公式: 护盾上限 = 最大生命值 × 护盾属性 × 此倍率\n§7示例:§r 当护盾属性=1.0,倍率=0.5时\n护盾上限为最大生命值的50%%\n§7示例:§r 当护盾属性=2.0,倍率=0.5时\n护盾上限为最大生命值的100%%",
+
+  "config.kuvalich.enableDamageNumbers": "启用伤害跳字",
+  "config.kuvalich.enableDamageNumbers.tooltip": "启用飘字伤害显示\n§7true§r = 启用(默认)\n§7false§r = 禁用且不发送数据包\n关闭后将完全不消耗网络资源",
+
+  "config.kuvalich.enableTrueDamage": "启用真伤系统",
+  "config.kuvalich.enableTrueDamage.tooltip": "启用真伤系统(绕过setHealth和伤害减免)\n§7true§r = 启用(默认)\n§7false§r = 使用标准setHealth方法\n启用时将查找并缓存实体真正的血量字段\n这会绕过自定义血量系统如Apollyon\n禁用时使用标准的setHealth方法",
 
   "effect.kuvalich.ice": "冰冻",
   "effect.kuvalich.fire": "火焰",

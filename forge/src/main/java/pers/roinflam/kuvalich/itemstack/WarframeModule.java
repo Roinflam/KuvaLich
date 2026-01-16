@@ -2,7 +2,6 @@ package pers.roinflam.kuvalich.itemstack;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -28,33 +27,42 @@ import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.WarframeModules;
-import pers.roinflam.kuvalich.init.KuvaLichMobEffects;
+import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
+import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.network.message.DiggingSpeedPacket;
-import pers.roinflam.kuvalich.utils.HiddenEffectHelper;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
- * Warframe模组系统（1.20.1版本，业务逻辑100%不变）
- * Warframe Module System (1.20.1 version, business logic 100% unchanged)
+ * Warframe模组系统（1.20.1版本，使用动态属性系统）
+ * Warframe Module System (1.20.1 version, using dynamic attribute system)
+ *
+ * 主要功能：
+ * 1. 护盾系统：支持固定护盾和百分比护盾两种模式
+ * 2. 生命值/护甲系统：支持固定上限和动态属性两种模式
+ * 3. 击杀叠层系统：战甲和武器的击杀增益效果
+ * 4. 挖掘距离：通过Forge的BLOCK_REACH和ENTITY_REACH属性实现
  */
 @Mod.EventBusSubscriber
 public class WarframeModule {
 
     /**
      * 护盾恢复冷却（UUID → 剩余ticks）
+     * Shield recovery cooldown (UUID → remaining ticks)
      */
     public static HashMap<UUID, Integer> cooldingHashMap = new HashMap<>();
 
     /**
      * 固定属性 AttributeModifier 的 UUID
+     * Fixed attribute AttributeModifier UUIDs
      */
     private static final UUID FIXED_HEALTH_MODIFIER_UUID = UUID.fromString("a1b2c3d4-1111-2222-3333-444444444444");
     private static final UUID FIXED_ARMOR_MODIFIER_UUID = UUID.fromString("a1b2c3d4-5555-6666-7777-888888888888");
 
     /**
      * 乘算属性类型定义
+     * Multiplicative attribute types
      */
     private static final Set<String> MULTIPLICATIVE_ATTRIBUTES = new HashSet<>(Arrays.asList(
             "fireProtection",
@@ -66,6 +74,7 @@ public class WarframeModule {
 
     /**
      * 击杀叠层抗性属性
+     * Kill stack protection attributes
      */
     private static final Set<String> KILL_STACK_PROTECTION_ATTRIBUTES = new HashSet<>(Arrays.asList(
             "killStackFireProtection",
@@ -76,6 +85,7 @@ public class WarframeModule {
 
     /**
      * 获取玩家装备的所有模组
+     * Get all modules equipped by player
      */
     public static List<ItemStack> getModules(Player player) {
         List<ItemStack> itemStacks = new ArrayList<>();
@@ -97,6 +107,10 @@ public class WarframeModule {
         return itemStacks;
     }
 
+    /**
+     * 添加有效的ItemStack到列表
+     * Add valid ItemStack to list
+     */
     private static void addIfValid(List<ItemStack> list, ItemStack stack) {
         if (stack != null && !stack.isEmpty()) {
             list.add(stack);
@@ -105,10 +119,13 @@ public class WarframeModule {
 
     /**
      * 收集玩家所有模组属性（区分加算、乘算、固定上限）
+     * Collect all module attributes from player (separate additive, multiplicative, fixed cap)
      */
     private static HashMap<String, Double> collectAttributes(Player player) {
         HashMap<String, Double> attributes = new HashMap<>();
 
+        // 初始化乘算属性为1.0（基准值）
+        // Initialize multiplicative attributes to 1.0 (baseline)
         HashMap<String, Double> multiplicativeAttributes = new HashMap<>();
         multiplicativeAttributes.put("fireProtection", 1.0);
         multiplicativeAttributes.put("electricProtection", 1.0);
@@ -124,23 +141,37 @@ public class WarframeModule {
                 double value = entry.getValue();
 
                 if (MULTIPLICATIVE_ATTRIBUTES.contains(key)) {
+                    // 乘算属性处理
+                    // Multiplicative attribute processing
                     if (key.equals("shieldRecoveryDelay")) {
+                        // 护盾恢复延迟是增加的（越高越慢）
+                        // Shield recovery delay is additive (higher = slower)
                         multiplicativeAttributes.put(key,
                                 multiplicativeAttributes.get(key) * (1.0 + value));
                     } else {
+                        // 抗性是减少的（越高越少伤害）
+                        // Resistance is subtractive (higher = less damage)
                         multiplicativeAttributes.put(key,
                                 multiplicativeAttributes.get(key) * (1.0 - value));
                     }
                 } else if (key.equals("fixedHealth") || key.equals("fixedShield") || key.equals("fixedArmor")) {
+                    // 固定上限属性：直接加算
+                    // Fixed cap attributes: direct addition
                     attributes.put(key, attributes.getOrDefault(key, 0.0) + value);
                 } else if (KILL_STACK_PROTECTION_ATTRIBUTES.contains(key)) {
+                    // 击杀叠层抗性属性：先收集基础值
+                    // Kill stack protection attributes: collect base values first
                     attributes.put(key, attributes.getOrDefault(key, 0.0) + value);
                 } else {
+                    // 加算属性：直接加算
+                    // Additive attributes: direct addition
                     attributes.put(key, attributes.getOrDefault(key, 0.0) + value);
                 }
             }
         }
 
+        // 将乘算属性合并到总属性表
+        // Merge multiplicative attributes into total attributes
         attributes.putAll(multiplicativeAttributes);
         return attributes;
     }
@@ -149,6 +180,7 @@ public class WarframeModule {
     public static void onEntityJoinLevel(@Nonnull EntityJoinLevelEvent evt) {
         if (!evt.getLevel().isClientSide() && evt.getEntity() instanceof Player) {
             // 预留位置：可以在这里初始化玩家数据
+            // Reserved: can initialize player data here
         }
     }
 
@@ -158,19 +190,24 @@ public class WarframeModule {
             DamageSource damageSource = evt.getSource();
 
             // 情况1：玩家受伤
+            // Case 1: Player being hurt
             if (evt.getEntity() instanceof Player) {
                 Player player = (Player) evt.getEntity();
 
                 HashMap<String, Double> attributes = collectAttributes(player);
                 applyWarframeKillStackEffects(player, attributes);
 
+                // 设置护盾恢复冷却
+                // Set shield recovery cooldown
                 double delayMultiplier = attributes.getOrDefault("shieldRecoveryDelay", 1.0);
                 int coolding = (int) (10 * delayMultiplier);
                 if (player.getAbsorptionAmount() <= 0) {
-                    coolding *= 3;
+                    coolding *= 3; // 护盾破碎时冷却时间x3
                 }
                 cooldingHashMap.put(player.getUUID(), coolding);
 
+                // 应用各种抗性
+                // Apply various resistances
                 if (damageSource.is(net.minecraft.tags.DamageTypeTags.IS_FIRE)) {
                     double damageMultiplier = attributes.getOrDefault("fireProtection", 1.0);
                     evt.setAmount((float) (evt.getAmount() * damageMultiplier));
@@ -193,12 +230,15 @@ public class WarframeModule {
             }
 
             // 情况2：玩家攻击
+            // Case 2: Player attacking
             if (damageSource.getEntity() instanceof Player) {
                 Player player = (Player) damageSource.getEntity();
 
                 HashMap<String, Double> attributes = collectAttributes(player);
                 applyWarframeKillStackEffects(player, attributes);
 
+                // 设置护盾恢复冷却
+                // Set shield recovery cooldown
                 double delayMultiplier = attributes.getOrDefault("shieldRecoveryDelay", 1.0);
                 int coolding = (int) (10 * delayMultiplier);
                 if (player.getAbsorptionAmount() <= 0) {
@@ -206,7 +246,8 @@ public class WarframeModule {
                 }
                 cooldingHashMap.put(player.getUUID(), coolding);
 
-                // 击杀检测
+                // 击杀检测：如果这次伤害会杀死目标，增加叠层
+                // Kill detection: if this damage will kill target, add stacks
                 if (evt.getEntity().getHealth() - evt.getAmount() <= 0) {
                     addWarframeKillStacks(player);
                 }
@@ -227,12 +268,16 @@ public class WarframeModule {
             if (jumpBoostObj != null && jumpBoostObj != 0.0) {
                 double jumpBoost = jumpBoostObj;
 
+                // 应用跳跃增益：新速度 = 原速度 * sqrt(1 + jumpBoost)
+                // Apply jump boost: newSpeed = originalSpeed * sqrt(1 + jumpBoost)
                 player.setDeltaMovement(
                         player.getDeltaMovement().x,
                         player.getDeltaMovement().y * Math.sqrt(1.0 + jumpBoost),
                         player.getDeltaMovement().z
                 );
 
+                // 同步到客户端
+                // Sync to client
                 if (player instanceof ServerPlayer) {
                     ServerPlayer serverPlayer = (ServerPlayer) player;
                     serverPlayer.connection.send(
@@ -245,9 +290,11 @@ public class WarframeModule {
 
     /**
      * 应用战甲击杀叠层效果
+     * Apply warframe kill stack effects
      */
     private static void applyWarframeKillStackEffects(Player player, HashMap<String, Double> attributes) {
-        // 加算属性
+        // 加算属性处理
+        // Additive attribute processing
         if (attributes.containsKey("killStackHealth")) {
             int stacks = KillStackManager.getStacks(player, KillStackManager.StackType.WARFRAME_HEALTH);
             if (stacks > 0) {
@@ -320,7 +367,8 @@ public class WarframeModule {
             }
         }
 
-        // 乘算属性（击杀叠层抗性）
+        // 乘算属性处理（击杀叠层抗性）
+        // Multiplicative attribute processing (kill stack resistances)
         if (attributes.containsKey("killStackFireProtection")) {
             int stacks = KillStackManager.getStacks(player, KillStackManager.StackType.WARFRAME_FIRE_PROTECTION);
             if (stacks > 0) {
@@ -364,11 +412,14 @@ public class WarframeModule {
 
     /**
      * 战甲击杀时添加叠层
+     * Add warframe kill stacks
      */
     private static void addWarframeKillStacks(Player player) {
         HashMap<String, Double> attributes = new HashMap<>();
         List<ItemStack> modules = getModules(player);
 
+        // 收集所有击杀叠层属性
+        // Collect all kill stack attributes
         for (ItemStack module : modules) {
             if (module == null || module.isEmpty()) {
                 continue;
@@ -384,6 +435,8 @@ public class WarframeModule {
             }
         }
 
+        // 根据拥有的击杀叠层属性添加叠层
+        // Add stacks based on possessed kill stack attributes
         if (attributes.containsKey("killStackHealth")) {
             KillStackManager.addStack(player, KillStackManager.StackType.WARFRAME_HEALTH);
         }
@@ -431,10 +484,14 @@ public class WarframeModule {
                 HashMap<String, Double> attributes = collectAttributes(player);
                 applyWarframeKillStackEffects(player, attributes);
 
+                // 应用掉落物倍率
+                // Apply item drop multiplier
                 double itemDropMultiplier = 1 + attributes.getOrDefault("itemDropMultiplier", 0.0);
                 Collection<ItemEntity> drops = evt.getDrops();
                 for (ItemEntity drop : drops) {
                     ItemStack dropStack = drop.getItem();
+                    // 不影响装备掉落
+                    // Don't affect equipment drops
                     if (!(dropStack.getItem() instanceof ArmorItem) &&
                             !(dropStack.getItem() instanceof SwordItem) &&
                             !(dropStack.getItem() instanceof TieredItem)) {
@@ -453,42 +510,81 @@ public class WarframeModule {
             HashMap<String, Double> attributes = collectAttributes(player);
             applyWarframeKillStackEffects(player, attributes);
 
+            // 应用恢复倍率
+            // Apply heal multiplier
             double responseRate = 1 + attributes.getOrDefault("responseRate", 0.0);
             if (responseRate <= 0) {
-                evt.setCanceled(true);
+                evt.setCanceled(true); // 恢复倍率为负时取消治疗
             } else {
                 evt.setAmount((float) (evt.getAmount() * responseRate));
             }
         }
     }
 
-    @SubscribeEvent
+    /**
+     * 挖掘速度事件处理（使用 LOWEST 优先级确保最后执行）
+     * Break speed event handler (using LOWEST priority to ensure last execution)
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onBreakSpeed(PlayerEvent.BreakSpeed evt) {
         Player player = evt.getEntity();
+
+        // 客户端：优先使用网络包缓存的数据
+        // Client: Prefer cached data from network packet
+        if (player.level().isClientSide()) {
+            float cachedIncrement = DiggingSpeedPacket.getDiggingSpeedIncrement(player.getUUID());
+
+            // 应用速度增量：newSpeed = currentSpeed * (1 + increment)
+            // Apply speed increment: newSpeed = currentSpeed * (1 + increment)
+            float speedMultiplier = 1.0f + cachedIncrement;
+            float finalSpeed = evt.getNewSpeed() * speedMultiplier;
+
+            evt.setNewSpeed(finalSpeed);
+            return;
+        }
+
+        // 服务端：从属性计算
+        // Server: Calculate from attributes
         HashMap<String, Double> attributes = collectAttributes(player);
         applyWarframeKillStackEffects(player, attributes);
 
-        double diggingSpeed = 1 + attributes.getOrDefault("diggingSpeed", 0.0);
-        evt.setNewSpeed((float) (evt.getNewSpeed() * diggingSpeed));
+        double diggingSpeed = attributes.getOrDefault("diggingSpeed", 0.0);
+
+        // 应用速度增量
+        // Apply speed increment
+        float speedMultiplier = (float) (1.0 + diggingSpeed);
+        float finalSpeed = evt.getNewSpeed() * speedMultiplier;
+
+        evt.setNewSpeed(finalSpeed);
     }
 
     /**
      * 应用固定生命值上限
+     * Apply fixed health cap
+     *
+     * 重要：当fixedHealth > 0时，会覆盖所有其他生命值加成
+     * Important: When fixedHealth > 0, it overrides all other health bonuses
      */
     private static void applyFixedHealthCap(Player player, double fixedHealth) {
         AttributeInstance maxHealthAttribute = player.getAttribute(Attributes.MAX_HEALTH);
         if (maxHealthAttribute == null) return;
 
+        // 移除旧的固定上限修改器
+        // Remove old fixed cap modifier
         AttributeModifier oldModifier = maxHealthAttribute.getModifier(FIXED_HEALTH_MODIFIER_UUID);
         if (oldModifier != null) {
             maxHealthAttribute.removeModifier(oldModifier);
         }
 
         if (fixedHealth > 0) {
+            // 确保生命值至少为1
+            // Ensure health is at least 1
             double cappedHealth = Math.max(1.0, fixedHealth);
             double baseHealth = maxHealthAttribute.getBaseValue();
             double operation = cappedHealth - baseHealth;
 
+            // 添加新的固定上限修改器
+            // Add new fixed cap modifier
             AttributeModifier newModifier = new AttributeModifier(
                     FIXED_HEALTH_MODIFIER_UUID,
                     "Warframe Fixed Health Cap",
@@ -498,6 +594,8 @@ public class WarframeModule {
 
             maxHealthAttribute.addPermanentModifier(newModifier);
 
+            // 关键修复：如果当前生命值超过上限，将其限制在上限内
+            // Critical fix: If current health exceeds cap, limit it to cap
             if (player.getHealth() > cappedHealth) {
                 player.setHealth((float) cappedHealth);
             }
@@ -506,11 +604,17 @@ public class WarframeModule {
 
     /**
      * 应用固定护甲上限
+     * Apply fixed armor cap
+     *
+     * 重要：当fixedArmor > 0时，会覆盖所有其他护甲加成
+     * Important: When fixedArmor > 0, it overrides all other armor bonuses
      */
     private static void applyFixedArmorCap(Player player, double fixedArmor) {
         AttributeInstance armorAttribute = player.getAttribute(Attributes.ARMOR);
         if (armorAttribute == null) return;
 
+        // 移除旧的固定上限修改器
+        // Remove old fixed cap modifier
         AttributeModifier oldModifier = armorAttribute.getModifier(FIXED_ARMOR_MODIFIER_UUID);
         if (oldModifier != null) {
             armorAttribute.removeModifier(oldModifier);
@@ -521,6 +625,8 @@ public class WarframeModule {
             double currentTotalArmor = armorAttribute.getValue();
             double operation = cappedArmor - currentTotalArmor;
 
+            // 添加新的固定上限修改器
+            // Add new fixed cap modifier
             AttributeModifier newModifier = new AttributeModifier(
                     FIXED_ARMOR_MODIFIER_UUID,
                     "Warframe Fixed Armor Cap",
@@ -532,6 +638,22 @@ public class WarframeModule {
         }
     }
 
+    /**
+     * 限制生命值不超过当前最大生命值
+     * Limit health to not exceed current max health
+     *
+     * 用途：防止玩家通过先获取生命值加成再移除模组来无限刷生命值
+     * Purpose: Prevent infinite health exploit by gaining health bonus then removing modules
+     */
+    private static void limitHealthToMax(Player player) {
+        float maxHealth = player.getMaxHealth();
+        float currentHealth = player.getHealth();
+
+        if (currentHealth > maxHealth) {
+            player.setHealth(maxHealth);
+        }
+    }
+
     @SubscribeEvent
     public static void onPlayerTick(@Nonnull TickEvent.PlayerTickEvent evt) {
         if (!evt.player.level().isClientSide()) {
@@ -539,9 +661,14 @@ public class WarframeModule {
                 @Nonnull Player player = evt.player;
                 if (player.isAlive()) {
 
-                    // 每秒处理：护盾恢复
+                    // ═══════════════════════════════════════════════════════════════
+                    // 每秒处理：护盾恢复系统
+                    // Every second: Shield recovery system
+                    // ═══════════════════════════════════════════════════════════════
                     if (player.level().getGameTime() % 20 == 0) {
                         if (cooldingHashMap.containsKey(player.getUUID())) {
+                            // 冷却中，减少计数
+                            // In cooldown, decrease counter
                             if (cooldingHashMap.get(player.getUUID()) > 1) {
                                 cooldingHashMap.put(player.getUUID(),
                                         cooldingHashMap.get(player.getUUID()) - 1);
@@ -549,6 +676,8 @@ public class WarframeModule {
                                 cooldingHashMap.remove(player.getUUID());
                             }
                         } else {
+                            // 冷却结束，开始恢复护盾
+                            // Cooldown ended, start recovering shield
                             HashMap<String, Double> attributes = collectAttributes(player);
                             applyWarframeKillStackEffects(player, attributes);
 
@@ -556,41 +685,70 @@ public class WarframeModule {
                             double fixedShield = attributes.getOrDefault("fixedShield", 0.0);
 
                             if (fixedShield > 0) {
+                                // ═══ 固定护盾模式 ═══
+                                // Fixed shield mode
                                 double cappedShield = Math.max(0.0, fixedShield);
                                 if (cappedShield > 0) {
                                     float currentShield = player.getAbsorptionAmount();
                                     if (currentShield < cappedShield) {
+                                        // 护盾未满，恢复护盾
+                                        // Shield not full, recover shield
                                         double shieldRecoveryRate = 1 + attributes.getOrDefault("shieldRecoveryRate", 0.0);
                                         player.setAbsorptionAmount((float) Math.min(
                                                 cappedShield,
                                                 currentShield + cappedShield * 0.01 * shieldRecoveryRate
                                         ));
                                     } else if (currentShield > cappedShield) {
+                                        // 护盾超过上限，限制到上限
+                                        // Shield exceeds cap, limit to cap
                                         player.setAbsorptionAmount((float) cappedShield);
                                     }
                                 }
                             } else if (shield > 0) {
-                                if (player.getAbsorptionAmount() < (int) (player.getMaxHealth() * shield / 2)) {
+                                // ═══ 百分比护盾模式 ═══
+                                // Percentage shield mode
+                                // 护盾上限 = 最大生命值 * shield属性值 / 2
+                                // Shield cap = max health * shield value / 2
+                                double shieldCap = player.getMaxHealth() * shield / 2;
+                                float currentShield = player.getAbsorptionAmount();
+
+                                if (currentShield < shieldCap) {
+                                    // 护盾未满，恢复护盾
+                                    // Shield not full, recover shield
                                     double shieldRecoveryRate = 1 + attributes.getOrDefault("shieldRecoveryRate", 0.0);
                                     player.setAbsorptionAmount((float) Math.min(
-                                            (int) (player.getMaxHealth() * shield / 2),
-                                            player.getAbsorptionAmount() + player.getMaxHealth() * shield / 2 * 0.01 * shieldRecoveryRate
+                                            shieldCap,
+                                            currentShield + shieldCap * 0.01 * shieldRecoveryRate
                                     ));
+                                } else if (currentShield > shieldCap) {
+                                    // 关键修复：护盾超过上限时，限制到上限
+                                    // Critical fix: When shield exceeds cap, limit to cap
+                                    // 这防止了玩家通过先装备护盾模组获取护盾，再卸下模组保留高护盾的exploit
+                                    // This prevents exploit where player equips shield modules to gain shield, then unequips to keep high shield
+                                    player.setAbsorptionAmount((float) shieldCap);
                                 }
                             }
                         }
                     }
 
-                    // 每0.25秒处理：属性药水效果 + 挖掘速度同步 + 固定上限
+                    // ═══════════════════════════════════════════════════════════════
+                    // 每0.25秒处理：属性效果 + 挖掘速度同步 + 固定上限
+                    // Every 0.25s: Attribute effects + digging speed sync + fixed caps
+                    // ═══════════════════════════════════════════════════════════════
                     if (player.level().getGameTime() % 5 == 0) {
                         HashMap<String, Double> attributes = collectAttributes(player);
                         applyWarframeKillStackEffects(player, attributes);
 
-                        // ✅ 应用固定生命值上限
+                        // ═══ 生命值系统 ═══
+                        // Health system
                         double fixedHealth = attributes.getOrDefault("fixedHealth", 0.0);
                         if (fixedHealth > 0) {
+                            // 使用固定生命值上限
+                            // Use fixed health cap
                             applyFixedHealthCap(player, fixedHealth);
                         } else {
+                            // 移除固定生命值修改器（如果存在）
+                            // Remove fixed health modifier (if exists)
                             AttributeInstance maxHealthAttribute = player.getAttribute(Attributes.MAX_HEALTH);
                             if (maxHealthAttribute != null) {
                                 AttributeModifier oldModifier = maxHealthAttribute.getModifier(FIXED_HEALTH_MODIFIER_UUID);
@@ -599,22 +757,33 @@ public class WarframeModule {
                                 }
                             }
 
+                            // 使用动态属性系统
+                            // Use dynamic attribute system
                             double health = attributes.getOrDefault("health", 0.0);
                             if (health >= 0.1) {
                                 int level = (int) (health / 0.1) - 1;
-                                HiddenEffectHelper.apply(player, KuvaLichMobEffects.HEALTH.get(), 6, level);
+                                DynamicAttributeManager.apply(player, DynamicAttributes.HEALTH.createInstance(6, level));
                             } else if (health <= -0.1) {
                                 int level = (int) (-health / 0.1) - 1;
                                 level = Math.min(level, 8);
-                                HiddenEffectHelper.apply(player, KuvaLichMobEffects.NEGATIVE_HEALTH.get(), 6, level);
+                                DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_HEALTH.createInstance(6, level));
                             }
+
+                            // 关键修复：使用动态属性时也要限制生命值
+                            // Critical fix: Also limit health when using dynamic attributes
+                            limitHealthToMax(player);
                         }
 
-                        // ✅ 应用固定护甲上限
+                        // ═══ 护甲系统 ═══
+                        // Armor system
                         double fixedArmor = attributes.getOrDefault("fixedArmor", 0.0);
                         if (fixedArmor > 0) {
+                            // 使用固定护甲上限
+                            // Use fixed armor cap
                             applyFixedArmorCap(player, fixedArmor);
                         } else {
+                            // 移除固定护甲修改器（如果存在）
+                            // Remove fixed armor modifier (if exists)
                             AttributeInstance armorAttribute = player.getAttribute(Attributes.ARMOR);
                             if (armorAttribute != null) {
                                 AttributeModifier oldModifier = armorAttribute.getModifier(FIXED_ARMOR_MODIFIER_UUID);
@@ -623,44 +792,51 @@ public class WarframeModule {
                                 }
                             }
 
+                            // 使用动态属性系统
+                            // Use dynamic attribute system
                             double armor = attributes.getOrDefault("armor", 0.0);
                             if (armor >= 0.1) {
                                 int level = (int) (armor / 0.1) - 1;
-                                HiddenEffectHelper.apply(player, KuvaLichMobEffects.ARMOR.get(), 6, level);
+                                DynamicAttributeManager.apply(player, DynamicAttributes.ARMOR.createInstance(6, level));
                             } else if (armor <= -0.1) {
                                 int level = (int) (-armor / 0.1) - 1;
-                                HiddenEffectHelper.apply(player, KuvaLichMobEffects.NEGATIVE_ARMOR.get(), 6, level);
+                                DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_ARMOR.createInstance(6, level));
                             }
                         }
 
-                        // ✅ 其他属性处理
+                        // ═══ 其他属性处理 ═══
+                        // Other attribute processing
                         double sprintSpeed = attributes.getOrDefault("sprintSpeed", 0.0);
                         if (sprintSpeed >= 0.1) {
                             int level = (int) (sprintSpeed / 0.1) - 1;
-                            HiddenEffectHelper.apply(player, KuvaLichMobEffects.MOVEMENT_SPEED.get(), 6, level);
+                            DynamicAttributeManager.apply(player, DynamicAttributes.MOVEMENT_SPEED.createInstance(6, level));
                         } else if (sprintSpeed <= -0.1) {
                             int level = (int) (-sprintSpeed / 0.1) - 1;
-                            HiddenEffectHelper.apply(player, KuvaLichMobEffects.NEGATIVE_MOVEMENT_SPEED.get(), 6, level);
+                            DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_MOVEMENT_SPEED.createInstance(6, level));
                         }
 
                         double knockbackResistance = attributes.getOrDefault("knockbackResistance", 0.0);
                         if (knockbackResistance >= 0.1) {
                             int level = (int) (knockbackResistance / 0.1) - 1;
-                            HiddenEffectHelper.apply(player, KuvaLichMobEffects.KNOCKBACK_RESISTANCE.get(), 6, level);
+                            DynamicAttributeManager.apply(player, DynamicAttributes.KNOCKBACK_RESISTANCE.createInstance(6, level));
                         } else if (knockbackResistance <= -0.1) {
                             int level = (int) (-knockbackResistance / 0.1) - 1;
-                            HiddenEffectHelper.apply(player, KuvaLichMobEffects.NEGATIVE_KNOCKBACK_RESISTANCE.get(), 6, level);
+                            DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_KNOCKBACK_RESISTANCE.createInstance(6, level));
                         }
 
                         double reachDistance = attributes.getOrDefault("reachDistance", 0.0);
                         if (reachDistance >= 0.1) {
                             int level = (int) (reachDistance / 0.1) - 1;
-                            HiddenEffectHelper.apply(player, KuvaLichMobEffects.REACH_DISTANCE.get(), 6, level);
+                            DynamicAttributeManager.apply(player, DynamicAttributes.REACH_DISTANCE.createInstance(6, level));
                         } else if (reachDistance <= -0.1) {
                             int level = (int) (-reachDistance / 0.1) - 1;
-                            HiddenEffectHelper.apply(player, KuvaLichMobEffects.REACH_DISTANCE.get(), 6, level);
+                            DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_REACH_DISTANCE.createInstance(6, level));
                         }
 
+                        // ═══ 同步挖掘速度到客户端 ═══
+                        // Sync digging speed to client
+                        // 挖掘距离增加通过 ForgeMod.BLOCK_REACH 和 ForgeMod.ENTITY_REACH 实现
+                        // Reach distance increase is implemented through ForgeMod.BLOCK_REACH and ForgeMod.ENTITY_REACH
                         double diggingSpeed = attributes.getOrDefault("diggingSpeed", 0.0);
                         if (player instanceof ServerPlayer) {
                             KuvaLich.network.send(

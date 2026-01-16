@@ -47,7 +47,7 @@ public class DestrezaPrime extends KuvaWeaponBase {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, DestrezaPrime.class, 0.66);
 
         if (weapon != null) {
-            float cooldownProgress = EntityLivingUtil.getTicksSinceLastSwing(attacker);
+            float cooldownProgress = attacker.getAttackStrengthScale(0.5F);
             float mainDamage = EntityPlayerUtil.getAttackDamage(attacker, hurter);
             float extraDamage = mainDamage * 0.333f * cooldownProgress;
 

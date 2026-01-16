@@ -12,7 +12,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  *
  * 统一管理所有配置项
  * Unified management of all configuration items
- * 配置文件位置：config/kuvalich-common.toml
+ * 配置文件位置:config/kuvalich-common.toml
  * Config file location: config/kuvalich-common.toml
  *
  * @author RoinFlam
@@ -43,6 +43,10 @@ public final class ModConfig {
 
         public final ForgeConfigSpec.BooleanValue enableDetailedLogging;
 
+        // ========== 护盾系统 / Shield System ==========
+
+        public final ForgeConfigSpec.DoubleValue shieldCapMultiplier;
+
         // ========== 物品没收系统 / Item Confiscation System ==========
 
         public final ForgeConfigSpec.DoubleValue confiscationChance;
@@ -60,6 +64,8 @@ public final class ModConfig {
         // ========== 伤害系统 / Damage System ==========
 
         public final ForgeConfigSpec.BooleanValue damageDisplay;
+        public final ForgeConfigSpec.BooleanValue enableDamageNumbers;
+        public final ForgeConfigSpec.BooleanValue enableTrueDamage;  // ✅ 新增:真伤系统开关
         public final ForgeConfigSpec.DoubleValue battleBoost;
         public final ForgeConfigSpec.DoubleValue reducedDamage;
         public final ForgeConfigSpec.DoubleValue increaseDamage;
@@ -129,6 +135,19 @@ public final class ModConfig {
                     .comment("启用详细调试日志")
                     .define("enableDetailedLogging", false);
 
+            // ========== 护盾系统 ==========
+            builder.comment("")
+                    .comment("═══ Shield System / 护盾系统 ═══");
+
+            shieldCapMultiplier = builder
+                    .comment("Shield cap multiplier (based on max health)")
+                    .comment("护盾上限倍率(基于最大生命值)")
+                    .comment("Formula: Shield Cap = Max Health × Shield Attribute × This Multiplier")
+                    .comment("公式: 护盾上限 = 最大生命值 × 护盾属性 × 此倍率")
+                    .comment("Example: 0.5 means shield cap is 50% of max health when shield attribute = 1.0")
+                    .comment("示例: 0.5 表示当护盾属性=1.0时,护盾上限为最大生命值的50%")
+                    .defineInRange("shieldCapMultiplier", 0.5, 0.0, 10.0);
+
             // ========== 物品没收系统 ==========
             builder.comment("")
                     .comment("═══ Item Confiscation System / 物品没收系统 ═══");
@@ -185,6 +204,25 @@ public final class ModConfig {
                     .comment("Display all damage numbers")
                     .comment("显示所有伤害数字")
                     .define("damageDisplay", false);
+
+            enableDamageNumbers = builder
+                    .comment("Enable damage number display (floating damage text)")
+                    .comment("启用伤害跳字显示(飘字效果)")
+                    .comment("When disabled, no damage packets will be sent to client")
+                    .comment("关闭时将不会向客户端发送伤害数据包")
+                    .define("enableDamageNumbers", true);
+
+            // ✅ 新增:真伤系统开关
+            enableTrueDamage = builder
+                    .comment("Enable true damage system (bypass setHealth and damage reduction)")
+                    .comment("启用真伤系统(绕过setHealth和伤害减免)")
+                    .comment("When enabled, will find and cache the real health field of entities")
+                    .comment("启用时将查找并缓存实体真正的血量字段")
+                    .comment("This bypasses custom health systems like Apollyon")
+                    .comment("这会绕过自定义血量系统如Apollyon")
+                    .comment("When disabled, will use standard setHealth method")
+                    .comment("禁用时将使用标准的setHealth方法")
+                    .define("enableTrueDamage", true);
 
             battleBoost = builder
                     .comment("Battle damage boost per second")

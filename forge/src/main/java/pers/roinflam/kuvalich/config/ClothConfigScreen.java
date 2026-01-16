@@ -50,6 +50,22 @@ public class ClothConfigScreen {
                 .build());
 
         // ═══════════════════════════════════════════════════════════════
+        // 护盾系统
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory shieldCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.shield"));
+
+        shieldCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.shieldCapMultiplier"),
+                        ModConfig.KUVA_LICH.shieldCapMultiplier.get())
+                .setDefaultValue(0.5)
+                .setMin(0.0)
+                .setMax(10.0)
+                .setTooltip(Component.translatable("config.kuvalich.shieldCapMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.shieldCapMultiplier::set)
+                .build());
+
+        // ═══════════════════════════════════════════════════════════════
         // 物品没收系统
         // ═══════════════════════════════════════════════════════════════
         ConfigCategory confiscationCategory = builder.getOrCreateCategory(
@@ -147,6 +163,23 @@ public class ClothConfigScreen {
                 .setDefaultValue(false)
                 .setTooltip(Component.translatable("config.kuvalich.damageDisplay.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.damageDisplay::set)
+                .build());
+
+        // ✅ 新增:伤害跳字开关
+        damageCategory.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.kuvalich.enableDamageNumbers"),
+                        ModConfig.KUVA_LICH.enableDamageNumbers.get())
+                .setDefaultValue(true)
+                .setTooltip(Component.translatable("config.kuvalich.enableDamageNumbers.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.enableDamageNumbers::set)
+                .build());
+
+        damageCategory.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.kuvalich.enableTrueDamage"),
+                        ModConfig.KUVA_LICH.enableTrueDamage.get())
+                .setDefaultValue(true)
+                .setTooltip(Component.translatable("config.kuvalich.enableTrueDamage.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.enableTrueDamage::set)
                 .build());
 
         damageCategory.addEntry(entryBuilder.startDoubleField(
@@ -947,9 +980,9 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedCaustacyst::set)
                 .build());
 
-// ═══════════════════════════════════════════════════════════════
-// 模组管理
-// ═══════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
+        // 模组管理
+        // ═══════════════════════════════════════════════════════════════
         ConfigCategory moduleCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.module"));
 
