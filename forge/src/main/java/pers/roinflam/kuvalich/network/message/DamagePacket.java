@@ -1,3 +1,5 @@
+// 文件：DamagePacket.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/network/message/DamagePacket.java
 package pers.roinflam.kuvalich.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -45,6 +47,63 @@ public class DamagePacket {
     }
 
     /**
+     * 格式化伤害数字（Warframe风格）
+     * Format damage number (Warframe style)
+     *
+     * 规则：
+     * - 千位分隔符：100,000,000
+     * - 最多2位小数：123.45
+     * - 整数不显示小数点：123
+     * - 小数第二位是0也不显示：123.4
+     *
+     * @param damage 伤害数值
+     * @return 格式化后的字符串
+     */
+    public static String formatDamage(float damage) {
+        // 判断是否为整数
+        if (damage == (int) damage) {
+            return String.format("%,d", (int) damage);
+        }
+
+        // 保留2位小数
+        String formatted = String.format("%,.2f", damage);
+
+        // 移除末尾的0（如 123.40 → 123.4）
+        if (formatted.endsWith("0") && !formatted.endsWith(".00")) {
+            formatted = formatted.substring(0, formatted.length() - 1);
+        }
+
+        // 移除 .00（如 123.00 → 123）
+        if (formatted.endsWith(".00")) {
+            formatted = formatted.substring(0, formatted.length() - 3);
+        }
+
+        return formatted;
+    }
+
+    /**
+     * 将颜色值转换为§颜色代码
+     * Convert color value to § color code
+     *
+     * @param color ARGB颜色值
+     * @return § 颜色代码字符串（如 "§f", "§e"）
+     */
+    public static String getColorCode(int color) {
+        if (color == DamageInfo.DamageColor.WHITE.getColor()) {
+            return "§f";  // 白色
+        } else if (color == DamageInfo.DamageColor.YELLOW.getColor()) {
+            return "§e";  // 黄色
+        } else if (color == DamageInfo.DamageColor.ORANGE.getColor()) {
+            return "§6";  // 橙色（金色）
+        } else if (color == DamageInfo.DamageColor.RED.getColor()) {
+            return "§c";  // 红色
+        } else if (color == DamageInfo.DamageColor.BLUE.getColor()) {
+            return "§b";  // 蓝色
+        }
+        return "§f";  // 默认白色
+    }
+
+    /**
      * 静态辅助方法：发送数字伤害（自动格式化）
      *
      * @param player 目标玩家
@@ -58,7 +117,7 @@ public class DamagePacket {
             return;
         }
 
-        String text = colorCode + DamageRenderer.formatDamage(damage);
+        String text = colorCode + formatDamage(damage);
         KuvaLich.network.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new DamagePacket(text, position)

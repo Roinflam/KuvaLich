@@ -21,12 +21,6 @@ import java.util.function.Predicate;
  */
 public class EntityUtil {
 
-    /** 缓存的remainingFireTicks字段 / Cached remainingFireTicks field */
-    private static java.lang.reflect.Field remainingFireTicksField = null;
-
-    /** fire字段初始化标记 / fire field initialization flag */
-    private static boolean fireFieldInitialized = false;
-
     /**
      * 获取指定范围内的实体（立方体范围）
      * Get entities within specified range (cubic range)

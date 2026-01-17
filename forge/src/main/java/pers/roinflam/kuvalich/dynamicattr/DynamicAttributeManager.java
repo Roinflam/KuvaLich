@@ -276,9 +276,12 @@ public class DynamicAttributeManager {
 
         if (instances == null || instances.isEmpty()) return;
 
+        // 创建快照副本以避免 ConcurrentModificationException
+        // 因为 onTick 回调可能会调用 apply/remove 修改原列表
+        List<DynamicAttributeInstance> snapshot = new ArrayList<>(instances);
         List<DynamicAttributeInstance> expired = new ArrayList<>();
 
-        for (DynamicAttributeInstance instance : instances) {
+        for (DynamicAttributeInstance instance : snapshot) {
             // 时间流逝
             if (instance.tick(1)) {
                 expired.add(instance);

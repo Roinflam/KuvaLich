@@ -554,7 +554,7 @@ public class ItemModule {
 
         // ========== 第十二步：显示伤害数字 ==========
         if (totalDamage > 0 && !Float.isNaN(totalDamage) && !Float.isInfinite(totalDamage)) {
-            StringBuilder displayText = new StringBuilder(colorCode + DamageRenderer.formatDamage(totalDamage));
+            StringBuilder displayText = new StringBuilder(colorCode + DamagePacket.formatDamage(totalDamage));
 
             for (String element : triggeredElements) {
                 displayText.append(getElementEmoji(element));
@@ -573,7 +573,7 @@ public class ItemModule {
         float damage = evt.getAmount();
 
         if (damage > 0 && !Float.isNaN(damage) && !Float.isInfinite(damage)) {
-            String displayText = "§f" + DamageRenderer.formatDamage(damage);
+            String displayText = "§f" + DamagePacket.formatDamage(damage);
             Vec3 position = getRandomDamagePosition(hurter);
 
             DamagePacket.sendToPlayer((ServerPlayer) player, displayText, position);
@@ -1029,7 +1029,7 @@ public class ItemModule {
                             hurter.setSecondsOnFire(6);
                             hurter.hurt(hurter.damageSources().inFire(), dotDamage);
 
-                            String displayText = "§f" + DamageRenderer.formatDamage(dotDamage) + getElementEmoji("fire");
+                            String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("fire");
                             DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
                         }
                     }.start();
@@ -1061,7 +1061,7 @@ public class ItemModule {
 
                             boolean hasShield = hurter.getAbsorptionAmount() > 0;
 
-                            String displayText = "§f" + DamageRenderer.formatDamage(dotDamage) + getElementEmoji("poison");
+                            String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("poison");
                             DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
 
                             if (hasShield) {
@@ -1117,7 +1117,7 @@ public class ItemModule {
 
                     hurter.hurt(level.damageSources().lightningBolt(), lightningDamage);
 
-                    String displayText = "§f" + DamageRenderer.formatDamage(lightningDamage) + getElementEmoji("electricity");
+                    String displayText = "§f" + DamagePacket.formatDamage(lightningDamage) + getElementEmoji("electricity");
                     DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
 
                     DynamicAttributeManager.apply(hurter,
@@ -1148,7 +1148,7 @@ public class ItemModule {
                                 return;
                             }
 
-                            String displayText = "§f" + DamageRenderer.formatDamage(finalDotDamage) + getElementEmoji("slash");
+                            String displayText = "§f" + DamagePacket.formatDamage(finalDotDamage) + getElementEmoji("slash");
                             DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
 
                             if (hurter.getHealth() - finalDotDamage > 0.01f) {
@@ -1280,7 +1280,7 @@ public class ItemModule {
 
                     hurter.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
 
-                    String displayText = "§f" + DamageRenderer.formatDamage(explosionDamage) + getElementEmoji("explosion");
+                    String displayText = "§f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
                     DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
 
                     List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 3,
@@ -1289,7 +1289,7 @@ public class ItemModule {
                     for (LivingEntity entity : entities) {
                         entity.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
 
-                        String aoeDisplayText = "§f" + DamageRenderer.formatDamage(explosionDamage) + getElementEmoji("explosion");
+                        String aoeDisplayText = "§f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
                         DamagePacket.sendToPlayer((ServerPlayer) attacker, aoeDisplayText, getRandomDamagePosition(entity));
                     }
                 }
@@ -1335,7 +1335,7 @@ public class ItemModule {
 
                                 entity.hurt(attacker.damageSources().magic(), dotDamage);
 
-                                String displayText = "§f" + DamageRenderer.formatDamage(dotDamage) + getElementEmoji("gas");
+                                String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("gas");
                                 DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(entity));
                             }
                         }
