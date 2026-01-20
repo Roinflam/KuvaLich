@@ -3,7 +3,7 @@
 # ⚔️ Kuva Lich | 赤毒玄骸
 
 [![CurseForge Downloads](https://cf.way2muchnoise.eu/full_kuvalich_downloads.svg?badge_style=for_the_badge)](https://www.curseforge.com/minecraft/mc-mods/kuvalich)
-[![MCMOD](https://img.shields.io/badge/MCMOD-14140-red?style=for_the_badge)](https://www.mcmod.cn/class/14140.html)
+[![MC Version](https://img.shields.io/badge/Minecraft-1.20.1-brightgreen?style=for-the-badge&logo=minecraft)](https://minecraft.net)
 [![MC Version](https://img.shields.io/badge/Minecraft-1.20.1-brightgreen?style=for-the-badge&logo=minecraft)](https://minecraft.net)
 [![Forge](https://img.shields.io/badge/Forge-Latest-orange?style=for-the-badge)](https://files.minecraftforge.net/)
 

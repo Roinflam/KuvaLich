@@ -138,11 +138,8 @@ public class EntityLivingUtil {
      * 步骤1：优先尝试setHealth，检查是否生效
      * Step 1: Try setHealth first, check if effective
      *
-     * 步骤2：如果setHealth无效，尝试使用原版DATA_HEALTH_ID字段
-     * Step 2: If setHealth fails, try vanilla DATA_HEALTH_ID field
-     *
-     * 步骤3：如果原版字段也无效，暴力查找所有字段
-     * Step 3: If vanilla field fails, brute-force search all fields
+     * 步骤2：如果原版字段也无效，暴力查找所有字段
+     * Step 2: If vanilla field fails, brute-force search all fields
      *
      * @param entity 目标实体 / Target entity
      * @param damage 伤害值 / Damage amount
@@ -256,40 +253,12 @@ public class EntityLivingUtil {
             // setHealth无效，恢复血量 / setHealth failed, restore health
             entity.setHealth(currentHealth);
             LogUtil.debug("[真伤系统] " + entityName + " 的 setHealth 无效，进入步骤2");
-
         } catch (Exception e) {
             LogUtil.error("[真伤系统] " + entityName + " 测试 setHealth 时出错", e);
         }
 
-        // ========== 步骤2：测试原版字段 / Step 2: Test vanilla field ==========
-        LogUtil.debug("[真伤系统] 步骤2：测试 " + entityName + " 的原版 DATA_HEALTH_ID");
-
-        if (!ReflectionCache.isDataHealthIdAvailable()) {
-            LogUtil.warn("[真伤系统] DATA_HEALTH_ID 不可用，跳过步骤2");
-        } else {
-            try {
-                EntityDataAccessor<Float> vanillaHealthId = ReflectionCache.getDataHealthId();
-                SynchedEntityData entityData = entity.getEntityData();
-
-                entityData.set(vanillaHealthId, targetHealth);
-                float actualHealth = entity.getHealth();
-
-                if (Math.abs(actualHealth - targetHealth) < 0.01f) {
-                    LogUtil.info("✓ [真伤系统] " + entityName + " 使用 VANILLA_FIELD 方式");
-                    return new HealthFieldInfo(DamageMethod.VANILLA_FIELD, vanillaHealthId, true);
-                }
-
-                // 原版字段无效，恢复血量 / Vanilla field failed, restore health
-                entityData.set(vanillaHealthId, currentHealth);
-                LogUtil.debug("[真伤系统] " + entityName + " 的原版字段无效，进入步骤3");
-
-            } catch (Exception e) {
-                LogUtil.error("[真伤系统] " + entityName + " 测试原版字段时出错", e);
-            }
-        }
-
-        // ========== 步骤3：暴力查找 / Step 3: Brute-force search ==========
-        LogUtil.debug("[真伤系统] 步骤3：暴力查找 " + entityName + " 的真实血量字段");
+        // ========== 步骤2：暴力查找 / Step 2: Brute-force search ==========
+        LogUtil.debug("[真伤系统] 步骤2：暴力查找 " + entityName + " 的真实血量字段");
 
         HealthFieldInfo customFieldInfo = bruteForceFindHealthField(entity, currentHealth);
 

@@ -5,17 +5,23 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
+import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 import pers.roinflam.kuvalich.world.inventory.MenuRequiemRecast;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 安魂之铸方块（1.20.1版本，业务逻辑100%不变）
@@ -33,6 +39,15 @@ public class RequiemRecast extends Block {
     public @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level,
                                         @NotNull BlockPos pos, @NotNull CollisionContext context) {
         return SHAPE;
+    }
+
+    /**
+     * ✅ 修复：方块被破坏时掉落自己
+     * Fix: Drop self when broken
+     */
+    @Override
+    public @NotNull List<ItemStack> getDrops(@NotNull BlockState state, LootParams.@NotNull Builder builder) {
+        return Collections.singletonList(new ItemStack(KuvaLichBlocks.REQUIEM_RECAST_ITEM.get()));
     }
 
     @Override
