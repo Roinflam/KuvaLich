@@ -1,3 +1,4 @@
+// RequiemCard.java
 package pers.roinflam.kuvalich.capability;
 
 import net.minecraft.core.Direction;
@@ -78,9 +79,14 @@ public class RequiemCard {
         this.setMinimumLevelWeapon(requiemCard.getMinimumLevelWeapon());
         this.setMaximumLevelWeapon(requiemCard.getMaximumLevelWeapon());
 
-        // 克隆没收物品列表
-        // Clone confiscated items list
-        this.confiscatedItems = new ArrayList<>(requiemCard.getConfiscatedItems());
+        // 克隆没收物品列表（深拷贝每个ItemStack）
+        // Clone confiscated items list (deep copy each ItemStack)
+        this.confiscatedItems = new ArrayList<>();
+        for (ItemStack item : requiemCard.confiscatedItems) {
+            if (item != null && !item.isEmpty()) {
+                this.confiscatedItems.add(item.copy());
+            }
+        }
     }
 
     // ==================== Getters and Setters ====================
@@ -284,22 +290,76 @@ public class RequiemCard {
     }
 
     /**
-     * 重置所有数据
-     * Reset all data
+     * 消耗卡片耐久并返回仍有耐久的卡片列表
+     * Consume card durability and return cards that still have durability remaining
+     *
+     * 每张卡片耐久降低1点：
+     * - 如果卡片仍有剩余耐久，加入返回列表（归还给玩家）
+     * - 如果卡片耐久耗尽，不加入列表（卡片消失）
+     *
+     * Each card loses 1 durability:
+     * - If card still has remaining durability, add to return list (give back to player)
+     * - If card durability is depleted, don't add to list (card is consumed)
+     *
+     * @return 仍有耐久的卡片列表 / List of cards that still have durability
      */
-    public void reset() {
-        // 降低卡片耐久度（在清空前处理）
-        // Degrade card durability (process before clearing)
-        if (oneCard != null && !oneCard.isEmpty()) {
-            degradeCardDurability(oneCard);
-        }
-        if (twoCard != null && !twoCard.isEmpty()) {
-            degradeCardDurability(twoCard);
-        }
-        if (threeCard != null && !threeCard.isEmpty()) {
-            degradeCardDurability(threeCard);
+    public List<ItemStack> consumeCardsAndGetSurvivors() {
+        List<ItemStack> survivors = new ArrayList<>();
+
+        // 依次处理三张卡的耐久
+        // Process durability for all three cards
+        oneCard = processCardConsumption(oneCard, survivors);
+        twoCard = processCardConsumption(twoCard, survivors);
+        threeCard = processCardConsumption(threeCard, survivors);
+
+        return survivors;
+    }
+
+    /**
+     * 处理单张卡片的耐久消耗
+     * Process single card's durability consumption
+     *
+     * @param card      要处理的卡片 / Card to process
+     * @param survivors 存活卡片收集列表 / Surviving cards collection list
+     * @return ItemStack.EMPTY（卡片已从槽位移除）/ ItemStack.EMPTY (card removed from slot)
+     */
+    private ItemStack processCardConsumption(ItemStack card, List<ItemStack> survivors) {
+        if (card == null || card.isEmpty()) {
+            return ItemStack.EMPTY;
         }
 
+        // 如果卡片不可损坏（无耐久条），直接消耗掉
+        // If card is not damageable (no durability bar), consume it directly
+        if (!card.isDamageableItem()) {
+            return ItemStack.EMPTY;
+        }
+
+        // 增加1点损坏值（降低1点耐久）
+        // Increase damage by 1 (reduce 1 durability)
+        int newDamage = card.getDamageValue() + 1;
+
+        // 判断卡片是否还有剩余耐久
+        // Check if card still has remaining durability
+        // maxDamage=3 时：damage 0→1→2 仍可用，damage 3 时耗尽
+        // When maxDamage=3: damage 0→1→2 still usable, damage 3 means depleted
+        if (newDamage < card.getMaxDamage()) {
+            // 卡片仍有耐久，设置新损坏值并加入存活列表
+            // Card still has durability, set new damage and add to survivors
+            card.setDamageValue(newDamage);
+            survivors.add(card.copy());
+        }
+        // 否则耐久耗尽，卡片消失，不加入survivors
+
+        // 无论如何都从槽位清除（卡片要么归还玩家背包，要么消失）
+        // Clear from slot regardless (card either returns to player inventory or disappears)
+        return ItemStack.EMPTY;
+    }
+
+    /**
+     * 重置所有数据（不处理卡片耐久，耐久由consumeCardsAndGetSurvivors单独处理）
+     * Reset all data (does NOT handle card durability, durability is handled by consumeCardsAndGetSurvivors separately)
+     */
+    public void reset() {
         // 初始化ItemStack字段为EMPTY（防止null）
         // Initialize ItemStack fields to EMPTY (prevent null)
         this.oneCard = ItemStack.EMPTY;
@@ -317,24 +377,6 @@ public class RequiemCard {
         this.kuvaLevel = 0;
         // 注意：reset时不清空没收物品
         // Note: don't clear confiscated items on reset
-    }
-
-    /**
-     * 降低卡片耐久度（仅修改耐久，不清空）
-     * Degrade card durability (only modify durability, don't clear)
-     */
-    private void degradeCardDurability(ItemStack card) {
-        if (card == null || card.isEmpty() || !card.isDamageableItem()) {
-            return;
-        }
-
-        if (card.getDamageValue() < card.getMaxDamage() - 1) {
-            card.setDamageValue(card.getDamageValue() + 1);
-        } else {
-            // 已达到最大损坏，标记为损坏
-            // Reached max damage, mark as damaged
-            card.setDamageValue(card.getMaxDamage());
-        }
     }
 
     /**
@@ -380,13 +422,38 @@ public class RequiemCard {
     }
 
     /**
-     * 添加被没收的物品
-     * Add confiscated item
+     * 添加被没收的物品（带上限检查）
+     * Add confiscated item (with limit check)
+     *
+     * @param itemStack 要没收的物品 / item to confiscate
+     * @return true表示成功没收，false表示已达上限无法没收
+     *         true = successfully confiscated, false = limit reached
      */
-    public void addConfiscatedItem(ItemStack itemStack) {
-        if (itemStack != null && !itemStack.isEmpty()) {
-            confiscatedItems.add(itemStack.copy());
+    public boolean addConfiscatedItem(ItemStack itemStack) {
+        if (itemStack == null || itemStack.isEmpty()) {
+            return false;
         }
+
+        // 检查是否已达到没收上限
+        // Check if confiscation limit has been reached
+        int maxCount = 128;
+        if (confiscatedItems.size() >= maxCount) {
+            return false;
+        }
+
+        confiscatedItems.add(itemStack.copy());
+        return true;
+    }
+
+    /**
+     * 检查是否还能没收更多物品
+     * Check if more items can be confiscated
+     *
+     * @return true表示还能没收，false表示已达上限
+     *         true = can confiscate more, false = limit reached
+     */
+    public boolean canConfiscateMore() {
+        return confiscatedItems.size() < 128;
     }
 
     /**

@@ -1,3 +1,4 @@
+// DiggingSpeedPacket.java
 package pers.roinflam.kuvalich.network.message;
 
 import net.minecraft.client.Minecraft;
@@ -34,6 +35,21 @@ public class DiggingSpeedPacket {
      * Client cache (UUID → digging speed increment)
      */
     private static final Map<UUID, Float> CLIENT_CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * 服务端缓存：上次发送给每个玩家的值，用于去重
+     * Server cache: last sent value per player, used for deduplication
+     *
+     * 只在服务端使用，玩家退出时需清理
+     * Only used on server side, must be cleaned up when player leaves
+     */
+    private static final Map<UUID, Float> SERVER_LAST_SENT = new ConcurrentHashMap<>();
+
+    /**
+     * 值比较的容差（避免浮点精度问题导致无意义的重复发包）
+     * Tolerance for value comparison (avoid meaningless repeated packets due to float precision)
+     */
+    private static final float EPSILON = 0.0001f;
 
     /**
      * 构造挖掘速度包
@@ -97,6 +113,31 @@ public class DiggingSpeedPacket {
     }
 
     /**
+     * 检查值是否发生变化，如果变化则更新缓存并返回true
+     * Check if value has changed, update cache and return true if changed
+     *
+     * 调用方应先调用此方法，只在返回true时才构造并发送包
+     * Caller should invoke this first, only construct and send packet when true is returned
+     *
+     * @param playerUUID 玩家UUID / player UUID
+     * @param newValue   新的速度增量值 / new speed increment value
+     * @return true表示值已变化需要发包，false表示值未变无需发包
+     *         true = value changed, need to send; false = unchanged, skip
+     */
+    public static boolean shouldSend(UUID playerUUID, float newValue) {
+        Float lastSent = SERVER_LAST_SENT.get(playerUUID);
+
+        // 首次发送，或值发生了超过容差的变化
+        // First send, or value changed beyond tolerance
+        if (lastSent == null || Math.abs(lastSent - newValue) > EPSILON) {
+            SERVER_LAST_SENT.put(playerUUID, newValue);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * 获取玩家的挖掘速度增量
      * Get player's digging speed increment
      *
@@ -110,8 +151,22 @@ public class DiggingSpeedPacket {
     /**
      * 清理缓存（退出世界时调用）
      * Clean cache (called when leaving world)
+     *
+     * 同时清理客户端缓存和服务端发送记录
+     * Clean both client cache and server send records
      */
     public static void cleanupCache() {
         CLIENT_CACHE.clear();
+        SERVER_LAST_SENT.clear();
+    }
+
+    /**
+     * 清理指定玩家的服务端缓存（玩家退出时调用）
+     * Clean server cache for specific player (called when player leaves)
+     *
+     * @param playerUUID 玩家UUID / player UUID
+     */
+    public static void cleanupPlayer(UUID playerUUID) {
+        SERVER_LAST_SENT.remove(playerUUID);
     }
 }

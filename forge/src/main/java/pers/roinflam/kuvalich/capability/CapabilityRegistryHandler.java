@@ -1,5 +1,3 @@
-// 文件：CapabilityRegistryHandler.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/capability/CapabilityRegistryHandler.java
 package pers.roinflam.kuvalich.capability;
 
 import net.minecraft.resources.ResourceLocation;
@@ -84,18 +82,30 @@ public class CapabilityRegistryHandler {
     }
 
     /**
-     * 玩家克隆事件（死亡重生）
-     * Player clone event (death respawn)
+     * 玩家克隆事件（死亡重生 / 维度传送等）
+     * Player clone event (death respawn / dimension travel etc.)
      *
-     * 用于在玩家死亡后保留Capability数据
-     * Used to preserve Capability data after player death
+     * 用于在玩家实体重建后保留Capability数据
+     * Used to preserve Capability data after player entity recreation
+     *
+     * 触发场景 / Triggered scenarios:
+     * 1. 玩家死亡重生 (isWasDeath=true)
+     * 2. 从末地返回主世界 (isWasDeath=false)
+     * 3. 其他导致玩家实体重建的情况 (isWasDeath=false)
+     *
+     * ⚠️ 所有场景都必须克隆数据！
+     * ⚠️ ALL scenarios must clone data!
      *
      * 修复说明（2025-01-14）：
      * Fix notes:
      * 1. 添加reviveCaps()调用以恢复死亡玩家的Capability访问权限
-     * 2. 添加isWasDeath()检查,只在真正死亡时克隆数据
-     * 3. 添加异常处理,确保克隆失败不会导致游戏崩溃
-     * 4. 添加invalidateCaps()调用,确保旧实体的Capability被正确清理
+     * 2. 添加异常处理,确保克隆失败不会导致游戏崩溃
+     * 3. 添加invalidateCaps()调用,确保旧实体的Capability被正确清理
+     *
+     * 修复说明（2025-xx-xx）：
+     * Fix notes:
+     * 4. 移除isWasDeath()检查，修复从末地返回时数据丢失的bug
+     *    Removed isWasDeath() check to fix data loss when returning from End
      */
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
@@ -106,15 +116,17 @@ public class CapabilityRegistryHandler {
             return;
         }
 
-        // ✅ 新增：只在死亡时克隆,避免从末地返回等情况误触发
-        // Only clone on death, avoid triggering on end portal return etc.
-        if (!event.isWasDeath()) {
-            LogUtil.debug("玩家 " + entity.getName().getString() + " 触发克隆事件但非死亡,跳过Capability克隆");
-            return;
-        }
+        // ✅ 修复：不再检查isWasDeath()，所有Clone事件都必须克隆数据
+        // Fix: No longer check isWasDeath(), ALL Clone events must clone data
+        // 原因：从末地返回时isWasDeath()=false，但玩家实体同样会被重建
+        // Reason: isWasDeath()=false when returning from End, but player entity is still recreated
 
         Player player = (Player) entity;
         Player original = event.getOriginal();
+
+        LogUtil.debug("玩家 " + player.getName().getString() + " 触发克隆事件"
+                + (event.isWasDeath() ? "（死亡重生）" : "（维度传送等）")
+                + "，开始克隆Capability数据");
 
         // ✅ 关键修复：恢复旧实体的Capability访问权限
         // Critical fix: Revive old entity's Capability access
@@ -130,7 +142,6 @@ public class CapabilityRegistryHandler {
             player.getCapability(REQUIEM_CARD).ifPresent(newCap -> {
                 original.getCapability(REQUIEM_CARD).ifPresent(oldCap -> {
                     newCap.clone(oldCap);
-                    LogUtil.info("✓ 已克隆玩家 " + player.getName().getString() + " 的RequiemCard数据");
                 });
             });
 
@@ -139,7 +150,6 @@ public class CapabilityRegistryHandler {
             player.getCapability(WARFRAME_MODULES).ifPresent(newCap -> {
                 original.getCapability(WARFRAME_MODULES).ifPresent(oldCap -> {
                     newCap.clone(oldCap);
-                    LogUtil.info("✓ 已克隆玩家 " + player.getName().getString() + " 的WarframeModules数据");
                 });
             });
 
@@ -148,7 +158,7 @@ public class CapabilityRegistryHandler {
             // Catch any exceptions during cloning to avoid game crash
             LogUtil.error("克隆玩家Capability数据时出错: " + player.getName().getString(), e);
         } finally {
-            // ✅ 新增：确保旧实体的Capability被正确失效
+            // ✅ 确保旧实体的Capability被正确失效
             // Ensure old entity's Capabilities are properly invalidated
             // 说明：克隆完成后必须再次失效,确保资源正确释放,防止内存泄漏
             // Note: Must invalidate again after cloning to ensure proper resource cleanup and prevent memory leaks

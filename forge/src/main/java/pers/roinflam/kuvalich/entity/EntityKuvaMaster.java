@@ -1,3 +1,4 @@
+// EntityKuvaMaster.java
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.ChatFormatting;
@@ -170,8 +171,15 @@ public class EntityKuvaMaster extends KuvaBase {
     }
 
     /**
-     * 处理成功破解（业务逻辑100%不变）
-     * Handle successful decryption (business logic 100% unchanged)
+     * 处理成功破解
+     * Handle successful decryption
+     *
+     * 修改说明：卡片不再直接消失，而是每次消耗1点耐久
+     * Change notes: Cards no longer disappear directly, instead consume 1 durability each time
+     * - 仍有耐久的卡片会归还到玩家背包
+     *   Cards with remaining durability are returned to player inventory
+     * - 耐久耗尽的卡片才会消失
+     *   Cards only disappear when durability is depleted
      */
     private void handleSuccessfulDecryption(Player player, RequiemCard requiemCard, BlockPos pos) {
         // 发送死亡语录 / Send death message
@@ -180,7 +188,23 @@ public class EntityKuvaMaster extends KuvaBase {
         // 掉落被没收的物品 / Drop confiscated items
         dropConfiscatedItems(player, requiemCard, pos);
 
+        // ★ 先消耗卡片耐久，获取仍有耐久的存活卡片
+        // ★ Consume card durability first, get surviving cards that still have durability
+        List<ItemStack> survivingCards = requiemCard.consumeCardsAndGetSurvivors();
+
+        // 重置安魂卡片数据（谜语、答案、进度等，卡片槽已在consume中清空）
+        // Reset requiem card data (riddles, answers, progress, etc. Card slots already cleared in consume)
         requiemCard.reset();
+
+        // ★ 将仍有耐久的卡片归还给玩家
+        // ★ Return cards that still have durability to the player
+        for (ItemStack survivingCard : survivingCards) {
+            if (!player.getInventory().add(survivingCard)) {
+                // 背包满时掉落到地上
+                // Drop on ground if inventory is full
+                spawnItem(pos, survivingCard);
+            }
+        }
 
         // 掉落Kuva武器 / Drop Kuva weapon
         ItemStack weapon = KuvaWeapon.getItem(

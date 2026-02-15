@@ -119,7 +119,7 @@ public class DynamicAttributes {
                 private final UUID boundEntityId = entity.getUUID();
 
                 @SubscribeEvent
-                public void onHurt(LivingHurtEvent event) {
+                public void onMagneticHurt(LivingHurtEvent event) {
                     if (!event.getEntity().getUUID().equals(boundEntityId)) return;
                     if (event.getEntity().level().isClientSide()) return;
 
@@ -208,7 +208,7 @@ public class DynamicAttributes {
                 private final UUID boundEntityId = entity.getUUID();
 
                 @SubscribeEvent
-                public void onHurt(LivingHurtEvent event) {
+                public void onPunctureHurt(LivingHurtEvent event) {
                     if (!event.getEntity().getUUID().equals(boundEntityId)) return;
                     if (event.getEntity().level().isClientSide()) return;
 

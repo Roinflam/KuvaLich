@@ -835,18 +835,35 @@ public class WarframeModule {
 
                         // ═══ 同步挖掘速度到客户端 ═══
                         // Sync digging speed to client
-                        // 挖掘距离增加通过 ForgeMod.BLOCK_REACH 和 ForgeMod.ENTITY_REACH 实现
-                        // Reach distance increase is implemented through ForgeMod.BLOCK_REACH and ForgeMod.ENTITY_REACH
+                        // 只在值变化时才发包，避免每5tick无意义重复发送
+                        // Only send when value changes, avoid meaningless repeated sends every 5 ticks
                         double diggingSpeed = attributes.getOrDefault("diggingSpeed", 0.0);
                         if (player instanceof ServerPlayer) {
-                            KuvaLich.network.send(
-                                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                                    new DiggingSpeedPacket((float) diggingSpeed)
-                            );
+                            if (DiggingSpeedPacket.shouldSend(player.getUUID(), (float) diggingSpeed)) {
+                                KuvaLich.network.send(
+                                        PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                                        new DiggingSpeedPacket((float) diggingSpeed)
+                                );
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * 玩家退出时清理缓存，防止内存泄漏
+     * Clean up caches when player logs out to prevent memory leak
+     */
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent evt) {
+        UUID uuid = evt.getEntity().getUUID();
+        // 清理护盾冷却缓存
+        // Clean shield cooldown cache
+        cooldingHashMap.remove(uuid);
+        // 清理挖掘速度发送记录
+        // Clean digging speed send record
+        DiggingSpeedPacket.cleanupPlayer(uuid);
     }
 }

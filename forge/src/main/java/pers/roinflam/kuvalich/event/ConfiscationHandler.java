@@ -13,11 +13,14 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
 /**
- * 赤毒玄骸没收物品事件处理器（1.20.1版本，业务逻辑100%不变）
- * Confiscation Handler (1.20.1 version, business logic 100% unchanged)
+ * 赤毒玄骸没收物品事件处理器（1.20.1版本）
+ * Confiscation Handler (1.20.1 version)
  *
  * 当玩家解密了任意谜语后，捡起物品时有概率被没收
  * When player unlocked any riddle, items may be confiscated when picked up
+ *
+ * 没收上限由配置项 maxConfiscatedItems 控制，达到上限后不再没收
+ * Confiscation limit controlled by maxConfiscatedItems config, stops when limit reached
  */
 @Mod.EventBusSubscriber
 public class ConfiscationHandler {
@@ -39,9 +42,6 @@ public class ConfiscationHandler {
     /**
      * 监听玩家捡起物品事件（1.20.1事件API）
      * Listen to item pickup event (1.20.1 event API)
-     *
-     * 注意：1.20.1使用EntityItemPickupEvent.Pre
-     * Note: 1.20.1 uses EntityItemPickupEvent.Pre
      */
     @SubscribeEvent
     public static void onItemPickup(EntityItemPickupEvent event) {
@@ -53,7 +53,8 @@ public class ConfiscationHandler {
             return;
         }
 
-        // ✅ 修正：调用.get()获取配置值
+        // 获取没收概率配置
+        // Get confiscation chance config
         double confiscationChance = ModConfig.KUVA_LICH.confiscationChance.get();
         if (confiscationChance <= 0) {
             return;
@@ -63,6 +64,12 @@ public class ConfiscationHandler {
         player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
             // 检查是否有任意谜语被解开 / Check if any riddle unlocked
             if (!requiemCard.hasAnyRiddleUnlocked()) {
+                return;
+            }
+
+            // ✅ 新增：检查是否已达到没收上限
+            // Check if confiscation limit has been reached
+            if (!requiemCard.canConfiscateMore()) {
                 return;
             }
 
@@ -77,11 +84,16 @@ public class ConfiscationHandler {
                 return;
             }
 
-            // 没收物品 / Confiscate item
-            requiemCard.addConfiscatedItem(itemStack);
+            // 没收物品（addConfiscatedItem内部也会做上限检查，双重保险）
+            // Confiscate item (addConfiscatedItem also checks limit internally, double safety)
+            if (!requiemCard.addConfiscatedItem(itemStack)) {
+                // 没收失败（已达上限），不取消拾取
+                // Confiscation failed (limit reached), don't cancel pickup
+                return;
+            }
 
-            // 取消拾取事件，移除掉落物实体（1.20.1新API）
-            // Cancel pickup, remove item entity (1.20.1 new API)
+            // 取消拾取事件，移除掉落物实体
+            // Cancel pickup, remove item entity
             event.setCanceled(true);
             entityItem.discard();
 
