@@ -48,7 +48,7 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
         this.addSlot(new InputSlot(this.cardHandler, 0, 31, 54));
         this.addSlot(new InputSlot(this.cardHandler, 1, 80, 54));
         this.addSlot(new InputSlot(this.cardHandler, 2, 129, 54));
-        this.addSlot(new OutputSlot(this.cardHandler, 3, 81, 10));
+        this.addSlot(new OutputSlot(this.cardHandler, 3, 80, 10));
 
         // 添加玩家背包槽位 / Add player inventory slots
         for (int i = 0; i < 9; i++) {
