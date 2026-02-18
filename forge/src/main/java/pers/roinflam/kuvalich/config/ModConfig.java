@@ -1,3 +1,4 @@
+// ModConfig.java
 package pers.roinflam.kuvalich.config;
 
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -10,11 +11,6 @@ import pers.roinflam.kuvalich.utils.Reference;
  * 赤毒玄骸模组配置类
  * Kuva Lich Mod Configuration Class
  *
- * 统一管理所有配置项
- * Unified management of all configuration items
- * 配置文件位置:config/kuvalich-common.toml
- * Config file location: config/kuvalich-common.toml
- *
  * @author RoinFlam
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -23,12 +19,14 @@ public final class ModConfig {
     public static final ForgeConfigSpec COMMON_CONFIG;
     public static final KuvaLichConfig KUVA_LICH;
     public static final KuvaWeaponConfig KUVA_WEAPON;
+    public static final OreGenConfig ORE_GEN;
 
     static {
         ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
 
         KUVA_LICH = new KuvaLichConfig(COMMON_BUILDER);
         KUVA_WEAPON = new KuvaWeaponConfig(COMMON_BUILDER);
+        ORE_GEN = new OreGenConfig(COMMON_BUILDER);
 
         COMMON_CONFIG = COMMON_BUILDER.build();
     }
@@ -65,7 +63,7 @@ public final class ModConfig {
 
         public final ForgeConfigSpec.BooleanValue damageDisplay;
         public final ForgeConfigSpec.BooleanValue enableDamageNumbers;
-        public final ForgeConfigSpec.BooleanValue enableTrueDamage;  // ✅ 新增:真伤系统开关
+        public final ForgeConfigSpec.BooleanValue enableTrueDamage;
         public final ForgeConfigSpec.DoubleValue battleBoost;
         public final ForgeConfigSpec.DoubleValue reducedDamage;
         public final ForgeConfigSpec.DoubleValue increaseDamage;
@@ -119,6 +117,59 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue kuvaSlaveMinSpawnCount;
         public final ForgeConfigSpec.IntValue kuvaSlaveMaxSpawnCount;
 
+        // ========== 灭骸附魔掉落概率 / Requiem Destroyed Enchantment Drop Chances ==========
+
+        public final ForgeConfigSpec.IntValue cardDropChanceWithEnchant;
+        public final ForgeConfigSpec.IntValue baseCardDropChance;
+        public final ForgeConfigSpec.DoubleValue fortuneReductionPerLevel;
+        public final ForgeConfigSpec.IntValue minCardDropChance;
+        public final ForgeConfigSpec.IntValue commonModuleDropChance;
+        public final ForgeConfigSpec.IntValue uncommonModuleDropChance;
+        public final ForgeConfigSpec.IntValue rareModuleDropChance;
+        public final ForgeConfigSpec.IntValue expMultiplier;
+
+        // ========== 赤毒奴仆掉落 / Kuva Slave Drop Loot ==========
+
+        /** 奴仆掉落赤毒的概率(%) / Chance (%) to drop Kuva from slave */
+        public final ForgeConfigSpec.IntValue slaveKuvaDropChance;
+
+        /** 奴仆掉落赤毒的最小数量 / Minimum Kuva amount dropped by slave */
+        public final ForgeConfigSpec.IntValue slaveKuvaMinAmount;
+
+        /** 奴仆掉落赤毒的最大数量 / Maximum Kuva amount dropped by slave */
+        public final ForgeConfigSpec.IntValue slaveKuvaMaxAmount;
+
+        /** 奴仆掉落裂罅碎块的概率(%) / Chance (%) to drop Riven Sliver from slave */
+        public final ForgeConfigSpec.IntValue slaveRivenSliverDropChance;
+
+        /** 奴仆掉落安魂宝石的基础概率(%) / Base chance (%) to drop Requiem Gem from slave */
+        public final ForgeConfigSpec.IntValue slaveRequiemGemBaseChance;
+
+        /** 奴仆安魂宝石掉落概率每级时运加成(%) / Requiem Gem chance bonus per looting level (%) */
+        public final ForgeConfigSpec.DoubleValue slaveRequiemGemLootingBonus;
+
+        // ========== 赤毒玄骸掉落 / Kuva Master Drop Loot ==========
+
+        /** 玄骸掉落赤毒的最小数量 / Minimum Kuva amount dropped by master */
+        public final ForgeConfigSpec.IntValue masterKuvaMinAmount;
+
+        /** 玄骸掉落赤毒的最大数量 / Maximum Kuva amount dropped by master */
+        public final ForgeConfigSpec.IntValue masterKuvaMaxAmount;
+
+        /** 玄骸掉落裂罅碎块的最小数量 / Minimum Riven Sliver amount dropped by master */
+        public final ForgeConfigSpec.IntValue masterRivenSliverMinAmount;
+
+        /** 玄骸掉落裂罅碎块的最大数量 / Maximum Riven Sliver amount dropped by master */
+        public final ForgeConfigSpec.IntValue masterRivenSliverMaxAmount;
+
+        /** 玄骸掉落高级模组时选择Prime而非裂罅的概率(%) / Chance (%) to drop Prime module instead of Riven module */
+        public final ForgeConfigSpec.IntValue masterPrimeModuleChance;
+
+        // ========== 通用掉落 / Common Drop Settings ==========
+
+        /** 模组掉落时武器模组的比例(%)，剩余为战甲模组 / Weapon module ratio (%) when dropping module, rest is warframe */
+        public final ForgeConfigSpec.IntValue moduleWeaponRatio;
+
         public KuvaLichConfig(ForgeConfigSpec.Builder builder) {
             builder.comment("═══════════════════════════════════════════════════════════════")
                     .comment("Kuva Lich System Configuration")
@@ -144,8 +195,6 @@ public final class ModConfig {
                     .comment("护盾上限倍率(基于最大生命值)")
                     .comment("Formula: Shield Cap = Max Health × Shield Attribute × This Multiplier")
                     .comment("公式: 护盾上限 = 最大生命值 × 护盾属性 × 此倍率")
-                    .comment("Example: 0.5 means shield cap is 50% of max health when shield attribute = 1.0")
-                    .comment("示例: 0.5 表示当护盾属性=1.0时,护盾上限为最大生命值的50%")
                     .defineInRange("shieldCapMultiplier", 0.5, 0.0, 10.0);
 
             // ========== 物品没收系统 ==========
@@ -212,7 +261,6 @@ public final class ModConfig {
                     .comment("关闭时将不会向客户端发送伤害数据包")
                     .define("enableDamageNumbers", true);
 
-            // ✅ 新增:真伤系统开关
             enableTrueDamage = builder
                     .comment("Enable true damage system (bypass setHealth and damage reduction)")
                     .comment("启用真伤系统(绕过setHealth和伤害减免)")
@@ -408,12 +456,14 @@ public final class ModConfig {
 
             // ========== 实体生成 ==========
             builder.comment("")
-                    .comment("═══ Entity Spawning / 实体生成 ═══");
+                    .comment("═══ Entity Spawning / 实体生成 ═══")
+                    .comment("Note: These values are read during world generation setup")
+                    .comment("注意：这些值在世界生成初始化时读取，修改后重启游戏生效");
 
             kuvaLichSpawnWeight = builder
-                    .comment("Kuva Lich spawn weight")
-                    .comment("赤毒玄骸生成权重")
-                    .defineInRange("kuvaLichSpawnWeight", 5, 1, Integer.MAX_VALUE);
+                    .comment("Kuva Lich spawn weight (set to 0 to disable)")
+                    .comment("赤毒玄骸生成权重(设为0可禁用生成)")
+                    .defineInRange("kuvaLichSpawnWeight", 5, 0, Integer.MAX_VALUE);
 
             kuvaLichMinSpawnCount = builder
                     .comment("Kuva Lich minimum spawn count")
@@ -426,9 +476,9 @@ public final class ModConfig {
                     .defineInRange("kuvaLichMaxSpawnCount", 1, 1, Integer.MAX_VALUE);
 
             kuvaSlaveSpawnWeight = builder
-                    .comment("Kuva Slave spawn weight")
-                    .comment("赤毒奴仆生成权重")
-                    .defineInRange("kuvaSlaveSpawnWeight", 10, 1, Integer.MAX_VALUE);
+                    .comment("Kuva Slave spawn weight (set to 0 to disable)")
+                    .comment("赤毒奴仆生成权重(设为0可禁用生成)")
+                    .defineInRange("kuvaSlaveSpawnWeight", 10, 0, Integer.MAX_VALUE);
 
             kuvaSlaveMinSpawnCount = builder
                     .comment("Kuva Slave minimum spawn count")
@@ -439,6 +489,207 @@ public final class ModConfig {
                     .comment("Kuva Slave maximum spawn count")
                     .comment("赤毒奴仆最大生成数量")
                     .defineInRange("kuvaSlaveMaxSpawnCount", 3, 1, Integer.MAX_VALUE);
+
+            // ========== 灭骸附魔掉落概率 ==========
+            builder.comment("")
+                    .comment("═══ Requiem Destroyed Enchantment Drop Chances / 灭骸附魔掉落概率 ═══")
+                    .comment("These control drop chances when mining Requiem Ore with the Requiem Destroyed enchantment")
+                    .comment("这些控制使用灭骸附魔挖掘安魂矿石时的掉落概率");
+
+            cardDropChanceWithEnchant = builder
+                    .comment("Requiem Card drop chance (%) when tool has Requiem Destroyed enchantment")
+                    .comment("持有灭骸附魔时安魂卡片掉落概率(%)")
+                    .defineInRange("cardDropChanceWithEnchant", 75, 0, 100);
+
+            baseCardDropChance = builder
+                    .comment("Base Requiem Card drop chance (%) without the enchantment (affected by Fortune)")
+                    .comment("无附魔时的基础安魂卡片掉落概率(%)(受时运影响)")
+                    .defineInRange("baseCardDropChance", 25, 0, 100);
+
+            fortuneReductionPerLevel = builder
+                    .comment("Reduction to base card drop chance per Fortune level (%)")
+                    .comment("每级时运对基础卡片掉落概率的削减量(%)")
+                    .comment("Example: baseCardDropChance=25, fortuneReductionPerLevel=2.5, Fortune III → 25 - 7.5 = 17.5%%")
+                    .comment("示例: 基础25%, 每级削减2.5%, 时运III → 25 - 7.5 = 17.5%%")
+                    .defineInRange("fortuneReductionPerLevel", 2.5, 0.0, 100.0);
+
+            minCardDropChance = builder
+                    .comment("Minimum card drop chance (%) even with high Fortune levels")
+                    .comment("即使时运等级很高时的最低卡片掉落概率(%)")
+                    .defineInRange("minCardDropChance", 5, 0, 100);
+
+            commonModuleDropChance = builder
+                    .comment("Common (Bronze) module drop chance (%) from Requiem Ore")
+                    .comment("安魂矿石掉落青铜模组的概率(%)")
+                    .defineInRange("commonModuleDropChance", 15, 0, 100);
+
+            uncommonModuleDropChance = builder
+                    .comment("Uncommon (Silver) module drop chance (%) from Requiem Ore")
+                    .comment("安魂矿石掉落白银模组的概率(%)")
+                    .defineInRange("uncommonModuleDropChance", 10, 0, 100);
+
+            rareModuleDropChance = builder
+                    .comment("Rare (Gold) module drop chance (%) from Requiem Ore")
+                    .comment("安魂矿石掉落黄金模组的概率(%)")
+                    .defineInRange("rareModuleDropChance", 5, 0, 100);
+
+            expMultiplier = builder
+                    .comment("Experience multiplier when mining Requiem Ore with Requiem Destroyed enchantment")
+                    .comment("持有灭骸附魔挖掘安魂矿石时的经验倍数")
+                    .defineInRange("expMultiplier", 2, 1, 100);
+
+            // ========== 赤毒奴仆掉落 ==========
+            builder.comment("")
+                    .comment("═══ Kuva Slave Drop Loot / 赤毒奴仆掉落战利品 ═══");
+
+            slaveKuvaDropChance = builder
+                    .comment("Chance (%) to drop Kuva when killed by player")
+                    .comment("被玩家击杀时掉落赤毒的概率(%)")
+                    .defineInRange("slaveKuvaDropChance", 10, 0, 100);
+
+            slaveKuvaMinAmount = builder
+                    .comment("Minimum number of Kuva dropped")
+                    .comment("掉落赤毒的最小数量")
+                    .defineInRange("slaveKuvaMinAmount", 2, 1, 64);
+
+            slaveKuvaMaxAmount = builder
+                    .comment("Maximum number of Kuva dropped")
+                    .comment("掉落赤毒的最大数量")
+                    .defineInRange("slaveKuvaMaxAmount", 8, 1, 64);
+
+            slaveRivenSliverDropChance = builder
+                    .comment("Chance (%) to drop Riven Sliver when killed by player")
+                    .comment("被玩家击杀时掉落裂罅碎块的概率(%)")
+                    .defineInRange("slaveRivenSliverDropChance", 10, 0, 100);
+
+            slaveRequiemGemBaseChance = builder
+                    .comment("Base chance (%) to drop Requiem Gem when killed by player")
+                    .comment("被玩家击杀时掉落安魂宝石的基础概率(%)")
+                    .comment("Increases by slaveRequiemGemLootingBonus per looting level")
+                    .comment("每级时运提升slaveRequiemGemLootingBonus个百分点")
+                    .defineInRange("slaveRequiemGemBaseChance", 25, 0, 100);
+
+            slaveRequiemGemLootingBonus = builder
+                    .comment("Requiem Gem chance bonus per looting enchantment level (%)")
+                    .comment("每级时运附魔对安魂宝石掉落概率的加成(%)")
+                    .comment("Example: base 25%%, looting III, bonus 2.5 → 25 + 7.5 = 32.5%%")
+                    .comment("示例: 基础25%%, 时运III, 每级2.5 → 25 + 7.5 = 32.5%%")
+                    .defineInRange("slaveRequiemGemLootingBonus", 2.5, 0.0, 100.0);
+
+            // ========== 赤毒玄骸掉落 ==========
+            builder.comment("")
+                    .comment("═══ Kuva Master Drop Loot / 赤毒玄骸掉落战利品 ═══");
+
+            masterKuvaMinAmount = builder
+                    .comment("Minimum number of Kuva dropped on death")
+                    .comment("死亡时掉落赤毒的最小数量")
+                    .defineInRange("masterKuvaMinAmount", 32, 1, 256);
+
+            masterKuvaMaxAmount = builder
+                    .comment("Maximum number of Kuva dropped on death")
+                    .comment("死亡时掉落赤毒的最大数量")
+                    .defineInRange("masterKuvaMaxAmount", 64, 1, 256);
+
+            masterRivenSliverMinAmount = builder
+                    .comment("Minimum number of Riven Sliver dropped on death")
+                    .comment("死亡时掉落裂罅碎块的最小数量")
+                    .defineInRange("masterRivenSliverMinAmount", 4, 1, 64);
+
+            masterRivenSliverMaxAmount = builder
+                    .comment("Maximum number of Riven Sliver dropped on death")
+                    .comment("死亡时掉落裂罅碎块的最大数量")
+                    .defineInRange("masterRivenSliverMaxAmount", 8, 1, 64);
+
+            masterPrimeModuleChance = builder
+                    .comment("Chance (%) to drop a Prime module instead of Riven module on death")
+                    .comment("死亡时掉落Prime模组而非裂罅模组的概率(%)")
+                    .comment("Remaining chance will drop a Riven module")
+                    .comment("剩余概率将掉落裂罅模组")
+                    .defineInRange("masterPrimeModuleChance", 50, 0, 100);
+
+            // ========== 通用掉落设置 ==========
+            builder.comment("")
+                    .comment("═══ Common Drop Settings / 通用掉落设置 ═══");
+
+            moduleWeaponRatio = builder
+                    .comment("When dropping a module, chance (%) it is a weapon module")
+                    .comment("掉落模组时，该模组为武器模组的概率(%)")
+                    .comment("Remaining chance will be a warframe module")
+                    .comment("剩余概率为战甲模组")
+                    .defineInRange("moduleWeaponRatio", 75, 0, 100);
+
+            builder.pop();
+        }
+    }
+
+    /**
+     * 矿石生成配置
+     * Ore Generation Configuration
+     */
+    public static class OreGenConfig {
+
+        public final ForgeConfigSpec.IntValue requiemOreVeinCount;
+        public final ForgeConfigSpec.IntValue requiemOreVeinSize;
+        public final ForgeConfigSpec.IntValue requiemOreMinHeight;
+        public final ForgeConfigSpec.IntValue requiemOreMaxHeight;
+        public final ForgeConfigSpec.IntValue experienceOreVeinCount;
+        public final ForgeConfigSpec.IntValue experienceOreVeinSize;
+        public final ForgeConfigSpec.IntValue experienceOreMinHeight;
+        public final ForgeConfigSpec.IntValue experienceOreMaxHeight;
+
+        public OreGenConfig(ForgeConfigSpec.Builder builder) {
+            builder.comment("")
+                    .comment("═══════════════════════════════════════════════════════════════")
+                    .comment("Ore Generation Configuration")
+                    .comment("矿石生成配置")
+                    .comment("═══════════════════════════════════════════════════════════════")
+                    .comment("⚠ Changes only take effect after restarting the game!")
+                    .comment("⚠ 修改后需重启游戏才能生效！仅对新生成区块有效。")
+                    .push("ore_gen");
+
+            builder.comment("").comment("═══ Requiem Ore / 安魂矿石 ═══");
+
+            requiemOreVeinCount = builder
+                    .comment("Number of Requiem Ore veins per chunk (0 = disable)")
+                    .comment("每个区块生成安魂矿石脉体数量(0=禁用)")
+                    .defineInRange("requiemOreVeinCount", 8, 0, 256);
+
+            requiemOreVeinSize = builder
+                    .comment("Maximum blocks per Requiem Ore vein")
+                    .comment("每个安魂矿石脉体最多包含的方块数")
+                    .defineInRange("requiemOreVeinSize", 4, 1, 64);
+
+            requiemOreMinHeight = builder
+                    .comment("Minimum Y level for Requiem Ore generation")
+                    .comment("安魂矿石生成的最低Y坐标")
+                    .defineInRange("requiemOreMinHeight", -64, -64, 320);
+
+            requiemOreMaxHeight = builder
+                    .comment("Maximum Y level for Requiem Ore generation")
+                    .comment("安魂矿石生成的最高Y坐标")
+                    .defineInRange("requiemOreMaxHeight", 28, -64, 320);
+
+            builder.comment("").comment("═══ Experience Ore / 经验矿石 ═══");
+
+            experienceOreVeinCount = builder
+                    .comment("Number of Experience Ore veins per chunk (0 = disable)")
+                    .comment("每个区块生成经验矿石脉体数量(0=禁用)")
+                    .defineInRange("experienceOreVeinCount", 16, 0, 256);
+
+            experienceOreVeinSize = builder
+                    .comment("Maximum blocks per Experience Ore vein")
+                    .comment("每个经验矿石脉体最多包含的方块数")
+                    .defineInRange("experienceOreVeinSize", 4, 1, 64);
+
+            experienceOreMinHeight = builder
+                    .comment("Minimum Y level for Experience Ore generation")
+                    .comment("经验矿石生成的最低Y坐标")
+                    .defineInRange("experienceOreMinHeight", -64, -64, 320);
+
+            experienceOreMaxHeight = builder
+                    .comment("Maximum Y level for Experience Ore generation")
+                    .comment("经验矿石生成的最高Y坐标")
+                    .defineInRange("experienceOreMaxHeight", 128, -64, 320);
 
             builder.pop();
         }
@@ -452,67 +703,54 @@ public final class ModConfig {
 
         public final ForgeConfigSpec.DoubleValue attributeMultiplier;
 
-        // 赤毒希尔德
         public final ForgeConfigSpec.DoubleValue attackDamageKuvaShildeg;
         public final ForgeConfigSpec.DoubleValue attackSpeedKuvaShildeg;
         public final ForgeConfigSpec.DoubleValue movementSpeedKuvaShildeg;
 
-        // 尖幡
         public final ForgeConfigSpec.DoubleValue attackDamagePennant;
         public final ForgeConfigSpec.DoubleValue attackSpeedPennant;
         public final ForgeConfigSpec.DoubleValue movementSpeedPennant;
 
-        // 关刀Prime
         public final ForgeConfigSpec.DoubleValue attackDamageGuandaoPrime;
         public final ForgeConfigSpec.DoubleValue attackSpeedGuandaoPrime;
         public final ForgeConfigSpec.DoubleValue movementSpeedGuandaoPrime;
 
-        // 心智之殁
         public final ForgeConfigSpec.DoubleValue attackDamageParacesis;
         public final ForgeConfigSpec.DoubleValue attackSpeedParacesis;
         public final ForgeConfigSpec.DoubleValue movementSpeedParacesis;
 
-        // 弧电振子锤
         public final ForgeConfigSpec.DoubleValue attackDamageArcaTitron;
         public final ForgeConfigSpec.DoubleValue attackSpeedArcaTitron;
         public final ForgeConfigSpec.DoubleValue movementSpeedArcaTitron;
 
-        // 收割者Prime
         public final ForgeConfigSpec.DoubleValue attackDamageReaperPrime;
         public final ForgeConfigSpec.DoubleValue attackSpeedReaperPrime;
         public final ForgeConfigSpec.DoubleValue movementSpeedReaperPrime;
 
-        // 金璃剑
         public final ForgeConfigSpec.DoubleValue attackDamageVitrica;
         public final ForgeConfigSpec.DoubleValue attackSpeedVitrica;
         public final ForgeConfigSpec.DoubleValue movementSpeedVitrica;
 
-        // 格拉姆Prime
         public final ForgeConfigSpec.DoubleValue attackDamageGramPrime;
         public final ForgeConfigSpec.DoubleValue attackSpeedGramPrime;
         public final ForgeConfigSpec.DoubleValue movementSpeedGramPrime;
 
-        // 圣洁执法者
         public final ForgeConfigSpec.DoubleValue attackDamageSanctiMagistar;
         public final ForgeConfigSpec.DoubleValue attackSpeedSanctiMagistar;
         public final ForgeConfigSpec.DoubleValue movementSpeedSanctiMagistar;
 
-        // 技巧之剑Prime
         public final ForgeConfigSpec.DoubleValue attackDamageDestrezaPrime;
         public final ForgeConfigSpec.DoubleValue attackSpeedDestrezaPrime;
         public final ForgeConfigSpec.DoubleValue movementSpeedDestrezaPrime;
 
-        // 棱晶真理巨剑
         public final ForgeConfigSpec.DoubleValue attackDamagePrismaVeritux;
         public final ForgeConfigSpec.DoubleValue attackSpeedPrismaVeritux;
         public final ForgeConfigSpec.DoubleValue movementSpeedPrismaVeritux;
 
-        // 马谢特砍刀
         public final ForgeConfigSpec.DoubleValue attackDamageMachete;
         public final ForgeConfigSpec.DoubleValue attackSpeedMachete;
         public final ForgeConfigSpec.DoubleValue movementSpeedMachete;
 
-        // 灼蚀变体镰
         public final ForgeConfigSpec.DoubleValue attackDamageCaustacyst;
         public final ForgeConfigSpec.DoubleValue attackSpeedCaustacyst;
         public final ForgeConfigSpec.DoubleValue movementSpeedCaustacyst;
@@ -530,79 +768,66 @@ public final class ModConfig {
                     .comment("武器属性倍率")
                     .defineInRange("attributeMultiplier", 1.5, 0.0, Double.MAX_VALUE);
 
-            // 赤毒希尔德
             builder.comment("").comment("Kuva Shildeg / 赤毒希尔德");
             attackDamageKuvaShildeg = builder.defineInRange("attackDamageKuvaShildeg", 44.0, 0.0, Double.MAX_VALUE);
             attackSpeedKuvaShildeg = builder.defineInRange("attackSpeedKuvaShildeg", 0.7, 0.0, Double.MAX_VALUE);
             movementSpeedKuvaShildeg = builder.defineInRange("movementSpeedKuvaShildeg", -0.2, -1.0, 1.0);
 
-            // 尖幡
             builder.comment("").comment("Pennant / 尖幡");
             attackDamagePennant = builder.defineInRange("attackDamagePennant", 28.0, 0.0, Double.MAX_VALUE);
             attackSpeedPennant = builder.defineInRange("attackSpeedPennant", 1.1, 0.0, Double.MAX_VALUE);
             movementSpeedPennant = builder.defineInRange("movementSpeedPennant", 0.025, -1.0, 1.0);
 
-            // 关刀Prime
             builder.comment("").comment("Guandao Prime / 关刀Prime");
             attackDamageGuandaoPrime = builder.defineInRange("attackDamageGuandaoPrime", 16.0, 0.0, Double.MAX_VALUE);
             attackSpeedGuandaoPrime = builder.defineInRange("attackSpeedGuandaoPrime", 2.0, 0.0, Double.MAX_VALUE);
             movementSpeedGuandaoPrime = builder.defineInRange("movementSpeedGuandaoPrime", 0.075, -1.0, 1.0);
 
-            // 心智之殁
             builder.comment("").comment("Paracesis / 心智之殁");
             attackDamageParacesis = builder.defineInRange("attackDamageParacesis", 34.0, 0.0, Double.MAX_VALUE);
             attackSpeedParacesis = builder.defineInRange("attackSpeedParacesis", 0.9, 0.0, Double.MAX_VALUE);
             movementSpeedParacesis = builder.defineInRange("movementSpeedParacesis", -0.1, -1.0, 1.0);
 
-            // 弧电振子锤
             builder.comment("").comment("Arca Titron / 弧电振子锤");
             attackDamageArcaTitron = builder.defineInRange("attackDamageArcaTitron", 38.0, 0.0, Double.MAX_VALUE);
             attackSpeedArcaTitron = builder.defineInRange("attackSpeedArcaTitron", 0.75, 0.0, Double.MAX_VALUE);
             movementSpeedArcaTitron = builder.defineInRange("movementSpeedArcaTitron", -0.15, -1.0, 1.0);
 
-            // 收割者Prime
             builder.comment("").comment("Reaper Prime / 收割者Prime");
             attackDamageReaperPrime = builder.defineInRange("attackDamageReaperPrime", 18.0, 0.0, Double.MAX_VALUE);
             attackSpeedReaperPrime = builder.defineInRange("attackSpeedReaperPrime", 1.75, 0.0, Double.MAX_VALUE);
             movementSpeedReaperPrime = builder.defineInRange("movementSpeedReaperPrime", 0.05, -1.0, 1.0);
 
-            // 金璃剑
             builder.comment("").comment("Vitrica / 金璃剑");
             attackDamageVitrica = builder.defineInRange("attackDamageVitrica", 50.0, 0.0, Double.MAX_VALUE);
             attackSpeedVitrica = builder.defineInRange("attackSpeedVitrica", 0.65, 0.0, Double.MAX_VALUE);
             movementSpeedVitrica = builder.defineInRange("movementSpeedVitrica", -0.2, -1.0, 1.0);
 
-            // 格拉姆Prime
             builder.comment("").comment("Gram Prime / 格拉姆Prime");
             attackDamageGramPrime = builder.defineInRange("attackDamageGramPrime", 46.0, 0.0, Double.MAX_VALUE);
             attackSpeedGramPrime = builder.defineInRange("attackSpeedGramPrime", 0.7, 0.0, Double.MAX_VALUE);
             movementSpeedGramPrime = builder.defineInRange("movementSpeedGramPrime", -0.15, -1.0, 1.0);
 
-            // 圣洁执法者
             builder.comment("").comment("Sancti Magistar / 圣洁执法者");
             attackDamageSanctiMagistar = builder.defineInRange("attackDamageSanctiMagistar", 36.0, 0.0, Double.MAX_VALUE);
             attackSpeedSanctiMagistar = builder.defineInRange("attackSpeedSanctiMagistar", 0.85, 0.0, Double.MAX_VALUE);
             movementSpeedSanctiMagistar = builder.defineInRange("movementSpeedSanctiMagistar", -0.075, -1.0, 1.0);
 
-            // 技巧之剑Prime
             builder.comment("").comment("Destreza Prime / 技巧之剑Prime");
             attackDamageDestrezaPrime = builder.defineInRange("attackDamageDestrezaPrime", 24.0, 0.0, Double.MAX_VALUE);
             attackSpeedDestrezaPrime = builder.defineInRange("attackSpeedDestrezaPrime", 1.4, 0.0, Double.MAX_VALUE);
             movementSpeedDestrezaPrime = builder.defineInRange("movementSpeedDestrezaPrime", 0.125, -1.0, 1.0);
 
-            // 棱晶真理巨剑
             builder.comment("").comment("Prisma Veritux / 棱晶真理巨剑");
             attackDamagePrismaVeritux = builder.defineInRange("attackDamagePrismaVeritux", 100.0, 0.0, Double.MAX_VALUE);
             attackSpeedPrismaVeritux = builder.defineInRange("attackSpeedPrismaVeritux", 0.45, 0.0, Double.MAX_VALUE);
             movementSpeedPrismaVeritux = builder.defineInRange("movementSpeedPrismaVeritux", -0.6, -1.0, 1.0);
 
-            // 马谢特砍刀
             builder.comment("").comment("Machete / 马谢特砍刀");
             attackDamageMachete = builder.defineInRange("attackDamageMachete", 32.0, 0.0, Double.MAX_VALUE);
             attackSpeedMachete = builder.defineInRange("attackSpeedMachete", 1.55, 0.0, Double.MAX_VALUE);
             movementSpeedMachete = builder.defineInRange("movementSpeedMachete", 0.025, -1.0, 1.0);
 
-            // 灼蚀变体镰
             builder.comment("").comment("Caustacyst / 灼蚀变体镰");
             attackDamageCaustacyst = builder.defineInRange("attackDamageCaustacyst", 28.0, 0.0, Double.MAX_VALUE);
             attackSpeedCaustacyst = builder.defineInRange("attackSpeedCaustacyst", 1.3, 0.0, Double.MAX_VALUE);
@@ -612,10 +837,6 @@ public final class ModConfig {
         }
     }
 
-    /**
-     * 配置重载事件处理
-     * Config reload event handler
-     */
     @SubscribeEvent
     public static void onConfigReload(final ModConfigEvent event) {
         // 配置重载时的逻辑（如果需要）

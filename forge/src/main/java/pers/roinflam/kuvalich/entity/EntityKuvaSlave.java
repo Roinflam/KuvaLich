@@ -1,3 +1,4 @@
+// EntityKuvaSlave.java
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.core.BlockPos;
@@ -130,37 +131,68 @@ public class EntityKuvaSlave extends KuvaBase {
     private void dropLoot(Player player) {
         BlockPos pos = this.blockPosition();
 
+        // 根据配置概率掉落模组 / Drop module based on config chance
         dropModule(pos);
 
-        if (RandomUtil.percentageChance(10)) {
-            spawnItem(pos, new ItemStack(KuvaLichItems.KUVA.get(), RandomUtil.getInt(2, 8)));
+        // 根据配置概率掉落赤毒 / Drop Kuva based on config chance
+        if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.slaveKuvaDropChance.get())) {
+            spawnItem(pos, new ItemStack(
+                    KuvaLichItems.KUVA.get(),
+                    RandomUtil.getInt(
+                            ModConfig.KUVA_LICH.slaveKuvaMinAmount.get(),
+                            ModConfig.KUVA_LICH.slaveKuvaMaxAmount.get()
+                    )
+            ));
         }
 
-        if (RandomUtil.percentageChance(10)) {
+        // 根据配置概率掉落裂罅碎块 / Drop Riven Sliver based on config chance
+        if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.slaveRivenSliverDropChance.get())) {
             spawnItem(pos, new ItemStack(KuvaLichItems.RIVEN_SLIVER.get(), 1));
         }
 
+        // 安魂宝石：基础概率 + 每级时运加成 / Requiem Gem: base chance + looting bonus per level
         int lootingLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MOB_LOOTING, player.getMainHandItem());
-        if (RandomUtil.percentageChance(25 + 2.5 * lootingLevel)) {
+        double gemChance = ModConfig.KUVA_LICH.slaveRequiemGemBaseChance.get()
+                + ModConfig.KUVA_LICH.slaveRequiemGemLootingBonus.get() * lootingLevel;
+        if (RandomUtil.percentageChance(gemChance)) {
             spawnItem(pos, new ItemStack(KuvaLichItems.REQUIEM_GEM.get(), 1));
         }
     }
 
+    /**
+     * 掉落模组，概率从配置文件读取
+     * Drop module, chances read from config
+     *
+     * 按照 青铜 → 白银 → 黄金 的优先级滚动，每个模组类型使用独立配置概率
+     * Rolls common → uncommon → rare in priority order, each type uses independent config chance
+     */
     private void dropModule(BlockPos pos) {
+        // 读取各级别概率 / Read each tier's chance from config
+        int commonChance = ModConfig.KUVA_LICH.commonModuleDropChance.get();
+        int uncommonChance = ModConfig.KUVA_LICH.uncommonModuleDropChance.get();
+        int rareChance = ModConfig.KUVA_LICH.rareModuleDropChance.get();
+        // 武器模组比例 / Weapon module ratio
+        int weaponRatio = ModConfig.KUVA_LICH.moduleWeaponRatio.get();
+
         double roll = Math.random() * 100;
 
-        if (roll < 15) {
-            ItemStack module = RandomUtil.percentageChance(75)
+        // 先判断是否掉落青铜模组 / Check common module first
+        if (roll < commonChance) {
+            ItemStack module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemCommonModule.getRandomModule()
                     : WarframeCommonModule.getRandomModule();
             spawnItem(pos, module);
-        } else if (roll < 25) {
-            ItemStack module = RandomUtil.percentageChance(75)
+            // 再判断是否掉落白银模组（青铜+白银的总范围内）
+            // Then check uncommon module (within common + uncommon range)
+        } else if (roll < commonChance + uncommonChance) {
+            ItemStack module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemUncommonModule.getRandomModule()
                     : WarframeUncommonModule.getRandomModule();
             spawnItem(pos, module);
-        } else if (roll < 30) {
-            ItemStack module = RandomUtil.percentageChance(75)
+            // 最后判断是否掉落黄金模组（青铜+白银+黄金的总范围内）
+            // Finally check rare module (within common + uncommon + rare range)
+        } else if (roll < commonChance + uncommonChance + rareChance) {
+            ItemStack module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemRareModule.getRandomModule()
                     : WarframeRareModule.getRandomModule();
             spawnItem(pos, module);
@@ -178,7 +210,6 @@ public class EntityKuvaSlave extends KuvaBase {
 
     @Override
     public @NotNull EntityType<?> getType() {
-        // ✅ 修正：调用正确的注册类
         return KuvaLichEntities.KUVA_SLAVE.get();
     }
 }

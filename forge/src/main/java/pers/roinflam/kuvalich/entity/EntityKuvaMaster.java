@@ -32,8 +32,8 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import java.util.List;
 
 /**
- * 赤毒玄骸实体（1.20.1版本，业务逻辑100%不变）
- * Kuva Master Entity (1.20.1 version, business logic 100% unchanged)
+ * 赤毒玄骸实体
+ * Kuva Master Entity
  */
 public class EntityKuvaMaster extends KuvaBase {
 
@@ -48,7 +48,6 @@ public class EntityKuvaMaster extends KuvaBase {
     private static final float HEAL_PER_ATTACK = 0.2f;
     private static final float AOE_RADIUS = 3.0f;
 
-    // 死亡语录（业务逻辑100%不变）/ Death messages (business logic 100% unchanged)
     private static final String[] DEATH_MESSAGES = {
             "message.kuvalich.death.hurts",
             "message.kuvalich.death.fair",
@@ -91,10 +90,8 @@ public class EntityKuvaMaster extends KuvaBase {
         float attackDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
         float finalDamage = attackDamage * this.level().getDifficulty().getId() * ATTACK_DAMAGE_MULTIPLIER;
 
-        // AOE攻击周围敌人 / AOE attack nearby enemies
         attackNearbyEntities(finalDamage, target);
 
-        // 攻击主目标 / Attack main target
         if (target.hurt(this.damageSources().mobAttack(this), finalDamage)) {
             applyKnockback(target);
             this.heal(attackDamage * HEAL_PER_ATTACK);
@@ -104,10 +101,6 @@ public class EntityKuvaMaster extends KuvaBase {
         return false;
     }
 
-    /**
-     * 攻击周围实体（AOE，业务逻辑100%不变）
-     * Attack nearby entities (AOE, business logic 100% unchanged)
-     */
     private void attackNearbyEntities(float damage, Entity excludeEntity) {
         AABB aabb = this.getBoundingBox().inflate(AOE_RADIUS);
         List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(
@@ -147,15 +140,10 @@ public class EntityKuvaMaster extends KuvaBase {
         super.die(damageSource);
     }
 
-    /**
-     * 处理玩家击杀（业务逻辑100%不变）
-     * Handle player kill (business logic 100% unchanged)
-     */
     private void handlePlayerKill(Player player) {
         player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
             BlockPos pos = this.blockPosition();
 
-            // 检查是否正确破解 / Check if correctly decrypted
             if (requiemCard.isReadyCard()) {
                 if (requiemCard.isCorrectAnswer()) {
                     handleSuccessfulDecryption(player, requiemCard, pos);
@@ -165,7 +153,6 @@ public class EntityKuvaMaster extends KuvaBase {
                 handleFailedDecryption(player, requiemCard);
             }
 
-            // 给予解密进度 / Give decryption progress
             giveDecryptionProgress(player, requiemCard);
         });
     }
@@ -173,40 +160,22 @@ public class EntityKuvaMaster extends KuvaBase {
     /**
      * 处理成功破解
      * Handle successful decryption
-     *
-     * 修改说明：卡片不再直接消失，而是每次消耗1点耐久
-     * Change notes: Cards no longer disappear directly, instead consume 1 durability each time
-     * - 仍有耐久的卡片会归还到玩家背包
-     *   Cards with remaining durability are returned to player inventory
-     * - 耐久耗尽的卡片才会消失
-     *   Cards only disappear when durability is depleted
      */
     private void handleSuccessfulDecryption(Player player, RequiemCard requiemCard, BlockPos pos) {
-        // 发送死亡语录 / Send death message
         sendDeathMessage(player);
 
-        // 掉落被没收的物品 / Drop confiscated items
         dropConfiscatedItems(player, requiemCard, pos);
 
-        // ★ 先消耗卡片耐久，获取仍有耐久的存活卡片
-        // ★ Consume card durability first, get surviving cards that still have durability
         List<ItemStack> survivingCards = requiemCard.consumeCardsAndGetSurvivors();
-
-        // 重置安魂卡片数据（谜语、答案、进度等，卡片槽已在consume中清空）
-        // Reset requiem card data (riddles, answers, progress, etc. Card slots already cleared in consume)
         requiemCard.reset();
 
-        // ★ 将仍有耐久的卡片归还给玩家
-        // ★ Return cards that still have durability to the player
         for (ItemStack survivingCard : survivingCards) {
             if (!player.getInventory().add(survivingCard)) {
-                // 背包满时掉落到地上
-                // Drop on ground if inventory is full
                 spawnItem(pos, survivingCard);
             }
         }
 
-        // 掉落Kuva武器 / Drop Kuva weapon
+        // 掉落赤毒武器 / Drop Kuva weapon
         ItemStack weapon = KuvaWeapon.getItem(
                 KuvaLichItems.KUVA_WEAPONS.get(RandomUtil.getInt(0, KuvaLichItems.KUVA_WEAPONS.size() - 1)),
                 requiemCard.getMinimumLevelWeapon(),
@@ -214,12 +183,28 @@ public class EntityKuvaMaster extends KuvaBase {
         );
         spawnItem(pos, weapon);
 
-        // 掉落其他战利品 / Drop other loot
+        // 掉落固定战利品 / Drop fixed loot
         spawnItem(pos, new ItemStack(KuvaLichItems.LICH_RELIQUARY.get()));
-        spawnItem(pos, new ItemStack(KuvaLichItems.RIVEN_SLIVER.get(), RandomUtil.getInt(4, 8)));
-        spawnItem(pos, new ItemStack(KuvaLichItems.KUVA.get(), RandomUtil.getInt(32, 64)));
 
-        // 掉落高级模组 / Drop advanced module
+        // 掉落裂罅碎块：数量从配置读取 / Drop Riven Sliver: amount from config
+        spawnItem(pos, new ItemStack(
+                KuvaLichItems.RIVEN_SLIVER.get(),
+                RandomUtil.getInt(
+                        ModConfig.KUVA_LICH.masterRivenSliverMinAmount.get(),
+                        ModConfig.KUVA_LICH.masterRivenSliverMaxAmount.get()
+                )
+        ));
+
+        // 掉落赤毒：数量从配置读取 / Drop Kuva: amount from config
+        spawnItem(pos, new ItemStack(
+                KuvaLichItems.KUVA.get(),
+                RandomUtil.getInt(
+                        ModConfig.KUVA_LICH.masterKuvaMinAmount.get(),
+                        ModConfig.KUVA_LICH.masterKuvaMaxAmount.get()
+                )
+        ));
+
+        // 掉落高级模组：Prime/裂罅比例从配置读取 / Drop advanced module: Prime/Riven ratio from config
         dropAdvancedModule(pos);
 
         // 掉落安魂通牒（可配置几率）/ Drop Requiem Ultimatum (configurable chance)
@@ -227,14 +212,9 @@ public class EntityKuvaMaster extends KuvaBase {
             spawnItem(pos, new ItemStack(KuvaLichItems.REQUIEM_ULTIMATUM.get(), 1));
         }
 
-        // 提升武器等级上限 / Upgrade weapon level cap
         upgradeWeaponLevelCap(player, requiemCard);
     }
 
-    /**
-     * 掉落被没收的物品（业务逻辑100%不变）
-     * Drop confiscated items (business logic 100% unchanged)
-     */
     private void dropConfiscatedItems(Player player, RequiemCard requiemCard, BlockPos pos) {
         if (!requiemCard.hasConfiscatedItems()) {
             return;
@@ -245,7 +225,6 @@ public class EntityKuvaMaster extends KuvaBase {
                 .withStyle(ChatFormatting.DARK_RED));
 
         List<ItemStack> confiscatedItems = requiemCard.clearAndGetConfiscatedItems();
-
         for (ItemStack item : confiscatedItems) {
             spawnItem(pos, item);
         }
@@ -256,24 +235,28 @@ public class EntityKuvaMaster extends KuvaBase {
         player.sendSystemMessage(Component.translatable(messageKey).withStyle(ChatFormatting.DARK_RED));
     }
 
+    /**
+     * 掉落高级模组，Prime与裂罅的概率从配置读取
+     * Drop advanced module, Prime vs Riven ratio read from config
+     */
     private void dropAdvancedModule(BlockPos pos) {
+        int weaponRatio = ModConfig.KUVA_LICH.moduleWeaponRatio.get();
         ItemStack module;
-        if (RandomUtil.percentageChance(50)) {
-            module = RandomUtil.percentageChance(75)
+
+        // masterPrimeModuleChance 控制掉落Prime还是裂罅模组
+        // masterPrimeModuleChance controls whether to drop Prime or Riven module
+        if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.masterPrimeModuleChance.get())) {
+            module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemPrimeModule.getRandomModule()
                     : WarframePrimeModule.getRandomModule();
         } else {
-            module = RandomUtil.percentageChance(75)
+            module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemRivenModule.getRandomModule()
                     : WarframeRivenModule.getRandomModule();
         }
         spawnItem(pos, module);
     }
 
-    /**
-     * 提升武器等级上限（业务逻辑100%不变）
-     * Upgrade weapon level cap (business logic 100% unchanged)
-     */
     private void upgradeWeaponLevelCap(Player player, RequiemCard requiemCard) {
         int randomNum = RandomUtil.getInt(
                 ModConfig.KUVA_LICH.minimumLevelCapIncrease.get(),
@@ -299,10 +282,6 @@ public class EntityKuvaMaster extends KuvaBase {
         }
     }
 
-    /**
-     * 处理破解失败（业务逻辑100%不变）
-     * Handle failed decryption (business logic 100% unchanged)
-     */
     private void handleFailedDecryption(Player player, RequiemCard requiemCard) {
         if (requiemCard.isFirstCorrectAnswer()) {
             sendMessage(player, "message.kuvalich.firstCorrect", ChatFormatting.RED);
@@ -316,10 +295,6 @@ public class EntityKuvaMaster extends KuvaBase {
                 ChatFormatting.RED, requiemCard.getKuvaLevel());
     }
 
-    /**
-     * 给予解密进度（业务逻辑100%不变）
-     * Give decryption progress (business logic 100% unchanged)
-     */
     private void giveDecryptionProgress(Player player, RequiemCard requiemCard) {
         int addPotion = RandomUtil.getInt(
                 (int) (ModConfig.KUVA_LICH.minDecryptionProgress.get() * ModConfig.KUVA_LICH.masterPotionMultiplier.get()),

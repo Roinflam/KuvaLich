@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich;
 
-import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -21,6 +20,7 @@ import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.tabs.KuvaLichCreativeTabs;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.worldgen.KuvaLichBiomeModifiers;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -64,6 +64,10 @@ public class KuvaLich {
 
         // 注册创造模式标签页 / Register creative tabs
         KuvaLichCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+
+        // 注册自定义BiomeModifier Codec（矿石生成+实体生成+蘑菇岛排除）
+        // Register custom BiomeModifier Codec (ore gen + entity spawn + mushroom island exclusion)
+        KuvaLichBiomeModifiers.register(modEventBus);
 
         // 注册设置事件
         // Register setup events
@@ -145,17 +149,4 @@ public class KuvaLich {
     private void clientSetup(final FMLClientSetupEvent event) {
         LogUtil.debug("赤毒玄骸模组客户端设置完成");
     }
-
-    /**
-     * 注：1.20.1的世界生成已改为JSON配置方式
-     * Note: World generation in 1.20.1 has changed to JSON configuration
-     *
-     * 矿石生成配置应移至：
-     * Ore generation configuration should be moved to:
-     * - data/kuvalich/worldgen/placed_feature/
-     * - data/kuvalich/worldgen/configured_feature/
-     *
-     * 示例配置会在后续提供
-     * Example configurations will be provided later
-     */
 }

@@ -1,3 +1,4 @@
+// ClothConfigScreen.java
 package pers.roinflam.kuvalich.config;
 
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
@@ -16,19 +17,11 @@ import java.util.Arrays;
  */
 public class ClothConfigScreen {
 
-    /**
-     * 创建配置界面
-     * Create configuration screen
-     *
-     * @param parent 父屏幕 / Parent screen
-     * @return 配置屏幕 / Configuration screen
-     */
     public static Screen createConfigScreen(Screen parent) {
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
                 .setTitle(Component.translatable("config.kuvalich.title"))
                 .setSavingRunnable(() -> {
-                    // 保存配置
                     ModConfig.COMMON_CONFIG.save();
                     ModuleConfig.MODULE_CONFIG.save();
                 });
@@ -165,7 +158,6 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_LICH.damageDisplay::set)
                 .build());
 
-        // ✅ 新增:伤害跳字开关
         damageCategory.addEntry(entryBuilder.startBooleanToggle(
                         Component.translatable("config.kuvalich.enableDamageNumbers"),
                         ModConfig.KUVA_LICH.enableDamageNumbers.get())
@@ -538,7 +530,7 @@ public class ClothConfigScreen {
                         Component.translatable("config.kuvalich.kuvaLichSpawnWeight"),
                         ModConfig.KUVA_LICH.kuvaLichSpawnWeight.get())
                 .setDefaultValue(5)
-                .setMin(1)
+                .setMin(0)
                 .setTooltip(Component.translatable("config.kuvalich.kuvaLichSpawnWeight.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichSpawnWeight::set)
                 .build());
@@ -565,7 +557,7 @@ public class ClothConfigScreen {
                         Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight"),
                         ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight.get())
                 .setDefaultValue(10)
-                .setMin(1)
+                .setMin(0)
                 .setTooltip(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight::set)
                 .build());
@@ -589,6 +581,316 @@ public class ClothConfigScreen {
                 .build());
 
         // ═══════════════════════════════════════════════════════════════
+        // 矿石生成配置
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory oreGenCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.oreGen"));
+
+        oreGenCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.requiemOreVeinCount"),
+                        ModConfig.ORE_GEN.requiemOreVeinCount.get())
+                .setDefaultValue(8)
+                .setMin(0)
+                .setMax(256)
+                .setTooltip(Component.translatable("config.kuvalich.requiemOreVeinCount.tooltip"))
+                .setSaveConsumer(ModConfig.ORE_GEN.requiemOreVeinCount::set)
+                .build());
+
+        oreGenCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.requiemOreVeinSize"),
+                        ModConfig.ORE_GEN.requiemOreVeinSize.get())
+                .setDefaultValue(4)
+                .setMin(1)
+                .setMax(64)
+                .setTooltip(Component.translatable("config.kuvalich.requiemOreVeinSize.tooltip"))
+                .setSaveConsumer(ModConfig.ORE_GEN.requiemOreVeinSize::set)
+                .build());
+
+        oreGenCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.requiemOreMinHeight"),
+                        ModConfig.ORE_GEN.requiemOreMinHeight.get())
+                .setDefaultValue(-64)
+                .setMin(-64)
+                .setMax(320)
+                .setTooltip(Component.translatable("config.kuvalich.requiemOreMinHeight.tooltip"))
+                .setSaveConsumer(ModConfig.ORE_GEN.requiemOreMinHeight::set)
+                .build());
+
+        oreGenCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.requiemOreMaxHeight"),
+                        ModConfig.ORE_GEN.requiemOreMaxHeight.get())
+                .setDefaultValue(28)
+                .setMin(-64)
+                .setMax(320)
+                .setTooltip(Component.translatable("config.kuvalich.requiemOreMaxHeight.tooltip"))
+                .setSaveConsumer(ModConfig.ORE_GEN.requiemOreMaxHeight::set)
+                .build());
+
+        oreGenCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.experienceOreVeinCount"),
+                        ModConfig.ORE_GEN.experienceOreVeinCount.get())
+                .setDefaultValue(16)
+                .setMin(0)
+                .setMax(256)
+                .setTooltip(Component.translatable("config.kuvalich.experienceOreVeinCount.tooltip"))
+                .setSaveConsumer(ModConfig.ORE_GEN.experienceOreVeinCount::set)
+                .build());
+
+        oreGenCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.experienceOreVeinSize"),
+                        ModConfig.ORE_GEN.experienceOreVeinSize.get())
+                .setDefaultValue(4)
+                .setMin(1)
+                .setMax(64)
+                .setTooltip(Component.translatable("config.kuvalich.experienceOreVeinSize.tooltip"))
+                .setSaveConsumer(ModConfig.ORE_GEN.experienceOreVeinSize::set)
+                .build());
+
+        oreGenCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.experienceOreMinHeight"),
+                        ModConfig.ORE_GEN.experienceOreMinHeight.get())
+                .setDefaultValue(-64)
+                .setMin(-64)
+                .setMax(320)
+                .setTooltip(Component.translatable("config.kuvalich.experienceOreMinHeight.tooltip"))
+                .setSaveConsumer(ModConfig.ORE_GEN.experienceOreMinHeight::set)
+                .build());
+
+        oreGenCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.experienceOreMaxHeight"),
+                        ModConfig.ORE_GEN.experienceOreMaxHeight.get())
+                .setDefaultValue(128)
+                .setMin(-64)
+                .setMax(320)
+                .setTooltip(Component.translatable("config.kuvalich.experienceOreMaxHeight.tooltip"))
+                .setSaveConsumer(ModConfig.ORE_GEN.experienceOreMaxHeight::set)
+                .build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // 灭骸附魔掉落概率
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory oreDropsCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.oreDrops"));
+
+        oreDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.expMultiplier"),
+                        ModConfig.KUVA_LICH.expMultiplier.get())
+                .setDefaultValue(2)
+                .setMin(1)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.expMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.expMultiplier::set)
+                .build());
+
+        oreDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.cardDropChanceWithEnchant"),
+                        ModConfig.KUVA_LICH.cardDropChanceWithEnchant.get())
+                .setDefaultValue(75)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.cardDropChanceWithEnchant.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.cardDropChanceWithEnchant::set)
+                .build());
+
+        oreDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.baseCardDropChance"),
+                        ModConfig.KUVA_LICH.baseCardDropChance.get())
+                .setDefaultValue(25)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.baseCardDropChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.baseCardDropChance::set)
+                .build());
+
+        oreDropsCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.fortuneReductionPerLevel"),
+                        ModConfig.KUVA_LICH.fortuneReductionPerLevel.get())
+                .setDefaultValue(2.5)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.fortuneReductionPerLevel.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.fortuneReductionPerLevel::set)
+                .build());
+
+        oreDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.minCardDropChance"),
+                        ModConfig.KUVA_LICH.minCardDropChance.get())
+                .setDefaultValue(5)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.minCardDropChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.minCardDropChance::set)
+                .build());
+
+        oreDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.commonModuleDropChance"),
+                        ModConfig.KUVA_LICH.commonModuleDropChance.get())
+                .setDefaultValue(15)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.commonModuleDropChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.commonModuleDropChance::set)
+                .build());
+
+        oreDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.uncommonModuleDropChance"),
+                        ModConfig.KUVA_LICH.uncommonModuleDropChance.get())
+                .setDefaultValue(10)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.uncommonModuleDropChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.uncommonModuleDropChance::set)
+                .build());
+
+        oreDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.rareModuleDropChance"),
+                        ModConfig.KUVA_LICH.rareModuleDropChance.get())
+                .setDefaultValue(5)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.rareModuleDropChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.rareModuleDropChance::set)
+                .build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // 赤毒奴仆掉落战利品
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory slaveDropsCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.slaveDrops"));
+
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.slaveKuvaDropChance"),
+                        ModConfig.KUVA_LICH.slaveKuvaDropChance.get())
+                .setDefaultValue(10)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.slaveKuvaDropChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaDropChance::set)
+                .build());
+
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.slaveKuvaMinAmount"),
+                        ModConfig.KUVA_LICH.slaveKuvaMinAmount.get())
+                .setDefaultValue(2)
+                .setMin(1)
+                .setMax(64)
+                .setTooltip(Component.translatable("config.kuvalich.slaveKuvaMinAmount.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaMinAmount::set)
+                .build());
+
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.slaveKuvaMaxAmount"),
+                        ModConfig.KUVA_LICH.slaveKuvaMaxAmount.get())
+                .setDefaultValue(8)
+                .setMin(1)
+                .setMax(64)
+                .setTooltip(Component.translatable("config.kuvalich.slaveKuvaMaxAmount.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaMaxAmount::set)
+                .build());
+
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.slaveRivenSliverDropChance"),
+                        ModConfig.KUVA_LICH.slaveRivenSliverDropChance.get())
+                .setDefaultValue(10)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.slaveRivenSliverDropChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.slaveRivenSliverDropChance::set)
+                .build());
+
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.slaveRequiemGemBaseChance"),
+                        ModConfig.KUVA_LICH.slaveRequiemGemBaseChance.get())
+                .setDefaultValue(25)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.slaveRequiemGemBaseChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.slaveRequiemGemBaseChance::set)
+                .build());
+
+        slaveDropsCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.slaveRequiemGemLootingBonus"),
+                        ModConfig.KUVA_LICH.slaveRequiemGemLootingBonus.get())
+                .setDefaultValue(2.5)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.slaveRequiemGemLootingBonus.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.slaveRequiemGemLootingBonus::set)
+                .build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // 赤毒玄骸掉落战利品
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory masterDropsCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.masterDrops"));
+
+        masterDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.masterKuvaMinAmount"),
+                        ModConfig.KUVA_LICH.masterKuvaMinAmount.get())
+                .setDefaultValue(32)
+                .setMin(1)
+                .setMax(256)
+                .setTooltip(Component.translatable("config.kuvalich.masterKuvaMinAmount.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.masterKuvaMinAmount::set)
+                .build());
+
+        masterDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.masterKuvaMaxAmount"),
+                        ModConfig.KUVA_LICH.masterKuvaMaxAmount.get())
+                .setDefaultValue(64)
+                .setMin(1)
+                .setMax(256)
+                .setTooltip(Component.translatable("config.kuvalich.masterKuvaMaxAmount.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.masterKuvaMaxAmount::set)
+                .build());
+
+        masterDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.masterRivenSliverMinAmount"),
+                        ModConfig.KUVA_LICH.masterRivenSliverMinAmount.get())
+                .setDefaultValue(4)
+                .setMin(1)
+                .setMax(64)
+                .setTooltip(Component.translatable("config.kuvalich.masterRivenSliverMinAmount.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.masterRivenSliverMinAmount::set)
+                .build());
+
+        masterDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.masterRivenSliverMaxAmount"),
+                        ModConfig.KUVA_LICH.masterRivenSliverMaxAmount.get())
+                .setDefaultValue(8)
+                .setMin(1)
+                .setMax(64)
+                .setTooltip(Component.translatable("config.kuvalich.masterRivenSliverMaxAmount.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.masterRivenSliverMaxAmount::set)
+                .build());
+
+        masterDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.masterPrimeModuleChance"),
+                        ModConfig.KUVA_LICH.masterPrimeModuleChance.get())
+                .setDefaultValue(50)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.masterPrimeModuleChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.masterPrimeModuleChance::set)
+                .build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // 通用掉落设置
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory commonDropsCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.commonDrops"));
+
+        commonDropsCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.moduleWeaponRatio"),
+                        ModConfig.KUVA_LICH.moduleWeaponRatio.get())
+                .setDefaultValue(75)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.translatable("config.kuvalich.moduleWeaponRatio.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.moduleWeaponRatio::set)
+                .build());
+
+        // ═══════════════════════════════════════════════════════════════
         // 赤毒武器配置
         // ═══════════════════════════════════════════════════════════════
         ConfigCategory weaponAttributeCategory = builder.getOrCreateCategory(
@@ -603,382 +905,278 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_WEAPON.attributeMultiplier::set)
                 .build());
 
-        // 赤毒希尔德
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageKuvaShildeg"),
                         ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg.get())
-                .setDefaultValue(44.0)
-                .setMin(0.0)
+                .setDefaultValue(44.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageKuvaShildeg.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedKuvaShildeg"),
                         ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg.get())
-                .setDefaultValue(0.7)
-                .setMin(0.0)
+                .setDefaultValue(0.7).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedKuvaShildeg.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedKuvaShildeg"),
                         ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg.get())
-                .setDefaultValue(-0.2)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(-0.2).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedKuvaShildeg.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg::set).build());
 
-        // 尖幡
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamagePennant"),
                         ModConfig.KUVA_WEAPON.attackDamagePennant.get())
-                .setDefaultValue(28.0)
-                .setMin(0.0)
+                .setDefaultValue(28.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamagePennant.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamagePennant::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamagePennant::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedPennant"),
                         ModConfig.KUVA_WEAPON.attackSpeedPennant.get())
-                .setDefaultValue(1.1)
-                .setMin(0.0)
+                .setDefaultValue(1.1).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedPennant.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedPennant::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedPennant::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedPennant"),
                         ModConfig.KUVA_WEAPON.movementSpeedPennant.get())
-                .setDefaultValue(0.025)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(0.025).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedPennant.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedPennant::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedPennant::set).build());
 
-        // 关刀Prime
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageGuandaoPrime"),
                         ModConfig.KUVA_WEAPON.attackDamageGuandaoPrime.get())
-                .setDefaultValue(16.0)
-                .setMin(0.0)
+                .setDefaultValue(16.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageGuandaoPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageGuandaoPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageGuandaoPrime::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedGuandaoPrime"),
                         ModConfig.KUVA_WEAPON.attackSpeedGuandaoPrime.get())
-                .setDefaultValue(2.0)
-                .setMin(0.0)
+                .setDefaultValue(2.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedGuandaoPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedGuandaoPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedGuandaoPrime::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedGuandaoPrime"),
                         ModConfig.KUVA_WEAPON.movementSpeedGuandaoPrime.get())
-                .setDefaultValue(0.075)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(0.075).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedGuandaoPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedGuandaoPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedGuandaoPrime::set).build());
 
-        // 心智之殁
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageParacesis"),
                         ModConfig.KUVA_WEAPON.attackDamageParacesis.get())
-                .setDefaultValue(34.0)
-                .setMin(0.0)
+                .setDefaultValue(34.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageParacesis.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageParacesis::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageParacesis::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedParacesis"),
                         ModConfig.KUVA_WEAPON.attackSpeedParacesis.get())
-                .setDefaultValue(0.9)
-                .setMin(0.0)
+                .setDefaultValue(0.9).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedParacesis.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedParacesis::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedParacesis::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedParacesis"),
                         ModConfig.KUVA_WEAPON.movementSpeedParacesis.get())
-                .setDefaultValue(-0.1)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(-0.1).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedParacesis.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedParacesis::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedParacesis::set).build());
 
-        // 弧电振子锤
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageArcaTitron"),
                         ModConfig.KUVA_WEAPON.attackDamageArcaTitron.get())
-                .setDefaultValue(38.0)
-                .setMin(0.0)
+                .setDefaultValue(38.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageArcaTitron.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageArcaTitron::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageArcaTitron::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedArcaTitron"),
                         ModConfig.KUVA_WEAPON.attackSpeedArcaTitron.get())
-                .setDefaultValue(0.75)
-                .setMin(0.0)
+                .setDefaultValue(0.75).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedArcaTitron.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedArcaTitron::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedArcaTitron::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedArcaTitron"),
                         ModConfig.KUVA_WEAPON.movementSpeedArcaTitron.get())
-                .setDefaultValue(-0.15)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(-0.15).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedArcaTitron.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedArcaTitron::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedArcaTitron::set).build());
 
-        // 收割者Prime
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageReaperPrime"),
                         ModConfig.KUVA_WEAPON.attackDamageReaperPrime.get())
-                .setDefaultValue(18.0)
-                .setMin(0.0)
+                .setDefaultValue(18.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageReaperPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageReaperPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageReaperPrime::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedReaperPrime"),
                         ModConfig.KUVA_WEAPON.attackSpeedReaperPrime.get())
-                .setDefaultValue(1.75)
-                .setMin(0.0)
+                .setDefaultValue(1.75).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedReaperPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedReaperPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedReaperPrime::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedReaperPrime"),
                         ModConfig.KUVA_WEAPON.movementSpeedReaperPrime.get())
-                .setDefaultValue(0.05)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(0.05).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedReaperPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedReaperPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedReaperPrime::set).build());
 
-        // 金璃剑
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageVitrica"),
                         ModConfig.KUVA_WEAPON.attackDamageVitrica.get())
-                .setDefaultValue(50.0)
-                .setMin(0.0)
+                .setDefaultValue(50.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageVitrica.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageVitrica::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageVitrica::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedVitrica"),
                         ModConfig.KUVA_WEAPON.attackSpeedVitrica.get())
-                .setDefaultValue(0.65)
-                .setMin(0.0)
+                .setDefaultValue(0.65).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedVitrica.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedVitrica::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedVitrica::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedVitrica"),
                         ModConfig.KUVA_WEAPON.movementSpeedVitrica.get())
-                .setDefaultValue(-0.2)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(-0.2).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedVitrica.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedVitrica::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedVitrica::set).build());
 
-        // 格拉姆Prime
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageGramPrime"),
                         ModConfig.KUVA_WEAPON.attackDamageGramPrime.get())
-                .setDefaultValue(46.0)
-                .setMin(0.0)
+                .setDefaultValue(46.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageGramPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageGramPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageGramPrime::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedGramPrime"),
                         ModConfig.KUVA_WEAPON.attackSpeedGramPrime.get())
-                .setDefaultValue(0.7)
-                .setMin(0.0)
+                .setDefaultValue(0.7).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedGramPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedGramPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedGramPrime::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedGramPrime"),
                         ModConfig.KUVA_WEAPON.movementSpeedGramPrime.get())
-                .setDefaultValue(-0.15)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(-0.15).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedGramPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedGramPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedGramPrime::set).build());
 
-        // 圣洁执法者
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageSanctiMagistar"),
                         ModConfig.KUVA_WEAPON.attackDamageSanctiMagistar.get())
-                .setDefaultValue(36.0)
-                .setMin(0.0)
+                .setDefaultValue(36.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageSanctiMagistar.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageSanctiMagistar::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageSanctiMagistar::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedSanctiMagistar"),
                         ModConfig.KUVA_WEAPON.attackSpeedSanctiMagistar.get())
-                .setDefaultValue(0.85)
-                .setMin(0.0)
+                .setDefaultValue(0.85).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedSanctiMagistar.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedSanctiMagistar::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedSanctiMagistar::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedSanctiMagistar"),
                         ModConfig.KUVA_WEAPON.movementSpeedSanctiMagistar.get())
-                .setDefaultValue(-0.075)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(-0.075).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedSanctiMagistar.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedSanctiMagistar::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedSanctiMagistar::set).build());
 
-        // 技巧之剑Prime
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageDestrezaPrime"),
                         ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime.get())
-                .setDefaultValue(24.0)
-                .setMin(0.0)
+                .setDefaultValue(24.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageDestrezaPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedDestrezaPrime"),
                         ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime.get())
-                .setDefaultValue(1.4)
-                .setMin(0.0)
+                .setDefaultValue(1.4).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedDestrezaPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedDestrezaPrime"),
                         ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime.get())
-                .setDefaultValue(0.125)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(0.125).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedDestrezaPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime::set).build());
 
-        // 棱晶真理巨剑
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamagePrismaVeritux"),
                         ModConfig.KUVA_WEAPON.attackDamagePrismaVeritux.get())
-                .setDefaultValue(100.0)
-                .setMin(0.0)
+                .setDefaultValue(100.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamagePrismaVeritux.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamagePrismaVeritux::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamagePrismaVeritux::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedPrismaVeritux"),
                         ModConfig.KUVA_WEAPON.attackSpeedPrismaVeritux.get())
-                .setDefaultValue(0.45)
-                .setMin(0.0)
+                .setDefaultValue(0.45).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedPrismaVeritux.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedPrismaVeritux::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedPrismaVeritux::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedPrismaVeritux"),
                         ModConfig.KUVA_WEAPON.movementSpeedPrismaVeritux.get())
-                .setDefaultValue(-0.6)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(-0.6).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedPrismaVeritux.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedPrismaVeritux::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedPrismaVeritux::set).build());
 
-        // 马谢特砍刀
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageMachete"),
                         ModConfig.KUVA_WEAPON.attackDamageMachete.get())
-                .setDefaultValue(32.0)
-                .setMin(0.0)
+                .setDefaultValue(32.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageMachete.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageMachete::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageMachete::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedMachete"),
                         ModConfig.KUVA_WEAPON.attackSpeedMachete.get())
-                .setDefaultValue(1.55)
-                .setMin(0.0)
+                .setDefaultValue(1.55).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedMachete.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedMachete::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedMachete::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedMachete"),
                         ModConfig.KUVA_WEAPON.movementSpeedMachete.get())
-                .setDefaultValue(0.025)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(0.025).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedMachete.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedMachete::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedMachete::set).build());
 
-        // 灼蚀变体镰
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackDamageCaustacyst"),
                         ModConfig.KUVA_WEAPON.attackDamageCaustacyst.get())
-                .setDefaultValue(28.0)
-                .setMin(0.0)
+                .setDefaultValue(28.0).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackDamageCaustacyst.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageCaustacyst::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageCaustacyst::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.attackSpeedCaustacyst"),
                         ModConfig.KUVA_WEAPON.attackSpeedCaustacyst.get())
-                .setDefaultValue(1.3)
-                .setMin(0.0)
+                .setDefaultValue(1.3).setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.attackSpeedCaustacyst.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedCaustacyst::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedCaustacyst::set).build());
 
         weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.movementSpeedCaustacyst"),
                         ModConfig.KUVA_WEAPON.movementSpeedCaustacyst.get())
-                .setDefaultValue(0.125)
-                .setMin(-1.0)
-                .setMax(1.0)
+                .setDefaultValue(0.125).setMin(-1.0).setMax(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.movementSpeedCaustacyst.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedCaustacyst::set)
-                .build());
+                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedCaustacyst::set).build());
 
         // ═══════════════════════════════════════════════════════════════
         // 模组管理
