@@ -30,11 +30,13 @@ import java.util.List;
  * 赤毒玄骸自定义生物群系修改器
  * KuvaLich Custom Biome Modifier
  *
- * 统一处理以下功能，全部从配置文件读取参数：
- * Handles the following features, all parameters read from config:
- * 1. 矿石生成（安魂矿石、经验矿石）/ Ore generation (Requiem Ore, Experience Ore)
- * 2. 实体生成（赤毒玄骸、赤毒奴仆）/ Entity spawning (Kuva Master, Kuva Slave)
- * 3. 排除蘑菇岛生成，与僵尸行为一致 / Exclude mushroom islands, consistent with zombie behavior
+ * 生成规则：
+ * - 实体生成：主世界 + 地狱 + 暮色森林等所有维度，排除末地和蘑菇岛
+ * - 矿石生成：所有维度（依赖方块Tag自动过滤，无石头的维度自然不会生成）
+ *
+ * Spawn rules:
+ * - Entity spawning: Overworld + Nether + Twilight Forest etc., excludes The End and mushroom islands
+ * - Ore generation: All dimensions (block tag filtering handles incompatible biomes naturally)
  */
 public class KuvaLichBiomeModifier implements BiomeModifier {
 
@@ -45,12 +47,19 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
     public static final Codec<KuvaLichBiomeModifier> CODEC = Codec.unit(INSTANCE);
 
     /**
-     * 蘑菇岛生物群系Tag（手动构造，1.20.1的BiomeTags没有IS_MUSHROOM常量）
-     * Mushroom biome tag (manually constructed, BiomeTags in 1.20.1 has no IS_MUSHROOM constant)
+     * 蘑菇岛Tag / Mushroom biome tag
      */
     private static final TagKey<Biome> IS_MUSHROOM_TAG = TagKey.create(
             Registries.BIOME,
             new ResourceLocation("minecraft", "is_mushroom")
+    );
+
+    /**
+     * 末地Tag / The End biome tag
+     */
+    private static final TagKey<Biome> IS_END_TAG = TagKey.create(
+            Registries.BIOME,
+            new ResourceLocation("minecraft", "is_end")
     );
 
     private KuvaLichBiomeModifier() {}
@@ -61,15 +70,20 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
     public void modify(Holder<Biome> biome, Phase phase, BiomeInfo.Builder builder) {
         if (phase != Phase.ADD) return;
 
-        // 矿石生成不受蘑菇岛限制 / Ore gen applies to all biomes
-        addOreGeneration(builder);
-
-        // 蘑菇岛不生成敌对实体 / No hostile spawns on mushroom islands
-        if (biome.is(IS_MUSHROOM_TAG)) {
+        // 末地不做任何处理 / Skip The End entirely
+        if (biome.is(IS_END_TAG)) {
             return;
         }
 
-        addEntitySpawns(builder.getMobSpawnSettings());
+        // 矿石生成：除末地外所有维度（无石头的维度靠Tag自动过滤）
+        // Ore gen: all dims except The End (block tags handle incompatible biomes naturally)
+        addOreGeneration(builder);
+
+        // 实体生成：排除蘑菇岛，其余维度（主世界/地狱/暮色森林等）均可生成
+        // Entity spawning: exclude mushroom islands, spawn in all other dims (overworld/nether/twilight etc.)
+        if (!biome.is(IS_MUSHROOM_TAG)) {
+            addEntitySpawns(builder.getMobSpawnSettings());
+        }
     }
 
     /**
@@ -108,7 +122,6 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
                 List.of(
                         CountPlacement.of(veinCount),
                         InSquarePlacement.spread(),
-                        // 梯形分布，与原JSON trapezoid一致 / Trapezoid distribution, matching original JSON
                         HeightRangePlacement.triangle(
                                 VerticalAnchor.absolute(ModConfig.ORE_GEN.requiemOreMinHeight.get()),
                                 VerticalAnchor.absolute(ModConfig.ORE_GEN.requiemOreMaxHeight.get())
@@ -150,7 +163,6 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
                 List.of(
                         CountPlacement.of(veinCount),
                         InSquarePlacement.spread(),
-                        // 均匀分布，与原JSON uniform一致 / Uniform distribution, matching original JSON
                         HeightRangePlacement.uniform(
                                 VerticalAnchor.absolute(ModConfig.ORE_GEN.experienceOreMinHeight.get()),
                                 VerticalAnchor.absolute(ModConfig.ORE_GEN.experienceOreMaxHeight.get())
