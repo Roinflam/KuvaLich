@@ -1,4 +1,3 @@
-// ClothConfigScreen.java
 package pers.roinflam.kuvalich.config;
 
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
@@ -9,12 +8,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.Arrays;
 
-/**
- * 赤毒玄骸 Cloth Config 配置界面
- * Kuva Lich Cloth Config Screen
- *
- * @author RoinFlam
- */
 public class ClothConfigScreen {
 
     public static Screen createConfigScreen(Screen parent) {
@@ -1183,6 +1176,16 @@ public class ClothConfigScreen {
         // ═══════════════════════════════════════════════════════════════
         ConfigCategory moduleCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.module"));
+
+        moduleCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.moduleAttributeMultiplier"),
+                        ModConfig.KUVA_LICH.moduleAttributeMultiplier.get())
+                .setDefaultValue(1.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.moduleAttributeMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.moduleAttributeMultiplier::set)
+                .build());
 
         moduleCategory.addEntry(entryBuilder.startStrList(
                         Component.translatable("config.kuvalich.disabledModuleTypes"),

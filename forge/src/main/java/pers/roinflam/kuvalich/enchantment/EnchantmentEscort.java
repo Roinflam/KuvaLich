@@ -21,16 +21,26 @@ import pers.roinflam.kuvalich.utils.Reference;
  *
  * 效果：满血时大幅减少受到的伤害
  * Effect: Greatly reduce damage taken when at full health
+ *
+ * 减伤计算（修复后）：
+ * 等级1：乘以 (1 - 1 * 0.25) = 0.75，减伤 25%
+ * 等级2：乘以 (1 - 2 * 0.25) = 0.50，减伤 50%
+ * 等级3：乘以 (1 - 3 * 0.25) = 0.25，减伤 75%
+ *
+ * Damage reduction (after fix):
+ * Level 1: multiply by (1 - 1 * 0.25) = 0.75, reduce 25%
+ * Level 2: multiply by (1 - 2 * 0.25) = 0.50, reduce 50%
+ * Level 3: multiply by (1 - 3 * 0.25) = 0.25, reduce 75%
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class EnchantmentEscort extends EnchantmentBase {
 
-    // 常量定义 / Constants
     private static final int MAX_LEVEL = 3;
     private static final int BASE_ENCHANTABILITY = 25;
     private static final int ENCHANTABILITY_PER_LEVEL = 25;
     private static final float DAMAGE_REDUCTION_PER_LEVEL = 0.25f;
-    private static final float MAX_DAMAGE_CAP = 0.99f;
+    // 保留最低伤害上限，防止完全免疫 / Keep a minimum damage floor to prevent full immunity
+    private static final float MIN_DAMAGE_MULTIPLIER = 0.01f;
 
     public EnchantmentEscort() {
         super(Enchantment.Rarity.RARE,
@@ -51,7 +61,7 @@ public class EnchantmentEscort extends EnchantmentBase {
         }
 
         LivingEntity target = evt.getEntity();
-        if (target == null || target.getHealth() != target.getMaxHealth()) {
+        if (target.getHealth() != target.getMaxHealth()) {
             return;
         }
 
@@ -60,14 +70,15 @@ public class EnchantmentEscort extends EnchantmentBase {
             return;
         }
 
-        // 限制等级上限 / Limit max level
         maxLevel = Math.min(maxLevel, MAX_LEVEL);
 
-        // 计算减伤后的伤害 / Calculate reduced damage
-        float reducedDamage = evt.getAmount() * maxLevel * DAMAGE_REDUCTION_PER_LEVEL;
-        float maxAllowedDamage = target.getMaxHealth() * MAX_DAMAGE_CAP;
-
-        evt.setAmount(Math.min(maxAllowedDamage, reducedDamage));
+        // 修复：减伤应为 amount * (1 - level * reductionPerLevel)
+        // 原代码是 amount * level * 0.25，等级越高伤害反而越大（逻辑反了）
+        //
+        // Fix: reduction should be amount * (1 - level * reductionPerLevel)
+        // Original code was amount * level * 0.25, which INCREASED damage at higher levels (inverted logic)
+        float damageMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1.0f - maxLevel * DAMAGE_REDUCTION_PER_LEVEL);
+        evt.setAmount(evt.getAmount() * damageMultiplier);
     }
 
     /**
@@ -77,7 +88,6 @@ public class EnchantmentEscort extends EnchantmentBase {
     private static int getMaxEnchantmentLevel(LivingEntity entity) {
         int maxLevel = 0;
 
-        // 1.20.1中使用getArmorSlots()
         for (ItemStack armor : entity.getArmorSlots()) {
             if (armor == null || armor.isEmpty()) {
                 continue;

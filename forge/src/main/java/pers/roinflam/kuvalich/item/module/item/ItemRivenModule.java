@@ -14,6 +14,7 @@ import net.minecraft.world.level.Level;
 
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -112,6 +113,10 @@ public class ItemRivenModule extends ItemModuleBase {
         setCycle(itemStack, cycleNumber + 1);
         setMelee(itemStack, isMelee);
 
+        // 获取全局模组属性倍率
+        // Get global module attribute multiplier
+        double globalMultiplier = ModConfig.KUVA_LICH.moduleAttributeMultiplier.get();
+
         boolean more = false;
         boolean negative = false;
 
@@ -196,7 +201,10 @@ public class ItemRivenModule extends ItemModuleBase {
             randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
             hasAttributeType.add(attributeType);
-            ItemModuleBase.addAttributes(itemStack, attributeType, getBaseAttributeValue(attributeType) * trendMagnification * randomDouble);
+            // 应用全局属性倍率（正面属性）
+            // Apply global attribute multiplier (positive attributes)
+            ItemModuleBase.addAttributes(itemStack, attributeType,
+                    getBaseAttributeValue(attributeType) * trendMagnification * randomDouble * globalMultiplier);
             add++;
         }
 
@@ -228,7 +236,10 @@ public class ItemRivenModule extends ItemModuleBase {
                 double randomDouble = 0.8 + (Math.random() * (1.2 - 0.8));
                 randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
-                ItemModuleBase.addAttributes(itemStack, attributeType, -(getBaseAttributeValue(attributeType) * negativeTrendMagnification * randomDouble));
+                // 应用全局属性倍率（负面属性）
+                // Apply global attribute multiplier (negative attributes)
+                ItemModuleBase.addAttributes(itemStack, attributeType,
+                        -(getBaseAttributeValue(attributeType) * negativeTrendMagnification * randomDouble * globalMultiplier));
                 break;
             }
         }

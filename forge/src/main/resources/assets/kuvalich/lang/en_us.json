@@ -799,7 +799,6 @@
   "config.kuvalich.rareModuleDropChance": "Rare Module Drop Chance (%)",
   "config.kuvalich.rareModuleDropChance.tooltip": "Chance (%%) to drop a Rare (Gold) module when mining Requiem Ore\n§75§r = 5%% chance (default)\n75%% weapon mod, 25%% warframe mod",
 
-  // en_us.json 新增部分（追加到文件末尾 } 之前）
   "config.kuvalich.category.slaveDrops": "Kuva Thrall Drop Loot",
   "config.kuvalich.slaveKuvaDropChance": "Thrall - Kuva Drop Chance (%)",
   "config.kuvalich.slaveKuvaDropChance.tooltip": "Chance (%) to drop Kuva when Thrall is killed by player\n§710§r = 10%% chance (default)",
@@ -828,5 +827,8 @@
 
   "config.kuvalich.category.commonDrops": "Common Drop Settings",
   "config.kuvalich.moduleWeaponRatio": "Module Weapon Ratio (%)",
-  "config.kuvalich.moduleWeaponRatio.tooltip": "When a module drops, chance (%) it is a weapon module\n§775§r = 75%% weapon, 25%% warframe (default)\nApplies to all entity module drops"
+  "config.kuvalich.moduleWeaponRatio.tooltip": "When a module drops, chance (%) it is a weapon module\n§775§r = 75%% weapon, 25%% warframe (default)\nApplies to all entity module drops",
+
+  "config.kuvalich.moduleAttributeMultiplier": "Global Module Attribute Multiplier",
+  "config.kuvalich.moduleAttributeMultiplier.tooltip": "Global multiplier applied to all module attribute values (including Riven modules)\n§71.0§r = original values (default)\n§72.0§r = double all stats\n§70.5§r = halve all stats\nApplies to all tiers of weapon and warframe modules:\nCommon / Uncommon / Rare / Prime / Riven\n§cRiven modules: multiplier is applied on top of random roll and trend scaling§r\nNegative stats (e.g. -firing rate) are also scaled proportionally\n\n§eWhat changed:§r Previously this multiplier only affected fixed modules (Common/Uncommon/Rare/Prime). Riven modules were excluded.\nNow Riven modules are also affected.\n\n§eExample (Weapon Riven, Trend 3):§r\nBase melee damage value: 1.65\nAfter trend scaling (×1.0) + random roll (×0.95): 1.5675\nWith multiplier §72.0§r → §a3.135§r\nWith multiplier §70.5§r → §a0.784§r\n\n§eExample (negative stat):§r\nBase firing rate penalty: 0.6\nAfter trend/random: −0.495\nWith multiplier §72.0§r → §c−0.99§r"
 }

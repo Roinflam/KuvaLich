@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level;
 import pers.roinflam.kuvalich.base.item.ItemModuleBase;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -93,6 +94,10 @@ public class WarframeRivenModule extends WarframeModuleBase {
         setTrend(itemStack, trend);
         setCycle(itemStack, cycleNumber + 1);
 
+        // 获取全局模组属性倍率
+        // Get global module attribute multiplier
+        double globalMultiplier = ModConfig.KUVA_LICH.moduleAttributeMultiplier.get();
+
         boolean more = false;
         boolean negative = false;
 
@@ -148,7 +153,10 @@ public class WarframeRivenModule extends WarframeModuleBase {
             randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
             hasAttributeType.add(attributeType);
-            ModuleBase.addAttributes(itemStack, attributeType, getBaseAttributeValue(attributeType) * trendMagnification * randomDouble);
+            // 应用全局属性倍率（正面属性）
+            // Apply global attribute multiplier (positive attributes)
+            ModuleBase.addAttributes(itemStack, attributeType,
+                    getBaseAttributeValue(attributeType) * trendMagnification * randomDouble * globalMultiplier);
             add++;
         }
 
@@ -160,7 +168,10 @@ public class WarframeRivenModule extends WarframeModuleBase {
                 double randomDouble = 0.8 + (Math.random() * (1.2 - 0.8));
                 randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
-                ModuleBase.addAttributes(itemStack, attributeType, -(getBaseAttributeValue(attributeType) * negativeTrendMagnification * randomDouble));
+                // 应用全局属性倍率（负面属性）
+                // Apply global attribute multiplier (negative attributes)
+                ModuleBase.addAttributes(itemStack, attributeType,
+                        -(getBaseAttributeValue(attributeType) * negativeTrendMagnification * randomDouble * globalMultiplier));
                 break;
             }
         }

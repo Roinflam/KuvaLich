@@ -1,4 +1,3 @@
-// EntityKuvaMaster.java
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.ChatFormatting;
@@ -17,6 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.base.entity.KuvaBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
@@ -116,17 +116,25 @@ public class EntityKuvaMaster extends KuvaBase {
         }
     }
 
+    /**
+     * 修复：先保存目标的原始速度，再分别计算 target 和 self 的新速度
+     * Fix: save target's original velocity before modification, then calculate both independently
+     */
     private void applyKnockback(Entity target) {
+        // 保存原始速度，避免 self 的计算依赖被修改后的 target 速度
+        // Save original velocity to avoid self calculation depending on already-modified target velocity
+        Vec3 originalTargetVelocity = target.getDeltaMovement();
+
         target.setDeltaMovement(
-                target.getDeltaMovement().x * KNOCKBACK_MULTIPLIER,
-                target.getDeltaMovement().y * VERTICAL_KNOCKBACK,
-                target.getDeltaMovement().z * KNOCKBACK_MULTIPLIER
+                originalTargetVelocity.x * KNOCKBACK_MULTIPLIER,
+                originalTargetVelocity.y * VERTICAL_KNOCKBACK,
+                originalTargetVelocity.z * KNOCKBACK_MULTIPLIER
         );
 
         this.setDeltaMovement(
-                target.getDeltaMovement().x * SELF_KNOCKBACK_MULTIPLIER,
-                target.getDeltaMovement().y * SELF_KNOCKBACK_MULTIPLIER,
-                target.getDeltaMovement().z * SELF_KNOCKBACK_MULTIPLIER
+                originalTargetVelocity.x * SELF_KNOCKBACK_MULTIPLIER,
+                originalTargetVelocity.y * SELF_KNOCKBACK_MULTIPLIER,
+                originalTargetVelocity.z * SELF_KNOCKBACK_MULTIPLIER
         );
     }
 
@@ -157,10 +165,6 @@ public class EntityKuvaMaster extends KuvaBase {
         });
     }
 
-    /**
-     * 处理成功破解
-     * Handle successful decryption
-     */
     private void handleSuccessfulDecryption(Player player, RequiemCard requiemCard, BlockPos pos) {
         sendDeathMessage(player);
 
@@ -175,7 +179,6 @@ public class EntityKuvaMaster extends KuvaBase {
             }
         }
 
-        // 掉落赤毒武器 / Drop Kuva weapon
         ItemStack weapon = KuvaWeapon.getItem(
                 KuvaLichItems.KUVA_WEAPONS.get(RandomUtil.getInt(0, KuvaLichItems.KUVA_WEAPONS.size() - 1)),
                 requiemCard.getMinimumLevelWeapon(),
@@ -183,10 +186,8 @@ public class EntityKuvaMaster extends KuvaBase {
         );
         spawnItem(pos, weapon);
 
-        // 掉落固定战利品 / Drop fixed loot
         spawnItem(pos, new ItemStack(KuvaLichItems.LICH_RELIQUARY.get()));
 
-        // 掉落裂罅碎块：数量从配置读取 / Drop Riven Sliver: amount from config
         spawnItem(pos, new ItemStack(
                 KuvaLichItems.RIVEN_SLIVER.get(),
                 RandomUtil.getInt(
@@ -195,7 +196,6 @@ public class EntityKuvaMaster extends KuvaBase {
                 )
         ));
 
-        // 掉落赤毒：数量从配置读取 / Drop Kuva: amount from config
         spawnItem(pos, new ItemStack(
                 KuvaLichItems.KUVA.get(),
                 RandomUtil.getInt(
@@ -204,10 +204,8 @@ public class EntityKuvaMaster extends KuvaBase {
                 )
         ));
 
-        // 掉落高级模组：Prime/裂罅比例从配置读取 / Drop advanced module: Prime/Riven ratio from config
         dropAdvancedModule(pos);
 
-        // 掉落安魂通牒（可配置几率）/ Drop Requiem Ultimatum (configurable chance)
         if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.requiemUltimatumDropChance.get())) {
             spawnItem(pos, new ItemStack(KuvaLichItems.REQUIEM_ULTIMATUM.get(), 1));
         }
@@ -238,13 +236,14 @@ public class EntityKuvaMaster extends KuvaBase {
     /**
      * 掉落高级模组，Prime与裂罅的概率从配置读取
      * Drop advanced module, Prime vs Riven ratio read from config
+     *
+     * 修复：统一使用 RandomUtil，不再混用 Math.random()
+     * Fix: use RandomUtil consistently instead of mixing with Math.random()
      */
     private void dropAdvancedModule(BlockPos pos) {
         int weaponRatio = ModConfig.KUVA_LICH.moduleWeaponRatio.get();
         ItemStack module;
 
-        // masterPrimeModuleChance 控制掉落Prime还是裂罅模组
-        // masterPrimeModuleChance controls whether to drop Prime or Riven module
         if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.masterPrimeModuleChance.get())) {
             module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemPrimeModule.getRandomModule()

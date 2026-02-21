@@ -954,7 +954,6 @@
   "config.kuvalich.rareModuleDropChance": "黄金模组掉落概率(%)",
   "config.kuvalich.rareModuleDropChance.tooltip": "挖掘安魂矿石时掉落黄金模组的概率(%%)\n§75§r = 5%%概率(默认)\n75%%为武器模组，25%%为战甲模组",
 
-  // zh_cn.json 新增部分（追加到文件末尾 } 之前）
   "config.kuvalich.category.slaveDrops": "赤毒奴仆掉落战利品",
   "config.kuvalich.slaveKuvaDropChance": "奴仆 - 赤毒掉落概率(%)",
   "config.kuvalich.slaveKuvaDropChance.tooltip": "被玩家击杀时掉落赤毒的概率(%%)\n§710§r = 10%%概率(默认)",
@@ -983,5 +982,8 @@
 
   "config.kuvalich.category.commonDrops": "通用掉落设置",
   "config.kuvalich.moduleWeaponRatio": "模组武器比例(%)",
-  "config.kuvalich.moduleWeaponRatio.tooltip": "掉落模组时，该模组为武器模组的概率(%%)\n§775§r = 75%%武器，25%%战甲(默认)\n适用于所有实体的模组掉落"
+  "config.kuvalich.moduleWeaponRatio.tooltip": "掉落模组时，该模组为武器模组的概率(%%)\n§775§r = 75%%武器，25%%战甲(默认)\n适用于所有实体的模组掉落",
+
+  "config.kuvalich.moduleAttributeMultiplier": "模组属性全局倍率",
+  "config.kuvalich.moduleAttributeMultiplier.tooltip": "应用于所有模组属性数值的全局倍率（包含裂罅模组）\n§71.0§r = 原始数值(默认)\n§72.0§r = 所有属性翻倍\n§70.5§r = 所有属性减半\n适用于所有品质的武器和战甲模组：\n青铜 / 白银 / 黄金 / Prime / 裂罅\n§c裂罅模组：倍率在随机词条和倾向性缩放之后叠加生效§r\n负面属性也会等比例缩放"
 }

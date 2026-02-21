@@ -1,4 +1,3 @@
-// EntityKuvaSlave.java
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.core.BlockPos;
@@ -16,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.base.entity.KuvaBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
@@ -78,17 +78,25 @@ public class EntityKuvaSlave extends KuvaBase {
         return false;
     }
 
+    /**
+     * 修复：先保存目标的原始速度，再分别计算 target 和 self 的新速度
+     * Fix: save target's original velocity before modification, then calculate both independently
+     */
     private void applyKnockback(Entity target) {
+        // 保存原始速度，避免 self 的计算依赖被修改后的 target 速度
+        // Save original velocity to avoid self calculation depending on already-modified target velocity
+        Vec3 originalTargetVelocity = target.getDeltaMovement();
+
         target.setDeltaMovement(
-                target.getDeltaMovement().x * KNOCKBACK_MULTIPLIER,
-                target.getDeltaMovement().y * VERTICAL_KNOCKBACK,
-                target.getDeltaMovement().z * KNOCKBACK_MULTIPLIER
+                originalTargetVelocity.x * KNOCKBACK_MULTIPLIER,
+                originalTargetVelocity.y * VERTICAL_KNOCKBACK,
+                originalTargetVelocity.z * KNOCKBACK_MULTIPLIER
         );
 
         this.setDeltaMovement(
-                target.getDeltaMovement().x * SELF_KNOCKBACK_MULTIPLIER,
-                target.getDeltaMovement().y * SELF_KNOCKBACK_MULTIPLIER,
-                target.getDeltaMovement().z * SELF_KNOCKBACK_MULTIPLIER
+                originalTargetVelocity.x * SELF_KNOCKBACK_MULTIPLIER,
+                originalTargetVelocity.y * SELF_KNOCKBACK_MULTIPLIER,
+                originalTargetVelocity.z * SELF_KNOCKBACK_MULTIPLIER
         );
     }
 
@@ -131,10 +139,8 @@ public class EntityKuvaSlave extends KuvaBase {
     private void dropLoot(Player player) {
         BlockPos pos = this.blockPosition();
 
-        // 根据配置概率掉落模组 / Drop module based on config chance
         dropModule(pos);
 
-        // 根据配置概率掉落赤毒 / Drop Kuva based on config chance
         if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.slaveKuvaDropChance.get())) {
             spawnItem(pos, new ItemStack(
                     KuvaLichItems.KUVA.get(),
@@ -145,12 +151,10 @@ public class EntityKuvaSlave extends KuvaBase {
             ));
         }
 
-        // 根据配置概率掉落裂罅碎块 / Drop Riven Sliver based on config chance
         if (RandomUtil.percentageChance(ModConfig.KUVA_LICH.slaveRivenSliverDropChance.get())) {
             spawnItem(pos, new ItemStack(KuvaLichItems.RIVEN_SLIVER.get(), 1));
         }
 
-        // 安魂宝石：基础概率 + 每级时运加成 / Requiem Gem: base chance + looting bonus per level
         int lootingLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MOB_LOOTING, player.getMainHandItem());
         double gemChance = ModConfig.KUVA_LICH.slaveRequiemGemBaseChance.get()
                 + ModConfig.KUVA_LICH.slaveRequiemGemLootingBonus.get() * lootingLevel;
@@ -163,34 +167,29 @@ public class EntityKuvaSlave extends KuvaBase {
      * 掉落模组，概率从配置文件读取
      * Drop module, chances read from config
      *
-     * 按照 青铜 → 白银 → 黄金 的优先级滚动，每个模组类型使用独立配置概率
-     * Rolls common → uncommon → rare in priority order, each type uses independent config chance
+     * 修复：统一使用 RandomUtil，不再混用 Math.random()
+     * Fix: use RandomUtil consistently instead of mixing with Math.random()
      */
     private void dropModule(BlockPos pos) {
-        // 读取各级别概率 / Read each tier's chance from config
         int commonChance = ModConfig.KUVA_LICH.commonModuleDropChance.get();
         int uncommonChance = ModConfig.KUVA_LICH.uncommonModuleDropChance.get();
         int rareChance = ModConfig.KUVA_LICH.rareModuleDropChance.get();
-        // 武器模组比例 / Weapon module ratio
         int weaponRatio = ModConfig.KUVA_LICH.moduleWeaponRatio.get();
 
-        double roll = Math.random() * 100;
+        // 修复：使用 RandomUtil 代替 Math.random()
+        // Fix: use RandomUtil instead of Math.random()
+        int roll = RandomUtil.getInt(0, 99);
 
-        // 先判断是否掉落青铜模组 / Check common module first
         if (roll < commonChance) {
             ItemStack module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemCommonModule.getRandomModule()
                     : WarframeCommonModule.getRandomModule();
             spawnItem(pos, module);
-            // 再判断是否掉落白银模组（青铜+白银的总范围内）
-            // Then check uncommon module (within common + uncommon range)
         } else if (roll < commonChance + uncommonChance) {
             ItemStack module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemUncommonModule.getRandomModule()
                     : WarframeUncommonModule.getRandomModule();
             spawnItem(pos, module);
-            // 最后判断是否掉落黄金模组（青铜+白银+黄金的总范围内）
-            // Finally check rare module (within common + uncommon + rare range)
         } else if (roll < commonChance + uncommonChance + rareChance) {
             ItemStack module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemRareModule.getRandomModule()
