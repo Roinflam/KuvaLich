@@ -1177,6 +1177,7 @@ public class ClothConfigScreen {
         ConfigCategory moduleCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.module"));
 
+        // 通用词条倍率
         moduleCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.moduleAttributeMultiplier"),
                         ModConfig.KUVA_LICH.moduleAttributeMultiplier.get())
@@ -1185,6 +1186,17 @@ public class ClothConfigScreen {
                 .setMax(100.0)
                 .setTooltip(Component.translatable("config.kuvalich.moduleAttributeMultiplier.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.moduleAttributeMultiplier::set)
+                .build());
+
+        // 关键词条倍率（暴击、触发、护盾机制类）
+        moduleCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.keyAttributeMultiplier"),
+                        ModConfig.KUVA_LICH.keyAttributeMultiplier.get())
+                .setDefaultValue(1.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.keyAttributeMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.keyAttributeMultiplier::set)
                 .build());
 
         moduleCategory.addEntry(entryBuilder.startStrList(

@@ -97,6 +97,42 @@ public class ItemRivenModule extends ItemModuleBase {
         return kuvalichModule.getBoolean("Melee");
     }
 
+    /**
+     * 判断某属性是否为近战专属（远程Riven不可出现）
+     * Check if an attribute is melee-exclusive (cannot appear on remote Riven)
+     */
+    private static boolean isMeleeExclusiveAttr(String attributeType) {
+        return attributeType.equals("meleeDamage")
+                || attributeType.equals("attackSpeed")
+                || attributeType.equals("attackRange")
+                || attributeType.equals("meleeCriticalStrikeProbability")
+                || attributeType.equals("meleeCriticalStrikeMultiplier")
+                || attributeType.equals("dashMeleeCriticalStrikeProbability")
+                || attributeType.equals("dashAttackRange")
+                || attributeType.equals("dashTriggerChance")
+                || attributeType.equals("killStackMeleeCriticalMultiplier")
+                || attributeType.equals("killStackAttackRange")
+                || attributeType.equals("killStackAttackSpeed");
+    }
+
+    /**
+     * 判断某属性是否为远程专属（近战Riven不可出现）
+     * Check if an attribute is remote-exclusive (cannot appear on melee Riven)
+     */
+    private static boolean isRemoteExclusiveAttr(String attributeType) {
+        return attributeType.equals("remoteDamage")
+                || attributeType.equals("arrowDamage")
+                || attributeType.equals("projectileDamage")
+                || attributeType.equals("multishot")
+                || attributeType.equals("remoteCriticalStrikeProbability")
+                || attributeType.equals("remoteCriticalStrikeMultiplier")
+                || attributeType.equals("firing_rate")
+                || attributeType.equals("bursting_radius")
+                || attributeType.equals("killStackMultishot")
+                || attributeType.equals("killStackBurstingRadius")
+                || attributeType.equals("killStackFiringRate");
+    }
+
     public static ItemStack cycleModule(int trend, int cycleNumber, boolean isMelee) {
         // 检查是否被禁用
         if (isRivenDisabled()) {
@@ -170,33 +206,15 @@ public class ItemRivenModule extends ItemModuleBase {
                 continue;
             }
 
-            if (isMelee) {
-                // 近战武器排除的属性
-                if (attributeType.equals("remoteDamage") || attributeType.equals("arrowDamage") ||
-                        attributeType.equals("projectileDamage") || attributeType.equals("multishot") ||
-                        attributeType.equals("remoteCriticalStrikeProbability") ||
-                        attributeType.equals("remoteCriticalStrikeMultiplier") ||
-                        attributeType.equals("firing_rate") || attributeType.equals("bursting_radius") ||
-                        // 排除远程击杀叠加词条
-                        attributeType.equals("killStackMultishot") ||
-                        attributeType.equals("killStackBurstingRadius") ||
-                        attributeType.equals("killStackFiringRate")) {
-                    continue;
-                }
-            } else {
-                // 远程武器排除的属性
-                if (attributeType.equals("meleeDamage") || attributeType.equals("attackSpeed") ||
-                        attributeType.equals("attackRange") || attributeType.equals("meleeCriticalStrikeProbability") ||
-                        attributeType.equals("meleeCriticalStrikeMultiplier") ||
-                        attributeType.equals("dashMeleeCriticalStrikeProbability") ||
-                        attributeType.equals("dashAttackRange") || attributeType.equals("dashTriggerChance") ||
-                        // 排除近战击杀叠加词条
-                        attributeType.equals("killStackMeleeCriticalMultiplier") ||
-                        attributeType.equals("killStackAttackRange") ||
-                        attributeType.equals("killStackAttackSpeed")) {
-                    continue;
-                }
+            // 根据近战/远程过滤专属词条（正面）
+            // Filter exclusive attributes for melee/remote (positive)
+            if (isMelee && isRemoteExclusiveAttr(attributeType)) {
+                continue;
             }
+            if (!isMelee && isMeleeExclusiveAttr(attributeType)) {
+                continue;
+            }
+
             double randomDouble = 0.9 + (Math.random() * (1.1 - 0.9));
             randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
@@ -214,25 +232,27 @@ public class ItemRivenModule extends ItemModuleBase {
                     continue;
                 }
 
-                // Riven紫卡不能洗出复合元素词条(包括负面)
+                // Riven紫卡不能洗出复合元素词条（包括负面）
                 if (attributeType.equals("gas") || attributeType.equals("radiation") ||
                         attributeType.equals("magnetic") || attributeType.equals("corrosion") ||
                         attributeType.equals("explosion") || attributeType.equals("virus")) {
                     continue;
                 }
 
-                if (isMelee) {
-                    if (attributeType.equals("remoteDamage") || attributeType.equals("arrowDamage") || attributeType.equals("projectileDamage") || attributeType.equals("multishot") || attributeType.equals("remoteCriticalStrikeProbability") || attributeType.equals("remoteCriticalStrikeMultiplier") || attributeType.equals("firing_rate") || attributeType.equals("bursting_radius")) {
-                        continue;
-                    }
-                } else {
-                    if (attributeType.equals("meleeDamage") || attributeType.equals("attackSpeed") || attributeType.equals("attackRange") || attributeType.equals("meleeCriticalStrikeProbability") || attributeType.equals("meleeCriticalStrikeMultiplier") || attributeType.equals("dashMeleeCriticalStrikeProbability") || attributeType.equals("dashAttackRange") || attributeType.equals("dashTriggerChance")) {
-                        continue;
-                    }
-                }
-                if (attributeType.equals("fire") || attributeType.equals("ice") || attributeType.equals("poison") || attributeType.equals("electricity")) {
+                // 根据近战/远程过滤专属词条（负面）
+                // Filter exclusive attributes for melee/remote (negative)
+                if (isMelee && isRemoteExclusiveAttr(attributeType)) {
                     continue;
                 }
+                if (!isMelee && isMeleeExclusiveAttr(attributeType)) {
+                    continue;
+                }
+
+                if (attributeType.equals("fire") || attributeType.equals("ice") ||
+                        attributeType.equals("poison") || attributeType.equals("electricity")) {
+                    continue;
+                }
+
                 double randomDouble = 0.8 + (Math.random() * (1.2 - 0.8));
                 randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
@@ -399,7 +419,7 @@ public class ItemRivenModule extends ItemModuleBase {
 
             ItemStack module = initModule();
 
-            // 如果返回空物品,说明被禁用了
+            // 如果返回空物品，说明被禁用了
             if (module.isEmpty()) {
                 return InteractionResultHolder.fail(itemstack);
             }

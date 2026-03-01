@@ -985,5 +985,8 @@
   "config.kuvalich.moduleWeaponRatio.tooltip": "掉落模组时，该模组为武器模组的概率(%%)\n§775§r = 75%%武器，25%%战甲(默认)\n适用于所有实体的模组掉落",
 
   "config.kuvalich.moduleAttributeMultiplier": "模组属性全局倍率",
-  "config.kuvalich.moduleAttributeMultiplier.tooltip": "应用于所有模组属性数值的全局倍率（包含裂罅模组）\n§71.0§r = 原始数值(默认)\n§72.0§r = 所有属性翻倍\n§70.5§r = 所有属性减半\n适用于所有品质的武器和战甲模组：\n青铜 / 白银 / 黄金 / Prime / 裂罅\n§c裂罅模组：倍率在随机词条和倾向性缩放之后叠加生效§r\n负面属性也会等比例缩放"
+  "config.kuvalich.moduleAttributeMultiplier.tooltip": "应用于所有模组属性数值的全局倍率（包含裂罅模组）\n§71.0§r = 原始数值(默认)\n§72.0§r = 所有属性翻倍\n§70.5§r = 所有属性减半\n适用于所有品质的武器和战甲模组：\n青铜 / 白银 / 黄金 / Prime / 裂罅\n§c裂罅模组：倍率在随机词条和倾向性缩放之后叠加生效§r\n负面属性也会等比例缩放",
+
+  "config.kuvalich.keyAttributeMultiplier": "关键词条全局倍率",
+  "config.kuvalich.keyAttributeMultiplier.tooltip": "独立应用于关键机制词条的全局倍率\n包含：所有暴击几率/暴击伤害、触发几率/触发时间、护盾恢复速率/恢复延迟，以及对应的击杀叠层版本\n与通用词条倍率相互独立，默认均为1.0互不影响\n1.0 = 原始数值(默认)"
 }

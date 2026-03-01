@@ -58,7 +58,13 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue upgradeLimit;
 
         // ========== 模组属性倍率 / Module Attribute Multiplier ==========
+        // 普通词条倍率（伤害、速度、抗性等影响强度的词条）
+        // General attribute multiplier (damage, speed, resistance etc.)
         public final ForgeConfigSpec.DoubleValue moduleAttributeMultiplier;
+
+        // 关键词条倍率（暴击、触发、护盾机制类词条，缩放后可能破坏机制逻辑）
+        // Key attribute multiplier (crit, trigger, shield mechanic attributes whose logic may break if scaled too far)
+        public final ForgeConfigSpec.DoubleValue keyAttributeMultiplier;
 
         public final ForgeConfigSpec.IntValue weaponStackDecayTicks;
         public final ForgeConfigSpec.IntValue maxStacksBaseDamage;
@@ -277,20 +283,37 @@ public final class ModConfig {
 
             // ========== 模组属性倍率 ==========
             builder.comment("")
-                    .comment("═══ Module Attribute Multiplier / 模组属性倍率 ═══");
+                    .comment("═══ Module Attribute Multiplier / 模组属性倍率 ═══")
+                    .comment("Two independent multipliers for different attribute categories.")
+                    .comment("两套独立倍率，分别控制不同类型词条，互不干扰，默认均为1.0。");
 
             moduleAttributeMultiplier = builder
-                    .comment("Multiplier applied to all module attribute values (including Riven modules)")
-                    .comment("应用于所有模组属性数值的全局倍率（包含裂罅模组）")
-                    .comment("1.0 = use original values (default), 2.0 = double all stats, 0.5 = halve all stats")
-                    .comment("1.0 = 使用原始数值(默认), 2.0 = 所有属性翻倍, 0.5 = 所有属性减半")
-                    .comment("Affects all tiers: Common/Uncommon/Rare/Prime/Riven (weapon & warframe)")
-                    .comment("影响所有品质：青铜/白银/黄金/Prime/裂罅（武器和战甲模组）")
-                    .comment("For Riven modules, the multiplier is applied on top of the random roll and trend scaling")
-                    .comment("对于裂罅模组，倍率在随机词条数值和倾向性缩放之后叠加生效")
-                    .comment("Note: negative stats (like -firing_rate) are also scaled proportionally")
-                    .comment("注意：负面属性（如负射速）也会等比例缩放")
+                    .comment("General attribute multiplier — applies to all non-key attributes")
+                    .comment("通用词条倍率 —— 应用于所有非关键词条")
+                    .comment("Includes: all damage types, elements, faction bonus, health/shield/armor,")
+                    .comment("attack speed, firing rate, sprint/digging speed, jump height,")
+                    .comment("resistances, knockback resistance, multishot, response rate, item drop rate,")
+                    .comment("and all corresponding kill-stack versions")
+                    .comment("包含：各类伤害、元素、派系加成、生命/护盾/护甲、")
+                    .comment("攻速、射速、冲刺/挖掘速度、跳跃高度、")
+                    .comment("三种抗性、抗击倒、多重射击、恢复倍率、战利品倍率")
+                    .comment("及以上所有属性的击杀叠层版本")
+                    .comment("1.0 = use original values (default) / 1.0 = 原始数值(默认)")
                     .defineInRange("moduleAttributeMultiplier", 1.0, 0.0, 100.0);
+
+            keyAttributeMultiplier = builder
+                    .comment("Key attribute multiplier — applies independently to mechanical attributes")
+                    .comment("关键词条倍率 —— 独立应用于机制性词条")
+                    .comment("Includes: crit chance/multiplier (all types), trigger chance/time,")
+                    .comment("shield recovery rate/delay, and their kill-stack versions")
+                    .comment("包含：所有暴击几率/暴击伤害、触发几率/触发时间、")
+                    .comment("护盾恢复速率/恢复延迟，以及对应的击杀叠层版本")
+                    .comment("These are kept separate because their internal logic has special thresholds")
+                    .comment("(e.g. crit tier at 100%/200%/300%, trigger multi-proc above 100%)")
+                    .comment("这些词条的底层逻辑有特殊档位（暴击100%/200%/300%档位、触发超100%多次触发），")
+                    .comment("单独暴露倍率以便精细控制，避免和通用倍率混用导致数值错乱")
+                    .comment("1.0 = use original values (default) / 1.0 = 原始数值(默认)")
+                    .defineInRange("keyAttributeMultiplier", 1.0, 0.0, 100.0);
 
             builder.comment("")
                     .comment("═══ Weapon Kill Stack System / 武器击杀叠层系统 ═══");
