@@ -27,6 +27,7 @@ import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.WarframeModules;
+import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.network.message.DiggingSpeedPacket;
@@ -62,7 +63,10 @@ public class WarframeModule {
 
     /**
      * 乘算属性类型定义
+     * 这些属性使用乘法叠加，不参与总值 clamp（乘法结构与加法 cap 语义不兼容）
      * Multiplicative attribute types
+     * These attributes use multiplicative stacking and do NOT participate in total cap
+     * (multiplicative structure is semantically incompatible with additive cap)
      */
     private static final Set<String> MULTIPLICATIVE_ATTRIBUTES = new HashSet<>(Arrays.asList(
             "fireProtection",
@@ -118,8 +122,18 @@ public class WarframeModule {
     }
 
     /**
-     * 收集玩家所有模组属性（区分加算、乘算、固定上限）
-     * Collect all module attributes from player (separate additive, multiplicative, fixed cap)
+     * 收集玩家所有模组的运行时属性（区分加算、乘算、固定上限）
+     * Collect all module runtime attributes from player (separate additive, multiplicative, fixed cap)
+     *
+     * 约束规则（不修改模组卡 NBT，仅在运行时生效）：
+     * Constraint rules (does NOT modify module NBT, only applied at runtime):
+     *   1. 单值 clamp：每个模组的词条原始读取值限制在配置的 [min, max] 范围内
+     *      Single value clamp: each module's attribute raw value is clamped to configured [min, max]
+     *   2. 总值 clamp：仅对加算属性（非乘算属性）的叠加总值应用 totalCap 上限
+     *      Total cap clamp: only applied to ADDITIVE attributes (not multiplicative)
+     *      乘算属性（如 fireProtection）使用乘法结构，语义上不适合加法总值 cap
+     *      Multiplicative attributes (e.g. fireProtection) use multiplicative structure,
+     *      semantically incompatible with additive total cap
      */
     private static HashMap<String, Double> collectAttributes(Player player) {
         HashMap<String, Double> attributes = new HashMap<>();
@@ -138,11 +152,14 @@ public class WarframeModule {
         for (ItemStack module : modules) {
             for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
                 String key = entry.getKey();
-                double value = entry.getValue();
+
+                // ── 单值 clamp：不修改卡 NBT，仅限制本次读取值的区间 ──
+                // Single value clamp: does NOT modify card NBT, only limits the value read this time
+                double value = ModuleConfig.clampAttributeValue(key, entry.getValue());
 
                 if (MULTIPLICATIVE_ATTRIBUTES.contains(key)) {
-                    // 乘算属性处理
-                    // Multiplicative attribute processing
+                    // 乘算属性处理（不参与总值 clamp，乘法结构语义不兼容）
+                    // Multiplicative attribute processing (no total cap, incompatible semantics)
                     if (key.equals("shieldRecoveryDelay")) {
                         // 护盾恢复延迟是增加的（越高越慢）
                         // Shield recovery delay is additive (higher = slower)
@@ -170,8 +187,16 @@ public class WarframeModule {
             }
         }
 
-        // 将乘算属性合并到总属性表
-        // Merge multiplicative attributes into total attributes
+        // ── 总值 clamp：对加算属性的叠加总值应用上限（乘算属性跳过）──
+        // Total cap clamp: apply upper limit to summed additive attributes (multiplicative skipped)
+        for (String key : new ArrayList<>(attributes.keySet())) {
+            // 乘算属性的相关 killStack key 也参与总值 clamp
+            // Kill stack protection keys also participate in total cap
+            attributes.put(key, ModuleConfig.clampAttributeTotal(key, attributes.get(key)));
+        }
+
+        // 将乘算属性合并到总属性表（乘算属性已在内部处理，无需再 clamp）
+        // Merge multiplicative attributes into total attributes (already handled internally)
         attributes.putAll(multiplicativeAttributes);
         return attributes;
     }
@@ -291,6 +316,9 @@ public class WarframeModule {
     /**
      * 应用战甲击杀叠层效果
      * Apply warframe kill stack effects
+     *
+     * 传入的 attributes 已经过单值 clamp 和总值 clamp，无需再次处理
+     * Passed attributes are already single-value and total-cap clamped, no further processing needed
      */
     private static void applyWarframeKillStackEffects(Player player, HashMap<String, Double> attributes) {
         // 加算属性处理
@@ -413,13 +441,18 @@ public class WarframeModule {
     /**
      * 战甲击杀时添加叠层
      * Add warframe kill stacks
+     *
+     * 此处仅检测是否拥有对应 killStack 属性的模组，不需要读取具体数值，
+     * 所以直接读卡原始值即可（不影响叠层触发逻辑）
+     * Only checks if player has modules with killStack attributes; raw values are fine here
+     * as we only need key existence, not the actual amount
      */
     private static void addWarframeKillStacks(Player player) {
         HashMap<String, Double> attributes = new HashMap<>();
         List<ItemStack> modules = getModules(player);
 
-        // 收集所有击杀叠层属性
-        // Collect all kill stack attributes
+        // 收集所有击杀叠层属性（仅用于判断 key 是否存在，值大小不影响此处逻辑）
+        // Collect all kill stack attributes (only for key existence check)
         for (ItemStack module : modules) {
             if (module == null || module.isEmpty()) {
                 continue;
@@ -543,8 +576,8 @@ public class WarframeModule {
             return;
         }
 
-        // 服务端：从属性计算
-        // Server: Calculate from attributes
+        // 服务端：从属性计算（collectAttributes 已应用 clamp）
+        // Server: Calculate from attributes (collectAttributes already applied clamp)
         HashMap<String, Double> attributes = collectAttributes(player);
         applyWarframeKillStackEffects(player, attributes);
 
@@ -676,8 +709,8 @@ public class WarframeModule {
                                 cooldingHashMap.remove(player.getUUID());
                             }
                         } else {
-                            // 冷却结束，开始恢复护盾
-                            // Cooldown ended, start recovering shield
+                            // 冷却结束，开始恢复护盾（collectAttributes 内已应用 clamp）
+                            // Cooldown ended, start recovering shield (clamp applied inside collectAttributes)
                             HashMap<String, Double> attributes = collectAttributes(player);
                             applyWarframeKillStackEffects(player, attributes);
 
@@ -723,8 +756,6 @@ public class WarframeModule {
                                 } else if (currentShield > shieldCap) {
                                     // 关键修复：护盾超过上限时，限制到上限
                                     // Critical fix: When shield exceeds cap, limit to cap
-                                    // 这防止了玩家通过先装备护盾模组获取护盾，再卸下模组保留高护盾的exploit
-                                    // This prevents exploit where player equips shield modules to gain shield, then unequips to keep high shield
                                     player.setAbsorptionAmount((float) shieldCap);
                                 }
                             }
@@ -736,6 +767,8 @@ public class WarframeModule {
                     // Every 0.25s: Attribute effects + digging speed sync + fixed caps
                     // ═══════════════════════════════════════════════════════════════
                     if (player.level().getGameTime() % 5 == 0) {
+                        // collectAttributes 内已应用单值 clamp + 总值 clamp
+                        // collectAttributes already applies single value clamp + total cap clamp
                         HashMap<String, Double> attributes = collectAttributes(player);
                         applyWarframeKillStackEffects(player, attributes);
 
