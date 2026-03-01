@@ -1,5 +1,3 @@
-// 文件：ItemModule.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/itemstack/ItemModule.java
 package pers.roinflam.kuvalich.itemstack;
 
 import net.minecraft.client.resources.language.I18n;
@@ -363,7 +361,6 @@ public class ItemModule {
      */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLivingDamage(@Nonnull LivingDamageEvent evt) {
-        // ✅ 修改：移除客户端检查，因为事件在服务端触发，显示逻辑也在服务端
         LivingEntity hurter = evt.getEntity();
 
         // ✅ 从队列中获取待显示的伤害信息
@@ -1480,18 +1477,17 @@ public class ItemModule {
             return;
         }
 
-        if (firingRate < 0) {
-            double slowRate = Math.abs(firingRate);
-
-            if (slowRate >= 1.0) {
-                evt.setDuration(evt.getDuration() + 1);
-                return;
-            }
-
-            if (RandomUtil.percentageChance(slowRate * 100)) {
-                evt.setDuration(evt.getDuration() + 1);
+        if (firingRate <= -1.0) {
+            // -100%及以下：完全禁止使用
+            player.stopUsingItem();
+        } else if (firingRate < 0) {
+            // -100%~0之间：按概率取消当前tick使用进度，降低使用速度
+            // 例如 -0.2 则有20%概率跳过当前tick，实现减速20%
+            if (RandomUtil.percentageChance(Math.abs(firingRate) * 100)) {
+                evt.setCanceled(true);
             }
         }
+        // 正值射速在 onLivingTickForFiringRate 中处理，此处不重复
     }
 
     @SubscribeEvent
@@ -1539,6 +1535,8 @@ public class ItemModule {
             firingRate *= 2.0;
         }
 
+        // 负值或零直接返回，不推帧
+        // Negative or zero: return directly, don't advance frames
         if (firingRate <= 0) {
             return;
         }

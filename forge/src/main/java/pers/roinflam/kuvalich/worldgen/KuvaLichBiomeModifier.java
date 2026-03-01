@@ -31,11 +31,11 @@ import java.util.List;
  * KuvaLich Custom Biome Modifier
  *
  * 生成规则：
- * - 实体生成：主世界 + 地狱 + 暮色森林等所有维度，排除末地和蘑菇岛
+ * - 实体生成：仅限主世界，排除蘑菇岛
  * - 矿石生成：所有维度（依赖方块Tag自动过滤，无石头的维度自然不会生成）
  *
  * Spawn rules:
- * - Entity spawning: Overworld + Nether + Twilight Forest etc., excludes The End and mushroom islands
+ * - Entity spawning: Overworld only, excludes mushroom islands
  * - Ore generation: All dimensions (block tag filtering handles incompatible biomes naturally)
  */
 public class KuvaLichBiomeModifier implements BiomeModifier {
@@ -62,6 +62,14 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
             new ResourceLocation("minecraft", "is_end")
     );
 
+    /**
+     * 主世界Tag / Overworld biome tag
+     */
+    private static final TagKey<Biome> IS_OVERWORLD_TAG = TagKey.create(
+            Registries.BIOME,
+            new ResourceLocation("minecraft", "is_overworld")
+    );
+
     private KuvaLichBiomeModifier() {}
 
     // ═══ 核心修改逻辑 / Core modification logic ═══
@@ -79,9 +87,9 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
         // Ore gen: all dims except The End (block tags handle incompatible biomes naturally)
         addOreGeneration(builder);
 
-        // 实体生成：排除蘑菇岛，其余维度（主世界/地狱/暮色森林等）均可生成
-        // Entity spawning: exclude mushroom islands, spawn in all other dims (overworld/nether/twilight etc.)
-        if (!biome.is(IS_MUSHROOM_TAG)) {
+        // 实体生成：仅限主世界，排除蘑菇岛
+        // Entity spawning: Overworld only, exclude mushroom islands
+        if (biome.is(IS_OVERWORLD_TAG) && !biome.is(IS_MUSHROOM_TAG)) {
             addEntitySpawns(builder.getMobSpawnSettings());
         }
     }
