@@ -33,6 +33,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
@@ -506,6 +507,15 @@ public class ItemModule {
                 range += stackValue * stacks * 2;
             }
 
+            // TACZ 枪械自带爆炸时，由 TaczCompatEventHandler 处理 bursting_radius 的增量叠加，
+            // 此处抑制 ItemModule 自身的 AOE 计算，避免与 TACZ 爆炸伤害重复
+            // When TACZ gun has native explosion, TaczCompatEventHandler handles bursting_radius delta,
+            // suppress ItemModule's own AOE here to avoid overlap with TACZ explosion damage
+            if (WarframeTaczBridge.isBurstRadiusSuppressed()) {
+                range = 1;
+                WarframeTaczBridge.clearBurstRadiusSuppressed();
+            }
+
             if (!damageSource.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) {
                 if (range > 1) {
                     List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, range,
@@ -660,9 +670,6 @@ public class ItemModule {
     /**
      * 应用击杀层数效果
      * Apply kill stack effects
-     * <p>
-     * 此方法接收已经过 clamp 处理的 attributes，无需再次处理
-     * This method receives already-clamped attributes, no further processing needed
      */
     private static void applyKillStackEffects(Player player, ItemStack weapon,
                                               HashMap<String, Double> attributes,
@@ -728,8 +735,6 @@ public class ItemModule {
                 if (player.level().getGameTime() % 20 == 0 && player.isAlive()) {
                     ItemStack weapon = player.getMainHandItem();
                     if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
-                        // 使用运行时收集方法（已应用 clamp）
-                        // Use runtime collection method (clamp applied)
                         HashMap<String, Double> attributes = collectItemAttributes(getModules(weapon));
 
                         if (attributes.containsKey("killStackAttackSpeed")) {
@@ -766,8 +771,6 @@ public class ItemModule {
                     float attackStrength = player.getAttackStrengthScale(0.5F);
                     if (attackStrength <= 0.8F) return;
 
-                    // 使用运行时收集方法（已应用 clamp）
-                    // Use runtime collection method (clamp applied)
                     HashMap<String, Double> attributes = collectItemAttributes(getModules(weapon));
 
                     double range = attributes.getOrDefault("attackRange", 0.0);
@@ -797,12 +800,6 @@ public class ItemModule {
 
     // ========== 元素组合计算 / Element Composition ==========
 
-    /**
-     * 获取武器的触发元素组成（用于显示）
-     * 注意：此方法用于 Tooltip 显示，直接读取卡原始值
-     * Get weapon's trigger element composition (for display)
-     * Note: This method is for tooltip display, reads raw card values directly
-     */
     public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
         Map<String, Double> elementValues = new LinkedHashMap<>();
 
@@ -893,9 +890,6 @@ public class ItemModule {
         return null;
     }
 
-    /**
-     * 随机选择一个触发元素
-     */
     public static String getTriggerElement(ItemStack weapon) {
         HashMap<String, String> elements = getTriggerElements(weapon);
         if (elements.isEmpty()) return null;
@@ -916,12 +910,6 @@ public class ItemModule {
         return elementList.get(elementList.size() - 1).getKey();
     }
 
-    /**
-     * 获取元素的实际伤害值（包含赤毒武器自带的元素）
-     * 注意：此方法使用的是已经过 clamp 的 attributes
-     * Get element's actual damage value (including Kuva weapon's innate element)
-     * Note: This method uses already-clamped attributes
-     */
     private static double getElementDamageValue(String element, HashMap<String, Double> attributes, ItemStack weapon) {
         double value = 0.0;
 
@@ -990,9 +978,6 @@ public class ItemModule {
         return value;
     }
 
-    /**
-     * 生成随机伤害数字显示位置
-     */
     private static Vec3 getRandomDamagePosition(LivingEntity entity) {
         double offsetX = (Math.random() - 0.5) * entity.getBbWidth() * 1.2;
         double offsetZ = (Math.random() - 0.5) * entity.getBbWidth() * 1.2;
@@ -1003,12 +988,6 @@ public class ItemModule {
         );
     }
 
-    /**
-     * 触发元素效果（核心逻辑）
-     * 传入的 attributes 已经过 clamp 处理
-     * Trigger element effects (core logic)
-     * Passed attributes are already clamped
-     */
     private static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
                                                Player attacker, ItemStack itemStack,
                                                double triggerTime, double coreDamage,
@@ -1312,8 +1291,6 @@ public class ItemModule {
         ItemStack weapon = player.getMainHandItem();
         if (weapon.isEmpty() || !ItemModule.hasBase(weapon)) return;
 
-        // 使用运行时收集方法（已应用 clamp）
-        // Use runtime collection method (clamp applied)
         HashMap<String, Double> attributes = collectItemAttributes(getModules(weapon));
 
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
@@ -1353,8 +1330,6 @@ public class ItemModule {
         ItemStack weapon = player.getMainHandItem();
         if (weapon.isEmpty() || !ItemModule.hasBase(weapon)) return;
 
-        // 使用运行时收集方法（已应用 clamp）
-        // Use runtime collection method (clamp applied)
         HashMap<String, Double> attributes = collectItemAttributes(getModules(weapon));
 
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
@@ -1388,8 +1363,6 @@ public class ItemModule {
         if (!evt.getEntity().level().isClientSide()) {
             ItemStack bow = evt.getBow();
             if (!bow.isEmpty() && ItemModule.hasBase(bow)) {
-                // 使用运行时收集方法（已应用 clamp）
-                // Use runtime collection method (clamp applied)
                 HashMap<String, Double> attributes = collectItemAttributes(getModules(bow));
 
                 double multishot = attributes.getOrDefault("multishot", 0.0);
@@ -1467,34 +1440,31 @@ public class ItemModule {
 
     private static String getElementEmoji(String element) {
         switch (element) {
-            case "fire":
-                return "§c🔥";
-            case "ice":
-                return "§3❄";
-            case "poison":
-                return "§2☠";
-            case "electricity":
-                return "§1⚡";
-            case "slash":
-                return "§7☾";
-            case "puncture":
-                return "§f†";
-            case "impact":
-                return "§f🔨";
-            case "gas":
-                return "§a\uD83D\uDCA8";
-            case "radiation":
-                return "§e☢";
-            case "magnetic":
-                return "§b🧲";
-            case "corrosion":
-                return "§2🧪";
-            case "explosion":
-                return "§4💥";
-            case "virus":
-                return "§a🦠";
-            default:
-                return "";
+            case "fire": return "§c🔥";
+            case "ice": return "§3❄";
+            case "poison": return "§2☠";
+            case "electricity": return "§1⚡";
+            case "slash": return "§7☾";
+            case "puncture": return "§f†";
+            case "impact": return "§f🔨";
+            case "gas": return "§a\uD83D\uDCA8";
+            case "radiation": return "§e☢";
+            case "magnetic": return "§b🧲";
+            case "corrosion": return "§2🧪";
+            case "explosion": return "§4💥";
+            case "virus": return "§a🦠";
+            default: return "";
         }
+    }
+
+    /**
+     * 公共接口：获取武器运行时属性（供外部兼容模组使用）
+     * Public API: Get weapon runtime attributes (for external compat modules)
+     *
+     * @param weapon 武器物品栈 / weapon ItemStack
+     * @return 运行时属性 Map（已应用 clamp）/ runtime attributes (clamped)
+     */
+    public static HashMap<String, Double> getWeaponAttributes(ItemStack weapon) {
+        return collectItemAttributes(getModules(weapon));
     }
 }

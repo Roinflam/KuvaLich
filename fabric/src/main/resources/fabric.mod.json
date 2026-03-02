@@ -22,7 +22,8 @@
     ]
   },
   "mixins": [
-    "kuvalich.mixins.json"
+    "kuvalich.mixins.json",
+    "kuvalich.tacz.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.18.4",

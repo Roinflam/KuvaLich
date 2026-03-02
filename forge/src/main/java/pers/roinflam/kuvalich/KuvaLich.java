@@ -1,7 +1,11 @@
+// 文件：KuvaLich.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/KuvaLich.java
 package pers.roinflam.kuvalich;
 
 import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -37,7 +41,7 @@ public class KuvaLich {
     /** 模组实例 / Mod instance */
     public static KuvaLich instance;
 
-    /** 网络通道（通过NetworkRegistryHandler获取）/ Network channel (obtained via NetworkRegistryHandler) */
+    /** 网络通道（通过 NetworkRegistryHandler 获取）/ Network channel */
     public static SimpleChannel network;
 
     public KuvaLich() {
@@ -59,23 +63,23 @@ public class KuvaLich {
         // 注册实体类型 / Register entity types
         KuvaLichEntities.ENTITY_TYPES.register(modEventBus);
 
-        // 注册MenuType / Register menu types
+        // 注册 MenuType / Register menu types
         KuvaLichMenuTypes.MENUS.register(modEventBus);
 
         // 注册创造模式标签页 / Register creative tabs
         KuvaLichCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
-        // 注册自定义BiomeModifier Codec（矿石生成+实体生成+蘑菇岛排除）
-        // Register custom BiomeModifier Codec (ore gen + entity spawn + mushroom island exclusion)
+        // 注册自定义 BiomeModifier Codec（矿石/实体生成）
+        // Register custom BiomeModifier Codec
         KuvaLichBiomeModifiers.register(modEventBus);
 
-        // 注册设置事件
-        // Register setup events
+        // 注册生命周期事件
+        // Register lifecycle events
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);
 
-        // 注册配置
-        // Register configurations
+        // 注册配置文件
+        // Register config files
         ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON,
                 ModConfig.COMMON_CONFIG, "kuvalich-common.toml");
         ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON,
@@ -90,37 +94,61 @@ public class KuvaLich {
                 )
         );
 
-        LogUtil.info("赤毒玄骸模组构造函数执行完成");
-
         modEventBus.addListener(CapabilityRegistryHandler::registerCapabilities);
 
-        LogUtil.info("Capability系统初始化完成");
+        LogUtil.info("赤毒玄骸模组构造函数执行完成");
     }
 
     /**
-     * 通用设置阶段（客户端和服务端都执行）
-     * Common setup phase (executed on both client and server)
+     * 通用设置阶段（客户端和服务端均执行）
+     * Common setup phase (executed on both sides)
      */
     private void commonSetup(final FMLCommonSetupEvent event) {
         LogUtil.info("赤毒玄骸模组开始通用设置...");
 
         event.enqueueWork(() -> {
             try {
-                // 注册网络处理器（已包含网络通道创建和消息包注册）
-                // Register network handlers (includes network channel creation and packet registration)
+                // 注册网络处理器
+                // Register network handler
                 NetworkRegistryHandler.register();
-
-                // 获取网络通道实例供其他地方使用
-                // Get network channel instance for use in other places
                 network = NetworkRegistryHandler.getChannel();
-
                 LogUtil.debug("网络系统初始化成功");
 
-                // ========== 初始化自定义模组系统 / Initialize Custom Module System ==========
+                // 初始化自定义模组系统
+                // Initialize custom module system
                 CustomModuleManager.getInstance().initialize();
 
-                // 启动缓存清理定时器
-                // Start cache cleanup timer
+                // ================================================================
+                // TACZ 兼容层注册
+                // TACZ compatibility layer registration
+                //
+                // 仅在 TACZ 已加载时注册兼容事件处理器，避免类加载异常。
+                // Only register compat handler when TACZ is loaded to prevent
+                // ClassNotFoundException at class loading time.
+                //
+                // 注意：Mixin（MixinGunShootInterval）通过独立的
+                // kuvalich.tacz.mixins.json 配置，defaultRequire=0，
+                // TACZ 不存在时会静默跳过，不会报错。
+                // Note: The Mixin (MixinGunShootInterval) uses a separate
+                // kuvalich.tacz.mixins.json with defaultRequire=0, so it
+                // silently skips when TACZ is absent.
+                // ================================================================
+                if (ModList.get().isLoaded("tacz")) {
+                    // 实例化兼容处理器并手动注册到 Forge 事件总线
+                    // Instantiate compat handler and manually register to Forge event bus
+                    MinecraftForge.EVENT_BUS.register(
+                            new pers.roinflam.kuvalich.compat.tacz.TaczCompatEventHandler()
+                    );
+                    LogUtil.info("检测到 TACZ，Warframe 模组兼容层已启用");
+                    LogUtil.info("  - 射速修正：MixinGunShootInterval（Mixin 注入）");
+                    LogUtil.info("  - 正值多重射击：GunCachePropertyEvent（bullet_amount）");
+                    LogUtil.info("  - 负值多重射击：GunFireEvent（概率取消）");
+                } else {
+                    LogUtil.debug("未检测到 TACZ，跳过兼容层注册");
+                }
+
+                // 启动缓存清理定时器（每 5 分钟清理一次）
+                // Start cache cleanup timer (every 5 minutes)
                 Timer cacheCleanerTimer = new Timer("KuvaLich-Cache-Cleaner", true);
                 cacheCleanerTimer.scheduleAtFixedRate(new TimerTask() {
                     @Override
@@ -132,9 +160,10 @@ public class KuvaLich {
                             LogUtil.error("缓存清理失败", e);
                         }
                     }
-                }, 300000, 300000); // 5分钟清理一次 / Clean every 5 minutes
+                }, 300000, 300000);
 
                 LogUtil.info("赤毒玄骸模组通用设置完成");
+
             } catch (Exception e) {
                 LogUtil.error("赤毒玄骸模组通用设置失败", e);
                 throw e;

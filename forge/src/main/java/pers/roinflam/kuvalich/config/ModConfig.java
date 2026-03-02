@@ -454,7 +454,7 @@ public final class ModConfig {
             kuvaSlaveSpawnWeight = builder
                     .comment("Kuva Slave spawn weight (set to 0 to disable)")
                     .comment("赤毒奴仆生成权重(设为0可禁用生成)")
-                    .defineInRange("kuvaSlaveSpawnWeight", 10, 0, Integer.MAX_VALUE);
+                    .defineInRange("kuvaSlaveSpawnWeight", 15, 0, Integer.MAX_VALUE);
 
             kuvaSlaveMinSpawnCount = builder
                     .comment("Kuva Slave minimum spawn count")
@@ -464,7 +464,7 @@ public final class ModConfig {
             kuvaSlaveMaxSpawnCount = builder
                     .comment("Kuva Slave maximum spawn count")
                     .comment("赤毒奴仆最大生成数量")
-                    .defineInRange("kuvaSlaveMaxSpawnCount", 3, 1, Integer.MAX_VALUE);
+                    .defineInRange("kuvaSlaveMaxSpawnCount", 2, 1, Integer.MAX_VALUE);
 
             builder.comment("")
                     .comment("═══ Requiem Destroyed Enchantment Drop Chances / 灭骸附魔掉落概率 ═══")
