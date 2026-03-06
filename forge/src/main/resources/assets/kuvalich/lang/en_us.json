@@ -269,6 +269,7 @@
   "item.kuvalich.item_riven_module": "Riven Mod",
   "item.kuvalich.item_riven_module_cycle_melee": "Melee Riven",
   "item.kuvalich.item_riven_module_cycle_remote": "Ranged Riven",
+  "item.kuvalich.item_riven_module_cycle_universal": "Universal Riven",
   "item.kuvalich.item_uncommon_module": "Silver Mod",
   "item.kuvalich.jahu": "JAHU",
   "item.kuvalich.jahu.first_tooltip": "Physical laws lack binding force",
@@ -389,7 +390,7 @@
   "kuvaweapon.item_module.arcane_ballistics": "§9Arcane Ballistics",
   "kuvaweapon.item_module.arcane_ballistics_prime": "§bArcane Ballistics Prime",
   "kuvaweapon.item_module.arcane_domination": "§eArcane Domination",
-  "kuvaweapon.item_module.arcane_potential": "§6Arcane Potential",
+  "kuvaweapon.item_module.arcane_potential": "§eArcane Potential",
   "kuvaweapon.item_module.arcane_torrent": "§eArcane Torrent",
   "kuvaweapon.item_module.argon_crystal_shoot": "§eArgon Scope",
   "kuvaweapon.item_module.argon_crystal_wrath": "§eArgon Wrath",
@@ -399,7 +400,7 @@
   "kuvaweapon.item_module.arrow_poison": "§9Poison Arrow",
   "kuvaweapon.item_module.auger_strike": "§6Auger Strike",
   "kuvaweapon.item_module.ballistic_master": "§eBallistic Master",
-  "kuvaweapon.item_module.ballistics_expert": "§6Ballistics Expert",
+  "kuvaweapon.item_module.ballistics_expert": "§eBallistics Expert",
   "kuvaweapon.item_module.bane_of_arthropod": "§9Bane of Arthropods",
   "kuvaweapon.item_module.bane_of_arthropod_prime": "§bBane of Arthropods Prime",
   "kuvaweapon.item_module.bane_of_illager": "§9Bane of Illagers",
@@ -502,7 +503,7 @@
   "kuvaweapon.item_module.malicious": "§eMalicious",
   "kuvaweapon.item_module.malicious_prime": "§bMalicious Prime",
   "kuvaweapon.item_module.malignant_force": "§6Malignant Force",
-  "kuvaweapon.item_module.marksmans_gift": "§6Marksman's Gift",
+  "kuvaweapon.item_module.marksmans_gift": "§eMarksman's Gift",
   "kuvaweapon.item_module.melee_fury": "§eMelee Fury",
   "kuvaweapon.item_module.meltdown_protocol": "§eMeltdown Protocol",
   "kuvaweapon.item_module.molten_impact": "§9Molten Impact",
@@ -724,22 +725,15 @@
   "message.kuvalich.requiemRiddleAnswer": "Current riddle answers are %s / %s / %s",
   "message.kuvalich.requiemRiddleNotAnswer": "Current riddle has no answer yet! Please decrypt at least one answer first!",
   "message.kuvalich.secondCorrect": "Decryption failed, second answer is correct!",
-
   "_comment_mob_effects": "========== Mob Effects ==========",
-
   "_comment_config_shield": "========== Shield System ==========",
-
   "config.kuvalich.category.shield": "Shield System",
-
   "config.kuvalich.shieldCapMultiplier": "Shield Cap Multiplier",
   "config.kuvalich.shieldCapMultiplier.tooltip": "Shield capacity multiplier based on max health\n§70.5§r = 0.5x multiplier (default)\nFormula: Shield Cap = Max Health × Shield Attribute × This Multiplier\n§7Example:§r When shield attribute=1.0, multiplier=0.5\nShield cap is 50%% of max health\n§7Example:§r When shield attribute=2.0, multiplier=0.5\nShield cap is 100%% of max health",
-
   "config.kuvalich.enableDamageNumbers": "Enable Damage Numbers",
   "config.kuvalich.enableDamageNumbers.tooltip": "Enable floating damage text display\n§7true§r = Enabled (default)\n§7false§r = Disabled and no packets sent\nWhen disabled, no network resources are consumed",
-
   "config.kuvalich.enableTrueDamage": "Enable True Damage System",
   "config.kuvalich.enableTrueDamage.tooltip": "Enable true damage system (bypass setHealth and damage reduction)\n§7true§r = Enabled (default)\n§7false§r = Use standard setHealth method\nWhen enabled, will find and cache the real health field of entities\nThis bypasses custom health systems like Apollyon\nWhen disabled, uses standard setHealth method",
-
   "effect.kuvalich.ice": "Frozen",
   "effect.kuvalich.fire": "Burning",
   "effect.kuvalich.armor": "Armor Boost",
@@ -762,7 +756,6 @@
   "effect.kuvalich.negative_movement_speed": "Slowness",
   "effect.kuvalich.negative_reach_distance": "Reduced Reach",
   "effect.kuvalich.negative_knockback_resistance": "Unstable",
-
   "config.kuvalich.category.oreGen": "Ore Generation",
   "config.kuvalich.requiemOreVeinCount": "Requiem Ore - Veins Per Chunk",
   "config.kuvalich.requiemOreVeinCount.tooltip": "Number of Requiem Ore vein attempts per chunk\n§78§r = 8 veins (default)\n§70§r = Disable ore generation\n⚠ Requires restart, affects new chunks only",
@@ -780,7 +773,6 @@
   "config.kuvalich.experienceOreMinHeight.tooltip": "Minimum Y coordinate for Experience Ore spawning\n§7-64§r = Bedrock level (default)\n⚠ Requires restart, affects new chunks only",
   "config.kuvalich.experienceOreMaxHeight": "Experience Ore - Max Y Level",
   "config.kuvalich.experienceOreMaxHeight.tooltip": "Maximum Y coordinate for Experience Ore spawning\n§7128§r = Y level 128 (default)\n⚠ Requires restart, affects new chunks only",
-
   "config.kuvalich.category.oreDrops": "Ore Drop Chances",
   "config.kuvalich.expMultiplier": "Experience Multiplier",
   "config.kuvalich.expMultiplier.tooltip": "Experience multiplier when mining Requiem Ore with Requiem Destroyed enchantment\n§72§r = 2x experience (default)",
@@ -798,7 +790,6 @@
   "config.kuvalich.uncommonModuleDropChance.tooltip": "Chance (%%) to drop an Uncommon (Silver) module when mining Requiem Ore\n§710§r = 10%% chance (default)\n75%% weapon mod, 25%% warframe mod",
   "config.kuvalich.rareModuleDropChance": "Rare Module Drop Chance (%)",
   "config.kuvalich.rareModuleDropChance.tooltip": "Chance (%%) to drop a Rare (Gold) module when mining Requiem Ore\n§75§r = 5%% chance (default)\n75%% weapon mod, 25%% warframe mod",
-
   "config.kuvalich.category.slaveDrops": "Kuva Thrall Drop Loot",
   "config.kuvalich.slaveKuvaDropChance": "Thrall - Kuva Drop Chance (%)",
   "config.kuvalich.slaveKuvaDropChance.tooltip": "Chance (%) to drop Kuva when Thrall is killed by player\n§710§r = 10%% chance (default)",
@@ -812,7 +803,6 @@
   "config.kuvalich.slaveRequiemGemBaseChance.tooltip": "Base chance (%) to drop Requiem Gem when Thrall is killed\nIncreases by slaveRequiemGemLootingBonus per looting level\n§725§r = 25%% base (default)",
   "config.kuvalich.slaveRequiemGemLootingBonus": "Thrall - Gem Looting Bonus Per Level (%)",
   "config.kuvalich.slaveRequiemGemLootingBonus.tooltip": "Requiem Gem chance bonus per Looting enchantment level\n§72.5§r = +2.5%% per level (default)\nExample: base 25%%, Looting III → 25 + 7.5 = 32.5%%",
-
   "config.kuvalich.category.masterDrops": "Kuva Lich Drop Loot",
   "config.kuvalich.masterKuvaMinAmount": "Lich - Kuva Min Amount",
   "config.kuvalich.masterKuvaMinAmount.tooltip": "Minimum amount of Kuva dropped by Kuva Lich on death\n§732§r = 32 (default)",
@@ -824,14 +814,11 @@
   "config.kuvalich.masterRivenSliverMaxAmount.tooltip": "Maximum amount of Riven Sliver dropped by Kuva Lich on death\n§78§r = 8 (default)",
   "config.kuvalich.masterPrimeModuleChance": "Lich - Prime Module Chance (%)",
   "config.kuvalich.masterPrimeModuleChance.tooltip": "Chance (%) to drop a Prime module instead of Riven module on death\n§750§r = 50%% Prime, 50%% Riven (default)",
-
   "config.kuvalich.category.commonDrops": "Common Drop Settings",
   "config.kuvalich.moduleWeaponRatio": "Module Weapon Ratio (%)",
   "config.kuvalich.moduleWeaponRatio.tooltip": "When a module drops, chance (%) it is a weapon module\n§775§r = 75%% weapon, 25%% warframe (default)\nApplies to all entity module drops",
-
   "config.kuvalich.moduleAttributeMultiplier": "Global Module Attribute Multiplier",
   "config.kuvalich.moduleAttributeMultiplier.tooltip": "Global multiplier applied to all module attribute values (including Riven modules)\n§71.0§r = original values (default)\n§72.0§r = double all stats\n§70.5§r = halve all stats\nApplies to all tiers of weapon and warframe modules:\nCommon / Uncommon / Rare / Prime / Riven\n§cRiven modules: multiplier is applied on top of random roll and trend scaling§r\nNegative stats (e.g. -firing rate) are also scaled proportionally\n\n§eWhat changed:§r Previously this multiplier only affected fixed modules (Common/Uncommon/Rare/Prime). Riven modules were excluded.\nNow Riven modules are also affected.\n\n§eExample (Weapon Riven, Trend 3):§r\nBase melee damage value: 1.65\nAfter trend scaling (×1.0) + random roll (×0.95): 1.5675\nWith multiplier §72.0§r → §a3.135§r\nWith multiplier §70.5§r → §a0.784§r\n\n§eExample (negative stat):§r\nBase firing rate penalty: 0.6\nAfter trend/random: −0.495\nWith multiplier §72.0§r → §c−0.99§r",
-
   "config.kuvalich.keyAttributeMultiplier": "Key Attribute Multiplier",
   "config.kuvalich.keyAttributeMultiplier.tooltip": "Global multiplier applied independently to key mechanical attributes\nIncludes: all crit chance/multiplier, trigger chance/time, shield recovery rate/delay, and their kill-stack versions\nIndependent from general attribute multiplier, both default to 1.0\n1.0 = original values (default)"
 }

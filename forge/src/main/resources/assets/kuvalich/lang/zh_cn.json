@@ -191,6 +191,7 @@
   "item.kuvalich.item_riven_module": "裂罅模组",
   "item.kuvalich.item_riven_module_cycle_melee": "近战裂罅",
   "item.kuvalich.item_riven_module_cycle_remote": "远程裂罅",
+  "item.kuvalich.item_riven_module_cycle_universal": "通用裂罅",
   "item.kuvalich.item_uncommon_module": "白银模组",
 
   "item.kuvalich.warframe_common_module": "青铜模组",
@@ -618,9 +619,9 @@
   "kuvaweapon.item_module.tear": "§e撕裂",
   "kuvaweapon.item_module.touches_of_extension": "§e触染延伸",
   "kuvaweapon.item_module.true_steel": "§e斩铁",
-  "kuvaweapon.item_module.arcane_potential": "§6奥术潜能",
-  "kuvaweapon.item_module.ballistics_expert": "§6弹道专家",
-  "kuvaweapon.item_module.marksmans_gift": "§6神射天赋",
+  "kuvaweapon.item_module.arcane_potential": "§e奥术潜能",
+  "kuvaweapon.item_module.ballistics_expert": "§e弹道专家",
+  "kuvaweapon.item_module.marksmans_gift": "§e神射天赋",
 
   "_comment_weapon_modules_uncommon": "========== 武器模组 - 白银品质(蓝色) ==========",
 

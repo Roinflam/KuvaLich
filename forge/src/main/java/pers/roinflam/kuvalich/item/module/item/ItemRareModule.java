@@ -137,7 +137,7 @@ public class ItemRareModule extends ItemModuleBase {
                 "kuvaweapon.item_module.reflex_coil", "reflex_coil",
                 new Object[]{"attackSpeed", 0.60001f, "meleeCriticalStrikeProbability", 0.60001f});
 
-        // 元素打击
+        // 元素打击（火焰/冰冻/毒素/电击 → 组合为腐蚀+爆炸）
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.elemental_strike", "elemental_strike",
                 new Object[]{"fire", 0.30001f, "ice", 0.30001f, "poison", 0.30001f, "electricity", 0.30001f});
@@ -149,15 +149,15 @@ public class ItemRareModule extends ItemModuleBase {
                 "kuvaweapon.item_module.plague_herald", "plague_herald",
                 new Object[]{"gas", 0.90001f, "triggerTime", 0.75001f});
 
-        // 核子风暴 - 移除multishot冲突(数值只有60%)
+        // 核子风暴 - 元素修正为辐射（平衡调整：与Prime版保持一致）
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.nuclear_storm", "nuclear_storm",
-                new Object[]{"gas", 0.90001f, "multishot", 0.60001f});
+                new Object[]{"radiation", 0.90001f, "multishot", 0.60001f});
 
-        // 磁暴领主 - 移除melee_crit_chance冲突(数值只有75%)
+        // 磁暴领主 - 暴击修正为远程暴击几率（平衡调整：与Prime版保持一致）
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.magnetic_overlord", "magnetic_overlord",
-                new Object[]{"magnetic", 0.90001f, "meleeCriticalStrikeProbability", 0.75001f});
+                new Object[]{"magnetic", 0.90001f, "remoteCriticalStrikeProbability", 0.75001f});
 
         // 剥皮者
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
@@ -358,10 +358,10 @@ public class ItemRareModule extends ItemModuleBase {
                 "kuvaweapon.item_module.bombardment", "bombardment",
                 new Object[]{"multishot", 1.20001f, "dashMeleeCriticalStrikeProbability", 1.20001f, "firing_rate", -0.25001f});
 
-        // 元素融合
+        // 元素融合（电击/毒素/火焰/冰冻 → 组合为辐射+病毒，与元素打击的腐蚀+爆炸不同）
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.elemental_fusion", "elemental_fusion",
-                new Object[]{"fire", 0.30001f, "poison", 0.30001f, "ice", 0.30001f, "electricity", 0.30001f});
+                new Object[]{"electricity", 0.30001f, "poison", 0.30001f, "fire", 0.30001f, "ice", 0.30001f});
     }
 
     /**

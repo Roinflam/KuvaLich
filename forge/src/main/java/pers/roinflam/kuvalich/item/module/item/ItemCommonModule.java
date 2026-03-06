@@ -132,10 +132,10 @@ public class ItemCommonModule extends ItemModuleBase {
                 "kuvaweapon.item_module.tear", "tear",
                 new Object[]{"meleeCriticalStrikeProbability", 1.65001f, "meleeDamage", -0.60001f});
 
-        // 灾难射击
+        // 灾难射击 - 触发几率削弱（平衡调整：青铜不应超过白银准确射手的60%触发几率）
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.disaster_shoot", "disaster_shoot",
-                new Object[]{"remoteDamage", 1.2001f, "triggerChance", 0.90001f});
+                new Object[]{"remoteDamage", 1.2001f, "triggerChance", 0.45001f});
 
         // 恶意
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,

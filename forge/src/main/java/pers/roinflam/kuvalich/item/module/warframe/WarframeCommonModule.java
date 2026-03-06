@@ -115,10 +115,10 @@ public class WarframeCommonModule extends WarframeModuleBase {
                 "kuvaweapon.warframe_module.bones", "bones",
                 new Object[]{"armor", 1.2001f, "health", -0.4001f});
 
-        // 马利万
+        // 马利万 - 战利品掉落倍率削弱（平衡调整：青铜不应超过Prime品质的密藏猎人90%）
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.maliwan", "maliwan",
-                new Object[]{"itemDropMultiplier", 1.2001f, "reachDistance", -0.3001f, "diggingSpeed", -0.6001f},
+                new Object[]{"itemDropMultiplier", 0.6001f, "reachDistance", -0.3001f, "diggingSpeed", -0.6001f},
                 "item_drop_multiplier");
 
         // 跃动信号
