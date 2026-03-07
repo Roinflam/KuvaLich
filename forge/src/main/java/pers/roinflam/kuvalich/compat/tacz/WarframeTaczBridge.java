@@ -28,10 +28,26 @@ public class WarframeTaczBridge {
      */
     private static final ThreadLocal<Boolean> suppressBurstRadius = ThreadLocal.withInitial(() -> false);
 
+    /**
+     * ThreadLocal 存储：TACZ 原始弹丸数（多重射击膨胀前的值）。
+     * ThreadLocal storage: TACZ original bullet count (before multishot inflation).
+     * <p>
+     * 生命周期：由 MixinGunShootOnce（修改 bulletAmount 前）写入，
+     * 由 MixinBulletDamageSpread（applyShotgunDamageSpread 注入）读取。
+     * Lifecycle: written by MixinGunShootOnce (before modifying bulletAmount),
+     * read by MixinBulletDamageSpread (in applyShotgunDamageSpread injection).
+     * <p>
+     * 值为 0 表示未设置（不干预）。
+     * Value of 0 means not set (no intervention).
+     */
+    private static final ThreadLocal<Integer> originalBulletAmount = ThreadLocal.withInitial(() -> 0);
+
     // ========== 抑制标志 API / Suppress Flag API ==========
 
     /**
      * 查询当前线程是否处于 bursting_radius 抑制状态。
+     *
+     * @return 是否抑制
      */
     public static boolean isBurstRadiusSuppressed() {
         return suppressBurstRadius.get();
@@ -39,6 +55,8 @@ public class WarframeTaczBridge {
 
     /**
      * 设置 bursting_radius 抑制标志。
+     *
+     * @param suppress 是否抑制
      */
     public static void setSuppressBurstRadius(boolean suppress) {
         suppressBurstRadius.set(suppress);
@@ -51,10 +69,44 @@ public class WarframeTaczBridge {
         suppressBurstRadius.set(false);
     }
 
+    // ========== 原始弹丸数 API / Original Bullet Amount API ==========
+
+    /**
+     * 获取当前线程存储的原始弹丸数。
+     *
+     * @return 原始弹丸数，0 表示未设置
+     */
+    public static int getOriginalBulletAmount() {
+        return originalBulletAmount.get();
+    }
+
+    /**
+     * 设置原始弹丸数（多重射击膨胀前的值）。
+     * <p>
+     * 由 MixinGunShootOnce 在修改 bulletAmount 之前调用，
+     * 确保 MixinBulletDamageSpread 能用原始值计算 damageModifier。
+     *
+     * @param amount 原始弹丸数
+     */
+    public static void setOriginalBulletAmount(int amount) {
+        originalBulletAmount.set(amount);
+    }
+
+    /**
+     * 清除原始弹丸数。
+     */
+    public static void clearOriginalBulletAmount() {
+        originalBulletAmount.set(0);
+    }
+
     // ========== 模组属性读取 / Module Attribute Getters ==========
 
     /**
      * 获取枪械上装载的 firing_rate 模组合计修正值。
+     *
+     * @param gunItem 枪械 ItemStack
+     * @param shooter 持枪实体
+     * @return firing_rate 增量值，无模组时返回 0
      */
     public static float getFireRateMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
@@ -76,6 +128,10 @@ public class WarframeTaczBridge {
 
     /**
      * 获取枪械上装载的 multishot 模组合计修正值。
+     *
+     * @param gunItem 枪械 ItemStack
+     * @param shooter 持枪实体
+     * @return multishot 增量值，无模组时返回 0
      */
     public static float getMultishotMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {

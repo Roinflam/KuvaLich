@@ -4,6 +4,8 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "kuvalich.tacz.refmap.json",
   "mixins": [
+    "EntityKineticBulletAccessor",
+    "MixinBulletDamageSpread",
     "MixinGunShootInterval",
     "MixinGunShootOnce",
     "MixinTaczBulletExplosion"
