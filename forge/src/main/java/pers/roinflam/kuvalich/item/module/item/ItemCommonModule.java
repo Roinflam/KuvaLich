@@ -201,6 +201,46 @@ public class ItemCommonModule extends ItemModuleBase {
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.ballistics_expert", "ballistics_expert",
                 new Object[]{"projectileDamage", 1.25001f});
+
+        // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
+        // ========== TACZ exclusive modules (only registered when TACZ is loaded) ==========
+        if (ItemRivenModule.isTaczLoaded()) {
+
+            // 爆发装填 —— 30%装填速度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.burst_reload", "burst_reload",
+                    new Object[]{"reload_speed", 0.30001f});
+
+            // 弹夹增幅 —— 30%弹夹容量
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.magazine_amplifier", "magazine_amplifier",
+                    new Object[]{"magazine_size", 0.30001f});
+
+            // 迅捷弹匣 —— 20%装填速度 + 20%弹夹容量（全能入门型）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.swift_magazine", "swift_magazine",
+                    new Object[]{"reload_speed", 0.20001f, "magazine_size", 0.20001f});
+
+            // 穿甲弹头 —— 45%投射物速度 + 30%穿刺伤害（物理+速度入门）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.piercing_round", "piercing_round",
+                    new Object[]{"projectile_speed", 0.45001f, "puncture", 0.30001f});
+
+            // 电磁加速弹 —— 60%远程伤害 + 30%投射物速度（远程+速度入门）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.electromagnetic_accelerator", "electromagnetic_accelerator",
+                    new Object[]{"remoteDamage", 0.60001f, "projectile_speed", 0.30001f});
+
+            // 稳固射击 —— 60%远程伤害 + 30%后坐力降低（远程+稳定入门）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.steady_shot", "steady_shot",
+                    new Object[]{"remoteDamage", 0.60001f, "recoil_reduction", 0.30001f});
+
+            // 轻量弹匣 —— 20%弹夹容量 + 20%装填速度 + 20%后坐力降低（三属性轻量型）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.lightweight_magazine", "lightweight_magazine",
+                    new Object[]{"magazine_size", 0.20001f, "reload_speed", 0.20001f, "recoil_reduction", 0.20001f});
+        }
     }
 
     /**

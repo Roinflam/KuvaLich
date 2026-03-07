@@ -1,4 +1,3 @@
-// RequiemCard.java
 package pers.roinflam.kuvalich.capability;
 
 import net.minecraft.core.Direction;
@@ -138,6 +137,8 @@ public class RequiemCard {
     /**
      * 检查是否有任意一个谜语被解开
      * Check if any riddle is unlocked
+     *
+     * @return true表示至少有一个谜语被解开
      */
     public boolean hasAnyRiddleUnlocked() {
         return oneRiddle != -1 || twoRiddle != -1 || threeRiddle != -1;
@@ -146,6 +147,8 @@ public class RequiemCard {
     /**
      * 检查是否所有谜语都已解开
      * Check if all riddles are unlocked
+     *
+     * @return true表示三个谜语全部解开
      */
     public boolean isUnlockAll() {
         return oneRiddle != -1 && twoRiddle != -1 && threeRiddle != -1;
@@ -154,6 +157,9 @@ public class RequiemCard {
     /**
      * 检查是否包含指定卡片
      * Check if contains specified card
+     *
+     * @param id 卡片ID
+     * @return true表示谜语中包含该卡片
      */
     public boolean containCard(int id) {
         return oneRiddle == id || twoRiddle == id || threeRiddle == id;
@@ -162,6 +168,8 @@ public class RequiemCard {
     /**
      * 检查卡片槽位是否已准备好
      * Check if card slots are ready
+     *
+     * @return true表示三个槽位都有卡片
      */
     public boolean isReadyCard() {
         return !oneCard.isEmpty() && !twoCard.isEmpty() && !threeCard.isEmpty();
@@ -170,6 +178,8 @@ public class RequiemCard {
     /**
      * 检查答案是否完全正确
      * Check if answer is completely correct
+     *
+     * @return true表示三张卡片顺序和内容完全正确
      */
     public boolean isCorrectAnswer() {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
@@ -186,6 +196,8 @@ public class RequiemCard {
     /**
      * 检查第一个答案是否正确
      * Check if first answer is correct
+     *
+     * @return true表示第一张卡片正确
      */
     public boolean isFirstCorrectAnswer() {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
@@ -199,6 +211,8 @@ public class RequiemCard {
     /**
      * 检查第二个答案是否正确
      * Check if second answer is correct
+     *
+     * @return true表示第二张卡片正确
      */
     public boolean isTwoCorrectAnswer() {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
@@ -212,6 +226,9 @@ public class RequiemCard {
     /**
      * 获取指定等级的锁定卡片
      * Get locked card for specified level
+     *
+     * @param level 等级(1/2/3)
+     * @return 对应的答案卡片ID，-1表示无效
      */
     public int getLockCard(int level) {
         switch (level) {
@@ -225,6 +242,8 @@ public class RequiemCard {
     /**
      * 获取当前阶段所需点数
      * Get points required for current stage
+     *
+     * @return 当前阶段所需的解密点数，-1表示已全部解锁
      */
     public int getPointsRequired() {
         switch (unlockedCardStatus) {
@@ -238,6 +257,9 @@ public class RequiemCard {
     /**
      * 添加药水进度
      * Add potion progress
+     *
+     * @param potion 要添加的进度点数
+     * @return true表示添加成功
      */
     public boolean addPotion(int potion) {
         switch (unlockedCardStatus) {
@@ -255,6 +277,10 @@ public class RequiemCard {
     /**
      * 处理阶段进度
      * Process stage progress
+     *
+     * @param potion    新增的进度点数
+     * @param threshold 当前阶段的阈值
+     * @return true表示处理成功
      */
     private boolean processStage(int potion, int threshold) {
         decryptionProgress += potion;
@@ -273,8 +299,8 @@ public class RequiemCard {
     }
 
     /**
-     * 生成随机答案
-     * Generate random answers
+     * 生成随机答案（保证三个答案互不相同）
+     * Generate random answers (ensure all three are different)
      */
     private void generateAnswers() {
         int one, two, three;
@@ -357,7 +383,7 @@ public class RequiemCard {
 
     /**
      * 重置所有数据（不处理卡片耐久，耐久由consumeCardsAndGetSurvivors单独处理）
-     * Reset all data (does NOT handle card durability, durability is handled by consumeCardsAndGetSurvivors separately)
+     * Reset all data (does NOT handle card durability, durability is handled separately)
      */
     public void reset() {
         // 初始化ItemStack字段为EMPTY（防止null）
@@ -382,6 +408,8 @@ public class RequiemCard {
     /**
      * 添加卡片到随机槽位
      * Add card to random slot
+     *
+     * @param level 解锁的等级
      */
     public void addCard(int level) {
         if (isUnlockAll()) {
@@ -414,16 +442,21 @@ public class RequiemCard {
     // ==================== 没收物品相关方法 / Confiscated Items Methods ====================
 
     /**
-     * 获取被没收的物品列表
-     * Get confiscated items list
+     * 获取被没收的物品列表（返回副本，防止外部修改）
+     * Get confiscated items list (returns copy to prevent external modification)
+     *
+     * @return 没收物品列表的副本
      */
     public List<ItemStack> getConfiscatedItems() {
         return new ArrayList<>(confiscatedItems);
     }
 
     /**
-     * 添加被没收的物品（带上限检查）
-     * Add confiscated item (with limit check)
+     * 添加被没收的物品
+     * 上限从配置文件 maxConfiscatedItems 读取，不再硬编码
+     *
+     * Add confiscated item
+     * Limit is read from config maxConfiscatedItems, no longer hardcoded
      *
      * @param itemStack 要没收的物品 / item to confiscate
      * @return true表示成功没收，false表示已达上限无法没收
@@ -434,10 +467,10 @@ public class RequiemCard {
             return false;
         }
 
-        // 检查是否已达到没收上限
-        // Check if confiscation limit has been reached
-        int maxCount = 128;
-        if (confiscatedItems.size() >= maxCount) {
+        // 从配置读取没收上限（默认64，配置范围0~1024）
+        // Read confiscation limit from config (default 64, range 0~1024)
+        int maxCount = ModConfig.KUVA_LICH.maxConfiscatedItems.get();
+        if (maxCount <= 0 || confiscatedItems.size() >= maxCount) {
             return false;
         }
 
@@ -447,18 +480,27 @@ public class RequiemCard {
 
     /**
      * 检查是否还能没收更多物品
-     * Check if more items can be confiscated
+     * 上限从配置文件 maxConfiscatedItems 读取
      *
-     * @return true表示还能没收，false表示已达上限
-     *         true = can confiscate more, false = limit reached
+     * Check if more items can be confiscated
+     * Limit is read from config maxConfiscatedItems
+     *
+     * @return true表示还能没收，false表示已达上限或配置为0
+     *         true = can confiscate more, false = limit reached or disabled
      */
     public boolean canConfiscateMore() {
-        return confiscatedItems.size() < 128;
+        int maxCount = ModConfig.KUVA_LICH.maxConfiscatedItems.get();
+        if (maxCount <= 0) {
+            return false;
+        }
+        return confiscatedItems.size() < maxCount;
     }
 
     /**
      * 清空没收物品列表并返回所有物品
      * Clear and get all confiscated items
+     *
+     * @return 之前被没收的所有物品
      */
     public List<ItemStack> clearAndGetConfiscatedItems() {
         List<ItemStack> items = new ArrayList<>(confiscatedItems);
@@ -469,6 +511,8 @@ public class RequiemCard {
     /**
      * 检查是否有被没收的物品
      * Check if has confiscated items
+     *
+     * @return true表示有被没收的物品
      */
     public boolean hasConfiscatedItems() {
         return !confiscatedItems.isEmpty();
@@ -477,6 +521,8 @@ public class RequiemCard {
     /**
      * 获取被没收物品的数量
      * Get confiscated item count
+     *
+     * @return 当前被没收的物品总数
      */
     public int getConfiscatedItemCount() {
         return confiscatedItems.size();
@@ -487,6 +533,8 @@ public class RequiemCard {
     /**
      * 序列化到NBT
      * Serialize to NBT
+     *
+     * @return 包含所有数据的CompoundTag
      */
     public CompoundTag serializeNBT() {
         CompoundTag nbt = new CompoundTag();
@@ -525,6 +573,8 @@ public class RequiemCard {
     /**
      * 从NBT反序列化
      * Deserialize from NBT
+     *
+     * @param nbt 要反序列化的CompoundTag
      */
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt == null) {
@@ -565,6 +615,7 @@ public class RequiemCard {
 
     /**
      * Capability Provider
+     * 负责提供RequiemCard实例和NBT序列化/反序列化
      */
     public static class Provider implements ICapabilityProvider, INBTSerializable<CompoundTag> {
 

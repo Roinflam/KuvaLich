@@ -1,5 +1,3 @@
-// 文件：DamageRenderer.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/render/damagedisplay/DamageRenderer.java
 package pers.roinflam.kuvalich.render.damagedisplay;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -17,21 +15,35 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Iterator;
 
 /**
  * 伤害数字/文本渲染器(1.20.1)
  * Damage number/text renderer (1.20.1)
+ *
+ * 性能优化：使用 ArrayDeque 替代 ArrayList，移除首元素从 O(n) → O(1)
+ * Performance: ArrayDeque replaces ArrayList, remove-first from O(n) → O(1)
  */
 @OnlyIn(Dist.CLIENT)
 public class DamageRenderer {
 
-    private final List<DamageInfo> damageInfos = new ArrayList<>();
+    /** 伤害信息队列（ArrayDeque 支持高效的头部/尾部操作） / Damage info deque */
+    private final ArrayDeque<DamageInfo> damageInfos = new ArrayDeque<>();
+
+    /** 单例实例 / Singleton instance */
     private static volatile DamageRenderer instance;
+
+    /** 上升速度 / Rise speed */
     private static final double RISE_SPEED = 1.0 / 4000.0;
+
+    /** 最大伤害信息数量 / Max damage info count */
     private static final int MAX_DAMAGE_INFOS = 500;
+
+    /** 清理间隔（tick） / Cleanup interval (ticks) */
     private static final int CLEANUP_INTERVAL = 20;
+
+    /** 清理计时器 / Cleanup timer */
     private int cleanupTimer = 0;
 
     // 字体缩放(白色基准值×1.5)
@@ -60,6 +72,9 @@ public class DamageRenderer {
 
     /**
      * 添加伤害信息
+     *
+     * 性能优化：pollFirst() 是 O(1)（原 ArrayList.remove(0) 是 O(n)）
+     * Performance: pollFirst() is O(1) (was ArrayList.remove(0) which is O(n))
      */
     public void addDamageInfo(DamageInfo info) {
         if (info == null) {
@@ -67,10 +82,10 @@ public class DamageRenderer {
         }
 
         if (damageInfos.size() >= MAX_DAMAGE_INFOS) {
-            damageInfos.remove(0);
+            damageInfos.pollFirst();  // O(1)，原 remove(0) 是 O(n)
         }
 
-        damageInfos.add(info);
+        damageInfos.addLast(info);
     }
 
     /**
@@ -97,6 +112,9 @@ public class DamageRenderer {
 
     /**
      * 清理过期的伤害信息
+     *
+     * 使用 Iterator 遍历 ArrayDeque 安全移除过期元素
+     * Use Iterator to safely remove expired elements from ArrayDeque
      */
     private void cleanupExpired() {
         if (damageInfos.isEmpty()) {
@@ -104,7 +122,12 @@ public class DamageRenderer {
         }
 
         long currentTime = System.currentTimeMillis();
-        damageInfos.removeIf(info -> info.isExpired(currentTime));
+        Iterator<DamageInfo> iterator = damageInfos.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().isExpired(currentTime)) {
+                iterator.remove();
+            }
+        }
     }
 
     /**

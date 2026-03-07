@@ -35,7 +35,9 @@ public abstract class ItemModuleBase extends ModuleBase {
                     "gas", "radiation", "magnetic", "corrosion", "explosion", "virus",
                     "killStackBaseDamage", "killStackMultishot", "killStackMeleeCriticalMultiplier",
                     "killStackTriggerChance", "killStackAttackRange", "killStackAttackSpeed",
-                    "killStackBurstingRadius", "killStackFiringRate"
+                    "killStackBurstingRadius", "killStackFiringRate",
+                    // ===== TACZ 枪械新属性 / New TACZ gun attributes =====
+                    "reload_speed", "magazine_size", "projectile_speed", "recoil_reduction","first_bullet_damage "
             ))
     );
 

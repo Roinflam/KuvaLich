@@ -240,6 +240,45 @@ public class ItemUncommonModule extends ItemModuleBase {
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.death_barrage", "death_barrage",
                 new Object[]{"multishot", 0.60001f, "triggerChance", 0.90001f});
+
+        // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
+        if (ItemRivenModule.isTaczLoaded()) {
+
+            // 极限速度 —— 60%投射物速度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.terminal_velocity", "terminal_velocity",
+                    new Object[]{"projectile_speed", 0.60001f});
+
+            // 致命弹道 —— 45%投射物速度 + 60%远程暴击几率（狙击入门向）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.lethal_trajectory", "lethal_trajectory",
+                    new Object[]{"projectile_speed", 0.45001f, "remoteCriticalStrikeProbability", 0.60001f});
+
+            // 弹幕倾泻 —— 30%射速 + 30%多重射击 - 30%远程伤害（弹幕代价型，移除冲突标签：有负面效果）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.barrage_protocol", "barrage_protocol",
+                    new Object[]{"firing_rate", 0.30001f, "multishot", 0.30001f, "remoteDamage", -0.30001f});
+
+            // 战术装填 —— 40%装填速度 + 40%后坐力降低（机动入门向）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.tactical_reload", "tactical_reload",
+                    new Object[]{"reload_speed", 0.40001f, "recoil_reduction", 0.40001f});
+
+            // 镇定射击 —— 45%后坐力降低 + 60%触发几率（稳定+触发）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.steady_aim", "steady_aim",
+                    new Object[]{"recoil_reduction", 0.45001f, "triggerChance", 0.60001f});
+
+            // 弹道校准 —— 45%投射物速度 + 60%远程暴击伤害（狙击暴伤向）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.ballistic_calibration", "ballistic_calibration",
+                    new Object[]{"projectile_speed", 0.45001f, "remoteCriticalStrikeMultiplier", 0.60001f});
+
+            // 超量供弹 —— 60%弹夹容量 - 20%装填速度（弹夹代价型，移除冲突标签：有负面效果）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.surplus_ammo", "surplus_ammo",
+                    new Object[]{"magazine_size", 0.60001f, "reload_speed", -0.20001f});
+        }
     }
 
     public static void registerCreativeTabItems(CreativeModeTab.Output output) {

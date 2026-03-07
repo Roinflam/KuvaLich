@@ -31,6 +31,7 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue shieldCapMultiplier;
 
         public final ForgeConfigSpec.DoubleValue confiscationChance;
+        public final ForgeConfigSpec.IntValue maxConfiscatedItems;
         public final ForgeConfigSpec.DoubleValue requiemUltimatumDropChance;
 
         public final ForgeConfigSpec.IntValue minDecryptionProgress;
@@ -57,14 +58,11 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue upgradeMultiplier;
         public final ForgeConfigSpec.IntValue upgradeLimit;
 
-        // ========== 模组属性倍率 / Module Attribute Multiplier ==========
-        // 普通词条倍率（伤害、速度、抗性等影响强度的词条）
-        // General attribute multiplier (damage, speed, resistance etc.)
         public final ForgeConfigSpec.DoubleValue moduleAttributeMultiplier;
-
-        // 关键词条倍率（暴击、触发、护盾机制类词条，缩放后可能破坏机制逻辑）
-        // Key attribute multiplier (crit, trigger, shield mechanic attributes whose logic may break if scaled too far)
         public final ForgeConfigSpec.DoubleValue keyAttributeMultiplier;
+
+        public final ForgeConfigSpec.BooleanValue formaLockEnabled;
+        public final ForgeConfigSpec.DoubleValue formaLockChance;
 
         public final ForgeConfigSpec.IntValue weaponStackDecayTicks;
         public final ForgeConfigSpec.IntValue maxStacksBaseDamage;
@@ -153,6 +151,13 @@ public final class ModConfig {
                     .comment("Item confiscation chance (%)")
                     .comment("物品没收概率(%)")
                     .defineInRange("confiscationChance", 1.0, 0.0, 100.0);
+
+            maxConfiscatedItems = builder
+                    .comment("Maximum number of items a Kuva Lich can confiscate per riddle cycle")
+                    .comment("每个解密周期中赤毒玄骸最多没收的物品数量")
+                    .comment("0 = disable confiscation regardless of chance")
+                    .comment("0 = 无论概率如何都禁用没收")
+                    .defineInRange("maxConfiscatedItems", 64, 0, 1024);
 
             requiemUltimatumDropChance = builder
                     .comment("Requiem Ultimatum drop chance after successful decryption (%)")
@@ -281,7 +286,6 @@ public final class ModConfig {
                     .comment("武器升级次数上限")
                     .defineInRange("upgradeLimit", 999, 0, Integer.MAX_VALUE);
 
-            // ========== 模组属性倍率 ==========
             builder.comment("")
                     .comment("═══ Module Attribute Multiplier / 模组属性倍率 ═══")
                     .comment("Two independent multipliers for different attribute categories.")
@@ -314,6 +318,21 @@ public final class ModConfig {
                     .comment("单独暴露倍率以便精细控制，避免和通用倍率混用导致数值错乱")
                     .comment("1.0 = use original values (default) / 1.0 = 原始数值(默认)")
                     .defineInRange("keyAttributeMultiplier", 1.0, 0.0, 100.0);
+
+            builder.comment("")
+                    .comment("═══ Forma Lock System / 塑形块锁定系统 ═══");
+
+            formaLockEnabled = builder
+                    .comment("Enable Forma lock chance (each Forma re-roll may permanently lock the weapon panel)")
+                    .comment("启用塑形块锁定概率(每次Forma洗面板可能永久锁定武器面板)")
+                    .define("formaLockEnabled", false);
+
+            formaLockChance = builder
+                    .comment("Chance (%) to permanently lock weapon panel after Forma re-roll")
+                    .comment("使用塑形块洗面板后永久锁定面板的概率(%)")
+                    .comment("Only effective when formaLockEnabled is true")
+                    .comment("仅在启用Forma锁定时生效")
+                    .defineInRange("formaLockChance", 10.0, 0.0, 100.0);
 
             builder.comment("")
                     .comment("═══ Weapon Kill Stack System / 武器击杀叠层系统 ═══");

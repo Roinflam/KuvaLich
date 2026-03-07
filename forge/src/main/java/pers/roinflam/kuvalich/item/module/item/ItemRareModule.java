@@ -362,6 +362,110 @@ public class ItemRareModule extends ItemModuleBase {
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.elemental_fusion", "elemental_fusion",
                 new Object[]{"electricity", 0.30001f, "poison", 0.30001f, "fire", 0.30001f, "ice", 0.30001f});
+
+        // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
+        if (ItemRivenModule.isTaczLoaded()) {
+
+            // 赋能装填 —— 40%装填速度 + 60%辐射伤害
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.empowered_reload", "empowered_reload",
+                    new Object[]{"reload_speed", 0.40001f, "radiation", 0.60001f});
+
+            // 野火 —— 20%弹夹容量 + 60%火焰伤害
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.wildfire", "wildfire",
+                    new Object[]{"magazine_size", 0.20001f, "fire", 0.60001f});
+
+            // 腐败弹夹 —— 66%弹夹容量 - 33%装填速度（移除冲突标签：有负面效果）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.tainted_magazine", "tainted_magazine",
+                    new Object[]{"magazine_size", 0.66001f, "reload_speed", -0.33001f});
+
+            // 稳定 —— 60%后坐力降低
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.stabilizer", "stabilizer",
+                    new Object[]{"recoil_reduction", 0.60001f});
+
+            // 致命精准 —— 90%后坐力降低 + 75%远程暴击几率 - 30%射速（精准狙击核心，移除冲突标签：有负面效果）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.lethal_precision", "lethal_precision",
+                    new Object[]{"recoil_reduction", 0.90001f, "remoteCriticalStrikeProbability", 0.75001f, "firing_rate", -0.30001f});
+
+            // 弹雨风暴 —— 60%多重射击 + 40%弹夹容量 - 30%装填速度（弹幕流核心，移除冲突标签：有负面效果）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.bullet_storm", "bullet_storm",
+                    new Object[]{"multishot", 0.60001f, "magazine_size", 0.40001f, "reload_speed", -0.30001f});
+
+            // 过载弹匣 —— 90%弹夹容量 + 45%射速 - 60%装填速度（极端循环，移除冲突标签：有负面效果）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.overloaded_magazine", "overloaded_magazine",
+                    new Object[]{"magazine_size", 0.90001f, "firing_rate", 0.45001f, "reload_speed", -0.60001f});
+
+            // 急速换弹 —— 60%装填速度 + 30%射速 - 30%弹夹容量（快速循环流，移除冲突标签：有负面效果）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.rapid_reload", "rapid_reload",
+                    new Object[]{"reload_speed", 0.60001f, "firing_rate", 0.30001f, "magazine_size", -0.30001f});
+
+            // 冰封弹链 —— 20%弹夹容量 + 60%冰冻伤害（弹夹+冰冻，对标野火结构）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.cryo_chain", "cryo_chain",
+                    new Object[]{"magazine_size", 0.20001f, "ice", 0.60001f});
+
+            // 焦土弹药 —— 20%装填速度 + 60%火焰伤害（装填+火焰，对标野火结构）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.scorched_ammo", "scorched_ammo",
+                    new Object[]{"reload_speed", 0.20001f, "fire", 0.60001f});
+
+            // 毒素注射 —— 20%弹夹容量 + 60%毒素伤害（弹夹+毒素，对标野火结构）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.toxin_injection", "toxin_injection",
+                    new Object[]{"magazine_size", 0.20001f, "poison", 0.60001f});
+
+            // 雷暴弹幕 —— 30%多重射击 + 60%电击伤害（多重+电击，副词条为多重基准90%的1/3）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.thunder_barrage", "thunder_barrage",
+                    new Object[]{"multishot", 0.30001f, "electricity", 0.60001f});
+
+            // 病毒载荷 —— 40%投射物速度 + 45%病毒伤害（狙击+复合元素）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.viral_payload", "viral_payload",
+                    new Object[]{"projectile_speed", 0.40001f, "virus", 0.45001f});
+
+            // 磁力脉冲 —— 40%后坐力降低 + 45%磁力伤害（稳定+复合元素）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.magnetic_pulse", "magnetic_pulse",
+                    new Object[]{"recoil_reduction", 0.40001f, "magnetic", 0.45001f});
+
+            // 腐蚀弹头 —— 40%投射物速度 + 45%腐蚀伤害（速度+复合元素）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.corrosive_payload", "corrosive_payload",
+                    new Object[]{"projectile_speed", 0.40001f, "corrosion", 0.45001f});
+
+            // 爆裂弹头 —— 20%投射物速度 + 45%爆炸伤害 + 10%爆炸半径（三词条复合元素，副词条压缩）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.explosive_round", "explosive_round",
+                    new Object[]{"projectile_speed", 0.20001f, "explosion", 0.45001f, "bursting_radius", 0.10001f});
+
+            // 辐射穿透 —— 20%投射物速度 + 45%辐射伤害 + 30%穿刺伤害（三词条复合元素）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.radiation_penetration", "radiation_penetration",
+                    new Object[]{"projectile_speed", 0.20001f, "radiation", 0.45001f, "puncture", 0.30001f});
+
+            // 电磁过载 —— 20%装填速度 + 45%磁力伤害 + 20%触发几率（三词条复合元素）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.electromagnetic_overload", "electromagnetic_overload",
+                    new Object[]{"reload_speed", 0.20001f, "magnetic", 0.45001f, "triggerChance", 0.20001f});
+
+            // 毒气弥散 —— 20%弹夹容量 + 45%毒气伤害 + 30%触发时间（三词条复合元素）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.gas_dispersal", "gas_dispersal",
+                    new Object[]{"magazine_size", 0.20001f, "gas", 0.45001f, "triggerTime", 0.30001f});
+
+            // 膛室 Prime —— 1000%弹匣第一发子弹伤害（满弹夹射出的第一发直接加基伤）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.chambered_prime", "chambered",
+                    new Object[]{"first_bullet_damage", 10.00001f});
+        }
     }
 
     /**

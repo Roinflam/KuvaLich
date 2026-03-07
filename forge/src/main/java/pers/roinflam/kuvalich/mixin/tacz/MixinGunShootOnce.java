@@ -83,14 +83,6 @@ public class MixinGunShootOnce {
 
         int finalAmount = originalAmount + extraBullets;
 
-        // 调试日志：多重射击计算过程（仅对玩家打印，受 enableDetailedLogging 配置控制）
-        if (shooter instanceof Player) {
-            LogUtil.debug(String.format(
-                    "[多重射击] 射手=%s, multishotMod=%.2f, 原始弹丸=%d, scaledMultishot=%.2f, 额外弹丸=%d, 最终弹丸=%d",
-                    shooter.getName().getString(), multishotMod, originalAmount, scaledMultishot, extraBullets, finalAmount
-            ));
-        }
-
         return finalAmount;
     }
 }

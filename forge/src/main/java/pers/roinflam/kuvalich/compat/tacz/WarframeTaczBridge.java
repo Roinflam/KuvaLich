@@ -42,6 +42,22 @@ public class WarframeTaczBridge {
      */
     private static final ThreadLocal<Integer> originalBulletAmount = ThreadLocal.withInitial(() -> 0);
 
+    /**
+     * ThreadLocal 存储：满弹夹第一发射击时的额外伤害倍率。
+     * ThreadLocal storage: bonus damage multiplier for first bullet from full magazine.
+     * <p>
+     * 生命周期：由 MixinFirstBulletDetect（shootOnce HEAD）写入，
+     * 由 MixinFirstBulletDamage（EntityKineticBullet 构造器）读取，
+     * 由 MixinFirstBulletDetect（shootOnce RETURN）清除。
+     * Lifecycle: written by MixinFirstBulletDetect (shootOnce HEAD),
+     * read by MixinFirstBulletDamage (EntityKineticBullet constructor),
+     * cleared by MixinFirstBulletDetect (shootOnce RETURN).
+     * <p>
+     * 值为 0 表示非第一发或无模组。
+     * Value of 0 means not first bullet or no module.
+     */
+    private static final ThreadLocal<Float> firstBulletDamageBonus = ThreadLocal.withInitial(() -> 0f);
+
     // ========== 抑制标志 API / Suppress Flag API ==========
 
     /**
@@ -97,6 +113,33 @@ public class WarframeTaczBridge {
      */
     public static void clearOriginalBulletAmount() {
         originalBulletAmount.set(0);
+    }
+
+    // ========== 第一发子弹伤害 API / First Bullet Damage API ==========
+
+    /**
+     * 获取当前线程的第一发子弹伤害加成。
+     *
+     * @return 伤害加成倍率，0 表示无加成
+     */
+    public static float getFirstBulletDamageBonus() {
+        return firstBulletDamageBonus.get();
+    }
+
+    /**
+     * 设置第一发子弹伤害加成。
+     *
+     * @param bonus 伤害加成倍率
+     */
+    public static void setFirstBulletDamageBonus(float bonus) {
+        firstBulletDamageBonus.set(bonus);
+    }
+
+    /**
+     * 清除第一发子弹伤害加成。
+     */
+    public static void clearFirstBulletDamageBonus() {
+        firstBulletDamageBonus.set(0f);
     }
 
     // ========== 模组属性读取 / Module Attribute Getters ==========
@@ -168,5 +211,115 @@ public class WarframeTaczBridge {
         }
         HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
         return attributes.getOrDefault("bursting_radius", 0.0).floatValue();
+    }
+
+    // ========== TACZ 枪械新属性读取 / New TACZ Gun Attribute Getters ==========
+
+    /**
+     * 获取枪械上装载的 reload_speed 模组合计修正值。
+     * Get total reload_speed modifier from KuvaLich weapon modules on the gun.
+     * <p>
+     * 用于膨胀装填已耗时间，使脚本判定更早完成装填。
+     * Used to inflate elapsed reload time so script logic completes reload earlier.
+     * <p>
+     * 公式：膨胀后耗时 = 实际耗时 × (1 + reload_speed)
+     *
+     * @param gunItem 枪械 ItemStack
+     * @param shooter 持枪实体
+     * @return reload_speed 增量值，无模组时返回 0
+     */
+    public static float getReloadSpeedMod(ItemStack gunItem, LivingEntity shooter) {
+        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("reload_speed", 0.0).floatValue();
+    }
+
+    /**
+     * 获取枪械上装载的 magazine_size 模组合计修正值。
+     * Get total magazine_size modifier from KuvaLich weapon modules on the gun.
+     * <p>
+     * 用于修改 AttachmentDataUtils.getAmmoCountWithAttachment 返回值。
+     * Used to modify the return value of AttachmentDataUtils.getAmmoCountWithAttachment.
+     * <p>
+     * 注意：此方法不接受 shooter 参数，因为 AttachmentDataUtils.getAmmoCountWithAttachment
+     * 是静态方法，调用上下文中无法获取射击者实体。
+     * Note: No shooter param because AttachmentDataUtils.getAmmoCountWithAttachment is static.
+     *
+     * @param gunItem 枪械 ItemStack
+     * @return magazine_size 增量值，无模组时返回 0
+     */
+    public static float getMagazineSizeMod(ItemStack gunItem) {
+        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("magazine_size", 0.0).floatValue();
+    }
+
+    /**
+     * 获取枪械上装载的 projectile_speed 模组合计修正值。
+     * Get total projectile_speed modifier from KuvaLich weapon modules on the gun.
+     * <p>
+     * 用于修改 shootOnce 内部 processedSpeed（子弹飞行速度）。
+     * 速度提升 → 同一 lifetime 内子弹飞行更远 → 有效射程自然增加。
+     * Used to modify processedSpeed in shootOnce (bullet flight speed).
+     * Higher speed → bullet travels farther in same lifetime → effective range increases.
+     *
+     * @param gunItem 枪械 ItemStack
+     * @param shooter 持枪实体
+     * @return projectile_speed 增量值，无模组时返回 0
+     */
+    public static float getProjectileSpeedMod(ItemStack gunItem, LivingEntity shooter) {
+        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("projectile_speed", 0.0).floatValue();
+    }
+
+    /**
+     * 获取枪械上装载的 recoil_reduction 模组合计修正值。
+     * Get total recoil_reduction modifier from KuvaLich weapon modules on the gun.
+     * <p>
+     * 用于缩放 CameraSetupEvent 中 genPitch/YawSplineFunction 的 modifier 参数。
+     * 在客户端侧生效，直接降低摄像机后坐力偏移量。
+     * Used to scale the modifier parameter of genPitch/YawSplineFunction in CameraSetupEvent.
+     * Takes effect client-side, directly reducing camera recoil displacement.
+     *
+     * @param gunItem 枪械 ItemStack
+     * @param shooter 持枪实体
+     * @return recoil_reduction 增量值，无模组时返回 0
+     */
+    public static float getRecoilReductionMod(ItemStack gunItem, LivingEntity shooter) {
+        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("recoil_reduction", 0.0).floatValue();
+    }
+
+    /**
+     * 获取枪械上装载的 first_bullet_damage 模组合计修正值。
+     * Get total first_bullet_damage modifier from KuvaLich weapon modules on the gun.
+     * <p>
+     * 语义：满弹夹射出第一发时，子弹基伤直接乘以 (1 + first_bullet_damage)。
+     * Semantics: when firing the first bullet from a full magazine,
+     * bullet base damage is multiplied by (1 + first_bullet_damage).
+     * <p>
+     * 例：first_bullet_damage = 10.0（+1000%），原始 10 伤害 → 10 × 11 = 110 伤害
+     * Example: first_bullet_damage = 10.0 (+1000%), original 10 dmg → 10 × 11 = 110 dmg
+     *
+     * @param gunItem 枪械 ItemStack
+     * @param shooter 持枪实体
+     * @return first_bullet_damage 增量值，无模组时返回 0
+     */
+    public static float getFirstBulletDamageMod(ItemStack gunItem, LivingEntity shooter) {
+        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("first_bullet_damage", 0.0).floatValue();
     }
 }

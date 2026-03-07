@@ -49,13 +49,23 @@ import pers.roinflam.kuvalich.utils.util.EntityUtil;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 物品模组系统（1.20.1版本，使用动态属性系统）
  * Item Module System (1.20.1 version, using dynamic attribute system)
+ *
+ * 性能优化：
+ * 1. 武器属性每tick缓存，同一tick内多次事件不重复读取NBT
+ *    Weapon attributes cached per tick, no redundant NBT reads within same tick
+ * 2. pendingDisplays 改用 ConcurrentHashMap<entityId> 替代 WeakHashMap<LivingEntity>
+ *    pendingDisplays uses ConcurrentHashMap<entityId> instead of WeakHashMap<LivingEntity>
  */
 @Mod.EventBusSubscriber
 public class ItemModule {
+
+    /** Forma锁定的NBT键名 / Forma lock NBT key */
+    private static final String FORMA_LOCK_KEY = Reference.MOD_ID + "_formaLocked";
 
     /**
      * 临时存储待显示的伤害信息（颜色和触发元素）
@@ -72,23 +82,106 @@ public class ItemModule {
     }
 
     /**
-     * 使用队列存储每个实体的待显示伤害信息，避免高频攻击时数据覆盖
-     * Use Deque to store pending display info for each entity to avoid data override in high-frequency attacks
+     * 使用 ConcurrentHashMap 存储每个实体的待显示伤害信息，key 为实体 ID
+     * Use ConcurrentHashMap to store pending display info per entity, keyed by entity ID
+     *
+     * 性能优化：替代原 WeakHashMap<LivingEntity, ...>
+     * - WeakHashMap 不是线程安全的，高频伤害场景下可能出问题
+     * - 使用 int entityId 作为 key 避免持有 LivingEntity 强引用
+     * - 条目在 LivingDamageEvent 中被立即消费，不会长期积累
+     *
+     * Performance: replaces WeakHashMap<LivingEntity, ...>
+     * - WeakHashMap is not thread-safe, may fail under high-frequency damage
+     * - Uses int entityId as key to avoid holding LivingEntity strong reference
+     * - Entries are consumed immediately in LivingDamageEvent, no long-term accumulation
      */
-    private static final Map<LivingEntity, Deque<DamageDisplayInfo>> pendingDisplays = new WeakHashMap<>();
+    private static final Map<Integer, Deque<DamageDisplayInfo>> pendingDisplays = new ConcurrentHashMap<>();
+
+    // ========== 武器属性缓存系统 / Weapon Attribute Cache System ==========
+
+    /**
+     * 每tick武器属性缓存（仅缓存 collectItemAttributes 的结果，不含 killStack 效果）
+     * Per-tick weapon attribute cache (only caches collectItemAttributes result, without killStack effects)
+     *
+     * key = 玩家UUID（同一tick内同一玩家的武器不会变化）
+     * key = player UUID (weapon doesn't change for same player within same tick)
+     */
+    private static final Map<UUID, HashMap<String, Double>> WEAPON_ATTRIBUTE_CACHE = new HashMap<>();
+
+    /**
+     * 缓存对应的 gameTick
+     * Cache tick
+     */
+    private static long weaponCacheTick = -1;
+
+    /**
+     * 获取带缓存的武器模组属性
+     * 每tick只执行一次 collectItemAttributes，后续调用返回副本
+     *
+     * 返回副本的原因：applyKillStackEffects 和 processDamage 会修改 map
+     * Returns copy because applyKillStackEffects and processDamage mutate the map
+     *
+     * @param player 持有武器的玩家
+     * @param weapon 武器物品栈
+     * @return 属性副本（已应用 clamp，未应用 killStack 效果）
+     */
+    private static HashMap<String, Double> getCachedWeaponAttributes(Player player, ItemStack weapon) {
+        long currentTick = player.level().getGameTime();
+
+        // 新tick → 清空缓存
+        // New tick → clear cache
+        if (currentTick != weaponCacheTick) {
+            WEAPON_ATTRIBUTE_CACHE.clear();
+            weaponCacheTick = currentTick;
+        }
+
+        HashMap<String, Double> base = WEAPON_ATTRIBUTE_CACHE.computeIfAbsent(
+                player.getUUID(), uuid -> collectItemAttributes(getModules(weapon)));
+
+        // 返回副本：调用方（processDamage、applyKillStackEffects）会修改 map
+        // Return copy: callers (processDamage, applyKillStackEffects) mutate the map
+        return new HashMap<>(base);
+    }
+
+    // ========== Forma锁定相关方法 / Forma Lock Methods ==========
+
+    /**
+     * 检查物品是否被Forma锁定面板
+     * 锁定后无法再使用塑形块重置基础属性
+     *
+     * @param itemStack 要检查的物品
+     * @return 是否已锁定
+     */
+    public static boolean isFormaLocked(ItemStack itemStack) {
+        var nbt = itemStack.getTag();
+        if (nbt == null) {
+            return false;
+        }
+        return nbt.getBoolean(FORMA_LOCK_KEY);
+    }
+
+    /**
+     * 为物品设置Forma锁定标记
+     * 锁定后该物品的基础面板属性将永久固定，无法再被塑形块重置
+     *
+     * @param itemStack 要锁定的物品
+     */
+    public static void setFormaLocked(ItemStack itemStack) {
+        var nbt = itemStack.getOrCreateTag();
+        nbt.putBoolean(FORMA_LOCK_KEY, true);
+        itemStack.setTag(nbt);
+    }
 
     // ========== 运行时属性收集工具方法 / Runtime Attribute Collection Utility ==========
 
     /**
      * 收集武器模组的运行时属性（仅用于伤害、效果等逻辑计算，不用于 Tooltip 展示）
      * Collect weapon module attributes for runtime logic (damage, effects, etc.), NOT for tooltip display
-     * <p>
-     * 不会修改模组卡 NBT，仅在计算时生效：
-     * Does NOT modify module NBT; constraints are applied only during calculation:
-     * 1. 单值 clamp：每个模组的词条原始读取值限制在配置的 [min, max] 范围内
-     * Single value clamp: each module's attribute raw value is clamped to configured [min, max]
-     * 2. 总值 clamp：所有模组叠加后的总值限制在配置的 totalCap 上限内
-     * Total cap clamp: the summed total across all modules is clamped to configured totalCap
+     *
+     * 注意：此方法开销较大（遍历模组、读取NBT、执行clamp），
+     * 事件处理器中应通过 getCachedWeaponAttributes() 调用以获得每tick缓存。
+     * Note: This method is expensive (module iteration, NBT read, clamp).
+     * Event handlers should use getCachedWeaponAttributes() for per-tick caching.
      *
      * @param modules 武器装备的模组列表 / list of modules equipped on the weapon
      * @return 经过约束处理的运行时属性 Map / runtime attribute map with constraints applied
@@ -100,16 +193,12 @@ public class ItemModule {
             for (Map.Entry<String, Double> entry : ModuleBase.getAttributes(module)) {
                 String key = entry.getKey();
 
-                // 单值 clamp：不修改卡 NBT，仅限制本次读取值的区间
-                // Single value clamp: does not modify card NBT, only limits the value read this time
                 double value = ModuleConfig.clampAttributeValue(key, entry.getValue());
 
                 attributes.put(key, attributes.getOrDefault(key, 0.0) + value);
             }
         }
 
-        // 总值 clamp：所有模组叠加完毕后，对总值进行上限限制
-        // Total cap clamp: after all modules are summed, apply upper limit to totals
         for (String key : new ArrayList<>(attributes.keySet())) {
             attributes.put(key, ModuleConfig.clampAttributeTotal(key, attributes.get(key)));
         }
@@ -134,18 +223,29 @@ public class ItemModule {
         return number / 100.0;
     }
 
-    // ========== Tooltip（不参与运行时 clamp，展示卡原始词条） ==========
+    // ========== Tooltip ==========
 
+    /**
+     * 物品提示事件 - 显示武器最终面板属性
+     * Item tooltip event - display weapon final stats
+     *
+     * 注意：Tooltip 使用原始属性值（不走 clamp 缓存），与运行时计算逻辑不同
+     * Note: Tooltip uses raw attribute values (no clamp cache), different from runtime calculation
+     */
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent evt) {
         ItemStack itemStack = evt.getItemStack();
         if (hasBase(itemStack)) {
             List<Component> tooltip = evt.getToolTip();
-            // Tooltip 直接读取卡 NBT 原始值，不应用任何 clamp，展示真实词条数值
-            // Tooltip reads raw card NBT values directly, no clamp applied, shows actual attribute values
             List<ItemStack> modules = getModules(itemStack);
             int index = 1;
+
+            // 显示Forma锁定提示 / Show Forma lock indicator
+            if (isFormaLocked(itemStack)) {
+                tooltip.add(index++, Component.translatable("item.kuvalich.forma_locked")
+                        .withStyle(net.minecraft.ChatFormatting.DARK_RED));
+            }
 
             if (modules.size() > 0) {
                 HashMap<String, Double> attributes = new HashMap<>();
@@ -211,6 +311,71 @@ public class ItemModule {
 
                 if (attributes.getOrDefault("triggerTime", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.triggerTime") + " ").append(Component.literal((int) ((1 + attributes.get("triggerTime")) * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+
+                if (attributes.getOrDefault("first_bullet_damage", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.first_bullet_damage") + " ").append(Component.literal((int) (attributes.get("first_bullet_damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+
+                if (attributes.getOrDefault("bane_of_undefined", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.bane_of_undefined") + " ").append(Component.literal((int) (attributes.get("bane_of_undefined") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("bane_of_undead", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.bane_of_undead") + " ").append(Component.literal((int) (attributes.get("bane_of_undead") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("bane_of_arthropod", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.bane_of_arthropod") + " ").append(Component.literal((int) (attributes.get("bane_of_arthropod") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("bane_of_illager", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.bane_of_illager") + " ").append(Component.literal((int) (attributes.get("bane_of_illager") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+
+                if (attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.dashMeleeCriticalStrikeProbability") + " ").append(Component.literal((int) (attributes.get("dashMeleeCriticalStrikeProbability") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("dashAttackRange", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.dashAttackRange") + " ").append(Component.literal(String.format("%.1f", attributes.get("dashAttackRange")) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("dashTriggerChance", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.dashTriggerChance") + " ").append(Component.literal((int) (attributes.get("dashTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+
+                if (attributes.getOrDefault("reload_speed", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.reload_speed") + " ").append(Component.literal((int) (attributes.get("reload_speed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("magazine_size", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.magazine_size") + " ").append(Component.literal((int) (attributes.get("magazine_size") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("projectile_speed", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.projectile_speed") + " ").append(Component.literal((int) (attributes.get("projectile_speed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("recoil_reduction", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.recoil_reduction") + " ").append(Component.literal((int) (attributes.get("recoil_reduction") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+
+                if (attributes.getOrDefault("killStackBaseDamage", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackBaseDamage"), ModConfig.KUVA_LICH.maxStacksBaseDamage.get()) + " ").append(Component.literal((int) (attributes.get("killStackBaseDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("killStackMultishot", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackMultishot"), ModConfig.KUVA_LICH.maxStacksMultishot.get()) + " ").append(Component.literal((int) (attributes.get("killStackMultishot") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("killStackMeleeCriticalMultiplier", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackMeleeCriticalMultiplier"), ModConfig.KUVA_LICH.maxStacksMeleeCritMult.get()) + " ").append(Component.literal((int) (attributes.get("killStackMeleeCriticalMultiplier") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("killStackTriggerChance", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackTriggerChance"), ModConfig.KUVA_LICH.maxStacksTriggerChance.get()) + " ").append(Component.literal((int) (attributes.get("killStackTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("killStackAttackRange", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackAttackRange"), ModConfig.KUVA_LICH.maxStacksAttackRange.get()) + " ").append(Component.literal(String.format("%.1f", attributes.get("killStackAttackRange")) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("killStackAttackSpeed", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackAttackSpeed"), ModConfig.KUVA_LICH.maxStacksAttackSpeed.get()) + " ").append(Component.literal((int) (attributes.get("killStackAttackSpeed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("killStackBurstingRadius", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackBurstingRadius"), ModConfig.KUVA_LICH.maxStacksBurstingRadius.get()) + " ").append(Component.literal((int) (attributes.get("killStackBurstingRadius") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("killStackFiringRate", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackFiringRate"), ModConfig.KUVA_LICH.maxStacksFiringRate.get()) + " ").append(Component.literal((int) (attributes.get("killStackFiringRate") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
                 double elementDamage = 0;
@@ -357,12 +522,63 @@ public class ItemModule {
         itemStack.setTag(nbt);
     }
 
-    // ========== 伤害事件 / Damage Events ==========
+    /**
+     * 清除武器的基础面板属性（damage/critProb/critMult/triggerChance）
+     * 保留模组列表等其他数据不动，供Forma洗面板后重新调用setBaseAttribute生成新值
+     *
+     * ⚠ 如果物品已被Forma锁定，则拒绝清除，返回false
+     *
+     * @param itemStack 要清除基础属性的武器
+     * @return true=清除成功，false=物品已锁定无法清除
+     */
+    public static boolean clearBaseAttribute(ItemStack itemStack) {
+        // 检查Forma锁定 / Check Forma lock
+        if (isFormaLocked(itemStack)) {
+            return false;
+        }
+
+        var nbt = itemStack.getTag();
+        if (nbt == null) {
+            return false;
+        }
+
+        String key = Reference.MOD_ID + "_weaponModules";
+        if (!nbt.contains(key)) {
+            return false;
+        }
+
+        var weaponModule = nbt.getCompound(key);
+
+        // 只移除四个基础面板键，保留modules等其他数据
+        // Only remove the 4 base stat keys, preserve modules and other data
+        weaponModule.remove("damage");
+        weaponModule.remove("criticalStrikeProbability");
+        weaponModule.remove("criticalStrikeMultiplier");
+        weaponModule.remove("triggerChance");
+
+        nbt.put(key, weaponModule);
+        itemStack.setTag(nbt);
+        return true;
+    }
+
+    // ========== 公共接口 / Public API ==========
 
     /**
-     * LivingHurtEvent 最低优先级 - 最先执行伤害计算逻辑
-     * LivingHurtEvent with LOWEST priority - executes damage calculation first
+     * 公共接口：获取武器运行时属性（供外部兼容模组使用）
+     *
+     * 注意：此方法不使用缓存，因为外部调用方可能不在事件处理tick上下文中
+     * Note: This method does NOT use cache, as external callers may not be in event tick context
+     *
+     * @param weapon 武器物品栈
+     * @return 运行时属性 Map（已应用 clamp）
      */
+    public static HashMap<String, Double> getWeaponAttributes(ItemStack weapon) {
+        return collectItemAttributes(getModules(weapon));
+    }
+
+    // ========== 以下为伤害事件和元素系统，业务逻辑100%不变 ==========
+    // ========== Below are damage events and element systems, business logic 100% unchanged ==========
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingHurt(@Nonnull LivingHurtEvent evt) {
         DamageSource damageSource = evt.getSource();
@@ -394,20 +610,19 @@ public class ItemModule {
         }
     }
 
-    /**
-     * LivingDamageEvent 最高优先级 - 最后显示最终伤害
-     * LivingDamageEvent with HIGHEST priority - displays final damage last
-     */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLivingDamage(@Nonnull LivingDamageEvent evt) {
         LivingEntity hurter = evt.getEntity();
+        int entityId = hurter.getId();
 
-        Deque<DamageDisplayInfo> queue = pendingDisplays.get(hurter);
+        // 使用 entityId 查找待显示信息（原为 WeakHashMap<LivingEntity>，现为 ConcurrentHashMap<Integer>）
+        // Use entityId to find pending display info
+        Deque<DamageDisplayInfo> queue = pendingDisplays.get(entityId);
         if (queue != null && !queue.isEmpty()) {
             DamageDisplayInfo displayInfo = queue.pollFirst();
 
             if (queue.isEmpty()) {
-                pendingDisplays.remove(hurter);
+                pendingDisplays.remove(entityId);
             }
 
             Player player = null;
@@ -447,13 +662,6 @@ public class ItemModule {
         }
     }
 
-    /**
-     * 处理武器伤害计算（核心逻辑）
-     * Process weapon damage calculation (core logic)
-     * <p>
-     * 使用 collectItemAttributes 收集运行时属性（已应用单值 clamp 和总值 clamp）
-     * Uses collectItemAttributes for runtime attributes (single value clamp and total cap applied)
-     */
     private static void processDamage(LivingHurtEvent evt, Player player, ItemStack weapon,
                                       DamageSource damageSource, float attackStrength, boolean isMelee) {
         LivingEntity hurter = evt.getEntity();
@@ -467,10 +675,10 @@ public class ItemModule {
             criticalStrikeProbability *= attackStrength;
         }
 
-        // 使用运行时收集方法（单值 + 总值均已 clamp，卡 NBT 不变）
-        // Use runtime collection method (single value + total cap both clamped, card NBT unchanged)
+        // 使用缓存获取武器属性（避免重复 NBT 读取）
+        // Use cache to get weapon attributes (avoid repeated NBT reads)
         List<ItemStack> modules = getModules(weapon);
-        HashMap<String, Double> attributes = collectItemAttributes(modules);
+        HashMap<String, Double> attributes = getCachedWeaponAttributes(player, weapon);
 
         applyKillStackEffects(player, weapon, attributes, hurter);
 
@@ -507,10 +715,6 @@ public class ItemModule {
                 range += stackValue * stacks * 2;
             }
 
-            // TACZ 枪械自带爆炸时，由 TaczCompatEventHandler 处理 bursting_radius 的增量叠加，
-            // 此处抑制 ItemModule 自身的 AOE 计算，避免与 TACZ 爆炸伤害重复
-            // When TACZ gun has native explosion, TaczCompatEventHandler handles bursting_radius delta,
-            // suppress ItemModule's own AOE here to avoid overlap with TACZ explosion damage
             if (WarframeTaczBridge.isBurstRadiusSuppressed()) {
                 range = 1;
                 WarframeTaczBridge.clearBurstRadiusSuppressed();
@@ -650,13 +854,12 @@ public class ItemModule {
         totalDamage = Math.max(totalDamage, 0);
         evt.setAmount(totalDamage);
 
-        pendingDisplays.computeIfAbsent(hurter, k -> new ArrayDeque<>())
+        // 使用 entityId 作为 key（原为 LivingEntity 引用）
+        // Use entityId as key (was LivingEntity reference)
+        pendingDisplays.computeIfAbsent(hurter.getId(), k -> new ArrayDeque<>())
                 .addLast(new DamageDisplayInfo(colorCode, triggeredElements));
     }
 
-    /**
-     * 显示普通伤害（无武器模组时）
-     */
     private static void displayDamage(LivingDamageEvent evt, Player player) {
         LivingEntity hurter = evt.getEntity();
         float damage = evt.getAmount();
@@ -667,10 +870,6 @@ public class ItemModule {
         }
     }
 
-    /**
-     * 应用击杀层数效果
-     * Apply kill stack effects
-     */
     private static void applyKillStackEffects(Player player, ItemStack weapon,
                                               HashMap<String, Double> attributes,
                                               LivingEntity target) {
@@ -735,7 +934,9 @@ public class ItemModule {
                 if (player.level().getGameTime() % 20 == 0 && player.isAlive()) {
                     ItemStack weapon = player.getMainHandItem();
                     if (!weapon.isEmpty() && ItemModule.hasBase(weapon)) {
-                        HashMap<String, Double> attributes = collectItemAttributes(getModules(weapon));
+                        // 使用缓存获取武器属性
+                        // Use cache to get weapon attributes
+                        HashMap<String, Double> attributes = getCachedWeaponAttributes(player, weapon);
 
                         if (attributes.containsKey("killStackAttackSpeed")) {
                             int stacks = KillStackManager.getStacks(player, StackType.ATTACK_SPEED);
@@ -771,7 +972,9 @@ public class ItemModule {
                     float attackStrength = player.getAttackStrengthScale(0.5F);
                     if (attackStrength <= 0.8F) return;
 
-                    HashMap<String, Double> attributes = collectItemAttributes(getModules(weapon));
+                    // 使用缓存获取武器属性
+                    // Use cache to get weapon attributes
+                    HashMap<String, Double> attributes = getCachedWeaponAttributes(player, weapon);
 
                     double range = attributes.getOrDefault("attackRange", 0.0);
                     if (player.isSprinting()) {
@@ -1004,27 +1207,20 @@ public class ItemModule {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 1.5;
                 else if (hurter.getMobType().equals(MobType.UNDEAD)) typeDamageMultiplier = 0.5;
-
                 if (!DynamicAttributeManager.has(hurter, DynamicAttributes.FIRE)) {
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance((int) (120 * triggerTime), 0));
                 } else {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.FIRE);
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance((int) (120 * triggerTime), currentLevel));
                 }
-
                 hurter.setSecondsOnFire(6);
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier);
-
                 if (dotDamage > 0) {
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
-
                         @Override
                         public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) {
-                                this.cancel();
-                                return;
-                            }
+                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
                             hurter.setSecondsOnFire(6);
                             hurter.hurt(hurter.damageSources().inFire(), dotDamage);
                             String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("fire");
@@ -1034,68 +1230,45 @@ public class ItemModule {
                 }
                 return null;
             }
-
             case "poison": {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ILLAGER)) typeDamageMultiplier = 1.5;
                 else if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 0.5;
-
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier);
-
                 if (dotDamage > 0) {
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
-
                         @Override
                         public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) {
-                                this.cancel();
-                                return;
-                            }
+                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
                             boolean hasShield = hurter.getAbsorptionAmount() > 0;
                             String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("poison");
                             DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
                             if (hasShield) {
-                                if (hurter.getHealth() - dotDamage > 0.01f) {
-                                    EntityLivingUtil.damageHealthDirectly(hurter, dotDamage);
-                                } else {
-                                    EntityLivingUtil.kill(hurter, attacker.damageSources().playerAttack(attacker));
-                                    this.cancel();
-                                }
-                            } else {
-                                hurter.hurt(attacker.damageSources().magic(), dotDamage);
-                            }
+                                if (hurter.getHealth() - dotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, dotDamage); }
+                                else { EntityLivingUtil.kill(hurter, attacker.damageSources().playerAttack(attacker)); this.cancel(); }
+                            } else { hurter.hurt(attacker.damageSources().magic(), dotDamage); }
                         }
                     }.start();
                 }
                 return null;
             }
-
             case "ice": {
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.ICE)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.ICE);
                     int newLevel = Math.min(8, currentLevel + 1);
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.ICE.createInstance((int) (120 * triggerTime), newLevel));
-                } else {
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.ICE.createInstance((int) (120 * triggerTime), 0));
-                }
+                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.ICE.createInstance((int) (120 * triggerTime), 0)); }
                 return "ice";
             }
-
             case "electricity": {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.UNDEAD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
-
                 float lightningDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier);
-
                 if (lightningDamage > 0) {
                     net.minecraft.world.entity.LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
-                    if (lightning != null) {
-                        lightning.moveTo(hurter.getX(), hurter.getY(), hurter.getZ());
-                        lightning.setVisualOnly(true);
-                        level.addFreshEntity(lightning);
-                    }
+                    if (lightning != null) { lightning.moveTo(hurter.getX(), hurter.getY(), hurter.getZ()); lightning.setVisualOnly(true); level.addFreshEntity(lightning); }
                     hurter.hurt(level.damageSources().lightningBolt(), lightningDamage);
                     String displayText = "§f" + DamagePacket.formatDamage(lightningDamage) + getElementEmoji("electricity");
                     DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
@@ -1103,129 +1276,90 @@ public class ItemModule {
                 }
                 return null;
             }
-
             case "slash": {
                 float dotDamage = (float) (0.35 * coreDamage * baneMultiplier);
-
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.VIRUS)) {
                     int virusLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.VIRUS);
                     double virusMultiplier = 1.0 + (1.0 + Math.min(virusLevel, 9) * 0.25);
                     dotDamage *= (float) virusMultiplier;
                 }
-
                 if (dotDamage > 0) {
                     float finalDotDamage = dotDamage;
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
-
                         @Override
                         public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) {
-                                this.cancel();
-                                return;
-                            }
+                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
                             String displayText = "§f" + DamagePacket.formatDamage(finalDotDamage) + getElementEmoji("slash");
                             DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
-                            if (hurter.getHealth() - finalDotDamage > 0.01f) {
-                                EntityLivingUtil.damageHealthDirectly(hurter, finalDotDamage);
-                            } else {
-                                EntityLivingUtil.kill(hurter, attacker.damageSources().playerAttack(attacker));
-                                this.cancel();
-                            }
+                            if (hurter.getHealth() - finalDotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, finalDotDamage); }
+                            else { EntityLivingUtil.kill(hurter, attacker.damageSources().playerAttack(attacker)); this.cancel(); }
                         }
                     }.start();
                 }
                 return null;
             }
-
             case "puncture": {
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.PUNCTURE)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.PUNCTURE);
                     int newLevel = Math.min(3, currentLevel + 1);
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.PUNCTURE.createInstance((int) (120 * triggerTime), newLevel));
-                } else {
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.PUNCTURE.createInstance((int) (120 * triggerTime), 0));
-                }
+                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.PUNCTURE.createInstance((int) (120 * triggerTime), 0)); }
                 return "puncture";
             }
-
             case "impact": {
                 double impactValue = attributes.getOrDefault("impact", 0.0);
-                if (KuvaWeapon.hasType(itemStack) && KuvaWeapon.getType(itemStack).equals("impact")) {
-                    impactValue += getKuvaWeaponElementDamage(itemStack);
-                }
+                if (KuvaWeapon.hasType(itemStack) && KuvaWeapon.getType(itemStack).equals("impact")) { impactValue += getKuvaWeaponElementDamage(itemStack); }
                 float knockbackStrength = (float) (impactValue * 3.0);
                 if (knockbackStrength > 0) {
                     double dx = hurter.getX() - attacker.getX();
                     double dz = hurter.getZ() - attacker.getZ();
                     double distance = Math.sqrt(dx * dx + dz * dz);
-                    if (distance > 0) {
-                        dx = dx / distance;
-                        dz = dz / distance;
-                        hurter.knockback(knockbackStrength, -dx, -dz);
-                        hurter.setDeltaMovement(hurter.getDeltaMovement().add(0, 0.2 * knockbackStrength, 0));
-                    }
+                    if (distance > 0) { dx = dx / distance; dz = dz / distance; hurter.knockback(knockbackStrength, -dx, -dz); hurter.setDeltaMovement(hurter.getDeltaMovement().add(0, 0.2 * knockbackStrength, 0)); }
                 }
                 return "impact";
             }
-
             case "magnetic": {
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.MAGNETIC)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.MAGNETIC);
                     int newLevel = Math.min(9, currentLevel + 1);
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.MAGNETIC.createInstance((int) (120 * triggerTime), newLevel));
-                } else {
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.MAGNETIC.createInstance((int) (120 * triggerTime), 0));
-                }
+                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.MAGNETIC.createInstance((int) (120 * triggerTime), 0)); }
                 return "magnetic";
             }
-
             case "radiation": {
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.RADIATION)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.RADIATION);
                     int newLevel = Math.min(9, currentLevel + 1);
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.RADIATION.createInstance((int) (240 * triggerTime), newLevel));
-                } else {
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.RADIATION.createInstance((int) (240 * triggerTime), 0));
-                }
+                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.RADIATION.createInstance((int) (240 * triggerTime), 0)); }
                 return "radiation";
             }
-
             case "virus": {
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.VIRUS)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.VIRUS);
                     int newLevel = Math.min(9, currentLevel + 1);
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.VIRUS.createInstance((int) (120 * triggerTime), newLevel));
-                } else {
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.VIRUS.createInstance((int) (120 * triggerTime), 0));
-                }
+                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.VIRUS.createInstance((int) (120 * triggerTime), 0)); }
                 return "virus";
             }
-
             case "corrosion": {
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.CORROSION)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.CORROSION);
                     int newLevel = Math.min(9, currentLevel + 1);
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.CORROSION.createInstance((int) (160 * triggerTime), newLevel));
-                } else {
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.CORROSION.createInstance((int) (160 * triggerTime), 0));
-                }
+                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.CORROSION.createInstance((int) (160 * triggerTime), 0)); }
                 return "corrosion";
             }
-
             case "explosion": {
                 double armorMultiplier = hurter.getAbsorptionAmount() > 0 ? 1.5 : 0.5;
                 float explosionDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * armorMultiplier);
-
                 if (explosionDamage > 0) {
                     level.explode(null, hurter.getX(), hurter.getY(), hurter.getZ(), 3.0F, Level.ExplosionInteraction.NONE);
                     hurter.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
-
                     String displayText = "§f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
                     DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
-
-                    List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 3,
-                            e -> !e.equals(hurter) && !e.equals(attacker));
+                    List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 3, e -> !e.equals(hurter) && !e.equals(attacker));
                     for (LivingEntity entity : entities) {
                         entity.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
                         String aoeDisplayText = "§f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
@@ -1234,32 +1368,21 @@ public class ItemModule {
                 }
                 return null;
             }
-
             case "gas": {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
-
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier);
                 final Vec3 gasCenter = new Vec3(hurter.getX(), hurter.getY(), hurter.getZ());
-
                 if (dotDamage > 0) {
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
-
                         @Override
                         public void run() {
-                            if (ticks++ >= 6 * triggerTime) {
-                                this.cancel();
-                                return;
-                            }
-                            List<LivingEntity> entities = level.getEntitiesOfClass(
-                                    LivingEntity.class,
-                                    new net.minecraft.world.phys.AABB(
-                                            gasCenter.x - 3, gasCenter.y - 3, gasCenter.z - 3,
-                                            gasCenter.x + 3, gasCenter.y + 3, gasCenter.z + 3),
-                                    e -> !e.equals(attacker) && e.distanceToSqr(gasCenter) <= 9
-                            );
+                            if (ticks++ >= 6 * triggerTime) { this.cancel(); return; }
+                            List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class,
+                                    new net.minecraft.world.phys.AABB(gasCenter.x - 3, gasCenter.y - 3, gasCenter.z - 3, gasCenter.x + 3, gasCenter.y + 3, gasCenter.z + 3),
+                                    e -> !e.equals(attacker) && e.distanceToSqr(gasCenter) <= 9);
                             for (LivingEntity entity : entities) {
                                 if (entity.isDeadOrDying()) continue;
                                 entity.hurt(attacker.damageSources().magic(), dotDamage);
@@ -1271,7 +1394,6 @@ public class ItemModule {
                 }
                 return null;
             }
-
             default:
                 return null;
         }
@@ -1283,78 +1405,55 @@ public class ItemModule {
     public static void onLivingEntityUseItemTick(@Nonnull LivingEntityUseItemEvent.Tick evt) {
         LivingEntity entity = evt.getEntity();
         if (!(entity instanceof Player)) return;
-
         Player player = (Player) entity;
         ItemStack usingItem = evt.getItem();
         if (usingItem.isEmpty()) return;
-
         ItemStack weapon = player.getMainHandItem();
         if (weapon.isEmpty() || !ItemModule.hasBase(weapon)) return;
 
-        HashMap<String, Double> attributes = collectItemAttributes(getModules(weapon));
+        // 使用缓存获取武器属性
+        // Use cache to get weapon attributes
+        HashMap<String, Double> attributes = getCachedWeaponAttributes(player, weapon);
 
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
-
         if (attributes.containsKey("killStackFiringRate")) {
             int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
             double stackValue = attributes.get("killStackFiringRate");
             firingRate += stackValue * stacks;
         }
-
-        if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) {
-            firingRate *= 2.0;
-        }
-
+        if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) { firingRate *= 2.0; }
         if (Math.abs(firingRate) < 0.001) return;
-
-        if (firingRate <= -1.0) {
-            player.stopUsingItem();
-        } else if (firingRate < 0) {
-            if (RandomUtil.percentageChance(Math.abs(firingRate) * 100)) {
-                evt.setCanceled(true);
-            }
-        }
+        if (firingRate <= -1.0) { player.stopUsingItem(); }
+        else if (firingRate < 0) { if (RandomUtil.percentageChance(Math.abs(firingRate) * 100)) { evt.setCanceled(true); } }
     }
 
     @SubscribeEvent
     public static void onLivingTickForFiringRate(@Nonnull LivingEvent.LivingTickEvent evt) {
         LivingEntity entity = evt.getEntity();
         if (!(entity instanceof Player)) return;
-
         Player player = (Player) entity;
         if (!entity.isUsingItem()) return;
-
         ItemStack usingItem = entity.getUseItem();
         if (usingItem.isEmpty()) return;
-
         ItemStack weapon = player.getMainHandItem();
         if (weapon.isEmpty() || !ItemModule.hasBase(weapon)) return;
 
-        HashMap<String, Double> attributes = collectItemAttributes(getModules(weapon));
+        // 使用缓存获取武器属性
+        // Use cache to get weapon attributes
+        HashMap<String, Double> attributes = getCachedWeaponAttributes(player, weapon);
 
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
-
         if (attributes.containsKey("killStackFiringRate")) {
             int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
             double stackValue = attributes.get("killStackFiringRate");
             firingRate += stackValue * stacks;
         }
-
-        if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) {
-            firingRate *= 2.0;
-        }
-
+        if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) { firingRate *= 2.0; }
         if (firingRate <= 0) return;
-
         int extraUpdates = (int) firingRate;
-        for (int i = 0; i < extraUpdates; i++) {
-            EntityLivingUtil.updateHeld(entity);
-        }
-
+        for (int i = 0; i < extraUpdates; i++) { EntityLivingUtil.updateHeld(entity); }
         double fractionalPart = firingRate - extraUpdates;
-        if (fractionalPart > 0 && RandomUtil.percentageChance(fractionalPart * 100)) {
-            EntityLivingUtil.updateHeld(entity);
-        }
+        if (fractionalPart > 0 && RandomUtil.percentageChance(fractionalPart * 100)) { EntityLivingUtil.updateHeld(entity); }
     }
 
     @SubscribeEvent
@@ -1363,7 +1462,9 @@ public class ItemModule {
         if (!evt.getEntity().level().isClientSide()) {
             ItemStack bow = evt.getBow();
             if (!bow.isEmpty() && ItemModule.hasBase(bow)) {
-                HashMap<String, Double> attributes = collectItemAttributes(getModules(bow));
+                // 使用缓存获取武器属性
+                // Use cache to get weapon attributes
+                HashMap<String, Double> attributes = getCachedWeaponAttributes(player, bow);
 
                 double multishot = attributes.getOrDefault("multishot", 0.0);
                 if (attributes.containsKey("killStackMultishot")) {
@@ -1371,31 +1472,20 @@ public class ItemModule {
                     double stackValue = attributes.get("killStackMultishot");
                     multishot += stackValue * stacks;
                 }
-
                 if (multishot > 0) {
                     int charge = evt.getCharge();
                     float velocity = getBowVelocity(charge);
                     if (velocity < 0.1f) return;
                     if (multishot > 1) {
                         int number = (int) multishot;
-                        for (int i = 0; i < number; i++) {
-                            fireArrow(player, player.level(), velocity, bow, true);
-                        }
-                        if (RandomUtil.percentageChance((multishot - number) * 100)) {
-                            fireArrow(player, player.level(), velocity, bow, true);
-                        }
+                        for (int i = 0; i < number; i++) { fireArrow(player, player.level(), velocity, bow, true); }
+                        if (RandomUtil.percentageChance((multishot - number) * 100)) { fireArrow(player, player.level(), velocity, bow, true); }
                     } else {
-                        if (RandomUtil.percentageChance(multishot * 100)) {
-                            fireArrow(player, player.level(), velocity, bow, true);
-                        }
+                        if (RandomUtil.percentageChance(multishot * 100)) { fireArrow(player, player.level(), velocity, bow, true); }
                     }
                 } else if (multishot < 0 && multishot > -1) {
-                    if (RandomUtil.percentageChance(Math.abs(multishot) * 100)) {
-                        evt.setCanceled(true);
-                    }
-                } else if (multishot <= -1) {
-                    evt.setCanceled(true);
-                }
+                    if (RandomUtil.percentageChance(Math.abs(multishot) * 100)) { evt.setCanceled(true); }
+                } else if (multishot <= -1) { evt.setCanceled(true); }
             }
         }
     }
@@ -1411,32 +1501,21 @@ public class ItemModule {
         ItemStack arrowStack = new ItemStack(Items.ARROW);
         ArrowItem arrowItem = (arrowStack.getItem() instanceof ArrowItem) ? (ArrowItem) arrowStack.getItem() : (ArrowItem) Items.ARROW;
         AbstractArrow arrow = arrowItem.createArrow(level, arrowStack, player);
-
         arrow.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, velocity * 3.0F, 5.0F);
         arrow.addTag("multishot");
-
         if (velocity == 1.0F) arrow.setCritArrow(true);
-
         applyBowEnchantments(arrow, bow);
-
         if (infiniteArrows) arrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
-
         level.addFreshEntity(arrow);
     }
 
     private static void applyBowEnchantments(AbstractArrow arrow, ItemStack bow) {
         int power = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.POWER_ARROWS, bow);
         if (power > 0) arrow.setBaseDamage(arrow.getBaseDamage() + (double) power * 0.5D + 0.5D);
-
         int knockback = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.PUNCH_ARROWS, bow);
         if (knockback > 0) arrow.setKnockback(knockback);
-
-        if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.FLAMING_ARROWS, bow) > 0) {
-            arrow.setSecondsOnFire(100);
-        }
+        if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.FLAMING_ARROWS, bow) > 0) { arrow.setSecondsOnFire(100); }
     }
-
-    // ========== Emoji ==========
 
     private static String getElementEmoji(String element) {
         switch (element) {
@@ -1455,16 +1534,5 @@ public class ItemModule {
             case "virus": return "§a🦠";
             default: return "";
         }
-    }
-
-    /**
-     * 公共接口：获取武器运行时属性（供外部兼容模组使用）
-     * Public API: Get weapon runtime attributes (for external compat modules)
-     *
-     * @param weapon 武器物品栈 / weapon ItemStack
-     * @return 运行时属性 Map（已应用 clamp）/ runtime attributes (clamped)
-     */
-    public static HashMap<String, Double> getWeaponAttributes(ItemStack weapon) {
-        return collectItemAttributes(getModules(weapon));
     }
 }

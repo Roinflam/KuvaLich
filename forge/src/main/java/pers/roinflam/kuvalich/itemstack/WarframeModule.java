@@ -44,6 +44,10 @@ import java.util.*;
  * 2. 生命值/护甲系统：支持固定上限和动态属性两种模式
  * 3. 击杀叠层系统：战甲和武器的击杀增益效果
  * 4. 挖掘距离：通过Forge的BLOCK_REACH和ENTITY_REACH属性实现
+ *
+ * 性能优化：
+ * - collectAttributes 结果每tick缓存一次，同一tick内多次调用不重复计算
+ *   collectAttributes result cached per tick, no redundant computation within same tick
  */
 @Mod.EventBusSubscriber
 public class WarframeModule {
@@ -87,6 +91,56 @@ public class WarframeModule {
             "killStackShieldRecoveryDelay"
     ));
 
+    // ========== 属性缓存系统 / Attribute Cache System ==========
+
+    /**
+     * 每tick属性缓存（仅缓存 collectAttributes 的基础结果，不含 killStack 效果）
+     * Per-tick attribute cache (only caches base collectAttributes result, without killStack effects)
+     *
+     * 缓存的意义：collectAttributes 涉及大量 NBT 读取和遍历模组槽位，
+     * 而同一tick内可能从 onBreakSpeed、onPlayerTick、onLivingDamage 等多处调用。
+     * 缓存后同一tick内仅计算一次，后续调用直接返回副本。
+     *
+     * Significance: collectAttributes involves heavy NBT reads and module slot iteration,
+     * and may be called from onBreakSpeed, onPlayerTick, onLivingDamage, etc. in the same tick.
+     * With cache, computation happens only once per tick, subsequent calls return copies.
+     */
+    private static final Map<UUID, HashMap<String, Double>> ATTRIBUTE_CACHE = new HashMap<>();
+
+    /**
+     * 缓存对应的 gameTick（当 gameTick 变化时缓存自动失效）
+     * Cache tick (cache invalidates when gameTick changes)
+     */
+    private static long attributeCacheTick = -1;
+
+    /**
+     * 获取带缓存的玩家战甲属性
+     * 每tick只执行一次 collectAttributes，后续调用返回副本
+     *
+     * 返回副本的原因：applyWarframeKillStackEffects 会修改 map，不能污染缓存
+     * Returns copy because applyWarframeKillStackEffects mutates the map
+     *
+     * @param player 玩家
+     * @return 属性副本（未应用 killStack 效果，调用方需自行调用 applyWarframeKillStackEffects）
+     */
+    private static HashMap<String, Double> getCachedAttributes(Player player) {
+        long currentTick = player.level().getGameTime();
+
+        // 新tick → 清空缓存
+        // New tick → clear cache
+        if (currentTick != attributeCacheTick) {
+            ATTRIBUTE_CACHE.clear();
+            attributeCacheTick = currentTick;
+        }
+
+        HashMap<String, Double> base = ATTRIBUTE_CACHE.computeIfAbsent(
+                player.getUUID(), uuid -> collectAttributes(player));
+
+        // 返回副本：applyWarframeKillStackEffects 会修改 map，不能污染缓存原始数据
+        // Return copy: applyWarframeKillStackEffects mutates map, must not pollute cached data
+        return new HashMap<>(base);
+    }
+
     /**
      * 获取玩家装备的所有模组
      * Get all modules equipped by player
@@ -124,6 +178,11 @@ public class WarframeModule {
     /**
      * 收集玩家所有模组的运行时属性（区分加算、乘算、固定上限）
      * Collect all module runtime attributes from player (separate additive, multiplicative, fixed cap)
+     *
+     * 注意：此方法开销较大（遍历模组、读取NBT、执行clamp），
+     * 外部应通过 getCachedAttributes() 调用以获得每tick缓存。
+     * Note: This method is expensive (module iteration, NBT read, clamp).
+     * External callers should use getCachedAttributes() for per-tick caching.
      *
      * 约束规则（不修改模组卡 NBT，仅在运行时生效）：
      * Constraint rules (does NOT modify module NBT, only applied at runtime):
@@ -219,7 +278,9 @@ public class WarframeModule {
             if (evt.getEntity() instanceof Player) {
                 Player player = (Player) evt.getEntity();
 
-                HashMap<String, Double> attributes = collectAttributes(player);
+                // 使用缓存获取属性（避免重复 NBT 读取）
+                // Use cache to get attributes (avoid repeated NBT reads)
+                HashMap<String, Double> attributes = getCachedAttributes(player);
                 applyWarframeKillStackEffects(player, attributes);
 
                 // 设置护盾恢复冷却
@@ -259,7 +320,9 @@ public class WarframeModule {
             if (damageSource.getEntity() instanceof Player) {
                 Player player = (Player) damageSource.getEntity();
 
-                HashMap<String, Double> attributes = collectAttributes(player);
+                // 使用缓存获取属性（避免重复 NBT 读取）
+                // Use cache to get attributes (avoid repeated NBT reads)
+                HashMap<String, Double> attributes = getCachedAttributes(player);
                 applyWarframeKillStackEffects(player, attributes);
 
                 // 设置护盾恢复冷却
@@ -285,7 +348,9 @@ public class WarframeModule {
         if (!evt.getEntity().level().isClientSide() && evt.getEntity() instanceof Player) {
             Player player = (Player) evt.getEntity();
 
-            HashMap<String, Double> attributes = collectAttributes(player);
+            // 使用缓存获取属性
+            // Use cache to get attributes
+            HashMap<String, Double> attributes = getCachedAttributes(player);
             applyWarframeKillStackEffects(player, attributes);
 
             Double jumpBoostObj = attributes.get("jumpBoost");
@@ -514,7 +579,9 @@ public class WarframeModule {
             if (evt.getEntity() instanceof Animal || evt.getEntity() instanceof Monster) {
                 Player player = (Player) evt.getSource().getEntity();
 
-                HashMap<String, Double> attributes = collectAttributes(player);
+                // 使用缓存获取属性
+                // Use cache to get attributes
+                HashMap<String, Double> attributes = getCachedAttributes(player);
                 applyWarframeKillStackEffects(player, attributes);
 
                 // 应用掉落物倍率
@@ -540,7 +607,9 @@ public class WarframeModule {
         if (!evt.getEntity().level().isClientSide() && evt.getEntity() instanceof Player) {
             Player player = (Player) evt.getEntity();
 
-            HashMap<String, Double> attributes = collectAttributes(player);
+            // 使用缓存获取属性
+            // Use cache to get attributes
+            HashMap<String, Double> attributes = getCachedAttributes(player);
             applyWarframeKillStackEffects(player, attributes);
 
             // 应用恢复倍率
@@ -557,6 +626,9 @@ public class WarframeModule {
     /**
      * 挖掘速度事件处理（使用 LOWEST 优先级确保最后执行）
      * Break speed event handler (using LOWEST priority to ensure last execution)
+     *
+     * 性能优化：服务端使用 getCachedAttributes 缓存，避免每tick重复计算属性
+     * Performance: server uses getCachedAttributes cache, avoiding repeated computation per tick
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onBreakSpeed(PlayerEvent.BreakSpeed evt) {
@@ -576,9 +648,9 @@ public class WarframeModule {
             return;
         }
 
-        // 服务端：从属性计算（collectAttributes 已应用 clamp）
-        // Server: Calculate from attributes (collectAttributes already applied clamp)
-        HashMap<String, Double> attributes = collectAttributes(player);
+        // 服务端：使用缓存获取属性（避免每tick重复读取 NBT）
+        // Server: Use cache to get attributes (avoid repeated NBT reads per tick)
+        HashMap<String, Double> attributes = getCachedAttributes(player);
         applyWarframeKillStackEffects(player, attributes);
 
         double diggingSpeed = attributes.getOrDefault("diggingSpeed", 0.0);
@@ -709,9 +781,11 @@ public class WarframeModule {
                                 cooldingHashMap.remove(player.getUUID());
                             }
                         } else {
-                            // 冷却结束，开始恢复护盾（collectAttributes 内已应用 clamp）
-                            // Cooldown ended, start recovering shield (clamp applied inside collectAttributes)
-                            HashMap<String, Double> attributes = collectAttributes(player);
+                            // 冷却结束，开始恢复护盾
+                            // 使用缓存获取属性（getCachedAttributes 内已应用 clamp）
+                            // Cooldown ended, start recovering shield
+                            // Use cache to get attributes (clamp applied inside getCachedAttributes)
+                            HashMap<String, Double> attributes = getCachedAttributes(player);
                             applyWarframeKillStackEffects(player, attributes);
 
                             double shield = attributes.getOrDefault("shield", 0.0);
@@ -767,9 +841,9 @@ public class WarframeModule {
                     // Every 0.25s: Attribute effects + digging speed sync + fixed caps
                     // ═══════════════════════════════════════════════════════════════
                     if (player.level().getGameTime() % 5 == 0) {
-                        // collectAttributes 内已应用单值 clamp + 总值 clamp
-                        // collectAttributes already applies single value clamp + total cap clamp
-                        HashMap<String, Double> attributes = collectAttributes(player);
+                        // 使用缓存获取属性（getCachedAttributes 内已应用单值 clamp + 总值 clamp）
+                        // Use cache to get attributes (single value clamp + total cap clamp applied inside)
+                        HashMap<String, Double> attributes = getCachedAttributes(player);
                         applyWarframeKillStackEffects(player, attributes);
 
                         // ═══ 生命值系统 ═══
@@ -898,5 +972,8 @@ public class WarframeModule {
         // 清理挖掘速度发送记录
         // Clean digging speed send record
         DiggingSpeedPacket.cleanupPlayer(uuid);
+        // 清理属性缓存
+        // Clean attribute cache
+        ATTRIBUTE_CACHE.remove(uuid);
     }
 }

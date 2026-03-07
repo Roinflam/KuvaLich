@@ -1,3 +1,5 @@
+// EntityKuvaSlave.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/entity/EntityKuvaSlave.java
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.core.BlockPos;
@@ -26,22 +28,53 @@ import pers.roinflam.kuvalich.item.module.item.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
+/**
+ * 赤毒奴仆实体
+ * 普通小怪，拥有25%固定伤害减免
+ *
+ * Kuva Slave Entity
+ * Regular minion with flat 25% damage reduction
+ */
 public class EntityKuvaSlave extends KuvaBase {
 
-    private static final float BASE_HEAL_MULTIPLIER = 0.01f;
-    private static final float TARGET_HEAL_MULTIPLIER = 0.02f;
-    private static final float MIN_HEAL_NO_TARGET = 1.0f;
-    private static final float MIN_HEAL_HAS_TARGET = 2.0f;
+    // ==================== 回血参数（已砍半） ====================
+
+    /** 无目标时基础回血倍率（基于缺失血量） */
+    private static final float BASE_HEAL_MULTIPLIER = 0.005f;
+    /** 有目标时基础回血倍率（基于缺失血量） */
+    private static final float TARGET_HEAL_MULTIPLIER = 0.01f;
+    /** 无目标时最低回血量 */
+    private static final float MIN_HEAL_NO_TARGET = 0.5f;
+    /** 有目标时最低回血量 */
+    private static final float MIN_HEAL_HAS_TARGET = 1.0f;
+
+    // ==================== 攻击参数 ====================
+
+    /** 攻击伤害系数（受难度影响） */
     private static final float ATTACK_DAMAGE_MULTIPLIER = 0.85f;
+    /** 击退目标的水平倍率 */
     private static final float KNOCKBACK_MULTIPLIER = 3.0f;
+    /** 击退目标的垂直倍率 */
     private static final float VERTICAL_KNOCKBACK = 2.0f;
+    /** 自身受到的击退倍率 */
     private static final float SELF_KNOCKBACK_MULTIPLIER = 1.15f;
+    /** 每次攻击命中的自愈比例 */
     private static final float HEAL_PER_ATTACK = 0.1f;
+
+    // ==================== 抗性参数 ====================
+
+    /** 固定伤害减免倍率（25%减伤，即乘以0.75） */
+    private static final float FLAT_DAMAGE_REDUCTION = 0.75f;
 
     public EntityKuvaSlave(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
     }
 
+    /**
+     * 创建奴仆属性
+     *
+     * @return 属性构建器
+     */
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 100.0)
@@ -51,6 +84,23 @@ public class EntityKuvaSlave extends KuvaBase {
                 .add(Attributes.FOLLOW_RANGE, 32.0)
                 .add(Attributes.ARMOR, 4.0);
     }
+
+    // ==================== 抗性：固定25%减伤 ====================
+
+    /**
+     * 奴仆的高级抗性：简单的25%固定减伤
+     * 在基础伤害类型修正之后应用
+     *
+     * @param source 伤害来源
+     * @param damage 伤害值
+     * @return 减伤后的伤害值
+     */
+    @Override
+    protected float applyAdvancedResistance(DamageSource source, float damage) {
+        return damage * FLAT_DAMAGE_REDUCTION;
+    }
+
+    // ==================== 回血 ====================
 
     @Override
     protected float getTickHeal() {
@@ -62,6 +112,14 @@ public class EntityKuvaSlave extends KuvaBase {
         return Math.max(MIN_HEAL_HAS_TARGET, (this.getMaxHealth() - this.getHealth()) * TARGET_HEAL_MULTIPLIER);
     }
 
+    // ==================== 攻击 ====================
+
+    /**
+     * 对目标造成伤害，附带击退和自愈
+     *
+     * @param target 攻击目标
+     * @return 是否命中成功
+     */
     @Override
     public boolean doHurtTarget(@NotNull Entity target) {
         this.playSound(SoundEvents.IRON_GOLEM_ATTACK, 1.0F, 1.0F);
@@ -79,12 +137,12 @@ public class EntityKuvaSlave extends KuvaBase {
     }
 
     /**
-     * 修复：先保存目标的原始速度，再分别计算 target 和 self 的新速度
-     * Fix: save target's original velocity before modification, then calculate both independently
+     * 对目标和自身施加击退效果
+     * 先保存目标原始速度，避免计算互相干扰
+     *
+     * @param target 被击退的目标
      */
     private void applyKnockback(Entity target) {
-        // 保存原始速度，避免 self 的计算依赖被修改后的 target 速度
-        // Save original velocity to avoid self calculation depending on already-modified target velocity
         Vec3 originalTargetVelocity = target.getDeltaMovement();
 
         target.setDeltaMovement(
@@ -100,6 +158,8 @@ public class EntityKuvaSlave extends KuvaBase {
         );
     }
 
+    // ==================== 死亡与掉落 ====================
+
     @Override
     public void die(@NotNull DamageSource damageSource) {
         if (!level().isClientSide) {
@@ -110,6 +170,12 @@ public class EntityKuvaSlave extends KuvaBase {
         super.die(damageSource);
     }
 
+    /**
+     * 处理玩家击杀奴仆的逻辑
+     * 给予解密进度并掉落物品
+     *
+     * @param player 击杀的玩家
+     */
     private void handlePlayerKill(Player player) {
         player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
             giveDecryptionProgress(player, requiemCard);
@@ -117,6 +183,12 @@ public class EntityKuvaSlave extends KuvaBase {
         });
     }
 
+    /**
+     * 给予安魂密语解密进度
+     *
+     * @param player 玩家
+     * @param requiemCard 安魂卡片能力
+     */
     private void giveDecryptionProgress(Player player, pers.roinflam.kuvalich.capability.RequiemCard requiemCard) {
         int addPotion = RandomUtil.getInt(
                 ModConfig.KUVA_LICH.minDecryptionProgress.get(),
@@ -136,6 +208,11 @@ public class EntityKuvaSlave extends KuvaBase {
         }
     }
 
+    /**
+     * 掉落战利品（赤毒、裂罅碎片、安魂宝石、模组）
+     *
+     * @param player 击杀的玩家
+     */
     private void dropLoot(Player player) {
         BlockPos pos = this.blockPosition();
 
@@ -164,11 +241,10 @@ public class EntityKuvaSlave extends KuvaBase {
     }
 
     /**
-     * 掉落模组，概率从配置文件读取
-     * Drop module, chances read from config
+     * 掉落模组，按品质概率分层
+     * 统一使用RandomUtil
      *
-     * 修复：统一使用 RandomUtil，不再混用 Math.random()
-     * Fix: use RandomUtil consistently instead of mixing with Math.random()
+     * @param pos 掉落位置
      */
     private void dropModule(BlockPos pos) {
         int commonChance = ModConfig.KUVA_LICH.commonModuleDropChance.get();
@@ -176,8 +252,6 @@ public class EntityKuvaSlave extends KuvaBase {
         int rareChance = ModConfig.KUVA_LICH.rareModuleDropChance.get();
         int weaponRatio = ModConfig.KUVA_LICH.moduleWeaponRatio.get();
 
-        // 修复：使用 RandomUtil 代替 Math.random()
-        // Fix: use RandomUtil instead of Math.random()
         int roll = RandomUtil.getInt(0, 99);
 
         if (roll < commonChance) {
@@ -198,6 +272,12 @@ public class EntityKuvaSlave extends KuvaBase {
         }
     }
 
+    /**
+     * 在指定位置生成掉落物实体
+     *
+     * @param pos 位置
+     * @param itemStack 物品
+     */
     private void spawnItem(BlockPos pos, ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
             return;

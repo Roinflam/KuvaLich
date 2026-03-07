@@ -67,6 +67,16 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_LICH.confiscationChance::set)
                 .build());
 
+        confiscationCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.maxConfiscatedItems"),
+                        ModConfig.KUVA_LICH.maxConfiscatedItems.get())
+                .setDefaultValue(64)
+                .setMin(0)
+                .setMax(1024)
+                .setTooltip(Component.translatable("config.kuvalich.maxConfiscatedItems.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.maxConfiscatedItems::set)
+                .build());
+
         confiscationCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.requiemUltimatumDropChance"),
                         ModConfig.KUVA_LICH.requiemUltimatumDropChance.get())
@@ -898,278 +908,57 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_WEAPON.attributeMultiplier::set)
                 .build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageKuvaShildeg"),
-                        ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg.get())
-                .setDefaultValue(44.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageKuvaShildeg.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageKuvaShildeg"), ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg.get()).setDefaultValue(44.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageKuvaShildeg.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedKuvaShildeg"), ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg.get()).setDefaultValue(0.7).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedKuvaShildeg.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedKuvaShildeg"), ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg.get()).setDefaultValue(-0.2).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedKuvaShildeg.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedKuvaShildeg"),
-                        ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg.get())
-                .setDefaultValue(0.7).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedKuvaShildeg.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamagePennant"), ModConfig.KUVA_WEAPON.attackDamagePennant.get()).setDefaultValue(28.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamagePennant.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamagePennant::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedPennant"), ModConfig.KUVA_WEAPON.attackSpeedPennant.get()).setDefaultValue(1.1).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedPennant.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedPennant::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedPennant"), ModConfig.KUVA_WEAPON.movementSpeedPennant.get()).setDefaultValue(0.025).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedPennant.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedPennant::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedKuvaShildeg"),
-                        ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg.get())
-                .setDefaultValue(-0.2).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedKuvaShildeg.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageGuandaoPrime"), ModConfig.KUVA_WEAPON.attackDamageGuandaoPrime.get()).setDefaultValue(16.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageGuandaoPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageGuandaoPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedGuandaoPrime"), ModConfig.KUVA_WEAPON.attackSpeedGuandaoPrime.get()).setDefaultValue(2.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedGuandaoPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedGuandaoPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedGuandaoPrime"), ModConfig.KUVA_WEAPON.movementSpeedGuandaoPrime.get()).setDefaultValue(0.075).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedGuandaoPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedGuandaoPrime::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamagePennant"),
-                        ModConfig.KUVA_WEAPON.attackDamagePennant.get())
-                .setDefaultValue(28.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamagePennant.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamagePennant::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageParacesis"), ModConfig.KUVA_WEAPON.attackDamageParacesis.get()).setDefaultValue(34.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageParacesis.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageParacesis::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedParacesis"), ModConfig.KUVA_WEAPON.attackSpeedParacesis.get()).setDefaultValue(0.9).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedParacesis.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedParacesis::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedParacesis"), ModConfig.KUVA_WEAPON.movementSpeedParacesis.get()).setDefaultValue(-0.1).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedParacesis.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedParacesis::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedPennant"),
-                        ModConfig.KUVA_WEAPON.attackSpeedPennant.get())
-                .setDefaultValue(1.1).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedPennant.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedPennant::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageArcaTitron"), ModConfig.KUVA_WEAPON.attackDamageArcaTitron.get()).setDefaultValue(38.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageArcaTitron.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageArcaTitron::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedArcaTitron"), ModConfig.KUVA_WEAPON.attackSpeedArcaTitron.get()).setDefaultValue(0.75).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedArcaTitron.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedArcaTitron::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedArcaTitron"), ModConfig.KUVA_WEAPON.movementSpeedArcaTitron.get()).setDefaultValue(-0.15).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedArcaTitron.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedArcaTitron::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedPennant"),
-                        ModConfig.KUVA_WEAPON.movementSpeedPennant.get())
-                .setDefaultValue(0.025).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedPennant.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedPennant::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageReaperPrime"), ModConfig.KUVA_WEAPON.attackDamageReaperPrime.get()).setDefaultValue(18.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageReaperPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageReaperPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedReaperPrime"), ModConfig.KUVA_WEAPON.attackSpeedReaperPrime.get()).setDefaultValue(1.75).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedReaperPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedReaperPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedReaperPrime"), ModConfig.KUVA_WEAPON.movementSpeedReaperPrime.get()).setDefaultValue(0.05).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedReaperPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedReaperPrime::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageGuandaoPrime"),
-                        ModConfig.KUVA_WEAPON.attackDamageGuandaoPrime.get())
-                .setDefaultValue(16.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageGuandaoPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageGuandaoPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageVitrica"), ModConfig.KUVA_WEAPON.attackDamageVitrica.get()).setDefaultValue(50.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageVitrica.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageVitrica::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedVitrica"), ModConfig.KUVA_WEAPON.attackSpeedVitrica.get()).setDefaultValue(0.65).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedVitrica.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedVitrica::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedVitrica"), ModConfig.KUVA_WEAPON.movementSpeedVitrica.get()).setDefaultValue(-0.2).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedVitrica.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedVitrica::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedGuandaoPrime"),
-                        ModConfig.KUVA_WEAPON.attackSpeedGuandaoPrime.get())
-                .setDefaultValue(2.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedGuandaoPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedGuandaoPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageGramPrime"), ModConfig.KUVA_WEAPON.attackDamageGramPrime.get()).setDefaultValue(46.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageGramPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageGramPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedGramPrime"), ModConfig.KUVA_WEAPON.attackSpeedGramPrime.get()).setDefaultValue(0.7).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedGramPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedGramPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedGramPrime"), ModConfig.KUVA_WEAPON.movementSpeedGramPrime.get()).setDefaultValue(-0.15).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedGramPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedGramPrime::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedGuandaoPrime"),
-                        ModConfig.KUVA_WEAPON.movementSpeedGuandaoPrime.get())
-                .setDefaultValue(0.075).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedGuandaoPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedGuandaoPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageSanctiMagistar"), ModConfig.KUVA_WEAPON.attackDamageSanctiMagistar.get()).setDefaultValue(36.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageSanctiMagistar.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageSanctiMagistar::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedSanctiMagistar"), ModConfig.KUVA_WEAPON.attackSpeedSanctiMagistar.get()).setDefaultValue(0.85).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedSanctiMagistar.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedSanctiMagistar::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedSanctiMagistar"), ModConfig.KUVA_WEAPON.movementSpeedSanctiMagistar.get()).setDefaultValue(-0.075).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedSanctiMagistar.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedSanctiMagistar::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageParacesis"),
-                        ModConfig.KUVA_WEAPON.attackDamageParacesis.get())
-                .setDefaultValue(34.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageParacesis.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageParacesis::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageDestrezaPrime"), ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime.get()).setDefaultValue(24.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageDestrezaPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedDestrezaPrime"), ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime.get()).setDefaultValue(1.4).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedDestrezaPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedDestrezaPrime"), ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime.get()).setDefaultValue(0.125).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedDestrezaPrime.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedParacesis"),
-                        ModConfig.KUVA_WEAPON.attackSpeedParacesis.get())
-                .setDefaultValue(0.9).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedParacesis.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedParacesis::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamagePrismaVeritux"), ModConfig.KUVA_WEAPON.attackDamagePrismaVeritux.get()).setDefaultValue(100.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamagePrismaVeritux.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamagePrismaVeritux::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedPrismaVeritux"), ModConfig.KUVA_WEAPON.attackSpeedPrismaVeritux.get()).setDefaultValue(0.45).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedPrismaVeritux.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedPrismaVeritux::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedPrismaVeritux"), ModConfig.KUVA_WEAPON.movementSpeedPrismaVeritux.get()).setDefaultValue(-0.6).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedPrismaVeritux.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedPrismaVeritux::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedParacesis"),
-                        ModConfig.KUVA_WEAPON.movementSpeedParacesis.get())
-                .setDefaultValue(-0.1).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedParacesis.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedParacesis::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageMachete"), ModConfig.KUVA_WEAPON.attackDamageMachete.get()).setDefaultValue(32.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageMachete.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageMachete::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedMachete"), ModConfig.KUVA_WEAPON.attackSpeedMachete.get()).setDefaultValue(1.55).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedMachete.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedMachete::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedMachete"), ModConfig.KUVA_WEAPON.movementSpeedMachete.get()).setDefaultValue(0.025).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedMachete.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedMachete::set).build());
 
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageArcaTitron"),
-                        ModConfig.KUVA_WEAPON.attackDamageArcaTitron.get())
-                .setDefaultValue(38.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageArcaTitron.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageArcaTitron::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedArcaTitron"),
-                        ModConfig.KUVA_WEAPON.attackSpeedArcaTitron.get())
-                .setDefaultValue(0.75).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedArcaTitron.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedArcaTitron::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedArcaTitron"),
-                        ModConfig.KUVA_WEAPON.movementSpeedArcaTitron.get())
-                .setDefaultValue(-0.15).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedArcaTitron.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedArcaTitron::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageReaperPrime"),
-                        ModConfig.KUVA_WEAPON.attackDamageReaperPrime.get())
-                .setDefaultValue(18.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageReaperPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageReaperPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedReaperPrime"),
-                        ModConfig.KUVA_WEAPON.attackSpeedReaperPrime.get())
-                .setDefaultValue(1.75).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedReaperPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedReaperPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedReaperPrime"),
-                        ModConfig.KUVA_WEAPON.movementSpeedReaperPrime.get())
-                .setDefaultValue(0.05).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedReaperPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedReaperPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageVitrica"),
-                        ModConfig.KUVA_WEAPON.attackDamageVitrica.get())
-                .setDefaultValue(50.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageVitrica.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageVitrica::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedVitrica"),
-                        ModConfig.KUVA_WEAPON.attackSpeedVitrica.get())
-                .setDefaultValue(0.65).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedVitrica.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedVitrica::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedVitrica"),
-                        ModConfig.KUVA_WEAPON.movementSpeedVitrica.get())
-                .setDefaultValue(-0.2).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedVitrica.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedVitrica::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageGramPrime"),
-                        ModConfig.KUVA_WEAPON.attackDamageGramPrime.get())
-                .setDefaultValue(46.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageGramPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageGramPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedGramPrime"),
-                        ModConfig.KUVA_WEAPON.attackSpeedGramPrime.get())
-                .setDefaultValue(0.7).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedGramPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedGramPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedGramPrime"),
-                        ModConfig.KUVA_WEAPON.movementSpeedGramPrime.get())
-                .setDefaultValue(-0.15).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedGramPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedGramPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageSanctiMagistar"),
-                        ModConfig.KUVA_WEAPON.attackDamageSanctiMagistar.get())
-                .setDefaultValue(36.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageSanctiMagistar.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageSanctiMagistar::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedSanctiMagistar"),
-                        ModConfig.KUVA_WEAPON.attackSpeedSanctiMagistar.get())
-                .setDefaultValue(0.85).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedSanctiMagistar.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedSanctiMagistar::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedSanctiMagistar"),
-                        ModConfig.KUVA_WEAPON.movementSpeedSanctiMagistar.get())
-                .setDefaultValue(-0.075).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedSanctiMagistar.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedSanctiMagistar::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageDestrezaPrime"),
-                        ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime.get())
-                .setDefaultValue(24.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageDestrezaPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedDestrezaPrime"),
-                        ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime.get())
-                .setDefaultValue(1.4).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedDestrezaPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedDestrezaPrime"),
-                        ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime.get())
-                .setDefaultValue(0.125).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedDestrezaPrime.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamagePrismaVeritux"),
-                        ModConfig.KUVA_WEAPON.attackDamagePrismaVeritux.get())
-                .setDefaultValue(100.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamagePrismaVeritux.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamagePrismaVeritux::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedPrismaVeritux"),
-                        ModConfig.KUVA_WEAPON.attackSpeedPrismaVeritux.get())
-                .setDefaultValue(0.45).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedPrismaVeritux.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedPrismaVeritux::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedPrismaVeritux"),
-                        ModConfig.KUVA_WEAPON.movementSpeedPrismaVeritux.get())
-                .setDefaultValue(-0.6).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedPrismaVeritux.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedPrismaVeritux::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageMachete"),
-                        ModConfig.KUVA_WEAPON.attackDamageMachete.get())
-                .setDefaultValue(32.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageMachete.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageMachete::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedMachete"),
-                        ModConfig.KUVA_WEAPON.attackSpeedMachete.get())
-                .setDefaultValue(1.55).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedMachete.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedMachete::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedMachete"),
-                        ModConfig.KUVA_WEAPON.movementSpeedMachete.get())
-                .setDefaultValue(0.025).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedMachete.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedMachete::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackDamageCaustacyst"),
-                        ModConfig.KUVA_WEAPON.attackDamageCaustacyst.get())
-                .setDefaultValue(28.0).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackDamageCaustacyst.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageCaustacyst::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.attackSpeedCaustacyst"),
-                        ModConfig.KUVA_WEAPON.attackSpeedCaustacyst.get())
-                .setDefaultValue(1.3).setMin(0.0)
-                .setTooltip(Component.translatable("config.kuvalich.attackSpeedCaustacyst.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedCaustacyst::set).build());
-
-        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.kuvalich.movementSpeedCaustacyst"),
-                        ModConfig.KUVA_WEAPON.movementSpeedCaustacyst.get())
-                .setDefaultValue(0.125).setMin(-1.0).setMax(1.0)
-                .setTooltip(Component.translatable("config.kuvalich.movementSpeedCaustacyst.tooltip"))
-                .setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedCaustacyst::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackDamageCaustacyst"), ModConfig.KUVA_WEAPON.attackDamageCaustacyst.get()).setDefaultValue(28.0).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackDamageCaustacyst.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackDamageCaustacyst::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.attackSpeedCaustacyst"), ModConfig.KUVA_WEAPON.attackSpeedCaustacyst.get()).setDefaultValue(1.3).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.attackSpeedCaustacyst.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.attackSpeedCaustacyst::set).build());
+        weaponAttributeCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.movementSpeedCaustacyst"), ModConfig.KUVA_WEAPON.movementSpeedCaustacyst.get()).setDefaultValue(0.125).setMin(-1.0).setMax(1.0).setTooltip(Component.translatable("config.kuvalich.movementSpeedCaustacyst.tooltip")).setSaveConsumer(ModConfig.KUVA_WEAPON.movementSpeedCaustacyst::set).build());
 
         // ═══════════════════════════════════════════════════════════════
         // 模组管理
@@ -1177,7 +966,6 @@ public class ClothConfigScreen {
         ConfigCategory moduleCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.module"));
 
-        // 通用词条倍率
         moduleCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.moduleAttributeMultiplier"),
                         ModConfig.KUVA_LICH.moduleAttributeMultiplier.get())
@@ -1188,7 +976,6 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_LICH.moduleAttributeMultiplier::set)
                 .build());
 
-        // 关键词条倍率（暴击、触发、护盾机制类）
         moduleCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.keyAttributeMultiplier"),
                         ModConfig.KUVA_LICH.keyAttributeMultiplier.get())
@@ -1197,6 +984,24 @@ public class ClothConfigScreen {
                 .setMax(100.0)
                 .setTooltip(Component.translatable("config.kuvalich.keyAttributeMultiplier.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.keyAttributeMultiplier::set)
+                .build());
+
+        moduleCategory.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.kuvalich.formaLockEnabled"),
+                        ModConfig.KUVA_LICH.formaLockEnabled.get())
+                .setDefaultValue(false)
+                .setTooltip(Component.translatable("config.kuvalich.formaLockEnabled.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.formaLockEnabled::set)
+                .build());
+
+        moduleCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.formaLockChance"),
+                        ModConfig.KUVA_LICH.formaLockChance.get())
+                .setDefaultValue(10.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.formaLockChance.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.formaLockChance::set)
                 .build());
 
         moduleCategory.addEntry(entryBuilder.startStrList(

@@ -217,6 +217,42 @@ public class ItemPrimeModule extends ItemModuleBase {
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.galvanized_death_barrage", "death_barrage",
                 new Object[]{"multishot", 0.45001f, "triggerChance", 0.75001f, "killStackMultishot", 0.25001f});
+
+        // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
+        if (ItemRivenModule.isTaczLoaded()) {
+
+            // 爆发装填 Prime —— 55%装填速度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.burst_reload_prime", "burst_reload",
+                    new Object[]{"reload_speed", 0.55001f});
+
+            // 弹夹增幅 Prime —— 55%弹夹容量
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.magazine_amplifier_prime", "magazine_amplifier",
+                    new Object[]{"magazine_size", 0.55001f});
+
+            // 致命弹道 Prime —— 90%投射物速度 + 75%远程暴击几率（狙击流毕业）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.lethal_trajectory_prime", "lethal_trajectory",
+                    new Object[]{"projectile_speed", 0.90001f, "remoteCriticalStrikeProbability", 0.75001f},
+                    "remote_crit_chance");
+
+            // 战术装填 Prime —— 55%装填速度 + 55%后坐力降低（机动流毕业）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.tactical_reload_prime", "tactical_reload",
+                    new Object[]{"reload_speed", 0.55001f, "recoil_reduction", 0.55001f});
+
+            // 镇定射击 Prime —— 60%后坐力降低 + 75%触发几率（稳定触发毕业）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.steady_aim_prime", "steady_aim",
+                    new Object[]{"recoil_reduction", 0.60001f, "triggerChance", 0.75001f});
+
+            // 弹道校准 Prime —— 60%投射物速度 + 75%远程暴击伤害（暴伤毕业）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.ballistic_calibration_prime", "ballistic_calibration",
+                    new Object[]{"projectile_speed", 0.60001f, "remoteCriticalStrikeMultiplier", 0.75001f},
+                    "remote_crit_mult");
+        }
     }
 
     public static void registerCreativeTabItems(CreativeModeTab.Output output) {

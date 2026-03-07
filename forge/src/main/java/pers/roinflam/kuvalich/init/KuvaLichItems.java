@@ -255,4 +255,7 @@ public class KuvaLichItems {
                     0x1C1C1C,  // 次色：黑色
                     new Item.Properties()
             ));
+
+    public static final RegistryObject<Item> FORMA = ITEMS.register("forma",
+            () -> new Forma(new Item.Properties()));
 }

@@ -6,11 +6,18 @@
   "mixins": [
     "EntityKineticBulletAccessor",
     "MixinBulletDamageSpread",
+    "MixinFirstBulletDetect",
+    "MixinGunMagazineSize",
+    "MixinGunProjectileSpeed",
+    "MixinGunReloadSpeed",
     "MixinGunShootInterval",
     "MixinGunShootOnce",
     "MixinTaczBulletExplosion"
   ],
-  "client": [],
+  "client": [
+    "MixinCameraRecoil",
+    "MixinObjectAnimationRunner"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 0
