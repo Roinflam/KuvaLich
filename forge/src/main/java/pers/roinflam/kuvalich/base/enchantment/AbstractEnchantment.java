@@ -9,7 +9,7 @@ import pers.roinflam.kuvalich.utils.LogUtil;
  * 附魔基类
  * Enchantment base class
  */
-public abstract class EnchantmentBase extends Enchantment {
+public abstract class AbstractEnchantment extends Enchantment {
 
     private final String registryName;
 
@@ -22,7 +22,7 @@ public abstract class EnchantmentBase extends Enchantment {
      * @param slots 适用装备槽位 / applicable equipment slots
      * @param name 注册名 / registry name
      */
-    protected EnchantmentBase(Rarity rarityIn, EnchantmentCategory typeIn, EquipmentSlot[] slots, String name) {
+    protected AbstractEnchantment(Rarity rarityIn, EnchantmentCategory typeIn, EquipmentSlot[] slots, String name) {
         super(rarityIn, typeIn, slots);
         this.registryName = name;
 

@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Module Base Class (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
-public abstract class ModuleBase extends Item {
+public abstract class AbstractModule extends Item {
 
     private static final int MAX_CACHE_SIZE = 1000;
     private static final long CACHE_DURATION_MS = 30000;
@@ -42,7 +42,7 @@ public abstract class ModuleBase extends Item {
      * 1.20.1构造函数：只接收Properties，不需要name参数
      * 1.20.1 constructor: only accepts Properties, no name parameter needed
      */
-    public ModuleBase(@Nonnull Item.Properties properties) {
+    public AbstractModule(@Nonnull Item.Properties properties) {
         super(properties.stacksTo(1)); // 设置最大堆叠数为1 / Set max stack size to 1
     }
 

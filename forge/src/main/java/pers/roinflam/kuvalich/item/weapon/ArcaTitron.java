@@ -10,11 +10,11 @@ import net.minecraftforge.event.entity.player.CriticalHitEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
  * Arca Titron (1.20.1 version, using dynamic attribute system)
  */
 @Mod.EventBusSubscriber
-public class ArcaTitron extends KuvaWeaponBase {
+public class ArcaTitron extends AbstractKuvaWeapon {
 
     public ArcaTitron(@Nonnull Item.Properties properties) {
         super(properties);
@@ -55,7 +55,7 @@ public class ArcaTitron extends KuvaWeaponBase {
             DynamicAttributeManager.apply(
                     attacker,
                     DynamicAttributes.ARCA_TITRON.createInstance(
-                            (int) KuvaWeapon.getMagnification(weapon, 400),
+                            (int) KuvaWeaponUtil.getMagnification(weapon, 400),
                             newAmplifier
                     )
             );
@@ -74,7 +74,7 @@ public class ArcaTitron extends KuvaWeaponBase {
             // ✅ 使用动态属性检测（简化处理）
             if (DynamicAttributeManager.has(attacker, DynamicAttributes.ARCA_TITRON)) {
                 int level = 6; // 简化处理，使用固定等级
-                float bonusDamage = KuvaWeapon.getMagnification(weapon,
+                float bonusDamage = KuvaWeaponUtil.getMagnification(weapon,
                         event.getDamageModifier() * level * 0.05f);
 
                 event.setDamageModifier(event.getDamageModifier() + bonusDamage);
@@ -89,19 +89,19 @@ public class ArcaTitron extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageArcaTitron.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedArcaTitron.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack,
+        return Math.min(0, -1 + KuvaWeaponUtil.getMagnification(itemStack,
                 1 + ModConfig.KUVA_WEAPON.movementSpeedArcaTitron.get(), 2));
     }
 

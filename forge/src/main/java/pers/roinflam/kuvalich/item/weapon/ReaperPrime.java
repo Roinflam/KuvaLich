@@ -17,9 +17,9 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
  * Reaper Prime (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
-public class ReaperPrime extends KuvaWeaponBase {
+public class ReaperPrime extends AbstractKuvaWeapon {
 
     public ReaperPrime(@Nonnull Item.Properties properties) {
         super(properties);
@@ -52,7 +52,7 @@ public class ReaperPrime extends KuvaWeaponBase {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, ReaperPrime.class);
 
         if (weapon != null) {
-            float healAmount = KuvaWeapon.getMagnification(weapon, event.getAmount() * 0.1f);
+            float healAmount = KuvaWeaponUtil.getMagnification(weapon, event.getAmount() * 0.1f);
             attacker.heal(healAmount);
         }
     }
@@ -88,7 +88,7 @@ public class ReaperPrime extends KuvaWeaponBase {
                     1.5
             );
 
-            double speed = KuvaWeapon.getMagnification(
+            double speed = KuvaWeaponUtil.getMagnification(
                     stack,
                     player.getAttribute(Attributes.MOVEMENT_SPEED).getValue(),
                     3
@@ -108,19 +108,19 @@ public class ReaperPrime extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageReaperPrime.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedReaperPrime.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.max(0, KuvaWeapon.getMagnification(itemStack,
+        return Math.max(0, KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.movementSpeedReaperPrime.get(), 2));
     }
 

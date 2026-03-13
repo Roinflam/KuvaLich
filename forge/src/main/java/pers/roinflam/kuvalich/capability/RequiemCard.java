@@ -11,7 +11,7 @@ import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import pers.roinflam.kuvalich.base.item.RequiemCardBase;
+import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
@@ -186,9 +186,9 @@ public class RequiemCard {
             return false;
         }
 
-        RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
-        RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
-        RequiemCardBase three = (RequiemCardBase) threeCard.getItem();
+        AbstractRequiemCard one = (AbstractRequiemCard) oneCard.getItem();
+        AbstractRequiemCard two = (AbstractRequiemCard) twoCard.getItem();
+        AbstractRequiemCard three = (AbstractRequiemCard) threeCard.getItem();
 
         return one.getID() == oneAnswer && two.getID() == twoAnswer && three.getID() == threeAnswer;
     }
@@ -204,7 +204,7 @@ public class RequiemCard {
             return false;
         }
 
-        RequiemCardBase one = (RequiemCardBase) oneCard.getItem();
+        AbstractRequiemCard one = (AbstractRequiemCard) oneCard.getItem();
         return one.getID() == oneAnswer;
     }
 
@@ -219,7 +219,7 @@ public class RequiemCard {
             return false;
         }
 
-        RequiemCardBase two = (RequiemCardBase) twoCard.getItem();
+        AbstractRequiemCard two = (AbstractRequiemCard) twoCard.getItem();
         return two.getID() == twoAnswer;
     }
 

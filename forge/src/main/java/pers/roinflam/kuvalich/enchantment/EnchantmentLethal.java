@@ -10,7 +10,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
+import pers.roinflam.kuvalich.base.enchantment.AbstractEnchantment;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -22,7 +22,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  * Effect: Deal more damage to enemies with lower health
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
-public class EnchantmentLethal extends EnchantmentBase {
+public class EnchantmentLethal extends AbstractEnchantment {
 
     // 常量定义 / Constants
     private static final int MAX_LEVEL = 5;

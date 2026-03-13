@@ -12,9 +12,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.level.Level;
 
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
-import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
+import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class WarframeRivenModule extends WarframeModuleBase {
+public class WarframeRivenModule extends AbstractWarframeModule {
     private static final String[] PREFIXES = {"Croni", "Sati", "Vexi", "Locti", "Magna", "Crita", "Geli", "Rupti", "Arma", "Venxi", "Furi", "Praesi", "Nexi", "Draco", "Spira", "Phasa", "Lunari", "Solara", "Terron", "Aquix", "Ventra", "Ignis", "Frosti", "Voltic", "Plasma", "Ethera", "Radi", "Mortal", "Divin", "Spectra", "Celest", "Infern", "Obliv", "Eclip", "Cosmi", "Stella", "Astron", "Nebula", "Galax", "Orbit", "Nova", "Lunar", "Solar", "Comet", "Astro", "Stellar", "Void", "Quantum", "Gluon", "Gravi", "Photon", "Pulsar", "Quark", "Radian", "Sigma", "Tau", "Upsilon", "Vecti", "Warp", "Xenon", "Yotta", "Zetta", "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega", "Axion", "Baryon", "Charm", "Dynami", "Electro", "Fluxi", "Gyro", "Halo", "Ioni", "Joule", "Kineti", "Lepto", "Mytho", "Neuro", "Omni", "Penta", "Quanta", "Retro", "Syntho", "Tri", "Umbra", "Vecta", "Wyrm", "Xero", "Yield", "Zephyr"};
 
     private static final String[] SUFFIXES = {"cron", "ata", "icor", "tis", "tron", "cak", "nus", "vex", "mira", "ton", "sera", "phix", "gara", "luxe", "moto", "zora", "fyre", "glacia", "volt", "terra", "aqua", "nebula", "stellar", "cosmo", "sol", "lunar", "astral", "void", "nether", "ether", "flux", "halo", "vortex", "quantum", "sigma", "omega", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu", "nu", "xi", "omicron", "pi", "rho", "sigma", "tau", "upsilon", "phi", "chi", "psi", "omega", "alpha", "beta", "axion", "baryon", "charm", "dynami", "electro", "fluxi", "gyro", "halo", "ioni", "joule", "kineti", "lepto", "mytho", "neuro", "omni", "penta", "quanta", "retro", "syntho", "tri", "umbra", "vecta", "wyrm", "xero", "yield", "zephyr", "ara", "bolo", "ceta", "dome", "ergo", "foti", "glow", "hype", "ille", "juno", "kilo", "lima", "mote", "nano", "oxi", "pico", "quark", "rune", "solo", "tome", "uni", "volo", "watt", "xene", "yotta", "zetta"};
@@ -51,7 +51,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE.get());
         itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + Component.translatable("kuvaweapon.warframe_type_riven_random.name").getString()));
-        ModuleBase.setRandom(itemStack, true);
+        AbstractModule.setRandom(itemStack, true);
         return itemStack;
     }
 
@@ -133,7 +133,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
             negativeTrendMagnification *= 1.5;
         }
 
-        List<String> warframeAttributeType = new ArrayList<>(WarframeModuleBase.WARFRAME_ATTRIBUTE_TYPES);
+        List<String> warframeAttributeType = new ArrayList<>(AbstractWarframeModule.WARFRAME_ATTRIBUTE_TYPES);
 
         // 紫卡不能刷出固定属性
         warframeAttributeType.remove("fixedHealth");
@@ -155,7 +155,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
             hasAttributeType.add(attributeType);
             // 应用全局属性倍率（正面属性）
             // Apply global attribute multiplier (positive attributes)
-            ModuleBase.addAttributes(itemStack, attributeType,
+            AbstractModule.addAttributes(itemStack, attributeType,
                     getBaseAttributeValue(attributeType) * trendMagnification * randomDouble * globalMultiplier);
             add++;
         }
@@ -170,14 +170,14 @@ public class WarframeRivenModule extends WarframeModuleBase {
 
                 // 应用全局属性倍率（负面属性）
                 // Apply global attribute multiplier (negative attributes)
-                ModuleBase.addAttributes(itemStack, attributeType,
+                AbstractModule.addAttributes(itemStack, attributeType,
                         -(getBaseAttributeValue(attributeType) * negativeTrendMagnification * randomDouble * globalMultiplier));
                 break;
             }
         }
 
         // 设置战甲Riven专用type
-        ModuleBase.setType(itemStack, RIVEN_TYPE);
+        AbstractModule.setType(itemStack, RIVEN_TYPE);
 
         return itemStack;
     }
@@ -315,7 +315,7 @@ public class WarframeRivenModule extends WarframeModuleBase {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
-        if (!level.isClientSide() && ItemModuleBase.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
+        if (!level.isClientSide() && AbstractItemModule.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
             // 检查Riven是否被禁用
             if (isRivenDisabled()) {
                 return InteractionResultHolder.fail(itemstack);

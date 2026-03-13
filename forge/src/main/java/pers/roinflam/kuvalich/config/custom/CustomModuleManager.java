@@ -8,7 +8,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 
-import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.LogUtil;
@@ -421,17 +421,17 @@ public class CustomModuleManager {
 
         // 添加属性
         for (Map.Entry<String, Double> attr : entry.attributes.entrySet()) {
-            ModuleBase.addAttributes(stack, attr.getKey(), attr.getValue());
+            AbstractModule.addAttributes(stack, attr.getKey(), attr.getValue());
         }
 
         // 设置type
         if (entry.type != null && !entry.type.isEmpty()) {
-            ModuleBase.setType(stack, entry.type);
+            AbstractModule.setType(stack, entry.type);
         }
 
         // 设置冲突标签
         if (entry.conflictTags != null && !entry.conflictTags.isEmpty()) {
-            ModuleBase.setConflictTags(stack, entry.conflictTags);
+            AbstractModule.setConflictTags(stack, entry.conflictTags);
         }
 
         return stack;

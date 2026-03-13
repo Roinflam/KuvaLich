@@ -9,11 +9,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
  * Guandao Prime (1.20.1 version, using dynamic attribute system)
  */
 @Mod.EventBusSubscriber
-public class GuandaoPrime extends KuvaWeaponBase {
+public class GuandaoPrime extends AbstractKuvaWeapon {
 
     public GuandaoPrime(@Nonnull Item.Properties properties) {
         super(properties);
@@ -59,14 +59,14 @@ public class GuandaoPrime extends KuvaWeaponBase {
             DynamicAttributeManager.apply(
                     attacker,
                     DynamicAttributes.GUANDAO_PRIME.createInstance(
-                            (int) KuvaWeapon.getMagnification(weapon, 100),
+                            (int) KuvaWeaponUtil.getMagnification(weapon, 100),
                             currentLevel + 5
                     )
             );
 
             float baseDamage = event.getAmount();
             float maxHealthDamage = hurter.getMaxHealth() * 0.025f;
-            float dotDamage = KuvaWeapon.getMagnification(weapon, (baseDamage + maxHealthDamage) / 20);
+            float dotDamage = KuvaWeaponUtil.getMagnification(weapon, (baseDamage + maxHealthDamage) / 20);
 
             new SynchronizationTask(5, 5) {
                 private int tick = 0;
@@ -108,19 +108,19 @@ public class GuandaoPrime extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageGuandaoPrime.get(), 2));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedGuandaoPrime.get()));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.max(0, KuvaWeapon.getMagnification(itemStack,
+        return Math.max(0, KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.movementSpeedGuandaoPrime.get()));
     }
 

@@ -11,7 +11,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
+import pers.roinflam.kuvalich.base.enchantment.AbstractEnchantment;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -33,7 +33,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  * Level 3: multiply by (1 - 3 * 0.25) = 0.25, reduce 75%
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
-public class EnchantmentEscort extends EnchantmentBase {
+public class EnchantmentEscort extends AbstractEnchantment {
 
     private static final int MAX_LEVEL = 3;
     private static final int BASE_ENCHANTABILITY = 25;

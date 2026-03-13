@@ -10,7 +10,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import pers.roinflam.kuvalich.base.item.RequiemCardBase;
+import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.world.inventory.MenuRequiemGate;
@@ -136,7 +136,7 @@ public class ScreenRequiemGate extends AbstractContainerScreen<MenuRequiemGate> 
         if (riddleId == -1) {
             guiGraphics.blit(TEXTURE, x, y, 0, this.imageHeight, RIDDLE_SIZE, RIDDLE_SIZE);
         } else {
-            ItemStack card = new ItemStack(RequiemCardBase.getCard(riddleId));
+            ItemStack card = new ItemStack(AbstractRequiemCard.getCard(riddleId));
             drawCard(guiGraphics, card, x, y);
 
             if (isMouseOver(x, y, RIDDLE_SIZE, RIDDLE_SIZE, mouseX, mouseY)) {

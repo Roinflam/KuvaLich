@@ -12,9 +12,9 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
@@ -28,7 +28,7 @@ import java.util.UUID;
  * Prisma Veritux (1.20.1 version, fixed reach distance issue)
  */
 @Mod.EventBusSubscriber
-public class PrismaVeritux extends KuvaWeaponBase {
+public class PrismaVeritux extends AbstractKuvaWeapon {
 
     /**
      * 实体交互距离UUID（用于攻击距离）
@@ -63,7 +63,7 @@ public class PrismaVeritux extends KuvaWeaponBase {
             } else {
                 // 目标无护甲时增加25%伤害
                 // +25% damage when target has no armor
-                event.setAmount(event.getAmount() * KuvaWeapon.getMagnification(weapon, 1.25f));
+                event.setAmount(event.getAmount() * KuvaWeaponUtil.getMagnification(weapon, 1.25f));
             }
         }
     }
@@ -82,7 +82,7 @@ public class PrismaVeritux extends KuvaWeaponBase {
         Multimap<Attribute, AttributeModifier> multimap = super.getAttributeModifiers(slot, stack);
 
         if (slot == EquipmentSlot.MAINHAND) {
-            double reachBonus = KuvaWeapon.getMagnification(stack, 1, 2);
+            double reachBonus = KuvaWeaponUtil.getMagnification(stack, 1, 2);
 
             // ✅ 添加方块交互距离（挖掘、放置方块）
             // Add block reach (mining, placing blocks)
@@ -119,19 +119,19 @@ public class PrismaVeritux extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamagePrismaVeritux.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedPrismaVeritux.get()));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack,
+        return Math.min(0, -1 + KuvaWeaponUtil.getMagnification(itemStack,
                 1 + ModConfig.KUVA_WEAPON.movementSpeedPrismaVeritux.get()));
     }
 

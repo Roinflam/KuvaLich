@@ -12,8 +12,8 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
-import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
+import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.WarframeModules;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
@@ -114,7 +114,7 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
             LogUtil.debug("战甲模组转移成功，已触发同步");
         } else {
             // 从背包转移到模组槽位 / From inventory to module slot
-            if (itemstack.getItem() instanceof WarframeModuleBase) {
+            if (itemstack.getItem() instanceof AbstractWarframeModule) {
                 boolean success = false;
                 for (int i = 0; i < 8; i++) {
                     if (this.moveItemStackTo(slotStack, i, i + 1, false)) {
@@ -168,7 +168,7 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
                 for (int i = 0; i < 8; i++) {
                     ItemStack stack = moduleHandler.getStackInSlot(i);
 
-                    if (!stack.isEmpty() && !(stack.getItem() instanceof WarframeModuleBase)) {
+                    if (!stack.isEmpty() && !(stack.getItem() instanceof AbstractWarframeModule)) {
                         LogUtil.warn("检测到非法物品在战甲军械库槽位" + i + ": " +
                                 stack.getHoverName().getString() + " - 正在返还");
 
@@ -236,10 +236,10 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            if (!(stack.getItem() instanceof WarframeModuleBase)) {
+            if (!(stack.getItem() instanceof AbstractWarframeModule)) {
                 return false;
             }
-            if (WarframeModuleBase.isRandom(stack)) {
+            if (AbstractWarframeModule.isRandom(stack)) {
                 return false;
             }
             if (!this.getItemHandler().getStackInSlot(slotIndex).isEmpty()) {
@@ -258,7 +258,7 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
                         }
 
                         // 双向冲突检测 / Bidirectional conflict detection
-                        if (ModuleBase.hasConflict(existingStack, stack)) {
+                        if (AbstractModule.hasConflict(existingStack, stack)) {
                             return false;
                         }
                     }
@@ -274,7 +274,7 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
             if (!menu.level.isClientSide) {
                 try {
                     if (!stack.isEmpty()) {
-                        if (!(stack.getItem() instanceof WarframeModuleBase)) {
+                        if (!(stack.getItem() instanceof AbstractWarframeModule)) {
                             LogUtil.error("警告：非战甲模组被放入槽位" + slotIndex + " - " +
                                     stack.getHoverName().getString());
                             menu.moduleHandler.setStackInSlot(slotIndex, ItemStack.EMPTY);

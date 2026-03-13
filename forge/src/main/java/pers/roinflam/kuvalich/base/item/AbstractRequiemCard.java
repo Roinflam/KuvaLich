@@ -19,9 +19,9 @@ import java.util.List;
  * Requiem Card Base Class (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
-public abstract class RequiemCardBase extends Item {
+public abstract class AbstractRequiemCard extends Item {
 
-    public RequiemCardBase(@Nonnull Item.Properties properties) {
+    public AbstractRequiemCard(@Nonnull Item.Properties properties) {
         super(properties
                 .stacksTo(1)           // 最大堆叠数1 / Max stack size 1
                 .durability(3)         // 最大耐久度3 / Max durability 3
@@ -43,7 +43,7 @@ public abstract class RequiemCardBase extends Item {
         ItemStack itemStack = event.getItemStack();
         Item item = itemStack.getItem();
 
-        if (item instanceof RequiemCardBase) {
+        if (item instanceof AbstractRequiemCard) {
             List<Component> tooltip = event.getToolTip();
 
             // 获取物品的描述ID（1.20.1新API）

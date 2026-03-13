@@ -20,7 +20,7 @@ import java.util.UUID;
  * 赤毒武器基类（1.20.1版本，业务逻辑100%不变）
  * Kuva Weapon Base Class (1.20.1 version, business logic 100% unchanged)
  */
-public abstract class KuvaWeaponBase extends SwordItem {
+public abstract class AbstractKuvaWeapon extends SwordItem {
 
     // ✅ 1.20.1使用Tier代替ToolMaterial
     // ✅ 1.20.1 uses Tier instead of ToolMaterial
@@ -40,7 +40,7 @@ public abstract class KuvaWeaponBase extends SwordItem {
     public static UUID MAX_HEALTH = UUID.fromString("157634e9-f993-110e-8705-dab08f43c437");
     public static UUID REACH_DISTANCE = UUID.fromString("e4e74f53-41a0-f8ae-41e8-8de5cfd7f2ed");
 
-    public KuvaWeaponBase(@Nonnull Item.Properties properties) {
+    public AbstractKuvaWeapon(@Nonnull Item.Properties properties) {
         super(KUVA, 0, 0, properties);  // 攻击伤害和速度由getAttributeModifiers控制
     }
 

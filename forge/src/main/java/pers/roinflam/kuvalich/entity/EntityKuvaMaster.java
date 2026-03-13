@@ -21,7 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.entity.KuvaBase;
+import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
@@ -29,7 +29,7 @@ import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.item.module.item.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
 import java.util.*;
@@ -47,7 +47,7 @@ import java.util.*;
  * 2. Burst diminishing - ring buffer implementation, zero GC
  * 3. Soft damage cap - logarithmic cap prevents one-shots
  */
-public class EntityKuvaMaster extends KuvaBase {
+public class EntityKuvaMaster extends AbstractKuva {
 
     // ==================== 回血参数（已砍半） ====================
 
@@ -358,7 +358,7 @@ public class EntityKuvaMaster extends KuvaBase {
         List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(
                 LivingEntity.class,
                 aabb,
-                entity -> !(entity instanceof KuvaBase) && !entity.equals(excludeEntity)
+                entity -> !(entity instanceof AbstractKuva) && !entity.equals(excludeEntity)
         );
 
         for (LivingEntity nearby : nearbyEntities) {
@@ -447,7 +447,7 @@ public class EntityKuvaMaster extends KuvaBase {
             }
         }
 
-        ItemStack weapon = KuvaWeapon.getItem(
+        ItemStack weapon = KuvaWeaponUtil.getItem(
                 KuvaLichItems.KUVA_WEAPONS.get(RandomUtil.getInt(0, KuvaLichItems.KUVA_WEAPONS.size() - 1)),
                 requiemCard.getMinimumLevelWeapon(),
                 requiemCard.getMaximumLevelWeapon()

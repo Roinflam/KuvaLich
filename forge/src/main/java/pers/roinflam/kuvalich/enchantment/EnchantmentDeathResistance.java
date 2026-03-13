@@ -5,7 +5,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
 import net.minecraftforge.fml.common.Mod;
 
-import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
+import pers.roinflam.kuvalich.base.enchantment.AbstractEnchantment;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
@@ -19,7 +19,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  * Note: Specific death resistance logic needs to be implemented in LivingDeathEvent
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
-public class EnchantmentDeathResistance extends EnchantmentBase {
+public class EnchantmentDeathResistance extends AbstractEnchantment {
 
     // 常量定义 / Constants
     private static final int MAX_LEVEL = 3;

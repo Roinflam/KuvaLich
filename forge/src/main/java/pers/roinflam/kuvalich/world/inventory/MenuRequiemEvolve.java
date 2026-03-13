@@ -20,8 +20,8 @@ import pers.roinflam.kuvalich.item.Kuva;
 import pers.roinflam.kuvalich.item.RivenSliver;
 import pers.roinflam.kuvalich.item.module.item.ItemRivenModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
-import pers.roinflam.kuvalich.itemstack.ItemModule;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.LogUtil;
 
 /**
@@ -309,7 +309,7 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      */
     private void processCrafting(ItemStack weaponStack, ItemStack materialStack) {
         // 情况1：赤毒武器融合 / Case 1: Kuva weapon evolve
-        if (KuvaWeapon.hasType(weaponStack) && KuvaWeapon.hasType(materialStack)) {
+        if (KuvaWeaponUtil.hasType(weaponStack) && KuvaWeaponUtil.hasType(materialStack)) {
             processWeaponEvolve(weaponStack, materialStack);
             return;
         }
@@ -329,9 +329,9 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         // 情况4：Forma洗面板（已开光 + 非赤毒 + 未锁定 + 塑形块 → 直接消耗）
         // Case 4: Forma re-roll (opened + non-Kuva + not locked + Forma → instant consume)
         if (materialStack.getItem() instanceof Forma
-                && ItemModule.hasBase(weaponStack)
-                && !KuvaWeapon.hasType(weaponStack)
-                && !ItemModule.isFormaLocked(weaponStack)
+                && WeaponModuleHandler.hasBase(weaponStack)
+                && !KuvaWeaponUtil.hasType(weaponStack)
+                && !WeaponModuleHandler.isFormaLocked(weaponStack)
                 && weaponStack.getCount() == 1) {
             processFormaReroll(weaponStack, materialStack);
             return;
@@ -357,15 +357,15 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         try {
             ItemStack newWeapon = weaponStack.copy();
 
-            int weaponLevel = KuvaWeapon.getNumber(weaponStack);
-            int materialLevel = KuvaWeapon.getNumber(materialStack);
+            int weaponLevel = KuvaWeaponUtil.getNumber(weaponStack);
+            int materialLevel = KuvaWeaponUtil.getNumber(materialStack);
             int newLevel = Math.max(weaponLevel, materialLevel);
 
             newLevel = (int) (newLevel * (1 + ModConfig.KUVA_LICH.upgradeMultiplier.get()));
             newLevel = Math.min(newLevel, ModConfig.KUVA_LICH.upgradeLimit.get());
 
-            KuvaWeapon.setType(newWeapon, KuvaWeapon.getType(materialStack));
-            KuvaWeapon.setNumber(newWeapon, newLevel);
+            KuvaWeaponUtil.setType(newWeapon, KuvaWeaponUtil.getType(materialStack));
+            KuvaWeaponUtil.setNumber(newWeapon, newLevel);
 
             resultHandler.setStackInSlot(0, newWeapon);
             evolveMode = true;
@@ -474,7 +474,7 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      *
      * 前提条件（在processCrafting中已验证）：
      * - 武器已开光（hasBase == true）
-     * - 武器不是赤毒武器（!KuvaWeapon.hasType）
+     * - 武器不是赤毒武器（!KuvaWeaponUtil.hasType）
      * - 武器未被锁定（!isFormaLocked）
      * - 武器数量为1
      * - 材料是塑形块（Forma）
@@ -488,13 +488,13 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             ItemStack newWeapon = weaponStack.copy();
 
             // 清除旧面板 → 重新随机 / Clear old panel → re-randomize
-            if (!ItemModule.clearBaseAttribute(newWeapon)) {
+            if (!WeaponModuleHandler.clearBaseAttribute(newWeapon)) {
                 // 理论上不会走到这里（processCrafting已检查锁定），安全兜底
                 // Should not reach here (processCrafting already checked lock), safety fallback
                 LogUtil.warn("Forma洗面板失败：物品已锁定");
                 return;
             }
-            ItemModule.setBaseAttribute(newWeapon);
+            WeaponModuleHandler.setBaseAttribute(newWeapon);
 
             // ⭐ 检查是否触发Forma锁定 / Check if Forma lock triggers
             if (ModConfig.KUVA_LICH.formaLockEnabled.get()) {
@@ -504,7 +504,7 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                     // Use world random generator, range 0~100, compare with lockChance
                     double roll = level.random.nextDouble() * 100.0;
                     if (roll < lockChance) {
-                        ItemModule.setFormaLocked(newWeapon);
+                        WeaponModuleHandler.setFormaLocked(newWeapon);
                         LogUtil.debugEvent("Forma锁定触发",
                                 newWeapon.getHoverName().getString(),
                                 "概率 " + lockChance + "%, 掷骰 " + String.format("%.2f", roll) + " → 面板已被永久锁定");
@@ -543,10 +543,10 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      * @param materialStack 裂罅碎块
      */
     private void processAddBaseAttribute(ItemStack weaponStack, ItemStack materialStack) {
-        if (!ItemModule.hasBase(weaponStack) && weaponStack.getCount() == 1) {
+        if (!WeaponModuleHandler.hasBase(weaponStack) && weaponStack.getCount() == 1) {
             try {
                 ItemStack newWeapon = weaponStack.copy();
-                ItemModule.setBaseAttribute(newWeapon);
+                WeaponModuleHandler.setBaseAttribute(newWeapon);
 
                 // 消耗1个裂罅碎块 / Consume 1 Riven Sliver
                 ItemStack newMaterial = materialStack.copy();
@@ -713,7 +713,7 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
             // 赤毒武器（融合用）/ Kuva weapon (for evolve)
-            if (KuvaWeapon.hasType(stack)) {
+            if (KuvaWeaponUtil.hasType(stack)) {
                 return super.mayPlace(stack);
             }
             // 裂罅模组（循环用）/ Riven module (for cycle)
@@ -721,12 +721,12 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                 return super.mayPlace(stack);
             }
             // 未开光物品（开光用）/ Unopened item (for base attribute)
-            if (!ItemModule.hasBase(stack) && stack.getCount() == 1) {
+            if (!WeaponModuleHandler.hasBase(stack) && stack.getCount() == 1) {
                 return super.mayPlace(stack);
             }
             // 已开光的非赤毒武器（Forma洗面板用，允许已锁定物品放入，锁定检查在processCrafting中做）
             // Opened non-Kuva weapon (for Forma re-roll, locked items allowed in slot, lock check in processCrafting)
-            if (ItemModule.hasBase(stack) && stack.getCount() == 1) {
+            if (WeaponModuleHandler.hasBase(stack) && stack.getCount() == 1) {
                 return super.mayPlace(stack);
             }
             return false;
@@ -763,7 +763,7 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
             // 赤毒武器（融合材料）/ Kuva weapon (evolve material)
-            if (KuvaWeapon.hasType(stack)) {
+            if (KuvaWeaponUtil.hasType(stack)) {
                 return super.mayPlace(stack);
             }
             // 赤毒（裂罅循环消耗品）/ Kuva (Riven cycle consumable)

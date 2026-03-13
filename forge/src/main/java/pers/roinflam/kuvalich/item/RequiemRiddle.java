@@ -14,7 +14,7 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.item.RequiemCardBase;
+import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 
 import javax.annotation.Nonnull;
@@ -51,7 +51,7 @@ public class RequiemRiddle extends Item {
      * Get card name component (business logic 100% unchanged)
      */
     private Component getCardName(int id) {
-        return Component.translatable(RequiemCardBase.getCard(id).getDescriptionId());
+        return Component.translatable(AbstractRequiemCard.getCard(id).getDescriptionId());
     }
 
     /**

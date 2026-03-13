@@ -7,11 +7,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
  * Caustacyst (1.20.1 version, using dynamic attribute system)
  */
 @Mod.EventBusSubscriber
-public class Caustacyst extends KuvaWeaponBase {
+public class Caustacyst extends AbstractKuvaWeapon {
 
     public Caustacyst(@Nonnull Item.Properties properties) {
         super(properties);
@@ -46,24 +46,24 @@ public class Caustacyst extends KuvaWeaponBase {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, Caustacyst.class);
 
         if (weapon != null) {
-            String weaponType = KuvaWeapon.getType(weapon);
+            String weaponType = KuvaWeaponUtil.getType(weapon);
 
             if (weaponType.equalsIgnoreCase("poison")) {
                 // ✅ 替换为动态属性系统
                 DynamicAttributeManager.apply(
                         hurter,
                         DynamicAttributes.VIRUS.createInstance(
-                                (int) KuvaWeapon.getMagnification(weapon, 150),
+                                (int) KuvaWeaponUtil.getMagnification(weapon, 150),
                                 9
                         )
                 );
             } else {
-                event.setAmount(KuvaWeapon.getMagnification(weapon, event.getAmount() * 0.75f));
+                event.setAmount(KuvaWeaponUtil.getMagnification(weapon, event.getAmount() * 0.75f));
                 // ✅ 替换为动态属性系统
                 DynamicAttributeManager.apply(
                         hurter,
                         DynamicAttributes.VIRUS.createInstance(
-                                (int) KuvaWeapon.getMagnification(weapon, 150),
+                                (int) KuvaWeaponUtil.getMagnification(weapon, 150),
                                 0
                         )
                 );
@@ -73,19 +73,19 @@ public class Caustacyst extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageCaustacyst.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedCaustacyst.get()));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.max(0, KuvaWeapon.getMagnification(itemStack,
+        return Math.max(0, KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.movementSpeedCaustacyst.get()));
     }
 

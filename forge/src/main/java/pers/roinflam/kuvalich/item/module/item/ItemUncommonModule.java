@@ -9,8 +9,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.level.Level;
 
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
@@ -23,7 +23,7 @@ import java.util.List;
  * 白银级武器模组（1.20.1版本）
  * Uncommon (Silver) tier weapon module (1.20.1 version)
  */
-public class ItemUncommonModule extends ItemModuleBase {
+public class ItemUncommonModule extends AbstractItemModule {
 
     public static List<ItemStack> itemStackList = new ArrayList<>();
     private static boolean isInitialized = false;
@@ -35,7 +35,7 @@ public class ItemUncommonModule extends ItemModuleBase {
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_UNCOMMON_MODULE.get());
         itemStack.setHoverName(net.minecraft.network.chat.Component.translatable("kuvaweapon.item_type_random.name"));
-        ModuleBase.setRandom(itemStack, true);
+        AbstractModule.setRandom(itemStack, true);
         return itemStack;
     }
 
@@ -296,7 +296,7 @@ public class ItemUncommonModule extends ItemModuleBase {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
-        if (!level.isClientSide() && ItemModuleBase.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
+        if (!level.isClientSide() && AbstractItemModule.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
             ensureInitialized();
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
             CustomModuleManager.getInstance().addCustomItemModulesToRandomList(availableModules, Rarity.UNCOMMON);

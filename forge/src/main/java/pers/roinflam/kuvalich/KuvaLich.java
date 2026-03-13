@@ -13,7 +13,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.simple.SimpleChannel;
 
-import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ClothConfigScreen;
 import pers.roinflam.kuvalich.config.ModConfig;
@@ -154,7 +154,7 @@ public class KuvaLich {
                     @Override
                     public void run() {
                         try {
-                            ModuleBase.cleanExpiredCache();
+                            AbstractModule.cleanExpiredCache();
                             LogUtil.debug("缓存清理完成");
                         } catch (Exception e) {
                             LogUtil.error("缓存清理失败", e);

@@ -19,7 +19,7 @@ import java.util.*;
  * Item Module Base Class (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
-public abstract class ItemModuleBase extends ModuleBase {
+public abstract class AbstractItemModule extends AbstractModule {
 
     public static final Set<String> ITEM_ATTRIBUTE_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(
@@ -43,7 +43,7 @@ public abstract class ItemModuleBase extends ModuleBase {
             ))
     );
 
-    public ItemModuleBase(@Nonnull Item.Properties properties) {
+    public AbstractItemModule(@Nonnull Item.Properties properties) {
         super(properties);
     }
 
@@ -64,13 +64,13 @@ public abstract class ItemModuleBase extends ModuleBase {
         }
 
         Item item = itemStack.getItem();
-        if (!(item instanceof ItemModuleBase)) {
+        if (!(item instanceof AbstractItemModule)) {
             return;
         }
 
         List<Component> tooltip = event.getToolTip();
 
-        if (ModuleBase.isRandom(itemStack)) {
+        if (AbstractModule.isRandom(itemStack)) {
             for (int i = 1; i < 4 && i < tooltip.size(); i++) {
                 tooltip.add(i, Component.translatable("kuvaweapon.item_type_random.tooltip")
                         .withStyle(ChatFormatting.GRAY));
@@ -91,7 +91,7 @@ public abstract class ItemModuleBase extends ModuleBase {
             number = addRivenTooltips(tooltip, itemStack, number);
         }
 
-        for (Map.Entry<String, Double> attributeTag : ModuleBase.getAttributes(itemStack)) {
+        for (Map.Entry<String, Double> attributeTag : AbstractModule.getAttributes(itemStack)) {
             String prefix = attributeTag.getValue() >= 0 ? "+" : "";
             int percentage = (int) (attributeTag.getValue() * 100);
             String attributeKey = attributeTag.getKey();

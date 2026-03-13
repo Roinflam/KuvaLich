@@ -19,7 +19,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.entity.KuvaBase;
+import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
@@ -35,7 +35,7 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
  * Kuva Slave Entity
  * Regular minion with flat 25% damage reduction
  */
-public class EntityKuvaSlave extends KuvaBase {
+public class EntityKuvaSlave extends AbstractKuva {
 
     // ==================== 回血参数（已砍半） ====================
 

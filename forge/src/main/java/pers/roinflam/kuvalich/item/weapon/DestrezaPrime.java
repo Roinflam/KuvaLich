@@ -8,9 +8,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
  * Destreza Prime (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
-public class DestrezaPrime extends KuvaWeaponBase {
+public class DestrezaPrime extends AbstractKuvaWeapon {
 
     public DestrezaPrime(@Nonnull Item.Properties properties) {
         super(properties);
@@ -59,19 +59,19 @@ public class DestrezaPrime extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageDestrezaPrime.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedDestrezaPrime.get()));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.max(0, KuvaWeapon.getMagnification(itemStack,
+        return Math.max(0, KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.movementSpeedDestrezaPrime.get()));
     }
 

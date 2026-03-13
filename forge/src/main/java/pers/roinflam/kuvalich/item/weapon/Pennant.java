@@ -19,9 +19,9 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.KuvaLich;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.render.damagedisplay.DamageInfo;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 @Mod.EventBusSubscriber
-public class Pennant extends KuvaWeaponBase {
+public class Pennant extends AbstractKuvaWeapon {
 
     public Pennant(@Nonnull Item.Properties properties) {
         super(properties);
@@ -95,7 +95,7 @@ public class Pennant extends KuvaWeaponBase {
 
             @Nonnull List<LivingEntity> entities = EntityUtil.getNearbyEntities(
                     LivingEntity.class, player,
-                    KuvaWeapon.getMagnification(stack, 12, 4),
+                    KuvaWeaponUtil.getMagnification(stack, 12, 4),
                     e -> !e.equals(player)
             );
 
@@ -115,7 +115,7 @@ public class Pennant extends KuvaWeaponBase {
                                 return;
                             }
 
-                            float damage = KuvaWeapon.getMagnification(stack,
+                            float damage = KuvaWeaponUtil.getMagnification(stack,
                                     (hurter.getMaxHealth() - hurter.getHealth()) * 0.25f / 20);
                             damage = damage * 0.3f + damage * tick / 10 * 0.7f;
 
@@ -154,19 +154,19 @@ public class Pennant extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamagePennant.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedPennant.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.max(0, KuvaWeapon.getMagnification(itemStack,
+        return Math.max(0, KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.movementSpeedPennant.get(), 2));
     }
 

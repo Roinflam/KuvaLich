@@ -9,9 +9,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.level.Level;
 
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
-import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
+import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
@@ -24,7 +24,7 @@ import java.util.List;
  * 黄金级战甲模组（1.20.1版本）
  * Rare (Gold) tier warframe module (1.20.1 version)
  */
-public class WarframeRareModule extends WarframeModuleBase {
+public class WarframeRareModule extends AbstractWarframeModule {
 
     public static List<ItemStack> itemStackList = new ArrayList<>();
     private static boolean isInitialized = false;
@@ -36,7 +36,7 @@ public class WarframeRareModule extends WarframeModuleBase {
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RARE_MODULE.get());
         itemStack.setHoverName(net.minecraft.network.chat.Component.translatable("kuvaweapon.warframe_type_random.name"));
-        ModuleBase.setRandom(itemStack, true);
+        AbstractModule.setRandom(itemStack, true);
         return itemStack;
     }
 
@@ -86,20 +86,20 @@ public class WarframeRareModule extends WarframeModuleBase {
                 "kuvaweapon.warframe_module.pal", "pal",
                 new Object[]{"reachDistance", 0.201f, "diggingSpeed", 0.401f});
 
-        // 超频
+        // 超频 ★ 冲刺速度 0.3001f → 0.2001f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.overclock", "overclock",
-                new Object[]{"sprintSpeed", 0.3001f, "shieldRecoveryRate", 0.6001f, "shield", -0.9001f});
+                new Object[]{"sprintSpeed", 0.2001f, "shieldRecoveryRate", 0.6001f, "shield", -0.9001f});
 
-        // 过度延伸
+        // 过度延伸 ★ 挖掘距离 0.9001f → 0.6001f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.overextended", "overextended",
-                new Object[]{"reachDistance", 0.9001f, "diggingSpeed", -0.6001f});
+                new Object[]{"reachDistance", 0.6001f, "diggingSpeed", -0.6001f});
 
-        // 心胸狭窄
+        // 心胸狭窄 ★ 挖掘速度 0.9001f → 0.6001f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.narrow_minded", "overextended",
-                new Object[]{"diggingSpeed", 0.9001f, "reachDistance", -0.6001f});
+                new Object[]{"diggingSpeed", 0.6001f, "reachDistance", -0.6001f});
 
         // 返老还童
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
@@ -111,16 +111,16 @@ public class WarframeRareModule extends WarframeModuleBase {
                 "kuvaweapon.warframe_module.rapid_recovery", "rapid_recovery",
                 new Object[]{"responseRate", 0.6001f, "shieldRecoveryRate", 0.6001f, "health", -0.3001f, "shield", -0.3001f});
 
-        // 伊甸6号
+        // 伊甸6号 ★ 挖掘速度 0.6001f → 0.3001f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.eden_6", "treasure_thief",
-                new Object[]{"itemDropMultiplier", 0.9001f, "diggingSpeed", 0.6001f, "reachDistance", 0.3001f, "health", -0.9001f},
+                new Object[]{"itemDropMultiplier", 0.9001f, "diggingSpeed", 0.3001f, "reachDistance", 0.3001f, "health", -0.9001f},
                 "item_drop_multiplier");
 
-        // 献祭烈焰
+        // 献祭烈焰 ★ 火抗 0.9001f → 0.6001f, 护甲 0.9001f → 0.6001f, 冲刺 0.4501f → 0.2001f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.sacrificial_blaze", "flame_repellent",
-                new Object[]{"fireProtection", 0.9001f, "armor", 0.9001f, "sprintSpeed", 0.4501f, "health", -0.6001f});
+                new Object[]{"fireProtection", 0.6001f, "armor", 0.6001f, "sprintSpeed", 0.2001f, "health", -0.6001f});
     }
 
     public static void registerCreativeTabItems(CreativeModeTab.Output output) {
@@ -138,7 +138,7 @@ public class WarframeRareModule extends WarframeModuleBase {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
-        if (!level.isClientSide() && ItemModuleBase.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
+        if (!level.isClientSide() && AbstractItemModule.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
             ensureInitialized();
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
             CustomModuleManager.getInstance().addCustomWarframeModulesToRandomList(availableModules, Rarity.RARE);

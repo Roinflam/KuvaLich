@@ -8,9 +8,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
@@ -26,7 +26,7 @@ import java.util.List;
  * Gram Prime (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
-public class GramPrime extends KuvaWeaponBase {
+public class GramPrime extends AbstractKuvaWeapon {
 
     public GramPrime(@Nonnull Item.Properties properties) {
         super(properties);
@@ -53,7 +53,7 @@ public class GramPrime extends KuvaWeaponBase {
 
             @Nonnull List<LivingEntity> entities = EntityUtil.getNearbyEntities(
                     LivingEntity.class, hurter,
-                    KuvaWeapon.getMagnification(weapon, 4, 6),
+                    KuvaWeaponUtil.getMagnification(weapon, 4, 6),
                     e -> !e.equals(hurter) && !e.equals(attacker)
             );
 
@@ -68,19 +68,19 @@ public class GramPrime extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageGramPrime.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedGramPrime.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack,
+        return Math.min(0, -1 + KuvaWeaponUtil.getMagnification(itemStack,
                 1 + ModConfig.KUVA_WEAPON.movementSpeedGramPrime.get(), 2));
     }
 

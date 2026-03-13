@@ -4,7 +4,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 
 import javax.annotation.Nullable;
 
@@ -47,7 +47,7 @@ public class WeaponEventUtil {
      * ✅ 业务逻辑与1.12.2完全一致
      */
     @Nullable
-    public static ItemStack checkWeaponAttack(LivingEntity attacker, Class<? extends KuvaWeaponBase> weaponClass) {
+    public static ItemStack checkWeaponAttack(LivingEntity attacker, Class<? extends AbstractKuvaWeapon> weaponClass) {
         return checkWeaponAttack(attacker, weaponClass, 1.0);
     }
 
@@ -59,7 +59,7 @@ public class WeaponEventUtil {
      */
     @Nullable
     public static ItemStack checkWeaponAttack(LivingEntity attacker,
-                                              Class<? extends KuvaWeaponBase> weaponClass,
+                                              Class<? extends AbstractKuvaWeapon> weaponClass,
                                               double cooldownThreshold) {
         ItemStack weapon = getActiveWeapon(attacker);
         if (weapon == null) {

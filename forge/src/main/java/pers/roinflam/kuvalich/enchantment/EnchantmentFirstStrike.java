@@ -13,7 +13,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
+import pers.roinflam.kuvalich.base.enchantment.AbstractEnchantment;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -25,7 +25,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  * Effect: Deal extra damage to enemies at full health and gain experience
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
-public class EnchantmentFirstStrike extends EnchantmentBase {
+public class EnchantmentFirstStrike extends AbstractEnchantment {
 
     // 常量定义 / Constants
     private static final int MAX_LEVEL = 3;

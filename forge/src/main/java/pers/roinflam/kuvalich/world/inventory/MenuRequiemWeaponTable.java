@@ -16,11 +16,11 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
 import pers.roinflam.kuvalich.item.module.item.ItemRivenModule;
-import pers.roinflam.kuvalich.itemstack.ItemModule;
+import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -156,7 +156,7 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
             // 从背包转移 / From inventory
             boolean transferred = false;
 
-            if (itemstack.getItem() instanceof ItemModuleBase) {
+            if (itemstack.getItem() instanceof AbstractItemModule) {
                 // 只尝试放入已解锁的槽位 / Only try unlocked slots
                 int limit = getModuleLimit();
                 for (int i = 0; i < limit; i++) {
@@ -168,7 +168,7 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
                 if (!transferred) {
                     return ItemStack.EMPTY;
                 }
-            } else if (ItemModule.hasBase(itemstack)) {
+            } else if (WeaponModuleHandler.hasBase(itemstack)) {
                 if (!this.moveItemStackTo(slotStack, 8, 9, false)) {
                     return ItemStack.EMPTY;
                 }
@@ -219,7 +219,7 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
                 ItemStack moduleStack = moduleHandler.getStackInSlot(i);
 
                 if (moduleStack != null && !moduleStack.isEmpty()) {
-                    if (moduleStack.getItem() instanceof ItemModuleBase) {
+                    if (moduleStack.getItem() instanceof AbstractItemModule) {
                         moduleStack.save(itemTag);
                     } else {
                         ItemStack.EMPTY.save(itemTag);
@@ -284,7 +284,7 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
             if (!menu.weaponHandler.getStackInSlot(0).isEmpty()) {
                 return false;
             }
-            if (!ItemModule.hasBase(stack)) {
+            if (!WeaponModuleHandler.hasBase(stack)) {
                 return false;
             }
             return super.mayPlace(stack);
@@ -411,10 +411,10 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
                 return false;
             }
 
-            if (!(stack.getItem() instanceof ItemModuleBase)) {
+            if (!(stack.getItem() instanceof AbstractItemModule)) {
                 return false;
             }
-            if (ItemModuleBase.isRandom(stack)) {
+            if (AbstractItemModule.isRandom(stack)) {
                 return false;
             }
             if (!this.getItemHandler().getStackInSlot(slotIndex).isEmpty()) {
@@ -433,7 +433,7 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
                         }
 
                         // 双向冲突检测 / Bidirectional conflict detection
-                        if (ModuleBase.hasConflict(existingStack, stack)) {
+                        if (AbstractModule.hasConflict(existingStack, stack)) {
                             return false;
                         }
                     }
@@ -481,7 +481,7 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
             ItemStack weaponItemStack = menu.weaponHandler.getStackInSlot(0);
 
             if (weaponItemStack == null || weaponItemStack.isEmpty() ||
-                    !ItemModule.hasBase(weaponItemStack)) {
+                    !WeaponModuleHandler.hasBase(weaponItemStack)) {
                 return;
             }
 
@@ -502,7 +502,7 @@ public class MenuRequiemWeaponTable extends AbstractContainerMenu {
                     ItemStack moduleStack = menu.moduleHandler.getStackInSlot(i);
 
                     if (moduleStack != null && !moduleStack.isEmpty()) {
-                        if (moduleStack.getItem() instanceof ItemModuleBase) {
+                        if (moduleStack.getItem() instanceof AbstractItemModule) {
                             moduleStack.save(itemTag);
                         } else {
                             ItemStack.EMPTY.save(itemTag);

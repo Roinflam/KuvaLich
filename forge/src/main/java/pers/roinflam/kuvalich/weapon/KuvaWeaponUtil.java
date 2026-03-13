@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.itemstack;
+package pers.roinflam.kuvalich.weapon;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -9,7 +9,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
@@ -23,7 +23,7 @@ import java.util.List;
  * Kuva Weapon Utility Class (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
-public class KuvaWeapon {
+public class KuvaWeaponUtil {
 
     private static final List<String> DAMAGE_TYPE = new ArrayList<>(Arrays.asList(
             "fire", "poison", "ice", "electricity", "impact", "magnetic", "radiation"
@@ -53,8 +53,8 @@ public class KuvaWeapon {
 
         tag.put(Reference.MOD_ID, kuvalich);
 
-        if (item instanceof KuvaWeaponBase) {
-            ((KuvaWeaponBase) item).getBaseAttribute(itemStack);
+        if (item instanceof AbstractKuvaWeapon) {
+            ((AbstractKuvaWeapon) item).getBaseAttribute(itemStack);
         }
 
         return itemStack;

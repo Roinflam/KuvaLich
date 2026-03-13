@@ -7,9 +7,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
@@ -21,7 +21,7 @@ import javax.annotation.Nonnull;
  * Kuva Shildeg (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
-public class KuvaShildeg extends KuvaWeaponBase {
+public class KuvaShildeg extends AbstractKuvaWeapon {
 
     public KuvaShildeg(@Nonnull Item.Properties properties) {
         super(properties);
@@ -47,7 +47,7 @@ public class KuvaShildeg extends KuvaWeaponBase {
             if (hurter.getArmorValue() > 0) {
 
             } else {
-                event.setAmount(event.getAmount() * KuvaWeapon.getMagnification(weapon, 1.25f));
+                event.setAmount(event.getAmount() * KuvaWeaponUtil.getMagnification(weapon, 1.25f));
             }
         }
     }
@@ -59,19 +59,19 @@ public class KuvaShildeg extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageKuvaShildeg.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedKuvaShildeg.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack,
+        return Math.min(0, -1 + KuvaWeaponUtil.getMagnification(itemStack,
                 1 + ModConfig.KUVA_WEAPON.movementSpeedKuvaShildeg.get(), 2));
     }
 

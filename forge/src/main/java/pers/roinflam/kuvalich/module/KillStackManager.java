@@ -1,5 +1,5 @@
 // KillStackManager.java - 1.20.1版本
-package pers.roinflam.kuvalich.itemstack;
+package pers.roinflam.kuvalich.module;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;

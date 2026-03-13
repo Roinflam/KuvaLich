@@ -19,7 +19,7 @@ import java.util.*;
  * Warframe Module Base Class (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
-public abstract class WarframeModuleBase extends ModuleBase {
+public abstract class AbstractWarframeModule extends AbstractModule {
 
     public static final Set<String> WARFRAME_ATTRIBUTE_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(
@@ -37,7 +37,7 @@ public abstract class WarframeModuleBase extends ModuleBase {
             ))
     );
 
-    public WarframeModuleBase(@Nonnull Item.Properties properties) {
+    public AbstractWarframeModule(@Nonnull Item.Properties properties) {
         super(properties);
     }
 
@@ -54,13 +54,13 @@ public abstract class WarframeModuleBase extends ModuleBase {
         }
 
         Item item = itemStack.getItem();
-        if (!(item instanceof WarframeModuleBase)) {
+        if (!(item instanceof AbstractWarframeModule)) {
             return;
         }
 
         List<Component> tooltip = event.getToolTip();
 
-        if (ModuleBase.isRandom(itemStack)) {
+        if (AbstractModule.isRandom(itemStack)) {
             for (int i = 1; i < 4 && i < tooltip.size(); i++) {
                 tooltip.add(i, Component.translatable("kuvaweapon.warframe_type_random.tooltip")
                         .withStyle(ChatFormatting.GRAY));
@@ -77,7 +77,7 @@ public abstract class WarframeModuleBase extends ModuleBase {
             number = addRivenTooltips(tooltip, itemStack, number);
         }
 
-        for (Map.Entry<String, Double> attributeTag : ModuleBase.getAttributes(itemStack)) {
+        for (Map.Entry<String, Double> attributeTag : AbstractModule.getAttributes(itemStack)) {
             String attributeKey = attributeTag.getKey();
             double value = attributeTag.getValue();
 

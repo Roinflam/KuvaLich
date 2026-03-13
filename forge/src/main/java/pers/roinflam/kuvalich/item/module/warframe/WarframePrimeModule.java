@@ -9,9 +9,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.level.Level;
 
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
-import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
+import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
@@ -24,7 +24,7 @@ import java.util.List;
  * Prime级战甲模组（1.20.1版本）
  * Prime (Epic) tier warframe module (1.20.1 version)
  */
-public class WarframePrimeModule extends WarframeModuleBase {
+public class WarframePrimeModule extends AbstractWarframeModule {
 
     public static List<ItemStack> itemStackList = new ArrayList<>();
     private static boolean isInitialized = false;
@@ -36,7 +36,7 @@ public class WarframePrimeModule extends WarframeModuleBase {
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_PRIME_MODULE.get());
         itemStack.setHoverName(net.minecraft.network.chat.Component.translatable("kuvaweapon.warframe_type_random.name"));
-        ModuleBase.setRandom(itemStack, true);
+        AbstractModule.setRandom(itemStack, true);
         return itemStack;
     }
 
@@ -86,20 +86,20 @@ public class WarframePrimeModule extends WarframeModuleBase {
                 new Object[]{"itemDropMultiplier", 0.9001f},
                 "item_drop_multiplier");
 
-        // 超频Prime
+        // 超频Prime ★ 冲刺速度 0.4501f → 0.2501f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.overclock_prime", "overclock",
-                new Object[]{"sprintSpeed", 0.4501f, "shieldRecoveryRate", 0.9001f, "shield", -0.9001f});
+                new Object[]{"sprintSpeed", 0.2501f, "shieldRecoveryRate", 0.9001f, "shield", -0.9001f});
 
-        // 充能护甲Prime
+        // 充能护甲Prime ★ 护盾恢复速率 1.4001f → 1.0001f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.charged_armor_prime", "charged_armor",
-                new Object[]{"shield", 1.4001f, "shieldRecoveryRate", 1.4001f, "armor", -2.0001f});
+                new Object[]{"shield", 1.4001f, "shieldRecoveryRate", 1.0001f, "armor", -2.0001f});
 
-        // 宝藏盗贼Prime
+        // 宝藏盗贼Prime ★ 掉落倍率 1.2001f → 1.0001f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.treasure_thief_prime", "treasure_thief",
-                new Object[]{"itemDropMultiplier", 1.2001f, "health", -0.6001f, "shield", -1.2001f},
+                new Object[]{"itemDropMultiplier", 1.0001f, "health", -0.6001f, "shield", -1.2001f},
                 "item_drop_multiplier");
 
         // 执刑官 生命力
@@ -180,7 +180,7 @@ public class WarframePrimeModule extends WarframeModuleBase {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
-        if (!level.isClientSide() && ItemModuleBase.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
+        if (!level.isClientSide() && AbstractItemModule.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
             ensureInitialized();
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
             CustomModuleManager.getInstance().addCustomWarframeModulesToRandomList(availableModules, Rarity.EPIC);

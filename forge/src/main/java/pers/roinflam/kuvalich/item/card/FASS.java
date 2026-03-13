@@ -1,10 +1,10 @@
 package pers.roinflam.kuvalich.item.card;
 
 import net.minecraft.world.item.Item;
-import pers.roinflam.kuvalich.base.item.RequiemCardBase;
+import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import javax.annotation.Nonnull;
 
-public class FASS extends RequiemCardBase {
+public class FASS extends AbstractRequiemCard {
 
     public FASS(@Nonnull Item.Properties properties) {
         super(properties);

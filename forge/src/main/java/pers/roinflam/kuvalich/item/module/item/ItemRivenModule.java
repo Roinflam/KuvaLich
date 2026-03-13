@@ -12,8 +12,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.level.Level;
 
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
@@ -36,7 +36,7 @@ import java.util.Set;
  * Supports three modes: Melee(0), Remote(1), Universal(2)
  * Universal mode allows both melee and remote attributes in a single mixed pool
  */
-public class ItemRivenModule extends ItemModuleBase {
+public class ItemRivenModule extends AbstractItemModule {
     private static final String[] PREFIXES = {"Croni", "Sati", "Vexi", "Locti", "Magna", "Crita", "Geli", "Rupti", "Arma", "Venxi", "Furi", "Praesi", "Nexi", "Draco", "Spira", "Phasa", "Lunari", "Solara", "Terron", "Aquix", "Ventra", "Ignis", "Frosti", "Voltic", "Plasma", "Ethera", "Radi", "Mortal", "Divin", "Spectra", "Celest", "Infern", "Obliv", "Eclip", "Cosmi", "Stella", "Astron", "Nebula", "Galax", "Orbit", "Nova", "Lunar", "Solar", "Comet", "Astro", "Stellar", "Void", "Quantum", "Gluon", "Gravi", "Photon", "Pulsar", "Quark", "Radian", "Sigma", "Tau", "Upsilon", "Vecti", "Warp", "Xenon", "Yotta", "Zetta", "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega", "Axion", "Baryon", "Charm", "Dynami", "Electro", "Fluxi", "Gyro", "Halo", "Ioni", "Joule", "Kineti", "Lepto", "Mytho", "Neuro", "Omni", "Penta", "Quanta", "Retro", "Syntho", "Tri", "Umbra", "Vecta", "Wyrm", "Xero", "Yield", "Zephyr"};
 
     private static final String[] SUFFIXES = {"cron", "ata", "icor", "tis", "tron", "cak", "nus", "vex", "mira", "ton", "sera", "phix", "gara", "luxe", "moto", "zora", "fyre", "glacia", "volt", "terra", "aqua", "nebula", "stellar", "cosmo", "sol", "lunar", "astral", "void", "nether", "ether", "flux", "halo", "vortex", "quantum", "sigma", "omega", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu", "nu", "xi", "omicron", "pi", "rho", "sigma", "tau", "upsilon", "phi", "chi", "psi", "omega", "alpha", "beta", "axion", "baryon", "charm", "dynami", "electro", "fluxi", "gyro", "halo", "ioni", "joule", "kineti", "lepto", "mytho", "neuro", "omni", "penta", "quanta", "retro", "syntho", "tri", "umbra", "vecta", "wyrm", "xero", "yield", "zephyr", "ara", "bolo", "ceta", "dome", "ergo", "foti", "glow", "hype", "ille", "juno", "kilo", "lima", "mote", "nano", "oxi", "pico", "quark", "rune", "solo", "tome", "uni", "volo", "watt", "xene", "yotta", "zetta"};
@@ -85,7 +85,7 @@ public class ItemRivenModule extends ItemModuleBase {
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_RIVEN_MODULE.get());
         itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + Component.translatable("kuvaweapon.item_type_riven_random.name").getString()));
-        ModuleBase.setRandom(itemStack, true);
+        AbstractModule.setRandom(itemStack, true);
         return itemStack;
     }
 
@@ -265,7 +265,7 @@ public class ItemRivenModule extends ItemModuleBase {
             negativeTrendMagnification *= 1.5;
         }
 
-        List<String> itemAttributeType = new ArrayList<>(ItemModuleBase.ITEM_ATTRIBUTE_TYPES);
+        List<String> itemAttributeType = new ArrayList<>(AbstractItemModule.ITEM_ATTRIBUTE_TYPES);
         Collections.shuffle(itemAttributeType);
 
         List<String> hasAttributeType = new ArrayList<>();
@@ -297,7 +297,7 @@ public class ItemRivenModule extends ItemModuleBase {
             randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
             hasAttributeType.add(attributeType);
-            ItemModuleBase.addAttributes(itemStack, attributeType,
+            AbstractItemModule.addAttributes(itemStack, attributeType,
                     getBaseAttributeValue(attributeType) * trendMagnification * randomDouble * globalMultiplier);
             add++;
         }
@@ -331,13 +331,13 @@ public class ItemRivenModule extends ItemModuleBase {
                 double randomDouble = 0.8 + (Math.random() * (1.2 - 0.8));
                 randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
-                ItemModuleBase.addAttributes(itemStack, attributeType,
+                AbstractItemModule.addAttributes(itemStack, attributeType,
                         -(getBaseAttributeValue(attributeType) * negativeTrendMagnification * randomDouble * globalMultiplier));
                 break;
             }
         }
 
-        ItemModuleBase.setType(itemStack, RIVEN_TYPE);
+        AbstractItemModule.setType(itemStack, RIVEN_TYPE);
 
         return itemStack;
     }
@@ -491,7 +491,7 @@ public class ItemRivenModule extends ItemModuleBase {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
-        if (!level.isClientSide() && ItemModuleBase.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
+        if (!level.isClientSide() && AbstractItemModule.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
             if (isRivenDisabled()) {
                 return InteractionResultHolder.fail(itemstack);
             }

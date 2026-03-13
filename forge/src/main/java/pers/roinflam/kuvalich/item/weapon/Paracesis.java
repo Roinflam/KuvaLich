@@ -9,9 +9,9 @@ import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
  * Paracesis (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
-public class Paracesis extends KuvaWeaponBase {
+public class Paracesis extends AbstractKuvaWeapon {
 
     public Paracesis(@Nonnull Item.Properties properties) {
         super(properties);
@@ -70,7 +70,7 @@ public class Paracesis extends KuvaWeaponBase {
 
         if (weapon != null) {
             float totalDamage = event.getAmount();
-            float dotDamage = KuvaWeapon.getMagnification(weapon, totalDamage * 0.7f / 100);
+            float dotDamage = KuvaWeaponUtil.getMagnification(weapon, totalDamage * 0.7f / 100);
             event.setAmount(totalDamage * 0.3f);
 
             new SynchronizationTask(5, 1) {
@@ -96,19 +96,19 @@ public class Paracesis extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageParacesis.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedParacesis.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack,
+        return Math.min(0, -1 + KuvaWeaponUtil.getMagnification(itemStack,
                 1 + ModConfig.KUVA_WEAPON.movementSpeedParacesis.get(), 2));
     }
 

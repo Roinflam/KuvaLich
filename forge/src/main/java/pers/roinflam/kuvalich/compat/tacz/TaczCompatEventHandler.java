@@ -14,7 +14,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
-import pers.roinflam.kuvalich.itemstack.ItemModule;
+import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 
 /**
  * TACZ 兼容事件处理器（由 KuvaLich 主类在检测到 TACZ 后手动注册到 Forge 事件总线）
@@ -26,7 +26,7 @@ import pers.roinflam.kuvalich.itemstack.ItemModule;
  * 1. 负值多重射击 → GunFireEvent 概率取消
  * 2. TACZ 枪械自带爆炸 + bursting_radius 模组 →
  *    爆炸半径放大由 MixinTaczBulletExplosion 在子弹构造时直接写入 explosionRadius 字段；
- *    此处仅设置 suppressBurstRadius，防止 ItemModule 额外触发 bursting_radius AOE
+ *    此处仅设置 suppressBurstRadius，防止 WeaponModuleHandler 额外触发 bursting_radius AOE
  * 3. TACZ 枪械无爆炸 → 完全不干预
  */
 public class TaczCompatEventHandler {
@@ -34,9 +34,9 @@ public class TaczCompatEventHandler {
     /**
      * 在伤害结算前（NORMAL 优先级）检测 TACZ 枪击中情况，设置 bursting_radius 抑制标志。
      * <p>
-     * 执行顺序：本方法（NORMAL）先于 ItemModule.onLivingHurt（LOWEST）运行。
+     * 执行顺序：本方法（NORMAL）先于 WeaponModuleHandler.onLivingHurt（LOWEST）运行。
      * <p>
-     * 有爆炸 → 设置 suppressBurstRadius = true，阻止 ItemModule 重复 AOE；
+     * 有爆炸 → 设置 suppressBurstRadius = true，阻止 WeaponModuleHandler 重复 AOE；
      * 爆炸半径放大已由 MixinTaczBulletExplosion 在子弹创建时完成，此处无需处理。
      * <p>
      * 无爆炸 → 清除标志，与原来完全一致。
@@ -64,13 +64,13 @@ public class TaczCompatEventHandler {
             return;
         }
 
-        if (!ItemModule.hasBase(gunStack)) {
+        if (!WeaponModuleHandler.hasBase(gunStack)) {
             WarframeTaczBridge.clearBurstRadiusSuppressed();
             return;
         }
 
-        // 有爆炸 → 抑制 ItemModule 的 bursting_radius AOE（爆炸半径已在子弹创建时放大）
-        // Has explosion → suppress ItemModule's bursting_radius AOE (radius already enlarged at bullet spawn)
+        // 有爆炸 → 抑制 WeaponModuleHandler 的 bursting_radius AOE（爆炸半径已在子弹创建时放大）
+        // Has explosion → suppress WeaponModuleHandler's bursting_radius AOE (radius already enlarged at bullet spawn)
         // 无爆炸 → 清除标志，完全不干预
         // No explosion → clear flag, no intervention
         WarframeTaczBridge.setSuppressBurstRadius(checkTaczGunHasExplosion(iGun, gunStack, shooter));

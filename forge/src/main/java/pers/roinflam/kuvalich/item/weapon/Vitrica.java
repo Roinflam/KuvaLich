@@ -8,11 +8,11 @@ import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
 import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
  * Vitrica (1.20.1 version, using dynamic attribute system)
  */
 @Mod.EventBusSubscriber
-public class Vitrica extends KuvaWeaponBase {
+public class Vitrica extends AbstractKuvaWeapon {
 
     public Vitrica(@Nonnull Item.Properties properties) {
         super(properties);
@@ -55,7 +55,7 @@ public class Vitrica extends KuvaWeaponBase {
             DynamicAttributeManager.apply(
                     hurter,
                     DynamicAttributes.VITRICA.createInstance(
-                            (int) KuvaWeapon.getMagnification(weapon, 200),
+                            (int) KuvaWeaponUtil.getMagnification(weapon, 200),
                             newAmplifier
                     )
             );
@@ -78,25 +78,25 @@ public class Vitrica extends KuvaWeaponBase {
                     ? 1.25f
                     : 0.75f;
 
-            event.setAmount(KuvaWeapon.getMagnification(weapon, event.getAmount() * multiplier, 2));
+            event.setAmount(KuvaWeaponUtil.getMagnification(weapon, event.getAmount() * multiplier, 2));
         }
     }
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageVitrica.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedVitrica.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack,
+        return Math.min(0, -1 + KuvaWeaponUtil.getMagnification(itemStack,
                 1 + ModConfig.KUVA_WEAPON.movementSpeedVitrica.get(), 2));
     }
 

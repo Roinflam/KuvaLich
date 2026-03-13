@@ -9,9 +9,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.level.Level;
 
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
-import pers.roinflam.kuvalich.base.item.WarframeModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
+import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.ModuleRegistryHelper;
@@ -24,7 +24,7 @@ import java.util.List;
  * 白银级战甲模组（1.20.1版本）
  * Uncommon (Silver) tier warframe module (1.20.1 version)
  */
-public class WarframeUncommonModule extends WarframeModuleBase {
+public class WarframeUncommonModule extends AbstractWarframeModule {
 
     public static List<ItemStack> itemStackList = new ArrayList<>();
     private static boolean isInitialized = false;
@@ -36,7 +36,7 @@ public class WarframeUncommonModule extends WarframeModuleBase {
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get());
         itemStack.setHoverName(net.minecraft.network.chat.Component.translatable("kuvaweapon.warframe_type_random.name"));
-        ModuleBase.setRandom(itemStack, true);
+        AbstractModule.setRandom(itemStack, true);
         return itemStack;
     }
 
@@ -85,10 +85,10 @@ public class WarframeUncommonModule extends WarframeModuleBase {
                 "kuvaweapon.warframe_module.digging_hand", "digging_hand",
                 new Object[]{"reachDistance", 0.3001f});
 
-        // 挖掘之力
+        // 挖掘之力 ★ 已调整：0.6001f → 0.3001f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.digging_power", "digging_power",
-                new Object[]{"diggingSpeed", 0.6001f},
+                new Object[]{"diggingSpeed", 0.3001f},
                 "digging_speed");
 
         // 复苏者
@@ -128,7 +128,7 @@ public class WarframeUncommonModule extends WarframeModuleBase {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
-        if (!level.isClientSide() && ItemModuleBase.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
+        if (!level.isClientSide() && AbstractItemModule.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
             ensureInitialized();
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
             CustomModuleManager.getInstance().addCustomWarframeModulesToRandomList(availableModules, Rarity.UNCOMMON);

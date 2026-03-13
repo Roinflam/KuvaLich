@@ -12,7 +12,7 @@ import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.item.module.item.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
@@ -63,19 +63,19 @@ public class KuvaLichCreativeTabs {
                         int minLevel = ModConfig.KUVA_LICH.baseMinimumLevel.get();
                         int maxLevel = ModConfig.KUVA_LICH.baseMaximumLevel.get();
 
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.KUVA_SHILDEG.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.PENNANT.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.GUANDAO_PRIME.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.PARACESIS.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.ARCA_TITRON.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.REAPER_PRIME.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.VITRICA.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.GRAM_PRIME.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.SANCTI_MAGISTAR.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.DESTREZA_PRIME.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.PRISMA_VERITUX.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.MACHETE.get(), minLevel, maxLevel));
-                        output.accept(KuvaWeapon.getItem(KuvaLichItems.CAUSTACYST.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.KUVA_SHILDEG.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.PENNANT.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.GUANDAO_PRIME.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.PARACESIS.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.ARCA_TITRON.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.REAPER_PRIME.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.VITRICA.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.GRAM_PRIME.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.SANCTI_MAGISTAR.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.DESTREZA_PRIME.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.PRISMA_VERITUX.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.MACHETE.get(), minLevel, maxLevel));
+                        output.accept(KuvaWeaponUtil.getItem(KuvaLichItems.CAUSTACYST.get(), minLevel, maxLevel));
 
                         // ========== 方块 / Blocks ==========
                         output.accept(KuvaLichBlocks.REQUIEM_ORE.get());

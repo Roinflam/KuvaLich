@@ -8,9 +8,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.KuvaWeaponBase;
+import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.AttributesUtil;
@@ -25,7 +25,7 @@ import java.util.List;
  * Sancti Magistar (1.20.1 version, business logic 100% unchanged)
  */
 @Mod.EventBusSubscriber
-public class SanctiMagistar extends KuvaWeaponBase {
+public class SanctiMagistar extends AbstractKuvaWeapon {
 
     public SanctiMagistar(@Nonnull Item.Properties properties) {
         super(properties);
@@ -49,7 +49,7 @@ public class SanctiMagistar extends KuvaWeaponBase {
             ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, SanctiMagistar.class);
 
             if (weapon != null) {
-                float healAmount = KuvaWeapon.getMagnification(weapon, event.getAmount() * 0.05f, 0.5f) / 50;
+                float healAmount = KuvaWeaponUtil.getMagnification(weapon, event.getAmount() * 0.05f, 0.5f) / 50;
 
                 new SynchronizationTask(5, 1) {
                     private int ticks = 0;
@@ -76,7 +76,7 @@ public class SanctiMagistar extends KuvaWeaponBase {
             ItemStack weapon = WeaponEventUtil.getActiveWeapon(hurter);
 
             if (weapon != null && weapon.getItem() instanceof SanctiMagistar) {
-                event.setAmount(event.getAmount() - KuvaWeapon.getMagnification(weapon, event.getAmount() * 0.5f, 2));
+                event.setAmount(event.getAmount() - KuvaWeaponUtil.getMagnification(weapon, event.getAmount() * 0.5f, 2));
             }
         }
     }
@@ -88,19 +88,19 @@ public class SanctiMagistar extends KuvaWeaponBase {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamage(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageSanctiMagistar.get()));
     }
 
     @Override
     public double getAttackSpeedAmount(ItemStack itemStack) {
-        return AttributesUtil.getDamageSpeed(KuvaWeapon.getMagnification(itemStack,
+        return AttributesUtil.getDamageSpeed(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackSpeedSanctiMagistar.get(), 2));
     }
 
     @Override
     public double getMovementSpeedAmount(ItemStack itemStack) {
-        return Math.min(0, -1 + KuvaWeapon.getMagnification(itemStack,
+        return Math.min(0, -1 + KuvaWeaponUtil.getMagnification(itemStack,
                 1 + ModConfig.KUVA_WEAPON.movementSpeedSanctiMagistar.get(), 2));
     }
 

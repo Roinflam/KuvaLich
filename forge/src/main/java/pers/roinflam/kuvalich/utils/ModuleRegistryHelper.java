@@ -3,8 +3,8 @@ package pers.roinflam.kuvalich.utils;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.ModuleBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 
@@ -112,14 +112,14 @@ public class ModuleRegistryHelper {
                 attrValue = attrValue * generalMultiplier;
             }
 
-            ItemModuleBase.addAttributes(itemStack, attrName, (float) attrValue);
+            AbstractItemModule.addAttributes(itemStack, attrName, (float) attrValue);
         }
 
-        ItemModuleBase.setType(itemStack, type);
+        AbstractItemModule.setType(itemStack, type);
 
         // 设置冲突标签
         if (conflictTags != null && conflictTags.length > 0) {
-            ItemModuleBase.setConflictTags(itemStack, conflictTags);
+            AbstractItemModule.setConflictTags(itemStack, conflictTags);
         }
 
         if (items != null) {
@@ -154,7 +154,7 @@ public class ModuleRegistryHelper {
     public static List<ItemStack> filterDisabled(List<ItemStack> moduleList) {
         List<ItemStack> result = new java.util.ArrayList<>();
         for (ItemStack stack : moduleList) {
-            String type = ModuleBase.getType(stack);
+            String type = AbstractModule.getType(stack);
             if (!ModuleConfig.isTypeDisabled(type)) {
                 result.add(stack);
             }

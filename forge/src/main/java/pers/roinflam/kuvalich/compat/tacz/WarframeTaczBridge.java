@@ -3,8 +3,8 @@ package pers.roinflam.kuvalich.compat.tacz;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import pers.roinflam.kuvalich.itemstack.ItemModule;
-import pers.roinflam.kuvalich.itemstack.KillStackManager;
+import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
+import pers.roinflam.kuvalich.module.KillStackManager;
 
 import java.util.HashMap;
 
@@ -22,9 +22,9 @@ public class WarframeTaczBridge {
      * ThreadLocal flag: suppress KuvaLich bursting_radius AOE when TACZ gun has its own explosion logic.
      * <p>
      * 生命周期：由 TaczCompatEventHandler（NORMAL 优先级）写入，
-     * 由 ItemModule.processDamage（LOWEST 优先级）读取并清除。
+     * 由 WeaponModuleHandler.processDamage（LOWEST 优先级）读取并清除。
      * Lifecycle: written by TaczCompatEventHandler (NORMAL priority),
-     * read and cleared by ItemModule.processDamage (LOWEST priority).
+     * read and cleared by WeaponModuleHandler.processDamage (LOWEST priority).
      */
     private static final ThreadLocal<Boolean> suppressBurstRadius = ThreadLocal.withInitial(() -> false);
 
@@ -152,10 +152,10 @@ public class WarframeTaczBridge {
      * @return firing_rate 增量值，无模组时返回 0
      */
     public static float getFireRateMod(ItemStack gunItem, LivingEntity shooter) {
-        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
-        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
         if (shooter instanceof Player player) {
             Double stackBonus = attributes.get("killStackFiringRate");
@@ -177,10 +177,10 @@ public class WarframeTaczBridge {
      * @return multishot 增量值，无模组时返回 0
      */
     public static float getMultishotMod(ItemStack gunItem, LivingEntity shooter) {
-        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
-        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         double multishot = attributes.getOrDefault("multishot", 0.0);
         if (shooter instanceof Player player) {
             Double stackBonus = attributes.get("killStackMultishot");
@@ -206,10 +206,10 @@ public class WarframeTaczBridge {
      * @return bursting_radius 增量值，无模组时返回 0
      */
     public static float getBurstingRadiusMod(ItemStack gunItem, LivingEntity shooter) {
-        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
-        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         return attributes.getOrDefault("bursting_radius", 0.0).floatValue();
     }
 
@@ -229,10 +229,10 @@ public class WarframeTaczBridge {
      * @return reload_speed 增量值，无模组时返回 0
      */
     public static float getReloadSpeedMod(ItemStack gunItem, LivingEntity shooter) {
-        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
-        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         return attributes.getOrDefault("reload_speed", 0.0).floatValue();
     }
 
@@ -251,10 +251,10 @@ public class WarframeTaczBridge {
      * @return magazine_size 增量值，无模组时返回 0
      */
     public static float getMagazineSizeMod(ItemStack gunItem) {
-        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
-        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         return attributes.getOrDefault("magazine_size", 0.0).floatValue();
     }
 
@@ -272,10 +272,10 @@ public class WarframeTaczBridge {
      * @return projectile_speed 增量值，无模组时返回 0
      */
     public static float getProjectileSpeedMod(ItemStack gunItem, LivingEntity shooter) {
-        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
-        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         return attributes.getOrDefault("projectile_speed", 0.0).floatValue();
     }
 
@@ -293,10 +293,10 @@ public class WarframeTaczBridge {
      * @return recoil_reduction 增量值，无模组时返回 0
      */
     public static float getRecoilReductionMod(ItemStack gunItem, LivingEntity shooter) {
-        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
-        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         return attributes.getOrDefault("recoil_reduction", 0.0).floatValue();
     }
 
@@ -316,10 +316,10 @@ public class WarframeTaczBridge {
      * @return first_bullet_damage 增量值，无模组时返回 0
      */
     public static float getFirstBulletDamageMod(ItemStack gunItem, LivingEntity shooter) {
-        if (gunItem == null || gunItem.isEmpty() || !ItemModule.hasBase(gunItem)) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
-        HashMap<String, Double> attributes = ItemModule.getWeaponAttributes(gunItem);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         return attributes.getOrDefault("first_bullet_damage", 0.0).floatValue();
     }
 }

@@ -17,7 +17,7 @@ import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import pers.roinflam.kuvalich.base.enchantment.EnchantmentBase;
+import pers.roinflam.kuvalich.base.enchantment.AbstractEnchantment;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
@@ -41,7 +41,7 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
  * 3. 增加安魂卡片和模组的掉落几率（概率均可配置）
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
-public class EnchantmentRequiemDestroyed extends EnchantmentBase {
+public class EnchantmentRequiemDestroyed extends AbstractEnchantment {
 
     private static final int MIN_ENCHANTABILITY = 35;
     private static final float FAST_BREAK_SPEED = 300.0f;

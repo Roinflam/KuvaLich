@@ -15,7 +15,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.item.RequiemCardBase;
+import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
@@ -209,7 +209,7 @@ public class MenuRequiemGate extends AbstractContainerMenu {
                 BlockPos blockPos = player.blockPosition();
 
                 // 处理第一张卡片 / Handle first card
-                if (!oneCard.isEmpty() && !(oneCard.getItem() instanceof RequiemCardBase)) {
+                if (!oneCard.isEmpty() && !(oneCard.getItem() instanceof AbstractRequiemCard)) {
                     LogUtil.warn("检测到非法物品在卡片槽位0: " + oneCard.getHoverName().getString() + " - 正在返还");
                     level.addFreshEntity(new ItemEntity(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), oneCard.copy()));
                 } else {
@@ -217,7 +217,7 @@ public class MenuRequiemGate extends AbstractContainerMenu {
                 }
 
                 // 处理第二张卡片 / Handle second card
-                if (!twoCard.isEmpty() && !(twoCard.getItem() instanceof RequiemCardBase)) {
+                if (!twoCard.isEmpty() && !(twoCard.getItem() instanceof AbstractRequiemCard)) {
                     LogUtil.warn("检测到非法物品在卡片槽位1: " + twoCard.getHoverName().getString() + " - 正在返还");
                     level.addFreshEntity(new ItemEntity(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), twoCard.copy()));
                 } else {
@@ -225,7 +225,7 @@ public class MenuRequiemGate extends AbstractContainerMenu {
                 }
 
                 // 处理第三张卡片 / Handle third card
-                if (!threeCard.isEmpty() && !(threeCard.getItem() instanceof RequiemCardBase)) {
+                if (!threeCard.isEmpty() && !(threeCard.getItem() instanceof AbstractRequiemCard)) {
                     LogUtil.warn("检测到非法物品在卡片槽位2: " + threeCard.getHoverName().getString() + " - 正在返还");
                     level.addFreshEntity(new ItemEntity(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), threeCard.copy()));
                 } else {
@@ -290,7 +290,7 @@ public class MenuRequiemGate extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            return (stack.getItem() instanceof RequiemCardBase) && super.mayPlace(stack);
+            return (stack.getItem() instanceof AbstractRequiemCard) && super.mayPlace(stack);
         }
     }
 }

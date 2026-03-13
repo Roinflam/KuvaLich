@@ -13,8 +13,8 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.base.item.ItemModuleBase;
-import pers.roinflam.kuvalich.base.item.RequiemCardBase;
+import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
 import pers.roinflam.kuvalich.item.module.item.*;
 import pers.roinflam.kuvalich.utils.LogUtil;
@@ -162,17 +162,17 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
      */
     private void processCrafting(ItemStack slot0, ItemStack slot1, ItemStack slot2) {
         // 情况1：3张安魂卡 / Case 1: 3 Requiem Cards
-        if (slot0.getItem() instanceof RequiemCardBase &&
-                slot1.getItem() instanceof RequiemCardBase &&
-                slot2.getItem() instanceof RequiemCardBase) {
+        if (slot0.getItem() instanceof AbstractRequiemCard &&
+                slot1.getItem() instanceof AbstractRequiemCard &&
+                slot2.getItem() instanceof AbstractRequiemCard) {
             processRequiemCardCrafting();
             return;
         }
 
         // 情况2：3个同级模组 / Case 2: 3 same-tier modules
-        if (slot0.getItem() instanceof ItemModuleBase &&
-                slot1.getItem() instanceof ItemModuleBase &&
-                slot2.getItem() instanceof ItemModuleBase) {
+        if (slot0.getItem() instanceof AbstractItemModule &&
+                slot1.getItem() instanceof AbstractItemModule &&
+                slot2.getItem() instanceof AbstractItemModule) {
 
             if (slot0.getItem() instanceof ItemRivenModule ||
                     slot1.getItem() instanceof ItemRivenModule ||
@@ -191,7 +191,7 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
     private void processRequiemCardCrafting() {
         try {
             int randomId = level.random.nextInt(8);
-            ItemStack result = new ItemStack(RequiemCardBase.getCard(randomId));
+            ItemStack result = new ItemStack(AbstractRequiemCard.getCard(randomId));
 
             // 事务式修改：一次性设置所有状态 / Transactional change
             cardHandler.setStackInSlot(3, result);
@@ -286,10 +286,10 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            if (stack.getItem() instanceof RequiemCardBase) {
+            if (stack.getItem() instanceof AbstractRequiemCard) {
                 return super.mayPlace(stack);
             }
-            if (stack.getItem() instanceof ItemModuleBase &&
+            if (stack.getItem() instanceof AbstractItemModule &&
                     !(stack.getItem() instanceof ItemRivenModule)) {
                 return super.mayPlace(stack);
             }

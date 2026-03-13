@@ -1,5 +1,5 @@
-// KuvaBase.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/base/entity/KuvaBase.java
+// AbstractKuva.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/base/entity/AbstractKuva.java
 package pers.roinflam.kuvalich.base.entity;
 
 import net.minecraft.nbt.CompoundTag;
@@ -27,7 +27,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.itemstack.KuvaWeapon;
+import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -44,7 +44,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  * subclasses override to implement specific resistance logic
  */
 @Mod.EventBusSubscriber
-public abstract class KuvaBase extends Monster implements GeoEntity {
+public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     // ==================== 基础伤害类型倍率 ====================
 
@@ -63,7 +63,7 @@ public abstract class KuvaBase extends Monster implements GeoEntity {
     // ==================== 同步数据 ====================
 
     private static final EntityDataAccessor<Boolean> HAS_TARGET =
-            SynchedEntityData.defineId(KuvaBase.class, EntityDataSerializers.BOOLEAN);
+            SynchedEntityData.defineId(AbstractKuva.class, EntityDataSerializers.BOOLEAN);
 
     // ==================== 动画 ====================
 
@@ -94,7 +94,7 @@ public abstract class KuvaBase extends Monster implements GeoEntity {
         OTHER
     }
 
-    public KuvaBase(EntityType<? extends Monster> entityType, Level level) {
+    public AbstractKuva(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
     }
 
@@ -120,14 +120,14 @@ public abstract class KuvaBase extends Monster implements GeoEntity {
         LivingEntity target = event.getEntity();
 
         // 赤毒实体造成伤害时的加成
-        if (damageSource.getEntity() instanceof KuvaBase kuvaBase) {
+        if (damageSource.getEntity() instanceof AbstractKuva kuvaBase) {
             applyKuvaBaseDamageBonus(event, kuvaBase);
         } else if (damageSource.getEntity() instanceof Player player) {
             applyPlayerDamageModifier(event, player);
         }
 
         // 赤毒实体受到伤害时的减伤（委托给实例方法）
-        if (target instanceof KuvaBase kuva) {
+        if (target instanceof AbstractKuva kuva) {
             event.setAmount(kuva.applyResistance(damageSource, event.getAmount()));
         } else if (target instanceof Player player) {
             applyPlayerDefense(event, player);
@@ -140,7 +140,7 @@ public abstract class KuvaBase extends Monster implements GeoEntity {
      * @param event 受伤事件
      * @param kuvaBase 攻击方赤毒实体
      */
-    private static void applyKuvaBaseDamageBonus(LivingHurtEvent event, KuvaBase kuvaBase) {
+    private static void applyKuvaBaseDamageBonus(LivingHurtEvent event, AbstractKuva kuvaBase) {
         float multiplier = (float) (1.0f + (kuvaBase.getBattleTick() / 20f) * ModConfig.KUVA_LICH.battleBoost.get());
         event.setAmount(event.getAmount() * multiplier);
     }
@@ -156,7 +156,7 @@ public abstract class KuvaBase extends Monster implements GeoEntity {
             float reduction = (float) Math.min(0.999f, requiemCard.getKuvaLevel() * ModConfig.KUVA_LICH.reducedDamage.get());
             float damage = event.getAmount() * (1.0f - reduction);
 
-            if (KuvaWeapon.hasType(player.getItemInHand(player.getUsedItemHand()))) {
+            if (KuvaWeaponUtil.hasType(player.getItemInHand(player.getUsedItemHand()))) {
                 damage *= KUVA_WEAPON_DAMAGE_MULTIPLIER;
             }
 
@@ -301,7 +301,7 @@ public abstract class KuvaBase extends Monster implements GeoEntity {
         this.targetSelector.addGoal(0, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 16, true, true,
-                entity -> !(entity instanceof Creeper) && !(entity instanceof KuvaBase)));
+                entity -> !(entity instanceof Creeper) && !(entity instanceof AbstractKuva)));
     }
 
     // ==================== 状态管理 ====================
