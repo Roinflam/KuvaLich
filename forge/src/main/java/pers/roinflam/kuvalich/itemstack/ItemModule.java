@@ -353,29 +353,33 @@ public class ItemModule {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.recoil_reduction") + " ").append(Component.literal((int) (attributes.get("recoil_reduction") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
+                // ===== 修复：使用 I18n.get(key, arg) 替代 String.format(I18n.get(key), arg) =====
+                // ===== Fix: use I18n.get(key, arg) instead of String.format(I18n.get(key), arg) =====
+                // 原因：I18n.get() 内部遇到含 %d 的格式串但未传参数时会抛异常返回 "Format error: ..."
+                // Reason: I18n.get() throws exception and returns "Format error: ..." when format string contains %d but no args passed
                 if (attributes.getOrDefault("killStackBaseDamage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackBaseDamage"), ModConfig.KUVA_LICH.maxStacksBaseDamage.get()) + " ").append(Component.literal((int) (attributes.get("killStackBaseDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackBaseDamage", ModConfig.KUVA_LICH.maxStacksBaseDamage.get()) + " ").append(Component.literal((int) (attributes.get("killStackBaseDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("killStackMultishot", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackMultishot"), ModConfig.KUVA_LICH.maxStacksMultishot.get()) + " ").append(Component.literal((int) (attributes.get("killStackMultishot") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackMultishot", ModConfig.KUVA_LICH.maxStacksMultishot.get()) + " ").append(Component.literal((int) (attributes.get("killStackMultishot") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("killStackMeleeCriticalMultiplier", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackMeleeCriticalMultiplier"), ModConfig.KUVA_LICH.maxStacksMeleeCritMult.get()) + " ").append(Component.literal((int) (attributes.get("killStackMeleeCriticalMultiplier") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackMeleeCriticalMultiplier", ModConfig.KUVA_LICH.maxStacksMeleeCritMult.get()) + " ").append(Component.literal((int) (attributes.get("killStackMeleeCriticalMultiplier") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("killStackTriggerChance", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackTriggerChance"), ModConfig.KUVA_LICH.maxStacksTriggerChance.get()) + " ").append(Component.literal((int) (attributes.get("killStackTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackTriggerChance", ModConfig.KUVA_LICH.maxStacksTriggerChance.get()) + " ").append(Component.literal((int) (attributes.get("killStackTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("killStackAttackRange", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackAttackRange"), ModConfig.KUVA_LICH.maxStacksAttackRange.get()) + " ").append(Component.literal(String.format("%.1f", attributes.get("killStackAttackRange")) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackAttackRange", ModConfig.KUVA_LICH.maxStacksAttackRange.get()) + " ").append(Component.literal(String.format("%.1f", attributes.get("killStackAttackRange")) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("killStackAttackSpeed", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackAttackSpeed"), ModConfig.KUVA_LICH.maxStacksAttackSpeed.get()) + " ").append(Component.literal((int) (attributes.get("killStackAttackSpeed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackAttackSpeed", ModConfig.KUVA_LICH.maxStacksAttackSpeed.get()) + " ").append(Component.literal((int) (attributes.get("killStackAttackSpeed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("killStackBurstingRadius", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackBurstingRadius"), ModConfig.KUVA_LICH.maxStacksBurstingRadius.get()) + " ").append(Component.literal((int) (attributes.get("killStackBurstingRadius") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackBurstingRadius", ModConfig.KUVA_LICH.maxStacksBurstingRadius.get()) + " ").append(Component.literal((int) (attributes.get("killStackBurstingRadius") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("killStackFiringRate", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(String.format(I18n.get("item.module.killStackFiringRate"), ModConfig.KUVA_LICH.maxStacksFiringRate.get()) + " ").append(Component.literal((int) (attributes.get("killStackFiringRate") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackFiringRate", ModConfig.KUVA_LICH.maxStacksFiringRate.get()) + " ").append(Component.literal((int) (attributes.get("killStackFiringRate") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
                 double elementDamage = 0;

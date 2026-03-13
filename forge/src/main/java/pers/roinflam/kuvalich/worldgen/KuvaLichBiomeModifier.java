@@ -32,11 +32,11 @@ import java.util.List;
  *
  * 生成规则：
  * - 实体生成：仅限主世界，排除蘑菇岛
- * - 矿石生成：所有维度（依赖方块Tag自动过滤，无石头的维度自然不会生成）
+ * - 矿石生成：所有维度（依赖方块Tag自动过滤，无石头的维度自然不会生成），但排除末地
  *
  * Spawn rules:
  * - Entity spawning: Overworld only, excludes mushroom islands
- * - Ore generation: All dimensions (block tag filtering handles incompatible biomes naturally)
+ * - Ore generation: All dimensions except The End (block tag filtering handles incompatible biomes naturally)
  */
 public class KuvaLichBiomeModifier implements BiomeModifier {
 
@@ -79,7 +79,7 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
         if (phase != Phase.ADD) return;
 
         // 末地不做任何处理 / Skip The End entirely
-        if (biome.is(IS_END_TAG)) {
+        if (biome.is(IS_END_TAG) || isEnd(biome)) {
             return;
         }
 
@@ -87,16 +87,103 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
         // Ore gen: all dims except The End (block tags handle incompatible biomes naturally)
         addOreGeneration(builder);
 
-        // 实体生成：仅限主世界，排除蘑菇岛
-        // Entity spawning: Overworld only, exclude mushroom islands
-        if (biome.is(IS_OVERWORLD_TAG) && !biome.is(IS_MUSHROOM_TAG)) {
+        // 实体生成：仅限主世界，排除蘑菇岛（同时使用Tag和注册ID双重判定，防止Tag未绑定）
+        // Entity spawning: Overworld only, exclude mushroom islands (dual check: tag + registry ID)
+        if (isOverworld(biome) && !isMushroom(biome)) {
             addEntitySpawns(builder.getMobSpawnSettings());
         }
     }
 
+    // ═══ 生物群系判定辅助方法 / Biome identification helpers ═══
+
+    /**
+     * 判断是否为蘑菇岛生物群系（Tag + 注册ID双重判定，避免Tag未绑定导致失效）
+     * Check if the biome is a mushroom biome (dual check to avoid unbound tag issues)
+     *
+     * @param biome 生物群系Holder / biome holder
+     * @return 是否为蘑菇岛 / whether it's a mushroom biome
+     */
+    private static boolean isMushroom(Holder<Biome> biome) {
+        // 优先使用Tag判定
+        if (biome.is(IS_MUSHROOM_TAG)) {
+            return true;
+        }
+        // Tag可能未绑定，回退到注册ID判定
+        return biome.unwrapKey()
+                .map(key -> key.location().getPath().equals("mushroom_fields"))
+                .orElse(false);
+    }
+
+    /**
+     * 判断是否为主世界生物群系（Tag + 注册ID双重判定）
+     * Check if the biome is an overworld biome (dual check: tag + registry ID)
+     *
+     * 回退逻辑采用保守策略：仅匹配原版命名空间下的已知主世界生物群系，
+     * 模组维度（如暮色森林 twilightforest:xxx）的生物群系不会被误判为主世界。
+     *
+     * Fallback uses conservative strategy: only matches known vanilla overworld biomes,
+     * mod dimensions (e.g. Twilight Forest) won't be misidentified as overworld.
+     *
+     * @param biome 生物群系Holder / biome holder
+     * @return 是否为主世界 / whether it's overworld
+     */
+    private static boolean isOverworld(Holder<Biome> biome) {
+        // 优先使用Tag判定
+        if (biome.is(IS_OVERWORLD_TAG)) {
+            return true;
+        }
+        // Tag未绑定时，保守处理：仅匹配原版命名空间下的已知主世界生物群系注册ID
+        return biome.unwrapKey()
+                .map(key -> {
+                    String namespace = key.location().getNamespace();
+                    String path = key.location().getPath();
+                    // 非原版命名空间的生物群系直接返回false，避免模组维度被误判
+                    if (!"minecraft".equals(namespace)) {
+                        return false;
+                    }
+                    // 排除末地生物群系
+                    if (path.equals("the_end") || path.equals("end_barrens")
+                            || path.equals("end_highlands") || path.equals("end_midlands")
+                            || path.equals("small_end_islands")) {
+                        return false;
+                    }
+                    // 排除下界生物群系
+                    if (path.equals("nether_wastes") || path.equals("soul_sand_valley")
+                            || path.equals("crimson_forest") || path.equals("warped_forest")
+                            || path.equals("basalt_deltas")) {
+                        return false;
+                    }
+                    // 原版命名空间下，排除末地和下界后，剩余的就是主世界生物群系
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    /**
+     * 判断是否为末地生物群系（Tag + 注册ID双重判定）
+     * Check if the biome is an End biome (dual check: tag + registry ID)
+     *
+     * @param biome 生物群系Holder / biome holder
+     * @return 是否为末地 / whether it's The End
+     */
+    private static boolean isEnd(Holder<Biome> biome) {
+        return biome.unwrapKey()
+                .map(key -> {
+                    String path = key.location().getPath();
+                    return path.equals("the_end") || path.equals("end_barrens")
+                            || path.equals("end_highlands") || path.equals("end_midlands")
+                            || path.equals("small_end_islands");
+                })
+                .orElse(false);
+    }
+
+    // ═══ 矿石生成 / Ore generation ═══
+
     /**
      * 添加矿石生成
      * Add ore generation
+     *
+     * @param builder 生物群系信息构建器 / biome info builder
      */
     private void addOreGeneration(BiomeInfo.Builder builder) {
         addRequiemOre(builder);
@@ -106,6 +193,8 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
     /**
      * 添加安魂矿石生成
      * Add Requiem Ore generation
+     *
+     * @param builder 生物群系信息构建器 / biome info builder
      */
     private void addRequiemOre(BiomeInfo.Builder builder) {
         int veinCount = ModConfig.ORE_GEN.requiemOreVeinCount.get();
@@ -147,6 +236,8 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
     /**
      * 添加经验矿石生成
      * Add Experience Ore generation
+     *
+     * @param builder 生物群系信息构建器 / biome info builder
      */
     private void addExperienceOre(BiomeInfo.Builder builder) {
         int veinCount = ModConfig.ORE_GEN.experienceOreVeinCount.get();
@@ -185,9 +276,13 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
         );
     }
 
+    // ═══ 实体生成 / Entity spawning ═══
+
     /**
      * 添加实体生成
      * Add entity spawning
+     *
+     * @param spawnBuilder 怪物生成设置构建器 / mob spawn settings builder
      */
     private void addEntitySpawns(MobSpawnSettingsBuilder spawnBuilder) {
         int lichWeight = ModConfig.KUVA_LICH.kuvaLichSpawnWeight.get();

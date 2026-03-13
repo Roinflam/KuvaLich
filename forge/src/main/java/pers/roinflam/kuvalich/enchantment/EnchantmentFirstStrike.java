@@ -1,3 +1,4 @@
+// EnchantmentFirstStrike.java
 package pers.roinflam.kuvalich.enchantment;
 
 import net.minecraft.world.entity.EquipmentSlot;
@@ -35,6 +36,8 @@ public class EnchantmentFirstStrike extends EnchantmentBase {
     private static final float MAX_DAMAGE_CAP = 0.99f;
     private static final float EXPERIENCE_MULTIPLIER = 0.1f;
     private static final float MAX_EXPERIENCE_CAP = 0.33f;
+    /** 经验绝对上限 / Absolute experience cap */
+    private static final int MAX_EXPERIENCE_ABSOLUTE = 1000;
 
     public EnchantmentFirstStrike() {
         super(Enchantment.Rarity.VERY_RARE,
@@ -95,12 +98,18 @@ public class EnchantmentFirstStrike extends EnchantmentBase {
     /**
      * 给予玩家经验
      * Give player experience
+     *
+     * @param player 攻击者玩家 / Attacker player
+     * @param target 被攻击的目标 / Target entity
+     * @param bonusDamage 额外伤害值 / Bonus damage dealt
+     * @param level 附魔等级 / Enchantment level
      */
     private static void giveExperience(Player player, LivingEntity target, float bonusDamage, int level) {
         float baseExp = bonusDamage + bonusDamage * (level - 1) * DAMAGE_MULTIPLIER_PER_LEVEL;
         float maxExp = target.getMaxHealth() * MAX_EXPERIENCE_CAP;
 
-        int experience = (int) Math.min(maxExp, baseExp * EXPERIENCE_MULTIPLIER);
+        // 取血量比例上限和绝对上限中的较小值 / Take the smaller of health-based cap and absolute cap
+        int experience = (int) Math.min(MAX_EXPERIENCE_ABSOLUTE, Math.min(maxExp, baseExp * EXPERIENCE_MULTIPLIER));
         player.giveExperiencePoints(experience);
     }
 

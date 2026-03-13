@@ -1,3 +1,4 @@
+// MenuRequiemEvolve.java
 package pers.roinflam.kuvalich.world.inventory;
 
 import net.minecraft.core.BlockPos;
@@ -36,6 +37,9 @@ import pers.roinflam.kuvalich.utils.LogUtil;
  *
  * ⭐ 已修复：结果槽支持Shift+点击转移到背包
  * ⭐ 已修复：关闭菜单时根据模式正确处理物品归还/丢弃，彻底杜绝物品复制
+ * ⭐ 已修复：输入被替换（非清空）时，过期预览结果立即清除，防止无限刷物品
+ * ⭐ 已修复：合成消耗（扣赤毒）后快照立即同步，防止下一tick误判为输入变化导致无限循环
+ * ⭐ 已修复：武器裂罅循环使用getRivenMode替代已废弃的isMelee，防止通用模式(O)被错误洗成远程(R)
  */
 public class MenuRequiemEvolve extends AbstractContainerMenu {
 
@@ -211,9 +215,18 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      * 检测输入变化并触发合成逻辑
      *
      * 核心逻辑：
-     * 1. 输入为空 → 清空结果和模式标记（baseAttribute模式除外，因为武器槽已清空）
-     * 2. 输入变化且结果为空 → 尝试合成
-     * 3. 输入未变 → 不处理（避免重复触发）
+     * 1. 输入变化且处于预览模式 → 立即清除过期预览结果（防止无限刷物品）
+     * 2. 输入为空 → 清空结果和模式标记（baseAttribute模式除外，因为武器槽已清空）
+     * 3. 输入变化且结果为空 → 尝试合成
+     * 4. 输入未变 → 不处理（避免重复触发）
+     *
+     * ⭐ 修复要点1（防无限刷）：
+     * 输入被替换（非清空）时，若处于预览模式，立即清除过期结果。
+     *
+     * ⭐ 修复要点2（防无限循环消耗）：
+     * 所有更新快照的地方都从handler重新读取最新值，而非使用方法开头获取的旧引用。
+     * 因为processCrafting会修改handler内容（如扣除赤毒），如果快照用旧值，
+     * 下一tick会误判为inputChanged，导致清除结果→重新合成→再扣赤毒的死循环。
      */
     private void checkAndProcessCrafting() {
         ItemStack currentWeapon = weaponHandler.getStackInSlot(0);
@@ -222,6 +235,19 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
         boolean inputChanged = !ItemStack.matches(currentWeapon, lastWeapon) ||
                 !ItemStack.matches(currentMaterial, lastMaterial);
+
+        // ⭐ 修复1：输入变化时，清除预览模式的过期结果（防止无限刷物品）
+        // ⭐ Fix 1: Clear stale preview result when inputs change (prevent item duplication)
+        //
+        // 触发场景：玩家在evolve/cycle预览状态下替换了武器槽或材料槽的物品
+        // 旧结果是基于旧输入生成的预览，必须立即作废，否则可以白拿导致无限刷
+        if (inputChanged && !currentResult.isEmpty() && (evolveMode || cycleMode)) {
+            resultHandler.setStackInSlot(0, ItemStack.EMPTY);
+            currentResult = ItemStack.EMPTY;
+            evolveMode = false;
+            cycleMode = false;
+            LogUtil.debugEvent("安魂之融", "输入变化，清除过期预览结果", "防止物品复制");
+        }
 
         // 输入不完整时清理结果（baseAttribute模式除外）
         // Clear result when input is incomplete (except baseAttribute mode)
@@ -240,8 +266,10 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                 baseAttributeJustProcessed = false;
             }
 
-            lastWeapon = currentWeapon.copy();
-            lastMaterial = currentMaterial.copy();
+            // ⭐ 修复2：从handler重新读取最新值更新快照
+            // ⭐ Fix 2: Re-read current values from handler for snapshot
+            lastWeapon = weaponHandler.getStackInSlot(0).copy();
+            lastMaterial = materialHandler.getStackInSlot(0).copy();
             return;
         }
 
@@ -253,8 +281,16 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             }
 
             processCrafting(currentWeapon, currentMaterial);
-            lastWeapon = currentWeapon.copy();
-            lastMaterial = currentMaterial.copy();
+
+            // ⭐ 修复2：从handler重新读取最新值更新快照
+            // ⭐ Fix 2: Re-read current values from handler for snapshot
+            //
+            // processCrafting可能修改了handler内容（如扣除赤毒、清空武器槽），
+            // 必须用处理后的实际值作为快照，否则下一tick会因为
+            // "快照（扣除前）≠ handler（扣除后）"而误判为inputChanged，
+            // 导致清除结果 → 重新合成 → 再扣赤毒的无限循环
+            lastWeapon = weaponHandler.getStackInSlot(0).copy();
+            lastMaterial = materialHandler.getStackInSlot(0).copy();
         }
     }
 
@@ -343,6 +379,9 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      * 消耗赤毒重新随机裂罅模组属性，消耗量随循环次数和倾向性递增
      * 赤毒在此方法中立即扣除，结果是新裂罅预览，取走时消耗旧裂罅
      *
+     * ⭐ 已修复：使用getRivenMode()替代已废弃的isMelee()，
+     *    确保通用模式(MODE_UNIVERSAL=2)不会被错误降级为远程模式(MODE_REMOTE=1)
+     *
      * @param weaponStack   武器裂罅模组
      * @param materialStack 赤毒（消耗品）
      */
@@ -363,9 +402,13 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                 newMaterial.setCount(materialStack.getCount() - kuvaSpend);
                 materialHandler.setStackInSlot(0, newMaterial);
 
+                // ⭐ 修复：使用getRivenMode()正确读取裂罅模式（近战/远程/通用）
+                // ⭐ Fix: Use getRivenMode() to correctly read riven mode (melee/remote/universal)
+                // 旧代码使用已废弃的isMelee()，通用模式(2)会被错误判为false→MODE_REMOTE(1)
+                int rivenMode = ItemRivenModule.getRivenMode(weaponStack);
+
                 // 生成新的裂罅模组 / Generate new Riven module
-                boolean isMelee = ItemRivenModule.isMelee(weaponStack);
-                ItemStack newRiven = ItemRivenModule.cycleModule(trend, cycleCount, isMelee);
+                ItemStack newRiven = ItemRivenModule.cycleModule(trend, cycleCount, rivenMode);
                 resultHandler.setStackInSlot(0, newRiven);
 
                 // 更新循环计数 / Update cycle count
