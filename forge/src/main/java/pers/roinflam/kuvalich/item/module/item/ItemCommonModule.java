@@ -27,13 +27,11 @@ public class ItemCommonModule extends AbstractItemModule {
 
     /**
      * 静态模组列表,用于随机获取
-     * Static module list for random obtaining
      */
     public static List<ItemStack> itemStackList = new ArrayList<>();
 
     /**
      * 标记是否已初始化（用于服务器端懒加载）
-     * Flag to check if initialized (for server-side lazy loading)
      */
     private static boolean isInitialized = false;
 
@@ -43,7 +41,6 @@ public class ItemCommonModule extends AbstractItemModule {
 
     /**
      * 获取随机模组物品
-     * Get random module item
      */
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_COMMON_MODULE.get());
@@ -54,7 +51,6 @@ public class ItemCommonModule extends AbstractItemModule {
 
     /**
      * 懒加载初始化方法（用于服务器端）
-     * Lazy initialization for server-side
      */
     private static synchronized void ensureInitialized() {
         if (!isInitialized) {
@@ -65,10 +61,8 @@ public class ItemCommonModule extends AbstractItemModule {
 
     /**
      * 初始化模组列表
-     * Initialize module list
      */
     private static void initializeModuleList() {
-        // 清空列表，防止重复添加
         itemStackList.clear();
 
         // 压力点
@@ -76,7 +70,7 @@ public class ItemCommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.pressure_point", "pressure_point",
                 new Object[]{"meleeDamage", 1.2001f});
 
-        // 攻击范围 - 移除attack_range冲突(数值只有110%)
+        // 攻击范围
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.reach", "reach",
                 new Object[]{"attackRange", 1.1001f});
@@ -87,12 +81,12 @@ public class ItemCommonModule extends AbstractItemModule {
                 new Object[]{"meleeCriticalStrikeProbability", 1.2001f},
                 "melee_crit_chance");
 
-        // 器官粉碎 - 移除melee_crit_mult冲突(数值只有90%)
+        // 器官粉碎
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.organ_shatter", "organ_shatter",
                 new Object[]{"meleeCriticalStrikeMultiplier", 0.9001f});
 
-        // 精准打击 - 移除remote_crit_chance冲突(数值只有90%)
+        // 精准打击
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.point_strike", "point_strike",
                 new Object[]{"remoteCriticalStrikeProbability", 0.9001f});
@@ -107,12 +101,12 @@ public class ItemCommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.sawtooth_clip", "sawtooth_clip",
                 new Object[]{"slash", 0.30001f, "remoteDamage", 0.30001f});
 
-        // 氩晶体射击 - 移除remote_crit_chance冲突(数值只有45%)
+        // 氩晶体射击
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.argon_crystal_shoot", "argon_crystal_shoot",
                 new Object[]{"projectileDamage", 0.60001f, "remoteCriticalStrikeProbability", 0.45001f});
 
-        // 氩晶体愤怒 - 移除remote_crit_mult冲突(数值只有45%)
+        // 氩晶体愤怒
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.argon_crystal_wrath", "argon_crystal_wrath",
                 new Object[]{"projectileDamage", 0.60001f, "remoteCriticalStrikeMultiplier", 0.45001f});
@@ -122,17 +116,17 @@ public class ItemCommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.elemental_argon_crystal_wrath", "elemental_argon_crystal_wrath",
                 new Object[]{"meleeDamage", 0.9001f, "triggerChance", 0.9001f, "triggerTime", 0.9001f});
 
-        // 地狱电锯 - 移除冲突标签(有负面效果)
+        // 地狱电锯
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.chainsaw_from_hell", "chainsaw_from_hell",
                 new Object[]{"meleeCriticalStrikeProbability", 0.6001f, "meleeCriticalStrikeMultiplier", 0.6001f, "attackSpeed", -0.3001f});
 
-        // 泪痕 - 移除melee_crit_chance冲突(有负面效果)
+        // 泪痕
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.tear", "tear",
                 new Object[]{"meleeCriticalStrikeProbability", 1.65001f, "meleeDamage", -0.60001f});
 
-        // 灾难射击 - 触发几率削弱（平衡调整：青铜不应超过白银准确射手的60%触发几率）
+        // 灾难射击
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.disaster_shoot", "disaster_shoot",
                 new Object[]{"remoteDamage", 1.2001f, "triggerChance", 0.45001f});
@@ -147,7 +141,7 @@ public class ItemCommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.single_point_breakthrough", "single_point_breakthrough",
                 new Object[]{"meleeDamage", 1.6501f, "attackRange", -0.7501f});
 
-        // 病灶打击 - 移除dash_trigger冲突(数值只有150%)
+        // 病灶打击
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.lesion_blow", "lesion_blow",
                 new Object[]{"dashTriggerChance", 1.50001f});
@@ -157,22 +151,22 @@ public class ItemCommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.persuasion", "persuasion",
                 new Object[]{"baseDamageWhenNotCriticalStrike", 1.20001f});
 
-        // 延伸之触 - 移除冲突标签(有负面效果)
+        // 延伸之触
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.touches_of_extension", "touches_of_extension",
                 new Object[]{"meleeCriticalStrikeProbability", 0.90001f, "meleeCriticalStrikeMultiplier", 0.60001f, "triggerChance", 0.60001f, "slash", -1.20001f});
 
-        // 凶猛之弓 - 移除multishot冲突(数值只有60%)
+        // 凶猛之弓
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.fierce_bow", "fierce_bow",
                 new Object[]{"arrowDamage", 1.20001f, "multishot", 0.60001f});
 
-        // 幻影之箭 - 移除multishot和firing_rate冲突(数值只有30%)
+        // 幻影之箭
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.phantom_arrow", "phantom_arrow",
                 new Object[]{"arrowDamage", 0.60001f, "multishot", 0.30001f, "firing_rate", 0.30001f});
 
-        // 魔法增长 - 移除multishot冲突(数值只有60%)
+        // 魔法增长
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.magical_growth", "magical_growth",
                 new Object[]{"magicDamage", 0.90001f, "multishot", 0.60001f});
@@ -203,70 +197,89 @@ public class ItemCommonModule extends AbstractItemModule {
                 new Object[]{"projectileDamage", 1.25001f});
 
         // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
-        // ========== TACZ exclusive modules (only registered when TACZ is loaded) ==========
         if (ItemRivenModule.isTaczLoaded()) {
 
-            // 爆发装填 —— 30%装填速度
+            // 爆发装填
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.burst_reload", "burst_reload",
                     new Object[]{"reload_speed", 0.30001f});
 
-            // 弹夹增幅 —— 30%弹夹容量
+            // 弹夹增幅
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.magazine_amplifier", "magazine_amplifier",
                     new Object[]{"magazine_size", 0.30001f});
 
-            // 迅捷弹匣 —— 20%装填速度 + 20%弹夹容量（全能入门型）
+            // 迅捷弹匣
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.swift_magazine", "swift_magazine",
                     new Object[]{"reload_speed", 0.20001f, "magazine_size", 0.20001f});
 
-            // 穿甲弹头 —— 45%投射物速度 + 30%穿刺伤害（物理+速度入门）
+            // 穿甲弹头
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.piercing_round", "piercing_round",
                     new Object[]{"projectile_speed", 0.45001f, "puncture", 0.30001f});
 
-            // 电磁加速弹 —— 60%远程伤害 + 30%投射物速度（远程+速度入门）
+            // 电磁加速弹
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.electromagnetic_accelerator", "electromagnetic_accelerator",
                     new Object[]{"remoteDamage", 0.60001f, "projectile_speed", 0.30001f});
 
-            // 稳固射击 —— 60%远程伤害 + 30%后坐力降低（远程+稳定入门）
+            // 稳固射击
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.steady_shot", "steady_shot",
                     new Object[]{"remoteDamage", 0.60001f, "recoil_reduction", 0.30001f});
 
-            // 轻量弹匣 —— 20%弹夹容量 + 20%装填速度 + 20%后坐力降低（三属性轻量型）
+            // 轻量弹匣
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.lightweight_magazine", "lightweight_magazine",
                     new Object[]{"magazine_size", 0.20001f, "reload_speed", 0.20001f, "recoil_reduction", 0.20001f});
+
+            // ===== 第二批TACZ新属性青铜卡 =====
+
+            // 精准射击 —— 30%精准度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.precise_shot", "precise_shot",
+                    new Object[]{"accuracy", 0.30001f});
+
+            // 迅捷举镜 —— 30%瞄准速度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.swift_aim", "swift_aim",
+                    new Object[]{"aim_time", 0.30001f});
+
+            // 致命要害 —— 60%爆头伤害倍率
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.vital_target", "vital_target",
+                    new Object[]{"headshot_damage", 0.60001f});
+
+            // 狙击直觉 —— 120%枪械伤害 + 20%精准度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.sniper_instinct", "sniper_instinct",
+                    new Object[]{"gun_damage", 1.20001f, "accuracy", 0.20001f});
+
+            // 重装弹头 —— 180%枪械伤害（纯枪伤入门）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.heavy_round", "heavy_round",
+                    new Object[]{"gun_damage", 1.80001f});
+
+            // 瞄准训练 —— 20%瞄准速度 + 20%精准度（双属性入门）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.aim_training", "aim_training",
+                    new Object[]{"aim_time", 0.20001f, "accuracy", 0.20001f});
         }
     }
 
     /**
      * 注册所有模组到创造标签页
-     * Register all modules to creative tab
-     *
-     * @param output 创造标签页输出 / creative tab output
      */
     public static void registerCreativeTabItems(CreativeModeTab.Output output) {
-        // 确保列表已初始化
         if (itemStackList.isEmpty()) {
             initializeModuleList();
         }
 
         List<ItemStack> items = new ArrayList<>();
-
-        // 随机模组始终显示
         items.add(getRandomModule());
-
-        // 将所有已注册的模组添加到创造物品栏
         items.addAll(itemStackList);
-
-        // ========== 自定义模组 / Custom Modules ==========
         CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, Rarity.COMMON);
-
-        // 将所有物品添加到创造标签页
         items.forEach(output::accept);
     }
 
@@ -274,13 +287,8 @@ public class ItemCommonModule extends AbstractItemModule {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
         if (!level.isClientSide() && AbstractItemModule.isRandom(itemstack) && hand.equals(InteractionHand.MAIN_HAND)) {
-            // 服务器端懒加载
             ensureInitialized();
-
-            // 过滤掉被禁用的模组
             List<ItemStack> availableModules = ModuleRegistryHelper.filterDisabled(itemStackList);
-
-            // ========== 添加自定义模组到随机池 / Add custom modules to random pool ==========
             CustomModuleManager.getInstance().addCustomItemModulesToRandomList(availableModules, Rarity.COMMON);
 
             if (availableModules.isEmpty()) {
@@ -288,10 +296,8 @@ public class ItemCommonModule extends AbstractItemModule {
             }
 
             ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
-
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);
-
             player.setItemInHand(hand, ItemStack.EMPTY);
             return InteractionResultHolder.success(itemstack);
         }

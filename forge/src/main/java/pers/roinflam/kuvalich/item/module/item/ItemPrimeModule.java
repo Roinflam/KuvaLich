@@ -118,27 +118,27 @@ public class ItemPrimeModule extends AbstractItemModule {
                 "kuvaweapon.item_module.violent_aesthetic_prime", "violent_aesthetic",
                 new Object[]{"baseDamageWhenNotCriticalStrike", 3.00001f, "attackSpeed", 0.40001f});
 
-        // 感染协议Prime ★ 触发几率 1.65001f → 1.20001f, 触发时间 1.35001f → 1.00001f
+        // 感染协议Prime
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.infection_protocol_prime", "infection_protocol",
                 new Object[]{"triggerChance", 1.20001f, "triggerTime", 1.00001f});
 
-        // 双重契约Prime ★ 近战伤害 2.20001f → 1.80001f, 远程伤害 2.20001f → 1.80001f
+        // 双重契约Prime
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.dual_covenant_prime", "dual_covenant",
                 new Object[]{"meleeDamage", 1.80001f, "remoteDamage", 1.80001f});
 
-        // 秘法弓术Prime ★ 箭矢 2.55001f → 2.00001f, 魔法 1.65001f → 1.35001f
+        // 秘法弓术Prime
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.mystic_archery_prime", "mystic_archery",
                 new Object[]{"arrowDamage", 2.00001f, "magicDamage", 1.35001f});
 
-        // 奥能轨迹Prime ★ 弹射物 2.55001f → 2.00001f, 魔法 1.65001f → 1.35001f
+        // 奥能轨迹Prime
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.arcane_ballistics_prime", "arcane_ballistics",
                 new Object[]{"projectileDamage", 2.00001f, "magicDamage", 1.35001f});
 
-        // 死神镰刀Prime ★ 多重 1.20001f → 0.90001f, 远程暴击几率 1.60001f → 1.20001f
+        // 死神镰刀Prime
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.reapers_scythe_prime", "reapers_scythe",
                 new Object[]{"multishot", 0.90001f, "remoteCriticalStrikeProbability", 1.20001f},
@@ -171,7 +171,7 @@ public class ItemPrimeModule extends AbstractItemModule {
                 new Object[]{"magnetic", 1.65001f, "remoteCriticalStrikeProbability", 1.35001f},
                 "remote_crit_chance");
 
-        // 灾厄降临Prime ★ 触发几率 1.20001f → 0.90001f, 触发时间 1.20001f → 0.90001f
+        // 灾厄降临Prime
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.catastrophe_prime", "catastrophe",
                 new Object[]{"bursting_radius", 0.33001f, "triggerChance", 0.90001f, "triggerTime", 0.90001f});
@@ -193,7 +193,7 @@ public class ItemPrimeModule extends AbstractItemModule {
                 "kuvaweapon.item_module.galvanized_violent_aesthetic", "violent_aesthetic",
                 new Object[]{"baseDamageWhenNotCriticalStrike", 2.00001f, "attackSpeed", 0.75001f, "killStackAttackSpeed", 0.10001f});
 
-        // 镀层感染协议（不动）
+        // 镀层感染协议
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.galvanized_infection_protocol", "infection_protocol",
                 new Object[]{"triggerChance", 0.90001f, "triggerTime", 0.75001f, "killStackTriggerChance", 0.30001f});
@@ -203,7 +203,7 @@ public class ItemPrimeModule extends AbstractItemModule {
                 "kuvaweapon.item_module.galvanized_dual_covenant", "dual_covenant",
                 new Object[]{"meleeDamage", 1.20001f, "remoteDamage", 1.20001f, "killStackMeleeCriticalMultiplier", 0.50001f});
 
-        // 镀层死神镰刀（不动）
+        // 镀层死神镰刀
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.galvanized_reapers_scythe", "reapers_scythe",
                 new Object[]{"multishot", 0.60001f, "remoteCriticalStrikeProbability", 0.80001f, "killStackMultishot", 0.30001f});
@@ -252,6 +252,71 @@ public class ItemPrimeModule extends AbstractItemModule {
                     "kuvaweapon.item_module.ballistic_calibration_prime", "ballistic_calibration",
                     new Object[]{"projectile_speed", 0.60001f, "remoteCriticalStrikeMultiplier", 0.75001f},
                     "remote_crit_mult");
+
+            // ===== 第二批TACZ新属性Prime卡（第一批） =====
+
+            // 弹道学 Prime —— 375%枪械伤害 + 45%精准度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.ballistics_prime", "ballistics",
+                    new Object[]{"gun_damage", 3.75001f, "accuracy", 0.45001f});
+
+            // 处刑者 Prime —— 180%爆头伤害 + 120%远程暴伤
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.executioner_prime", "executioner",
+                    new Object[]{"headshot_damage", 1.80001f, "remoteCriticalStrikeMultiplier", 1.20001f},
+                    "remote_crit_mult");
+
+            // 极速瞄具 Prime —— 55%瞄准速度 + 45%精准度 + 30%后坐力降低
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.quickdraw_sight_prime", "quickdraw_sight",
+                    new Object[]{"aim_time", 0.55001f, "accuracy", 0.45001f, "recoil_reduction", 0.30001f});
+
+            // ===== 第二批TACZ新属性镀层卡 =====
+
+            // 镀层 弹道学 —— 200%枪械伤害 + 击杀叠多重30%
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.galvanized_ballistics", "ballistics",
+                    new Object[]{"gun_damage", 2.00001f, "killStackMultishot", 0.30001f},
+                    "multishot");
+
+            // 镀层 猎首者 —— 60%爆头倍率 + 60%远程暴击几率 + 击杀叠触发30%
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.galvanized_headhunter", "headhunter",
+                    new Object[]{"headshot_damage", 0.60001f, "remoteCriticalStrikeProbability", 0.60001f, "killStackTriggerChance", 0.30001f});
+
+            // 镀层 极速瞄具 —— 30%瞄准速度 + 30%后坐力降低 + 击杀叠射速20%
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.galvanized_quickdraw_sight", "quickdraw_sight",
+                    new Object[]{"aim_time", 0.30001f, "recoil_reduction", 0.30001f, "killStackFiringRate", 0.20001f});
+
+            // 镀层 火力集中 —— 120%枪械伤害 + 45%爆头倍率 + 击杀叠多重25%
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.galvanized_focused_firepower", "focused_firepower",
+                    new Object[]{"gun_damage", 1.20001f, "headshot_damage", 0.45001f, "killStackMultishot", 0.25001f},
+                    "multishot");
+
+            // ===== 第二批TACZ新属性Prime升级版 =====
+
+            // 弱点锁定 Prime —— 135%爆头倍率 + 45%精准度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.weak_point_lock_prime", "weak_point_lock",
+                    new Object[]{"headshot_damage", 1.35001f, "accuracy", 0.45001f});
+
+            // 致命精准 Prime —— 180%枪械伤害 + 90%远程暴击几率
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.lethal_accuracy_prime", "lethal_accuracy",
+                    new Object[]{"gun_damage", 1.80001f, "remoteCriticalStrikeProbability", 0.90001f},
+                    "remote_crit_chance");
+
+            // 快速反应 Prime —— 55%瞄准速度 + 180%枪械伤害
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.quick_response_prime", "quick_response",
+                    new Object[]{"aim_time", 0.55001f, "gun_damage", 1.80001f});
+
+            // 爆头专家 Prime —— 165%爆头倍率 + 45%瞄准速度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.headshot_expert_prime", "headshot_expert",
+                    new Object[]{"headshot_damage", 1.65001f, "aim_time", 0.45001f});
         }
     }
 

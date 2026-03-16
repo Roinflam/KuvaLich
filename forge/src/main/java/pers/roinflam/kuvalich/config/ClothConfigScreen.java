@@ -204,6 +204,68 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_LICH.increaseDamage::set)
                 .build());
 
+        // ===== 元素伤害倍率 =====
+
+        damageCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.elementFireDamageMultiplier"),
+                        ModConfig.KUVA_LICH.elementFireDamageMultiplier.get())
+                .setDefaultValue(1.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.elementFireDamageMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.elementFireDamageMultiplier::set)
+                .build());
+
+        damageCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.elementPoisonDamageMultiplier"),
+                        ModConfig.KUVA_LICH.elementPoisonDamageMultiplier.get())
+                .setDefaultValue(1.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.elementPoisonDamageMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.elementPoisonDamageMultiplier::set)
+                .build());
+
+        damageCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.elementSlashDamageMultiplier"),
+                        ModConfig.KUVA_LICH.elementSlashDamageMultiplier.get())
+                .setDefaultValue(1.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.elementSlashDamageMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.elementSlashDamageMultiplier::set)
+                .build());
+
+        damageCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.elementGasDamageMultiplier"),
+                        ModConfig.KUVA_LICH.elementGasDamageMultiplier.get())
+                .setDefaultValue(1.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.elementGasDamageMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.elementGasDamageMultiplier::set)
+                .build());
+
+        damageCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.elementElectricityDamageMultiplier"),
+                        ModConfig.KUVA_LICH.elementElectricityDamageMultiplier.get())
+                .setDefaultValue(1.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.elementElectricityDamageMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.elementElectricityDamageMultiplier::set)
+                .build());
+
+        damageCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.elementExplosionDamageMultiplier"),
+                        ModConfig.KUVA_LICH.elementExplosionDamageMultiplier.get())
+                .setDefaultValue(1.0)
+                .setMin(0.0)
+                .setMax(100.0)
+                .setTooltip(Component.translatable("config.kuvalich.elementExplosionDamageMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.elementExplosionDamageMultiplier::set)
+                .build());
+
         // ═══════════════════════════════════════════════════════════════
         // 武器等级系统
         // ═══════════════════════════════════════════════════════════════

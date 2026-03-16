@@ -61,6 +61,20 @@ public class DynamicAttributes {
     public static final DynamicAttribute NEGATIVE_REACH_DISTANCE = new DynamicAttribute("negative_reach_distance")
             .addModifier(ForgeMod.BLOCK_REACH.get(), -0.1, AttributeModifier.Operation.MULTIPLY_TOTAL);
 
+    /**
+     * 攻击距离增加（基于 ENTITY_REACH，每级 +5%）
+     * 效果为攻击速度同粒度（0.1）的一半，防止攻击范围过于超标
+     * 例：attackRange=1.1 → level=10 → 0.05×11 = +55% ENTITY_REACH
+     */
+    public static final DynamicAttribute ATTACK_RANGE = new DynamicAttribute("attack_range")
+            .addModifier(ForgeMod.ENTITY_REACH.get(), 0.05, AttributeModifier.Operation.MULTIPLY_TOTAL);
+
+    /**
+     * 攻击距离降低（基于 ENTITY_REACH，每级 -5%）
+     */
+    public static final DynamicAttribute NEGATIVE_ATTACK_RANGE = new DynamicAttribute("negative_attack_range")
+            .addModifier(ForgeMod.ENTITY_REACH.get(), -0.05, AttributeModifier.Operation.MULTIPLY_TOTAL);
+
     // ========== 持续伤害效果 ==========
 
     /**

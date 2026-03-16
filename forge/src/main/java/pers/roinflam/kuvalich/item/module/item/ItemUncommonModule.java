@@ -54,7 +54,7 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.serration", "serration",
                 new Object[]{"remoteDamage", 1.65001f});
 
-        // 速度触发 - 移除firing_rate冲突(数值只有60%)
+        // 速度触发
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.speed_trigger", "speed_trigger",
                 new Object[]{"firing_rate", 0.6001f});
@@ -109,7 +109,7 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.fury", "fury",
                 new Object[]{"attackSpeed", 0.3001f});
 
-        // 回旋砍 - 移除attack_range冲突(数值只有120%)
+        // 回旋砍
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.roundhouse_chop", "roundhouse_chop",
                 new Object[]{"attackRange", 1.20001f, "slash", 0.60001f});
@@ -124,12 +124,12 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.triple_whammy", "triple_whammy",
                 new Object[]{"slash", 0.30001f, "puncture", 0.30001f, "impact", 0.30001f});
 
-        // 小口径 - 移除冲突标签(有负面效果)
+        // 小口径
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.small_caliber", "small_caliber",
                 new Object[]{"remoteCriticalStrikeProbability", 1.20001f, "remoteCriticalStrikeMultiplier", 1.20001f, "remoteDamage", -0.80001f});
 
-        // 流体 - 移除attack_range冲突(虽然是500%但属于特殊属性dash相关)
+        // 流体
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.stream", "stream",
                 new Object[]{"dashAttackRange", 5.00001f});
@@ -164,7 +164,7 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.cryo_rounds", "cryo_rounds",
                 new Object[]{"projectileDamage", 1.20001f, "ice", 0.60001f});
 
-        // 弹簧弹舱 - 移除firing_rate冲突(有负面效果)
+        // 弹簧弹舱
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.spring_loaded_chamber", "spring_loaded_chamber",
                 new Object[]{"projectileDamage", 1.55001f, "firing_rate", 0.75001f, "remoteCriticalStrikeProbability", -0.6001f});
@@ -174,7 +174,7 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.serrated_rounds", "serrated_rounds",
                 new Object[]{"projectileDamage", 1.20001f, "slash", 0.9001f, "triggerChance", 0.6001f});
 
-        // 毁灭 - 移除attack_range冲突(数值只有120%)
+        // 毁灭
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.devastated", "devastated",
                 new Object[]{"attackRange", 1.20001f, "puncture", 0.6001f, "triggerTime", 0.6001f});
@@ -226,7 +226,7 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.berserker_rage", "berserker_rage",
                 new Object[]{"meleeDamage", -0.15001f, "attackSpeed", 0.90001f});
 
-        // 火力压制 - 移除firing_rate冲突(只是辅助属性)
+        // 火力压制
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.suppressive_fire", "suppressive_fire",
                 new Object[]{"remoteDamage", 1.35001f, "firing_rate", 0.30001f});
@@ -236,7 +236,7 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.shockwave_domain", "shockwave_domain",
                 new Object[]{"bursting_radius", 0.15001f, "triggerTime", 0.90001f});
 
-        // 死亡弹幕 - 移除multishot冲突(数值只有60%)
+        // 死亡弹幕
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.death_barrage", "death_barrage",
                 new Object[]{"multishot", 0.60001f, "triggerChance", 0.90001f});
@@ -244,40 +244,97 @@ public class ItemUncommonModule extends AbstractItemModule {
         // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
         if (ItemRivenModule.isTaczLoaded()) {
 
-            // 极限速度 —— 60%投射物速度
+            // 极限速度
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.terminal_velocity", "terminal_velocity",
                     new Object[]{"projectile_speed", 0.60001f});
 
-            // 致命弹道 —— 45%投射物速度 + 60%远程暴击几率（狙击入门向）
+            // 致命弹道
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.lethal_trajectory", "lethal_trajectory",
                     new Object[]{"projectile_speed", 0.45001f, "remoteCriticalStrikeProbability", 0.60001f});
 
-            // 弹幕倾泻 —— 30%射速 + 30%多重射击 - 30%远程伤害（弹幕代价型，移除冲突标签：有负面效果）
+            // 弹幕倾泻
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.barrage_protocol", "barrage_protocol",
                     new Object[]{"firing_rate", 0.30001f, "multishot", 0.30001f, "remoteDamage", -0.30001f});
 
-            // 战术装填 —— 40%装填速度 + 40%后坐力降低（机动入门向）
+            // 战术装填
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.tactical_reload", "tactical_reload",
                     new Object[]{"reload_speed", 0.40001f, "recoil_reduction", 0.40001f});
 
-            // 镇定射击 —— 45%后坐力降低 + 60%触发几率（稳定+触发）
+            // 镇定射击
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.steady_aim", "steady_aim",
                     new Object[]{"recoil_reduction", 0.45001f, "triggerChance", 0.60001f});
 
-            // 弹道校准 —— 45%投射物速度 + 60%远程暴击伤害（狙击暴伤向）
+            // 弹道校准
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.ballistic_calibration", "ballistic_calibration",
                     new Object[]{"projectile_speed", 0.45001f, "remoteCriticalStrikeMultiplier", 0.60001f});
 
-            // 超量供弹 —— 60%弹夹容量 - 20%装填速度（弹夹代价型，移除冲突标签：有负面效果）
+            // 超量供弹
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.surplus_ammo", "surplus_ammo",
                     new Object[]{"magazine_size", 0.60001f, "reload_speed", -0.20001f});
+
+            // ===== 第二批TACZ新属性白银卡 =====
+
+            // 弹道聚焦 —— 45%精准度 + 120%枪械伤害
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.ballistic_focus", "ballistic_focus",
+                    new Object[]{"accuracy", 0.45001f, "gun_damage", 1.20001f});
+
+            // 猎首者 —— 90%爆头伤害 + 60%远程暴击几率
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.headhunter", "headhunter",
+                    new Object[]{"headshot_damage", 0.90001f, "remoteCriticalStrikeProbability", 0.60001f});
+
+            // 极速瞄具 —— 45%瞄准速度 + 30%后坐力降低
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.quickdraw_sight", "quickdraw_sight",
+                    new Object[]{"aim_time", 0.45001f, "recoil_reduction", 0.30001f});
+
+            // 穿甲弹芯 —— 200%枪械伤害 - 20%精准度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.armor_piercing_core", "armor_piercing_core",
+                    new Object[]{"gun_damage", 2.00001f, "accuracy", -0.20001f});
+
+            // 战术优势 —— 30%瞄准速度 + 30%精准度
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.tactical_edge", "tactical_edge",
+                    new Object[]{"aim_time", 0.30001f, "accuracy", 0.30001f});
+
+            // 火力集中 —— 150%枪械伤害 + 60%爆头伤害
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.focused_firepower", "focused_firepower",
+                    new Object[]{"gun_damage", 1.50001f, "headshot_damage", 0.60001f});
+
+            // 弹道学 —— 247%枪械伤害（弹道学Prime普通版）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.ballistics", "ballistics",
+                    new Object[]{"gun_damage", 2.47001f});
+
+            // 致命精准 —— 120%枪械伤害 + 60%远程暴击几率（致命精准Prime普通版）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.lethal_accuracy", "lethal_accuracy",
+                    new Object[]{"gun_damage", 1.20001f, "remoteCriticalStrikeProbability", 0.60001f});
+
+            // 弱点锁定 —— 90%爆头倍率 + 45%精准度（弱点锁定Prime普通版）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.weak_point_lock", "weak_point_lock",
+                    new Object[]{"headshot_damage", 0.90001f, "accuracy", 0.45001f});
+
+            // 爆头专家 —— 120%爆头倍率 + 30%瞄准速度（爆头专家Prime普通版）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.headshot_expert", "headshot_expert",
+                    new Object[]{"headshot_damage", 1.20001f, "aim_time", 0.30001f});
+
+            // 快速反应 —— 45%瞄准速度 + 120%枪械伤害（快速反应Prime普通版）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.quick_response", "quick_response",
+                    new Object[]{"aim_time", 0.45001f, "gun_damage", 1.20001f});
         }
     }
 

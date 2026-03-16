@@ -1,3 +1,4 @@
+// WeaponElementSystem.java
 package pers.roinflam.kuvalich.module.weapon;
 
 import net.minecraft.server.level.ServerPlayer;
@@ -11,6 +12,7 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
@@ -317,7 +319,9 @@ public class WeaponElementSystem {
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance((int) (120 * triggerTime), currentLevel));
                 }
                 hurter.setSecondsOnFire(6);
-                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier);
+                // [新增] 火焰元素伤害倍率
+                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
+                        * ModConfig.KUVA_LICH.elementFireDamageMultiplier.get());
                 if (dotDamage > 0) {
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
@@ -338,7 +342,9 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ILLAGER)) typeDamageMultiplier = 1.5;
                 else if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 0.5;
-                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier);
+                // [新增] 毒素元素伤害倍率
+                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
+                        * ModConfig.KUVA_LICH.elementPoisonDamageMultiplier.get());
                 if (dotDamage > 0) {
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
@@ -371,7 +377,9 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.UNDEAD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
-                float lightningDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier);
+                // [新增] 电击元素伤害倍率
+                float lightningDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
+                        * ModConfig.KUVA_LICH.elementElectricityDamageMultiplier.get());
                 if (lightningDamage > 0) {
                     net.minecraft.world.entity.LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
                     if (lightning != null) { lightning.moveTo(hurter.getX(), hurter.getY(), hurter.getZ()); lightning.setVisualOnly(true); level.addFreshEntity(lightning); }
@@ -384,7 +392,9 @@ public class WeaponElementSystem {
             }
             case "slash": {
                 // 切割：无视护甲DOT，受病毒debuff增幅
-                float dotDamage = (float) (0.35 * coreDamage * baneMultiplier);
+                // [新增] 切割元素伤害倍率
+                float dotDamage = (float) (0.35 * coreDamage * baneMultiplier
+                        * ModConfig.KUVA_LICH.elementSlashDamageMultiplier.get());
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.VIRUS)) {
                     int virusLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.VIRUS);
                     double virusMultiplier = 1.0 + (1.0 + Math.min(virusLevel, 9) * 0.25);
@@ -467,7 +477,9 @@ public class WeaponElementSystem {
             case "explosion": {
                 // 爆炸：AOE范围伤害
                 double armorMultiplier = hurter.getAbsorptionAmount() > 0 ? 1.5 : 0.5;
-                float explosionDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * armorMultiplier);
+                // [新增] 爆炸元素伤害倍率
+                float explosionDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * armorMultiplier
+                        * ModConfig.KUVA_LICH.elementExplosionDamageMultiplier.get());
                 if (explosionDamage > 0) {
                     level.explode(null, hurter.getX(), hurter.getY(), hurter.getZ(), 3.0F, Level.ExplosionInteraction.NONE);
                     hurter.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
@@ -487,7 +499,9 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
-                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier);
+                // [新增] 毒气元素伤害倍率
+                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
+                        * ModConfig.KUVA_LICH.elementGasDamageMultiplier.get());
                 final Vec3 gasCenter = new Vec3(hurter.getX(), hurter.getY(), hurter.getZ());
                 if (dotDamage > 0) {
                     new SynchronizationTask(20, 20) {

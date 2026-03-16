@@ -17,140 +17,116 @@ import java.util.HashMap;
  */
 public class WarframeTaczBridge {
 
-    /**
-     * ThreadLocal 标志：当 TACZ 枪械自带爆炸逻辑时，抑制 KuvaLich bursting_radius 的 AOE 计算。
-     * ThreadLocal flag: suppress KuvaLich bursting_radius AOE when TACZ gun has its own explosion logic.
-     * <p>
-     * 生命周期：由 TaczCompatEventHandler（NORMAL 优先级）写入，
-     * 由 WeaponModuleHandler.processDamage（LOWEST 优先级）读取并清除。
-     * Lifecycle: written by TaczCompatEventHandler (NORMAL priority),
-     * read and cleared by WeaponModuleHandler.processDamage (LOWEST priority).
-     */
+    // ========== 射击期间 ThreadLocal / Shoot-time ThreadLocal ==========
+
+    /** bursting_radius 抑制标志 */
     private static final ThreadLocal<Boolean> suppressBurstRadius = ThreadLocal.withInitial(() -> false);
 
-    /**
-     * ThreadLocal 存储：TACZ 原始弹丸数（多重射击膨胀前的值）。
-     * ThreadLocal storage: TACZ original bullet count (before multishot inflation).
-     * <p>
-     * 生命周期：由 MixinGunShootOnce（修改 bulletAmount 前）写入，
-     * 由 MixinBulletDamageSpread（applyShotgunDamageSpread 注入）读取。
-     * Lifecycle: written by MixinGunShootOnce (before modifying bulletAmount),
-     * read by MixinBulletDamageSpread (in applyShotgunDamageSpread injection).
-     * <p>
-     * 值为 0 表示未设置（不干预）。
-     * Value of 0 means not set (no intervention).
-     */
+    /** TACZ 原始弹丸数（多重射击膨胀前的值） */
     private static final ThreadLocal<Integer> originalBulletAmount = ThreadLocal.withInitial(() -> 0);
 
-    /**
-     * ThreadLocal 存储：满弹夹第一发射击时的额外伤害倍率。
-     * ThreadLocal storage: bonus damage multiplier for first bullet from full magazine.
-     * <p>
-     * 生命周期：由 MixinFirstBulletDetect（shootOnce HEAD）写入，
-     * 由 MixinFirstBulletDamage（EntityKineticBullet 构造器）读取，
-     * 由 MixinFirstBulletDetect（shootOnce RETURN）清除。
-     * Lifecycle: written by MixinFirstBulletDetect (shootOnce HEAD),
-     * read by MixinFirstBulletDamage (EntityKineticBullet constructor),
-     * cleared by MixinFirstBulletDetect (shootOnce RETURN).
-     * <p>
-     * 值为 0 表示非第一发或无模组。
-     * Value of 0 means not first bullet or no module.
-     */
+    /** 满弹夹第一发射击时的额外伤害倍率 */
     private static final ThreadLocal<Float> firstBulletDamageBonus = ThreadLocal.withInitial(() -> 0f);
 
-    // ========== 抑制标志 API / Suppress Flag API ==========
+    /** 枪械伤害加成倍率（独立乘区） */
+    private static final ThreadLocal<Float> gunDamageBonus = ThreadLocal.withInitial(() -> 0f);
+
+    // ========== 缓存刷新期间 ThreadLocal / Cache Refresh ThreadLocal ==========
 
     /**
-     * 查询当前线程是否处于 bursting_radius 抑制状态。
-     *
-     * @return 是否抑制
+     * AttachmentPropertyManager.postChangeEvent 的 shooter 上下文。
+     * 由 MixinAttachmentPropertyContext（HEAD）写入，
+     * 由 TaczCompatEventHandler.onAttachmentPropertyEvent 读取并清除。
      */
+    private static final ThreadLocal<LivingEntity> cacheContextShooter = new ThreadLocal<>();
+
+    /**
+     * AttachmentPropertyManager.postChangeEvent 的 gunItem 上下文。
+     * 生命周期同 cacheContextShooter。
+     */
+    private static final ThreadLocal<ItemStack> cacheContextGunItem = new ThreadLocal<>();
+
+    // ========== 抑制标志 API ==========
+
     public static boolean isBurstRadiusSuppressed() {
         return suppressBurstRadius.get();
     }
 
-    /**
-     * 设置 bursting_radius 抑制标志。
-     *
-     * @param suppress 是否抑制
-     */
     public static void setSuppressBurstRadius(boolean suppress) {
         suppressBurstRadius.set(suppress);
     }
 
-    /**
-     * 清除 bursting_radius 抑制标志。
-     */
     public static void clearBurstRadiusSuppressed() {
         suppressBurstRadius.set(false);
     }
 
-    // ========== 原始弹丸数 API / Original Bullet Amount API ==========
+    // ========== 原始弹丸数 API ==========
 
-    /**
-     * 获取当前线程存储的原始弹丸数。
-     *
-     * @return 原始弹丸数，0 表示未设置
-     */
     public static int getOriginalBulletAmount() {
         return originalBulletAmount.get();
     }
 
-    /**
-     * 设置原始弹丸数（多重射击膨胀前的值）。
-     * <p>
-     * 由 MixinGunShootOnce 在修改 bulletAmount 之前调用，
-     * 确保 MixinBulletDamageSpread 能用原始值计算 damageModifier。
-     *
-     * @param amount 原始弹丸数
-     */
     public static void setOriginalBulletAmount(int amount) {
         originalBulletAmount.set(amount);
     }
 
-    /**
-     * 清除原始弹丸数。
-     */
     public static void clearOriginalBulletAmount() {
         originalBulletAmount.set(0);
     }
 
-    // ========== 第一发子弹伤害 API / First Bullet Damage API ==========
+    // ========== 第一发子弹伤害 API ==========
 
-    /**
-     * 获取当前线程的第一发子弹伤害加成。
-     *
-     * @return 伤害加成倍率，0 表示无加成
-     */
     public static float getFirstBulletDamageBonus() {
         return firstBulletDamageBonus.get();
     }
 
-    /**
-     * 设置第一发子弹伤害加成。
-     *
-     * @param bonus 伤害加成倍率
-     */
     public static void setFirstBulletDamageBonus(float bonus) {
         firstBulletDamageBonus.set(bonus);
     }
 
-    /**
-     * 清除第一发子弹伤害加成。
-     */
     public static void clearFirstBulletDamageBonus() {
         firstBulletDamageBonus.set(0f);
     }
 
-    // ========== 模组属性读取 / Module Attribute Getters ==========
+    // ========== 枪械伤害 API ==========
 
-    /**
-     * 获取枪械上装载的 firing_rate 模组合计修正值。
-     *
-     * @param gunItem 枪械 ItemStack
-     * @param shooter 持枪实体
-     * @return firing_rate 增量值，无模组时返回 0
-     */
+    public static float getGunDamageBonus() {
+        return gunDamageBonus.get();
+    }
+
+    public static void setGunDamageBonus(float bonus) {
+        gunDamageBonus.set(bonus);
+    }
+
+    public static void clearGunDamageBonus() {
+        gunDamageBonus.set(0f);
+    }
+
+    // ========== 缓存上下文 API ==========
+
+    public static LivingEntity getCacheContextShooter() {
+        return cacheContextShooter.get();
+    }
+
+    public static void setCacheContextShooter(LivingEntity shooter) {
+        cacheContextShooter.set(shooter);
+    }
+
+    public static ItemStack getCacheContextGunItem() {
+        return cacheContextGunItem.get();
+    }
+
+    public static void setCacheContextGunItem(ItemStack gunItem) {
+        cacheContextGunItem.set(gunItem);
+    }
+
+    public static void clearCacheContext() {
+        cacheContextShooter.remove();
+        cacheContextGunItem.remove();
+    }
+
+    // ========== 模组属性读取 ==========
+
     public static float getFireRateMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
@@ -169,13 +145,6 @@ public class WarframeTaczBridge {
         return (float) firingRate;
     }
 
-    /**
-     * 获取枪械上装载的 multishot 模组合计修正值。
-     *
-     * @param gunItem 枪械 ItemStack
-     * @param shooter 持枪实体
-     * @return multishot 增量值，无模组时返回 0
-     */
     public static float getMultishotMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
@@ -194,17 +163,6 @@ public class WarframeTaczBridge {
         return (float) multishot;
     }
 
-    /**
-     * 获取枪械上装载的 bursting_radius 模组合计修正值。
-     * Get total bursting_radius modifier from KuvaLich weapon modules on the gun.
-     * <p>
-     * 用于在 EntityKineticBullet 构造器中直接修改 explosionRadius 字段：
-     * explosionRadius *= (1 + burstingRadius)
-     *
-     * @param gunItem 枪械 ItemStack
-     * @param shooter 持枪实体
-     * @return bursting_radius 增量值，无模组时返回 0
-     */
     public static float getBurstingRadiusMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
@@ -213,21 +171,8 @@ public class WarframeTaczBridge {
         return attributes.getOrDefault("bursting_radius", 0.0).floatValue();
     }
 
-    // ========== TACZ 枪械新属性读取 / New TACZ Gun Attribute Getters ==========
+    // ========== TACZ 枪械属性读取（第一批）==========
 
-    /**
-     * 获取枪械上装载的 reload_speed 模组合计修正值。
-     * Get total reload_speed modifier from KuvaLich weapon modules on the gun.
-     * <p>
-     * 用于膨胀装填已耗时间，使脚本判定更早完成装填。
-     * Used to inflate elapsed reload time so script logic completes reload earlier.
-     * <p>
-     * 公式：膨胀后耗时 = 实际耗时 × (1 + reload_speed)
-     *
-     * @param gunItem 枪械 ItemStack
-     * @param shooter 持枪实体
-     * @return reload_speed 增量值，无模组时返回 0
-     */
     public static float getReloadSpeedMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
@@ -236,20 +181,6 @@ public class WarframeTaczBridge {
         return attributes.getOrDefault("reload_speed", 0.0).floatValue();
     }
 
-    /**
-     * 获取枪械上装载的 magazine_size 模组合计修正值。
-     * Get total magazine_size modifier from KuvaLich weapon modules on the gun.
-     * <p>
-     * 用于修改 AttachmentDataUtils.getAmmoCountWithAttachment 返回值。
-     * Used to modify the return value of AttachmentDataUtils.getAmmoCountWithAttachment.
-     * <p>
-     * 注意：此方法不接受 shooter 参数，因为 AttachmentDataUtils.getAmmoCountWithAttachment
-     * 是静态方法，调用上下文中无法获取射击者实体。
-     * Note: No shooter param because AttachmentDataUtils.getAmmoCountWithAttachment is static.
-     *
-     * @param gunItem 枪械 ItemStack
-     * @return magazine_size 增量值，无模组时返回 0
-     */
     public static float getMagazineSizeMod(ItemStack gunItem) {
         if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
@@ -258,19 +189,6 @@ public class WarframeTaczBridge {
         return attributes.getOrDefault("magazine_size", 0.0).floatValue();
     }
 
-    /**
-     * 获取枪械上装载的 projectile_speed 模组合计修正值。
-     * Get total projectile_speed modifier from KuvaLich weapon modules on the gun.
-     * <p>
-     * 用于修改 shootOnce 内部 processedSpeed（子弹飞行速度）。
-     * 速度提升 → 同一 lifetime 内子弹飞行更远 → 有效射程自然增加。
-     * Used to modify processedSpeed in shootOnce (bullet flight speed).
-     * Higher speed → bullet travels farther in same lifetime → effective range increases.
-     *
-     * @param gunItem 枪械 ItemStack
-     * @param shooter 持枪实体
-     * @return projectile_speed 增量值，无模组时返回 0
-     */
     public static float getProjectileSpeedMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
@@ -279,19 +197,6 @@ public class WarframeTaczBridge {
         return attributes.getOrDefault("projectile_speed", 0.0).floatValue();
     }
 
-    /**
-     * 获取枪械上装载的 recoil_reduction 模组合计修正值。
-     * Get total recoil_reduction modifier from KuvaLich weapon modules on the gun.
-     * <p>
-     * 用于缩放 CameraSetupEvent 中 genPitch/YawSplineFunction 的 modifier 参数。
-     * 在客户端侧生效，直接降低摄像机后坐力偏移量。
-     * Used to scale the modifier parameter of genPitch/YawSplineFunction in CameraSetupEvent.
-     * Takes effect client-side, directly reducing camera recoil displacement.
-     *
-     * @param gunItem 枪械 ItemStack
-     * @param shooter 持枪实体
-     * @return recoil_reduction 增量值，无模组时返回 0
-     */
     public static float getRecoilReductionMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
@@ -300,26 +205,61 @@ public class WarframeTaczBridge {
         return attributes.getOrDefault("recoil_reduction", 0.0).floatValue();
     }
 
-    /**
-     * 获取枪械上装载的 first_bullet_damage 模组合计修正值。
-     * Get total first_bullet_damage modifier from KuvaLich weapon modules on the gun.
-     * <p>
-     * 语义：满弹夹射出第一发时，子弹基伤直接乘以 (1 + first_bullet_damage)。
-     * Semantics: when firing the first bullet from a full magazine,
-     * bullet base damage is multiplied by (1 + first_bullet_damage).
-     * <p>
-     * 例：first_bullet_damage = 10.0（+1000%），原始 10 伤害 → 10 × 11 = 110 伤害
-     * Example: first_bullet_damage = 10.0 (+1000%), original 10 dmg → 10 × 11 = 110 dmg
-     *
-     * @param gunItem 枪械 ItemStack
-     * @param shooter 持枪实体
-     * @return first_bullet_damage 增量值，无模组时返回 0
-     */
     public static float getFirstBulletDamageMod(ItemStack gunItem, LivingEntity shooter) {
         if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
             return 0f;
         }
         HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
         return attributes.getOrDefault("first_bullet_damage", 0.0).floatValue();
+    }
+
+    // ========== TACZ 枪械属性读取（第二批）==========
+
+    /**
+     * 获取枪械上装载的 gun_damage 模组合计修正值。
+     * 语义：独立伤害乘区。damageModifier *= (1 + gun_damage)。
+     */
+    public static float getGunDamageMod(ItemStack gunItem, LivingEntity shooter) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("gun_damage", 0.0).floatValue();
+    }
+
+    /**
+     * 获取枪械上装载的 headshot_damage 模组合计修正值。
+     * 语义：爆头倍率加成。headShotMultiplier *= (1 + headshot_damage)。
+     */
+    public static float getHeadshotDamageMod(ItemStack gunItem, LivingEntity shooter) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("headshot_damage", 0.0).floatValue();
+    }
+
+    /**
+     * 获取枪械上装载的 aim_time 模组合计修正值。
+     * 语义：瞄准速度加成。newAdsTime = originalAdsTime / (1 + aim_time)。
+     */
+    public static float getAimTimeMod(ItemStack gunItem, LivingEntity shooter) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("aim_time", 0.0).floatValue();
+    }
+
+    /**
+     * 获取枪械上装载的 accuracy 模组合计修正值。
+     * 语义：精准度提升。newInaccuracy = oldInaccuracy * max(0, 1 - accuracy)。
+     */
+    public static float getAccuracyMod(ItemStack gunItem, LivingEntity shooter) {
+        if (gunItem == null || gunItem.isEmpty() || !WeaponModuleHandler.hasBase(gunItem)) {
+            return 0f;
+        }
+        HashMap<String, Double> attributes = WeaponModuleHandler.getWeaponAttributes(gunItem);
+        return attributes.getOrDefault("accuracy", 0.0).floatValue();
     }
 }

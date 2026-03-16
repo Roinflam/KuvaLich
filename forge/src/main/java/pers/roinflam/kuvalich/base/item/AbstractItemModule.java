@@ -36,10 +36,12 @@ public abstract class AbstractItemModule extends AbstractModule {
                     "killStackBaseDamage", "killStackMultishot", "killStackMeleeCriticalMultiplier",
                     "killStackTriggerChance", "killStackAttackRange", "killStackAttackSpeed",
                     "killStackBurstingRadius", "killStackFiringRate",
-                    // ===== TACZ 枪械新属性 / New TACZ gun attributes =====
-                    "reload_speed", "magazine_size", "projectile_speed", "recoil_reduction"
+                    // ===== TACZ 枪械新属性（第一批）/ New TACZ gun attributes (batch 1) =====
+                    "reload_speed", "magazine_size", "projectile_speed", "recoil_reduction",
                     // 注意：first_bullet_damage 不加入此集合，使紫卡（裂罅模组）无法洗出该词条
                     // Note: first_bullet_damage excluded from this set so Riven mods cannot roll it
+                    // ===== TACZ 枪械新属性（第二批）/ New TACZ gun attributes (batch 2) =====
+                    "gun_damage", "headshot_damage", "aim_time", "accuracy"
             ))
     );
 

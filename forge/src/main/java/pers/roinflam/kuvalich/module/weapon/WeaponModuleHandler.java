@@ -317,8 +317,9 @@ public class WeaponModuleHandler {
                 if (attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.baseDamageWhenNotCriticalStrike") + " ").append(Component.literal((int) (attributes.get("baseDamageWhenNotCriticalStrike") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
+                // 攻击距离：改为百分比显示（原版距离 * 攻击距离%）
                 if (attributes.getOrDefault("attackRange", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.attackRange") + " ").append(Component.literal(String.format("%.1f", attributes.get("attackRange")) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.attackRange") + " ").append(Component.literal((int) (attributes.get("attackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("bursting_radius", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.bursting_radius") + " ").append(Component.literal(String.format("%.1f", 1 + attributes.get("bursting_radius") * 2) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
@@ -374,8 +375,9 @@ public class WeaponModuleHandler {
                 if (attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.dashMeleeCriticalStrikeProbability") + " ").append(Component.literal((int) (attributes.get("dashMeleeCriticalStrikeProbability") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
+                // 冲刺攻击距离：改为百分比显示
                 if (attributes.getOrDefault("dashAttackRange", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.dashAttackRange") + " ").append(Component.literal(String.format("%.1f", attributes.get("dashAttackRange")) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.dashAttackRange") + " ").append(Component.literal((int) (attributes.get("dashAttackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("dashTriggerChance", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.dashTriggerChance") + " ").append(Component.literal((int) (attributes.get("dashTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
@@ -394,6 +396,20 @@ public class WeaponModuleHandler {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.recoil_reduction") + " ").append(Component.literal((int) (attributes.get("recoil_reduction") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
+                // ===== TACZ 枪械新属性（第二批）Tooltip 显示 =====
+                if (attributes.getOrDefault("gun_damage", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.gun_damage") + " ").append(Component.literal((int) (attributes.get("gun_damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("headshot_damage", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.headshot_damage") + " ").append(Component.literal((int) (attributes.get("headshot_damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("aim_time", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.aim_time") + " ").append(Component.literal((int) (attributes.get("aim_time") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("accuracy", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.accuracy") + " ").append(Component.literal((int) (attributes.get("accuracy") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+
                 // 击杀叠层词条（使用 I18n.get(key, arg) 传递参数避免 Format error）
                 if (attributes.getOrDefault("killStackBaseDamage", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.killStackBaseDamage", ModConfig.KUVA_LICH.maxStacksBaseDamage.get()) + " ").append(Component.literal((int) (attributes.get("killStackBaseDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
@@ -407,8 +423,9 @@ public class WeaponModuleHandler {
                 if (attributes.getOrDefault("killStackTriggerChance", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.killStackTriggerChance", ModConfig.KUVA_LICH.maxStacksTriggerChance.get()) + " ").append(Component.literal((int) (attributes.get("killStackTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
+                // 击杀叠层攻击距离：改为百分比显示
                 if (attributes.getOrDefault("killStackAttackRange", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackAttackRange", ModConfig.KUVA_LICH.maxStacksAttackRange.get()) + " ").append(Component.literal(String.format("%.1f", attributes.get("killStackAttackRange")) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.killStackAttackRange", ModConfig.KUVA_LICH.maxStacksAttackRange.get()) + " ").append(Component.literal((int) (attributes.get("killStackAttackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
                 if (attributes.getOrDefault("killStackAttackSpeed", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.killStackAttackSpeed", ModConfig.KUVA_LICH.maxStacksAttackSpeed.get()) + " ").append(Component.literal((int) (attributes.get("killStackAttackSpeed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));

@@ -5,6 +5,7 @@
   "refmap": "kuvalich.tacz.refmap.json",
   "mixins": [
     "EntityKineticBulletAccessor",
+    "MixinAttachmentPropertyContext",
     "MixinBulletDamageSpread",
     "MixinFirstBulletDetect",
     "MixinGunMagazineSize",

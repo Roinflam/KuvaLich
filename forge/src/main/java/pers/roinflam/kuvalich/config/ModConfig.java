@@ -1,3 +1,4 @@
+// ModConfig.java
 package pers.roinflam.kuvalich.config;
 
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -47,6 +48,14 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue battleBoost;
         public final ForgeConfigSpec.DoubleValue reducedDamage;
         public final ForgeConfigSpec.DoubleValue increaseDamage;
+
+        // ===== 元素伤害倍率 / Element Damage Multipliers =====
+        public final ForgeConfigSpec.DoubleValue elementFireDamageMultiplier;
+        public final ForgeConfigSpec.DoubleValue elementPoisonDamageMultiplier;
+        public final ForgeConfigSpec.DoubleValue elementSlashDamageMultiplier;
+        public final ForgeConfigSpec.DoubleValue elementGasDamageMultiplier;
+        public final ForgeConfigSpec.DoubleValue elementElectricityDamageMultiplier;
+        public final ForgeConfigSpec.DoubleValue elementExplosionDamageMultiplier;
 
         public final ForgeConfigSpec.IntValue benchmarkLevel;
         public final ForgeConfigSpec.IntValue baseMinimumLevel;
@@ -237,6 +246,55 @@ public final class ModConfig {
                     .comment("Enemy damage increase per failed decryption")
                     .comment("每次解密失败敌人伤害提升")
                     .defineInRange("increaseDamage", 0.25, 0.0, Double.MAX_VALUE);
+
+            builder.comment("")
+                    .comment("═══ Element Damage Multipliers / 元素伤害倍率 ═══")
+                    .comment("Independent multipliers for each damage-dealing element's triggered effect.")
+                    .comment("各造成伤害的元素触发效果的独立倍率，仅影响元素触发时产生的额外伤害。")
+                    .comment("Does NOT affect the element's contribution to total weapon damage calculation.")
+                    .comment("不影响元素对武器总伤害计算的贡献，仅影响触发后的DOT/瞬发伤害。");
+
+            elementFireDamageMultiplier = builder
+                    .comment("Fire element triggered DOT damage multiplier")
+                    .comment("火焰元素触发的持续伤害倍率")
+                    .comment("1.0 = original damage (default)")
+                    .comment("1.0 = 原始伤害(默认)")
+                    .defineInRange("elementFireDamageMultiplier", 1.0, 0.0, 100.0);
+
+            elementPoisonDamageMultiplier = builder
+                    .comment("Poison element triggered DOT damage multiplier")
+                    .comment("毒素元素触发的持续伤害倍率")
+                    .comment("1.0 = original damage (default)")
+                    .comment("1.0 = 原始伤害(默认)")
+                    .defineInRange("elementPoisonDamageMultiplier", 1.0, 0.0, 100.0);
+
+            elementSlashDamageMultiplier = builder
+                    .comment("Slash element triggered DOT damage multiplier")
+                    .comment("切割元素触发的持续伤害倍率")
+                    .comment("1.0 = original damage (default)")
+                    .comment("1.0 = 原始伤害(默认)")
+                    .defineInRange("elementSlashDamageMultiplier", 1.0, 0.0, 100.0);
+
+            elementGasDamageMultiplier = builder
+                    .comment("Gas element triggered AOE DOT damage multiplier")
+                    .comment("毒气元素触发的范围持续伤害倍率")
+                    .comment("1.0 = original damage (default)")
+                    .comment("1.0 = 原始伤害(默认)")
+                    .defineInRange("elementGasDamageMultiplier", 1.0, 0.0, 100.0);
+
+            elementElectricityDamageMultiplier = builder
+                    .comment("Electricity element triggered instant damage multiplier")
+                    .comment("电击元素触发的瞬发伤害倍率")
+                    .comment("1.0 = original damage (default)")
+                    .comment("1.0 = 原始伤害(默认)")
+                    .defineInRange("elementElectricityDamageMultiplier", 1.0, 0.0, 100.0);
+
+            elementExplosionDamageMultiplier = builder
+                    .comment("Explosion element triggered AOE damage multiplier")
+                    .comment("爆炸元素触发的范围伤害倍率")
+                    .comment("1.0 = original damage (default)")
+                    .comment("1.0 = 原始伤害(默认)")
+                    .defineInRange("elementExplosionDamageMultiplier", 1.0, 0.0, 100.0);
 
             builder.comment("")
                     .comment("═══ Weapon Level System / 武器等级系统 ═══");

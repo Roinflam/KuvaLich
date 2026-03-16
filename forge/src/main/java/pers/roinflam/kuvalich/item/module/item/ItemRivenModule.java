@@ -54,7 +54,8 @@ public class ItemRivenModule extends AbstractItemModule {
     private static final Set<String> TACZ_EXCLUSIVE_ATTRIBUTES = Set.of(
             "reload_speed", "magazine_size", "projectile_speed", "recoil_reduction",
             "firing_rate", "bursting_radius", "multishot",
-            "killStackMultishot", "killStackBurstingRadius", "killStackFiringRate"
+            "killStackMultishot", "killStackBurstingRadius", "killStackFiringRate",
+            "gun_damage", "headshot_damage", "aim_time", "accuracy"
     );
 
     /** TACZ 模组加载状态缓存 */
@@ -183,7 +184,12 @@ public class ItemRivenModule extends AbstractItemModule {
                 || attributeType.equals("reload_speed")
                 || attributeType.equals("magazine_size")
                 || attributeType.equals("projectile_speed")
-                || attributeType.equals("recoil_reduction");
+                || attributeType.equals("recoil_reduction")
+                // ===== TACZ 枪械新属性（第二批，远程专属）=====
+                || attributeType.equals("gun_damage")
+                || attributeType.equals("headshot_damage")
+                || attributeType.equals("aim_time")
+                || attributeType.equals("accuracy");
     }
 
     private static boolean shouldFilterAttribute(String attributeType, int rivenMode) {
@@ -439,7 +445,7 @@ public class ItemRivenModule extends AbstractItemModule {
         if (attributeType.equals("killStackFiringRate")) {
             return 0.08;
         }
-        // ===== TACZ 枪械新属性基础数值 =====
+        // ===== TACZ 枪械新属性（第一批）基础数值 =====
         if (attributeType.equals("reload_speed")) {
             return 0.3;
         }
@@ -451,6 +457,19 @@ public class ItemRivenModule extends AbstractItemModule {
         }
         if (attributeType.equals("recoil_reduction")) {
             return 0.6;
+        }
+        // ===== TACZ 枪械新属性（第二批）基础数值 =====
+        if (attributeType.equals("gun_damage")) {
+            return 2.475;
+        }
+        if (attributeType.equals("headshot_damage")) {
+            return 1.2;
+        }
+        if (attributeType.equals("aim_time")) {
+            return 0.3;
+        }
+        if (attributeType.equals("accuracy")) {
+            return 0.3;
         }
 
         return 0;

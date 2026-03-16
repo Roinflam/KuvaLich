@@ -21,7 +21,6 @@ import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.ArrowLooseEvent;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -44,10 +43,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 武器战斗事件处理器
- * 负责所有伤害事件、近战溅射、弓箭多重射击、射速加速、攻击速度tick
+ * 负责所有伤害事件、弓箭多重射击、射速加速、攻击速度/攻击距离tick
  *
  * Weapon Combat Event Handler
- * Handles all damage events, melee splash, bow multishot, firing rate, attack speed tick
+ * Handles all damage events, bow multishot, firing rate, attack speed/attack range tick
  */
 @Mod.EventBusSubscriber
 public class WeaponCombatHandler {
@@ -446,10 +445,13 @@ public class WeaponCombatHandler {
         }
     }
 
-    // ========== 攻击速度Tick / Attack Speed Tick ==========
+    // ========== 攻击速度 & 攻击距离 Tick / Attack Speed & Attack Range Tick ==========
 
     /**
-     * 每秒检测一次武器攻击速度属性，通过动态属性系统应用到玩家
+     * 每秒检测一次武器攻击速度和攻击距离属性，通过动态属性系统应用到玩家
+     * 攻击距离：修改原版 ENTITY_REACH 属性，以百分比方式增减玩家的攻击触及距离
+     * 多模组叠加时，所有模组的 attackRange 值在 collectItemAttributes 中已累加为总值，
+     * 此处一次性转换为 ENTITY_REACH 的 MULTIPLY_TOTAL 修改器，保证叠加正确
      */
     @SubscribeEvent
     public static void onPlayerTick(@Nonnull TickEvent.PlayerTickEvent evt) {
@@ -461,6 +463,7 @@ public class WeaponCombatHandler {
                     if (!weapon.isEmpty() && WeaponModuleHandler.hasBase(weapon)) {
                         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(player, weapon);
 
+                        // ========== 攻击速度（原有逻辑不变）==========
                         if (attributes.containsKey("killStackAttackSpeed")) {
                             int stacks = KillStackManager.getStacks(player, StackType.ATTACK_SPEED);
                             if (stacks > 0) {
@@ -477,50 +480,30 @@ public class WeaponCombatHandler {
                             int level = (int) (-attackSpeed / 0.1) - 1;
                             DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_ATTACK_SPEED.createInstance(30, level));
                         }
-                    }
-                }
-            }
-        }
-    }
 
-    // ========== 近战溅射 / Melee Splash ==========
-
-    /**
-     * 近战攻击时根据攻击范围属性对周围敌人造成溅射伤害
-     */
-    @SubscribeEvent
-    public static void onAttackEntity(AttackEntityEvent evt) {
-        if (!evt.getEntity().level().isClientSide()) {
-            if (evt.getTarget() instanceof LivingEntity) {
-                LivingEntity hurter = (LivingEntity) evt.getTarget();
-                Player player = evt.getEntity();
-
-                ItemStack weapon = player.getMainHandItem();
-                if (!weapon.isEmpty() && WeaponModuleHandler.hasBase(weapon)) {
-                    float attackStrength = player.getAttackStrengthScale(0.5F);
-                    if (attackStrength <= 0.8F) return;
-
-                    HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(player, weapon);
-
-                    double range = attributes.getOrDefault("attackRange", 0.0);
-                    if (player.isSprinting()) {
-                        range += attributes.getOrDefault("dashAttackRange", 0.0);
-                    }
-                    if (attributes.containsKey("killStackAttackRange")) {
-                        int stacks = KillStackManager.getStacks(player, StackType.ATTACK_RANGE);
-                        double stackValue = attributes.get("killStackAttackRange");
-                        range += stackValue * stacks;
-                    }
-
-                    if (range > 0) {
-                        List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, range,
-                                e -> !e.equals(hurter) && !e.equals(player));
-                        for (LivingEntity entity : entities) {
-                            float damage = EntityPlayerUtil.getAttackDamage(player, entity);
-                            entity.hurt(player.damageSources().playerAttack(player), damage * 0.5f * attackStrength);
+                        // ========== 攻击距离 ==========
+                        // 累加基础攻击距离（所有模组的 attackRange 已在缓存中合计）
+                        double attackRange = attributes.getOrDefault("attackRange", 0.0);
+                        // 冲刺时额外加上冲刺攻击距离
+                        if (player.isSprinting()) {
+                            attackRange += attributes.getOrDefault("dashAttackRange", 0.0);
                         }
-                    } else if (range < 0) {
-                        evt.setCanceled(true);
+                        // 击杀叠层额外加成
+                        if (attributes.containsKey("killStackAttackRange")) {
+                            int rangeStacks = KillStackManager.getStacks(player, StackType.ATTACK_RANGE);
+                            if (rangeStacks > 0) {
+                                double rangeStackValue = attributes.get("killStackAttackRange");
+                                attackRange += rangeStackValue * rangeStacks;
+                            }
+                        }
+                        // 通过动态属性系统应用到 ENTITY_REACH（每级 ±10%）
+                        if (attackRange >= 0.1) {
+                            int rangeLevel = (int) (attackRange / 0.1) - 1;
+                            DynamicAttributeManager.apply(player, DynamicAttributes.ATTACK_RANGE.createInstance(30, rangeLevel));
+                        } else if (attackRange <= -0.1) {
+                            int rangeLevel = (int) (-attackRange / 0.1) - 1;
+                            DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_ATTACK_RANGE.createInstance(30, rangeLevel));
+                        }
                     }
                 }
             }
