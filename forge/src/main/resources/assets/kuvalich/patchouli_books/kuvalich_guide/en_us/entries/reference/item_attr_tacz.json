@@ -1,0 +1,19 @@
+{
+  "name": "kuvalich.guidebook.entry.item_attr_tacz",
+  "description": "kuvalich.guidebook.entry.item_attr_tacz.desc",
+  "icon": "minecraft:crossbow",
+  "category": "kuvalich:reference",
+  "sortnum": 4,
+  "flag": "mod:tacz",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.item_attr_tacz.title",
+      "text": "kuvalich.guidebook.entry.item_attr_tacz.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.item_attr_tacz.p2"
+    }
+  ]
+}

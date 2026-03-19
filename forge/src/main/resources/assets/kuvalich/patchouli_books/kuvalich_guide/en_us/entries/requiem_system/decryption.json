@@ -1,0 +1,30 @@
+{
+  "name": "kuvalich.guidebook.entry.decryption",
+  "description": "kuvalich.guidebook.entry.decryption.desc",
+  "icon": "kuvalich:requiem_gem",
+  "category": "kuvalich:requiem_system",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.decryption.title",
+      "text": "kuvalich.guidebook.entry.decryption.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.decryption.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.decryption.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.decryption.p4"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.decryption.p5"
+    }
+  ]
+}

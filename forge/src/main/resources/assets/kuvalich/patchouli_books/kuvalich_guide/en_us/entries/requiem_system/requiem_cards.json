@@ -1,0 +1,22 @@
+{
+  "name": "kuvalich.guidebook.entry.requiem_cards",
+  "description": "kuvalich.guidebook.entry.requiem_cards.desc",
+  "icon": "kuvalich:khra",
+  "category": "kuvalich:requiem_system",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.requiem_cards.title",
+      "text": "kuvalich.guidebook.entry.requiem_cards.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.requiem_cards.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.requiem_cards.p3"
+    }
+  ]
+}

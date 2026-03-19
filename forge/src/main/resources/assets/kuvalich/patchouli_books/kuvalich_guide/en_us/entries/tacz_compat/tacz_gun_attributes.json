@@ -1,0 +1,23 @@
+{
+  "name": "kuvalich.guidebook.entry.tacz_gun_attributes",
+  "description": "kuvalich.guidebook.entry.tacz_gun_attributes.desc",
+  "icon": "minecraft:crossbow",
+  "category": "kuvalich:tacz_compat",
+  "sortnum": 1,
+  "flag": "mod:tacz",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.tacz_gun_attributes.title",
+      "text": "kuvalich.guidebook.entry.tacz_gun_attributes.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.tacz_gun_attributes.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.tacz_gun_attributes.p3"
+    }
+  ]
+}

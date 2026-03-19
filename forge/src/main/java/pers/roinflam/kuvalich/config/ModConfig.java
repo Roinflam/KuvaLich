@@ -165,6 +165,9 @@ public final class ModConfig {
         // ===== 通用掉落 / Common Drops =====
         public final ForgeConfigSpec.IntValue moduleWeaponRatio;
 
+        // ===== 战利品效果倍率 / Item Drop Effect Multiplier =====
+        public final ForgeConfigSpec.DoubleValue itemDropEffectMultiplier;
+
         // ===== 教程书 / Guidebook =====
         public final ForgeConfigSpec.BooleanValue enableGuidebook;
 
@@ -302,43 +305,31 @@ public final class ModConfig {
             elementFireDamageMultiplier = builder
                     .comment("Fire element triggered DOT damage multiplier")
                     .comment("火焰元素触发的持续伤害倍率")
-                    .comment("1.0 = original damage (default)")
-                    .comment("1.0 = 原始伤害(默认)")
                     .defineInRange("elementFireDamageMultiplier", 1.0, 0.0, 100.0);
 
             elementPoisonDamageMultiplier = builder
                     .comment("Poison element triggered DOT damage multiplier")
                     .comment("毒素元素触发的持续伤害倍率")
-                    .comment("1.0 = original damage (default)")
-                    .comment("1.0 = 原始伤害(默认)")
                     .defineInRange("elementPoisonDamageMultiplier", 1.0, 0.0, 100.0);
 
             elementSlashDamageMultiplier = builder
                     .comment("Slash element triggered DOT damage multiplier")
                     .comment("切割元素触发的持续伤害倍率")
-                    .comment("1.0 = original damage (default)")
-                    .comment("1.0 = 原始伤害(默认)")
                     .defineInRange("elementSlashDamageMultiplier", 1.0, 0.0, 100.0);
 
             elementGasDamageMultiplier = builder
                     .comment("Gas element triggered AOE DOT damage multiplier")
                     .comment("毒气元素触发的范围持续伤害倍率")
-                    .comment("1.0 = original damage (default)")
-                    .comment("1.0 = 原始伤害(默认)")
                     .defineInRange("elementGasDamageMultiplier", 1.0, 0.0, 100.0);
 
             elementElectricityDamageMultiplier = builder
                     .comment("Electricity element triggered instant damage multiplier")
                     .comment("电击元素触发的瞬发伤害倍率")
-                    .comment("1.0 = original damage (default)")
-                    .comment("1.0 = 原始伤害(默认)")
                     .defineInRange("elementElectricityDamageMultiplier", 1.0, 0.0, 100.0);
 
             elementExplosionDamageMultiplier = builder
                     .comment("Explosion element triggered AOE damage multiplier")
                     .comment("爆炸元素触发的范围伤害倍率")
-                    .comment("1.0 = original damage (default)")
-                    .comment("1.0 = 原始伤害(默认)")
                     .defineInRange("elementExplosionDamageMultiplier", 1.0, 0.0, 100.0);
 
             builder.comment("")
@@ -397,29 +388,11 @@ public final class ModConfig {
             moduleAttributeMultiplier = builder
                     .comment("General attribute multiplier — applies to all non-key attributes")
                     .comment("通用词条倍率 —— 应用于所有非关键词条")
-                    .comment("Includes: all damage types, elements, faction bonus, health/shield/armor,")
-                    .comment("attack speed, firing rate, sprint/digging speed, jump height,")
-                    .comment("resistances, knockback resistance, multishot, response rate, item drop rate,")
-                    .comment("and all corresponding kill-stack versions")
-                    .comment("包含：各类伤害、元素、派系加成、生命/护盾/护甲、")
-                    .comment("攻速、射速、冲刺/挖掘速度、跳跃高度、")
-                    .comment("三种抗性、抗击倒、多重射击、恢复倍率、战利品倍率")
-                    .comment("及以上所有属性的击杀叠层版本")
-                    .comment("1.0 = use original values (default) / 1.0 = 原始数值(默认)")
                     .defineInRange("moduleAttributeMultiplier", 1.0, 0.0, 100.0);
 
             keyAttributeMultiplier = builder
                     .comment("Key attribute multiplier — applies independently to mechanical attributes")
                     .comment("关键词条倍率 —— 独立应用于机制性词条")
-                    .comment("Includes: crit chance/multiplier (all types), trigger chance/time,")
-                    .comment("shield recovery rate/delay, and their kill-stack versions")
-                    .comment("包含：所有暴击几率/暴击伤害、触发几率/触发时间、")
-                    .comment("护盾恢复速率/恢复延迟，以及对应的击杀叠层版本")
-                    .comment("These are kept separate because their internal logic has special thresholds")
-                    .comment("(e.g. crit tier at 100%/200%/300%, trigger multi-proc above 100%)")
-                    .comment("这些词条的底层逻辑有特殊档位（暴击100%/200%/300%档位、触发超100%多次触发），")
-                    .comment("单独暴露倍率以便精细控制，避免和通用倍率混用导致数值错乱")
-                    .comment("1.0 = use original values (default) / 1.0 = 原始数值(默认)")
                     .defineInRange("keyAttributeMultiplier", 1.0, 0.0, 100.0);
 
             builder.comment("")
@@ -701,6 +674,15 @@ public final class ModConfig {
                     .comment("When dropping a module, chance (%) it is a weapon module")
                     .comment("掉落模组时，该模组为武器模组的概率(%)")
                     .defineInRange("moduleWeaponRatio", 75, 0, 100);
+
+            itemDropEffectMultiplier = builder
+                    .comment("Effective multiplier for the item drop bonus from warframe modules (%)")
+                    .comment("战甲模组的战利品掉落加成实际生效倍率(%)")
+                    .comment("100 = full effect (default), 50 = half effect, 0 = no bonus")
+                    .comment("100 = 完全生效(默认), 50 = 效果减半, 0 = 无加成")
+                    .comment("If the scaled drop multiplier goes below zero, items may not drop at all")
+                    .comment("如果缩放后的掉落倍率低于0，物品可能完全不掉落")
+                    .defineInRange("itemDropEffectMultiplier", 100.0, 0.0, 1000.0);
 
             builder.comment("")
                     .comment("═══ Guidebook / 教程书 ═══");

@@ -1,0 +1,15 @@
+{
+  "name": "kuvalich.guidebook.entry.experience_ore",
+  "description": "kuvalich.guidebook.entry.experience_ore.desc",
+  "icon": "kuvalich:experience_ore",
+  "category": "kuvalich:blocks",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:experience_ore",
+      "title": "kuvalich.guidebook.entry.experience_ore.title",
+      "text": "kuvalich.guidebook.entry.experience_ore.p1"
+    }
+  ]
+}

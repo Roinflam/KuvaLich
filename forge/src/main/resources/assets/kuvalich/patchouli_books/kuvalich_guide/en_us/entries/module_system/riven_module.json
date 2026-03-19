@@ -1,0 +1,18 @@
+{
+  "name": "kuvalich.guidebook.entry.riven_module",
+  "description": "kuvalich.guidebook.entry.riven_module.desc",
+  "icon": "kuvalich:item_riven_module",
+  "category": "kuvalich:module_system",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.riven_module.title",
+      "text": "kuvalich.guidebook.entry.riven_module.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.riven_module.p2"
+    }
+  ]
+}

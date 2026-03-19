@@ -1,0 +1,18 @@
+{
+  "name": "kuvalich.guidebook.entry.item_attr_killstack",
+  "description": "kuvalich.guidebook.entry.item_attr_killstack.desc",
+  "icon": "minecraft:experience_bottle",
+  "category": "kuvalich:reference",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.item_attr_killstack.title",
+      "text": "kuvalich.guidebook.entry.item_attr_killstack.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.item_attr_killstack.p2"
+    }
+  ]
+}

@@ -24,6 +24,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import pers.roinflam.kuvalich.KuvaLich;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.network.message.DiggingSpeedPacket;
@@ -166,6 +167,17 @@ public class WarframeEffectHandler {
 
     // ========== 掉落物倍率 / Drop Multiplier ==========
 
+    /**
+     * 怪物掉落事件处理
+     * <p>
+     * 当玩家击杀动物或怪物时，根据战甲模组的 itemDropMultiplier 属性
+     * 和配置中的 itemDropEffectMultiplier 缩放掉落物数量。
+     * <p>
+     * 缩放后倍率 < 1 时按概率决定是否掉落（每组独立判定）。
+     * 不影响装备类掉落（武器、盔甲、工具）。
+     *
+     * @param evt 掉落事件
+     */
     @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent evt) {
         if (!evt.getEntity().level().isClientSide() && evt.getSource().getEntity() instanceof Player) {
@@ -175,14 +187,53 @@ public class WarframeEffectHandler {
                 HashMap<String, Double> attributes = WarframeModuleHandler.getCachedAttributes(player);
                 WarframeModuleHandler.applyWarframeKillStackEffects(player, attributes);
 
-                double itemDropMultiplier = 1 + attributes.getOrDefault("itemDropMultiplier", 0.0);
+                // 从模组获取原始 itemDropMultiplier 值
+                double rawModuleValue = attributes.getOrDefault("itemDropMultiplier", 0.0);
+
+                // 应用配置中的生效倍率百分比
+                double effectPercent = ModConfig.KUVA_LICH.itemDropEffectMultiplier.get() / 100.0;
+                double scaledModuleValue = rawModuleValue * effectPercent;
+
+                // 最终掉落倍率 = 1 + 缩放后的模组值
+                double itemDropMultiplier = 1.0 + scaledModuleValue;
+
                 Collection<ItemEntity> drops = evt.getDrops();
+
+                // 倍率 <= 0 时：清除所有非装备掉落物
+                if (itemDropMultiplier <= 0) {
+                    drops.removeIf(drop -> {
+                        ItemStack dropStack = drop.getItem();
+                        // 装备类不受影响
+                        if (dropStack.getItem() instanceof ArmorItem ||
+                                dropStack.getItem() instanceof SwordItem ||
+                                dropStack.getItem() instanceof TieredItem) {
+                            return false;
+                        }
+                        // 倍率为0或负数时100%移除
+                        return true;
+                    });
+                    return;
+                }
+
+                // 倍率 > 0 时：缩放掉落物数量
                 for (ItemEntity drop : drops) {
                     ItemStack dropStack = drop.getItem();
+                    // 装备类不受影响
                     if (!(dropStack.getItem() instanceof ArmorItem) &&
                             !(dropStack.getItem() instanceof SwordItem) &&
                             !(dropStack.getItem() instanceof TieredItem)) {
-                        dropStack.setCount((int) (dropStack.getCount() * itemDropMultiplier));
+                        int originalCount = dropStack.getCount();
+                        double scaledCount = originalCount * itemDropMultiplier;
+                        int integerPart = (int) scaledCount;
+                        double fractionalPart = scaledCount - integerPart;
+
+                        // 小数部分按概率决定是否+1
+                        if (fractionalPart > 0 && Math.random() < fractionalPart) {
+                            integerPart++;
+                        }
+
+                        // 确保不低于0
+                        dropStack.setCount(Math.max(integerPart, 0));
                     }
                 }
             }

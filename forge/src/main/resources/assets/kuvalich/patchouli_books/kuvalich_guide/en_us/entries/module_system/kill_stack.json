@@ -1,0 +1,18 @@
+{
+  "name": "kuvalich.guidebook.entry.kill_stack",
+  "description": "kuvalich.guidebook.entry.kill_stack.desc",
+  "icon": "kuvalich:item_prime_module",
+  "category": "kuvalich:module_system",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.kill_stack.title",
+      "text": "kuvalich.guidebook.entry.kill_stack.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.kill_stack.p2"
+    }
+  ]
+}

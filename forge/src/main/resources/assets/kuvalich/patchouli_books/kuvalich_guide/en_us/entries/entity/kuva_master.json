@@ -1,0 +1,26 @@
+{
+  "name": "kuvalich.guidebook.entry.kuva_master",
+  "description": "kuvalich.guidebook.entry.kuva_master.desc",
+  "icon": "kuvalich:requiem_ultimatum",
+  "category": "kuvalich:entity",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.kuva_master.title",
+      "text": "kuvalich.guidebook.entry.kuva_master.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.kuva_master.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.kuva_master.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.kuva_master.p4"
+    }
+  ]
+}

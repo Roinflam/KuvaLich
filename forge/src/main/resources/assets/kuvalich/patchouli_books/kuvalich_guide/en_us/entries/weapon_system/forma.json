@@ -1,0 +1,15 @@
+{
+  "name": "kuvalich.guidebook.entry.forma",
+  "description": "kuvalich.guidebook.entry.forma.desc",
+  "icon": "kuvalich:forma",
+  "category": "kuvalich:weapon_system",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:forma",
+      "title": "kuvalich.guidebook.entry.forma.title",
+      "text": "kuvalich.guidebook.entry.forma.p1"
+    }
+  ]
+}

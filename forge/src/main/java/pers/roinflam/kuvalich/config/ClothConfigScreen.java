@@ -356,6 +356,16 @@ public class ClothConfigScreen {
 
         commonDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.moduleWeaponRatio"), ModConfig.KUVA_LICH.moduleWeaponRatio.get()).setDefaultValue(75).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.moduleWeaponRatio.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.moduleWeaponRatio::set).build());
 
+        commonDropsCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.itemDropEffectMultiplier"),
+                        ModConfig.KUVA_LICH.itemDropEffectMultiplier.get())
+                .setDefaultValue(100.0)
+                .setMin(0.0)
+                .setMax(1000.0)
+                .setTooltip(Component.translatable("config.kuvalich.itemDropEffectMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.itemDropEffectMultiplier::set)
+                .build());
+
         // ═══════════════════════════════════════════════════════════════
         // 赤毒武器配置
         // ═══════════════════════════════════════════════════════════════

@@ -1,0 +1,7 @@
+{
+  "name": "kuvalich.guidebook.category.tacz_compat",
+  "description": "kuvalich.guidebook.category.tacz_compat.desc",
+  "icon": "minecraft:crossbow",
+  "sortnum": 4,
+  "flag": "mod:tacz"
+}

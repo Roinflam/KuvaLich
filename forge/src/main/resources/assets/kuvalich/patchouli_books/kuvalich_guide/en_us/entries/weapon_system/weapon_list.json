@@ -1,0 +1,92 @@
+{
+  "name": "kuvalich.guidebook.entry.weapon_list",
+  "description": "kuvalich.guidebook.entry.weapon_list.desc",
+  "icon": "kuvalich:gram_prime",
+  "category": "kuvalich:weapon_system",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.weapon_list.title",
+      "text": "kuvalich.guidebook.entry.weapon_list.intro"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:prisma_veritux",
+      "title": "kuvalich.guidebook.weapon.prisma_veritux.name",
+      "text": "kuvalich.guidebook.weapon.prisma_veritux.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:vitrica",
+      "title": "kuvalich.guidebook.weapon.vitrica.name",
+      "text": "kuvalich.guidebook.weapon.vitrica.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:gram_prime",
+      "title": "kuvalich.guidebook.weapon.gram_prime.name",
+      "text": "kuvalich.guidebook.weapon.gram_prime.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:kuva_shildeg",
+      "title": "kuvalich.guidebook.weapon.kuva_shildeg.name",
+      "text": "kuvalich.guidebook.weapon.kuva_shildeg.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:arca_titron",
+      "title": "kuvalich.guidebook.weapon.arca_titron.name",
+      "text": "kuvalich.guidebook.weapon.arca_titron.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:sancti_magistar",
+      "title": "kuvalich.guidebook.weapon.sancti_magistar.name",
+      "text": "kuvalich.guidebook.weapon.sancti_magistar.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:paracesis",
+      "title": "kuvalich.guidebook.weapon.paracesis.name",
+      "text": "kuvalich.guidebook.weapon.paracesis.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:machete",
+      "title": "kuvalich.guidebook.weapon.machete.name",
+      "text": "kuvalich.guidebook.weapon.machete.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:caustacyst",
+      "title": "kuvalich.guidebook.weapon.caustacyst.name",
+      "text": "kuvalich.guidebook.weapon.caustacyst.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:pennant",
+      "title": "kuvalich.guidebook.weapon.pennant.name",
+      "text": "kuvalich.guidebook.weapon.pennant.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:destreza_prime",
+      "title": "kuvalich.guidebook.weapon.destreza_prime.name",
+      "text": "kuvalich.guidebook.weapon.destreza_prime.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:reaper_prime",
+      "title": "kuvalich.guidebook.weapon.reaper_prime.name",
+      "text": "kuvalich.guidebook.weapon.reaper_prime.desc"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:guandao_prime",
+      "title": "kuvalich.guidebook.weapon.guandao_prime.name",
+      "text": "kuvalich.guidebook.weapon.guandao_prime.desc"
+    }
+  ]
+}

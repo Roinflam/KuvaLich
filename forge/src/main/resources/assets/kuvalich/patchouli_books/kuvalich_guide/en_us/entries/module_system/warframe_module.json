@@ -1,0 +1,22 @@
+{
+  "name": "kuvalich.guidebook.entry.warframe_module",
+  "description": "kuvalich.guidebook.entry.warframe_module.desc",
+  "icon": "kuvalich:warframe_rare_module",
+  "category": "kuvalich:module_system",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.warframe_module.title",
+      "text": "kuvalich.guidebook.entry.warframe_module.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.warframe_module.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.warframe_module.p3"
+    }
+  ]
+}

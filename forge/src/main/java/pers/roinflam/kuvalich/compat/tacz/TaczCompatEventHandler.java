@@ -20,6 +20,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
+import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
@@ -39,6 +40,7 @@ import java.util.UUID;
  * 2. TACZ 枪械自带爆炸 → 设置 suppressBurstRadius
  * 3. AttachmentPropertyEvent → 修改 ADS_TIME、INACCURACY、HEADSHOT_MULTIPLIER 缓存
  * 4. 玩家登录/重生/周期性 → 强制刷新 TACZ 缓存，确保 KuvaLich 属性及时生效
+ * 5. 击杀叠层实时追踪 → 射速/多重射击叠层变化时立即刷新 TACZ 缓存
  */
 public class TaczCompatEventHandler {
 
@@ -52,6 +54,20 @@ public class TaczCompatEventHandler {
 
     /** TACZ 缓存刷新间隔（tick）：100 tick = 5 秒 */
     private static final long CACHE_REFRESH_INTERVAL = 100L;
+
+    // ========== 击杀叠层实时追踪 / Kill Stack Real-time Tracking ==========
+
+    /**
+     * 记录每个玩家上一次检测到的击杀叠层值。
+     * <p>
+     * 用于检测射速（FIRING_RATE）和多重射击（MULTISHOT）的击杀叠层变化，
+     * 变化时立即触发 TACZ 缓存刷新，使 Mixin 拦截的 getShootInterval / shootOnce
+     * 在 TACZ 脚本重新初始化后能读取到最新的叠层加成。
+     * <p>
+     * int[0] = FIRING_RATE 叠层数
+     * int[1] = MULTISHOT 叠层数
+     */
+    private static final Map<UUID, int[]> lastKillStackValues = new HashMap<>();
 
     // ========== 伤害事件 / Damage Events ==========
 
@@ -235,15 +251,16 @@ public class TaczCompatEventHandler {
     }
 
     /**
-     * 周期性检查并刷新 TACZ 缓存。
+     * 玩家 Tick 事件处理：包含两层刷新机制
      * <p>
-     * 每 5 秒检查一次持有 TACZ 枪械且装载了 KuvaLich 模组的玩家，
-     * 触发 postChangeEvent 强制刷新 TACZ 配件属性缓存。
+     * 第一层（每 tick）：击杀叠层实时追踪
+     *   检测 FIRING_RATE 和 MULTISHOT 的击杀叠层是否发生变化，
+     *   变化时立即触发 TACZ 缓存刷新，使射速/多重射击的 Mixin
+     *   在 TACZ 脚本重新初始化后能读取到最新值。
+     *   开销极低：仅两次 HashMap.get + int 比较。
      * <p>
-     * 必要性：
-     * - 击杀叠层（killStack）随时间变化，影响 aim_time、accuracy 等通过缓存修改的属性
-     * - 模组热更换后需要刷新
-     * - 作为登录刷新的兜底机制，防止任何边界情况导致属性不同步
+     * 第二层（每 100 tick）：常规周期性刷新
+     *   作为兜底机制，处理模组热更换、配件变化等场景。
      *
      * @param event 玩家 Tick 事件
      */
@@ -258,6 +275,45 @@ public class TaczCompatEventHandler {
             return;
         }
 
+        UUID uuid = player.getUUID();
+
+        // ═══ 第一层：击杀叠层实时追踪（每 tick 执行，开销极低） ═══
+        // 检查主手是否持有带 KuvaLich 模组的 TACZ 枪械
+        ItemStack gunStack = player.getMainHandItem();
+        if (!gunStack.isEmpty()) {
+            IGun iGun = IGun.getIGunOrNull(gunStack);
+            if (iGun != null && WeaponModuleHandler.hasBase(gunStack)) {
+                // 读取当前射速和多重射击的击杀叠层数
+                int currentFiringRateStacks = KillStackManager.getStacks(player, KillStackManager.StackType.FIRING_RATE);
+                int currentMultishotStacks = KillStackManager.getStacks(player, KillStackManager.StackType.MULTISHOT);
+
+                // 与上一次记录的值比较
+                int[] lastValues = lastKillStackValues.get(uuid);
+                boolean stacksChanged;
+                if (lastValues == null) {
+                    // 首次检测：只有当叠层大于0时才记为变化（避免无叠层时无意义刷新）
+                    stacksChanged = (currentFiringRateStacks > 0 || currentMultishotStacks > 0);
+                } else {
+                    stacksChanged = (lastValues[0] != currentFiringRateStacks || lastValues[1] != currentMultishotStacks);
+                }
+
+                if (stacksChanged) {
+                    // 叠层变化，立即触发 TACZ 缓存刷新
+                    triggerTaczCacheRefresh(player);
+                    lastKillStackValues.put(uuid, new int[]{currentFiringRateStacks, currentMultishotStacks});
+
+                    // 同时更新常规刷新时间戳，避免重复刷新
+                    lastCacheRefreshTick.put(uuid, player.level().getGameTime());
+
+                    LogUtil.debug(String.format(
+                            "[TaczCompat] 击杀叠层变化，立即刷新: firingRate=%d, multishot=%d, 玩家=%s",
+                            currentFiringRateStacks, currentMultishotStacks, player.getName().getString()
+                    ));
+                }
+            }
+        }
+
+        // ═══ 第二层：常规周期性刷新（每 100 tick，兜底机制） ═══
         long currentTick = player.level().getGameTime();
 
         // 使用全局 tick 对齐，减少 HashMap 查询频率（每秒才检查一次）
@@ -265,7 +321,6 @@ public class TaczCompatEventHandler {
             return;
         }
 
-        UUID uuid = player.getUUID();
         Long lastRefresh = lastCacheRefreshTick.get(uuid);
 
         // 未到刷新间隔则跳过
@@ -274,7 +329,6 @@ public class TaczCompatEventHandler {
         }
 
         // 检查是否持有带 KuvaLich 模组的 TACZ 枪械
-        ItemStack gunStack = player.getMainHandItem();
         if (gunStack.isEmpty()) {
             return;
         }
@@ -303,6 +357,10 @@ public class TaczCompatEventHandler {
      * <p>
      * 同时，MixinAttachmentPropertyContext（HEAD注入）会在 postChangeEvent 开头
      * 保存 shooter 和 gunItem 到 ThreadLocal，确保事件处理器能读取到正确的上下文。
+     * <p>
+     * 此外，postChangeEvent 还会触发 TACZ 内部重新初始化枪械脚本状态，
+     * 使 getShootInterval 等被 Mixin 拦截的方法有机会读取到最新 KuvaLich 属性
+     * （包括击杀叠层加成的射速和多重射击）。
      *
      * @param player 持枪玩家
      */
@@ -325,13 +383,15 @@ public class TaczCompatEventHandler {
     }
 
     /**
-     * 玩家退出时清理缓存刷新记录，防止内存泄漏。
+     * 玩家退出时清理所有缓存数据，防止内存泄漏。
      *
      * @param event 玩家退出事件
      */
     @SubscribeEvent
     public void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        lastCacheRefreshTick.remove(event.getEntity().getUUID());
+        UUID uuid = event.getEntity().getUUID();
+        lastCacheRefreshTick.remove(uuid);
+        lastKillStackValues.remove(uuid);
     }
 
     // ========== AttachmentPropertyEvent 处理 / AttachmentPropertyEvent Handling ==========

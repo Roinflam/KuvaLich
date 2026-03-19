@@ -1,0 +1,22 @@
+{
+  "name": "kuvalich.guidebook.entry.module_overview",
+  "description": "kuvalich.guidebook.entry.module_overview.desc",
+  "icon": "kuvalich:item_rare_module",
+  "category": "kuvalich:module_system",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.module_overview.title",
+      "text": "kuvalich.guidebook.entry.module_overview.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.module_overview.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.module_overview.p3"
+    }
+  ]
+}

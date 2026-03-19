@@ -1,0 +1,21 @@
+{
+  "name": "kuvalich.guidebook.entry.weapon_table",
+  "description": "kuvalich.guidebook.entry.weapon_table.desc",
+  "icon": "kuvalich:requiem_weapon_table",
+  "category": "kuvalich:blocks",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:requiem_weapon_table",
+      "title": "kuvalich.guidebook.entry.weapon_table.title",
+      "text": "kuvalich.guidebook.entry.weapon_table.p1"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:requiem_warframe_table",
+      "title": "kuvalich.guidebook.entry.warframe_table.title",
+      "text": "kuvalich.guidebook.entry.warframe_table.p1"
+    }
+  ]
+}

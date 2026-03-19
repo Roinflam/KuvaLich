@@ -1,0 +1,19 @@
+{
+  "name": "kuvalich.guidebook.entry.requiem_ore",
+  "description": "kuvalich.guidebook.entry.requiem_ore.desc",
+  "icon": "kuvalich:requiem_ore",
+  "category": "kuvalich:blocks",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:requiem_ore",
+      "title": "kuvalich.guidebook.entry.requiem_ore.title",
+      "text": "kuvalich.guidebook.entry.requiem_ore.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.requiem_ore.p2"
+    }
+  ]
+}

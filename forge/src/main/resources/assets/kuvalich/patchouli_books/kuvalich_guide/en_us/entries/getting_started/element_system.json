@@ -1,0 +1,30 @@
+{
+  "name": "kuvalich.guidebook.entry.element_system",
+  "description": "kuvalich.guidebook.entry.element_system.desc",
+  "icon": "kuvalich:lich_reliquary",
+  "category": "kuvalich:getting_started",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.element_system.title",
+      "text": "kuvalich.guidebook.entry.element_system.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.element_system.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.element_system.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.element_system.p4"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.element_system.p5"
+    }
+  ]
+}

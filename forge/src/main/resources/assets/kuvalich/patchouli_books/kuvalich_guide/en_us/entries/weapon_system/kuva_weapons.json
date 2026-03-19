@@ -1,0 +1,22 @@
+{
+  "name": "kuvalich.guidebook.entry.kuva_weapons",
+  "description": "kuvalich.guidebook.entry.kuva_weapons.desc",
+  "icon": "kuvalich:gram_prime",
+  "category": "kuvalich:weapon_system",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.kuva_weapons.title",
+      "text": "kuvalich.guidebook.entry.kuva_weapons.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.kuva_weapons.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.kuva_weapons.p3"
+    }
+  ]
+}

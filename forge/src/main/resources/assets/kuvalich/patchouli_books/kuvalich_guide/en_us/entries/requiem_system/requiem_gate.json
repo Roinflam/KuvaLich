@@ -1,0 +1,19 @@
+{
+  "name": "kuvalich.guidebook.entry.requiem_gate",
+  "description": "kuvalich.guidebook.entry.requiem_gate.desc",
+  "icon": "kuvalich:requiem_gate",
+  "category": "kuvalich:requiem_system",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:requiem_gate",
+      "title": "kuvalich.guidebook.entry.requiem_gate.title",
+      "text": "kuvalich.guidebook.entry.requiem_gate.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.requiem_gate.p2"
+    }
+  ]
+}

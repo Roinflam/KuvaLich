@@ -1,0 +1,18 @@
+{
+  "name": "kuvalich.guidebook.entry.item_attr_damage",
+  "description": "kuvalich.guidebook.entry.item_attr_damage.desc",
+  "icon": "minecraft:diamond_sword",
+  "category": "kuvalich:reference",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.item_attr_damage.title",
+      "text": "kuvalich.guidebook.entry.item_attr_damage.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.item_attr_damage.p2"
+    }
+  ]
+}

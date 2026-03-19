@@ -1,0 +1,22 @@
+{
+  "name": "kuvalich.guidebook.entry.weapon_panel",
+  "description": "kuvalich.guidebook.entry.weapon_panel.desc",
+  "icon": "kuvalich:forma",
+  "category": "kuvalich:weapon_system",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.weapon_panel.title",
+      "text": "kuvalich.guidebook.entry.weapon_panel.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.weapon_panel.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.weapon_panel.p3"
+    }
+  ]
+}

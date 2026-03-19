@@ -1,0 +1,19 @@
+{
+  "name": "kuvalich.guidebook.entry.requiem_recast",
+  "description": "kuvalich.guidebook.entry.requiem_recast.desc",
+  "icon": "kuvalich:requiem_recast",
+  "category": "kuvalich:requiem_system",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:requiem_recast",
+      "title": "kuvalich.guidebook.entry.requiem_recast.title",
+      "text": "kuvalich.guidebook.entry.requiem_recast.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.requiem_recast.p2"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "kuvalich.guidebook.entry.first_steps",
+  "description": "kuvalich.guidebook.entry.first_steps.desc",
+  "icon": "kuvalich:khra",
+  "category": "kuvalich:getting_started",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.first_steps.title",
+      "text": "kuvalich.guidebook.entry.first_steps.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.first_steps.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.first_steps.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.first_steps.p4"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.first_steps.p5"
+    }
+  ]
+}

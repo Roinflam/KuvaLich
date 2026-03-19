@@ -1210,7 +1210,7 @@
   "kuvalich.guidebook.entry.warframe_attr_killstack": "Warframe Kill Stacks",
   "kuvalich.guidebook.entry.warframe_attr_killstack.title": "Warframe Attributes · Kill Stacks",
   "kuvalich.guidebook.entry.warframe_attr_killstack.p1": "From Executioner series mods:$(br2)· Health killStackHealth$(br)· Shield Capacity killStackShield$(br)· Armor killStackArmor$(br)· Sprint Speed killStackSprintSpeed$(br)· Shield Recharge Rate$(br)  killStackShieldRecoveryRate",
-  "kuvalich.guidebook.entry.warframe_attr_killstack.p2": "· Shield Recharge Delay (multiplicative)$(br)  killStackShieldRecoveryDelay$(br2)· Resistance Stacks (multiplicative):$(br)  killStackFireProtection$(br)  killStackElectricProtection$(br)  killStackHomologousProtection$(br2)· killStackResponseRate$(br)· killStackItemDropMultiplier$(br)· killStackDiggingSpeed"
+  "kuvalich.guidebook.entry.warframe_attr_killstack.p2": "· Shield Recharge Delay (multiplicative)$(br)  killStackShieldRecoveryDelay$(br2)· Resistance Stacks (multiplicative):$(br)  killStackFireProtection$(br)  killStackElectricProtection$(br)  killStackHomologousProtection$(br2)· killStackResponseRate$(br)· killStackItemDropMultiplier$(br)· killStackDiggingSpeed",
 
   "kuvalich.guidebook.entry.overview.desc": "Core loop: mine, hunt, decrypt, upgrade",
   "kuvalich.guidebook.entry.first_steps.desc": "Five steps to begin your adventure",
@@ -1247,5 +1247,7 @@
   "kuvalich.guidebook.entry.warframe_attr_survival.desc": "Health, armor, shield attributes",
   "kuvalich.guidebook.entry.warframe_attr_resist.desc": "Fire, electric, homologous resistance",
   "kuvalich.guidebook.entry.warframe_attr_mobility.desc": "Sprint, mining, loot multiplier, etc.",
-  "kuvalich.guidebook.entry.warframe_attr_killstack.desc": "Executioner kill stack attributes"
+  "kuvalich.guidebook.entry.warframe_attr_killstack.desc": "Executioner kill stack attributes",
+  "config.kuvalich.itemDropEffectMultiplier": "Item Drop Effect Multiplier (%)",
+  "config.kuvalich.itemDropEffectMultiplier.tooltip": "Effective multiplier for warframe module item drop bonus\n§7100.0§r = Full effect (default)\n§750.0§r = Half effect\n§70.0§r = No bonus from modules\nIf scaled multiplier goes below zero, non-equipment items won't drop"
 }

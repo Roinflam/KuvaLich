@@ -125,7 +125,7 @@
   "kuvaweapon.item_attribute_type.killStackAttackSpeed": "攻击速度 击杀时获取,最多叠加%d次",
   "kuvaweapon.item_attribute_type.killStackBaseDamage": "目标身上每一种负面效果可增加基础伤害 击杀时获取,最多叠加%d次",
   "kuvaweapon.item_attribute_type.killStackBurstingRadius": "爆炸半径 提高远程攻击时目标对周围伤害的范围 击杀时获取,最多叠加%d次",
-  "kuvaweapon.item_attribute_type.killStackFiringRate": "射速(弓类效果加倍) 击杀时获取,最多叠加%d次",
+  "kuvaweapon.item_attribute_type.killStackFiringRate": "射速 (弓类效果加倍) 击杀时获取,最多叠加%d次",
   "kuvaweapon.item_attribute_type.killStackMeleeCriticalMultiplier": "近战暴击伤害 击杀时获取,最多叠加%d次",
   "kuvaweapon.item_attribute_type.killStackMultishot": "多重射击 击杀时获取,最多叠加%d次",
   "kuvaweapon.item_attribute_type.killStackTriggerChance": "触发几率 击杀时获取,最多叠加%d次",
@@ -1390,5 +1390,8 @@
   "kuvalich.guidebook.entry.warframe_attr_survival.desc": "生命、护甲、护盾等生存词条",
   "kuvalich.guidebook.entry.warframe_attr_resist.desc": "火焰、电击、同源等抗性词条",
   "kuvalich.guidebook.entry.warframe_attr_mobility.desc": "冲刺速度、挖掘、掉落倍率等",
-  "kuvalich.guidebook.entry.warframe_attr_killstack.desc": "执刑官系列的击杀叠层词条"
+  "kuvalich.guidebook.entry.warframe_attr_killstack.desc": "执刑官系列的击杀叠层词条",
+
+  "config.kuvalich.itemDropEffectMultiplier": "战利品效果生效倍率(%)",
+  "config.kuvalich.itemDropEffectMultiplier.tooltip": "战甲模组的战利品掉落加成实际生效倍率\n§7100.0§r = 完全生效(默认)\n§750.0§r = 效果减半\n§70.0§r = 模组加成不生效\n缩放后倍率低于0时非装备类物品不会掉落"
 }

@@ -1,0 +1,22 @@
+{
+  "name": "kuvalich.guidebook.entry.confiscation",
+  "description": "kuvalich.guidebook.entry.confiscation.desc",
+  "icon": "minecraft:hopper",
+  "category": "kuvalich:requiem_system",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.confiscation.title",
+      "text": "kuvalich.guidebook.entry.confiscation.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.confiscation.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.confiscation.p3"
+    }
+  ]
+}
