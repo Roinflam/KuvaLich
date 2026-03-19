@@ -19,6 +19,10 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        name = "Blamejared"
+        url = "https://maven.blamejared.com"
+    }
     mavenCentral()
 }
 
@@ -70,6 +74,11 @@ dependencies {
     // Cloth Config
     modApi "me.shedaniel.cloth:cloth-config-forge:11.1.136"
     include "me.shedaniel.cloth:cloth-config-forge:11.1.136"
+
+    // ==================== 可选依赖 ====================
+
+    // Patchouli（可选依赖，仅编译期 + 运行时测试）
+    modApi "vazkii.patchouli:Patchouli:1.20.1-84-FORGE"
 
     // ==================== MixinExtras ====================
     // 我们自己声明 0.5.0，提取 JiJ 时会跳过 tacz 内置的旧版本，避免模块冲突

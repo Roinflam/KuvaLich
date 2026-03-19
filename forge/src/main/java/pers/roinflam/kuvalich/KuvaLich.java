@@ -1,5 +1,3 @@
-// 文件：KuvaLich.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/KuvaLich.java
 package pers.roinflam.kuvalich;
 
 import net.minecraftforge.client.ConfigScreenHandler;
@@ -145,6 +143,24 @@ public class KuvaLich {
                     LogUtil.info("  - 负值多重射击：GunFireEvent（概率取消）");
                 } else {
                     LogUtil.debug("未检测到 TACZ，跳过兼容层注册");
+                }
+
+                // ================================================================
+                // Patchouli 教程书系统注册
+                // Patchouli guidebook system registration
+                //
+                // 仅在 Patchouli 已加载时注册教程书发放事件处理器。
+                // 玩家首次进服时自动发放赤毒玄骸教程书，可通过配置关闭。
+                // Only register guidebook handler when Patchouli is loaded.
+                // Automatically gives the guidebook on first join, configurable.
+                // ================================================================
+                if (ModList.get().isLoaded("patchouli")) {
+                    MinecraftForge.EVENT_BUS.register(
+                            new pers.roinflam.kuvalich.event.BookGiveHandler()
+                    );
+                    LogUtil.info("检测到 Patchouli，教程书系统已启用");
+                } else {
+                    LogUtil.debug("未检测到 Patchouli，跳过教程书系统注册");
                 }
 
                 // 启动缓存清理定时器（每 5 分钟清理一次）

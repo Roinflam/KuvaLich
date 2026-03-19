@@ -1,0 +1,19 @@
+{
+  "name": "kuvalich.guidebook.title",
+  "subtitle": "kuvalich.guidebook.subtitle",
+  "landing_text": "kuvalich.guidebook.landing",
+  "book_texture": "patchouli:textures/gui/book_purple.png",
+  "model": "kuvalich:kuvalich_guide",
+  "text_color": "000000",
+  "header_color": "8B0000",
+  "nameplate_color": "D4AF37",
+  "link_color": "0000EE",
+  "link_hover_color": "8800EE",
+  "use_blocky_font": true,
+  "i18n": true,
+  "show_progress": false,
+  "version": "1",
+  "creative_tab": "kuvalich_tab",
+  "dont_generate_book": false,
+  "use_resource_pack": true
+}

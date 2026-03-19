@@ -41,3 +41,10 @@ config = "kuvalich.mixins.json"
 
 [[mixins]]
 config = "kuvalich.tacz.mixins.json"
+
+[[dependencies.kuvalich]]
+modId="patchouli"
+mandatory=false
+versionRange="[1.20.1-84,)"
+ordering="AFTER"
+side="BOTH"

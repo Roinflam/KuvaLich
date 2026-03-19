@@ -462,118 +462,92 @@
 
   "config.kuvalich.attackDamageKuvaShildeg": "赤毒希尔德 - 攻击伤害",
   "config.kuvalich.attackDamageKuvaShildeg.tooltip": "赤毒希尔德的基础攻击伤害\n§744.0§r = 44点伤害(默认)",
-
   "config.kuvalich.attackSpeedKuvaShildeg": "赤毒希尔德 - 攻击速度",
   "config.kuvalich.attackSpeedKuvaShildeg.tooltip": "赤毒希尔德的基础攻击速度\n§70.7§r = 0.7倍速度(默认)",
-
   "config.kuvalich.movementSpeedKuvaShildeg": "赤毒希尔德 - 移动速度",
   "config.kuvalich.movementSpeedKuvaShildeg.tooltip": "赤毒希尔德的移动速度修正\n§7-0.2§r = -20%%移动速度(默认)",
 
   "config.kuvalich.attackDamagePennant": "尖幡 - 攻击伤害",
   "config.kuvalich.attackDamagePennant.tooltip": "尖幡的基础攻击伤害\n§728.0§r = 28点伤害(默认)",
-
   "config.kuvalich.attackSpeedPennant": "尖幡 - 攻击速度",
   "config.kuvalich.attackSpeedPennant.tooltip": "尖幡的基础攻击速度\n§71.1§r = 1.1倍速度(默认)",
-
   "config.kuvalich.movementSpeedPennant": "尖幡 - 移动速度",
   "config.kuvalich.movementSpeedPennant.tooltip": "尖幡的移动速度修正\n§70.025§r = +2.5%%移动速度(默认)",
 
   "config.kuvalich.attackDamageGuandaoPrime": "关刀Prime - 攻击伤害",
   "config.kuvalich.attackDamageGuandaoPrime.tooltip": "关刀Prime的基础攻击伤害\n§716.0§r = 16点伤害(默认)",
-
   "config.kuvalich.attackSpeedGuandaoPrime": "关刀Prime - 攻击速度",
   "config.kuvalich.attackSpeedGuandaoPrime.tooltip": "关刀Prime的基础攻击速度\n§72.0§r = 2.0倍速度(默认)",
-
   "config.kuvalich.movementSpeedGuandaoPrime": "关刀Prime - 移动速度",
   "config.kuvalich.movementSpeedGuandaoPrime.tooltip": "关刀Prime的移动速度修正\n§70.075§r = +7.5%%移动速度(默认)",
 
   "config.kuvalich.attackDamageParacesis": "心智之殁 - 攻击伤害",
   "config.kuvalich.attackDamageParacesis.tooltip": "心智之殁的基础攻击伤害\n§734.0§r = 34点伤害(默认)",
-
   "config.kuvalich.attackSpeedParacesis": "心智之殁 - 攻击速度",
   "config.kuvalich.attackSpeedParacesis.tooltip": "心智之殁的基础攻击速度\n§70.9§r = 0.9倍速度(默认)",
-
   "config.kuvalich.movementSpeedParacesis": "心智之殁 - 移动速度",
   "config.kuvalich.movementSpeedParacesis.tooltip": "心智之殁的移动速度修正\n§7-0.1§r = -10%%移动速度(默认)",
 
   "config.kuvalich.attackDamageArcaTitron": "弧电振子锤 - 攻击伤害",
   "config.kuvalich.attackDamageArcaTitron.tooltip": "弧电振子锤的基础攻击伤害\n§738.0§r = 38点伤害(默认)",
-
   "config.kuvalich.attackSpeedArcaTitron": "弧电振子锤 - 攻击速度",
   "config.kuvalich.attackSpeedArcaTitron.tooltip": "弧电振子锤的基础攻击速度\n§70.75§r = 0.75倍速度(默认)",
-
   "config.kuvalich.movementSpeedArcaTitron": "弧电振子锤 - 移动速度",
   "config.kuvalich.movementSpeedArcaTitron.tooltip": "弧电振子锤的移动速度修正\n§7-0.15§r = -15%%移动速度(默认)",
 
   "config.kuvalich.attackDamageReaperPrime": "收割者Prime - 攻击伤害",
   "config.kuvalich.attackDamageReaperPrime.tooltip": "收割者Prime的基础攻击伤害\n§718.0§r = 18点伤害(默认)",
-
   "config.kuvalich.attackSpeedReaperPrime": "收割者Prime - 攻击速度",
   "config.kuvalich.attackSpeedReaperPrime.tooltip": "收割者Prime的基础攻击速度\n§71.75§r = 1.75倍速度(默认)",
-
   "config.kuvalich.movementSpeedReaperPrime": "收割者Prime - 移动速度",
   "config.kuvalich.movementSpeedReaperPrime.tooltip": "收割者Prime的移动速度修正\n§70.05§r = +5%%移动速度(默认)",
 
   "config.kuvalich.attackDamageVitrica": "金璃剑 - 攻击伤害",
   "config.kuvalich.attackDamageVitrica.tooltip": "金璃剑的基础攻击伤害\n§750.0§r = 50点伤害(默认)",
-
   "config.kuvalich.attackSpeedVitrica": "金璃剑 - 攻击速度",
   "config.kuvalich.attackSpeedVitrica.tooltip": "金璃剑的基础攻击速度\n§70.65§r = 0.65倍速度(默认)",
-
   "config.kuvalich.movementSpeedVitrica": "金璃剑 - 移动速度",
   "config.kuvalich.movementSpeedVitrica.tooltip": "金璃剑的移动速度修正\n§7-0.2§r = -20%%移动速度(默认)",
 
   "config.kuvalich.attackDamageGramPrime": "格拉姆Prime - 攻击伤害",
   "config.kuvalich.attackDamageGramPrime.tooltip": "格拉姆Prime的基础攻击伤害\n§746.0§r = 46点伤害(默认)",
-
   "config.kuvalich.attackSpeedGramPrime": "格拉姆Prime - 攻击速度",
   "config.kuvalich.attackSpeedGramPrime.tooltip": "格拉姆Prime的基础攻击速度\n§70.7§r = 0.7倍速度(默认)",
-
   "config.kuvalich.movementSpeedGramPrime": "格拉姆Prime - 移动速度",
   "config.kuvalich.movementSpeedGramPrime.tooltip": "格拉姆Prime的移动速度修正\n§7-0.15§r = -15%%移动速度(默认)",
 
   "config.kuvalich.attackDamageSanctiMagistar": "圣洁执法者 - 攻击伤害",
   "config.kuvalich.attackDamageSanctiMagistar.tooltip": "圣洁执法者的基础攻击伤害\n§736.0§r = 36点伤害(默认)",
-
   "config.kuvalich.attackSpeedSanctiMagistar": "圣洁执法者 - 攻击速度",
   "config.kuvalich.attackSpeedSanctiMagistar.tooltip": "圣洁执法者的基础攻击速度\n§70.85§r = 0.85倍速度(默认)",
-
   "config.kuvalich.movementSpeedSanctiMagistar": "圣洁执法者 - 移动速度",
   "config.kuvalich.movementSpeedSanctiMagistar.tooltip": "圣洁执法者的移动速度修正\n§7-0.075§r = -7.5%%移动速度(默认)",
 
   "config.kuvalich.attackDamageDestrezaPrime": "技巧之剑Prime - 攻击伤害",
   "config.kuvalich.attackDamageDestrezaPrime.tooltip": "技巧之剑Prime的基础攻击伤害\n§724.0§r = 24点伤害(默认)",
-
   "config.kuvalich.attackSpeedDestrezaPrime": "技巧之剑Prime - 攻击速度",
   "config.kuvalich.attackSpeedDestrezaPrime.tooltip": "技巧之剑Prime的基础攻击速度\n§71.4§r = 1.4倍速度(默认)",
-
   "config.kuvalich.movementSpeedDestrezaPrime": "技巧之剑Prime - 移动速度",
   "config.kuvalich.movementSpeedDestrezaPrime.tooltip": "技巧之剑Prime的移动速度修正\n§70.125§r = +12.5%%移动速度(默认)",
 
   "config.kuvalich.attackDamagePrismaVeritux": "棱晶真理巨剑 - 攻击伤害",
   "config.kuvalich.attackDamagePrismaVeritux.tooltip": "棱晶真理巨剑的基础攻击伤害\n§7100.0§r = 100点伤害(默认)",
-
   "config.kuvalich.attackSpeedPrismaVeritux": "棱晶真理巨剑 - 攻击速度",
   "config.kuvalich.attackSpeedPrismaVeritux.tooltip": "棱晶真理巨剑的基础攻击速度\n§70.45§r = 0.45倍速度(默认)",
-
   "config.kuvalich.movementSpeedPrismaVeritux": "棱晶真理巨剑 - 移动速度",
   "config.kuvalich.movementSpeedPrismaVeritux.tooltip": "棱晶真理巨剑的移动速度修正\n§7-0.6§r = -60%%移动速度(默认)",
 
   "config.kuvalich.attackDamageMachete": "马谢特砍刀 - 攻击伤害",
   "config.kuvalich.attackDamageMachete.tooltip": "马谢特砍刀的基础攻击伤害\n§732.0§r = 32点伤害(默认)",
-
   "config.kuvalich.attackSpeedMachete": "马谢特砍刀 - 攻击速度",
   "config.kuvalich.attackSpeedMachete.tooltip": "马谢特砍刀的基础攻击速度\n§71.55§r = 1.55倍速度(默认)",
-
   "config.kuvalich.movementSpeedMachete": "马谢特砍刀 - 移动速度",
   "config.kuvalich.movementSpeedMachete.tooltip": "马谢特砍刀的移动速度修正\n§70.025§r = +2.5%%移动速度(默认)",
 
   "config.kuvalich.attackDamageCaustacyst": "灼蚀变体镰 - 攻击伤害",
   "config.kuvalich.attackDamageCaustacyst.tooltip": "灼蚀变体镰的基础攻击伤害\n§728.0§r = 28点伤害(默认)",
-
   "config.kuvalich.attackSpeedCaustacyst": "灼蚀变体镰 - 攻击速度",
   "config.kuvalich.attackSpeedCaustacyst.tooltip": "灼蚀变体镰的基础攻击速度\n§71.3§r = 1.3倍速度(默认)",
-
   "config.kuvalich.movementSpeedCaustacyst": "灼蚀变体镰 - 移动速度",
   "config.kuvalich.movementSpeedCaustacyst.tooltip": "灼蚀变体镰的移动速度修正\n§70.125§r = +12.5%%移动速度(默认)",
 
@@ -1128,5 +1102,293 @@
   "config.kuvalich.elementElectricityDamageMultiplier": "电击元素伤害倍率",
   "config.kuvalich.elementElectricityDamageMultiplier.tooltip": "电击元素触发的瞬发伤害倍率\n§71.0§r = 原始伤害(默认)",
   "config.kuvalich.elementExplosionDamageMultiplier": "爆炸元素伤害倍率",
-  "config.kuvalich.elementExplosionDamageMultiplier.tooltip": "爆炸元素触发的范围伤害倍率\n§71.0§r = 原始伤害(默认)"
+  "config.kuvalich.elementExplosionDamageMultiplier.tooltip": "爆炸元素触发的范围伤害倍率\n§71.0§r = 原始伤害(默认)",
+
+  "_comment_guidebook": "========== 指南书 - Patchouli Guidebook ==========",
+
+  "kuvalich.guidebook.title": "赤毒玄骸 冒险指南",
+  "kuvalich.guidebook.landing": "欢迎翻开$(l)§5赤毒玄骸$()冒险指南！$(br2)本模组添加了武器养成与Boss挑战。$(br)不需要了解星际战甲，从零教你。$(br2)建议按章节顺序阅读。",
+  "kuvalich.guidebook.subtitle": "武器养成与Boss挑战",
+
+  "kuvalich.guidebook.category.getting_started": "入门指南",
+  "kuvalich.guidebook.category.getting_started.desc": "从这里开始！",
+  "kuvalich.guidebook.category.requiem_system": "安魂系统",
+  "kuvalich.guidebook.category.requiem_system.desc": "解密击败Boss。",
+  "kuvalich.guidebook.category.weapon_system": "武器系统",
+  "kuvalich.guidebook.category.weapon_system.desc": "赤毒武器与强化。",
+  "kuvalich.guidebook.category.module_system": "模组系统",
+  "kuvalich.guidebook.category.module_system.desc": "武器与战甲模组。",
+  "kuvalich.guidebook.category.tacz_compat": "枪械适配",
+  "kuvalich.guidebook.category.tacz_compat.desc": "TACZ枪械联动。",
+  "kuvalich.guidebook.category.entity": "敌人图鉴",
+  "kuvalich.guidebook.category.entity.desc": "玄骸与奴仆。",
+  "kuvalich.guidebook.category.blocks": "方块与矿石",
+  "kuvalich.guidebook.category.blocks.desc": "矿石与功能方块。",
+  "kuvalich.guidebook.category.reference": "词条参考",
+  "kuvalich.guidebook.category.reference.desc": "所有词条一览。",
+
+  "kuvalich.guidebook.entry.overview": "模组概览",
+  "kuvalich.guidebook.entry.overview.title": "这个模组玩什么？",
+  "kuvalich.guidebook.entry.overview.p1": "$(l)赤毒玄骸$()为Minecraft添加了$(br)武器养成和Boss挑战系统。$(br2)核心循环：$(br2)挖矿获取素材$(br)→ 杀怪攒解密进度$(br)→ 解锁答案后挑战Boss$(br)→ 拿武器装模组变强$(br)→ 继续循环，越来越强",
+  "kuvalich.guidebook.entry.overview.p2": "六大系统：$(br2)$(l)安魂系统$() — 解密讨伐玄骸$(br2)$(l)武器系统$() — 多种赤毒武器$(br2)$(l)模组系统$() — 给装备插卡强化$(br2)$(l)元素系统$() — 14种元素伤害$(br2)$(l)护盾系统$() — 战甲模组给护盾$(br2)$(l)击杀叠层$() — 连杀临时增强",
+
+  "kuvalich.guidebook.entry.first_steps": "新手上路",
+  "kuvalich.guidebook.entry.first_steps.title": "五步开始冒险",
+  "kuvalich.guidebook.entry.first_steps.p1": "$(l)1. 挖矿$()$(br2)在地下深处挖$(l)安魂矿石$()。$(br)需要钻石镐才能挖。$(br2)可获得安魂卡、安魂宝石和模组。$(br2)建议准备一把$(thing)灭骸$()附魔的镐子，$(br)安魂卡掉率大幅提升。$(br2)普通时运附魔反而会降低掉率。",
+  "kuvalich.guidebook.entry.first_steps.p2": "$(l)2. 刷怪$()$(br2)击杀世界中自然生成的$(br)$(l)赤毒奴仆$()可获得解密进度。$(br2)$(l)3. 解锁答案$()$(br2)进度分三个阶段，$(br)每阶段解锁1个安魂卡答案。$(br2)三个全部解锁后可挑战Boss。",
+  "kuvalich.guidebook.entry.first_steps.p3": "$(l)4. 挑战Boss$()$(br2)在$(thing)灭骸之扉$()放3张安魂卡，$(br)按正确顺序击杀赤毒玄骸。$(br2)成功奖励：$(br2)赤毒武器、高级模组、$(br)大量材料和被没收物品归还。",
+  "kuvalich.guidebook.entry.first_steps.p4": "$(l)5. 强化装备$()$(br2)$(thing)武器军械库$()$(br)→ 给武器安装武器模组$(br2)$(thing)战甲军械库$()$(br)→ 给自己安装战甲模组$(br2)$(thing)安魂之融$()$(br)→ 升级和融合赤毒武器",
+  "kuvalich.guidebook.entry.first_steps.p5": "每次解密还会提升武器等级上限！$(br2)这意味着每一轮循环$(br)你都能拿到更强的武器。$(br2)前期获得的低级武器留着，$(br)后续可以作为融合材料使用。",
+
+  "kuvalich.guidebook.entry.element_system": "元素系统",
+  "kuvalich.guidebook.entry.element_system.title": "14种元素伤害",
+  "kuvalich.guidebook.entry.element_system.p1": "$(l)物理元素$()$(br2)冲击 — 击退敌人$(br2)穿刺 — 降低目标攻击力$(br2)切割 — 无视护甲的流血DOT",
+  "kuvalich.guidebook.entry.element_system.p2": "$(l)基础元素$()$(br2)火焰 — 灼烧DOT + 着火$(br2)冰冻 — 减速，可叠加$(br2)电击 — 范围瞬发伤害 + 麻痹$(br2)毒素 — 无视护甲的持续伤害",
+  "kuvalich.guidebook.entry.element_system.p3": "$(l)复合元素$()$(br)两种基础元素自动组合：$(br2)火+冰 = $(l)爆炸$() — 范围AOE伤害$(br)火+电 = $(l)辐射$() — 敌人互攻$(br)火+毒 = $(l)毒气$() — 范围毒云DOT$(br)冰+电 = $(l)磁力$() — 护盾削减$(br)冰+毒 = $(l)病毒$() — 降最大生命$(br)电+毒 = $(l)腐蚀$() — 大幅削甲",
+  "kuvalich.guidebook.entry.element_system.p4": "$(l)触发机制$()$(br2)武器面板的$(l)触发几率$()决定$(br)每次攻击触发元素效果的概率。$(br2)超过100%%后每次攻击$(br)可以触发多次异常效果！$(br2)触发的元素类型按$(br)各元素伤害的比例随机选取。",
+  "kuvalich.guidebook.entry.element_system.p5": "$(l)常见搭配思路$()$(br2)高护甲敌人 → 腐蚀 或 切割$(br2)群怪清场 → 爆炸 或 电击$(br2)持续压制 → 病毒 + 切割$(br2)控场减速 → 冰冻$(br2)安装模组时注意元素组合顺序。",
+
+  "kuvalich.guidebook.entry.requiem_cards": "安魂卡",
+  "kuvalich.guidebook.entry.requiem_cards.title": "解密的钥匙",
+  "kuvalich.guidebook.entry.requiem_cards.p1": "安魂卡共8种：$(br2)KHRA  JAHU  FASS  LOHK$(br)NETRA  VOME  XATA  RIS$(br2)每张有耐久限制，$(br)参与解密消耗1次，耗尽消失。$(br2)未消耗完的卡片会归还。$(br)卡片只在验证时才消耗，$(br)放入灭骸之扉不会消耗。",
+  "kuvalich.guidebook.entry.requiem_cards.p2": "$(l)获取方式$()$(br2)挖$(l)安魂矿石$()有概率掉落。$(br)$(thing)灭骸$()附魔的镐子掉率大幅提升。$(br2)在$(thing)安魂之铸$()中，$(br)3张任意安魂卡合成1张随机新卡。",
+  "kuvalich.guidebook.entry.requiem_cards.p3": "$(l)解密机制$()$(br2)每只玄骸对应3张特定安魂卡。$(br)你要找出正确的3张，$(br)并按$(l)正确顺序$()排列。$(br2)界面显示的答案只告诉你是哪3张，$(br)$(l)不代表正确顺序$()！$(br2)3张卡共6种排列，$(br)最坏试5次必定成功。$(br2)每次失败会提示哪个位置对了。",
+
+  "kuvalich.guidebook.entry.decryption": "解密系统",
+  "kuvalich.guidebook.entry.decryption.title": "解密进度详解",
+  "kuvalich.guidebook.entry.decryption.p1": "$(l)获取解密进度$()$(br2)击杀$(l)赤毒奴仆$()每次获得少量进度。$(br)击杀$(l)赤毒玄骸$()获得数倍进度。$(br2)进度分三个阶段，点数递增。$(br)每阶段攒满后解锁1个答案。$(br2)三个全部解锁后可挑战Boss。",
+  "kuvalich.guidebook.entry.decryption.p2": "$(l)解密成功奖励$()$(br2)· 随机赤毒武器 x1$(br)· 高级模组（Prime或裂罅）$(br)· 大量赤毒和裂罅碎块$(br)· 玄骸之遗 x1$(br)· 有概率获得安魂通牒$(br)· 归还全部被没收物品$(br)· 武器等级上下限提升",
+  "kuvalich.guidebook.entry.decryption.p3": "$(l)武器等级上下限$()$(br2)武器等级在一定范围内随机生成。$(br)刚开始范围较窄且偏低。$(br2)每次成功解密都会提升上下限，$(br)直到达到系统的绝对上限。$(br2)前期低级武器留作融合材料。",
+  "kuvalich.guidebook.entry.decryption.p4": "$(l)解密失败惩罚$()$(br2)· 提示第几个位置的卡放对了$(br)  （这是宝贵的线索！）$(br2)· 玄骸等级提升一级$(br)· 你对玄骸伤害降低$(br)· 玄骸对你伤害提升$(br2)惩罚会累积，准备充分再尝试。",
+  "kuvalich.guidebook.entry.decryption.p5": "$(l)战斗加成$()$(br2)与玄骸战斗时，$(br)你的伤害会随时间持续增长。$(br)鼓励积极进攻而非拖延。$(br2)$(l)实用道具$()$(br2)$(thing)安魂谜语$()$(br)→ 使用后查看已解锁答案$(br2)$(thing)安魂通牒$()$(br)→ 使用后直接召唤玄骸",
+
+  "kuvalich.guidebook.entry.confiscation": "物品没收",
+  "kuvalich.guidebook.entry.confiscation.title": "玄骸的贪婪之手",
+  "kuvalich.guidebook.entry.confiscation.p1": "解锁任意一个安魂卡答案后，$(br)每次捡起地上的物品时$(br)都有一定概率被玄骸没收。$(br2)被没收的物品会消失，$(br)同时玄骸发送一条嘲讽消息。$(br2)背包里已有的物品不会被没收，$(br)只有正在捡起的物品才会触发。",
+  "kuvalich.guidebook.entry.confiscation.p2": "每个解密周期内有没收数量上限，$(br)达到上限后不再没收。$(br2)$(l)如何拿回？$()$(br2)成功解密击杀玄骸后，$(br)所有被没收的物品$(br)全部掉落在击杀位置。$(br2)一件都不会少。",
+  "kuvalich.guidebook.entry.confiscation.p3": "$(l)应对策略$()$(br2)· 解锁答案后尽快完成解密，$(br)  减少被没收的时间窗口。$(br2)· 贵重物品不要随意丢在地上。$(br2)· 被偷了很多东西？$(br)  更有动力去击败玄骸了！",
+
+  "kuvalich.guidebook.entry.requiem_gate": "灭骸之扉",
+  "kuvalich.guidebook.entry.requiem_gate.title": "解密核心方块",
+  "kuvalich.guidebook.entry.requiem_gate.p1": "右键打开，放入3张安魂卡。$(br)关闭后击杀玄骸自动验证。$(br2)卡片耐久只在验证时消耗，$(br)放入取出不消耗。",
+  "kuvalich.guidebook.entry.requiem_gate.p2": "$(l)技巧$()$(br2)· 提示第一个正确时，$(br)  固定它只换后两张。$(br2)· 用$(thing)安魂谜语$()可直接查看答案。$(br2)· 每次失败玄骸变强，$(br)  请备好食物和装备。",
+
+  "kuvalich.guidebook.entry.requiem_recast": "安魂之铸",
+  "kuvalich.guidebook.entry.requiem_recast.title": "卡片与模组合成",
+  "kuvalich.guidebook.entry.requiem_recast.p1": "$(l)功能一：安魂卡合成$()$(br2)3张任意安魂卡$(br)→ 合成1张随机新卡$(br2)$(l)功能二：模组合成$()$(br2)3个同品质武器模组$(br)→ 合成1个该品质随机模组",
+  "kuvalich.guidebook.entry.requiem_recast.p2": "模组合成支持：$(br)青铜、白银、黄金、Prime$(br2)裂罅模组不能合成。$(br)三个模组必须是同品质。$(br2)结果为未揭示状态，右键展开。",
+
+  "kuvalich.guidebook.entry.requiem_evolve": "安魂之融",
+  "kuvalich.guidebook.entry.requiem_evolve.title": "武器强化工作台",
+  "kuvalich.guidebook.entry.requiem_evolve.p1": "最重要的方块，有5种功能。$(br2)左放物品，中放材料，右出结果。",
+  "kuvalich.guidebook.entry.requiem_evolve.p2": "$(l)功能1：武器融合$()$(br2)两把赤毒武器合一把。$(br)等级取较高值并提升。$(br)继承材料武器的元素。$(br2)$(l)功能2：开光$()$(br2)物品 + 裂罅碎块$(br)→ 获得随机基础面板（暴击率等）$(br2)开光后才能装模组！",
+  "kuvalich.guidebook.entry.requiem_evolve.p3": "$(l)功能3：塑形块洗面板$()$(br2)已开光非赤毒武器 + 塑形块$(br)→ 基础面板重新随机$(br2)$(l)功能4/5：裂罅循环$()$(br2)裂罅模组 + 赤毒$(br)→ 词条完全重随$(br2)消耗的赤毒随循环次数递增。",
+  "kuvalich.guidebook.entry.requiem_evolve.p4": "$(l)优先级建议$()$(br2)① 先给主力武器开光$(br2)② 用低级武器融合提升等级$(br2)③ 用赤毒循环裂罅洗词条$(br2)④ 对面板不满意用塑形块",
+  "kuvalich.guidebook.entry.requiem_evolve.p5": "$(l)小贴士$()$(br2)开光是让任意物品$(br)进入模组系统的入口。$(br2)裂罅循环前几次便宜，$(br)后面越来越贵。$(br2)把安魂之融放在基地方便的位置！",
+
+  "kuvalich.guidebook.entry.kuva_weapons": "赤毒武器",
+  "kuvalich.guidebook.entry.kuva_weapons.title": "最强近战武器",
+  "kuvalich.guidebook.entry.kuva_weapons.p1": "解密成功后获得的终极武器。$(br2)每种有独特被动效果。$(br)每把包含：$(br2)· 固定属性（攻击、攻速、移速）$(br)· 随机等级（越高越强）$(br)· 随机元素（附带一种）$(br)· 基础面板（暴击、触发等）$(br2)赤毒武器不会损坏。",
+  "kuvalich.guidebook.entry.kuva_weapons.p2": "$(l)重型$() — 高伤慢速降移速$(br)适合爆发输出$(br2)$(l)轻型$() — 低伤高速加移速$(br)适合持续作战$(br2)选武器不要只看面板数字，$(br)被动效果才是区分关键。",
+  "kuvalich.guidebook.entry.kuva_weapons.p3": "$(l)养成建议$()$(br2)前几次解密拿到的$(br)低级武器留作融合材料。$(br2)等级上限高了以后$(br)再认真挑选主力武器。",
+
+  "kuvalich.guidebook.entry.weapon_panel": "武器面板",
+  "kuvalich.guidebook.entry.weapon_panel.title": "基础面板属性",
+  "kuvalich.guidebook.entry.weapon_panel.p1": "开光后武器有4个面板：$(br2)$(l)基础伤害$() — 总体伤害倍率$(br2)$(l)暴击几率$() — 触发暴击的概率$(br2)$(l)暴击倍率$() — 暴击时伤害乘数$(br2)$(l)触发几率$() — 触发元素异常的概率$(br2)面板在开光时随机生成。$(br)可用$(thing)塑形块$()重新随机。",
+  "kuvalich.guidebook.entry.weapon_panel.p2": "$(l)暴击档位$()$(br2)暴击率超过100%%后$(br)可进入更高暴击档位：$(br2)普通暴击 — 伤害×倍率$(br2)双重暴击 — 伤害×倍率×2$(br2)三重暴击 — 伤害×倍率×3",
+  "kuvalich.guidebook.entry.weapon_panel.p3": "$(l)伤害颜色含义$()$(br2)$(#FFFFFF)白色$() = 普通伤害$(br2)$(#FFAA00)橙色$() = 暴击$(br2)$(#FF5555)红色$() = 双重暴击$(br2)$(#AA00AA)紫色$() = 三重暴击$(br2)$(#55FFFF)青色$() = 目标有护盾",
+
+  "kuvalich.guidebook.entry.weapon_upgrade": "武器升级",
+  "kuvalich.guidebook.entry.weapon_upgrade.title": "让武器更强",
+  "kuvalich.guidebook.entry.weapon_upgrade.p1": "$(l)方法一：安装模组$()$(br2)武器军械库中最多装8个。$(br)是最主要的强化手段。$(br2)$(l)方法二：武器融合$()$(br2)安魂之融中两把合一把。$(br)等级取较高值并提升。",
+  "kuvalich.guidebook.entry.weapon_upgrade.p2": "$(l)方法三：提升等级范围$()$(br2)每次成功解密赤毒玄骸，$(br)武器等级的上下限都会提升。$(br2)前期低级武器不要丢弃，$(br)留作融合材料最划算。",
+
+  "kuvalich.guidebook.entry.forma": "塑形块",
+  "kuvalich.guidebook.entry.forma.title": "重置武器面板",
+  "kuvalich.guidebook.entry.forma.p1": "已开光非赤毒武器 + 塑形块$(br)→ 基础面板重新随机$(br2)每次消耗1个。结果随机。$(br)仅限非赤毒武器使用。",
+
+  "kuvalich.guidebook.entry.weapon_list": "武器一览",
+  "kuvalich.guidebook.entry.weapon_list.title": "赤毒武器列表",
+  "kuvalich.guidebook.entry.weapon_list.intro": "$(l)重型$() — 高伤慢速降移速$(br)$(l)轻型$() — 低伤高速加移速$(br2)根据被动效果和模组来选择。",
+
+  "kuvalich.guidebook.weapon.prisma_veritux.name": "棱晶真理巨剑",
+  "kuvalich.guidebook.weapon.prisma_veritux.desc": "超远攻击距离$(br)无护甲目标伤害提升$(br2)$(#AAAAAA)重型$()",
+  "kuvalich.guidebook.weapon.vitrica.name": "金璃剑",
+  "kuvalich.guidebook.weapon.vitrica.desc": "连续攻击同一目标$(br)伤害逐渐递增$(br2)$(#AAAAAA)重型$()",
+  "kuvalich.guidebook.weapon.gram_prime.name": "格拉姆Prime",
+  "kuvalich.guidebook.weapon.gram_prime.desc": "攻击附带范围溅射伤害$(br2)$(#AAAAAA)重型$()",
+  "kuvalich.guidebook.weapon.kuva_shildeg.name": "赤毒希尔德",
+  "kuvalich.guidebook.weapon.kuva_shildeg.desc": "可破盾$(br)无护甲目标伤害提升$(br2)$(#AAAAAA)重型$()",
+  "kuvalich.guidebook.weapon.arca_titron.name": "弧电振子锤",
+  "kuvalich.guidebook.weapon.arca_titron.desc": "击杀叠加暴击加成$(br)可破盾$(br2)$(#AAAAAA)重型$()",
+  "kuvalich.guidebook.weapon.sancti_magistar.name": "圣洁执法者",
+  "kuvalich.guidebook.weapon.sancti_magistar.desc": "攻击回血$(br)加范围治疗队友$(br2)$(#AAAAAA)重型$()",
+  "kuvalich.guidebook.weapon.paracesis.name": "心智之殁",
+  "kuvalich.guidebook.weapon.paracesis.desc": "高暴击率 高暴击倍率$(br)伤害转化为持续伤害$(br2)$(#AAAAAA)重型$()",
+  "kuvalich.guidebook.weapon.machete.name": "马谢特砍刀",
+  "kuvalich.guidebook.weapon.machete.desc": "击杀后掉落物数量翻倍$(br2)$(#AAAAAA)轻型$()",
+  "kuvalich.guidebook.weapon.caustacyst.name": "灼蚀变体镰",
+  "kuvalich.guidebook.weapon.caustacyst.desc": "毒素元素时$(br)大幅提升病毒增伤$(br2)$(#AAAAAA)轻型$()",
+  "kuvalich.guidebook.weapon.pennant.name": "尖幡",
+  "kuvalich.guidebook.weapon.pennant.desc": "蓄力突进$(br)加范围真实伤害$(br2)$(#AAAAAA)轻型$()",
+  "kuvalich.guidebook.weapon.destreza_prime.name": "技巧之剑P",
+  "kuvalich.guidebook.weapon.destreza_prime.desc": "概率追加额外伤害$(br2)$(#AAAAAA)轻型$()",
+  "kuvalich.guidebook.weapon.reaper_prime.name": "收割者Prime",
+  "kuvalich.guidebook.weapon.reaper_prime.desc": "攻击吸血 蓄力突进$(br2)$(#AAAAAA)轻型$()",
+  "kuvalich.guidebook.weapon.guandao_prime.name": "关刀Prime",
+  "kuvalich.guidebook.weapon.guandao_prime.desc": "攻击附带$(br)最大生命值持续伤害$(br2)$(#AAAAAA)轻型 最快攻速$()",
+
+  "kuvalich.guidebook.entry.module_overview": "模组概览",
+  "kuvalich.guidebook.entry.module_overview.title": "给装备插卡",
+  "kuvalich.guidebook.entry.module_overview.p1": "模组是核心强化系统。$(br2)$(l)武器模组$()$(br)增加伤害、暴击、攻速、元素等。$(br)在武器军械库安装，最多8个。$(br2)$(l)战甲模组$()$(br)增加生命、护甲、护盾、抗性等。$(br)在战甲军械库安装，最多8个。$(br)全时段生效，不需手持武器。",
+  "kuvalich.guidebook.entry.module_overview.p2": "$(l)安装规则$()$(br2)· 同类型模组不能重复安装$(br)· 裂罅只能装1个$(br)· 未揭示的模组需先右键展开$(br2)$(l)获取途径$()$(br2)· 挖安魂矿石（青铜/白银/黄金）$(br)· 击杀赤毒奴仆（同上）$(br)· 击杀赤毒玄骸（Prime/裂罅）$(br)· 在安魂之铸中合成",
+  "kuvalich.guidebook.entry.module_overview.p3": "$(l)入门推荐$()$(br2)$(thing)压迫点$()系列 — 近战伤害基础$(br2)$(thing)膛线$() — 远程伤害$(br2)$(thing)分裂膛室$() — 多重射击$(br2)$(thing)弱点感应$() — 远程暴伤$(br2)$(thing)斩铁$() — 近战暴击",
+
+  "kuvalich.guidebook.entry.module_rarity": "模组品质",
+  "kuvalich.guidebook.entry.module_rarity.title": "品质等级",
+  "kuvalich.guidebook.entry.module_rarity.p1": "从弱到强：$(br2)$(#FFAA00)青铜$() — 基础属性，易获取$(br2)$(#AAAAAA)白银$() — 中等，含四元素$(br2)$(#FFAA00)黄金$() — 高级，含复合元素$(br2)$(#5555FF)Prime$() — 增强版，仅玄骸掉$(br2)$(#AAAAAA)镀层$() — Prime品质，带击杀叠层$(br2)$(#FF5555)执刑官$() — 战甲专属，带击杀叠层$(br2)$(#AA00AA)裂罅$() — 最稀有，属性全随机",
+  "kuvalich.guidebook.entry.module_rarity.p2": "裂罅模组可能有负面属性，$(br)有负面时正面数值更强。$(br2)镀层和执刑官系列$(br)提供击杀叠层效果，$(br)越杀越强/越杀越坦。",
+  "kuvalich.guidebook.entry.module_rarity.p3": "$(l)升级路线$()$(br2)前期：青铜白银够用$(br2)中期：换黄金模组$(br2)后期：Prime + 镀层 + 执刑官$(br)        裂罅循环洗好词条",
+
+  "kuvalich.guidebook.entry.riven_module": "裂罅模组",
+  "kuvalich.guidebook.entry.riven_module.title": "随机词条终极模组",
+  "kuvalich.guidebook.entry.riven_module.p1": "属性完全随机，最稀有的模组。$(br2)有若干正面属性，可能有负面。$(br)有负面时正面数值更强。$(br2)$(l)倾向性$()$(br2)裂罅有不同的倾向性等级，$(br)倾向性越高词条越强。$(br2)武器裂罅分3种：$(br)近战、远程、通用",
+  "kuvalich.guidebook.entry.riven_module.p2": "$(l)循环$()$(br2)在安魂之融中：$(br)裂罅模组 + 赤毒 → 词条重随$(br2)消耗随循环次数递增。$(br)不能洗出复合元素。$(br)倾向性等级不变。$(br2)遇到满意的词条就收手。",
+
+  "kuvalich.guidebook.entry.kill_stack": "击杀叠层",
+  "kuvalich.guidebook.entry.kill_stack.title": "越杀越强",
+  "kuvalich.guidebook.entry.kill_stack.p1": "$(l)镀层$()和$(l)执刑官$()系列模组$(br)提供击杀叠层效果。$(br2)击杀怪物后获得临时属性增强。$(br)连续击杀刷新持续时间。$(br)停止后逐层消退。$(br2)每种属性有独立的最大层数。",
+  "kuvalich.guidebook.entry.kill_stack.p2": "$(l)武器叠层$()（衰减较快）$(br2)基础伤害、多重射击、暴伤、$(br)触发率、攻击范围、攻速、$(br)爆炸半径、射速$(br2)$(l)战甲叠层$()（衰减较慢）$(br2)生命、护盾、护甲、冲刺速度、$(br)护盾恢复、各种抗性、$(br)恢复倍率、掉落倍率、挖掘速度",
+
+  "kuvalich.guidebook.entry.warframe_module": "战甲模组",
+  "kuvalich.guidebook.entry.warframe_module.title": "战甲模组与护盾",
+  "kuvalich.guidebook.entry.warframe_module.p1": "在$(thing)战甲军械库$()安装。$(br)全时段生效，不需手持武器。$(br)最多8个，绑定角色，死亡不丢。$(br2)$(l)属性类型$()$(br2)· 生命、护甲、护盾容量$(br)· 冲刺速度、击退抗性$(br)· 火焰/电击/同源抗性$(br)· 挖掘距离、挖掘速度$(br)· 恢复倍率、掉落倍率$(br)· 跳跃高度、摔落抗性",
+  "kuvalich.guidebook.entry.warframe_module.p2": "$(l)护盾系统$()$(br2)装备带护盾容量的模组后$(br)获得额外吸收护盾（金色心）。$(br2)受伤后进入冷却期，$(br)冷却结束后缓慢恢复。$(br2)护盾完全破碎时冷却更长。",
+  "kuvalich.guidebook.entry.warframe_module.p3": "尽早制作战甲军械库！$(br2)战甲模组的全时段增益$(br)比想象中重要得多。$(br2)$(thing)生命力$()和$(thing)钢铁纤维$()$(br)几乎是所有方案的基础。",
+
+  "kuvalich.guidebook.entry.tacz_overview": "枪械适配总览",
+  "kuvalich.guidebook.entry.tacz_overview.title": "赤毒×枪械 联动",
+  "kuvalich.guidebook.entry.tacz_overview.p1": "赤毒玄骸完整适配了TACZ枪械。$(br)枪械开光后即可安装模组。$(br2)所有通用武器词条$(br)（伤害、暴击、触发、元素等）$(br)在枪械上同样生效。$(br2)此外还有一系列枪械专属词条。",
+  "kuvalich.guidebook.entry.tacz_overview.p2": "$(l)枪械专属词条$()$(br2)$(l)输出：$()$(br)枪械伤害、爆头伤害、$(br)多重射击、首发子弹伤害$(br2)$(l)操控：$()$(br)射速、装填速度、$(br)后坐力降低、瞄准速度、精准度$(br2)$(l)弹药：$()$(br)弹夹容量、投射物速度",
+  "kuvalich.guidebook.entry.tacz_overview.p3": "$(l)枪械的多重射击$()$(br2)枪械的多重射击按$(br)原始弹丸数比例缩放。$(br2)单发枪 → 概率多发一颗$(br)散弹枪 → 弹丸数按比例翻倍$(br2)额外弹丸的伤害按原始弹丸数均分，$(br)不会导致总伤害异常膨胀。$(br2)每一发子弹命中时$(br)都会独立判定元素触发。",
+
+  "kuvalich.guidebook.entry.tacz_gun_attributes": "枪械词条详解",
+  "kuvalich.guidebook.entry.tacz_gun_attributes.title": "枪械专属词条",
+  "kuvalich.guidebook.entry.tacz_gun_attributes.p1": "$(l)枪械伤害$() — 独立乘区加成$(br2)$(l)爆头伤害倍率$() — 命中头部额外伤害$(br2)$(l)首发子弹伤害$() — 满弹时首发加成$(br)（此词条不会出现在裂罅中）$(br2)$(l)射速$() — 缩短射击间隔$(br2)$(l)装填速度$() — 加速装填和拉栓$(br)装填动画同步加速播放",
+  "kuvalich.guidebook.entry.tacz_gun_attributes.p2": "$(l)弹夹容量$() — 增加最大弹药数$(br2)$(l)投射物速度$() — 子弹飞得更快更远$(br2)$(l)后坐力降低$() — 俯仰偏航都减少$(br2)$(l)瞄准速度$() — 加快举镜速度$(br2)$(l)精准度$() — 减少子弹散布",
+  "kuvalich.guidebook.entry.tacz_gun_attributes.p3": "$(l)搭配思路$()$(br2)$(l)步枪：$()枪械伤害 + 弹夹 + 后坐力$(br2)$(l)散弹：$()多重射击 + 装填速度$(br2)$(l)狙击：$()爆头 + 首发 + 投射物速度$(br2)$(l)冲锋枪：$()射速 + 触发率 + 元素",
+
+  "kuvalich.guidebook.entry.kuva_master": "赤毒玄骸",
+  "kuvalich.guidebook.entry.kuva_master.title": "终极Boss",
+  "kuvalich.guidebook.entry.kuva_master.p1": "赤毒玄骸拥有三层动态抗性：$(br2)$(l)适应性抗性$()$(br)连续用同种方式打它，$(br)减伤逐渐增加。$(br)切换近战/弓箭/魔法可重置。$(br2)$(l)连击递减$()$(br)短时间内打太多次伤害降低。$(br)控制节奏不要无脑平A。",
+  "kuvalich.guidebook.entry.kuva_master.p2": "$(l)单次伤害上限$()$(br2)单次伤害有软上限，不可能秒杀。$(br)稳定持续输出效率最高。$(br2)$(l)其他特性$()$(br2)· 自动回血$(br)· 免疫摔落伤害$(br)· AOE范围攻击$(br)· 强力击退$(br)· 攻击命中回复自身生命",
+  "kuvalich.guidebook.entry.kuva_master.p3": "$(l)击杀策略$()$(br2)· 近战、弓箭、魔法交替使用，$(br)  避免被适应性克制。$(br2)· 弓箭对赤毒实体有额外伤害。$(br)  其他弹射物和魔法效果较低。$(br2)· 持续战斗，利用伤害增长。$(br2)· 在平坦开阔的地方战斗。",
+  "kuvalich.guidebook.entry.kuva_master.p4": "$(l)解密成功奖励$()$(br2)· 赤毒武器$(br)· 高级模组$(br)· 大量赤毒和裂罅碎块$(br)· 安魂通牒（概率）$(br)· 玄骸之遗$(br)· 归还全部没收物品$(br)· 武器等级上限提升",
+
+  "kuvalich.guidebook.entry.kuva_slave": "赤毒奴仆",
+  "kuvalich.guidebook.entry.kuva_slave.title": "解密进度来源",
+  "kuvalich.guidebook.entry.kuva_slave.p1": "获取解密进度的主要途径。$(br)比玄骸常见得多。$(br2)· 拥有固定减伤，比普通怪硬$(br)· 攻击造成强力击退$(br)· 每次命中回复自身少量HP$(br2)· 弓箭有额外伤害$(br)· 弹射物和魔法效果较低$(br)· 免疫摔落伤害",
+  "kuvalich.guidebook.entry.kuva_slave.p2": "$(l)击杀奖励$()$(br2)· 解密进度（最重要）$(br)· 赤毒（概率）$(br)· 裂罅碎块（概率）$(br)· 安魂宝石（概率，时运提高掉率）$(br)· 各品质模组（概率）$(br2)解锁答案后捡物品$(br)注意没收机制！",
+
+  "kuvalich.guidebook.entry.requiem_ore": "安魂矿石",
+  "kuvalich.guidebook.entry.requiem_ore.title": "一切的起点",
+  "kuvalich.guidebook.entry.requiem_ore.p1": "生成在地下深处。$(br)需要钻石镐才能挖。$(br2)掉落：安魂卡片、各品质模组、经验。$(br2)时运附魔会降低安魂卡掉率！$(br)应该用$(thing)灭骸$()附魔的镐子。",
+  "kuvalich.guidebook.entry.requiem_ore.p2": "$(l)灭骸附魔$()$(br2)· 安魂卡掉率大幅提升$(br)· 经验获取翻倍$(br)· 快速挖掘安魂类方块$(br2)建议准备两把镐：$(br)灭骸镐挖安魂矿，时运镐挖其他。",
+
+  "kuvalich.guidebook.entry.experience_ore": "经验矿石",
+  "kuvalich.guidebook.entry.experience_ore.title": "快速获取经验",
+  "kuvalich.guidebook.entry.experience_ore.p1": "在地下广泛生成。$(br)只需石镐即可。$(br)只掉经验球，不掉物品。$(br)比安魂矿石常见得多。$(br2)用$(thing)经验之运$()附魔的镐子$(br)可以获得更多经验。",
+
+  "kuvalich.guidebook.entry.weapon_table": "军械库",
+  "kuvalich.guidebook.entry.weapon_table.title": "武器军械库",
+  "kuvalich.guidebook.entry.weapon_table.p1": "给已开光武器安装武器模组。$(br2)下方放武器，上方放模组。$(br)同类型不重复，裂罅限1个。",
+  "kuvalich.guidebook.entry.warframe_table.title": "战甲军械库",
+  "kuvalich.guidebook.entry.warframe_table.p1": "安装战甲模组，全时段生效。$(br)不需放武器，直接放模组。$(br2)模组绑定角色，死亡不丢。$(br2)尽早制作！",
+
+  "kuvalich.guidebook.entry.item_attr_damage": "伤害词条",
+  "kuvalich.guidebook.entry.item_attr_damage.title": "武器词条 · 伤害类",
+  "kuvalich.guidebook.entry.item_attr_damage.p1": "$(l)基础伤害$()$(br2)· 近战伤害 meleeDamage$(br)· 远程伤害 remoteDamage$(br)· 箭矢伤害 arrowDamage$(br)· 弹射物伤害 projectileDamage$(br)· 魔法伤害 magicDamage",
+  "kuvalich.guidebook.entry.item_attr_damage.p2": "$(l)条件伤害$()$(br2)· 未暴击时伤害$(br)  baseDamageWhenNotCriticalStrike$(br2)$(l)克制伤害$()$(br2)· 对奇特生物 bane_of_undefined$(br)· 对亡灵生物 bane_of_undead$(br)· 对节肢动物 bane_of_arthropod$(br)· 对灾厄生物 bane_of_illager",
+
+  "kuvalich.guidebook.entry.item_attr_crit": "暴击词条",
+  "kuvalich.guidebook.entry.item_attr_crit.title": "武器词条 · 暴击类",
+  "kuvalich.guidebook.entry.item_attr_crit.p1": "$(l)近战$()$(br2)· 暴击几率$(br)  meleeCriticalStrikeProbability$(br)· 暴击伤害$(br)  meleeCriticalStrikeMultiplier$(br2)$(l)远程$()$(br2)· 暴击几率$(br)  remoteCriticalStrikeProbability$(br)· 暴击伤害$(br)  remoteCriticalStrikeMultiplier",
+  "kuvalich.guidebook.entry.item_attr_crit.p2": "$(l)冲刺特化$()$(br2)· 冲刺暴击几率$(br)  dashMeleeCriticalStrikeProbability$(br2)· 冲刺攻击范围$(br)  dashAttackRange$(br2)· 冲刺触发几率$(br)  dashTriggerChance$(br2)仅在冲刺状态下额外生效。",
+
+  "kuvalich.guidebook.entry.item_attr_utility": "功能词条",
+  "kuvalich.guidebook.entry.item_attr_utility.title": "武器词条 · 功能类",
+  "kuvalich.guidebook.entry.item_attr_utility.p1": "· 攻击速度 attackSpeed$(br)· 攻击范围 attackRange$(br)· 射速 firing_rate$(br)  （弓类效果加倍）$(br2)· 触发几率 triggerChance$(br)· 触发时间 triggerTime$(br)  （延长元素效果持续时间）",
+  "kuvalich.guidebook.entry.item_attr_utility.p2": "$(l)多重射击$() multishot$(br2)弓箭：概率额外发射箭矢$(br)枪械：按弹丸数比例缩放$(br2)$(l)爆炸半径$() bursting_radius$(br2)远程命中后对周围溅射伤害",
+
+  "kuvalich.guidebook.entry.item_attr_element": "元素词条",
+  "kuvalich.guidebook.entry.item_attr_element.title": "武器词条 · 元素类",
+  "kuvalich.guidebook.entry.item_attr_element.p1": "$(l)物理$()$(br)切割 slash / 穿刺 puncture / 冲击 impact$(br2)$(l)基础$()$(br)火焰 fire / 冰冻 ice$(br)电击 electricity / 毒素 poison$(br2)$(l)复合$()（自动组合）$(br)毒气 gas / 辐射 radiation$(br)磁力 magnetic / 腐蚀 corrosion$(br)爆炸 explosion / 病毒 virus",
+  "kuvalich.guidebook.entry.item_attr_element.p2": "$(l)组合规则$()$(br2)火+毒 = 毒气$(br)火+电 = 辐射$(br)冰+电 = 磁力$(br)电+毒 = 腐蚀$(br)火+冰 = 爆炸$(br)冰+毒 = 病毒$(br2)病毒大幅增强切割DOT。$(br)腐蚀削甲后物理伤害更高。",
+
+  "kuvalich.guidebook.entry.item_attr_tacz": "枪械专属词条",
+  "kuvalich.guidebook.entry.item_attr_tacz.title": "武器词条 · 枪械专属",
+  "kuvalich.guidebook.entry.item_attr_tacz.p1": "仅对TACZ枪械生效：$(br2)· 枪械伤害 gun_damage$(br)· 爆头伤害 headshot_damage$(br)· 首发子弹伤害 first_bullet_damage$(br)  （不出现在裂罅中）$(br2)· 射速 firing_rate$(br)· 装填速度 reload_speed$(br)· 后坐力降低 recoil_reduction",
+  "kuvalich.guidebook.entry.item_attr_tacz.p2": "· 瞄准速度 aim_time$(br)· 精准度 accuracy$(br)· 弹夹容量 magazine_size$(br)· 投射物速度 projectile_speed$(br2)投射物速度越快有效射程越远。$(br2)装填速度同时加速动画播放。",
+
+  "kuvalich.guidebook.entry.item_attr_killstack": "击杀叠层词条",
+  "kuvalich.guidebook.entry.item_attr_killstack.title": "武器词条 · 击杀叠层",
+  "kuvalich.guidebook.entry.item_attr_killstack.p1": "来自镀层系列模组：$(br2)· 基础伤害叠层$(br)  killStackBaseDamage$(br)  （每层按目标负面效果数量加成）$(br2)· 多重射击叠层$(br)  killStackMultishot$(br2)· 近战暴伤叠层$(br)  killStackMeleeCriticalMultiplier$(br2)· 触发几率叠层$(br)  killStackTriggerChance",
+  "kuvalich.guidebook.entry.item_attr_killstack.p2": "· 攻击范围叠层$(br)  killStackAttackRange$(br2)· 攻击速度叠层$(br)  killStackAttackSpeed$(br2)· 爆炸半径叠层$(br)  killStackBurstingRadius$(br2)· 射速叠层$(br)  killStackFiringRate$(br2)每种有独立最大层数和衰减时间。$(br)武器叠层衰减较快，需持续击杀。",
+
+  "kuvalich.guidebook.entry.warframe_attr_survival": "生存词条",
+  "kuvalich.guidebook.entry.warframe_attr_survival.title": "战甲词条 · 生存类",
+  "kuvalich.guidebook.entry.warframe_attr_survival.p1": "· 生命值 health（百分比）$(br)· 护甲 armor（百分比）$(br)· 固定生命值 fixedHealth$(br)· 固定护甲 fixedArmor$(br2)固定类优先级高于百分比。$(br)两者同时存在时固定值生效。",
+  "kuvalich.guidebook.entry.warframe_attr_survival.p2": "· 护盾容量 shield（百分比）$(br)· 固定护盾容量 fixedShield$(br2)· 护盾恢复速率 shieldRecoveryRate$(br)  （加算叠加）$(br2)· 护盾恢复延迟 shieldRecoveryDelay$(br)  （乘算叠加，多个模组相乘）$(br2)护盾破碎后冷却大幅延长。",
+
+  "kuvalich.guidebook.entry.warframe_attr_resist": "抗性词条",
+  "kuvalich.guidebook.entry.warframe_attr_resist.title": "战甲词条 · 抗性类",
+  "kuvalich.guidebook.entry.warframe_attr_resist.p1": "以下为$(l)乘算叠加$()：$(br2)· 火焰抗性 fireProtection$(br)· 电击抗性 electricProtection$(br)· 同源抗性 homologousProtection$(br)· 摔落抗性 fallProtection$(br2)乘算意味着不可能达到100%%免疫。",
+  "kuvalich.guidebook.entry.warframe_attr_resist.p2": "$(l)击退抗性$() knockbackResistance$(br)概率抵抗击退，加算叠加。$(br2)$(l)恢复生命值倍率$() responseRate$(br)提升所有生命恢复效果。$(br)包括自然回血、药水、食物等。$(br2)负值时完全阻止生命恢复。",
+
+  "kuvalich.guidebook.entry.warframe_attr_mobility": "机动与工具词条",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.title": "战甲词条 · 机动/工具",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.p1": "· 冲刺速度 sprintSpeed$(br)· 跳跃高度 jumpBoost$(br2)· 挖掘距离 reachDistance$(br)· 挖掘速度 diggingSpeed$(br)  （服务端客户端同步）",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.p2": "$(l)战利品掉落倍率$()$(br)itemDropMultiplier$(br2)提升击杀怪物时掉落物数量。$(br)仅对非装备类掉落物生效。$(br)对动物和怪物均有效。$(br2)配合执刑官系列的$(br)击杀叠层版本效果更佳。",
+
+  "kuvalich.guidebook.entry.warframe_attr_killstack": "战甲叠层词条",
+  "kuvalich.guidebook.entry.warframe_attr_killstack.title": "战甲词条 · 击杀叠层",
+  "kuvalich.guidebook.entry.warframe_attr_killstack.p1": "来自执刑官系列模组：$(br2)· 生命值 killStackHealth$(br)· 护盾容量 killStackShield$(br)· 护甲 killStackArmor$(br)· 冲刺速度 killStackSprintSpeed$(br)· 护盾恢复速率$(br)  killStackShieldRecoveryRate",
+  "kuvalich.guidebook.entry.warframe_attr_killstack.p2": "· 护盾恢复延迟（乘算）$(br)  killStackShieldRecoveryDelay$(br2)· 抗性叠层（乘算）：$(br)  killStackFireProtection$(br)  killStackElectricProtection$(br)  killStackHomologousProtection$(br2)· killStackResponseRate$(br)· killStackItemDropMultiplier$(br)· killStackDiggingSpeed",
+
+  "kuvalich.guidebook.entry.overview.desc": "武器养成与Boss挑战的核心循环",
+  "kuvalich.guidebook.entry.first_steps.desc": "五步开始你的冒险之旅",
+  "kuvalich.guidebook.entry.element_system.desc": "14种元素伤害与组合规则",
+  "kuvalich.guidebook.entry.requiem_cards.desc": "8种安魂卡与解密机制",
+  "kuvalich.guidebook.entry.decryption.desc": "解密进度、奖励与惩罚",
+  "kuvalich.guidebook.entry.confiscation.desc": "物品没收与夺回机制",
+  "kuvalich.guidebook.entry.requiem_gate.desc": "放置安魂卡进行解密验证",
+  "kuvalich.guidebook.entry.requiem_recast.desc": "安魂卡与模组的合成",
+  "kuvalich.guidebook.entry.requiem_evolve.desc": "武器融合、开光、裂罅循环",
+  "kuvalich.guidebook.entry.kuva_weapons.desc": "解密成功获得的终极武器",
+  "kuvalich.guidebook.entry.weapon_panel.desc": "暴击、触发等基础面板属性",
+  "kuvalich.guidebook.entry.weapon_upgrade.desc": "模组、融合、等级提升",
+  "kuvalich.guidebook.entry.forma.desc": "重置武器的基础面板属性",
+  "kuvalich.guidebook.entry.weapon_list.desc": "全部13种赤毒武器一览",
+  "kuvalich.guidebook.entry.module_overview.desc": "模组安装规则与获取途径",
+  "kuvalich.guidebook.entry.module_rarity.desc": "从青铜到裂罅的品质等级",
+  "kuvalich.guidebook.entry.riven_module.desc": "随机词条的终极模组",
+  "kuvalich.guidebook.entry.kill_stack.desc": "镀层与执刑官的击杀叠层",
+  "kuvalich.guidebook.entry.warframe_module.desc": "全时段生效的战甲模组与护盾",
+  "kuvalich.guidebook.entry.tacz_overview.desc": "枪械开光后安装模组",
+  "kuvalich.guidebook.entry.tacz_gun_attributes.desc": "枪械专属的输出与操控词条",
+  "kuvalich.guidebook.entry.kuva_master.desc": "三层动态抗性的终极Boss",
+  "kuvalich.guidebook.entry.kuva_slave.desc": "获取解密进度的主要途径",
+  "kuvalich.guidebook.entry.requiem_ore.desc": "安魂卡与模组的矿石来源",
+  "kuvalich.guidebook.entry.experience_ore.desc": "地下广泛分布的经验来源",
+  "kuvalich.guidebook.entry.weapon_table.desc": "安装武器与战甲模组",
+  "kuvalich.guidebook.entry.item_attr_damage.desc": "近战、远程、魔法等伤害词条",
+  "kuvalich.guidebook.entry.item_attr_crit.desc": "暴击几率与暴击伤害词条",
+  "kuvalich.guidebook.entry.item_attr_utility.desc": "攻速、触发、多重射击等",
+  "kuvalich.guidebook.entry.item_attr_element.desc": "物理、基础与复合元素词条",
+  "kuvalich.guidebook.entry.item_attr_tacz.desc": "枪械伤害、射速、弹夹等",
+  "kuvalich.guidebook.entry.item_attr_killstack.desc": "镀层系列的击杀叠层词条",
+  "kuvalich.guidebook.entry.warframe_attr_survival.desc": "生命、护甲、护盾等生存词条",
+  "kuvalich.guidebook.entry.warframe_attr_resist.desc": "火焰、电击、同源等抗性词条",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.desc": "冲刺速度、挖掘、掉落倍率等",
+  "kuvalich.guidebook.entry.warframe_attr_killstack.desc": "执刑官系列的击杀叠层词条"
 }

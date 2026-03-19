@@ -1,4 +1,3 @@
-// ModConfig.java
 package pers.roinflam.kuvalich.config;
 
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -7,12 +6,28 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import pers.roinflam.kuvalich.utils.Reference;
 
+/**
+ * 赤毒玄骸模组配置类
+ * <p>
+ * 管理所有模组配置项，包括赤毒玄骸系统、赤毒武器属性和矿石生成。
+ * 使用 Forge 配置规范（ForgeConfigSpec）实现持久化。
+ * </p>
+ *
+ * @author RoinFlam
+ */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class ModConfig {
 
+    /** 通用配置规范 / Common config spec */
     public static final ForgeConfigSpec COMMON_CONFIG;
+
+    /** 赤毒玄骸系统配置 / Kuva Lich system config */
     public static final KuvaLichConfig KUVA_LICH;
+
+    /** 赤毒武器属性配置 / Kuva weapon attribute config */
     public static final KuvaWeaponConfig KUVA_WEAPON;
+
+    /** 矿石生成配置 / Ore generation config */
     public static final OreGenConfig ORE_GEN;
 
     static {
@@ -25,16 +40,27 @@ public final class ModConfig {
         COMMON_CONFIG = COMMON_BUILDER.build();
     }
 
+    /**
+     * 赤毒玄骸系统配置
+     * <p>
+     * 包含调试、护盾、物品没收、解密进度、伤害、武器等级、
+     * 击杀叠层、实体生成、掉落概率、教程书等所有子系统配置。
+     * </p>
+     */
     public static class KuvaLichConfig {
 
+        // ===== 调试 / Debug =====
         public final ForgeConfigSpec.BooleanValue enableDetailedLogging;
 
+        // ===== 护盾系统 / Shield System =====
         public final ForgeConfigSpec.DoubleValue shieldCapMultiplier;
 
+        // ===== 物品没收系统 / Confiscation System =====
         public final ForgeConfigSpec.DoubleValue confiscationChance;
         public final ForgeConfigSpec.IntValue maxConfiscatedItems;
         public final ForgeConfigSpec.DoubleValue requiemUltimatumDropChance;
 
+        // ===== 解密进度系统 / Decryption Progress =====
         public final ForgeConfigSpec.IntValue minDecryptionProgress;
         public final ForgeConfigSpec.IntValue maxDecryptionProgress;
         public final ForgeConfigSpec.IntValue firstStage;
@@ -42,6 +68,7 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue thirdStage;
         public final ForgeConfigSpec.DoubleValue masterPotionMultiplier;
 
+        // ===== 伤害系统 / Damage System =====
         public final ForgeConfigSpec.BooleanValue damageDisplay;
         public final ForgeConfigSpec.BooleanValue enableDamageNumbers;
         public final ForgeConfigSpec.BooleanValue enableTrueDamage;
@@ -57,6 +84,7 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue elementElectricityDamageMultiplier;
         public final ForgeConfigSpec.DoubleValue elementExplosionDamageMultiplier;
 
+        // ===== 武器等级系统 / Weapon Level System =====
         public final ForgeConfigSpec.IntValue benchmarkLevel;
         public final ForgeConfigSpec.IntValue baseMinimumLevel;
         public final ForgeConfigSpec.IntValue baseMaximumLevel;
@@ -67,12 +95,15 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue upgradeMultiplier;
         public final ForgeConfigSpec.IntValue upgradeLimit;
 
+        // ===== 模组属性倍率 / Module Attribute Multipliers =====
         public final ForgeConfigSpec.DoubleValue moduleAttributeMultiplier;
         public final ForgeConfigSpec.DoubleValue keyAttributeMultiplier;
 
+        // ===== 塑形块锁定 / Forma Lock =====
         public final ForgeConfigSpec.BooleanValue formaLockEnabled;
         public final ForgeConfigSpec.DoubleValue formaLockChance;
 
+        // ===== 武器击杀叠层 / Weapon Kill Stack =====
         public final ForgeConfigSpec.IntValue weaponStackDecayTicks;
         public final ForgeConfigSpec.IntValue maxStacksBaseDamage;
         public final ForgeConfigSpec.IntValue maxStacksMultishot;
@@ -83,6 +114,7 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue maxStacksBurstingRadius;
         public final ForgeConfigSpec.IntValue maxStacksFiringRate;
 
+        // ===== 战甲击杀叠层 / Warframe Kill Stack =====
         public final ForgeConfigSpec.IntValue warframeStackDecayTicks;
         public final ForgeConfigSpec.IntValue maxStacksHealth;
         public final ForgeConfigSpec.IntValue maxStacksShield;
@@ -97,6 +129,7 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue maxStacksItemDropMultiplier;
         public final ForgeConfigSpec.IntValue maxStacksDiggingSpeed;
 
+        // ===== 实体生成 / Entity Spawning =====
         public final ForgeConfigSpec.IntValue kuvaLichSpawnWeight;
         public final ForgeConfigSpec.IntValue kuvaLichMinSpawnCount;
         public final ForgeConfigSpec.IntValue kuvaLichMaxSpawnCount;
@@ -104,6 +137,7 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue kuvaSlaveMinSpawnCount;
         public final ForgeConfigSpec.IntValue kuvaSlaveMaxSpawnCount;
 
+        // ===== 矿石掉落概率 / Ore Drop Chances =====
         public final ForgeConfigSpec.IntValue cardDropChanceWithEnchant;
         public final ForgeConfigSpec.IntValue baseCardDropChance;
         public final ForgeConfigSpec.DoubleValue fortuneReductionPerLevel;
@@ -113,6 +147,7 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue rareModuleDropChance;
         public final ForgeConfigSpec.IntValue expMultiplier;
 
+        // ===== 赤毒奴仆掉落 / Kuva Slave Drops =====
         public final ForgeConfigSpec.IntValue slaveKuvaDropChance;
         public final ForgeConfigSpec.IntValue slaveKuvaMinAmount;
         public final ForgeConfigSpec.IntValue slaveKuvaMaxAmount;
@@ -120,14 +155,24 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue slaveRequiemGemBaseChance;
         public final ForgeConfigSpec.DoubleValue slaveRequiemGemLootingBonus;
 
+        // ===== 赤毒玄骸掉落 / Kuva Master Drops =====
         public final ForgeConfigSpec.IntValue masterKuvaMinAmount;
         public final ForgeConfigSpec.IntValue masterKuvaMaxAmount;
         public final ForgeConfigSpec.IntValue masterRivenSliverMinAmount;
         public final ForgeConfigSpec.IntValue masterRivenSliverMaxAmount;
         public final ForgeConfigSpec.IntValue masterPrimeModuleChance;
 
+        // ===== 通用掉落 / Common Drops =====
         public final ForgeConfigSpec.IntValue moduleWeaponRatio;
 
+        // ===== 教程书 / Guidebook =====
+        public final ForgeConfigSpec.BooleanValue enableGuidebook;
+
+        /**
+         * 构造赤毒玄骸系统配置
+         *
+         * @param builder Forge 配置规范构建器
+         */
         public KuvaLichConfig(ForgeConfigSpec.Builder builder) {
             builder.comment("═══════════════════════════════════════════════════════════════")
                     .comment("Kuva Lich System Configuration")
@@ -516,7 +561,7 @@ public final class ModConfig {
             kuvaLichSpawnWeight = builder
                     .comment("Kuva Lich spawn weight (set to 0 to disable)")
                     .comment("赤毒玄骸生成权重(设为0可禁用生成)")
-                    .defineInRange("kuvaLichSpawnWeight", 5, 0, Integer.MAX_VALUE);
+                    .defineInRange("kuvaLichSpawnWeight", 10, 0, Integer.MAX_VALUE);
 
             kuvaLichMinSpawnCount = builder
                     .comment("Kuva Lich minimum spawn count")
@@ -531,7 +576,7 @@ public final class ModConfig {
             kuvaSlaveSpawnWeight = builder
                     .comment("Kuva Slave spawn weight (set to 0 to disable)")
                     .comment("赤毒奴仆生成权重(设为0可禁用生成)")
-                    .defineInRange("kuvaSlaveSpawnWeight", 15, 0, Integer.MAX_VALUE);
+                    .defineInRange("kuvaSlaveSpawnWeight", 25, 0, Integer.MAX_VALUE);
 
             kuvaSlaveMinSpawnCount = builder
                     .comment("Kuva Slave minimum spawn count")
@@ -551,7 +596,7 @@ public final class ModConfig {
             cardDropChanceWithEnchant = builder
                     .comment("Requiem Card drop chance (%) when tool has Requiem Destroyed enchantment")
                     .comment("持有灭骸附魔时安魂卡片掉落概率(%)")
-                    .defineInRange("cardDropChanceWithEnchant", 75, 0, 100);
+                    .defineInRange("cardDropChanceWithEnchant", 100, 0, 100);
 
             baseCardDropChance = builder
                     .comment("Base Requiem Card drop chance (%) without the enchantment (affected by Fortune)")
@@ -657,10 +702,25 @@ public final class ModConfig {
                     .comment("掉落模组时，该模组为武器模组的概率(%)")
                     .defineInRange("moduleWeaponRatio", 75, 0, 100);
 
+            builder.comment("")
+                    .comment("═══ Guidebook / 教程书 ═══");
+
+            enableGuidebook = builder
+                    .comment("Give guidebook on first join (requires Patchouli)")
+                    .comment("首次进服时发放教程书(需要安装帕秋莉)")
+                    .define("enableGuidebook", true);
+
             builder.pop();
         }
     }
 
+    /**
+     * 矿石生成配置
+     * <p>
+     * 控制安魂矿石和经验矿石的生成参数。
+     * 修改后需要重启游戏，仅对新生成区块有效。
+     * </p>
+     */
     public static class OreGenConfig {
 
         public final ForgeConfigSpec.IntValue requiemOreVeinCount;
@@ -672,6 +732,11 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue experienceOreMinHeight;
         public final ForgeConfigSpec.IntValue experienceOreMaxHeight;
 
+        /**
+         * 构造矿石生成配置
+         *
+         * @param builder Forge 配置规范构建器
+         */
         public OreGenConfig(ForgeConfigSpec.Builder builder) {
             builder.comment("")
                     .comment("═══════════════════════════════════════════════════════════════")
@@ -730,8 +795,15 @@ public final class ModConfig {
         }
     }
 
+    /**
+     * 赤毒武器基础属性配置
+     * <p>
+     * 控制每种赤毒武器的攻击伤害、攻击速度和移动速度修正。
+     * </p>
+     */
     public static class KuvaWeaponConfig {
 
+        /** 武器属性全局倍率 / Global weapon attribute multiplier */
         public final ForgeConfigSpec.DoubleValue attributeMultiplier;
 
         public final ForgeConfigSpec.DoubleValue attackDamageKuvaShildeg;
@@ -786,6 +858,11 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue attackSpeedCaustacyst;
         public final ForgeConfigSpec.DoubleValue movementSpeedCaustacyst;
 
+        /**
+         * 构造赤毒武器属性配置
+         *
+         * @param builder Forge 配置规范构建器
+         */
         public KuvaWeaponConfig(ForgeConfigSpec.Builder builder) {
             builder.comment("")
                     .comment("═══════════════════════════════════════════════════════════════")
@@ -868,6 +945,11 @@ public final class ModConfig {
         }
     }
 
+    /**
+     * 配置重新加载事件处理
+     *
+     * @param event 配置变更事件
+     */
     @SubscribeEvent
     public static void onConfigReload(final ModConfigEvent event) {
     }

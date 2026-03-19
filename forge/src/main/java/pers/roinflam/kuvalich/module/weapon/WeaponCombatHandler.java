@@ -5,7 +5,9 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
@@ -15,7 +17,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
@@ -33,20 +34,23 @@ import pers.roinflam.kuvalich.module.KillStackManager.StackType;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
-import pers.roinflam.kuvalich.utils.util.EntityPlayerUtil;
 import pers.roinflam.kuvalich.utils.util.EntityUtil;
 import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 武器战斗事件处理器
  * 负责所有伤害事件、弓箭多重射击、射速加速、攻击速度/攻击距离tick
+ * 支持所有LivingEntity持有开光武器享受加成和元素触发
+ * 伤害数字：玩家直接显示，驯服生物同维度内转发给主人（带🎀前缀，继承暴击颜色）
  *
  * Weapon Combat Event Handler
- * Handles all damage events, bow multishot, firing rate, attack speed/attack range tick
+ * Supports all LivingEntity with modded weapons.
+ * Damage numbers: direct for players, forwarded to same-dimension owner for tamed entities (with 🎀 prefix inheriting crit color).
  */
 @Mod.EventBusSubscriber
 public class WeaponCombatHandler {
@@ -54,55 +58,119 @@ public class WeaponCombatHandler {
     // ========== 伤害显示缓冲 / Damage Display Buffer ==========
 
     /**
-     * 临时存储待显示的伤害信息（颜色和触发元素）
+     * 临时存储待显示的伤害信息
+     * 直接存储 ServerPlayer 引用而非实体ID，避免二次查找失败
+     * onLivingHurt 和 onLivingDamage 在同一tick同步执行，引用必然有效
      */
     private static class DamageDisplayInfo {
+        /** 暴击颜色代码 */
         String colorCode;
+        /** 触发的元素集合 */
         Set<String> triggeredElements;
+        /** 显示前缀（玩家为空，宠物/女仆为🎀，无颜色代码，继承暴击颜色） */
+        String prefix;
+        /** 接收伤害数字的玩家（直接引用，不做ID反查） */
+        ServerPlayer displayTarget;
 
-        DamageDisplayInfo(String colorCode, Set<String> triggeredElements) {
+        DamageDisplayInfo(String colorCode, Set<String> triggeredElements,
+                          String prefix, ServerPlayer displayTarget) {
             this.colorCode = colorCode;
             this.triggeredElements = triggeredElements;
+            this.prefix = prefix;
+            this.displayTarget = displayTarget;
         }
     }
 
     /**
-     * 使用 ConcurrentHashMap 存储每个实体的待显示伤害信息，key 为实体 ID
+     * 使用 ConcurrentHashMap 存储每个受害者实体的待显示伤害信息
      * 条目在 LivingDamageEvent 中被立即消费，不会长期积累
      */
     private static final Map<Integer, Deque<DamageDisplayInfo>> pendingDisplays = new ConcurrentHashMap<>();
 
+    // ========== 通用工具方法 / Utility ==========
+
+    /**
+     * 获取攻击者的通用攻击伤害源
+     * 玩家使用 playerAttack，Mob 使用 mobAttack，其他使用 generic
+     *
+     * @param attacker 攻击者实体
+     * @return 对应类型的伤害源
+     */
+    private static DamageSource getAttackDamageSource(LivingEntity attacker) {
+        if (attacker instanceof Player player) {
+            return player.damageSources().playerAttack(player);
+        } else if (attacker instanceof Mob mob) {
+            return mob.damageSources().mobAttack(mob);
+        } else {
+            return attacker.damageSources().generic();
+        }
+    }
+
+    /**
+     * 查找应该接收伤害数字的玩家
+     * 1. 攻击者本身是 ServerPlayer → 返回自身
+     * 2. 攻击者是驯服生物（女仆/狼等） → 查找主人，同维度在线即可，不限距离
+     * 3. 其他情况 → 返回 null（不显示伤害数字）
+     *
+     * TamableAnimal.getOwner() 是原版方法，女仆/狼/猫等所有驯服生物通用
+     * 不需要导入任何第三方模组
+     *
+     * @param attacker 攻击者实体
+     * @return 应接收伤害数字的玩家，无则返回null
+     */
+    @Nullable
+    static ServerPlayer findDamageDisplayTarget(LivingEntity attacker) {
+        // 玩家自身直接返回
+        if (attacker instanceof ServerPlayer player) {
+            return player;
+        }
+        // 驯服生物：查找主人，同维度在线即可
+        if (attacker instanceof TamableAnimal tamable) {
+            LivingEntity owner = tamable.getOwner();
+            if (owner instanceof ServerPlayer player && attacker.level() == player.level()) {
+                return player;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取伤害数字的显示前缀
+     * 玩家自身攻击无前缀
+     * 驯服生物攻击加🎀前缀（无颜色代码，拼接时放在colorCode后面，自动继承暴击颜色）
+     *
+     * @param attacker 攻击者实体
+     * @return 显示前缀字符串
+     */
+    static String getDamageDisplayPrefix(LivingEntity attacker) {
+        return (attacker instanceof Player) ? "" : "🎀";
+    }
+
     // ========== 伤害事件 / Damage Events ==========
 
     /**
-     * LivingHurt 事件入口：玩家造成伤害时触发武器模组伤害计算
+     * LivingHurt 事件入口：任何LivingEntity持有开光武器造成伤害时触发武器模组伤害计算
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingHurt(@Nonnull LivingHurtEvent evt) {
         DamageSource damageSource = evt.getSource();
 
-        if (!evt.getEntity().level().isClientSide() && (damageSource.getDirectEntity() instanceof Player || damageSource.getEntity() instanceof Player)) {
-            Player player;
+        if (!evt.getEntity().level().isClientSide()) {
+            LivingEntity attacker = null;
             boolean isMelee = false;
 
-            if (damageSource.getDirectEntity() instanceof Player) {
-                player = (Player) damageSource.getDirectEntity();
+            if (damageSource.getDirectEntity() instanceof LivingEntity direct) {
+                attacker = direct;
                 isMelee = true;
-            } else if (damageSource.getEntity() instanceof Player) {
-                player = (Player) damageSource.getEntity();
+            } else if (damageSource.getEntity() instanceof LivingEntity indirect) {
+                attacker = indirect;
                 isMelee = false;
-            } else {
-                player = null;
             }
 
-            if (player != null) {
-                ItemStack weapon = player.getMainHandItem();
+            if (attacker != null) {
+                ItemStack weapon = attacker.getMainHandItem();
                 if (!weapon.isEmpty() && WeaponModuleHandler.hasBase(weapon)) {
-                    if (isMelee) {
-                        processDamage(evt, player, weapon, damageSource, 1, isMelee);
-                    } else {
-                        processDamage(evt, player, weapon, damageSource, 1.0f, isMelee);
-                    }
+                    processDamage(evt, attacker, weapon, damageSource, 1.0f, isMelee);
                 }
             }
         }
@@ -110,6 +178,9 @@ public class WeaponCombatHandler {
 
     /**
      * LivingDamage 事件：读取待显示信息，发送伤害数字到客户端
+     * 直接使用 DamageDisplayInfo 中缓存的 ServerPlayer 引用发包
+     * 拼接顺序：颜色代码 → 🎀前缀 → 伤害数字 → 元素emoji
+     * 使🎀和数字都继承同一个暴击颜色
      */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLivingDamage(@Nonnull LivingDamageEvent evt) {
@@ -124,28 +195,27 @@ public class WeaponCombatHandler {
                 pendingDisplays.remove(entityId);
             }
 
-            Player player = null;
-            DamageSource damageSource = evt.getSource();
-
-            if (damageSource.getDirectEntity() instanceof Player) {
-                player = (Player) damageSource.getDirectEntity();
-            } else if (damageSource.getEntity() instanceof Player) {
-                player = (Player) damageSource.getEntity();
-            }
-
-            if (player != null && ModConfig.KUVA_LICH.enableDamageNumbers.get()) {
+            // 直接使用缓存的 ServerPlayer 引用，不做二次查找
+            ServerPlayer serverPlayer = displayInfo.displayTarget;
+            if (serverPlayer != null && serverPlayer.isAlive()
+                    && ModConfig.KUVA_LICH.enableDamageNumbers.get()) {
                 float finalDamage = evt.getAmount();
 
                 if (finalDamage > 0 && !Float.isNaN(finalDamage) && !Float.isInfinite(finalDamage)) {
-                    StringBuilder displayText = new StringBuilder(displayInfo.colorCode + DamagePacket.formatDamage(finalDamage));
+                    StringBuilder displayText = new StringBuilder();
+                    // 颜色代码在最前面，🎀和数字都继承同一个暴击颜色
+                    displayText.append(displayInfo.colorCode);
+                    displayText.append(displayInfo.prefix);
+                    displayText.append(DamagePacket.formatDamage(finalDamage));
                     for (String element : displayInfo.triggeredElements) {
                         displayText.append(WeaponElementSystem.getElementEmoji(element));
                     }
                     Vec3 position = WeaponElementSystem.getRandomDamagePosition(hurter);
-                    DamagePacket.sendToPlayer((ServerPlayer) player, displayText.toString(), position);
+                    DamagePacket.sendToPlayer(serverPlayer, displayText.toString(), position);
                 }
             }
         } else {
+            // 非模组武器的普通伤害显示（仅玩家攻击者）
             DamageSource damageSource = evt.getSource();
             Player player = null;
 
@@ -165,9 +235,13 @@ public class WeaponCombatHandler {
 
     /**
      * 核心伤害处理流程：
-     * 基础伤害 → 暴击计算 → 克制倍率 → 元素伤害 → 元素触发 → 最终伤害
+     * 基础伤害 → 暴击计算 → 克制倍率 → 元素伤害 → 元素触发 → 最终伤害 → 击杀叠层
+     *
+     * 支持所有 LivingEntity 攻击者
+     * 击杀叠层效果仅对玩家生效
+     * 伤害数字：玩家直接显示，驯服生物同维度内转发给主人（带🎀前缀）
      */
-    private static void processDamage(LivingHurtEvent evt, Player player, ItemStack weapon,
+    private static void processDamage(LivingHurtEvent evt, LivingEntity attacker, ItemStack weapon,
                                       DamageSource damageSource, float attackStrength, boolean isMelee) {
         LivingEntity hurter = evt.getEntity();
         double baseDamage = 1;
@@ -181,27 +255,30 @@ public class WeaponCombatHandler {
         }
 
         List<ItemStack> modules = WeaponModuleHandler.getModules(weapon);
-        HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(player, weapon);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(attacker, weapon);
 
-        applyKillStackEffects(player, weapon, attributes, hurter);
+        boolean isPlayer = attacker instanceof Player;
+        if (isPlayer) {
+            applyKillStackEffects((Player) attacker, weapon, attributes, hurter);
+        }
 
         // ========== 伤害类型加成 ==========
-        if (damageSource.getDirectEntity() instanceof Player) {
+        if (damageSource.getDirectEntity() == attacker) {
             baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
             criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
 
-            if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
-                int stacks = KillStackManager.getStacks(player, StackType.MELEE_CRIT_MULT);
+            if (isPlayer && attributes.containsKey("killStackMeleeCriticalMultiplier")) {
+                int stacks = KillStackManager.getStacks((Player) attacker, StackType.MELEE_CRIT_MULT);
                 double stackValue = attributes.get("killStackMeleeCriticalMultiplier");
                 criticalStrikeMultiplier *= (1 + stackValue * stacks);
             }
 
-            if (player.isSprinting()) {
+            if (attacker.isSprinting()) {
                 criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0) + attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0));
             } else {
                 criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
             }
-        } else if (damageSource.getEntity() instanceof Player) {
+        } else if (damageSource.getEntity() == attacker) {
             baseDamage += attributes.getOrDefault("remoteDamage", 0.0);
             criticalStrikeProbability *= (1 + attributes.getOrDefault("remoteCriticalStrikeProbability", 0.0));
             criticalStrikeMultiplier *= (1 + attributes.getOrDefault("remoteCriticalStrikeMultiplier", 0.0));
@@ -214,8 +291,8 @@ public class WeaponCombatHandler {
 
             // 爆炸半径溅射
             double range = 1 + attributes.getOrDefault("bursting_radius", 0.0) * 2;
-            if (attributes.containsKey("killStackBurstingRadius")) {
-                int stacks = KillStackManager.getStacks(player, StackType.BURSTING_RADIUS);
+            if (isPlayer && attributes.containsKey("killStackBurstingRadius")) {
+                int stacks = KillStackManager.getStacks((Player) attacker, StackType.BURSTING_RADIUS);
                 double stackValue = attributes.get("killStackBurstingRadius");
                 range += stackValue * stacks * 2;
             }
@@ -227,10 +304,11 @@ public class WeaponCombatHandler {
 
             if (!damageSource.is(DamageTypeTags.IS_EXPLOSION)) {
                 if (range > 1) {
+                    DamageSource splashSource = getAttackDamageSource(attacker);
                     List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, range,
-                            e -> !e.equals(hurter) && !e.equals(player));
+                            e -> !e.equals(hurter) && !e.equals(attacker));
                     for (LivingEntity entity : entities) {
-                        entity.hurt(player.damageSources().playerAttack(player), evt.getAmount() * 0.5f);
+                        entity.hurt(splashSource, evt.getAmount() * 0.5f);
                     }
                 }
             } else if (range < 0) {
@@ -330,14 +408,14 @@ public class WeaponCombatHandler {
         // ========== 元素触发 ==========
         double triggerTime = 1 + attributes.getOrDefault("triggerTime", 0.0);
 
-        if (player.isSprinting()) {
+        if (attacker.isSprinting()) {
             triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0) + attributes.getOrDefault("dashTriggerChance", 0.0));
         } else {
             triggerChance *= (1 + attributes.getOrDefault("triggerChance", 0.0));
         }
 
-        if (attributes.containsKey("killStackTriggerChance")) {
-            int stacks = KillStackManager.getStacks(player, StackType.TRIGGER_CHANCE);
+        if (isPlayer && attributes.containsKey("killStackTriggerChance")) {
+            int stacks = KillStackManager.getStacks((Player) attacker, StackType.TRIGGER_CHANCE);
             double stackValue = attributes.get("killStackTriggerChance");
             triggerChance *= (1 + stackValue * stacks);
         }
@@ -347,17 +425,17 @@ public class WeaponCombatHandler {
         if (triggerChance > 100) {
             int number = (int) triggerChance / 100;
             for (int i = 0; i < number; i++) {
-                String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, player, weapon, triggerTime,
+                String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, triggerTime,
                         coreDamage, attributes, baneMultiplier);
                 if (element != null) triggeredElements.add(element);
             }
             if (RandomUtil.percentageChance(triggerChance - number * 100)) {
-                String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, player, weapon, triggerTime,
+                String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, triggerTime,
                         coreDamage, attributes, baneMultiplier);
                 if (element != null) triggeredElements.add(element);
             }
         } else if (RandomUtil.percentageChance(triggerChance)) {
-            String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, player, weapon, triggerTime,
+            String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, triggerTime,
                     coreDamage, attributes, baneMultiplier);
             if (element != null) triggeredElements.add(element);
         }
@@ -365,13 +443,24 @@ public class WeaponCombatHandler {
         totalDamage = Math.max(totalDamage, 0);
         evt.setAmount(totalDamage);
 
-        // 写入待显示信息，供 onLivingDamage 读取
-        pendingDisplays.computeIfAbsent(hurter.getId(), k -> new ArrayDeque<>())
-                .addLast(new DamageDisplayInfo(colorCode, triggeredElements));
+        // ========== 武器击杀叠层累加（击杀检测）==========
+        // 判断本次伤害是否会击杀目标，如果是则为攻击者（仅限玩家）累加武器击杀叠层
+        // 修复：原版代码中武器侧 killStack 从未有入口调用 addStack，叠层永远为 0
+        if (isPlayer && hurter.getHealth() - totalDamage <= 0) {
+            addWeaponKillStacks((Player) attacker, attributes);
+        }
+
+        // 查找伤害数字接收者并直接存储引用
+        ServerPlayer displayTarget = findDamageDisplayTarget(attacker);
+        if (displayTarget != null) {
+            String prefix = getDamageDisplayPrefix(attacker);
+            pendingDisplays.computeIfAbsent(hurter.getId(), k -> new ArrayDeque<>())
+                    .addLast(new DamageDisplayInfo(colorCode, triggeredElements, prefix, displayTarget));
+        }
     }
 
     /**
-     * 普通伤害显示（无模组武器的默认白色伤害数字）
+     * 普通伤害显示（无模组武器的默认白色伤害数字，仅玩家可见）
      */
     private static void displayDamage(LivingDamageEvent evt, Player player) {
         LivingEntity hurter = evt.getEntity();
@@ -386,7 +475,7 @@ public class WeaponCombatHandler {
     // ========== 击杀叠层效果 / Kill Stack Effects ==========
 
     /**
-     * 将击杀叠层的增益应用到武器属性上
+     * 将击杀叠层的增益应用到武器属性上（仅对玩家生效）
      * 传入的 attributes 是缓存副本，修改不会影响缓存原数据
      */
     private static void applyKillStackEffects(Player player, ItemStack weapon,
@@ -445,118 +534,150 @@ public class WeaponCombatHandler {
         }
     }
 
+    // ========== 武器击杀叠层累加 / Weapon Kill Stack Addition ==========
+
+    /**
+     * 击杀时为玩家累加武器击杀叠层。
+     * <p>
+     * 只检查 attributes 中是否存在 killStack 类型的 key，
+     * 存在即为对应 StackType 累加一层。
+     * <p>
+     * 此方法修复了武器击杀叠层从未被累加的 bug：
+     * WarframeEffectHandler.onLivingDamage 中只调用了 addWarframeKillStacks（战甲侧），
+     * 武器侧的 killStack（killStackBaseDamage、killStackMultishot、killStackFiringRate 等）
+     * 从未有入口调用 KillStackManager.addStack，导致叠层永远为 0。
+     *
+     * @param player     击杀者
+     * @param attributes 当前武器的运行时属性（已含模组词条的合并值）
+     */
+    private static void addWeaponKillStacks(Player player, HashMap<String, Double> attributes) {
+        if (attributes.containsKey("killStackBaseDamage")) {
+            KillStackManager.addStack(player, StackType.BASE_DAMAGE);
+        }
+        if (attributes.containsKey("killStackMultishot")) {
+            KillStackManager.addStack(player, StackType.MULTISHOT);
+        }
+        if (attributes.containsKey("killStackMeleeCriticalMultiplier")) {
+            KillStackManager.addStack(player, StackType.MELEE_CRIT_MULT);
+        }
+        if (attributes.containsKey("killStackTriggerChance")) {
+            KillStackManager.addStack(player, StackType.TRIGGER_CHANCE);
+        }
+        if (attributes.containsKey("killStackAttackRange")) {
+            KillStackManager.addStack(player, StackType.ATTACK_RANGE);
+        }
+        if (attributes.containsKey("killStackAttackSpeed")) {
+            KillStackManager.addStack(player, StackType.ATTACK_SPEED);
+        }
+        if (attributes.containsKey("killStackBurstingRadius")) {
+            KillStackManager.addStack(player, StackType.BURSTING_RADIUS);
+        }
+        if (attributes.containsKey("killStackFiringRate")) {
+            KillStackManager.addStack(player, StackType.FIRING_RATE);
+        }
+    }
+
     // ========== 攻击速度 & 攻击距离 Tick / Attack Speed & Attack Range Tick ==========
 
     /**
-     * 每秒检测一次武器攻击速度和攻击距离属性，通过动态属性系统应用到玩家
-     * 攻击距离：修改原版 ENTITY_REACH 属性，以百分比方式增减玩家的攻击触及距离
-     * 多模组叠加时，所有模组的 attackRange 值在 collectItemAttributes 中已累加为总值，
-     * 此处一次性转换为 ENTITY_REACH 的 MULTIPLY_TOTAL 修改器，保证叠加正确
+     * 每秒检测一次武器攻击速度和攻击距离属性，通过动态属性系统应用
+     * 支持所有持有开光武器的LivingEntity，击杀叠层加成仅对玩家生效
      */
     @SubscribeEvent
-    public static void onPlayerTick(@Nonnull TickEvent.PlayerTickEvent evt) {
-        if (!evt.player.level().isClientSide()) {
-            if (evt.phase.equals(TickEvent.Phase.START)) {
-                Player player = evt.player;
-                if (player.level().getGameTime() % 20 == 0 && player.isAlive()) {
-                    ItemStack weapon = player.getMainHandItem();
-                    if (!weapon.isEmpty() && WeaponModuleHandler.hasBase(weapon)) {
-                        HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(player, weapon);
+    public static void onLivingTick(@Nonnull LivingEvent.LivingTickEvent evt) {
+        LivingEntity entity = evt.getEntity();
+        if (entity.level().isClientSide()) return;
+        if (!entity.isAlive()) return;
+        if (entity.level().getGameTime() % 20 != 0) return;
 
-                        // ========== 攻击速度（原有逻辑不变）==========
-                        if (attributes.containsKey("killStackAttackSpeed")) {
-                            int stacks = KillStackManager.getStacks(player, StackType.ATTACK_SPEED);
-                            if (stacks > 0) {
-                                double stackValue = attributes.get("killStackAttackSpeed");
-                                attributes.put("attackSpeed", attributes.getOrDefault("attackSpeed", 0.0) + stackValue * stacks);
-                            }
-                        }
+        ItemStack weapon = entity.getMainHandItem();
+        if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
 
-                        double attackSpeed = attributes.getOrDefault("attackSpeed", 0.0);
-                        if (attackSpeed >= 0.1) {
-                            int level = (int) (attackSpeed / 0.1) - 1;
-                            DynamicAttributeManager.apply(player, DynamicAttributes.ATTACK_SPEED.createInstance(30, level));
-                        } else if (attackSpeed <= -0.1) {
-                            int level = (int) (-attackSpeed / 0.1) - 1;
-                            DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_ATTACK_SPEED.createInstance(30, level));
-                        }
+        HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(entity, weapon);
+        boolean isPlayer = entity instanceof Player;
 
-                        // ========== 攻击距离 ==========
-                        // 累加基础攻击距离（所有模组的 attackRange 已在缓存中合计）
-                        double attackRange = attributes.getOrDefault("attackRange", 0.0);
-                        // 冲刺时额外加上冲刺攻击距离
-                        if (player.isSprinting()) {
-                            attackRange += attributes.getOrDefault("dashAttackRange", 0.0);
-                        }
-                        // 击杀叠层额外加成
-                        if (attributes.containsKey("killStackAttackRange")) {
-                            int rangeStacks = KillStackManager.getStacks(player, StackType.ATTACK_RANGE);
-                            if (rangeStacks > 0) {
-                                double rangeStackValue = attributes.get("killStackAttackRange");
-                                attackRange += rangeStackValue * rangeStacks;
-                            }
-                        }
-                        // 通过动态属性系统应用到 ENTITY_REACH（每级 ±10%）
-                        if (attackRange >= 0.1) {
-                            int rangeLevel = (int) (attackRange / 0.1) - 1;
-                            DynamicAttributeManager.apply(player, DynamicAttributes.ATTACK_RANGE.createInstance(30, rangeLevel));
-                        } else if (attackRange <= -0.1) {
-                            int rangeLevel = (int) (-attackRange / 0.1) - 1;
-                            DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_ATTACK_RANGE.createInstance(30, rangeLevel));
-                        }
-                    }
-                }
+        // ========== 攻击速度 ==========
+        if (isPlayer && attributes.containsKey("killStackAttackSpeed")) {
+            int stacks = KillStackManager.getStacks((Player) entity, StackType.ATTACK_SPEED);
+            if (stacks > 0) {
+                double stackValue = attributes.get("killStackAttackSpeed");
+                attributes.put("attackSpeed", attributes.getOrDefault("attackSpeed", 0.0) + stackValue * stacks);
             }
+        }
+
+        double attackSpeed = attributes.getOrDefault("attackSpeed", 0.0);
+        if (attackSpeed >= 0.1) {
+            int level = (int) (attackSpeed / 0.1) - 1;
+            DynamicAttributeManager.apply(entity, DynamicAttributes.ATTACK_SPEED.createInstance(30, level));
+        } else if (attackSpeed <= -0.1) {
+            int level = (int) (-attackSpeed / 0.1) - 1;
+            DynamicAttributeManager.apply(entity, DynamicAttributes.NEGATIVE_ATTACK_SPEED.createInstance(30, level));
+        }
+
+        // ========== 攻击距离 ==========
+        double attackRange = attributes.getOrDefault("attackRange", 0.0);
+        if (entity.isSprinting()) {
+            attackRange += attributes.getOrDefault("dashAttackRange", 0.0);
+        }
+        if (isPlayer && attributes.containsKey("killStackAttackRange")) {
+            int rangeStacks = KillStackManager.getStacks((Player) entity, StackType.ATTACK_RANGE);
+            if (rangeStacks > 0) {
+                double rangeStackValue = attributes.get("killStackAttackRange");
+                attackRange += rangeStackValue * rangeStacks;
+            }
+        }
+        if (attackRange >= 0.1) {
+            int rangeLevel = (int) (attackRange / 0.1) - 1;
+            DynamicAttributeManager.apply(entity, DynamicAttributes.ATTACK_RANGE.createInstance(30, rangeLevel));
+        } else if (attackRange <= -0.1) {
+            int rangeLevel = (int) (-attackRange / 0.1) - 1;
+            DynamicAttributeManager.apply(entity, DynamicAttributes.NEGATIVE_ATTACK_RANGE.createInstance(30, rangeLevel));
         }
     }
 
     // ========== 弓箭 / 射速事件 / Bow & Firing Rate ==========
 
     /**
-     * 使用物品Tick事件：处理射速减速（负射速时概率取消tick或停止使用）
+     * 使用物品Tick事件：处理射速减速
      */
     @SubscribeEvent
     public static void onLivingEntityUseItemTick(@Nonnull LivingEntityUseItemEvent.Tick evt) {
         LivingEntity entity = evt.getEntity();
-        if (!(entity instanceof Player)) return;
-        Player player = (Player) entity;
         ItemStack usingItem = evt.getItem();
         if (usingItem.isEmpty()) return;
-        ItemStack weapon = player.getMainHandItem();
+        ItemStack weapon = entity.getMainHandItem();
         if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
 
-        HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(player, weapon);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(entity, weapon);
 
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
-        if (attributes.containsKey("killStackFiringRate")) {
+        if (entity instanceof Player player && attributes.containsKey("killStackFiringRate")) {
             int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
             double stackValue = attributes.get("killStackFiringRate");
             firingRate += stackValue * stacks;
         }
         if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) { firingRate *= 2.0; }
         if (Math.abs(firingRate) < 0.001) return;
-        if (firingRate <= -1.0) { player.stopUsingItem(); }
+        if (firingRate <= -1.0) { entity.stopUsingItem(); }
         else if (firingRate < 0) { if (RandomUtil.percentageChance(Math.abs(firingRate) * 100)) { evt.setCanceled(true); } }
     }
 
     /**
-     * 生物Tick事件：处理射速加速（正射速时额外更新使用进度）
+     * 生物Tick事件：处理射速加速
      */
     @SubscribeEvent
     public static void onLivingTickForFiringRate(@Nonnull LivingEvent.LivingTickEvent evt) {
         LivingEntity entity = evt.getEntity();
-        if (!(entity instanceof Player)) return;
-        Player player = (Player) entity;
         if (!entity.isUsingItem()) return;
         ItemStack usingItem = entity.getUseItem();
         if (usingItem.isEmpty()) return;
-        ItemStack weapon = player.getMainHandItem();
+        ItemStack weapon = entity.getMainHandItem();
         if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
 
-        HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(player, weapon);
+        HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(entity, weapon);
 
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
-        if (attributes.containsKey("killStackFiringRate")) {
+        if (entity instanceof Player player && attributes.containsKey("killStackFiringRate")) {
             int stacks = KillStackManager.getStacks(player, StackType.FIRING_RATE);
             double stackValue = attributes.get("killStackFiringRate");
             firingRate += stackValue * stacks;
@@ -570,7 +691,7 @@ public class WeaponCombatHandler {
     }
 
     /**
-     * 弓箭释放事件：处理多重射击（multishot）
+     * 弓箭释放事件：处理多重射击（仅Player触发）
      */
     @SubscribeEvent
     public static void onArrowLoose(ArrowLooseEvent evt) {

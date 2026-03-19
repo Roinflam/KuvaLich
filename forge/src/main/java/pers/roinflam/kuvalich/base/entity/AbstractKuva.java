@@ -54,8 +54,6 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     private static final float PROJECTILE_DAMAGE_MULTIPLIER = 0.75f;
     /** 魔法伤害倍率（抗性） */
     private static final float MAGIC_DAMAGE_MULTIPLIER = 0.75f;
-    /** 赤毒武器对赤毒实体的伤害倍率（大幅削减） */
-    private static final float KUVA_WEAPON_DAMAGE_MULTIPLIER = 0.25f;
 
     /** 抗性衰减检查间隔（20tick = 1秒，无需每tick检查） */
     private static final int RESISTANCE_CHECK_INTERVAL = 20;
@@ -155,10 +153,6 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
             float reduction = (float) Math.min(0.999f, requiemCard.getKuvaLevel() * ModConfig.KUVA_LICH.reducedDamage.get());
             float damage = event.getAmount() * (1.0f - reduction);
-
-            if (KuvaWeaponUtil.hasType(player.getItemInHand(player.getUsedItemHand()))) {
-                damage *= KUVA_WEAPON_DAMAGE_MULTIPLIER;
-            }
 
             event.setAmount(damage);
         });

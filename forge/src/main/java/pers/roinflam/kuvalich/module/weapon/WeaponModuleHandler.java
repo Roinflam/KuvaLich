@@ -2,6 +2,7 @@ package pers.roinflam.kuvalich.module.weapon;
 
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
@@ -36,7 +37,7 @@ public class WeaponModuleHandler {
 
     /**
      * 每tick武器属性缓存（仅缓存 collectItemAttributes 的结果，不含 killStack 效果）
-     * key = 玩家UUID（同一tick内同一玩家的武器不会变化）
+     * key = 实体UUID（同一tick内同一实体的武器不会变化）
      */
     private static final Map<UUID, HashMap<String, Double>> WEAPON_ATTRIBUTE_CACHE = new HashMap<>();
 
@@ -49,12 +50,14 @@ public class WeaponModuleHandler {
      *
      * 返回副本的原因：applyKillStackEffects 和 processDamage 会修改 map
      *
-     * @param player 持有武器的玩家
+     * 已扩展为支持所有 LivingEntity（不再限定 Player）
+     *
+     * @param entity 持有武器的实体（玩家或怪物等）
      * @param weapon 武器物品栈
      * @return 属性副本（已应用 clamp，未应用 killStack 效果）
      */
-    static HashMap<String, Double> getCachedWeaponAttributes(Player player, ItemStack weapon) {
-        long currentTick = player.level().getGameTime();
+    static HashMap<String, Double> getCachedWeaponAttributes(LivingEntity entity, ItemStack weapon) {
+        long currentTick = entity.level().getGameTime();
 
         if (currentTick != weaponCacheTick) {
             WEAPON_ATTRIBUTE_CACHE.clear();
@@ -62,7 +65,7 @@ public class WeaponModuleHandler {
         }
 
         HashMap<String, Double> base = WEAPON_ATTRIBUTE_CACHE.computeIfAbsent(
-                player.getUUID(), uuid -> collectItemAttributes(getModules(weapon)));
+                entity.getUUID(), uuid -> collectItemAttributes(getModules(weapon)));
 
         return new HashMap<>(base);
     }
@@ -317,7 +320,6 @@ public class WeaponModuleHandler {
                 if (attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.baseDamageWhenNotCriticalStrike") + " ").append(Component.literal((int) (attributes.get("baseDamageWhenNotCriticalStrike") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
-                // 攻击距离：改为百分比显示（原版距离 * 攻击距离%）
                 if (attributes.getOrDefault("attackRange", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.attackRange") + " ").append(Component.literal((int) (attributes.get("attackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
@@ -375,7 +377,6 @@ public class WeaponModuleHandler {
                 if (attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.dashMeleeCriticalStrikeProbability") + " ").append(Component.literal((int) (attributes.get("dashMeleeCriticalStrikeProbability") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
-                // 冲刺攻击距离：改为百分比显示
                 if (attributes.getOrDefault("dashAttackRange", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.dashAttackRange") + " ").append(Component.literal((int) (attributes.get("dashAttackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
@@ -410,7 +411,7 @@ public class WeaponModuleHandler {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.accuracy") + " ").append(Component.literal((int) (attributes.get("accuracy") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
-                // 击杀叠层词条（使用 I18n.get(key, arg) 传递参数避免 Format error）
+                // 击杀叠层词条
                 if (attributes.getOrDefault("killStackBaseDamage", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.killStackBaseDamage", ModConfig.KUVA_LICH.maxStacksBaseDamage.get()) + " ").append(Component.literal((int) (attributes.get("killStackBaseDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
@@ -423,7 +424,6 @@ public class WeaponModuleHandler {
                 if (attributes.getOrDefault("killStackTriggerChance", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.killStackTriggerChance", ModConfig.KUVA_LICH.maxStacksTriggerChance.get()) + " ").append(Component.literal((int) (attributes.get("killStackTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
-                // 击杀叠层攻击距离：改为百分比显示
                 if (attributes.getOrDefault("killStackAttackRange", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.killStackAttackRange", ModConfig.KUVA_LICH.maxStacksAttackRange.get()) + " ").append(Component.literal((int) (attributes.get("killStackAttackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }

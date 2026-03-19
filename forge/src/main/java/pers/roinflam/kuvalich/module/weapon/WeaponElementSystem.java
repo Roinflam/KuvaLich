@@ -1,10 +1,10 @@
-// WeaponElementSystem.java
 package pers.roinflam.kuvalich.module.weapon;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -26,10 +26,11 @@ import java.util.*;
 /**
  * 武器元素系统
  * 负责元素组合计算、元素效果触发、伤害位置和元素表情符号
+ * 支持所有LivingEntity攻击者，伤害数字仅对玩家攻击者发送
  *
  * Weapon Element System
- * Handles element composition calculation, element effect triggering,
- * damage position generation and element emoji display
+ * Handles element composition, effect triggering, damage position and emoji display.
+ * Supports all LivingEntity attackers; damage numbers are only sent to player attackers.
  */
 public class WeaponElementSystem {
 
@@ -47,6 +48,39 @@ public class WeaponElementSystem {
         }
         int number = KuvaWeaponUtil.getNumber(weapon);
         return number / 100.0;
+    }
+
+    // ========== 通用工具方法 / Utility ==========
+
+    /**
+     * 获取攻击者的通用攻击伤害源
+     * 玩家使用 playerAttack，Mob 使用 mobAttack，其他使用 generic
+     *
+     * @param attacker 攻击者实体
+     * @return 对应类型的伤害源
+     */
+    private static DamageSource getAttackDamageSource(LivingEntity attacker) {
+        if (attacker instanceof Player player) {
+            return player.damageSources().playerAttack(player);
+        } else if (attacker instanceof Mob mob) {
+            return mob.damageSources().mobAttack(mob);
+        } else {
+            return attacker.damageSources().generic();
+        }
+    }
+
+    /**
+     * 如果攻击者是玩家，发送伤害数字到客户端
+     * 非玩家攻击者不发送（无渲染目标）
+     *
+     * @param attacker    攻击者
+     * @param displayText 显示文本
+     * @param position    显示位置
+     */
+    private static void sendDamageDisplayIfPlayer(LivingEntity attacker, String displayText, Vec3 position) {
+        if (attacker instanceof ServerPlayer serverPlayer) {
+            DamagePacket.sendToPlayer(serverPlayer, displayText, position);
+        }
     }
 
     // ========== 元素组合计算 / Element Composition ==========
@@ -284,10 +318,11 @@ public class WeaponElementSystem {
 
     /**
      * 触发一次元素效果（火焰DOT、冰冻减速、电击麻痹、毒素直伤等）
+     * 支持所有 LivingEntity 攻击者，伤害数字仅在攻击者是玩家时发送
      *
      * @param damageSource   伤害来源
      * @param hurter         受害者
-     * @param attacker       攻击者
+     * @param attacker       攻击者（可以是玩家或怪物等LivingEntity）
      * @param itemStack      武器物品栈
      * @param triggerTime    触发时间倍率
      * @param coreDamage     核心物理伤害（用于计算元素DOT基础伤害）
@@ -296,7 +331,7 @@ public class WeaponElementSystem {
      * @return 被触发的元素名（用于伤害显示），DOT类元素返回null（自行处理显示）
      */
     static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
-                                       Player attacker, ItemStack itemStack,
+                                       LivingEntity attacker, ItemStack itemStack,
                                        double triggerTime, double coreDamage,
                                        HashMap<String, Double> attributes,
                                        double baneMultiplier) {
@@ -319,10 +354,11 @@ public class WeaponElementSystem {
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance((int) (120 * triggerTime), currentLevel));
                 }
                 hurter.setSecondsOnFire(6);
-                // [新增] 火焰元素伤害倍率
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementFireDamageMultiplier.get());
                 if (dotDamage > 0) {
+                    // 捕获攻击者引用供异步任务使用
+                    final LivingEntity dotAttacker = attacker;
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
                         @Override
@@ -331,7 +367,7 @@ public class WeaponElementSystem {
                             hurter.setSecondsOnFire(6);
                             hurter.hurt(hurter.damageSources().inFire(), dotDamage);
                             String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("fire");
-                            DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
+                            sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
                         }
                     }.start();
                 }
@@ -342,10 +378,11 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ILLAGER)) typeDamageMultiplier = 1.5;
                 else if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 0.5;
-                // [新增] 毒素元素伤害倍率
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementPoisonDamageMultiplier.get());
                 if (dotDamage > 0) {
+                    final LivingEntity dotAttacker = attacker;
+                    final DamageSource attackSource = getAttackDamageSource(attacker);
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
                         @Override
@@ -353,11 +390,11 @@ public class WeaponElementSystem {
                             if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
                             boolean hasShield = hurter.getAbsorptionAmount() > 0;
                             String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("poison");
-                            DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
+                            sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
                             if (hasShield) {
                                 if (hurter.getHealth() - dotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, dotDamage); }
-                                else { EntityLivingUtil.kill(hurter, attacker.damageSources().playerAttack(attacker)); this.cancel(); }
-                            } else { hurter.hurt(attacker.damageSources().magic(), dotDamage); }
+                                else { EntityLivingUtil.kill(hurter, attackSource); this.cancel(); }
+                            } else { hurter.hurt(dotAttacker.damageSources().magic(), dotDamage); }
                         }
                     }.start();
                 }
@@ -377,7 +414,6 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.UNDEAD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
-                // [新增] 电击元素伤害倍率
                 float lightningDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementElectricityDamageMultiplier.get());
                 if (lightningDamage > 0) {
@@ -385,14 +421,13 @@ public class WeaponElementSystem {
                     if (lightning != null) { lightning.moveTo(hurter.getX(), hurter.getY(), hurter.getZ()); lightning.setVisualOnly(true); level.addFreshEntity(lightning); }
                     hurter.hurt(level.damageSources().lightningBolt(), lightningDamage);
                     String displayText = "§f" + DamagePacket.formatDamage(lightningDamage) + getElementEmoji("electricity");
-                    DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
+                    sendDamageDisplayIfPlayer(attacker, displayText, getRandomDamagePosition(hurter));
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.ELECTRICITY_PARALYSIS.createInstance((int) (10 * triggerTime), 0));
                 }
                 return null;
             }
             case "slash": {
                 // 切割：无视护甲DOT，受病毒debuff增幅
-                // [新增] 切割元素伤害倍率
                 float dotDamage = (float) (0.35 * coreDamage * baneMultiplier
                         * ModConfig.KUVA_LICH.elementSlashDamageMultiplier.get());
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.VIRUS)) {
@@ -402,15 +437,17 @@ public class WeaponElementSystem {
                 }
                 if (dotDamage > 0) {
                     float finalDotDamage = dotDamage;
+                    final LivingEntity dotAttacker = attacker;
+                    final DamageSource attackSource = getAttackDamageSource(attacker);
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
                         @Override
                         public void run() {
                             if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
                             String displayText = "§f" + DamagePacket.formatDamage(finalDotDamage) + getElementEmoji("slash");
-                            DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
+                            sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
                             if (hurter.getHealth() - finalDotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, finalDotDamage); }
-                            else { EntityLivingUtil.kill(hurter, attacker.damageSources().playerAttack(attacker)); this.cancel(); }
+                            else { EntityLivingUtil.kill(hurter, attackSource); this.cancel(); }
                         }
                     }.start();
                 }
@@ -477,19 +514,18 @@ public class WeaponElementSystem {
             case "explosion": {
                 // 爆炸：AOE范围伤害
                 double armorMultiplier = hurter.getAbsorptionAmount() > 0 ? 1.5 : 0.5;
-                // [新增] 爆炸元素伤害倍率
                 float explosionDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * armorMultiplier
                         * ModConfig.KUVA_LICH.elementExplosionDamageMultiplier.get());
                 if (explosionDamage > 0) {
                     level.explode(null, hurter.getX(), hurter.getY(), hurter.getZ(), 3.0F, Level.ExplosionInteraction.NONE);
                     hurter.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
                     String displayText = "§f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
-                    DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(hurter));
+                    sendDamageDisplayIfPlayer(attacker, displayText, getRandomDamagePosition(hurter));
                     List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 3, e -> !e.equals(hurter) && !e.equals(attacker));
                     for (LivingEntity entity : entities) {
                         entity.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
                         String aoeDisplayText = "§f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
-                        DamagePacket.sendToPlayer((ServerPlayer) attacker, aoeDisplayText, getRandomDamagePosition(entity));
+                        sendDamageDisplayIfPlayer(attacker, aoeDisplayText, getRandomDamagePosition(entity));
                     }
                 }
                 return null;
@@ -499,11 +535,11 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
-                // [新增] 毒气元素伤害倍率
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementGasDamageMultiplier.get());
                 final Vec3 gasCenter = new Vec3(hurter.getX(), hurter.getY(), hurter.getZ());
                 if (dotDamage > 0) {
+                    final LivingEntity dotAttacker = attacker;
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
                         @Override
@@ -511,12 +547,12 @@ public class WeaponElementSystem {
                             if (ticks++ >= 6 * triggerTime) { this.cancel(); return; }
                             List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class,
                                     new net.minecraft.world.phys.AABB(gasCenter.x - 3, gasCenter.y - 3, gasCenter.z - 3, gasCenter.x + 3, gasCenter.y + 3, gasCenter.z + 3),
-                                    e -> !e.equals(attacker) && e.distanceToSqr(gasCenter) <= 9);
+                                    e -> !e.equals(dotAttacker) && e.distanceToSqr(gasCenter) <= 9);
                             for (LivingEntity entity : entities) {
                                 if (entity.isDeadOrDying()) continue;
-                                entity.hurt(attacker.damageSources().magic(), dotDamage);
+                                entity.hurt(dotAttacker.damageSources().magic(), dotDamage);
                                 String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("gas");
-                                DamagePacket.sendToPlayer((ServerPlayer) attacker, displayText, getRandomDamagePosition(entity));
+                                sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(entity));
                             }
                         }
                     }.start();
