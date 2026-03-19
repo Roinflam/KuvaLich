@@ -26,10 +26,6 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.requiem_evolve.p5"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "kuvalich.guidebook.entry.requiem_evolve.p6"
     }
   ]
 }

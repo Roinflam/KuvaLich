@@ -13,10 +13,6 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.riven_module.p2"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "kuvalich.guidebook.entry.riven_module.p3"
     }
   ]
 }

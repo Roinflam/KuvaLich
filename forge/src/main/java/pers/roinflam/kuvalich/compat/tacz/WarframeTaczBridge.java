@@ -1,8 +1,5 @@
 package pers.roinflam.kuvalich.compat.tacz;
 
-import com.tacz.guns.item.ModernKineticGunScriptAPI;
-import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
-import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -24,7 +21,7 @@ public class WarframeTaczBridge {
 
     /** bursting_radius 抑制标志 */
     private static final ThreadLocal<Boolean> suppressBurstRadius = ThreadLocal.withInitial(() -> false);
-    AttachmentPropertyManager
+
     /** TACZ 原始弹丸数（多重射击膨胀前的值） */
     private static final ThreadLocal<Integer> originalBulletAmount = ThreadLocal.withInitial(() -> 0);
 
