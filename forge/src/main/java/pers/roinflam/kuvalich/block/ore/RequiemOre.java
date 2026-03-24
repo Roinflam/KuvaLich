@@ -31,6 +31,9 @@ public class RequiemOre extends Block {
     private static final int MIN_EXP = 50;
     private static final int MAX_EXP = 100;
 
+    /** 经验范围提供器，用于spawnAfterBreak调用 */
+    private static final UniformInt EXP_RANGE = UniformInt.of(MIN_EXP, MAX_EXP);
+
     /**
      * 构造函数（1.20.1只接收Properties）
      * Constructor (1.20.1 only accepts Properties)
@@ -60,22 +63,36 @@ public class RequiemOre extends Block {
     }
 
     /**
-     * 尝试掉落经验（1.20.1新方法，业务逻辑100%不变）
-     * Try drop experience (1.20.1 new method, business logic 100% unchanged)
+     * 方块被破坏后触发经验掉落（业务逻辑100%不变）
+     * Trigger experience drop after block is broken (business logic 100% unchanged)
      *
-     * 替代1.12.2的getExpDrop()方法
-     * Replaces 1.12.2's getExpDrop() method
+     * 注意：Block基类的spawnAfterBreak不会自动调用tryDropExperience，
+     * 只有DropExperienceBlock才会。因此必须手动重写此方法来触发经验掉落。
+     * Note: Block base class's spawnAfterBreak does not call tryDropExperience automatically,
+     * only DropExperienceBlock does. Must override this method to trigger exp drops.
+     *
+     * @param state 方块状态
+     * @param level 服务端世界
+     * @param pos 方块位置
+     * @param tool 使用的工具
+     * @param dropExperience 是否应该掉落经验（丝绸之触时为false）
      */
     @Override
-    protected void tryDropExperience(@NotNull ServerLevel level, @NotNull BlockPos pos,
-                                     @NotNull ItemStack tool, @NotNull net.minecraft.util.valueproviders.IntProvider experience) {
-        // 使用UniformInt保持50-100经验范围（业务逻辑不变）
-        // Use UniformInt to maintain 50-100 exp range (business logic unchanged)
-        super.tryDropExperience(level, pos, tool, UniformInt.of(MIN_EXP, MAX_EXP));
+    public void spawnAfterBreak(@NotNull BlockState state, @NotNull ServerLevel level,
+                                @NotNull BlockPos pos, @NotNull ItemStack tool, boolean dropExperience) {
+        super.spawnAfterBreak(state, level, pos, tool, dropExperience);
+        if (dropExperience) {
+            // 掉落50-100经验（业务逻辑不变）
+            // Drop 50-100 experience (business logic unchanged)
+            int exp = EXP_RANGE.sample(level.random);
+            if (exp > 0) {
+                this.popExperience(level, pos, exp);
+            }
 
-        LogUtil.debugEvent("安魂矿石经验掉落",
-                "位置: " + pos,
-                "经验范围: " + MIN_EXP + "-" + MAX_EXP
-        );
+            LogUtil.debugEvent("安魂矿石经验掉落",
+                    "位置: " + pos,
+                    "经验: " + exp + " (范围: " + MIN_EXP + "-" + MAX_EXP + ")"
+            );
+        }
     }
 }

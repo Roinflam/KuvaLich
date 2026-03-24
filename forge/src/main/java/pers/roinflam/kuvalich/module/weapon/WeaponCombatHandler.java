@@ -4,6 +4,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobType;
@@ -25,6 +26,7 @@ import net.minecraftforge.event.entity.player.ArrowLooseEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import pers.roinflam.kuvalich.compat.curios.CuriosCompat;
 import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
@@ -47,6 +49,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 负责所有伤害事件、弓箭多重射击、射速加速、攻击速度/攻击距离tick
  * 支持所有LivingEntity持有开光武器享受加成和元素触发
  * 伤害数字：玩家直接显示，驯服生物同维度内转发给主人（带🎀前缀，继承暴击颜色）
+ * <p>
+ * ⭐ 多槽位支持：主手提供基础面板，副手/护甲/饰品栏的模组属性额外叠加
+ * ⭐ Multi-slot support: main hand provides base panel, off-hand/armor/curios contribute bonus module attributes
  *
  * Weapon Combat Event Handler
  * Supports all LivingEntity with modded weapons.
@@ -87,6 +92,94 @@ public class WeaponCombatHandler {
      */
     private static final Map<Integer, Deque<DamageDisplayInfo>> pendingDisplays = new ConcurrentHashMap<>();
 
+    // ========== 多槽位属性合并 / Multi-Slot Attribute Merging ==========
+
+    /**
+     * 合并额外装备槽位的模组属性到现有属性表
+     * Merge module attributes from additional equipment slots into existing attribute map
+     * <p>
+     * 主手武器始终提供基础面板（damage、criticalStrikeProbability等），
+     * 其他槽位的模组仅贡献额外属性加成。
+     * 每个槽位的启用/禁用由配置文件独立控制。
+     * 物品必须已开光（hasBase）才会被处理，未开光或空栈静默跳过不报错。
+     * <p>
+     * Main hand always provides base panel. Other slots only contribute bonus attributes.
+     * Each slot is independently configurable. Items must be gilded (hasBase) to contribute.
+     * Empty or non-gilded items are silently skipped.
+     *
+     * @param attacker   攻击者实体 / attacker entity
+     * @param attributes 要合并到的属性表（主手武器的缓存属性副本）/ target attribute map (cached copy from main hand)
+     */
+    private static void mergeAdditionalSlotAttributes(LivingEntity attacker, HashMap<String, Double> attributes) {
+        // 副手 / Off-hand
+        if (ModConfig.KUVA_LICH.enableOffhandModule.get()) {
+            double offhandMult = ModConfig.KUVA_LICH.offhandEffectMultiplier.get() / 100.0;
+            mergeSlotAttributes(attacker.getOffhandItem(), attributes, offhandMult);
+        }
+
+        // 护甲统一倍率 / Armor unified multiplier
+        double armorMult = ModConfig.KUVA_LICH.armorEffectMultiplier.get() / 100.0;
+
+        // 头盔 / Helmet
+        if (ModConfig.KUVA_LICH.enableHelmetModule.get()) {
+            mergeSlotAttributes(attacker.getItemBySlot(EquipmentSlot.HEAD), attributes, armorMult);
+        }
+
+        // 胸甲 / Chestplate
+        if (ModConfig.KUVA_LICH.enableChestplateModule.get()) {
+            mergeSlotAttributes(attacker.getItemBySlot(EquipmentSlot.CHEST), attributes, armorMult);
+        }
+
+        // 护腿 / Leggings
+        if (ModConfig.KUVA_LICH.enableLeggingsModule.get()) {
+            mergeSlotAttributes(attacker.getItemBySlot(EquipmentSlot.LEGS), attributes, armorMult);
+        }
+
+        // 靴子 / Boots
+        if (ModConfig.KUVA_LICH.enableBootsModule.get()) {
+            mergeSlotAttributes(attacker.getItemBySlot(EquipmentSlot.FEET), attributes, armorMult);
+        }
+
+        // Curios饰品栏（需要Curios模组） / Curios trinket slots (requires Curios mod)
+        if (ModConfig.KUVA_LICH.enableCuriosModule.get()) {
+            double curiosMult = ModConfig.KUVA_LICH.curiosEffectMultiplier.get() / 100.0;
+            int maxSlots = ModConfig.KUVA_LICH.curiosModuleMaxSlots.get();
+            List<ItemStack> curiosItems = CuriosCompat.getEquippedCurios(attacker, maxSlots);
+            for (ItemStack curio : curiosItems) {
+                mergeSlotAttributes(curio, attributes, curiosMult);
+            }
+        }
+    }
+
+    /**
+     * 将单个物品的模组属性按倍率合并到目标属性表
+     * Merge a single item's module attributes into the target attribute map with effectiveness multiplier
+     * <p>
+     * 物品必须非空且已开光（hasBase）才会被处理。
+     * 未开光、空栈或null均静默跳过，不抛出异常。
+     * 倍率为0时跳过合并，倍率为1时等效于原始值全额叠加。
+     *
+     * @param itemStack          要合并的物品（可为null或空） / item to merge (may be null or empty)
+     * @param attributes         目标属性表 / target attribute map
+     * @param effectMultiplier   生效倍率（0.0~1.0，由配置项 / 100.0 得到）/ effectiveness multiplier
+     */
+    private static void mergeSlotAttributes(ItemStack itemStack, HashMap<String, Double> attributes, double effectMultiplier) {
+        if (itemStack == null || itemStack.isEmpty() || !WeaponModuleHandler.hasBase(itemStack)) {
+            return;
+        }
+        // 倍率为0时直接跳过，避免无意义计算 / Skip when multiplier is 0
+        if (effectMultiplier <= 0.0) {
+            return;
+        }
+        // 使用不带缓存的公共API，因为额外槽位不频繁调用
+        // Use non-cached public API since extra slots are not called frequently
+        HashMap<String, Double> slotAttrs = WeaponModuleHandler.getWeaponAttributes(itemStack);
+        for (Map.Entry<String, Double> entry : slotAttrs.entrySet()) {
+            // 属性值乘以生效倍率后再叠加 / Multiply attribute value by effectiveness before merging
+            attributes.merge(entry.getKey(), entry.getValue() * effectMultiplier, Double::sum);
+        }
+    }
+
     // ========== 通用工具方法 / Utility ==========
 
     /**
@@ -112,19 +205,14 @@ public class WeaponCombatHandler {
      * 2. 攻击者是驯服生物（女仆/狼等） → 查找主人，同维度在线即可，不限距离
      * 3. 其他情况 → 返回 null（不显示伤害数字）
      *
-     * TamableAnimal.getOwner() 是原版方法，女仆/狼/猫等所有驯服生物通用
-     * 不需要导入任何第三方模组
-     *
      * @param attacker 攻击者实体
      * @return 应接收伤害数字的玩家，无则返回null
      */
     @Nullable
     static ServerPlayer findDamageDisplayTarget(LivingEntity attacker) {
-        // 玩家自身直接返回
         if (attacker instanceof ServerPlayer player) {
             return player;
         }
-        // 驯服生物：查找主人，同维度在线即可
         if (attacker instanceof TamableAnimal tamable) {
             LivingEntity owner = tamable.getOwner();
             if (owner instanceof ServerPlayer player && attacker.level() == player.level()) {
@@ -137,7 +225,7 @@ public class WeaponCombatHandler {
     /**
      * 获取伤害数字的显示前缀
      * 玩家自身攻击无前缀
-     * 驯服生物攻击加🎀前缀（无颜色代码，拼接时放在colorCode后面，自动继承暴击颜色）
+     * 驯服生物攻击加🎀前缀
      *
      * @param attacker 攻击者实体
      * @return 显示前缀字符串
@@ -195,7 +283,6 @@ public class WeaponCombatHandler {
                 pendingDisplays.remove(entityId);
             }
 
-            // 直接使用缓存的 ServerPlayer 引用，不做二次查找
             ServerPlayer serverPlayer = displayInfo.displayTarget;
             if (serverPlayer != null && serverPlayer.isAlive()
                     && ModConfig.KUVA_LICH.enableDamageNumbers.get()) {
@@ -203,7 +290,6 @@ public class WeaponCombatHandler {
 
                 if (finalDamage > 0 && !Float.isNaN(finalDamage) && !Float.isInfinite(finalDamage)) {
                     StringBuilder displayText = new StringBuilder();
-                    // 颜色代码在最前面，🎀和数字都继承同一个暴击颜色
                     displayText.append(displayInfo.colorCode);
                     displayText.append(displayInfo.prefix);
                     displayText.append(DamagePacket.formatDamage(finalDamage));
@@ -236,6 +322,8 @@ public class WeaponCombatHandler {
     /**
      * 核心伤害处理流程：
      * 基础伤害 → 暴击计算 → 克制倍率 → 元素伤害 → 元素触发 → 最终伤害 → 击杀叠层
+     * <p>
+     * ⭐ 新增：在获取主手武器模组属性后，合并额外槽位（副手/护甲/饰品栏）的模组属性
      *
      * 支持所有 LivingEntity 攻击者
      * 击杀叠层效果仅对玩家生效
@@ -256,6 +344,10 @@ public class WeaponCombatHandler {
 
         List<ItemStack> modules = WeaponModuleHandler.getModules(weapon);
         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(attacker, weapon);
+
+        // ⭐ 新增：合并额外装备槽位的模组属性（副手/护甲/Curios饰品栏）
+        // ⭐ NEW: Merge module attributes from additional equipment slots (off-hand/armor/curios)
+        mergeAdditionalSlotAttributes(attacker, attributes);
 
         boolean isPlayer = attacker instanceof Player;
         if (isPlayer) {
@@ -444,8 +536,6 @@ public class WeaponCombatHandler {
         evt.setAmount(totalDamage);
 
         // ========== 武器击杀叠层累加（击杀检测）==========
-        // 判断本次伤害是否会击杀目标，如果是则为攻击者（仅限玩家）累加武器击杀叠层
-        // 修复：原版代码中武器侧 killStack 从未有入口调用 addStack，叠层永远为 0
         if (isPlayer && hurter.getHealth() - totalDamage <= 0) {
             addWeaponKillStacks((Player) attacker, attributes);
         }
@@ -538,14 +628,6 @@ public class WeaponCombatHandler {
 
     /**
      * 击杀时为玩家累加武器击杀叠层。
-     * <p>
-     * 只检查 attributes 中是否存在 killStack 类型的 key，
-     * 存在即为对应 StackType 累加一层。
-     * <p>
-     * 此方法修复了武器击杀叠层从未被累加的 bug：
-     * WarframeEffectHandler.onLivingDamage 中只调用了 addWarframeKillStacks（战甲侧），
-     * 武器侧的 killStack（killStackBaseDamage、killStackMultishot、killStackFiringRate 等）
-     * 从未有入口调用 KillStackManager.addStack，导致叠层永远为 0。
      *
      * @param player     击杀者
      * @param attributes 当前武器的运行时属性（已含模组词条的合并值）
@@ -582,6 +664,8 @@ public class WeaponCombatHandler {
     /**
      * 每秒检测一次武器攻击速度和攻击距离属性，通过动态属性系统应用
      * 支持所有持有开光武器的LivingEntity，击杀叠层加成仅对玩家生效
+     * <p>
+     * ⭐ 新增：合并额外槽位的模组属性
      */
     @SubscribeEvent
     public static void onLivingTick(@Nonnull LivingEvent.LivingTickEvent evt) {
@@ -594,6 +678,9 @@ public class WeaponCombatHandler {
         if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
 
         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(entity, weapon);
+        // ⭐ 合并额外槽位属性 / Merge additional slot attributes
+        mergeAdditionalSlotAttributes(entity, attributes);
+
         boolean isPlayer = entity instanceof Player;
 
         // ========== 攻击速度 ==========
@@ -639,6 +726,7 @@ public class WeaponCombatHandler {
 
     /**
      * 使用物品Tick事件：处理射速减速
+     * ⭐ 新增：合并额外槽位的模组属性
      */
     @SubscribeEvent
     public static void onLivingEntityUseItemTick(@Nonnull LivingEntityUseItemEvent.Tick evt) {
@@ -649,6 +737,8 @@ public class WeaponCombatHandler {
         if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
 
         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(entity, weapon);
+        // ⭐ 合并额外槽位属性 / Merge additional slot attributes
+        mergeAdditionalSlotAttributes(entity, attributes);
 
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
         if (entity instanceof Player player && attributes.containsKey("killStackFiringRate")) {
@@ -664,6 +754,7 @@ public class WeaponCombatHandler {
 
     /**
      * 生物Tick事件：处理射速加速
+     * ⭐ 新增：合并额外槽位的模组属性
      */
     @SubscribeEvent
     public static void onLivingTickForFiringRate(@Nonnull LivingEvent.LivingTickEvent evt) {
@@ -675,6 +766,8 @@ public class WeaponCombatHandler {
         if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
 
         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(entity, weapon);
+        // ⭐ 合并额外槽位属性 / Merge additional slot attributes
+        mergeAdditionalSlotAttributes(entity, attributes);
 
         double firingRate = attributes.getOrDefault("firing_rate", 0.0);
         if (entity instanceof Player player && attributes.containsKey("killStackFiringRate")) {
@@ -692,6 +785,7 @@ public class WeaponCombatHandler {
 
     /**
      * 弓箭释放事件：处理多重射击（仅Player触发）
+     * ⭐ 新增：合并额外槽位的模组属性
      */
     @SubscribeEvent
     public static void onArrowLoose(ArrowLooseEvent evt) {
@@ -700,6 +794,8 @@ public class WeaponCombatHandler {
             ItemStack bow = evt.getBow();
             if (!bow.isEmpty() && WeaponModuleHandler.hasBase(bow)) {
                 HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(player, bow);
+                // ⭐ 合并额外槽位属性 / Merge additional slot attributes
+                mergeAdditionalSlotAttributes(player, attributes);
 
                 double multishot = attributes.getOrDefault("multishot", 0.0);
                 if (attributes.containsKey("killStackMultishot")) {

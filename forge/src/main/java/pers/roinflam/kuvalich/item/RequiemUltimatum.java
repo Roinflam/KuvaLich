@@ -35,7 +35,7 @@ import java.util.List;
 public class RequiemUltimatum extends Item {
 
     public RequiemUltimatum(@Nonnull Item.Properties properties) {
-        super(properties.stacksTo(1));
+        super(properties.stacksTo(16));
     }
 
     @SubscribeEvent

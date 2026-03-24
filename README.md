@@ -29,7 +29,7 @@
 
 - 🎴 **8 Requiem Cards** - FASS, JAHU, KHRA, LOHK, NETRA, RIS, VOME, XATA
 - ⚔️ **13 Kuva Weapons** - Guandao Prime, Paracesis, Gram Prime, and more
-- 🔧 **Weapon Mod System** - Bronze, Silver, Gold, Prime, Galvanized, Riven tiers
+- 🔧 **Weapon Mod System** - Bronze, Sliver, Gold, Prime, Galvanized, Riven tiers
 - 🛡️ **Warframe Mod System** - Armor, health, shield, and various attribute bonuses
 - 💀 **Lich System** - Defeat Kuva Slaves for decryption progress, challenge Kuva Lich
 - 🌟 **14 Element Types** - Fire, Ice, Electric, Toxin, Radiation, Viral, Corrosion, etc.

@@ -1,7 +1,8 @@
 {
   "variants": {
-    "": {
-      "model": "kuvalich:block/requiem_gate"
-    }
+    "facing=north": { "model": "kuvalich:block/requiem_gate" },
+    "facing=south": { "model": "kuvalich:block/requiem_gate", "y": 180 },
+    "facing=west": { "model": "kuvalich:block/requiem_gate", "y": 270 },
+    "facing=east": { "model": "kuvalich:block/requiem_gate", "y": 90 }
   }
 }

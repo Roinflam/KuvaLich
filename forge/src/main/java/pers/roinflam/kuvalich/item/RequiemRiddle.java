@@ -31,7 +31,7 @@ import java.util.List;
 public class RequiemRiddle extends Item {
 
     public RequiemRiddle(@Nonnull Item.Properties properties) {
-        super(properties.stacksTo(1));
+        super(properties.stacksTo(16));
     }
 
     @SubscribeEvent

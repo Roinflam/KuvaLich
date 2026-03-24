@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * 白银级战甲模组（1.20.1版本）
- * Uncommon (Silver) tier warframe module (1.20.1 version)
+ * Uncommon (Sliver) tier warframe module (1.20.1 version)
  */
 public class WarframeUncommonModule extends AbstractWarframeModule {
 

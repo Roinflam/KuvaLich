@@ -1,6 +1,118 @@
 {
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "kuvalich:item/riven_sliver"
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    64,
+    64
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "scale": [
+        0.31,
+        0.31,
+        0.31
+      ]
+    },
+    "thirdperson_lefthand": {
+      "scale": [
+        0.31,
+        0.31,
+        0.31
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        -180,
+        40.25,
+        -180
+      ],
+      "scale": [
+        0.31,
+        0.31,
+        0.31
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        -180,
+        40.25,
+        -180
+      ],
+      "scale": [
+        0.31,
+        0.31,
+        0.31
+      ]
+    },
+    "ground": {
+      "scale": [
+        0.31,
+        0.31,
+        0.31
+      ]
+    },
+    "gui": {
+      "rotation": [
+        0,
+        -180,
+        -23
+      ],
+      "translation": [
+        1.75,
+        -3.75,
+        0
+      ],
+      "scale": [
+        0.63,
+        0.63,
+        0.63
+      ]
+    },
+    "head": {
+      "translation": [
+        0,
+        8.25,
+        0
+      ],
+      "scale": [
+        0.28,
+        0.28,
+        0.28
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        -23
+      ],
+      "translation": [
+        -1.75,
+        -3.75,
+        0
+      ],
+      "scale": [
+        0.63,
+        0.63,
+        0.63
+      ]
+    },
+    "on_shelf": {
+      "rotation": [
+        0,
+        0,
+        -23
+      ],
+      "translation": [
+        -1.75,
+        -3.75,
+        0
+      ],
+      "scale": [
+        0.63,
+        0.63,
+        0.63
+      ]
+    }
   }
 }

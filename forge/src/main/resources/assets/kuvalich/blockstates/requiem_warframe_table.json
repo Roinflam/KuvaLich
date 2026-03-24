@@ -1,7 +1,8 @@
 {
   "variants": {
-    "": {
-      "model": "kuvalich:block/requiem_warframe_table"
-    }
+    "facing=north": { "model": "kuvalich:block/requiem_warframe_table" },
+    "facing=south": { "model": "kuvalich:block/requiem_warframe_table", "y": 180 },
+    "facing=west": { "model": "kuvalich:block/requiem_warframe_table", "y": 270 },
+    "facing=east": { "model": "kuvalich:block/requiem_warframe_table", "y": 90 }
   }
 }

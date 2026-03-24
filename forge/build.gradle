@@ -23,6 +23,10 @@ repositories {
         name = "Blamejared"
         url = "https://maven.blamejared.com"
     }
+    maven {
+        name = "Curios"
+        url = "https://maven.theillusivec4.top/"
+    }
     mavenCentral()
 }
 
@@ -79,6 +83,9 @@ dependencies {
 
     // Patchouli（可选依赖，仅编译期 + 运行时测试）
     modApi "vazkii.patchouli:Patchouli:1.20.1-84-FORGE"
+
+    // Curios（可选依赖，饰品栏 API）
+    modApi "top.theillusivec4.curios:curios-forge:${rootProject.curios_version}"
 
     // ==================== MixinExtras ====================
     // 我们自己声明 0.5.0，提取 JiJ 时会跳过 tacz 内置的旧版本，避免模块冲突

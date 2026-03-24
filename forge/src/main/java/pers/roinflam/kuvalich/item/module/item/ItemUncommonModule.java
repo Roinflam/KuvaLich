@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * 白银级武器模组（1.20.1版本）
- * Uncommon (Silver) tier weapon module (1.20.1 version)
+ * Uncommon (Sliver) tier weapon module (1.20.1 version)
  */
 public class ItemUncommonModule extends AbstractItemModule {
 

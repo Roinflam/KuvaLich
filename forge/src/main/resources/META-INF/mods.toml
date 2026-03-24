@@ -36,15 +36,22 @@ versionRange="[4.4,)"
 ordering="AFTER"
 side="BOTH"
 
-[[mixins]]
-config = "kuvalich.mixins.json"
-
-[[mixins]]
-config = "kuvalich.tacz.mixins.json"
-
 [[dependencies.kuvalich]]
 modId="patchouli"
 mandatory=false
 versionRange="[1.20.1-84,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.kuvalich]]
+modId="curios"
+mandatory=false
+versionRange="[5.9.1,)"
+ordering="AFTER"
+side="BOTH"
+
+[[mixins]]
+config = "kuvalich.mixins.json"
+
+[[mixins]]
+config = "kuvalich.tacz.mixins.json"

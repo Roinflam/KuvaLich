@@ -44,7 +44,7 @@ public final class ModConfig {
      * 赤毒玄骸系统配置
      * <p>
      * 包含调试、护盾、物品没收、解密进度、伤害、武器等级、
-     * 击杀叠层、实体生成、掉落概率、教程书等所有子系统配置。
+     * 击杀叠层、实体生成、掉落概率、教程书、多槽位装备、三合一等所有子系统配置。
      * </p>
      */
     public static class KuvaLichConfig {
@@ -170,6 +170,27 @@ public final class ModConfig {
 
         // ===== 教程书 / Guidebook =====
         public final ForgeConfigSpec.BooleanValue enableGuidebook;
+
+        // ===== 多槽位装备模组系统 / Multi-Slot Equipment Module System =====
+        public final ForgeConfigSpec.BooleanValue enableOffhandModule;
+        public final ForgeConfigSpec.BooleanValue enableHelmetModule;
+        public final ForgeConfigSpec.BooleanValue enableChestplateModule;
+        public final ForgeConfigSpec.BooleanValue enableLeggingsModule;
+        public final ForgeConfigSpec.BooleanValue enableBootsModule;
+        public final ForgeConfigSpec.BooleanValue enableCuriosModule;
+        public final ForgeConfigSpec.IntValue curiosModuleMaxSlots;
+        public final ForgeConfigSpec.DoubleValue offhandEffectMultiplier;
+        public final ForgeConfigSpec.DoubleValue armorEffectMultiplier;
+        public final ForgeConfigSpec.DoubleValue curiosEffectMultiplier;
+
+        // ===== 三合一合成系统 / Recast Crafting System =====
+        public final ForgeConfigSpec.BooleanValue enablePrimeModuleRecast;
+        public final ForgeConfigSpec.BooleanValue enableRivenModuleRecast;
+        public final ForgeConfigSpec.BooleanValue enableCrossTierRecast;
+        public final ForgeConfigSpec.BooleanValue enableWarframeModuleRecast;
+        public final ForgeConfigSpec.BooleanValue enableWarframePrimeModuleRecast;
+        public final ForgeConfigSpec.BooleanValue enableWarframeRivenModuleRecast;
+        public final ForgeConfigSpec.BooleanValue enableWarframeCrossTierRecast;
 
         /**
          * 构造赤毒玄骸系统配置
@@ -592,7 +613,7 @@ public final class ModConfig {
                     .defineInRange("commonModuleDropChance", 15, 0, 100);
 
             uncommonModuleDropChance = builder
-                    .comment("Uncommon (Silver) module drop chance (%) from Requiem Ore")
+                    .comment("Uncommon (Sliver) module drop chance (%) from Requiem Ore")
                     .comment("安魂矿石掉落白银模组的概率(%)")
                     .defineInRange("uncommonModuleDropChance", 10, 0, 100);
 
@@ -691,6 +712,135 @@ public final class ModConfig {
                     .comment("Give guidebook on first join (requires Patchouli)")
                     .comment("首次进服时发放教程书(需要安装帕秋莉)")
                     .define("enableGuidebook", true);
+
+            // ═══════════════════════════════════════════════════════════════
+            // 新增：多槽位装备模组系统
+            // NEW: Multi-Slot Equipment Module System
+            // ═══════════════════════════════════════════════════════════════
+
+            builder.comment("")
+                    .comment("═══ Multi-Slot Equipment Module System / 多槽位装备模组系统 ═══")
+                    .comment("Controls which equipment slots contribute module attributes during combat.")
+                    .comment("控制哪些装备槽位在战斗时贡献模组属性。")
+                    .comment("Main hand weapon always provides base panel; other slots contribute bonus attributes only.")
+                    .comment("主手武器始终提供基础面板；其他槽位仅贡献额外模组属性加成。")
+                    .comment("Items in other slots must be gilded (have base data) for their modules to take effect.")
+                    .comment("其他槽位的物品必须经过开光（有基础数据）其模组才会生效。");
+
+            enableOffhandModule = builder
+                    .comment("Enable off-hand (shield hand) module attribute contribution")
+                    .comment("启用副手（盾牌手）的模组属性加成")
+                    .define("enableOffhandModule", true);
+
+            enableHelmetModule = builder
+                    .comment("Enable helmet slot module attribute contribution")
+                    .comment("启用头盔槽位的模组属性加成")
+                    .define("enableHelmetModule", false);
+
+            enableChestplateModule = builder
+                    .comment("Enable chestplate slot module attribute contribution")
+                    .comment("启用胸甲槽位的模组属性加成")
+                    .define("enableChestplateModule", false);
+
+            enableLeggingsModule = builder
+                    .comment("Enable leggings slot module attribute contribution")
+                    .comment("启用护腿槽位的模组属性加成")
+                    .define("enableLeggingsModule", false);
+
+            enableBootsModule = builder
+                    .comment("Enable boots slot module attribute contribution")
+                    .comment("启用靴子槽位的模组属性加成")
+                    .define("enableBootsModule", false);
+
+            enableCuriosModule = builder
+                    .comment("Enable Curios trinket slot module attribute contribution (requires Curios mod)")
+                    .comment("启用Curios饰品栏的模组属性加成(需要安装Curios模组)")
+                    .define("enableCuriosModule", false);
+
+            curiosModuleMaxSlots = builder
+                    .comment("Maximum number of Curios slots to check for module attributes")
+                    .comment("最大检查的Curios饰品槽位数量")
+                    .comment("999 = check all slots (default), 1 = only check first slot")
+                    .comment("999 = 检查所有槽位(默认), 1 = 只检查第一个槽位")
+                    .defineInRange("curiosModuleMaxSlots", 999, 1, 999);
+
+            offhandEffectMultiplier = builder
+                    .comment("Effectiveness multiplier for off-hand module attributes (%)")
+                    .comment("副手模组属性的生效倍率(%)")
+                    .comment("100 = full effect, 50 = half effect (default), 0 = no effect")
+                    .comment("100 = 完全生效, 50 = 半效(默认), 0 = 无效果")
+                    .defineInRange("offhandEffectMultiplier", 50.0, 0.0, 100.0);
+
+            armorEffectMultiplier = builder
+                    .comment("Effectiveness multiplier for armor slot module attributes (%)")
+                    .comment("护甲槽位模组属性的生效倍率(%)")
+                    .comment("Applies to helmet, chestplate, leggings and boots equally")
+                    .comment("统一应用于头盔、胸甲、护腿和靴子")
+                    .comment("100 = full effect, 25 = quarter effect (default), 0 = no effect")
+                    .comment("100 = 完全生效, 25 = 四分之一效果(默认), 0 = 无效果")
+                    .defineInRange("armorEffectMultiplier", 25.0, 0.0, 100.0);
+
+            curiosEffectMultiplier = builder
+                    .comment("Effectiveness multiplier for Curios slot module attributes (%)")
+                    .comment("饰品栏模组属性的生效倍率(%)")
+                    .comment("100 = full effect, 25 = quarter effect (default), 0 = no effect")
+                    .comment("100 = 完全生效, 25 = 四分之一效果(默认), 0 = 无效果")
+                    .defineInRange("curiosEffectMultiplier", 25.0, 0.0, 100.0);
+
+            // ═══════════════════════════════════════════════════════════════
+            // 新增：三合一合成系统
+            // NEW: Recast (3-to-1) Crafting System
+            // ═══════════════════════════════════════════════════════════════
+
+            builder.comment("")
+                    .comment("═══ Recast Crafting System / 三合一合成系统 ═══")
+                    .comment("Controls what module tiers can be used in 3-to-1 crafting at the Requiem Recast.")
+                    .comment("控制安魂之铸中三合一合成支持的模组品质。")
+                    .comment("Common/Uncommon/Rare (Bronze/Silver/Gold) tiers are always supported.")
+                    .comment("青铜/白银/黄金品质始终支持三合一。")
+                    .comment("Prime and Riven tiers require explicit opt-in below.")
+                    .comment("Prime和裂罅品质需要在下方明确启用。");
+
+            enablePrimeModuleRecast = builder
+                    .comment("Allow weapon Prime modules in 3-to-1 crafting (output: unveiled Prime)")
+                    .comment("允许武器Prime模组参与三合一(产出: 未揭示的Prime模组)")
+                    .define("enablePrimeModuleRecast", false);
+
+            enableRivenModuleRecast = builder
+                    .comment("Allow weapon Riven modules in 3-to-1 crafting (output: unveiled Riven)")
+                    .comment("允许武器裂罅模组参与三合一(产出: 未揭示的裂罅模组)")
+                    .define("enableRivenModuleRecast", false);
+
+            enableCrossTierRecast = builder
+                    .comment("Allow mixing different tiers of weapon modules in 3-to-1 crafting")
+                    .comment("允许不同品质的武器模组混合三合一")
+                    .comment("Only applies to Common/Uncommon/Rare tiers; output tier is based on input ratio")
+                    .comment("仅适用于青铜/白银/黄金品质；产出品质按放入比例随机")
+                    .comment("Example: 2 Gold + 1 Bronze → ~67% chance Gold, ~33% chance Bronze")
+                    .comment("示例: 2金+1铜 → 约67%概率出金, 约33%概率出铜")
+                    .define("enableCrossTierRecast", false);
+
+            enableWarframeModuleRecast = builder
+                    .comment("Enable warframe module 3-to-1 crafting at the Requiem Recast")
+                    .comment("启用战甲模组在安魂之铸中的三合一合成")
+                    .define("enableWarframeModuleRecast", true);
+
+            enableWarframePrimeModuleRecast = builder
+                    .comment("Allow warframe Prime modules in 3-to-1 crafting (output: unveiled Prime)")
+                    .comment("允许战甲Prime模组参与三合一(产出: 未揭示的Prime模组)")
+                    .define("enableWarframePrimeModuleRecast", false);
+
+            enableWarframeRivenModuleRecast = builder
+                    .comment("Allow warframe Riven modules in 3-to-1 crafting (output: unveiled Riven)")
+                    .comment("允许战甲裂罅模组参与三合一(产出: 未揭示的裂罅模组)")
+                    .define("enableWarframeRivenModuleRecast", false);
+
+            enableWarframeCrossTierRecast = builder
+                    .comment("Allow mixing different tiers of warframe modules in 3-to-1 crafting")
+                    .comment("允许不同品质的战甲模组混合三合一")
+                    .comment("Same rules as weapon cross-tier: only Common/Uncommon/Rare, output based on ratio")
+                    .comment("规则同武器跨品质: 仅青铜/白银/黄金, 产出按比例随机")
+                    .define("enableWarframeCrossTierRecast", false);
 
             builder.pop();
         }

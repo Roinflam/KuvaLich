@@ -184,7 +184,7 @@ public class CustomModuleManager {
         sb.append("//\n");
         sb.append("// rarity: 稀有度 / Rarity\n");
         sb.append("//   - \"common\": 青铜 / Bronze\n");
-        sb.append("//   - \"uncommon\": 白银 / Silver\n");
+        sb.append("//   - \"uncommon\": 白银 / Sliver\n");
         sb.append("//   - \"rare\": 黄金 / Gold\n");
         sb.append("//   - \"prime\": Prime\n");
         sb.append("//\n");

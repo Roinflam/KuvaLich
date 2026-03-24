@@ -1,7 +1,8 @@
 {
   "variants": {
-    "": {
-      "model": "kuvalich:block/requiem_evolve"
-    }
+    "facing=north": { "model": "kuvalich:block/requiem_evolve" },
+    "facing=south": { "model": "kuvalich:block/requiem_evolve", "y": 180 },
+    "facing=west": { "model": "kuvalich:block/requiem_evolve", "y": 270 },
+    "facing=east": { "model": "kuvalich:block/requiem_evolve", "y": 90 }
   }
 }
