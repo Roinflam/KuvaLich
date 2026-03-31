@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -39,6 +40,9 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
  * 1. 大幅加快安魂方块的挖掘速度
  * 2. 增加安魂矿石的经验掉落（倍率可配置）
  * 3. 增加安魂卡片和模组的掉落几率（概率均可配置）
+ *
+ * ⭐ 修复：dropModules 现在读取 moduleWeaponRatio 配置而非硬编码75
+ * ⭐ 修复：onBreak 使用 LOW 优先级，避免暮色森林等模组结界区方块复原时重复触发掉落
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class EnchantmentRequiemDestroyed extends AbstractEnchantment {
@@ -112,8 +116,24 @@ public class EnchantmentRequiemDestroyed extends AbstractEnchantment {
         }
     }
 
-    @SubscribeEvent
+    /**
+     * 安魂矿石破坏事件 — 掉落安魂卡、模组、赤毒资源
+     * <p>
+     * ⭐ 使用 EventPriority.LOW 确保在暮色森林等模组的结界保护处理之后执行。
+     * 暮色森林在未击败对应Boss时会取消方块破坏事件（cancel），
+     * 如果我们在默认优先级处理，可能在取消之前就已经掉落物品，
+     * 导致方块复原但物品重复掉落。LOW优先级 + isCanceled检查可完全避免此问题。
+     * </p>
+     *
+     * @param evt 方块破坏事件
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onBreak(BlockEvent.BreakEvent evt) {
+        // ⭐ 检查事件是否已被其他模组取消（暮色森林结界保护等）
+        if (evt.isCanceled()) {
+            return;
+        }
+
         Block block = evt.getState().getBlock();
         if (!block.equals(KuvaLichBlocks.REQUIEM_ORE.get())) {
             return;
@@ -170,25 +190,36 @@ public class EnchantmentRequiemDestroyed extends AbstractEnchantment {
         spawnItem(world, pos, new ItemStack(card, 1));
     }
 
+    /**
+     * 掉落随机品质模组
+     * <p>
+     * ⭐ 修复：武器/战甲比例现在读取配置 moduleWeaponRatio，不再硬编码75
+     * </p>
+     *
+     * @param world 服务端世界
+     * @param pos   掉落位置
+     */
     private static void dropModules(ServerLevel world, BlockPos pos) {
         int commonChance = ModConfig.KUVA_LICH.commonModuleDropChance.get();
         int uncommonChance = ModConfig.KUVA_LICH.uncommonModuleDropChance.get();
         int rareChance = ModConfig.KUVA_LICH.rareModuleDropChance.get();
 
-        // 修复：统一使用 RandomUtil / Fix: use RandomUtil consistently
+        // ⭐ 修复：从配置读取武器/战甲比例（原先硬编码为75）
+        int weaponRatio = ModConfig.KUVA_LICH.moduleWeaponRatio.get();
+
         int roll = RandomUtil.getInt(0, 99);
         ItemStack module = null;
 
         if (roll < rareChance) {
-            module = RandomUtil.percentageChance(75)
+            module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemRareModule.getRandomModule()
                     : WarframeRareModule.getRandomModule();
         } else if (roll < rareChance + uncommonChance) {
-            module = RandomUtil.percentageChance(75)
+            module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemUncommonModule.getRandomModule()
                     : WarframeUncommonModule.getRandomModule();
         } else if (roll < rareChance + uncommonChance + commonChance) {
-            module = RandomUtil.percentageChance(75)
+            module = RandomUtil.percentageChance(weaponRatio)
                     ? ItemCommonModule.getRandomModule()
                     : WarframeCommonModule.getRandomModule();
         }

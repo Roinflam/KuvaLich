@@ -258,4 +258,8 @@ public class KuvaLichItems {
 
     public static final RegistryObject<Item> FORMA = ITEMS.register("forma",
             () -> new Forma(new Item.Properties()));
+
+    // ⭐ 内融核心（模组等级升级消耗品）/ Endo (Module level upgrade material)
+    public static final RegistryObject<Item> ENDO = ITEMS.register("endo",
+            () -> new pers.roinflam.kuvalich.item.Endo(new Item.Properties()));
 }

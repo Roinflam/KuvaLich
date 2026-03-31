@@ -201,6 +201,15 @@ public final class ModConfig {
         /** 最大强化次数（-1 = 无限制） */
         public final ForgeConfigSpec.IntValue taczGunEnhanceMaxCount;
 
+        // ===== 模组等级系统 / Module Level System =====
+        public final ForgeConfigSpec.BooleanValue enableModuleLevelSystem;
+        public final ForgeConfigSpec.IntValue moduleMaxLevel;
+        public final ForgeConfigSpec.DoubleValue endoDropChance;
+        public final ForgeConfigSpec.IntValue endoLastLevelCost;
+        public final ForgeConfigSpec.DoubleValue endoCostExponent;
+        public final ForgeConfigSpec.IntValue endoDropMinAmount;
+        public final ForgeConfigSpec.IntValue endoDropMaxAmount;
+        public final ForgeConfigSpec.BooleanValue enableMasteryOnReveal;
         /**
          * 构造赤毒玄骸系统配置
          *
@@ -257,12 +266,12 @@ public final class ModConfig {
             minDecryptionProgress = builder
                     .comment("Minimum decryption progress per kill")
                     .comment("每次击杀获得的最小解密进度")
-                    .defineInRange("minDecryptionProgress", 3, 0, Integer.MAX_VALUE);
+                    .defineInRange("minDecryptionProgress", 5, 0, Integer.MAX_VALUE);
 
             maxDecryptionProgress = builder
                     .comment("Maximum decryption progress per kill")
                     .comment("每次击杀获得的最大解密进度")
-                    .defineInRange("maxDecryptionProgress", 10, 0, Integer.MAX_VALUE);
+                    .defineInRange("maxDecryptionProgress", 15, 0, Integer.MAX_VALUE);
 
             firstStage = builder
                     .comment("First stage decryption requirement")
@@ -282,7 +291,7 @@ public final class ModConfig {
             masterPotionMultiplier = builder
                     .comment("Master kill point multiplier")
                     .comment("击杀赤毒玄骸的额外点数倍率")
-                    .defineInRange("masterPotionMultiplier", 5.0, 1.0, Double.MAX_VALUE);
+                    .defineInRange("masterPotionMultiplier", 3.0, 1.0, Double.MAX_VALUE);
 
             builder.comment("")
                     .comment("═══ Damage System / 伤害系统 ═══");
@@ -619,7 +628,7 @@ public final class ModConfig {
             commonModuleDropChance = builder
                     .comment("Common (Bronze) module drop chance (%) from Requiem Ore")
                     .comment("安魂矿石掉落青铜模组的概率(%)")
-                    .defineInRange("commonModuleDropChance", 15, 0, 100);
+                    .defineInRange("commonModuleDropChance", 20, 0, 100);
 
             uncommonModuleDropChance = builder
                     .comment("Uncommon (Sliver) module drop chance (%) from Requiem Ore")
@@ -634,7 +643,7 @@ public final class ModConfig {
             expMultiplier = builder
                     .comment("Experience multiplier when mining Requiem Ore with Requiem Destroyed enchantment")
                     .comment("持有灭骸附魔挖掘安魂矿石时的经验倍数")
-                    .defineInRange("expMultiplier", 5, 1, 100);
+                    .defineInRange("expMultiplier", 10, 1, 100);
 
             builder.comment("")
                     .comment("═══ Kuva Slave Drop Loot / 赤毒奴仆掉落战利品 ═══");
@@ -642,7 +651,7 @@ public final class ModConfig {
             slaveKuvaDropChance = builder
                     .comment("Chance (%) to drop Kuva when killed by player")
                     .comment("被玩家击杀时掉落赤毒的概率(%)")
-                    .defineInRange("slaveKuvaDropChance", 15, 0, 100);
+                    .defineInRange("slaveKuvaDropChance", 25, 0, 100);
 
             slaveKuvaMinAmount = builder
                     .comment("Minimum number of Kuva dropped")
@@ -879,6 +888,55 @@ public final class ModConfig {
                     .comment("Maximum enhancement count, -1 for unlimited")
                     .comment("最大强化次数，-1为无限制")
                     .defineInRange("taczGunEnhanceMaxCount", -1, -1, 10000);
+
+            // ═══════════════════════════════════════════════════════════════
+            // 新增：模组等级系统（内融核心 / Endo System）
+            // ═══════════════════════════════════════════════════════════════
+
+            builder.comment("")
+                    .comment("═══ Module Level System / 模组等级系统 ═══")
+                    .comment("When enabled, modules start at level 1 and must be upgraded with Endo.")
+                    .comment("启用后，模组初始为1级，需要使用内融核心升级。")
+                    .comment("When disabled, all modules work at full power (100%), same as before.")
+                    .comment("关闭时，所有模组以满功率（100%）运作，与以前一样。");
+
+            enableModuleLevelSystem = builder
+                    .comment("Enable the module level system")
+                    .comment("启用模组等级系统")
+                    .define("enableModuleLevelSystem", true);
+
+            moduleMaxLevel = builder
+                    .comment("Maximum module level (each level = 1/maxLevel of original value)")
+                    .comment("模组最大等级（每一级提供 1/最大等级 的原属性数值）")
+                    .defineInRange("moduleMaxLevel", 10, 2, 100);
+
+            endoDropChance = builder
+                    .comment("Chance (%) to drop 1 Endo when killing a Monster with a gilded weapon")
+                    .comment("使用开光武器击杀Monster时掉落1个内融核心的概率(%)")
+                    .defineInRange("endoDropChance", 1.0, 0.0, 100.0);
+
+            endoLastLevelCost = builder
+                    .comment("Endo cost for the LAST level upgrade (not total)")
+                    .comment("最后一级升级所需的内融核心数量（不是总数）")
+                    .defineInRange("endoLastLevelCost", 64, 1, 1024);
+
+            endoCostExponent = builder
+                    .comment("Cost curve exponent (higher = more back-loaded, 2.0 = quadratic)")
+                    .comment("费用曲线指数（越高越后期集中，2.0 = 二次曲线）")
+                    .defineInRange("endoCostExponent", 2.0, 1.0, 5.0);
+            endoDropMinAmount = builder
+                    .comment("Minimum number of Endo dropped per drop event")
+                    .comment("每次掉落内融核心的最小数量")
+                    .defineInRange("endoDropMinAmount", 1, 1, 64);
+
+            endoDropMaxAmount = builder
+                    .comment("Maximum number of Endo dropped per drop event")
+                    .comment("每次掉落内融核心的最大数量")
+                    .defineInRange("endoDropMaxAmount", 1, 1, 64);
+            enableMasteryOnReveal = builder
+                    .comment("Apply mastery level when revealing modules (false = always level 1)")
+                    .comment("揭示模组时是否赋予精通等级（false = 每次都是1级）")
+                    .define("enableMasteryOnReveal", true);
 
             builder.pop();
         }

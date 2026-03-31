@@ -57,6 +57,7 @@ public class KuvaLichCreativeTabs {
                         output.accept(KuvaLichItems.REQUIEM_ULTIMATUM.get());
                         output.accept(KuvaLichItems.LICH_RELIQUARY.get());
                         output.accept(KuvaLichItems.RIVEN_SLIVER.get());
+                        output.accept(KuvaLichItems.ENDO.get());
 
                         // ========== 赤毒武器 / Kuva Weapons ==========
                         // 使用KuvaWeapon.getItem生成带属性的武器实例

@@ -443,7 +443,7 @@ public class ClothConfigScreen {
         moduleCategory.addEntry(entryBuilder.startStrList(
                         Component.translatable("config.kuvalich.disabledModuleTypes"),
                         new java.util.ArrayList<>(ModuleConfig.DISABLED_MODULE_TYPES.get()))
-                .setDefaultValue(java.util.Arrays.asList())
+                .setDefaultValue(Arrays.asList())
                 .setTooltip(Component.translatable("config.kuvalich.disabledModuleTypes.tooltip"))
                 .setSaveConsumer(list -> {
                     ModuleConfig.DISABLED_MODULE_TYPES.set(list);
@@ -452,7 +452,7 @@ public class ClothConfigScreen {
                 .build());
 
         // ═══════════════════════════════════════════════════════════════
-        // 多槽位装备模组系统（新增）
+        // 多槽位装备模组系统
         // ═══════════════════════════════════════════════════════════════
         ConfigCategory multiSlotCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.multiSlot"));
@@ -469,7 +469,7 @@ public class ClothConfigScreen {
         multiSlotCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.curiosEffectMultiplier"), ModConfig.KUVA_LICH.curiosEffectMultiplier.get()).setDefaultValue(25.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.curiosEffectMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.curiosEffectMultiplier::set).build());
 
         // ═══════════════════════════════════════════════════════════════
-        // 三合一合成系统（新增）
+        // 三合一合成系统
         // ═══════════════════════════════════════════════════════════════
         ConfigCategory recastCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.recast"));
@@ -483,7 +483,24 @@ public class ClothConfigScreen {
         recastCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableWarframeCrossTierRecast"), ModConfig.KUVA_LICH.enableWarframeCrossTierRecast.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableWarframeCrossTierRecast.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableWarframeCrossTierRecast::set).build());
 
         // ═══════════════════════════════════════════════════════════════
-        // TACZ枪械永久强化（新增）
+        // 模组等级系统
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory moduleLevelCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.moduleLevel"));
+
+        moduleLevelCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableModuleLevelSystem"), ModConfig.KUVA_LICH.enableModuleLevelSystem.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableModuleLevelSystem.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableModuleLevelSystem::set).build());
+        moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.moduleMaxLevel"), ModConfig.KUVA_LICH.moduleMaxLevel.get()).setDefaultValue(10).setMin(2).setMax(100).setTooltip(Component.translatable("config.kuvalich.moduleMaxLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.moduleMaxLevel::set).build());
+        moduleLevelCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.endoDropChance"), ModConfig.KUVA_LICH.endoDropChance.get()).setDefaultValue(1.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.endoDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropChance::set).build());
+        // ⭐ 新增：内融核心掉落数量范围
+        moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoDropMinAmount"), ModConfig.KUVA_LICH.endoDropMinAmount.get()).setDefaultValue(1).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.endoDropMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropMinAmount::set).build());
+        moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoDropMaxAmount"), ModConfig.KUVA_LICH.endoDropMaxAmount.get()).setDefaultValue(1).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.endoDropMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropMaxAmount::set).build());
+        moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoLastLevelCost"), ModConfig.KUVA_LICH.endoLastLevelCost.get()).setDefaultValue(64).setMin(1).setMax(1024).setTooltip(Component.translatable("config.kuvalich.endoLastLevelCost.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoLastLevelCost::set).build());
+        moduleLevelCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.endoCostExponent"), ModConfig.KUVA_LICH.endoCostExponent.get()).setDefaultValue(2.0).setMin(1.0).setMax(5.0).setTooltip(Component.translatable("config.kuvalich.endoCostExponent.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoCostExponent::set).build());
+        // ⭐ 补全遗漏：精通赋予开关
+        moduleLevelCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableMasteryOnReveal"), ModConfig.KUVA_LICH.enableMasteryOnReveal.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableMasteryOnReveal.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableMasteryOnReveal::set).build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // TACZ枪械永久强化
         // ═══════════════════════════════════════════════════════════════
         ConfigCategory taczEnhanceCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.taczEnhance"));

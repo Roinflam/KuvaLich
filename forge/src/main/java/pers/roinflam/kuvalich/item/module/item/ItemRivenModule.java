@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 
 /**
  * 裂罅武器模组（1.20.1版本）
@@ -521,6 +523,9 @@ public class ItemRivenModule extends AbstractItemModule {
                 return InteractionResultHolder.fail(itemstack);
             }
 
+
+// ⭐ 模组等级系统：赋予揭示等级
+            ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);
 

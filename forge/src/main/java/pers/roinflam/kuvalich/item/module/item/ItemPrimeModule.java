@@ -18,6 +18,8 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 
 /**
  * Prime级武器模组（1.20.1版本）
@@ -329,6 +331,16 @@ public class ItemPrimeModule extends AbstractItemModule {
         items.add(getRandomModule());
         items.addAll(itemStackList);
         CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, Rarity.EPIC);
+
+        // ⭐ 创造模式模组默认满级
+        if (ModuleLevelHelper.isLevelSystemEnabled()) {
+            for (ItemStack stack : items) {
+                if (!AbstractModule.isRandom(stack)) {
+                    ModuleLevelHelper.setModuleLevel(stack, ModuleLevelHelper.getMaxLevel());
+                }
+            }
+        }
+
         items.forEach(output::accept);
     }
 
@@ -345,6 +357,9 @@ public class ItemPrimeModule extends AbstractItemModule {
             }
 
             ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
+
+// ⭐ 模组等级系统：赋予揭示等级
+            ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);
             player.setItemInHand(hand, ItemStack.EMPTY);

@@ -10,13 +10,19 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.item.module.item.*;
+import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
+import pers.roinflam.kuvalich.module.level.ModuleLevelTooltipHelper;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
- * 武器模组基类（1.20.1版本，业务逻辑100%不变）
- * Item Module Base Class (1.20.1 version, business logic 100% unchanged)
+ * 武器模组基类（1.20.1版本）
+ * Item Module Base Class
+ *
+ * ⭐ 属性词条根据等级动态缩放显示
+ * ⭐ 满级不显示等级Tooltip
+ * ⭐ 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public abstract class AbstractItemModule extends AbstractModule {
@@ -36,11 +42,7 @@ public abstract class AbstractItemModule extends AbstractModule {
                     "killStackBaseDamage", "killStackMultishot", "killStackMeleeCriticalMultiplier",
                     "killStackTriggerChance", "killStackAttackRange", "killStackAttackSpeed",
                     "killStackBurstingRadius", "killStackFiringRate",
-                    // ===== TACZ 枪械新属性（第一批）/ New TACZ gun attributes (batch 1) =====
                     "reload_speed", "magazine_size", "projectile_speed", "recoil_reduction",
-                    // 注意：first_bullet_damage 不加入此集合，使紫卡（裂罅模组）无法洗出该词条
-                    // Note: first_bullet_damage excluded from this set so Riven mods cannot roll it
-                    // ===== TACZ 枪械新属性（第二批）/ New TACZ gun attributes (batch 2) =====
                     "gun_damage", "headshot_damage", "aim_time", "accuracy"
             ))
     );
@@ -54,24 +56,13 @@ public abstract class AbstractItemModule extends AbstractModule {
         return false;
     }
 
-    /**
-     * 物品提示事件处理（1.20.1新API）
-     * Item tooltip event handler (1.20.1 new API)
-     */
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack itemStack = event.getItemStack();
-        if (itemStack == null || itemStack.isEmpty()) {
-            return;
-        }
-
+        if (itemStack == null || itemStack.isEmpty()) { return; }
         Item item = itemStack.getItem();
-        if (!(item instanceof AbstractItemModule)) {
-            return;
-        }
-
+        if (!(item instanceof AbstractItemModule)) { return; }
         List<Component> tooltip = event.getToolTip();
-
         if (AbstractModule.isRandom(itemStack)) {
             for (int i = 1; i < 4 && i < tooltip.size(); i++) {
                 tooltip.add(i, Component.translatable("kuvaweapon.item_type_random.tooltip")
@@ -82,10 +73,6 @@ public abstract class AbstractItemModule extends AbstractModule {
         }
     }
 
-    /**
-     * 添加属性提示（业务逻辑100%不变）
-     * Add attribute tooltips (business logic 100% unchanged)
-     */
     private static void addAttributeTooltips(List<Component> tooltip, ItemStack itemStack, Item item) {
         int number = 1;
 
@@ -93,9 +80,21 @@ public abstract class AbstractItemModule extends AbstractModule {
             number = addRivenTooltips(tooltip, itemStack, number);
         }
 
+        // ⭐ 等级系统Tooltip（满级自动跳过）
+        if (ModuleLevelHelper.isLevelSystemEnabled()) {
+            int currentLevel = ModuleLevelHelper.getModuleLevel(itemStack);
+            int maxLevel = ModuleLevelHelper.getMaxLevel();
+            number += ModuleLevelTooltipHelper.appendLevelTooltip(tooltip, number, currentLevel, maxLevel);
+            number += ModuleLevelTooltipHelper.appendUpgradeCostTooltipIfInEvolve(tooltip, number, currentLevel);
+        }
+
+        // ⭐ 属性值根据等级缩放后显示
+        double levelMult = ModuleLevelHelper.getEffectiveMultiplier(itemStack);
+
         for (Map.Entry<String, Double> attributeTag : AbstractModule.getAttributes(itemStack)) {
-            String prefix = attributeTag.getValue() >= 0 ? "+" : "";
-            int percentage = (int) (attributeTag.getValue() * 100);
+            double scaledValue = attributeTag.getValue() * levelMult;
+            String prefix = scaledValue >= 0 ? "+" : "";
+            int percentage = (int) (scaledValue * 100);
             String attributeKey = attributeTag.getKey();
 
             Component attributeName;
@@ -116,10 +115,6 @@ public abstract class AbstractItemModule extends AbstractModule {
                 .withStyle(ChatFormatting.WHITE));
     }
 
-    /**
-     * 获取击杀叠加词条的最大层数（业务逻辑100%不变）
-     * Get max stacks for kill stack attributes (business logic 100% unchanged)
-     */
     private static int getMaxStacksForAttribute(String attributeKey) {
         switch (attributeKey) {
             case "killStackBaseDamage": return ModConfig.KUVA_LICH.maxStacksBaseDamage.get();
@@ -134,43 +129,28 @@ public abstract class AbstractItemModule extends AbstractModule {
         }
     }
 
-    /**
-     * 添加Riven模组提示（业务逻辑100%不变）
-     * Add Riven module tooltips (business logic 100% unchanged)
-     */
     private static int addRivenTooltips(List<Component> tooltip, ItemStack itemStack, int startIndex) {
         int trend = ItemRivenModule.getTrend(itemStack);
-
         StringBuilder trendBar = new StringBuilder(15);
-        for (int i = 0; i < trend; i++) {
-            trendBar.append("●");
-        }
-        for (int i = trend; i < 5; i++) {
-            trendBar.append("○");
-        }
-
+        for (int i = 0; i < trend; i++) { trendBar.append("●"); }
+        for (int i = trend; i < 5; i++) { trendBar.append("○"); }
         tooltip.add(startIndex++,
                 Component.translatable("kuvaweapon.item_type_riven_trend.tooltip")
-                        .append(" ")
-                        .append(Component.literal(trendBar.toString()).withStyle(ChatFormatting.BOLD))
+                        .append(" ").append(Component.literal(trendBar.toString()).withStyle(ChatFormatting.BOLD))
                         .withStyle(ChatFormatting.DARK_PURPLE));
-
         int cycle = ItemRivenModule.getCycle(itemStack);
         if (cycle > 0) {
             tooltip.add(startIndex++,
                     Component.translatable("kuvaweapon.item_type_riven_cycle.tooltip")
-                            .append(" ")
-                            .append(Component.literal(String.valueOf(cycle)).withStyle(ChatFormatting.BOLD))
+                            .append(" ").append(Component.literal(String.valueOf(cycle)).withStyle(ChatFormatting.BOLD))
                             .withStyle(ChatFormatting.DARK_PURPLE));
         }
-
+        // ⭐ 在安魂之融中显示洗卡所需赤毒（倾向+次数双维度）
+        startIndex += ModuleLevelTooltipHelper.appendRivenCycleCostTooltipIfInEvolve(
+                tooltip, startIndex, trend, cycle);
         return startIndex;
     }
 
-    /**
-     * 获取模组颜色（业务逻辑100%不变）
-     * Get module color (business logic 100% unchanged)
-     */
     private static ChatFormatting getModuleColor(Item item) {
         if (item instanceof ItemCommonModule) return ChatFormatting.GOLD;
         if (item instanceof ItemUncommonModule) return ChatFormatting.AQUA;
