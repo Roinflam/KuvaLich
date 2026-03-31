@@ -13,7 +13,8 @@
     "MixinGunReloadSpeed",
     "MixinGunShootInterval",
     "MixinGunShootOnce",
-    "MixinTaczBulletExplosion"
+    "MixinTaczBulletExplosion",
+    "MixinTaczDamageDisplay"
   ],
   "client": [
     "MixinCameraRecoil",

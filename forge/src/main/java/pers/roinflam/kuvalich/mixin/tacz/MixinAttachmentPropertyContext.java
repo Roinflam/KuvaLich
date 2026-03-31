@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.mixin.tacz;
 
+import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;

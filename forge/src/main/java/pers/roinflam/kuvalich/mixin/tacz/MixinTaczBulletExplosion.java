@@ -1,3 +1,4 @@
+// MixinTaczBulletExplosion.java
 package pers.roinflam.kuvalich.mixin.tacz;
 
 import com.tacz.guns.resource.pojo.data.gun.BulletData;
@@ -27,6 +28,9 @@ import pers.roinflam.kuvalich.utils.LogUtil;
  * 功能三：枪械伤害独立乘区
  * damageModifier *= (1 + gun_damage)
  * <p>
+ * 功能四：玄骸强化独立乘区
+ * damageModifier *= gunEnhanceMultiplier
+ * <p>
  * 注意：headshot_damage 和 aim_time、accuracy 一样走 AttachmentPropertyEvent 缓存修改，
  * 不在此处处理。
  */
@@ -43,7 +47,7 @@ public class MixinTaczBulletExplosion {
 
     /**
      * 在 EntityKineticBullet 完整构造器末尾注入。
-     * 处理爆炸半径放大、第一发子弹伤害和枪械伤害。
+     * 处理爆炸半径放大、第一发子弹伤害、枪械伤害和玄骸强化。
      */
     @Inject(
             method = "<init>(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;ZLcom/tacz/guns/resource/pojo/data/gun/GunData;Lcom/tacz/guns/resource/pojo/data/gun/BulletData;)V",
@@ -96,6 +100,19 @@ public class MixinTaczBulletExplosion {
             LogUtil.debug(String.format(
                     "[枪械伤害] gun_damage生效! damageModifier=%.4f → %.4f, 加成=+%.0f%%",
                     currentModifier, newModifier, gunDamageBonus * 100f
+            ));
+        }
+
+        // ========== 功能四：玄骸强化独立乘区 ==========
+        double enhanceMultiplier = WarframeTaczBridge.getGunEnhanceMultiplier();
+        if (enhanceMultiplier != 1.0) {
+            float currentModifier = accessor.getDamageModifier();
+            float newModifier = (float) (currentModifier * enhanceMultiplier);
+            accessor.setDamageModifier(newModifier);
+
+            LogUtil.debug(String.format(
+                    "[玄骸强化] 强化乘数生效! damageModifier=%.4f → %.4f, 乘数=%.2fx",
+                    currentModifier, newModifier, enhanceMultiplier
             ));
         }
     }

@@ -92,29 +92,62 @@ public class WeaponCombatHandler {
      */
     private static final Map<Integer, Deque<DamageDisplayInfo>> pendingDisplays = new ConcurrentHashMap<>();
 
-    // ========== 多槽位属性合并 / Multi-Slot Attribute Merging ==========
+    // ========== 多槽位属性缓存 / Multi-Slot Attribute Cache ==========
 
     /**
-     * 合并额外装备槽位的模组属性到现有属性表
-     * Merge module attributes from additional equipment slots into existing attribute map
+     * 额外槽位属性缓存（已含倍率预计算）
+     * Extra slot attribute cache (multipliers pre-applied)
      * <p>
-     * 主手武器始终提供基础面板（damage、criticalStrikeProbability等），
-     * 其他槽位的模组仅贡献额外属性加成。
-     * 每个槽位的启用/禁用由配置文件独立控制。
-     * 物品必须已开光（hasBase）才会被处理，未开光或空栈静默跳过不报错。
-     * <p>
-     * Main hand always provides base panel. Other slots only contribute bonus attributes.
-     * Each slot is independently configurable. Items must be gilded (hasBase) to contribute.
-     * Empty or non-gilded items are silently skipped.
-     *
-     * @param attacker   攻击者实体 / attacker entity
-     * @param attributes 要合并到的属性表（主手武器的缓存属性副本）/ target attribute map (cached copy from main hand)
+     * key = 实体UUID，value = 所有额外槽位模组属性合并后的结果（倍率已乘入）。
+     * 每 EXTRA_SLOT_CACHE_INTERVAL tick 清空一次，期间同一实体不会重复计算。
+     * 因为玩家很少在战斗中频繁更换模组，2秒刷新一次足够。
      */
-    private static void mergeAdditionalSlotAttributes(LivingEntity attacker, HashMap<String, Double> attributes) {
+    private static final Map<UUID, HashMap<String, Double>> EXTRA_SLOT_CACHE = new ConcurrentHashMap<>();
+
+    /** 上次清空额外槽位缓存的 gameTick / Last tick when extra slot cache was cleared */
+    private static long extraSlotCacheTick = -1;
+
+    /** 额外槽位缓存刷新间隔（tick）：40 tick = 2秒 / Extra slot cache refresh interval */
+    private static final long EXTRA_SLOT_CACHE_INTERVAL = 40L;
+
+    /**
+     * 获取缓存的额外槽位属性（含倍率已预计算）
+     * Get cached extra slot attributes (multipliers pre-applied)
+     * <p>
+     * 同包可见，供 WeaponModuleHandler 的 Tooltip 复用。
+     * Package-private for reuse by WeaponModuleHandler's tooltip.
+     *
+     * @param entity 实体 / entity
+     * @return 额外槽位属性表（只读使用，不要修改）/ extra slot attribute map (read-only, do not modify)
+     */
+    static HashMap<String, Double> getCachedExtraSlotAttributes(LivingEntity entity) {
+        long currentTick = entity.level().getGameTime();
+        // 超过刷新间隔则清空全部缓存，所有实体下次访问时重新计算
+        // Clear all cache entries when interval expires, all entities recompute on next access
+        if (Math.abs(currentTick - extraSlotCacheTick) >= EXTRA_SLOT_CACHE_INTERVAL) {
+            EXTRA_SLOT_CACHE.clear();
+            extraSlotCacheTick = currentTick;
+        }
+        return EXTRA_SLOT_CACHE.computeIfAbsent(entity.getUUID(), uuid -> computeExtraSlotAttributes(entity));
+    }
+
+    /**
+     * 计算实体所有额外槽位的模组属性合并结果（含倍率）
+     * Compute merged module attributes from all extra slots (with multipliers applied)
+     * <p>
+     * 仅在缓存未命中时被调用，每个实体每2秒最多执行一次。
+     * Only called on cache miss, at most once per 2 seconds per entity.
+     *
+     * @param entity 实体 / entity
+     * @return 合并后的额外属性表 / merged extra attribute map
+     */
+    private static HashMap<String, Double> computeExtraSlotAttributes(LivingEntity entity) {
+        HashMap<String, Double> result = new HashMap<>();
+
         // 副手 / Off-hand
         if (ModConfig.KUVA_LICH.enableOffhandModule.get()) {
             double offhandMult = ModConfig.KUVA_LICH.offhandEffectMultiplier.get() / 100.0;
-            mergeSlotAttributes(attacker.getOffhandItem(), attributes, offhandMult);
+            mergeSlotAttributes(entity.getOffhandItem(), result, offhandMult);
         }
 
         // 护甲统一倍率 / Armor unified multiplier
@@ -122,32 +155,51 @@ public class WeaponCombatHandler {
 
         // 头盔 / Helmet
         if (ModConfig.KUVA_LICH.enableHelmetModule.get()) {
-            mergeSlotAttributes(attacker.getItemBySlot(EquipmentSlot.HEAD), attributes, armorMult);
+            mergeSlotAttributes(entity.getItemBySlot(EquipmentSlot.HEAD), result, armorMult);
         }
 
         // 胸甲 / Chestplate
         if (ModConfig.KUVA_LICH.enableChestplateModule.get()) {
-            mergeSlotAttributes(attacker.getItemBySlot(EquipmentSlot.CHEST), attributes, armorMult);
+            mergeSlotAttributes(entity.getItemBySlot(EquipmentSlot.CHEST), result, armorMult);
         }
 
         // 护腿 / Leggings
         if (ModConfig.KUVA_LICH.enableLeggingsModule.get()) {
-            mergeSlotAttributes(attacker.getItemBySlot(EquipmentSlot.LEGS), attributes, armorMult);
+            mergeSlotAttributes(entity.getItemBySlot(EquipmentSlot.LEGS), result, armorMult);
         }
 
         // 靴子 / Boots
         if (ModConfig.KUVA_LICH.enableBootsModule.get()) {
-            mergeSlotAttributes(attacker.getItemBySlot(EquipmentSlot.FEET), attributes, armorMult);
+            mergeSlotAttributes(entity.getItemBySlot(EquipmentSlot.FEET), result, armorMult);
         }
 
         // Curios饰品栏（需要Curios模组） / Curios trinket slots (requires Curios mod)
         if (ModConfig.KUVA_LICH.enableCuriosModule.get()) {
             double curiosMult = ModConfig.KUVA_LICH.curiosEffectMultiplier.get() / 100.0;
             int maxSlots = ModConfig.KUVA_LICH.curiosModuleMaxSlots.get();
-            List<ItemStack> curiosItems = CuriosCompat.getEquippedCurios(attacker, maxSlots);
+            List<ItemStack> curiosItems = CuriosCompat.getEquippedCurios(entity, maxSlots);
             for (ItemStack curio : curiosItems) {
-                mergeSlotAttributes(curio, attributes, curiosMult);
+                mergeSlotAttributes(curio, result, curiosMult);
             }
+        }
+
+        return result;
+    }
+
+    /**
+     * 将缓存的额外槽位属性合并到战斗属性表
+     * Merge cached extra slot attributes into combat attribute map
+     * <p>
+     * 所有事件处理器的调用入口。内部使用2秒缓存，大幅减少NBT读取次数。
+     * Entry point for all event handlers. Uses 2-second cache to drastically reduce NBT reads.
+     *
+     * @param entity     实体 / entity
+     * @param attributes 要合并到的属性表 / target attribute map
+     */
+    private static void mergeAdditionalSlotAttributes(LivingEntity entity, HashMap<String, Double> attributes) {
+        HashMap<String, Double> cached = getCachedExtraSlotAttributes(entity);
+        for (Map.Entry<String, Double> entry : cached.entrySet()) {
+            attributes.merge(entry.getKey(), entry.getValue(), Double::sum);
         }
     }
 
@@ -157,26 +209,28 @@ public class WeaponCombatHandler {
      * <p>
      * 物品必须非空且已开光（hasBase）才会被处理。
      * 未开光、空栈或null均静默跳过，不抛出异常。
-     * 倍率为0时跳过合并，倍率为1时等效于原始值全额叠加。
      *
      * @param itemStack          要合并的物品（可为null或空） / item to merge (may be null or empty)
      * @param attributes         目标属性表 / target attribute map
-     * @param effectMultiplier   生效倍率（0.0~1.0，由配置项 / 100.0 得到）/ effectiveness multiplier
+     * @param effectMultiplier   生效倍率（0.0~1.0） / effectiveness multiplier
      */
     private static void mergeSlotAttributes(ItemStack itemStack, HashMap<String, Double> attributes, double effectMultiplier) {
         if (itemStack == null || itemStack.isEmpty() || !WeaponModuleHandler.hasBase(itemStack)) {
             return;
         }
-        // 倍率为0时直接跳过，避免无意义计算 / Skip when multiplier is 0
         if (effectMultiplier <= 0.0) {
             return;
         }
-        // 使用不带缓存的公共API，因为额外槽位不频繁调用
-        // Use non-cached public API since extra slots are not called frequently
+        // 读取该物品的基础伤害面板作为额外乘数（100%=1.0正常，80%=0.8打折，120%=1.2加成）
+        // Read item's base damage panel as additional multiplier (100%=1.0, 80%=0.8, 120%=1.2)
+        double baseDamage = WeaponModuleHandler.getBaseAttribute(itemStack, "damage");
+        if (baseDamage <= 0.0) {
+            baseDamage = 1.0;
+        }
+        double finalMultiplier = effectMultiplier * baseDamage;
         HashMap<String, Double> slotAttrs = WeaponModuleHandler.getWeaponAttributes(itemStack);
         for (Map.Entry<String, Double> entry : slotAttrs.entrySet()) {
-            // 属性值乘以生效倍率后再叠加 / Multiply attribute value by effectiveness before merging
-            attributes.merge(entry.getKey(), entry.getValue() * effectMultiplier, Double::sum);
+            attributes.merge(entry.getKey(), entry.getValue() * finalMultiplier, Double::sum);
         }
     }
 

@@ -1,3 +1,5 @@
+// TaczCompatEventHandler.java
+// forge/src/main/java/pers/roinflam/kuvalich/compat/tacz/TaczCompatEventHandler.java
 package pers.roinflam.kuvalich.compat.tacz;
 
 import com.tacz.guns.api.GunProperties;
@@ -8,24 +10,32 @@ import com.tacz.guns.api.event.common.GunFireEvent;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.modifier.AttachmentCacheProperty;
 import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
+import com.tacz.guns.resource.modifier.custom.DamageModifier;
 import com.tacz.guns.resource.pojo.data.gun.ExplosionData;
+import com.tacz.guns.resource.pojo.data.gun.ExtraDamage;
 import com.tacz.guns.resource.pojo.data.gun.InaccuracyType;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -41,6 +51,7 @@ import java.util.UUID;
  * 3. AttachmentPropertyEvent → 修改 ADS_TIME、INACCURACY、HEADSHOT_MULTIPLIER 缓存
  * 4. 玩家登录/重生/周期性 → 强制刷新 TACZ 缓存，确保 KuvaLich 属性及时生效
  * 5. 击杀叠层实时追踪 → 射速/多重射击叠层变化时立即刷新 TACZ 缓存
+ * 6. TACZ枪械永久强化 → AttachmentPropertyEvent 独立处理伤害缓存 + Tooltip显示
  */
 public class TaczCompatEventHandler {
 
@@ -181,14 +192,6 @@ public class TaczCompatEventHandler {
 
     /**
      * 玩家登录时延迟刷新 TACZ 缓存。
-     * <p>
-     * 解决问题：玩家登录时枪械已在手中，TACZ 在登录过程中初始化了枪械脚本，
-     * 但此时 KuvaLich 的模组属性尚未被 TACZ 缓存纳入计算。
-     * 延迟 1 秒（20 tick）后触发 postChangeEvent，强制 TACZ 重新计算配件属性缓存，
-     * 使 KuvaLich 的 ADS_TIME、INACCURACY、HEADSHOT_MULTIPLIER 等修改生效。
-     * <p>
-     * 同时也会触发 TACZ 内部重新初始化枪械脚本状态，
-     * 使 getShootInterval 等被 Mixin 拦截的方法有机会读取到最新 KuvaLich 属性。
      *
      * @param event 玩家登录事件
      */
@@ -199,9 +202,6 @@ public class TaczCompatEventHandler {
             return;
         }
 
-        // 延迟 20 tick（1秒）后刷新，确保所有数据已加载完毕
-        // period=1 避免 SynchronizationTask 底层 Timer 因 period=0 抛异常，
-        // run 内第一行 cancel() 保证只执行一次
         new SynchronizationTask(20, 1) {
             @Override
             public void run() {
@@ -219,9 +219,6 @@ public class TaczCompatEventHandler {
 
     /**
      * 玩家重生时刷新 TACZ 缓存。
-     * <p>
-     * 重生后物品栏恢复（keepInventory 或墓碑模组），TACZ 脚本可能使用旧的缓存数据，
-     * 需要刷新以应用 KuvaLich 属性。
      *
      * @param event 玩家重生事件
      */
@@ -232,9 +229,6 @@ public class TaczCompatEventHandler {
             return;
         }
 
-        // 延迟 10 tick（0.5秒）后刷新
-        // period=1 避免 SynchronizationTask 底层 Timer 因 period=0 抛异常，
-        // run 内第一行 cancel() 保证只执行一次
         new SynchronizationTask(10, 1) {
             @Override
             public void run() {
@@ -252,15 +246,6 @@ public class TaczCompatEventHandler {
 
     /**
      * 玩家 Tick 事件处理：包含两层刷新机制
-     * <p>
-     * 第一层（每 tick）：击杀叠层实时追踪
-     *   检测 FIRING_RATE 和 MULTISHOT 的击杀叠层是否发生变化，
-     *   变化时立即触发 TACZ 缓存刷新，使射速/多重射击的 Mixin
-     *   在 TACZ 脚本重新初始化后能读取到最新值。
-     *   开销极低：仅两次 HashMap.get + int 比较。
-     * <p>
-     * 第二层（每 100 tick）：常规周期性刷新
-     *   作为兜底机制，处理模组热更换、配件变化等场景。
      *
      * @param event 玩家 Tick 事件
      */
@@ -278,31 +263,24 @@ public class TaczCompatEventHandler {
         UUID uuid = player.getUUID();
 
         // ═══ 第一层：击杀叠层实时追踪（每 tick 执行，开销极低） ═══
-        // 检查主手是否持有带 KuvaLich 模组的 TACZ 枪械
         ItemStack gunStack = player.getMainHandItem();
         if (!gunStack.isEmpty()) {
             IGun iGun = IGun.getIGunOrNull(gunStack);
             if (iGun != null && WeaponModuleHandler.hasBase(gunStack)) {
-                // 读取当前射速和多重射击的击杀叠层数
                 int currentFiringRateStacks = KillStackManager.getStacks(player, KillStackManager.StackType.FIRING_RATE);
                 int currentMultishotStacks = KillStackManager.getStacks(player, KillStackManager.StackType.MULTISHOT);
 
-                // 与上一次记录的值比较
                 int[] lastValues = lastKillStackValues.get(uuid);
                 boolean stacksChanged;
                 if (lastValues == null) {
-                    // 首次检测：只有当叠层大于0时才记为变化（避免无叠层时无意义刷新）
                     stacksChanged = (currentFiringRateStacks > 0 || currentMultishotStacks > 0);
                 } else {
                     stacksChanged = (lastValues[0] != currentFiringRateStacks || lastValues[1] != currentMultishotStacks);
                 }
 
                 if (stacksChanged) {
-                    // 叠层变化，立即触发 TACZ 缓存刷新
                     triggerTaczCacheRefresh(player);
                     lastKillStackValues.put(uuid, new int[]{currentFiringRateStacks, currentMultishotStacks});
-
-                    // 同时更新常规刷新时间戳，避免重复刷新
                     lastCacheRefreshTick.put(uuid, player.level().getGameTime());
 
                     LogUtil.debug(String.format(
@@ -316,19 +294,16 @@ public class TaczCompatEventHandler {
         // ═══ 第二层：常规周期性刷新（每 100 tick，兜底机制） ═══
         long currentTick = player.level().getGameTime();
 
-        // 使用全局 tick 对齐，减少 HashMap 查询频率（每秒才检查一次）
         if (currentTick % 20 != 0) {
             return;
         }
 
         Long lastRefresh = lastCacheRefreshTick.get(uuid);
 
-        // 未到刷新间隔则跳过
         if (lastRefresh != null && (currentTick - lastRefresh) < CACHE_REFRESH_INTERVAL) {
             return;
         }
 
-        // 检查是否持有带 KuvaLich 模组的 TACZ 枪械
         if (gunStack.isEmpty()) {
             return;
         }
@@ -342,25 +317,12 @@ public class TaczCompatEventHandler {
             return;
         }
 
-        // 触发 TACZ 缓存刷新
         triggerTaczCacheRefresh(player);
         lastCacheRefreshTick.put(uuid, currentTick);
     }
 
     /**
      * 触发 TACZ 配件属性缓存刷新。
-     * <p>
-     * 调用 AttachmentPropertyManager.postChangeEvent 会：
-     * 1. 触发 TACZ 完整的配件属性重新计算流程
-     * 2. 发送 AttachmentPropertyEvent 事件（被本类的 onAttachmentPropertyEvent 捕获）
-     * 3. 我们在事件中叠加 KuvaLich 的 aim_time、accuracy、headshot_damage 修改
-     * <p>
-     * 同时，MixinAttachmentPropertyContext（HEAD注入）会在 postChangeEvent 开头
-     * 保存 shooter 和 gunItem 到 ThreadLocal，确保事件处理器能读取到正确的上下文。
-     * <p>
-     * 此外，postChangeEvent 还会触发 TACZ 内部重新初始化枪械脚本状态，
-     * 使 getShootInterval 等被 Mixin 拦截的方法有机会读取到最新 KuvaLich 属性
-     * （包括击杀叠层加成的射速和多重射击）。
      *
      * @param player 持枪玩家
      */
@@ -394,13 +356,13 @@ public class TaczCompatEventHandler {
         lastKillStackValues.remove(uuid);
     }
 
-    // ========== AttachmentPropertyEvent 处理 / AttachmentPropertyEvent Handling ==========
+    // ========== AttachmentPropertyEvent 处理（KuvaLich模组属性） ==========
 
     /**
      * 监听 AttachmentPropertyEvent，修改 TACZ 缓存中的 ADS_TIME、INACCURACY、HEADSHOT_MULTIPLIER。
      * <p>
-     * 在 TACZ 配件属性计算完毕后触发，此时 cacheProperty 中已有配件修改后的值。
-     * 本方法在此基础上叠加 KuvaLich 模组属性修改。
+     * 仅处理装有KuvaLich模组系统（hasBase）的枪械。
+     * 与枪械永久强化（onGunEnhancePropertyEvent）完全独立。
      *
      * @param event 配件属性事件
      */
@@ -437,9 +399,6 @@ public class TaczCompatEventHandler {
 
     /**
      * 修改缓存中的 ADS_TIME 值。
-     * <p>
-     * aim_time = 0.3 → ADS_TIME / 1.3（瞄准快30%）
-     * aim_time = -0.3 → ADS_TIME / 0.7（瞄准慢）
      *
      * @param cacheProperty TACZ 配件缓存属性
      * @param gunItem       枪械物品栈
@@ -460,7 +419,6 @@ public class TaczCompatEventHandler {
         if (aimTimeMod <= -1.0f) {
             newAdsTime = Float.MAX_VALUE / 2f;
         } else {
-            // newAdsTime = originalAdsTime / (1 + aimTimeMod)
             newAdsTime = originalAdsTime / (1f + aimTimeMod);
         }
 
@@ -475,9 +433,6 @@ public class TaczCompatEventHandler {
 
     /**
      * 修改缓存中的 INACCURACY Map（所有散布类型统一缩放）。
-     * <p>
-     * accuracy = 0.6 → 所有散布 × 0.4（降低60%）
-     * accuracy = -0.3 → 所有散布 × 1.3（增大30%）
      *
      * @param cacheProperty TACZ 配件缓存属性
      * @param gunItem       枪械物品栈
@@ -495,10 +450,8 @@ public class TaczCompatEventHandler {
             return;
         }
 
-        // 缩放因子 = max(0, 1 - accuracy)
         float scaleFactor = Math.max(0f, 1f - accuracyMod);
 
-        // 创建新 Map 避免修改原始引用
         HashMap<InaccuracyType, Float> modifiedInaccuracy = new HashMap<>();
         for (Map.Entry<InaccuracyType, Float> entry : originalInaccuracy.entrySet()) {
             float newValue = entry.getValue() * scaleFactor;
@@ -515,11 +468,6 @@ public class TaczCompatEventHandler {
 
     /**
      * 修改缓存中的 HEADSHOT_MULTIPLIER 值。
-     * <p>
-     * headshot_damage = 0.5 → 爆头倍率 × 1.5（爆头伤害+50%）
-     * headshot_damage = -0.3 → 爆头倍率 × 0.7（爆头伤害-30%）
-     * <p>
-     * 公式：newMultiplier = originalMultiplier * (1 + headshot_damage)
      *
      * @param cacheProperty TACZ 配件缓存属性
      * @param gunItem       枪械物品栈
@@ -536,10 +484,8 @@ public class TaczCompatEventHandler {
             return;
         }
 
-        // newMultiplier = originalMultiplier * (1 + headshotMod)
         float newMultiplier = originalMultiplier * (1f + headshotMod);
 
-        // 爆头倍率不可低于 0
         newMultiplier = Math.max(newMultiplier, 0f);
         cacheProperty.setCache(GunProperties.HEADSHOT_MULTIPLIER, newMultiplier);
 
@@ -547,5 +493,32 @@ public class TaczCompatEventHandler {
                 "[爆头倍率] headshot_damage=%.2f, HEADSHOT_MULTIPLIER=%.4f → %.4f",
                 headshotMod, originalMultiplier, newMultiplier
         ));
+    }
+
+    /**
+     * 为TACZ枪械添加玄骸强化信息Tooltip
+     * <p>显示格式：§4✦ 玄骸之力 §c×3 §4(§c伤害+75%§4)</p>
+     *
+     * @param event 物品Tooltip事件
+     */
+    @SubscribeEvent
+    public void onTaczGunTooltip(ItemTooltipEvent event) {
+        if (!ModConfig.KUVA_LICH.taczGunEnhanceEnable.get()) {
+            return;
+        }
+        ItemStack stack = event.getItemStack();
+        // 仅处理TACZ枪械
+        if (!TaczGunEnhanceUtil.isTaczGun(stack)) {
+            return;
+        }
+        int enhanceCount = TaczGunEnhanceUtil.getEnhanceCount(stack);
+        if (enhanceCount <= 0) {
+            return;
+        }
+        double totalPercent = TaczGunEnhanceUtil.getTotalEnhancePercent(stack);
+        List<Component> tooltip = event.getToolTip();
+        // 单行显示：§4✦ 玄骸之力 §c×3 §4(§c伤害+75%§4)
+        tooltip.add(1, Component.translatable("tooltip.kuvalich.gun_enhance.info",
+                enhanceCount, String.format("+%.0f%%", totalPercent * 100)));
     }
 }

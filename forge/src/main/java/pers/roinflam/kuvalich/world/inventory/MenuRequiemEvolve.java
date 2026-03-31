@@ -1,4 +1,3 @@
-// MenuRequiemEvolve.java
 package pers.roinflam.kuvalich.world.inventory;
 
 import net.minecraft.core.BlockPos;
@@ -13,10 +12,12 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
+import pers.roinflam.kuvalich.compat.tacz.TaczGunEnhanceUtil;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
 import pers.roinflam.kuvalich.item.Forma;
 import pers.roinflam.kuvalich.item.Kuva;
+import pers.roinflam.kuvalich.item.LichReliquary;
 import pers.roinflam.kuvalich.item.RivenSliver;
 import pers.roinflam.kuvalich.item.module.item.ItemRivenModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
@@ -33,13 +34,8 @@ import pers.roinflam.kuvalich.utils.LogUtil;
  * 2. 武器裂罅循环（裂罅模组 + 赤毒 → 新裂罅）
  * 3. 战甲裂罅循环（战甲裂罅模组 + 赤毒 → 新裂罅）
  * 4. 添加基础属性（未开光物品 + 裂罅碎块 → 开光物品）
- * 5. Forma洗面板（已开光非赤毒武器 + 塑形块 → 直接消耗并重新随机面板）
- *
- * ⭐ 已修复：结果槽支持Shift+点击转移到背包
- * ⭐ 已修复：关闭菜单时根据模式正确处理物品归还/丢弃，彻底杜绝物品复制
- * ⭐ 已修复：输入被替换（非清空）时，过期预览结果立即清除，防止无限刷物品
- * ⭐ 已修复：合成消耗（扣赤毒）后快照立即同步，防止下一tick误判为输入变化导致无限循环
- * ⭐ 已修复：武器裂罅循环使用getRivenMode替代已废弃的isMelee，防止通用模式(O)被错误洗成远程(R)
+ * 5. Forma洗面板（已开光非赤毒未锁定武器 + 塑形块 → 直接消耗并重新随机面板）
+ * 6. TACZ枪械强化（TACZ枪械 + 玄骸之遗 → 永久增强基础伤害）
  */
 public class MenuRequiemEvolve extends AbstractContainerMenu {
 
@@ -57,38 +53,16 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
     /** 结果槽位处理器（右侧，1个槽位）/ Result handler (right, 1 slot) */
     private final ItemStackHandler resultHandler;
 
-    /**
-     * 融合模式标记：两把赤毒武器融合
-     * Evolve mode flag: two Kuva weapons fused
-     *
-     * 结果是系统生成的预览品，取走时消耗两把武器，
-     * 关闭菜单时若未取走则丢弃结果（原始武器已在槽内可返还）
-     */
+    /** 融合模式标记 */
     private boolean evolveMode = false;
-
-    /**
-     * 循环模式标记：裂罅模组循环
-     * Cycle mode flag: Riven module re-roll
-     *
-     * 赤毒在处理时已扣除，结果是系统生成的新裂罅预览，
-     * 取走时消耗旧裂罅，关闭菜单时若未取走则丢弃结果
-     */
+    /** 循环模式标记 */
     private boolean cycleMode = false;
-
-    /**
-     * 基础属性刚处理完毕标记
-     * Base attribute just processed flag
-     *
-     * 适用于"开光"和"Forma洗面板"两种场景：
-     * - 武器槽已在处理时被清空
-     * - 材料已在处理时被消耗
-     * - 结果槽中的物品是唯一副本，关闭时必须返还
-     */
+    /** 基础属性刚处理完毕标记（含开光、Forma、枪械强化） */
     private boolean baseAttributeJustProcessed = false;
 
-    /** 上一tick的武器快照（用于检测输入变化）/ Last tick weapon snapshot */
+    /** 上一tick的武器快照 */
     private ItemStack lastWeapon = ItemStack.EMPTY;
-    /** 上一tick的材料快照（用于检测输入变化）/ Last tick material snapshot */
+    /** 上一tick的材料快照 */
     private ItemStack lastMaterial = ItemStack.EMPTY;
 
     /**
@@ -117,11 +91,11 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         // 槽位2：结果（右侧）/ Slot 2: Result (right)
         this.addSlot(new ResultSlot(this, this.resultHandler, 0, 131, 32));
 
-        // 槽位3-11：玩家快捷栏 / Slots 3-11: Player hotbar
+        // 槽位3-11：玩家快捷栏
         for (int i = 0; i < 9; i++) {
             this.addSlot(new Slot(playerInventory, i, 8 + 18 * i, 171 - 10));
         }
-        // 槽位12-38：玩家主背包 / Slots 12-38: Player main inventory
+        // 槽位12-38：玩家主背包
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 113 - 10 + row * 18));
@@ -133,17 +107,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     /**
      * Shift+点击快速转移物品
-     *
-     * 槽位布局：
-     *   0 = 武器槽（左）  1 = 材料槽（中）  2 = 结果槽（右）
-     *   3~11 = 快捷栏  12~38 = 主背包
-     *
-     * ⭐ 结果槽（index=2）支持Shift+点击：
-     *    moveItemStackTo完成后，框架自动调用 slot.onTake → onResultTaken()
-     *
-     * @param player 操作的玩家
-     * @param index  被点击的槽位索引
-     * @return 转移前的物品副本（用于判断转移是否成功），失败返回EMPTY
      */
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
@@ -157,32 +120,22 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         ItemStack slotStack = slot.getItem();
         itemstack = slotStack.copy();
 
-        // ====== 从容器槽位（0/1/2）转移到背包（3~38）======
         if (index < 3) {
             if (!this.moveItemStackTo(slotStack, 3, 39, true)) {
                 return ItemStack.EMPTY;
             }
-            // 框架会在下面调用 slot.onTake，ResultSlot.onTake → onResultTaken()
-        }
-        // ====== 从背包（3~38）转移到容器槽位（0/1）======
-        else {
+        } else {
             boolean transferred = false;
-
-            // 优先尝试放入武器槽 / Try weapon slot first
             if (this.moveItemStackTo(slotStack, 0, 1, false)) {
                 transferred = true;
-            }
-            // 再尝试放入材料槽 / Then try material slot
-            else if (this.moveItemStackTo(slotStack, 1, 2, false)) {
+            } else if (this.moveItemStackTo(slotStack, 1, 2, false)) {
                 transferred = true;
             }
-
             if (!transferred) {
                 return ItemStack.EMPTY;
             }
         }
 
-        // 标准后处理 / Standard post-processing
         if (slotStack.isEmpty()) {
             slot.set(ItemStack.EMPTY);
         } else {
@@ -193,15 +146,10 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             return ItemStack.EMPTY;
         }
 
-        // 对于ResultSlot，此处调用onTake → onResultTaken()
         slot.onTake(player, slotStack);
         return itemstack;
     }
 
-    /**
-     * 每次同步时检测并处理合成
-     * 在服务端每tick被调用，负责检测输入变化并触发对应逻辑
-     */
     @Override
     public void broadcastChanges() {
         super.broadcastChanges();
@@ -213,20 +161,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     /**
      * 检测输入变化并触发合成逻辑
-     *
-     * 核心逻辑：
-     * 1. 输入变化且处于预览模式 → 立即清除过期预览结果（防止无限刷物品）
-     * 2. 输入为空 → 清空结果和模式标记（baseAttribute模式除外，因为武器槽已清空）
-     * 3. 输入变化且结果为空 → 尝试合成
-     * 4. 输入未变 → 不处理（避免重复触发）
-     *
-     * ⭐ 修复要点1（防无限刷）：
-     * 输入被替换（非清空）时，若处于预览模式，立即清除过期结果。
-     *
-     * ⭐ 修复要点2（防无限循环消耗）：
-     * 所有更新快照的地方都从handler重新读取最新值，而非使用方法开头获取的旧引用。
-     * 因为processCrafting会修改handler内容（如扣除赤毒），如果快照用旧值，
-     * 下一tick会误判为inputChanged，导致清除结果→重新合成→再扣赤毒的死循环。
      */
     private void checkAndProcessCrafting() {
         ItemStack currentWeapon = weaponHandler.getStackInSlot(0);
@@ -236,11 +170,7 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         boolean inputChanged = !ItemStack.matches(currentWeapon, lastWeapon) ||
                 !ItemStack.matches(currentMaterial, lastMaterial);
 
-        // ⭐ 修复1：输入变化时，清除预览模式的过期结果（防止无限刷物品）
-        // ⭐ Fix 1: Clear stale preview result when inputs change (prevent item duplication)
-        //
-        // 触发场景：玩家在evolve/cycle预览状态下替换了武器槽或材料槽的物品
-        // 旧结果是基于旧输入生成的预览，必须立即作废，否则可以白拿导致无限刷
+        // 输入变化时，清除预览模式的过期结果（防止无限刷物品）
         if (inputChanged && !currentResult.isEmpty() && (evolveMode || cycleMode)) {
             resultHandler.setStackInSlot(0, ItemStack.EMPTY);
             currentResult = ItemStack.EMPTY;
@@ -249,8 +179,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             LogUtil.debugEvent("安魂之融", "输入变化，清除过期预览结果", "防止物品复制");
         }
 
-        // 输入不完整时清理结果（baseAttribute模式除外）
-        // Clear result when input is incomplete (except baseAttribute mode)
         if (currentWeapon.isEmpty() || currentMaterial.isEmpty()) {
             if (!currentResult.isEmpty()) {
                 if (!baseAttributeJustProcessed) {
@@ -260,21 +188,15 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                 }
             }
 
-            // baseAttribute处理完后，结果已放好，下一tick重置标记
-            // After baseAttribute processing, result is placed, reset flag next tick
             if (currentResult.isEmpty() && baseAttributeJustProcessed) {
                 baseAttributeJustProcessed = false;
             }
 
-            // ⭐ 修复2：从handler重新读取最新值更新快照
-            // ⭐ Fix 2: Re-read current values from handler for snapshot
             lastWeapon = weaponHandler.getStackInSlot(0).copy();
             lastMaterial = materialHandler.getStackInSlot(0).copy();
             return;
         }
 
-        // 输入变化且结果为空时，尝试合成
-        // Try crafting when input changed and result is empty
         if (inputChanged && currentResult.isEmpty()) {
             if (baseAttributeJustProcessed) {
                 baseAttributeJustProcessed = false;
@@ -282,13 +204,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
             processCrafting(currentWeapon, currentMaterial);
 
-            // ⭐ 修复2：从handler重新读取最新值更新快照
-            // ⭐ Fix 2: Re-read current values from handler for snapshot
-            //
-            // processCrafting可能修改了handler内容（如扣除赤毒、清空武器槽），
-            // 必须用处理后的实际值作为快照，否则下一tick会因为
-            // "快照（扣除前）≠ handler（扣除后）"而误判为inputChanged，
-            // 导致清除结果 → 重新合成 → 再扣赤毒的无限循环
             lastWeapon = weaponHandler.getStackInSlot(0).copy();
             lastMaterial = materialHandler.getStackInSlot(0).copy();
         }
@@ -301,33 +216,33 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      * 1. 赤毒武器 + 赤毒武器 → 武器融合
      * 2. 武器裂罅 + 赤毒 → 武器裂罅循环
      * 3. 战甲裂罅 + 赤毒 → 战甲裂罅循环
-     * 4. 已开光非赤毒未锁定武器 + 塑形块 → Forma洗面板（直接消耗）
+     * 4. 已开光非赤毒未锁定武器 + 塑形块 → Forma洗面板
      * 5. 未开光物品 + 裂罅碎块 → 添加基础属性（开光）
+     * 6. TACZ枪械 + 玄骸之遗 → 枪械永久强化
      *
      * @param weaponStack   武器槽中的物品
      * @param materialStack 材料槽中的物品
      */
     private void processCrafting(ItemStack weaponStack, ItemStack materialStack) {
-        // 情况1：赤毒武器融合 / Case 1: Kuva weapon evolve
+        // 情况1：赤毒武器融合
         if (KuvaWeaponUtil.hasType(weaponStack) && KuvaWeaponUtil.hasType(materialStack)) {
             processWeaponEvolve(weaponStack, materialStack);
             return;
         }
 
-        // 情况2：武器裂罅循环 / Case 2: Item Riven cycle
+        // 情况2：武器裂罅循环
         if (weaponStack.getItem() instanceof ItemRivenModule && materialStack.getItem() instanceof Kuva) {
             processItemRivenCycle(weaponStack, materialStack);
             return;
         }
 
-        // 情况3：战甲裂罅循环 / Case 3: Warframe Riven cycle
+        // 情况3：战甲裂罅循环
         if (weaponStack.getItem() instanceof WarframeRivenModule && materialStack.getItem() instanceof Kuva) {
             processWarframeRivenCycle(weaponStack, materialStack);
             return;
         }
 
-        // 情况4：Forma洗面板（已开光 + 非赤毒 + 未锁定 + 塑形块 → 直接消耗）
-        // Case 4: Forma re-roll (opened + non-Kuva + not locked + Forma → instant consume)
+        // 情况4：Forma洗面板
         if (materialStack.getItem() instanceof Forma
                 && WeaponModuleHandler.hasBase(weaponStack)
                 && !KuvaWeaponUtil.hasType(weaponStack)
@@ -337,21 +252,25 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             return;
         }
 
-        // 情况5：添加基础属性（未开光 + 裂罅碎块 → 开光）
-        // Case 5: Add base attribute (unopened + Riven Sliver → open)
+        // 情况5：添加基础属性（开光）
         if (!weaponStack.isEmpty() && materialStack.getItem() instanceof RivenSliver) {
             processAddBaseAttribute(weaponStack, materialStack);
             return;
         }
+
+        // 情况6：TACZ枪械 + 玄骸之遗 → 枪械永久强化
+        if (TaczGunEnhanceUtil.isLichReliquary(materialStack)
+                && TaczGunEnhanceUtil.isEnhanceableTaczGun(weaponStack)
+                && weaponStack.getCount() == 1) {
+            processGunEnhance(weaponStack, materialStack);
+            return;
+        }
     }
+
+    // ==================== 合成处理方法 ====================
 
     /**
      * 处理赤毒武器融合
-     * 两把赤毒武器合并，取较高等级并应用升级倍率
-     * 结果是预览品，取走时消耗两把武器
-     *
-     * @param weaponStack   左侧赤毒武器
-     * @param materialStack 中间赤毒武器（作为材料）
      */
     private void processWeaponEvolve(ItemStack weaponStack, ItemStack materialStack) {
         try {
@@ -376,14 +295,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     /**
      * 处理武器裂罅循环
-     * 消耗赤毒重新随机裂罅模组属性，消耗量随循环次数和倾向性递增
-     * 赤毒在此方法中立即扣除，结果是新裂罅预览，取走时消耗旧裂罅
-     *
-     * ⭐ 已修复：使用getRivenMode()替代已废弃的isMelee()，
-     *    确保通用模式(MODE_UNIVERSAL=2)不会被错误降级为远程模式(MODE_REMOTE=1)
-     *
-     * @param weaponStack   武器裂罅模组
-     * @param materialStack 赤毒（消耗品）
      */
     private void processItemRivenCycle(ItemStack weaponStack, ItemStack materialStack) {
         if (ItemRivenModule.isRandom(weaponStack)) {
@@ -397,21 +308,15 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             kuvaSpend += Math.pow(trend, 2) - Math.pow(trend - 1, 2);
 
             if (materialStack.getCount() >= kuvaSpend) {
-                // 扣除赤毒 / Deduct Kuva
                 ItemStack newMaterial = materialStack.copy();
                 newMaterial.setCount(materialStack.getCount() - kuvaSpend);
                 materialHandler.setStackInSlot(0, newMaterial);
 
-                // ⭐ 修复：使用getRivenMode()正确读取裂罅模式（近战/远程/通用）
-                // ⭐ Fix: Use getRivenMode() to correctly read riven mode (melee/remote/universal)
-                // 旧代码使用已废弃的isMelee()，通用模式(2)会被错误判为false→MODE_REMOTE(1)
                 int rivenMode = ItemRivenModule.getRivenMode(weaponStack);
 
-                // 生成新的裂罅模组 / Generate new Riven module
                 ItemStack newRiven = ItemRivenModule.cycleModule(trend, cycleCount, rivenMode);
                 resultHandler.setStackInSlot(0, newRiven);
 
-                // 更新循环计数 / Update cycle count
                 ItemRivenModule.setCycle(weaponStack, cycleCount + 1);
                 cycleMode = true;
 
@@ -424,11 +329,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     /**
      * 处理战甲裂罅循环
-     * 消耗赤毒重新随机战甲裂罅模组属性
-     * 赤毒在此方法中立即扣除，结果是新裂罅预览，取走时消耗旧裂罅
-     *
-     * @param weaponStack   战甲裂罅模组
-     * @param materialStack 赤毒（消耗品）
      */
     private void processWarframeRivenCycle(ItemStack weaponStack, ItemStack materialStack) {
         if (WarframeRivenModule.isRandom(weaponStack)) {
@@ -442,16 +342,13 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             kuvaSpend += Math.pow(trend, 2);
 
             if (materialStack.getCount() >= kuvaSpend) {
-                // 扣除赤毒 / Deduct Kuva
                 ItemStack newMaterial = materialStack.copy();
                 newMaterial.setCount(materialStack.getCount() - kuvaSpend);
                 materialHandler.setStackInSlot(0, newMaterial);
 
-                // 生成新的裂罅模组 / Generate new Riven module
                 ItemStack newRiven = WarframeRivenModule.cycleModule(trend, cycleCount);
                 resultHandler.setStackInSlot(0, newRiven);
 
-                // 更新循环计数 / Update cycle count
                 WarframeRivenModule.setCycle(weaponStack, cycleCount + 1);
                 cycleMode = true;
 
@@ -463,45 +360,21 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
     }
 
     /**
-     * 处理Forma洗面板（直接消耗，立即生效）
-     *
-     * 行为：
-     * 1. 复制武器并清除旧面板 → 重新随机
-     * 2. 若配置启用Forma锁定且概率命中，给武器打上永久锁定标记
-     * 3. 消耗1个塑形块
-     * 4. 武器槽清空，结果放到结果槽（唯一副本）
-     * 5. 设置baseAttributeJustProcessed标记，确保关闭时正确返还
-     *
-     * 前提条件（在processCrafting中已验证）：
-     * - 武器已开光（hasBase == true）
-     * - 武器不是赤毒武器（!KuvaWeaponUtil.hasType）
-     * - 武器未被锁定（!isFormaLocked）
-     * - 武器数量为1
-     * - 材料是塑形块（Forma）
-     *
-     * @param weaponStack   已开光的非赤毒武器（已确认未锁定）
-     * @param materialStack 塑形块
+     * 处理Forma洗面板
      */
     private void processFormaReroll(ItemStack weaponStack, ItemStack materialStack) {
         try {
-            // 复制武器，在副本上操作 / Copy weapon, operate on the copy
             ItemStack newWeapon = weaponStack.copy();
 
-            // 清除旧面板 → 重新随机 / Clear old panel → re-randomize
             if (!WeaponModuleHandler.clearBaseAttribute(newWeapon)) {
-                // 理论上不会走到这里（processCrafting已检查锁定），安全兜底
-                // Should not reach here (processCrafting already checked lock), safety fallback
                 LogUtil.warn("Forma洗面板失败：物品已锁定");
                 return;
             }
             WeaponModuleHandler.setBaseAttribute(newWeapon);
 
-            // ⭐ 检查是否触发Forma锁定 / Check if Forma lock triggers
             if (ModConfig.KUVA_LICH.formaLockEnabled.get()) {
                 double lockChance = ModConfig.KUVA_LICH.formaLockChance.get();
                 if (lockChance > 0) {
-                    // 使用世界随机数生成器，范围0~100，与lockChance比较
-                    // Use world random generator, range 0~100, compare with lockChance
                     double roll = level.random.nextDouble() * 100.0;
                     if (roll < lockChance) {
                         WeaponModuleHandler.setFormaLocked(newWeapon);
@@ -512,18 +385,13 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                 }
             }
 
-            // 消耗1个塑形块 / Consume 1 Forma
             ItemStack newMaterial = materialStack.copy();
             newMaterial.shrink(1);
             materialHandler.setStackInSlot(0, newMaterial);
 
-            // 武器移到结果槽，清空武器槽（和开光逻辑完全一致）
-            // Move weapon to result slot, clear weapon slot (identical to opening logic)
             resultHandler.setStackInSlot(0, newWeapon);
             weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
 
-            // 复用开光的保护标记（关闭时结果是唯一副本，必须返还）
-            // Reuse opening's protection flag (result is the only copy on close, must return)
             baseAttributeJustProcessed = true;
 
             LogUtil.debugEvent("Forma洗面板", weaponStack.getHoverName().getString(),
@@ -535,12 +403,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     /**
      * 处理添加基础属性（开光）
-     * 未开光的单个物品 + 裂罅碎块 → 带有基础面板属性的物品
-     *
-     * 处理完成后武器槽立即清空，结果是唯一副本
-     *
-     * @param weaponStack   未开光的物品
-     * @param materialStack 裂罅碎块
      */
     private void processAddBaseAttribute(ItemStack weaponStack, ItemStack materialStack) {
         if (!WeaponModuleHandler.hasBase(weaponStack) && weaponStack.getCount() == 1) {
@@ -548,13 +410,11 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                 ItemStack newWeapon = weaponStack.copy();
                 WeaponModuleHandler.setBaseAttribute(newWeapon);
 
-                // 消耗1个裂罅碎块 / Consume 1 Riven Sliver
                 ItemStack newMaterial = materialStack.copy();
                 newMaterial.setCount(materialStack.getCount() - 1);
 
                 baseAttributeJustProcessed = true;
 
-                // 立即设置结果并清空输入 / Set result and clear input immediately
                 resultHandler.setStackInSlot(0, newWeapon);
                 materialHandler.setStackInSlot(0, newMaterial);
                 weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
@@ -568,16 +428,59 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
     }
 
     /**
-     * 结果物品被玩家取走时的回调
-     * 根据当前模式清理对应的输入槽位
+     * 处理TACZ枪械永久强化（玄骸之遗 + 枪械 → 永久增强基础伤害）
      *
-     * 各模式行为：
-     * - evolveMode：清空武器槽和材料槽（两把武器都被消耗）
-     * - cycleMode：清空武器槽（旧裂罅被消耗，赤毒已在处理时扣除）
-     * - baseAttributeJustProcessed（开光/Forma）：无需额外处理（武器槽已在处理时清空，材料已消耗）
+     * <p>行为：
+     * <br>1. 复制枪械
+     * <br>2. 强化次数+1（NBT存储在枪械上）
+     * <br>3. 消耗1个玄骸之遗
+     * <br>4. 枪械移到结果槽，清空武器槽（唯一副本）
+     * <br>5. 设置baseAttributeJustProcessed标记，确保关闭时正确返还</p>
+     *
+     * <p>前提条件（在processCrafting中已验证）：
+     * <br>- 武器是可强化的TACZ枪械（配置启用、未达上限）
+     * <br>- 材料是玄骸之遗
+     * <br>- 武器数量为1</p>
+     *
+     * @param weaponStack   TACZ枪械
+     * @param materialStack 玄骸之遗
+     */
+    private void processGunEnhance(ItemStack weaponStack, ItemStack materialStack) {
+        try {
+            // 复制枪械，在副本上操作
+            ItemStack newGun = weaponStack.copy();
+
+            // 强化次数+1
+            int oldCount = TaczGunEnhanceUtil.getEnhanceCount(newGun);
+            TaczGunEnhanceUtil.setEnhanceCount(newGun, oldCount + 1);
+
+            // 消耗1个玄骸之遗
+            ItemStack newMaterial = materialStack.copy();
+            newMaterial.shrink(1);
+            materialHandler.setStackInSlot(0, newMaterial);
+
+            // 枪械移到结果槽，清空武器槽（和开光/Forma逻辑一致）
+            resultHandler.setStackInSlot(0, newGun);
+            weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
+
+            // 复用开光的保护标记（关闭时结果是唯一副本，必须返还）
+            baseAttributeJustProcessed = true;
+
+            double totalPercent = TaczGunEnhanceUtil.getTotalEnhancePercent(newGun);
+            LogUtil.debugEvent("TACZ枪械强化", weaponStack.getHoverName().getString(),
+                    "强化次数: " + (oldCount + 1) + ", 总增幅: " + String.format("+%.0f%%", totalPercent * 100));
+        } catch (Exception e) {
+            LogUtil.error("TACZ枪械强化失败", e);
+            baseAttributeJustProcessed = false;
+        }
+    }
+
+    // ==================== 结果取走回调 ====================
+
+    /**
+     * 结果物品被玩家取走时的回调
      */
     public void onResultTaken() {
-        // 武器融合：消耗两把武器 / Weapon evolve: consume both weapons
         if (evolveMode) {
             weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
             materialHandler.setStackInSlot(0, ItemStack.EMPTY);
@@ -585,61 +488,41 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             LogUtil.debugEvent("安魂之融", "融合结果被取走", "已清空武器和材料槽");
         }
 
-        // 裂罅循环：消耗旧裂罅 / Riven cycle: consume old riven
         if (cycleMode) {
             weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
             cycleMode = false;
             LogUtil.debugEvent("安魂之融", "裂罅循环结果被取走", "已清空武器槽");
         }
 
-        // 开光/Forma：武器槽和材料已在处理时完成消耗，仅重置标记
-        // Opening/Forma: weapon slot and material already consumed during processing, just reset flag
         if (baseAttributeJustProcessed) {
             baseAttributeJustProcessed = false;
         }
     }
 
+    // ==================== 菜单关闭 ====================
+
     /**
      * 菜单关闭时返还物品
-     *
-     * ⭐ 关键安全逻辑：
-     * - 武器槽：总是返还（若还有物品则返还原始物品）
-     * - 材料槽：总是返还（若还有剩余材料则返还）
-     * - 结果槽：
-     *   · evolve/cycle模式 → 结果是预览品，丢弃不返还（防止物品复制）
-     *   · baseAttribute模式（含开光和Forma）→ 武器槽已清空，结果是唯一副本，必须返还
-     *   · 其他情况 → 正常返还
-     *
-     * @param player 操作的玩家
      */
     @Override
     public void removed(@NotNull Player player) {
         super.removed(player);
 
         if (!level.isClientSide) {
-            // 武器槽：总是返还 / Weapon slot: always return
             returnSlotToPlayer(weaponHandler, 0, player);
-
-            // 材料槽：总是返还 / Material slot: always return
             returnSlotToPlayer(materialHandler, 0, player);
 
-            // 结果槽：根据模式决定是否返还 / Result slot: based on mode
             ItemStack resultStack = resultHandler.getStackInSlot(0);
             if (!resultStack.isEmpty()) {
                 if (evolveMode || cycleMode) {
-                    // ⭐ 预览模式：结果是系统生成的预览品，关闭时丢弃
-                    // ⭐ Preview mode: result is a generated preview, discard on close
                     resultHandler.setStackInSlot(0, ItemStack.EMPTY);
                     LogUtil.debugEvent("安魂之融菜单关闭", "丢弃未取走的预览结果",
                             resultStack.getHoverName().getString());
                 } else {
-                    // 开光/Forma模式或其他：结果是唯一副本，必须返还
-                    // Opening/Forma mode or other: result is the only copy, must return
                     returnSlotToPlayer(resultHandler, 0, player);
                 }
             }
 
-            // 重置所有状态标记 / Reset all state flags
             evolveMode = false;
             cycleMode = false;
             baseAttributeJustProcessed = false;
@@ -648,40 +531,25 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     /**
      * 将指定槽位的物品返还给玩家
-     * 优先放入背包，背包满时掉落到方块位置
-     *
-     * @param handler 物品处理器
-     * @param slot    槽位索引
-     * @param player  目标玩家
      */
     private void returnSlotToPlayer(ItemStackHandler handler, int slot, Player player) {
         ItemStack stack = handler.getStackInSlot(slot);
         if (!stack.isEmpty()) {
-            // 尝试放入玩家背包 / Try to place in player inventory
             if (!this.moveItemStackTo(stack, 3, 39, true)) {
-                // 背包满，掉落到世界 / Inventory full, drop to world
                 level.addFreshEntity(new ItemEntity(level,
                         pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack.copy()));
             }
-            // 清空槽位 / Clear slot
             handler.setStackInSlot(slot, ItemStack.EMPTY);
         }
     }
 
-    /**
-     * 检查玩家是否仍可与菜单交互
-     * 距离限制为8格（64 = 8²）
-     *
-     * @param player 玩家
-     * @return 是否可交互
-     */
     @Override
     public boolean stillValid(@NotNull Player player) {
         return player.level().equals(this.level) &&
                 player.blockPosition().distSqr(this.pos) <= 64;
     }
 
-    // ============================== 内部槽位类 / Inner Slot Classes ==============================
+    // ============================== 内部槽位类 ==============================
 
     /**
      * 武器槽位（左侧）
@@ -690,44 +558,40 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      * - 赤毒武器（用于融合）
      * - 武器裂罅模组 / 战甲裂罅模组（用于循环）
      * - 未开光的单个物品（用于开光）
-     * - 已开光的单个非赤毒武器（用于Forma洗面板，含已锁定的——放入后不会触发Forma，只是不拒绝放入）
+     * - 已开光的单个非赤毒武器（用于Forma洗面板）
+     * - TACZ枪械（用于玄骸强化）
      */
     public static class WeaponSlot extends SlotItemHandler {
 
-        /**
-         * @param itemHandler 武器物品处理器
-         * @param index       槽位索引
-         * @param xPosition   GUI X坐标
-         * @param yPosition   GUI Y坐标
-         */
         public WeaponSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
-        /**
-         * 检查物品是否可以放入武器槽
-         *
-         * @param stack 要放入的物品
-         * @return 是否允许放入
-         */
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            // 赤毒武器（融合用）/ Kuva weapon (for evolve)
+            // 赤毒武器（融合用）
             if (KuvaWeaponUtil.hasType(stack)) {
                 return super.mayPlace(stack);
             }
-            // 裂罅模组（循环用）/ Riven module (for cycle)
+            // 裂罅模组（循环用）
             if (stack.getItem() instanceof ItemRivenModule || stack.getItem() instanceof WarframeRivenModule) {
                 return super.mayPlace(stack);
             }
-            // 未开光物品（开光用）/ Unopened item (for base attribute)
+            // 未开光物品（开光用）
             if (!WeaponModuleHandler.hasBase(stack) && stack.getCount() == 1) {
                 return super.mayPlace(stack);
             }
-            // 已开光的非赤毒武器（Forma洗面板用，允许已锁定物品放入，锁定检查在processCrafting中做）
-            // Opened non-Kuva weapon (for Forma re-roll, locked items allowed in slot, lock check in processCrafting)
+            // 已开光的非赤毒武器（Forma洗面板用）
             if (WeaponModuleHandler.hasBase(stack) && stack.getCount() == 1) {
                 return super.mayPlace(stack);
+            }
+            // TACZ枪械（玄骸强化用） — 安全调用，无TACZ时返回false
+            try {
+                if (TaczGunEnhanceUtil.isTaczGun(stack) && stack.getCount() == 1) {
+                    return super.mayPlace(stack);
+                }
+            } catch (NoClassDefFoundError ignored) {
+                // TACZ未安装时忽略
             }
             return false;
         }
@@ -741,41 +605,34 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      * - 赤毒（裂罅循环的消耗品）
      * - 裂罅碎块（开光的消耗品）
      * - 塑形块（Forma洗面板的消耗品）
+     * - 玄骸之遗（TACZ枪械强化的消耗品）
      */
     public static class MaterialSlot extends SlotItemHandler {
 
-        /**
-         * @param itemHandler 材料物品处理器
-         * @param index       槽位索引
-         * @param xPosition   GUI X坐标
-         * @param yPosition   GUI Y坐标
-         */
         public MaterialSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
-        /**
-         * 检查物品是否可以放入材料槽
-         *
-         * @param stack 要放入的物品
-         * @return 是否允许放入
-         */
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            // 赤毒武器（融合材料）/ Kuva weapon (evolve material)
+            // 赤毒武器（融合材料）
             if (KuvaWeaponUtil.hasType(stack)) {
                 return super.mayPlace(stack);
             }
-            // 赤毒（裂罅循环消耗品）/ Kuva (Riven cycle consumable)
+            // 赤毒（裂罅循环消耗品）
             if (stack.getItem() instanceof Kuva) {
                 return super.mayPlace(stack);
             }
-            // 裂罅碎块（开光消耗品）/ Riven Sliver (base attribute consumable)
+            // 裂罅碎块（开光消耗品）
             if (stack.getItem() instanceof RivenSliver) {
                 return super.mayPlace(stack);
             }
-            // 塑形块（Forma洗面板消耗品）/ Forma (re-roll consumable)
+            // 塑形块（Forma洗面板消耗品）
             if (stack.getItem() instanceof Forma) {
+                return super.mayPlace(stack);
+            }
+            // 玄骸之遗（TACZ枪械强化消耗品）
+            if (stack.getItem() instanceof LichReliquary) {
                 return super.mayPlace(stack);
             }
             return false;
@@ -784,47 +641,20 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     /**
      * 结果槽位（右侧，只读）
-     *
-     * 不允许手动放入物品，取走时触发onResultTaken清理逻辑
-     *
-     * 支持普通点击和Shift+点击两种取出方式：
-     * - 普通点击：Minecraft框架调用 onTake → onResultTaken
-     * - Shift+点击：quickMoveStack完成转移后，框架调用 onTake → onResultTaken
      */
     public static class ResultSlot extends SlotItemHandler {
-        /** 所属菜单引用 / Reference to parent menu */
         private final MenuRequiemEvolve menu;
 
-        /**
-         * @param menu        所属的安魂之融菜单
-         * @param itemHandler 结果物品处理器
-         * @param index       槽位索引
-         * @param xPosition   GUI X坐标
-         * @param yPosition   GUI Y坐标
-         */
         public ResultSlot(MenuRequiemEvolve menu, IItemHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
             this.menu = menu;
         }
 
-        /**
-         * 结果槽不允许手动放入物品
-         *
-         * @param stack 要放入的物品
-         * @return 始终返回false
-         */
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
             return false;
         }
 
-        /**
-         * 物品被取走时的回调
-         * 触发菜单的清理逻辑（清空输入槽、重置模式标记）
-         *
-         * @param player 取走物品的玩家
-         * @param stack  被取走的物品
-         */
         @Override
         public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
             menu.onResultTaken();

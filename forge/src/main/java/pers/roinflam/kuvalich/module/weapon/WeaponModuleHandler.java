@@ -273,6 +273,9 @@ public class WeaponModuleHandler {
 
     /**
      * 物品提示事件 - 显示武器最终面板属性
+     * <p>
+     * ⭐ 面板数字仅在查看主手武器时包含额外槽位合并值
+     * ⭐ 额外装备加成明细显示在"已装备以下模组"上方
      *
      * 注意：Tooltip 使用原始属性值（不走 clamp 缓存），与运行时计算逻辑不同
      */
@@ -298,6 +301,10 @@ public class WeaponModuleHandler {
                         attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + entry.getValue());
                     }
                 }
+
+                // ⭐ 合并额外槽位属性到面板（仅主手武器，副手/护甲/饰品不合并）
+                // ⭐ Merge extra slot attributes (main hand only, others unaffected)
+                ExtraSlotTooltipHelper.mergeExtraSlotIntoAttributes(evt.getEntity(), itemStack, attributes);
 
                 tooltip.add(index++, Component.literal(I18n.get("item.module")).withStyle(net.minecraft.ChatFormatting.WHITE, net.minecraft.ChatFormatting.BOLD));
                 tooltip.add(index++, Component.literal(I18n.get("item.module.damage") + " ").append(Component.literal((int) (getBaseAttribute(itemStack, "damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
@@ -468,6 +475,10 @@ public class WeaponModuleHandler {
                     }
                     tooltip.add(index++, triggerElements);
                 }
+
+                // ⭐ 额外装备槽位加成（在"已装备以下模组"上方，仅主手武器显示）
+                // ⭐ Extra slot bonuses (above "Equipped modules", main hand only)
+                index += ExtraSlotTooltipHelper.appendExtraSlotTooltip(tooltip, evt.getEntity(), itemStack, index);
 
                 tooltip.add(index++, Component.translatable("kuvaweapon.item_module_info").withStyle(net.minecraft.ChatFormatting.GOLD, net.minecraft.ChatFormatting.BOLD));
                 List<ItemStack> itemStacks = getModules(itemStack);

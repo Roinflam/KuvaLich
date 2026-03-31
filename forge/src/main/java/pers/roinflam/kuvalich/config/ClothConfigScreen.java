@@ -1,3 +1,5 @@
+// ClothConfigScreen.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/config/ClothConfigScreen.java
 package pers.roinflam.kuvalich.config;
 
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
@@ -219,7 +221,7 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_LICH.increaseDamage::set)
                 .build());
 
-        // ===== 元素伤害倍率 =====
+        // ===== 元素伤害倍率 / Element Damage Multipliers =====
 
         damageCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.elementFireDamageMultiplier"), ModConfig.KUVA_LICH.elementFireDamageMultiplier.get()).setDefaultValue(1.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.elementFireDamageMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.elementFireDamageMultiplier::set).build());
         damageCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.elementPoisonDamageMultiplier"), ModConfig.KUVA_LICH.elementPoisonDamageMultiplier.get()).setDefaultValue(1.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.elementPoisonDamageMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.elementPoisonDamageMultiplier::set).build());
@@ -448,6 +450,47 @@ public class ClothConfigScreen {
                     ModuleConfig.rebuildCache();
                 })
                 .build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // 多槽位装备模组系统（新增）
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory multiSlotCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.multiSlot"));
+
+        multiSlotCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableOffhandModule"), ModConfig.KUVA_LICH.enableOffhandModule.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableOffhandModule.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableOffhandModule::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableHelmetModule"), ModConfig.KUVA_LICH.enableHelmetModule.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enableHelmetModule.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableHelmetModule::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableChestplateModule"), ModConfig.KUVA_LICH.enableChestplateModule.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enableChestplateModule.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableChestplateModule::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableLeggingsModule"), ModConfig.KUVA_LICH.enableLeggingsModule.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enableLeggingsModule.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableLeggingsModule::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableBootsModule"), ModConfig.KUVA_LICH.enableBootsModule.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enableBootsModule.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableBootsModule::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableCuriosModule"), ModConfig.KUVA_LICH.enableCuriosModule.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enableCuriosModule.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableCuriosModule::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.curiosModuleMaxSlots"), ModConfig.KUVA_LICH.curiosModuleMaxSlots.get()).setDefaultValue(999).setMin(1).setMax(999).setTooltip(Component.translatable("config.kuvalich.curiosModuleMaxSlots.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.curiosModuleMaxSlots::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.offhandEffectMultiplier"), ModConfig.KUVA_LICH.offhandEffectMultiplier.get()).setDefaultValue(50.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.offhandEffectMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.offhandEffectMultiplier::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.armorEffectMultiplier"), ModConfig.KUVA_LICH.armorEffectMultiplier.get()).setDefaultValue(25.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.armorEffectMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.armorEffectMultiplier::set).build());
+        multiSlotCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.curiosEffectMultiplier"), ModConfig.KUVA_LICH.curiosEffectMultiplier.get()).setDefaultValue(25.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.curiosEffectMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.curiosEffectMultiplier::set).build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // 三合一合成系统（新增）
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory recastCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.recast"));
+
+        recastCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enablePrimeModuleRecast"), ModConfig.KUVA_LICH.enablePrimeModuleRecast.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enablePrimeModuleRecast.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enablePrimeModuleRecast::set).build());
+        recastCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableRivenModuleRecast"), ModConfig.KUVA_LICH.enableRivenModuleRecast.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enableRivenModuleRecast.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableRivenModuleRecast::set).build());
+        recastCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableCrossTierRecast"), ModConfig.KUVA_LICH.enableCrossTierRecast.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableCrossTierRecast.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableCrossTierRecast::set).build());
+        recastCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableWarframeModuleRecast"), ModConfig.KUVA_LICH.enableWarframeModuleRecast.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableWarframeModuleRecast.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableWarframeModuleRecast::set).build());
+        recastCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableWarframePrimeModuleRecast"), ModConfig.KUVA_LICH.enableWarframePrimeModuleRecast.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enableWarframePrimeModuleRecast.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableWarframePrimeModuleRecast::set).build());
+        recastCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableWarframeRivenModuleRecast"), ModConfig.KUVA_LICH.enableWarframeRivenModuleRecast.get()).setDefaultValue(false).setTooltip(Component.translatable("config.kuvalich.enableWarframeRivenModuleRecast.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableWarframeRivenModuleRecast::set).build());
+        recastCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableWarframeCrossTierRecast"), ModConfig.KUVA_LICH.enableWarframeCrossTierRecast.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableWarframeCrossTierRecast.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableWarframeCrossTierRecast::set).build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // TACZ枪械永久强化（新增）
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory taczEnhanceCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.taczEnhance"));
+
+        taczEnhanceCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.taczGunEnhanceEnable"), ModConfig.KUVA_LICH.taczGunEnhanceEnable.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.taczGunEnhanceEnable.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.taczGunEnhanceEnable::set).build());
+        taczEnhanceCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.taczGunEnhancePercent"), ModConfig.KUVA_LICH.taczGunEnhancePercent.get()).setDefaultValue(0.1).setMin(0.01).setMax(10000.0).setTooltip(Component.translatable("config.kuvalich.taczGunEnhancePercent.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.taczGunEnhancePercent::set).build());
+        taczEnhanceCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.taczGunEnhanceMaxCount"), ModConfig.KUVA_LICH.taczGunEnhanceMaxCount.get()).setDefaultValue(-1).setMin(-1).setMax(10000).setTooltip(Component.translatable("config.kuvalich.taczGunEnhanceMaxCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.taczGunEnhanceMaxCount::set).build());
 
         // ═══════════════════════════════════════════════════════════════
         // 教程书

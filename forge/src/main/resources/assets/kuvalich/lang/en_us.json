@@ -1243,5 +1243,17 @@
   "config.kuvalich.enableWarframeRivenModuleRecast": "Warframe Riven 3-to-1",
   "config.kuvalich.enableWarframeRivenModuleRecast.tooltip": "Allow warframe Riven modules in 3-to-1 crafting\nOutput: unveiled random warframe Riven\n§7false§r = Disabled (default)",
   "config.kuvalich.enableWarframeCrossTierRecast": "Warframe Cross-Tier 3-to-1",
-  "config.kuvalich.enableWarframeCrossTierRecast.tooltip": "Allow mixing different tiers in warframe module 3-to-1\nSame rules as weapon cross-tier\n§7false§r = Disabled (default)"
+  "config.kuvalich.enableWarframeCrossTierRecast.tooltip": "Allow mixing different tiers in warframe module 3-to-1\nSame rules as weapon cross-tier\n§7false§r = Disabled (default)",
+  "item.module.extra_slot_header": "Extra Slot Bonuses",
+  "item.module.extra_slot_per_stack": "stack",
+  "tooltip.kuvalich.gun_enhance.count": "§6Lich Enhancement: %sx",
+  "tooltip.kuvalich.gun_enhance.percent": "§6Damage Boost: %s",
+  "tooltip.kuvalich.gun_enhance.info": "§4Lich Enhancement §c× %1$s §4(§cDamage %2$s§4)",
+  "config.kuvalich.category.taczEnhance": "TACZ Gun Enhancement",
+  "config.kuvalich.taczGunEnhanceEnable": "Enable Gun Enhancement",
+  "config.kuvalich.taczGunEnhanceEnable.tooltip": "Enable TACZ gun permanent enhancement (Lich Reliquary + Gun)\n§7true§r = Enabled (default)\nUse Lich Reliquary + TACZ Gun at Requiem Forge to permanently boost gun damage",
+  "config.kuvalich.taczGunEnhancePercent": "Enhancement Damage Increase (%)",
+  "config.kuvalich.taczGunEnhancePercent.tooltip": "Damage increase percentage per enhancement (linear, not compound)\n§70.1§r = +10%% of original damage per enhancement (default)\nExample: 0.25 = +25%% of original damage per enhancement",
+  "config.kuvalich.taczGunEnhanceMaxCount": "Maximum Enhancement Count",
+  "config.kuvalich.taczGunEnhanceMaxCount.tooltip": "Maximum number of enhancements allowed\n§7-1§r = Unlimited (default)\nSet to a positive number to cap enhancements"
 }

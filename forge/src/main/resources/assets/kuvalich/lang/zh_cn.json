@@ -1243,5 +1243,15 @@
   "config.kuvalich.enableWarframeRivenModuleRecast": "战甲裂罅三合一",
   "config.kuvalich.enableWarframeRivenModuleRecast.tooltip": "允许战甲裂罅模组参与三合一合成\n产出：未揭示的随机战甲裂罅模组\n§7false§r = 关闭(默认)",
   "config.kuvalich.enableWarframeCrossTierRecast": "战甲跨品质三合一",
-  "config.kuvalich.enableWarframeCrossTierRecast.tooltip": "允许不同品质的战甲模组混合三合一\n规则同武器跨品质: 仅青铜/白银/黄金, 按比例随机\n§7false§r = 关闭(默认)"
+  "config.kuvalich.enableWarframeCrossTierRecast.tooltip": "允许不同品质的战甲模组混合三合一\n规则同武器跨品质: 仅青铜/白银/黄金, 按比例随机\n§7false§r = 关闭(默认)",
+  "item.module.extra_slot_header": "额外装备加成",
+  "item.module.extra_slot_per_stack": "层",
+  "tooltip.kuvalich.gun_enhance.info": "§4女皇之力 §c× %1$s §4(§c伤害%2$s§4)",
+  "config.kuvalich.category.taczEnhance": "TACZ枪械永久强化",
+  "config.kuvalich.taczGunEnhanceEnable": "启用枪械永久强化",
+  "config.kuvalich.taczGunEnhanceEnable.tooltip": "启用TACZ枪械永久强化功能（玄骸之遗 + 枪械）\n§7true§r = 启用(默认)\n在安魂之融中使用玄骸之遗 + TACZ枪械，永久提升枪械基础伤害",
+  "config.kuvalich.taczGunEnhancePercent": "每次强化伤害增加(%)",
+  "config.kuvalich.taczGunEnhancePercent.tooltip": "每次强化增加的伤害百分比（线性叠加，非复利）\n§70.1§r = 每次+10%%原始伤害(默认)\n示例: 0.25 = 每次强化+25%%原始伤害",
+  "config.kuvalich.taczGunEnhanceMaxCount": "最大强化次数",
+  "config.kuvalich.taczGunEnhanceMaxCount.tooltip": "允许的最大强化次数\n§7-1§r = 无限制(默认)\n设为正数可限制强化上限"
 }

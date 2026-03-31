@@ -1,3 +1,4 @@
+// WarframeTaczBridge.java
 package pers.roinflam.kuvalich.compat.tacz;
 
 import net.minecraft.world.entity.LivingEntity;
@@ -30,6 +31,18 @@ public class WarframeTaczBridge {
 
     /** 枪械伤害加成倍率（独立乘区） */
     private static final ThreadLocal<Float> gunDamageBonus = ThreadLocal.withInitial(() -> 0f);
+
+    /**
+     * 玄骸强化伤害乘数（独立乘区）。
+     * <p>
+     * 语义：最终伤害直接乘以此值。1.0 = 无强化，1.75 = 伤害×1.75。
+     * 不依赖开光（hasBase），仅检查 NBT 中的 kuvalich_gun_enhance_count 标记。
+     * <p>
+     * 由 MixinFirstBulletDetect（HEAD）写入，
+     * 由 MixinBulletDamageSpread / MixinTaczBulletExplosion 读取，
+     * 由 MixinFirstBulletDetect（RETURN）清除。
+     */
+    private static final ThreadLocal<Double> gunEnhanceMultiplier = ThreadLocal.withInitial(() -> 1.0);
 
     // ========== 缓存刷新期间 ThreadLocal / Cache Refresh ThreadLocal ==========
 
@@ -100,6 +113,33 @@ public class WarframeTaczBridge {
 
     public static void clearGunDamageBonus() {
         gunDamageBonus.set(0f);
+    }
+
+    // ========== 玄骸强化乘数 API ==========
+
+    /**
+     * 获取当前射击的玄骸强化伤害乘数。
+     *
+     * @return 伤害乘数，1.0 表示无强化
+     */
+    public static double getGunEnhanceMultiplier() {
+        return gunEnhanceMultiplier.get();
+    }
+
+    /**
+     * 设置玄骸强化伤害乘数。
+     *
+     * @param multiplier 伤害乘数（如 1.75 = 伤害×1.75）
+     */
+    public static void setGunEnhanceMultiplier(double multiplier) {
+        gunEnhanceMultiplier.set(multiplier);
+    }
+
+    /**
+     * 清除玄骸强化伤害乘数（重置为 1.0）。
+     */
+    public static void clearGunEnhanceMultiplier() {
+        gunEnhanceMultiplier.set(1.0);
     }
 
     // ========== 缓存上下文 API ==========

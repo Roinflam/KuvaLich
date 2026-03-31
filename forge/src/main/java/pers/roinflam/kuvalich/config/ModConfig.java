@@ -192,6 +192,15 @@ public final class ModConfig {
         public final ForgeConfigSpec.BooleanValue enableWarframeRivenModuleRecast;
         public final ForgeConfigSpec.BooleanValue enableWarframeCrossTierRecast;
 
+        // ===== TACZ枪械永久强化 / TACZ Gun Permanent Enhancement =====
+
+        /** 是否启用TACZ枪械永久强化功能 */
+        public final ForgeConfigSpec.BooleanValue taczGunEnhanceEnable;
+        /** 每次强化增加的伤害百分比（基于初始值，线性叠加） */
+        public final ForgeConfigSpec.DoubleValue taczGunEnhancePercent;
+        /** 最大强化次数（-1 = 无限制） */
+        public final ForgeConfigSpec.IntValue taczGunEnhanceMaxCount;
+
         /**
          * 构造赤毒玄骸系统配置
          *
@@ -235,7 +244,7 @@ public final class ModConfig {
                     .comment("每个解密周期中赤毒玄骸最多没收的物品数量")
                     .comment("0 = disable confiscation regardless of chance")
                     .comment("0 = 无论概率如何都禁用没收")
-                    .defineInRange("maxConfiscatedItems", 64, 0, 1024);
+                    .defineInRange("maxConfiscatedItems", 128, 0, 1024);
 
             requiemUltimatumDropChance = builder
                     .comment("Requiem Ultimatum drop chance after successful decryption (%)")
@@ -253,7 +262,7 @@ public final class ModConfig {
             maxDecryptionProgress = builder
                     .comment("Maximum decryption progress per kill")
                     .comment("每次击杀获得的最大解密进度")
-                    .defineInRange("maxDecryptionProgress", 5, 0, Integer.MAX_VALUE);
+                    .defineInRange("maxDecryptionProgress", 10, 0, Integer.MAX_VALUE);
 
             firstStage = builder
                     .comment("First stage decryption requirement")
@@ -364,7 +373,7 @@ public final class ModConfig {
             baseMinimumLevel = builder
                     .comment("Base minimum weapon level")
                     .comment("基础最低武器等级")
-                    .defineInRange("baseMinimumLevel", 5, 0, Integer.MAX_VALUE);
+                    .defineInRange("baseMinimumLevel", 10, 0, Integer.MAX_VALUE);
 
             baseMaximumLevel = builder
                     .comment("Base maximum weapon level")
@@ -374,12 +383,12 @@ public final class ModConfig {
             minimumLevelCapIncrease = builder
                     .comment("Minimum level cap increase per upgrade")
                     .comment("每次升级的最小等级下限提升")
-                    .defineInRange("minimumLevelCapIncrease", 3, 0, Integer.MAX_VALUE);
+                    .defineInRange("minimumLevelCapIncrease", 6, 0, Integer.MAX_VALUE);
 
             maximumLevelCapIncrease = builder
                     .comment("Maximum level cap increase per upgrade")
                     .comment("每次升级的最大等级上限提升")
-                    .defineInRange("maximumLevelCapIncrease", 6, 0, Integer.MAX_VALUE);
+                    .defineInRange("maximumLevelCapIncrease", 12, 0, Integer.MAX_VALUE);
 
             minimumLevel = builder
                     .comment("Absolute minimum weapon level")
@@ -399,7 +408,7 @@ public final class ModConfig {
             upgradeLimit = builder
                     .comment("Weapon upgrade limit")
                     .comment("武器升级次数上限")
-                    .defineInRange("upgradeLimit", 999, 0, Integer.MAX_VALUE);
+                    .defineInRange("upgradeLimit", 9999, 0, Integer.MAX_VALUE);
 
             builder.comment("")
                     .comment("═══ Module Attribute Multiplier / 模组属性倍率 ═══")
@@ -555,7 +564,7 @@ public final class ModConfig {
             kuvaLichSpawnWeight = builder
                     .comment("Kuva Lich spawn weight (set to 0 to disable)")
                     .comment("赤毒玄骸生成权重(设为0可禁用生成)")
-                    .defineInRange("kuvaLichSpawnWeight", 10, 0, Integer.MAX_VALUE);
+                    .defineInRange("kuvaLichSpawnWeight", 15, 0, Integer.MAX_VALUE);
 
             kuvaLichMinSpawnCount = builder
                     .comment("Kuva Lich minimum spawn count")
@@ -570,7 +579,7 @@ public final class ModConfig {
             kuvaSlaveSpawnWeight = builder
                     .comment("Kuva Slave spawn weight (set to 0 to disable)")
                     .comment("赤毒奴仆生成权重(设为0可禁用生成)")
-                    .defineInRange("kuvaSlaveSpawnWeight", 25, 0, Integer.MAX_VALUE);
+                    .defineInRange("kuvaSlaveSpawnWeight", 35, 0, Integer.MAX_VALUE);
 
             kuvaSlaveMinSpawnCount = builder
                     .comment("Kuva Slave minimum spawn count")
@@ -580,7 +589,7 @@ public final class ModConfig {
             kuvaSlaveMaxSpawnCount = builder
                     .comment("Kuva Slave maximum spawn count")
                     .comment("赤毒奴仆最大生成数量")
-                    .defineInRange("kuvaSlaveMaxSpawnCount", 2, 1, Integer.MAX_VALUE);
+                    .defineInRange("kuvaSlaveMaxSpawnCount", 1, 1, Integer.MAX_VALUE);
 
             builder.comment("")
                     .comment("═══ Requiem Destroyed Enchantment Drop Chances / 灭骸附魔掉落概率 ═══")
@@ -625,7 +634,7 @@ public final class ModConfig {
             expMultiplier = builder
                     .comment("Experience multiplier when mining Requiem Ore with Requiem Destroyed enchantment")
                     .comment("持有灭骸附魔挖掘安魂矿石时的经验倍数")
-                    .defineInRange("expMultiplier", 2, 1, 100);
+                    .defineInRange("expMultiplier", 5, 1, 100);
 
             builder.comment("")
                     .comment("═══ Kuva Slave Drop Loot / 赤毒奴仆掉落战利品 ═══");
@@ -633,27 +642,27 @@ public final class ModConfig {
             slaveKuvaDropChance = builder
                     .comment("Chance (%) to drop Kuva when killed by player")
                     .comment("被玩家击杀时掉落赤毒的概率(%)")
-                    .defineInRange("slaveKuvaDropChance", 10, 0, 100);
+                    .defineInRange("slaveKuvaDropChance", 15, 0, 100);
 
             slaveKuvaMinAmount = builder
                     .comment("Minimum number of Kuva dropped")
                     .comment("掉落赤毒的最小数量")
-                    .defineInRange("slaveKuvaMinAmount", 2, 1, 64);
+                    .defineInRange("slaveKuvaMinAmount", 1, 1, 64);
 
             slaveKuvaMaxAmount = builder
                     .comment("Maximum number of Kuva dropped")
                     .comment("掉落赤毒的最大数量")
-                    .defineInRange("slaveKuvaMaxAmount", 8, 1, 64);
+                    .defineInRange("slaveKuvaMaxAmount", 4, 1, 64);
 
             slaveRivenSliverDropChance = builder
                     .comment("Chance (%) to drop Riven Sliver when killed by player")
                     .comment("被玩家击杀时掉落裂罅碎块的概率(%)")
-                    .defineInRange("slaveRivenSliverDropChance", 10, 0, 100);
+                    .defineInRange("slaveRivenSliverDropChance", 5, 0, 100);
 
             slaveRequiemGemBaseChance = builder
                     .comment("Base chance (%) to drop Requiem Gem when killed by player")
                     .comment("被玩家击杀时掉落安魂宝石的基础概率(%)")
-                    .defineInRange("slaveRequiemGemBaseChance", 25, 0, 100);
+                    .defineInRange("slaveRequiemGemBaseChance", 33, 0, 100);
 
             slaveRequiemGemLootingBonus = builder
                     .comment("Requiem Gem chance bonus per looting enchantment level (%)")
@@ -666,7 +675,7 @@ public final class ModConfig {
             masterKuvaMinAmount = builder
                     .comment("Minimum number of Kuva dropped on death")
                     .comment("死亡时掉落赤毒的最小数量")
-                    .defineInRange("masterKuvaMinAmount", 32, 1, 256);
+                    .defineInRange("masterKuvaMinAmount", 16, 1, 256);
 
             masterKuvaMaxAmount = builder
                     .comment("Maximum number of Kuva dropped on death")
@@ -676,12 +685,12 @@ public final class ModConfig {
             masterRivenSliverMinAmount = builder
                     .comment("Minimum number of Riven Sliver dropped on death")
                     .comment("死亡时掉落裂罅碎块的最小数量")
-                    .defineInRange("masterRivenSliverMinAmount", 4, 1, 64);
+                    .defineInRange("masterRivenSliverMinAmount", 1, 1, 64);
 
             masterRivenSliverMaxAmount = builder
                     .comment("Maximum number of Riven Sliver dropped on death")
                     .comment("死亡时掉落裂罅碎块的最大数量")
-                    .defineInRange("masterRivenSliverMaxAmount", 8, 1, 64);
+                    .defineInRange("masterRivenSliverMaxAmount", 3, 1, 64);
 
             masterPrimeModuleChance = builder
                     .comment("Chance (%) to drop a Prime module instead of Riven module on death")
@@ -818,7 +827,7 @@ public final class ModConfig {
                     .comment("仅适用于青铜/白银/黄金品质；产出品质按放入比例随机")
                     .comment("Example: 2 Gold + 1 Bronze → ~67% chance Gold, ~33% chance Bronze")
                     .comment("示例: 2金+1铜 → 约67%概率出金, 约33%概率出铜")
-                    .define("enableCrossTierRecast", false);
+                    .define("enableCrossTierRecast", true);
 
             enableWarframeModuleRecast = builder
                     .comment("Enable warframe module 3-to-1 crafting at the Requiem Recast")
@@ -840,7 +849,36 @@ public final class ModConfig {
                     .comment("允许不同品质的战甲模组混合三合一")
                     .comment("Same rules as weapon cross-tier: only Common/Uncommon/Rare, output based on ratio")
                     .comment("规则同武器跨品质: 仅青铜/白银/黄金, 产出按比例随机")
-                    .define("enableWarframeCrossTierRecast", false);
+                    .define("enableWarframeCrossTierRecast", true);
+
+            // ═══════════════════════════════════════════════════════════════
+            // 新增：TACZ枪械永久强化系统
+            // NEW: TACZ Gun Permanent Enhancement System
+            // ═══════════════════════════════════════════════════════════════
+
+            builder.comment("")
+                    .comment("═══ TACZ Gun Permanent Enhancement / TACZ枪械永久强化 ═══")
+                    .comment("Use Lich Reliquary + TACZ Gun at Requiem Evolve to permanently boost gun damage.")
+                    .comment("在安魂之融中使用玄骸之遗 + TACZ枪械，永久提升枪械基础伤害。")
+                    .comment("Each enhancement adds a fixed % of the gun's ORIGINAL damage (linear, not compound).")
+                    .comment("每次强化增加枪械原始伤害的固定百分比（线性叠加，非复利）。");
+
+            taczGunEnhanceEnable = builder
+                    .comment("Enable TACZ gun permanent enhancement (Lich Reliquary + Gun)")
+                    .comment("是否启用TACZ枪械永久强化（玄骸之遗 + 枪械）")
+                    .define("taczGunEnhanceEnable", true);
+
+            taczGunEnhancePercent = builder
+                    .comment("Damage increase percentage per enhancement (linear, not compound)")
+                    .comment("每次强化增加的伤害百分比（线性叠加，非复利）")
+                    .comment("Example: 0.25 = +25% of original damage per enhancement")
+                    .comment("示例：0.25 = 每次强化+25%原始伤害")
+                    .defineInRange("taczGunEnhancePercent", 0.1, 0.01, 10000.0);
+
+            taczGunEnhanceMaxCount = builder
+                    .comment("Maximum enhancement count, -1 for unlimited")
+                    .comment("最大强化次数，-1为无限制")
+                    .defineInRange("taczGunEnhanceMaxCount", -1, -1, 10000);
 
             builder.pop();
         }

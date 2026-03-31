@@ -634,7 +634,11 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
                 if (stack.getItem() instanceof ItemRivenModule) {
                     return ModConfig.KUVA_LICH.enableRivenModuleRecast.get() && super.mayPlace(stack);
                 }
-                // 其他武器模组（含Prime）：始终接受 / Other weapon modules (incl. Prime): always
+                // 武器Prime：需要配置启用 / Weapon Prime: config required
+                if (stack.getItem() instanceof ItemPrimeModule) {
+                    return ModConfig.KUVA_LICH.enablePrimeModuleRecast.get() && super.mayPlace(stack);
+                }
+                // 其他武器模组（青铜/白银/黄金）：始终接受 / Other weapon modules (Common/Uncommon/Rare): always
                 return super.mayPlace(stack);
             }
 
@@ -648,7 +652,11 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
                 if (stack.getItem() instanceof WarframeRivenModule) {
                     return ModConfig.KUVA_LICH.enableWarframeRivenModuleRecast.get() && super.mayPlace(stack);
                 }
-                // 其他战甲模组（含Prime）：三合一启用时接受 / Other warframe modules: accept when recast enabled
+                // 战甲Prime：需要配置启用 / Warframe Prime: config required
+                if (stack.getItem() instanceof WarframePrimeModule) {
+                    return ModConfig.KUVA_LICH.enableWarframePrimeModuleRecast.get() && super.mayPlace(stack);
+                }
+                // 其他战甲模组（青铜/白银/黄金）：三合一启用时接受 / Other warframe modules: accept when recast enabled
                 return super.mayPlace(stack);
             }
 
