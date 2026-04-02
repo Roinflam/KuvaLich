@@ -913,7 +913,7 @@ public final class ModConfig {
             endoDropChance = builder
                     .comment("Chance (%) to drop 1 Endo when killing a Monster with a gilded weapon")
                     .comment("使用开光武器击杀Monster时掉落1个内融核心的概率(%)")
-                    .defineInRange("endoDropChance", 1.0, 0.0, 100.0);
+                    .defineInRange("endoDropChance", 10.0, 0.0, 100.0);
 
             endoLastLevelCost = builder
                     .comment("Endo cost for the LAST level upgrade (not total)")
@@ -932,7 +932,7 @@ public final class ModConfig {
             endoDropMaxAmount = builder
                     .comment("Maximum number of Endo dropped per drop event")
                     .comment("每次掉落内融核心的最大数量")
-                    .defineInRange("endoDropMaxAmount", 1, 1, 64);
+                    .defineInRange("endoDropMaxAmount", 5, 1, 64);
             enableMasteryOnReveal = builder
                     .comment("Apply mastery level when revealing modules (false = always level 1)")
                     .comment("揭示模组时是否赋予精通等级（false = 每次都是1级）")

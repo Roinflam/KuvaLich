@@ -1255,5 +1255,17 @@
   "config.kuvalich.taczGunEnhancePercent": "Enhancement Damage Increase (%)",
   "config.kuvalich.taczGunEnhancePercent.tooltip": "Damage increase percentage per enhancement (linear, not compound)\n§70.1§r = +10%% of original damage per enhancement (default)\nExample: 0.25 = +25%% of original damage per enhancement",
   "config.kuvalich.taczGunEnhanceMaxCount": "Maximum Enhancement Count",
-  "config.kuvalich.taczGunEnhanceMaxCount.tooltip": "Maximum number of enhancements allowed\n§7-1§r = Unlimited (default)\nSet to a positive number to cap enhancements"
+  "config.kuvalich.taczGunEnhanceMaxCount.tooltip": "Maximum number of enhancements allowed\n§7-1§r = Unlimited (default)\nSet to a positive number to cap enhancements",
+  "_comment_endo_system": "========== Module Level System ==========",
+  "config.kuvalich.endoDropMinAmount": "Endo Min Drop Amount",
+  "config.kuvalich.endoDropMinAmount.tooltip": "Minimum number of Endo dropped per drop event\n§71§r = 1 (default)",
+  "config.kuvalich.endoDropMaxAmount": "Endo Max Drop Amount",
+  "config.kuvalich.endoDropMaxAmount.tooltip": "Maximum number of Endo dropped per drop event\n§71§r = 1 (default)\nWhen min equals max, drops exactly that amount",
+  "config.kuvalich.enableMasteryOnReveal": "Apply Mastery on Reveal",
+  "config.kuvalich.enableMasteryOnReveal.tooltip": "Apply mastery level when revealing modules\n§7true§r = Apply mastery (default)\n§7false§r = Always level 1 on reveal",
+  "item.kuvalich.endo": "Endo",
+  "item.kuvalich.endo.tooltip": "A crystallization of ancient power, used to upgrade modules",
+  "item.module.level.max": "MAX",
+  "item.module.level.upgrade_cost": "Upgrade cost: %d Endo",
+  "item.module.riven.cycle_cost": "Cycle cost: %d Kuva"
 }
