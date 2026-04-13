@@ -1,6 +1,8 @@
 package pers.roinflam.kuvalich.world.inventory;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -41,6 +43,7 @@ import pers.roinflam.kuvalich.utils.LogUtil;
  * 5. Forma洗面板（已开光非赤毒未锁定武器 + 塑形块 → 直接消耗并重新随机面板）
  * 6. TACZ枪械强化（TACZ枪械 + 玄骸之遗 → 永久增强基础伤害）
  * 7. ⭐ 模组升级（模组 + 内融核心 → 预览升级结果，取出时消耗材料）
+ *    ⭐ 升级费用根据品质缩放：铜25% / 银50% / 金75% / Prime&裂罅100%
  */
 public class MenuRequiemEvolve extends AbstractContainerMenu {
 
@@ -83,6 +86,13 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         }
     }
 
+    // ==================== Shift+点击 ====================
+
+    /**
+     * 快速转移物品（Shift+点击）
+     * <p>
+     * ⭐ 修复：材料类物品直接路由到材料槽，跳过武器槽判断。
+     */
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
@@ -90,34 +100,111 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         if (slot == null || !slot.hasItem()) { return itemstack; }
         ItemStack slotStack = slot.getItem();
         itemstack = slotStack.copy();
+
+        // 从容器转移到玩家背包
         if (index < 3) {
             if (!this.moveItemStackTo(slotStack, 3, 39, true)) { return ItemStack.EMPTY; }
-        } else {
+        }
+        // 从玩家背包转移到容器
+        else {
             boolean transferred = false;
-            if (this.moveItemStackTo(slotStack, 0, 1, false)) { transferred = true; }
-            else if (this.moveItemStackTo(slotStack, 1, 2, false)) { transferred = true; }
+
+            if (isMaterialOnly(slotStack)) {
+                // ⭐ 材料类物品直接进材料槽，跳过武器槽
+                transferred = this.moveItemStackTo(slotStack, 1, 2, false);
+            } else {
+                // 其他物品：先尝试武器槽，再尝试材料槽
+                if (this.moveItemStackTo(slotStack, 0, 1, false)) { transferred = true; }
+                else if (this.moveItemStackTo(slotStack, 1, 2, false)) { transferred = true; }
+            }
+
             if (!transferred) { return ItemStack.EMPTY; }
         }
+
         if (slotStack.isEmpty()) { slot.set(ItemStack.EMPTY); } else { slot.setChanged(); }
         if (slotStack.getCount() == itemstack.getCount()) { return ItemStack.EMPTY; }
         slot.onTake(player, slotStack);
         return itemstack;
     }
 
+    /**
+     * 判断物品是否为纯材料类（只应放入材料槽，不应放入武器槽）
+     * <p>
+     * 赤毒武器不在此列：武器融合时它既可作为融合输入（武器槽）
+     * 也可作为融合材料（材料槽），需保留先武器后材料的路由顺序。
+     *
+     * @param stack 待判断的物品
+     * @return 是否为纯材料类
+     */
+    private static boolean isMaterialOnly(ItemStack stack) {
+        return stack.getItem() instanceof Kuva
+                || stack.getItem() instanceof Endo
+                || stack.getItem() instanceof RivenSliver
+                || stack.getItem() instanceof Forma
+                || stack.getItem() instanceof LichReliquary;
+    }
+
+    // ==================== 同步（三重保险）====================
+
+    /**
+     * 增量同步（每tick由服务端调用）
+     * <p>
+     * ⭐ 先处理合成逻辑再执行父类增量同步，确保本帧的所有槽位变化
+     * 都能被 super.broadcastChanges() 检测到并发送给客户端。
+     */
     @Override
     public void broadcastChanges() {
-        super.broadcastChanges();
         if (!level.isClientSide) { checkAndProcessCrafting(); }
+        super.broadcastChanges();
     }
 
     /**
+     * 全量同步（点击事件stateId不匹配时由服务端调用）
+     * <p>
+     * ⭐ Mohist 混合服下点击容器时经常走这条路径而非 broadcastChanges，
+     * 必须在全量同步前也执行处理逻辑，否则客户端收到的全量状态不含处理结果。
+     */
+    @Override
+    public void broadcastFullState() {
+        if (!level.isClientSide) { checkAndProcessCrafting(); }
+        super.broadcastFullState();
+    }
+
+    /**
+     * 直接发送3个容器槽位数据包给客户端
+     * <p>
+     * 绕过 broadcastChanges 的 remoteSlots 增量比较机制，
+     * 不依赖父类同步时序，直接通过网络层推送最终状态。
+     * 在 Mohist 环境下这是最可靠的同步方式。
+     * <p>
+     * 使用单一 stateId 发送所有3个槽位，客户端会更新到该 stateId，
+     * 后续 broadcastChanges 发现 remoteSlots 与当前不一致时
+     * 会再发一次（冗余但无害），并更新 remoteSlots 使后续tick不再重复。
+     */
+    private void forceContainerSlotSync() {
+        if (!(player instanceof ServerPlayer serverPlayer)) { return; }
+        int stateId = this.incrementStateId();
+        for (int i = 0; i < 3; i++) {
+            serverPlayer.connection.send(new ClientboundContainerSetSlotPacket(
+                    this.containerId, stateId, i, this.slots.get(i).getItem().copy()));
+        }
+    }
+
+    // ==================== 合成检测 ====================
+
+    /**
      * 检测输入变化并触发合成逻辑
+     * <p>
+     * 处理成功后立即调用 forceContainerSlotSync() 直接推送槽位数据，
+     * 不依赖后续的 super.broadcastChanges() 增量同步。
      */
     private void checkAndProcessCrafting() {
         ItemStack currentWeapon = weaponHandler.getStackInSlot(0);
         ItemStack currentMaterial = materialHandler.getStackInSlot(0);
         ItemStack currentResult = resultHandler.getStackInSlot(0);
         boolean inputChanged = !ItemStack.matches(currentWeapon, lastWeapon) || !ItemStack.matches(currentMaterial, lastMaterial);
+
+        // 输入变化且有预览结果 → 清除旧预览
         if (inputChanged && !currentResult.isEmpty() && (evolveMode || cycleMode || upgradeMode)) {
             resultHandler.setStackInSlot(0, ItemStack.EMPTY);
             currentResult = ItemStack.EMPTY;
@@ -125,6 +212,8 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             cycleMode = false;
             upgradeMode = false;
         }
+
+        // 任一输入为空 → 清理状态
         if (currentWeapon.isEmpty() || currentMaterial.isEmpty()) {
             if (!currentResult.isEmpty()) {
                 if (!baseAttributeJustProcessed) { resultHandler.setStackInSlot(0, ItemStack.EMPTY); evolveMode = false; cycleMode = false; upgradeMode = false; }
@@ -134,11 +223,16 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             lastMaterial = materialHandler.getStackInSlot(0).copy();
             return;
         }
+
+        // 输入变化且结果为空 → 尝试处理
         if (inputChanged && currentResult.isEmpty()) {
             if (baseAttributeJustProcessed) { baseAttributeJustProcessed = false; }
             processCrafting(currentWeapon, currentMaterial);
             lastWeapon = weaponHandler.getStackInSlot(0).copy();
             lastMaterial = materialHandler.getStackInSlot(0).copy();
+
+            // ⭐ 处理后直接发包同步，不依赖父类增量同步
+            forceContainerSlotSync();
         }
     }
 
@@ -306,7 +400,8 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
      * <p>
      * 放入模组+内融核心后仅预览结果，不消耗任何材料。
      * 材料在玩家从结果槽取出时才实际消耗（同武器融合逻辑）。
-     * </p>
+     * <p>
+     * ⭐ 升级费用根据模组品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
      *
      * @param moduleStack 待升级的模组
      * @param endoStack   内融核心
@@ -314,7 +409,8 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
     private void processModuleUpgrade(ItemStack moduleStack, ItemStack endoStack) {
         try {
             int currentLevel = ModuleLevelHelper.getModuleLevel(moduleStack);
-            int cost = ModuleLevelHelper.getUpgradeCost(currentLevel);
+            // ⭐ 使用带品质缩放的费用计算
+            int cost = ModuleLevelHelper.getUpgradeCost(currentLevel, moduleStack);
             if (cost <= 0 || endoStack.getCount() < cost) { return; }
 
             // 仅预览：生成升级后的模组放入结果槽，不消耗材料
@@ -355,7 +451,8 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             ItemStack moduleStack = weaponHandler.getStackInSlot(0);
             ItemStack endoStack = materialHandler.getStackInSlot(0);
             int currentLevel = ModuleLevelHelper.getModuleLevel(moduleStack);
-            int cost = ModuleLevelHelper.getUpgradeCost(currentLevel);
+            // ⭐ 使用带品质缩放的费用计算
+            int cost = ModuleLevelHelper.getUpgradeCost(currentLevel, moduleStack);
 
             // 消耗内融核心
             if (cost > 0 && endoStack.getCount() >= cost) {

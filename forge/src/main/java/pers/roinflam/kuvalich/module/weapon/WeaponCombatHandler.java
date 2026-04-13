@@ -378,6 +378,7 @@ public class WeaponCombatHandler {
      * 基础伤害 → 暴击计算 → 克制倍率 → 元素伤害 → 元素触发 → 最终伤害 → 击杀叠层
      * <p>
      * ⭐ 新增：在获取主手武器模组属性后，合并额外槽位（副手/护甲/饰品栏）的模组属性
+     * ⭐ 性能优化：modules 列表只解析一次，透传给元素触发系统避免重复 NBT 反序列化
      *
      * 支持所有 LivingEntity 攻击者
      * 击杀叠层效果仅对玩家生效
@@ -396,6 +397,8 @@ public class WeaponCombatHandler {
             criticalStrikeProbability *= attackStrength;
         }
 
+        // ⭐ 性能优化：modules 只解析一次，后续元素触发复用此列表
+        // ⭐ Performance: parse modules once, reuse for element triggers
         List<ItemStack> modules = WeaponModuleHandler.getModules(weapon);
         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(attacker, weapon);
 
@@ -568,20 +571,25 @@ public class WeaponCombatHandler {
 
         Set<String> triggeredElements = new LinkedHashSet<>();
 
+        // ⭐ 性能优化：将已解析的 modules 列表传入 triggerElementEffect，
+        //    避免每次触发都重新调用 getModules() 进行 NBT 反序列化（ItemStack.of）。
+        //    SlashBlade 范围攻击一 tick 命中大量实体时，此优化可消除数百次冗余 ItemStack 创建。
+        // ⭐ Performance: pass pre-parsed modules list to triggerElementEffect,
+        //    avoiding repeated getModules() → ItemStack.of() NBT deserialization per trigger.
         if (triggerChance > 100) {
             int number = (int) triggerChance / 100;
             for (int i = 0; i < number; i++) {
-                String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, triggerTime,
+                String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, modules, triggerTime,
                         coreDamage, attributes, baneMultiplier);
                 if (element != null) triggeredElements.add(element);
             }
             if (RandomUtil.percentageChance(triggerChance - number * 100)) {
-                String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, triggerTime,
+                String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, modules, triggerTime,
                         coreDamage, attributes, baneMultiplier);
                 if (element != null) triggeredElements.add(element);
             }
         } else if (RandomUtil.percentageChance(triggerChance)) {
-            String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, triggerTime,
+            String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon, modules, triggerTime,
                     coreDamage, attributes, baneMultiplier);
             if (element != null) triggeredElements.add(element);
         }

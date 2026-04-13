@@ -90,6 +90,14 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
         LogUtil.debugEvent("安魂之铸菜单创建", player.getName().getString(), "位置: " + pos.toString());
     }
 
+    /**
+     * 快速转移物品（Shift+点击）
+     * <p>
+     * ⭐ 修复：移除了产出槽(index==3)的Shift+点击拦截，
+     * 合成后产出物可以正常Shift+点击转移到玩家背包。
+     * 合成时输入已被消耗（槽位已清空），产出物是独立的新物品，
+     * 转移到背包不会导致任何物品复制。
+     */
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
@@ -102,15 +110,15 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
         ItemStack slotStack = slot.getItem();
         itemstack = slotStack.copy();
 
+        // 从容器转移到玩家背包（输入槽0~2 + 产出槽3）
+        // From container to player inventory (input slots 0~2 + output slot 3)
         if (index < 4) {
-            if (index == 3) {
-                return ItemStack.EMPTY;
-            }
-
             if (!this.moveItemStackTo(slotStack, 4, 40, true)) {
                 return ItemStack.EMPTY;
             }
-        } else {
+        }
+        // 从玩家背包转移到输入槽 / From player inventory to input slots
+        else {
             if (!this.moveItemStackTo(slotStack, 0, 3, false)) {
                 return ItemStack.EMPTY;
             }

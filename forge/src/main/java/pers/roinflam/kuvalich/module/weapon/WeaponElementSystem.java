@@ -28,6 +28,10 @@ import java.util.*;
  * 负责元素组合计算、元素效果触发、伤害位置和元素表情符号
  * 支持所有LivingEntity攻击者，伤害数字仅对玩家攻击者发送
  *
+ * ⭐ 性能优化：所有需要模组列表的方法均支持外部传入已解析的 modules 列表，
+ *    避免在同一次伤害事件中对同一把武器反复调用 getModules() 进行 NBT 反序列化。
+ *    SlashBlade 等范围攻击一 tick 命中大量实体时，此优化可显著减少 ItemStack 创建开销。
+ *
  * Weapon Element System
  * Handles element composition, effect triggering, damage position and emoji display.
  * Supports all LivingEntity attackers; damage numbers are only sent to player attackers.
@@ -86,13 +90,13 @@ public class WeaponElementSystem {
     // ========== 元素组合计算 / Element Composition ==========
 
     /**
-     * 获取武器的最终元素组合及各元素占比
-     * 按照Warframe的元素组合规则：基础元素会自动合成为复合元素
+     * 获取武器的最终元素组合及各元素占比（外部传入已解析的模组列表，避免重复 NBT 反序列化）
      *
-     * @param weapon 武器物品栈
+     * @param weapon  武器物品栈
+     * @param modules 已解析的模组列表（由调用方提供，避免重复调用 getModules）
      * @return 元素名→百分比字符串的映射（例如 {"radiation" → "60%", "virus" → "40%"}）
      */
-    public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
+    public static HashMap<String, String> getTriggerElements(ItemStack weapon, List<ItemStack> modules) {
         Map<String, Double> elementValues = new LinkedHashMap<>();
 
         // 赤毒武器自带元素优先加入
@@ -103,7 +107,6 @@ public class WeaponElementSystem {
         }
 
         // 收集所有模组的元素词条
-        List<ItemStack> modules = WeaponModuleHandler.getModules(weapon);
         for (ItemStack module : modules) {
             for (Map.Entry<String, Double> entry : AbstractModule.getAttributes(module)) {
                 String key = entry.getKey();
@@ -159,13 +162,24 @@ public class WeaponElementSystem {
     }
 
     /**
-     * 根据元素占比概率随机选取一个触发元素
+     * 获取武器的最终元素组合及各元素占比（兼容旧调用，内部调用 getModules）
      *
      * @param weapon 武器物品栈
+     * @return 元素名→百分比字符串的映射（例如 {"radiation" → "60%", "virus" → "40%"}）
+     */
+    public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
+        return getTriggerElements(weapon, WeaponModuleHandler.getModules(weapon));
+    }
+
+    /**
+     * 根据元素占比概率随机选取一个触发元素（外部传入已解析的模组列表）
+     *
+     * @param weapon  武器物品栈
+     * @param modules 已解析的模组列表
      * @return 被选中的元素名，无元素时返回null
      */
-    public static String getTriggerElement(ItemStack weapon) {
-        HashMap<String, String> elements = getTriggerElements(weapon);
+    public static String getTriggerElement(ItemStack weapon, List<ItemStack> modules) {
+        HashMap<String, String> elements = getTriggerElements(weapon, modules);
         if (elements.isEmpty()) return null;
 
         List<Map.Entry<String, Double>> elementList = new ArrayList<>();
@@ -182,6 +196,16 @@ public class WeaponElementSystem {
         }
 
         return elementList.get(elementList.size() - 1).getKey();
+    }
+
+    /**
+     * 根据元素占比概率随机选取一个触发元素（兼容旧调用）
+     *
+     * @param weapon 武器物品栈
+     * @return 被选中的元素名，无元素时返回null
+     */
+    public static String getTriggerElement(ItemStack weapon) {
+        return getTriggerElement(weapon, WeaponModuleHandler.getModules(weapon));
     }
 
     // ========== 元素类型判断 / Element Type Check ==========
@@ -320,10 +344,14 @@ public class WeaponElementSystem {
      * 触发一次元素效果（火焰DOT、冰冻减速、电击麻痹、毒素直伤等）
      * 支持所有 LivingEntity 攻击者，伤害数字仅在攻击者是玩家时发送
      *
+     * ⭐ 性能优化：接受外部传入的 modules 列表，避免在同一次伤害事件中
+     *    对同一把武器反复调用 getModules() 进行 NBT 反序列化（ItemStack.of）。
+     *
      * @param damageSource   伤害来源
      * @param hurter         受害者
      * @param attacker       攻击者（可以是玩家或怪物等LivingEntity）
      * @param itemStack      武器物品栈
+     * @param modules        已解析的模组列表（由调用方提供）
      * @param triggerTime    触发时间倍率
      * @param coreDamage     核心物理伤害（用于计算元素DOT基础伤害）
      * @param attributes     武器运行时属性
@@ -332,10 +360,11 @@ public class WeaponElementSystem {
      */
     static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
                                        LivingEntity attacker, ItemStack itemStack,
+                                       List<ItemStack> modules,
                                        double triggerTime, double coreDamage,
                                        HashMap<String, Double> attributes,
                                        double baneMultiplier) {
-        String type = getTriggerElement(itemStack);
+        String type = getTriggerElement(itemStack, modules);
         if (type == null) return null;
 
         Level level = hurter.level();
@@ -562,6 +591,22 @@ public class WeaponElementSystem {
             default:
                 return null;
         }
+    }
+
+    /**
+     * 触发一次元素效果（兼容旧调用，内部调用 getModules）
+     *
+     * @deprecated 优先使用带 modules 参数的重载版本以避免重复 NBT 反序列化
+     */
+    @Deprecated
+    static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
+                                       LivingEntity attacker, ItemStack itemStack,
+                                       double triggerTime, double coreDamage,
+                                       HashMap<String, Double> attributes,
+                                       double baneMultiplier) {
+        return triggerElementEffect(damageSource, hurter, attacker, itemStack,
+                WeaponModuleHandler.getModules(itemStack),
+                triggerTime, coreDamage, attributes, baneMultiplier);
     }
 
     // ========== 工具方法 / Utility ==========

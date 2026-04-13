@@ -397,8 +397,9 @@ public class WarframeEffectHandler {
                                     }
                                 }
                             } else if (shield > 0) {
-                                // 百分比护盾模式
-                                double shieldCap = player.getMaxHealth() * shield / 2;
+                                // ⭐ 百分比护盾模式（修复：使用配置的shieldCapMultiplier而非硬编码/2）
+                                // ⭐ Percentage shield mode (fix: use configured shieldCapMultiplier instead of hardcoded /2)
+                                double shieldCap = player.getMaxHealth() * shield * ModConfig.KUVA_LICH.shieldCapMultiplier.get();
                                 float currentShield = player.getAbsorptionAmount();
 
                                 if (currentShield < shieldCap) {

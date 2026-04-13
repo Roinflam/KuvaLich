@@ -23,6 +23,7 @@ import java.util.*;
  * ⭐ 属性词条根据等级动态缩放显示
  * ⭐ 满级不显示等级Tooltip
  * ⭐ 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
+ * ⭐ 升级费用根据品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public abstract class AbstractItemModule extends AbstractModule {
@@ -47,7 +48,7 @@ public abstract class AbstractItemModule extends AbstractModule {
             ))
     );
 
-    public AbstractItemModule(@Nonnull Item.Properties properties) {
+    public AbstractItemModule(@Nonnull Properties properties) {
         super(properties);
     }
 
@@ -85,7 +86,8 @@ public abstract class AbstractItemModule extends AbstractModule {
             int currentLevel = ModuleLevelHelper.getModuleLevel(itemStack);
             int maxLevel = ModuleLevelHelper.getMaxLevel();
             number += ModuleLevelTooltipHelper.appendLevelTooltip(tooltip, number, currentLevel, maxLevel);
-            number += ModuleLevelTooltipHelper.appendUpgradeCostTooltipIfInEvolve(tooltip, number, currentLevel);
+            // ⭐ 传入itemStack以支持品质缩放费用显示
+            number += ModuleLevelTooltipHelper.appendUpgradeCostTooltipIfInEvolve(tooltip, number, currentLevel, itemStack);
         }
 
         // ⭐ 属性值根据等级缩放后显示
@@ -145,9 +147,9 @@ public abstract class AbstractItemModule extends AbstractModule {
                             .append(" ").append(Component.literal(String.valueOf(cycle)).withStyle(ChatFormatting.BOLD))
                             .withStyle(ChatFormatting.DARK_PURPLE));
         }
-        // ⭐ 在安魂之融中显示洗卡所需赤毒（倾向+次数双维度）
+        // ⭐ 在安魂之融中显示洗卡所需赤毒（武器裂罅公式：min(cycle,8) + trend² - (trend-1)²）
         startIndex += ModuleLevelTooltipHelper.appendRivenCycleCostTooltipIfInEvolve(
-                tooltip, startIndex, trend, cycle);
+                tooltip, startIndex, trend, cycle, false);
         return startIndex;
     }
 

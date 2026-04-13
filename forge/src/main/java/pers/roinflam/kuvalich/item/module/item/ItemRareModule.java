@@ -99,7 +99,7 @@ public class ItemRareModule extends AbstractItemModule {
 
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.katana_energy", "katana_energy",
-                new Object[]{"attackRange", 1.65001f, "meleeDamage", 0.60001f});
+                new Object[]{"attackRange", 1.2001f, "meleeDamage", 0.60001f});
 
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.item_module.reflex_coil", "reflex_coil",

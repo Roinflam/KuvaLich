@@ -2,11 +2,13 @@ package pers.roinflam.kuvalich.module.level;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.item.module.item.ItemRivenModule;
+import pers.roinflam.kuvalich.item.module.item.*;
+import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
@@ -14,6 +16,9 @@ import pers.roinflam.kuvalich.utils.Reference;
  * Module Level System Core Helper
  * <p>
  * 职责：等级NBT读写、属性缩放、升级费用、精通键生成、揭示等级赋予、系统开关
+ * <p>
+ * ⭐ 升级费用根据模组品质缩放：
+ *    铜卡(Common) 25% | 银卡(Uncommon) 50% | 金卡(Rare) 75% | Prime/裂罅 100%
  *
  * @author RoinFlam
  */
@@ -98,9 +103,13 @@ public final class ModuleLevelHelper {
     // ==================== 升级费用 ====================
 
     /**
-     * 计算从当前等级升级到下一级所需的内融核心数量
+     * 计算从当前等级升级到下一级所需的内融核心数量（基础费用，不含品质缩放）
+     * <p>
      * 公式：cost(n) = max(1, round(endoLastLevelCost × (n / (maxLevel - 1)) ^ exponent))
      * 已满级返回-1
+     *
+     * @param currentLevel 当前等级
+     * @return 基础升级费用，已满级返回-1
      */
     public static int getUpgradeCost(int currentLevel) {
         int maxLevel = getMaxLevel();
@@ -113,7 +122,67 @@ public final class ModuleLevelHelper {
     }
 
     /**
-     * 计算从1级升到满级的总内融核心消耗
+     * ⭐ 计算指定模组从当前等级升级所需的内融核心数量（含品质缩放）
+     * <p>
+     * 在基础费用上乘以品质系数后向上取整，保证最低消耗1个。
+     * <p>
+     * 品质系数：铜卡 0.25 | 银卡 0.50 | 金卡 0.75 | Prime/裂罅 1.00
+     *
+     * @param currentLevel 当前等级
+     * @param moduleStack  模组物品栈（用于判断品质）
+     * @return 实际升级费用，已满级返回-1
+     */
+    public static int getUpgradeCost(int currentLevel, ItemStack moduleStack) {
+        int baseCost = getUpgradeCost(currentLevel);
+        if (baseCost <= 0) { return baseCost; }
+        double multiplier = getRarityCostMultiplier(moduleStack);
+        // 向上取整确保低品质低等级时不会出现0消耗
+        return Math.max(1, (int) Math.ceil(baseCost * multiplier));
+    }
+
+    /**
+     * ⭐ 获取模组品质对应的内融核心费用系数
+     * <p>
+     * 品质越低，升级越便宜：
+     * <pre>
+     * 品质        系数    说明
+     * 铜卡        0.25    基础费用的 1/4
+     * 银卡        0.50    基础费用的 2/4
+     * 金卡        0.75    基础费用的 3/4
+     * Prime/裂罅  1.00    全额
+     * </pre>
+     * <p>
+     * 武器模组和战甲模组共用同一套系数。
+     *
+     * @param moduleStack 模组物品栈
+     * @return 费用系数（0.25 ~ 1.0）
+     */
+    public static double getRarityCostMultiplier(ItemStack moduleStack) {
+        if (moduleStack == null || moduleStack.isEmpty()) { return 1.0; }
+        Item item = moduleStack.getItem();
+        // 紫卡（裂罅）和 Prime：全额
+        if (item instanceof ItemRivenModule || item instanceof WarframeRivenModule
+                || item instanceof ItemPrimeModule || item instanceof WarframePrimeModule) {
+            return 1.0;
+        }
+        // 金卡（稀有）：3/4
+        if (item instanceof ItemRareModule || item instanceof WarframeRareModule) {
+            return 0.75;
+        }
+        // 银卡（罕见）：2/4
+        if (item instanceof ItemUncommonModule || item instanceof WarframeUncommonModule) {
+            return 0.5;
+        }
+        // 铜卡（普通）：1/4
+        if (item instanceof ItemCommonModule || item instanceof WarframeCommonModule) {
+            return 0.25;
+        }
+        // 未知品质兜底：全额
+        return 1.0;
+    }
+
+    /**
+     * 计算从1级升到满级的总内融核心消耗（基础费用，不含品质缩放）
      */
     public static int getTotalUpgradeCost() {
         int maxLevel = getMaxLevel();
