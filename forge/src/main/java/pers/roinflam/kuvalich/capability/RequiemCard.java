@@ -3,6 +3,7 @@ package pers.roinflam.kuvalich.capability;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.capabilities.Capability;
@@ -17,21 +18,22 @@ import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 安魂卡片Capability
  * Requiem Card Capability
  *
- * 存储玩家的安魂卡片数据、解密进度、没收物品、模组精通记录等
- * Stores player's requiem card data, decryption progress, confiscated items, module mastery records, etc.
+ * 存储玩家的安魂卡片数据、解密进度、没收物品、模组精通记录、模组发现记录等
+ * Stores player's requiem card data, decryption progress, confiscated items, module mastery records, module discovery records, etc.
  *
- * ⭐ 新增：模组精通记录（moduleMastery）
- * ⭐ NEW: Module mastery records (moduleMastery)
- * 记录玩家对每种模组type升级过的最高等级，揭示新模组时自动赋予精通等级。
- * Records the highest level a player has upgraded for each module type.
- * When revealing new modules, automatically assigns mastery level.
+ * ⭐ 新增：模组发现记录（discoveredModules）
+ * ⭐ NEW: Module discovery records (discoveredModules)
+ * 记录玩家获取过的所有模组type，图鉴界面使用此数据显示已获得/未获得状态。
+ * Records all module types the player has ever obtained. Codex screen uses this for discovered/undiscovered display.
  */
 public class RequiemCard {
 
@@ -60,20 +62,25 @@ public class RequiemCard {
     /**
      * ⭐ 模组精通记录（模组type/精通键 → 最高等级）
      * ⭐ Module mastery records (module type/mastery key → highest level)
-     * <p>
-     * 键由 ModuleLevelHelper.getMasteryKey() 生成：
-     * - 普通模组：直接使用type字符串（如 "vitality", "split_chamber"）
-     * - 武器裂罅：按模式分3种独立键（"riven_weapon_module_melee/remote/universal"）
-     * - 战甲裂罅：共享一个键（"riven_warframe_module"）
-     * <p>
-     * 死亡不丢失（跟随RequiemCard Capability持久化）。
      */
     private Map<String, Integer> moduleMastery;
+
+    /**
+     * ⭐ 模组发现记录（已获得过的模组type集合）
+     * ⭐ Module discovery records (set of module types the player has obtained)
+     *
+     * 用于图鉴界面区分已获得/未获得模组。
+     * 死亡不丢失，跟随RequiemCard Capability持久化。
+     * Used by codex screen to distinguish discovered/undiscovered modules.
+     * Not lost on death, persisted with RequiemCard Capability.
+     */
+    private Set<String> discoveredModules;
 
     public RequiemCard() {
         reset();
         this.confiscatedItems = new ArrayList<>();
         this.moduleMastery = new HashMap<>();
+        this.discoveredModules = new HashSet<>();
     }
 
     /**
@@ -108,8 +115,11 @@ public class RequiemCard {
             }
         }
 
-        // ⭐ 克隆精通记录 / Clone mastery records
+        // 克隆精通记录 / Clone mastery records
         this.moduleMastery = new HashMap<>(requiemCard.moduleMastery);
+
+        // ⭐ 克隆发现记录 / Clone discovery records
+        this.discoveredModules = new HashSet<>(requiemCard.discoveredModules);
     }
 
     // ==================== Getters and Setters ====================
@@ -292,7 +302,7 @@ public class RequiemCard {
         this.unlockedCardStatus = 0;
         this.decryptionProgress = 0;
         this.kuvaLevel = 0;
-        // 注意：reset时不清空没收物品和精通记录
+        // 注意：reset时不清空没收物品、精通记录和发现记录
     }
 
     public void addCard(int level) {
@@ -351,15 +361,8 @@ public class RequiemCard {
         return confiscatedItems.size();
     }
 
-    // ==================== ⭐ 模组精通相关方法 / Module Mastery Methods ====================
+    // ==================== 模组精通相关方法 / Module Mastery Methods ====================
 
-    /**
-     * 获取指定模组类型的精通等级
-     * Get mastery level for a module type
-     *
-     * @param masteryKey 精通键（由 ModuleLevelHelper.getMasteryKey 生成）
-     * @return 精通等级，无记录返回0
-     */
     public int getMasteryLevel(String masteryKey) {
         if (masteryKey == null || masteryKey.isEmpty()) {
             return 0;
@@ -367,13 +370,6 @@ public class RequiemCard {
         return moduleMastery.getOrDefault(masteryKey, 0);
     }
 
-    /**
-     * 设置指定模组类型的精通等级（仅当新等级高于已有记录时更新）
-     * Set mastery level for a module type (only updates if new level is higher)
-     *
-     * @param masteryKey 精通键
-     * @param level      精通等级
-     */
     public void updateMasteryLevel(String masteryKey, int level) {
         if (masteryKey == null || masteryKey.isEmpty()) {
             return;
@@ -384,14 +380,58 @@ public class RequiemCard {
         }
     }
 
-    /**
-     * 获取全部精通记录（返回副本）
-     * Get all mastery records (returns copy)
-     *
-     * @return 精通记录Map的副本
-     */
     public Map<String, Integer> getAllMastery() {
         return new HashMap<>(moduleMastery);
+    }
+
+    // ==================== ⭐ 模组发现相关方法 / Module Discovery Methods ====================
+
+    /**
+     * 记录模组发现
+     * Record module discovery
+     *
+     * @param moduleType 模组type标识符
+     * @return true=新发现（之前没有记录），false=已有记录
+     */
+    public boolean discoverModule(String moduleType) {
+        if (moduleType == null || moduleType.isEmpty()) {
+            return false;
+        }
+        return discoveredModules.add(moduleType);
+    }
+
+    /**
+     * 查询模组是否已发现
+     * Check if module is discovered
+     *
+     * @param moduleType 模组type标识符
+     * @return 是否已发现
+     */
+    public boolean isModuleDiscovered(String moduleType) {
+        if (moduleType == null || moduleType.isEmpty()) {
+            return false;
+        }
+        return discoveredModules.contains(moduleType);
+    }
+
+    /**
+     * 获取所有已发现模组type的集合（返回副本）
+     * Get all discovered module types (returns copy)
+     *
+     * @return 已发现模组type的Set副本
+     */
+    public Set<String> getDiscoveredModules() {
+        return new HashSet<>(discoveredModules);
+    }
+
+    /**
+     * 获取已发现模组数量
+     * Get discovered module count
+     *
+     * @return 已发现数量
+     */
+    public int getDiscoveredModuleCount() {
+        return discoveredModules.size();
     }
 
     // ==================== NBT序列化 / NBT Serialization ====================
@@ -424,12 +464,19 @@ public class RequiemCard {
         }
         nbt.put("confiscatedItems", confiscatedList);
 
-        // ⭐ 序列化精通记录 / Serialize mastery records
+        // 序列化精通记录 / Serialize mastery records
         CompoundTag masteryTag = new CompoundTag();
         for (Map.Entry<String, Integer> entry : moduleMastery.entrySet()) {
             masteryTag.putInt(entry.getKey(), entry.getValue());
         }
         nbt.put("moduleMastery", masteryTag);
+
+        // ⭐ 序列化发现记录 / Serialize discovery records
+        ListTag discoveryList = new ListTag();
+        for (String type : discoveredModules) {
+            discoveryList.add(StringTag.valueOf(type));
+        }
+        nbt.put("discoveredModules", discoveryList);
 
         return nbt;
     }
@@ -467,12 +514,24 @@ public class RequiemCard {
             }
         }
 
-        // ⭐ 反序列化精通记录 / Deserialize mastery records
+        // 反序列化精通记录 / Deserialize mastery records
         this.moduleMastery = new HashMap<>();
         if (nbt.contains("moduleMastery", Tag.TAG_COMPOUND)) {
             CompoundTag masteryTag = nbt.getCompound("moduleMastery");
             for (String key : masteryTag.getAllKeys()) {
                 this.moduleMastery.put(key, masteryTag.getInt(key));
+            }
+        }
+
+        // ⭐ 反序列化发现记录 / Deserialize discovery records
+        this.discoveredModules = new HashSet<>();
+        if (nbt.contains("discoveredModules", Tag.TAG_LIST)) {
+            ListTag discoveryList = nbt.getList("discoveredModules", Tag.TAG_STRING);
+            for (int i = 0; i < discoveryList.size(); i++) {
+                String type = discoveryList.getString(i);
+                if (type != null && !type.isEmpty()) {
+                    discoveredModules.add(type);
+                }
             }
         }
     }

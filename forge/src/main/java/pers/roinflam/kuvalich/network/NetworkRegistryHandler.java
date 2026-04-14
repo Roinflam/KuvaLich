@@ -1,12 +1,12 @@
-// 文件：NetworkRegistryHandler.java（保持不变）
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/network/NetworkRegistryHandler.java
 package pers.roinflam.kuvalich.network;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
+import pers.roinflam.kuvalich.network.message.CodexGiveItemPacket;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.network.message.DiggingSpeedPacket;
+import pers.roinflam.kuvalich.network.message.ModuleDiscoveryPacket;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -16,6 +16,8 @@ import pers.roinflam.kuvalich.utils.Reference;
  *
  * 统一管理所有网络包的注册
  * Unified management of all packet registrations
+ *
+ * ⭐ 新增：CodexGiveItemPacket（图鉴创造模式给予物品，C2S）
  */
 public class NetworkRegistryHandler {
 
@@ -35,8 +37,6 @@ public class NetworkRegistryHandler {
     public static void register() {
         LogUtil.info("开始注册网络通道...");
 
-        // 创建网络通道
-        // Create network channel
         INSTANCE = NetworkRegistry.newSimpleChannel(
                 new ResourceLocation(Reference.MOD_ID, "main"),
                 () -> PROTOCOL_VERSION,
@@ -44,8 +44,6 @@ public class NetworkRegistryHandler {
                 PROTOCOL_VERSION::equals
         );
 
-        // 注册消息包
-        // Register packets
         registerMessages();
 
         LogUtil.info("网络通道注册成功,共注册 " + messageId + " 个消息包");
@@ -57,7 +55,6 @@ public class NetworkRegistryHandler {
      */
     private static void registerMessages() {
         // 伤害显示包（服务器 → 客户端）
-        // Damage display packet (Server → Client)
         INSTANCE.registerMessage(
                 nextMessageId(),
                 DamagePacket.class,
@@ -67,7 +64,6 @@ public class NetworkRegistryHandler {
         );
 
         // 挖掘速度包（服务器 → 客户端）
-        // Digging speed packet (Server → Client)
         INSTANCE.registerMessage(
                 nextMessageId(),
                 DiggingSpeedPacket.class,
@@ -75,20 +71,31 @@ public class NetworkRegistryHandler {
                 DiggingSpeedPacket::decode,
                 DiggingSpeedPacket::handle
         );
+
+        // 模组发现记录同步包（服务器 → 客户端）
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                ModuleDiscoveryPacket.class,
+                ModuleDiscoveryPacket::encode,
+                ModuleDiscoveryPacket::decode,
+                ModuleDiscoveryPacket::handle
+        );
+
+        // ⭐ 图鉴创造模式给予物品包（客户端 → 服务器）
+        // ⭐ Codex creative mode give item packet (Client → Server)
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                CodexGiveItemPacket.class,
+                CodexGiveItemPacket::encode,
+                CodexGiveItemPacket::decode,
+                CodexGiveItemPacket::handle
+        );
     }
 
-    /**
-     * 获取下一个消息ID
-     * Get next message ID
-     */
     private static int nextMessageId() {
         return messageId++;
     }
 
-    /**
-     * 获取网络通道实例
-     * Get network channel instance
-     */
     public static SimpleChannel getChannel() {
         if (INSTANCE == null) {
             throw new IllegalStateException("网络通道未初始化！请先调用register()方法。");

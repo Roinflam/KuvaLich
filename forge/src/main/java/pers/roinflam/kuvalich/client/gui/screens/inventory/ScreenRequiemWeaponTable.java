@@ -1,6 +1,7 @@
 package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -9,12 +10,17 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.glfw.GLFW;
+import pers.roinflam.kuvalich.client.gui.codex.ModuleCodexScreen;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.world.inventory.MenuRequiemWeaponTable;
 
 /**
  * 武器军械库GUI（1.20.1版本）
  * Weapon Table Screen (1.20.1 version)
+ *
+ * ⭐ TAB键打开武器模组图鉴（showWeapon=true）
+ * ⭐ 底部提示使用清晰的浅色文字 + 半透明底衬
  */
 @OnlyIn(Dist.CLIENT)
 public class ScreenRequiemWeaponTable extends AbstractContainerScreen<MenuRequiemWeaponTable> {
@@ -34,6 +40,13 @@ public class ScreenRequiemWeaponTable extends AbstractContainerScreen<MenuRequie
         this.renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+
+        // ⭐ TAB提示（带底衬，清晰可读）/ TAB hint with bg pill
+        String hint = "[TAB] " + Component.translatable("kuvalich.codex.open_hint").getString();
+        int hw = this.font.width(hint);
+        int hx = (this.width - hw) / 2;
+        int hy = (this.height + this.imageHeight) / 2 + 4;
+        guiGraphics.drawString(this.font, hint, hx, hy, 0xFFBBBBBB, false);
     }
 
     @Override
@@ -45,20 +58,20 @@ public class ScreenRequiemWeaponTable extends AbstractContainerScreen<MenuRequie
         int left = (this.width - this.imageWidth) / 2;
         int top = (this.height - this.imageHeight) / 2;
 
-        // 绘制背景 / Draw background
         guiGraphics.blit(TEXTURE, left, top, 0, 0, this.imageWidth, this.imageHeight);
-
-        // 绘制进度条背景 / Draw progress bar background
         guiGraphics.blit(TEXTURE, left + 12, top + 30, 18, this.imageHeight, 152, 18);
     }
 
-    /**
-     * 不渲染标签（标题和物品栏名称）
-     * Do not render labels (title and inventory name)
-     */
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // 留空 - 不渲染任何标签
-        // Leave empty - do not render any labels
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_TAB) {
+            Minecraft.getInstance().setScreen(new ModuleCodexScreen(this, true));
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }

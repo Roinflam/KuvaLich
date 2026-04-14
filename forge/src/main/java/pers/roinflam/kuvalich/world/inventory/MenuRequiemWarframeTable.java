@@ -23,6 +23,8 @@ import pers.roinflam.kuvalich.utils.LogUtil;
 /**
  * 战甲军械库菜单（1.20.1版本，业务逻辑100%不变）
  * Warframe Table Menu (1.20.1 version, business logic 100% unchanged)
+ *
+ * ⭐ 非法物品返还优先快捷栏（Inventory.add）
  */
 public class MenuRequiemWarframeTable extends AbstractContainerMenu {
 
@@ -41,7 +43,6 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
 
         this.moduleHandler = new ItemStackHandler(8);
 
-        // 添加模组槽位（8个）/ Add module slots (8 slots)
         for (int i = 0; i < 4; i++) {
             this.addSlot(new ModuleSlot(this, i, 18 + 41 * i, 12));
         }
@@ -49,13 +50,10 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
             this.addSlot(new ModuleSlot(this, i + 4, 18 + 41 * i, 39));
         }
 
-        // 从Capability加载战甲模组（业务逻辑100%不变）
-        // Load warframe modules from Capability (business logic 100% unchanged)
         if (!level.isClientSide) {
             loadModulesFromCapability(playerInventory.player);
         }
 
-        // 添加玩家背包槽位 / Add player inventory slots
         for (int i = 0; i < 9; i++) {
             this.addSlot(new Slot(playerInventory, i, 8 + 18 * i, 122));
         }
@@ -66,10 +64,6 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
         }
     }
 
-    /**
-     * 从Capability加载模组（业务逻辑100%不变）
-     * Load modules from Capability (business logic 100% unchanged)
-     */
     private void loadModulesFromCapability(Player player) {
         try {
             player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).ifPresent(warframeModules -> {
@@ -81,46 +75,34 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
                 this.moduleHandler.insertItem(5, warframeModules.getSix(), false);
                 this.moduleHandler.insertItem(6, warframeModules.getSeven(), false);
                 this.moduleHandler.insertItem(7, warframeModules.getEight(), false);
-
-                LogUtil.debugEvent("战甲军械库菜单创建", player.getName().getString(),
-                        "已加载玩家的战甲模组配置");
+                LogUtil.debugEvent("战甲军械库菜单创建", player.getName().getString(), "已加载玩家的战甲模组配置");
             });
-        } catch (Exception e) {
-            LogUtil.error("加载战甲模组时发生错误", e);
-        }
+        } catch (Exception e) { LogUtil.error("加载战甲模组时发生错误", e); }
     }
 
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
-
-        if (slot == null || !slot.hasItem()) {
-            return itemstack;
-        }
+        if (slot == null || !slot.hasItem()) return itemstack;
 
         ItemStack slotStack = slot.getItem();
         itemstack = slotStack.copy();
 
         if (index < 8) {
-            // 从模组槽位转移到背包 / From module slot to inventory
             LogUtil.debug("从战甲模组槽位" + index + "转移到背包: " + slotStack.getHoverName().getString());
-
             if (!this.moveItemStackTo(slotStack, 8, 44, true)) {
                 LogUtil.debug("背包已满，无法转移");
                 return ItemStack.EMPTY;
             }
-
             LogUtil.debug("战甲模组转移成功，已触发同步");
         } else {
-            // 从背包转移到模组槽位 / From inventory to module slot
             if (itemstack.getItem() instanceof AbstractWarframeModule) {
                 boolean success = false;
                 for (int i = 0; i < 8; i++) {
                     if (this.moveItemStackTo(slotStack, i, i + 1, false)) {
                         success = true;
-                        LogUtil.debug("战甲模组从背包转移到槽位" + i + ": " +
-                                slotStack.getHoverName().getString());
+                        LogUtil.debug("战甲模组从背包转移到槽位" + i + ": " + slotStack.getHoverName().getString());
                         break;
                     }
                 }
@@ -134,16 +116,8 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
             }
         }
 
-        if (slotStack.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
-        } else {
-            slot.setChanged();
-        }
-
-        if (slotStack.getCount() == itemstack.getCount()) {
-            return ItemStack.EMPTY;
-        }
-
+        if (slotStack.isEmpty()) { slot.set(ItemStack.EMPTY); } else { slot.setChanged(); }
+        if (slotStack.getCount() == itemstack.getCount()) return ItemStack.EMPTY;
         slot.onTake(player, slotStack);
         return itemstack;
     }
@@ -151,38 +125,30 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
     @Override
     public void removed(@NotNull Player player) {
         super.removed(player);
-
         if (!level.isClientSide) {
             saveModulesToCapability(player);
         }
     }
 
     /**
-     * 保存模组到Capability（业务逻辑100%不变）
-     * Save modules to Capability (business logic 100% unchanged)
+     * 保存模组到Capability
+     * ⭐ 非法物品返还使用 Inventory.add() 优先快捷栏
      */
     private void saveModulesToCapability(Player player) {
         try {
             player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).ifPresent(warframeModules -> {
-                // 检测并返还非法物品 / Detect and return invalid items
                 for (int i = 0; i < 8; i++) {
                     ItemStack stack = moduleHandler.getStackInSlot(i);
-
                     if (!stack.isEmpty() && !(stack.getItem() instanceof AbstractWarframeModule)) {
-                        LogUtil.warn("检测到非法物品在战甲军械库槽位" + i + ": " +
-                                stack.getHoverName().getString() + " - 正在返还");
-
-                        if (!this.moveItemStackTo(stack, 8, 44, true)) {
-                            LogUtil.warn("玩家背包已满，物品掉落到地上: " + stack.getHoverName().getString());
-                            level.addFreshEntity(new ItemEntity(level, pos.getX(), pos.getY(),
-                                    pos.getZ(), stack.copy()));
+                        LogUtil.warn("检测到非法物品在战甲军械库槽位" + i + ": " + stack.getHoverName().getString() + " - 正在返还");
+                        // ⭐ 优先快捷栏
+                        if (!player.getInventory().add(stack.copy())) {
+                            player.drop(stack.copy(), false);
                         }
-
                         moduleHandler.setStackInSlot(i, ItemStack.EMPTY);
                     }
                 }
 
-                // 保存到Capability / Save to Capability
                 warframeModules.setOne(moduleHandler.getStackInSlot(0));
                 warframeModules.setTwo(moduleHandler.getStackInSlot(1));
                 warframeModules.setThree(moduleHandler.getStackInSlot(2));
@@ -191,24 +157,18 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
                 warframeModules.setSix(moduleHandler.getStackInSlot(5));
                 warframeModules.setSeven(moduleHandler.getStackInSlot(6));
                 warframeModules.setEight(moduleHandler.getStackInSlot(7));
-
                 LogUtil.debugEvent("战甲军械库菜单关闭", player.getName().getString(), "战甲模组配置已保存");
             });
-        } catch (Exception e) {
-            LogUtil.error("保存战甲模组时发生错误", e);
-        }
+        } catch (Exception e) { LogUtil.error("保存战甲模组时发生错误", e); }
     }
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return player.level().equals(this.level) &&
-                player.blockPosition().distSqr(this.pos) <= 64;
+        return player.level().equals(this.level) && player.blockPosition().distSqr(this.pos) <= 64;
     }
 
-    /**
-     * 战甲模组槽位类（业务逻辑100%不变）
-     * Warframe module slot class (business logic 100% unchanged)
-     */
+    // ============================== 内部槽位类 ==============================
+
     public static class ModuleSlot extends SlotItemHandler {
         private final MenuRequiemWarframeTable menu;
         private final int slotIndex;
@@ -222,45 +182,26 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
         @Override
         public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
             super.onTake(player, stack);
-
             if (!menu.level.isClientSide) {
                 try {
-                    LogUtil.debugEvent("战甲模组取出", stack.getHoverName().getString(),
-                            "槽位: " + slotIndex);
+                    LogUtil.debugEvent("战甲模组取出", stack.getHoverName().getString(), "槽位: " + slotIndex);
                     syncToCapability();
-                } catch (Exception e) {
-                    LogUtil.error("战甲模组取出时同步失败", e);
-                }
+                } catch (Exception e) { LogUtil.error("战甲模组取出时同步失败", e); }
             }
         }
 
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            if (!(stack.getItem() instanceof AbstractWarframeModule)) {
-                return false;
-            }
-            if (AbstractWarframeModule.isRandom(stack)) {
-                return false;
-            }
-            if (!this.getItemHandler().getStackInSlot(slotIndex).isEmpty()) {
-                return false;
-            }
+            if (!(stack.getItem() instanceof AbstractWarframeModule)) return false;
+            if (AbstractWarframeModule.isRandom(stack)) return false;
+            if (!this.getItemHandler().getStackInSlot(slotIndex).isEmpty()) return false;
 
-            // 冲突检测（业务逻辑100%不变）/ Conflict detection (business logic 100% unchanged)
             for (int i = 0; i < 8; i++) {
                 if (i != slotIndex) {
                     ItemStack existingStack = menu.moduleHandler.getStackInSlot(i);
                     if (!existingStack.isEmpty()) {
-                        // 紫卡特殊处理 / Riven module special handling
-                        if (stack.getItem() instanceof WarframeRivenModule &&
-                                existingStack.getItem() instanceof WarframeRivenModule) {
-                            return false;
-                        }
-
-                        // 双向冲突检测 / Bidirectional conflict detection
-                        if (AbstractModule.hasConflict(existingStack, stack)) {
-                            return false;
-                        }
+                        if (stack.getItem() instanceof WarframeRivenModule && existingStack.getItem() instanceof WarframeRivenModule) return false;
+                        if (AbstractModule.hasConflict(existingStack, stack)) return false;
                     }
                 }
             }
@@ -270,62 +211,46 @@ public class MenuRequiemWarframeTable extends AbstractContainerMenu {
         @Override
         public void set(@NotNull ItemStack stack) {
             super.set(stack);
-
             if (!menu.level.isClientSide) {
                 try {
                     if (!stack.isEmpty()) {
                         if (!(stack.getItem() instanceof AbstractWarframeModule)) {
-                            LogUtil.error("警告：非战甲模组被放入槽位" + slotIndex + " - " +
-                                    stack.getHoverName().getString());
+                            LogUtil.error("警告：非战甲模组被放入槽位" + slotIndex + " - " + stack.getHoverName().getString());
                             menu.moduleHandler.setStackInSlot(slotIndex, ItemStack.EMPTY);
                             return;
                         }
-                        LogUtil.debugEvent("战甲模组装备", stack.getHoverName().getString(),
-                                "槽位: " + slotIndex);
+                        LogUtil.debugEvent("战甲模组装备", stack.getHoverName().getString(), "槽位: " + slotIndex);
                     }
                     syncToCapability();
-                } catch (Exception e) {
-                    LogUtil.error("战甲模组装备时同步失败", e);
-                }
+                } catch (Exception e) { LogUtil.error("战甲模组装备时同步失败", e); }
             }
         }
 
         @Override
         public void setChanged() {
             super.setChanged();
-
             if (!menu.level.isClientSide) {
                 try {
                     LogUtil.debug("战甲模组槽位" + slotIndex + "内容变化，触发同步");
                     syncToCapability();
-                } catch (Exception e) {
-                    LogUtil.error("槽位变化同步失败", e);
-                }
+                } catch (Exception e) { LogUtil.error("槽位变化同步失败", e); }
             }
         }
 
-        /**
-         * 同步到Capability（业务逻辑100%不变）
-         * Sync to Capability (business logic 100% unchanged)
-         */
         private void syncToCapability() {
             try {
-                menu.player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES)
-                        .ifPresent(warframeModules -> {
-                            warframeModules.setOne(menu.moduleHandler.getStackInSlot(0));
-                            warframeModules.setTwo(menu.moduleHandler.getStackInSlot(1));
-                            warframeModules.setThree(menu.moduleHandler.getStackInSlot(2));
-                            warframeModules.setFour(menu.moduleHandler.getStackInSlot(3));
-                            warframeModules.setFive(menu.moduleHandler.getStackInSlot(4));
-                            warframeModules.setSix(menu.moduleHandler.getStackInSlot(5));
-                            warframeModules.setSeven(menu.moduleHandler.getStackInSlot(6));
-                            warframeModules.setEight(menu.moduleHandler.getStackInSlot(7));
-
-                            LogUtil.debug("战甲模组同步到Capability成功");
-                        });
-            } catch (Exception e) {
-                LogUtil.error("同步战甲模组到Capability时发生错误", e);
-            }
+                menu.player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).ifPresent(warframeModules -> {
+                    warframeModules.setOne(menu.moduleHandler.getStackInSlot(0));
+                    warframeModules.setTwo(menu.moduleHandler.getStackInSlot(1));
+                    warframeModules.setThree(menu.moduleHandler.getStackInSlot(2));
+                    warframeModules.setFour(menu.moduleHandler.getStackInSlot(3));
+                    warframeModules.setFive(menu.moduleHandler.getStackInSlot(4));
+                    warframeModules.setSix(menu.moduleHandler.getStackInSlot(5));
+                    warframeModules.setSeven(menu.moduleHandler.getStackInSlot(6));
+                    warframeModules.setEight(menu.moduleHandler.getStackInSlot(7));
+                    LogUtil.debug("战甲模组同步到Capability成功");
+                });
+            } catch (Exception e) { LogUtil.error("同步战甲模组到Capability时发生错误", e); }
         }
     }
 }

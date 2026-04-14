@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.event.ModuleDiscoveryHandler;
 import pers.roinflam.kuvalich.item.module.item.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -19,6 +20,12 @@ import pers.roinflam.kuvalich.utils.Reference;
  * <p>
  * ⭐ 升级费用根据模组品质缩放：
  *    铜卡(Common) 25% | 银卡(Uncommon) 50% | 金卡(Rare) 75% | Prime/裂罅 100%
+ *
+ * ⭐ 精通键从纯 type 升级为 type:rarityOrder 格式，
+ *    不同品质的同type模组精通独立记录（如 fury:1 和 fury:3 独立）。
+ *    揭示时回退检查旧格式纯type键，兼容旧存档。
+ *
+ * ⭐ 发现记录同步改为使用 type:rarityOrder 组合键。
  *
  * @author RoinFlam
  */
@@ -194,10 +201,50 @@ public final class ModuleLevelHelper {
     // ==================== 精通键 ====================
 
     /**
-     * 获取模组的精通键（mastery key）
-     * 普通模组：type字符串 | 武器裂罅：按模式分3键 | 战甲裂罅：共享1键
+     * ⭐ 获取模组的精通键（mastery key）
+     * <p>
+     * 新格式：type:rarityOrder（如 "fury:1"、"fury:3"）
+     * 武器裂罅特殊处理：按模式分键（如 "riven_weapon_module_melee:3"）
+     * 战甲裂罅：共享1键（"riven_warframe_module:3"）
+     * <p>
+     * 品质通过 ModuleDiscoveryHandler.getRarityOrder 获取。
+     *
+     * @param moduleStack 模组物品栈
+     * @return 精通键（type:rarityOrder 格式）
      */
     public static String getMasteryKey(ItemStack moduleStack) {
+        if (moduleStack == null || moduleStack.isEmpty()) { return ""; }
+        String type = AbstractModule.getType(moduleStack);
+        if (type.isEmpty()) { return ""; }
+
+        // 武器裂罅特殊处理：按模式分3键
+        if (type.equals(ItemRivenModule.RIVEN_TYPE) && moduleStack.getItem() instanceof ItemRivenModule) {
+            int mode = ItemRivenModule.getRivenMode(moduleStack);
+            String modeKey;
+            switch (mode) {
+                case ItemRivenModule.MODE_MELEE: modeKey = type + "_melee"; break;
+                case ItemRivenModule.MODE_REMOTE: modeKey = type + "_remote"; break;
+                case ItemRivenModule.MODE_UNIVERSAL: modeKey = type + "_universal"; break;
+                default: modeKey = type + "_melee"; break;
+            }
+            // ⭐ 追加品质后缀 / Append rarity suffix
+            int rarity = ModuleDiscoveryHandler.getRarityOrder(moduleStack);
+            return rarity >= 0 ? modeKey + ":" + rarity : modeKey;
+        }
+
+        // ⭐ 普通模组：type + ":" + rarityOrder / Regular modules: type + ":" + rarityOrder
+        int rarity = ModuleDiscoveryHandler.getRarityOrder(moduleStack);
+        return rarity >= 0 ? type + ":" + rarity : type;
+    }
+
+    /**
+     * 获取旧格式精通键（不含品质后缀，用于回退查询旧存档）
+     * Get legacy mastery key (without rarity suffix, for fallback query on old saves)
+     *
+     * @param moduleStack 模组物品栈
+     * @return 旧格式精通键（纯type或type_mode）
+     */
+    private static String getLegacyMasteryKey(ItemStack moduleStack) {
         if (moduleStack == null || moduleStack.isEmpty()) { return ""; }
         String type = AbstractModule.getType(moduleStack);
         if (type.isEmpty()) { return ""; }
@@ -224,6 +271,9 @@ public final class ModuleLevelHelper {
      * <p>
      * 等级系统关闭时不做任何操作（所有模组按满级计算）
      *
+     * ⭐ 精通键使用新格式 type:rarityOrder，读取时回退旧格式兼容旧存档。
+     * ⭐ 发现记录同步使用 type:rarityOrder 组合键。
+     *
      * @param module 揭示出的模组物品
      * @param player 揭示者
      */
@@ -231,15 +281,24 @@ public final class ModuleLevelHelper {
         if (!isLevelSystemEnabled()) { return; }
         if (module == null || module.isEmpty() || player == null) { return; }
 
-        // 配置：是否启用精通赋予
         boolean useMastery = ModConfig.KUVA_LICH.enableMasteryOnReveal.get();
 
         if (useMastery) {
-            // 读取精通记录赋予等级
             String masteryKey = getMasteryKey(module);
             if (!masteryKey.isEmpty()) {
                 player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+                    // ⭐ 先查新格式精通键 / Try new format mastery key first
                     int masteryLevel = requiemCard.getMasteryLevel(masteryKey);
+
+                    // ⭐ 旧存档兼容：新键没命中则回退查旧格式纯type键
+                    // ⭐ Legacy compat: fallback to old type-only key if new key not found
+                    if (masteryLevel <= 0) {
+                        String legacyKey = getLegacyMasteryKey(module);
+                        if (!legacyKey.equals(masteryKey)) {
+                            masteryLevel = requiemCard.getMasteryLevel(legacyKey);
+                        }
+                    }
+
                     if (masteryLevel > 0) {
                         setModuleLevel(module, masteryLevel);
                     } else {
@@ -250,8 +309,15 @@ public final class ModuleLevelHelper {
                 setModuleLevel(module, 1);
             }
         } else {
-            // 每次揭示都是1级
             setModuleLevel(module, 1);
+        }
+
+        // ⭐ 揭示时记录模组发现（使用 type:rarityOrder 组合键）
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            String discoveryKey = ModuleDiscoveryHandler.buildDiscoveryKey(module);
+            if (!discoveryKey.isEmpty()) {
+                pers.roinflam.kuvalich.network.message.ModuleDiscoveryPacket.discoverAndSync(sp, discoveryKey);
+            }
         }
     }
 

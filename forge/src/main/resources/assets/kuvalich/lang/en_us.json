@@ -1267,5 +1267,14 @@
   "item.kuvalich.endo.tooltip": "A crystallization of ancient power, used to upgrade modules",
   "item.module.level.max": "MAX",
   "item.module.level.upgrade_cost": "Upgrade cost: %d Endo",
-  "item.module.riven.cycle_cost": "Cycle cost: %d Kuva"
+  "item.module.riven.cycle_cost": "Cycle cost: %d Kuva",
+  "kuvalich.codex.title.weapon": "Weapon Module Codex",
+  "kuvalich.codex.title.warframe": "Warframe Module Codex",
+  "kuvalich.codex.empty": "No modules registered",
+  "kuvalich.codex.close_hint": "Back",
+  "kuvalich.codex.open_hint": "Module Codex",
+  "kuvalich.codex.count_suffix": " modules",
+  "kuvalich.codex.search_hint": "Search attributes...",
+  "kuvalich.codex.filter_result": "Filter result:",
+  "kuvalich.codex.clear_search": "Clear search"
 }

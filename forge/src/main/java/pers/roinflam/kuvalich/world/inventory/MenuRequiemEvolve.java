@@ -129,12 +129,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     /**
      * 判断物品是否为纯材料类（只应放入材料槽，不应放入武器槽）
-     * <p>
-     * 赤毒武器不在此列：武器融合时它既可作为融合输入（武器槽）
-     * 也可作为融合材料（材料槽），需保留先武器后材料的路由顺序。
-     *
-     * @param stack 待判断的物品
-     * @return 是否为纯材料类
      */
     private static boolean isMaterialOnly(ItemStack stack) {
         return stack.getItem() instanceof Kuva
@@ -146,41 +140,18 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     // ==================== 同步（三重保险）====================
 
-    /**
-     * 增量同步（每tick由服务端调用）
-     * <p>
-     * ⭐ 先处理合成逻辑再执行父类增量同步，确保本帧的所有槽位变化
-     * 都能被 super.broadcastChanges() 检测到并发送给客户端。
-     */
     @Override
     public void broadcastChanges() {
         if (!level.isClientSide) { checkAndProcessCrafting(); }
         super.broadcastChanges();
     }
 
-    /**
-     * 全量同步（点击事件stateId不匹配时由服务端调用）
-     * <p>
-     * ⭐ Mohist 混合服下点击容器时经常走这条路径而非 broadcastChanges，
-     * 必须在全量同步前也执行处理逻辑，否则客户端收到的全量状态不含处理结果。
-     */
     @Override
     public void broadcastFullState() {
         if (!level.isClientSide) { checkAndProcessCrafting(); }
         super.broadcastFullState();
     }
 
-    /**
-     * 直接发送3个容器槽位数据包给客户端
-     * <p>
-     * 绕过 broadcastChanges 的 remoteSlots 增量比较机制，
-     * 不依赖父类同步时序，直接通过网络层推送最终状态。
-     * 在 Mohist 环境下这是最可靠的同步方式。
-     * <p>
-     * 使用单一 stateId 发送所有3个槽位，客户端会更新到该 stateId，
-     * 后续 broadcastChanges 发现 remoteSlots 与当前不一致时
-     * 会再发一次（冗余但无害），并更新 remoteSlots 使后续tick不再重复。
-     */
     private void forceContainerSlotSync() {
         if (!(player instanceof ServerPlayer serverPlayer)) { return; }
         int stateId = this.incrementStateId();
@@ -192,19 +163,12 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     // ==================== 合成检测 ====================
 
-    /**
-     * 检测输入变化并触发合成逻辑
-     * <p>
-     * 处理成功后立即调用 forceContainerSlotSync() 直接推送槽位数据，
-     * 不依赖后续的 super.broadcastChanges() 增量同步。
-     */
     private void checkAndProcessCrafting() {
         ItemStack currentWeapon = weaponHandler.getStackInSlot(0);
         ItemStack currentMaterial = materialHandler.getStackInSlot(0);
         ItemStack currentResult = resultHandler.getStackInSlot(0);
         boolean inputChanged = !ItemStack.matches(currentWeapon, lastWeapon) || !ItemStack.matches(currentMaterial, lastMaterial);
 
-        // 输入变化且有预览结果 → 清除旧预览
         if (inputChanged && !currentResult.isEmpty() && (evolveMode || cycleMode || upgradeMode)) {
             resultHandler.setStackInSlot(0, ItemStack.EMPTY);
             currentResult = ItemStack.EMPTY;
@@ -213,7 +177,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             upgradeMode = false;
         }
 
-        // 任一输入为空 → 清理状态
         if (currentWeapon.isEmpty() || currentMaterial.isEmpty()) {
             if (!currentResult.isEmpty()) {
                 if (!baseAttributeJustProcessed) { resultHandler.setStackInSlot(0, ItemStack.EMPTY); evolveMode = false; cycleMode = false; upgradeMode = false; }
@@ -224,50 +187,37 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             return;
         }
 
-        // 输入变化且结果为空 → 尝试处理
         if (inputChanged && currentResult.isEmpty()) {
             if (baseAttributeJustProcessed) { baseAttributeJustProcessed = false; }
             processCrafting(currentWeapon, currentMaterial);
             lastWeapon = weaponHandler.getStackInSlot(0).copy();
             lastMaterial = materialHandler.getStackInSlot(0).copy();
-
-            // ⭐ 处理后直接发包同步，不依赖父类增量同步
             forceContainerSlotSync();
         }
     }
 
-    /**
-     * 判断并执行合成类型
-     */
     private void processCrafting(ItemStack weaponStack, ItemStack materialStack) {
-        // 情况1：赤毒武器融合
         if (KuvaWeaponUtil.hasType(weaponStack) && KuvaWeaponUtil.hasType(materialStack)) {
             processWeaponEvolve(weaponStack, materialStack); return;
         }
-        // 情况2：武器裂罅循环
         if (weaponStack.getItem() instanceof ItemRivenModule && materialStack.getItem() instanceof Kuva) {
             processItemRivenCycle(weaponStack, materialStack); return;
         }
-        // 情况3：战甲裂罅循环
         if (weaponStack.getItem() instanceof WarframeRivenModule && materialStack.getItem() instanceof Kuva) {
             processWarframeRivenCycle(weaponStack, materialStack); return;
         }
-        // 情况4：Forma洗面板
         if (materialStack.getItem() instanceof Forma && WeaponModuleHandler.hasBase(weaponStack)
                 && !KuvaWeaponUtil.hasType(weaponStack) && !WeaponModuleHandler.isFormaLocked(weaponStack)
                 && weaponStack.getCount() == 1) {
             processFormaReroll(weaponStack, materialStack); return;
         }
-        // 情况5：添加基础属性（开光）
         if (!weaponStack.isEmpty() && materialStack.getItem() instanceof RivenSliver) {
             processAddBaseAttribute(weaponStack, materialStack); return;
         }
-        // 情况6：TACZ枪械强化
         if (TaczGunEnhanceUtil.isLichReliquary(materialStack) && TaczGunEnhanceUtil.isEnhanceableTaczGun(weaponStack)
                 && weaponStack.getCount() == 1) {
             processGunEnhance(weaponStack, materialStack); return;
         }
-        // ⭐ 情况7：模组 + 内融核心 → 模组升级（预览模式）
         if (ModuleLevelHelper.isLevelSystemEnabled()
                 && materialStack.getItem() instanceof Endo
                 && (weaponStack.getItem() instanceof AbstractModule)
@@ -309,7 +259,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                 materialHandler.setStackInSlot(0, newMaterial);
                 int rivenMode = ItemRivenModule.getRivenMode(weaponStack);
                 ItemStack newRiven = ItemRivenModule.cycleModule(trend, cycleCount, rivenMode);
-                // ⭐ 保留原裂罅的等级
                 if (ModuleLevelHelper.isLevelSystemEnabled()) {
                     int originalLevel = ModuleLevelHelper.getModuleLevel(weaponStack);
                     ModuleLevelHelper.setModuleLevel(newRiven, originalLevel);
@@ -333,7 +282,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
                 newMaterial.setCount(materialStack.getCount() - kuvaSpend);
                 materialHandler.setStackInSlot(0, newMaterial);
                 ItemStack newRiven = WarframeRivenModule.cycleModule(trend, cycleCount);
-                // ⭐ 保留原裂罅的等级
                 if (ModuleLevelHelper.isLevelSystemEnabled()) {
                     int originalLevel = ModuleLevelHelper.getModuleLevel(weaponStack);
                     ModuleLevelHelper.setModuleLevel(newRiven, originalLevel);
@@ -395,25 +343,12 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         } catch (Exception e) { LogUtil.error("TACZ枪械强化失败", e); baseAttributeJustProcessed = false; }
     }
 
-    /**
-     * ⭐ 处理模组等级升级（预览模式）
-     * <p>
-     * 放入模组+内融核心后仅预览结果，不消耗任何材料。
-     * 材料在玩家从结果槽取出时才实际消耗（同武器融合逻辑）。
-     * <p>
-     * ⭐ 升级费用根据模组品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
-     *
-     * @param moduleStack 待升级的模组
-     * @param endoStack   内融核心
-     */
     private void processModuleUpgrade(ItemStack moduleStack, ItemStack endoStack) {
         try {
             int currentLevel = ModuleLevelHelper.getModuleLevel(moduleStack);
-            // ⭐ 使用带品质缩放的费用计算
             int cost = ModuleLevelHelper.getUpgradeCost(currentLevel, moduleStack);
             if (cost <= 0 || endoStack.getCount() < cost) { return; }
 
-            // 仅预览：生成升级后的模组放入结果槽，不消耗材料
             ItemStack upgradedModule = moduleStack.copy();
             int newLevel = currentLevel + 1;
             ModuleLevelHelper.setModuleLevel(upgradedModule, newLevel);
@@ -430,40 +365,29 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     // ==================== 结果取走回调 ====================
 
-    /**
-     * 结果槽物品被取出时的回调
-     * 各模式在此实际消耗材料
-     */
     public void onResultTaken() {
-        // 武器融合：取出时消耗两个输入
         if (evolveMode) {
             weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
             materialHandler.setStackInSlot(0, ItemStack.EMPTY);
             evolveMode = false;
         }
-        // 裂罅循环：取出时消耗左侧模组（赤毒已在预览时扣除）
         if (cycleMode) {
             weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
             cycleMode = false;
         }
-        // ⭐ 模组升级：取出时才消耗内融核心和原模组
         if (upgradeMode) {
             ItemStack moduleStack = weaponHandler.getStackInSlot(0);
             ItemStack endoStack = materialHandler.getStackInSlot(0);
             int currentLevel = ModuleLevelHelper.getModuleLevel(moduleStack);
-            // ⭐ 使用带品质缩放的费用计算
             int cost = ModuleLevelHelper.getUpgradeCost(currentLevel, moduleStack);
 
-            // 消耗内融核心
             if (cost > 0 && endoStack.getCount() >= cost) {
                 endoStack.shrink(cost);
                 materialHandler.setStackInSlot(0, endoStack);
             }
 
-            // 清空左侧模组槽
             weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
 
-            // 更新玩家精通记录
             int newLevel = currentLevel + 1;
             String masteryKey = ModuleLevelHelper.getMasteryKey(moduleStack);
             if (!masteryKey.isEmpty()) {
@@ -489,7 +413,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             returnSlotToPlayer(materialHandler, 0, player);
             ItemStack resultStack = resultHandler.getStackInSlot(0);
             if (!resultStack.isEmpty()) {
-                // 预览模式下关闭界面：丢弃预览结果（材料未消耗所以无损）
                 if (evolveMode || cycleMode || upgradeMode) {
                     resultHandler.setStackInSlot(0, ItemStack.EMPTY);
                 } else {
@@ -504,13 +427,14 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
     }
 
     /**
-     * 将槽位中的物品返还给玩家（优先放背包，放不下则掉落）
+     * 将槽位中的物品返还给玩家
+     * ⭐ 使用 Inventory.add() 优先填充快捷栏，满了掉脚下
      */
     private void returnSlotToPlayer(ItemStackHandler handler, int slot, Player player) {
         ItemStack stack = handler.getStackInSlot(slot);
         if (!stack.isEmpty()) {
-            if (!this.moveItemStackTo(stack, 3, 39, true)) {
-                level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack.copy()));
+            if (!player.getInventory().add(stack)) {
+                player.drop(stack, false);
             }
             handler.setStackInSlot(slot, ItemStack.EMPTY);
         }
@@ -523,10 +447,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
 
     // ============================== 内部槽位类 ==============================
 
-    /**
-     * 武器槽位（左侧）
-     * ⭐ 接受已揭示的非满级模组（用于升级）
-     */
     public static class WeaponSlot extends SlotItemHandler {
         public WeaponSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
@@ -541,7 +461,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             try {
                 if (TaczGunEnhanceUtil.isTaczGun(stack) && stack.getCount() == 1) { return super.mayPlace(stack); }
             } catch (NoClassDefFoundError ignored) {}
-            // ⭐ 模组升级用（已揭示的非满级模组）
             if (ModuleLevelHelper.isLevelSystemEnabled()
                     && stack.getItem() instanceof AbstractModule
                     && !AbstractModule.isRandom(stack)
@@ -553,10 +472,6 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
         }
     }
 
-    /**
-     * 材料槽位（中间）
-     * ⭐ 接受内融核心（模组升级消耗品）
-     */
     public static class MaterialSlot extends SlotItemHandler {
         public MaterialSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
@@ -569,15 +484,11 @@ public class MenuRequiemEvolve extends AbstractContainerMenu {
             if (stack.getItem() instanceof RivenSliver) { return super.mayPlace(stack); }
             if (stack.getItem() instanceof Forma) { return super.mayPlace(stack); }
             if (stack.getItem() instanceof LichReliquary) { return super.mayPlace(stack); }
-            // ⭐ 内融核心（模组升级消耗品）
             if (stack.getItem() instanceof Endo) { return super.mayPlace(stack); }
             return false;
         }
     }
 
-    /**
-     * 结果槽位（右侧，只出不进）
-     */
     public static class ResultSlot extends SlotItemHandler {
         private final MenuRequiemEvolve menu;
         public ResultSlot(MenuRequiemEvolve menu, IItemHandler itemHandler, int index, int xPosition, int yPosition) {

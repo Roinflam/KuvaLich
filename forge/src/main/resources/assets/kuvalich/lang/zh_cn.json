@@ -1265,5 +1265,14 @@
   "item.kuvalich.endo.tooltip": "蕴含古老力量的结晶，可用于强化模组",
   "item.module.level.max": "MAX",
   "item.module.level.upgrade_cost": "升级所需: %d 内融核心",
-  "item.module.riven.cycle_cost": "循环所需: %d 赤毒"
+  "item.module.riven.cycle_cost": "循环所需: %d 赤毒",
+  "kuvalich.codex.title.weapon": "武器模组图鉴",
+  "kuvalich.codex.title.warframe": "战甲模组图鉴",
+  "kuvalich.codex.empty": "暂无已注册的模组",
+  "kuvalich.codex.close_hint": "返回",
+  "kuvalich.codex.open_hint": "模组图鉴",
+  "kuvalich.codex.count_suffix": "个",
+  "kuvalich.codex.search_hint": "搜索词条...",
+  "kuvalich.codex.filter_result": "筛选结果:",
+  "kuvalich.codex.clear_search": "清除搜索"
 }
