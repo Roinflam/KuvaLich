@@ -22,12 +22,10 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
-import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
-import pers.roinflam.kuvalich.network.message.DiggingSpeedPacket;
+import pers.roinflam.kuvalich.network.message.WarframeModuleSyncPacket;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -36,9 +34,9 @@ import java.util.*;
  * 战甲效果事件处理器
  * 负责护盾恢复、生命值/护甲系统、伤害抗性、跳跃增益、掉落物、治疗、挖掘速度等
  *
- * Warframe Effect Event Handler
- * Handles shield recovery, health/armor systems, damage resistance,
- * jump boost, drops, healing, digging speed, etc.
+ * ⭐ 重构：使用 WarframeModuleSyncPacket 替代 DiggingSpeedPacket
+ *    客户端 BreakSpeed 恢复使用，与服务端使用完全相同的属性计算逻辑
+ *    同步时机：登录、重生/维度传送、击杀叠层变化、每5tick脏检测
  */
 @Mod.EventBusSubscriber
 public class WarframeEffectHandler {
@@ -63,12 +61,46 @@ public class WarframeEffectHandler {
         }
     }
 
+    // ========== ⭐ 同步触发点：登录 ==========
+
+    /**
+     * 玩家登录时同步战甲模组数据到客户端
+     * 延迟1tick确保 Capability 已就绪
+     */
+    @SubscribeEvent
+    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        player.getServer().execute(() -> {
+            WarframeModuleSyncPacket.syncToPlayer(player);
+        });
+    }
+
+    // ========== ⭐ 同步触发点：重生/维度传送 ==========
+
+    /**
+     * 玩家 Clone 事件后同步战甲模组数据
+     * 使用 LOW 优先级确保在 CapabilityRegistryHandler 的克隆逻辑之后执行
+     * 延迟1tick确保新实体的 Capability 已完全初始化
+     */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        if (event.getEntity().level().isClientSide()) return;
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        player.getServer().execute(() -> {
+            WarframeModuleSyncPacket.syncToPlayer(player);
+        });
+    }
+
     // ========== 伤害事件 / Damage Events ==========
 
     /**
      * 玩家受伤/攻击时的战甲属性处理
      * - 受伤时：应用各种抗性、设置护盾冷却
      * - 攻击时：设置护盾冷却、击杀检测
+     * ⭐ 击杀时增加叠层后立即同步到客户端
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDamage(LivingDamageEvent evt) {
@@ -129,6 +161,10 @@ public class WarframeEffectHandler {
                 // 击杀检测
                 if (evt.getEntity().getHealth() - evt.getAmount() <= 0) {
                     WarframeModuleHandler.addWarframeKillStacks(player);
+                    // ⭐ 击杀叠层变化后立即同步到客户端
+                    if (player instanceof ServerPlayer serverPlayer) {
+                        WarframeModuleSyncPacket.syncToPlayer(serverPlayer);
+                    }
                 }
             }
         }
@@ -203,13 +239,11 @@ public class WarframeEffectHandler {
                 if (itemDropMultiplier <= 0) {
                     drops.removeIf(drop -> {
                         ItemStack dropStack = drop.getItem();
-                        // 装备类不受影响
                         if (dropStack.getItem() instanceof ArmorItem ||
                                 dropStack.getItem() instanceof SwordItem ||
                                 dropStack.getItem() instanceof TieredItem) {
                             return false;
                         }
-                        // 倍率为0或负数时100%移除
                         return true;
                     });
                     return;
@@ -218,7 +252,6 @@ public class WarframeEffectHandler {
                 // 倍率 > 0 时：缩放掉落物数量
                 for (ItemEntity drop : drops) {
                     ItemStack dropStack = drop.getItem();
-                    // 装备类不受影响
                     if (!(dropStack.getItem() instanceof ArmorItem) &&
                             !(dropStack.getItem() instanceof SwordItem) &&
                             !(dropStack.getItem() instanceof TieredItem)) {
@@ -227,12 +260,10 @@ public class WarframeEffectHandler {
                         int integerPart = (int) scaledCount;
                         double fractionalPart = scaledCount - integerPart;
 
-                        // 小数部分按概率决定是否+1
                         if (fractionalPart > 0 && Math.random() < fractionalPart) {
                             integerPart++;
                         }
 
-                        // 确保不低于0
                         dropStack.setCount(Math.max(integerPart, 0));
                     }
                 }
@@ -261,19 +292,21 @@ public class WarframeEffectHandler {
 
     // ========== 挖掘速度 / Digging Speed ==========
 
+    /**
+     * 挖掘速度事件处理
+     *
+     * ⭐ 客户端/服务端使用完全相同的计算路径：
+     *    getCachedAttributes → applyWarframeKillStackEffects → 读取 diggingSpeed
+     *    客户端数据来源为 WarframeModuleSyncPacket 同步的缓存，
+     *    与服务端使用相同计算逻辑，天然一致，不会回弹。
+     *
+     * @param evt 挖掘速度事件
+     */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onBreakSpeed(PlayerEvent.BreakSpeed evt) {
         Player player = evt.getEntity();
 
-        // 客户端：使用网络包缓存数据
-        if (player.level().isClientSide()) {
-            float cachedIncrement = DiggingSpeedPacket.getDiggingSpeedIncrement(player.getUUID());
-            float speedMultiplier = 1.0f + cachedIncrement;
-            evt.setNewSpeed(evt.getNewSpeed() * speedMultiplier);
-            return;
-        }
-
-        // 服务端：使用缓存属性
+        // 双端统一计算路径（客户端使用同步缓存，服务端使用实时数据）
         HashMap<String, Double> attributes = WarframeModuleHandler.getCachedAttributes(player);
         WarframeModuleHandler.applyWarframeKillStackEffects(player, attributes);
 
@@ -382,7 +415,6 @@ public class WarframeEffectHandler {
                             double fixedShield = attributes.getOrDefault("fixedShield", 0.0);
 
                             if (fixedShield > 0) {
-                                // 固定护盾模式
                                 double cappedShield = Math.max(0.0, fixedShield);
                                 if (cappedShield > 0) {
                                     float currentShield = player.getAbsorptionAmount();
@@ -397,8 +429,6 @@ public class WarframeEffectHandler {
                                     }
                                 }
                             } else if (shield > 0) {
-                                // ⭐ 百分比护盾模式（修复：使用配置的shieldCapMultiplier而非硬编码/2）
-                                // ⭐ Percentage shield mode (fix: use configured shieldCapMultiplier instead of hardcoded /2)
                                 double shieldCap = player.getMaxHealth() * shield * ModConfig.KUVA_LICH.shieldCapMultiplier.get();
                                 float currentShield = player.getAbsorptionAmount();
 
@@ -415,7 +445,7 @@ public class WarframeEffectHandler {
                         }
                     }
 
-                    // ═══ 每0.25秒：属性效果 + 挖掘速度同步 + 固定上限 ═══
+                    // ═══ 每0.25秒：属性效果 + 战甲模组同步 + 固定上限 ═══
                     if (player.level().getGameTime() % 5 == 0) {
                         HashMap<String, Double> attributes = WarframeModuleHandler.getCachedAttributes(player);
                         WarframeModuleHandler.applyWarframeKillStackEffects(player, attributes);
@@ -497,15 +527,11 @@ public class WarframeEffectHandler {
                             DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_REACH_DISTANCE.createInstance(6, level));
                         }
 
-                        // ═══ 同步挖掘速度到客户端 ═══
-                        double diggingSpeed = attributes.getOrDefault("diggingSpeed", 0.0);
-                        if (player instanceof ServerPlayer) {
-                            if (DiggingSpeedPacket.shouldSend(player.getUUID(), (float) diggingSpeed)) {
-                                KuvaLich.network.send(
-                                        PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                                        new DiggingSpeedPacket((float) diggingSpeed)
-                                );
-                            }
+                        // ⭐ 战甲模组同步（替代原 DiggingSpeedPacket）
+                        // 定期脏检测：模组槽变更、击杀叠层衰减等变化会被捕获
+                        // 击杀时的叠层增加已在 onLivingDamage 中立即同步
+                        if (player instanceof ServerPlayer serverPlayer) {
+                            WarframeModuleSyncPacket.syncIfChanged(serverPlayer);
                         }
                     }
                 }
@@ -519,7 +545,14 @@ public class WarframeEffectHandler {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent evt) {
         UUID uuid = evt.getEntity().getUUID();
         cooldingHashMap.remove(uuid);
-        DiggingSpeedPacket.cleanupPlayer(uuid);
         WarframeModuleHandler.cleanupCache(uuid);
+
+        if (evt.getEntity().level().isClientSide()) {
+            // 客户端：清理同步缓存
+            WarframeModuleHandler.clearClientCache();
+        } else {
+            // 服务端：清理状态追踪
+            WarframeModuleSyncPacket.cleanupPlayer(uuid);
+        }
     }
 }

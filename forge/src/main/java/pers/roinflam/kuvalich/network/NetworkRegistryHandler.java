@@ -5,8 +5,8 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import pers.roinflam.kuvalich.network.message.CodexGiveItemPacket;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
-import pers.roinflam.kuvalich.network.message.DiggingSpeedPacket;
 import pers.roinflam.kuvalich.network.message.ModuleDiscoveryPacket;
+import pers.roinflam.kuvalich.network.message.WarframeModuleSyncPacket;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -17,15 +17,19 @@ import pers.roinflam.kuvalich.utils.Reference;
  * 统一管理所有网络包的注册
  * Unified management of all packet registrations
  *
- * ⭐ 新增：CodexGiveItemPacket（图鉴创造模式给予物品，C2S）
+ * ⭐ 变更：移除 DiggingSpeedPacket，新增 WarframeModuleSyncPacket
+ * ⭐ 协议版本升级为 "2"（包列表变更，不兼容旧版客户端）
  */
 public class NetworkRegistryHandler {
 
     /** 网络通道 / Network channel */
     private static SimpleChannel INSTANCE;
 
-    /** 网络协议版本 / Network protocol version */
-    private static final String PROTOCOL_VERSION = "1";
+    /**
+     * 网络协议版本
+     * ⭐ 升级为 "2"：移除 DiggingSpeedPacket，新增 WarframeModuleSyncPacket
+     */
+    private static final String PROTOCOL_VERSION = "2";
 
     /** 消息ID计数器 / Message ID counter */
     private static int messageId = 0;
@@ -63,15 +67,6 @@ public class NetworkRegistryHandler {
                 DamagePacket::handle
         );
 
-        // 挖掘速度包（服务器 → 客户端）
-        INSTANCE.registerMessage(
-                nextMessageId(),
-                DiggingSpeedPacket.class,
-                DiggingSpeedPacket::encode,
-                DiggingSpeedPacket::decode,
-                DiggingSpeedPacket::handle
-        );
-
         // 模组发现记录同步包（服务器 → 客户端）
         INSTANCE.registerMessage(
                 nextMessageId(),
@@ -81,14 +76,23 @@ public class NetworkRegistryHandler {
                 ModuleDiscoveryPacket::handle
         );
 
-        // ⭐ 图鉴创造模式给予物品包（客户端 → 服务器）
-        // ⭐ Codex creative mode give item packet (Client → Server)
+        // 图鉴创造模式给予物品包（客户端 → 服务器）
         INSTANCE.registerMessage(
                 nextMessageId(),
                 CodexGiveItemPacket.class,
                 CodexGiveItemPacket::encode,
                 CodexGiveItemPacket::decode,
                 CodexGiveItemPacket::handle
+        );
+
+        // ⭐ 战甲模组完整同步包（服务器 → 客户端）
+        // 替代原 DiggingSpeedPacket，同步完整模组数据+击杀叠层
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                WarframeModuleSyncPacket.class,
+                WarframeModuleSyncPacket::encode,
+                WarframeModuleSyncPacket::decode,
+                WarframeModuleSyncPacket::handle
         );
     }
 
