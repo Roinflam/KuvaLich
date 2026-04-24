@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.module.weapon;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
@@ -15,7 +16,10 @@ import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
+import pers.roinflam.kuvalich.network.ElementEffectNetwork;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
+import pers.roinflam.kuvalich.network.message.ElementDebuffPacket;
+import pers.roinflam.kuvalich.render.particle.ElementParticleEffects;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
 import pers.roinflam.kuvalich.utils.util.EntityUtil;
@@ -24,17 +28,17 @@ import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import java.util.*;
 
 /**
- * 武器元素系统
+ * 武器元素系统 · v6
  * 负责元素组合计算、元素效果触发、伤害位置和元素表情符号
- * 支持所有LivingEntity攻击者，伤害数字仅对玩家攻击者发送
  *
- * ⭐ 性能优化：所有需要模组列表的方法均支持外部传入已解析的 modules 列表，
- *    避免在同一次伤害事件中对同一把武器反复调用 getModules() 进行 NBT 反序列化。
- *    SlashBlade 等范围攻击一 tick 命中大量实体时，此优化可显著减少 ItemStack 创建开销。
+ * ⭐ v6 变更：
+ *  - 病毒 emoji 颜色码：§a 绿 → §d 亮紫粉（LIGHT_PURPLE）
+ *  - 毒气 emoji 颜色码：§a 绿 → §b 青色（AQUA）
+ *  - 磁力 case 移除 ElementParticleEffects.spawnMagneticBurst 调用
+ *    （磁力视觉改由 ElementGeometryRenderer 的纯几何双环线条承担，无粒子）
  *
- * Weapon Element System
+ * Weapon Element System (v6)
  * Handles element composition, effect triggering, damage position and emoji display.
- * Supports all LivingEntity attackers; damage numbers are only sent to player attackers.
  */
 public class WeaponElementSystem {
 
@@ -58,7 +62,6 @@ public class WeaponElementSystem {
 
     /**
      * 获取攻击者的通用攻击伤害源
-     * 玩家使用 playerAttack，Mob 使用 mobAttack，其他使用 generic
      *
      * @param attacker 攻击者实体
      * @return 对应类型的伤害源
@@ -75,7 +78,6 @@ public class WeaponElementSystem {
 
     /**
      * 如果攻击者是玩家，发送伤害数字到客户端
-     * 非玩家攻击者不发送（无渲染目标）
      *
      * @param attacker    攻击者
      * @param displayText 显示文本
@@ -87,26 +89,37 @@ public class WeaponElementSystem {
         }
     }
 
+    /**
+     * 将视觉 debuff 立即同步到所有追踪该实体的客户端
+     *
+     * @param target        被附加 debuff 的目标
+     * @param element       元素名
+     * @param durationTicks 持续 tick 数
+     * @param amplifier     元素等级
+     */
+    private static void syncVisualDebuff(LivingEntity target, String element, int durationTicks, int amplifier) {
+        ElementEffectNetwork.sendToTrackers(target,
+                new ElementDebuffPacket(target.getId(), element, durationTicks, amplifier));
+    }
+
     // ========== 元素组合计算 / Element Composition ==========
 
     /**
-     * 获取武器的最终元素组合及各元素占比（外部传入已解析的模组列表，避免重复 NBT 反序列化）
+     * 获取武器的最终元素组合及各元素占比
      *
      * @param weapon  武器物品栈
-     * @param modules 已解析的模组列表（由调用方提供，避免重复调用 getModules）
-     * @return 元素名→百分比字符串的映射（例如 {"radiation" → "60%", "virus" → "40%"}）
+     * @param modules 已解析的模组列表
+     * @return 元素名→百分比字符串的映射
      */
     public static HashMap<String, String> getTriggerElements(ItemStack weapon, List<ItemStack> modules) {
         Map<String, Double> elementValues = new LinkedHashMap<>();
 
-        // 赤毒武器自带元素优先加入
         if (KuvaWeaponUtil.hasType(weapon)) {
             String kuvaType = KuvaWeaponUtil.getType(weapon);
             double kuvaValue = getKuvaWeaponElementDamage(weapon);
             elementValues.put(kuvaType, kuvaValue);
         }
 
-        // 收集所有模组的元素词条
         for (ItemStack module : modules) {
             for (Map.Entry<String, Double> entry : AbstractModule.getAttributes(module)) {
                 String key = entry.getKey();
@@ -117,22 +130,18 @@ public class WeaponElementSystem {
             }
         }
 
-        // 移除非正值元素
         elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
 
-        // 按Warframe规则组合元素
         Map<String, Double> combinedElements = new LinkedHashMap<>();
         for (Map.Entry<String, Double> entry : elementValues.entrySet()) {
             String currentElement = entry.getKey();
             double currentValue = entry.getValue();
 
-            // 复合元素直接累加
             if (isCompound(currentElement)) {
                 combinedElements.merge(currentElement, currentValue, Double::sum);
                 continue;
             }
 
-            // 尝试与已有元素组合
             boolean combined = false;
             for (String existingElement : new ArrayList<>(combinedElements.keySet())) {
                 if (isCompound(existingElement)) continue;
@@ -150,7 +159,6 @@ public class WeaponElementSystem {
             }
         }
 
-        // 计算各元素占比
         double totalValue = combinedElements.values().stream().mapToDouble(Double::doubleValue).sum();
         HashMap<String, String> result = new HashMap<>();
         for (Map.Entry<String, Double> entry : combinedElements.entrySet()) {
@@ -162,17 +170,17 @@ public class WeaponElementSystem {
     }
 
     /**
-     * 获取武器的最终元素组合及各元素占比（兼容旧调用，内部调用 getModules）
+     * 获取武器的最终元素组合及各元素占比（兼容旧调用）
      *
      * @param weapon 武器物品栈
-     * @return 元素名→百分比字符串的映射（例如 {"radiation" → "60%", "virus" → "40%"}）
+     * @return 元素名→百分比字符串的映射
      */
     public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
         return getTriggerElements(weapon, WeaponModuleHandler.getModules(weapon));
     }
 
     /**
-     * 根据元素占比概率随机选取一个触发元素（外部传入已解析的模组列表）
+     * 根据元素占比概率随机选取一个触发元素
      *
      * @param weapon  武器物品栈
      * @param modules 已解析的模组列表
@@ -202,7 +210,7 @@ public class WeaponElementSystem {
      * 根据元素占比概率随机选取一个触发元素（兼容旧调用）
      *
      * @param weapon 武器物品栈
-     * @return 被选中的元素名，无元素时返回null
+     * @return 被选中的元素名
      */
     public static String getTriggerElement(ItemStack weapon) {
         return getTriggerElement(weapon, WeaponModuleHandler.getModules(weapon));
@@ -210,24 +218,18 @@ public class WeaponElementSystem {
 
     // ========== 元素类型判断 / Element Type Check ==========
 
-    /**
-     * 是否为基础元素（火/冰/毒/电）
-     */
+    /** 是否为基础元素（火/冰/毒/电）*/
     static boolean isElemental(String element) {
         return element.equals("fire") || element.equals("ice") ||
                 element.equals("poison") || element.equals("electricity");
     }
 
-    /**
-     * 是否为物理元素（切割/穿刺/冲击）
-     */
+    /** 是否为物理元素（切割/穿刺/冲击）*/
     static boolean isPhysical(String element) {
         return element.equals("slash") || element.equals("puncture") || element.equals("impact");
     }
 
-    /**
-     * 是否为复合元素
-     */
+    /** 是否为复合元素 */
     static boolean isCompound(String element) {
         return element.equals("gas") || element.equals("radiation") ||
                 element.equals("magnetic") || element.equals("corrosion") ||
@@ -260,7 +262,7 @@ public class WeaponElementSystem {
     // ========== 元素伤害值计算 / Element Damage Value ==========
 
     /**
-     * 获取指定元素的总伤害值（包括赤毒武器自带 + 模组词条 + 复合元素的组成元素）
+     * 获取指定元素的总伤害值
      *
      * @param element    元素名
      * @param attributes 武器模组属性
@@ -270,13 +272,11 @@ public class WeaponElementSystem {
     static double getElementDamageValue(String element, HashMap<String, Double> attributes, ItemStack weapon) {
         double value = 0.0;
 
-        // 赤毒武器自带元素贡献
         if (KuvaWeaponUtil.hasType(weapon)) {
             String kuvaType = KuvaWeaponUtil.getType(weapon);
             if (kuvaType.equals(element)) {
                 value += getKuvaWeaponElementDamage(weapon);
             }
-            // 复合元素：如果赤毒元素是其组成部分，也计入
             if (isCompound(element)) {
                 switch (element) {
                     case "gas":
@@ -307,7 +307,6 @@ public class WeaponElementSystem {
             }
         }
 
-        // 模组词条的元素贡献（复合元素 = 组成元素之和）
         if (isCompound(element)) {
             switch (element) {
                 case "gas":
@@ -341,22 +340,18 @@ public class WeaponElementSystem {
     // ========== 元素效果触发 / Element Effect Trigger ==========
 
     /**
-     * 触发一次元素效果（火焰DOT、冰冻减速、电击麻痹、毒素直伤等）
-     * 支持所有 LivingEntity 攻击者，伤害数字仅在攻击者是玩家时发送
-     *
-     * ⭐ 性能优化：接受外部传入的 modules 列表，避免在同一次伤害事件中
-     *    对同一把武器反复调用 getModules() 进行 NBT 反序列化（ItemStack.of）。
+     * 触发一次元素效果
      *
      * @param damageSource   伤害来源
      * @param hurter         受害者
-     * @param attacker       攻击者（可以是玩家或怪物等LivingEntity）
+     * @param attacker       攻击者
      * @param itemStack      武器物品栈
-     * @param modules        已解析的模组列表（由调用方提供）
+     * @param modules        已解析的模组列表
      * @param triggerTime    触发时间倍率
-     * @param coreDamage     核心物理伤害（用于计算元素DOT基础伤害）
+     * @param coreDamage     核心物理伤害
      * @param attributes     武器运行时属性
      * @param baneMultiplier 克制倍率
-     * @return 被触发的元素名（用于伤害显示），DOT类元素返回null（自行处理显示）
+     * @return 被触发的元素名
      */
     static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
                                        LivingEntity attacker, ItemStack itemStack,
@@ -372,30 +367,38 @@ public class WeaponElementSystem {
 
         switch (type) {
             case "fire": {
-                // 火焰：DOT持续伤害 + 着火效果
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 1.5;
                 else if (hurter.getMobType().equals(MobType.UNDEAD)) typeDamageMultiplier = 0.5;
+
+                int duration = (int) (120 * triggerTime);
+                int fireLevel;
                 if (!DynamicAttributeManager.has(hurter, DynamicAttributes.FIRE)) {
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance((int) (120 * triggerTime), 0));
+                    fireLevel = 0;
+                    DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance(duration, 0));
                 } else {
-                    int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.FIRE);
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance((int) (120 * triggerTime), currentLevel));
+                    fireLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.FIRE);
+                    DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance(duration, fireLevel));
                 }
+                syncVisualDebuff(hurter, "fire", duration, fireLevel);
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnFireBurst(hurter, sl);
+                }
+
                 hurter.setSecondsOnFire(6);
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementFireDamageMultiplier.get());
                 if (dotDamage > 0) {
-                    // 捕获攻击者引用供异步任务使用
                     final LivingEntity dotAttacker = attacker;
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
+
                         @Override
                         public void run() {
                             if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
                             hurter.setSecondsOnFire(6);
                             hurter.hurt(hurter.damageSources().inFire(), dotDamage);
-                            String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("fire");
+                            String displayText = "\u00a7f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("fire");
                             sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
                         }
                     }.start();
@@ -403,7 +406,13 @@ public class WeaponElementSystem {
                 return null;
             }
             case "poison": {
-                // 毒素：无视护甲的DOT
+                int duration = (int) (120 * triggerTime);
+                DynamicAttributeManager.apply(hurter, DynamicAttributes.POISON.createInstance(duration, 0));
+                syncVisualDebuff(hurter, "poison", duration, 0);
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnPoisonBurst(hurter, sl);
+                }
+
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ILLAGER)) typeDamageMultiplier = 1.5;
                 else if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 0.5;
@@ -414,11 +423,13 @@ public class WeaponElementSystem {
                     final DamageSource attackSource = getAttackDamageSource(attacker);
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
+
                         @Override
                         public void run() {
                             if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
+
                             boolean hasShield = hurter.getAbsorptionAmount() > 0;
-                            String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("poison");
+                            String displayText = "\u00a7f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("poison");
                             sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
                             if (hasShield) {
                                 if (hurter.getHealth() - dotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, dotDamage); }
@@ -430,16 +441,22 @@ public class WeaponElementSystem {
                 return null;
             }
             case "ice": {
-                // 冰冻：叠加减速debuff
+                int duration = (int) (120 * triggerTime);
+                int newLevel;
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.ICE)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.ICE);
-                    int newLevel = Math.min(8, currentLevel + 1);
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.ICE.createInstance((int) (120 * triggerTime), newLevel));
-                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.ICE.createInstance((int) (120 * triggerTime), 0)); }
+                    newLevel = Math.min(8, currentLevel + 1);
+                } else {
+                    newLevel = 0;
+                }
+                DynamicAttributeManager.apply(hurter, DynamicAttributes.ICE.createInstance(duration, newLevel));
+                syncVisualDebuff(hurter, "ice", duration, newLevel);
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnIceBurst(hurter, sl);
+                }
                 return "ice";
             }
             case "electricity": {
-                // 电击：瞬发伤害 + 麻痹
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.UNDEAD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
@@ -449,14 +466,17 @@ public class WeaponElementSystem {
                     net.minecraft.world.entity.LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
                     if (lightning != null) { lightning.moveTo(hurter.getX(), hurter.getY(), hurter.getZ()); lightning.setVisualOnly(true); level.addFreshEntity(lightning); }
                     hurter.hurt(level.damageSources().lightningBolt(), lightningDamage);
-                    String displayText = "§f" + DamagePacket.formatDamage(lightningDamage) + getElementEmoji("electricity");
+                    String displayText = "\u00a7f" + DamagePacket.formatDamage(lightningDamage) + getElementEmoji("electricity");
                     sendDamageDisplayIfPlayer(attacker, displayText, getRandomDamagePosition(hurter));
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.ELECTRICITY_PARALYSIS.createInstance((int) (10 * triggerTime), 0));
                 }
                 return null;
             }
             case "slash": {
-                // 切割：无视护甲DOT，受病毒debuff增幅
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnSlashBurst(hurter, sl);
+                }
+
                 float dotDamage = (float) (0.35 * coreDamage * baneMultiplier
                         * ModConfig.KUVA_LICH.elementSlashDamageMultiplier.get());
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.VIRUS)) {
@@ -470,10 +490,16 @@ public class WeaponElementSystem {
                     final DamageSource attackSource = getAttackDamageSource(attacker);
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
+
                         @Override
                         public void run() {
                             if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
-                            String displayText = "§f" + DamagePacket.formatDamage(finalDotDamage) + getElementEmoji("slash");
+
+                            if (hurter.level() instanceof ServerLevel sl) {
+                                ElementParticleEffects.spawnSlashEffect(hurter, sl);
+                            }
+
+                            String displayText = "\u00a7f" + DamagePacket.formatDamage(finalDotDamage) + getElementEmoji("slash");
                             sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
                             if (hurter.getHealth() - finalDotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, finalDotDamage); }
                             else { EntityLivingUtil.kill(hurter, attackSource); this.cancel(); }
@@ -483,16 +509,22 @@ public class WeaponElementSystem {
                 return null;
             }
             case "puncture": {
-                // 穿刺：叠加减伤debuff
+                int duration = (int) (120 * triggerTime);
+                int newLevel;
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.PUNCTURE)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.PUNCTURE);
-                    int newLevel = Math.min(3, currentLevel + 1);
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.PUNCTURE.createInstance((int) (120 * triggerTime), newLevel));
-                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.PUNCTURE.createInstance((int) (120 * triggerTime), 0)); }
+                    newLevel = Math.min(3, currentLevel + 1);
+                } else {
+                    newLevel = 0;
+                }
+                DynamicAttributeManager.apply(hurter, DynamicAttributes.PUNCTURE.createInstance(duration, newLevel));
+                syncVisualDebuff(hurter, "puncture", duration, newLevel);
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnPunctureBurst(hurter, sl);
+                }
                 return "puncture";
             }
             case "impact": {
-                // 冲击：击退效果
                 double impactValue = attributes.getOrDefault("impact", 0.0);
                 if (KuvaWeaponUtil.hasType(itemStack) && KuvaWeaponUtil.getType(itemStack).equals("impact")) { impactValue += getKuvaWeaponElementDamage(itemStack); }
                 float knockbackStrength = (float) (impactValue * 3.0);
@@ -500,87 +532,132 @@ public class WeaponElementSystem {
                     double dx = hurter.getX() - attacker.getX();
                     double dz = hurter.getZ() - attacker.getZ();
                     double distance = Math.sqrt(dx * dx + dz * dz);
-                    if (distance > 0) { dx = dx / distance; dz = dz / distance; hurter.knockback(knockbackStrength, -dx, -dz); hurter.setDeltaMovement(hurter.getDeltaMovement().add(0, 0.2 * knockbackStrength, 0)); }
+                    if (distance > 0) {
+                        dx = dx / distance; dz = dz / distance;
+                        hurter.knockback(knockbackStrength, -dx, -dz);
+                        hurter.setDeltaMovement(hurter.getDeltaMovement().add(0, 0.2 * knockbackStrength, 0));
+                    }
+                }
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnImpactShockwave(sl, hurter);
                 }
                 return "impact";
             }
             case "magnetic": {
-                // 磁力：叠加护盾削减debuff
+                // ⭐ v6：磁力粒子已全部移除，视觉由 ElementGeometryRenderer 的几何双环承担
+                int duration = (int) (120 * triggerTime);
+                int newLevel;
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.MAGNETIC)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.MAGNETIC);
-                    int newLevel = Math.min(9, currentLevel + 1);
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.MAGNETIC.createInstance((int) (120 * triggerTime), newLevel));
-                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.MAGNETIC.createInstance((int) (120 * triggerTime), 0)); }
+                    newLevel = Math.min(9, currentLevel + 1);
+                } else {
+                    newLevel = 0;
+                }
+                DynamicAttributeManager.apply(hurter, DynamicAttributes.MAGNETIC.createInstance(duration, newLevel));
+                syncVisualDebuff(hurter, "magnetic", duration, newLevel);
+                // ⭐ v6：spawnMagneticBurst 调用已移除
                 return "magnetic";
             }
             case "radiation": {
-                // 辐射：叠加混乱debuff
+                int duration = (int) (240 * triggerTime);
+                int newLevel;
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.RADIATION)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.RADIATION);
-                    int newLevel = Math.min(9, currentLevel + 1);
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.RADIATION.createInstance((int) (240 * triggerTime), newLevel));
-                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.RADIATION.createInstance((int) (240 * triggerTime), 0)); }
+                    newLevel = Math.min(9, currentLevel + 1);
+                } else {
+                    newLevel = 0;
+                }
+                DynamicAttributeManager.apply(hurter, DynamicAttributes.RADIATION.createInstance(duration, newLevel));
+                syncVisualDebuff(hurter, "radiation", duration, newLevel);
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnRadiationBurst(hurter, sl);
+                }
                 return "radiation";
             }
             case "virus": {
-                // 病毒：叠加生命值削减debuff
+                int duration = (int) (120 * triggerTime);
+                int newLevel;
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.VIRUS)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.VIRUS);
-                    int newLevel = Math.min(9, currentLevel + 1);
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.VIRUS.createInstance((int) (120 * triggerTime), newLevel));
-                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.VIRUS.createInstance((int) (120 * triggerTime), 0)); }
+                    newLevel = Math.min(9, currentLevel + 1);
+                } else {
+                    newLevel = 0;
+                }
+                DynamicAttributeManager.apply(hurter, DynamicAttributes.VIRUS.createInstance(duration, newLevel));
+                syncVisualDebuff(hurter, "virus", duration, newLevel);
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnVirusBurst(hurter, sl);
+                }
                 return "virus";
             }
             case "corrosion": {
-                // 腐蚀：叠加护甲削减debuff
+                int duration = (int) (160 * triggerTime);
+                int newLevel;
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.CORROSION)) {
                     int currentLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.CORROSION);
-                    int newLevel = Math.min(9, currentLevel + 1);
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.CORROSION.createInstance((int) (160 * triggerTime), newLevel));
-                } else { DynamicAttributeManager.apply(hurter, DynamicAttributes.CORROSION.createInstance((int) (160 * triggerTime), 0)); }
+                    newLevel = Math.min(9, currentLevel + 1);
+                } else {
+                    newLevel = 0;
+                }
+                DynamicAttributeManager.apply(hurter, DynamicAttributes.CORROSION.createInstance(duration, newLevel));
+                syncVisualDebuff(hurter, "corrosion", duration, newLevel);
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnCorrosionBurst(hurter, sl);
+                }
                 return "corrosion";
             }
             case "explosion": {
-                // 爆炸：AOE范围伤害
                 double armorMultiplier = hurter.getAbsorptionAmount() > 0 ? 1.5 : 0.5;
                 float explosionDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * armorMultiplier
                         * ModConfig.KUVA_LICH.elementExplosionDamageMultiplier.get());
                 if (explosionDamage > 0) {
                     level.explode(null, hurter.getX(), hurter.getY(), hurter.getZ(), 3.0F, Level.ExplosionInteraction.NONE);
                     hurter.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
-                    String displayText = "§f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
+                    String displayText = "\u00a7f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
                     sendDamageDisplayIfPlayer(attacker, displayText, getRandomDamagePosition(hurter));
                     List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 3, e -> !e.equals(hurter) && !e.equals(attacker));
                     for (LivingEntity entity : entities) {
                         entity.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
-                        String aoeDisplayText = "§f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
+                        String aoeDisplayText = "\u00a7f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
                         sendDamageDisplayIfPlayer(attacker, aoeDisplayText, getRandomDamagePosition(entity));
                     }
                 }
                 return null;
             }
             case "gas": {
-                // 毒气：AOE范围DOT
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementGasDamageMultiplier.get());
                 final Vec3 gasCenter = new Vec3(hurter.getX(), hurter.getY(), hurter.getZ());
+                final double gasRadius = 3.0;
+
+                if (level instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnGasBurst(sl, gasCenter, gasRadius);
+                }
+
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
                     new SynchronizationTask(20, 20) {
                         private int ticks = 0;
+
                         @Override
                         public void run() {
                             if (ticks++ >= 6 * triggerTime) { this.cancel(); return; }
+
+                            if (level instanceof ServerLevel sl) {
+                                ElementParticleEffects.spawnGasCloudEffect(sl, gasCenter, gasRadius);
+                            }
+
                             List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class,
-                                    new net.minecraft.world.phys.AABB(gasCenter.x - 3, gasCenter.y - 3, gasCenter.z - 3, gasCenter.x + 3, gasCenter.y + 3, gasCenter.z + 3),
-                                    e -> !e.equals(dotAttacker) && e.distanceToSqr(gasCenter) <= 9);
+                                    new net.minecraft.world.phys.AABB(gasCenter.x - gasRadius, gasCenter.y - gasRadius, gasCenter.z - gasRadius,
+                                            gasCenter.x + gasRadius, gasCenter.y + gasRadius, gasCenter.z + gasRadius),
+                                    e -> !e.equals(dotAttacker) && e.distanceToSqr(gasCenter) <= gasRadius * gasRadius);
                             for (LivingEntity entity : entities) {
                                 if (entity.isDeadOrDying()) continue;
                                 entity.hurt(dotAttacker.damageSources().magic(), dotDamage);
-                                String displayText = "§f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("gas");
+                                String displayText = "\u00a7f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("gas");
                                 sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(entity));
                             }
                         }
@@ -594,9 +671,9 @@ public class WeaponElementSystem {
     }
 
     /**
-     * 触发一次元素效果（兼容旧调用，内部调用 getModules）
+     * 触发一次元素效果（兼容旧调用）
      *
-     * @deprecated 优先使用带 modules 参数的重载版本以避免重复 NBT 反序列化
+     * @deprecated 优先使用带 modules 参数的重载版本
      */
     @Deprecated
     static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
@@ -629,25 +706,30 @@ public class WeaponElementSystem {
 
     /**
      * 获取元素对应的表情符号（用于伤害数字显示）
+     * <p>⭐ v6 颜色码调整：
+     * <ul>
+     *     <li>gas（毒气）：§a 绿 → §b 青色（AQUA），对应粒子青色</li>
+     *     <li>virus（病毒）：§a 绿 → §d 亮紫粉（LIGHT_PURPLE），对应粒子粉色</li>
+     * </ul></p>
      *
      * @param element 元素名
      * @return 带颜色代码的表情符号字符串
      */
     static String getElementEmoji(String element) {
         switch (element) {
-            case "fire": return "§c🔥";
-            case "ice": return "§3❄";
-            case "poison": return "§2☠";
-            case "electricity": return "§1⚡";
-            case "slash": return "§7☾";
-            case "puncture": return "§f†";
-            case "impact": return "§f🔨";
-            case "gas": return "§a\uD83D\uDCA8";
-            case "radiation": return "§e☢";
-            case "magnetic": return "§b🧲";
-            case "corrosion": return "§2🧪";
-            case "explosion": return "§4💥";
-            case "virus": return "§a🦠";
+            case "fire": return "\u00a7c\ud83d\udd25";
+            case "ice": return "\u00a73\u2744";
+            case "poison": return "\u00a72\u2620";
+            case "electricity": return "\u00a71\u26a1";
+            case "slash": return "\u00a77\u263e";
+            case "puncture": return "\u00a7f\u2020";
+            case "impact": return "\u00a7f\ud83d\udd28";
+            case "gas": return "\u00a7b\uD83D\uDCA8";          // v6：§a → §b 青色
+            case "radiation": return "\u00a7e\u2622";
+            case "magnetic": return "\u00a7b\ud83e\uddf2";
+            case "corrosion": return "\u00a72\ud83e\uddea";
+            case "explosion": return "\u00a74\ud83d\udca5";
+            case "virus": return "\u00a7d\ud83e\udda0";         // v6：§a → §d 亮紫粉
             default: return "";
         }
     }

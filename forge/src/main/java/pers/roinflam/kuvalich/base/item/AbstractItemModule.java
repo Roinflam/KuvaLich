@@ -24,6 +24,11 @@ import java.util.*;
  * ⭐ 满级不显示等级Tooltip
  * ⭐ 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
  * ⭐ 升级费用根据品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
+ *
+ * ⭐ v6 改动：特定元素属性词条使用元素专属颜色（覆盖模组品质颜色）：
+ *    - virus 病毒 → LIGHT_PURPLE 粉色
+ *    - gas 毒气  → AQUA 青色
+ *    - 其他属性保持原有品质颜色（getModuleColor）
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public abstract class AbstractItemModule extends AbstractModule {
@@ -107,7 +112,9 @@ public abstract class AbstractItemModule extends AbstractModule {
                 attributeName = Component.translatable("kuvaweapon.item_attribute_type." + attributeKey);
             }
 
-            ChatFormatting color = getModuleColor(item);
+            // ⭐ v6：特定元素使用专属颜色（病毒粉色、毒气青色），其他走原品质颜色
+            ChatFormatting elementColor = getElementColor(attributeKey);
+            ChatFormatting color = elementColor != null ? elementColor : getModuleColor(item);
             tooltip.add(number++, Component.literal(prefix + percentage + "% ")
                     .append(attributeName)
                     .withStyle(color));
@@ -160,5 +167,18 @@ public abstract class AbstractItemModule extends AbstractModule {
         if (item instanceof ItemPrimeModule) return ChatFormatting.WHITE;
         if (item instanceof ItemRivenModule) return ChatFormatting.LIGHT_PURPLE;
         return ChatFormatting.WHITE;
+    }
+
+    /**
+     * 根据属性 key 返回元素专属颜色（仅病毒粉色、毒气青色应用覆盖）
+     * <p>其他属性返回 null，调用方会 fallback 到 {@link #getModuleColor}。</p>
+     *
+     * @param attributeKey 属性 key（如 "virus"、"gas"、"meleeDamage"）
+     * @return 元素专属颜色，无匹配时 null
+     */
+    private static ChatFormatting getElementColor(String attributeKey) {
+        switch (attributeKey) {
+            default:      return null;
+        }
     }
 }

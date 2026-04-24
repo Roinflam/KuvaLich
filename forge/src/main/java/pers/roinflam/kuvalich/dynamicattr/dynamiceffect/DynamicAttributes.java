@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.dynamicattr.dynamiceffect;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -10,14 +11,26 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttribute;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeInstance;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
+import pers.roinflam.kuvalich.render.particle.ElementParticleEffects;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * 动态属性注册
- * 完全替代原来的MobEffect系统
+ * 动态属性注册（v6）
+ * Dynamic Attribute Registration
+ *
+ * <p>⭐ v6 变更：
+ * <ul>
+ *     <li>{@code MAGNETIC} 移除 {@code setTickInterval} 和 {@code onTick} 链，
+ *         粒子生成完全停止。磁力视觉改由 {@code ElementGeometryRenderer} 的
+ *         几何双环线条承担，不再依赖粒子系统。</li>
+ *     <li>磁力的护盾增伤逻辑（{@code withEventHandler}）完全保留不变。</li>
+ * </ul></p>
+ *
+ * <p>其他元素（FIRE/ICE/POISON/RADIATION/CORROSION/VIRUS/PUNCTURE）的 onTick
+ * 粒子生成保持不变。</p>
  */
 public class DynamicAttributes {
 
@@ -61,17 +74,9 @@ public class DynamicAttributes {
     public static final DynamicAttribute NEGATIVE_REACH_DISTANCE = new DynamicAttribute("negative_reach_distance")
             .addModifier(ForgeMod.BLOCK_REACH.get(), -0.1, AttributeModifier.Operation.MULTIPLY_TOTAL);
 
-    /**
-     * 攻击距离增加（基于 ENTITY_REACH，每级 +5%）
-     * 效果为攻击速度同粒度（0.1）的一半，防止攻击范围过于超标
-     * 例：attackRange=1.1 → level=10 → 0.05×11 = +55% ENTITY_REACH
-     */
     public static final DynamicAttribute ATTACK_RANGE = new DynamicAttribute("attack_range")
             .addModifier(ForgeMod.ENTITY_REACH.get(), 0.05, AttributeModifier.Operation.MULTIPLY_TOTAL);
 
-    /**
-     * 攻击距离降低（基于 ENTITY_REACH，每级 -5%）
-     */
     public static final DynamicAttribute NEGATIVE_ATTACK_RANGE = new DynamicAttribute("negative_attack_range")
             .addModifier(ForgeMod.ENTITY_REACH.get(), -0.05, AttributeModifier.Operation.MULTIPLY_TOTAL);
 
@@ -79,15 +84,22 @@ public class DynamicAttributes {
 
     /**
      * 火焰效果 - 护甲削减升级（0->1->2->3）
+     * ⭐ 视觉：每 0.5 秒生成火焰 + 灵魂火焰 + 熔岩 + 小火焰 + 烟雾 + 灰烬
+     * ⭐ v8：粒子密度按 amplifier 分层（50% → 100%）
      */
     public static final DynamicAttribute FIRE = new DynamicAttribute("fire")
             .setTickInterval(10)
             .onTick(ctx -> {
-                int currentLevel = ctx.getAmplifier();
+                LivingEntity entity = ctx.getEntity();
 
+                if (entity.level() instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnFireEffect(entity, sl, ctx.getAmplifier());
+                }
+
+                int currentLevel = ctx.getAmplifier();
                 if (currentLevel < 3) {
                     int newLevel = currentLevel + 1;
-                    DynamicAttributeManager.apply(ctx.getEntity(),
+                    DynamicAttributeManager.apply(entity,
                             new DynamicAttributeInstance(
                                     ctx.getInstance().getAttribute(),
                                     ctx.getRemainingDuration(),
@@ -106,8 +118,16 @@ public class DynamicAttributes {
 
     /**
      * 冰冻效果 - 叠加式减速（0级50% → 8级90%）
+     * ⭐ 视觉：每 0.5 秒生成雪花 + 冰晶 + 烟花闪光 + 悬浮冰雾；身上覆盖蓝冰装饰
      */
     public static final DynamicAttribute ICE = new DynamicAttribute("ice")
+            .setTickInterval(10)
+            .onTick(ctx -> {
+                LivingEntity entity = ctx.getEntity();
+                if (entity.level() instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnIceEffect(entity, sl, ctx.getAmplifier());
+                }
+            })
             .addModifier(Attributes.MOVEMENT_SPEED, AttributeModifier.Operation.MULTIPLY_TOTAL, (level) -> {
                 return -(0.5 + Math.min(level, 8) * 0.05);
             })
@@ -119,6 +139,19 @@ public class DynamicAttributes {
             });
 
     /**
+     * ⭐ 毒素持续标记 DynamicAttribute（纯视觉）
+     * DOT 由 WeaponElementSystem 的 SynchronizationTask 负责
+     */
+    public static final DynamicAttribute POISON = new DynamicAttribute("poison")
+            .setTickInterval(10)
+            .onTick(ctx -> {
+                LivingEntity entity = ctx.getEntity();
+                if (entity.level() instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnPoisonEffect(entity, sl);
+                }
+            });
+
+    /**
      * 电击麻痹效果 - 移动速度降低99%（几乎定身）
      */
     public static final DynamicAttribute ELECTRICITY_PARALYSIS = new DynamicAttribute("electricity_paralysis")
@@ -127,6 +160,8 @@ public class DynamicAttributes {
 
     /**
      * 磁力效果 - 有护盾时受到伤害增加（0级100% → 9级325%）
+     * ⭐ v6：粒子完全移除，视觉改由 ElementGeometryRenderer 的几何双环承担。
+     *        护盾增伤逻辑（withEventHandler）完全保留。
      */
     public static final DynamicAttribute MAGNETIC = new DynamicAttribute("magnetic")
             .withEventHandler(entity -> new Object() {
@@ -148,11 +183,16 @@ public class DynamicAttributes {
 
     /**
      * 辐射效果 - 混乱攻击同类并增伤（0级100% → 9级550%）
+     * ⭐ 视觉：每 0.5 秒生成黄→绿渐变 + 灵魂 + 金光 + 电火花 + 发光点
      */
     public static final DynamicAttribute RADIATION = new DynamicAttribute("radiation")
             .setTickInterval(10)
             .onTick(ctx -> {
                 LivingEntity entity = ctx.getEntity();
+
+                if (entity.level() instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnRadiationEffect(entity, sl, ctx.getAmplifier());
+                }
 
                 if (!(entity instanceof Mob mob)) {
                     return;
@@ -205,8 +245,16 @@ public class DynamicAttributes {
 
     /**
      * 腐蚀效果 - 降低护甲（0级26% → 9级80%）
+     * ⭐ 视觉：每 0.5 秒生成深绿酸液 + 粘液 + 黑曜石泪滴 + 酸液落地
      */
     public static final DynamicAttribute CORROSION = new DynamicAttribute("corrosion")
+            .setTickInterval(10)
+            .onTick(ctx -> {
+                LivingEntity entity = ctx.getEntity();
+                if (entity.level() instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnCorrosionEffect(entity, sl, ctx.getAmplifier());
+                }
+            })
             .addModifier(Attributes.ARMOR, AttributeModifier.Operation.MULTIPLY_TOTAL, (level) -> {
                 return -(0.26 + Math.min(level, 9) * 0.06);
             })
@@ -216,8 +264,16 @@ public class DynamicAttributes {
 
     /**
      * 穿刺效果 - 减少近战伤害（0级40% → 3级80%）
+     * ⭐ 视觉：每 0.5 秒生成白色针状 + 金属闪烁 + 浅银尘埃 + 发光点
      */
     public static final DynamicAttribute PUNCTURE = new DynamicAttribute("puncture")
+            .setTickInterval(10)
+            .onTick(ctx -> {
+                LivingEntity entity = ctx.getEntity();
+                if (entity.level() instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnPunctureEffect(entity, sl, ctx.getAmplifier());
+                }
+            })
             .withEventHandler(entity -> new Object() {
                 private final UUID boundEntityId = entity.getUUID();
 
@@ -249,8 +305,16 @@ public class DynamicAttributes {
 
     /**
      * 病毒效果 - 满层降低50%生命上限（切割增伤在切割代码中处理）
+     * ⭐ 视觉：每 0.5 秒生成病毒尘埃 + 孢子 + 监守者爆裂（v6 粉色主调）
      */
     public static final DynamicAttribute VIRUS = new DynamicAttribute("virus")
+            .setTickInterval(10)
+            .onTick(ctx -> {
+                LivingEntity entity = ctx.getEntity();
+                if (entity.level() instanceof ServerLevel sl) {
+                    ElementParticleEffects.spawnVirusEffect(entity, sl, ctx.getAmplifier());
+                }
+            })
             .addModifier(Attributes.MAX_HEALTH, AttributeModifier.Operation.MULTIPLY_TOTAL, (level) -> {
                 return level >= 9 ? -0.5 : 0.0;
             });
