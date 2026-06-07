@@ -16,10 +16,10 @@ import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
-import pers.roinflam.kuvalich.network.ElementEffectNetwork;
+import pers.roinflam.kuvalich.network.ElementSyncGuard;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
-import pers.roinflam.kuvalich.network.message.ElementDebuffPacket;
 import pers.roinflam.kuvalich.render.particle.ElementParticleEffects;
+import pers.roinflam.kuvalich.render.particle.ParticleEmissionGuard;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
 import pers.roinflam.kuvalich.utils.util.EntityUtil;
@@ -28,17 +28,35 @@ import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import java.util.*;
 
 /**
- * 武器元素系统 · v6
+ * 武器元素系统 · v7
  * 负责元素组合计算、元素效果触发、伤害位置和元素表情符号
  *
- * ⭐ v6 变更：
- *  - 病毒 emoji 颜色码：§a 绿 → §d 亮紫粉（LIGHT_PURPLE）
- *  - 毒气 emoji 颜色码：§a 绿 → §b 青色（AQUA）
- *  - 磁力 case 移除 ElementParticleEffects.spawnMagneticBurst 调用
- *    （磁力视觉改由 ElementGeometryRenderer 的纯几何双环线条承担，无粒子）
+ * <p>⭐ v7 关键修复（针对网络包雪崩导致的服务器卡死）：
+ * <ol>
+ *   <li><b>所有 syncVisualDebuff 调用改走 {@link ElementSyncGuard#trySend}</b>。
+ *       原来每次 element 触发都会无条件给每个 tracker 广播 ElementDebuffPacket，
+ *       SlashBlade 群体斩击 / Goety AOE / 爆炸半径溅射场景下一帧内
+ *       N 目标 × M tracker × K 触发 = 数百到数千次 IOUtil.write1 系统调用，
+ *       主线程被卡死被 Watchdog 终止。</li>
+ *   <li>节流策略由 {@link ElementSyncGuard} 实现：
+ *       <ul>
+ *         <li>同 tick 同 (target, element) 去重 → 单一目标多次触发只发一次</li>
+ *         <li>跨 tick 至少间隔 10 tick → 群体场景下网络压力降到 1/10</li>
+ *         <li>debuff 持续 120-240 tick，10 tick 一次同步对客户端染色无视觉差异</li>
+ *       </ul></li>
+ *   <li>debuff 应用 (DynamicAttributeManager.apply) 与 DOT 伤害逻辑不受影响，
+ *       只有"通知客户端染色"这一项被节流。</li>
+ * </ol></p>
  *
- * Weapon Element System (v6)
- * Handles element composition, effect triggering, damage position and emoji display.
+ * <p>v6.1：所有 spawn*Burst / spawn*Effect 调用之前都先经过
+ * {@link ParticleEmissionGuard} 门控（保留）。</p>
+ *
+ * <p>v6：磁力粒子已全部移除（保留）。
+ * 病毒 emoji 颜色码：§a → §d；毒气 emoji 颜色码：§a → §b（保留）。</p>
+ *
+ * Weapon Element System (v7)
+ * v7: All syncVisualDebuff() calls now go through ElementSyncGuard.trySend(),
+ * eliminating packet-broadcast avalanches under group-attack scenarios.
  */
 public class WeaponElementSystem {
 
@@ -90,7 +108,11 @@ public class WeaponElementSystem {
     }
 
     /**
-     * 将视觉 debuff 立即同步到所有追踪该实体的客户端
+     * 将视觉 debuff 同步到所有追踪该实体的客户端（受 ElementSyncGuard 节流）
+     *
+     * <p>⭐ v7：原直接调用 ElementEffectNetwork.sendToTrackers，改为走
+     * {@link ElementSyncGuard#trySend}。同 tick 同 (target, element) 去重 +
+     * 跨 tick 10 tick 间隔节流，避免群体攻击场景下网络包雪崩。</p>
      *
      * @param target        被附加 debuff 的目标
      * @param element       元素名
@@ -98,8 +120,9 @@ public class WeaponElementSystem {
      * @param amplifier     元素等级
      */
     private static void syncVisualDebuff(LivingEntity target, String element, int durationTicks, int amplifier) {
-        ElementEffectNetwork.sendToTrackers(target,
-                new ElementDebuffPacket(target.getId(), element, durationTicks, amplifier));
+        // ⭐ v7：走节流通道，被节流时返回 false，调用方无需处理
+        // ⭐ v7: routed through throttler, false return is silently ignored
+        ElementSyncGuard.trySend(target, element, durationTicks, amplifier);
     }
 
     // ========== 元素组合计算 / Element Composition ==========
@@ -342,6 +365,13 @@ public class WeaponElementSystem {
     /**
      * 触发一次元素效果
      *
+     * <p>⭐ v7：所有 syncVisualDebuff 调用通过 {@link ElementSyncGuard} 节流，
+     * 同 tick 同 (target, element) 去重 + 跨 tick 10 tick 间隔节流，
+     * 避免 SlashBlade 群体攻击 / Goety AOE / 爆炸溅射场景下网络包雪崩。</p>
+     *
+     * <p>⭐ v6.1：所有 spawn*Burst / spawn*Effect 调用前都经过 ParticleEmissionGuard 限流，
+     * 超出每 tick 预算时仅跳过视觉粒子，元素 debuff 应用与 DOT 伤害逻辑不受影响。</p>
+     *
      * @param damageSource   伤害来源
      * @param hurter         受害者
      * @param attacker       攻击者
@@ -381,7 +411,7 @@ public class WeaponElementSystem {
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance(duration, fireLevel));
                 }
                 syncVisualDebuff(hurter, "fire", duration, fireLevel);
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnFireBurst(hurter, sl);
                 }
 
@@ -409,7 +439,7 @@ public class WeaponElementSystem {
                 int duration = (int) (120 * triggerTime);
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.POISON.createInstance(duration, 0));
                 syncVisualDebuff(hurter, "poison", duration, 0);
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnPoisonBurst(hurter, sl);
                 }
 
@@ -451,7 +481,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.ICE.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "ice", duration, newLevel);
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnIceBurst(hurter, sl);
                 }
                 return "ice";
@@ -473,7 +503,7 @@ public class WeaponElementSystem {
                 return null;
             }
             case "slash": {
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnSlashBurst(hurter, sl);
                 }
 
@@ -495,7 +525,7 @@ public class WeaponElementSystem {
                         public void run() {
                             if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
 
-                            if (hurter.level() instanceof ServerLevel sl) {
+                            if (hurter.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                                 ElementParticleEffects.spawnSlashEffect(hurter, sl);
                             }
 
@@ -519,7 +549,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.PUNCTURE.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "puncture", duration, newLevel);
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnPunctureBurst(hurter, sl);
                 }
                 return "puncture";
@@ -538,13 +568,12 @@ public class WeaponElementSystem {
                         hurter.setDeltaMovement(hurter.getDeltaMovement().add(0, 0.2 * knockbackStrength, 0));
                     }
                 }
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnImpactShockwave(sl, hurter);
                 }
                 return "impact";
             }
             case "magnetic": {
-                // ⭐ v6：磁力粒子已全部移除，视觉由 ElementGeometryRenderer 的几何双环承担
                 int duration = (int) (120 * triggerTime);
                 int newLevel;
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.MAGNETIC)) {
@@ -555,7 +584,6 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.MAGNETIC.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "magnetic", duration, newLevel);
-                // ⭐ v6：spawnMagneticBurst 调用已移除
                 return "magnetic";
             }
             case "radiation": {
@@ -569,7 +597,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.RADIATION.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "radiation", duration, newLevel);
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnRadiationBurst(hurter, sl);
                 }
                 return "radiation";
@@ -585,7 +613,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.VIRUS.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "virus", duration, newLevel);
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnVirusBurst(hurter, sl);
                 }
                 return "virus";
@@ -601,7 +629,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.CORROSION.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "corrosion", duration, newLevel);
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnCorrosionBurst(hurter, sl);
                 }
                 return "corrosion";
@@ -633,7 +661,7 @@ public class WeaponElementSystem {
                 final Vec3 gasCenter = new Vec3(hurter.getX(), hurter.getY(), hurter.getZ());
                 final double gasRadius = 3.0;
 
-                if (level instanceof ServerLevel sl) {
+                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                     ElementParticleEffects.spawnGasBurst(sl, gasCenter, gasRadius);
                 }
 
@@ -646,7 +674,7 @@ public class WeaponElementSystem {
                         public void run() {
                             if (ticks++ >= 6 * triggerTime) { this.cancel(); return; }
 
-                            if (level instanceof ServerLevel sl) {
+                            if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquireGlobal(sl)) {
                                 ElementParticleEffects.spawnGasCloudEffect(sl, gasCenter, gasRadius);
                             }
 
@@ -724,12 +752,12 @@ public class WeaponElementSystem {
             case "slash": return "\u00a77\u263e";
             case "puncture": return "\u00a7f\u2020";
             case "impact": return "\u00a7f\ud83d\udd28";
-            case "gas": return "\u00a7b\uD83D\uDCA8";          // v6：§a → §b 青色
+            case "gas": return "\u00a7b\uD83D\uDCA8";
             case "radiation": return "\u00a7e\u2622";
             case "magnetic": return "\u00a7b\ud83e\uddf2";
             case "corrosion": return "\u00a72\ud83e\uddea";
             case "explosion": return "\u00a74\ud83d\udca5";
-            case "virus": return "\u00a7d\ud83e\udda0";         // v6：§a → §d 亮紫粉
+            case "virus": return "\u00a7d\ud83e\udda0";
             default: return "";
         }
     }

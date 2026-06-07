@@ -1,3 +1,5 @@
+// 文件：WeaponCombatHandler.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/module/weapon/WeaponCombatHandler.java
 package pers.roinflam.kuvalich.module.weapon;
 
 import net.minecraft.server.level.ServerPlayer;
@@ -109,6 +111,26 @@ public class WeaponCombatHandler {
 
     /** 额外槽位缓存刷新间隔（tick）：40 tick = 2秒 / Extra slot cache refresh interval */
     private static final long EXTRA_SLOT_CACHE_INTERVAL = 40L;
+
+    // ========== 元素触发硬上限 / Element Trigger Hard Cap ==========
+
+    /**
+     * 单次伤害事件中元素效果的最大触发次数（硬上限）
+     * Maximum number of element trigger effects per single damage event (hard cap)
+     * <p>
+     * 防止超高 triggerChance（来自模组堆叠、击杀叠层、冲刺加成等）在群体攻击场景下
+     * 触发数百次元素效果，导致服务器主线程卡死被 Watchdog 终止。
+     * <p>
+     * 即使最终 triggerChance 计算结果超过 2000%（=20 次），也强制截断为 20 次。
+     * 体感上 20 次已经足以让所有元素 debuff 叠满层数（最高 9 层）+ DOT 元素打出爆发伤害。
+     * <p>
+     * 取值理由：
+     * - 单次 20 次爆炸 ≈ 1-5ms，单目标完全可接受
+     * - 群体场景（20 目标 × 20 次 = 400 次）仍需依赖 ElementSyncGuard /
+     *   ParticleEmissionGuard 节流网络包和粒子，但 DOT 任务和爆炸调用不会失控
+     * - 比 100 次降低 5 倍负载，单帧最坏开销可控
+     */
+    private static final int MAX_ELEMENT_TRIGGER_COUNT = 20;
 
     /**
      * 获取缓存的额外槽位属性（含倍率已预计算）
@@ -379,6 +401,8 @@ public class WeaponCombatHandler {
      * <p>
      * ⭐ 新增：在获取主手武器模组属性后，合并额外槽位（副手/护甲/饰品栏）的模组属性
      * ⭐ 性能优化：modules 列表只解析一次，透传给元素触发系统避免重复 NBT 反序列化
+     * ⭐ 元素触发硬上限：最终 triggerChance 被截断到 MAX_ELEMENT_TRIGGER_COUNT * 100，
+     *    单次伤害事件最多触发 20 次元素效果，避免高几率堆叠造成服务器卡死
      *
      * 支持所有 LivingEntity 攻击者
      * 击杀叠层效果仅对玩家生效
@@ -568,6 +592,14 @@ public class WeaponCombatHandler {
             double stackValue = attributes.get("killStackTriggerChance");
             triggerChance *= (1 + stackValue * stacks);
         }
+
+        // ⭐ 元素触发硬上限：所有加成乘算完成后，强制截断到 MAX_ELEMENT_TRIGGER_COUNT * 100。
+        // ⭐ Element trigger hard cap: clamp triggerChance after all multipliers applied.
+        // 即使理论值超过 2000%（=20 次），也只会触发 20 次元素效果，避免群体场景下
+        // N 目标 × M 次的爆炸式调用使主线程超时被 Watchdog 终止。
+        // Even if theoretical value exceeds 2000% (=20 triggers), only 20 effects are triggered,
+        // preventing exploding N-target × M-trigger scenarios from causing main thread timeout.
+        triggerChance = Math.min(triggerChance, MAX_ELEMENT_TRIGGER_COUNT * 100.0);
 
         Set<String> triggeredElements = new LinkedHashSet<>();
 
