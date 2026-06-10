@@ -52,12 +52,16 @@ public class ItemRivenModule extends AbstractItemModule {
     /**
      * 需要 TACZ 模组才能生效的词条集合。
      * 未安装 TACZ 时，这些词条不会出现在紫卡随机池中，避免洗出无效废词条。
+     * <p>
+     * ⭐ 第三批新增：true_bullet（真实伤害）、gun_loot_drop（枪械战利品掉落）为 TACZ 专属。
+     *    execute_threshold / purge_buff / execute_chance 为通用词条，不在此集合内。
      */
     private static final Set<String> TACZ_EXCLUSIVE_ATTRIBUTES = Set.of(
             "reload_speed", "magazine_size", "projectile_speed", "recoil_reduction",
             "firing_rate", "bursting_radius", "multishot",
             "killStackMultishot", "killStackBurstingRadius", "killStackFiringRate",
-            "gun_damage", "headshot_damage", "aim_time", "accuracy"
+            "gun_damage", "headshot_damage", "aim_time", "accuracy",
+            "true_bullet", "gun_loot_drop"
     );
 
     /** TACZ 模组加载状态缓存 */
@@ -191,7 +195,10 @@ public class ItemRivenModule extends AbstractItemModule {
                 || attributeType.equals("gun_damage")
                 || attributeType.equals("headshot_damage")
                 || attributeType.equals("aim_time")
-                || attributeType.equals("accuracy");
+                || attributeType.equals("accuracy")
+                // ===== TACZ 枪械新属性（第三批，远程专属）=====
+                || attributeType.equals("true_bullet")
+                || attributeType.equals("gun_loot_drop");
     }
 
     private static boolean shouldFilterAttribute(String attributeType, int rivenMode) {
@@ -472,6 +479,27 @@ public class ItemRivenModule extends AbstractItemModule {
         }
         if (attributeType.equals("accuracy")) {
             return 0.3;
+        }
+        // ===== 第三批新词条基础数值（= 对应单词条银卡数值）=====
+        // 真实伤害（TACZ 专属）：银卡 20%
+        if (attributeType.equals("true_bullet")) {
+            return 0.20;
+        }
+        // 枪械战利品掉落（TACZ 专属）：银卡 30%
+        if (attributeType.equals("gun_loot_drop")) {
+            return 0.30;
+        }
+        // 收集者阈值（通用）：银卡 2%，无上限，绕生命上限百分比处决
+        if (attributeType.equals("execute_threshold")) {
+            return 0.02;
+        }
+        // 净化驱散（通用）：银卡 10% 概率
+        if (attributeType.equals("purge_buff")) {
+            return 0.10;
+        }
+        // 致命斩首（通用）：银卡 0.01% 概率
+        if (attributeType.equals("execute_chance")) {
+            return 0.001;
         }
 
         return 0;

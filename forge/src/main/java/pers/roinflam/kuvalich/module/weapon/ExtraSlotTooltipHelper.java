@@ -43,6 +43,8 @@ public final class ExtraSlotTooltipHelper {
             "dashMeleeCriticalStrikeProbability", "dashAttackRange", "dashTriggerChance",
             "reload_speed", "magazine_size", "projectile_speed", "recoil_reduction",
             "gun_damage", "headshot_damage", "aim_time", "accuracy",
+            // 第三批新词条 / Third batch new attributes
+            "true_bullet", "gun_loot_drop", "execute_threshold", "purge_buff", "execute_chance",
             // 击杀叠层 / Kill stacks
             "killStackBaseDamage", "killStackMultishot", "killStackMeleeCriticalMultiplier",
             "killStackTriggerChance", "killStackAttackRange", "killStackAttackSpeed",
@@ -274,6 +276,15 @@ public final class ExtraSlotTooltipHelper {
         if (attrKey.startsWith("killStack")) {
             String perStack = I18n.get("item.module.extra_slot_per_stack");
             return sign + (int) (value * 100) + "%/" + perStack;
+        }
+
+        // ⭐ 秒杀概率数值极小，保留小数并去掉末尾多余的0（0.010%→0.01%）/ Instant kill: tiny value
+        if (attrKey.equals("execute_chance")) {
+            String percentText = String.format("%.3f", value * 100);
+            if (percentText.indexOf('.') >= 0) {
+                percentText = percentText.replaceAll("0+$", "").replaceAll("\\.$", "");
+            }
+            return sign + percentText + "%";
         }
 
         // 默认显示为百分比 / Default display as percentage

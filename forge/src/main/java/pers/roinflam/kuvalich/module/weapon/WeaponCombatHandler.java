@@ -1,10 +1,11 @@
-// 文件：WeaponCombatHandler.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/module/weapon/WeaponCombatHandler.java
 package pers.roinflam.kuvalich.module.weapon;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -19,6 +20,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -36,6 +38,7 @@ import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.module.KillStackManager.StackType;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
+import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
 import pers.roinflam.kuvalich.utils.util.EntityUtil;
@@ -54,6 +57,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * ⭐ 多槽位支持：主手提供基础面板，副手/护甲/饰品栏的模组属性额外叠加
  * ⭐ Multi-slot support: main hand provides base panel, off-hand/armor/curios contribute bonus module attributes
+ *
+ * <p>⭐ 第三批新词条战斗逻辑：
+ * <ul>
+ *   <li>true_bullet（真实伤害）：普通伤害结算后，按"暴击前基伤快照 × 克制 × 词条值"额外结算一次真伤，
+ *       无视护甲减伤（走 EntityLivingUtil.damageHealthDirectly），独立爆深红色伤害数字。仅 TACZ 远程专属。</li>
+ *   <li>purge_buff（净化驱散）：攻击命中时按概率移除目标的增益效果，超 100% 一次多移除一个。通用。</li>
+ *   <li>execute_threshold（收集者阈值）：目标当前生命低于"生命上限 × 阈值"时直接处决。无上限，多卡叠加。通用。</li>
+ *   <li>execute_chance（致命斩首）：攻击命中时按极低概率直接处决，可被多重射击/射速放大。通用。</li>
+ * </ul>
+ * 处决统一延迟 1 tick 执行（与切割/真伤一致），并在确认实体仍存活时才击杀，避免与普通击杀重复结算叠层。
  *
  * Weapon Combat Event Handler
  * Supports all LivingEntity with modded weapons.
@@ -524,6 +537,10 @@ public class WeaponCombatHandler {
             }
         }
 
+        // ⭐ 真实伤害：在暴击计算前捕获基伤快照（含远程/弹射物/枪械伤害与基础面板倍率，不含暴击与元素增伤）
+        // ⭐ True damage snapshot: captured before crit, excludes crit multiplier and elemental damage
+        double trueBulletBaseDamage = baseDamage;
+
         // ========== 暴击计算 ==========
         String colorCode;
         if (criticalStrikeProbability > 300) {
@@ -629,10 +646,21 @@ public class WeaponCombatHandler {
         totalDamage = Math.max(totalDamage, 0);
         evt.setAmount(totalDamage);
 
+        // ⭐ 真实伤害：普通伤害结算后额外结算真伤（无视护甲减伤，独立爆深红数字）
+        //    仅 TACZ 子弹命中才结算，避免近战/其它武器装真实子弹卡也触发
+        applyTrueBulletDamage(attacker, hurter, damageSource, attributes, originalDamage, trueBulletBaseDamage, baneMultiplier);
+
+        // ⭐ 净化驱散：攻击命中时按概率移除目标增益效果
+        applyPurgeBuff(hurter, attributes);
+
         // ========== 武器击杀叠层累加（击杀检测）==========
         if (isPlayer && hurter.getHealth() - totalDamage <= 0) {
             addWeaponKillStacks((Player) attacker, attributes);
         }
+
+        // ⭐ 处决：处决阈值（生命低于上限比例）+ 秒杀概率（概率秒杀），延迟1tick执行
+        //    传入本次最终伤害用于叠层去重（避免与上方普通击杀重复累加）
+        applyExecuteEffects(attacker, hurter, attributes, isPlayer, totalDamage);
 
         // 查找伤害数字接收者并直接存储引用
         ServerPlayer displayTarget = findDamageDisplayTarget(attacker);
@@ -673,7 +701,7 @@ public class WeaponCombatHandler {
                 double stackValue = attributes.get("killStackBaseDamage");
                 int debuffCount = 0;
                 for (MobEffectInstance effect : target.getActiveEffects()) {
-                    if (effect.getEffect().getCategory().equals(net.minecraft.world.effect.MobEffectCategory.HARMFUL)) {
+                    if (effect.getEffect().getCategory().equals(MobEffectCategory.HARMFUL)) {
                         debuffCount++;
                     }
                 }
@@ -750,6 +778,227 @@ public class WeaponCombatHandler {
         }
         if (attributes.containsKey("killStackFiringRate")) {
             KillStackManager.addStack(player, StackType.FIRING_RATE);
+        }
+    }
+
+    // ========== 第三批新词条：真实伤害 / 净化驱散 / 处决 ==========
+
+    /**
+     * 真实伤害（true_bullet）结算。
+     * <p>
+     * 在普通伤害结算完成后额外结算一次真伤：
+     * trueDamage = 原始伤害 × 暴击前基伤快照 × 克制倍率 × 真实伤害词条值。
+     * 真伤无视护甲减伤（走 {@link EntityLivingUtil#damageHealthDirectly}），并独立爆出深红色伤害数字。
+     * <p>
+     * 延迟 1 tick 执行，确保普通伤害先落地，且实体已死亡时不再重复结算。
+     *
+     * @param attacker             攻击者
+     * @param hurter               受击者
+     * @param attributes           武器运行时属性
+     * @param originalDamage       本次攻击的原始伤害（事件原始 amount）
+     * @param trueBulletBaseDamage 暴击前的基伤快照
+     * @param baneMultiplier       克制倍率
+     */
+    private static void applyTrueBulletDamage(LivingEntity attacker, LivingEntity hurter,
+                                              DamageSource damageSource,
+                                              HashMap<String, Double> attributes,
+                                              float originalDamage, double trueBulletBaseDamage,
+                                              double baneMultiplier) {
+        double trueBulletValue = attributes.getOrDefault("true_bullet", 0.0);
+        if (trueBulletValue <= 0) { return; }
+
+        // ⭐ 真实子弹仅对 TACZ 子弹命中生效：近战/弓/其它武器即便装了真实子弹卡也不触发
+        if (!isTaczBullet(damageSource)) { return; }
+
+        float trueDamage = (float) (originalDamage * trueBulletBaseDamage * baneMultiplier * trueBulletValue);
+        if (trueDamage <= 0 || Float.isNaN(trueDamage) || Float.isInfinite(trueDamage)) { return; }
+
+        final float finalTrueDamage = trueDamage;
+        final LivingEntity trueAttacker = attacker;
+        final DamageSource trueSource = getAttackDamageSource(attacker);
+
+        new SynchronizationTask(1, 1) {
+            @Override
+            public void run() {
+                this.cancel();
+                if (hurter.isDeadOrDying()) { return; }
+                // 无视护甲减伤直接扣血，致死时走 kill
+                if (hurter.getHealth() - finalTrueDamage > 0.01f) {
+                    EntityLivingUtil.damageHealthDirectly(hurter, finalTrueDamage);
+                } else {
+                    EntityLivingUtil.kill(hurter, trueSource);
+                }
+                // 独立爆深紫色真伤数字（与红色暴击区分）
+                ServerPlayer target = findDamageDisplayTarget(trueAttacker);
+                if (target != null && target.isAlive() && ModConfig.KUVA_LICH.enableDamageNumbers.get()) {
+                    String prefix = getDamageDisplayPrefix(trueAttacker);
+                    String displayText = "\u00a75" + prefix + DamagePacket.formatDamage(finalTrueDamage) + getTrueBulletEmoji();
+                    Vec3 position = WeaponElementSystem.getRandomDamagePosition(hurter);
+                    DamagePacket.sendToPlayer(target, displayText, position);
+                }
+            }
+        }.start();
+    }
+
+    /**
+     * 判断本次伤害是否由 TACZ 子弹（{@code com.tacz.guns.entity.EntityKineticBullet}）直接造成。
+     * <p>
+     * 用全限定类名字符串匹配，避免对 TACZ 形成硬编译依赖（TACZ 为软依赖）。
+     *
+     * @param source 伤害源
+     * @return 直接实体为 TACZ 子弹时返回 true
+     */
+    private static boolean isTaczBullet(DamageSource source) {
+        if (source == null || source.getDirectEntity() == null) { return false; }
+        return "com.tacz.guns.entity.EntityKineticBullet".equals(source.getDirectEntity().getClass().getName());
+    }
+
+    /**
+     * 获取真实伤害的伤害数字后缀（深紫色匕首，与红色暴击区分）。
+     *
+     * @return 带颜色代码的匕首符号
+     */
+    private static String getTrueBulletEmoji() {
+        return "\u00a75\ud83d\udde1"; // §5 🗡
+    }
+
+    /**
+     * 净化驱散（purge_buff）结算。
+     * <p>
+     * 攻击命中时按概率移除目标的增益效果（{@link MobEffectCategory#BENEFICIAL}）。
+     * 概率超过 100% 时保底多移除整数个，余下小数部分按概率追加一个。
+     * 移除数量不超过目标当前增益数量。
+     *
+     * @param hurter     受击者
+     * @param attributes 武器运行时属性
+     */
+    private static void applyPurgeBuff(LivingEntity hurter, HashMap<String, Double> attributes) {
+        double purgeValue = attributes.getOrDefault("purge_buff", 0.0);
+        if (purgeValue <= 0) { return; }
+
+        double chance = purgeValue * 100.0;
+        int removeCount = (int) (chance / 100.0);
+        double fraction = chance - removeCount * 100.0;
+        if (RandomUtil.percentageChance(fraction)) { removeCount++; }
+        if (removeCount <= 0) { return; }
+
+        // 收集目标当前的所有增益效果
+        List<MobEffect> beneficial = new ArrayList<>();
+        for (MobEffectInstance instance : hurter.getActiveEffects()) {
+            if (instance.getEffect().getCategory() == MobEffectCategory.BENEFICIAL) {
+                beneficial.add(instance.getEffect());
+            }
+        }
+        if (beneficial.isEmpty()) { return; }
+
+        Collections.shuffle(beneficial);
+        int actual = Math.min(removeCount, beneficial.size());
+        for (int i = 0; i < actual; i++) {
+            hurter.removeEffect(beneficial.get(i));
+        }
+    }
+
+    /**
+     * 处决结算（处决阈值 execute_threshold + 秒杀概率 execute_chance）。
+     * <p>
+     * <ul>
+     *   <li>处决阈值：目标当前生命 ≤ 生命上限 × 阈值时直接处决（无上限，多卡叠加）。</li>
+     *   <li>秒杀概率：按极低概率直接处决（可被多重射击/射速放大，每发独立判定）。</li>
+     * </ul>
+     * 叠层在判定成立的命中瞬间累加（与普通击杀同一时机），避免怪在延迟的 1 tick 内
+     * 被其它来源打死导致玩家漏拿叠层；并按本次伤害是否已致死去重，避免与普通击杀双重累加。
+     * 实际击杀延迟 1 tick 执行（先让普通伤害结算再补刀），走 {@link EntityLivingUtil#kill}，
+     * 会绕过部分单次伤害上限机制。
+     *
+     * @param attacker    攻击者
+     * @param hurter      受击者
+     * @param attributes  武器运行时属性
+     * @param isPlayer    攻击者是否为玩家（决定是否累加击杀叠层）
+     * @param totalDamage 本次攻击的最终伤害（用于叠层去重）
+     */
+    private static void applyExecuteEffects(LivingEntity attacker, LivingEntity hurter,
+                                            HashMap<String, Double> attributes, boolean isPlayer, float totalDamage) {
+        double thresholdValue = attributes.getOrDefault("execute_threshold", 0.0);
+        double chanceValue = attributes.getOrDefault("execute_chance", 0.0);
+        if (thresholdValue <= 0 && chanceValue <= 0) { return; }
+
+        boolean shouldExecute = false;
+        boolean byThreshold = false; // 处决阈值触发（收割）
+        boolean byChance = false;    // 秒杀概率触发（斩杀）
+
+        // 处决阈值：当前生命低于生命上限的指定比例 → 处决
+        if (thresholdValue > 0) {
+            float maxHealth = hurter.getMaxHealth();
+            if (maxHealth > 0 && hurter.getHealth() > 0 && hurter.getHealth() <= maxHealth * thresholdValue) {
+                shouldExecute = true;
+                byThreshold = true;
+            }
+        }
+        // 秒杀概率：按概率直接处决（概率极低，靠多重射击/射速放大）
+        if (!shouldExecute && chanceValue > 0) {
+            if (RandomUtil.percentageChance(chanceValue * 100.0)) {
+                shouldExecute = true;
+                byChance = true;
+            }
+        }
+        if (!shouldExecute) { return; }
+
+        // ⭐ 叠层去重 + 命中即累加：
+        //    普通伤害若已足够致死，上方普通击杀路径已累加叠层，此处不再重复；
+        //    仅当普通伤害打不死（需处决补刀）时，由处决/秒杀在命中瞬间累加叠层，
+        //    避免叠层放进延迟任务后、因怪在这 1 tick 内被其它来源打死而漏加。
+        boolean killedByNormalHit = (hurter.getHealth() - totalDamage) <= 0;
+        if (!killedByNormalHit && isPlayer && attacker instanceof Player) {
+            addWeaponKillStacks((Player) attacker, attributes);
+        }
+
+        // ⭐ 处决/秒杀特效：在命中瞬间播放（收割与斩杀使用不同粒子以作区分）
+        spawnExecuteParticles(hurter, byThreshold, byChance);
+
+        final DamageSource exSource = getAttackDamageSource(attacker);
+
+        new SynchronizationTask(1, 1) {
+            @Override
+            public void run() {
+                this.cancel();
+                // 已被普通伤害（或其它来源）打死则无需补刀；叠层已在命中时处理
+                if (hurter.isDeadOrDying()) { return; }
+                EntityLivingUtil.kill(hurter, exSource);
+            }
+        }.start();
+    }
+
+    /**
+     * 播放处决/秒杀特效（服务端粒子，单次少量，性能开销可控）。
+     * <p>
+     * 收割（处决阈值）与斩杀（秒杀概率）使用不同粒子以作区分：
+     * <ul>
+     *   <li>收割：灵魂粒子 + 红色伤害指示，表现"收割低血目标"。</li>
+     *   <li>斩杀：附魔锐击 + 暴击星，表现"致命一击"。</li>
+     * </ul>
+     * 仅在判定成立时调用一次，不在 tick 循环内，避免持续开销。
+     *
+     * @param target      被处决目标
+     * @param byThreshold 是否由处决阈值（收割）触发
+     * @param byChance    是否由秒杀概率（斩杀）触发
+     */
+    private static void spawnExecuteParticles(LivingEntity target, boolean byThreshold, boolean byChance) {
+        if (!(target.level() instanceof ServerLevel server)) { return; }
+
+        double x = target.getX();
+        double y = target.getY() + target.getBbHeight() * 0.5;
+        double z = target.getZ();
+        double rx = target.getBbWidth() * 0.5 + 0.1;
+        double ry = target.getBbHeight() * 0.4;
+
+        if (byChance) {
+            // 斩杀：锐利白光 + 暴击星（快速爆发感）
+            server.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 14, rx, ry, rx, 0.1);
+            server.sendParticles(ParticleTypes.CRIT, x, y, z, 10, rx, ry, rx, 0.25);
+        } else if (byThreshold) {
+            // 收割：灵魂上升 + 红色伤害指示（沉重收割感）
+            server.sendParticles(ParticleTypes.SOUL, x, y, z, 10, rx, ry, rx, 0.02);
+            server.sendParticles(ParticleTypes.DAMAGE_INDICATOR, x, y, z, 8, rx, ry, rx, 0.1);
         }
     }
 

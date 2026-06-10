@@ -25,6 +25,7 @@ import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
+import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.network.message.WarframeModuleSyncPacket;
 
 import javax.annotation.Nonnull;
@@ -37,6 +38,9 @@ import java.util.*;
  * ⭐ 重构：使用 WarframeModuleSyncPacket 替代 DiggingSpeedPacket
  *    客户端 BreakSpeed 恢复使用，与服务端使用完全相同的属性计算逻辑
  *    同步时机：登录、重生/维度传送、击杀叠层变化、每5tick脏检测
+ *
+ * ⭐ 第三批新词条：枪械战利品掉落（gun_loot_drop，武器专属，仅 TACZ 子弹击杀生效）在
+ *    onLivingDrops 中加法叠加到战甲的 itemDropMultiplier 上，与战甲共享同一套配置生效倍率。
  */
 @Mod.EventBusSubscriber
 public class WarframeEffectHandler {
@@ -51,6 +55,12 @@ public class WarframeEffectHandler {
      */
     private static final UUID FIXED_HEALTH_MODIFIER_UUID = UUID.fromString("a1b2c3d4-1111-2222-3333-444444444444");
     private static final UUID FIXED_ARMOR_MODIFIER_UUID = UUID.fromString("a1b2c3d4-5555-6666-7777-888888888888");
+
+    /**
+     * TACZ 动能子弹实体类全限定名（用类名字符串判定，避免硬依赖 TACZ）
+     * TACZ kinetic bullet entity FQN (matched by class name string to avoid hard dependency on TACZ)
+     */
+    private static final String TACZ_BULLET_CLASS = "com.tacz.guns.entity.EntityKineticBullet";
 
     // ========== 实体加入世界 / Entity Join Level ==========
 
@@ -209,6 +219,9 @@ public class WarframeEffectHandler {
      * 当玩家击杀动物或怪物时，根据战甲模组的 itemDropMultiplier 属性
      * 和配置中的 itemDropEffectMultiplier 缩放掉落物数量。
      * <p>
+     * ⭐ 第三批新增：若击杀来源为 TACZ 枪械子弹，则把玩家主手武器的 gun_loot_drop 词条
+     *    加法叠加到 itemDropMultiplier 原始值上，与战甲共享同一套生效倍率与缩放逻辑。
+     * <p>
      * 缩放后倍率 < 1 时按概率决定是否掉落（每组独立判定）。
      * 不影响装备类掉落（武器、盔甲、工具）。
      *
@@ -225,6 +238,9 @@ public class WarframeEffectHandler {
 
                 // 从模组获取原始 itemDropMultiplier 值
                 double rawModuleValue = attributes.getOrDefault("itemDropMultiplier", 0.0);
+
+                // ⭐ 枪械战利品掉落：仅 TACZ 枪械击杀时叠加武器词条 gun_loot_drop（加法合并，与战甲共享配置倍率）
+                rawModuleValue += getGunLootDropValue(evt.getSource(), player);
 
                 // 应用配置中的生效倍率百分比
                 double effectPercent = ModConfig.KUVA_LICH.itemDropEffectMultiplier.get() / 100.0;
@@ -269,6 +285,28 @@ public class WarframeEffectHandler {
                 }
             }
         }
+    }
+
+    /**
+     * 获取本次击杀对应的枪械战利品掉落加成（gun_loot_drop）。
+     * <p>
+     * 仅当伤害来源的直接实体为 TACZ 动能子弹时才生效，读取玩家主手武器的 gun_loot_drop 词条值。
+     * 通过类名字符串判定 TACZ 子弹，避免对 TACZ 产生硬编译依赖；未安装 TACZ 时安全返回 0。
+     *
+     * @param source 伤害来源
+     * @param player 击杀者
+     * @return 枪械战利品掉落加成值（加法叠加到 itemDropMultiplier），不满足条件时返回 0
+     */
+    private static double getGunLootDropValue(DamageSource source, Player player) {
+        if (source == null) { return 0.0; }
+        var direct = source.getDirectEntity();
+        // 类名字符串判定 TACZ 子弹，避免直接引用 TACZ 类
+        if (direct == null || !TACZ_BULLET_CLASS.equals(direct.getClass().getName())) {
+            return 0.0;
+        }
+        ItemStack weapon = player.getMainHandItem();
+        if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) { return 0.0; }
+        return WeaponModuleHandler.getWeaponAttributes(weapon).getOrDefault("gun_loot_drop", 0.0);
     }
 
     // ========== 治疗倍率 / Heal Multiplier ==========

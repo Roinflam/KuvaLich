@@ -27,6 +27,9 @@ import java.util.*;
  *
  * ⭐ 新增：模组等级缩放 — 属性值 × (level / maxLevel)
  * ⭐ NEW: Module level scaling — attribute value × (level / maxLevel)
+ *
+ * ⭐ 第三批新词条面板显示：true_bullet / gun_loot_drop / execute_threshold / purge_buff / execute_chance。
+ *    其中 execute_chance 数值极小（如 0.01%），用小数格式显示避免取整为 0%。
  */
 @Mod.EventBusSubscriber
 public class WeaponModuleHandler {
@@ -342,6 +345,28 @@ public class WeaponModuleHandler {
                 }
                 if (attributes.getOrDefault("accuracy", 0.0) != 0) {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.accuracy") + " ").append(Component.literal((int) (attributes.get("accuracy") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+
+                // ⭐ 第三批新词条面板显示
+                if (attributes.getOrDefault("true_bullet", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.true_bullet") + " ").append(Component.literal((int) (attributes.get("true_bullet") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("gun_loot_drop", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.gun_loot_drop") + " ").append(Component.literal((int) (attributes.get("gun_loot_drop") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("execute_threshold", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.execute_threshold") + " ").append(Component.literal((int) (attributes.get("execute_threshold") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("purge_buff", 0.0) != 0) {
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.purge_buff") + " ").append(Component.literal((int) (attributes.get("purge_buff") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
+                }
+                if (attributes.getOrDefault("execute_chance", 0.0) != 0) {
+                    // ⭐ 秒杀概率：保留小数避免取整为0%，并去掉末尾多余的0（0.010%→0.01%）
+                    String executeChancePercent = String.format("%.3f", attributes.get("execute_chance") * 100);
+                    if (executeChancePercent.indexOf('.') >= 0) {
+                        executeChancePercent = executeChancePercent.replaceAll("0+$", "").replaceAll("\\.$", "");
+                    }
+                    tooltip.add(index++, Component.literal(I18n.get("item.module.execute_chance") + " ").append(Component.literal(executeChancePercent + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
                 // 击杀叠层词条

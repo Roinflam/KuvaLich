@@ -29,6 +29,10 @@ import java.util.*;
  *    - virus 病毒 → LIGHT_PURPLE 粉色
  *    - gas 毒气  → AQUA 青色
  *    - 其他属性保持原有品质颜色（getModuleColor）
+ *
+ * ⭐ 第三批新词条：true_bullet（真实伤害）、gun_loot_drop（枪械战利品掉落，TACZ 专属），
+ *    execute_threshold（收集者阈值）、purge_buff（净化驱散）、execute_chance（致命斩首，通用）。
+ *    其中 execute_chance 数值极小（如 0.01%），显示时保留小数避免取整为 0%。
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public abstract class AbstractItemModule extends AbstractModule {
@@ -49,7 +53,8 @@ public abstract class AbstractItemModule extends AbstractModule {
                     "killStackTriggerChance", "killStackAttackRange", "killStackAttackSpeed",
                     "killStackBurstingRadius", "killStackFiringRate",
                     "reload_speed", "magazine_size", "projectile_speed", "recoil_reduction",
-                    "gun_damage", "headshot_damage", "aim_time", "accuracy"
+                    "gun_damage", "headshot_damage", "aim_time", "accuracy",
+                    "true_bullet", "gun_loot_drop", "execute_threshold", "purge_buff", "execute_chance"
             ))
     );
 
@@ -101,8 +106,18 @@ public abstract class AbstractItemModule extends AbstractModule {
         for (Map.Entry<String, Double> attributeTag : AbstractModule.getAttributes(itemStack)) {
             double scaledValue = attributeTag.getValue() * levelMult;
             String prefix = scaledValue >= 0 ? "+" : "";
-            int percentage = (int) (scaledValue * 100);
             String attributeKey = attributeTag.getKey();
+            // ⭐ 秒杀概率数值极小（如0.01%），保留小数避免取整后显示为0%，并去掉末尾多余的0（0.010%→0.01%）；其余词条整数显示
+            String valueText;
+            if (attributeKey.equals("execute_chance")) {
+                String percentText = String.format("%.3f", scaledValue * 100);
+                if (percentText.indexOf('.') >= 0) {
+                    percentText = percentText.replaceAll("0+$", "").replaceAll("\\.$", "");
+                }
+                valueText = percentText + "%";
+            } else {
+                valueText = (int) (scaledValue * 100) + "%";
+            }
 
             Component attributeName;
             if (attributeKey.startsWith("killStack")) {
@@ -115,7 +130,7 @@ public abstract class AbstractItemModule extends AbstractModule {
             // ⭐ v6：特定元素使用专属颜色（病毒粉色、毒气青色），其他走原品质颜色
             ChatFormatting elementColor = getElementColor(attributeKey);
             ChatFormatting color = elementColor != null ? elementColor : getModuleColor(item);
-            tooltip.add(number++, Component.literal(prefix + percentage + "% ")
+            tooltip.add(number++, Component.literal(prefix + valueText + " ")
                     .append(attributeName)
                     .withStyle(color));
         }

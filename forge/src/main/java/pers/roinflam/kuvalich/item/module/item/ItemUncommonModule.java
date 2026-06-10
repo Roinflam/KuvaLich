@@ -24,6 +24,19 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 /**
  * 白银级武器模组（1.20.1版本）
  * Uncommon (Sliver) tier weapon module (1.20.1 version)
+ *
+ * ⭐ 第三批新增 · 单词条银卡：
+ *    通用：收割之刻（收集者阈值 2%）、涤魂（净化驱散 10%）、斩首（致命斩首 0.01%）
+ *    TACZ：洞穿弹头（真实伤害 20%）、战利搜集（枪械战利品掉落 30%）
+ *
+ * ⭐ 第四批新增 · 轻量银卡搭配：
+ *    通用：弱化打击（净化10%+近战60%）、猎魂者（阈值2%+远程60%）
+ *    TACZ：实弹穿透（真伤10%+枪械伤害60%）、拾荒弹链（枪械战利品20%+弹夹30%）
+ *
+ * ⭐ 第五批新增 · 轻量银卡搭配（新词条 × 老词条）：
+ *    通用：腐蚀猎手（阈值2%+腐蚀60%）、涤魂触击（抹除10%+远程60%）、
+ *          毒刃斩首（秒杀0.01%+毒60%）、净化箭（抹除10%+箭矢90%）
+ *    TACZ：真伤弹芯（真伤10%+爆头60%）、掠夺者之眼（枪械战利品20%+精准30%）
  */
 public class ItemUncommonModule extends AbstractItemModule {
 
@@ -243,6 +256,57 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.death_barrage", "death_barrage",
                 new Object[]{"multishot", 0.60001f, "triggerChance", 0.90001f});
 
+        // ========== 新增通用词条 · 单词条银卡 ==========
+
+        // 收割之刻 —— 收集者阈值 2%（目标生命低于上限2%直接处决，无上限，多卡叠加）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.reapers_threshold", "execute_threshold",
+                new Object[]{"execute_threshold", 0.02001f});
+
+        // 涤魂 —— 净化驱散 10%（攻击命中概率移除目标增益）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.soul_cleanse", "purge_buff",
+                new Object[]{"purge_buff", 0.10001f});
+
+        // 斩首 —— 致命斩首 0.01%（攻击命中极低概率直接处决，可被多重射击放大）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.decapitate", "execute_chance",
+                new Object[]{"execute_chance", 0.0001f});
+
+        // ========== 第四批新增通用词条 · 轻量银卡搭配 ==========
+
+        // 弱化打击 —— 净化驱散10% + 近战伤害60%（近战削增益入门卡）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.enfeebling_strike", "enfeebling_strike",
+                new Object[]{"purge_buff", 0.10001f, "meleeDamage", 0.60001f});
+
+        // 猎魂者 —— 收集者阈值2% + 远程伤害60%（远程处决入门卡）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.soul_hunter", "soul_hunter",
+                new Object[]{"execute_threshold", 0.02001f, "remoteDamage", 0.60001f});
+
+        // ========== 第五批新增通用词条 · 轻量银卡搭配（新词条 × 老词条）==========
+
+        // 腐蚀猎手 —— 处决阈值2% + 腐蚀60%（破甲处决入门）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.corrosive_hunter", "corrosive_hunter",
+                new Object[]{"execute_threshold", 0.02001f, "corrosion", 0.60001f});
+
+        // 涤魂触击 —— 抹除增益10% + 远程伤害60%（远程抹增益入门）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.cleansing_touch", "cleansing_touch",
+                new Object[]{"purge_buff", 0.10001f, "remoteDamage", 0.60001f});
+
+        // 毒刃斩首 —— 秒杀概率0.01% + 毒素60%（毒素 + 秒杀入门）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.venomous_decapitation", "venomous_decapitation",
+                new Object[]{"execute_chance", 0.0001f, "poison", 0.60001f});
+
+        // 净化箭 —— 抹除增益10% + 箭矢伤害90%（弓抹增益入门）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.purifying_arrow", "purifying_arrow",
+                new Object[]{"purge_buff", 0.10001f, "arrowDamage", 0.90001f});
+
         // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
         if (ItemRivenModule.isTaczLoaded()) {
 
@@ -337,6 +401,42 @@ public class ItemUncommonModule extends AbstractItemModule {
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.quick_response", "quick_response",
                     new Object[]{"aim_time", 0.45001f, "gun_damage", 1.20001f});
+
+            // ===== 新增 TACZ 专属词条 · 单词条银卡 =====
+
+            // 洞穿弹头 —— 真实伤害 20%（额外真伤，无视护甲）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.penetrator_round", "true_bullet",
+                    new Object[]{"true_bullet", 0.20001f});
+
+            // 战利搜集 —— 枪械战利品掉落 30%（仅 TACZ 子弹击杀生效）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.spoils_collector", "gun_loot_drop",
+                    new Object[]{"gun_loot_drop", 0.30001f});
+
+            // ===== 第四批新增 TACZ 专属词条 · 轻量银卡搭配 =====
+
+            // 实弹穿透 —— 真实伤害10% + 枪械伤害60%（真伤入门卡，枪伤抬基数）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.solid_penetrator", "solid_penetrator",
+                    new Object[]{"true_bullet", 0.10001f, "gun_damage", 0.60001f});
+
+            // 拾荒弹链 —— 枪械战利品掉落20% + 弹夹容量30%（刷材料续航入门卡）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.scavenger_belt", "scavenger_belt",
+                    new Object[]{"gun_loot_drop", 0.20001f, "magazine_size", 0.30001f});
+
+            // ===== 第五批新增 TACZ 专属 · 轻量银卡搭配 =====
+
+            // 真伤弹芯 —— 真实子弹10% + 爆头伤害60%（爆头真伤入门）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.true_core", "true_core",
+                    new Object[]{"true_bullet", 0.10001f, "headshot_damage", 0.60001f});
+
+            // 掠夺者之眼 —— 枪械战利品掉落20% + 精准度30%（精准刷材料入门）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.plunderers_eye", "plunderers_eye",
+                    new Object[]{"gun_loot_drop", 0.20001f, "accuracy", 0.30001f});
         }
     }
 

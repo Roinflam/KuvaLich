@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich;
 
+import com.tacz.guns.entity.EntityKineticBullet;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
