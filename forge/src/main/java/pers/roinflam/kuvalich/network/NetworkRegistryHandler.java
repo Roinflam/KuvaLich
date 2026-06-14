@@ -5,7 +5,9 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import pers.roinflam.kuvalich.network.message.CodexGiveItemPacket;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
+import pers.roinflam.kuvalich.network.message.DecryptionHudPacket;
 import pers.roinflam.kuvalich.network.message.ModuleDiscoveryPacket;
+import pers.roinflam.kuvalich.network.message.RequiemGateFillPacket;
 import pers.roinflam.kuvalich.network.message.WarframeModuleSyncPacket;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -18,7 +20,9 @@ import pers.roinflam.kuvalich.utils.Reference;
  * Unified management of all packet registrations
  *
  * ⭐ 变更：移除 DiggingSpeedPacket，新增 WarframeModuleSyncPacket
- * ⭐ 协议版本升级为 "2"（包列表变更，不兼容旧版客户端）
+ * ⭐ 变更：新增 DecryptionHudPacket（顶部解密进度HUD同步包）
+ * ⭐ 变更：新增 RequiemGateFillPacket（灭骸之扉一键补全答案包，创造模式专用）
+ * ⭐ 协议版本升级为 "4"（包列表变更，不兼容旧版客户端）
  */
 public class NetworkRegistryHandler {
 
@@ -27,9 +31,10 @@ public class NetworkRegistryHandler {
 
     /**
      * 网络协议版本
-     * ⭐ 升级为 "2"：移除 DiggingSpeedPacket，新增 WarframeModuleSyncPacket
+     * ⭐ 升级为 "4"：在 "3"（DecryptionHudPacket）基础上再新增 RequiemGateFillPacket，
+     *    包列表变更，不兼容旧版客户端
      */
-    private static final String PROTOCOL_VERSION = "2";
+    private static final String PROTOCOL_VERSION = "4";
 
     /** 消息ID计数器 / Message ID counter */
     private static int messageId = 0;
@@ -93,6 +98,26 @@ public class NetworkRegistryHandler {
                 WarframeModuleSyncPacket::encode,
                 WarframeModuleSyncPacket::decode,
                 WarframeModuleSyncPacket::handle
+        );
+
+        // ⭐ 顶部解密进度HUD同步包（服务器 → 客户端）
+        // 击杀奴仆/玄骸获得解密进度时下发，驱动屏幕顶部HUD的填充补间与揭示提示
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                DecryptionHudPacket.class,
+                DecryptionHudPacket::encode,
+                DecryptionHudPacket::decode,
+                DecryptionHudPacket::handle
+        );
+
+        // ⭐ 灭骸之扉一键补全答案包（客户端 → 服务器，创造模式专用）
+        // 创造玩家在灭骸之扉按 TAB 时请求服务端填入正确答案卡片
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                RequiemGateFillPacket.class,
+                RequiemGateFillPacket::encode,
+                RequiemGateFillPacket::decode,
+                RequiemGateFillPacket::handle
         );
     }
 

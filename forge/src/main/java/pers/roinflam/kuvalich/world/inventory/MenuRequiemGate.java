@@ -2,6 +2,7 @@ package pers.roinflam.kuvalich.world.inventory;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -34,6 +35,8 @@ import pers.roinflam.kuvalich.utils.LogUtil;
  * 2. 允许玩家放置3张安魂卡进行解密
  * 3. 自动从玩家Capability加载已配置的卡片
  * 4. 关闭时保存卡片配置到Capability
+ *
+ * ⭐ 新增：autoFillAnswerCards —— 创造模式一键补全正确答案卡片（由 RequiemGateFillPacket 调用）
  */
 public class MenuRequiemGate extends AbstractContainerMenu {
 
@@ -242,6 +245,69 @@ public class MenuRequiemGate extends AbstractContainerMenu {
             });
         } catch (Exception e) {
             LogUtil.error("保存卡片配置时发生错误", e);
+        }
+    }
+
+    /**
+     * 一键补全当前玄骸的正确答案卡片（仅服务端调用，创造模式专用）
+     * <p>
+     * 从玩家 RequiemCard 能力读取 oneAnswer/twoAnswer/threeAnswer（带正确顺序），
+     * 创建对应的三张安魂卡按正确顺序填入卡槽，省去手动查看答案并从背包找卡的步骤。
+     * 玩家关闭界面时，{@link #saveCardsToCapability} 会把这三张卡持久化到能力，
+     * 之后击杀玄骸即可用这些卡自动验证解密。
+     * <p>
+     * 若答案尚未生成（玩家还未解锁第一阶段，answer 为 -1），静默返回不做任何操作。
+     * 填入前会把玩家手动放入的旧卡返还背包（背包满则掉落脚下），避免被覆盖吞掉。
+     *
+     * @param serverPlayer 触发补全的服务端玩家（已在网络包层校验为创造模式）
+     */
+    public void autoFillAnswerCards(ServerPlayer serverPlayer) {
+        if (level.isClientSide) {
+            return;
+        }
+        serverPlayer.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+            int oneAnswer = requiemCard.getOneAnswer();
+            int twoAnswer = requiemCard.getTwoAnswer();
+            int threeAnswer = requiemCard.getThreeAnswer();
+
+            // 答案尚未生成（未解锁第一阶段），无法补全，静默返回
+            if (oneAnswer < 0 || twoAnswer < 0 || threeAnswer < 0) {
+                LogUtil.debug("灭骸之扉一键补全：答案尚未生成，已忽略");
+                return;
+            }
+
+            // 返还玩家手动放入的旧卡，避免被覆盖丢失
+            returnExistingCards(serverPlayer);
+
+            // 按正确顺序填入正确答案卡片
+            cardHandler.setStackInSlot(0, new ItemStack(AbstractRequiemCard.getCard(oneAnswer)));
+            cardHandler.setStackInSlot(1, new ItemStack(AbstractRequiemCard.getCard(twoAnswer)));
+            cardHandler.setStackInSlot(2, new ItemStack(AbstractRequiemCard.getCard(threeAnswer)));
+
+            // 立即同步卡槽变更到客户端
+            broadcastChanges();
+
+            LogUtil.debugEvent("灭骸之扉一键补全", serverPlayer.getName().getString(),
+                    "答案: " + oneAnswer + " / " + twoAnswer + " / " + threeAnswer);
+        });
+    }
+
+    /**
+     * 将卡槽中玩家手动放入的旧卡返还玩家（背包满则掉落脚下），并清空对应卡槽。
+     * <p>
+     * 供一键补全前调用，避免直接覆盖导致玩家原本放入的卡片凭空消失。
+     *
+     * @param serverPlayer 接收返还卡片的玩家
+     */
+    private void returnExistingCards(ServerPlayer serverPlayer) {
+        for (int i = 0; i < 3; i++) {
+            ItemStack oldCard = cardHandler.getStackInSlot(i);
+            if (!oldCard.isEmpty()) {
+                if (!serverPlayer.getInventory().add(oldCard.copy())) {
+                    serverPlayer.drop(oldCard.copy(), false);
+                }
+                cardHandler.setStackInSlot(i, ItemStack.EMPTY);
+            }
         }
     }
 

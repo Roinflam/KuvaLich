@@ -327,7 +327,7 @@ public final class ModConfig {
             reducedDamage = builder
                     .comment("Damage reduction per failed decryption")
                     .comment("每次解密失败的伤害削减")
-                    .defineInRange("reducedDamage", 0.1, 0.0, Double.MAX_VALUE);
+                    .defineInRange("reducedDamage", 0.0, 0.0, Double.MAX_VALUE);
 
             increaseDamage = builder
                     .comment("Enemy damage increase per failed decryption")

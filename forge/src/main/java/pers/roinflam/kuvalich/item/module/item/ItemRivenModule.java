@@ -34,6 +34,16 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  * 支持三种模式：近战(0)、远程(1)、通用(2)
  * 通用模式近战和远程词条均可出现，形成大混池
  *
+ * ⭐ 负面词条排除规则（本次新增）：
+ *    以下词条不会作为负面词条被洗出，原因分两类：
+ *    1. 机制类新词条（true_bullet / gun_loot_drop / execute_threshold / purge_buff / execute_chance）——
+ *       除 gun_loot_drop 外，其余在战斗代码中均有正值守卫，负值完全无效（死负面），
+ *       玩家白吃 ×1.2 正面加成；且"负的处决阈值"等语义不通，tooltip 显示也很怪。
+ *       gun_loot_drop 虽然负值有效，但为保持五个新词条规则统一，一并排除。
+ *    2. 击杀叠层词条（killStack* 前缀）——
+ *       战斗代码以 containsKey 判定是否累加叠层，负值词条会导致"越杀越弱"的毒词条，
+ *       与"无伤负"设计意图相悖，故全部排除。
+ *
  * Riven weapon module (1.20.1 version)
  * Supports three modes: Melee(0), Remote(1), Universal(2)
  * Universal mode allows both melee and remote attributes in a single mixed pool
@@ -62,6 +72,20 @@ public class ItemRivenModule extends AbstractItemModule {
             "killStackMultishot", "killStackBurstingRadius", "killStackFiringRate",
             "gun_damage", "headshot_damage", "aim_time", "accuracy",
             "true_bullet", "gun_loot_drop"
+    );
+
+    /**
+     * ⭐ 禁止作为负面词条出现的机制类新词条集合。
+     * <p>
+     * true_bullet / execute_threshold / purge_buff / execute_chance 在战斗代码中
+     * 均有 {@code <= 0} 正值守卫，负值完全无效（死负面）；
+     * gun_loot_drop 负值虽然有效（会真实扣掉枪械击杀掉落倍率），
+     * 但为保持五个新词条规则统一、避免玩家困惑，一并排除。
+     * 正面词条池不受影响，这些词条仍可正常作为正面词条洗出。
+     */
+    private static final Set<String> NEGATIVE_EXCLUDED_ATTRIBUTES = Set.of(
+            "true_bullet", "gun_loot_drop",
+            "execute_threshold", "purge_buff", "execute_chance"
     );
 
     /** TACZ 模组加载状态缓存 */
@@ -228,6 +252,9 @@ public class ItemRivenModule extends AbstractItemModule {
      * 洗卡/生成裂罅词条
      * 根据倾向性、洗卡次数和裂罅模式重新随机所有词条
      * 未安装 TACZ 时自动过滤枪械专属词条
+     * <p>
+     * ⭐ 负面词条额外排除（仅影响负面槽，正面词条池不变）：
+     *    机制类新词条（NEGATIVE_EXCLUDED_ATTRIBUTES）与所有击杀叠层词条（killStack* 前缀）。
      */
     public static ItemStack cycleModule(int trend, int cycleNumber, int rivenMode) {
         if (isRivenDisabled()) {
@@ -340,6 +367,21 @@ public class ItemRivenModule extends AbstractItemModule {
 
                 if (attributeType.equals("fire") || attributeType.equals("ice") ||
                         attributeType.equals("poison") || attributeType.equals("electricity")) {
+                    continue;
+                }
+
+                // ⭐ 机制类新词条不出负面：
+                //    true_bullet / execute_threshold / purge_buff / execute_chance 负值在战斗代码中
+                //    被正值守卫拦截，属于完全无效的"死负面"（白吃 ×1.2 正面加成）；
+                //    gun_loot_drop 负值虽有效，但为保持新词条规则统一一并排除。
+                if (NEGATIVE_EXCLUDED_ATTRIBUTES.contains(attributeType)) {
+                    continue;
+                }
+
+                // ⭐ 击杀叠层词条不出负面：
+                //    战斗代码以 containsKey 判定累加叠层，负值词条会让玩家"越杀越弱"，
+                //    属于惩罚击杀行为的毒词条，与无伤负设计意图相悖。
+                if (attributeType.startsWith("killStack")) {
                     continue;
                 }
 

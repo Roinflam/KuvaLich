@@ -1,5 +1,3 @@
-// EntityKuvaMaster.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/entity/EntityKuvaMaster.java
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.ChatFormatting;
@@ -29,6 +27,7 @@ import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.item.module.item.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
+import pers.roinflam.kuvalich.network.message.DecryptionHudPacket;
 import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 
@@ -479,6 +478,10 @@ public class EntityKuvaMaster extends AbstractKuva {
         }
 
         upgradeWeaponLevelCap(player, requiemCard);
+
+        // 通知顶部HUD：最终解密成功（触发庆祝提示并将进度条归零）
+        // reset() 已在上方执行，此处读取到的为重置后的阶段状态
+        DecryptionHudPacket.sendComplete(player, requiemCard);
     }
 
     /**
@@ -598,15 +601,26 @@ public class EntityKuvaMaster extends AbstractKuva {
                 (int) (ModConfig.KUVA_LICH.maxDecryptionProgress.get() * ModConfig.KUVA_LICH.masterPotionMultiplier.get())
         );
 
+        // 记录加成前的阶段，用于判断本次是否揭示了新线索
+        int levelBefore = requiemCard.getUnlockedCardStatus();
+
         if (requiemCard.addPotion(addPotion)) {
+            // 同步顶部解密HUD（带过渡动画；阶段推进时触发揭示提示）
+            DecryptionHudPacket.sendProgress(player, requiemCard, addPotion, levelBefore);
+
             boolean max = requiemCard.getPointsRequired() == -1;
             sendMessage(player, "message.kuvalich.getPoints",
                     ChatFormatting.RED,
                     addPotion,
                     max ? "Max" : requiemCard.getDecryptionProgress(),
                     max ? "Max" : requiemCard.getPointsRequired());
-        } else if (!requiemCard.isCorrectAnswer() && !requiemCard.isReadyCard()) {
-            sendMessage(player, "message.kuvalich.maxLevel", ChatFormatting.RED);
+        } else {
+            // 已满级（线索全部揭示）：进度未变化，但仍补发一个 added=0 的进度包，
+            // 使顶部HUD在满级后继续击杀时也能弹出（显示满进度条与提示，不触发闪光）
+            DecryptionHudPacket.sendProgress(player, requiemCard, 0, levelBefore);
+            if (!requiemCard.isCorrectAnswer() && !requiemCard.isReadyCard()) {
+                sendMessage(player, "message.kuvalich.maxLevel", ChatFormatting.RED);
+            }
         }
     }
 

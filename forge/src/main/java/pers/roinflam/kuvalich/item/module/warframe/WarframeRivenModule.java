@@ -29,6 +29,15 @@ import java.util.List;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 
+/**
+ * 裂罅战甲模组（1.20.1版本）
+ * <p>
+ * ⭐ 负面词条排除规则（本次新增）：
+ *    所有击杀叠层词条（killStack* 前缀）不再作为负面词条洗出。
+ *    原因：战甲叠层累加以 containsKey 判定（WarframeModuleHandler.addWarframeKillStacks），
+ *    负值词条会导致玩家"越杀越弱"的毒词条效果，与无伤负设计意图相悖。
+ *    正面词条池不受影响，击杀叠层词条仍可正常作为正面词条洗出。
+ */
 public class WarframeRivenModule extends AbstractWarframeModule {
     private static final String[] PREFIXES = {"Croni", "Sati", "Vexi", "Locti", "Magna", "Crita", "Geli", "Rupti", "Arma", "Venxi", "Furi", "Praesi", "Nexi", "Draco", "Spira", "Phasa", "Lunari", "Solara", "Terron", "Aquix", "Ventra", "Ignis", "Frosti", "Voltic", "Plasma", "Ethera", "Radi", "Mortal", "Divin", "Spectra", "Celest", "Infern", "Obliv", "Eclip", "Cosmi", "Stella", "Astron", "Nebula", "Galax", "Orbit", "Nova", "Lunar", "Solar", "Comet", "Astro", "Stellar", "Void", "Quantum", "Gluon", "Gravi", "Photon", "Pulsar", "Quark", "Radian", "Sigma", "Tau", "Upsilon", "Vecti", "Warp", "Xenon", "Yotta", "Zetta", "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega", "Axion", "Baryon", "Charm", "Dynami", "Electro", "Fluxi", "Gyro", "Halo", "Ioni", "Joule", "Kineti", "Lepto", "Mytho", "Neuro", "Omni", "Penta", "Quanta", "Retro", "Syntho", "Tri", "Umbra", "Vecta", "Wyrm", "Xero", "Yield", "Zephyr"};
 
@@ -167,6 +176,14 @@ public class WarframeRivenModule extends AbstractWarframeModule {
                 if (hasAttributeType.contains(attributeType)) {
                     continue;
                 }
+
+                // ⭐ 击杀叠层词条不出负面：
+                //    战甲叠层累加以 containsKey 判定（addWarframeKillStacks），
+                //    负值词条会让玩家"越杀越弱"，属于惩罚击杀行为的毒词条，故排除。
+                if (attributeType.startsWith("killStack")) {
+                    continue;
+                }
+
                 double randomDouble = 0.8 + (Math.random() * (1.2 - 0.8));
                 randomDouble = new BigDecimal(Double.toString(randomDouble)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 

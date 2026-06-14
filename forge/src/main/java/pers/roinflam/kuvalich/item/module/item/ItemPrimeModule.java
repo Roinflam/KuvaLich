@@ -1,3 +1,5 @@
+// 文件：ItemPrimeModule.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/item/module/item/ItemPrimeModule.java
 package pers.roinflam.kuvalich.item.module.item;
 
 import net.minecraft.world.entity.item.ItemEntity;
@@ -28,6 +30,13 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  * ⭐ 第三批新增 · 单词条 Prime（银卡数值×1.5，与对应银卡同 type 互斥）：
  *    通用：收割之刻Prime（收集者阈值3%）、涤魂Prime（净化驱散15%）、斩首Prime（致命斩首0.015%）
  *    TACZ：洞穿弹头Prime（真实伤害30%）、战利搜集Prime（枪械战利品掉落45%）
+ *
+ * ⭐ 第六批新增 · 冷门 Prime（强度复合，部分与金卡同 type 互斥形成拉梯）：
+ *    通用：神王之锤(冲击+暴伤,与金卡titan_hammer互斥)、终焉审判(基伤+处决)、影刃刺客(冲刺+处决)、
+ *      奥术终结(魔法+处决)、时之囚笼(triggerTime专精)、屠魔圣典(四bane,与slaughter_feast互斥)、
+ *      瘟疫领主、磁暴领主、病毒君主、大法师(与archmage_blade互斥)、元素法神(与arcane_elements互斥)、
+ *      风暴突袭(冲刺+净化)、灭世箭神(与apocalypse_bow互斥)、暴君终结(基伤+秒杀)；
+ *    TACZ：燃焰处决(与flame_execution互斥)、真伤狙神、腐蚀狂潮、辐射主宰、战利狙神、净化风暴(与purge_storm互斥)。
  */
 public class ItemPrimeModule extends AbstractItemModule {
 
@@ -243,6 +252,82 @@ public class ItemPrimeModule extends AbstractItemModule {
                 "kuvaweapon.item_module.galvanized_death_barrage", "death_barrage",
                 new Object[]{"multishot", 0.45001f, "triggerChance", 0.75001f, "killStackMultishot", 0.25001f});
 
+        // ========== ⭐ 第六批新增 · 通用 Prime（冷门强度复合）==========
+        // 处决数值用 Prime 档（阈值3% / 秒杀0.015%）；部分卡复用金卡 type 形成金⇄Prime 互斥拉梯。
+
+        // 神王之锤Prime —— 冲击120% + 近战暴击伤害60%（与金卡 titan_hammer 互斥）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.titan_hammer_prime", "titan_hammer",
+                new Object[]{"impact", 1.20001f, "meleeCriticalStrikeMultiplier", 0.60001f},
+                "melee_crit_mult");
+
+        // 终焉审判Prime —— 非暴击基伤300% + 处决阈值3%（基伤+处决Prime）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.doom_judgment_prime", "doom_judgment",
+                new Object[]{"baseDamageWhenNotCriticalStrike", 3.00001f, "execute_threshold", 0.03001f});
+
+        // 影刃刺客Prime —— 冲刺暴击200% + 处决阈值3% + 冲刺距离（冲刺+处决Prime）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.shadow_assassin_prime", "shadow_assassin",
+                new Object[]{"dashMeleeCriticalStrikeProbability", 2.00001f, "execute_threshold", 0.03001f, "dashAttackRange", 5.00001f},
+                "dash_crit_chance", "dash_range");
+
+        // 奥术终结Prime —— 魔法伤害240% + 处决阈值3% + 触发几率60%（魔法+处决Prime）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.arcane_finisher_prime", "arcane_finisher",
+                new Object[]{"magicDamage", 2.40001f, "execute_threshold", 0.03001f, "triggerChance", 0.60001f});
+
+        // 时之囚笼Prime —— 触发时间200% + 触发几率90%（DOT 延长终极专精）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.time_prison_prime", "time_prison",
+                new Object[]{"triggerTime", 2.00001f, "triggerChance", 0.90001f});
+
+        // 屠魔圣典Prime —— 四系克星各40%（与金卡 slaughter_feast 互斥）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.demon_codex_prime", "slaughter_feast",
+                new Object[]{"bane_of_undead", 0.40001f, "bane_of_arthropod", 0.40001f, "bane_of_illager", 0.40001f});
+
+        // 瘟疫领主Prime —— 毒气165% + 攻击距离90% + 触发几率30%（横扫毒云Prime）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.plague_lord_prime", "plague_lord",
+                new Object[]{"gas", 1.65001f, "attackRange", 0.90001f, "triggerChance", 0.30001f});
+
+        // 磁暴领主Prime —— 磁力165% + 穿刺90%（破甲磁暴Prime）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.magnetic_lord_prime", "magnetic_lord",
+                new Object[]{"magnetic", 1.65001f, "puncture", 0.90001f});
+
+        // 病毒君主Prime —— 病毒165% + 冲击90% + 近战伤害60%（近战病毒Prime）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.viral_sovereign_prime", "viral_sovereign",
+                new Object[]{"virus", 1.65001f, "impact", 0.90001f, "meleeDamage", 0.60001f});
+
+        // 大法师Prime —— 魔法伤害240% + 攻击速度60%（与金卡 archmage_blade 互斥）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.archmage_prime", "archmage_blade",
+                new Object[]{"magicDamage", 2.40001f, "attackSpeed", 0.60001f});
+
+        // 元素法神Prime —— 魔法伤害180% + 火焰90% + 冰冻90% + 触发几率30%（与金卡 arcane_elements 互斥）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.elemental_god_prime", "arcane_elements",
+                new Object[]{"magicDamage", 1.80001f, "fire", 0.90001f, "ice", 0.90001f, "triggerChance", 0.30001f});
+
+        // 风暴突袭Prime —— 冲刺暴击200% + 冲刺触发240% + 净化驱散10%（冲刺+净化Prime）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.storm_raid_prime", "storm_raid",
+                new Object[]{"dashMeleeCriticalStrikeProbability", 2.00001f, "dashTriggerChance", 2.40001f, "purge_buff", 0.10001f},
+                "dash_crit_chance", "dash_trigger");
+
+        // 灭世箭神Prime —— 未定义克星45% + 箭矢伤害180% + 多重射击45%（与金卡 apocalypse_bow 互斥）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.apocalypse_archer_prime", "apocalypse_bow",
+                new Object[]{"bane_of_undefined", 0.45001f, "arrowDamage", 1.80001f, "multishot", 0.45001f});
+
+        // 暴君终结Prime —— 非暴击基伤300% + 秒杀概率0.015% - 近战伤害45%（基伤+秒杀Prime）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.tyrant_finisher_prime", "tyrant_finisher",
+                new Object[]{"baseDamageWhenNotCriticalStrike", 3.00001f, "execute_chance", 0.00015f, "meleeDamage", -0.45001f});
+
         // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
         if (ItemRivenModule.isTaczLoaded()) {
 
@@ -351,6 +436,37 @@ public class ItemPrimeModule extends AbstractItemModule {
                     new Object[]{"gun_damage", 1.20001f, "headshot_damage", 0.45001f, "killStackMultishot", 0.25001f},
                     "multishot");
 
+            // ===== ⭐ 第六批新增 · TACZ Prime（冷门强度复合）=====
+
+            // 燃焰处决Prime —— 枪械伤害240% + 火焰90% + 处决阈值3%（与金卡 flame_execution 互斥）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.flame_execution_prime", "flame_execution",
+                    new Object[]{"gun_damage", 2.40001f, "fire", 0.90001f, "execute_threshold", 0.03001f});
+
+            // 真伤狙神Prime —— 真实子弹20% + 爆头伤害120% + 精准度45%（精准爆头真伤狙Prime）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.true_marksman_prime", "true_marksman",
+                    new Object[]{"true_bullet", 0.20001f, "headshot_damage", 1.20001f, "accuracy", 0.45001f});
+
+            // 腐蚀狂潮Prime —— 枪械伤害180% + 腐蚀90% + 多重射击30%（破甲弹幕Prime）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.corrosive_tide_prime", "corrosive_tide_gun",
+                    new Object[]{"gun_damage", 1.80001f, "corrosion", 0.90001f, "multishot", 0.30001f});
+
+            // 辐射主宰Prime —— 枪械伤害180% + 辐射90% + 精准度30%（精准辐射弹药Prime）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.radiation_master_prime", "radiation_master",
+                    new Object[]{"gun_damage", 1.80001f, "radiation", 0.90001f, "accuracy", 0.30001f});
+
+            // 战利狙神Prime —— 枪械战利品掉落45% + 爆头伤害120%（爆头刷材料狙Prime）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.loot_master_prime", "loot_master",
+                    new Object[]{"gun_loot_drop", 0.45001f, "headshot_damage", 1.20001f});
+
+            // 净化风暴Prime —— 枪械伤害180% + 净化驱散15% + 爆头伤害60%（与金卡 purge_storm 互斥）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.purge_storm_prime", "purge_storm",
+                    new Object[]{"gun_damage", 1.80001f, "purge_buff", 0.15001f, "headshot_damage", 0.60001f});
         }
     }
 

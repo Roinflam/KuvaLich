@@ -1,3 +1,5 @@
+// 文件：ItemUncommonModule.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/item/module/item/ItemUncommonModule.java
 package pers.roinflam.kuvalich.item.module.item;
 
 import net.minecraft.world.entity.item.ItemEntity;
@@ -37,6 +39,12 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  *    通用：腐蚀猎手（阈值2%+腐蚀60%）、涤魂触击（抹除10%+远程60%）、
  *          毒刃斩首（秒杀0.01%+毒60%）、净化箭（抹除10%+箭矢90%）
  *    TACZ：真伤弹芯（真伤10%+爆头60%）、掠夺者之眼（枪械战利品20%+精准30%）
+ *
+ * ⭐ 第六批新增 · 冷门组合（银卡）：
+ *    通用：基础元素×冷门载体（烈焰挥砍/冰封打击/剧毒穿刺/雷暴连射/炽炎之触/寒霜领域）、
+ *          impact 控场进阶（碎骨重锤/震荡刃/霰弹冲击）、magicDamage×元素与散件、
+ *          bane×暴击/×元素/×远程、基伤×元素、triggerTime 专精、dash×元素、横扫近战等。
+ *    TACZ：枪伤×元素穿甲、真伤×精准、战利品×枪手、速瞄×元素、精准弹幕等冷门搭配。
  */
 public class ItemUncommonModule extends AbstractItemModule {
 
@@ -307,6 +315,165 @@ public class ItemUncommonModule extends AbstractItemModule {
                 "kuvaweapon.item_module.purifying_arrow", "purifying_arrow",
                 new Object[]{"purge_buff", 0.10001f, "arrowDamage", 0.90001f});
 
+        // ========== ⭐ 第六批新增 · 通用冷门组合（银卡）==========
+        // 基础元素值统一 0.9（与现有银卡单元素一致）；不引入处决/真伤等进阶机制以外的超模数值。
+
+        // ----- 基础元素 × 冷门载体 -----
+
+        // 烈焰挥砍 —— 火焰90% + 切割60%（火×切割，区别于纯近战）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.flame_slash", "flame_slash",
+                new Object[]{"fire", 0.90001f, "slash", 0.60001f});
+
+        // 冰封打击 —— 冰冻90% + 冲击60%（减速+击退控场）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.frost_strike", "frost_strike",
+                new Object[]{"ice", 0.90001f, "impact", 0.60001f});
+
+        // 剧毒穿刺 —— 毒素90% + 穿刺60%（破甲毒DOT）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.venom_pierce", "venom_pierce",
+                new Object[]{"poison", 0.90001f, "puncture", 0.60001f});
+
+        // 雷暴侵蚀 —— 电击90% + 触发几率60%（高频触发感电，避免与金卡雷霆弹幕倒挂）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.storm_volley", "storm_volley",
+                new Object[]{"electricity", 0.90001f, "triggerChance", 0.60001f});
+
+        // 炽炎之触 —— 火焰90% + 攻击速度30%（高频纵火）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.searing_touch", "searing_touch",
+                new Object[]{"fire", 0.90001f, "attackSpeed", 0.30001f});
+
+        // 寒霜领域 —— 冰冻90% + 攻击距离90%（横扫冰冻控场）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.frost_field", "frost_field",
+                new Object[]{"ice", 0.90001f, "attackRange", 0.90001f});
+
+        // ----- impact 控场进阶 -----
+
+        // 碎骨重锤 —— 冲击60% + 近战伤害90%（近战击退主力）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.bone_crusher", "bone_crusher",
+                new Object[]{"impact", 0.60001f, "meleeDamage", 0.90001f});
+
+        // 震荡刃 —— 冲击60% + 攻击距离90%（横扫击退）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.shockwave_blade", "shockwave_blade",
+                new Object[]{"impact", 0.60001f, "attackRange", 0.90001f});
+
+        // 霰弹冲击 —— 冲击45% + 多重射击60%（远程多发击退）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.scatter_blast", "scatter_blast",
+                new Object[]{"impact", 0.45001f, "multishot", 0.60001f});
+
+        // ----- magicDamage × 元素 / 散件 -----
+
+        // 元素咒刃 —— 魔法伤害105% + 火焰60%（法术纵火）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.elemental_hex_blade", "elemental_hex_blade",
+                new Object[]{"magicDamage", 1.05001f, "fire", 0.60001f});
+
+        // 奥术风暴 —— 魔法伤害135% + 触发几率60% + 触发时间60%（法术异常爆发）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.arcane_storm", "arcane_storm",
+                new Object[]{"magicDamage", 1.35001f, "triggerChance", 0.60001f, "triggerTime", 0.60001f});
+
+        // 咒能箭雨 —— 魔法伤害105% + 箭矢伤害90% + 多重射击30%（法术弓流）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.hex_arrow_rain", "hex_arrow_rain",
+                new Object[]{"magicDamage", 1.05001f, "arrowDamage", 0.90001f, "multishot", 0.30001f});
+
+        // ----- bane × 暴击 / 元素 / 远程 -----
+
+        // 猎魔暴击 —— 不死克星30% + 近战暴击几率90%
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.undead_crit", "undead_crit",
+                new Object[]{"bane_of_undead", 0.30001f, "meleeCriticalStrikeProbability", 0.90001f},
+                "melee_crit_chance");
+
+        // 灭虫毒刃 —— 节肢克星30% + 毒素90%
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.arthropod_venom", "arthropod_venom",
+                new Object[]{"bane_of_arthropod", 0.30001f, "poison", 0.90001f});
+
+        // 讨逆箭 —— 灾厄村民克星30% + 箭矢伤害90%
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.illager_arrow", "illager_arrow",
+                new Object[]{"bane_of_illager", 0.30001f, "arrowDamage", 0.90001f});
+
+        // 异界克星 —— 未定义克星30% + 远程伤害90%
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.aberration_bane", "aberration_bane",
+                new Object[]{"bane_of_undefined", 0.30001f, "remoteDamage", 0.90001f});
+
+        // ----- 基伤 × 元素 / triggerTime 专精 / dash -----
+
+        // 重拳 —— 非暴击基伤165% + 冲击60%（稳定击退）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.heavy_fist", "heavy_fist",
+                new Object[]{"baseDamageWhenNotCriticalStrike", 1.65001f, "impact", 0.60001f});
+
+        // 毒躯 —— 非暴击基伤165% + 毒素60%（无暴击毒流）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.toxic_husk", "toxic_husk",
+                new Object[]{"baseDamageWhenNotCriticalStrike", 1.65001f, "poison", 0.60001f});
+
+        // 持久毒云 —— 毒素90% + 触发时间90%（延长毒DOT专精）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.lasting_toxin", "lasting_toxin",
+                new Object[]{"poison", 0.90001f, "triggerTime", 0.90001f});
+
+        // 永冻 —— 冰冻90% + 触发时间100% + 触发几率30%（长效减速）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.perma_frost", "perma_frost",
+                new Object[]{"ice", 0.90001f, "triggerTime", 1.00001f, "triggerChance", 0.30001f});
+
+        // 疾风毒刃 —— 冲刺触发几率135% + 毒素60%（冲刺触毒）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.gale_venom", "gale_venom",
+                new Object[]{"dashTriggerChance", 1.35001f, "poison", 0.60001f});
+
+        // 突袭重斩 —— 冲刺攻击距离 + 近战伤害60%（冲刺横扫强化）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.lunge_heavy", "lunge_heavy",
+                new Object[]{"dashAttackRange", 5.00001f, "meleeDamage", 0.60001f});
+
+        // ----- 暴击 / 横扫 / 远程 -----
+
+        // 狂乱挥砍 —— 攻击速度45% + 切割60%（高频切割，攻速压至 Prime 狂怒之下避免倒挂）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.frenzy_slash", "frenzy_slash",
+                new Object[]{"attackSpeed", 0.45001f, "slash", 0.60001f});
+
+        // 破绽横扫 —— 攻击距离120% + 近战暴击几率60%（大范围+暴击，避免与金卡居合能量同值）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.mighty_sweep", "mighty_sweep",
+                new Object[]{"attackRange", 1.20001f, "meleeCriticalStrikeProbability", 0.60001f},
+                "melee_crit_chance");
+
+        // 致命精准 —— 近战暴击几率120% + 近战暴击伤害60%（双暴击）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.lethal_precision_melee", "lethal_precision_melee",
+                new Object[]{"meleeCriticalStrikeProbability", 1.20001f, "meleeCriticalStrikeMultiplier", 0.60001f},
+                "melee_crit_chance", "melee_crit_mult");
+
+        // 弹道精算 —— 远程暴击几率120% + 远程伤害60%
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.ballistic_calc", "ballistic_calc",
+                new Object[]{"remoteCriticalStrikeProbability", 1.20001f, "remoteDamage", 0.60001f},
+                "remote_crit_chance");
+
+        // 爆发箭 —— 箭矢伤害150% + 射速30%
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.burst_arrow", "burst_arrow",
+                new Object[]{"arrowDamage", 1.50001f, "firing_rate", 0.30001f});
+
+        // 弹幕压制 —— 远程伤害135% + 多重射击60% - 射速30%
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.barrage_suppress", "barrage_suppress",
+                new Object[]{"remoteDamage", 1.35001f, "multishot", 0.60001f, "firing_rate", -0.30001f});
+
         // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
         if (ItemRivenModule.isTaczLoaded()) {
 
@@ -437,6 +604,69 @@ public class ItemUncommonModule extends AbstractItemModule {
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.plunderers_eye", "plunderers_eye",
                     new Object[]{"gun_loot_drop", 0.20001f, "accuracy", 0.30001f});
+
+            // ===== ⭐ 第六批新增 · TACZ 冷门组合（银卡）=====
+            // gun_damage 独立乘区，配元素(0.6)不超模；真伤/战利品配差异化老词条避免与现有重复。
+
+            // 烈焰穿甲 —— 枪械伤害150% + 火焰60% + 穿刺30%（破甲纵火弹）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.flame_ap", "flame_ap",
+                    new Object[]{"gun_damage", 1.50001f, "fire", 0.60001f, "puncture", 0.30001f});
+
+            // 毒液狙击 —— 爆头伤害90% + 毒素60% + 精准度30%（精准毒狙）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.venom_snipe", "venom_snipe",
+                    new Object[]{"headshot_damage", 0.90001f, "poison", 0.60001f, "accuracy", 0.30001f});
+
+            // 电磁狙杀 —— 爆头伤害90% + 电击60%（爆头触电）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.em_snipe", "em_snipe",
+                    new Object[]{"headshot_damage", 0.90001f, "electricity", 0.60001f});
+
+            // 真伤精准 —— 真实子弹10% + 精准度45%（精准真伤，区别于真伤弹芯的爆头向）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.true_precision", "true_precision",
+                    new Object[]{"true_bullet", 0.10001f, "accuracy", 0.45001f});
+
+            // 炽焰枪击 —— 枪械伤害150% + 火焰60%（火焰枪 DPS，去掉弹夹避免压制金卡野火）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.flame_belt", "flame_belt",
+                    new Object[]{"gun_damage", 1.50001f, "fire", 0.60001f});
+
+            // 重装狙击 —— 枪械伤害180% + 精准度30%（纯枪伤狙击强化）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.heavy_marksman", "heavy_marksman",
+                    new Object[]{"gun_damage", 1.80001f, "accuracy", 0.30001f});
+
+            // 战利枪手 —— 枪械战利品掉落30% + 枪械伤害60%（边刷材料边输出）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.loot_marksman", "loot_marksman",
+                    new Object[]{"gun_loot_drop", 0.30001f, "gun_damage", 0.60001f});
+
+            // 速瞄燃烧 —— 瞄准速度45% + 火焰60%（速瞄纵火）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.quick_burn", "quick_burn",
+                    new Object[]{"aim_time", 0.45001f, "fire", 0.60001f});
+
+            // 精准弹幕 —— 精准度45% + 多重射击60%（精准多发）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.precise_barrage", "precise_barrage",
+                    new Object[]{"accuracy", 0.45001f, "multishot", 0.60001f});
+
+            // 稳固连射 —— 后坐力降低45% + 射速30%（稳定压枪连射，后坐压至金卡稳定器之下避免倒挂）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.steady_volley", "steady_volley",
+                    new Object[]{"recoil_reduction", 0.45001f, "firing_rate", 0.30001f});
+
+            // 弹链续航 —— 弹夹容量40% + 装填速度20%（大弹夹快装填，弹夹压至 Prime 弹夹增幅之下避免倒挂）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.ammo_endurance", "ammo_endurance",
+                    new Object[]{"magazine_size", 0.40001f, "reload_speed", 0.20001f});
+
+            // 穿甲弹幕 —— 枪械伤害150% + 穿刺45% + 多重射击30%（多发破甲）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_UNCOMMON_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.ap_barrage", "ap_barrage",
+                    new Object[]{"gun_damage", 1.50001f, "puncture", 0.45001f, "multishot", 0.30001f});
         }
     }
 

@@ -1,3 +1,5 @@
+// 文件：ItemRareModule.java
+// 路径：forge/src/main/java/pers/roinflam/kuvalich/item/module/item/ItemRareModule.java
 package pers.roinflam.kuvalich.item.module.item;
 
 import net.minecraft.world.entity.item.ItemEntity;
@@ -25,25 +27,16 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  * 黄金级武器模组（1.20.1版本）
  * Rare (Gold) tier weapon module (1.20.1 version)
  *
- * ⭐ 第三批新增 · 复合金卡：
- *    通用：净世审判（净化10%+收集者阈值2%）、处决之刃（收集者阈值2%+近战伤害100%+近战暴击60%）、
- *          斩首弹幕（致命斩首0.01%+多重射击30%+射速30%）、收割弹幕（收集者阈值2%+多重射击30%+远程伤害50%）
- *    TACZ：幻影弹（真伤15%+枪械伤害100%）、影袭（真伤15%+爆头60%+瞄准速度30%）、
- *          穿透处决（真伤15%+收集者阈值2%）、血色掠夺（枪械战利品35%+多重射击30%）、
- *          战利补给（枪械战利品30%+弹夹30%+装填20%）、净化弹幕（净化10%+精准20%+多重射击30%）
+ * ⭐ 第三~五批新增 · 复合金卡（处决/真伤/净化体系，详见各注释）。
  *
- * ⭐ 第四批新增 · 复合金卡：
- *    通用：死神协奏（阈值2%+斩首0.01%）、净魂斩（净化15%+斩首0.01%+多重30%）、
- *          腐化收割（净化10%+阈值2%+远程50%）、狂乱斩首（斩首0.01%+攻速60%+近战暴击60%）、
- *          灵魂榨取（净化10%+近战100%+阈值2%）
- *    TACZ：收集者（阈值2.5%+枪械战利品35%）、穿魂弹（真伤15%+净化10%）、
- *          湮灭连射（真伤10%+射速30%+多重30%）、断罪者（真伤15%+斩首0.01%+爆头60%）、
- *          尸潮收割（枪械战利品30%+斩首0.01%+射速30%）、真理之触（真伤20%+精准30%）
- *
- * ⭐ 第五批新增 · 复合金卡（新词条 × 老词条交叉）：
- *    通用：腐蚀处决、瘟疫收割、雷暴斩首、湮灭爆轰、净化风暴、夺魂连斩、
- *          死亡箭雨、血祭审判、寒狱处决、灭杀领域、暴君终焉
- *    TACZ：穿甲真弹、影刃真伤、静默处决者、精准搜刮、真理弹幕
+ * ⭐ 第六批新增 · 冷门组合（金卡）：
+ *    处决复合（用户点名）：终焉重击(基伤+处决)、刺客信条(冲刺+处决)、冲锋斩首(冲刺+秒杀)、
+ *      奥术处决(魔法+秒杀)、魔能净化(魔法+净化)、暴君处决(基伤+秒杀)、冲刺净化、元素处决；
+ *    impact 控场：泰坦重锤、冲击波领域、毁灭冲撞；
+ *    复合元素×冷门载体：瘟疫横扫、辐射狂战、磁暴穿刺、病毒重击、腐蚀法刃、爆裂咒术；
+ *    bane 进阶：歼灭者(双bane)、圣裁、灭世弓、灭族打击(双bane)；
+ *    magicDamage 进阶：元素奥术、大法师之刃、奥术狙击；
+ *    TACZ：燃焰处决、真伤狙杀、腐蚀弹幕、辐射弹药、战利狙击、净化风暴弹。
  */
 public class ItemRareModule extends AbstractItemModule {
 
@@ -413,6 +406,147 @@ public class ItemRareModule extends AbstractItemModule {
                 "kuvaweapon.item_module.tyrants_end", "tyrants_end",
                 new Object[]{"execute_threshold", 0.02501f, "bane_of_undefined", 0.30001f, "bane_of_illager", 0.30001f});
 
+        // ========== ⭐ 第六批新增 · 通用冷门组合（金卡）==========
+        // 处决复合走金卡强度档（用户点名）；复合元素 0.9~1.2、双bane 0.45 与现有金卡同档，不超模。
+
+        // ----- 处决复合（基伤/冲刺/魔法 × 处决/秒杀/净化）-----
+
+        // 终焉重击 —— 非暴击基伤240% + 处决阈值2% + 冲击60%（无暴击压血处决）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.doom_strike", "doom_strike",
+                new Object[]{"baseDamageWhenNotCriticalStrike", 2.40001f, "execute_threshold", 0.02001f, "impact", 0.60001f});
+
+        // 刺客信条 —— 冲刺暴击165% + 处决阈值2% + 冲刺距离（冲刺压血处决）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.assassins_creed", "assassins_creed",
+                new Object[]{"dashMeleeCriticalStrikeProbability", 1.65001f, "execute_threshold", 0.02001f, "dashAttackRange", 3.00001f},
+                "dash_crit_chance", "dash_range");
+
+        // 冲锋斩首 —— 冲刺触发225% + 秒杀概率0.01%（冲刺高触发顺带秒杀）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.charging_decap", "charging_decap",
+                new Object[]{"dashTriggerChance", 2.25001f, "execute_chance", 0.0001f},
+                "dash_trigger");
+
+        // 奥术处决 —— 魔法伤害180% + 秒杀概率0.01% + 多重射击30%（法术弹幕秒杀）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.arcane_execution", "arcane_execution",
+                new Object[]{"magicDamage", 1.80001f, "execute_chance", 0.0001f, "multishot", 0.30001f});
+
+        // 魔能净化 —— 魔法伤害180% + 净化驱散10% + 触发几率60%（法术抹增益）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.arcane_purge", "arcane_purge",
+                new Object[]{"magicDamage", 1.80001f, "purge_buff", 0.10001f, "triggerChance", 0.60001f});
+
+        // 暴君处决 —— 非暴击基伤240% + 秒杀概率0.01% - 近战伤害45%（赌命秒杀）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.tyrant_execution", "tyrant_execution",
+                new Object[]{"baseDamageWhenNotCriticalStrike", 2.40001f, "execute_chance", 0.0001f, "meleeDamage", -0.45001f});
+
+        // 冲刺净化 —— 冲刺暴击165% + 净化驱散10% + 近战伤害60%（冲刺抹增益）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.dash_purge", "dash_purge",
+                new Object[]{"dashMeleeCriticalStrikeProbability", 1.65001f, "purge_buff", 0.10001f, "meleeDamage", 0.60001f},
+                "dash_crit_chance");
+
+        // 元素处决 —— 辐射90% + 处决阈值2% + 多重射击60%（辐射弹幕处决）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.elemental_execution", "elemental_execution",
+                new Object[]{"radiation", 0.90001f, "execute_threshold", 0.02001f, "multishot", 0.60001f});
+
+        // ----- impact 控场 -----
+
+        // 泰坦重锤 —— 冲击90% + 近战暴击伤害90% - 近战伤害30%（暴击击退）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.titan_hammer", "titan_hammer",
+                new Object[]{"impact", 0.90001f, "meleeCriticalStrikeMultiplier", 0.90001f, "meleeDamage", -0.30001f},
+                "melee_crit_mult");
+
+        // 冲击波领域 —— 冲击60% + 爆炸半径 + 攻击距离90%（范围击退）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.shockwave_field", "shockwave_field",
+                new Object[]{"impact", 0.60001f, "bursting_radius", 0.15001f, "attackRange", 0.90001f});
+
+        // 毁灭冲撞 —— 冲击90% + 冲刺暴击120% + 冲刺距离（冲刺击退）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.devastating_charge", "devastating_charge",
+                new Object[]{"impact", 0.90001f, "dashMeleeCriticalStrikeProbability", 1.20001f, "dashAttackRange", 3.00001f},
+                "dash_crit_chance", "dash_range");
+
+        // ----- 复合元素 × 冷门载体 -----
+
+        // 瘟疫横扫 —— 毒气90% + 攻击距离90% + 触发几率30%（横扫毒云）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.plague_sweep", "plague_sweep",
+                new Object[]{"gas", 0.90001f, "attackRange", 0.90001f, "triggerChance", 0.30001f});
+
+        // 辐射狂战 —— 辐射90% + 攻击速度60% - 近战暴击几率30%（高频辐射）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.radiation_berserk", "radiation_berserk",
+                new Object[]{"radiation", 0.90001f, "attackSpeed", 0.60001f, "meleeCriticalStrikeProbability", -0.30001f},
+                "melee_crit_chance");
+
+        // 磁暴穿刺 —— 磁力90% + 穿刺90% + 触发时间60%（破甲磁暴）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.magnetic_pierce", "magnetic_pierce",
+                new Object[]{"magnetic", 0.90001f, "puncture", 0.90001f, "triggerTime", 0.60001f});
+
+        // 病毒重击 —— 病毒120% + 冲击60% + 近战伤害60%（近战病毒击退）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.viral_smash", "viral_smash",
+                new Object[]{"virus", 1.20001f, "impact", 0.60001f, "meleeDamage", 0.60001f});
+
+        // 腐蚀法刃 —— 腐蚀90% + 魔法伤害135%（法术破甲）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.corrosive_spell", "corrosive_spell",
+                new Object[]{"corrosion", 0.90001f, "magicDamage", 1.35001f});
+
+        // 爆裂咒术 —— 爆炸90% + 魔法伤害135% + 触发几率30%（法术爆炸）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.explosive_hex", "explosive_hex",
+                new Object[]{"explosion", 0.90001f, "magicDamage", 1.35001f, "triggerChance", 0.30001f});
+
+        // ----- bane 进阶 -----
+
+        // 歼灭者 —— 未定义克星45% + 不死克星45% + 近战伤害60%（双克制近战）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.annihilator", "annihilator",
+                new Object[]{"bane_of_undefined", 0.45001f, "bane_of_undead", 0.45001f, "meleeDamage", 0.60001f});
+
+        // 圣裁 —— 灾厄村民克星45% + 近战暴击几率90% + 切割60%（村民杀手）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.holy_judgment", "holy_judgment",
+                new Object[]{"bane_of_illager", 0.45001f, "meleeCriticalStrikeProbability", 0.90001f, "slash", 0.60001f},
+                "melee_crit_chance");
+
+        // 灭世弓 —— 未定义克星45% + 箭矢伤害135% + 多重射击30%（克制弓流）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.apocalypse_bow", "apocalypse_bow",
+                new Object[]{"bane_of_undefined", 0.45001f, "arrowDamage", 1.35001f, "multishot", 0.30001f});
+
+        // 灭族打击 —— 节肢克星45% + 灾厄村民克星45% + 远程伤害90%（双克制远程）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.genocide_strike", "genocide_strike",
+                new Object[]{"bane_of_arthropod", 0.45001f, "bane_of_illager", 0.45001f, "remoteDamage", 0.90001f});
+
+        // ----- magicDamage 进阶 -----
+
+        // 元素奥术 —— 魔法伤害180% + 火焰90% + 冰冻90%（火冰合爆炸的法术流）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.arcane_elements", "arcane_elements",
+                new Object[]{"magicDamage", 1.80001f, "fire", 0.90001f, "ice", 0.90001f});
+
+        // 大法师之刃 —— 魔法伤害200% + 攻击速度60% - 近战伤害30%（高频近战法刃）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.archmage_blade", "archmage_blade",
+                new Object[]{"magicDamage", 2.00001f, "attackSpeed", 0.60001f, "meleeDamage", -0.30001f});
+
+        // 奥术狙击 —— 魔法伤害180% + 远程暴击几率120% - 射速30%（法术狙击）
+        ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.item_module.arcane_snipe", "arcane_snipe",
+                new Object[]{"magicDamage", 1.80001f, "remoteCriticalStrikeProbability", 1.20001f, "firing_rate", -0.30001f},
+                "remote_crit_chance");
+
         // ========== TACZ 枪械专属模组（需要 TACZ 才会注册）==========
         if (ItemRivenModule.isTaczLoaded()) {
 
@@ -588,7 +722,7 @@ public class ItemRareModule extends AbstractItemModule {
                     "kuvaweapon.item_module.war_supply", "war_supply",
                     new Object[]{"gun_loot_drop", 0.30001f, "magazine_size", 0.30001f, "reload_speed", 0.20001f});
 
-            // 净化弹幕 —— 净化驱散10% + 精准度20% + 多重射击30%（泼水抹增益）
+            // 净化弹幕 —— 净化驱散10% + 精准20% + 多重射击30%（泼水抹增益）
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.purge_barrage", "purge_barrage",
                     new Object[]{"purge_buff", 0.10001f, "accuracy", 0.20001f, "multishot", 0.30001f});
@@ -651,6 +785,38 @@ public class ItemRareModule extends AbstractItemModule {
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
                     "kuvaweapon.item_module.truth_barrage", "truth_barrage",
                     new Object[]{"true_bullet", 0.10001f, "gun_damage", 1.50001f, "multishot", 0.30001f});
+
+            // ===== ⭐ 第六批新增 · TACZ 冷门组合（金卡）=====
+
+            // 燃焰处决 —— 枪械伤害180% + 火焰90% + 处决阈值2%（纵火压血处决）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.flame_execution", "flame_execution",
+                    new Object[]{"gun_damage", 1.80001f, "fire", 0.90001f, "execute_threshold", 0.02001f});
+
+            // 真伤狙杀 —— 真实子弹20% + 爆头伤害90% + 精准度30%（精准爆头真伤狙）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.true_snipe", "true_snipe",
+                    new Object[]{"true_bullet", 0.20001f, "headshot_damage", 0.90001f, "accuracy", 0.30001f});
+
+            // 腐蚀弹幕 —— 枪械伤害150% + 腐蚀60% + 多重射击30%（破甲弹幕）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.corrosive_barrage", "corrosive_barrage",
+                    new Object[]{"gun_damage", 1.50001f, "corrosion", 0.60001f, "multishot", 0.30001f});
+
+            // 辐射弹药 —— 枪械伤害150% + 辐射60% + 精准度30%（精准辐射弹药）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.radiation_gun", "radiation_gun",
+                    new Object[]{"gun_damage", 1.50001f, "radiation", 0.60001f, "accuracy", 0.30001f});
+
+            // 战利狙击 —— 枪械战利品掉落35% + 爆头伤害90% + 精准度30%（精准爆头刷材料狙）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.loot_snipe", "loot_snipe",
+                    new Object[]{"gun_loot_drop", 0.35001f, "headshot_damage", 0.90001f, "accuracy", 0.30001f});
+
+            // 净化风暴弹 —— 枪械伤害150% + 净化驱散10% + 爆头伤害60%（爆头抹增益）
+            ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
+                    "kuvaweapon.item_module.purge_storm", "purge_storm",
+                    new Object[]{"gun_damage", 1.50001f, "purge_buff", 0.10001f, "headshot_damage", 0.60001f});
         }
     }
 
