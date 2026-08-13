@@ -18,6 +18,10 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.tacz_overview.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.tacz_overview.p4"
     }
   ]
 }

@@ -11,6 +11,10 @@
       "text": "kuvalich.guidebook.entry.weapon_list.intro"
     },
     {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.weapon_list.pick"
+    },
+    {
       "type": "patchouli:spotlight",
       "item": "kuvalich:prisma_veritux",
       "title": "kuvalich.guidebook.weapon.prisma_veritux.name",

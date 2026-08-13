@@ -26,5 +26,6 @@
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.first_steps.p5"
     }
-  ]
+  ],
+  "priority": true
 }

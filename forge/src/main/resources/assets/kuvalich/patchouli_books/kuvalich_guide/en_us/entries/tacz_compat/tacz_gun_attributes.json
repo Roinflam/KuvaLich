@@ -18,6 +18,10 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.tacz_gun_attributes.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.tacz_gun_attributes.p4"
     }
   ]
 }

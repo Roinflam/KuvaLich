@@ -13,6 +13,15 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.overview.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.overview.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.overview.p4"
     }
-  ]
+  ],
+  "priority": true
 }

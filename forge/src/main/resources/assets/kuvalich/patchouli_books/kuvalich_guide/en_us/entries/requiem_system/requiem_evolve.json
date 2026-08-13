@@ -30,6 +30,11 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.requiem_evolve.p6"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "kuvalich:requiem_evolve",
+      "text": "kuvalich.guidebook.entry.requiem_evolve.craft"
     }
   ]
 }

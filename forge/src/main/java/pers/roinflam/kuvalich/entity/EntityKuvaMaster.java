@@ -148,6 +148,7 @@ public class EntityKuvaMaster extends AbstractKuva {
         for (DamageCategory category : DamageCategory.values()) {
             adaptiveResistance.put(category, new AdaptiveStack());
         }
+
     }
 
     /**

@@ -3,7 +3,7 @@
   "description": "kuvalich.guidebook.entry.warframe_attr_survival.desc",
   "icon": "minecraft:golden_chestplate",
   "category": "kuvalich:reference",
-  "sortnum": 6,
+  "sortnum": 7,
   "pages": [
     {
       "type": "patchouli:text",

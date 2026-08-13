@@ -1,0 +1,18 @@
+{
+  "name": "kuvalich.guidebook.entry.module_codex",
+  "description": "kuvalich.guidebook.entry.module_codex.desc",
+  "icon": "minecraft:knowledge_book",
+  "category": "kuvalich:module_system",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.module_codex.title",
+      "text": "kuvalich.guidebook.entry.module_codex.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.module_codex.p2"
+    }
+  ]
+}

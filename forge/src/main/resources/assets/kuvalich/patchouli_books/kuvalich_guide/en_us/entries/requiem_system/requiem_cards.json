@@ -17,6 +17,14 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.requiem_cards.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.requiem_cards.p4"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.requiem_cards.p5"
     }
   ]
 }

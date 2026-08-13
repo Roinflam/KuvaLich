@@ -20,6 +20,10 @@ import java.util.*;
  * <p>
  * 元素词条在额外加成区块中合并为一行"元素伤害"，避免与主手触发属性显示产生歧义。
  *
+ * <p>⭐ 显示取整修正：百分比显示由 {@code (int) (x * 100)} 改为
+ * {@code (int) Math.round(x * 100)}，与主面板保持一致。
+ * 原截断写法会把 float 精度导致的 0.89999997 显示成 89% 而非 90%。</p>
+ *
  * @author RoinFlam
  */
 @OnlyIn(Dist.CLIENT)
@@ -207,7 +211,8 @@ public final class ExtraSlotTooltipHelper {
         // Element damage merged into single line (using same "Elemental Damage" translation key)
         if (Math.abs(totalElementDamage) >= 0.001) {
             String elemName = I18n.get("item.module.triggerDamage");
-            String elemValue = (totalElementDamage >= 0 ? "+" : "") + (int) (totalElementDamage * 100) + "%";
+            // ⭐ 用 Math.round 代替截断，与主面板保持一致
+            String elemValue = (totalElementDamage >= 0 ? "+" : "") + (int) Math.round(totalElementDamage * 100) + "%";
             tooltip.add(index + linesAdded, Component.literal("  " + elemName + " ")
                     .append(Component.literal(elemValue)
                             .withStyle(totalElementDamage >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED)));
@@ -260,6 +265,8 @@ public final class ExtraSlotTooltipHelper {
      * 格式化属性值为显示字符串（国际化）
      * Format attribute value as localized display string
      *
+     * <p>⭐ 百分比一律使用 {@code Math.round}，避免 float 精度导致的少 1%。</p>
+     *
      * @param attrKey 属性键名 / attribute key
      * @param value   属性值 / attribute value
      * @return 格式化后的字符串 / formatted string
@@ -275,7 +282,7 @@ public final class ExtraSlotTooltipHelper {
         // 击杀叠层类：加"每层"后缀 / Kill stack: add "per stack" suffix
         if (attrKey.startsWith("killStack")) {
             String perStack = I18n.get("item.module.extra_slot_per_stack");
-            return sign + (int) (value * 100) + "%/" + perStack;
+            return sign + (int) Math.round(value * 100) + "%/" + perStack;
         }
 
         // ⭐ 秒杀概率数值极小，保留小数并去掉末尾多余的0（0.010%→0.01%）/ Instant kill: tiny value
@@ -288,7 +295,7 @@ public final class ExtraSlotTooltipHelper {
         }
 
         // 默认显示为百分比 / Default display as percentage
-        return sign + (int) (value * 100) + "%";
+        return sign + (int) Math.round(value * 100) + "%";
     }
 
     /** 工具类禁止实例化 / Utility class, no instantiation */

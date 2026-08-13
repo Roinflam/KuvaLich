@@ -3,7 +3,7 @@
   "description": "kuvalich.guidebook.entry.warframe_attr_resist.desc",
   "icon": "minecraft:shield_banner_pattern",
   "category": "kuvalich:reference",
-  "sortnum": 7,
+  "sortnum": 8,
   "pages": [
     {
       "type": "patchouli:text",

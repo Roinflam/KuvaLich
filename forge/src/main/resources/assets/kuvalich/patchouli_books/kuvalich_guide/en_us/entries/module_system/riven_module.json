@@ -17,6 +17,14 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.riven_module.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.riven_module.p5"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.riven_module.p4"
     }
   ]
 }

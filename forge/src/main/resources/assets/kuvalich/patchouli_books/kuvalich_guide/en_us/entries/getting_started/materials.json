@@ -1,0 +1,49 @@
+{
+  "name": "kuvalich.guidebook.entry.materials",
+  "description": "kuvalich.guidebook.entry.materials.desc",
+  "icon": "kuvalich:riven_sliver",
+  "category": "kuvalich:getting_started",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.materials.title",
+      "text": "kuvalich.guidebook.entry.materials.p1"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:kuva",
+      "text": "kuvalich.guidebook.entry.materials.kuva"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:riven_sliver",
+      "text": "kuvalich.guidebook.entry.materials.sliver"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:requiem_gem",
+      "text": "kuvalich.guidebook.entry.materials.gem"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:lich_reliquary",
+      "text": "kuvalich.guidebook.entry.materials.reliquary"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:endo",
+      "text": "kuvalich.guidebook.entry.materials.endo"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:requiem_riddle",
+      "text": "kuvalich.guidebook.entry.materials.riddle"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:requiem_ultimatum",
+      "text": "kuvalich.guidebook.entry.materials.ultimatum"
+    }
+  ]
+}

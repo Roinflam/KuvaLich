@@ -33,6 +33,14 @@ import java.util.*;
  * ⭐ 第三批新词条：true_bullet（真实伤害）、gun_loot_drop（枪械战利品掉落，TACZ 专属），
  *    execute_threshold（收集者阈值）、purge_buff（净化驱散）、execute_chance（致命斩首，通用）。
  *    其中 execute_chance 数值极小（如 0.01%），显示时保留小数避免取整为 0%。
+ *
+ * <p>⭐ 显示取整修正：百分比显示由 {@code (int) (x * 100)} 改为
+ * {@code (int) Math.round(x * 100)}。
+ * 原写法是向零截断，而 float 无法精确表示 0.9 / 0.7 / 0.35 这类十进制小数
+ * （0.9f 的真实值是 0.89999997615814209），乘 100 后截断会掉一位，
+ * 把 90% 显示成 89%、35% 显示成 34%。
+ * 模组定义里普遍存在的 {@code 0.90001F} 这类"多余尾数"正是为绕开此问题而加的补丁，
+ * 根因修掉之后那些尾数即可清理为整洁的 {@code 0.9F}。</p>
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public abstract class AbstractItemModule extends AbstractModule {
@@ -116,7 +124,8 @@ public abstract class AbstractItemModule extends AbstractModule {
                 }
                 valueText = percentText + "%";
             } else {
-                valueText = (int) (scaledValue * 100) + "%";
+                // ⭐ 用 Math.round 代替截断：避免 0.9 因 float 精度显示成 89%
+                valueText = (int) Math.round(scaledValue * 100) + "%";
             }
 
             Component attributeName;

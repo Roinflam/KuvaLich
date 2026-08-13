@@ -17,6 +17,10 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.warframe_module.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.warframe_module.p4"
     }
   ]
 }

@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.network.message;
 
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -8,6 +9,7 @@ import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.utils.LogUtil;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,8 +25,31 @@ import java.util.function.Supplier;
  * ⭐ 发现记录键格式升级为 type:rarityOrder（如 "fury:1"、"fury:3"）
  *    兼容旧存档：旧的纯 type 格式（如 "fury"）在查询时作为回退匹配。
  *    即旧玩家如果有 "fury" 记录，查询 "fury:1" 或 "fury:3" 均视为已发现。
+ *
+ * <p>⭐ 安全修复：{@code decode} 中的条目数量与单键长度加上了硬上限。
+ * 修复前 {@code int size = buffer.readInt()} 完全不受限，
+ * 且该包在 NetworkRegistryHandler 中未声明方向（Forge 默认双向），
+ * 改装客户端只要发一个 {@code size = Integer.MAX_VALUE} 的包，
+ * 服务端执行到 {@code new HashSet<>(size)} 时就会立刻尝试分配巨大的哈希表并 OOM 崩服。
+ * 现在双管齐下：注册处锁定为 S2C，解码处再做长度校验兜底。</p>
  */
 public class ModuleDiscoveryPacket {
+
+    // ==================== 解码安全上限 / Decode Safety Limits ====================
+
+    /**
+     * 单个包允许携带的最大发现记录条目数。
+     * <p>发现键格式为 type:rarityOrder，全模组（武器+战甲，4 品质）加上自定义模组
+     * 数量级在数百，4096 是数量级以上的余量，正常玩家永远不会触碰。
+     * 超过即判定为恶意包，抛出 {@link DecoderException} 由 Netty 断开该连接。</p>
+     */
+    private static final int MAX_DISCOVERY_ENTRIES = 4096;
+
+    /**
+     * 单个发现记录键允许的最大字符数。
+     * <p>实际键形如 "heavy_caliber:2"，远小于 256。</p>
+     */
+    private static final int MAX_KEY_LENGTH = 256;
 
     /** 已发现的模组key集合 / Discovered module key set */
     private final Set<String> discoveredTypes;
@@ -45,18 +70,54 @@ public class ModuleDiscoveryPacket {
 
     // ==================== 编解码 / Encode/Decode ====================
 
+    /**
+     * 编码到字节缓冲
+     *
+     * <p>⭐ 与解码端对称截断：若集合规模异常超过 {@link #MAX_DISCOVERY_ENTRIES}，
+     * 只写出前 N 条并打警告，避免服务端写出一个客户端必定拒收的包导致玩家掉线。
+     * 正常情况下永远不会触发。</p>
+     *
+     * @param packet 待编码包
+     * @param buffer 字节缓冲
+     */
     public static void encode(ModuleDiscoveryPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeInt(packet.discoveredTypes.size());
+        int total = packet.discoveredTypes.size();
+        int size = Math.min(total, MAX_DISCOVERY_ENTRIES);
+        if (total > MAX_DISCOVERY_ENTRIES) {
+            LogUtil.warn("模组发现记录数量异常(" + total + ")，已截断为 " + MAX_DISCOVERY_ENTRIES + " 条发送");
+        }
+
+        buffer.writeInt(size);
+        int written = 0;
         for (String type : packet.discoveredTypes) {
-            buffer.writeUtf(type);
+            if (written >= size) {
+                break;
+            }
+            buffer.writeUtf(type, MAX_KEY_LENGTH);
+            written++;
         }
     }
 
+    /**
+     * 从字节缓冲解码
+     *
+     * <p>⭐ 对长度字段做严格校验：负数或超过 {@link #MAX_DISCOVERY_ENTRIES} 一律拒绝，
+     * 防止恶意长度字段导致的内存耗尽。</p>
+     *
+     * @param buffer 字节缓冲
+     * @return 解码得到的包
+     * @throws DecoderException 长度字段非法时抛出，由 Netty 断开连接
+     */
     public static ModuleDiscoveryPacket decode(FriendlyByteBuf buffer) {
         int size = buffer.readInt();
-        Set<String> types = new HashSet<>(size);
+        if (size < 0 || size > MAX_DISCOVERY_ENTRIES) {
+            throw new DecoderException("ModuleDiscoveryPacket 条目数非法: " + size
+                    + "（允许范围 0 ~ " + MAX_DISCOVERY_ENTRIES + "）");
+        }
+
+        Set<String> types = new HashSet<>(Math.max(16, size * 2));
         for (int i = 0; i < size; i++) {
-            types.add(buffer.readUtf());
+            types.add(buffer.readUtf(MAX_KEY_LENGTH));
         }
         return new ModuleDiscoveryPacket(types);
     }

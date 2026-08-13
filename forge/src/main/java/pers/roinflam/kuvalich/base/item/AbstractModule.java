@@ -10,12 +10,19 @@ import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 模组基类（1.20.1版本，业务逻辑100%不变）
  * Module Base Class (1.20.1 version, business logic 100% unchanged)
+ *
+ * <p>⭐ 正确性修复：属性缓存此前直接用 {@code nbt.hashCode()}（32 位 int）当唯一键，
+ * 两个 NBT 内容不同但哈希相同的模组会互相命中对方的缓存，
+ * 静默返回错误的属性集合（战斗数值直接算错，且没有任何报错）。
+ * 现在缓存条目额外保存一份建立时的 NBT 快照，命中时用 {@code equals} 校验，
+ * 校验不通过视为未命中并重新计算覆盖，从而把哈希从"唯一键"降级为"索引"。</p>
  */
 @Mod.EventBusSubscriber
 public abstract class AbstractModule extends Item {
@@ -27,14 +34,36 @@ public abstract class AbstractModule extends Item {
     private static class CacheEntry {
         final Set<Map.Entry<String, Double>> attributes;
         final long timestamp;
+        /**
+         * ⭐ 建立缓存时的物品 NBT 快照（深拷贝）。
+         * <p>用于命中时校验 NBT 是否真的一致，防止 hashCode 碰撞导致返回其他物品的属性。
+         * 必须是拷贝而非引用：若持有活引用，物品原地修改 NBT 后校验仍会通过，
+         * 反而会掩盖真实的缓存失效。</p>
+         */
+        @Nullable
+        final CompoundTag nbtSnapshot;
 
-        CacheEntry(Set<Map.Entry<String, Double>> attributes) {
+        CacheEntry(Set<Map.Entry<String, Double>> attributes, @Nullable CompoundTag nbtSnapshot) {
             this.attributes = attributes;
             this.timestamp = System.currentTimeMillis();
+            this.nbtSnapshot = nbtSnapshot;
         }
 
         boolean isExpired() {
             return System.currentTimeMillis() - timestamp > CACHE_DURATION_MS;
+        }
+
+        /**
+         * ⭐ 校验缓存条目是否真的属于给定的 NBT（防哈希碰撞）
+         *
+         * @param nbt 当前物品的 NBT（可为 null）
+         * @return 内容一致返回 true
+         */
+        boolean matches(@Nullable CompoundTag nbt) {
+            if (nbtSnapshot == null) {
+                return nbt == null;
+            }
+            return nbtSnapshot.equals(nbt);
         }
     }
 
@@ -42,7 +71,7 @@ public abstract class AbstractModule extends Item {
      * 1.20.1构造函数：只接收Properties，不需要name参数
      * 1.20.1 constructor: only accepts Properties, no name parameter needed
      */
-    public AbstractModule(@Nonnull Item.Properties properties) {
+    public AbstractModule(@Nonnull Properties properties) {
         super(properties.stacksTo(1)); // 设置最大堆叠数为1 / Set max stack size to 1
     }
 
@@ -67,14 +96,27 @@ public abstract class AbstractModule extends Item {
         invalidateCache(itemStack);
     }
 
+    /**
+     * 读取模组的属性集合（带缓存）
+     *
+     * <p>⭐ 缓存命中条件由「哈希相同」收紧为「哈希相同 且 未过期 且 NBT 内容一致」。
+     * 第三个条件是本次新增，用于消除哈希碰撞导致的错值。</p>
+     *
+     * @param itemStack 模组物品栈
+     * @return 属性键值对集合，无模组数据时返回空集合
+     */
     public static Set<Map.Entry<String, Double>> getAttributes(ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
             return Collections.emptySet();
         }
 
-        int cacheKey = getCacheKey(itemStack);
+        // ⭐ 取一次完整 NBT 引用，后续的键计算与内容校验都基于它，避免重复调用
+        CompoundTag fullNbt = itemStack.getTag();
+        int cacheKey = getCacheKey(fullNbt);
+
         CacheEntry cached = ATTRIBUTE_CACHE.get(cacheKey);
-        if (cached != null && !cached.isExpired()) {
+        // ⭐ 增加 matches 校验：哈希相同但 NBT 内容不同时视为未命中
+        if (cached != null && !cached.isExpired() && cached.matches(fullNbt)) {
             return cached.attributes;
         }
 
@@ -103,7 +145,8 @@ public abstract class AbstractModule extends Item {
             }
         }
 
-        ATTRIBUTE_CACHE.put(cacheKey, new CacheEntry(result));
+        // ⭐ 存快照而非引用：物品 NBT 原地变更后校验会失败，从而正确地重新计算
+        ATTRIBUTE_CACHE.put(cacheKey, new CacheEntry(result, fullNbt != null ? fullNbt.copy() : null));
         return result;
     }
 
@@ -212,8 +255,26 @@ public abstract class AbstractModule extends Item {
 
     // ========== 缓存管理 ==========
 
+    /**
+     * 计算物品的缓存索引
+     *
+     * <p>⭐ 注意：返回值只作为哈希索引使用，不再被当作唯一键。
+     * 真正的身份校验由 {@link CacheEntry#matches(CompoundTag)} 完成。</p>
+     *
+     * @param itemStack 物品栈
+     * @return 缓存索引
+     */
     private static int getCacheKey(ItemStack itemStack) {
-        CompoundTag nbt = itemStack.getTag();
+        return getCacheKey(itemStack.getTag());
+    }
+
+    /**
+     * 由 NBT 直接计算缓存索引（避免重复调用 getTag）
+     *
+     * @param nbt 物品 NBT（可为 null）
+     * @return 缓存索引
+     */
+    private static int getCacheKey(@Nullable CompoundTag nbt) {
         return nbt != null ? nbt.hashCode() : 0;
     }
 

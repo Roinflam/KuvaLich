@@ -1,0 +1,30 @@
+{
+  "name": "kuvalich.guidebook.entry.lich_resistance",
+  "description": "kuvalich.guidebook.entry.lich_resistance.desc",
+  "icon": "minecraft:netherite_chestplate",
+  "category": "kuvalich:entity",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.lich_resistance.title",
+      "text": "kuvalich.guidebook.entry.lich_resistance.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.lich_resistance.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.lich_resistance.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.lich_resistance.p4"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.lich_resistance.p5"
+    }
+  ]
+}

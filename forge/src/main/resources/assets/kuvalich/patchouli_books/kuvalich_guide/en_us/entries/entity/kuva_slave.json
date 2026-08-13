@@ -6,6 +6,14 @@
   "sortnum": 1,
   "pages": [
     {
+      "type": "patchouli:entity",
+      "entity": "kuvalich:kuva_slave",
+      "scale": 0.7,
+      "rotate": true,
+      "name": "entity.kuvalich.kuva_slave",
+      "text": "kuvalich.guidebook.entry.kuva_slave.p0"
+    },
+    {
       "type": "patchouli:text",
       "title": "kuvalich.guidebook.entry.kuva_slave.title",
       "text": "kuvalich.guidebook.entry.kuva_slave.p1"
@@ -13,6 +21,10 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.kuva_slave.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.kuva_slave.p3"
     }
   ]
 }

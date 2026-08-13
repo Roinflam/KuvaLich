@@ -1,0 +1,31 @@
+{
+  "name": "kuvalich.guidebook.entry.module_level",
+  "description": "kuvalich.guidebook.entry.module_level.desc",
+  "icon": "kuvalich:endo",
+  "category": "kuvalich:module_system",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "kuvalich:endo",
+      "title": "kuvalich.guidebook.entry.module_level.title",
+      "text": "kuvalich.guidebook.entry.module_level.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.module_level.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.module_level.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.module_level.p4"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.module_level.p5"
+    }
+  ]
+}

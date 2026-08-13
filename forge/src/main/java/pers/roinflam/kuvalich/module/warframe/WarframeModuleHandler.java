@@ -10,6 +10,7 @@ import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ToIntFunction;
 
 /**
@@ -20,6 +21,14 @@ import java.util.function.ToIntFunction;
  *    服务端从 Capability + KillStackManager 取数据
  *    客户端从 WarframeModuleSyncPacket 同步的缓存取数据
  *    两端调用方代码完全一致，无需区分侧
+ *
+ * <p>⭐ 并发安全修复：{@code ATTRIBUTE_CACHE} 由 {@link HashMap} 改为
+ * {@link ConcurrentHashMap}。该 Map 是 static 的、跨玩家共享的，
+ * 且存在 {@code computeIfAbsent} 与 {@code clear} / {@code remove} 的并发组合
+ * （{@code cleanupCache} 在玩家退出事件中调用）。
+ * 原实现在 Mohist 这类混合端上一旦被插件线程触碰，
+ * 可能在扩容时形成链表环，表现为主线程 CPU 100% 且不抛任何异常。
+ * 同时 {@code attributeCacheTick} 加上 {@code volatile}，保证 tick 翻转跨线程可见。</p>
  */
 public class WarframeModuleHandler {
 
@@ -58,10 +67,17 @@ public class WarframeModuleHandler {
 
     // ==================== 服务端属性缓存 ====================
 
-    /** 服务端每tick属性缓存（UUID → 基础属性Map） */
-    private static final Map<UUID, HashMap<String, Double>> ATTRIBUTE_CACHE = new HashMap<>();
-    /** 缓存对应的tick */
-    private static long attributeCacheTick = -1;
+    /**
+     * 服务端每tick属性缓存（UUID → 基础属性Map）
+     * <p>⭐ 必须使用并发容器：static 跨线程共享，且存在 computeIfAbsent / clear / remove 的并发组合。</p>
+     */
+    private static final Map<UUID, HashMap<String, Double>> ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * 缓存对应的tick
+     * <p>⭐ volatile：保证 tick 翻转后的清空动作对其他线程立即可见。</p>
+     */
+    private static volatile long attributeCacheTick = -1;
 
     // ==================== 客户端同步缓存 ====================
 

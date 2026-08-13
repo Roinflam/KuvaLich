@@ -30,6 +30,7 @@ import pers.roinflam.kuvalich.network.message.WarframeModuleSyncPacket;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 战甲效果事件处理器
@@ -41,14 +42,22 @@ import java.util.*;
  *
  * ⭐ 第三批新词条：枪械战利品掉落（gun_loot_drop，武器专属，仅 TACZ 子弹击杀生效）在
  *    onLivingDrops 中加法叠加到战甲的 itemDropMultiplier 上，与战甲共享同一套配置生效倍率。
+ *
+ * <p>⭐ 并发安全修复：{@code cooldingHashMap} 由 {@link HashMap} 改为
+ * {@link ConcurrentHashMap}，并加 {@code final} 防止被外部重新赋值。
+ * 该 Map 是 public static 跨玩家共享的，在伤害事件与 tick 事件中并发读写，
+ * 与 WeaponModuleHandler / WarframeModuleHandler 的属性缓存属于同一类风险：
+ * 在 Mohist 这类混合端上被插件线程触碰时，可能在扩容时形成链表环，
+ * 表现为主线程 CPU 100% 且不抛任何异常。</p>
  */
 @Mod.EventBusSubscriber
 public class WarframeEffectHandler {
 
     /**
      * 护盾恢复冷却（UUID → 剩余秒数）
+     * <p>⭐ 必须使用并发容器：public static 跨线程共享，且在多个事件处理器中并发读写。</p>
      */
-    public static HashMap<UUID, Integer> cooldingHashMap = new HashMap<>();
+    public static final Map<UUID, Integer> cooldingHashMap = new ConcurrentHashMap<>();
 
     /**
      * 固定属性 AttributeModifier 的 UUID

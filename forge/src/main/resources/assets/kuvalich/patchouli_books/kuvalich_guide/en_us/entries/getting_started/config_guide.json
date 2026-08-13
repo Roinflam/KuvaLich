@@ -1,0 +1,22 @@
+{
+  "name": "kuvalich.guidebook.entry.config_guide",
+  "description": "kuvalich.guidebook.entry.config_guide.desc",
+  "icon": "minecraft:comparator",
+  "category": "kuvalich:getting_started",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.config_guide.title",
+      "text": "kuvalich.guidebook.entry.config_guide.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.config_guide.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.config_guide.p3"
+    }
+  ]
+}

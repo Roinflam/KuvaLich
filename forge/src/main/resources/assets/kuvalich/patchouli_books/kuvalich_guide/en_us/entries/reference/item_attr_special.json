@@ -1,0 +1,30 @@
+{
+  "name": "kuvalich.guidebook.entry.item_attr_special",
+  "description": "kuvalich.guidebook.entry.item_attr_special.desc",
+  "icon": "kuvalich:item_prime_module",
+  "category": "kuvalich:reference",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.item_attr_special.title",
+      "text": "kuvalich.guidebook.entry.item_attr_special.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.item_attr_special.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.item_attr_special.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.item_attr_special.p4"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.item_attr_special.p5"
+    }
+  ]
+}

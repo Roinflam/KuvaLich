@@ -3,7 +3,7 @@
   "description": "kuvalich.guidebook.entry.warframe_attr_mobility.desc",
   "icon": "minecraft:feather",
   "category": "kuvalich:reference",
-  "sortnum": 8,
+  "sortnum": 9,
   "pages": [
     {
       "type": "patchouli:text",

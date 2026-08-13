@@ -24,6 +24,12 @@ import java.util.*;
  * ⭐ 满级不显示等级Tooltip
  * ⭐ 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
  * ⭐ 升级费用根据品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
+ *
+ * <p>⭐ 显示取整修正：百分比与固定值显示由向零截断改为 {@code Math.round}。
+ * float 无法精确表示 0.9 / 0.7 / 0.35 这类十进制小数
+ * （0.9f 的真实值是 0.89999997615814209），乘 100 后截断会掉一位，
+ * 把 90% 显示成 89%。模组定义里的 {@code 0.90001F} 尾数即为绕开此问题的补丁，
+ * 根因修掉后可以清理。</p>
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public abstract class AbstractWarframeModule extends AbstractModule {
@@ -96,11 +102,13 @@ public abstract class AbstractWarframeModule extends AbstractModule {
             if (attributeKey.equals("fixedHealth") || attributeKey.equals("fixedShield") || attributeKey.equals("fixedArmor")) {
                 Component attributeName = Component.translatable("kuvaweapon.warframe_attribute_type." + attributeKey);
                 ChatFormatting color = getModuleColor(item);
-                tooltip.add(number++, Component.literal("+" + (int) scaledValue + " ")
+                // ⭐ 用 Math.round 代替截断：固定值同样可能因 float 精度掉 1
+                tooltip.add(number++, Component.literal("+" + (int) Math.round(scaledValue) + " ")
                         .append(attributeName).withStyle(color));
             } else {
                 String prefix = scaledValue >= 0 ? "+" : "";
-                int percentage = (int) (scaledValue * 100);
+                // ⭐ 用 Math.round 代替截断：避免 0.9 因 float 精度显示成 89%
+                int percentage = (int) Math.round(scaledValue * 100);
                 Component attributeName;
                 if (attributeKey.startsWith("killStack")) {
                     int maxStacks = getMaxStacksForAttribute(attributeKey);

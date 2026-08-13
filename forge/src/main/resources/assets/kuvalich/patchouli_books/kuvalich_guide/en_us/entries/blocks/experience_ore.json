@@ -10,6 +10,10 @@
       "item": "kuvalich:experience_ore",
       "title": "kuvalich.guidebook.entry.experience_ore.title",
       "text": "kuvalich.guidebook.entry.experience_ore.p1"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.experience_ore.p2"
     }
   ]
 }

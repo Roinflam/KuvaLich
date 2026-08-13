@@ -3,7 +3,7 @@
   "description": "kuvalich.guidebook.entry.warframe_attr_killstack.desc",
   "icon": "minecraft:nether_star",
   "category": "kuvalich:reference",
-  "sortnum": 9,
+  "sortnum": 10,
   "pages": [
     {
       "type": "patchouli:text",

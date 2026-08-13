@@ -13,6 +13,10 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.item_attr_damage.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.item_attr_damage.p3"
     }
   ]
 }

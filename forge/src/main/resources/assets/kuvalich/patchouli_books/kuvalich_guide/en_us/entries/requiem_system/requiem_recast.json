@@ -14,6 +14,20 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.requiem_recast.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "kuvalich.guidebook.entry.requiem_recast.t3",
+      "text": "kuvalich.guidebook.entry.requiem_recast.p3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.requiem_recast.p4"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "kuvalich:requiem_recast",
+      "text": "kuvalich.guidebook.entry.requiem_recast.craft"
     }
   ]
 }
