@@ -5,7 +5,10 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -18,6 +21,33 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 动态属性管理器
  * 负责应用、移除、更新实体的动态属性
+ *
+ * <p>⭐ 内存泄漏修复（本次，两处，均会随服务器运行时长累积）：</p>
+ *
+ * <p><b>泄漏一：事件处理器永久驻留 Forge 事件总线。</b><br>
+ * {@code MAGNETIC} / {@code RADIATION} / {@code PUNCTURE} 通过
+ * {@code withEventHandler} 注册了 {@code LivingHurtEvent} 监听器，
+ * 注销只发生在「属性自然过期」或「被显式 remove」两条路径上。
+ * 但实体死亡后不再 tick，{@link #processEntityTick} 不会执行，
+ * 未过期的 handler 就永久留在事件总线上。
+ * 磁力 debuff 仅 120 tick、辐射 240 tick，怪基本都在 debuff 结束前就被打死，
+ * 于是每打死一只带元素 debuff 的怪就漏一个监听器。
+ * 累积后，<b>每一次伤害事件都要遍历这些僵尸监听器</b>，
+ * 表现为 MSPT 随在线时长单调上升、重启后恢复。<br>
+ * 修复：新增 {@link #onLivingDeath} 与 {@link #onEntityLeaveLevel} 兜底清理。</p>
+ *
+ * <p><b>泄漏二：{@code ENTITY_ATTRIBUTES} 的 key 永不删除。</b><br>
+ * 原 {@code remove} 只从内层 List 移除实例，List 空了之后
+ * 「UUID → 空 ArrayList」的条目仍留在 map 里。
+ * 每只被元素打过的怪都会留下一条。<br>
+ * 修复：内层 List 空时同步移除外层 key（见 {@link #dropIfEmpty}）。</p>
+ *
+ * <p>关于清理时机的说明：玩家跨维度同样会触发 {@link EntityLeaveLevelEvent}，
+ * 此时清理是<b>更正确</b>的行为——跨维度会重建玩家实体，
+ * {@code AttributeModifier} 本来就留在旧实体上已经失效，
+ * 而旧的 map 记录会让 {@link #has} 误报 true、并阻止 {@link #apply} 重新施加修改器。
+ * 清理后，战甲属性由 {@code WarframeEffectHandler}（每 5 tick）、
+ * 武器属性由 {@code WeaponCombatHandler}（每 20 tick）自动重建，不会有可感知的丢失。</p>
  */
 @Mod.EventBusSubscriber
 public class DynamicAttributeManager {
@@ -81,6 +111,9 @@ public class DynamicAttributeManager {
                     instance.unregisterEventHandler();
                     instances.remove(instance);
                 });
+
+        // ⭐ 泄漏修复：列表空了就把外层 key 一并删掉
+        dropIfEmpty(entityId, instances);
     }
 
     /**
@@ -96,6 +129,20 @@ public class DynamicAttributeManager {
         List<DynamicAttributeInstance> instances = ENTITY_ATTRIBUTES.get(entityId);
         if (instances != null) {
             instances.remove(instance);
+            // ⭐ 泄漏修复：列表空了就把外层 key 一并删掉
+            dropIfEmpty(entityId, instances);
+        }
+    }
+
+    /**
+     * ⭐ 内层列表为空时移除外层 map 条目，避免「UUID → 空 List」无限累积
+     *
+     * @param entityId  实体 UUID
+     * @param instances 该实体的属性实例列表
+     */
+    private static void dropIfEmpty(@Nonnull UUID entityId, @Nullable List<DynamicAttributeInstance> instances) {
+        if (instances != null && instances.isEmpty()) {
+            ENTITY_ATTRIBUTES.remove(entityId);
         }
     }
 
@@ -144,6 +191,9 @@ public class DynamicAttributeManager {
     /**
      * 清除实体的所有动态属性
      *
+     * <p>会同时注销所有已注册到 Forge 事件总线的处理器，
+     * 这是防止监听器泄漏的关键路径。</p>
+     *
      * @param entity 目标实体
      */
     public static void clearAll(@Nonnull LivingEntity entity) {
@@ -154,6 +204,7 @@ public class DynamicAttributeManager {
                 removeModifiers(entity, instance);
                 instance.unregisterEventHandler();
             });
+            instances.clear();
         }
     }
 
@@ -266,6 +317,43 @@ public class DynamicAttributeManager {
     }
 
     /**
+     * ⭐ 实体死亡时清理全部动态属性
+     *
+     * <p>这是修复监听器泄漏的<b>主路径</b>：怪物几乎总是在元素 debuff 到期前被打死，
+     * 死后不再 tick，自然过期逻辑永远不会执行。
+     * 使用 LOWEST 优先级，确保在其它模组的死亡处理（掉落、经验等）之后再清理属性，
+     * 避免属性修改器被提前移除影响它们的判定。</p>
+     *
+     * @param event 生物死亡事件
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onLivingDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
+        if (entity == null || entity.level().isClientSide()) {
+            return;
+        }
+        clearAll(entity);
+    }
+
+    /**
+     * ⭐ 实体离开世界时清理全部动态属性（兜底）
+     *
+     * <p>覆盖死亡事件之外的移除场景：区块卸载、指令 kill、维度传送、实体 discard 等。
+     * 与 {@link #onLivingDeath} 双保险，{@link #clearAll} 幂等，重复调用无副作用。</p>
+     *
+     * @param event 实体离开世界事件
+     */
+    @SubscribeEvent
+    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getLevel().isClientSide()) {
+            return;
+        }
+        if (event.getEntity() instanceof LivingEntity living) {
+            clearAll(living);
+        }
+    }
+
+    /**
      * 处理实体的Tick逻辑（提取公共方法）
      *
      * @param entity 要处理的实体
@@ -279,11 +367,14 @@ public class DynamicAttributeManager {
         // 创建快照副本以避免 ConcurrentModificationException
         // 因为 onTick 回调可能会调用 apply/remove 修改原列表
         List<DynamicAttributeInstance> snapshot = new ArrayList<>(instances);
-        List<DynamicAttributeInstance> expired = new ArrayList<>();
+        List<DynamicAttributeInstance> expired = null;
 
         for (DynamicAttributeInstance instance : snapshot) {
             // 时间流逝
             if (instance.tick(1)) {
+                if (expired == null) {
+                    expired = new ArrayList<>();
+                }
                 expired.add(instance);
                 continue;
             }
@@ -309,7 +400,11 @@ public class DynamicAttributeManager {
         }
 
         // 移除过期实例
-        expired.forEach(instance -> remove(entity, instance));
+        if (expired != null) {
+            for (DynamicAttributeInstance instance : expired) {
+                remove(entity, instance);
+            }
+        }
     }
 
     /**

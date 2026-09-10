@@ -1,9 +1,7 @@
 package pers.roinflam.kuvalich.network.message;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -24,10 +22,15 @@ import java.util.function.Supplier;
  * Warframe Module Full Sync Packet (Server → Client)
  *
  * 将玩家当前装备的8个战甲模组槽 + 所有击杀叠层计数一次性同步到客户端。
- * 客户端使用同步的原始数据本地计算属性，与服务端使用完全相同的计算逻辑，
- * 从根本上消除客户端/服务端属性值不一致导致的回弹问题。
+ * 客户端使用同步的原始数据本地计算属性，与服务端使用完全相同的计算逻辑。
  *
- * 替代原 DiggingSpeedPacket 的逐属性定时同步方案。
+ * <p>⭐ 性能修复（本次）：脏检测不再对 8 个 ItemStack 做 {@code tag.hashCode()} 全树递归。</p>
+ *
+ * <p>问题：原 {@code computeStateHash} 每 5 tick、每玩家都要深度遍历 8 个模组的完整 NBT 树。
+ * 60 人在线约为每秒 1920 次深度 hash，纯粹是为了「判断有没有变」而烧的 CPU。</p>
+ *
+ * <p>修复：模组侧改用 {@link WarframeModules#getVersion()} 脏标记（内容变化时才递增，
+ * 比较只是一次 int），叠层侧仍用 {@code Arrays.hashCode(int[])}（12 个 int，可忽略）。</p>
  *
  * 同步时机：
  * 1. 玩家登录
@@ -39,6 +42,9 @@ public class WarframeModuleSyncPacket {
 
     /** 模组槽数量 */
     private static final int MODULE_SLOT_COUNT = 8;
+
+    /** capability 缺失时使用的版本号占位值（保证每次都判定为脏并强制同步） */
+    private static final int VERSION_UNAVAILABLE = Integer.MIN_VALUE;
 
     // ==================== 包字段 ====================
 
@@ -52,8 +58,11 @@ public class WarframeModuleSyncPacket {
 
     // ==================== 服务端状态追踪 ====================
 
-    /** 每个玩家的上次同步状态哈希（用于脏检测，仅服务端使用） */
-    private static final Map<UUID, Integer> SERVER_STATE_HASH = new ConcurrentHashMap<>();
+    /**
+     * 每个玩家的上次同步状态（仅服务端使用）
+     * <p>[0] = 模组版本号，[1] = 击杀叠层 hash</p>
+     */
+    private static final Map<UUID, int[]> SERVER_STATE = new ConcurrentHashMap<>();
 
     // ==================== 构造 ====================
 
@@ -93,6 +102,10 @@ public class WarframeModuleSyncPacket {
             modules[i] = buf.readItem();
         }
         int stackTypeCount = buf.readVarInt();
+        // 防御性限制：叠层类型数量必须在合理范围内，避免恶意包造成巨量分配
+        if (stackTypeCount < 0 || stackTypeCount > 256) {
+            stackTypeCount = 0;
+        }
         int[] killStacks = new int[stackTypeCount];
         for (int i = 0; i < stackTypeCount; i++) {
             killStacks[i] = buf.readVarInt();
@@ -144,13 +157,16 @@ public class WarframeModuleSyncPacket {
                 new WarframeModuleSyncPacket(modules, stacks)
         );
 
-        // 更新状态哈希
-        SERVER_STATE_HASH.put(player.getUUID(), computeStateHash(modules, stacks));
+        // 更新状态记录
+        SERVER_STATE.put(player.getUUID(), new int[]{getModuleVersion(player), Arrays.hashCode(stacks)});
     }
 
     /**
      * 检测数据变化，仅在变化时发送同步包
      * 用于定期轮询场景（每5tick调用一次）
+     *
+     * <p>⭐ 模组侧用版本号（O(1) int 比较），叠层侧用 12 个 int 的数组 hash，
+     * 不再做任何 NBT 深度遍历。</p>
      *
      * @param player 目标玩家
      * @return true=有变化并已同步，false=无变化
@@ -158,21 +174,23 @@ public class WarframeModuleSyncPacket {
     public static boolean syncIfChanged(ServerPlayer player) {
         if (player == null) return false;
 
-        ItemStack[] modules = collectServerModules(player);
+        int version = getModuleVersion(player);
         int[] stacks = collectServerKillStacks(player);
-        int currentHash = computeStateHash(modules, stacks);
+        int stackHash = Arrays.hashCode(stacks);
 
-        Integer lastHash = SERVER_STATE_HASH.get(player.getUUID());
-        if (lastHash != null && lastHash == currentHash) {
+        int[] last = SERVER_STATE.get(player.getUUID());
+        if (last != null && last[0] == version && last[1] == stackHash
+                && version != VERSION_UNAVAILABLE) {
             return false;
         }
 
+        ItemStack[] modules = collectServerModules(player);
         KuvaLich.network.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new WarframeModuleSyncPacket(modules, stacks)
         );
 
-        SERVER_STATE_HASH.put(player.getUUID(), currentHash);
+        SERVER_STATE.put(player.getUUID(), new int[]{version, stackHash});
         return true;
     }
 
@@ -182,10 +200,21 @@ public class WarframeModuleSyncPacket {
      * @param playerUUID 玩家UUID
      */
     public static void cleanupPlayer(UUID playerUUID) {
-        SERVER_STATE_HASH.remove(playerUUID);
+        SERVER_STATE.remove(playerUUID);
     }
 
     // ==================== 内部方法 ====================
+
+    /**
+     * ⭐ 读取玩家战甲模组 capability 的版本号（脏标记）
+     *
+     * @param player 目标玩家
+     * @return 版本号；capability 不可用时返回 {@link #VERSION_UNAVAILABLE}
+     */
+    private static int getModuleVersion(ServerPlayer player) {
+        WarframeModules wm = player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).orElse(null);
+        return wm != null ? wm.getVersion() : VERSION_UNAVAILABLE;
+    }
 
     /**
      * 从服务端 capability 收集8个模组槽数据
@@ -219,27 +248,6 @@ public class WarframeModuleSyncPacket {
             counts[i] = KillStackManager.getStacks(player, types[i]);
         }
         return counts;
-    }
-
-    /**
-     * 计算状态哈希（用于脏检测）
-     * 结合模组槽 NBT 和叠层计数，碰撞概率极低
-     */
-    private static int computeStateHash(ItemStack[] modules, int[] stacks) {
-        int hash = 17;
-        for (ItemStack stack : modules) {
-            if (stack != null && !stack.isEmpty()) {
-                hash = 31 * hash + Item.getId(stack.getItem());
-                CompoundTag tag = stack.getTag();
-                if (tag != null) {
-                    hash = 31 * hash + tag.hashCode();
-                }
-            } else {
-                hash = 31 * hash;
-            }
-        }
-        hash = 31 * hash + Arrays.hashCode(stacks);
-        return hash;
     }
 
     private static ItemStack safe(ItemStack stack) {

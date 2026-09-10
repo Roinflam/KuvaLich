@@ -28,35 +28,30 @@ import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import java.util.*;
 
 /**
- * 武器元素系统 · v7
+ * 武器元素系统 · v8
  * 负责元素组合计算、元素效果触发、伤害位置和元素表情符号
  *
- * <p>⭐ v7 关键修复（针对网络包雪崩导致的服务器卡死）：
- * <ol>
- *   <li><b>所有 syncVisualDebuff 调用改走 {@link ElementSyncGuard#trySend}</b>。
- *       原来每次 element 触发都会无条件给每个 tracker 广播 ElementDebuffPacket，
- *       SlashBlade 群体斩击 / Goety AOE / 爆炸半径溅射场景下一帧内
- *       N 目标 × M tracker × K 触发 = 数百到数千次 IOUtil.write1 系统调用，
- *       主线程被卡死被 Watchdog 终止。</li>
- *   <li>节流策略由 {@link ElementSyncGuard} 实现：
- *       <ul>
- *         <li>同 tick 同 (target, element) 去重 → 单一目标多次触发只发一次</li>
- *         <li>跨 tick 至少间隔 10 tick → 群体场景下网络压力降到 1/10</li>
- *         <li>debuff 持续 120-240 tick，10 tick 一次同步对客户端染色无视觉差异</li>
- *       </ul></li>
- *   <li>debuff 应用 (DynamicAttributeManager.apply) 与 DOT 伤害逻辑不受影响，
- *       只有"通知客户端染色"这一项被节流。</li>
- * </ol></p>
+ * <p>⭐ v8 性能修复：新增 {@link ElementPool} 预计算元素池。</p>
  *
- * <p>v6.1：所有 spawn*Burst / spawn*Effect 调用之前都先经过
- * {@link ParticleEmissionGuard} 门控（保留）。</p>
+ * <p>问题：原 {@code triggerElementEffect} 每次触发第一行都调用
+ * {@code getTriggerElement} → {@code getTriggerElements}，后者会完整重建元素池：
+ * 遍历全部模组的全部属性 → 建 LinkedHashMap → 做复合元素合并 →
+ * 用 {@code String.format("%.0f%%")} 把权重格式化成百分比字符串 →
+ * 返回后调用方又 {@code Double.parseDouble(v.replace("%",""))} 解析回 double。<br>
+ * 元素池在<b>一次攻击内是常量</b>，但单次伤害最多触发 20 次
+ * （{@code MAX_ELEMENT_TRIGGER_COUNT}），SlashBlade 群体斩击命中 20 个目标
+ * 就是 400 次完整重建 + 800 次字符串格式化/解析。</p>
  *
- * <p>v6：磁力粒子已全部移除（保留）。
- * 病毒 emoji 颜色码：§a → §d；毒气 emoji 颜色码：§a → §b（保留）。</p>
+ * <p>修复：{@link #buildElementPool} 在 {@code processDamage} 里对每次攻击算<b>一次</b>，
+ * 结果以 {@code String[] + double[]} 形式持有，{@link ElementPool#pick()} 只做一次
+ * 加权随机采样，零分配、零字符串操作。Tooltip 侧的百分比展示由
+ * {@link ElementPool#toPercentMap()} 提供，行为与原来完全一致。</p>
  *
- * Weapon Element System (v7)
- * v7: All syncVisualDebuff() calls now go through ElementSyncGuard.trySend(),
- * eliminating packet-broadcast avalanches under group-attack scenarios.
+ * <p>v7 修复保留：所有 {@code syncVisualDebuff} 调用走 {@link ElementSyncGuard#trySend} 节流。</p>
+ * <p>v6.1 修复保留：所有 {@code spawn*Burst / spawn*Effect} 调用前经过
+ * {@link ParticleEmissionGuard} 门控。</p>
+ *
+ * @author RoinFlam
  */
 public class WeaponElementSystem {
 
@@ -74,6 +69,216 @@ public class WeaponElementSystem {
         }
         int number = KuvaWeaponUtil.getNumber(weapon);
         return number / 100.0;
+    }
+
+    // ========== ⭐ 元素池 / Element Pool ==========
+
+    /**
+     * 预计算好的元素池（一次攻击内复用）
+     * Pre-computed element pool, reused within a single attack
+     *
+     * <p>持有最终合并后的元素名数组与对应权重数组。
+     * 构造完成后不可变，{@link #pick()} 只做一次线性加权采样，
+     * 不产生任何对象分配和字符串操作。</p>
+     */
+    public static final class ElementPool {
+
+        /** 空池单例，避免为无元素武器重复分配 */
+        private static final ElementPool EMPTY = new ElementPool(new String[0], new double[0], 0.0);
+
+        /** 元素名数组 / Element names */
+        private final String[] elements;
+
+        /** 对应权重数组（未归一化）/ Corresponding weights (not normalized) */
+        private final double[] values;
+
+        /** 权重总和 / Sum of weights */
+        private final double total;
+
+        private ElementPool(String[] elements, double[] values, double total) {
+            this.elements = elements;
+            this.values = values;
+            this.total = total;
+        }
+
+        /**
+         * 元素池是否为空（武器没有任何元素属性）
+         *
+         * @return 为空返回 true
+         */
+        public boolean isEmpty() {
+            return elements.length == 0 || total <= 0;
+        }
+
+        /**
+         * 按权重随机选取一个触发元素
+         *
+         * @return 被选中的元素名，池为空时返回 null
+         */
+        public String pick() {
+            if (isEmpty()) {
+                return null;
+            }
+            if (elements.length == 1) {
+                return elements[0];
+            }
+            double random = Math.random() * total;
+            double cumulative = 0.0;
+            for (int i = 0; i < elements.length; i++) {
+                cumulative += values[i];
+                if (random <= cumulative) {
+                    return elements[i];
+                }
+            }
+            return elements[elements.length - 1];
+        }
+
+        /**
+         * 转换为「元素名 → 百分比字符串」映射，供 Tooltip 展示
+         *
+         * @return 百分比映射，与旧版 {@code getTriggerElements} 输出格式完全一致
+         */
+        public HashMap<String, String> toPercentMap() {
+            HashMap<String, String> result = new HashMap<>();
+            if (isEmpty()) {
+                return result;
+            }
+            for (int i = 0; i < elements.length; i++) {
+                double percentage = (values[i] / total) * 100;
+                result.put(elements[i], String.format("%.0f%%", percentage));
+            }
+            return result;
+        }
+    }
+
+    /**
+     * 构建武器的最终元素池（含复合元素合并）
+     *
+     * <p>合并规则与旧版 {@code getTriggerElements} 完全一致：
+     * <ol>
+     *   <li>汇总赤毒武器自带元素 + 所有模组的元素/物理/复合元素属性；</li>
+     *   <li>剔除权重 &le; 0 的项；</li>
+     *   <li>复合元素直接累加；基础元素尝试与已存在的基础元素两两合成复合元素。</li>
+     * </ol></p>
+     *
+     * @param weapon  武器物品栈
+     * @param modules 已解析的模组列表
+     * @return 元素池，无任何元素时返回空池
+     */
+    public static ElementPool buildElementPool(ItemStack weapon, List<ItemStack> modules) {
+        Map<String, Double> elementValues = new LinkedHashMap<>();
+
+        if (KuvaWeaponUtil.hasType(weapon)) {
+            String kuvaType = KuvaWeaponUtil.getType(weapon);
+            double kuvaValue = getKuvaWeaponElementDamage(weapon);
+            elementValues.put(kuvaType, kuvaValue);
+        }
+
+        if (modules != null) {
+            for (ItemStack module : modules) {
+                for (Map.Entry<String, Double> entry : AbstractModule.getAttributes(module)) {
+                    String key = entry.getKey();
+                    double value = entry.getValue();
+                    if (isElemental(key) || isPhysical(key) || isCompound(key)) {
+                        elementValues.merge(key, value, Double::sum);
+                    }
+                }
+            }
+        }
+
+        elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
+        if (elementValues.isEmpty()) {
+            return ElementPool.EMPTY;
+        }
+
+        Map<String, Double> combinedElements = new LinkedHashMap<>();
+        for (Map.Entry<String, Double> entry : elementValues.entrySet()) {
+            String currentElement = entry.getKey();
+            double currentValue = entry.getValue();
+
+            if (isCompound(currentElement)) {
+                combinedElements.merge(currentElement, currentValue, Double::sum);
+                continue;
+            }
+
+            boolean combined = false;
+            for (String existingElement : new ArrayList<>(combinedElements.keySet())) {
+                if (isCompound(existingElement)) continue;
+                String compoundElement = getCompoundElement(existingElement, currentElement);
+                if (compoundElement != null) {
+                    double existingValue = combinedElements.remove(existingElement);
+                    combinedElements.merge(compoundElement, existingValue + currentValue, Double::sum);
+                    combined = true;
+                    break;
+                }
+            }
+
+            if (!combined) {
+                combinedElements.put(currentElement, currentValue);
+            }
+        }
+
+        if (combinedElements.isEmpty()) {
+            return ElementPool.EMPTY;
+        }
+
+        int size = combinedElements.size();
+        String[] names = new String[size];
+        double[] weights = new double[size];
+        double total = 0.0;
+        int index = 0;
+        for (Map.Entry<String, Double> entry : combinedElements.entrySet()) {
+            names[index] = entry.getKey();
+            weights[index] = entry.getValue();
+            total += entry.getValue();
+            index++;
+        }
+
+        return new ElementPool(names, weights, total);
+    }
+
+    // ========== 元素组合计算（Tooltip 兼容接口）/ Element Composition ==========
+
+    /**
+     * 获取武器的最终元素组合及各元素占比
+     *
+     * @param weapon  武器物品栈
+     * @param modules 已解析的模组列表
+     * @return 元素名→百分比字符串的映射
+     */
+    public static HashMap<String, String> getTriggerElements(ItemStack weapon, List<ItemStack> modules) {
+        return buildElementPool(weapon, modules).toPercentMap();
+    }
+
+    /**
+     * 获取武器的最终元素组合及各元素占比（兼容旧调用）
+     *
+     * @param weapon 武器物品栈
+     * @return 元素名→百分比字符串的映射
+     */
+    public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
+        return getTriggerElements(weapon, WeaponModuleHandler.getModules(weapon));
+    }
+
+    /**
+     * 根据元素占比概率随机选取一个触发元素
+     *
+     * @param weapon  武器物品栈
+     * @param modules 已解析的模组列表
+     * @return 被选中的元素名，无元素时返回null
+     */
+    public static String getTriggerElement(ItemStack weapon, List<ItemStack> modules) {
+        return buildElementPool(weapon, modules).pick();
+    }
+
+    /**
+     * 根据元素占比概率随机选取一个触发元素（兼容旧调用）
+     *
+     * @param weapon 武器物品栈
+     * @return 被选中的元素名
+     */
+    public static String getTriggerElement(ItemStack weapon) {
+        return getTriggerElement(weapon, WeaponModuleHandler.getModules(weapon));
     }
 
     // ========== 通用工具方法 / Utility ==========
@@ -110,133 +315,13 @@ public class WeaponElementSystem {
     /**
      * 将视觉 debuff 同步到所有追踪该实体的客户端（受 ElementSyncGuard 节流）
      *
-     * <p>⭐ v7：原直接调用 ElementEffectNetwork.sendToTrackers，改为走
-     * {@link ElementSyncGuard#trySend}。同 tick 同 (target, element) 去重 +
-     * 跨 tick 10 tick 间隔节流，避免群体攻击场景下网络包雪崩。</p>
-     *
      * @param target        被附加 debuff 的目标
      * @param element       元素名
      * @param durationTicks 持续 tick 数
      * @param amplifier     元素等级
      */
     private static void syncVisualDebuff(LivingEntity target, String element, int durationTicks, int amplifier) {
-        // ⭐ v7：走节流通道，被节流时返回 false，调用方无需处理
-        // ⭐ v7: routed through throttler, false return is silently ignored
         ElementSyncGuard.trySend(target, element, durationTicks, amplifier);
-    }
-
-    // ========== 元素组合计算 / Element Composition ==========
-
-    /**
-     * 获取武器的最终元素组合及各元素占比
-     *
-     * @param weapon  武器物品栈
-     * @param modules 已解析的模组列表
-     * @return 元素名→百分比字符串的映射
-     */
-    public static HashMap<String, String> getTriggerElements(ItemStack weapon, List<ItemStack> modules) {
-        Map<String, Double> elementValues = new LinkedHashMap<>();
-
-        if (KuvaWeaponUtil.hasType(weapon)) {
-            String kuvaType = KuvaWeaponUtil.getType(weapon);
-            double kuvaValue = getKuvaWeaponElementDamage(weapon);
-            elementValues.put(kuvaType, kuvaValue);
-        }
-
-        for (ItemStack module : modules) {
-            for (Map.Entry<String, Double> entry : AbstractModule.getAttributes(module)) {
-                String key = entry.getKey();
-                double value = entry.getValue();
-                if (isElemental(key) || isPhysical(key) || isCompound(key)) {
-                    elementValues.merge(key, value, Double::sum);
-                }
-            }
-        }
-
-        elementValues.entrySet().removeIf(entry -> entry.getValue() <= 0);
-
-        Map<String, Double> combinedElements = new LinkedHashMap<>();
-        for (Map.Entry<String, Double> entry : elementValues.entrySet()) {
-            String currentElement = entry.getKey();
-            double currentValue = entry.getValue();
-
-            if (isCompound(currentElement)) {
-                combinedElements.merge(currentElement, currentValue, Double::sum);
-                continue;
-            }
-
-            boolean combined = false;
-            for (String existingElement : new ArrayList<>(combinedElements.keySet())) {
-                if (isCompound(existingElement)) continue;
-                String compoundElement = getCompoundElement(existingElement, currentElement);
-                if (compoundElement != null) {
-                    double existingValue = combinedElements.remove(existingElement);
-                    combinedElements.merge(compoundElement, existingValue + currentValue, Double::sum);
-                    combined = true;
-                    break;
-                }
-            }
-
-            if (!combined) {
-                combinedElements.put(currentElement, currentValue);
-            }
-        }
-
-        double totalValue = combinedElements.values().stream().mapToDouble(Double::doubleValue).sum();
-        HashMap<String, String> result = new HashMap<>();
-        for (Map.Entry<String, Double> entry : combinedElements.entrySet()) {
-            double percentage = (entry.getValue() / totalValue) * 100;
-            result.put(entry.getKey(), String.format("%.0f%%", percentage));
-        }
-
-        return result;
-    }
-
-    /**
-     * 获取武器的最终元素组合及各元素占比（兼容旧调用）
-     *
-     * @param weapon 武器物品栈
-     * @return 元素名→百分比字符串的映射
-     */
-    public static HashMap<String, String> getTriggerElements(ItemStack weapon) {
-        return getTriggerElements(weapon, WeaponModuleHandler.getModules(weapon));
-    }
-
-    /**
-     * 根据元素占比概率随机选取一个触发元素
-     *
-     * @param weapon  武器物品栈
-     * @param modules 已解析的模组列表
-     * @return 被选中的元素名，无元素时返回null
-     */
-    public static String getTriggerElement(ItemStack weapon, List<ItemStack> modules) {
-        HashMap<String, String> elements = getTriggerElements(weapon, modules);
-        if (elements.isEmpty()) return null;
-
-        List<Map.Entry<String, Double>> elementList = new ArrayList<>();
-        for (Map.Entry<String, String> entry : elements.entrySet()) {
-            double probability = Double.parseDouble(entry.getValue().replace("%", "")) / 100.0;
-            elementList.add(new AbstractMap.SimpleEntry<>(entry.getKey(), probability));
-        }
-
-        double random = Math.random();
-        double cumulativeProbability = 0.0;
-        for (Map.Entry<String, Double> entry : elementList) {
-            cumulativeProbability += entry.getValue();
-            if (random <= cumulativeProbability) return entry.getKey();
-        }
-
-        return elementList.get(elementList.size() - 1).getKey();
-    }
-
-    /**
-     * 根据元素占比概率随机选取一个触发元素（兼容旧调用）
-     *
-     * @param weapon 武器物品栈
-     * @return 被选中的元素名
-     */
-    public static String getTriggerElement(ItemStack weapon) {
-        return getTriggerElement(weapon, WeaponModuleHandler.getModules(weapon));
     }
 
     // ========== 元素类型判断 / Element Type Check ==========
@@ -365,31 +450,29 @@ public class WeaponElementSystem {
     /**
      * 触发一次元素效果
      *
-     * <p>⭐ v7：所有 syncVisualDebuff 调用通过 {@link ElementSyncGuard} 节流，
-     * 同 tick 同 (target, element) 去重 + 跨 tick 10 tick 间隔节流，
-     * 避免 SlashBlade 群体攻击 / Goety AOE / 爆炸溅射场景下网络包雪崩。</p>
-     *
-     * <p>⭐ v6.1：所有 spawn*Burst / spawn*Effect 调用前都经过 ParticleEmissionGuard 限流，
-     * 超出每 tick 预算时仅跳过视觉粒子，元素 debuff 应用与 DOT 伤害逻辑不受影响。</p>
+     * <p>⭐ v8：元素池由调用方预计算并传入，本方法内不再重建元素池。</p>
      *
      * @param damageSource   伤害来源
      * @param hurter         受害者
      * @param attacker       攻击者
      * @param itemStack      武器物品栈
-     * @param modules        已解析的模组列表
+     * @param elementPool    预计算好的元素池
      * @param triggerTime    触发时间倍率
      * @param coreDamage     核心物理伤害
      * @param attributes     武器运行时属性
      * @param baneMultiplier 克制倍率
-     * @return 被触发的元素名
+     * @return 被触发的元素名（仅用于伤害数字后缀，无后缀时返回 null）
      */
     static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
                                        LivingEntity attacker, ItemStack itemStack,
-                                       List<ItemStack> modules,
+                                       ElementPool elementPool,
                                        double triggerTime, double coreDamage,
                                        HashMap<String, Double> attributes,
                                        double baneMultiplier) {
-        String type = getTriggerElement(itemStack, modules);
+        if (elementPool == null) {
+            return null;
+        }
+        String type = elementPool.pick();
         if (type == null) return null;
 
         Level level = hurter.level();
@@ -699,9 +782,26 @@ public class WeaponElementSystem {
     }
 
     /**
+     * 触发一次元素效果（兼容旧调用，内部即时构建元素池）
+     *
+     * @deprecated 优先使用带 {@link ElementPool} 参数的重载版本，避免重复构建元素池
+     */
+    @Deprecated
+    static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
+                                       LivingEntity attacker, ItemStack itemStack,
+                                       List<ItemStack> modules,
+                                       double triggerTime, double coreDamage,
+                                       HashMap<String, Double> attributes,
+                                       double baneMultiplier) {
+        return triggerElementEffect(damageSource, hurter, attacker, itemStack,
+                buildElementPool(itemStack, modules),
+                triggerTime, coreDamage, attributes, baneMultiplier);
+    }
+
+    /**
      * 触发一次元素效果（兼容旧调用）
      *
-     * @deprecated 优先使用带 modules 参数的重载版本
+     * @deprecated 优先使用带 {@link ElementPool} 参数的重载版本
      */
     @Deprecated
     static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
@@ -710,7 +810,7 @@ public class WeaponElementSystem {
                                        HashMap<String, Double> attributes,
                                        double baneMultiplier) {
         return triggerElementEffect(damageSource, hurter, attacker, itemStack,
-                WeaponModuleHandler.getModules(itemStack),
+                buildElementPool(itemStack, WeaponModuleHandler.getModules(itemStack)),
                 triggerTime, coreDamage, attributes, baneMultiplier);
     }
 
@@ -734,11 +834,6 @@ public class WeaponElementSystem {
 
     /**
      * 获取元素对应的表情符号（用于伤害数字显示）
-     * <p>⭐ v6 颜色码调整：
-     * <ul>
-     *     <li>gas（毒气）：§a 绿 → §b 青色（AQUA），对应粒子青色</li>
-     *     <li>virus（病毒）：§a 绿 → §d 亮紫粉（LIGHT_PURPLE），对应粒子粉色</li>
-     * </ul></p>
      *
      * @param element 元素名
      * @return 带颜色代码的表情符号字符串

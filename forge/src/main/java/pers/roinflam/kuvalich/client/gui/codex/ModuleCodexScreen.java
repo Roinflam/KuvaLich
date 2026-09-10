@@ -27,6 +27,19 @@ import java.util.List;
  * - 底部 [TAB] 返回提示（带底衬）
  * - ⭐ 创造模式点击模组 → 发给背包（满了掉脚下）
  * - ⭐ 发现记录使用 discoveryKey（type:rarityOrder）区分品质
+ *
+ * <p>⭐ 本次改动（配合 {@link ModuleCodexData} 的惰性化）：</p>
+ * <ol>
+ *   <li>{@code e.searchableText} 字段访问改为 {@code e.getSearchableText()} 方法调用。
+ *       该字段已改为惰性构建的私有字段，只有在真正需要匹配时才会触发一次
+ *       {@code getTooltipLines} 计算，打开图鉴时不再有批量构建的卡顿。</li>
+ *   <li>{@link #onSearchChanged()} 增加<b>前缀增量收窄</b>：新查询以旧查询为前缀时，
+ *       从上一次的结果集继续筛选而非重新遍历全表。因为超集查询的结果必然是
+ *       子集查询结果的子集，语义完全等价；连续输入时只有第一个字符需要遍历全表，
+ *       后续按键的开销随结果集收缩而快速下降。退格 / 改词时前缀不成立，
+ *       自动回退到全表筛选，结果始终正确。</li>
+ * </ol>
+ * <p>搜索结果与改动前完全一致，仅计算时机和范围不同。</p>
  */
 @OnlyIn(Dist.CLIENT)
 public class ModuleCodexScreen extends Screen {
@@ -111,9 +124,26 @@ public class ModuleCodexScreen extends Screen {
         onSearchChanged();
     }
 
+    /**
+     * 搜索词变化时重新筛选条目
+     *
+     * <p>⭐ 前缀增量收窄：当新查询以旧查询为前缀且已有结果集时，
+     * 只需在旧结果集内继续筛选。这在语义上完全等价——
+     * 若某条目不含 "fi"，则必然也不含 "fir"。</p>
+     *
+     * <p>⭐ 可搜索文本通过 {@link ModuleCodexData.CodexEntry#getSearchableText()}
+     * 惰性获取，未被匹配到的条目永远不会付出 tooltip 构建开销。</p>
+     */
     private void onSearchChanged() {
         String query = searchBox.getValue().trim().toLowerCase();
         if (query.equals(lastSearch) && filtered != null) return;
+
+        // ⭐ 判断能否从上一次的结果集继续收窄（必须在更新 lastSearch 之前判断）
+        boolean canNarrow = filtered != null
+                && !query.isEmpty()
+                && !lastSearch.isEmpty()
+                && query.startsWith(lastSearch);
+
         lastSearch = query;
 
         List<ModuleCodexData.CodexEntry> all = showWeapon ?
@@ -121,10 +151,13 @@ public class ModuleCodexScreen extends Screen {
         if (query.isEmpty()) {
             filtered = all;
         } else {
-            filtered = new ArrayList<>();
-            for (ModuleCodexData.CodexEntry e : all) {
-                if (e.searchableText.contains(query)) filtered.add(e);
+            // 增量收窄时从旧结果集筛选，否则从全表筛选
+            List<ModuleCodexData.CodexEntry> source = canNarrow ? filtered : all;
+            List<ModuleCodexData.CodexEntry> result = new ArrayList<>();
+            for (ModuleCodexData.CodexEntry e : source) {
+                if (e.getSearchableText().contains(query)) result.add(e);
             }
+            filtered = result;
         }
         recalcContentH();
         scrollOffset = clamp(scrollOffset);

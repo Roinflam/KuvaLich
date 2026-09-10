@@ -17,40 +17,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Synchronous task scheduler
  *
  * 用于在服务器tick中延迟执行或周期执行任务。
- * Used for delayed or periodic task execution in server ticks.
  * 使用单一全局监听器管理所有任务，避免每个任务单独注册事件总线的性能开销。
- * Uses a single global listener to manage all tasks, avoiding performance overhead of registering each task separately.
+ *
+ * <p>⭐ 性能优化（本次）：{@code TaskManager.onServerTick} 原先每 tick 都无条件
+ * {@code new ArrayList<>()} 来收集待删任务，即使本 tick 一个任务都没结束。
+ * 元素 DOT 场景下任务数常年不为空，等于每 tick 白送一个短命对象给 GC。
+ * 现改为惰性分配：只有真的有任务完成时才创建列表。</p>
  *
  * <p>使用示例 / Usage examples:</p>
  * <pre>
  * // 延迟20tick后执行一次
- * // Execute once after 20 ticks
  * new SynchronizationTask(20) {
- *     @Override
+ *     &#64;Override
  *     public void run() {
- *         // 执行逻辑 / execution logic
+ *         // 执行逻辑
  *     }
  * }.start();
  *
  * // 延迟10tick后开始，每5tick执行一次（周期任务）
- * // Start after 10 ticks, execute every 5 ticks (periodic task)
  * new SynchronizationTask(10, 5) {
- *     @Override
+ *     &#64;Override
  *     public void run() {
- *         // 周期执行逻辑 / periodic execution logic
- *     }
- * }.start();
- *
- * // 立即开始，每1tick执行一次（持续伤害等）
- * // Start immediately, execute every tick (continuous damage, etc.)
- * new SynchronizationTask(0, 1) {
- *     @Override
- *     public void run() {
- *         if (条件不满足) {
- *             this.cancel();
- *             return;
- *         }
- *         // 持续伤害逻辑 / continuous damage logic
+ *         // 周期执行逻辑
  *     }
  * }.start();
  * </pre>
@@ -94,9 +82,8 @@ public abstract class SynchronizationTask implements Runnable {
 
     /**
      * 创建延迟执行的一次性任务
-     * Create a delayed one-time task
      *
-     * @param initialDelay 初始延迟（tick），0表示下一tick执行 / initial delay (ticks), 0 means execute next tick
+     * @param initialDelay 初始延迟（tick），0表示下一tick执行
      */
     public SynchronizationTask(int initialDelay) {
         this(initialDelay, -1);
@@ -104,10 +91,9 @@ public abstract class SynchronizationTask implements Runnable {
 
     /**
      * 创建延迟执行的周期任务
-     * Create a delayed periodic task
      *
-     * @param initialDelay 初始延迟（tick）/ initial delay (ticks)
-     * @param delay 周期间隔（tick），>=0表示周期任务，-1表示一次性任务 / period interval (ticks), >=0 for periodic task, -1 for one-time
+     * @param initialDelay 初始延迟（tick）
+     * @param delay 周期间隔（tick），>=0表示周期任务，-1表示一次性任务
      */
     public SynchronizationTask(int initialDelay, int delay) {
         this.taskId = ID_GENERATOR.incrementAndGet();
@@ -118,10 +104,9 @@ public abstract class SynchronizationTask implements Runnable {
 
     /**
      * 根据任务ID取消任务（静态方法）
-     * Cancel task by task ID (static method)
      *
-     * @param taskId 任务ID / task ID
-     * @return 是否成功取消 / whether successfully cancelled
+     * @param taskId 任务ID
+     * @return 是否成功取消
      */
     public static boolean cancel(int taskId) {
         return MANAGER.cancelTask(taskId);
@@ -129,9 +114,8 @@ public abstract class SynchronizationTask implements Runnable {
 
     /**
      * 获取任务ID
-     * Get task ID
      *
-     * @return 任务ID / task ID
+     * @return 任务ID
      */
     public int getTaskId() {
         return taskId;
@@ -139,10 +123,6 @@ public abstract class SynchronizationTask implements Runnable {
 
     /**
      * 启动任务
-     * Start task
-     *
-     * 任务启动后会在服务器tick中执行
-     * Task will execute in server ticks after being started
      */
     public synchronized void start() {
         if (!started) {
@@ -153,10 +133,7 @@ public abstract class SynchronizationTask implements Runnable {
 
     /**
      * 取消任务
-     * Cancel task
-     *
      * 可在run()方法内调用以停止周期任务
-     * Can be called inside run() method to stop periodic task
      */
     public synchronized void cancel() {
         if (started) {
@@ -167,9 +144,8 @@ public abstract class SynchronizationTask implements Runnable {
 
     /**
      * 内部tick处理（由TaskManager调用）
-     * Internal tick processing (called by TaskManager)
      *
-     * @return true表示任务已完成需要移除，false表示继续执行 / true if task completed and should be removed, false to continue
+     * @return true表示任务已完成需要移除，false表示继续执行
      */
     boolean onTick() {
         // 任务已被取消
@@ -220,10 +196,9 @@ public abstract class SynchronizationTask implements Runnable {
      * Global task manager
      *
      * 使用单一事件监听器管理所有任务，相比每个任务单独注册：
-     * Uses single event listener to manage all tasks, compared to individual registration:
-     * - 100个任务只有1个监听器，而不是100个 / 100 tasks with 1 listener instead of 100
-     * - 减少事件总线的遍历开销 / Reduces event bus traversal overhead
-     * - 线程安全 / Thread-safe
+     * - 100个任务只有1个监听器，而不是100个
+     * - 减少事件总线的遍历开销
+     * - 线程安全
      */
     @Mod.EventBusSubscriber
     private static class TaskManager {
@@ -236,7 +211,6 @@ public abstract class SynchronizationTask implements Runnable {
 
         /**
          * 添加任务
-         * Add task
          */
         void addTask(@Nonnull SynchronizationTask task) {
             tasks.put(task.getTaskId(), task);
@@ -245,7 +219,6 @@ public abstract class SynchronizationTask implements Runnable {
 
         /**
          * 移除任务
-         * Remove task
          */
         void removeTask(int taskId) {
             tasks.remove(taskId);
@@ -253,7 +226,6 @@ public abstract class SynchronizationTask implements Runnable {
 
         /**
          * 根据ID取消任务
-         * Cancel task by ID
          */
         boolean cancelTask(int taskId) {
             SynchronizationTask task = tasks.remove(taskId);
@@ -266,7 +238,6 @@ public abstract class SynchronizationTask implements Runnable {
 
         /**
          * 确保已注册到事件总线（只注册一次）
-         * Ensure registered to event bus (register only once)
          */
         private synchronized void ensureRegistered() {
             if (!registered) {
@@ -277,10 +248,8 @@ public abstract class SynchronizationTask implements Runnable {
 
         /**
          * 服务器tick事件处理
-         * Server tick event handling
          *
-         * 每个服务器tick遍历所有任务并执行
-         * Traverse and execute all tasks each server tick
+         * <p>⭐ 待删列表惰性分配：本 tick 无任务结束时不产生任何对象。</p>
          */
         @SubscribeEvent
         public void onServerTick(@Nonnull TickEvent.ServerTickEvent evt) {
@@ -294,21 +263,26 @@ public abstract class SynchronizationTask implements Runnable {
                 return;
             }
 
-            // 收集需要移除的任务（避免在遍历时修改）
-            List<Integer> toRemove = new ArrayList<>();
+            // ⭐ 惰性分配：只有真的有任务完成时才创建列表
+            List<Integer> toRemove = null;
 
             for (Map.Entry<Integer, SynchronizationTask> entry : tasks.entrySet()) {
                 SynchronizationTask task = entry.getValue();
 
                 // onTick()返回true表示任务已完成
                 if (task.onTick()) {
+                    if (toRemove == null) {
+                        toRemove = new ArrayList<>();
+                    }
                     toRemove.add(entry.getKey());
                 }
             }
 
             // 批量移除已完成的任务
-            for (Integer taskId : toRemove) {
-                tasks.remove(taskId);
+            if (toRemove != null) {
+                for (Integer taskId : toRemove) {
+                    tasks.remove(taskId);
+                }
             }
         }
     }

@@ -18,11 +18,9 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Vector3f;
 import pers.roinflam.kuvalich.utils.Reference;
 
-import java.util.List;
-
 /**
- * 元素实体渲染处理器（客户端 · v7）
- * Element Entity Render Handler (Client-side · v7)
+ * 元素实体渲染处理器（客户端 · v8）
+ * Element Entity Render Handler (Client-side · v8)
  *
  * <p>职责：
  * <ol>
@@ -32,26 +30,23 @@ import java.util.List;
  *         同时渲染冰块等装饰物。</li>
  * </ol></p>
  *
- * <p>⭐ v7 关键修复（"冰块出但不变色"偶发 bug）：<br>
- * Minecraft 的 {@code MultiBufferSource.BufferSource} 是 deferred 渲染——实体模型
- * 的顶点被塞进 buffer 后不会立即 draw，而是等 {@code endBatch()} 时统一 draw。
- * 此时 shader 读取的 {@code ColorModulator} uniform 是<b>最后一次</b> {@code setShaderColor}
- * 的值，而不是调用 renderToBuffer 时的值。<br>
- * 结果是 Pre 里 setShaderColor(tint) → 实体进 buffer → Post 里 setShaderColor(1,1,1) →
- * 最终 endBatch 时 uniform 已重置为白色，染色丢失。<br>
- * 修复：Pre 和 Post 里手动调用 {@code BufferSource.endBatch()} 强制立即 draw，
- * 把 uniform 时序问题彻底消除。</p>
+ * <p>⭐ v8 性能优化：染色计算改为<b>零分配</b>。
+ * 原 {@code getEntityTint} 通过 {@code getAllActiveElements} 拿一个 List，
+ * 内部还要先做一次快照 List，而它在 Pre / Post 各被调用一次，
+ * 即每实体每帧 2~4 次 List 分配。现改为
+ * {@link ClientElementDebuffTracker#forEachActiveElement} 配合静态累加器，
+ * 全程只在最终返回时分配一个 {@link Vector3f}。</p>
  *
- * <p>⭐ v7 新增：64 格距离裁剪。相机到实体距离 &gt; 64 格时跳过染色、冰块渲染和
- * flush 调用，大幅降低多玩家/密集战斗场景的渲染开销。</p>
+ * <p><b>关于 {@code endBatch()} 强制 flush 的保留说明：</b>
+ * Minecraft 的 {@code MultiBufferSource.BufferSource} 是 deferred 渲染——
+ * 实体模型顶点进 buffer 后不会立即 draw，而是等统一 {@code endBatch()} 时才 draw，
+ * 此时 shader 读到的 {@code ColorModulator} uniform 是<b>最后一次</b>
+ * {@code setShaderColor} 的值。若不在 Pre/Post 手动 flush，
+ * Post 里的颜色重置会让本实体的染色在最终 draw 时丢失（表现为"冰块出但不变色"）。
+ * 这个 flush 会打断批渲染、增加 draw call，但它是当前架构下保证染色正确的必要代价；
+ * 已通过 64 格距离裁剪把影响范围限制在近处实体。</p>
  *
- * <p>⭐ v6 改动：{@code TINT_VIRUS} 从病态绿改为粉色 (1.00, 0.50, 0.80)</p>
- *
- * <p>⭐ v5 多色混合策略：对实体身上所有 active 染色做等权平均。
- * 单 debuff 时原样显示，多 debuff 时按 RGB 算术平均。</p>
- *
- * <p>客户端 debuff 检测基于 {@link ClientElementDebuffTracker}：服务端 apply 时
- * 通过 {@code ElementDebuffPacket} 立即推送，延迟 &lt; 1 tick。</p>
+ * <p>v6 色调保留：{@code TINT_VIRUS} 为粉色 (1.00, 0.50, 0.80)。</p>
  *
  * @author RoinFlam
  */
@@ -75,7 +70,7 @@ public final class ElementRenderHandler {
     /** 腐蚀深绿 / Corrosion dark green */
     private static final Vector3f TINT_CORROSION = new Vector3f(0.60f, 0.90f, 0.40f);
 
-    /** 病毒粉色 / Virus pink（v6 改粉色）*/
+    /** 病毒粉色 / Virus pink */
     private static final Vector3f TINT_VIRUS = new Vector3f(1.00f, 0.50f, 0.80f);
 
     /** 磁力紫 / Magnetic purple */
@@ -114,6 +109,14 @@ public final class ElementRenderHandler {
     /** 最大渲染距离平方（64 格） */
     private static final double MAX_RENDER_DIST_SQR = 64.0 * 64.0;
 
+    // ==================== 零分配染色累加器 ====================
+
+    /**
+     * ⭐ 染色累加器：[r, g, b, count]
+     * <p>渲染只在客户端主线程执行，静态复用安全，避免每帧分配临时容器。</p>
+     */
+    private static final float[] TINT_ACCUMULATOR = new float[4];
+
     /**
      * 判断实体是否超出 64 格渲染距离
      *
@@ -134,8 +137,6 @@ public final class ElementRenderHandler {
 
     /**
      * 实体渲染前：应用元素染色
-     * <p>关键修复：调用 {@code setShaderColor} 前先 flush buffer，把<b>之前</b>
-     * 累积的其他实体顶点以原色 draw 出去，不被即将设置的 tint 颜色污染。</p>
      *
      * @param event 渲染前事件
      */
@@ -149,7 +150,7 @@ public final class ElementRenderHandler {
 
         Vector3f tint = getEntityTint(entity);
         if (tint != null) {
-            // ⭐ 关键修复：flush 之前累积的顶点，避免当前 tint 污染前面实体的渲染
+            // ⭐ flush 之前累积的顶点，避免当前 tint 污染前面实体的渲染
             flushBuffers(event.getMultiBufferSource());
             RenderSystem.setShaderColor(tint.x(), tint.y(), tint.z(), 1.0f);
         }
@@ -157,8 +158,6 @@ public final class ElementRenderHandler {
 
     /**
      * 实体渲染后：无条件重置染色 + 渲染冰块装饰
-     * <p>关键修复：如果 Pre 染色过，必须在重置颜色前 flush buffer，把<b>当前实体</b>
-     * 的顶点以 tint 颜色 draw 出去，否则后续重置会让染色丢失（deferred 渲染导致）。</p>
      *
      * @param event 渲染后事件
      */
@@ -167,7 +166,9 @@ public final class ElementRenderHandler {
         LivingEntity entity = event.getEntity();
         boolean visible = !beyondRenderDistance(entity);
 
-        // ⭐ 关键修复：如果染过色，必须在重置颜色前 flush，确保当前实体的顶点用 tint 颜色 draw
+        // ⭐ 若 Pre 染过色，必须在重置颜色前 flush，确保当前实体的顶点用 tint 颜色 draw
+        //    这里重新判定（而非缓存 Pre 的结果）是为了兼容嵌套渲染（骑乘实体递归渲染 passenger）
+        //    的场景；在零分配改造后，重新判定的成本仅为一次 map 查询 + 少量浮点运算。
         if (visible && getEntityTint(entity) != null) {
             flushBuffers(event.getMultiBufferSource());
         }
@@ -184,9 +185,6 @@ public final class ElementRenderHandler {
 
     /**
      * 强制 flush BufferSource 的所有累积顶点，立即 draw 到 GPU。
-     * <p>这是修复"染色丢失"bug 的关键操作——让 shader 在当前 uniform
-     * 状态下完成 draw，而不是等到 {@code endBatch} 时用最后一次
-     * {@code setShaderColor} 的值。</p>
      *
      * @param source MultiBufferSource（正常应为 BufferSource 实例）
      */
@@ -196,43 +194,50 @@ public final class ElementRenderHandler {
         }
     }
 
-    // ==================== 染色判断（v8 分层） ====================
+    // ==================== 染色判断（零分配） ====================
 
     /**
-     * 根据实体身上所有 active 元素 debuff 计算混合染色色值（按层数 lerp 后等权平均）
+     * 根据实体身上所有 active 元素 debuff 计算混合染色色值
      *
-     * <p>v8 分层策略：每个 debuff 先按 amplifier 做白色→满色的 lerp（最低级 50%
-     * 饱和，满级 100% 饱和），然后多 debuff 做等权 RGB 平均。</p>
+     * <p>每个 debuff 先按 amplifier 做白色→满色的 lerp（最低级约 70% 饱和，满级 100%），
+     * 然后多 debuff 做等权 RGB 平均。</p>
+     *
+     * <p>⭐ 零分配：不再构造中间 List，直接用静态累加器累加。</p>
      *
      * @param entity 实体
      * @return 染色色值，无 debuff 返回 null
      */
     private static Vector3f getEntityTint(LivingEntity entity) {
-        List<String> activeElements = ClientElementDebuffTracker.getAllActiveElements(entity);
-        if (activeElements.isEmpty()) return null;
+        TINT_ACCUMULATOR[0] = 0f;
+        TINT_ACCUMULATOR[1] = 0f;
+        TINT_ACCUMULATOR[2] = 0f;
+        TINT_ACCUMULATOR[3] = 0f;
 
-        float r = 0f, g = 0f, b = 0f;
-        int count = 0;
-        Vector3f lastTint = null;
-        for (String element : activeElements) {
-            Vector3f tint = getElementTintForLevel(entity, element);
-            if (tint == null) continue;
-            r += tint.x();
-            g += tint.y();
-            b += tint.z();
-            count++;
-            lastTint = tint;
+        ClientElementDebuffTracker.forEachActiveElement(entity, (element, amplifier) -> {
+            Vector3f tint = getElementTintForLevel(element, amplifier);
+            if (tint == null) {
+                return;
+            }
+            TINT_ACCUMULATOR[0] += tint.x();
+            TINT_ACCUMULATOR[1] += tint.y();
+            TINT_ACCUMULATOR[2] += tint.z();
+            TINT_ACCUMULATOR[3] += 1f;
+        });
+
+        int count = (int) TINT_ACCUMULATOR[3];
+        if (count <= 0) {
+            return null;
         }
-
-        if (count == 0) return null;
-        if (count == 1) return lastTint;
-
         float inv = 1.0f / count;
-        return new Vector3f(r * inv, g * inv, b * inv);
+        return new Vector3f(
+                TINT_ACCUMULATOR[0] * inv,
+                TINT_ACCUMULATOR[1] * inv,
+                TINT_ACCUMULATOR[2] * inv
+        );
     }
 
     /**
-     * 按元素 debuff 的当前 amplifier 计算最终染色（从白色向满色线性插值）
+     * 按元素 debuff 的 amplifier 计算最终染色（从白色向满色线性插值）
      *
      * <p>公式：{@code tint = 1 - factor * (1 - baseTint)}，factor ∈ [0.7, 1.0]：
      * 最低级（amplifier=0）factor=0.7，保证颜色有明显辨识度不会太淡；
@@ -240,18 +245,16 @@ public final class ElementRenderHandler {
      *
      * <p>对单层元素（{@code getMaxLevel} 返回 0，例如毒素）直接返回满色。</p>
      *
-     * @param entity  实体
-     * @param element 元素名
+     * @param element   元素名
+     * @param amplifier 当前元素等级
      * @return 插值后的染色，无定义元素返回 null
      */
-    private static Vector3f getElementTintForLevel(LivingEntity entity, String element) {
+    private static Vector3f getElementTintForLevel(String element, int amplifier) {
         Vector3f baseTint = getElementBaseTint(element);
         if (baseTint == null) return null;
 
         int maxLevel = getMaxLevel(element);
         if (maxLevel <= 0) return baseTint;
-
-        int amplifier = ClientElementDebuffTracker.getAmplifier(entity, element);
         if (amplifier < 0) return baseTint;
 
         float ratio = Math.min((float) amplifier / maxLevel, 1.0f);

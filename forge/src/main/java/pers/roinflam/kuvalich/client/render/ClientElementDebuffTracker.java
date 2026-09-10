@@ -22,9 +22,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * Client-side Element Debuff Tracker
  *
  * <p>存储从服务端通过 {@code ElementDebuffPacket} 推送过来的元素 debuff 信息，
- * 供 {@link ElementRenderHandler} 和 {@link ElementGeometryRenderer} 在每帧
+ * 供 {@link ElementRenderHandler} 和 {@code ElementGeometryRenderer} 在每帧
  * 渲染时查询。相比基于 {@code AttributeModifier} 的反查，本追踪器实现零延迟的
  * 视觉响应。</p>
+ *
+ * <p>⭐ 性能优化（本次）：新增 {@link #forEachActiveElement}，
+ * 供渲染层以<b>零分配</b>方式遍历实体身上的全部有效元素。
+ * 原 {@link #getAllActiveElements} 每次调用都要 {@code new ArrayList}
+ * 做快照 + 再 {@code new ArrayList} 遍历，而它在 {@code RenderLivingEvent}
+ * 的 Pre / Post 各被调用一次，即每实体每帧 2~4 次分配。
+ * 密集战斗（20+ 带 debuff 的怪）会给客户端制造持续的 GC 压力。</p>
  *
  * <p>生命周期：
  * <ul>
@@ -32,10 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *     <li>{@link #onClientTick}：每个客户端 tick 清理过期 debuff。</li>
  *     <li>{@link #onEntityLeave}：实体离开世界时清理对应条目，避免内存泄漏。</li>
  * </ul></p>
- *
- * <p>线程安全：外层 {@link ConcurrentHashMap} 保证多线程 put/get 不冲突；
- * 内层 {@link HashMap} 只在客户端主线程访问（packet handle 在 enqueueWork 里，
- * tick 清理在客户端 tick，都是主线程），无需进一步加锁。</p>
  *
  * @author RoinFlam
  */
@@ -68,6 +71,21 @@ public final class ClientElementDebuffTracker {
             this.expiresAtTick = expiresAtTick;
             this.amplifier = amplifier;
         }
+    }
+
+    /**
+     * ⭐ 元素访问器（零分配遍历用）
+     * Element visitor for allocation-free iteration
+     */
+    @FunctionalInterface
+    public interface ElementVisitor {
+        /**
+         * 访问一个未过期的元素 debuff
+         *
+         * @param element   元素类型名
+         * @param amplifier 元素等级
+         */
+        void accept(String element, int amplifier);
     }
 
     /**
@@ -135,12 +153,43 @@ public final class ClientElementDebuffTracker {
     }
 
     /**
-     * 获取实体身上所有未过期的元素 debuff 名列表
-     * <p>用于多色混合染色：{@code ElementRenderHandler} 根据返回列表遍历
-     * 各元素对应的颜色并做等权平均。</p>
+     * ⭐ 零分配遍历实体身上所有未过期的元素 debuff
+     * Allocation-free iteration over all active element debuffs
      *
-     * <p>遍历时做懒清理：遇到过期条目直接从 map 移除，避免下次重复判断。
-     * 对 map 做迭代前构造快照避免 ConcurrentModificationException。</p>
+     * <p>遍历过程中顺便懒清理过期条目（使用 {@code Iterator.remove}，
+     * 无需先构造快照）。</p>
+     *
+     * <p><b>约束</b>：{@code visitor} 内部<b>不得</b>再修改本追踪器的数据
+     * （不得调用 {@link #apply}），否则会抛 {@code ConcurrentModificationException}。
+     * 渲染层只做颜色累加，满足该约束。</p>
+     *
+     * @param entity  目标实体
+     * @param visitor 元素访问器
+     */
+    public static void forEachActiveElement(LivingEntity entity, ElementVisitor visitor) {
+        Map<String, DebuffData> debuffs = DEBUFFS.get(entity.getId());
+        if (debuffs == null || debuffs.isEmpty()) {
+            return;
+        }
+
+        long currentTick = entity.level().getGameTime();
+        Iterator<Map.Entry<String, DebuffData>> iterator = debuffs.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, DebuffData> entry = iterator.next();
+            DebuffData data = entry.getValue();
+            if (currentTick >= data.expiresAtTick) {
+                iterator.remove();
+            } else {
+                visitor.accept(entry.getKey(), data.amplifier);
+            }
+        }
+    }
+
+    /**
+     * 获取实体身上所有未过期的元素 debuff 名列表
+     *
+     * <p>会产生 List 分配，热路径请优先使用 {@link #forEachActiveElement}。
+     * 此方法保留供非每帧场景（调试、外部扩展）使用。</p>
      *
      * @param entity 目标实体
      * @return 元素名列表，不存在任何 debuff 时返回空列表
@@ -151,16 +200,8 @@ public final class ClientElementDebuffTracker {
             return Collections.emptyList();
         }
 
-        long currentTick = entity.level().getGameTime();
         List<String> active = new ArrayList<>(debuffs.size());
-        // 构造快照遍历，允许在遍历中清理过期条目
-        for (Map.Entry<String, DebuffData> entry : new ArrayList<>(debuffs.entrySet())) {
-            if (currentTick >= entry.getValue().expiresAtTick) {
-                debuffs.remove(entry.getKey());
-            } else {
-                active.add(entry.getKey());
-            }
-        }
+        forEachActiveElement(entity, (element, amplifier) -> active.add(element));
         return active;
     }
 

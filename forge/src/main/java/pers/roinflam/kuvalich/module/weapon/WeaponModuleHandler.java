@@ -26,18 +26,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * 武器模组数据层
  * 负责NBT读写、属性缓存、Forma锁定、Tooltip显示、公共API
  *
- * ⭐ 新增：模组等级缩放 — 属性值 × (level / maxLevel)
- * ⭐ NEW: Module level scaling — attribute value × (level / maxLevel)
+ * <p>⭐ 并发安全修复：{@code WEAPON_ATTRIBUTE_CACHE} 使用 {@link ConcurrentHashMap}。
+ * 该 Map 是 static 的、跨玩家共享的，且通过 {@code computeIfAbsent} 与 {@code clear} 并发读写。
+ * 使用普通 HashMap 时，在 Mohist 这类混合端上一旦被插件线程或客户端线程触碰，
+ * 就可能在扩容时形成链表环，表现为主线程 CPU 100% 且不抛任何异常。
+ * {@code weaponCacheTick} 加 {@code volatile} 保证 tick 翻转跨线程可见。</p>
  *
- * ⭐ 第三批新词条面板显示：true_bullet / gun_loot_drop / execute_threshold / purge_buff / execute_chance。
- *    其中 execute_chance 数值极小（如 0.01%），用小数格式显示避免取整为 0%。
+ * <p>⭐ 正确性修复（本次）：缓存键原先<b>只有实体 UUID</b>，
+ * 同 tick 内对同一实体传入不同武器（主手 / 副手 / 饰品）会错误返回第一次的结果。
+ * 现在缓存条目额外记录武器标识，标识不符视为未命中重新计算。</p>
  *
- * <p>⭐ 并发安全修复：{@code WEAPON_ATTRIBUTE_CACHE} 由 {@link HashMap} 改为
- * {@link ConcurrentHashMap}。该 Map 是 static 的、跨玩家共享的，
- * 且通过 {@code computeIfAbsent} 与 {@code clear} 并发读写。
- * 原实现在 Mohist 这类混合端上一旦被插件线程或客户端线程触碰，
- * 就可能在扩容时形成链表环，表现为主线程 CPU 100% 且不抛任何异常（最难排查的一类故障）。
- * 同时 {@code weaponCacheTick} 加上 {@code volatile}，保证 tick 翻转对其他线程可见。</p>
+ * <p>⭐ 性能修复（本次）：Tooltip 原先每帧调用三次 {@link #getModules}
+ * （自身一次、{@code getTriggerElements(itemStack)} 内部一次、末尾列模组名一次），
+ * 每次都要做 8 个 {@code ItemStack.of()} 的 NBT 反序列化，
+ * 即每帧 24 次——悬停武器时纯客户端掉帧。现在只解析一次并全程复用。</p>
  */
 @Mod.EventBusSubscriber
 public class WeaponModuleHandler {
@@ -48,20 +50,44 @@ public class WeaponModuleHandler {
     // ========== 武器属性缓存系统 / Weapon Attribute Cache System ==========
 
     /**
-     * 武器属性每tick缓存（UUID → 属性Map）
-     * <p>⭐ 必须使用并发容器：static 跨线程共享，且存在 computeIfAbsent / clear 的并发组合。</p>
+     * 缓存条目：属性表 + 对应的武器标识
+     *
+     * <p>武器标识用 {@link System#identityHashCode(Object)}：
+     * 同 tick 内 {@code getMainHandItem()} / {@code getOffhandItem()} 等返回的都是
+     * 背包槽中的稳定对象引用，足以区分「主手 vs 副手 vs 饰品」这类不同武器；
+     * 且是 O(1) 的，不会像 {@code tag.hashCode()} 那样递归遍历整棵 NBT 树，
+     * 完全不给热路径增加开销。</p>
      */
-    private static final Map<UUID, HashMap<String, Double>> WEAPON_ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
+    private static final class CachedWeaponAttributes {
+        /** 武器对象标识 */
+        final int weaponKey;
+        /** 计算好的属性表（基准副本，返回时再拷贝一份给调用方修改）*/
+        final HashMap<String, Double> attributes;
+
+        CachedWeaponAttributes(int weaponKey, HashMap<String, Double> attributes) {
+            this.weaponKey = weaponKey;
+            this.attributes = attributes;
+        }
+    }
+
+    /**
+     * 武器属性每tick缓存（UUID → 缓存条目）
+     */
+    private static final Map<UUID, CachedWeaponAttributes> WEAPON_ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
 
     /**
      * 缓存对应的 gameTick
-     * <p>⭐ volatile：保证 tick 翻转后的清空动作对其他线程立即可见，避免读到陈旧缓存。</p>
      */
     private static volatile long weaponCacheTick = -1;
 
     /**
      * 获取带缓存的武器模组属性
-     * ⭐ 内部 collectItemAttributes 已包含等级缩放
+     *
+     * <p>⭐ 命中条件由「同实体 + 同 tick」收紧为「同实体 + 同 tick + 同武器对象」。</p>
+     *
+     * @param entity 持有武器的实体
+     * @param weapon 武器物品栈
+     * @return 属性表副本（调用方可自由修改，不影响缓存）
      */
     static HashMap<String, Double> getCachedWeaponAttributes(LivingEntity entity, ItemStack weapon) {
         long currentTick = entity.level().getGameTime();
@@ -69,8 +95,17 @@ public class WeaponModuleHandler {
             WEAPON_ATTRIBUTE_CACHE.clear();
             weaponCacheTick = currentTick;
         }
-        HashMap<String, Double> base = WEAPON_ATTRIBUTE_CACHE.computeIfAbsent(
-                entity.getUUID(), uuid -> collectItemAttributes(getModules(weapon)));
+
+        int weaponKey = System.identityHashCode(weapon);
+        UUID entityId = entity.getUUID();
+
+        CachedWeaponAttributes cached = WEAPON_ATTRIBUTE_CACHE.get(entityId);
+        if (cached != null && cached.weaponKey == weaponKey) {
+            return new HashMap<>(cached.attributes);
+        }
+
+        HashMap<String, Double> base = collectItemAttributes(getModules(weapon));
+        WEAPON_ATTRIBUTE_CACHE.put(entityId, new CachedWeaponAttributes(weaponKey, base));
         return new HashMap<>(base);
     }
 
@@ -93,9 +128,8 @@ public class WeaponModuleHandler {
     /**
      * 收集武器模组的运行时属性
      *
-     * ⭐ 每个模组的属性值在叠加前会乘以等级缩放倍率：
-     *    value × (level / maxLevel)
-     *    系统关闭时倍率为1.0，效果与原逻辑完全一致。
+     * <p>⭐ 每个模组的属性值在叠加前会乘以等级缩放倍率：value × (level / maxLevel)。
+     * 系统关闭时倍率为 1.0，效果与原逻辑完全一致。</p>
      *
      * @param modules 武器装备的模组列表
      * @return 经过约束和等级缩放处理的运行时属性 Map
@@ -227,7 +261,9 @@ public class WeaponModuleHandler {
 
     /**
      * 物品提示事件 - 显示武器最终面板属性
-     * ⭐ 面板属性收集时已包含等级缩放，显示的是缩放后的数值
+     *
+     * <p>⭐ 面板属性收集时已包含等级缩放，显示的是缩放后的数值。</p>
+     * <p>⭐ modules 只解析一次并全程复用，不再每帧三次反序列化。</p>
      */
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
@@ -235,6 +271,7 @@ public class WeaponModuleHandler {
         ItemStack itemStack = evt.getItemStack();
         if (hasBase(itemStack)) {
             List<Component> tooltip = evt.getToolTip();
+            // ⭐ 全方法唯一一次 getModules 调用
             List<ItemStack> modules = getModules(itemStack);
             int index = 1;
 
@@ -417,7 +454,8 @@ public class WeaponModuleHandler {
                     tooltip.add(index++, Component.literal(I18n.get("item.module.triggerDamage") + " ").append(Component.literal((int) Math.round(elementDamage * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
                 }
 
-                HashMap<String, String> elements = WeaponElementSystem.getTriggerElements(itemStack);
+                // ⭐ 复用已解析的 modules，不再重复反序列化
+                HashMap<String, String> elements = WeaponElementSystem.getTriggerElements(itemStack, modules);
                 if (elements.size() > 0) {
                     Component triggerElements = Component.literal(I18n.get("item.module.triggerType") + " ").withStyle(net.minecraft.ChatFormatting.WHITE);
                     for (String element : elements.keySet()) {
@@ -430,8 +468,8 @@ public class WeaponModuleHandler {
                 index += ExtraSlotTooltipHelper.appendExtraSlotTooltip(tooltip, evt.getEntity(), itemStack, index);
 
                 tooltip.add(index++, Component.translatable("kuvaweapon.item_module_info").withStyle(net.minecraft.ChatFormatting.GOLD, net.minecraft.ChatFormatting.BOLD));
-                List<ItemStack> itemStacks = getModules(itemStack);
-                for (ItemStack module : itemStacks) {
+                // ⭐ 复用已解析的 modules，不再第三次调用 getModules
+                for (ItemStack module : modules) {
                     tooltip.add(index++, Component.literal(" - ").append(module.getHoverName()).append(" ").withStyle(net.minecraft.ChatFormatting.WHITE));
                 }
             } else {

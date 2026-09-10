@@ -21,10 +21,22 @@ import java.util.List;
  * 模组图鉴数据提供器
  * Module Codex Data Provider
  *
- * ⭐ 每个条目预计算 searchableText（名称+全部Tooltip文本，小写），
- * 供图鉴搜索框做关键词匹配，避免每帧重复获取Tooltip。
+ * <p>⭐ 性能修复（本次）：{@code searchableText} 改为<b>惰性构建</b>。</p>
  *
- * ⭐ discoveryKey = type + ":" + rarityOrder，区分不同品质的同type模组。
+ * <p>问题：原实现在 {@code CodexEntry} 构造时就调用 {@code getTooltipLines}
+ * 拼接可搜索文本。而 {@code getTooltipLines} 会反过来触发本 mod 自己的
+ * tooltip 事件处理器（→ {@code WeaponModuleHandler.onItemTooltip} →
+ * {@code getModules} → 8 次 {@code ItemStack.of} NBT 反序列化 →
+ * {@code AbstractModule.getAttributes}），同时还会触发整合包里所有其它 mod
+ * 注册的 {@code ItemTooltipEvent} 监听器。
+ * 全部模组数百个条目在 {@link #ensureInitialized()} 里一次性构建，
+ * 导致<b>首次打开图鉴必然明显卡顿一下</b>。</p>
+ *
+ * <p>修复：只在用户真正输入搜索词、需要匹配该条目时才构建一次并缓存。
+ * 不搜索就完全不产生这笔开销；即使搜索，也只在首次输入时摊销一次。
+ * 搜索结果与原来完全一致（文本内容、大小写处理均未改变）。</p>
+ *
+ * <p>⭐ discoveryKey = type + ":" + rarityOrder，区分不同品质的同type模组。</p>
  */
 public class ModuleCodexData {
 
@@ -50,16 +62,24 @@ public class ModuleCodexData {
         /** 稀有度排序权重 */
         public final int rarityOrder;
         /**
-         * ⭐ 发现记录键（type:rarityOrder 格式，区分不同品质的同type模组）
-         * Discovery key in "type:rarityOrder" format, distinguishes same type across tiers
+         * 发现记录键（type:rarityOrder 格式，区分不同品质的同type模组）
          */
         public final String discoveryKey;
-        /**
-         * ⭐ 可搜索文本（小写，包含名称+全部Tooltip行）
-         * 用于搜索框关键词匹配
-         */
-        public final String searchableText;
 
+        /**
+         * ⭐ 可搜索文本（小写，包含名称 + 全部 Tooltip 行）
+         *
+         * <p>惰性构建：构造时为 null，首次调用 {@link #getSearchableText()} 时才生成并缓存。
+         * 外部<b>必须</b>通过 {@link #getSearchableText()} 访问，不要直接读本字段。</p>
+         */
+        private String searchableText;
+
+        /**
+         * 构造图鉴条目
+         *
+         * @param stack       原始模组物品栈
+         * @param rarityOrder 稀有度排序权重（0=青铜 1=白银 2=黄金 3=Prime）
+         */
         public CodexEntry(ItemStack stack, int rarityOrder) {
             this.displayStack = stack.copy();
             if (ModuleLevelHelper.isLevelSystemEnabled()) {
@@ -68,14 +88,35 @@ public class ModuleCodexData {
             this.moduleType = AbstractModule.getType(stack);
             this.rarity = stack.getRarity();
             this.rarityOrder = rarityOrder;
-            // ⭐ 组合键：type + ":" + rarityOrder / Compound key
+            // 组合键：type + ":" + rarityOrder / Compound key
             this.discoveryKey = this.moduleType + ":" + rarityOrder;
-            this.searchableText = buildSearchText(this.displayStack);
+            // ⭐ 不在构造时构建 searchableText，避免打开图鉴时批量触发 tooltip 计算
+            this.searchableText = null;
+        }
+
+        /**
+         * ⭐ 获取可搜索文本（惰性构建 + 缓存）
+         *
+         * <p>只在用户实际输入搜索词并需要匹配本条目时才会触发构建，
+         * 之后一直复用缓存结果。</p>
+         *
+         * <p>线程安全说明：图鉴界面只在客户端渲染主线程访问，无需同步。
+         * 即使发生极端的重复构建，结果也是幂等的（同样的输入产生同样的文本）。</p>
+         *
+         * @return 小写的可搜索文本（物品名称 + 全部 Tooltip 行）
+         */
+        public String getSearchableText() {
+            if (searchableText == null) {
+                searchableText = buildSearchText(displayStack);
+            }
+            return searchableText;
         }
 
         /**
          * 构建可搜索文本：物品名称 + 全部Tooltip行，小写连接
-         * Build searchable text: item name + all tooltip lines, lowercased
+         *
+         * @param stack 展示用物品栈
+         * @return 小写可搜索文本
          */
         private static String buildSearchText(ItemStack stack) {
             StringBuilder sb = new StringBuilder();
@@ -85,7 +126,6 @@ public class ModuleCodexData {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc != null && mc.player != null) {
                     // 获取完整Tooltip（与游戏内一致，其他模组的修改也会包含）
-                    // Get full tooltip (same as in-game, includes other mod modifications)
                     List<Component> lines = stack.getTooltipLines(
                             mc.player, TooltipFlag.Default.NORMAL);
                     for (Component line : lines) {
@@ -132,7 +172,7 @@ public class ModuleCodexData {
     }
 
     /**
-     * ⭐ 强制初始化各模组类的静态 itemStackList
+     * 强制初始化各模组类的静态 itemStackList
      * 远程客户端可能尚未触发创造标签构建，列表为空
      */
     private static void forceInitModuleLists() {

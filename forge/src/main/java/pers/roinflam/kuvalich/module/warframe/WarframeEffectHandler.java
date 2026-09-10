@@ -1,7 +1,9 @@
 package pers.roinflam.kuvalich.module.warframe;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -10,9 +12,15 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ElytraItem;
+import net.minecraft.world.item.FishingRodItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.TridentItem;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
@@ -22,6 +30,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
@@ -42,6 +51,15 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * ⭐ 第三批新词条：枪械战利品掉落（gun_loot_drop，武器专属，仅 TACZ 子弹击杀生效）在
  *    onLivingDrops 中加法叠加到战甲的 itemDropMultiplier 上，与战甲共享同一套配置生效倍率。
+ *
+ * ⭐ 上次改动：onLivingDrops 的实体类型判断新增自定义NPC模组(CustomNPCs)实体放行，
+ *    使战甲 itemDropMultiplier 与武器 gun_loot_drop 对 NPC 掉落同样生效。
+ *    通过注册表命名空间判断（见 {@link #isCustomNpc}），不引用该模组的 Java 类，
+ *    因此本项目无需额外声明对自定义NPC模组的编译期依赖。
+ *
+ * ⭐ 本次改动：onLivingDrops 的装备判断由「盔甲/剑/有阶工具」扩大为一切装备、武器、工具
+ *    （见 {@link #isEquipment}），与 WorldLevel 模组 ModEvents、ServerManager 插件
+ *    DropBonusListener 的判定口径完全一致，确保同一次击杀中三套掉落倍率对物品的取舍相同。
  *
  * <p>⭐ 并发安全修复：{@code cooldingHashMap} 由 {@link HashMap} 改为
  * {@link ConcurrentHashMap}，并加 {@code final} 防止被外部重新赋值。
@@ -70,6 +88,12 @@ public class WarframeEffectHandler {
      * TACZ kinetic bullet entity FQN (matched by class name string to avoid hard dependency on TACZ)
      */
     private static final String TACZ_BULLET_CLASS = "com.tacz.guns.entity.EntityKineticBullet";
+
+    /**
+     * 自定义NPC模组(CustomNPCs)的注册表命名空间
+     * <p>用命名空间字符串判定，避免对该模组产生硬编译依赖；未安装时安全返回 false。</p>
+     */
+    private static final String CUSTOM_NPC_NAMESPACE = "customnpcs";
 
     // ========== 实体加入世界 / Entity Join Level ==========
 
@@ -225,21 +249,28 @@ public class WarframeEffectHandler {
     /**
      * 怪物掉落事件处理
      * <p>
-     * 当玩家击杀动物或怪物时，根据战甲模组的 itemDropMultiplier 属性
+     * 当玩家击杀动物、怪物或自定义NPC(CustomNPCs)时，根据战甲模组的 itemDropMultiplier 属性
      * 和配置中的 itemDropEffectMultiplier 缩放掉落物数量。
      * <p>
      * ⭐ 第三批新增：若击杀来源为 TACZ 枪械子弹，则把玩家主手武器的 gun_loot_drop 词条
      *    加法叠加到 itemDropMultiplier 原始值上，与战甲共享同一套生效倍率与缩放逻辑。
      * <p>
-     * 缩放后倍率 < 1 时按概率决定是否掉落（每组独立判定）。
-     * 不影响装备类掉落（武器、盔甲、工具）。
+     * ⭐ 上次新增：自定义NPC不继承 Animal/Monster，通过 {@link #isCustomNpc} 按注册表命名空间
+     *    "customnpcs" 判断后放行，使 itemDropMultiplier 与 gun_loot_drop 对 NPC 掉落同样生效。
+     *    该判断置于 Animal/Monster 之后，普通生物走短路不产生额外注册表查询开销。
+     * <p>
+     * 缩放后倍率 &lt; 1 时按概率决定是否掉落（每组独立判定）。
+     * <p>
+     * ⭐ 本次改动：装备判断改为调用 {@link #isEquipment}，覆盖范围由「盔甲/剑/有阶工具」
+     *    扩大为一切装备、武器、工具。两个分支的语义保持不变——
+     *    倍率 &lt;= 0 时装备仍被完整保留、只清除非装备掉落；倍率 &gt; 0 时装备不参与数量缩放。
      *
      * @param evt 掉落事件
      */
     @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent evt) {
         if (!evt.getEntity().level().isClientSide() && evt.getSource().getEntity() instanceof Player) {
-            if (evt.getEntity() instanceof Animal || evt.getEntity() instanceof Monster) {
+            if (evt.getEntity() instanceof Animal || evt.getEntity() instanceof Monster || isCustomNpc(evt.getEntity())) {
                 Player player = (Player) evt.getSource().getEntity();
 
                 HashMap<String, Double> attributes = WarframeModuleHandler.getCachedAttributes(player);
@@ -260,26 +291,16 @@ public class WarframeEffectHandler {
 
                 Collection<ItemEntity> drops = evt.getDrops();
 
-                // 倍率 <= 0 时：清除所有非装备掉落物
+                // 倍率 <= 0 时：清除所有非装备掉落物（装备、武器、工具原样保留）
                 if (itemDropMultiplier <= 0) {
-                    drops.removeIf(drop -> {
-                        ItemStack dropStack = drop.getItem();
-                        if (dropStack.getItem() instanceof ArmorItem ||
-                                dropStack.getItem() instanceof SwordItem ||
-                                dropStack.getItem() instanceof TieredItem) {
-                            return false;
-                        }
-                        return true;
-                    });
+                    drops.removeIf(drop -> !isEquipment(drop.getItem()));
                     return;
                 }
 
-                // 倍率 > 0 时：缩放掉落物数量
+                // 倍率 > 0 时：缩放掉落物数量（装备、武器、工具不参与缩放）
                 for (ItemEntity drop : drops) {
                     ItemStack dropStack = drop.getItem();
-                    if (!(dropStack.getItem() instanceof ArmorItem) &&
-                            !(dropStack.getItem() instanceof SwordItem) &&
-                            !(dropStack.getItem() instanceof TieredItem)) {
+                    if (!isEquipment(dropStack)) {
                         int originalCount = dropStack.getCount();
                         double scaledCount = originalCount * itemDropMultiplier;
                         int integerPart = (int) scaledCount;
@@ -294,6 +315,60 @@ public class WarframeEffectHandler {
                 }
             }
         }
+    }
+
+    /**
+     * 判断实体是否为自定义NPC模组(CustomNPCs)的实体。
+     * <p>
+     * 通过注册表ID的命名空间判断（"customnpcs:xxx"），不直接引用该模组的 Java 类，
+     * 避免本项目需要额外声明对自定义NPC模组的编译期依赖；未安装该模组时安全返回 false。
+     *
+     * @param entity 待判断的实体（可为 null）
+     * @return true=是自定义NPC模组的实体
+     */
+    private static boolean isCustomNpc(Entity entity) {
+        if (entity == null) { return false; }
+        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+        return id != null && CUSTOM_NPC_NAMESPACE.equals(id.getNamespace());
+    }
+
+    /**
+     * 判断物品是否为装备、武器或工具（一律不参与掉落数量缩放）。
+     * <p>
+     * 判定顺序：
+     * <ol>
+     *   <li>耐久度判断（主）：getMaxDamage() &gt; 0 的物品视为装备工具。
+     *       ItemStack#getMaxDamage() 经 Forge 修补后会转调 Item#getMaxDamage(ItemStack)，
+     *       模组自定义耐久的物品也能正确识别，无需逐个枚举模组类；
+     *       同时不受 NBT 中 Unbreakable 标签影响（该标签只影响 isDamageableItem）。</li>
+     *   <li>类型兜底：覆盖被设为无限耐久（maxDamage=0）的装备工具，
+     *       包含盔甲、鞘翅、盾牌、有阶工具与剑、弓弩、三叉戟、剪刀、钓竿。</li>
+     * </ol>
+     * 头颅、南瓜等可穿戴但属于战利品材料的物品不在此范围内，仍会正常参与缩放。
+     * <p>
+     * 本方法与 WorldLevel 模组 ModEvents#isEquipment、ServerManager 插件
+     * DropBonusListener#isEquipment 的判定口径一致，修改其中一处时请同步其余两处，
+     * 否则同一次击杀中三套掉落倍率对物品的取舍会不同。
+     *
+     * @param stack 掉落物品
+     * @return true=是装备/武器/工具，跳过缩放
+     */
+    private static boolean isEquipment(ItemStack stack) {
+        if (stack.isEmpty()) { return false; }
+
+        // 1. 有耐久度的物品一律视为装备工具
+        if (stack.getMaxDamage() > 0) { return true; }
+
+        // 2. 无耐久度的装备工具类型兜底
+        Item item = stack.getItem();
+        return item instanceof ArmorItem
+                || item instanceof ElytraItem
+                || item instanceof ShieldItem
+                || item instanceof TieredItem
+                || item instanceof ProjectileWeaponItem
+                || item instanceof TridentItem
+                || item instanceof ShearsItem
+                || item instanceof FishingRodItem;
     }
 
     /**

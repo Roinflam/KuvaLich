@@ -23,6 +23,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * 静默返回错误的属性集合（战斗数值直接算错，且没有任何报错）。
  * 现在缓存条目额外保存一份建立时的 NBT 快照，命中时用 {@code equals} 校验，
  * 校验不通过视为未命中并重新计算覆盖，从而把哈希从"唯一键"降级为"索引"。</p>
+ *
+ * <p>⭐ 性能修复（本次）：缓存的键计算与内容校验此前基于
+ * {@code itemStack.getTag()}（整把武器的完整 NBT，含 8 个模组的全部嵌套数据），
+ * 一次 {@link #getAttributes} 最坏会做三次全树递归：
+ * <ol>
+ *   <li>{@code hashCode()} 递归整棵 NBT 树算索引；</li>
+ *   <li>{@code equals()} 再递归整棵树做防碰撞校验；</li>
+ *   <li>未命中时 {@code copy()} 深拷贝整棵树存快照。</li>
+ * </ol>
+ * 这三次遍历的成本远超"直接读一遍 attributeList"本身，缓存反而成了负优化。
+ * 现在改为只基于模组自身的 {@code <modid>_modules} 子 tag，
+ * 数据体积小一个数量级，防碰撞语义完全不变。</p>
  */
 @Mod.EventBusSubscriber
 public abstract class AbstractModule extends Item {
@@ -35,8 +47,8 @@ public abstract class AbstractModule extends Item {
         final Set<Map.Entry<String, Double>> attributes;
         final long timestamp;
         /**
-         * ⭐ 建立缓存时的物品 NBT 快照（深拷贝）。
-         * <p>用于命中时校验 NBT 是否真的一致，防止 hashCode 碰撞导致返回其他物品的属性。
+         * ⭐ 建立缓存时的模组子 tag 快照（深拷贝）。
+         * <p>用于命中时校验内容是否真的一致，防止 hashCode 碰撞导致返回其他物品的属性。
          * 必须是拷贝而非引用：若持有活引用，物品原地修改 NBT 后校验仍会通过，
          * 反而会掩盖真实的缓存失效。</p>
          */
@@ -54,16 +66,16 @@ public abstract class AbstractModule extends Item {
         }
 
         /**
-         * ⭐ 校验缓存条目是否真的属于给定的 NBT（防哈希碰撞）
+         * ⭐ 校验缓存条目是否真的属于给定的模组子 tag（防哈希碰撞）
          *
-         * @param nbt 当前物品的 NBT（可为 null）
+         * @param moduleNbt 当前物品的模组子 tag（可为 null）
          * @return 内容一致返回 true
          */
-        boolean matches(@Nullable CompoundTag nbt) {
+        boolean matches(@Nullable CompoundTag moduleNbt) {
             if (nbtSnapshot == null) {
-                return nbt == null;
+                return moduleNbt == null;
             }
-            return nbtSnapshot.equals(nbt);
+            return nbtSnapshot.equals(moduleNbt);
         }
     }
 
@@ -99,8 +111,11 @@ public abstract class AbstractModule extends Item {
     /**
      * 读取模组的属性集合（带缓存）
      *
-     * <p>⭐ 缓存命中条件由「哈希相同」收紧为「哈希相同 且 未过期 且 NBT 内容一致」。
-     * 第三个条件是本次新增，用于消除哈希碰撞导致的错值。</p>
+     * <p>⭐ 缓存命中条件：「模组子 tag 哈希相同 且 未过期 且 子 tag 内容一致」。
+     * 第三个条件用于消除哈希碰撞导致的错值。</p>
+     *
+     * <p>⭐ 性能：键与校验均只基于 {@code <modid>_modules} 子 tag，
+     * 不再遍历整把武器的完整 NBT。</p>
      *
      * @param itemStack 模组物品栈
      * @return 属性键值对集合，无模组数据时返回空集合
@@ -110,23 +125,22 @@ public abstract class AbstractModule extends Item {
             return Collections.emptySet();
         }
 
-        // ⭐ 取一次完整 NBT 引用，后续的键计算与内容校验都基于它，避免重复调用
-        CompoundTag fullNbt = itemStack.getTag();
-        int cacheKey = getCacheKey(fullNbt);
-
-        CacheEntry cached = ATTRIBUTE_CACHE.get(cacheKey);
-        // ⭐ 增加 matches 校验：哈希相同但 NBT 内容不同时视为未命中
-        if (cached != null && !cached.isExpired() && cached.matches(fullNbt)) {
-            return cached.attributes;
-        }
-
-        CompoundTag kuvalich = itemStack.getTagElement(Reference.MOD_ID + "_modules");
-        if (kuvalich == null) {
+        // ⭐ 只取模组自身的子 tag：既是缓存键的来源，也是属性数据的来源，一次读取复用
+        CompoundTag moduleNbt = itemStack.getTagElement(Reference.MOD_ID + "_modules");
+        if (moduleNbt == null) {
             return Collections.emptySet();
         }
 
+        int cacheKey = moduleNbt.hashCode();
+
+        CacheEntry cached = ATTRIBUTE_CACHE.get(cacheKey);
+        // ⭐ matches 校验：哈希相同但内容不同时视为未命中
+        if (cached != null && !cached.isExpired() && cached.matches(moduleNbt)) {
+            return cached.attributes;
+        }
+
         Map<String, Double> attributeMap = new LinkedHashMap<>();
-        ListTag attributeList = kuvalich.getList("attributeList", Tag.TAG_COMPOUND);
+        ListTag attributeList = moduleNbt.getList("attributeList", Tag.TAG_COMPOUND);
 
         for (int i = 0; i < attributeList.size(); i++) {
             CompoundTag attributeTag = attributeList.getCompound(i);
@@ -146,7 +160,7 @@ public abstract class AbstractModule extends Item {
         }
 
         // ⭐ 存快照而非引用：物品 NBT 原地变更后校验会失败，从而正确地重新计算
-        ATTRIBUTE_CACHE.put(cacheKey, new CacheEntry(result, fullNbt != null ? fullNbt.copy() : null));
+        ATTRIBUTE_CACHE.put(cacheKey, new CacheEntry(result, moduleNbt.copy()));
         return result;
     }
 
@@ -261,21 +275,17 @@ public abstract class AbstractModule extends Item {
      * <p>⭐ 注意：返回值只作为哈希索引使用，不再被当作唯一键。
      * 真正的身份校验由 {@link CacheEntry#matches(CompoundTag)} 完成。</p>
      *
+     * <p>⭐ 只基于模组自身的子 tag，不再遍历整把武器的完整 NBT。</p>
+     *
      * @param itemStack 物品栈
      * @return 缓存索引
      */
     private static int getCacheKey(ItemStack itemStack) {
-        return getCacheKey(itemStack.getTag());
-    }
-
-    /**
-     * 由 NBT 直接计算缓存索引（避免重复调用 getTag）
-     *
-     * @param nbt 物品 NBT（可为 null）
-     * @return 缓存索引
-     */
-    private static int getCacheKey(@Nullable CompoundTag nbt) {
-        return nbt != null ? nbt.hashCode() : 0;
+        if (itemStack == null || itemStack.isEmpty()) {
+            return 0;
+        }
+        CompoundTag moduleNbt = itemStack.getTagElement(Reference.MOD_ID + "_modules");
+        return moduleNbt != null ? moduleNbt.hashCode() : 0;
     }
 
     private static void invalidateCache(ItemStack itemStack) {
