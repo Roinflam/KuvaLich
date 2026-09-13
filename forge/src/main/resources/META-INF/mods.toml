@@ -44,6 +44,20 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.kuvalich]]
+modId="tacz"
+mandatory=true
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.kuvalich]]
+modId="cloth_config"
+mandatory=false
+versionRange="[11.0.0,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.kuvalich]]
 modId="curios"
 mandatory=false
 versionRange="[5.9.1,)"

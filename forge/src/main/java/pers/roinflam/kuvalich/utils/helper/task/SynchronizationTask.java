@@ -4,6 +4,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.common.MinecraftForge;
+import pers.roinflam.kuvalich.utils.LogUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -161,11 +162,11 @@ public abstract class SynchronizationTask implements Runnable {
                 first = false;
                 tick = 0;
 
-                // 执行任务
+                // 执行任务（⭐ 修复 5：异常走 LogUtil，日志带模组前缀，方便排查；任务本身照常继续或结束）
                 try {
                     this.run();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LogUtil.error("[定时任务] 任务 #" + taskId + " 首次执行时抛出异常", e);
                 }
 
                 // 一次性任务执行后结束
@@ -182,7 +183,7 @@ public abstract class SynchronizationTask implements Runnable {
                 try {
                     this.run();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LogUtil.error("[定时任务] 周期任务 #" + taskId + " 执行时抛出异常，下一周期将继续", e);
                 }
             }
         }

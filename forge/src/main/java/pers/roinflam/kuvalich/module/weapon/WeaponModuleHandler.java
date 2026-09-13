@@ -282,15 +282,9 @@ public class WeaponModuleHandler {
             }
 
             if (modules.size() > 0) {
-                HashMap<String, Double> attributes = new HashMap<>();
-                // ⭐ Tooltip属性收集也应用等级缩放，与运行时逻辑一致
-                for (ItemStack module : modules) {
-                    double levelMultiplier = ModuleLevelHelper.getEffectiveMultiplier(module);
-                    for (Map.Entry<String, Double> entry : AbstractModule.getAttributes(module)) {
-                        double scaledValue = entry.getValue() * levelMultiplier;
-                        attributes.put(entry.getKey(), attributes.getOrDefault(entry.getKey(), 0.0) + scaledValue);
-                    }
-                }
+                // ⭐ Tooltip 直接复用战斗用的汇总方法：等级缩放、单条上下限、总量上限全部一致。
+                //    以前 tooltip 自己累加、不做上下限裁剪，服务端配置了属性上限时面板显示会高于实际生效值
+                HashMap<String, Double> attributes = collectItemAttributes(modules);
 
                 // ⭐ 合并额外槽位属性到面板
                 ExtraSlotTooltipHelper.mergeExtraSlotIntoAttributes(evt.getEntity(), itemStack, attributes);

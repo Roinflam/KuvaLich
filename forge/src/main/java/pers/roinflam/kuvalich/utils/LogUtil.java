@@ -87,6 +87,16 @@ public class LogUtil {
      *
      * @param message 调试消息 / debug message
      */
+    /**
+     * ⭐ 详细日志是否开启。热点路径（每颗子弹、每次命中）里请先判断再拼字符串，
+     * 否则 String.format 的开销在日志关闭时也会白白付出。
+     *
+     * @return 配置已加载且 enableDetailedLogging=true 时返回 true
+     */
+    public static boolean isDebugEnabled() {
+        return isConfigLoaded() && ModConfig.KUVA_LICH.enableDetailedLogging.get();
+    }
+
     public static void debug(String message) {
         // ✅ 添加配置加载检查
         if (isConfigLoaded() && ModConfig.KUVA_LICH.enableDetailedLogging.get()) {

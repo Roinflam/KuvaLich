@@ -28,7 +28,12 @@ import javax.annotation.Nonnull;
 @Mod.EventBusSubscriber
 public class ArcaTitron extends AbstractKuvaWeapon {
 
-    public ArcaTitron(@Nonnull Item.Properties properties) {
+    /** 击杀叠层上限（amplifier 从 0 起算，9 即第 10 层） */
+    private static final int MAX_AMPLIFIER = 9;
+    /** 每层给暴击伤害倍率的加成 */
+    private static final float CRIT_BONUS_PER_STACK = 0.05f;
+
+    public ArcaTitron(@Nonnull Properties properties) {
         super(properties);
     }
 
@@ -47,10 +52,10 @@ public class ArcaTitron extends AbstractKuvaWeapon {
         ItemStack weapon = WeaponEventUtil.getActiveWeapon(attacker);
 
         if (weapon != null && weapon.getItem() instanceof ArcaTitron) {
-            // ✅ 替换为动态属性系统（简化处理，每次击杀叠加）
-            int newAmplifier = DynamicAttributeManager.has(attacker, DynamicAttributes.ARCA_TITRON)
-                    ? Math.min(9, 6)
-                    : 5;
+            // ⭐ 修复叠层：原来首杀直接 5 层、之后永远 6 层。现在每次击杀 +1 层，最高 9（共 10 层）；
+            //    到顶后只刷新持续时间
+            int current = DynamicAttributeManager.getAmplifier(attacker, DynamicAttributes.ARCA_TITRON);
+            int newAmplifier = current < 0 ? 0 : Math.min(MAX_AMPLIFIER, current + 1);
 
             DynamicAttributeManager.apply(
                     attacker,
@@ -71,11 +76,12 @@ public class ArcaTitron extends AbstractKuvaWeapon {
         ItemStack weapon = WeaponEventUtil.getActiveWeapon(attacker);
 
         if (weapon != null && weapon.getItem() instanceof ArcaTitron) {
-            // ✅ 使用动态属性检测（简化处理）
-            if (DynamicAttributeManager.has(attacker, DynamicAttributes.ARCA_TITRON)) {
-                int level = 6; // 简化处理，使用固定等级
+            // ⭐ 修复叠层：暴击加成按实际层数算（原来写死 6 层）。每层 +5%，10 层 +50%
+            int amplifier = DynamicAttributeManager.getAmplifier(attacker, DynamicAttributes.ARCA_TITRON);
+            if (amplifier >= 0) {
+                int level = amplifier + 1;
                 float bonusDamage = KuvaWeaponUtil.getMagnification(weapon,
-                        event.getDamageModifier() * level * 0.05f);
+                        event.getDamageModifier() * level * CRIT_BONUS_PER_STACK);
 
                 event.setDamageModifier(event.getDamageModifier() + bonusDamage);
             }

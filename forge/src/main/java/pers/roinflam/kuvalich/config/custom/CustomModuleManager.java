@@ -45,7 +45,12 @@ public class CustomModuleManager {
      * 配置文件路径
      * Config file path
      */
-    private static final String CONFIG_PATH = "config/kuvalich/custom_modules.json";
+    /**
+     * ⭐ 配置文件路径改为取 Forge 的 config 目录，而不是写死相对路径 "config/..."：
+     * 相对路径依赖 JVM 的工作目录，部分启动器 / 面板的工作目录不是游戏目录，文件会生成到别处。
+     */
+    private static final java.nio.file.Path CONFIG_PATH =
+            net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().resolve("kuvalich").resolve("custom_modules.json");
 
     /**
      * JSON解析器（带格式化输出）
@@ -110,7 +115,7 @@ public class CustomModuleManager {
      * Load or create config file
      */
     private void loadOrCreateConfig() {
-        File configFile = new File(CONFIG_PATH);
+        File configFile = CONFIG_PATH.toFile();
 
         // 确保父目录存在
         if (!configFile.getParentFile().exists()) {
@@ -144,7 +149,7 @@ public class CustomModuleManager {
      * Save config to file
      */
     public void saveConfig() {
-        File configFile = new File(CONFIG_PATH);
+        File configFile = CONFIG_PATH.toFile();
 
         try (OutputStreamWriter writer = new OutputStreamWriter(
                 new FileOutputStream(configFile), StandardCharsets.UTF_8)) {

@@ -171,9 +171,33 @@ public class KillStackManager {
     }
 
     /**
-     * 玩家叠层数据存储
+     * 玩家叠层数据存储（仅服务端写入）
      */
     private static final Map<UUID, Map<StackType, StackData>> PLAYER_STACKS = new ConcurrentHashMap<>();
+
+    /**
+     * ⭐ 武器类叠层的固定顺序表：同步包按这个顺序打包 / 解包，两端必须一致，
+     * 所以只能追加、不能重排或删除。
+     */
+    public static final StackType[] WEAPON_STACK_TYPES = {
+            StackType.BASE_DAMAGE,
+            StackType.MULTISHOT,
+            StackType.MELEE_CRIT_MULT,
+            StackType.TRIGGER_CHANCE,
+            StackType.ATTACK_RANGE,
+            StackType.ATTACK_SPEED,
+            StackType.BURSTING_RADIUS,
+            StackType.FIRING_RATE
+    };
+
+    /**
+     * ⭐ 客户端镜像：本地玩家的武器叠层数量，由 {@code WarframeModuleSyncPacket} 每次同步时覆盖。
+     * key = 本地玩家 UUID（只会有本地玩家一个条目），value 按 {@link #WEAPON_STACK_TYPES} 顺序排列。
+     *
+     * <p>以前客户端拿不到叠层数据，射速 / 多重射击等在客户端一律按 0 层算，
+     * 与服务端不一致，蓄力动画会对不上；现在两端看到的是同一份数据。</p>
+     */
+    private static final Map<UUID, int[]> CLIENT_WEAPON_STACKS = new ConcurrentHashMap<>();
 
     /**
      * 玩家击杀时添加叠层
@@ -205,6 +229,19 @@ public class KillStackManager {
         if (player == null) {
             return 0;
         }
+        // ⭐ 客户端：武器类叠层读同步下来的镜像；其他玩家或尚未同步时为 0（与改动前一致）
+        if (player.level().isClientSide()) {
+            int[] mirror = CLIENT_WEAPON_STACKS.get(player.getUUID());
+            if (mirror == null) {
+                return 0;
+            }
+            for (int i = 0; i < WEAPON_STACK_TYPES.length; i++) {
+                if (WEAPON_STACK_TYPES[i] == stackType) {
+                    return i < mirror.length ? mirror[i] : 0;
+                }
+            }
+            return 0;
+        }
 
         Map<StackType, StackData> playerData = PLAYER_STACKS.get(player.getUUID());
         if (playerData == null) {
@@ -213,6 +250,49 @@ public class KillStackManager {
 
         StackData stackData = playerData.get(stackType);
         return stackData != null ? stackData.stacks : 0;
+    }
+
+    /**
+     * ⭐ 服务端：按 {@link #WEAPON_STACK_TYPES} 顺序收集玩家当前的武器叠层数量（供同步包打包）
+     *
+     * @param player 服务端玩家
+     * @return 各武器叠层数量，顺序与 {@link #WEAPON_STACK_TYPES} 一致
+     */
+    public static int[] collectWeaponStacks(Player player) {
+        int[] counts = new int[WEAPON_STACK_TYPES.length];
+        if (player == null) {
+            return counts;
+        }
+        for (int i = 0; i < WEAPON_STACK_TYPES.length; i++) {
+            counts[i] = getStacks(player, WEAPON_STACK_TYPES[i]);
+        }
+        return counts;
+    }
+
+    /**
+     * ⭐ 客户端：收到同步包时覆盖本地玩家的武器叠层镜像
+     *
+     * @param localPlayerId 本地玩家 UUID
+     * @param weaponStacks  服务端发来的数量数组，顺序与 {@link #WEAPON_STACK_TYPES} 一致；为 null 时清空
+     */
+    public static void onClientSyncReceived(UUID localPlayerId, int[] weaponStacks) {
+        if (localPlayerId == null) {
+            return;
+        }
+        if (weaponStacks == null) {
+            CLIENT_WEAPON_STACKS.remove(localPlayerId);
+            return;
+        }
+        // 只保留本地玩家一个条目：换存档 / 换服务器后旧 UUID 的数据不会残留
+        CLIENT_WEAPON_STACKS.clear();
+        CLIENT_WEAPON_STACKS.put(localPlayerId, weaponStacks.clone());
+    }
+
+    /**
+     * ⭐ 客户端：清空叠层镜像（退出世界 / 断线时调用）
+     */
+    public static void clearClientStacks() {
+        CLIENT_WEAPON_STACKS.clear();
     }
 
     /**

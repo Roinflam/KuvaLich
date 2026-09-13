@@ -21,8 +21,9 @@ import java.util.Optional;
  *
  * 统一管理所有网络包的注册
  *
- * <p>⭐ 协议版本升级为 "5"：{@link ModuleDiscoveryPacket} 新增了「全量/增量」标志位，
- * 字节流格式发生变化，与 "4" 及更早版本的客户端不兼容，必须提版本号强制握手拒绝，
+ * <p>⭐ 协议版本升级为 "7"：{@link DamagePacket} 改为传拆开的字段（伤害数字合并），
+ * {@link WarframeModuleSyncPacket} 追加了武器类击杀叠层数组（客户端射速 / 多重射击与服务端对齐），
+ * 字节流格式发生变化，与 "6" 及更早版本的客户端不兼容，必须提版本号强制握手拒绝，
  * 否则旧客户端会按老格式解码出错位数据。</p>
  *
  * <p>⭐ 安全：所有包在注册时都显式声明 {@link NetworkDirection}。
@@ -37,9 +38,10 @@ public class NetworkRegistryHandler {
 
     /**
      * 网络协议版本
-     * ⭐ "5"：ModuleDiscoveryPacket 新增全量/增量标志位，字节流格式变更
+     * ⭐ "6"：DamagePacket 改为传拆开的字段（伤害数字合并），字节流格式变更
+     * ⭐ "7"：WarframeModuleSyncPacket 追加武器类击杀叠层数组，字节流格式变更
      */
-    private static final String PROTOCOL_VERSION = "5";
+    private static final String PROTOCOL_VERSION = "7";
 
     /** 消息ID计数器 / Message ID counter */
     private static int messageId = 0;

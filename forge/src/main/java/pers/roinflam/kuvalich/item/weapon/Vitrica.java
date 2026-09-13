@@ -26,7 +26,10 @@ import javax.annotation.Nonnull;
 @Mod.EventBusSubscriber
 public class Vitrica extends AbstractKuvaWeapon {
 
-    public Vitrica(@Nonnull Item.Properties properties) {
+    /** 削弱叠层上限（amplifier 从 0 起算，7 即第 8 段） */
+    private static final int MAX_AMPLIFIER = 7;
+
+    public Vitrica(@Nonnull Properties properties) {
         super(properties);
     }
 
@@ -47,10 +50,10 @@ public class Vitrica extends AbstractKuvaWeapon {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, Vitrica.class);
 
         if (weapon != null) {
-            // ✅ 替换为动态属性系统
-            int newAmplifier = DynamicAttributeManager.has(hurter, DynamicAttributes.VITRICA)
-                    ? Math.min(7, 1)
-                    : 0;
+            // ⭐ 修复叠层：原来写成 Math.min(7, 1)，第二下起永远停在 1 层（-15%），到不了上限。
+            //    现在每命中一次 +1 层，最高 7（对应 8 段 -7.5% = -60%）；到顶后只刷新持续时间
+            int current = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.VITRICA);
+            int newAmplifier = current < 0 ? 0 : Math.min(MAX_AMPLIFIER, current + 1);
 
             DynamicAttributeManager.apply(
                     hurter,

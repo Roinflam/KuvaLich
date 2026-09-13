@@ -67,8 +67,9 @@ public abstract class AbstractWarframeModule extends AbstractModule {
         if (!(item instanceof AbstractWarframeModule)) { return; }
         List<Component> tooltip = event.getToolTip();
         if (AbstractModule.isRandom(itemStack)) {
-            for (int i = 1; i < 4 && i < tooltip.size(); i++) {
-                tooltip.add(i, Component.translatable("kuvaweapon.warframe_type_random.tooltip")
+            // ⭐ 固定在名称后插入三行 "+??% ???"，不再依赖 tooltip 当前行数（同 AbstractItemModule）
+            for (int i = 1; i <= 3; i++) {
+                tooltip.add(Math.min(i, tooltip.size()), Component.translatable("kuvaweapon.warframe_type_random.tooltip")
                         .withStyle(ChatFormatting.GRAY));
             }
         } else {

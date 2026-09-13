@@ -83,8 +83,11 @@ public abstract class AbstractItemModule extends AbstractModule {
         if (!(item instanceof AbstractItemModule)) { return; }
         List<Component> tooltip = event.getToolTip();
         if (AbstractModule.isRandom(itemStack)) {
-            for (int i = 1; i < 4 && i < tooltip.size(); i++) {
-                tooltip.add(i, Component.translatable("kuvaweapon.item_type_random.tooltip")
+            // ⭐ 固定在名称后插入三行 "+??% ???"（模仿三条被遮住的词条）。
+            //    原来的 i < tooltip.size() 条件让行数取决于 tooltip 当前有几行：
+            //    普通模式下只有名称一行时一行都不显示，开了 F3+H 又会显示三行
+            for (int i = 1; i <= 3; i++) {
+                tooltip.add(Math.min(i, tooltip.size()), Component.translatable("kuvaweapon.item_type_random.tooltip")
                         .withStyle(ChatFormatting.GRAY));
             }
         } else {

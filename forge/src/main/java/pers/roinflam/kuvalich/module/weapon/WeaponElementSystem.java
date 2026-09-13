@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModConfig;
@@ -25,11 +26,26 @@ import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
 import pers.roinflam.kuvalich.utils.util.EntityUtil;
 import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * 武器元素系统 · v8
+ * 武器元素系统 · v9
  * 负责元素组合计算、元素效果触发、伤害位置和元素表情符号
+ *
+ * <p>⭐ v9 伤害数字改为「实际扣了多少就显示多少」：</p>
+ * <ul>
+ *   <li><b>走 hurt 的元素伤害</b>（火焰 DoT、无盾毒素、电击、毒气）：改用
+ *       {@link DamageDisplayTracker#hurtWithDisplay}，数字取自最终伤害回调。
+ *       免疫、受击无敌、护甲、女巫魔法抗性与其他模组减伤都会如实体现，被整个挡掉就不跳字；
+ *       打到吸收护盾时，护盾吃掉的部分计入数字并追加护盾图标。</li>
+ *   <li><b>直接改血量的元素伤害</b>（切割、带盾毒素）：扣血前后对比，显示实际掉血；
+ *       目标因此死亡时按溢出规则显示完整预算值。这两种本来就绕过护盾，不带护盾图标。</li>
+ *   <li><b>爆炸</b>：原版爆炸冲击与补充的元素伤害在同一处同步打完，
+ *       用 {@link DamageDisplayTracker.HealthSnapshot} 前后对比，每个目标只跳一个合计数字；
+ *       原先完全没有数字的原版冲击部分（6 格内）也一并计入。</li>
+ *   <li>元素数字统一走附加通道限流（{@link DamagePacket.Channel#SECONDARY}），不挤占主伤害的额度。</li>
+ * </ul>
  *
  * <p>⭐ v8 性能修复：新增 {@link ElementPool} 预计算元素池。</p>
  *
@@ -299,17 +315,79 @@ public class WeaponElementSystem {
         }
     }
 
+    /** 元素伤害数字的颜色码（白字，元素图标自带颜色） */
+    private static final String ELEMENT_COLOR = "\u00a7f";
+
+    /** 爆炸元素的原版爆炸半径（与 level.explode 传入的值保持一致） */
+    private static final float ELEMENT_EXPLOSION_RADIUS = 3.0F;
+
     /**
-     * 如果攻击者是玩家，发送伤害数字到客户端
+     * 元素伤害数字的接收者：仅攻击者本人是玩家时显示（与改动前一致，宠物、女仆的元素伤害不显示）
      *
-     * @param attacker    攻击者
-     * @param displayText 显示文本
-     * @param position    显示位置
+     * @param attacker 攻击者，可为 null
+     * @return 服务端玩家；不是玩家时返回 null
      */
-    private static void sendDamageDisplayIfPlayer(LivingEntity attacker, String displayText, Vec3 position) {
-        if (attacker instanceof ServerPlayer serverPlayer) {
-            DamagePacket.sendToPlayer(serverPlayer, displayText, position);
+    @Nullable
+    private static ServerPlayer viewerOf(@Nullable LivingEntity attacker) {
+        return attacker instanceof ServerPlayer serverPlayer ? serverPlayer : null;
+    }
+
+    /**
+     * ⭐ 造成一次元素伤害并按实际扣除量显示数字
+     *
+     * <p>数字取自最终伤害回调：免疫、受击无敌、护甲、其他模组减伤都会如实体现；
+     * 这一下被整个挡掉时不跳字；打到护盾时计入护盾部分并追加护盾图标。</p>
+     *
+     * @param victim   受击实体
+     * @param source   伤害来源（直接传给 {@code hurt}）
+     * @param amount   伤害值（直接传给 {@code hurt}）
+     * @param attacker 攻击者（决定数字发给谁）
+     * @param element  元素名（决定数字后缀图标，同时作为合并分组：只与同元素数字合并）
+     * @return {@code hurt} 的返回值
+     */
+    private static boolean hurtWithElementDisplay(LivingEntity victim, DamageSource source, float amount,
+                                                  @Nullable LivingEntity attacker, String element) {
+        return DamageDisplayTracker.hurtWithDisplay(victim, source, amount, viewerOf(attacker),
+                ELEMENT_COLOR, "", getElementEmoji(element), DamagePacket.Channel.SECONDARY, element);
+    }
+
+    /**
+     * ⭐ 发送一条「直接改血量」类元素伤害的数字
+     *
+     * @param victim   受击实体
+     * @param amount   应显示的数值（由 {@link DamageDisplayTracker#resolveDirectLoss} 算出）
+     * @param attacker 攻击者（决定数字发给谁）
+     * @param element  元素名（决定数字后缀图标，同时作为合并分组：只与同元素数字合并）
+     */
+    private static void sendElementDirect(LivingEntity victim, float amount,
+                                          @Nullable LivingEntity attacker, String element) {
+        DamageDisplayTracker.sendDirect(viewerOf(attacker), victim, amount,
+                ELEMENT_COLOR, "", getElementEmoji(element), false, DamagePacket.Channel.SECONDARY, element);
+    }
+
+    /**
+     * ⭐ 为爆炸元素拍一份血量快照
+     *
+     * <p>原版爆炸会对「中心 ±（半径 × 2 + 1）格」方盒内的生物结算伤害，这里取同样的方盒；
+     * 排除攻击者本人（自伤不给攻击者跳字），并跳过已死亡的实体。</p>
+     *
+     * @param level    所在世界
+     * @param center   爆炸中心实体（主目标）
+     * @param attacker 攻击者
+     * @return 快照；无需显示（攻击者不是玩家、跳字关闭、范围内无目标）时返回 null
+     */
+    @Nullable
+    private static DamageDisplayTracker.HealthSnapshot captureBlastSnapshot(Level level, LivingEntity center,
+                                                                           LivingEntity attacker) {
+        if (viewerOf(attacker) == null || !ModConfig.KUVA_LICH.enableDamageNumbers.get()) {
+            return null;
         }
+        double reach = ELEMENT_EXPLOSION_RADIUS * 2.0 + 1.0;
+        AABB box = new AABB(center.getX() - reach, center.getY() - reach, center.getZ() - reach,
+                center.getX() + reach, center.getY() + reach, center.getZ() + reach);
+        List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, box,
+                e -> e != attacker && e.isAlive() && !e.isDeadOrDying());
+        return targets.isEmpty() ? null : DamageDisplayTracker.HealthSnapshot.capture(targets);
     }
 
     /**
@@ -508,11 +586,10 @@ public class WeaponElementSystem {
 
                         @Override
                         public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
+                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying() || hurter.isRemoved()) { this.cancel(); return; }
                             hurter.setSecondsOnFire(6);
-                            hurter.hurt(hurter.damageSources().inFire(), dotDamage);
-                            String displayText = "\u00a7f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("fire");
-                            sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
+                            // ⭐ 按实际扣除量显示：免疫火焰、受击无敌、其他模组减伤都会如实体现
+                            hurtWithElementDisplay(hurter, hurter.damageSources().inFire(), dotDamage, dotAttacker, "fire");
                         }
                     }.start();
                 }
@@ -539,15 +616,20 @@ public class WeaponElementSystem {
 
                         @Override
                         public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
+                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying() || hurter.isRemoved()) { this.cancel(); return; }
 
                             boolean hasShield = hurter.getAbsorptionAmount() > 0;
-                            String displayText = "\u00a7f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("poison");
-                            sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
                             if (hasShield) {
-                                if (hurter.getHealth() - dotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, dotDamage); }
+                                // ⭐ 有护盾：毒素绕过护盾直接扣血，显示「扣之前 − 扣之后」的实际掉血
+                                float healthBefore = hurter.getHealth();
+                                if (healthBefore - dotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, dotDamage); }
                                 else { EntityLivingUtil.kill(hurter, attackSource); this.cancel(); }
-                            } else { hurter.hurt(dotAttacker.damageSources().magic(), dotDamage); }
+                                sendElementDirect(hurter, DamageDisplayTracker.resolveDirectLoss(hurter, healthBefore, dotDamage),
+                                        dotAttacker, "poison");
+                            } else {
+                                // ⭐ 无护盾：走魔法伤害，按实际扣除量显示（女巫等魔法抗性会如实体现）
+                                hurtWithElementDisplay(hurter, dotAttacker.damageSources().magic(), dotDamage, dotAttacker, "poison");
+                            }
                         }
                     }.start();
                 }
@@ -578,9 +660,9 @@ public class WeaponElementSystem {
                 if (lightningDamage > 0) {
                     net.minecraft.world.entity.LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
                     if (lightning != null) { lightning.moveTo(hurter.getX(), hurter.getY(), hurter.getZ()); lightning.setVisualOnly(true); level.addFreshEntity(lightning); }
-                    hurter.hurt(level.damageSources().lightningBolt(), lightningDamage);
-                    String displayText = "\u00a7f" + DamagePacket.formatDamage(lightningDamage) + getElementEmoji("electricity");
-                    sendDamageDisplayIfPlayer(attacker, displayText, getRandomDamagePosition(hurter));
+                    // ⭐ 按实际扣除量显示。注意这一下嵌套在主目标自己的受击事件里，
+                    //    原版此时已给主目标上了受击无敌，电击伤害常被部分或全部吃掉，数字会如实变小或不显示
+                    hurtWithElementDisplay(hurter, level.damageSources().lightningBolt(), lightningDamage, attacker, "electricity");
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.ELECTRICITY_PARALYSIS.createInstance((int) (10 * triggerTime), 0));
                 }
                 return null;
@@ -606,16 +688,18 @@ public class WeaponElementSystem {
 
                         @Override
                         public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying()) { this.cancel(); return; }
+                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying() || hurter.isRemoved()) { this.cancel(); return; }
 
                             if (hurter.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
                                 ElementParticleEffects.spawnSlashEffect(hurter, sl);
                             }
 
-                            String displayText = "\u00a7f" + DamagePacket.formatDamage(finalDotDamage) + getElementEmoji("slash");
-                            sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(hurter));
-                            if (hurter.getHealth() - finalDotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, finalDotDamage); }
+                            // ⭐ 切割直接扣血：先扣、再显示「扣之前 − 扣之后」的实际掉血
+                            float healthBefore = hurter.getHealth();
+                            if (healthBefore - finalDotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, finalDotDamage); }
                             else { EntityLivingUtil.kill(hurter, attackSource); this.cancel(); }
+                            sendElementDirect(hurter, DamageDisplayTracker.resolveDirectLoss(hurter, healthBefore, finalDotDamage),
+                                    dotAttacker, "slash");
                         }
                     }.start();
                 }
@@ -722,15 +806,32 @@ public class WeaponElementSystem {
                 float explosionDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * armorMultiplier
                         * ModConfig.KUVA_LICH.elementExplosionDamageMultiplier.get());
                 if (explosionDamage > 0) {
-                    level.explode(null, hurter.getX(), hurter.getY(), hurter.getZ(), 3.0F, Level.ExplosionInteraction.NONE);
+                    // ⭐ 爆炸元素的实际伤害 = level.explode 的原版冲击 + 下面补的元素伤害（主目标 + 3 格范围），
+                    //    两段都在这里同步打完：先给冲击范围内的生物拍快照，打完再逐个算「扣之前 − 扣之后」，
+                    //    每个目标只跳一个合计数字；受击无敌、护甲、其他模组减伤、护盾都会如实体现
+                    DamageDisplayTracker.HealthSnapshot blastSnapshot = captureBlastSnapshot(level, hurter, attacker);
+
+                    // ⭐ 以前这里是 level.explode(null, ..., NONE)：虽然不炸方块，但原版爆炸本身会对范围内
+                    //    所有实体（包括近战时站在旁边的攻击者自己）造成威力 3（苦力怕级）的伤害和击退，
+                    //    目标还会被"原版爆炸 + 下面的自定义伤害"打两次，且原版那份不受伤害倍率配置控制。
+                    //    现改为只播放爆炸特效和音效，伤害全部走下面排除了攻击者的自定义计算。
+                    if (level instanceof ServerLevel blastLevel) {
+                        blastLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER,
+                                hurter.getX(), hurter.getY() + hurter.getBbHeight() * 0.5, hurter.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+                        blastLevel.playSound(null, hurter.getX(), hurter.getY(), hurter.getZ(),
+                                net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.HOSTILE,
+                                4.0F, (1.0F + (blastLevel.random.nextFloat() - blastLevel.random.nextFloat()) * 0.2F) * 0.7F);
+                    }
                     hurter.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
-                    String displayText = "\u00a7f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
-                    sendDamageDisplayIfPlayer(attacker, displayText, getRandomDamagePosition(hurter));
                     List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 3, e -> !e.equals(hurter) && !e.equals(attacker));
                     for (LivingEntity entity : entities) {
                         entity.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
-                        String aoeDisplayText = "\u00a7f" + DamagePacket.formatDamage(explosionDamage) + getElementEmoji("explosion");
-                        sendDamageDisplayIfPlayer(attacker, aoeDisplayText, getRandomDamagePosition(entity));
+                    }
+
+                    if (blastSnapshot != null) {
+                        // 合并分组传 "explosion"：爆炸数字只与同一只怪身上的其他爆炸数字合并
+                        blastSnapshot.sendDeltas(viewerOf(attacker), explosionDamage, ELEMENT_COLOR, "",
+                                getElementEmoji("explosion"), DamagePacket.Channel.SECONDARY, "explosion");
                     }
                 }
                 return null;
@@ -755,21 +856,21 @@ public class WeaponElementSystem {
 
                         @Override
                         public void run() {
-                            if (ticks++ >= 6 * triggerTime) { this.cancel(); return; }
+                            // ⭐ 修复 3：受击者已被移除（卸载 / 消失 / 传送走）时同样提前结束，不再对脱离世界的实体扣血
+                            if (ticks++ >= 6 * triggerTime || hurter.isRemoved()) { this.cancel(); return; }
 
                             if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquireGlobal(sl)) {
                                 ElementParticleEffects.spawnGasCloudEffect(sl, gasCenter, gasRadius);
                             }
 
                             List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class,
-                                    new net.minecraft.world.phys.AABB(gasCenter.x - gasRadius, gasCenter.y - gasRadius, gasCenter.z - gasRadius,
+                                    new AABB(gasCenter.x - gasRadius, gasCenter.y - gasRadius, gasCenter.z - gasRadius,
                                             gasCenter.x + gasRadius, gasCenter.y + gasRadius, gasCenter.z + gasRadius),
                                     e -> !e.equals(dotAttacker) && e.distanceToSqr(gasCenter) <= gasRadius * gasRadius);
                             for (LivingEntity entity : entities) {
                                 if (entity.isDeadOrDying()) continue;
-                                entity.hurt(dotAttacker.damageSources().magic(), dotDamage);
-                                String displayText = "\u00a7f" + DamagePacket.formatDamage(dotDamage) + getElementEmoji("gas");
-                                sendDamageDisplayIfPlayer(dotAttacker, displayText, getRandomDamagePosition(entity));
+                                // ⭐ 按实际扣除量显示：处于受击无敌、免疫魔法的目标不再凭空跳字
+                                hurtWithElementDisplay(entity, dotAttacker.damageSources().magic(), dotDamage, dotAttacker, "gas");
                             }
                         }
                     }.start();
@@ -819,17 +920,14 @@ public class WeaponElementSystem {
     /**
      * 在实体附近生成随机偏移的伤害数字显示位置
      *
+     * <p>⭐ 已统一委托给 {@link DamageDisplayTracker#randomDisplayPosition}（高度改为身体上半截，
+     * 配合客户端改为以相机为原点渲染）。保留本方法仅为兼容，新代码请直接调用委托目标。</p>
+     *
      * @param entity 受击实体
      * @return 随机偏移后的位置向量
      */
     static Vec3 getRandomDamagePosition(LivingEntity entity) {
-        double offsetX = (Math.random() - 0.5) * entity.getBbWidth() * 1.2;
-        double offsetZ = (Math.random() - 0.5) * entity.getBbWidth() * 1.2;
-        return new Vec3(
-                entity.getX() + offsetX,
-                entity.getY() + entity.getBbHeight() * (-0.2 + Math.random() * 0.4),
-                entity.getZ() + offsetZ
-        );
+        return DamageDisplayTracker.randomDisplayPosition(entity);
     }
 
     /**

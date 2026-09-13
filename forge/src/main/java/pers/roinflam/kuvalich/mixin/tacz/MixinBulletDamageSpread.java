@@ -74,10 +74,12 @@ public class MixinBulletDamageSpread {
 
         ((EntityKineticBulletAccessor) this).setDamageModifier(modifier);
 
-        LogUtil.debug(String.format(
-                "[伤害修正] 传入弹丸数=%d, 原始弹丸数=%d, 第一发加成=%.0f%%, 枪械伤害=%.0f%%, 玄骸强化=%.2fx, damageModifier=%.4f",
-                bulletCount, effectiveBulletCount, firstBulletBonus * 100f, gunDamageBonus * 100f, enhanceMultiplier, modifier
-        ));
+        if (LogUtil.isDebugEnabled()) {
+            LogUtil.debug(String.format(
+                    "[伤害修正] 传入弹丸数=%d, 原始弹丸数=%d, 第一发加成=%.0f%%, 枪械伤害=%.0f%%, 玄骸强化=%.2fx, damageModifier=%.4f",
+                    bulletCount, effectiveBulletCount, firstBulletBonus * 100f, gunDamageBonus * 100f, enhanceMultiplier, modifier
+            ));
+        }
 
         ci.cancel();
     }

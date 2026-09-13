@@ -5,7 +5,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -13,6 +12,7 @@ import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
+import pers.roinflam.kuvalich.module.weapon.DamageDisplayTracker;
 import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
 @Mod.EventBusSubscriber
 public class GuandaoPrime extends AbstractKuvaWeapon {
 
-    public GuandaoPrime(@Nonnull Item.Properties properties) {
+    public GuandaoPrime(@Nonnull Properties properties) {
         super(properties);
     }
 
@@ -73,33 +73,27 @@ public class GuandaoPrime extends AbstractKuvaWeapon {
 
                 @Override
                 public void run() {
-                    if (++tick > 20 || hurter.isDeadOrDying()) {
+                    // ⭐ 修复 3：实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血
+                    if (++tick > 20 || hurter.isDeadOrDying() || hurter.isRemoved()) {
                         this.cancel();
                         return;
                     }
 
-                    if (attacker instanceof ServerPlayer) {
-                        double entityWidth = hurter.getBbWidth();
-                        double entityHeight = hurter.getBbHeight();
-                        double entityY = hurter.getY();
-
-                        double offsetX = (Math.random() - 0.5) * entityWidth * 1.2;
-                        double offsetZ = (Math.random() - 0.5) * entityWidth * 1.2;
-
-                        Vec3 position = new Vec3(
-                                hurter.getX() + offsetX,
-                                entityY + entityHeight * (-0.2 + Math.random() * 0.4),
-                                hurter.getZ() + offsetZ
-                        );
-
-                        DamagePacket.sendToPlayer((ServerPlayer) attacker, dotDamage, position, "§f");
-                    }
-
-                    if (hurter.getHealth() - dotDamage > 0.01f) {
+                    // ⭐ 先扣血、再显示「扣之前 − 扣之后」的实际掉血：
+                    //    Boss 锁血、伤害上限等拦截直接扣血时，数字如实变小或不显示
+                    float healthBefore = hurter.getHealth();
+                    if (healthBefore - dotDamage > 0.01f) {
                         EntityLivingUtil.damageHealthDirectly(hurter, dotDamage);
                     } else {
                         EntityLivingUtil.kill(hurter, attacker.level().damageSources().indirectMagic(attacker, attacker));
                         this.cancel();
+                    }
+
+                    // 持续伤害走附加通道限流；直接改血量不经过护盾，因此不带护盾图标
+                    if (attacker instanceof ServerPlayer serverPlayer) {
+                        DamageDisplayTracker.sendDirect(serverPlayer, hurter,
+                                DamageDisplayTracker.resolveDirectLoss(hurter, healthBefore, dotDamage),
+                                "§f", "", "", false, DamagePacket.Channel.SECONDARY);
                     }
                 }
             }.start();

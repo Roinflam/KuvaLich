@@ -1,5 +1,3 @@
-// ClothConfigScreen.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/config/ClothConfigScreen.java
 package pers.roinflam.kuvalich.config;
 
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
@@ -7,6 +5,7 @@ import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import pers.roinflam.kuvalich.module.weapon.MagicDamageClassifier;
 
 import java.util.Arrays;
 
@@ -87,7 +86,7 @@ public class ClothConfigScreen {
         confiscationCategory.addEntry(entryBuilder.startIntField(
                         Component.translatable("config.kuvalich.maxConfiscatedItems"),
                         ModConfig.KUVA_LICH.maxConfiscatedItems.get())
-                .setDefaultValue(64)
+                .setDefaultValue(128)
                 .setMin(0)
                 .setMax(1024)
                 .setTooltip(Component.translatable("config.kuvalich.maxConfiscatedItems.tooltip"))
@@ -113,7 +112,7 @@ public class ClothConfigScreen {
         decryptionCategory.addEntry(entryBuilder.startIntField(
                         Component.translatable("config.kuvalich.minDecryptionProgress"),
                         ModConfig.KUVA_LICH.minDecryptionProgress.get())
-                .setDefaultValue(3)
+                .setDefaultValue(5)
                 .setMin(0)
                 .setTooltip(Component.translatable("config.kuvalich.minDecryptionProgress.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.minDecryptionProgress::set)
@@ -122,7 +121,7 @@ public class ClothConfigScreen {
         decryptionCategory.addEntry(entryBuilder.startIntField(
                         Component.translatable("config.kuvalich.maxDecryptionProgress"),
                         ModConfig.KUVA_LICH.maxDecryptionProgress.get())
-                .setDefaultValue(5)
+                .setDefaultValue(15)
                 .setMin(0)
                 .setTooltip(Component.translatable("config.kuvalich.maxDecryptionProgress.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.maxDecryptionProgress::set)
@@ -158,7 +157,7 @@ public class ClothConfigScreen {
         decryptionCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.masterPotionMultiplier"),
                         ModConfig.KUVA_LICH.masterPotionMultiplier.get())
-                .setDefaultValue(5.0)
+                .setDefaultValue(3.0)
                 .setMin(1.0)
                 .setTooltip(Component.translatable("config.kuvalich.masterPotionMultiplier.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.masterPotionMultiplier::set)
@@ -187,6 +186,24 @@ public class ClothConfigScreen {
                 .build());
 
         damageCategory.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.kuvalich.mergeDamageNumbers"),
+                        ModConfig.KUVA_LICH.mergeDamageNumbers.get())
+                .setDefaultValue(true)
+                .setTooltip(Component.translatable("config.kuvalich.mergeDamageNumbers.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.mergeDamageNumbers::set)
+                .build());
+
+        damageCategory.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.mergeDamageWindowMs"),
+                        ModConfig.KUVA_LICH.mergeDamageWindowMs.get())
+                .setDefaultValue(200)
+                .setMin(0)
+                .setMax(2000)
+                .setTooltip(Component.translatable("config.kuvalich.mergeDamageWindowMs.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.mergeDamageWindowMs::set)
+                .build());
+
+        damageCategory.addEntry(entryBuilder.startBooleanToggle(
                         Component.translatable("config.kuvalich.enableTrueDamage"),
                         ModConfig.KUVA_LICH.enableTrueDamage.get())
                 .setDefaultValue(true)
@@ -206,7 +223,7 @@ public class ClothConfigScreen {
         damageCategory.addEntry(entryBuilder.startDoubleField(
                         Component.translatable("config.kuvalich.reducedDamage"),
                         ModConfig.KUVA_LICH.reducedDamage.get())
-                .setDefaultValue(0.1)
+                .setDefaultValue(0.0)
                 .setMin(0.0)
                 .setTooltip(Component.translatable("config.kuvalich.reducedDamage.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.reducedDamage::set)
@@ -237,14 +254,14 @@ public class ClothConfigScreen {
                 Component.translatable("config.kuvalich.category.weaponLevel"));
 
         weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.benchmarkLevel"), ModConfig.KUVA_LICH.benchmarkLevel.get()).setDefaultValue(45).setMin(0).setTooltip(Component.translatable("config.kuvalich.benchmarkLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.benchmarkLevel::set).build());
-        weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.baseMinimumLevel"), ModConfig.KUVA_LICH.baseMinimumLevel.get()).setDefaultValue(5).setMin(0).setTooltip(Component.translatable("config.kuvalich.baseMinimumLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.baseMinimumLevel::set).build());
+        weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.baseMinimumLevel"), ModConfig.KUVA_LICH.baseMinimumLevel.get()).setDefaultValue(10).setMin(0).setTooltip(Component.translatable("config.kuvalich.baseMinimumLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.baseMinimumLevel::set).build());
         weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.baseMaximumLevel"), ModConfig.KUVA_LICH.baseMaximumLevel.get()).setDefaultValue(25).setMin(0).setTooltip(Component.translatable("config.kuvalich.baseMaximumLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.baseMaximumLevel::set).build());
-        weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.minimumLevelCapIncrease"), ModConfig.KUVA_LICH.minimumLevelCapIncrease.get()).setDefaultValue(3).setMin(0).setTooltip(Component.translatable("config.kuvalich.minimumLevelCapIncrease.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.minimumLevelCapIncrease::set).build());
-        weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.maximumLevelCapIncrease"), ModConfig.KUVA_LICH.maximumLevelCapIncrease.get()).setDefaultValue(6).setMin(0).setTooltip(Component.translatable("config.kuvalich.maximumLevelCapIncrease.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.maximumLevelCapIncrease::set).build());
+        weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.minimumLevelCapIncrease"), ModConfig.KUVA_LICH.minimumLevelCapIncrease.get()).setDefaultValue(6).setMin(0).setTooltip(Component.translatable("config.kuvalich.minimumLevelCapIncrease.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.minimumLevelCapIncrease::set).build());
+        weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.maximumLevelCapIncrease"), ModConfig.KUVA_LICH.maximumLevelCapIncrease.get()).setDefaultValue(12).setMin(0).setTooltip(Component.translatable("config.kuvalich.maximumLevelCapIncrease.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.maximumLevelCapIncrease::set).build());
         weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.minimumLevel"), ModConfig.KUVA_LICH.minimumLevel.get()).setDefaultValue(25).setMin(0).setTooltip(Component.translatable("config.kuvalich.minimumLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.minimumLevel::set).build());
         weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.maximumLevel"), ModConfig.KUVA_LICH.maximumLevel.get()).setDefaultValue(60).setMin(0).setTooltip(Component.translatable("config.kuvalich.maximumLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.maximumLevel::set).build());
         weaponLevelCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.upgradeMultiplier"), ModConfig.KUVA_LICH.upgradeMultiplier.get()).setDefaultValue(0.1).setMin(0.0).setTooltip(Component.translatable("config.kuvalich.upgradeMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.upgradeMultiplier::set).build());
-        weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.upgradeLimit"), ModConfig.KUVA_LICH.upgradeLimit.get()).setDefaultValue(999).setMin(0).setTooltip(Component.translatable("config.kuvalich.upgradeLimit.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.upgradeLimit::set).build());
+        weaponLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.upgradeLimit"), ModConfig.KUVA_LICH.upgradeLimit.get()).setDefaultValue(9999).setMin(0).setTooltip(Component.translatable("config.kuvalich.upgradeLimit.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.upgradeLimit::set).build());
 
         // ═══════════════════════════════════════════════════════════════
         // 武器击杀叠层系统
@@ -288,12 +305,12 @@ public class ClothConfigScreen {
         ConfigCategory spawnCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.spawn"));
 
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichSpawnWeight"), ModConfig.KUVA_LICH.kuvaLichSpawnWeight.get()).setDefaultValue(5).setMin(0).setTooltip(Component.translatable("config.kuvalich.kuvaLichSpawnWeight.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichSpawnWeight::set).build());
+        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichSpawnWeight"), ModConfig.KUVA_LICH.kuvaLichSpawnWeight.get()).setDefaultValue(15).setMin(0).setTooltip(Component.translatable("config.kuvalich.kuvaLichSpawnWeight.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichSpawnWeight::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichMinSpawnCount"), ModConfig.KUVA_LICH.kuvaLichMinSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaLichMinSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichMinSpawnCount::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichMaxSpawnCount"), ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaLichMaxSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight"), ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight.get()).setDefaultValue(10).setMin(0).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight::set).build());
+        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight"), ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight.get()).setDefaultValue(35).setMin(0).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMinSpawnCount"), ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMinSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMaxSpawnCount"), ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount.get()).setDefaultValue(3).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMaxSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount::set).build());
+        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMaxSpawnCount"), ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMaxSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount::set).build());
 
         // ═══════════════════════════════════════════════════════════════
         // 矿石生成配置
@@ -316,12 +333,12 @@ public class ClothConfigScreen {
         ConfigCategory oreDropsCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.oreDrops"));
 
-        oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.expMultiplier"), ModConfig.KUVA_LICH.expMultiplier.get()).setDefaultValue(2).setMin(1).setMax(100).setTooltip(Component.translatable("config.kuvalich.expMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.expMultiplier::set).build());
-        oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.cardDropChanceWithEnchant"), ModConfig.KUVA_LICH.cardDropChanceWithEnchant.get()).setDefaultValue(75).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.cardDropChanceWithEnchant.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.cardDropChanceWithEnchant::set).build());
+        oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.expMultiplier"), ModConfig.KUVA_LICH.expMultiplier.get()).setDefaultValue(10).setMin(1).setMax(100).setTooltip(Component.translatable("config.kuvalich.expMultiplier.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.expMultiplier::set).build());
+        oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.cardDropChanceWithEnchant"), ModConfig.KUVA_LICH.cardDropChanceWithEnchant.get()).setDefaultValue(100).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.cardDropChanceWithEnchant.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.cardDropChanceWithEnchant::set).build());
         oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.baseCardDropChance"), ModConfig.KUVA_LICH.baseCardDropChance.get()).setDefaultValue(25).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.baseCardDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.baseCardDropChance::set).build());
         oreDropsCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.fortuneReductionPerLevel"), ModConfig.KUVA_LICH.fortuneReductionPerLevel.get()).setDefaultValue(2.5).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.fortuneReductionPerLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.fortuneReductionPerLevel::set).build());
         oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.minCardDropChance"), ModConfig.KUVA_LICH.minCardDropChance.get()).setDefaultValue(5).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.minCardDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.minCardDropChance::set).build());
-        oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.commonModuleDropChance"), ModConfig.KUVA_LICH.commonModuleDropChance.get()).setDefaultValue(15).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.commonModuleDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.commonModuleDropChance::set).build());
+        oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.commonModuleDropChance"), ModConfig.KUVA_LICH.commonModuleDropChance.get()).setDefaultValue(20).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.commonModuleDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.commonModuleDropChance::set).build());
         oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.uncommonModuleDropChance"), ModConfig.KUVA_LICH.uncommonModuleDropChance.get()).setDefaultValue(10).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.uncommonModuleDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.uncommonModuleDropChance::set).build());
         oreDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.rareModuleDropChance"), ModConfig.KUVA_LICH.rareModuleDropChance.get()).setDefaultValue(5).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.rareModuleDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.rareModuleDropChance::set).build());
 
@@ -331,11 +348,11 @@ public class ClothConfigScreen {
         ConfigCategory slaveDropsCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.slaveDrops"));
 
-        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveKuvaDropChance"), ModConfig.KUVA_LICH.slaveKuvaDropChance.get()).setDefaultValue(10).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.slaveKuvaDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaDropChance::set).build());
-        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveKuvaMinAmount"), ModConfig.KUVA_LICH.slaveKuvaMinAmount.get()).setDefaultValue(2).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.slaveKuvaMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaMinAmount::set).build());
-        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveKuvaMaxAmount"), ModConfig.KUVA_LICH.slaveKuvaMaxAmount.get()).setDefaultValue(8).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.slaveKuvaMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaMaxAmount::set).build());
-        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveRivenSliverDropChance"), ModConfig.KUVA_LICH.slaveRivenSliverDropChance.get()).setDefaultValue(10).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.slaveRivenSliverDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveRivenSliverDropChance::set).build());
-        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveRequiemGemBaseChance"), ModConfig.KUVA_LICH.slaveRequiemGemBaseChance.get()).setDefaultValue(25).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.slaveRequiemGemBaseChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveRequiemGemBaseChance::set).build());
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveKuvaDropChance"), ModConfig.KUVA_LICH.slaveKuvaDropChance.get()).setDefaultValue(25).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.slaveKuvaDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaDropChance::set).build());
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveKuvaMinAmount"), ModConfig.KUVA_LICH.slaveKuvaMinAmount.get()).setDefaultValue(1).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.slaveKuvaMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaMinAmount::set).build());
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveKuvaMaxAmount"), ModConfig.KUVA_LICH.slaveKuvaMaxAmount.get()).setDefaultValue(4).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.slaveKuvaMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveKuvaMaxAmount::set).build());
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveRivenSliverDropChance"), ModConfig.KUVA_LICH.slaveRivenSliverDropChance.get()).setDefaultValue(5).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.slaveRivenSliverDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveRivenSliverDropChance::set).build());
+        slaveDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.slaveRequiemGemBaseChance"), ModConfig.KUVA_LICH.slaveRequiemGemBaseChance.get()).setDefaultValue(33).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.slaveRequiemGemBaseChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveRequiemGemBaseChance::set).build());
         slaveDropsCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.slaveRequiemGemLootingBonus"), ModConfig.KUVA_LICH.slaveRequiemGemLootingBonus.get()).setDefaultValue(2.5).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.slaveRequiemGemLootingBonus.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.slaveRequiemGemLootingBonus::set).build());
 
         // ═══════════════════════════════════════════════════════════════
@@ -344,10 +361,10 @@ public class ClothConfigScreen {
         ConfigCategory masterDropsCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.masterDrops"));
 
-        masterDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.masterKuvaMinAmount"), ModConfig.KUVA_LICH.masterKuvaMinAmount.get()).setDefaultValue(32).setMin(1).setMax(256).setTooltip(Component.translatable("config.kuvalich.masterKuvaMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.masterKuvaMinAmount::set).build());
+        masterDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.masterKuvaMinAmount"), ModConfig.KUVA_LICH.masterKuvaMinAmount.get()).setDefaultValue(16).setMin(1).setMax(256).setTooltip(Component.translatable("config.kuvalich.masterKuvaMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.masterKuvaMinAmount::set).build());
         masterDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.masterKuvaMaxAmount"), ModConfig.KUVA_LICH.masterKuvaMaxAmount.get()).setDefaultValue(64).setMin(1).setMax(256).setTooltip(Component.translatable("config.kuvalich.masterKuvaMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.masterKuvaMaxAmount::set).build());
-        masterDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.masterRivenSliverMinAmount"), ModConfig.KUVA_LICH.masterRivenSliverMinAmount.get()).setDefaultValue(4).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.masterRivenSliverMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.masterRivenSliverMinAmount::set).build());
-        masterDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.masterRivenSliverMaxAmount"), ModConfig.KUVA_LICH.masterRivenSliverMaxAmount.get()).setDefaultValue(8).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.masterRivenSliverMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.masterRivenSliverMaxAmount::set).build());
+        masterDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.masterRivenSliverMinAmount"), ModConfig.KUVA_LICH.masterRivenSliverMinAmount.get()).setDefaultValue(1).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.masterRivenSliverMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.masterRivenSliverMinAmount::set).build());
+        masterDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.masterRivenSliverMaxAmount"), ModConfig.KUVA_LICH.masterRivenSliverMaxAmount.get()).setDefaultValue(3).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.masterRivenSliverMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.masterRivenSliverMaxAmount::set).build());
         masterDropsCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.masterPrimeModuleChance"), ModConfig.KUVA_LICH.masterPrimeModuleChance.get()).setDefaultValue(50).setMin(0).setMax(100).setTooltip(Component.translatable("config.kuvalich.masterPrimeModuleChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.masterPrimeModuleChance::set).build());
 
         // ═══════════════════════════════════════════════════════════════
@@ -490,10 +507,10 @@ public class ClothConfigScreen {
 
         moduleLevelCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableModuleLevelSystem"), ModConfig.KUVA_LICH.enableModuleLevelSystem.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableModuleLevelSystem.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableModuleLevelSystem::set).build());
         moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.moduleMaxLevel"), ModConfig.KUVA_LICH.moduleMaxLevel.get()).setDefaultValue(10).setMin(2).setMax(100).setTooltip(Component.translatable("config.kuvalich.moduleMaxLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.moduleMaxLevel::set).build());
-        moduleLevelCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.endoDropChance"), ModConfig.KUVA_LICH.endoDropChance.get()).setDefaultValue(1.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.endoDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropChance::set).build());
+        moduleLevelCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.endoDropChance"), ModConfig.KUVA_LICH.endoDropChance.get()).setDefaultValue(10.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.endoDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropChance::set).build());
         // ⭐ 新增：内融核心掉落数量范围
         moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoDropMinAmount"), ModConfig.KUVA_LICH.endoDropMinAmount.get()).setDefaultValue(1).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.endoDropMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropMinAmount::set).build());
-        moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoDropMaxAmount"), ModConfig.KUVA_LICH.endoDropMaxAmount.get()).setDefaultValue(1).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.endoDropMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropMaxAmount::set).build());
+        moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoDropMaxAmount"), ModConfig.KUVA_LICH.endoDropMaxAmount.get()).setDefaultValue(5).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.endoDropMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropMaxAmount::set).build());
         moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoLastLevelCost"), ModConfig.KUVA_LICH.endoLastLevelCost.get()).setDefaultValue(64).setMin(1).setMax(1024).setTooltip(Component.translatable("config.kuvalich.endoLastLevelCost.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoLastLevelCost::set).build());
         moduleLevelCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.endoCostExponent"), ModConfig.KUVA_LICH.endoCostExponent.get()).setDefaultValue(2.0).setMin(1.0).setMax(5.0).setTooltip(Component.translatable("config.kuvalich.endoCostExponent.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoCostExponent::set).build());
         // ⭐ 补全遗漏：精通赋予开关
@@ -508,6 +525,56 @@ public class ClothConfigScreen {
         taczEnhanceCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.taczGunEnhanceEnable"), ModConfig.KUVA_LICH.taczGunEnhanceEnable.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.taczGunEnhanceEnable.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.taczGunEnhanceEnable::set).build());
         taczEnhanceCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.taczGunEnhancePercent"), ModConfig.KUVA_LICH.taczGunEnhancePercent.get()).setDefaultValue(0.1).setMin(0.01).setMax(10000.0).setTooltip(Component.translatable("config.kuvalich.taczGunEnhancePercent.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.taczGunEnhancePercent::set).build());
         taczEnhanceCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.taczGunEnhanceMaxCount"), ModConfig.KUVA_LICH.taczGunEnhanceMaxCount.get()).setDefaultValue(-1).setMin(-1).setMax(10000).setTooltip(Component.translatable("config.kuvalich.taczGunEnhanceMaxCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.taczGunEnhanceMaxCount::set).build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // 第三方魔法识别
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory magicRecognitionCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.magicRecognition"));
+
+        magicRecognitionCategory.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.kuvalich.enableThirdPartyMagicRecognition"),
+                        ModConfig.KUVA_LICH.enableThirdPartyMagicRecognition.get())
+                .setDefaultValue(true)
+                .setTooltip(Component.translatable("config.kuvalich.enableThirdPartyMagicRecognition.tooltip"))
+                .setSaveConsumer(value -> {
+                    ModConfig.KUVA_LICH.enableThirdPartyMagicRecognition.set(value);
+                    MagicDamageClassifier.invalidateCache();
+                })
+                .build());
+
+        magicRecognitionCategory.addEntry(entryBuilder.startStrList(
+                        Component.translatable("config.kuvalich.magicDamageNamespaces"),
+                        new java.util.ArrayList<>(ModConfig.KUVA_LICH.magicDamageNamespaces.get()))
+                .setDefaultValue(ModConfig.KuvaLichConfig.DEFAULT_MAGIC_DAMAGE_NAMESPACES)
+                .setTooltip(Component.translatable("config.kuvalich.magicDamageNamespaces.tooltip"))
+                .setSaveConsumer(list -> {
+                    ModConfig.KUVA_LICH.magicDamageNamespaces.set(list);
+                    MagicDamageClassifier.invalidateCache();
+                })
+                .build());
+
+        magicRecognitionCategory.addEntry(entryBuilder.startStrList(
+                        Component.translatable("config.kuvalich.magicDamageTypeWhitelist"),
+                        new java.util.ArrayList<>(ModConfig.KUVA_LICH.magicDamageTypeWhitelist.get()))
+                .setDefaultValue(ModConfig.KuvaLichConfig.DEFAULT_MAGIC_DAMAGE_TYPE_WHITELIST)
+                .setTooltip(Component.translatable("config.kuvalich.magicDamageTypeWhitelist.tooltip"))
+                .setSaveConsumer(list -> {
+                    ModConfig.KUVA_LICH.magicDamageTypeWhitelist.set(list);
+                    MagicDamageClassifier.invalidateCache();
+                })
+                .build());
+
+        magicRecognitionCategory.addEntry(entryBuilder.startStrList(
+                        Component.translatable("config.kuvalich.magicDamageTypeBlacklist"),
+                        new java.util.ArrayList<>(ModConfig.KUVA_LICH.magicDamageTypeBlacklist.get()))
+                .setDefaultValue(ModConfig.KuvaLichConfig.DEFAULT_MAGIC_DAMAGE_TYPE_BLACKLIST)
+                .setTooltip(Component.translatable("config.kuvalich.magicDamageTypeBlacklist.tooltip"))
+                .setSaveConsumer(list -> {
+                    ModConfig.KUVA_LICH.magicDamageTypeBlacklist.set(list);
+                    MagicDamageClassifier.invalidateCache();
+                })
+                .build());
 
         // ═══════════════════════════════════════════════════════════════
         // 教程书

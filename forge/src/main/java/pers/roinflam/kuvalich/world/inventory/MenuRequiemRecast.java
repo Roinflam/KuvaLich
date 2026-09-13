@@ -533,11 +533,11 @@ public class MenuRequiemRecast extends AbstractContainerMenu {
         if (!decomposeMode) {
             return;
         }
-        // 内融核心尚未全部取走时不消耗输入卡
-        if (!cardHandler.getStackInSlot(3).isEmpty()) {
-            return;
-        }
-        // 清空唯一的输入模组卡（即被分解的那张）
+        // ⭐ 修复刷内融核心漏洞：原实现只在结果槽被拿空时才消耗模组卡，
+        //    右键只拿一半、再把模组卡从输入槽拿走（或直接关界面），剩下的预览结果会被清掉，
+        //    但已拿走的一半内融核心留在了背包里，模组卡也还在——可以无限重复。
+        //    现在只要从结果槽拿走了任意数量，就立刻消耗模组卡并退出预览模式；
+        //    剩下没拿完的内融核心是已经付过费的真实物品，关闭界面时会正常返还。
         for (int i = 0; i < 3; i++) {
             if (!cardHandler.getStackInSlot(i).isEmpty()) {
                 cardHandler.setStackInSlot(i, ItemStack.EMPTY);

@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import pers.roinflam.kuvalich.module.weapon.WeaponCombatHandler;
+import pers.roinflam.kuvalich.module.weapon.DamageDisplayTracker;
 
 /**
  * 最终伤害捕获 Mixin
@@ -86,10 +86,12 @@ import pers.roinflam.kuvalich.module.weapon.WeaponCombatHandler;
  * <ul>
  *   <li><b>只读注入</b>：使用 {@code @Inject} 而非任何修改型注入器，
  *       只读取返回值不做修改，对伤害计算与事件派发零影响。</li>
- *   <li><b>护盾</b>：捕获的值已扣除吸收护盾（护盾吃掉的部分不计入），此为既定设计。</li>
- *   <li><b>零伤害</b>：事件被取消或伤害被减为 0 时返回值为 0，回调依然触发，
- *       用于清理 {@code pendingDisplays} 队列条目，避免残留到下次受击时被错误消费
- *       （颜色码与元素图标张冠李戴）。</li>
+ *   <li><b>护盾</b>：返回值本身已扣除吸收护盾；护盾吃掉的部分由
+ *       {@link DamageDisplayTracker} 按「登记时吸收量 − 回调时吸收量」补回，并在数字后追加护盾图标。</li>
+ *   <li><b>零伤害</b>：事件被取消或伤害被减为 0 时返回值为 0，回调依然触发；
+ *       若这一下护盾吃了伤害，仍按护盾扣除量显示，否则不显示。</li>
+ *   <li><b>配对</b>：本次的 {@code DamageSource} 对象一并交给 {@link DamageDisplayTracker}，
+ *       只与同一对象登记的条目配对，残留条目不会被其他伤害误用（不再串色、串图标、串接收人）。</li>
  *   <li><b>仅服务端</b>：客户端直接返回，不参与派发。</li>
  * </ul>
  *
@@ -124,6 +126,6 @@ public class MixinForgeHooksFinalDamage {
             return;
         }
 
-        WeaponCombatHandler.onFinalDamage(entity, source, finalDamage);
+        DamageDisplayTracker.onFinalDamage(entity, source, finalDamage);
     }
 }

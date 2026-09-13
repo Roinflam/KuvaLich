@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich.module.weapon;
 
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
@@ -21,8 +20,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -40,7 +37,6 @@ import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.module.KillStackManager.StackType;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
-import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
 import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
@@ -56,7 +52,40 @@ import java.util.concurrent.ConcurrentHashMap;
  * 武器战斗事件处理器
  * 负责所有伤害事件、弓箭多重射击、射速加速、攻击速度/攻击距离tick
  *
- * <p>⭐ 本次改动（三项，均为近战 / 远程词条串用修复）：</p>
+ * <p>⭐ 本次改动（魔法伤害识别与分支）：</p>
+ *
+ * <p><b>一、魔法判定交给 {@link MagicDamageClassifier}。</b><br>
+ * 原实现只认「message_id 含 magic」或 {@code witch_resistant_to} tag，
+ * Ars Nouveau（message_id 是 player/fire/freeze）、Goety 大部分法术（goety.xxx）
+ * 以及 ISB 的火场/毒云等残留伤害全都认不出来。现改为原版规则 + 第三方规则
+ * （{@code forge:is_magic} tag、伤害类型命名空间、白/黑名单，均走配置），
+ * 且召唤物替主人挥砍的命中一律不算魔法。不引入任何模组依赖。</p>
+ *
+ * <p><b>二、结算结构不变：近战/远程是基础分支，魔法是独立叠加层。</b><br>
+ * 直接实体是攻击者本人 → 近战分支；否则归属实体是攻击者 → 远程分支（含箭矢/弹射物细分与溅射）。
+ * 魔法只决定要不要在此之上再加 {@code magicDamage}，与基础分支互不排斥：
+ * 施法者亲手打出的射线/触碰法术 = 近战 + 魔法，弹射物法术 = 远程 + 弹射物 + 魔法。</p>
+ *
+ * <p>⭐ 此前改动（伤害数字，均为显示层，不改变任何伤害数值）：</p>
+ *
+ * <p><b>一、登记与配对迁至 {@link DamageDisplayTracker}。</b><br>
+ * 原实现按「先进先出」配对：受击事件里入队、最终伤害回调里取队首。
+ * 只要某一下入了队却没走到扣血（溅射目标处于受击无敌、举盾格挡、被其他模组或插件取消等），
+ * 条目就会残留，之后每一发都拿到上一发的颜色与元素图标，甚至把数字发给别的玩家。<br>
+ * 修复：登记记录本次的 {@link DamageSource} 对象，回调只认同一个对象；
+ * 溅射改用 {@link DamageDisplayTracker#hurtWithDisplay}，{@code hurt} 返回后未被消费的登记立即撤回；
+ * 最终伤害 ≤ 0 时不再登记；未消费登记每 tick 末统一清空。</p>
+ *
+ * <p><b>二、护盾部分计入数字。</b><br>
+ * 登记时记下目标的吸收量，回调时补回护盾吃掉的部分，并在数字后追加护盾图标。</p>
+ *
+ * <p><b>三、真伤数字改为实测。</b><br>
+ * 原实现直接显示预算值；现改为「扣之前血量 − 扣之后血量」，
+ * Boss 锁血、伤害上限等拦截扣血时如实变小或不显示；目标因此死亡时按溢出规则显示完整预算值。</p>
+ *
+ * <p><b>四、普通白字（{@code damageDisplay}）也走登记</b>，同样计入护盾。</p>
+ *
+ * <p>⭐ 此前改动（三项，均为近战 / 远程词条串用修复）：</p>
  *
  * <p><b>一、爆炸半径溅射的伤害口径与重复结算。</b><br>
  * 原实现在远程分支内立即执行溅射：
@@ -77,7 +106,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 改取主目标最终伤害的一半（见 {@link #applySplashDamage}），
  * 自然继承远程面板、远程暴击与克制倍率；同时用 {@link #SPLASH_REENTRY}
  * 线程标记让本处理器跳过派生伤害，杜绝二次放大。<br>
- * 溅射目标的伤害数字会主动入队并复用主目标的暴击颜色码，因此暴击色保留；
+ * 溅射目标的伤害数字会主动登记并复用主目标的暴击颜色码，因此暴击色保留；
  * 但溅射<b>不再</b>对每个目标独立掷元素触发，也不累加击杀叠层，只结算伤害。</p>
  *
  * <p><b>二、{@code dashMeleeCriticalStrikeProbability} 名实不符。</b><br>
@@ -101,45 +130,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * 如需维持修复前行为，把 {@link #ENABLE_ATTACK_STRENGTH_SCALING} 改为 {@code false} 即可，
  * 其余两项修复不受影响。</p>
  *
- * <p>⭐ 此前改动：伤害数字的读取时机由「{@code LivingDamageEvent} 监听器」
- * 改为「Mixin 捕获 {@code ForgeHooks.onLivingDamage} 的返回值」。</p>
- *
- * <p><b>为什么必须换：</b>基于事件监听器读取存在无法消除的优先级竞争。
- * Forge 的最低优先级是 {@code LOWEST}，而下列监听器同样注册在 {@code LOWEST}
- * 且会修改伤害数值：</p>
- * <ul>
- *   <li>{@code l2damagetracker.AttackEventHandler.onDamagePost}
- *       （以 jar-in-jar 内嵌于 L2Hostility 莱特兰·恶意）——
- *       其内部 {@code AttackCache.pushDamagePre} 会 {@code setAmount}，
- *       应用莱特兰词缀的最终减伤 / 免疫。</li>
- *   <li>本模组的 {@code WarframeEffectHandler.onLivingDamage} ——
- *       「受害者是玩家」分支会应用火抗 / 电抗 / 同源抗性。</li>
- * </ul>
- * <p>Forge 对同优先级监听器按注册顺序执行，顺序不受控，
- * 因此无论把本处理器设为何种优先级，都有概率读到中间值。</p>
- *
- * <p><b>新方案：</b>{@code MixinLivingEntityFinalDamage} 与
- * {@code MixinPlayerFinalDamage} 拦截 {@code ForgeHooks.onLivingDamage}
- * 的返回值后回调 {@link #onFinalDamage}。该返回值是整个事件链跑完后的结果，
- * 紧接着下一行就是 {@code setHealth}，因此必然等于实体实际掉的血量，
- * 与任何模组的监听器优先级、注册顺序均无关。</p>
- *
- * <p>该方案顺带堵死了原先的队列错位窗口：即便最终伤害被减为 0，
- * 回调依然会触发并清理 {@code pendingDisplays} 条目，
- * 不会再残留到下次受击时被错误消费（颜色码与元素图标张冠李戴）。</p>
- *
- * <p><b>护盾说明</b>：捕获的值已扣除吸收护盾（护盾吃掉的部分不计入），此为既定设计。</p>
+ * <p>⭐ 此前改动：伤害数字的取值点改为 {@code MixinForgeHooksFinalDamage}
+ * 捕获 {@code ForgeHooks.onLivingDamage} 的返回值（整个 {@code LivingDamageEvent} 事件链跑完后的结果），
+ * 不受任何监听器优先级、注册顺序影响。登记、配对与发包现已全部由 {@link DamageDisplayTracker} 负责。</p>
  *
  * <p>⭐ 此前修复（两项）：</p>
  *
  * <p><b>一、伤害显示队列内存泄漏。</b><br>
- * {@code pendingDisplays} 在 {@code onLivingHurt} 入队、靠最终伤害回调出队消费。
- * 但当实体在两个时机之间被移除、或伤害在 {@code LivingHurtEvent} 后被归零
- * 导致后续流程提前返回时，条目会残留。
- * 更糟的是原条目直接持有 {@link ServerPlayer} <b>强引用</b>，
- * 玩家下线后整个玩家实体（含背包、Capability）都无法被 GC。<br>
- * 修复：条目改存玩家 UUID + 入队 tick，发包时按 UUID 现查；
- * 并新增 {@link #onServerTick} 定期清扫过期条目。</p>
+ * 已被 {@link DamageDisplayTracker} 的机制取代：登记只存玩家 UUID，未消费登记每 tick 末统一清空。</p>
  *
  * <p><b>二、元素池重复构建。</b><br>
  * 元素池在一次攻击内是常量，但原实现每次元素触发都重建一遍
@@ -191,66 +189,6 @@ public class WeaponCombatHandler {
      */
     private static final ThreadLocal<Float> MELEE_ATTACK_STRENGTH = new ThreadLocal<>();
 
-    // ========== 伤害显示缓冲 / Damage Display Buffer ==========
-
-    /**
-     * 临时存储待显示的伤害信息
-     *
-     * <p>⭐ 只存玩家 UUID 而非 {@link ServerPlayer} 引用，避免玩家实体被队列残留条目钉住无法 GC。</p>
-     */
-    private static class DamageDisplayInfo {
-        /** 暴击颜色代码 */
-        final String colorCode;
-        /** 触发的元素集合 */
-        final Set<String> triggeredElements;
-        /** 显示前缀（玩家为空，宠物/女仆为🎀，无颜色代码，继承暴击颜色） */
-        final String prefix;
-        /** 接收伤害数字的玩家 UUID（弱引用语义，发包时现查） */
-        final UUID displayTargetId;
-        /** 入队时的服务端 tick 序号，用于兜底清理 */
-        final long createdTick;
-
-        DamageDisplayInfo(String colorCode, Set<String> triggeredElements,
-                          String prefix, UUID displayTargetId, long createdTick) {
-            this.colorCode = colorCode;
-            this.triggeredElements = triggeredElements;
-            this.prefix = prefix;
-            this.displayTargetId = displayTargetId;
-            this.createdTick = createdTick;
-        }
-    }
-
-    /**
-     * 使用 ConcurrentHashMap 存储每个受害者实体的待显示伤害信息
-     * 正常情况下条目在最终伤害回调中被立即消费，异常情况由定期清扫兜底
-     */
-    private static final Map<Integer, Deque<DamageDisplayInfo>> pendingDisplays = new ConcurrentHashMap<>();
-
-    /** 服务端 tick 序号（跨维度统一基准，仅用于队列过期判定）*/
-    private static volatile long serverTick = 0L;
-
-    /** 队列清扫间隔（tick）：100 tick = 5 秒 */
-    private static final int DISPLAY_CLEANUP_INTERVAL = 100;
-
-    /** 队列条目最大存活时长（tick）：超过即视为无人消费，直接丢弃 */
-    private static final int DISPLAY_MAX_AGE_TICKS = 40;
-
-    /** 清扫计时器 */
-    private static int displayCleanupCounter = 0;
-
-    // ========== Mixin 自检 / Mixin Self-Check ==========
-
-    /**
-     * ⭐ 诊断标志：最终伤害 Mixin 回调是否至少成功触发过一次
-     *
-     * <p>用于区分「Mixin 注入失败」与「其他原因导致不显示」两类问题。
-     * 首次触发时打印一条 INFO，之后不再输出。</p>
-     */
-    private static volatile boolean finalDamageHookVerified = false;
-
-    /** ⭐ 诊断标志：Mixin 缺失告警是否已打印过（避免刷屏，全程仅告警一次） */
-    private static volatile boolean hookMissingWarned = false;
-
     // ========== 多槽位属性缓存 / Multi-Slot Attribute Cache ==========
 
     /**
@@ -274,55 +212,6 @@ public class WeaponCombatHandler {
      * <p>防止超高 triggerChance 在群体攻击场景下触发数百次元素效果导致主线程卡死。</p>
      */
     private static final int MAX_ELEMENT_TRIGGER_COUNT = 20;
-
-    // ========== 服务端 Tick：计时 + 队列清扫 ==========
-
-    /**
-     * ⭐ 服务端 tick 末推进计时器并定期清扫伤害显示队列的僵尸条目
-     *
-     * @param evt 服务端 tick 事件
-     */
-    @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent evt) {
-        if (evt.phase != TickEvent.Phase.END) {
-            return;
-        }
-        serverTick++;
-
-        if (pendingDisplays.isEmpty()) {
-            displayCleanupCounter = 0;
-            return;
-        }
-        if (++displayCleanupCounter < DISPLAY_CLEANUP_INTERVAL) {
-            return;
-        }
-        displayCleanupCounter = 0;
-
-        long now = serverTick;
-        Iterator<Map.Entry<Integer, Deque<DamageDisplayInfo>>> iterator = pendingDisplays.entrySet().iterator();
-        boolean droppedAny = false;
-        while (iterator.hasNext()) {
-            Deque<DamageDisplayInfo> queue = iterator.next().getValue();
-            // 队列按入队顺序递增，从队首丢弃过期条目即可
-            while (!queue.isEmpty() && now - queue.peekFirst().createdTick > DISPLAY_MAX_AGE_TICKS) {
-                queue.pollFirst();
-                droppedAny = true;
-            }
-            if (queue.isEmpty()) {
-                iterator.remove();
-            }
-        }
-
-        // ⭐ 自检告警：有条目超时被丢弃，且 Mixin 回调从未触发过 → 几乎可以断定 Mixin 未生效
-        if (droppedAny && !finalDamageHookVerified && !hookMissingWarned) {
-            hookMissingWarned = true;
-            LogUtil.error("[伤害显示] 伤害显示队列出现超时丢弃，且最终伤害 Mixin 回调从未触发。");
-            LogUtil.error("[伤害显示] 判定：MixinLivingEntityFinalDamage / MixinPlayerFinalDamage 未生效，伤害数字将无法显示。");
-            LogUtil.error("[伤害显示] 排查：1) 确认 kuvalich.mixins.json 的 mixins 数组已包含这两个类；");
-            LogUtil.error("[伤害显示]       2) 确认已执行 clean build 重新生成 refmap；");
-            LogUtil.error("[伤害显示]       3) 在启动日志中搜索 kuvalich 与 mixin 关键字查看注入报错。");
-        }
-    }
 
     // ========== 额外槽位属性 / Extra Slot Attributes ==========
 
@@ -462,28 +351,6 @@ public class WeaponCombatHandler {
     }
 
     /**
-     * ⭐ 按 UUID 现查在线玩家（替代原来直接持有 ServerPlayer 强引用）
-     *
-     * @param reference 用于取得服务器实例的参考实体
-     * @param uuid      玩家 UUID
-     * @return 在线玩家，不在线返回 null
-     */
-    @Nullable
-    private static ServerPlayer resolveDisplayTarget(LivingEntity reference, UUID uuid) {
-        if (uuid == null) {
-            return null;
-        }
-        if (!(reference.level() instanceof ServerLevel serverLevel)) {
-            return null;
-        }
-        MinecraftServer server = serverLevel.getServer();
-        if (server == null) {
-            return null;
-        }
-        return server.getPlayerList().getPlayer(uuid);
-    }
-
-    /**
      * 获取伤害数字的显示前缀
      *
      * @param attacker 攻击者实体
@@ -491,6 +358,23 @@ public class WeaponCombatHandler {
      */
     static String getDamageDisplayPrefix(LivingEntity attacker) {
         return (attacker instanceof Player) ? "" : "🎀";
+    }
+
+    /**
+     * ⭐ 把本次攻击触发的元素拼成伤害数字后缀（各元素图标自带颜色码）
+     *
+     * @param triggeredElements 本次攻击触发的元素集合（可为空集合）
+     * @return 后缀字符串；无元素时返回空串
+     */
+    private static String buildElementSuffix(Set<String> triggeredElements) {
+        if (triggeredElements.isEmpty()) {
+            return "";
+        }
+        StringBuilder suffix = new StringBuilder();
+        for (String element : triggeredElements) {
+            suffix.append(WeaponElementSystem.getElementEmoji(element));
+        }
+        return suffix.toString();
     }
 
     // ========== ⭐ 近战攻击强度捕获 / Melee Attack Strength Capture ==========
@@ -545,6 +429,9 @@ public class WeaponCombatHandler {
      * <p>⭐ 溅射重入防护：由 {@link #applySplashDamage} 派生的伤害
      * 会带着 {@code playerAttack} 伤害源重新进入本方法并被误判为近战，
      * 见到 {@link #SPLASH_REENTRY} 标记直接放行，交由原版流程结算。</p>
+     *
+     * <p>⭐ 非开光武器造成的伤害：交给 {@link DamageDisplayTracker#registerPlain} 登记普通白字，
+     * 该方法在 {@code damageDisplay} 关闭时直接返回，默认配置下没有任何开销。</p>
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingHurt(@Nonnull LivingHurtEvent evt) {
@@ -573,78 +460,12 @@ public class WeaponCombatHandler {
                     // ⭐ 传入真实蓄力比例，替代原先恒为 1.0f 的死代码
                     processDamage(evt, attacker, weapon, damageSource,
                             consumeMeleeAttackStrength(isMelee), isMelee);
+                    return;
                 }
             }
-        }
-    }
 
-    /**
-     * ⭐ 最终伤害回调：读取待显示信息，发送伤害数字到客户端
-     *
-     * <p>由 {@code MixinLivingEntityFinalDamage} 与 {@code MixinPlayerFinalDamage}
-     * 在 {@code ForgeHooks.onLivingDamage} 返回后调用。此时整个
-     * {@code LivingDamageEvent} 事件链已跑完（含 l2damagetracker 的莱特兰词缀
-     * 减伤 / 免疫，以及本模组 {@code WarframeEffectHandler} 的各类抗性），
-     * 紧接着原版就会执行 {@code setHealth}，因此传入的 {@code finalDamage}
-     * 就是实体实际掉的血量，不受任何监听器优先级与注册顺序影响。</p>
-     *
-     * <p>{@code finalDamage} 为 0 时同样会触发本方法，此时只清理队列、不发送数字，
-     * 避免条目残留导致后续伤害显示错位。</p>
-     *
-     * <p><b>仅由 Mixin 在服务端调用</b>，调用方已完成 {@code isClientSide} 判断。</p>
-     *
-     * @param hurter      受击实体
-     * @param source      伤害来源
-     * @param finalDamage 事件链处理完毕后的最终扣血量
-     */
-    public static void onFinalDamage(@Nonnull LivingEntity hurter,
-                                     @Nonnull DamageSource source,
-                                     float finalDamage) {
-        // ⭐ 自检：首次触发时确认 Mixin 已生效，仅打印一次
-        if (!finalDamageHookVerified) {
-            finalDamageHookVerified = true;
-            LogUtil.info("[伤害显示] 最终伤害 Mixin 回调已生效，伤害数字将显示实际扣血值");
-        }
-
-        int entityId = hurter.getId();
-
-        Deque<DamageDisplayInfo> queue = pendingDisplays.get(entityId);
-        if (queue != null && !queue.isEmpty()) {
-            DamageDisplayInfo displayInfo = queue.pollFirst();
-
-            if (queue.isEmpty()) {
-                pendingDisplays.remove(entityId);
-            }
-
-            ServerPlayer serverPlayer = resolveDisplayTarget(hurter, displayInfo.displayTargetId);
-            if (serverPlayer != null && serverPlayer.isAlive()
-                    && ModConfig.KUVA_LICH.enableDamageNumbers.get()) {
-
-                if (finalDamage > 0 && !Float.isNaN(finalDamage) && !Float.isInfinite(finalDamage)) {
-                    StringBuilder displayText = new StringBuilder();
-                    displayText.append(displayInfo.colorCode);
-                    displayText.append(displayInfo.prefix);
-                    displayText.append(DamagePacket.formatDamage(finalDamage));
-                    for (String element : displayInfo.triggeredElements) {
-                        displayText.append(WeaponElementSystem.getElementEmoji(element));
-                    }
-                    Vec3 position = WeaponElementSystem.getRandomDamagePosition(hurter);
-                    DamagePacket.sendToPlayer(serverPlayer, displayText.toString(), position);
-                }
-            }
-        } else {
-            // 非模组武器的普通伤害显示（仅玩家攻击者）
-            Player player = null;
-
-            if (source.getDirectEntity() instanceof Player directPlayer) {
-                player = directPlayer;
-            } else if (source.getEntity() instanceof Player indirectPlayer) {
-                player = indirectPlayer;
-            }
-
-            if (player instanceof ServerPlayer serverPlayer && ModConfig.KUVA_LICH.damageDisplay.get()) {
-                displayDamage(serverPlayer, hurter, finalDamage);
-            }
+            // ⭐ 非开光武器：普通白字同样走登记，最终伤害回调才能算上护盾吃掉的部分
+            DamageDisplayTracker.registerPlain(evt.getEntity(), damageSource, evt.getAmount());
         }
     }
 
@@ -658,6 +479,9 @@ public class WeaponCombatHandler {
      *
      * <p>⭐ 爆炸半径溅射在远程分支只做半径计算并登记，实际结算延后到
      * {@code evt.setAmount(totalDamage)} 之后，以主目标最终伤害为基数。</p>
+     *
+     * <p>⭐ 魔法伤害：由 {@link MagicDamageClassifier#isMagic} 判定，是独立于近战/远程的叠加层：
+     * 先照常走近战或远程分支，判定为魔法再额外加 {@code magicDamage}。</p>
      *
      * @param attackStrength 近战蓄力比例（0.0 ~ 1.0），远程恒为 1.0
      */
@@ -689,7 +513,7 @@ public class WeaponCombatHandler {
             applyKillStackEffects((Player) attacker, weapon, attributes, hurter);
         }
 
-        // ========== 伤害类型加成 ==========
+        // ========== 伤害类型加成（基础分支：近战 / 远程） ==========
         if (damageSource.getDirectEntity() == attacker) {
             baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
 
@@ -746,7 +570,8 @@ public class WeaponCombatHandler {
             }
         }
 
-        if (damageSource.getMsgId().toLowerCase().contains("magic") || damageSource.is(DamageTypeTags.WITCH_RESISTANT_TO)) {
+        // ========== 魔法叠加层（独立于基础分支，见 MagicDamageClassifier：原版规则 + 第三方规则） ==========
+        if (MagicDamageClassifier.isMagic(damageSource)) {
             baseDamage += attributes.getOrDefault("magicDamage", 0.0);
         }
 
@@ -884,7 +709,7 @@ public class WeaponCombatHandler {
         totalDamage = Math.max(totalDamage, 0);
         evt.setAmount(totalDamage);
 
-        // ⭐ 提前取得伤害数字接收者，溅射与主目标入队共用同一个引用
+        // ⭐ 提前取得伤害数字接收者，溅射与主目标登记共用同一个引用
         ServerPlayer displayTarget = findDamageDisplayTarget(attacker);
 
         // ⭐ 爆炸半径溅射：以主目标最终伤害为基数，自动继承远程面板与暴击结果
@@ -904,12 +729,12 @@ public class WeaponCombatHandler {
         // ⭐ 处决：处决阈值 + 秒杀概率，延迟1tick执行
         applyExecuteEffects(attacker, hurter, attributes, isPlayer, totalDamage);
 
-        // ⭐ 只入队玩家 UUID，避免持有 ServerPlayer 强引用
-        if (displayTarget != null) {
-            String prefix = getDamageDisplayPrefix(attacker);
-            pendingDisplays.computeIfAbsent(hurter.getId(), k -> new ArrayDeque<>())
-                    .addLast(new DamageDisplayInfo(colorCode, triggeredElements, prefix,
-                            displayTarget.getUUID(), serverTick));
+        // ⭐ 登记伤害数字，以本次 DamageSource 对象作为配对凭据。
+        //    最终伤害 ≤ 0 时原版会在 actuallyHurt 里提前返回、根本走不到最终伤害回调，登记了只会白白作废，故跳过
+        if (displayTarget != null && totalDamage > 0) {
+            DamageDisplayTracker.register(hurter, damageSource, displayTarget, colorCode,
+                    getDamageDisplayPrefix(attacker), buildElementSuffix(triggeredElements),
+                    DamagePacket.Channel.PRIMARY);
         }
     }
 
@@ -929,13 +754,12 @@ public class WeaponCombatHandler {
      *
      * <p>行为约定：溅射<b>只结算伤害</b>，不独立掷元素触发、不累加武器击杀叠层、
      * 不做处决判定，避免一次群体命中把叠层与元素触发次数乘上目标数。
-     * 伤害数字主动入队并复用主目标的暴击颜色码，故溅射数字与主目标同色；
+     * 伤害数字复用主目标的暴击颜色码，故溅射数字与主目标同色；
      * 因不触发元素，数字后不带元素图标。</p>
      *
-     * <p>入队必须在 {@code hurt} 之前：{@code hurt} 会同步跑完事件链并回调
-     * {@link #onFinalDamage}，届时直接消费刚入队的条目。
-     * 若溅射伤害被其他模组完全取消导致回调未触发，残留条目由
-     * {@link #onServerTick} 的定期清扫兜底。</p>
+     * <p>⭐ 每个溅射目标都走 {@link DamageDisplayTracker#hurtWithDisplay}：登记 → {@code hurt} → 未消费即撤回。
+     * 连射时溅射目标大多处于受击无敌，{@code hurt} 会直接作废；
+     * 旧实现在这里留下残留条目，导致该目标之后的数字整体错位，现已杜绝。</p>
      *
      * @param attacker      攻击者
      * @param hurter        主目标（溅射中心，自身不重复受伤）
@@ -964,38 +788,18 @@ public class WeaponCombatHandler {
 
         DamageSource splashSource = getAttackDamageSource(attacker);
         String prefix = getDamageDisplayPrefix(attacker);
-        boolean showNumbers = displayTarget != null && ModConfig.KUVA_LICH.enableDamageNumbers.get();
-        UUID displayTargetId = showNumbers ? displayTarget.getUUID() : null;
 
         SPLASH_REENTRY.set(Boolean.TRUE);
         try {
             for (LivingEntity entity : entities) {
-                if (showNumbers) {
-                    // 溅射不触发元素，故元素集合为空；颜色码沿用主目标的暴击结果
-                    pendingDisplays.computeIfAbsent(entity.getId(), k -> new ArrayDeque<>())
-                            .addLast(new DamageDisplayInfo(colorCode, Collections.emptySet(),
-                                    prefix, displayTargetId, serverTick));
-                }
-                entity.hurt(splashSource, splashDamage);
+                // 溅射不触发元素，故无元素后缀；颜色码沿用主目标的暴击结果。
+                // displayTarget 为 null 或跳字关闭时，内部只造成伤害、不登记
+                DamageDisplayTracker.hurtWithDisplay(entity, splashSource, splashDamage, displayTarget,
+                        colorCode, prefix, "", DamagePacket.Channel.PRIMARY);
             }
         } finally {
             // 异常时也必须复位，否则该线程后续所有攻击都会被跳过结算
             SPLASH_REENTRY.set(Boolean.FALSE);
-        }
-    }
-
-    /**
-     * 普通伤害显示（无模组武器的默认白色伤害数字，仅玩家可见）
-     *
-     * @param serverPlayer 接收伤害数字的玩家
-     * @param hurter       受击实体
-     * @param damage       最终扣血量
-     */
-    private static void displayDamage(ServerPlayer serverPlayer, LivingEntity hurter, float damage) {
-        if (damage > 0 && !Float.isNaN(damage) && !Float.isInfinite(damage)) {
-            String displayText = "§f" + DamagePacket.formatDamage(damage);
-            Vec3 position = WeaponElementSystem.getRandomDamagePosition(hurter);
-            DamagePacket.sendToPlayer(serverPlayer, displayText, position);
         }
     }
 
@@ -1100,6 +904,11 @@ public class WeaponCombatHandler {
     /**
      * 真实伤害（true_bullet）结算。
      *
+     * <p>⭐ 伤害数字改为实测：扣血前记下血量，扣完显示实际掉了多少
+     * （见 {@link DamageDisplayTracker#resolveDirectLoss}）。
+     * Boss 锁血、伤害上限、其他模组拦截 {@code setHealth} 时数字如实变小或不显示；
+     * 目标因此死亡时显示完整预算值。真伤直接改血量、不经过护盾，因此不带护盾图标。</p>
+     *
      * @param attacker             攻击者
      * @param hurter               受击者
      * @param damageSource         伤害来源
@@ -1131,18 +940,19 @@ public class WeaponCombatHandler {
             public void run() {
                 this.cancel();
                 if (hurter.isDeadOrDying()) { return; }
-                if (hurter.getHealth() - finalTrueDamage > 0.01f) {
+
+                // ⭐ 先记下扣血前的血量，扣完再测实际掉了多少
+                float healthBefore = hurter.getHealth();
+                if (healthBefore - finalTrueDamage > 0.01f) {
                     EntityLivingUtil.damageHealthDirectly(hurter, finalTrueDamage);
                 } else {
                     EntityLivingUtil.kill(hurter, trueSource);
                 }
-                ServerPlayer target = findDamageDisplayTarget(trueAttacker);
-                if (target != null && target.isAlive() && ModConfig.KUVA_LICH.enableDamageNumbers.get()) {
-                    String prefix = getDamageDisplayPrefix(trueAttacker);
-                    String displayText = "\u00a75" + prefix + DamagePacket.formatDamage(finalTrueDamage) + getTrueBulletEmoji();
-                    Vec3 position = WeaponElementSystem.getRandomDamagePosition(hurter);
-                    DamagePacket.sendToPlayer(target, displayText, position);
-                }
+                float shown = DamageDisplayTracker.resolveDirectLoss(hurter, healthBefore, finalTrueDamage);
+
+                DamageDisplayTracker.sendDirect(findDamageDisplayTarget(trueAttacker), hurter, shown,
+                        "\u00a75", getDamageDisplayPrefix(trueAttacker), getTrueBulletEmoji(), false,
+                        DamagePacket.Channel.PRIMARY);
             }
         }.start();
     }
@@ -1286,7 +1096,8 @@ public class WeaponCombatHandler {
         LivingEntity entity = evt.getEntity();
         if (entity.level().isClientSide()) return;
         if (!entity.isAlive()) return;
-        if (entity.level().getGameTime() % 20 != 0) return;
+        // ⭐ 修复 4：用「游戏时间 + 实体 ID」错开，避免所有持开光武器的实体挤在同一个 tick 里算属性
+        if (Math.floorMod(entity.level().getGameTime() + entity.getId(), 20L) != 0) return;
 
         ItemStack weapon = entity.getMainHandItem();
         if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
@@ -1389,7 +1200,29 @@ public class WeaponCombatHandler {
         int extraUpdates = (int) firingRate;
         for (int i = 0; i < extraUpdates; i++) { EntityLivingUtil.updateHeld(entity); }
         double fractionalPart = firingRate - extraUpdates;
-        if (fractionalPart > 0 && RandomUtil.percentageChance(fractionalPart * 100)) { EntityLivingUtil.updateHeld(entity); }
+        // ⭐ 修复 2：本方法客户端、服务端都在跑（客户端跑是为了蓄力动画跟上实际进度）。
+        //    小数部分原来用 RandomUtil 掷骰，两端各掷各的，动画和实际进度会对不上；
+        //    现改为按「游戏时间 + 实体 ID」做确定性掷骰，两端同一 tick 得到同一结果
+        if (fractionalPart > 0 && deterministicChance(entity, fractionalPart)) { EntityLivingUtil.updateHeld(entity); }
+    }
+
+    /**
+     * 确定性掷骰：同一实体在同一游戏 tick 上，客户端和服务端算出的结果一定相同
+     *
+     * <p>把游戏时间和实体 ID 混成一个 64 位散列，取高 53 位当 [0,1) 的随机数。
+     * 游戏时间两端由原版同步，实体 ID 两端一致，所以两端结果一致。</p>
+     *
+     * @param entity 实体
+     * @param chance 概率（0 ~ 1）
+     * @return 命中返回 true
+     */
+    private static boolean deterministicChance(LivingEntity entity, double chance) {
+        long seed = entity.level().getGameTime() * 0x9E3779B97F4A7C15L + entity.getId();
+        seed ^= (seed >>> 29);
+        seed *= 0xBF58476D1CE4E5B9L;
+        seed ^= (seed >>> 32);
+        double roll = (seed >>> 11) * 0x1.0p-53;
+        return roll < chance;
     }
 
     /**

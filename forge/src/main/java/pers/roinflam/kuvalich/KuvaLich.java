@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich;
 
-import com.tacz.guns.entity.EntityKineticBullet;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -86,12 +85,17 @@ public class KuvaLich {
 
         // 注册配置屏幕
         // Register config screen
-        ModLoadingContext.get().registerExtensionPoint(
-                ConfigScreenHandler.ConfigScreenFactory.class,
-                () -> new ConfigScreenHandler.ConfigScreenFactory(
-                        (minecraft, screen) -> ClothConfigScreen.createConfigScreen(screen)
-                )
-        );
+        // ⭐ Cloth Config 是可选依赖：没装时不注册，否则玩家在模组列表点"配置"会直接 NoClassDefFoundError 崩溃
+        if (ModList.get().isLoaded("cloth_config")) {
+            ModLoadingContext.get().registerExtensionPoint(
+                    ConfigScreenHandler.ConfigScreenFactory.class,
+                    () -> new ConfigScreenHandler.ConfigScreenFactory(
+                            (minecraft, screen) -> ClothConfigScreen.createConfigScreen(screen)
+                    )
+            );
+        } else {
+            LogUtil.info("未检测到 Cloth Config，跳过配置界面注册（可直接编辑 config/kuvalich-*.toml）");
+        }
 
         modEventBus.addListener(CapabilityRegistryHandler::registerCapabilities);
 

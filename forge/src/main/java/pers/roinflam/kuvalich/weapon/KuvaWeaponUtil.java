@@ -65,9 +65,12 @@ public class KuvaWeaponUtil {
      * Get weapon element type (business logic 100% unchanged)
      */
     public static String getType(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getOrCreateTag();
-        CompoundTag kuvalich = tag.getCompound(Reference.MOD_ID);
-        return kuvalich.getString("Type");
+        // ⭐ 只读：用 getTag() 判空，不再用 getOrCreateTag() 给没有 NBT 的物品凭空塞一个空标签
+        CompoundTag tag = itemStack.getTag();
+        if (tag == null) {
+            return "";
+        }
+        return tag.getCompound(Reference.MOD_ID).getString("Type");
     }
 
     /**
@@ -87,9 +90,8 @@ public class KuvaWeaponUtil {
      * Check if is Kuva weapon (business logic 100% unchanged)
      */
     public static boolean isElementalWeapon(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getOrCreateTag();
-        CompoundTag kuvalich = tag.getCompound(Reference.MOD_ID);
-        return kuvalich.contains("Type") && kuvalich.contains("Number");
+        // ⭐ 只读：与 hasType 同一判定，用 getTag() 判空
+        return hasType(itemStack);
     }
 
     /**
@@ -141,9 +143,12 @@ public class KuvaWeaponUtil {
      * Get weapon level (business logic 100% unchanged)
      */
     public static int getNumber(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getOrCreateTag();
-        CompoundTag kuvalich = tag.getCompound(Reference.MOD_ID);
-        return kuvalich.getInt("Number");
+        // ⭐ 只读：用 getTag() 判空
+        CompoundTag tag = itemStack.getTag();
+        if (tag == null) {
+            return 0;
+        }
+        return tag.getCompound(Reference.MOD_ID).getInt("Number");
     }
 
     /**
@@ -163,7 +168,12 @@ public class KuvaWeaponUtil {
      * Check if has type tag (business logic 100% unchanged)
      */
     public static boolean hasType(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getOrCreateTag();
+        // ⭐ 只读：用 getTag() 判空。Tooltip 事件对鼠标划过的每个物品都会调本方法，
+        //    以前的 getOrCreateTag() 会给所有没有 NBT 的物品塞一个空 {} 标签
+        CompoundTag tag = itemStack.getTag();
+        if (tag == null) {
+            return false;
+        }
         CompoundTag kuvalich = tag.getCompound(Reference.MOD_ID);
         return kuvalich.contains("Type") && kuvalich.contains("Number");
     }

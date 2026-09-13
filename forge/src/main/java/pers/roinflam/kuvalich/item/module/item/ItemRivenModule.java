@@ -130,7 +130,7 @@ public class ItemRivenModule extends AbstractItemModule {
         }
 
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_RIVEN_MODULE.get());
-        itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + Component.translatable("item.item_type_riven_random.name").getString() + " " + generateRivenName()));
+        // 名称由 cycleModule 生成的新物品决定，这里的临时物品只用来暂存 trend / cycle / mode
 
         if (RandomUtil.percentageChance(2.5)) {
             setTrend(itemStack, 5);

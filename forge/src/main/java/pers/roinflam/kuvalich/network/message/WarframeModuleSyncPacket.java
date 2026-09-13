@@ -11,6 +11,7 @@ import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.WarframeModules;
 import pers.roinflam.kuvalich.module.KillStackManager;
+import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.module.warframe.WarframeModuleHandler;
 
 import java.util.*;
@@ -55,6 +56,8 @@ public class WarframeModuleSyncPacket {
      * 击杀叠层计数，索引对应 {@link WarframeModuleHandler#WARFRAME_STACK_TYPES}
      */
     private final int[] killStacks;
+    /** ⭐ 武器类叠层数量，顺序与 {@link KillStackManager#WEAPON_STACK_TYPES} 一致 */
+    private final int[] weaponStacks;
 
     // ==================== 服务端状态追踪 ====================
 
@@ -73,8 +76,20 @@ public class WarframeModuleSyncPacket {
      * @param killStacks 击杀叠层计数数组，索引对应 WARFRAME_STACK_TYPES
      */
     public WarframeModuleSyncPacket(ItemStack[] modules, int[] killStacks) {
+        this(modules, killStacks, new int[KillStackManager.WEAPON_STACK_TYPES.length]);
+    }
+
+    /**
+     * 完整构造函数
+     *
+     * @param modules      战甲模组
+     * @param killStacks   战甲类叠层数量（顺序与 {@code WARFRAME_STACK_TYPES} 一致）
+     * @param weaponStacks 武器类叠层数量（顺序与 {@link KillStackManager#WEAPON_STACK_TYPES} 一致）
+     */
+    public WarframeModuleSyncPacket(ItemStack[] modules, int[] killStacks, int[] weaponStacks) {
         this.modules = modules;
         this.killStacks = killStacks;
+        this.weaponStacks = weaponStacks != null ? weaponStacks : new int[KillStackManager.WEAPON_STACK_TYPES.length];
     }
 
     // ==================== 编解码 ====================
@@ -90,6 +105,13 @@ public class WarframeModuleSyncPacket {
         buf.writeVarInt(stackTypeCount);
         for (int i = 0; i < stackTypeCount; i++) {
             buf.writeVarInt(i < pkt.killStacks.length ? pkt.killStacks[i] : 0);
+        }
+
+        // ⭐ 武器类叠层：数量 + 各项，顺序见 KillStackManager.WEAPON_STACK_TYPES
+        int weaponTypeCount = KillStackManager.WEAPON_STACK_TYPES.length;
+        buf.writeVarInt(weaponTypeCount);
+        for (int i = 0; i < weaponTypeCount; i++) {
+            buf.writeVarInt(i < pkt.weaponStacks.length ? pkt.weaponStacks[i] : 0);
         }
     }
 
@@ -110,7 +132,17 @@ public class WarframeModuleSyncPacket {
         for (int i = 0; i < stackTypeCount; i++) {
             killStacks[i] = buf.readVarInt();
         }
-        return new WarframeModuleSyncPacket(modules, killStacks);
+
+        // ⭐ 武器类叠层
+        int weaponTypeCount = buf.readVarInt();
+        if (weaponTypeCount < 0 || weaponTypeCount > 256) {
+            weaponTypeCount = 0;
+        }
+        int[] weaponStacks = new int[weaponTypeCount];
+        for (int i = 0; i < weaponTypeCount; i++) {
+            weaponStacks[i] = buf.readVarInt();
+        }
+        return new WarframeModuleSyncPacket(modules, killStacks, weaponStacks);
     }
 
     /**
@@ -136,6 +168,14 @@ public class WarframeModuleSyncPacket {
         }
         // 交给 Handler 管理客户端缓存
         WarframeModuleHandler.onClientSyncReceived(validModules, pkt.killStacks);
+
+        // ⭐ 武器类叠层镜像：本地玩家 UUID 只能在客户端取，本方法已由 DistExecutor 限定在客户端执行
+        net.minecraft.client.player.LocalPlayer localPlayer = net.minecraft.client.Minecraft.getInstance().player;
+        if (localPlayer != null) {
+            KillStackManager.onClientSyncReceived(localPlayer.getUUID(), pkt.weaponStacks);
+        } else {
+            LogUtil.debug("[叠层同步] 收到同步包时本地玩家为空，已跳过武器叠层镜像更新");
+        }
     }
 
     // ==================== 服务端发送接口 ====================
@@ -151,14 +191,13 @@ public class WarframeModuleSyncPacket {
 
         ItemStack[] modules = collectServerModules(player);
         int[] stacks = collectServerKillStacks(player);
-
+        int[] weaponStacks = KillStackManager.collectWeaponStacks(player);
         KuvaLich.network.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new WarframeModuleSyncPacket(modules, stacks)
+                new WarframeModuleSyncPacket(modules, stacks, weaponStacks)
         );
-
-        // 更新状态记录
-        SERVER_STATE.put(player.getUUID(), new int[]{getModuleVersion(player), Arrays.hashCode(stacks)});
+        SERVER_STATE.put(player.getUUID(), new int[]{getModuleVersion(player), Arrays.hashCode(stacks),
+                Arrays.hashCode(weaponStacks)});
     }
 
     /**
@@ -177,20 +216,20 @@ public class WarframeModuleSyncPacket {
         int version = getModuleVersion(player);
         int[] stacks = collectServerKillStacks(player);
         int stackHash = Arrays.hashCode(stacks);
-
+        // ⭐ 武器类叠层也纳入"有没有变化"的判断，叠层增减或衰减时才重发
+        int[] weaponStacks = KillStackManager.collectWeaponStacks(player);
+        int weaponHash = Arrays.hashCode(weaponStacks);
         int[] last = SERVER_STATE.get(player.getUUID());
-        if (last != null && last[0] == version && last[1] == stackHash
-                && version != VERSION_UNAVAILABLE) {
+        if (last != null && last.length >= 3 && last[0] == version && last[1] == stackHash
+                && last[2] == weaponHash && version != VERSION_UNAVAILABLE) {
             return false;
         }
-
         ItemStack[] modules = collectServerModules(player);
         KuvaLich.network.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new WarframeModuleSyncPacket(modules, stacks)
+                new WarframeModuleSyncPacket(modules, stacks, weaponStacks)
         );
-
-        SERVER_STATE.put(player.getUUID(), new int[]{version, stackHash});
+        SERVER_STATE.put(player.getUUID(), new int[]{version, stackHash, weaponHash});
         return true;
     }
 

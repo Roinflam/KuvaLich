@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 @Mod.EventBusSubscriber
 public class Paracesis extends AbstractKuvaWeapon {
 
-    public Paracesis(@Nonnull Item.Properties properties) {
+    public Paracesis(@Nonnull Properties properties) {
         super(properties);
     }
 
@@ -78,7 +78,8 @@ public class Paracesis extends AbstractKuvaWeapon {
 
                 @Override
                 public void run() {
-                    if (++tick > 100 || hurter.isDeadOrDying()) {
+                    // ⭐ 实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血（与其他 DoT 一致）
+                    if (++tick > 100 || hurter.isDeadOrDying() || hurter.isRemoved()) {
                         this.cancel();
                         return;
                     }

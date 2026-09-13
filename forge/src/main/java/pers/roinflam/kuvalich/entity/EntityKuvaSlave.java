@@ -161,12 +161,15 @@ public class EntityKuvaSlave extends AbstractKuva {
 
     @Override
     public void die(@NotNull DamageSource damageSource) {
-        if (!level().isClientSide) {
+        // ⭐ 先走原版死亡流程，再发奖励：Forge 的 LivingDeathEvent 在 super.die() 里触发，
+        //    如果被别的模组取消（图腾类 / 复活类效果），实体其实没死，this.dead 保持 false，
+        //    这时不能发放击杀奖励，否则玩家可以反复"击杀"同一只怪刷掉落和解密进度
+        super.die(damageSource);
+        if (!level().isClientSide && this.dead) {
             if (damageSource.getEntity() instanceof Player player) {
                 handlePlayerKill(player);
             }
         }
-        super.die(damageSource);
     }
 
     /**

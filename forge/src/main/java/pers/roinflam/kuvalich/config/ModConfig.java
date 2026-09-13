@@ -4,7 +4,11 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
+import pers.roinflam.kuvalich.module.weapon.MagicDamageClassifier;
 import pers.roinflam.kuvalich.utils.Reference;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 赤毒玄骸模组配置类
@@ -71,6 +75,10 @@ public final class ModConfig {
         // ===== 伤害系统 / Damage System =====
         public final ForgeConfigSpec.BooleanValue damageDisplay;
         public final ForgeConfigSpec.BooleanValue enableDamageNumbers;
+        /** 是否把短时间内同一只怪身上的多条伤害数字合并成一条（客户端读取） */
+        public final ForgeConfigSpec.BooleanValue mergeDamageNumbers;
+        /** 合并窗口（毫秒）：从一条数字出现起，这段时间内到来的同组数字并入它 */
+        public final ForgeConfigSpec.IntValue mergeDamageWindowMs;
         public final ForgeConfigSpec.BooleanValue enableTrueDamage;
         public final ForgeConfigSpec.DoubleValue battleBoost;
         public final ForgeConfigSpec.DoubleValue reducedDamage;
@@ -210,6 +218,29 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue endoDropMinAmount;
         public final ForgeConfigSpec.IntValue endoDropMaxAmount;
         public final ForgeConfigSpec.BooleanValue enableMasteryOnReveal;
+
+        // ===== 第三方魔法识别 / Third-party Magic Recognition =====
+
+        /** 是否把第三方魔法模组的法术伤害识别为魔法伤害（总开关） */
+        public final ForgeConfigSpec.BooleanValue enableThirdPartyMagicRecognition;
+        /** 按命名空间整体算魔法的模组 id 列表 */
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> magicDamageNamespaces;
+        /** 精确算魔法的伤害类型 id 列表 */
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> magicDamageTypeWhitelist;
+        /** 精确不算魔法的伤害类型 id 列表（优先级最高） */
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> magicDamageTypeBlacklist;
+
+        /** 命名空间默认值：目前确认过伤害源结构的五个魔法模组 */
+        public static final List<String> DEFAULT_MAGIC_DAMAGE_NAMESPACES = Arrays.asList(
+                "irons_spellbooks", "gtbcs_geomancy_plus", "goety", "ars_nouveau", "sweetmagic");
+
+        /** 白名单默认值：空 */
+        public static final List<String> DEFAULT_MAGIC_DAMAGE_TYPE_WHITELIST = Arrays.asList();
+
+        /** 黑名单默认值：Goety 的召唤物攻击、镰刀/末影刃斩击、战利品爆炸、遣散 */
+        public static final List<String> DEFAULT_MAGIC_DAMAGE_TYPE_BLACKLIST = Arrays.asList(
+                "goety:summon", "goety:sword", "goety:loot_explode", "goety:loot_explode_owned", "goety:dismissed");
+
         /**
          * 构造赤毒玄骸系统配置
          *
@@ -307,6 +338,22 @@ public final class ModConfig {
                     .comment("When disabled, no damage packets will be sent to client")
                     .comment("关闭时将不会向客户端发送伤害数据包")
                     .define("enableDamageNumbers", true);
+
+            mergeDamageNumbers = builder
+                    .comment("Merge damage numbers on the same target within a short window into one")
+                    .comment("把短时间内同一只怪身上的多条伤害数字合并成一条(数值累加、颜色取最高、图标取并集)")
+                    .comment("This mod's own element damage only merges with the same element, so element icons stay accurate")
+                    .comment("本模组自己的元素伤害只与同元素合并，保证元素图标准确")
+                    .comment("Read on the client side; false = every hit shows its own number (old behaviour)")
+                    .comment("由客户端读取；false = 每一下各显示一个数字(旧行为)")
+                    .define("mergeDamageNumbers", true);
+
+            mergeDamageWindowMs = builder
+                    .comment("Merge window in milliseconds, counted from the first number in the group")
+                    .comment("合并窗口(毫秒)，从这组的第一条数字出现开始算")
+                    .comment("0 = disable merging")
+                    .comment("0 = 不合并")
+                    .defineInRange("mergeDamageWindowMs", 200, 0, 2000);
 
             enableTrueDamage = builder
                     .comment("Enable true damage system (bypass setHealth and damage reduction)")
@@ -938,6 +985,42 @@ public final class ModConfig {
                     .comment("揭示模组时是否赋予精通等级（false = 每次都是1级）")
                     .define("enableMasteryOnReveal", true);
 
+            // ═══════════════════════════════════════════════════════════════
+            // 新增：第三方魔法识别
+            // NEW: Third-party Magic Recognition
+            // ═══════════════════════════════════════════════════════════════
+
+            builder.comment("")
+                    .comment("═══ Third-party Magic Recognition / 第三方魔法识别 ═══")
+                    .comment("Decides which damage counts as 'magic' for the magicDamage attribute and Kuva adaptive resistance.")
+                    .comment("决定哪些伤害算「魔法伤害」（用于 magicDamage 词条与赤毒实体的适应性抗性）。")
+                    .comment("Magic is an independent layer on top of the base melee/remote branch: it never replaces melee/remote/projectile bonuses.")
+                    .comment("魔法是叠在近战/远程基础分支之上的独立层，不会取代近战/远程/弹射物加成。")
+                    .comment("Vanilla rule always applies: message_id contains 'magic', or damage type is in minecraft:witch_resistant_to.")
+                    .comment("原版规则始终生效：message_id 含 magic，或伤害类型在 minecraft:witch_resistant_to 里。")
+                    .comment("Summon/pet melee hits (direct entity is a living minion of someone else) are never counted as magic.")
+                    .comment("召唤物/宠物替主人挥砍的命中一律不算魔法。");
+
+            enableThirdPartyMagicRecognition = builder
+                    .comment("Enable third-party magic recognition (forge:is_magic tag + namespace/whitelist/blacklist rules)")
+                    .comment("启用第三方魔法识别（forge:is_magic tag + 命名空间/白名单/黑名单规则）")
+                    .define("enableThirdPartyMagicRecognition", true);
+
+            magicDamageNamespaces = builder
+                    .comment("Damage-type namespaces treated as magic as a whole, e.g. 'goety' covers goety:direct_shock, goety:hellfire, ...")
+                    .comment("整个命名空间都算魔法的模组 id，例如 goety 覆盖 goety:direct_shock、goety:hellfire 等全部类型")
+                    .defineList("magicDamageNamespaces", DEFAULT_MAGIC_DAMAGE_NAMESPACES, o -> o instanceof String);
+
+            magicDamageTypeWhitelist = builder
+                    .comment("Exact damage-type ids always treated as magic, e.g. 'somemod:arcane_bolt'")
+                    .comment("精确算魔法的伤害类型 id，例如 somemod:arcane_bolt")
+                    .defineList("magicDamageTypeWhitelist", DEFAULT_MAGIC_DAMAGE_TYPE_WHITELIST, o -> o instanceof String);
+
+            magicDamageTypeBlacklist = builder
+                    .comment("Exact damage-type ids never treated as magic (highest priority, overrides every other rule)")
+                    .comment("精确不算魔法的伤害类型 id（优先级最高，压过其他所有规则）")
+                    .defineList("magicDamageTypeBlacklist", DEFAULT_MAGIC_DAMAGE_TYPE_BLACKLIST, o -> o instanceof String);
+
             builder.pop();
         }
     }
@@ -1176,9 +1259,13 @@ public final class ModConfig {
     /**
      * 配置重新加载事件处理
      *
+     * <p>配置加载/重载后让 {@link MagicDamageClassifier} 的解析缓存失效，
+     * 下一次伤害判定时按新配置重建。</p>
+     *
      * @param event 配置变更事件
      */
     @SubscribeEvent
     public static void onConfigReload(final ModConfigEvent event) {
+        MagicDamageClassifier.invalidateCache();
     }
 }

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.module.weapon.DamageDisplayTracker;
 import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.render.damagedisplay.DamageInfo;
@@ -37,7 +38,7 @@ import java.util.List;
 @Mod.EventBusSubscriber
 public class Pennant extends AbstractKuvaWeapon {
 
-    public Pennant(@Nonnull Item.Properties properties) {
+    public Pennant(@Nonnull Properties properties) {
         super(properties);
     }
 
@@ -110,7 +111,8 @@ public class Pennant extends AbstractKuvaWeapon {
 
                         @Override
                         public void run() {
-                            if (++tick > 20 || hurter.isDeadOrDying()) {
+                            // ⭐ 修复 3：实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血
+                            if (++tick > 20 || hurter.isDeadOrDying() || hurter.isRemoved()) {
                                 this.cancel();
                                 return;
                             }
@@ -119,27 +121,22 @@ public class Pennant extends AbstractKuvaWeapon {
                                     (hurter.getMaxHealth() - hurter.getHealth()) * 0.25f / 20);
                             damage = damage * 0.3f + damage * tick / 10 * 0.7f;
 
-                            double entityWidth = hurter.getBbWidth();
-                            double entityHeight = hurter.getBbHeight();  // ✅ 使用实体总高度
-                            double entityY = hurter.getY();
-
-                            double offsetX = (Math.random() - 0.5) * entityWidth * 1.2;
-                            double offsetZ = (Math.random() - 0.5) * entityWidth * 1.2;
-
-                            Vec3 position = new Vec3(
-                                    hurter.getX() + offsetX,
-                                    entityY + entityHeight * (-0.2 + Math.random() * 0.4),
-                                    hurter.getZ() + offsetZ
-                            );
-
-                            DamagePacket.sendToPlayer((ServerPlayer) player, damage, position, "§f");
-
-                            if (hurter.getHealth() - damage > 0.01f) {
+                            // ⭐ 先扣血、再显示「扣之前 − 扣之后」的实际掉血：
+                            //    Boss 锁血、伤害上限等拦截直接扣血时，数字如实变小或不显示
+                            float healthBefore = hurter.getHealth();
+                            if (healthBefore - damage > 0.01f) {
                                 EntityLivingUtil.damageHealthDirectly(hurter, damage);
                             } else {
                                 // ✅ 使用indirectMagic
                                 EntityLivingUtil.kill(hurter, level.damageSources().indirectMagic(player, player));
                                 this.cancel();
+                            }
+
+                            // 持续伤害走附加通道限流；直接改血量不经过护盾，因此不带护盾图标
+                            if (player instanceof ServerPlayer serverPlayer) {
+                                DamageDisplayTracker.sendDirect(serverPlayer, hurter,
+                                        DamageDisplayTracker.resolveDirectLoss(hurter, healthBefore, damage),
+                                        "§f", "", "", false, DamagePacket.Channel.SECONDARY);
                             }
                         }
                     }.start();

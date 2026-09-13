@@ -5,12 +5,15 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
+import pers.roinflam.kuvalich.utils.LogUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -353,6 +356,70 @@ public class DynamicAttributeManager {
         }
     }
 
+    /** 本系统写入实体属性的修饰符名称前缀，清理残留时按它识别 */
+    private static final String MODIFIER_NAME_PREFIX = "DynamicAttribute:";
+
+    /**
+     * ⭐ 实体进入世界时清掉存档里残留的临时修饰符
+     *
+     * <p>问题背景：修饰符是用 {@code addPermanentModifier} 加的，会随实体一起写进存档
+     * （这样玩家重新登录时最大生命值还在，血量不会被截断）。但效果的"还剩几秒"只记在内存里：
+     * 玩家在效果期间下线、怪物在效果期间随区块卸载、服务器重启，存档里的修饰符就成了没人管的孤儿——
+     * 临时加血 / 加速 / 减甲会永久留在实体身上，直到同一个效果再次触发并自然到期。</p>
+     *
+     * <p>实体刚进入世界时内存里一定没有它的记录，所以此时身上所有本系统的修饰符都是残留，直接清掉。
+     * 战甲那类"每 5 tick 重新施加"的效果几 tick 后会自己补回来。</p>
+     *
+     * @param event 实体加入世界事件
+     */
+    @SubscribeEvent
+    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide()) {
+            return;
+        }
+        if (!(event.getEntity() instanceof LivingEntity living)) {
+            return;
+        }
+        // 内存里已有记录说明不是"从存档加载"而是同一世界内的重新加入，不动
+        if (ENTITY_ATTRIBUTES.containsKey(living.getUUID())) {
+            return;
+        }
+        purgeStaleModifiers(living);
+    }
+
+    /**
+     * 移除实体身上所有名称以 {@link #MODIFIER_NAME_PREFIX} 开头的修饰符
+     *
+     * @param entity 目标实体
+     */
+    private static void purgeStaleModifiers(@Nonnull LivingEntity entity) {
+        int removed = 0;
+        for (Attribute attr : ForgeRegistries.ATTRIBUTES.getValues()) {
+            AttributeInstance attrInstance = entity.getAttribute(attr);
+            if (attrInstance == null) {
+                continue;
+            }
+            List<AttributeModifier> stale = null;
+            for (AttributeModifier modifier : attrInstance.getModifiers()) {
+                if (modifier.getName().startsWith(MODIFIER_NAME_PREFIX)) {
+                    if (stale == null) {
+                        stale = new ArrayList<>(2);
+                    }
+                    stale.add(modifier);
+                }
+            }
+            if (stale != null) {
+                for (AttributeModifier modifier : stale) {
+                    attrInstance.removeModifier(modifier);
+                }
+                removed += stale.size();
+            }
+        }
+        if (removed > 0) {
+            LogUtil.debug("[动态属性] 实体 " + entity.getName().getString() + " 加载时清理了 " + removed + " 个残留修饰符");
+        }
+    }
+
     /**
      * 处理实体的Tick逻辑（提取公共方法）
      *
@@ -392,8 +459,8 @@ public class DynamicAttributeManager {
                         );
                         onTick.accept(context);
                     } catch (Exception e) {
-                        System.err.println("动态属性tick异常: " + instance.getAttribute().getRegistryName());
-                        e.printStackTrace();
+                        LogUtil.error("[动态属性] tick 回调抛出异常: " + instance.getAttribute().getRegistryName()
+                                + "，本次跳过，效果继续计时", e);
                     }
                 }
             }

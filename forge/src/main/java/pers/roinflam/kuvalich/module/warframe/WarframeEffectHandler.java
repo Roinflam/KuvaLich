@@ -31,6 +31,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
@@ -672,6 +673,7 @@ public class WarframeEffectHandler {
         if (evt.getEntity().level().isClientSide()) {
             // 客户端：清理同步缓存
             WarframeModuleHandler.clearClientCache();
+            KillStackManager.clearClientStacks();
         } else {
             // 服务端：清理状态追踪
             WarframeModuleSyncPacket.cleanupPlayer(uuid);

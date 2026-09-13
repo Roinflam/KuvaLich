@@ -84,10 +84,12 @@ public class MixinTaczBulletExplosion {
             float newModifier = originalModifier * (1f + firstBulletBonus);
             accessor.setDamageModifier(newModifier);
 
-            LogUtil.debug(String.format(
-                    "[膛室] 满弹夹第一发加成生效! damageModifier=%.4f → %.4f, 加成=+%.0f%%",
-                    originalModifier, newModifier, firstBulletBonus * 100f
-            ));
+            if (LogUtil.isDebugEnabled()) {
+                LogUtil.debug(String.format(
+                        "[膛室] 满弹夹第一发加成生效! damageModifier=%.4f → %.4f, 加成=+%.0f%%",
+                        originalModifier, newModifier, firstBulletBonus * 100f
+                ));
+            }
         }
 
         // ========== 功能三：枪械伤害独立乘区 ==========
@@ -97,10 +99,12 @@ public class MixinTaczBulletExplosion {
             float newModifier = currentModifier * (1f + gunDamageBonus);
             accessor.setDamageModifier(newModifier);
 
-            LogUtil.debug(String.format(
-                    "[枪械伤害] gun_damage生效! damageModifier=%.4f → %.4f, 加成=+%.0f%%",
-                    currentModifier, newModifier, gunDamageBonus * 100f
-            ));
+            if (LogUtil.isDebugEnabled()) {
+                LogUtil.debug(String.format(
+                        "[枪械伤害] gun_damage生效! damageModifier=%.4f → %.4f, 加成=+%.0f%%",
+                        currentModifier, newModifier, gunDamageBonus * 100f
+                ));
+            }
         }
 
         // ========== 功能四：玄骸强化独立乘区 ==========
@@ -110,10 +114,12 @@ public class MixinTaczBulletExplosion {
             float newModifier = (float) (currentModifier * enhanceMultiplier);
             accessor.setDamageModifier(newModifier);
 
-            LogUtil.debug(String.format(
-                    "[玄骸强化] 强化乘数生效! damageModifier=%.4f → %.4f, 乘数=%.2fx",
-                    currentModifier, newModifier, enhanceMultiplier
-            ));
+            if (LogUtil.isDebugEnabled()) {
+                LogUtil.debug(String.format(
+                        "[玄骸强化] 强化乘数生效! damageModifier=%.4f → %.4f, 乘数=%.2fx",
+                        currentModifier, newModifier, enhanceMultiplier
+                ));
+            }
         }
     }
 }

@@ -1,5 +1,3 @@
-// AbstractKuva.java
-// 路径：forge/src/main/java/pers/roinflam/kuvalich/base/entity/AbstractKuva.java
 package pers.roinflam.kuvalich.base.entity;
 
 import net.minecraft.nbt.CompoundTag;
@@ -27,6 +25,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.module.weapon.MagicDamageClassifier;
 import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -177,6 +176,11 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
      * 根据伤害来源判断伤害类别
      * 判定优先级：弓箭 > 弹射物 > 魔法 > 近战 > 其他
      *
+     * <p>⭐ 魔法判定改用 {@link MagicDamageClassifier#isMagic}：
+     * 原来只认 {@code witch_resistant_to} tag，Ars Nouveau / Goety / SweetMagic 的大部分法术
+     * 在这里都会落到「近战」或「其他」；现在与 {@code magicDamage} 词条用同一套规则，
+     * 召唤物替玩家挥砍的命中仍按近战记层。</p>
+     *
      * @param source 伤害来源
      * @return 伤害类别
      */
@@ -187,7 +191,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         if (source.is(DamageTypeTags.IS_PROJECTILE)) {
             return DamageCategory.PROJECTILE;
         }
-        if (source.is(DamageTypeTags.WITCH_RESISTANT_TO)) {
+        if (MagicDamageClassifier.isMagic(source)) {
             return DamageCategory.MAGIC;
         }
         if (source.getDirectEntity() instanceof LivingEntity) {
@@ -216,6 +220,9 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
      * 基础伤害类型修正，所有赤毒实体共有
      * 弓箭增伤125%，其他弹射物减伤75%，魔法减伤75%
      *
+     * <p>⭐ 魔法判定与 {@link #classifyDamage} 保持一致，改用 {@link MagicDamageClassifier#isMagic}。
+     * 这意味着第三方模组的法术现在也会吃到魔法减伤。</p>
+     *
      * @param source 伤害来源
      * @param damage 伤害值
      * @return 修正后伤害值
@@ -227,7 +234,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
             damage *= PROJECTILE_DAMAGE_MULTIPLIER;
         }
 
-        if (source.is(DamageTypeTags.WITCH_RESISTANT_TO) &&
+        if (MagicDamageClassifier.isMagic(source) &&
                 !source.is(DamageTypeTags.IS_PROJECTILE)) {
             damage *= MAGIC_DAMAGE_MULTIPLIER;
         }

@@ -82,7 +82,7 @@ public class WarframeRivenModule extends AbstractWarframeModule {
         }
 
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE.get());
-        itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + Component.translatable("item.warframe_type_riven_random.name").getString() + " " + generateRivenName()));
+        // 名称由 cycleModule 生成的新物品决定，这里的临时物品只用来暂存 trend / cycle
         if (RandomUtil.percentageChance(2.5)) {
             setTrend(itemStack, 5);
         } else if (RandomUtil.percentageChance(5)) {
