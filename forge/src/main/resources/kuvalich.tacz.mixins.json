@@ -1,5 +1,5 @@
 {
-  "required": true,
+  "required": false,
   "package": "pers.roinflam.kuvalich.mixin.tacz",
   "compatibilityLevel": "JAVA_17",
   "refmap": "kuvalich.tacz.refmap.json",

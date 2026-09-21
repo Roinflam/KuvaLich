@@ -45,7 +45,10 @@ side="BOTH"
 
 [[dependencies.kuvalich]]
 modId="tacz"
-mandatory=true
+# 可选：没装 TACZ 时本模组的枪械相关功能整体静默关闭，不影响近战与战甲系统。
+# ⚠️ 改这里必须同步改 kuvalich.tacz.mixins.json 的 "required"：
+#    那份配置若为 true，TACZ 缺席时 mixin 应用失败会直接崩，比缺前置提示屏更糟。
+mandatory=false
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

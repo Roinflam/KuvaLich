@@ -1,12 +1,9 @@
 package pers.roinflam.kuvalich.compat.tacz;
 
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.resource.pojo.data.gun.ExtraDamage;
 import net.minecraft.world.item.ItemStack;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.item.LichReliquary;
 
-import java.util.LinkedList;
 
 /**
  * TACZ枪械永久强化工具类
@@ -25,6 +22,9 @@ public final class TaczGunEnhanceUtil {
 
     /** NBT标签键：枪械强化次数 */
     public static final String TAG_ENHANCE_COUNT = "kuvalich_gun_enhance_count";
+
+    /** TACZ 是否已加载；null 表示还没查过 */
+    private static volatile Boolean taczLoaded;
 
     /** 私有构造，纯工具类禁止实例化 */
     private TaczGunEnhanceUtil() {
@@ -74,30 +74,6 @@ public final class TaczGunEnhanceUtil {
         return 1.0 + count * percentPerEnhance;
     }
 
-    /**
-     * 对伤害缓存列表应用强化乘数（就地修改）
-     * <p>用于在 AttachmentPropertyEvent 中修改战斗伤害缓存</p>
-     *
-     * @param damagePairs 伤害-距离对列表（TACZ的DamageModifier缓存）
-     * @param multiplier  伤害乘数
-     */
-    public static void applyMultiplierToCache(LinkedList<ExtraDamage.DistanceDamagePair> damagePairs,
-                                              double multiplier) {
-        if (damagePairs == null || damagePairs.isEmpty() || multiplier == 1.0) {
-            return;
-        }
-        // 构建新列表替换内容（DistanceDamagePair无setter，需新建对象）
-        LinkedList<ExtraDamage.DistanceDamagePair> modified = new LinkedList<>();
-        for (ExtraDamage.DistanceDamagePair pair : damagePairs) {
-            modified.add(new ExtraDamage.DistanceDamagePair(
-                    pair.getDistance(),
-                    (float) (pair.getDamage() * multiplier)
-            ));
-        }
-        damagePairs.clear();
-        damagePairs.addAll(modified);
-    }
-
     // ==================== 校验逻辑 ====================
 
     /**
@@ -108,13 +84,50 @@ public final class TaczGunEnhanceUtil {
      * @return 是否为TACZ枪械
      */
     public static boolean isTaczGun(ItemStack stack) {
-        if (stack.isEmpty()) {
+        if (stack.isEmpty() || !isTaczLoaded()) {
             return false;
         }
         try {
-            return IGun.getIGunOrNull(stack) != null;
-        } catch (Exception e) {
+            return TaczTypeProbe.isGun(stack);
+        } catch (LinkageError | Exception e) {
+            // 装了个签名对不上的 TACZ 版本时兜底。注意必须连 LinkageError 一起接 ——
+            // 改造前这里只 catch (Exception)，而类解析失败抛的是 NoClassDefFoundError，
+            // 属于 Error 不是 Exception，那个 catch 根本接不住。
             return false;
+        }
+    }
+
+    /**
+     * TACZ 装了没有（结果缓存，运行期不会变）
+     */
+    public static boolean isTaczLoaded() {
+        Boolean cached = taczLoaded;
+        if (cached == null) {
+            cached = net.minecraftforge.fml.ModList.get().isLoaded("tacz");
+            taczLoaded = cached;
+        }
+        return cached;
+    }
+
+    /**
+     * ⭐ 全类<b>唯一</b>触碰 TACZ 类型的地方，单独成一个内部类。
+     *
+     * <p>为什么非要拆出去：本工具类是<b>无条件</b>被加载的 —— tooltip 对每个物品都调
+     * {@code appendEnhanceLine}，面板的 {@code Gate.RANGED} 和安魂之融的槽位判定也在调。
+     * 只要 {@code IGun} 出现在本类的常量池里，没装 TACZ 的玩家就有在类解析阶段
+     * 吃 {@code NoClassDefFoundError} 的风险。
+     *
+     * <p>放进内部类之后，{@code IGun} 只存在于 {@code TaczTypeProbe.class} 的常量池，
+     * 而这个类<b>只可能</b>在 {@link #isTaczLoaded()} 返回 true 之后才被触碰，
+     * JVM 的惰性加载保证它在没装 TACZ 时根本不会被加载。</p>
+     */
+    private static final class TaczTypeProbe {
+
+        static boolean isGun(ItemStack stack) {
+            return com.tacz.guns.api.item.IGun.getIGunOrNull(stack) != null;
+        }
+
+        private TaczTypeProbe() {
         }
     }
 
