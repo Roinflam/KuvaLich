@@ -21,7 +21,6 @@ import pers.roinflam.kuvalich.network.ElementSyncGuard;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
 import pers.roinflam.kuvalich.render.particle.ElementParticleEffects;
 import pers.roinflam.kuvalich.render.particle.ParticleEmissionGuard;
-import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
 import pers.roinflam.kuvalich.utils.util.EntityUtil;
 import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
@@ -55,7 +54,7 @@ import java.util.*;
  * 用 {@code String.format("%.0f%%")} 把权重格式化成百分比字符串 →
  * 返回后调用方又 {@code Double.parseDouble(v.replace("%",""))} 解析回 double。<br>
  * 元素池在<b>一次攻击内是常量</b>，但单次伤害最多触发 20 次
- * （{@code MAX_ELEMENT_TRIGGER_COUNT}），SlashBlade 群体斩击命中 20 个目标
+ * （{@code MAX_ELEMENT_TRIGGER_PER_HIT}），SlashBlade 群体斩击命中 20 个目标
  * 就是 400 次完整重建 + 800 次字符串格式化/解析。</p>
  *
  * <p>修复：{@link #buildElementPool} 在 {@code processDamage} 里对每次攻击算<b>一次</b>，
@@ -79,7 +78,7 @@ public class WeaponElementSystem {
      * @param weapon 赤毒武器
      * @return 元素伤害百分比（例如35级 = 0.35即35%）
      */
-    static double getKuvaWeaponElementDamage(ItemStack weapon) {
+    public static double getKuvaWeaponElementDamage(ItemStack weapon) {
         if (!KuvaWeaponUtil.hasType(weapon)) {
             return 0.0;
         }
@@ -581,17 +580,15 @@ public class WeaponElementSystem {
                         * ModConfig.KUVA_LICH.elementFireDamageMultiplier.get());
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
-                    new SynchronizationTask(20, 20) {
-                        private int ticks = 0;
-
-                        @Override
-                        public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying() || hurter.isRemoved()) { this.cancel(); return; }
-                            hurter.setSecondsOnFire(6);
-                            // ⭐ 按实际扣除量显示：免疫火焰、受击无敌、其他模组减伤都会如实体现
-                            hurtWithElementDisplay(hurter, hurter.damageSources().inFire(), dotDamage, dotAttacker, "fire");
-                        }
-                    }.start();
+                    // ⭐ 走去重注册表：同一只怪身上每种元素永远只有一条 DOT 在跑，
+                    //    重复触发取 max 并刷新轮数，而不是再起一个独立任务。
+                    WeaponCombatHandler.ElementDotRegistry.apply(hurter, "fire", dotDamage,
+                            (int) Math.ceil(6 * triggerTime), (t, d) -> {
+                                t.setSecondsOnFire(6);
+                                // ⭐ 按实际扣除量显示：免疫火焰、受击无敌、其他模组减伤都会如实体现
+                                hurtWithElementDisplay(t, t.damageSources().inFire(), d, dotAttacker, "fire");
+                                return true;
+                            });
                 }
                 return null;
             }
@@ -611,27 +608,24 @@ public class WeaponElementSystem {
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
                     final DamageSource attackSource = getAttackDamageSource(attacker);
-                    new SynchronizationTask(20, 20) {
-                        private int ticks = 0;
-
-                        @Override
-                        public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying() || hurter.isRemoved()) { this.cancel(); return; }
-
-                            boolean hasShield = hurter.getAbsorptionAmount() > 0;
-                            if (hasShield) {
-                                // ⭐ 有护盾：毒素绕过护盾直接扣血，显示「扣之前 − 扣之后」的实际掉血
-                                float healthBefore = hurter.getHealth();
-                                if (healthBefore - dotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, dotDamage); }
-                                else { EntityLivingUtil.kill(hurter, attackSource); this.cancel(); }
-                                sendElementDirect(hurter, DamageDisplayTracker.resolveDirectLoss(hurter, healthBefore, dotDamage),
-                                        dotAttacker, "poison");
-                            } else {
+                    // ⭐ 走去重注册表（带盾时毒素绕过无敌帧，重复 DOT 是真·线性叠加，
+                    //    一次命中触发六次就是六份同时扣血 —— 这是平衡问题，比性能更要紧）
+                    WeaponCombatHandler.ElementDotRegistry.apply(hurter, "poison", dotDamage,
+                            (int) Math.ceil(6 * triggerTime), (t, d) -> {
+                                if (t.getAbsorptionAmount() > 0) {
+                                    // ⭐ 有护盾：毒素绕过护盾直接扣血，显示「扣之前 − 扣之后」的实际掉血
+                                    float healthBefore = t.getHealth();
+                                    boolean lethal = !(healthBefore - d > 0.01f);
+                                    if (lethal) { EntityLivingUtil.kill(t, attackSource); }
+                                    else { EntityLivingUtil.damageHealthDirectly(t, d); }
+                                    sendElementDirect(t, DamageDisplayTracker.resolveDirectLoss(t, healthBefore, d),
+                                            dotAttacker, "poison");
+                                    return !lethal;
+                                }
                                 // ⭐ 无护盾：走魔法伤害，按实际扣除量显示（女巫等魔法抗性会如实体现）
-                                hurtWithElementDisplay(hurter, dotAttacker.damageSources().magic(), dotDamage, dotAttacker, "poison");
-                            }
-                        }
-                    }.start();
+                                hurtWithElementDisplay(t, dotAttacker.damageSources().magic(), d, dotAttacker, "poison");
+                                return true;
+                            });
                 }
                 return null;
             }
@@ -683,25 +677,23 @@ public class WeaponElementSystem {
                     float finalDotDamage = dotDamage;
                     final LivingEntity dotAttacker = attacker;
                     final DamageSource attackSource = getAttackDamageSource(attacker);
-                    new SynchronizationTask(20, 20) {
-                        private int ticks = 0;
+                    // ⭐ 走去重注册表：切割走 damageHealthDirectly 绕过无敌帧，
+                    //    不去重的话一次命中触发六次就是六份同时扣血，直接秒杀。
+                    WeaponCombatHandler.ElementDotRegistry.apply(hurter, "slash", finalDotDamage,
+                            (int) Math.ceil(6 * triggerTime), (t, d) -> {
+                                if (t.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, t)) {
+                                    ElementParticleEffects.spawnSlashEffect(t, sl);
+                                }
 
-                        @Override
-                        public void run() {
-                            if (ticks++ >= 6 * triggerTime || hurter.isDeadOrDying() || hurter.isRemoved()) { this.cancel(); return; }
-
-                            if (hurter.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                                ElementParticleEffects.spawnSlashEffect(hurter, sl);
-                            }
-
-                            // ⭐ 切割直接扣血：先扣、再显示「扣之前 − 扣之后」的实际掉血
-                            float healthBefore = hurter.getHealth();
-                            if (healthBefore - finalDotDamage > 0.01f) { EntityLivingUtil.damageHealthDirectly(hurter, finalDotDamage); }
-                            else { EntityLivingUtil.kill(hurter, attackSource); this.cancel(); }
-                            sendElementDirect(hurter, DamageDisplayTracker.resolveDirectLoss(hurter, healthBefore, finalDotDamage),
-                                    dotAttacker, "slash");
-                        }
-                    }.start();
+                                // ⭐ 切割直接扣血：先扣、再显示「扣之前 − 扣之后」的实际掉血
+                                float healthBefore = t.getHealth();
+                                boolean lethal = !(healthBefore - d > 0.01f);
+                                if (lethal) { EntityLivingUtil.kill(t, attackSource); }
+                                else { EntityLivingUtil.damageHealthDirectly(t, d); }
+                                sendElementDirect(t, DamageDisplayTracker.resolveDirectLoss(t, healthBefore, d),
+                                        dotAttacker, "slash");
+                                return !lethal;
+                            });
                 }
                 return null;
             }
@@ -851,29 +843,27 @@ public class WeaponElementSystem {
 
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
-                    new SynchronizationTask(20, 20) {
-                        private int ticks = 0;
+                    // ⭐ 走去重注册表：毒气每轮都要做一次 AABB 实体扫描，
+                    //    是刷怪场里唯一能拉出可测 tick 时间的一条路径，去重收益最大。
+                    //    ⭐ stopOnDeath = false：毒气是以命中位置为中心的 AoE 云，
+                    //       锚点怪死了云还要继续（改造前这条任务的判定也只有 isRemoved()）。
+                    WeaponCombatHandler.ElementDotRegistry.apply(hurter, "gas", dotDamage,
+                            (int) Math.ceil(6 * triggerTime), (t, d) -> {
+                                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquireGlobal(sl)) {
+                                    ElementParticleEffects.spawnGasCloudEffect(sl, gasCenter, gasRadius);
+                                }
 
-                        @Override
-                        public void run() {
-                            // ⭐ 修复 3：受击者已被移除（卸载 / 消失 / 传送走）时同样提前结束，不再对脱离世界的实体扣血
-                            if (ticks++ >= 6 * triggerTime || hurter.isRemoved()) { this.cancel(); return; }
-
-                            if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquireGlobal(sl)) {
-                                ElementParticleEffects.spawnGasCloudEffect(sl, gasCenter, gasRadius);
-                            }
-
-                            List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class,
-                                    new AABB(gasCenter.x - gasRadius, gasCenter.y - gasRadius, gasCenter.z - gasRadius,
-                                            gasCenter.x + gasRadius, gasCenter.y + gasRadius, gasCenter.z + gasRadius),
-                                    e -> !e.equals(dotAttacker) && e.distanceToSqr(gasCenter) <= gasRadius * gasRadius);
-                            for (LivingEntity entity : entities) {
-                                if (entity.isDeadOrDying()) continue;
-                                // ⭐ 按实际扣除量显示：处于受击无敌、免疫魔法的目标不再凭空跳字
-                                hurtWithElementDisplay(entity, dotAttacker.damageSources().magic(), dotDamage, dotAttacker, "gas");
-                            }
-                        }
-                    }.start();
+                                List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class,
+                                        new AABB(gasCenter.x - gasRadius, gasCenter.y - gasRadius, gasCenter.z - gasRadius,
+                                                gasCenter.x + gasRadius, gasCenter.y + gasRadius, gasCenter.z + gasRadius),
+                                        e -> !e.equals(dotAttacker) && e.distanceToSqr(gasCenter) <= gasRadius * gasRadius);
+                                for (LivingEntity entity : entities) {
+                                    if (entity.isDeadOrDying()) continue;
+                                    // ⭐ 按实际扣除量显示：处于受击无敌、免疫魔法的目标不再凭空跳字
+                                    hurtWithElementDisplay(entity, dotAttacker.damageSources().magic(), d, dotAttacker, "gas");
+                                }
+                                return true;
+                            }, false);
                 }
                 return null;
             }

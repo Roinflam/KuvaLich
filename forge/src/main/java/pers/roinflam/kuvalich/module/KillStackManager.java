@@ -200,6 +200,18 @@ public class KillStackManager {
     private static final Map<UUID, int[]> CLIENT_WEAPON_STACKS = new ConcurrentHashMap<>();
 
     /**
+     * 该玩家是否是本客户端的本地玩家（仅在客户端调用有意义）
+     *
+     * <p>⭐ 用「镜像里有没有这个 UUID」来判断，而不是碰 {@code Minecraft.getInstance()} ——
+     * 本类是双端共用的，不能引用任何客户端专用类。
+     * {@code CLIENT_WEAPON_STACKS} 只会有本地玩家一个条目
+     * （{@link #onClientSyncReceived} 每次同步先 clear 再 put），所以这个判断是准的。</p>
+     */
+    private static boolean isLocalPlayer(Player player) {
+        return CLIENT_WEAPON_STACKS.containsKey(player.getUUID());
+    }
+
+    /**
      * 玩家击杀时添加叠层
      */
     public static void addStack(Player player, StackType stackType) {
@@ -229,18 +241,29 @@ public class KillStackManager {
         if (player == null) {
             return 0;
         }
-        // ⭐ 客户端：武器类叠层读同步下来的镜像；其他玩家或尚未同步时为 0（与改动前一致）
+        // ⭐ 客户端：武器类叠层读本类的镜像，战甲类转发给 WarframeModuleHandler 的镜像。
+        //
+        //    改造前这里遍历完 WEAPON_STACK_TYPES 找不到就 `return 0` —— 传战甲类型进来会
+        //    **静默返回 0 且不报错**。这类 bug 的现象是「数字不对」但没有任何异常线索，
+        //    很容易先去怀疑同步包、怀疑 NBT、绕一大圈才想到是读取入口选错了。
+        //    客户端的战甲叠层其实一直都有（WarframeModuleHandler.clientSyncedKillStacks），
+        //    只是存在另一条独立的镜像通道里。现在这个方法覆盖全部 20 种类型。
         if (player.level().isClientSide()) {
             int[] mirror = CLIENT_WEAPON_STACKS.get(player.getUUID());
-            if (mirror == null) {
-                return 0;
-            }
-            for (int i = 0; i < WEAPON_STACK_TYPES.length; i++) {
-                if (WEAPON_STACK_TYPES[i] == stackType) {
-                    return i < mirror.length ? mirror[i] : 0;
+            if (mirror != null) {
+                for (int i = 0; i < WEAPON_STACK_TYPES.length; i++) {
+                    if (WEAPON_STACK_TYPES[i] == stackType) {
+                        return i < mirror.length ? mirror[i] : 0;
+                    }
                 }
             }
-            return 0;
+            // ⭐ 战甲类镜像是一个单例数组（不按 UUID 索引），里面只可能是本地玩家的数据。
+            //    不加这道判定的话，传其它玩家进来会拿到本地玩家的层数，
+            //    与上面武器类分支「别的玩家返回 0」的语义不一致。
+            if (!isLocalPlayer(player)) {
+                return 0;
+            }
+            return pers.roinflam.kuvalich.module.warframe.WarframeModuleHandler.getClientKillStacks(stackType);
         }
 
         Map<StackType, StackData> playerData = PLAYER_STACKS.get(player.getUUID());
@@ -316,6 +339,26 @@ public class KillStackManager {
         if (playerData != null) {
             playerData.remove(stackType);
         }
+    }
+
+    /**
+     * 玩家退出时清空其叠层
+     *
+     * <p>⭐ 改造前 {@link #clearStacks} 全项目**零调用**，{@code PLAYER_STACKS}
+     * 里带着非零层数下线的玩家条目永远不会被移除。后果有两层：</p>
+     * <ul>
+     *   <li><b>玩法</b>（主要）：刷到满层 → 下线 → 隔天上线，头几十秒仍带着满层伤害 /
+     *       多重射击 / 射速加成，然后才开始掉。武器类叠层有客户端镜像、面板上直接看得见，
+     *       所以这是会被发现并当成「可存档的爆发技」来用的 —— 满层时下线，打 boss 前上线。</li>
+     *   <li><b>内存</b>（次要）：每个残留条目是一个最多 20 项的小 Map，量级几百字节，
+     *       重启即清零，实际运营中不会因此 OOM。</li>
+     * </ul>
+     * <p>另一种设计是把 {@code ticksUntilDecay} 与下线时间戳一起持久化到 capability，
+     * 登录时按真实流逝时间补扣层数。现状是两头不靠，所以这里选「下线即清空」。</p>
+     */
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent evt) {
+        clearStacks(evt.getEntity());
     }
 
     /**

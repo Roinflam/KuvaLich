@@ -14,15 +14,12 @@ import com.tacz.guns.resource.modifier.custom.DamageModifier;
 import com.tacz.guns.resource.pojo.data.gun.ExplosionData;
 import com.tacz.guns.resource.pojo.data.gun.ExtraDamage;
 import com.tacz.guns.resource.pojo.data.gun.InaccuracyType;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -51,7 +48,9 @@ import java.util.UUID;
  * 3. AttachmentPropertyEvent → 修改 ADS_TIME、INACCURACY、HEADSHOT_MULTIPLIER 缓存
  * 4. 玩家登录/重生/周期性 → 强制刷新 TACZ 缓存，确保 KuvaLich 属性及时生效
  * 5. 击杀叠层实时追踪 → 射速/多重射击叠层变化时立即刷新 TACZ 缓存
- * 6. TACZ枪械永久强化 → AttachmentPropertyEvent 独立处理伤害缓存 + Tooltip显示
+ * 6. TACZ枪械永久强化 → AttachmentPropertyEvent 独立处理伤害缓存
+ * <p>注：Tooltip 显示已迁至 TaczGunEnhanceUtil.appendEnhanceLine，由 client.tooltip.KuvaTooltipCoordinator 调用，
+ * 避免只为了画一行字就让 tooltip 路径 classload 到本类（本类直接 import 了 com.tacz.* 的事件类型）。
  */
 public class TaczCompatEventHandler {
 
@@ -495,30 +494,4 @@ public class TaczCompatEventHandler {
         ));
     }
 
-    /**
-     * 为TACZ枪械添加玄骸强化信息Tooltip
-     * <p>显示格式：§4✦ 玄骸之力 §c×3 §4(§c伤害+75%§4)</p>
-     *
-     * @param event 物品Tooltip事件
-     */
-    @SubscribeEvent
-    public void onTaczGunTooltip(ItemTooltipEvent event) {
-        if (!ModConfig.KUVA_LICH.taczGunEnhanceEnable.get()) {
-            return;
-        }
-        ItemStack stack = event.getItemStack();
-        // 仅处理TACZ枪械
-        if (!TaczGunEnhanceUtil.isTaczGun(stack)) {
-            return;
-        }
-        int enhanceCount = TaczGunEnhanceUtil.getEnhanceCount(stack);
-        if (enhanceCount <= 0) {
-            return;
-        }
-        double totalPercent = TaczGunEnhanceUtil.getTotalEnhancePercent(stack);
-        List<Component> tooltip = event.getToolTip();
-        // 单行显示：§4✦ 玄骸之力 §c×3 §4(§c伤害+75%§4)
-        tooltip.add(1, Component.translatable("tooltip.kuvalich.gun_enhance.info",
-                enhanceCount, String.format("+%.0f%%", totalPercent * 100)));
-    }
 }

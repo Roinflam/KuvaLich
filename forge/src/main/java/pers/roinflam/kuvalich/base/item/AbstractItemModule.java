@@ -75,6 +75,7 @@ public abstract class AbstractItemModule extends AbstractModule {
         return false;
     }
 
+    @net.minecraftforge.api.distmarker.OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack itemStack = event.getItemStack();
@@ -91,11 +92,17 @@ public abstract class AbstractItemModule extends AbstractModule {
                         .withStyle(ChatFormatting.GRAY));
             }
         } else {
-            addAttributeTooltips(tooltip, itemStack, item);
+            addAttributeTooltips(tooltip, itemStack, item, event.getEntity());
         }
     }
 
-    private static void addAttributeTooltips(List<Component> tooltip, ItemStack itemStack, Item item) {
+    // ⭐ @OnlyIn：本方法引用了 @OnlyIn(Dist.CLIENT) 的 LiveStackView。
+    //    HotSpot 对 invokestatic 是惰性解析的，不标也不会在专用服务端炸；
+    //    但标上之后 RuntimeDistCleaner 会直接把整段字节码剔掉，是零成本的保险，
+    //    也与旧 WeaponModuleHandler 的做法一致。
+    @net.minecraftforge.api.distmarker.OnlyIn(Dist.CLIENT)
+    private static void addAttributeTooltips(List<Component> tooltip, ItemStack itemStack, Item item,
+                                             net.minecraft.world.entity.player.Player viewer) {
         int number = 1;
 
         if (item instanceof ItemRivenModule) {
@@ -142,9 +149,17 @@ public abstract class AbstractItemModule extends AbstractModule {
             // ⭐ v6：特定元素使用专属颜色（病毒粉色、毒气青色），其他走原品质颜色
             ChatFormatting elementColor = getElementColor(attributeKey);
             ChatFormatting color = elementColor != null ? elementColor : getModuleColor(item);
-            tooltip.add(number++, Component.literal(prefix + valueText + " ")
+            net.minecraft.network.chat.MutableComponent line = Component.literal(prefix + valueText + " ")
                     .append(attributeName)
-                    .withStyle(color));
+                    .withStyle(color);
+
+            // ⭐ 叠层词条追加玩家当前层数：卡面原先只写「至多 N 层」，
+            //    玩家看不出这条词条现在到底生效了多少，容易低估它的强度。
+            Component live = pers.roinflam.kuvalich.client.tooltip.LiveStackView.liveStackSuffix(attributeKey, viewer);
+            if (live != null) {
+                line.append(live);
+            }
+            tooltip.add(number++, line);
         }
 
         tooltip.add(number, Component.translatable("kuvaweapon.item_type.tooltip")

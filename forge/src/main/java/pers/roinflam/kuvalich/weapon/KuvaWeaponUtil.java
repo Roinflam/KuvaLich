@@ -5,10 +5,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -22,7 +18,6 @@ import java.util.List;
  * 赤毒武器工具类（1.20.1版本，业务逻辑100%不变）
  * Kuva Weapon Utility Class (1.20.1 version, business logic 100% unchanged)
  */
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class KuvaWeaponUtil {
 
     private static final List<String> DAMAGE_TYPE = new ArrayList<>(Arrays.asList(
@@ -179,33 +174,37 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * Tooltip事件（1.20.1新API）
-     * Tooltip event (1.20.1 new API)
+     * 追加「赤毒类型 + 等级」行
+     *
+     * <p>⭐ 改造前这里是一个独立的 {@code @SubscribeEvent}，往
+     * {@code tooltip.add(1, ...)} 这个硬编码下标插行，与
+     * {@code WeaponModuleHandler} / {@code TaczCompatEventHandler} 抢同一个位置，
+     * 三者的相对顺序取决于 Forge 的注解扫描顺序（当前恰好对，但随时可能无声翻转）。
+     * 现在改为被 {@code client.tooltip.KuvaTooltipCoordinator} 按固定顺序调用。</p>
+     *
+     * @param lines     待写入的行列表
+     * @param itemStack 被查看的物品
      */
-    @SubscribeEvent
-    public static void onItemTooltip(ItemTooltipEvent event) {
-        ItemStack itemStack = event.getItemStack();
-
-        if (hasType(itemStack)) {
-            String type = getType(itemStack);
-            int number = getNumber(itemStack);
-
-            if (!DAMAGE_TYPE.contains(type)) {
-                type = "unknown";
-            }
-
-            List<Component> tooltip = event.getToolTip();
-            tooltip.add(1,
-                    Component.translatable("kuvaweapon.type")
-                            .append(" ")
-                            .append(Component.translatable("kuvaweapon.type." + type)
-                                    .withStyle(getColor(type)))
-                            .append(" ")
-                            .append(Component.literal(String.valueOf(number))
-                                    .withStyle(getColor(number), ChatFormatting.BOLD))
-                            .withStyle(ChatFormatting.GRAY)
-            );
+    public static void appendTypeLine(List<Component> lines, ItemStack itemStack) {
+        if (!hasType(itemStack)) {
+            return;
         }
+
+        String type = getType(itemStack);
+        int number = getNumber(itemStack);
+
+        if (!DAMAGE_TYPE.contains(type)) {
+            type = "unknown";
+        }
+
+        lines.add(Component.translatable("kuvaweapon.type")
+                .append(" ")
+                .append(Component.translatable("kuvaweapon.type." + type)
+                        .withStyle(getColor(type)))
+                .append(" ")
+                .append(Component.literal(String.valueOf(number))
+                        .withStyle(getColor(number), ChatFormatting.BOLD))
+                .withStyle(ChatFormatting.GRAY));
     }
 
     /**

@@ -1,30 +1,29 @@
 package pers.roinflam.kuvalich.module.weapon;
 
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
-import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
-import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 武器模组数据层
- * 负责NBT读写、属性缓存、Forma锁定、Tooltip显示、公共API
+ * 负责NBT读写、属性缓存、Forma锁定、公共API
+ *
+ * <p>⭐ 本类**不再参与 tooltip 渲染**，类级 {@code @Mod.EventBusSubscriber} 也随之移除。
+ * 面板的「有哪些词条、怎么算、怎么显示」现在是一张数据表
+ * （{@code module.weapon.panel.WeaponPanelCatalog}），渲染在
+ * {@code client.tooltip.WeaponPanelComposer}，事件入口统一到
+ * {@code client.tooltip.KuvaTooltipCoordinator}。
+ * 这么拆还顺带消掉一个隐患：改造前本类的 {@code @Mod.EventBusSubscriber} 没有限定
+ * {@code Dist}，而方法体里用了客户端专用的 {@code I18n} ——
+ * 专用服务端不炸完全依赖 RuntimeDistCleaner 把带 {@code @OnlyIn} 的方法剥干净，
+ * 哪天有人加个不带注解的辅助方法就会炸服。现在数据层里一个客户端类都不 import。</p>
  *
  * <p>⭐ 并发安全修复：{@code WEAPON_ATTRIBUTE_CACHE} 使用 {@link ConcurrentHashMap}。
  * 该 Map 是 static 的、跨玩家共享的，且通过 {@code computeIfAbsent} 与 {@code clear} 并发读写。
@@ -41,7 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * 每次都要做 8 个 {@code ItemStack.of()} 的 NBT 反序列化，
  * 即每帧 24 次——悬停武器时纯客户端掉帧。现在只解析一次并全程复用。</p>
  */
-@Mod.EventBusSubscriber
 public class WeaponModuleHandler {
 
     /** Forma锁定的NBT键名 */
@@ -257,223 +255,22 @@ public class WeaponModuleHandler {
         return collectItemAttributes(getModules(weapon));
     }
 
-    // ========== Tooltip ==========
+    // ========== Tooltip 数据入口 ==========
 
     /**
-     * 物品提示事件 - 显示武器最终面板属性
+     * 公共接口：用已解析好的模组列表算属性（避免重复反序列化）
      *
-     * <p>⭐ 面板属性收集时已包含等级缩放，显示的是缩放后的数值。</p>
-     * <p>⭐ modules 只解析一次并全程复用，不再每帧三次反序列化。</p>
+     * <p>⭐ 面板渲染已迁出本类，见
+     * {@code client.tooltip.WeaponPanelComposer} 与 {@code module.weapon.panel.WeaponPanelCatalog}。
+     * 改造前这里有一个约 200 行、包含 40 多个重复 {@code if} 块的 {@code onItemTooltip}，
+     * 每加一条词条都要复制粘贴一整段；现在那份信息以数据表的形式集中在
+     * {@code WeaponPanelCatalog.SPECS} 里，本类只负责 NBT 与属性汇总。</p>
+     *
+     * @param weapon  武器物品栈
+     * @param modules 已解析的模组列表
+     * @return 经过等级缩放与上下限裁剪的运行时属性
      */
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    public static void onItemTooltip(ItemTooltipEvent evt) {
-        ItemStack itemStack = evt.getItemStack();
-        if (hasBase(itemStack)) {
-            List<Component> tooltip = evt.getToolTip();
-            // ⭐ 全方法唯一一次 getModules 调用
-            List<ItemStack> modules = getModules(itemStack);
-            int index = 1;
-
-            // Forma锁定提示
-            if (isFormaLocked(itemStack)) {
-                tooltip.add(index++, Component.translatable("item.kuvalich.forma_locked")
-                        .withStyle(net.minecraft.ChatFormatting.DARK_RED));
-            }
-
-            if (modules.size() > 0) {
-                // ⭐ Tooltip 直接复用战斗用的汇总方法：等级缩放、单条上下限、总量上限全部一致。
-                //    以前 tooltip 自己累加、不做上下限裁剪，服务端配置了属性上限时面板显示会高于实际生效值
-                HashMap<String, Double> attributes = collectItemAttributes(modules);
-
-                // ⭐ 合并额外槽位属性到面板
-                ExtraSlotTooltipHelper.mergeExtraSlotIntoAttributes(evt.getEntity(), itemStack, attributes);
-
-                tooltip.add(index++, Component.literal(I18n.get("item.module")).withStyle(net.minecraft.ChatFormatting.WHITE, net.minecraft.ChatFormatting.BOLD));
-                tooltip.add(index++, Component.literal(I18n.get("item.module.damage") + " ").append(Component.literal((int) Math.round(getBaseAttribute(itemStack, "damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-
-                if (attributes.getOrDefault("meleeDamage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.meleeDamage") + " ").append(Component.literal((int) Math.round(attributes.get("meleeDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("remoteDamage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.remoteDamage") + " ").append(Component.literal((int) Math.round(attributes.get("remoteDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("arrowDamage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.arrowDamage") + " ").append(Component.literal((int) Math.round(attributes.get("arrowDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("projectileDamage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.projectileDamage") + " ").append(Component.literal((int) Math.round(attributes.get("projectileDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("magicDamage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.magicDamage") + " ").append(Component.literal((int) Math.round(attributes.get("magicDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.baseDamageWhenNotCriticalStrike") + " ").append(Component.literal((int) Math.round(attributes.get("baseDamageWhenNotCriticalStrike") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("attackRange", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.attackRange") + " ").append(Component.literal((int) Math.round(attributes.get("attackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("bursting_radius", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.bursting_radius") + " ").append(Component.literal(String.format("%.1f", 1 + attributes.get("bursting_radius") * 2) + "m").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("attackSpeed", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.attackSpeed") + " ").append(Component.literal(String.format("%.1f", attributes.get("attackSpeed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("firing_rate", 0.0) != 0) {
-                    if (itemStack.getItem() instanceof BowItem) {
-                        tooltip.add(index++, Component.literal(I18n.get("item.module.firing_rate") + " ").append(Component.literal((int) Math.round(attributes.get("firing_rate") * 2 * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                    } else {
-                        tooltip.add(index++, Component.literal(I18n.get("item.module.firing_rate") + " ").append(Component.literal((int) Math.round(attributes.get("firing_rate") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                    }
-                }
-
-                double baseCriticalStrikeProbability = getBaseAttribute(itemStack, "criticalStrikeProbability");
-                double meleeCriticalStrikeProbability = baseCriticalStrikeProbability * (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0));
-                double remoteCriticalStrikeProbability = baseCriticalStrikeProbability * (1 + attributes.getOrDefault("remoteCriticalStrikeProbability", 0.0));
-                tooltip.add(index++, Component.literal(I18n.get("item.module.criticalStrikeProbability") + " ").append(Component.literal((int) Math.round(meleeCriticalStrikeProbability * 100) + "% / " + (int) Math.round(remoteCriticalStrikeProbability * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-
-                double baseCriticalStrikeMultiplier = getBaseAttribute(itemStack, "criticalStrikeMultiplier");
-                double meleeCriticalStrikeMultiplier = baseCriticalStrikeMultiplier * (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
-                double remoteCriticalStrikeMultiplier = baseCriticalStrikeMultiplier * (1 + attributes.getOrDefault("remoteCriticalStrikeMultiplier", 0.0));
-                tooltip.add(index++, Component.literal(I18n.get("item.module.criticalStrikeMultiplier") + " ").append(Component.literal("x" + String.format("%.1f", meleeCriticalStrikeMultiplier) + " / x" + String.format("%.1f", remoteCriticalStrikeMultiplier)).withStyle(net.minecraft.ChatFormatting.GRAY)));
-
-                if (attributes.getOrDefault("multishot", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.multishot") + " ").append(Component.literal((int) Math.round(attributes.get("multishot") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-
-                tooltip.add(index++, Component.literal(I18n.get("item.module.triggerChance") + " ").append(Component.literal((int) Math.round(getBaseAttribute(itemStack, "triggerChance") * (1 + attributes.getOrDefault("triggerChance", 0.0)) * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-
-                if (attributes.getOrDefault("triggerTime", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.triggerTime") + " ").append(Component.literal((int) Math.round((1 + attributes.get("triggerTime")) * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("first_bullet_damage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.first_bullet_damage") + " ").append(Component.literal((int) Math.round(attributes.get("first_bullet_damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("bane_of_undefined", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.bane_of_undefined") + " ").append(Component.literal((int) Math.round(attributes.get("bane_of_undefined") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("bane_of_undead", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.bane_of_undead") + " ").append(Component.literal((int) Math.round(attributes.get("bane_of_undead") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("bane_of_arthropod", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.bane_of_arthropod") + " ").append(Component.literal((int) Math.round(attributes.get("bane_of_arthropod") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("bane_of_illager", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.bane_of_illager") + " ").append(Component.literal((int) Math.round(attributes.get("bane_of_illager") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("dashMeleeCriticalStrikeProbability", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.dashMeleeCriticalStrikeProbability") + " ").append(Component.literal((int) Math.round(attributes.get("dashMeleeCriticalStrikeProbability") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("dashAttackRange", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.dashAttackRange") + " ").append(Component.literal((int) Math.round(attributes.get("dashAttackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("dashTriggerChance", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.dashTriggerChance") + " ").append(Component.literal((int) Math.round(attributes.get("dashTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("reload_speed", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.reload_speed") + " ").append(Component.literal((int) Math.round(attributes.get("reload_speed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("magazine_size", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.magazine_size") + " ").append(Component.literal((int) Math.round(attributes.get("magazine_size") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("projectile_speed", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.projectile_speed") + " ").append(Component.literal((int) Math.round(attributes.get("projectile_speed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("recoil_reduction", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.recoil_reduction") + " ").append(Component.literal((int) Math.round(attributes.get("recoil_reduction") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("gun_damage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.gun_damage") + " ").append(Component.literal((int) Math.round(attributes.get("gun_damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("headshot_damage", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.headshot_damage") + " ").append(Component.literal((int) Math.round(attributes.get("headshot_damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("aim_time", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.aim_time") + " ").append(Component.literal((int) Math.round(attributes.get("aim_time") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("accuracy", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.accuracy") + " ").append(Component.literal((int) Math.round(attributes.get("accuracy") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-
-                // ⭐ 第三批新词条面板显示
-                if (attributes.getOrDefault("true_bullet", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.true_bullet") + " ").append(Component.literal((int) Math.round(attributes.get("true_bullet") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("gun_loot_drop", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.gun_loot_drop") + " ").append(Component.literal((int) Math.round(attributes.get("gun_loot_drop") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("execute_threshold", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.execute_threshold") + " ").append(Component.literal((int) Math.round(attributes.get("execute_threshold") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("purge_buff", 0.0) != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.purge_buff") + " ").append(Component.literal((int) Math.round(attributes.get("purge_buff") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-                if (attributes.getOrDefault("execute_chance", 0.0) != 0) {
-                    // ⭐ 秒杀概率：保留小数避免取整为0%，并去掉末尾多余的0（0.010%→0.01%）
-                    String executeChancePercent = String.format("%.3f", attributes.get("execute_chance") * 100);
-                    if (executeChancePercent.indexOf('.') >= 0) {
-                        executeChancePercent = executeChancePercent.replaceAll("0+$", "").replaceAll("\\.$", "");
-                    }
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.execute_chance") + " ").append(Component.literal(executeChancePercent + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-
-                // 击杀叠层词条
-                if (attributes.getOrDefault("killStackBaseDamage", 0.0) != 0) { tooltip.add(index++, Component.literal(I18n.get("item.module.killStackBaseDamage", ModConfig.KUVA_LICH.maxStacksBaseDamage.get()) + " ").append(Component.literal((int) Math.round(attributes.get("killStackBaseDamage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD))); }
-                if (attributes.getOrDefault("killStackMultishot", 0.0) != 0) { tooltip.add(index++, Component.literal(I18n.get("item.module.killStackMultishot", ModConfig.KUVA_LICH.maxStacksMultishot.get()) + " ").append(Component.literal((int) Math.round(attributes.get("killStackMultishot") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD))); }
-                if (attributes.getOrDefault("killStackMeleeCriticalMultiplier", 0.0) != 0) { tooltip.add(index++, Component.literal(I18n.get("item.module.killStackMeleeCriticalMultiplier", ModConfig.KUVA_LICH.maxStacksMeleeCritMult.get()) + " ").append(Component.literal((int) Math.round(attributes.get("killStackMeleeCriticalMultiplier") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD))); }
-                if (attributes.getOrDefault("killStackTriggerChance", 0.0) != 0) { tooltip.add(index++, Component.literal(I18n.get("item.module.killStackTriggerChance", ModConfig.KUVA_LICH.maxStacksTriggerChance.get()) + " ").append(Component.literal((int) Math.round(attributes.get("killStackTriggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD))); }
-                if (attributes.getOrDefault("killStackAttackRange", 0.0) != 0) { tooltip.add(index++, Component.literal(I18n.get("item.module.killStackAttackRange", ModConfig.KUVA_LICH.maxStacksAttackRange.get()) + " ").append(Component.literal((int) Math.round(attributes.get("killStackAttackRange") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD))); }
-                if (attributes.getOrDefault("killStackAttackSpeed", 0.0) != 0) { tooltip.add(index++, Component.literal(I18n.get("item.module.killStackAttackSpeed", ModConfig.KUVA_LICH.maxStacksAttackSpeed.get()) + " ").append(Component.literal((int) Math.round(attributes.get("killStackAttackSpeed") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD))); }
-                if (attributes.getOrDefault("killStackBurstingRadius", 0.0) != 0) { tooltip.add(index++, Component.literal(I18n.get("item.module.killStackBurstingRadius", ModConfig.KUVA_LICH.maxStacksBurstingRadius.get()) + " ").append(Component.literal((int) Math.round(attributes.get("killStackBurstingRadius") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD))); }
-                if (attributes.getOrDefault("killStackFiringRate", 0.0) != 0) { tooltip.add(index++, Component.literal(I18n.get("item.module.killStackFiringRate", ModConfig.KUVA_LICH.maxStacksFiringRate.get()) + " ").append(Component.literal((int) Math.round(attributes.get("killStackFiringRate") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD))); }
-
-                // 元素显示
-                double elementDamage = 0;
-                if (KuvaWeaponUtil.hasType(itemStack)) { elementDamage += WeaponElementSystem.getKuvaWeaponElementDamage(itemStack); }
-                elementDamage += attributes.getOrDefault("fire", 0.0);
-                elementDamage += attributes.getOrDefault("ice", 0.0);
-                elementDamage += attributes.getOrDefault("poison", 0.0);
-                elementDamage += attributes.getOrDefault("electricity", 0.0);
-                elementDamage += attributes.getOrDefault("slash", 0.0);
-                elementDamage += attributes.getOrDefault("puncture", 0.0);
-                elementDamage += attributes.getOrDefault("impact", 0.0);
-                elementDamage += attributes.getOrDefault("gas", 0.0);
-                elementDamage += attributes.getOrDefault("radiation", 0.0);
-                elementDamage += attributes.getOrDefault("magnetic", 0.0);
-                elementDamage += attributes.getOrDefault("corrosion", 0.0);
-                elementDamage += attributes.getOrDefault("explosion", 0.0);
-                elementDamage += attributes.getOrDefault("virus", 0.0);
-
-                if (elementDamage != 0) {
-                    tooltip.add(index++, Component.literal(I18n.get("item.module.triggerDamage") + " ").append(Component.literal((int) Math.round(elementDamage * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                }
-
-                // ⭐ 复用已解析的 modules，不再重复反序列化
-                HashMap<String, String> elements = WeaponElementSystem.getTriggerElements(itemStack, modules);
-                if (elements.size() > 0) {
-                    Component triggerElements = Component.literal(I18n.get("item.module.triggerType") + " ").withStyle(net.minecraft.ChatFormatting.WHITE);
-                    for (String element : elements.keySet()) {
-                        triggerElements = triggerElements.copy().append(Component.literal(I18n.get("kuvaweapon.type." + element) + elements.get(element) + " ").withStyle(KuvaWeaponUtil.getColor(element), net.minecraft.ChatFormatting.BOLD));
-                    }
-                    tooltip.add(index++, triggerElements);
-                }
-
-                // 额外装备槽位加成
-                index += ExtraSlotTooltipHelper.appendExtraSlotTooltip(tooltip, evt.getEntity(), itemStack, index);
-
-                tooltip.add(index++, Component.translatable("kuvaweapon.item_module_info").withStyle(net.minecraft.ChatFormatting.GOLD, net.minecraft.ChatFormatting.BOLD));
-                // ⭐ 复用已解析的 modules，不再第三次调用 getModules
-                for (ItemStack module : modules) {
-                    tooltip.add(index++, Component.literal(" - ").append(module.getHoverName()).append(" ").withStyle(net.minecraft.ChatFormatting.WHITE));
-                }
-            } else {
-                // 无模组时显示基础面板
-                tooltip.add(index++, Component.translatable("item.base").withStyle(net.minecraft.ChatFormatting.WHITE, net.minecraft.ChatFormatting.BOLD));
-                tooltip.add(index++, Component.literal(I18n.get("item.base.damage") + " ").append(Component.literal((int) Math.round(getBaseAttribute(itemStack, "damage") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                tooltip.add(index++, Component.literal(I18n.get("item.base.criticalStrikeProbability") + " ").append(Component.literal((int) Math.round(getBaseAttribute(itemStack, "criticalStrikeProbability") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                tooltip.add(index++, Component.literal(I18n.get("item.base.criticalStrikeMultiplier") + " ").append(Component.literal("x" + getBaseAttribute(itemStack, "criticalStrikeMultiplier")).withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-                tooltip.add(index++, Component.literal(I18n.get("item.base.triggerChance") + " ").append(Component.literal((int) Math.round(getBaseAttribute(itemStack, "triggerChance") * 100) + "%").withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.BOLD)));
-            }
-        }
+    public static HashMap<String, Double> getWeaponAttributes(ItemStack weapon, List<ItemStack> modules) {
+        return collectItemAttributes(modules);
     }
 }

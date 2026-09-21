@@ -20,6 +20,8 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -196,10 +198,30 @@ public class WeaponCombatHandler {
      * <p>key = 实体UUID，value = 所有额外槽位模组属性合并后的结果（倍率已乘入）。
      * 每 EXTRA_SLOT_CACHE_INTERVAL tick 清空一次。</p>
      */
-    private static final Map<UUID, HashMap<String, Double>> EXTRA_SLOT_CACHE = new ConcurrentHashMap<>();
+    private static final Map<UUID, HashMap<String, Double>> EXTRA_SLOT_CACHE_SERVER = new ConcurrentHashMap<>();
 
-    /** 上次清空额外槽位缓存的 gameTick */
-    private static long extraSlotCacheTick = -1;
+    /**
+     * 额外槽位属性缓存 · 客户端侧
+     *
+     * <p>⭐ 必须与服务端分开：单人游戏里逻辑服务端玩家与客户端玩家<b>UUID 相同</b>，
+     * 但持有的是两份不同的 {@code ItemStack} 实例、两份不同的 gameTime。
+     * 共用一张表时 {@code computeIfAbsent} 谁先跑谁定胜负，另一侧直接吃到对面的计算结果。
+     * 这个缺陷本来就存在（Tooltip 早就在客户端调它），但现在 TACZ 桥的 12 个 getter
+     * 也走这条路、<b>HUD 每帧都会触发</b>，撞面从「打开 tooltip 的瞬间」扩大到「一直」，
+     * 表现为单人游戏里弹匣数 / 装填速度间歇性地在两个值之间跳。</p>
+     */
+    private static final Map<UUID, HashMap<String, Double>> EXTRA_SLOT_CACHE_CLIENT = new ConcurrentHashMap<>();
+
+    /**
+     * 上次清空额外槽位缓存的 gameTick（服务端侧 / 客户端侧各一份）
+     *
+     * <p>⭐ volatile：本字段被服务端主线程（{@link #onLivingHurt}）与客户端渲染线程
+     * （Tooltip 经 {@code ExtraSlotTooltipHelper}、TACZ 面板经 {@code WarframeTaczBridge}）读写。
+     * long 的非 volatile 读写在 32 位语义下允许撕裂，且无 volatile 时一侧的写对另一侧可能永久不可见，
+     * 会让缓存要么永不过期（面板长期显示旧值）、要么每次都判定过期（每帧全量重算）。</p>
+     */
+    private static volatile long extraSlotCacheTickServer = -1;
+    private static volatile long extraSlotCacheTickClient = -1;
 
     /** 额外槽位缓存刷新间隔（tick）：40 tick = 2秒 */
     private static final long EXTRA_SLOT_CACHE_INTERVAL = 40L;
@@ -207,11 +229,63 @@ public class WeaponCombatHandler {
     // ========== 元素触发硬上限 / Element Trigger Hard Cap ==========
 
     /**
-     * 单次伤害事件中元素效果的最大触发次数（硬上限）
+     * ⭐ 单次命中的元素触发次数上限（原 {@code MAX_ELEMENT_TRIGGER_COUNT} 的「单次」语义）
      *
-     * <p>防止超高 triggerChance 在群体攻击场景下触发数百次元素效果导致主线程卡死。</p>
+     * <p>旧实现只有一个 20 的常量，同时承担「单次命中上限」与「事实上的全局上限」两个职责，
+     * 结果两边都不合格：单次命中允许 20 次触发，而切割与带盾时的毒素走
+     * {@code damageHealthDirectly} <b>绕过无敌帧</b>，20 份 DOT 是真·线性叠加，直接秒杀；
+     * 群体命中时又完全没有全局约束，10 个目标就是 200 次触发。</p>
+     *
+     * <p>现拆成两个常量：本常量管单次命中，{@link #MAX_ELEMENT_TRIGGER_PER_TICK} 管单 tick 全局。
+     * 5 的取值可后续提为配置项。</p>
+     *
+     * <p>⭐ public：ALT 实时视图要用它把触发几率的分解结果钳到同一个上限，
+     * 两边各写一个 5 就又是一次「面板与实战对不上」的分叉。</p>
      */
-    private static final int MAX_ELEMENT_TRIGGER_COUNT = 20;
+    public static final int MAX_ELEMENT_TRIGGER_PER_HIT = 5;
+
+    /**
+     * ⭐ 单 tick 内全局元素触发次数上限（跨所有攻击者与所有目标）
+     *
+     * <p>专治群体命中：横扫 / 霰弹一次打十几只怪时，单次命中上限管不住总量。
+     * 100 的取值可后续提为配置项。</p>
+     */
+    private static final int MAX_ELEMENT_TRIGGER_PER_TICK = 100;
+
+    /** 当前全局触发预算对应的 gameTime，与 {@link #elementTriggerBudgetUsed} 成对使用 */
+    private static volatile long elementTriggerBudgetTick = Long.MIN_VALUE;
+
+    /** 当前 tick 已消耗的全局触发次数 */
+    private static volatile int elementTriggerBudgetUsed = 0;
+
+    /**
+     * ⭐ 向单 tick 全局触发预算申请触发次数
+     *
+     * <p>不另起 tick 事件监听：以 {@code gameTime} 变化作为「新的一 tick」的判据，
+     * 惰性重置计数器即可。本方法只在服务端伤害结算线程调用，字段加 volatile 只为
+     * 与可能的跨线程读保持可见性，计数本身不要求严格原子（超发一两次无害）。</p>
+     *
+     * @param level 目标所在世界，用于取 gameTime
+     * @param want  本次命中想要的触发次数
+     * @return 实际获批的次数，预算耗尽时返回 0
+     */
+    private static int acquireElementTriggerBudget(@Nonnull Level level, int want) {
+        if (want <= 0) {
+            return 0;
+        }
+        long now = level.getGameTime();
+        if (now != elementTriggerBudgetTick) {
+            elementTriggerBudgetTick = now;
+            elementTriggerBudgetUsed = 0;
+        }
+        int remaining = MAX_ELEMENT_TRIGGER_PER_TICK - elementTriggerBudgetUsed;
+        if (remaining <= 0) {
+            return 0;
+        }
+        int granted = Math.min(want, remaining);
+        elementTriggerBudgetUsed += granted;
+        return granted;
+    }
 
     // ========== 额外槽位属性 / Extra Slot Attributes ==========
 
@@ -222,12 +296,45 @@ public class WeaponCombatHandler {
      * @return 额外槽位属性表（只读使用，不要修改）
      */
     static HashMap<String, Double> getCachedExtraSlotAttributes(LivingEntity entity) {
+        boolean clientSide = entity.level().isClientSide();
         long currentTick = entity.level().getGameTime();
-        if (Math.abs(currentTick - extraSlotCacheTick) >= EXTRA_SLOT_CACHE_INTERVAL) {
-            EXTRA_SLOT_CACHE.clear();
-            extraSlotCacheTick = currentTick;
+
+        // ⭐ 两侧各用一张表、各记一个 tick：单人游戏里两边 UUID 相同但数据源不同
+        Map<UUID, HashMap<String, Double>> cache = clientSide ? EXTRA_SLOT_CACHE_CLIENT : EXTRA_SLOT_CACHE_SERVER;
+        long lastTick = clientSide ? extraSlotCacheTickClient : extraSlotCacheTickServer;
+
+        if (Math.abs(currentTick - lastTick) >= EXTRA_SLOT_CACHE_INTERVAL) {
+            cache.clear();
+            if (clientSide) {
+                extraSlotCacheTickClient = currentTick;
+            } else {
+                extraSlotCacheTickServer = currentTick;
+            }
         }
-        return EXTRA_SLOT_CACHE.computeIfAbsent(entity.getUUID(), uuid -> computeExtraSlotAttributes(entity));
+        return cache.computeIfAbsent(entity.getUUID(), uuid -> computeExtraSlotAttributes(entity));
+    }
+
+    /**
+     * ⭐ 额外槽位属性的<b>跨包</b>公开入口
+     *
+     * <p>{@link #getCachedExtraSlotAttributes} 是包级私有，同包的
+     * {@code ExtraSlotTooltipHelper} 能直接用，但 {@code compat.tacz.WarframeTaczBridge}
+     * 不在本包内。TACZ 枪械的 12 个属性读取方法此前只读枪本体，
+     * 而枪的 tooltip 面板已经把副手 / 护甲 / 饰品的加成算进去了 ——
+     * 于是「面板数字涨了、实际开枪毫无变化」。本方法就是给桥接类补上这条读取路径，
+     * 让面板与实际生效值取自同一份数据。</p>
+     *
+     * <p><b>返回的是缓存实例本身，调用方只读，不要修改。</b>需要合并时请先拷贝。</p>
+     *
+     * @param entity 实体，可为 null
+     * @return 额外槽位属性表；entity 为 null 时返回空表
+     */
+    @Nonnull
+    public static HashMap<String, Double> getExtraSlotAttributes(@Nullable LivingEntity entity) {
+        if (entity == null) {
+            return new HashMap<>();
+        }
+        return getCachedExtraSlotAttributes(entity);
     }
 
     /**
@@ -677,8 +784,8 @@ public class WeaponCombatHandler {
             triggerChance *= (1 + stackValue * stacks);
         }
 
-        // ⭐ 元素触发硬上限：所有加成乘算完成后，强制截断
-        triggerChance = Math.min(triggerChance, MAX_ELEMENT_TRIGGER_COUNT * 100.0);
+        // ⭐ 元素触发硬上限（单次命中）：所有加成乘算完成后，强制截断
+        triggerChance = Math.min(triggerChance, MAX_ELEMENT_TRIGGER_PER_HIT * 100.0);
 
         Set<String> triggeredElements = new LinkedHashSet<>();
 
@@ -686,19 +793,22 @@ public class WeaponCombatHandler {
         if (triggerChance > 0) {
             WeaponElementSystem.ElementPool elementPool = WeaponElementSystem.buildElementPool(weapon, modules);
             if (!elementPool.isEmpty()) {
+                // ⭐ 先把本次命中要掷的总次数算清（整数部分 + 小数部分的一次概率掷），
+                //    再一次性向单 tick 全局预算申请。若改成逐次申请，同一 tick 的前几个目标
+                //    会把预算抢光，后面的目标一次都触发不了，群体命中的表现会变得极不稳定。
+                int rolls;
                 if (triggerChance > 100) {
-                    int number = (int) triggerChance / 100;
-                    for (int i = 0; i < number; i++) {
-                        String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon,
-                                elementPool, triggerTime, coreDamage, attributes, baneMultiplier);
-                        if (element != null) triggeredElements.add(element);
+                    rolls = (int) triggerChance / 100;
+                    if (RandomUtil.percentageChance(triggerChance - rolls * 100)) {
+                        rolls++;
                     }
-                    if (RandomUtil.percentageChance(triggerChance - number * 100)) {
-                        String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon,
-                                elementPool, triggerTime, coreDamage, attributes, baneMultiplier);
-                        if (element != null) triggeredElements.add(element);
-                    }
-                } else if (RandomUtil.percentageChance(triggerChance)) {
+                } else {
+                    rolls = RandomUtil.percentageChance(triggerChance) ? 1 : 0;
+                }
+
+                rolls = acquireElementTriggerBudget(hurter.level(), rolls);
+
+                for (int i = 0; i < rolls; i++) {
                     String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon,
                             elementPool, triggerTime, coreDamage, attributes, baneMultiplier);
                     if (element != null) triggeredElements.add(element);
@@ -1086,6 +1196,297 @@ public class WeaponCombatHandler {
         }
     }
 
+    // ========== ⭐ 元素 DOT 去重注册表 / Element DOT Deduplication Registry ==========
+
+    /**
+     * 元素 DOT 单轮伤害执行体
+     *
+     * <p>注册表只负责「同一目标的同一元素永远只有一个任务在跑」这件事，
+     * 具体一轮怎么扣血、怎么发跳字、要不要放粒子，仍由元素系统自己决定，
+     * 通过本接口回传。这样注册表不需要访问元素系统的任何私有显示逻辑。</p>
+     */
+    @FunctionalInterface
+    public interface DotTickAction {
+
+        /**
+         * 执行一轮 DOT 伤害
+         *
+         * @param target 目标实体（调用前已确认未死亡、未移除）
+         * @param damage 本轮伤害（取自注册表中的当前值）
+         * @return 返回 false 表示请求立即终止本条 DOT（例如本轮已把目标打死）
+         */
+        boolean run(@Nonnull LivingEntity target, float damage);
+    }
+
+    /**
+     * ⭐ 元素 DOT 去重注册表：按「实体 + 元素」合并持续伤害
+     *
+     * <p><b>要解决的问题。</b>元素系统此前每触发一次 fire / poison / slash 就
+     * {@code new SynchronizationTask(20, 20)} 起一个<b>独立</b>任务，完全不去重，后果有两层：</p>
+     * <ol>
+     *   <li><b>平衡性（更严重）</b>：切割与带盾时的毒素走
+     *       {@code EntityLivingUtil.damageHealthDirectly}，<b>绕过无敌帧</b>，
+     *       所以重复 DOT 的伤害是真·线性叠加 —— 一次命中触发 6 次切割，
+     *       就是 6 份切割 DOT 同时扣血，秒杀任何血量。</li>
+     *   <li><b>性能</b>：群体命中（横扫 / 霰弹打十几只怪）时几百个任务并存，
+     *       其中 gas 的每个重复任务每轮还各做一次 AABB 实体扫描，刷怪塔场景能拉出可测的 tick 时间。</li>
+     * </ol>
+     *
+     * <p><b>合并规则。</b>同一目标的同一元素只保留一条状态：
+     * 伤害<b>取 max</b>、剩余轮数<b>刷新为满</b>（取与新轮数的较大者，
+     * 免得一次短 triggerTime 的触发把正在跑的长 DOT 截断）。
+     * <b>绝不相加</b> —— 相加等于没修平衡问题。</p>
+     *
+     * <p><b>生命周期。</b>任务自身在目标死亡 / 被移除 / 轮数耗尽时 {@code cancel()} 并摘除自己的条目；
+     * 另有 {@link WeaponCombatHandler#onLivingDeathClearDot} 与
+     * {@link WeaponCombatHandler#onEntityLeaveLevelClearDot} 两道兜底，
+     * 覆盖怪物在 DOT 跑完前被打死、区块卸载、跨维度传送等场景，Map 不会泄漏。
+     * 兜底写法对齐 {@code DynamicAttributeManager} 的同名处理。</p>
+     *
+     * <p><b>接入状态。</b>本注册表已可用，但实际起 DOT 任务的三处代码在
+     * {@code WeaponElementSystem}（fire / poison / slash，另有 gas 的 AABB 扫描任务），
+     * 那个文件不在本次改动范围内，需由主线把那几处的
+     * {@code new SynchronizationTask(20, 20) { ... }} 换成
+     * {@code WeaponCombatHandler.ElementDotRegistry.apply(hurter, "slash", dotDamage, rounds, (t, d) -> { ...原轮体... })}。
+     * 在那之前本类不被调用，无任何运行时开销。</p>
+     */
+    public static final class ElementDotRegistry {
+
+        /** DOT 轮间隔（tick），与元素系统原有的 {@code new SynchronizationTask(20, 20)} 保持一致 */
+        private static final int DOT_ROUND_INTERVAL = 20;
+
+        /**
+         * key = 实体 UUID，value = （元素名 → 状态）
+         *
+         * <p>用 UUID 而非 entityId：entityId 只在单个世界内唯一且会被回收，
+         * 跨维度时可能撞号；这一点与 {@code EXTRA_SLOT_CACHE} 的选择一致。</p>
+         */
+        private static final Map<UUID, Map<String, DotState>> STATES = new ConcurrentHashMap<>();
+
+        private ElementDotRegistry() {
+        }
+
+        /** 单条 DOT 的可变状态 */
+        private static final class DotState {
+
+            /** 每轮伤害，重复触发时取 max */
+            private volatile float damage;
+
+            /** 剩余轮数，重复触发时刷新为满 */
+            private volatile int remainingRounds;
+
+            /** 单轮执行体，重复触发时替换为最新的一份（攻击者 / 跳字接收者可能已变） */
+            private volatile DotTickAction action;
+
+            /** 正在跑的任务，用于兜底清理时取消 */
+            private volatile SynchronizationTask task;
+
+            /**
+             * 目标死亡时是否终止本条 DOT
+             *
+             * <p>绝大多数元素是「附着在目标身上」的，目标死了自然结束；
+             * 但毒气（gas）是**以命中位置为中心的 AoE 云**，锚点怪死掉之后云本来还会继续
+             * 伤害圈内其它实体 —— 改造前那条任务的判定也确实只有 {@code isRemoved()}
+             * 而没有 {@code isDeadOrDying()}。若在这里一刀切地按死亡终止，
+             * 毒气在实战中（锚点通常最先死）会几乎失效。</p>
+             */
+            private volatile boolean stopOnDeath = true;
+        }
+
+        /**
+         * 施加 / 刷新一条元素 DOT
+         *
+         * @param target  目标实体
+         * @param element 元素名（如 {@code "fire"} / {@code "poison"} / {@code "slash"}）
+         * @param damage  每轮伤害
+         * @param rounds  总轮数
+         * @param action  单轮执行体
+         */
+        public static void apply(@Nullable LivingEntity target, @Nonnull String element,
+                                 float damage, int rounds, @Nonnull DotTickAction action) {
+            apply(target, element, damage, rounds, action, true);
+        }
+
+        /**
+         * 施加 / 刷新一条元素 DOT（可指定目标死亡后是否继续）
+         *
+         * @param stopOnDeath 目标死亡时是否终止；毒气这类 AoE 云传 false
+         */
+        public static void apply(@Nullable LivingEntity target, @Nonnull String element,
+                                 float damage, int rounds, @Nonnull DotTickAction action,
+                                 boolean stopOnDeath) {
+            if (target == null || rounds <= 0 || damage <= 0
+                    || Float.isNaN(damage) || Float.isInfinite(damage)) {
+                return;
+            }
+            if (target.level().isClientSide()) {
+                return;
+            }
+
+            final UUID uuid = target.getUUID();
+            Map<String, DotState> perEntity = STATES.computeIfAbsent(uuid, u -> new ConcurrentHashMap<>());
+
+            DotState existing = perEntity.get(element);
+            if (existing != null) {
+                // ⭐ 去重核心：取 max + 刷新为满，不新起任务
+                if (damage > existing.damage) {
+                    existing.damage = damage;
+                }
+                if (rounds > existing.remainingRounds) {
+                    existing.remainingRounds = rounds;
+                }
+                existing.action = action;
+                existing.stopOnDeath = stopOnDeath;
+                return;
+            }
+
+            final DotState state = new DotState();
+            state.damage = damage;
+            state.remainingRounds = rounds;
+            state.action = action;
+            state.stopOnDeath = stopOnDeath;
+            perEntity.put(element, state);
+
+            SynchronizationTask task = new SynchronizationTask(DOT_ROUND_INTERVAL, DOT_ROUND_INTERVAL) {
+                @Override
+                public void run() {
+                    if (state.remainingRounds <= 0 || target.isRemoved()
+                            || (state.stopOnDeath && target.isDeadOrDying())) {
+                        finish();
+                        return;
+                    }
+                    state.remainingRounds--;
+                    boolean keepGoing = state.action.run(target, state.damage);
+                    if (!keepGoing || state.remainingRounds <= 0) {
+                        finish();
+                    }
+                }
+
+                private void finish() {
+                    detach(uuid, element, this);
+                    this.cancel();
+                }
+            };
+            state.task = task;
+            task.start();
+        }
+
+        /**
+         * 摘除条目（仅当条目仍属于该任务时，避免误删刷新后新建的条目）
+         */
+        private static void detach(@Nonnull UUID uuid, @Nonnull String element, @Nonnull SynchronizationTask task) {
+            Map<String, DotState> perEntity = STATES.get(uuid);
+            if (perEntity == null) {
+                return;
+            }
+            DotState state = perEntity.get(element);
+            if (state != null && state.task == task) {
+                perEntity.remove(element);
+            }
+            if (perEntity.isEmpty()) {
+                STATES.remove(uuid);
+            }
+        }
+
+        /**
+         * 清空某实体身上的全部元素 DOT（幂等，重复调用无副作用）
+         *
+         * @param target 目标实体
+         */
+        public static void clear(@Nullable LivingEntity target) {
+            if (target == null) {
+                return;
+            }
+            Map<String, DotState> perEntity = STATES.remove(target.getUUID());
+            if (perEntity == null) {
+                return;
+            }
+            for (DotState state : perEntity.values()) {
+                cancelState(state);
+            }
+        }
+
+        /**
+         * 目标死亡时的清理：只清「死亡即终止」的条目
+         *
+         * <p>毒气云（{@code stopOnDeath = false}）不在此列 —— 锚点怪死了云还要继续，
+         * 它由轮数耗尽或 {@code EntityLeaveLevelEvent} 收尾。</p>
+         *
+         * @param target 死亡的实体
+         */
+        public static void clearOnDeath(@Nullable LivingEntity target) {
+            if (target == null) {
+                return;
+            }
+            Map<String, DotState> perEntity = STATES.get(target.getUUID());
+            if (perEntity == null) {
+                return;
+            }
+            perEntity.entrySet().removeIf(e -> {
+                if (!e.getValue().stopOnDeath) {
+                    return false;
+                }
+                cancelState(e.getValue());
+                return true;
+            });
+            if (perEntity.isEmpty()) {
+                STATES.remove(target.getUUID());
+            }
+        }
+
+        private static void cancelState(@Nonnull DotState state) {
+            state.remainingRounds = 0;
+            SynchronizationTask task = state.task;
+            if (task != null) {
+                task.cancel();
+            }
+        }
+
+        /**
+         * 当前正在跑的 DOT 条数（调试 / 性能观测用）
+         *
+         * @return DOT 总条数
+         */
+        public static int activeCount() {
+            int count = 0;
+            for (Map<String, DotState> perEntity : STATES.values()) {
+                count += perEntity.size();
+            }
+            return count;
+        }
+    }
+
+    /**
+     * ⭐ 实体死亡时清空其元素 DOT
+     *
+     * <p>这是防泄漏的主路径：怪物几乎总在 DOT 跑完前被打死，
+     * 任务自身的轮数递减逻辑永远走不到头。LOWEST 优先级，让其它模组的死亡处理先跑完。</p>
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onLivingDeathClearDot(LivingDeathEvent evt) {
+        LivingEntity entity = evt.getEntity();
+        if (entity == null || entity.level().isClientSide()) {
+            return;
+        }
+        // ⭐ 只清「死亡即终止」的条目：毒气云要在锚点死后继续伤害圈内其它实体
+        ElementDotRegistry.clearOnDeath(entity);
+    }
+
+    /**
+     * ⭐ 实体离开世界时清空其元素 DOT（兜底）
+     *
+     * <p>覆盖死亡之外的移除场景：区块卸载、指令 kill、跨维度传送、实体 discard。</p>
+     */
+    @SubscribeEvent
+    public static void onEntityLeaveLevelClearDot(EntityLeaveLevelEvent evt) {
+        if (evt.getLevel().isClientSide()) {
+            return;
+        }
+        if (evt.getEntity() instanceof LivingEntity living) {
+            ElementDotRegistry.clear(living);
+        }
+    }
+
     // ========== 攻击速度 & 攻击距离 Tick ==========
 
     /**
@@ -1156,7 +1557,7 @@ public class WeaponCombatHandler {
         LivingEntity entity = evt.getEntity();
         ItemStack usingItem = evt.getItem();
         if (usingItem.isEmpty()) return;
-        ItemStack weapon = entity.getMainHandItem();
+        ItemStack weapon = firingRateSource(entity, usingItem);
         if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
 
         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(entity, weapon);
@@ -1170,8 +1571,11 @@ public class WeaponCombatHandler {
         }
         if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) { firingRate *= 2.0; }
         if (Math.abs(firingRate) < 0.001) return;
+        // 总射速为负是「这把武器被废掉」的设计，弓弩也一样：-100% 直接放下手，
+        // 中间值按概率让这一 tick 的蓄力 / 使用凭空消失。掷骰用确定性的那套，
+        // 不然客户端和服务端各掷各的，蓄力进度两端对不上（和下面 tick 加速那条同一个理由）
         if (firingRate <= -1.0) { entity.stopUsingItem(); }
-        else if (firingRate < 0) { if (RandomUtil.percentageChance(Math.abs(firingRate) * 100)) { evt.setCanceled(true); } }
+        else if (firingRate < 0) { if (deterministicChance(entity, Math.min(1.0, Math.abs(firingRate)))) { evt.setCanceled(true); } }
     }
 
     /**
@@ -1183,7 +1587,7 @@ public class WeaponCombatHandler {
         if (!entity.isUsingItem()) return;
         ItemStack usingItem = entity.getUseItem();
         if (usingItem.isEmpty()) return;
-        ItemStack weapon = entity.getMainHandItem();
+        ItemStack weapon = firingRateSource(entity, usingItem);
         if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) return;
 
         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(entity, weapon);
@@ -1204,6 +1608,25 @@ public class WeaponCombatHandler {
         //    小数部分原来用 RandomUtil 掷骰，两端各掷各的，动画和实际进度会对不上；
         //    现改为按「游戏时间 + 实体 ID」做确定性掷骰，两端同一 tick 得到同一结果
         if (fractionalPart > 0 && deterministicChance(entity, fractionalPart)) { EntityLivingUtil.updateHeld(entity); }
+    }
+
+    /**
+     * 射速该按哪件武器算。
+     *
+     * <p>优先用<b>正在使用的那一件</b>：副手拿弓、主手拿别的武器时，原版会把右键转给副手，
+     * 此时该生效的是副手那张弓自己的模组。只看主手的话，副手弓会莫名其妙吃到主手武器的射速，
+     * 换一把主手武器同一张弓的手感就变了。
+     *
+     * <p>正在用的那件没有开光（没有模组基座）时退回主手，保持老行为——
+     * 拿着开了光的枪、同时在吃东西之类的场景不受影响。
+     *
+     * @param entity    使用者
+     * @param usingItem 正在使用的物品
+     * @return 用来读射速属性的那件武器
+     */
+    @Nonnull
+    private static ItemStack firingRateSource(@Nonnull LivingEntity entity, @Nonnull ItemStack usingItem) {
+        return WeaponModuleHandler.hasBase(usingItem) ? usingItem : entity.getMainHandItem();
     }
 
     /**

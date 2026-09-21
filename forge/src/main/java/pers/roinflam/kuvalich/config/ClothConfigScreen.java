@@ -33,6 +33,8 @@ public class ClothConfigScreen {
                 .setSavingRunnable(() -> {
                     ModConfig.COMMON_CONFIG.save();
                     ModuleConfig.MODULE_CONFIG.save();
+                    // ⭐ 面板配置是独立的 CLIENT spec，要单独存
+                    TooltipConfig.CLIENT_CONFIG.save();
                 });
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
@@ -590,6 +592,94 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_LICH.enableGuidebook::set)
                 .build());
 
+        // ═══════════════════════════════════════════════════════════════
+        // 面板显示（纯客户端，见 TooltipConfig）
+        // ═══════════════════════════════════════════════════════════════
+        buildPanelCategory(builder, entryBuilder);
+
         return builder.build();
+    }
+
+    /**
+     * 面板显示分类
+     *
+     * <p>⭐ 这些配置项来自独立的 {@link TooltipConfig#CLIENT_CONFIG}（{@code Type.CLIENT}），
+     * 与 {@code ModConfig.COMMON_CONFIG} 分开存盘，所以这里要单独 save 一次
+     * —— {@code createConfigScreen} 顶上的 {@code setSavingRunnable} 只保存了另外两份。</p>
+     */
+    private static void buildPanelCategory(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
+        ConfigCategory panel = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.panel"));
+
+        TooltipConfig.PanelConfig cfg = TooltipConfig.PANEL;
+
+        panel.addEntry(toggle(entryBuilder, "enabled", cfg.enabled, true));
+
+        panel.addEntry(entryBuilder.startEnumSelector(
+                        Component.translatable("config.kuvalich.panel.density"),
+                        TooltipConfig.Density.class, cfg.density.get())
+                .setDefaultValue(TooltipConfig.Density.COMPACT)
+                .setTooltip(Component.translatable("config.kuvalich.panel.density.tooltip"))
+                .setSaveConsumer(cfg.density::set)
+                .build());
+
+        panel.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.panel.maxLines"), cfg.maxLines.get())
+                .setDefaultValue(24).setMin(8).setMax(80)
+                .setTooltip(Component.translatable("config.kuvalich.panel.maxLines.tooltip"))
+                .setSaveConsumer(cfg.maxLines::set)
+                .build());
+
+        panel.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.panel.widthRatio"), cfg.widthRatio.get())
+                .setDefaultValue(0.5).setMin(0.3).setMax(0.9)
+                .setTooltip(Component.translatable("config.kuvalich.panel.widthRatio.tooltip"))
+                .setSaveConsumer(cfg.widthRatio::set)
+                .build());
+
+        panel.addEntry(toggle(entryBuilder, "showGutter", cfg.showGutter, true));
+        panel.addEntry(toggle(entryBuilder, "showKeyHint", cfg.showKeyHint, true));
+
+        panel.addEntry(entryBuilder.startEnumSelector(
+                        Component.translatable("config.kuvalich.panel.symbolStyle"),
+                        TooltipConfig.SymbolStyle.class, cfg.symbolStyle.get())
+                .setDefaultValue(TooltipConfig.SymbolStyle.UNICODE)
+                .setTooltip(Component.translatable("config.kuvalich.panel.symbolStyle.tooltip"))
+                .setSaveConsumer(cfg.symbolStyle::set)
+                .build());
+
+        panel.addEntry(toggle(entryBuilder, "hideIrrelevantGroups", cfg.hideIrrelevantGroups, true));
+        panel.addEntry(toggle(entryBuilder, "showDamageGroup", cfg.showDamageGroup, true));
+        panel.addEntry(toggle(entryBuilder, "showGunGroup", cfg.showGunGroup, true));
+        panel.addEntry(toggle(entryBuilder, "showRareGroup", cfg.showRareGroup, true));
+        panel.addEntry(toggle(entryBuilder, "showUnknownAttributes", cfg.showUnknownAttributes, true));
+        panel.addEntry(toggle(entryBuilder, "showStacks", cfg.showStacks, true));
+
+        panel.addEntry(entryBuilder.startEnumSelector(
+                        Component.translatable("config.kuvalich.panel.stackStyle"),
+                        TooltipConfig.StackStyle.class, cfg.stackStyle.get())
+                .setDefaultValue(TooltipConfig.StackStyle.DOTS)
+                .setTooltip(Component.translatable("config.kuvalich.panel.stackStyle.tooltip"))
+                .setSaveConsumer(cfg.stackStyle::set)
+                .build());
+
+        panel.addEntry(toggle(entryBuilder, "showDecayTimer", cfg.showDecayTimer, true));
+        panel.addEntry(toggle(entryBuilder, "showStackArrow", cfg.showStackArrow, true));
+        panel.addEntry(toggle(entryBuilder, "showElements", cfg.showElements, true));
+        panel.addEntry(toggle(entryBuilder, "showExtraSlots", cfg.showExtraSlots, true));
+        panel.addEntry(toggle(entryBuilder, "showModuleList", cfg.showModuleList, true));
+        panel.addEntry(toggle(entryBuilder, "showClampWarning", cfg.showClampWarning, true));
+    }
+
+    /** 布尔开关的样板收敛：一条配置项从 6 行降到 1 行 */
+    private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<Boolean> toggle(
+            ConfigEntryBuilder entryBuilder, String name,
+            net.minecraftforge.common.ForgeConfigSpec.BooleanValue value, boolean defaultValue) {
+        return entryBuilder.startBooleanToggle(
+                        Component.translatable("config.kuvalich.panel." + name), value.get())
+                .setDefaultValue(defaultValue)
+                .setTooltip(Component.translatable("config.kuvalich.panel." + name + ".tooltip"))
+                .setSaveConsumer(value::set)
+                .build();
     }
 }

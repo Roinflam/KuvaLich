@@ -83,6 +83,11 @@ public class KuvaLich {
         ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON,
                 ModuleConfig.MODULE_CONFIG, "kuvalich-modules.toml");
 
+        // ⭐ 面板显示配置：注册为 CLIENT 而不是 COMMON。
+        //    这些全是观感项，不该被服务端的 toml 左右，也不该出现在服务端的配置目录里。
+        ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.CLIENT,
+                pers.roinflam.kuvalich.config.TooltipConfig.CLIENT_CONFIG, "kuvalich-tooltip.toml");
+
         // 注册配置屏幕
         // Register config screen
         // ⭐ Cloth Config 是可选依赖：没装时不注册，否则玩家在模组列表点"配置"会直接 NoClassDefFoundError 崩溃

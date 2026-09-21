@@ -69,9 +69,10 @@ public class RequiemRiddle extends Item {
                         requiemCard.getThreeAnswer() == -1) {
 
                     // 尚未解密完成 / Not yet fully decrypted
+                    // ⭐ 这里原先多传了一个 getKuvaLevel()，但译文里没有任何占位符，
+                    //    Component.translatable 会把多余参数静默丢弃 —— 删掉以免误导
                     player.sendSystemMessage(Component.translatable(
-                            "message.kuvalich.requiemRiddleNotAnswer",
-                            requiemCard.getKuvaLevel()
+                            "message.kuvalich.requiemRiddleNotAnswer"
                     ).withStyle(ChatFormatting.RED));
 
                     player.getCooldowns().addCooldown(itemstack.getItem(), 200);

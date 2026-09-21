@@ -59,6 +59,7 @@ public abstract class AbstractWarframeModule extends AbstractModule {
         return true;
     }
 
+    @net.minecraftforge.api.distmarker.OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack itemStack = event.getItemStack();
@@ -73,11 +74,17 @@ public abstract class AbstractWarframeModule extends AbstractModule {
                         .withStyle(ChatFormatting.GRAY));
             }
         } else {
-            addAttributeTooltips(tooltip, itemStack, item);
+            addAttributeTooltips(tooltip, itemStack, item, event.getEntity());
         }
     }
 
-    private static void addAttributeTooltips(List<Component> tooltip, ItemStack itemStack, Item item) {
+    // ⭐ @OnlyIn：本方法引用了 @OnlyIn(Dist.CLIENT) 的 LiveStackView。
+    //    HotSpot 对 invokestatic 是惰性解析的，不标也不会在专用服务端炸；
+    //    但标上之后 RuntimeDistCleaner 会直接把整段字节码剔掉，是零成本的保险，
+    //    也与旧 WeaponModuleHandler 的做法一致。
+    @net.minecraftforge.api.distmarker.OnlyIn(Dist.CLIENT)
+    private static void addAttributeTooltips(List<Component> tooltip, ItemStack itemStack, Item item,
+                                             net.minecraft.world.entity.player.Player viewer) {
         int number = 1;
 
         if (item instanceof WarframeRivenModule) {
@@ -118,8 +125,17 @@ public abstract class AbstractWarframeModule extends AbstractModule {
                     attributeName = Component.translatable("kuvaweapon.warframe_attribute_type." + attributeKey);
                 }
                 ChatFormatting color = getModuleColor(item);
-                tooltip.add(number++, Component.literal(prefix + percentage + "% ")
-                        .append(attributeName).withStyle(color));
+                net.minecraft.network.chat.MutableComponent line = Component.literal(prefix + percentage + "% ")
+                        .append(attributeName).withStyle(color);
+
+                // ⭐ 叠层词条追加玩家当前层数。
+                //    战甲类叠层的客户端镜像在 WarframeModuleHandler 里，与武器类不是同一张表；
+                //    LiveStackView 已统一两条读取路径，这里不要直接调 KillStackManager。
+                Component live = pers.roinflam.kuvalich.client.tooltip.LiveStackView.liveStackSuffix(attributeKey, viewer);
+                if (live != null) {
+                    line.append(live);
+                }
+                tooltip.add(number++, line);
             }
         }
 

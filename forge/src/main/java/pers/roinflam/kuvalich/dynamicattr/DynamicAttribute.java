@@ -1,25 +1,42 @@
 package pers.roinflam.kuvalich.dynamicattr;
 
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 动态属性定义
- * 支持属性修改器、Tick回调和自定义事件处理器
+ * 支持属性修改器和Tick回调
+ *
+ * <p>⭐ 本版移除了 {@code withEventHandler}（运行时往 Forge 事件总线动态注册监听器）。
+ * 原因：每施加一次 debuff 就往总线上 register 一个匿名对象，反注册只发生在
+ * 「自然过期 / 显式 remove」两条路径上，一旦走到别的路径（见 {@code DynamicAttributeManager.apply}
+ * 里的旧 orphan 分支）监听器就永久泄漏，之后每一次 {@code LivingHurtEvent} 都要遍历这些僵尸监听器。
+ * 现在元素 debuff 的战斗效果改由 {@code DynamicAttributes.ElementCombatHandler}
+ * 里<b>固定数量</b>的静态监听器承担，语义完全等价，总线规模恒定。</p>
  */
 public class DynamicAttribute {
+
+    /**
+     * ⭐ 所有已构造的动态属性定义（构造时自注册）。
+     *
+     * <p>用途：让 {@code DynamicAttributeManager} 能汇总出「本模组真正写过的 Attribute 集合」，
+     * 从而不必在实体入世界时遍历整个属性注册表（那里动辄上百个属性，而本模组只碰不到 10 个）。</p>
+     *
+     * <p>本项目的所有实例都是 {@code DynamicAttributes} 里的 static final 常量，
+     * 在该类初始化时一次性全部构造完成；若日后新增运行时构造的定义，
+     * 需注意管理器侧的索引是首次使用时快照的。</p>
+     */
+    private static final List<DynamicAttribute> REGISTRY = new CopyOnWriteArrayList<>();
+
     private final String registryName;
     private final Map<Attribute, ModifierConfig> modifierConfigs = new HashMap<>();
     private EffectCallback onTickCallback;
     private int tickInterval = 20;
-
-    // 事件处理器工厂 - 用于创建事件监听器实例
-    private EventHandlerFactory eventHandlerFactory;
 
     /**
      * 构造动态属性
@@ -32,6 +49,17 @@ public class DynamicAttribute {
             throw new IllegalArgumentException("注册名不能为空");
         }
         this.registryName = registryName;
+        REGISTRY.add(this);
+    }
+
+    /**
+     * 获取所有已构造的动态属性定义
+     *
+     * @return 只读视图（CopyOnWriteArrayList，遍历期间不会抛 ConcurrentModificationException）
+     */
+    @Nonnull
+    public static List<DynamicAttribute> getAll() {
+        return Collections.unmodifiableList(REGISTRY);
     }
 
     // ========== 属性修改器 ==========
@@ -87,53 +115,6 @@ public class DynamicAttribute {
         return this;
     }
 
-    // ========== 事件处理器 ==========
-
-    /**
-     * 设置事件处理器工厂
-     * 用于创建监听各种Forge事件的处理器对象
-     *
-     * 使用示例:
-     * <pre>
-     * new DynamicAttribute("virus")
-     *     .withEventHandler(entity -> new Object() {
-     *         @SubscribeEvent
-     *         public void onHurt(LivingHurtEvent event) {
-     *             if (event.getEntity() != entity) return;
-     *             event.setAmount(event.getAmount() * 1.25f);
-     *         }
-     *     });
-     * </pre>
-     *
-     * @param factory 工厂函数,接收LivingEntity参数,返回包含@SubscribeEvent方法的对象
-     * @return this,支持链式调用
-     */
-    public DynamicAttribute withEventHandler(@Nonnull EventHandlerFactory factory) {
-        this.eventHandlerFactory = factory;
-        return this;
-    }
-
-    /**
-     * 创建事件处理器实例
-     *
-     * @param entity 关联的实体
-     * @return 事件处理器对象,如果没有设置工厂则返回null
-     */
-    @Nullable
-    public Object createEventHandler(@Nonnull LivingEntity entity) {
-        if (eventHandlerFactory == null) return null;
-        return eventHandlerFactory.create(entity);
-    }
-
-    /**
-     * 检查是否有事件处理器
-     *
-     * @return true表示设置了事件处理器工厂
-     */
-    public boolean hasEventHandler() {
-        return eventHandlerFactory != null;
-    }
-
     // ========== 实例创建 ==========
 
     /**
@@ -177,20 +158,6 @@ public class DynamicAttribute {
     }
 
     // ========== 内部类和接口 ==========
-
-    /**
-     * 事件处理器工厂接口
-     */
-    @FunctionalInterface
-    public interface EventHandlerFactory {
-        /**
-         * 创建事件处理器
-         *
-         * @param entity 关联的实体
-         * @return 包含@SubscribeEvent方法的事件处理器对象
-         */
-        Object create(LivingEntity entity);
-    }
 
     /**
      * 属性修改器配置

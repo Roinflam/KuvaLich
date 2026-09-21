@@ -1,13 +1,15 @@
 package pers.roinflam.kuvalich.dynamicattr;
 
-import net.minecraftforge.common.MinecraftForge;
-
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * 动态属性实例
  * 表示应用在某个实体上的具体动态属性
+ *
+ * <p>⭐ 本版移除了 {@code eventHandler} 字段与 setEventHandler / unregisterEventHandler：
+ * 实例不再持有、也不再需要反注册任何 Forge 事件监听器，
+ * 它现在是一个纯数据对象（等级 + 剩余时间 + tick 计数）。
+ * 元素 debuff 的战斗效果见 {@code DynamicAttributes.ElementCombatHandler} 的静态监听器。</p>
  */
 public class DynamicAttributeInstance {
     private final DynamicAttribute attribute;
@@ -16,9 +18,6 @@ public class DynamicAttributeInstance {
     private final int amplifier;
     private int tickCounter = 0;
     private int totalTicksTriggered = 0;
-
-    // 事件处理器实例
-    private Object eventHandler;
 
     /**
      * 构造动态属性实例
@@ -90,35 +89,6 @@ public class DynamicAttributeInstance {
         return this.attribute.equals(other.attribute) &&
                 (this.amplifier > other.amplifier ||
                         (this.amplifier == other.amplifier && this.duration > other.duration));
-    }
-
-    // ========== 事件处理器管理 ==========
-
-    /**
-     * 设置并注册事件处理器到Forge事件总线
-     *
-     * @param handler 事件处理器对象(包含@SubscribeEvent方法)
-     */
-    public void setEventHandler(@Nullable Object handler) {
-        if (handler != null) {
-            this.eventHandler = handler;
-            MinecraftForge.EVENT_BUS.register(handler);
-        }
-    }
-
-    /**
-     * 注销事件处理器
-     */
-    public void unregisterEventHandler() {
-        if (eventHandler != null) {
-            MinecraftForge.EVENT_BUS.unregister(eventHandler);
-            eventHandler = null;
-        }
-    }
-
-    @Nullable
-    public Object getEventHandler() {
-        return eventHandler;
     }
 
     // ========== Getter方法 ==========

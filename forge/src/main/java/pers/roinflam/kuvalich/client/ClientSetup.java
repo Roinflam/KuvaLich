@@ -36,8 +36,32 @@ public class ClientSetup {
             // 注册所有实体渲染器 / Register all entity renderers
             registerEntityRenderers();
 
+            // ⭐ 面板描述表自检：找出「模组系统声明了、但面板不认识」的属性
+            verifyPanelCatalog();
+
             LogUtil.info("客户端内容注册完成");
         });
+    }
+
+    /**
+     * 面板描述表自检
+     *
+     * <p>{@code WeaponPanelCatalog.SPECS} 是面板「有哪些词条」的唯一真相来源，
+     * 但属性本身是在 {@code AbstractItemModule.ITEM_ATTRIBUTE_TYPES} 里声明的。
+     * 两边对不上时改造前是**完全静默**的：装上去的词条在面板上一行都不显示，
+     * 只能靠玩家反馈发现。这类不一致真实存在过 ——
+     * {@code first_bullet_damage} 曾被面板读取并显示，却不在 ITEM_ATTRIBUTE_TYPES 的声明里。</p>
+     *
+     * <p>只打日志、不抛异常：漏登记一条词条不该让游戏起不来。</p>
+     */
+    private static void verifyPanelCatalog() {
+        java.util.List<String> gaps = pers.roinflam.kuvalich.module.weapon.panel.WeaponPanelCatalog
+                .findGaps(pers.roinflam.kuvalich.base.item.AbstractItemModule.ITEM_ATTRIBUTE_TYPES);
+        if (gaps.isEmpty()) {
+            LogUtil.debug("面板描述表自检通过，覆盖全部已声明词条");
+            return;
+        }
+        LogUtil.info("⚠ 面板描述表缺少以下词条的登记，它们不会显示在武器面板上: " + String.join(", ", gaps));
     }
 
     /**
