@@ -86,24 +86,17 @@ public final class KuvaTooltipCoordinator {
     @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static final class Registration {
 
-        /** 功能键视图允许占到的屏幕宽度比例（不低于玩家为默认视图配的值） */
-        private static final double DETAIL_WIDTH_RATIO = 0.85;
-
         @SubscribeEvent
         public static void onRegisterTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
             event.register(PanelGridComponent.class, data -> {
                 Minecraft mc = Minecraft.getInstance();
                 int screenWidth = mc.getWindow().getGuiScaledWidth();
 
-                // ⭐ 功能键视图放宽宽度上限。
-                //    「变矮」唯一的手段就是「变宽」（多排一列），宽度卡死的话多列方案会被
-                //    整个挡掉，又退回去截断。而 widthRatio 这个偏好本来针对的是默认视图
-                //    ——玩家嫌它铺满屏幕；按住 SHIFT/CTRL/ALT 时他要的恰恰是看全。
-                double ratio = TooltipConfig.PANEL.widthRatio.get();
-                if (!data.respectConfiguredMaxLines()) {
-                    ratio = Math.max(ratio, DETAIL_WIDTH_RATIO);
-                }
-                int maxWidth = (int) (screenWidth * ratio);
+                // ⭐ 四个视图共用同一个宽度上限。
+                //    曾经给功能键视图单独放宽过，想让它靠「变宽」换「变矮」而不是截断，
+                //    但宽度上限同样会影响列数：默认视图卡在两列、SHIFT 能排到三列，
+                //    于是同一把武器两种排版。一致性比那点余量重要。
+                int maxWidth = (int) (screenWidth * TooltipConfig.PANEL.widthRatio.get());
 
                 // ⭐ 高度也要传进去：面板超屏时原版不裁剪也不滚动，只会把顶部推到屏幕外面
                 return ClientPanelGrid.layout(data, mc.font, maxWidth, mc.getWindow().getGuiScaledHeight());

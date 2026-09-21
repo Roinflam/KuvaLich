@@ -95,10 +95,17 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
         //    都必须先按「这块屏幕能放下多少行」来排。
         int screenRows = Math.max(MIN_ROWS, (screenHeight - RESERVED_HEIGHT) / Math.max(1, rowHeight));
 
-        // 默认视图再叠一道玩家自己配的偏好值；功能键视图只受屏幕约束
-        int maxLines = data.respectConfiguredMaxLines()
-                ? Math.min(TooltipConfig.PANEL.maxLines.get(), screenRows)
-                : screenRows;
+        // ⭐ 列数目标：四个视图<b>必须用同一个值</b>。
+        //
+        //    列数是按行数预算反推的（下面那个循环：先试一列，够用就停），
+        //    所以预算不同 = 列数不同 = 排版不同。曾经给功能键视图放宽过这个预算，
+        //    结果屏幕一高，SHIFT 视图的一列排版就「够用」了，于是停在一列、每条一行，
+        //    而默认视图还是两列 —— 同一把武器按下 SHIFT 像换了个模组。
+        int layoutTarget = Math.min(TooltipConfig.PANEL.maxLines.get(), screenRows);
+
+        // 截断阈值才是两者的区别：默认视图按玩家的偏好值截；
+        // 功能键视图只在屏幕真的放不下时才截（那是物理限制，不是偏好）
+        int truncateAt = data.respectConfiguredMaxLines() ? layoutTarget : screenRows;
 
         int columnCap = data.maxColumns() > 0 ? Math.min(data.maxColumns(), MAX_COLUMNS) : MAX_COLUMNS;
 
@@ -111,7 +118,7 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
                 break;
             }
             best = attempt;
-            if (attempt.lines.size() <= maxLines) {
+            if (attempt.lines.size() <= layoutTarget) {
                 break;
             }
         }
@@ -123,7 +130,7 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
         }
 
         // 走到这一步还超行，说明连排满列都放不下 —— 只能截，否则会画到屏幕外面
-        List<Line> lines = truncate(best.lines, maxLines, data.respectConfiguredMaxLines());
+        List<Line> lines = truncate(best.lines, truncateAt, data.respectConfiguredMaxLines());
         int width = best.width;
         for (Line line : lines) {
             for (Piece piece : line.pieces()) {
