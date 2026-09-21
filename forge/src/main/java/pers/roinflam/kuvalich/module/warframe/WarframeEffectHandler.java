@@ -268,7 +268,17 @@ public class WarframeEffectHandler {
      *
      * @param evt 掉落事件
      */
-    @SubscribeEvent
+    /**
+     * ⭐ 必须是 {@link EventPriority#LOWEST}：本方法要在<b>所有</b>改掉落数量的模组之后跑。
+     *
+     * <p>整合包里的「世界等级」也有一条战利品倍率，挂在同一个事件上、优先级 NORMAL
+     * （已核实其字节码）。而本模组走 {@code @Mod.EventBusSubscriber} 在 mod 构造期注册，
+     * 世界等级在 {@code onServerStarting} 才注册 —— 同优先级下按注册顺序派发，
+     * 结果是本模组<b>先</b>跑。先跑的一方无论怎么钳制总量，后跑的那一方都会在钳好的结果上
+     * 再乘一次，钳制形同虚设（10 腐肉 → 本模组夹到 64 → 世界等级 ×5 → 320）。
+     * 改成 LOWEST 之后本模组最后跑，看到的是各家都乘完的结果，这时候钳才钳得住。</p>
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDrops(LivingDropsEvent evt) {
         if (!evt.getEntity().level().isClientSide() && evt.getSource().getEntity() instanceof Player) {
             if (evt.getEntity() instanceof Animal || evt.getEntity() instanceof Monster || isCustomNpc(evt.getEntity())) {
@@ -299,21 +309,62 @@ public class WarframeEffectHandler {
                 }
 
                 // 倍率 > 0 时：缩放掉落物数量（装备、武器、工具不参与缩放）
+                //
+                // ⭐ 钳制规则：同一种物品在一次击杀里的总量不超过
+                //    max(本模组介入前的总量, 该物品的堆叠上限)。
+                //
+                //    两头都要防：
+                //    · 上界用堆叠上限 —— 「杀一只僵尸掉 10 腐肉，世界等级 ×5 变 50，
+                //      战甲再 ×10」不应该变成 500 个、掉一地好几组，最多一组。
+                //    · 下界用「介入前的总量」—— 有些怪本来就掉不止一组，
+                //      不能因为钳制反而比不装这条词条掉得还少。
+                //
+                //    只能按「物品种类」汇总来钳：先跑的模组（如世界等级）会把超堆叠的量
+                //    拆成好几个 ItemEntity 再塞回列表，只看单个实体的 count 根本看不出总量。
+                Map<Item, Integer> beforeTotals = new HashMap<>();
                 for (ItemEntity drop : drops) {
                     ItemStack dropStack = drop.getItem();
                     if (!isEquipment(dropStack)) {
-                        int originalCount = dropStack.getCount();
-                        double scaledCount = originalCount * itemDropMultiplier;
-                        int integerPart = (int) scaledCount;
-                        double fractionalPart = scaledCount - integerPart;
-
-                        if (fractionalPart > 0 && Math.random() < fractionalPart) {
-                            integerPart++;
-                        }
-
-                        dropStack.setCount(Math.max(integerPart, 0));
+                        beforeTotals.merge(dropStack.getItem(), dropStack.getCount(), Integer::sum);
                     }
                 }
+
+                Map<Item, Integer> remaining = new HashMap<>();
+                for (Map.Entry<Item, Integer> e : beforeTotals.entrySet()) {
+                    int before = e.getValue();
+                    double scaled = before * itemDropMultiplier;
+                    int scaledCount = (int) scaled;
+                    if (Math.random() < scaled - scaledCount) {
+                        scaledCount++;
+                    }
+                    int cap = Math.max(before, e.getKey().getDefaultInstance().getMaxStackSize());
+                    remaining.put(e.getKey(), Math.max(0, Math.min(scaledCount, cap)));
+                }
+
+                // 把钳好的总量按原有实体逐个分配回去；分完还有剩余的挂到最后一个实体上
+                ItemEntity lastOf = null;
+                for (ItemEntity drop : drops) {
+                    ItemStack dropStack = drop.getItem();
+                    if (isEquipment(dropStack)) {
+                        continue;
+                    }
+                    Item item = dropStack.getItem();
+                    int left = remaining.getOrDefault(item, 0);
+                    int give = Math.min(left, dropStack.getMaxStackSize());
+                    dropStack.setCount(give);
+                    remaining.put(item, left - give);
+                    lastOf = drop;
+                }
+                if (lastOf != null) {
+                    // 剩余量（总量超过所有原有实体能装下的部分）补到最后一个实体上。
+                    // 原版 ItemEntity 允许 count 超过堆叠上限，捡起时会自动分摊到多个格子。
+                    ItemStack lastStack = lastOf.getItem();
+                    int left = remaining.getOrDefault(lastStack.getItem(), 0);
+                    if (left > 0) {
+                        lastStack.setCount(lastStack.getCount() + left);
+                    }
+                }
+                drops.removeIf(drop -> drop.getItem().isEmpty());
             }
         }
     }
