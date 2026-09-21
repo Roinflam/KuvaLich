@@ -53,6 +53,14 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_LICH.enableDetailedLogging::set)
                 .build());
 
+        debugCategory.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.kuvalich.cleanupEmptyItemTags"),
+                        ModConfig.KUVA_LICH.cleanupEmptyItemTags.get())
+                .setDefaultValue(true)
+                .setTooltip(Component.translatable("config.kuvalich.cleanupEmptyItemTags.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.cleanupEmptyItemTags::set)
+                .build());
+
         // ═══════════════════════════════════════════════════════════════
         // 护盾系统
         // ═══════════════════════════════════════════════════════════════

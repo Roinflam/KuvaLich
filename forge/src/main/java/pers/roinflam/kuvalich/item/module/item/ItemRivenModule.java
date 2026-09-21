@@ -163,7 +163,12 @@ public class ItemRivenModule extends AbstractItemModule {
     }
 
     public static int getRivenMode(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getOrCreateTag();
+        // ⭐ 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
+        //    而 ItemStack 比较 NBT 时 null != {}，物品会因此再也堆叠不起来。
+        CompoundTag tag = itemStack.getTag();
+        if (tag == null) {
+            return MODE_MELEE;
+        }
         CompoundTag kuvalichModule = tag.getCompound(Reference.MOD_ID + "_modules");
         if (kuvalichModule.contains("RivenMode")) {
             return kuvalichModule.getInt("RivenMode");
@@ -555,9 +560,13 @@ public class ItemRivenModule extends AbstractItemModule {
     }
 
     public static int getCycle(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getOrCreateTag();
-        CompoundTag kuvalichModule = tag.getCompound(Reference.MOD_ID + "_modules");
-        return kuvalichModule.getInt("Cycle");
+        // ⭐ 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
+        //    而 ItemStack 比较 NBT 时 null != {}，物品会因此再也堆叠不起来。
+        CompoundTag tag = itemStack.getTag();
+        if (tag == null) {
+            return 0;
+        }
+        return tag.getCompound(Reference.MOD_ID + "_modules").getInt("Cycle");
     }
 
     private static void setTrend(ItemStack itemStack, int trend) {
@@ -568,9 +577,13 @@ public class ItemRivenModule extends AbstractItemModule {
     }
 
     public static int getTrend(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getOrCreateTag();
-        CompoundTag kuvalichModule = tag.getCompound(Reference.MOD_ID + "_modules");
-        return kuvalichModule.getInt("Trend");
+        // ⭐ 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
+        //    而 ItemStack 比较 NBT 时 null != {}，物品会因此再也堆叠不起来。
+        CompoundTag tag = itemStack.getTag();
+        if (tag == null) {
+            return 0;
+        }
+        return tag.getCompound(Reference.MOD_ID + "_modules").getInt("Trend");
     }
 
     public static void registerCreativeTabItems(CreativeModeTab.Output output) {

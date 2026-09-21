@@ -1774,5 +1774,7 @@
   "kuvalich.panel.clamped.header": "Clamped by config",
   "kuvalich.panel.source.none": "The installed mods have no attributes",
   "config.kuvalich.panel.showGroupBands": "Tint attribute groups",
-  "config.kuvalich.panel.showGroupBands.tooltip": "Alternating groups get a very faint background tint so blocks read apart at a glance"
+  "config.kuvalich.panel.showGroupBands.tooltip": "Alternating groups get a very faint background tint so blocks read apart at a glance",
+  "config.kuvalich.cleanupEmptyItemTags": "Clean Up Empty NBT Tags",
+  "config.kuvalich.cleanupEmptyItemTags.tooltip": "§7Versions before 2.7.0 wrote an empty NBT tag onto every item the\n§7mouse hovered over. Such items no longer stack with clean ones\n§7(commonly dirt, cobblestone, etc). The cause is fixed, but tags\n§7already saved do not disappear on their own; this option scans\n§7player inventories on the server and strips them.\n§aOnly a completely empty tag is removed - items with data are untouched."
 }
