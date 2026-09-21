@@ -51,6 +51,7 @@ public class KuvaLich {
 
         // 注册方块 / Register blocks
         KuvaLichBlocks.BLOCKS.register(modEventBus);
+        KuvaLichLootModifiers.LOOT_MODIFIERS.register(modEventBus);
 
         // 注册物品 / Register items
         KuvaLichItems.ITEMS.register(modEventBus);

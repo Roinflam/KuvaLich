@@ -78,6 +78,18 @@ public class WarframeRareModule extends AbstractWarframeModule {
                 new Object[]{"itemDropMultiplier", 0.6001f},
                 "item_drop_multiplier");
 
+        // 矿脉嗅探 —— 金卡单词条标准值
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.warframe_module.vein_sense", "vein_sense",
+                new Object[]{"oreDropMultiplier", 0.3001f},
+                "ore_drop_multiplier");
+
+        // 深掘者 —— 挖矿倍率 + 挖掘速度，代价是护甲
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
+                "kuvaweapon.warframe_module.deep_delver", "deep_delver",
+                new Object[]{"oreDropMultiplier", 0.4501f, "diggingSpeed", 0.3001f, "armor", -0.6001f},
+                "ore_drop_multiplier");
+
         // 情同手足
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_RARE_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.deep_friendship", "deep_friendship",

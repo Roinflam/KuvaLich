@@ -123,6 +123,12 @@ public class WarframeCommonModule extends AbstractWarframeModule {
                 new Object[]{"itemDropMultiplier", 0.6001f, "reachDistance", -0.3001f, "diggingSpeed", -0.6001f},
                 "item_drop_multiplier");
 
+        // 矿工直觉 —— 铜卡：挖矿倍率入门值，代价是挖得慢
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_COMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.warframe_module.miner_instinct", "miner_instinct",
+                new Object[]{"oreDropMultiplier", 0.1501f, "diggingSpeed", -0.4001f},
+                "ore_drop_multiplier");
+
         // 跃动信号
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_COMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.mobilize", "mobilize",

@@ -88,6 +88,12 @@ public class WarframePrimeModule extends AbstractWarframeModule {
                 new Object[]{"itemDropMultiplier", 0.9001f},
                 "item_drop_multiplier");
 
+        // 星髓钻探 Prime —— 挖矿倍率上限档，无负面
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_PRIME_MODULE.get(), null, itemStackList,
+                "kuvaweapon.warframe_module.astral_drill_prime", "astral_drill_prime",
+                new Object[]{"oreDropMultiplier", 0.4501f},
+                "ore_drop_multiplier");
+
         // 超频Prime ★ 冲刺速度 0.4501f → 0.2501f
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_PRIME_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.overclock_prime", "overclock",

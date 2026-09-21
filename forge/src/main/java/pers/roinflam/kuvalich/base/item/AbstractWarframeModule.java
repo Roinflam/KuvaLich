@@ -39,7 +39,7 @@ public abstract class AbstractWarframeModule extends AbstractModule {
                     "health", "shield", "armor", "sprintSpeed", "shieldRecoveryRate",
                     "shieldRecoveryDelay", "knockbackResistance", "fireProtection",
                     "electricProtection", "homologousProtection", "reachDistance",
-                    "diggingSpeed", "responseRate", "itemDropMultiplier",
+                    "diggingSpeed", "responseRate", "itemDropMultiplier", "oreDropMultiplier",
                     "jumpBoost", "fallProtection",
                     "fixedHealth", "fixedShield", "fixedArmor",
                     "killStackHealth", "killStackShield", "killStackArmor", "killStackSprintSpeed",

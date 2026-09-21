@@ -5,6 +5,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import pers.roinflam.kuvalich.module.weapon.MagicDamageClassifier;
+import pers.roinflam.kuvalich.loot.OreDropRules;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Arrays;
@@ -181,6 +182,12 @@ public final class ModConfig {
 
         // ===== 空 NBT 清理 / Empty NBT Cleanup =====
         public final ForgeConfigSpec.BooleanValue cleanupEmptyItemTags;
+
+        // ===== 挖矿倍率 / Ore Drop Multiplier =====
+        public final ForgeConfigSpec.BooleanValue enableOreDropMultiplier;
+        public final ForgeConfigSpec.DoubleValue oreDropEffectMultiplier;
+        public final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> oreDropWhitelist;
+        public final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> oreDropBlacklist;
 
         // ===== 多槽位装备模组系统 / Multi-Slot Equipment Module System =====
         public final ForgeConfigSpec.BooleanValue enableOffhandModule;
@@ -797,6 +804,40 @@ public final class ModConfig {
                     .comment("只有完全为空的标签才会被移除，带任何真实数据的物品都不会被动到。")
                     .define("cleanupEmptyItemTags", true);
 
+            builder.comment("")
+                    .comment("═══ Ore Drop Multiplier / 挖矿倍率 ═══")
+                    .comment("Warframe attribute 'oreDropMultiplier': an INDEPENDENT multiplicative bucket")
+                    .comment("applied AFTER vanilla Fortune, and only to ore blocks broken by a player.")
+                    .comment("战甲词条 oreDropMultiplier：独立乘区，作用在原版时运结算之后，")
+                    .comment("且只对玩家亲手挖掉的矿石生效。")
+                    .comment("Silk Touch, self-drops and drops that are themselves ore blocks are skipped")
+                    .comment("(otherwise the ore could be placed back and re-mined for infinite duplication).")
+                    .comment("精准采集、掉落物就是方块自己、掉落物本身也是矿石方块，这三种一律跳过，")
+                    .comment("否则可以摆回去再挖，无限刷。");
+
+            enableOreDropMultiplier = builder
+                    .comment("Enable the ore drop multiplier entirely")
+                    .comment("总开关")
+                    .define("enableOreDropMultiplier", true);
+
+            oreDropEffectMultiplier = builder
+                    .comment("How much of the module value actually applies, in percent")
+                    .comment("模组词条值的实际生效倍率(%)，与战利品掉落倍率同一套语义")
+                    .comment("100.0 = 完全生效(默认)；50.0 = 效果减半；0.0 = 不生效")
+                    .defineInRange("oreDropEffectMultiplier", 100.0, 0.0, 1000.0);
+
+            oreDropWhitelist = builder
+                    .comment("Extra block ids treated as ore, beyond the kuvalich:mining_multiplier_ores tag")
+                    .comment("额外视为矿石的方块 id（在 kuvalich:mining_multiplier_ores 标签之外再加）")
+                    .comment("实测整合包里有 23 个方块用了原版时运公式却不在 forge:ores，")
+                    .comment("标签里已预置了能查到的那些；漏网的写在这里。")
+                    .defineList("oreDropWhitelist", java.util.List.of(), o -> o instanceof String);
+
+            oreDropBlacklist = builder
+                    .comment("Block ids never treated as ore (highest priority, overrides tag and whitelist)")
+                    .comment("永不视为矿石的方块 id（优先级最高，压过标签和白名单）")
+                    .defineList("oreDropBlacklist", java.util.List.of(), o -> o instanceof String);
+
             // ═══════════════════════════════════════════════════════════════
             // 新增：多槽位装备模组系统
             // NEW: Multi-Slot Equipment Module System
@@ -1286,5 +1327,7 @@ public final class ModConfig {
     @SubscribeEvent
     public static void onConfigReload(final ModConfigEvent event) {
         MagicDamageClassifier.invalidateCache();
+        // 挖矿倍率的白/黑名单是解析成 ResourceLocation 后缓存的，配置改了要重解析
+        OreDropRules.invalidateCache();
     }
 }

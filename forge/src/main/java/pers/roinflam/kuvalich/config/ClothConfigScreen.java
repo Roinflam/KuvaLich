@@ -61,6 +61,24 @@ public class ClothConfigScreen {
                 .setSaveConsumer(ModConfig.KUVA_LICH.cleanupEmptyItemTags::set)
                 .build());
 
+        // ===== 挖矿倍率 =====
+        debugCategory.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.kuvalich.enableOreDropMultiplier"),
+                        ModConfig.KUVA_LICH.enableOreDropMultiplier.get())
+                .setDefaultValue(true)
+                .setTooltip(Component.translatable("config.kuvalich.enableOreDropMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.enableOreDropMultiplier::set)
+                .build());
+
+        debugCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.kuvalich.oreDropEffectMultiplier"),
+                        ModConfig.KUVA_LICH.oreDropEffectMultiplier.get())
+                .setDefaultValue(100.0)
+                .setMin(0.0).setMax(1000.0)
+                .setTooltip(Component.translatable("config.kuvalich.oreDropEffectMultiplier.tooltip"))
+                .setSaveConsumer(ModConfig.KUVA_LICH.oreDropEffectMultiplier::set)
+                .build());
+
         // ═══════════════════════════════════════════════════════════════
         // 护盾系统
         // ═══════════════════════════════════════════════════════════════

@@ -104,6 +104,12 @@ public class WarframeUncommonModule extends AbstractWarframeModule {
                 new Object[]{"itemDropMultiplier", 0.9001f, "health", -0.6001f, "shield", -1.2001f},
                 "item_drop_multiplier");
 
+        // 矿脉共鸣 —— 银卡：挖矿倍率中段，代价是护盾
+        ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), null, itemStackList,
+                "kuvaweapon.warframe_module.vein_resonance", "vein_resonance",
+                new Object[]{"oreDropMultiplier", 0.2251f, "shield", -0.6001f},
+                "ore_drop_multiplier");
+
         // 坚守阵地
         ModuleRegistryHelper.register(KuvaLichItems.WARFRAME_UNCOMMON_MODULE.get(), null, itemStackList,
                 "kuvaweapon.warframe_module.stand_your_ground", "stand_your_ground",

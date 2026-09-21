@@ -237,6 +237,11 @@ public class WarframeRivenModule extends AbstractWarframeModule {
         if (attributeType.equals("itemDropMultiplier")) {
             return 0.9;
         }
+        // ⭐ 挖矿倍率基准 0.3：与金卡单词条同值，作者定的。
+        //    注意它低于战利品倍率的 0.9 —— 不是笔误，是刻意压低。
+        if (attributeType.equals("oreDropMultiplier")) {
+            return 0.3;
+        }
         if (attributeType.equals("jumpBoost")) {
             return 2.0;
         }
