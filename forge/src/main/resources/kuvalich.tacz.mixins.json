@@ -7,13 +7,13 @@
     "EntityKineticBulletAccessor",
     "MixinAttachmentPropertyContext",
     "MixinBulletDamageSpread",
-    "MixinFirstBulletDetect",
+    "MixinGunShootContext",
     "MixinGunMagazineSize",
     "MixinGunProjectileSpeed",
     "MixinGunReloadSpeed",
     "MixinGunShootInterval",
     "MixinGunShootOnce",
-    "MixinTaczBulletExplosion",
+    "MixinBulletModifiers",
     "MixinTaczDamageDisplay"
   ],
   "client": [

@@ -62,7 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *    （见 {@link #isEquipment}），与 WorldLevel 模组 ModEvents、ServerManager 插件
  *    DropBonusListener 的判定口径完全一致，确保同一次击杀中三套掉落倍率对物品的取舍相同。
  *
- * <p>⭐ 并发安全修复：{@code cooldingHashMap} 由 {@link HashMap} 改为
+ * <p>⭐ 并发安全修复：{@code cooldownTicks} 由 {@link HashMap} 改为
  * {@link ConcurrentHashMap}，并加 {@code final} 防止被外部重新赋值。
  * 该 Map 是 public static 跨玩家共享的，在伤害事件与 tick 事件中并发读写，
  * 与 WeaponModuleHandler / WarframeModuleHandler 的属性缓存属于同一类风险：
@@ -76,7 +76,7 @@ public class WarframeEffectHandler {
      * 护盾恢复冷却（UUID → 剩余秒数）
      * <p>⭐ 必须使用并发容器：public static 跨线程共享，且在多个事件处理器中并发读写。</p>
      */
-    public static final Map<UUID, Integer> cooldingHashMap = new ConcurrentHashMap<>();
+    public static final Map<UUID, Integer> cooldownTicks = new ConcurrentHashMap<>();
 
     /**
      * 固定属性 AttributeModifier 的 UUID
@@ -160,11 +160,11 @@ public class WarframeEffectHandler {
 
                 // 护盾恢复冷却
                 double delayMultiplier = attributes.getOrDefault("shieldRecoveryDelay", 1.0);
-                int coolding = (int) (10 * delayMultiplier);
+                int cooldown = (int) (10 * delayMultiplier);
                 if (player.getAbsorptionAmount() <= 0) {
-                    coolding *= 3; // 护盾破碎时冷却时间x3
+                    cooldown *= 3; // 护盾破碎时冷却时间x3
                 }
-                cooldingHashMap.put(player.getUUID(), coolding);
+                cooldownTicks.put(player.getUUID(), cooldown);
 
                 // 各种抗性
                 if (damageSource.is(net.minecraft.tags.DamageTypeTags.IS_FIRE)) {
@@ -196,11 +196,11 @@ public class WarframeEffectHandler {
                 WarframeModuleHandler.applyWarframeKillStackEffects(player, attributes);
 
                 double delayMultiplier = attributes.getOrDefault("shieldRecoveryDelay", 1.0);
-                int coolding = (int) (10 * delayMultiplier);
+                int cooldown = (int) (10 * delayMultiplier);
                 if (player.getAbsorptionAmount() <= 0) {
-                    coolding *= 3;
+                    cooldown *= 3;
                 }
-                cooldingHashMap.put(player.getUUID(), coolding);
+                cooldownTicks.put(player.getUUID(), cooldown);
 
                 // 击杀检测
                 if (evt.getEntity().getHealth() - evt.getAmount() <= 0) {
@@ -585,12 +585,12 @@ public class WarframeEffectHandler {
 
                     // ═══ 每秒：护盾恢复 ═══
                     if (player.level().getGameTime() % 20 == 0) {
-                        if (cooldingHashMap.containsKey(player.getUUID())) {
-                            if (cooldingHashMap.get(player.getUUID()) > 1) {
-                                cooldingHashMap.put(player.getUUID(),
-                                        cooldingHashMap.get(player.getUUID()) - 1);
+                        if (cooldownTicks.containsKey(player.getUUID())) {
+                            if (cooldownTicks.get(player.getUUID()) > 1) {
+                                cooldownTicks.put(player.getUUID(),
+                                        cooldownTicks.get(player.getUUID()) - 1);
                             } else {
-                                cooldingHashMap.remove(player.getUUID());
+                                cooldownTicks.remove(player.getUUID());
                             }
                         } else {
                             HashMap<String, Double> attributes = WarframeModuleHandler.getCachedAttributes(player);
@@ -729,7 +729,7 @@ public class WarframeEffectHandler {
     @SubscribeEvent
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent evt) {
         UUID uuid = evt.getEntity().getUUID();
-        cooldingHashMap.remove(uuid);
+        cooldownTicks.remove(uuid);
         WarframeModuleHandler.cleanupCache(uuid);
 
         if (evt.getEntity().level().isClientSide()) {

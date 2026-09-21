@@ -1,4 +1,4 @@
-// MixinFirstBulletDetect.java
+// MixinGunShootContext.java
 package pers.roinflam.kuvalich.mixin.tacz;
 
 import com.tacz.guns.api.item.IGun;
@@ -19,7 +19,7 @@ import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
  * RETURN：清除所有 ThreadLocal
  */
 @Mixin(targets = "com.tacz.guns.item.ModernKineticGunScriptAPI", remap = false)
-public abstract class MixinFirstBulletDetect {
+public abstract class MixinGunShootContext {
 
     @Shadow
     private LivingEntity shooter;

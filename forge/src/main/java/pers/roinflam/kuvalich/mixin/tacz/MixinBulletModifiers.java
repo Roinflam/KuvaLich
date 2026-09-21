@@ -1,4 +1,4 @@
-// MixinTaczBulletExplosion.java
+// MixinBulletModifiers.java
 package pers.roinflam.kuvalich.mixin.tacz;
 
 import com.tacz.guns.resource.pojo.data.gun.BulletData;
@@ -35,7 +35,7 @@ import pers.roinflam.kuvalich.utils.LogUtil;
  * 不在此处处理。
  */
 @Mixin(targets = "com.tacz.guns.entity.EntityKineticBullet", remap = false)
-public class MixinTaczBulletExplosion {
+public class MixinBulletModifiers {
 
     /** 子弹是否具有爆炸的标志 */
     @Shadow
