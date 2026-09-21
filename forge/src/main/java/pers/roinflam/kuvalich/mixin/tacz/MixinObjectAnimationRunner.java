@@ -1,10 +1,15 @@
 package pers.roinflam.kuvalich.mixin.tacz;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.tacz.guns.api.client.animation.ObjectAnimation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import pers.roinflam.kuvalich.compat.tacz.client.AnimationSpeedScaler;
+
+import java.util.Locale;
 
 /**
  * 注入 ObjectAnimationRunner，实现装填动画速度缩放（客户端专用）。
@@ -47,6 +52,57 @@ public class MixinObjectAnimationRunner {
             AnimationSpeedScaler.TimeTracker.createNanosTracker();
 
     /**
+     * 这段动画该不该跟着装填速度走。
+     *
+     * <p>缩放倍率是「玩家此刻在不在装填」算出来的一个全局值，可每个 Runner 播的是不同的动画：
+     * 不分段的话，装填那一两秒里待机呼吸、走路摆枪、冲刺收枪全都跟着快起来，
+     * 装填一结束又瞬间掉回原速——看上去就是整把枪抖了一下。
+     * 动画名在 Runner 造出来时就定了（{@code animation} 是 final），所以只判一次。
+     */
+    @Unique
+    private boolean kuvalich$scalable;
+
+    /**
+     * Runner 刚造出来：按动画名决定这一段要不要跟着装填速度走。
+     *
+     * @param animation 这段动画
+     * @param ci        回调
+     */
+    @Inject(method = "<init>(Lcom/tacz/guns/api/client/animation/ObjectAnimation;)V",
+            at = @At("RETURN"), require = 0)
+    private void kuvalich$classify(ObjectAnimation animation, CallbackInfo ci) {
+        String name = animation == null || animation.name == null
+                ? "" : animation.name.toLowerCase(Locale.ROOT);
+        this.kuvalich$scalable = !kuvalich$isAmbient(name);
+    }
+
+    /**
+     * 这段动画是不是「和装填无关、不该跟着装填速度走」的那一类。
+     *
+     * <p>为什么排黑名单而不是白名单：装填动画的名字各枪包自己取，
+     * 整合包里就有 {@code left_reload_tactical}、{@code combine_reload_tactical}、
+     * {@code special_load}（逐发霰弹枪）、{@code sound_reload_1}、{@code unloading} 这些，
+     * 按「reload / bolt 开头」挑的话会把它们全漏掉——那还不如不分段。
+     * 反过来列「肯定不该加速」的循环动作和无关动作，漏了一个最多是它跟着快一点，
+     * 不会出现「装填动画没跟上装填速度」这种真正看得出来的毛病。
+     *
+     * @param name 动画名，已转小写
+     * @return 是无关动作返回 true
+     */
+    @Unique
+    private static boolean kuvalich$isAmbient(String name) {
+        if (name.isEmpty()) {
+            return true;
+        }
+        return name.startsWith("idle") || name.startsWith("static") || name.startsWith("walk")
+                || name.startsWith("run") || name.startsWith("inspect") || name.startsWith("put_away")
+                || name.startsWith("put_down") || name.startsWith("draw") || name.startsWith("shoot")
+                || name.startsWith("fire") || name.startsWith("aim") || name.startsWith("sight")
+                || name.startsWith("spin") || name.startsWith("jump") || name.startsWith("slide")
+                || name.startsWith("crawl") || name.contains("heat");
+    }
+
+    /**
      * 拦截 run()、update()、updateSoundOnly() 中所有 System.nanoTime() 调用，
      * 通过 TimeTracker 缩放返回值实现动画速度调整。
      * <p>
@@ -70,6 +126,10 @@ public class MixinObjectAnimationRunner {
             require = 0
     )
     private long kuvalich$scaleAnimationTime(long original) {
+        if (!kuvalich$scalable) {
+            // 不是装填 / 拉栓那几段，原样走真实时间，连追踪器都不碰
+            return original;
+        }
         double scale = AnimationSpeedScaler.getAnimationSpeedScale();
         return kuvalich$timeTracker.updateAndGet(original, scale);
     }

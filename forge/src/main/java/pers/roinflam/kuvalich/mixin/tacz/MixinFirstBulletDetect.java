@@ -1,10 +1,7 @@
 // MixinFirstBulletDetect.java
 package pers.roinflam.kuvalich.mixin.tacz;
 
-import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.util.AttachmentDataUtils;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,13 +19,26 @@ import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
  * RETURN：清除所有 ThreadLocal
  */
 @Mixin(targets = "com.tacz.guns.item.ModernKineticGunScriptAPI", remap = false)
-public class MixinFirstBulletDetect {
+public abstract class MixinFirstBulletDetect {
 
     @Shadow
     private LivingEntity shooter;
 
     @Shadow
     private ItemStack itemStack;
+
+    /**
+     * TACZ 自己的「这把枪最多装多少发」。
+     *
+     * <p>不要自己去调 {@code AttachmentDataUtils.getAmmoCountWithAttachment}：别的模组
+     *（比如 AlbionMastery 的弹匣特化）是挂在<b>这个方法内部的调用点</b>上改容量的，
+     * 绕过去算出来的是没算别人加成的数。满弹判定拿它当阈值，会从「只有第一发」
+     * 变成「弹药量还很高时每一发都算第一发」，或者反过来永远判不到满弹。
+     *
+     * @return 这把枪当前的弹匣上限
+     */
+    @Shadow
+    public abstract int getMaxAmmoCount();
 
     /**
      * shootOnce 方法头部：检测满弹夹射击 + 设置枪械伤害 + 设置玄骸强化乘数 ThreadLocal。
@@ -57,10 +67,7 @@ public class MixinFirstBulletDetect {
             IGun iGun = IGun.getIGunOrNull(itemStack);
             if (iGun != null) {
                 int currentAmmo = iGun.getCurrentAmmoCount(itemStack);
-                ResourceLocation gunId = iGun.getGunId(itemStack);
-                int maxAmmo = TimelessAPI.getCommonGunIndex(gunId)
-                        .map(index -> AttachmentDataUtils.getAmmoCountWithAttachment(itemStack, index.getGunData()))
-                        .orElse(0);
+                int maxAmmo = getMaxAmmoCount();
 
                 if (maxAmmo > 0 && currentAmmo >= maxAmmo) {
                     WarframeTaczBridge.setFirstBulletDamageBonus(firstBulletMod);

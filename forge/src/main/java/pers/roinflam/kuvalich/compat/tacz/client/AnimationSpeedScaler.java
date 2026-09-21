@@ -29,6 +29,9 @@ import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
 @OnlyIn(Dist.CLIENT)
 public class AnimationSpeedScaler {
 
+    /** 自己这一份动画倍速的上限。再快人眼就看不清动作了。 */
+    private static final double MAX_SCALE = 4.0;
+
     /**
      * 获取当前动画播放速度缩放倍率。
      * Get current animation playback speed scale.
@@ -85,7 +88,18 @@ public class AnimationSpeedScaler {
         // 动画速度 = (1 + reload_speed)
         // +0.5 → 1.5 倍速（加速）
         // -0.3 → 0.7 倍速（减速）
-        return 1.0 + reloadSpeedMod;
+        // ⭐ 只夹上限，绝不夹下限。
+        //
+        // 上限：换弹模组是跨槽位相加的，堆满能到 +300% 以上，再叠上别的模组
+        //（比如 AlbionMastery 的换弹特化，它自己那一份也夹在 4 倍以内）就是整段动画一闪而过，
+        // 弹匣根本看不清换了没有。触顶之后动画比逻辑慢，表现是「装填好了动画还在播」，无伤大雅。
+        //
+        // 下限则不能夹：逻辑侧（MixinGunReloadSpeed）是不钳的，负的 reload_speed
+        // 靠两张金卡就能叠到 -0.93，逻辑上要 35 秒；动画若被抬到 0.25 就只播 10 秒，
+        // 而换弹动画是 PLAY_ONCE_STOP，播完即停回待机姿势 ——
+        // 玩家看着枪已经装好了，却还有 25 秒开不了火，正是本类存在的意义所要消除的那种不同步。
+        // 慢就让它慢，至少是同步的
+        return Math.min(MAX_SCALE, 1.0 + reloadSpeedMod);
     }
 
     /**
