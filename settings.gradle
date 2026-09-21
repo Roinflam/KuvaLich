@@ -11,6 +11,14 @@ pluginManagement {
 rootProject.name = providers.gradleProperty('mod_name').get()
 
 // 包含的子项目
-include 'common'
+// ⭐ 只剩 forge 一个。common / fabric 已移除（2026-09-21）：
+//    - fabric 是坏的：fabric.mod.json 指向的入口类 pers.tany.kuvalich.fabric.KuvaLichFabric
+//      根本不存在，这个 jar 从未发布过，却每次构建都要解析整套 fabric-api
+//    - common 只有一个 409 字节的空类，包名还是 pers.tany.kuvalich（另一套 groupId），
+//      而且它与 forge 各有一个同名的 KuvaLich 类和同名的 kuvalich.mixins.json
+//      同时在编译路径上：IDE 自动导入选错会拿到空类且编译能过；
+//      shadow 合并顺序一变就会静默丢掉 mixin 配置
+//    本模组有 57 个 @Mod.EventBusSubscriber、13 个 TACZ mixin 与大量
+//    net.minecraftforge.* 直接依赖，移植 Fabric 的实际工作量是重写，
+//    留着这套脚手架没有期权价值。
 include 'forge'
-include 'fabric'
