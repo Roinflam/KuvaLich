@@ -41,9 +41,16 @@ public final class OreDropRules {
     public static final TagKey<Block> MINING_MULTIPLIER_ORES =
             BlockTags.create(new ResourceLocation(Reference.MOD_ID, "mining_multiplier_ores"));
 
-    /** 配置列表解析后的缓存；配置重载时置空 */
-    private static Set<ResourceLocation> whitelistCache;
-    private static Set<ResourceLocation> blacklistCache;
+    /**
+     * 配置列表解析后的缓存；配置重载时置空
+     *
+     * <p>⭐ 必须 {@code volatile}：{@link #invalidateCache()} 由 {@code ModConfigEvent} 触发，
+     * 而 Forge 对「运行期外部改动了 toml」派发的是<b>配置文件监视线程</b>；
+     * 读这两个缓存的 {@link #isApplicableOre} 却跑在服务端主线程（挖矿时的战利品结算）。
+     * 两个线程之间没有可见性保证的话，表现就是「改完配置保存了，游戏里不生效」。</p>
+     */
+    private static volatile Set<ResourceLocation> whitelistCache;
+    private static volatile Set<ResourceLocation> blacklistCache;
 
     private OreDropRules() {
     }
@@ -110,18 +117,24 @@ public final class OreDropRules {
 
     // ==================== 配置列表解析 ====================
 
+    // ⭐ 先读进局部变量再判空：字段是 volatile，若直接「判一次、再读一次」，
+    //    两次读之间正好被配置监视线程 invalidateCache() 置空，就会返回 null。
     private static Set<ResourceLocation> whitelist() {
-        if (whitelistCache == null) {
-            whitelistCache = parse(ModConfig.KUVA_LICH.oreDropWhitelist.get());
+        Set<ResourceLocation> cached = whitelistCache;
+        if (cached == null) {
+            cached = parse(ModConfig.KUVA_LICH.oreDropWhitelist.get());
+            whitelistCache = cached;
         }
-        return whitelistCache;
+        return cached;
     }
 
     private static Set<ResourceLocation> blacklist() {
-        if (blacklistCache == null) {
-            blacklistCache = parse(ModConfig.KUVA_LICH.oreDropBlacklist.get());
+        Set<ResourceLocation> cached = blacklistCache;
+        if (cached == null) {
+            cached = parse(ModConfig.KUVA_LICH.oreDropBlacklist.get());
+            blacklistCache = cached;
         }
-        return blacklistCache;
+        return cached;
     }
 
     /** 把配置里的字符串解析成方块 id；写错的条目直接忽略，不因为一行笔误让整份配置失效 */

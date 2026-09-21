@@ -341,8 +341,14 @@ public class WarframeEffectHandler {
                     remaining.put(e.getKey(), Math.max(0, Math.min(scaledCount, cap)));
                 }
 
-                // 把钳好的总量按原有实体逐个分配回去；分完还有剩余的挂到最后一个实体上
-                ItemEntity lastOf = null;
+                // 把钳好的总量按原有实体逐个分配回去
+                //
+                // ⭐ 收尾必须<b>按物品种类各记各的</b>最后一个实体。
+                //    这里原先只用了一个 lastOf 变量，循环里被逐个覆盖，结束时它代表的是
+                //    「整批掉落里最后一个非装备实体」而不是「某一种物品的最后一个实体」。
+                //    一次掉出两种以上物品、而需要补余量的那种恰好不是最后遍历到的那种时，
+                //    多出来的数量会被静默丢弃 —— 玩家只会看到掉落莫名偏少，没有任何报错。
+                Map<Item, ItemEntity> lastEntityOf = new HashMap<>();
                 for (ItemEntity drop : drops) {
                     ItemStack dropStack = drop.getItem();
                     if (isEquipment(dropStack)) {
@@ -353,15 +359,20 @@ public class WarframeEffectHandler {
                     int give = Math.min(left, dropStack.getMaxStackSize());
                     dropStack.setCount(give);
                     remaining.put(item, left - give);
-                    lastOf = drop;
+                    lastEntityOf.put(item, drop);
                 }
-                if (lastOf != null) {
-                    // 剩余量（总量超过所有原有实体能装下的部分）补到最后一个实体上。
-                    // 原版 ItemEntity 允许 count 超过堆叠上限，捡起时会自动分摊到多个格子。
-                    ItemStack lastStack = lastOf.getItem();
-                    int left = remaining.getOrDefault(lastStack.getItem(), 0);
-                    if (left > 0) {
-                        lastStack.setCount(lastStack.getCount() + left);
+
+                // 现有实体按各自堆叠上限装不下的余量，补给该物品自己的最后一个实体。
+                // 原版 ItemEntity 允许 count 超过堆叠上限，捡起时会自动分摊到多个格子。
+                for (Map.Entry<Item, Integer> e : remaining.entrySet()) {
+                    int left = e.getValue();
+                    if (left <= 0) {
+                        continue;
+                    }
+                    ItemEntity target = lastEntityOf.get(e.getKey());
+                    if (target != null) {
+                        ItemStack stack = target.getItem();
+                        stack.setCount(stack.getCount() + left);
                     }
                 }
                 drops.removeIf(drop -> drop.getItem().isEmpty());

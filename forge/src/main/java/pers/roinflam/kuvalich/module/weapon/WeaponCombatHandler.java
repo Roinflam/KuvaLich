@@ -822,7 +822,7 @@ public class WeaponCombatHandler {
 
                 for (int i = 0; i < rolls; i++) {
                     String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon,
-                            elementPool, triggerTime, coreDamage, attributes);
+                            elementPool, triggerTime, coreDamage, attributes, baneMultiplier);
                     if (element != null) triggeredElements.add(element);
                 }
             }

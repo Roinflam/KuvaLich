@@ -529,28 +529,23 @@ public class WeaponElementSystem {
      *
      * <p>⭐ v8：元素池由调用方预计算并传入，本方法内不再重建元素池。</p>
      *
-     * <p>⭐ 本方法内的伤害公式<b>不能</b>再乘克制倍率。传进来的 {@code coreDamage} 就是
-     * {@code WeaponCombatHandler} 里的 {@code physicalDamage}
-     * （= 原始伤害 × baseDamage × baneMultiplier），克制已经包含在内。
-     * 改造前六条 DOT 公式各自又乘了一次，克制按<b>平方</b>生效 ——
-     * 堆满四张克制卡时 DOT 吃 5.76 倍而不是设计的 2.40 倍。
-     * {@code baneMultiplier} 参数也一并移除了，免得日后有人看见它又乘回去。</p>
-     *
      * @param damageSource   伤害来源
      * @param hurter         受害者
      * @param attacker       攻击者
      * @param itemStack      武器物品栈
      * @param elementPool    预计算好的元素池
      * @param triggerTime    触发时间倍率
-     * @param coreDamage     核心物理伤害（<b>已含克制倍率</b>，见下）
+     * @param coreDamage     核心物理伤害
      * @param attributes     武器运行时属性
+     * @param baneMultiplier 克制倍率
      * @return 被触发的元素名（仅用于伤害数字后缀，无后缀时返回 null）
      */
     static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
                                        LivingEntity attacker, ItemStack itemStack,
                                        ElementPool elementPool,
                                        double triggerTime, double coreDamage,
-                                       HashMap<String, Double> attributes) {
+                                       HashMap<String, Double> attributes,
+                                       double baneMultiplier) {
         if (elementPool == null) {
             return null;
         }
@@ -581,7 +576,7 @@ public class WeaponElementSystem {
                 }
 
                 hurter.setSecondsOnFire(6);
-                final float dotDamage = (float) (0.5 * coreDamage * elementValue * typeDamageMultiplier
+                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementFireDamageMultiplier.get());
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
@@ -608,7 +603,7 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ILLAGER)) typeDamageMultiplier = 1.5;
                 else if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 0.5;
-                final float dotDamage = (float) (0.5 * coreDamage * elementValue * typeDamageMultiplier
+                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementPoisonDamageMultiplier.get());
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
@@ -654,7 +649,7 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.UNDEAD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
-                float lightningDamage = (float) (0.5 * coreDamage * elementValue * typeDamageMultiplier
+                float lightningDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementElectricityDamageMultiplier.get());
                 if (lightningDamage > 0) {
                     net.minecraft.world.entity.LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
@@ -671,7 +666,7 @@ public class WeaponElementSystem {
                     ElementParticleEffects.spawnSlashBurst(hurter, sl);
                 }
 
-                float dotDamage = (float) (0.35 * coreDamage
+                float dotDamage = (float) (0.35 * coreDamage * baneMultiplier
                         * ModConfig.KUVA_LICH.elementSlashDamageMultiplier.get());
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.VIRUS)) {
                     int virusLevel = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.VIRUS);
@@ -800,7 +795,7 @@ public class WeaponElementSystem {
             }
             case "explosion": {
                 double armorMultiplier = hurter.getAbsorptionAmount() > 0 ? 1.5 : 0.5;
-                float explosionDamage = (float) (0.5 * coreDamage * elementValue * armorMultiplier
+                float explosionDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * armorMultiplier
                         * ModConfig.KUVA_LICH.elementExplosionDamageMultiplier.get());
                 if (explosionDamage > 0) {
                     // ⭐ 爆炸元素的实际伤害 = level.explode 的原版冲击 + 下面补的元素伤害（主目标 + 3 格范围），
@@ -837,7 +832,7 @@ public class WeaponElementSystem {
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ARTHROPOD)) typeDamageMultiplier = 1.5;
                 if (hurter.getAbsorptionAmount() > 0) typeDamageMultiplier *= 0.5;
-                final float dotDamage = (float) (0.5 * coreDamage * elementValue * typeDamageMultiplier
+                final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementGasDamageMultiplier.get());
                 final Vec3 gasCenter = new Vec3(hurter.getX(), hurter.getY(), hurter.getZ());
                 final double gasRadius = 3.0;
@@ -887,10 +882,11 @@ public class WeaponElementSystem {
                                        LivingEntity attacker, ItemStack itemStack,
                                        List<ItemStack> modules,
                                        double triggerTime, double coreDamage,
-                                       HashMap<String, Double> attributes) {
+                                       HashMap<String, Double> attributes,
+                                       double baneMultiplier) {
         return triggerElementEffect(damageSource, hurter, attacker, itemStack,
                 buildElementPool(itemStack, modules),
-                triggerTime, coreDamage, attributes);
+                triggerTime, coreDamage, attributes, baneMultiplier);
     }
 
     /**
@@ -902,10 +898,11 @@ public class WeaponElementSystem {
     static String triggerElementEffect(DamageSource damageSource, LivingEntity hurter,
                                        LivingEntity attacker, ItemStack itemStack,
                                        double triggerTime, double coreDamage,
-                                       HashMap<String, Double> attributes) {
+                                       HashMap<String, Double> attributes,
+                                       double baneMultiplier) {
         return triggerElementEffect(damageSource, hurter, attacker, itemStack,
                 buildElementPool(itemStack, WeaponModuleHandler.getModules(itemStack)),
-                triggerTime, coreDamage, attributes);
+                triggerTime, coreDamage, attributes, baneMultiplier);
     }
 
     // ========== 工具方法 / Utility ==========
