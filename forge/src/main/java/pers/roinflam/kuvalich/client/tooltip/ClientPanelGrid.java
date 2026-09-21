@@ -211,17 +211,23 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
      * 与描述表里的声明顺序一致。</p>
      */
     private static int layoutPairs(PanelGridComponent.Pairs pairs, Font font, int columns, List<List<Piece>> out) {
-        // ⭐ 先把「独占一行」的挑出来：它们不参与列宽计算，否则一条特别宽的词条
-        //    会把整列撑开，同列其它词条的标签与数值之间就被拉出一大段空白
-        List<PanelGridComponent.Cell> cells = new ArrayList<>();
-        List<PanelGridComponent.Cell> wide = new ArrayList<>();
-        for (PanelGridComponent.Cell cell : pairs.cells()) {
-            (cell.wide() ? wide : cells).add(cell);
+        List<PanelGridComponent.Cell> cells = pairs.cells();
+        if (cells.isEmpty()) {
+            return 0;
         }
 
-        if (cells.isEmpty()) {
-            return wide.isEmpty() ? 0 : layoutWideCells(wide, font, 0, out);
+        // ⭐ 只要组里有一条「排不进格子」的宽词条，<b>整组</b>就退回单列。
+        //
+        //    试过只让那一条独占行、其余照常分列，结果更难看：同一组里出现了三个
+        //    不同的右边界（第一列的值、第二列的值、独占行的值各对齐各的），
+        //    数值参差不齐。单列虽然多占几行，但所有数值共用一个右边界，
+        //    一眼扫下去是一条直线。
+        for (PanelGridComponent.Cell cell : cells) {
+            if (cell.wide()) {
+                return layoutSingleColumn(cells, font, out);
+            }
         }
+
         int cols = Math.min(columns, cells.size());
         int rows = (cells.size() + cols - 1) / cols;
 
@@ -258,27 +264,24 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
             out.add(line);
         }
 
-        int right = colRight[cols - 1];
-        // 独占行排在网格之后，右边界与网格对齐，整组看上去仍是一个方块
-        return wide.isEmpty() ? right : Math.max(right, layoutWideCells(wide, font, right, out));
+        return colRight[cols - 1];
     }
 
     /**
-     * 「独占一整行」的单元格：标签贴左，数值贴右
+     * 整组单列：一条一行，所有数值共用同一个右边界
      *
-     * @param alignRight 已有网格的右边界；为 0 表示这一组全是独占行，右边界由内容自己定
-     * @return 这些行占到的右边界
+     * <p>保持声明顺序，不把宽词条挪到末尾 —— 顺序本身是有意义的
+     * （「最终数值」组就是按基础伤害 → 攻击速度 → 触发几率 → 暴击的顺序读的）。</p>
+     *
+     * @return 这一组占到的右边界
      */
-    private static int layoutWideCells(List<PanelGridComponent.Cell> wide, Font font, int alignRight,
-                                       List<List<Piece>> out) {
-        // 取「网格右边界」与「最宽的那条独占行」的较大者：
-        // 对齐网格是为了整组看着像一个方块，但网格更窄时必须让步，否则数值会压到标签上
-        int right = Math.max(alignRight, 0);
-        for (PanelGridComponent.Cell cell : wide) {
+    private static int layoutSingleColumn(List<PanelGridComponent.Cell> cells, Font font, List<List<Piece>> out) {
+        int right = INDENT;
+        for (PanelGridComponent.Cell cell : cells) {
             right = Math.max(right,
                     INDENT + font.width(cell.label()) + LABEL_VALUE_GAP + font.width(cell.value()));
         }
-        for (PanelGridComponent.Cell cell : wide) {
+        for (PanelGridComponent.Cell cell : cells) {
             out.add(List.of(
                     new Piece(cell.label(), INDENT, PanelGridComponent.Align.LEFT),
                     new Piece(cell.value(), right, PanelGridComponent.Align.RIGHT)));

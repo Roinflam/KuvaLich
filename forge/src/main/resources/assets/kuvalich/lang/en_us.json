@@ -1766,7 +1766,7 @@
   "config.kuvalich.panel.rowHeight": "Panel row height (px)",
   "config.kuvalich.panel.rowHeight.tooltip": "Vanilla text rows are 10px. If another tooltip mod compacts text rows to 8px, this panel is a custom component and is unaffected - set 8 here to match",
   "kuvalich.panel.hint.hold": "Hold",
-  "kuvalich.panel.hint.full": "base values",
+  "kuvalich.panel.hint.full": "without stacks",
   "kuvalich.panel.hint.source": "source",
   "kuvalich.panel.hint.live": "live status",
   "config.kuvalich.panel.position": "Panel position",

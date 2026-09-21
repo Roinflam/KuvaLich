@@ -1766,7 +1766,7 @@
   "config.kuvalich.panel.rowHeight": "面板行高（像素）",
   "config.kuvalich.panel.rowHeight.tooltip": "原版一行文本是 10px。若其它 tooltip 模组开了「压缩行距」把文本压到 8px，本面板是自定义渲染组件不受影响，把这里也调成 8 可以与周围对齐",
   "kuvalich.panel.hint.hold": "按住",
-  "kuvalich.panel.hint.full": "基础值·全部",
+  "kuvalich.panel.hint.full": "不含叠层",
   "kuvalich.panel.hint.source": "来源",
   "kuvalich.panel.hint.live": "实时状态",
   "config.kuvalich.panel.position": "面板位置",

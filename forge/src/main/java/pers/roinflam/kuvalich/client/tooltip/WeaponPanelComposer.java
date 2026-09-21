@@ -232,11 +232,13 @@ public final class WeaponPanelComposer {
     // ==================== SHIFT：逐条完整 ====================
 
     /**
-     * SHIFT 视图：与默认视图同一套排版与<b>同一套名字</b>，区别只有两点
-     * <ul>
-     *   <li><b>强制单列</b>：哪怕内容再多也一条一行</li>
-     *   <li><b>不做门控</b>：近战武器也显示枪械词条（「我要看全部」就是全部）</li>
-     * </ul>
+     * SHIFT 视图：与默认视图<b>完全一致</b>的排版、名字与条目，唯一区别是
+     * 数值显示<b>不含击杀叠层</b>的基础面板。
+     *
+     * <p>⭐ 这里曾经还额外关掉门控（近战武器也显示枪械词条）。那让 SHIFT 比默认视图
+     * 多出一堆条目，位置全对不上，玩家没法把两组数字并排比较 ——
+     * 而「按住 SHIFT 看看这些数字里有多少是叠层撑起来的」正是这个视图的唯一用途。
+     * 门控现在跟随同一个配置项，两个视图条目逐行对齐。</p>
      *
      * <p>⭐ 这里曾经额外做过一件事：把标签换成 {@code item.module.<key>} 那套「长名」。
      * 那是个错误设计 —— 同一条属性在默认视图叫「触发时长」、按下 SHIFT 变成「触发时间」，
@@ -246,8 +248,9 @@ public final class WeaponPanelComposer {
     private static PanelGridComponent buildFullGrid(ItemStack stack, List<ItemStack> modules,
                                                     HashMap<String, Double> attrs, HashMap<String, Double> extra,
                                                     StackCounts stacks, TooltipView view) {
+        boolean applyGates = TooltipConfig.PANEL.hideIrrelevantGroups.get();
         return PanelGridComponent.detail(
-                buildGrid(stack, modules, attrs, extra, stacks, false, view, false).sections());
+                buildGrid(stack, modules, attrs, extra, stacks, applyGates, view, false).sections());
     }
 
     // ==================== CTRL：词条来源 ====================
