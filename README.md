@@ -256,6 +256,37 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 
 </details>
 
+### 🛠️ Building from Source
+
+<details>
+<summary><b>📦 Prerequisite: the TACZ jar (required!)</b></summary>
+
+**TACZ** (*Timeless and Classics Zero*, the gun mod) is a **compile-time hard dependency** - 18 source files reference `com.tacz`, and `mods.toml` declares it as mandatory. It is **not** pulled from Maven: `forge/build.gradle` simply scans a local folder:
+
+```groovy
+fileTree(dir: 'dependencies', include: '*.jar').each { File file ->
+    modApi(files(file))
+    jijSource(files(file))
+}
+```
+
+If that folder is empty, the build fails with `package com.tacz does not exist`.
+
+1. **Get the TACZ Forge jar for 1.20.1**
+   - [CurseForge →](https://www.curseforge.com/minecraft/mc-mods/tacz) / [Modrinth →](https://modrinth.com/mod/tacz)
+2. **Drop it into `forge/dependencies/`**
+   - The version this repo is built against: `tacz-1.20.1-1.1.7-hotfix.jar`
+3. **Build**
+   - The repo ships no `gradlew` script, so use a local Gradle **8.12.1** (the version in `gradle/wrapper/gradle-wrapper.properties`):
+   ```bash
+   gradle build
+   ```
+   - Output jar: `forge/build/libs/`
+
+Everything else (Forge, Architectury, GeckoLib, Curios, Patchouli, MixinExtras...) is resolved from Maven automatically - the TACZ jar is the only one you have to place by hand. Building requires **JDK 17**.
+
+</details>
+
 ### 📜 License
 
 - ✅ Free for personal use and modification
@@ -510,6 +541,37 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 3. 在灭骸之扉查看解密出来的答案
 4. 摆放正确卡片顺序击杀赤毒玄骸
 5. 获得赤毒专属武器和 Prime/裂罅模组!
+
+</details>
+
+### 🛠️ 从源码构建
+
+<details>
+<summary><b>📦 前置：TACZ 依赖 jar（必需！）</b></summary>
+
+**TACZ**（*Timeless and Classics Zero*，枪械模组）是**编译期硬依赖**——仓库里有 18 个源文件引用 `com.tacz`，`mods.toml` 里也把它声明为必需前置。它**不会**从 Maven 拉取，`forge/build.gradle` 只是扫描本地目录：
+
+```groovy
+fileTree(dir: 'dependencies', include: '*.jar').each { File file ->
+    modApi(files(file))
+    jijSource(files(file))
+}
+```
+
+目录为空时构建会直接报 `package com.tacz does not exist`。
+
+1. **获取 1.20.1 的 TACZ Forge 版 jar**
+   - [CurseForge →](https://www.curseforge.com/minecraft/mc-mods/tacz) / [Modrinth →](https://modrinth.com/mod/tacz)
+2. **放进 `forge/dependencies/` 目录**
+   - 本仓库对应的版本：`tacz-1.20.1-1.1.7-hotfix.jar`
+3. **执行构建**
+   - 仓库内没有 `gradlew` 脚本，请用本机 Gradle **8.12.1**（`gradle/wrapper/gradle-wrapper.properties` 里写的版本）：
+   ```bash
+   gradle build
+   ```
+   - 产物 jar 位于 `forge/build/libs/`
+
+其余依赖（Forge、Architectury、GeckoLib、Curios、Patchouli、MixinExtras 等）都由 Gradle 从 Maven 自动解析，只有 TACZ 这个 jar 需要手动放置。构建需要 **JDK 17**。
 
 </details>
 

@@ -117,3 +117,9 @@ runs/
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
+
+# ==================== 本地编译期依赖 ====================
+# forge/dependencies/ 下的 TACZ jar 是编译期硬依赖（forge/build.gradle 会把它加入类路径），
+# 但第三方 jar 不入库。新克隆的仓库需要手动下载放入，否则会报
+# "package com.tacz does not exist" —— 具体步骤见 README 「从源码构建」一节。
+forge/dependencies/

@@ -12,7 +12,7 @@ import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.utils.LogUtil;
 
 import javax.annotation.Nonnull;
@@ -20,24 +20,36 @@ import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 动态属性管理器
  * 负责应用、移除、更新实体的动态属性
  *
- * <p>⭐ 内存泄漏修复（本次，两处，均会随服务器运行时长累积）：</p>
+ * <p>⭐ 内存泄漏修复（历史，两处，均会随服务器运行时长累积）：</p>
  *
- * <p><b>泄漏一：事件处理器永久驻留 Forge 事件总线。</b><br>
- * {@code MAGNETIC} / {@code RADIATION} / {@code PUNCTURE} 通过
- * {@code withEventHandler} 注册了 {@code LivingHurtEvent} 监听器，
- * 注销只发生在「属性自然过期」或「被显式 remove」两条路径上。
- * 但实体死亡后不再 tick，{@link #processEntityTick} 不会执行，
- * 未过期的 handler 就永久留在事件总线上。
- * 磁力 debuff 仅 120 tick、辐射 240 tick，怪基本都在 debuff 结束前就被打死，
- * 于是每打死一只带元素 debuff 的怪就漏一个监听器。
+ * <p><b>泄漏一：事件处理器永久驻留 Forge 事件总线（已从根上消除）。</b><br>
+ * {@code MAGNETIC} / {@code RADIATION} / {@code PUNCTURE} 曾通过
+ * {@code withEventHandler} 在施加 debuff 时<b>动态</b>往总线 register 一个匿名监听器，
+ * 反注册只发生在「自然过期」「显式 remove」两条路径上。
+ * 但实体死亡后不再 tick，{@link #processEntityTick} 不会执行；
+ * 而 {@link #apply} 的旧 orphan 分支（见下）连反注册的机会都没有。
  * 累积后，<b>每一次伤害事件都要遍历这些僵尸监听器</b>，
  * 表现为 MSPT 随在线时长单调上升、重启后恢复。<br>
- * 修复：新增 {@link #onLivingDeath} 与 {@link #onEntityLeaveLevel} 兜底清理。</p>
+ * 修复：动态注册整体删除，元素战斗效果改由
+ * {@code DynamicAttributes.ElementCombatHandler} 里固定数量的静态监听器承担。
+ * apply/remove 退化成纯 map 操作，总线规模恒定。
+ * {@link #onLivingDeath} / {@link #onEntityLeaveLevel} 保留，
+ * 但职责只剩「清 map + 摘属性修改器」。</p>
+ *
+ * <p><b>泄漏一之二：{@link #apply} 的 orphan 分支（本次修复）。</b><br>
+ * 同一 debuff 二次触发、且该实体身上<b>只有</b>这一个动态属性时，
+ * 旧的 {@code remove(entity, old)} 会把内层列表清空并顺手把外层 key 也删掉
+ * （{@link #dropIfEmpty}），随后 apply 把新实例 add 进了一个<b>已经脱离 map 的列表</b>。
+ * 后果：监听器泄漏，且 {@link #getAmplifier} 一律返回 -1 ——
+ * 磁力护盾增伤、辐射同类增伤、穿刺减伤<b>静默失效</b>，
+ * 而客户端特效仍在转，玩家看到「特效在转但 debuff 不生效」。<br>
+ * 修复：覆盖分支不再走会删 key 的 {@code remove}，只摘修改器 + 从列表里移除旧实例。</p>
  *
  * <p><b>泄漏二：{@code ENTITY_ATTRIBUTES} 的 key 永不删除。</b><br>
  * 原 {@code remove} 只从内层 List 移除实例，List 空了之后
@@ -54,6 +66,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Mod.EventBusSubscriber
 public class DynamicAttributeManager {
+    /**
+     * 实体 UUID → 该实体身上的动态属性实例
+     *
+     * <p>⭐ 内层换成 {@link CopyOnWriteArrayList}：
+     * 内层列表会在被 stream / for 遍历的过程中被改写——最典型的是
+     * {@code FIRE} 的 onTick 回调里回调 {@link #apply} 给自己升一级，
+     * 而外层正在 {@link #processEntityTick} 里遍历同一实体的列表。
+     * 原来靠「每 tick 每实体 new 一个 ArrayList 快照」来回避 CME，
+     * 换成 COW 之后遍历天然是快照语义，那个每 tick 的临时对象也一并省掉了
+     * （30 只怪 = 每 tick 少 30 次分配）。列表长度常年个位数，写时拷贝的成本可以忽略。</p>
+     */
     // 移除UUID池，改用确定性生成
     private static final Map<UUID, List<DynamicAttributeInstance>> ENTITY_ATTRIBUTES = new ConcurrentHashMap<>();
 
@@ -65,18 +88,19 @@ public class DynamicAttributeManager {
      */
     public static void apply(@Nonnull LivingEntity entity, @Nonnull DynamicAttributeInstance instance) {
         UUID entityId = entity.getUUID();
-        List<DynamicAttributeInstance> instances = ENTITY_ATTRIBUTES.computeIfAbsent(entityId, k -> new ArrayList<>());
+        List<DynamicAttributeInstance> instances =
+                ENTITY_ATTRIBUTES.computeIfAbsent(entityId, k -> new CopyOnWriteArrayList<>());
 
         // 检查是否已存在相同属性
-        Optional<DynamicAttributeInstance> existing = instances.stream()
-                .filter(i -> i.getAttribute().equals(instance.getAttribute()))
-                .findFirst();
+        DynamicAttributeInstance old = findInstance(instances, instance.getAttribute());
 
-        if (existing.isPresent()) {
-            DynamicAttributeInstance old = existing.get();
+        if (old != null) {
             if (instance.shouldOverride(old)) {
                 // 新实例等级更高或时间更长,覆盖旧实例
-                remove(entity, old);
+                // ⭐ 这里绝不能调用 remove(entity, old)：那条路径在列表变空时会把外层 key 一起删掉
+                //    （dropIfEmpty），于是下面的 instances.add 加进了一个脱离 map 的孤儿列表，
+                //    导致 getAmplifier 恒为 -1、磁力/辐射/穿刺静默失效。只摘修改器、只从列表里移除。
+                removeModifiers(entity, old);
                 instances.remove(old);
             } else {
                 // 旧实例更优,只刷新时间
@@ -87,12 +111,29 @@ public class DynamicAttributeManager {
 
         instances.add(instance);
         applyModifiers(entity, instance);
+    }
 
-        // 注册事件处理器
-        if (instance.getAttribute().hasEventHandler()) {
-            Object handler = instance.getAttribute().createEventHandler(entity);
-            instance.setEventHandler(handler);
+    /**
+     * 在实例列表里查找指定属性的实例
+     *
+     * <p>用普通 for 循环而非 stream：本方法处在伤害事件的热路径上
+     * （{@code DynamicAttributes.ElementCombatHandler} 每次 LivingHurtEvent 都会查几次），
+     * 列表长度常年个位数，stream 的管道对象分配纯属浪费。</p>
+     *
+     * @param instances 实例列表,可为 null
+     * @param attribute 目标属性
+     * @return 匹配的实例,没有则返回 null
+     */
+    @Nullable
+    private static DynamicAttributeInstance findInstance(@Nullable List<DynamicAttributeInstance> instances,
+                                                         @Nonnull DynamicAttribute attribute) {
+        if (instances == null) return null;
+        for (DynamicAttributeInstance instance : instances) {
+            if (instance.getAttribute().equals(attribute)) {
+                return instance;
+            }
         }
+        return null;
     }
 
     /**
@@ -106,14 +147,11 @@ public class DynamicAttributeManager {
         List<DynamicAttributeInstance> instances = ENTITY_ATTRIBUTES.get(entityId);
         if (instances == null) return;
 
-        instances.stream()
-                .filter(i -> i.getAttribute().equals(attribute))
-                .findFirst()
-                .ifPresent(instance -> {
-                    removeModifiers(entity, instance);
-                    instance.unregisterEventHandler();
-                    instances.remove(instance);
-                });
+        DynamicAttributeInstance target = findInstance(instances, attribute);
+        if (target != null) {
+            removeModifiers(entity, target);
+            instances.remove(target);
+        }
 
         // ⭐ 泄漏修复：列表空了就把外层 key 一并删掉
         dropIfEmpty(entityId, instances);
@@ -127,7 +165,6 @@ public class DynamicAttributeManager {
      */
     private static void remove(@Nonnull LivingEntity entity, @Nonnull DynamicAttributeInstance instance) {
         removeModifiers(entity, instance);
-        instance.unregisterEventHandler();
         UUID entityId = entity.getUUID();
         List<DynamicAttributeInstance> instances = ENTITY_ATTRIBUTES.get(entityId);
         if (instances != null) {
@@ -157,9 +194,7 @@ public class DynamicAttributeManager {
      * @return true表示拥有
      */
     public static boolean has(@Nonnull LivingEntity entity, @Nonnull DynamicAttribute attribute) {
-        List<DynamicAttributeInstance> instances = ENTITY_ATTRIBUTES.get(entity.getUUID());
-        if (instances == null) return false;
-        return instances.stream().anyMatch(i -> i.getAttribute().equals(attribute));
+        return findInstance(ENTITY_ATTRIBUTES.get(entity.getUUID()), attribute) != null;
     }
 
     /**
@@ -170,14 +205,23 @@ public class DynamicAttributeManager {
      * @return 等级,如果不存在返回-1
      */
     public static int getAmplifier(@Nonnull LivingEntity entity, @Nonnull DynamicAttribute attribute) {
-        List<DynamicAttributeInstance> instances = ENTITY_ATTRIBUTES.get(entity.getUUID());
-        if (instances == null) return -1;
+        return getAmplifier(ENTITY_ATTRIBUTES.get(entity.getUUID()), attribute);
+    }
 
-        return instances.stream()
-                .filter(i -> i.getAttribute().equals(attribute))
-                .findFirst()
-                .map(DynamicAttributeInstance::getAmplifier)
-                .orElse(-1);
+    /**
+     * 在已取出的实例列表里查询等级
+     *
+     * <p>供伤害热路径使用：一次 {@link #getInstances} 之后连续查多个属性
+     * （磁力 + 穿刺），避免重复的 map 查找。</p>
+     *
+     * @param instances 实例列表,可为 null
+     * @param attribute 要查询的属性
+     * @return 等级,如果不存在返回-1
+     */
+    public static int getAmplifier(@Nullable List<DynamicAttributeInstance> instances,
+                                   @Nonnull DynamicAttribute attribute) {
+        DynamicAttributeInstance instance = findInstance(instances, attribute);
+        return instance == null ? -1 : instance.getAmplifier();
     }
 
     /**
@@ -194,8 +238,8 @@ public class DynamicAttributeManager {
     /**
      * 清除实体的所有动态属性
      *
-     * <p>会同时注销所有已注册到 Forge 事件总线的处理器，
-     * 这是防止监听器泄漏的关键路径。</p>
+     * <p>摘掉所有属性修改器并把该实体的 map 条目整体删除。
+     * 幂等，重复调用无副作用。</p>
      *
      * @param entity 目标实体
      */
@@ -203,10 +247,9 @@ public class DynamicAttributeManager {
         UUID entityId = entity.getUUID();
         List<DynamicAttributeInstance> instances = ENTITY_ATTRIBUTES.remove(entityId);
         if (instances != null) {
-            instances.forEach(instance -> {
+            for (DynamicAttributeInstance instance : instances) {
                 removeModifiers(entity, instance);
-                instance.unregisterEventHandler();
-            });
+            }
             instances.clear();
         }
     }
@@ -241,7 +284,7 @@ public class DynamicAttributeManager {
             // 添加新修改器
             AttributeModifier newModifier = new AttributeModifier(
                     modifierId,
-                    "DynamicAttribute:" + attribute.getRegistryName(),
+                    MODIFIER_NAME_PREFIX + attribute.getRegistryName(),
                     finalValue,
                     config.operation
             );
@@ -322,10 +365,12 @@ public class DynamicAttributeManager {
     /**
      * ⭐ 实体死亡时清理全部动态属性
      *
-     * <p>这是修复监听器泄漏的<b>主路径</b>：怪物几乎总是在元素 debuff 到期前被打死，
-     * 死后不再 tick，自然过期逻辑永远不会执行。
+     * <p>怪物几乎总是在元素 debuff 到期前被打死，死后不再 tick，
+     * 自然过期逻辑永远不会执行，map 条目会一直挂着。
      * 使用 LOWEST 优先级，确保在其它模组的死亡处理（掉落、经验等）之后再清理属性，
      * 避免属性修改器被提前移除影响它们的判定。</p>
+     *
+     * <p>注：监听器泄漏已由「静态监听器」方案从根上消除，本方法现在只负责 map 与修改器的清理。</p>
      *
      * @param event 生物死亡事件
      */
@@ -388,35 +433,67 @@ public class DynamicAttributeManager {
     }
 
     /**
-     * 移除实体身上所有名称以 {@link #MODIFIER_NAME_PREFIX} 开头的修饰符
+     * 移除实体身上所有本系统写入的残留修饰符
+     *
+     * <p>⭐ 性能修复：本方法对<b>每一个</b>加入世界的实体各跑一次（刷怪笼、区块加载时是密集调用）。
+     * 原实现遍历 {@code ForgeRegistries.ATTRIBUTES} 的<b>全部</b>属性——整合包里轻松上百个，
+     * 且对每个属性还要把 {@code getModifiers()} 整张表拉出来做字符串前缀比对。
+     * 而本模组真正写过的属性不到 10 个，写过的 (属性, 修饰符 UUID) 组合也就几十个，
+     * 且 UUID 是由「属性名 + 目标属性 descriptionId」<b>确定性</b>生成的（见 {@link #getModifierUUID}），
+     * 可以直接 {@code getModifier(uuid)} 精确命中，既不用扫注册表也不用扫修饰符表。</p>
      *
      * @param entity 目标实体
      */
     private static void purgeStaleModifiers(@Nonnull LivingEntity entity) {
         int removed = 0;
-        for (Attribute attr : ForgeRegistries.ATTRIBUTES.getValues()) {
-            AttributeInstance attrInstance = entity.getAttribute(attr);
+        for (Map.Entry<Attribute, List<UUID>> entry : TrackedModifiers.INDEX.entrySet()) {
+            AttributeInstance attrInstance = entity.getAttribute(entry.getKey());
             if (attrInstance == null) {
                 continue;
             }
-            List<AttributeModifier> stale = null;
-            for (AttributeModifier modifier : attrInstance.getModifiers()) {
-                if (modifier.getName().startsWith(MODIFIER_NAME_PREFIX)) {
-                    if (stale == null) {
-                        stale = new ArrayList<>(2);
-                    }
-                    stale.add(modifier);
-                }
-            }
-            if (stale != null) {
-                for (AttributeModifier modifier : stale) {
+            for (UUID modifierId : entry.getValue()) {
+                AttributeModifier modifier = attrInstance.getModifier(modifierId);
+                if (modifier != null) {
                     attrInstance.removeModifier(modifier);
+                    removed++;
                 }
-                removed += stale.size();
             }
         }
         if (removed > 0) {
             LogUtil.debug("[动态属性] 实体 " + entity.getName().getString() + " 加载时清理了 " + removed + " 个残留修饰符");
+        }
+    }
+
+    /**
+     * ⭐ 本模组写过的「目标属性 → 该属性下所有可能的修饰符 UUID」索引（懒加载）
+     *
+     * <p>用 holder 类做懒加载而不是直接写成外层的 static final：
+     * {@link DynamicAttributeManager} 带 {@code @Mod.EventBusSubscriber}，
+     * 会在 mod 构造期就被类加载；而 {@code DynamicAttributes} 的常量里有
+     * {@code ForgeMod.BLOCK_REACH.get()} 这类 RegistryObject 取值，
+     * 那时候还没注册完，提前初始化会直接抛异常。
+     * 放进 holder 后，索引在第一次实体入世界（此时注册表早已就绪）时才构建，构建一次后永久复用。</p>
+     */
+    private static final class TrackedModifiers {
+
+        static final Map<Attribute, List<UUID>> INDEX = build();
+
+        private static Map<Attribute, List<UUID>> build() {
+            // ⭐ 必须"读一个静态字段"来强制 DynamicAttributes 完成静态初始化
+            //（用 .class 字面量只会加载不会初始化），否则 DynamicAttribute.getAll()
+            //  可能只拿到零星几个碰巧被别处引用过的定义，索引就是残缺的。
+            DynamicAttributes.HEALTH.getRegistryName();
+            Map<Attribute, List<UUID>> index = new IdentityHashMap<>();
+            for (DynamicAttribute definition : DynamicAttribute.getAll()) {
+                for (Attribute targetAttr : definition.getModifierConfigs().keySet()) {
+                    index.computeIfAbsent(targetAttr, k -> new ArrayList<>(2))
+                            .add(getModifierUUID(definition.getRegistryName(), targetAttr));
+                }
+            }
+            return index;
+        }
+
+        private TrackedModifiers() {
         }
     }
 
@@ -431,12 +508,12 @@ public class DynamicAttributeManager {
 
         if (instances == null || instances.isEmpty()) return;
 
-        // 创建快照副本以避免 ConcurrentModificationException
-        // 因为 onTick 回调可能会调用 apply/remove 修改原列表
-        List<DynamicAttributeInstance> snapshot = new ArrayList<>(instances);
+        // ⭐ 直接遍历：内层已是 CopyOnWriteArrayList，迭代器本身就是拿到的那一刻的快照，
+        //    onTick 回调里的 apply/remove 改的是新数组，不会影响本次遍历，也不会抛 CME。
+        //    原来每 tick 每实体 new 一个 ArrayList 做快照，那份临时对象现在省掉了。
         List<DynamicAttributeInstance> expired = null;
 
-        for (DynamicAttributeInstance instance : snapshot) {
+        for (DynamicAttributeInstance instance : instances) {
             // 时间流逝
             if (instance.tick(1)) {
                 if (expired == null) {
