@@ -67,8 +67,10 @@ public final class TooltipConfig {
         public final ForgeConfigSpec.EnumValue<Density> density;
         /** 一个物品的 KuvaLich 面板最多占多少行（硬上限兜底） */
         public final ForgeConfigSpec.IntValue maxLines;
-        /** chip 打包的像素预算占屏宽比例 */
+        /** 面板占屏宽的比例上限 */
         public final ForgeConfigSpec.DoubleValue widthRatio;
+        /** 面板每行的高度（像素） */
+        public final ForgeConfigSpec.IntValue rowHeight;
         /** 是否显示行首的分组装订线 */
         public final ForgeConfigSpec.BooleanValue showGutter;
         /** 是否显示底部的按键提示行 */
@@ -134,11 +136,23 @@ public final class TooltipConfig {
                     "参考：1080p·GUI缩放3 约 32 行可用；1280x720·GUI缩放4 只有约 14 行。");
             maxLines = builder.defineInRange("maxLines", 24, 8, 80);
 
-            builder.comment("一行的像素预算占屏幕宽度的比例 / Line width budget as a ratio of screen width");
+            builder.comment(
+                    "面板允许占屏幕宽度的比例上限 / Max panel width as a ratio of screen width",
+                    "放不下时面板会自动多排一列（更宽、更矮），这个值就是「宽」的上限。");
             widthRatio = builder.defineInRange("widthRatio", 0.5, 0.3, 0.9);
 
-            builder.comment("是否显示行首的分组装订线 ▎ / Show the group gutter bar");
-            showGutter = builder.define("showGutter", true);
+            builder.comment(
+                    "面板每行的高度（像素）/ Panel row height in pixels",
+                    "原版一行文本是 10px。若整合包里的 tooltip 模组开了「压缩行距」",
+                    "（例如 Vibrant/Obscure Tooltips 的 removeAllSpacing，它把文本行压到 8px），",
+                    "本面板是自定义渲染组件、不受其影响，把这里也调成 8 可以与周围对齐。");
+            rowHeight = builder.defineInRange("rowHeight", 10, 7, 14);
+
+            builder.comment(
+                    "是否在分组标题前加一条彩色装订线 / Prefix group headers with a coloured gutter bar",
+                    "默认关闭：分组已经靠「暗灰色标题独立成行 + 内容缩进」表达层次了，",
+                    "再加一竖反而显得噪。想要一点颜色提示的话可以打开（只画在标题行上）。");
+            showGutter = builder.define("showGutter", false);
 
             builder.comment("是否显示底部的按键提示行（SHIFT/CTRL/ALT）/ Show the key hint line");
             showKeyHint = builder.define("showKeyHint", true);

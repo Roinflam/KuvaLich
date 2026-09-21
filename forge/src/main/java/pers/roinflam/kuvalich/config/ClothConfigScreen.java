@@ -637,7 +637,14 @@ public class ClothConfigScreen {
                 .setSaveConsumer(cfg.widthRatio::set)
                 .build());
 
-        panel.addEntry(toggle(entryBuilder, "showGutter", cfg.showGutter, true));
+        panel.addEntry(entryBuilder.startIntField(
+                        Component.translatable("config.kuvalich.panel.rowHeight"), cfg.rowHeight.get())
+                .setDefaultValue(10).setMin(7).setMax(14)
+                .setTooltip(Component.translatable("config.kuvalich.panel.rowHeight.tooltip"))
+                .setSaveConsumer(cfg.rowHeight::set)
+                .build());
+
+        panel.addEntry(toggle(entryBuilder, "showGutter", cfg.showGutter, false));
         panel.addEntry(toggle(entryBuilder, "showKeyHint", cfg.showKeyHint, true));
 
         panel.addEntry(entryBuilder.startEnumSelector(
