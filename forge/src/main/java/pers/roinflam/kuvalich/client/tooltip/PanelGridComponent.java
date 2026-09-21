@@ -126,8 +126,28 @@ public record PanelGridComponent(List<Section> sections, int maxColumns, boolean
         }
     }
 
-    /** 一个「标签 + 数值」单元格 */
-    public record Cell(Component label, Component value) {
+    /**
+     * 一个「标签 + 数值」单元格
+     *
+     * @param wide 这一条是否独占一整行
+     *
+     *             <p>⭐ 为什么需要它：多列网格的列宽是<b>按该列最宽的内容</b>定的，
+     *             所以一条特别宽的词条会把整列撑开，害得同列其它词条的标签与数值之间
+     *             拉出一大段空白。最典型的是成对词条（{@code x4.5 / x2.8}）——
+     *             它比同组的 {@code 113%} 宽两三倍，一挤进列里整组都变得松垮。
+     *             这类词条干脆整行独占，反而比硬塞进格子好看。</p>
+     */
+    public record Cell(Component label, Component value, boolean wide) {
+
+        /** 普通单元格：参与多列排版 */
+        public Cell(Component label, Component value) {
+            this(label, value, false);
+        }
+
+        /** 同一条内容，改为独占一整行 */
+        public Cell asWide() {
+            return new Cell(label, value, true);
+        }
     }
 
     /** 列对齐方式 */

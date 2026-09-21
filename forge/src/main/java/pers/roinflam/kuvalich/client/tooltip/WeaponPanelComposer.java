@@ -572,6 +572,9 @@ public final class WeaponPanelComposer {
             v.append(Component.literal(chip.secondaryText())
                     .withStyle(PanelPalette.bold(chip.isNegative()
                             ? PanelPalette.PENALTY : PanelPalette.value(spec.group()))));
+            // ⭐ 「x4.5 / x2.8」比同组的「113%」宽两三倍，挤进列里会把整列撑开，
+            //    害得旁边的词条标签与数值之间拉出一大段空白。让它整行独占反而齐整
+            return new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v, true);
         }
 
         return new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
@@ -610,9 +613,14 @@ public final class WeaponPanelComposer {
                     Component.literal(e.getValue()).withStyle(PanelPalette.bold(rgb))));
         }
         if (Math.abs(total) >= 1.0e-3) {
+            // ⭐ 独占一行：它是元素<b>总量</b>，与上面那些<b>占比</b>不是一回事，
+            //    而且「元素伤害」这个标签比「冲击」「病毒」长一倍，
+            //    混进同一列会把列宽撑开、把短元素的标签与数值拉散
             cells.add(new PanelGridComponent.Cell(
                     label(I18n.get("item.module.triggerDamage")),
-                    value((total >= 0 ? "+" : "") + Math.round(total * 100) + "%", PanelPalette.value(PanelGroup.ELEMENT))));
+                    value((total >= 0 ? "+" : "") + Math.round(total * 100) + "%",
+                            PanelPalette.value(PanelGroup.ELEMENT)),
+                    true));
         }
 
         return cells;

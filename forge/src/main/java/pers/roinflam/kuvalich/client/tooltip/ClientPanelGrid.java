@@ -211,9 +211,16 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
      * 与描述表里的声明顺序一致。</p>
      */
     private static int layoutPairs(PanelGridComponent.Pairs pairs, Font font, int columns, List<List<Piece>> out) {
-        List<PanelGridComponent.Cell> cells = pairs.cells();
+        // ⭐ 先把「独占一行」的挑出来：它们不参与列宽计算，否则一条特别宽的词条
+        //    会把整列撑开，同列其它词条的标签与数值之间就被拉出一大段空白
+        List<PanelGridComponent.Cell> cells = new ArrayList<>();
+        List<PanelGridComponent.Cell> wide = new ArrayList<>();
+        for (PanelGridComponent.Cell cell : pairs.cells()) {
+            (cell.wide() ? wide : cells).add(cell);
+        }
+
         if (cells.isEmpty()) {
-            return 0;
+            return wide.isEmpty() ? 0 : layoutWideCells(wide, font, 0, out);
         }
         int cols = Math.min(columns, cells.size());
         int rows = (cells.size() + cols - 1) / cols;
@@ -251,7 +258,32 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
             out.add(line);
         }
 
-        return colRight[cols - 1];
+        int right = colRight[cols - 1];
+        // 独占行排在网格之后，右边界与网格对齐，整组看上去仍是一个方块
+        return wide.isEmpty() ? right : Math.max(right, layoutWideCells(wide, font, right, out));
+    }
+
+    /**
+     * 「独占一整行」的单元格：标签贴左，数值贴右
+     *
+     * @param alignRight 已有网格的右边界；为 0 表示这一组全是独占行，右边界由内容自己定
+     * @return 这些行占到的右边界
+     */
+    private static int layoutWideCells(List<PanelGridComponent.Cell> wide, Font font, int alignRight,
+                                       List<List<Piece>> out) {
+        // 取「网格右边界」与「最宽的那条独占行」的较大者：
+        // 对齐网格是为了整组看着像一个方块，但网格更窄时必须让步，否则数值会压到标签上
+        int right = Math.max(alignRight, 0);
+        for (PanelGridComponent.Cell cell : wide) {
+            right = Math.max(right,
+                    INDENT + font.width(cell.label()) + LABEL_VALUE_GAP + font.width(cell.value()));
+        }
+        for (PanelGridComponent.Cell cell : wide) {
+            out.add(List.of(
+                    new Piece(cell.label(), INDENT, PanelGridComponent.Align.LEFT),
+                    new Piece(cell.value(), right, PanelGridComponent.Align.RIGHT)));
+        }
+        return right;
     }
 
     /**
