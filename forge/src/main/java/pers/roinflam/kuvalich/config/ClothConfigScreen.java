@@ -616,6 +616,14 @@ public class ClothConfigScreen {
         panel.addEntry(toggle(entryBuilder, "enabled", cfg.enabled, true));
 
         panel.addEntry(entryBuilder.startEnumSelector(
+                        Component.translatable("config.kuvalich.panel.position"),
+                        TooltipConfig.Position.class, cfg.position.get())
+                .setDefaultValue(TooltipConfig.Position.BOTTOM)
+                .setTooltip(Component.translatable("config.kuvalich.panel.position.tooltip"))
+                .setSaveConsumer(cfg.position::set)
+                .build());
+
+        panel.addEntry(entryBuilder.startEnumSelector(
                         Component.translatable("config.kuvalich.panel.density"),
                         TooltipConfig.Density.class, cfg.density.get())
                 .setDefaultValue(TooltipConfig.Density.COMPACT)

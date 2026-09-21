@@ -121,7 +121,7 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
         int keep = Math.max(1, maxLines - 1);
         List<List<Piece>> out = new ArrayList<>(lines.subList(0, keep));
         Component note = Component.translatable("kuvalich.panel.truncated", lines.size() - keep)
-                .withStyle(net.minecraft.ChatFormatting.DARK_GRAY, net.minecraft.ChatFormatting.ITALIC);
+                .withStyle(PanelPalette.italic(PanelPalette.WARN));
         out.add(List.of(new Piece(note, 0, PanelGridComponent.Align.LEFT)));
         return out;
     }

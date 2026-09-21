@@ -103,12 +103,14 @@ public final class KuvaTooltipCoordinator {
     // ==================== 事件 ====================
 
     /**
-     * ⭐ {@link EventPriority#LOW}：只是为了让插入<b>时机</b>确定（我们最后执行）。
+     * ⭐ {@link EventPriority#LOW}：让我们最后执行，这样插入位置相对其它模组是确定的。
      *
-     * <p>插入<b>位置</b>固定在物品名之后，所以净效果是「最后执行、但排在最上面」：
-     * 其它模组（多为 NORMAL）先写完之后，我们再把整块塞到名称行后面，把它们统统下压。
-     * 这是有意的 —— 面板贴着物品名最好读。
-     * 若将来想让别的模组排在上面，改成追加到末尾即可。</p>
+     * <p><b>插到哪里</b>由 {@code panel.position} 决定，默认 BOTTOM。
+     * 这一条是踩过坑才定下来的：TACZ 枪械的弹药 / 枪种 / 基础伤害那一大块
+     * 是它通过本事件加的（里面有弹药图标，只能走这条路）。
+     * 我们既然跑在它后面，再插到 index 1 就会把它整块压下去 ——
+     * 一把枪的身份信息被别的模组挤到第二屏，观感很差。
+     * 默认接在后面，本模组自己的武器想贴着名字的话把配置改成 TOP。</p>
      */
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void onGatherComponents(RenderTooltipEvent.GatherComponents event) {
@@ -123,8 +125,35 @@ public final class KuvaTooltipCoordinator {
         }
 
         List<Either<FormattedText, TooltipComponent>> elements = event.getTooltipElements();
-        int insertAt = Math.min(1, elements.size());
-        elements.addAll(insertAt, ours);
+        if (TooltipConfig.PANEL.position.get() == TooltipConfig.Position.TOP) {
+            elements.addAll(Math.min(1, elements.size()), ours);
+        } else {
+            elements.addAll(insertPoint(elements), ours);
+        }
+    }
+
+    /**
+     * BOTTOM 模式的插入点：末尾，但要排在「高级信息」之前
+     *
+     * <p>开了 F3+H 时原版会在最末尾追加注册名与 NBT 标签数
+     * （{@code ItemStack#getTooltipLines} 在 {@code TooltipFlag#isAdvanced} 分支里加的）。
+     * 直接 append 会让面板跑到那堆调试信息下面，很别扭。
+     * 这里从末尾往回找，跳过那几行纯调试文本。</p>
+     */
+    private static int insertPoint(List<Either<FormattedText, TooltipComponent>> elements) {
+        int at = elements.size();
+        if (!Minecraft.getInstance().options.advancedItemTooltips) {
+            return at;
+        }
+        // 高级信息最多两行（注册名 + NBT 标签数），且一定是纯文本
+        for (int i = 0; i < 2 && at > 1; i++) {
+            Either<FormattedText, TooltipComponent> last = elements.get(at - 1);
+            if (last.left().isEmpty()) {
+                break;
+            }
+            at--;
+        }
+        return at;
     }
 
     /**

@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
@@ -161,7 +162,8 @@ public final class WeaponPanelComposer {
         // Forma 锁定：独立一行，不参与任何分组与压缩
         if (WeaponModuleHandler.isFormaLocked(stack)) {
             sections.add(new PanelGridComponent.Flow(null,
-                    List.of(Component.translatable("item.kuvalich.forma_locked").withStyle(ChatFormatting.DARK_RED))));
+                    List.of(Component.translatable("item.kuvalich.forma_locked")
+                            .withStyle(PanelPalette.bold(PanelPalette.LOCKED)))));
         }
 
         // ---- 成对词条的各组 ----
@@ -178,7 +180,7 @@ public final class WeaponPanelComposer {
                         .add(new PanelGridComponent.Cell(
                                 label(PanelStyle.shortNameOf(e.getKey())),
                                 value(ValueFmt.PERCENT_SIGNED.format(e.getValue()),
-                                        e.getValue() >= 0 ? ChatFormatting.GRAY : ChatFormatting.RED)));
+                                        e.getValue() >= 0 ? PanelPalette.LABEL : PanelPalette.PENALTY)));
             }
         }
 
@@ -249,28 +251,37 @@ public final class WeaponPanelComposer {
     }
 
 
-    /** 分组标题：暗灰色小标题独立成行，内容缩进在它下面 —— 层次靠位置和颜色，不靠符号 */
+    /**
+     * 分组标题：独立成行，内容缩进在它下面 —— 层次靠位置和颜色，不靠符号
+     *
+     * <p>每组有自己的色相（见 {@link PanelPalette#header}），扫视时不用读字
+     * 就知道翻到哪一组了。统一比数值暗一档，但明显比原版 {@code DARK_GRAY} 亮 ——
+     * 后者在深色背景上基本读不出来。</p>
+     */
     private static Component header(PanelGroup group) {
         MutableComponent c = Component.empty();
         if (TooltipConfig.PANEL.showGutter.get()) {
-            c.append(Component.literal(PanelStyle.gutter()).withStyle(group.gutterColor()));
+            c.append(Component.literal(PanelStyle.gutter())
+                    .withStyle(PanelPalette.style(PanelPalette.header(group))));
         }
-        c.append(Component.translatable(group.titleKey()).withStyle(ChatFormatting.DARK_GRAY));
+        c.append(Component.translatable(group.titleKey())
+                .withStyle(PanelPalette.style(PanelPalette.header(group))));
         return c;
     }
 
     /** 带计数的分组标题，如「已装备模组 8/8」 */
     private static Component headerWithCount(PanelGroup group, int current, int max) {
         return header(group).copy()
-                .append(Component.literal(" " + current + "/" + max).withStyle(ChatFormatting.DARK_GRAY));
+                .append(Component.literal(" " + current + "/" + max)
+                        .withStyle(PanelPalette.style(PanelPalette.MUTED)));
     }
 
     private static Component label(String text) {
-        return Component.literal(text).withStyle(ChatFormatting.GRAY);
+        return Component.literal(text).withStyle(PanelPalette.style(PanelPalette.LABEL));
     }
 
-    private static Component value(String text, ChatFormatting color) {
-        return Component.literal(text).withStyle(color, ChatFormatting.BOLD);
+    private static Component value(String text, int rgb) {
+        return Component.literal(text).withStyle(PanelPalette.bold(rgb));
     }
 
     /**
@@ -281,18 +292,18 @@ public final class WeaponPanelComposer {
      */
     private static PanelGridComponent.Cell pairCell(PanelChip chip) {
         AttrSpec spec = chip.spec();
-        ChatFormatting color = PanelStyle.valueColor(spec.group(), chip.isNegative());
+        int color = chip.isNegative() ? PanelPalette.PENALTY : PanelPalette.value(spec.group());
 
-        MutableComponent v = Component.literal(chip.baseText()).withStyle(color, ChatFormatting.BOLD);
+        MutableComponent v = Component.literal(chip.baseText()).withStyle(PanelPalette.bold(color));
 
         if (TooltipConfig.PANEL.showStackArrow.get() && chip.hasStackBonus()) {
-            v.append(Component.literal(PanelStyle.arrow()).withStyle(ChatFormatting.DARK_GRAY));
-            v.append(Component.literal(chip.stackedText()).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
+            v.append(Component.literal(PanelStyle.arrow()).withStyle(PanelPalette.style(PanelPalette.MUTED)));
+            v.append(Component.literal(chip.stackedText()).withStyle(PanelPalette.bold(PanelPalette.STACKED)));
         }
 
         if (spec.isPaired() && chip.secondaryText() != null) {
-            v.append(Component.literal(" / ").withStyle(ChatFormatting.DARK_GRAY));
-            v.append(Component.literal(chip.secondaryText()).withStyle(color, ChatFormatting.BOLD));
+            v.append(Component.literal(" / ").withStyle(PanelPalette.style(PanelPalette.FAINT)));
+            v.append(Component.literal(chip.secondaryText()).withStyle(PanelPalette.bold(color)));
         }
 
         return new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
@@ -317,13 +328,15 @@ public final class WeaponPanelComposer {
 
         List<Component> chips = new ArrayList<>(pool.size() + 1);
         for (Map.Entry<String, String> e : pool.entrySet()) {
+            // ⭐ 元素色走自己的 RGB 表：原版的 DARK_RED / DARK_GREEN / DARK_GRAY
+            //    在深色背景上读不出来，而元素是靠颜色认的
             chips.add(Component.literal(I18n.get("kuvaweapon.type." + e.getKey()) + " " + e.getValue())
-                    .withStyle(KuvaWeaponUtil.getColor(e.getKey()), ChatFormatting.BOLD));
+                    .withStyle(PanelPalette.bold(PanelPalette.element(e.getKey()))));
         }
         if (Math.abs(total) >= 1.0e-3) {
             chips.add(Component.literal(I18n.get("item.module.triggerDamage") + " "
                     + (total >= 0 ? "+" : "") + Math.round(total * 100) + "%")
-                    .withStyle(ChatFormatting.DARK_GRAY));
+                    .withStyle(PanelPalette.style(PanelPalette.MUTED)));
         }
 
         return ChipPacker.pack(chips, Component.empty(), Component.empty(), budget);
@@ -338,9 +351,10 @@ public final class WeaponPanelComposer {
             if (!row.available()) {
                 // ⭐「不知道」与「确实是 0 层」必须可区分，否则玩家会把没数据误读成机制坏了
                 rows.add(List.of(name,
-                        Component.literal("?????").withStyle(ChatFormatting.DARK_GRAY),
-                        Component.literal("\u2014/" + row.max()).withStyle(ChatFormatting.DARK_GRAY),
-                        Component.translatable("kuvalich.panel.stack.unsynced").withStyle(ChatFormatting.DARK_GRAY)));
+                        Component.literal("?????").withStyle(PanelPalette.style(PanelPalette.FAINT)),
+                        Component.literal("\u2014/" + row.max()).withStyle(PanelPalette.style(PanelPalette.MUTED)),
+                        Component.translatable("kuvalich.panel.stack.unsynced")
+                                .withStyle(PanelPalette.style(PanelPalette.MUTED))));
                 continue;
             }
 
@@ -349,33 +363,37 @@ public final class WeaponPanelComposer {
             Component bonus;
             if (row.isIdle()) {
                 bonus = Component.translatable("kuvalich.panel.stack.per",
-                        ValueFmt.PERCENT_SIGNED.format(row.perStack())).withStyle(ChatFormatting.DARK_GRAY);
+                        ValueFmt.PERCENT_SIGNED.format(row.perStack()))
+                        .withStyle(PanelPalette.style(PanelPalette.MUTED));
             } else if (row.dependsOnTarget()) {
                 // ⭐ killStackBaseDamage 的最终加成 = 每层 × 层数 × 目标身上的负面效果数，
                 //    tooltip 时没有目标，所以只给「每负面效果」的口径，不编一个总百分比
                 bonus = Component.literal(ValueFmt.PERCENT_SIGNED.format(row.total()))
-                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
-                        .append(Component.literal("/").withStyle(ChatFormatting.DARK_GRAY))
+                        .withStyle(PanelPalette.bold(PanelPalette.STACK_ACTIVE))
+                        .append(Component.literal("/").withStyle(PanelPalette.style(PanelPalette.FAINT)))
                         .append(Component.translatable("kuvalich.panel.stack.per_debuff")
-                                .withStyle(ChatFormatting.DARK_GRAY));
+                                .withStyle(PanelPalette.style(PanelPalette.MUTED)));
             } else {
                 bonus = Component.literal(ValueFmt.PERCENT_SIGNED.format(row.total()))
-                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+                        .withStyle(PanelPalette.bold(PanelPalette.STACK_ACTIVE));
             }
 
             Component state;
             if (row.isIdle()) {
-                state = Component.translatable("kuvalich.panel.stack.idle").withStyle(ChatFormatting.DARK_GRAY);
+                state = Component.translatable("kuvalich.panel.stack.idle")
+                        .withStyle(PanelPalette.style(PanelPalette.FAINT));
             } else if (row.isFull()) {
                 // 满层时不显示秒数：满层继续击杀会刷新计时器但不改变层数，服务端此时不发包，
                 // 客户端的本地推算会一路数到 0 —— 显示「满层」永远不会错
                 state = Component.translatable("kuvalich.panel.stack.full")
-                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+                        .withStyle(PanelPalette.bold(PanelPalette.STACK_ACTIVE));
             } else if (TooltipConfig.PANEL.showDecayTimer.get() && row.decayTicks() > 0) {
                 double sec = row.decayTicks() / 20.0;
                 state = sec < 1.0
-                        ? Component.translatable("kuvalich.panel.stack.decaying").withStyle(ChatFormatting.DARK_GRAY)
-                        : Component.literal(String.format(Locale.ROOT, "%.1fs", sec)).withStyle(ChatFormatting.DARK_GRAY);
+                        ? Component.translatable("kuvalich.panel.stack.decaying")
+                                .withStyle(PanelPalette.style(PanelPalette.WARN))
+                        : Component.literal(String.format(Locale.ROOT, "%.1fs", sec))
+                                .withStyle(PanelPalette.style(PanelPalette.MUTED));
             } else {
                 state = Component.empty();
             }
@@ -416,13 +434,13 @@ public final class WeaponPanelComposer {
                 continue;
             }
             cells.add(new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(key)),
-                    value(fmt.format(v), v >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED)));
+                    value(fmt.format(v), v >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY)));
         }
 
         if (Math.abs(elementSum) >= 1.0e-3) {
             cells.add(new PanelGridComponent.Cell(label(I18n.get("item.module.triggerDamage")),
                     value(ValueFmt.PERCENT_SIGNED.format(elementSum),
-                            elementSum >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED)));
+                            elementSum >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY)));
         }
 
         // 叠层词条在额外槽位里用「每层」口径，避免与主面板的「当前总加成」混淆
@@ -433,7 +451,7 @@ public final class WeaponPanelComposer {
             }
             cells.add(new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(key)),
                     Component.translatable("kuvalich.panel.stack.per", ValueFmt.PERCENT_SIGNED.format(v))
-                            .withStyle(v >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED)));
+                            .withStyle(PanelPalette.style(v >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY))));
         }
 
         return cells;
@@ -443,9 +461,15 @@ public final class WeaponPanelComposer {
     private static List<Component> moduleNameLines(List<ItemStack> modules, int budget) {
         List<Component> names = new ArrayList<>(modules.size());
         for (int i = 0; i < modules.size(); i++) {
-            MutableComponent name = modules.get(i).getHoverName().copy().withStyle(ChatFormatting.GRAY);
+            // ⭐ 不覆盖模组卡自己的品质颜色（铜 / 银 / 金 / Prime / 裂罅），
+            //    那是玩家一眼认卡的依据；只补一个默认色兜底没有样式的名字
+            MutableComponent name = modules.get(i).getHoverName().copy();
+            if (name.getStyle().getColor() == null) {
+                name.withStyle(PanelPalette.style(PanelPalette.LABEL));
+            }
             if (i < modules.size() - 1) {
-                name.append(Component.literal(" " + PanelStyle.moduleSeparator()).withStyle(ChatFormatting.DARK_GRAY));
+                name.append(Component.literal(" " + PanelStyle.moduleSeparator())
+                        .withStyle(PanelPalette.style(PanelPalette.FAINT)));
             }
             names.add(name);
         }
@@ -932,11 +956,26 @@ public final class WeaponPanelComposer {
 
     // ==================== 提示行与行预算 ====================
 
+    /**
+     * 底部按键提示
+     *
+     * <p>按键名单独提亮：整行都是暗色的话，玩家扫过去只会当成一句废话，
+     * 而这行是整套四视图的<b>唯一入口</b>。</p>
+     */
     private static Component hintLine(TooltipView view) {
         if (view != TooltipView.COMPACT) {
-            return Component.translatable("kuvalich.panel.hint.release").withStyle(ChatFormatting.DARK_GRAY);
+            return Component.translatable("kuvalich.panel.hint.release")
+                    .withStyle(PanelPalette.style(PanelPalette.MUTED));
         }
-        return Component.translatable("kuvalich.panel.hint.keys").withStyle(ChatFormatting.DARK_GRAY);
+        Style dim = PanelPalette.style(PanelPalette.MUTED);
+        Style key = PanelPalette.bold(PanelPalette.LABEL);
+        return Component.translatable("kuvalich.panel.hint.hold").withStyle(dim)
+                .append(Component.literal(" SHIFT ").withStyle(key))
+                .append(Component.translatable("kuvalich.panel.hint.full").withStyle(dim))
+                .append(Component.literal("  CTRL ").withStyle(key))
+                .append(Component.translatable("kuvalich.panel.hint.source").withStyle(dim))
+                .append(Component.literal("  ALT ").withStyle(key))
+                .append(Component.translatable("kuvalich.panel.hint.live").withStyle(dim));
     }
 
     private WeaponPanelComposer() {

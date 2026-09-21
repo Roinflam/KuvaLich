@@ -1766,5 +1766,11 @@
   "config.kuvalich.panel.showUnknownAttributes": "显示未登记词条",
   "config.kuvalich.panel.showUnknownAttributes.tooltip": "整合包通过 kuvalich-custom-modules.json 添加的自定义词条。关闭后面板不显示，但战斗里依然生效",
   "config.kuvalich.panel.rowHeight": "面板行高（像素）",
-  "config.kuvalich.panel.rowHeight.tooltip": "原版一行文本是 10px。若其它 tooltip 模组开了「压缩行距」把文本压到 8px，本面板是自定义渲染组件不受影响，把这里也调成 8 可以与周围对齐"
+  "config.kuvalich.panel.rowHeight.tooltip": "原版一行文本是 10px。若其它 tooltip 模组开了「压缩行距」把文本压到 8px，本面板是自定义渲染组件不受影响，把这里也调成 8 可以与周围对齐",
+  "kuvalich.panel.hint.hold": "按住",
+  "kuvalich.panel.hint.full": "全部属性",
+  "kuvalich.panel.hint.source": "来源",
+  "kuvalich.panel.hint.live": "实时状态",
+  "config.kuvalich.panel.position": "面板位置",
+  "config.kuvalich.panel.position.tooltip": "BOTTOM：接在其它内容后面。TACZ 枪械这类本身带一大块自带信息（弹药/枪种/基础伤害）的物品适合这个\nTOP：贴在物品名下面。本模组自己的武器用这个更顺"
 }

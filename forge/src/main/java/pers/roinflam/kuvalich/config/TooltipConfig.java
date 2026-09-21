@@ -44,6 +44,21 @@ public final class TooltipConfig {
         NUMERIC
     }
 
+    /** 面板在 tooltip 里的位置 */
+    public enum Position {
+        /**
+         * 贴在物品名下面
+         * <p>本模组自己的武器适合这个位置（面板就是这把武器的全部信息）。</p>
+         */
+        TOP,
+        /**
+         * 接在其它内容后面（默认）
+         * <p>TACZ 枪械这类<b>本身就有一大块自带信息</b>的物品适合这个位置：
+         * 弹药、枪种、基础伤害这些是枪的身份信息，不该被本模组的面板挤到下面去。</p>
+         */
+        BOTTOM
+    }
+
     /** 面板里用到的符号字符 */
     public enum SymbolStyle {
         /** Unicode：装订线 ▎、箭头 →、圆点 ●○、分隔 ·（原版 unifont 回退可覆盖） */
@@ -63,6 +78,8 @@ public final class TooltipConfig {
          */
         public final ForgeConfigSpec.BooleanValue enabled;
 
+        /** 面板在 tooltip 里的位置 */
+        public final ForgeConfigSpec.EnumValue<Position> position;
         /** 面板密度；CLASSIC 是与其它 tooltip 模组冲突时的总退路 */
         public final ForgeConfigSpec.EnumValue<Density> density;
         /** 一个物品的 KuvaLich 面板最多占多少行（硬上限兜底） */
@@ -122,6 +139,14 @@ public final class TooltipConfig {
                     "整合包若使用自己的属性展示方案，可在此整体关闭。",
                     "关闭后仍保留：模组卡本身的词条、赤毒类型行、玄骸之力行。");
             enabled = builder.define("enabled", true);
+
+            builder.comment(
+                    "面板在 tooltip 里的位置 / Where the panel goes in the tooltip",
+                    "BOTTOM（默认）：接在其它内容后面。TACZ 枪械这类本身带一大块自带信息",
+                    "　　　　　　　 （弹药 / 枪种 / 基础伤害）的物品适合这个 —— 那是枪的身份信息，",
+                    "　　　　　　　 不该被本模组的面板挤下去。",
+                    "TOP：贴在物品名下面。本模组自己的武器用这个更顺。");
+            position = builder.defineEnum("position", Position.BOTTOM);
 
             builder.comment(
                     "面板密度 / Panel density",

@@ -160,7 +160,7 @@ public final class PanelStyle {
         if (TooltipConfig.PANEL.stackStyle.get() == TooltipConfig.StackStyle.NUMERIC || cap > 10) {
             // 上限超过 10 时圆点会把行撑宽，退化成纯数字
             return Component.literal(cur + "/" + cap)
-                    .withStyle(cur >= cap ? ChatFormatting.GOLD : ChatFormatting.WHITE, ChatFormatting.BOLD);
+                    .withStyle(PanelPalette.bold(cur >= cap ? PanelPalette.STACK_ACTIVE : PanelPalette.VALUE));
         }
 
         StringBuilder filled = new StringBuilder();
@@ -174,13 +174,16 @@ public final class PanelStyle {
 
         MutableComponent bar = Component.empty();
         if (filled.length() > 0) {
-            bar.append(Component.literal(filled.toString()).withStyle(ChatFormatting.GOLD));
+            bar.append(Component.literal(filled.toString())
+                    .withStyle(PanelPalette.style(PanelPalette.DOT_ON)));
         }
         if (empty.length() > 0) {
-            bar.append(Component.literal(empty.toString()).withStyle(ChatFormatting.DARK_GRAY));
+            // ⭐ 空心圆点要能看见「还剩几格」，原版 DARK_GRAY 在深色背景上直接消失
+            bar.append(Component.literal(empty.toString())
+                    .withStyle(PanelPalette.style(PanelPalette.DOT_OFF)));
         }
         bar.append(Component.literal(" " + cur + "/" + cap)
-                .withStyle(cur >= cap ? ChatFormatting.GOLD : ChatFormatting.WHITE, ChatFormatting.BOLD));
+                .withStyle(PanelPalette.bold(cur >= cap ? PanelPalette.STACK_ACTIVE : PanelPalette.VALUE)));
         return bar;
     }
 

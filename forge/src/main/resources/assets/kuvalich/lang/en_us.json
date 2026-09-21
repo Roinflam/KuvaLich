@@ -1766,5 +1766,11 @@
   "config.kuvalich.panel.showUnknownAttributes": "Show unregistered attributes",
   "config.kuvalich.panel.showUnknownAttributes.tooltip": "Custom attributes added via kuvalich-custom-modules.json. Hiding them does not disable them in combat",
   "config.kuvalich.panel.rowHeight": "Panel row height (px)",
-  "config.kuvalich.panel.rowHeight.tooltip": "Vanilla text rows are 10px. If another tooltip mod compacts text rows to 8px, this panel is a custom component and is unaffected - set 8 here to match"
+  "config.kuvalich.panel.rowHeight.tooltip": "Vanilla text rows are 10px. If another tooltip mod compacts text rows to 8px, this panel is a custom component and is unaffected - set 8 here to match",
+  "kuvalich.panel.hint.hold": "Hold",
+  "kuvalich.panel.hint.full": "all stats",
+  "kuvalich.panel.hint.source": "source",
+  "kuvalich.panel.hint.live": "live status",
+  "config.kuvalich.panel.position": "Panel position",
+  "config.kuvalich.panel.position.tooltip": "BOTTOM: after everything else. Best for items that already ship a big info block of their own (TACZ guns: ammo, gun type, base damage)\nTOP: right under the item name. Better for this mod's own weapons"
 }
