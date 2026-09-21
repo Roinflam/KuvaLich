@@ -179,16 +179,6 @@ public class ItemRivenModule extends AbstractItemModule {
         return MODE_MELEE;
     }
 
-    @Deprecated
-    public static void setMelee(ItemStack itemStack, boolean isMelee) {
-        setRivenMode(itemStack, isMelee ? MODE_MELEE : MODE_REMOTE);
-    }
-
-    @Deprecated
-    public static boolean isMelee(ItemStack itemStack) {
-        return getRivenMode(itemStack) == MODE_MELEE;
-    }
-
     private static boolean isMeleeExclusiveAttr(String attributeType) {
         return attributeType.equals("meleeDamage")
                 || attributeType.equals("attackSpeed")
@@ -402,11 +392,6 @@ public class ItemRivenModule extends AbstractItemModule {
         AbstractItemModule.setType(itemStack, RIVEN_TYPE);
 
         return itemStack;
-    }
-
-    @Deprecated
-    public static ItemStack cycleModule(int trend, int cycleNumber, boolean isMelee) {
-        return cycleModule(trend, cycleNumber, isMelee ? MODE_MELEE : MODE_REMOTE);
     }
 
     public static double getBaseAttributeValue(String attributeType) {

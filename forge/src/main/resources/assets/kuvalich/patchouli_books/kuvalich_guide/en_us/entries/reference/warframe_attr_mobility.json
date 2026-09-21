@@ -13,6 +13,10 @@
     {
       "type": "patchouli:text",
       "text": "kuvalich.guidebook.entry.warframe_attr_mobility.p2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "kuvalich.guidebook.entry.warframe_attr_mobility.p3"
     }
   ]
 }

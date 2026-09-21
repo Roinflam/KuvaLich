@@ -257,24 +257,4 @@ public class DamageInfo {
     public record MergeKey(int entityId, @Nonnull String group) {
     }
 
-    /**
-     * 伤害颜色枚举（保留用于兼容）
-     */
-    public enum DamageColor {
-        WHITE(0xFFFFFFFF),
-        YELLOW(0xFFFFFF00),
-        ORANGE(0xFFFFA500),
-        RED(0xFFFF0000),
-        BLUE(0xFF00FFFF);
-
-        private final int color;
-
-        DamageColor(int color) {
-            this.color = color;
-        }
-
-        public int getColor() {
-            return color;
-        }
-    }
 }

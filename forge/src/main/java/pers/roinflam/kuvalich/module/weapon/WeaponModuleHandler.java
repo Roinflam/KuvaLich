@@ -69,14 +69,26 @@ public class WeaponModuleHandler {
     }
 
     /**
-     * 武器属性每tick缓存（UUID → 缓存条目）
+     * 武器属性每tick缓存（UUID → 缓存条目），<b>两端各一份</b>
+     *
+     * <p>⭐ 必须按端分开。单人游戏里客户端与服务端在同一个 JVM，玩家 UUID 两端相同，
+     * 而缓存条目里的 {@code weaponKey} 用的是 {@code System.identityHashCode(weapon)} ——
+     * 两端拿到的是<b>不同的 ItemStack 对象</b>，identityHashCode 必然不同。
+     * 共用一张表的后果是两端互相顶掉对方的条目，缓存命中率归零；
+     * 更糟的是任一端 tick 翻转都会 {@code clear()} 整张表，把对端本 tick 的缓存也清掉。</p>
+     *
+     * <p>返回值本身是对的（键不匹配就重算），所以这不是数据串号，
+     * 而是「缓存在它专门为之而写的场景里完全失效」—— 蓄力与射速这条每 tick 双端都跑的
+     * 最热路径，等于每 tick 白算两遍。</p>
      */
-    private static final Map<UUID, CachedWeaponAttributes> WEAPON_ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
+    private static final Map<UUID, CachedWeaponAttributes> WEAPON_ATTRIBUTE_CACHE_SERVER = new ConcurrentHashMap<>();
+    private static final Map<UUID, CachedWeaponAttributes> WEAPON_ATTRIBUTE_CACHE_CLIENT = new ConcurrentHashMap<>();
 
     /**
-     * 缓存对应的 gameTick
+     * 缓存对应的 gameTick，两端各记一个
      */
-    private static volatile long weaponCacheTick = -1;
+    private static volatile long weaponCacheTickServer = -1;
+    private static volatile long weaponCacheTickClient = -1;
 
     /**
      * 获取带缓存的武器模组属性
@@ -88,22 +100,31 @@ public class WeaponModuleHandler {
      * @return 属性表副本（调用方可自由修改，不影响缓存）
      */
     static HashMap<String, Double> getCachedWeaponAttributes(LivingEntity entity, ItemStack weapon) {
+        boolean clientSide = entity.level().isClientSide();
+        Map<UUID, CachedWeaponAttributes> cache =
+                clientSide ? WEAPON_ATTRIBUTE_CACHE_CLIENT : WEAPON_ATTRIBUTE_CACHE_SERVER;
+
         long currentTick = entity.level().getGameTime();
-        if (currentTick != weaponCacheTick) {
-            WEAPON_ATTRIBUTE_CACHE.clear();
-            weaponCacheTick = currentTick;
+        long lastTick = clientSide ? weaponCacheTickClient : weaponCacheTickServer;
+        if (currentTick != lastTick) {
+            cache.clear();
+            if (clientSide) {
+                weaponCacheTickClient = currentTick;
+            } else {
+                weaponCacheTickServer = currentTick;
+            }
         }
 
         int weaponKey = System.identityHashCode(weapon);
         UUID entityId = entity.getUUID();
 
-        CachedWeaponAttributes cached = WEAPON_ATTRIBUTE_CACHE.get(entityId);
+        CachedWeaponAttributes cached = cache.get(entityId);
         if (cached != null && cached.weaponKey == weaponKey) {
             return new HashMap<>(cached.attributes);
         }
 
         HashMap<String, Double> base = collectItemAttributes(getModules(weapon));
-        WEAPON_ATTRIBUTE_CACHE.put(entityId, new CachedWeaponAttributes(weaponKey, base));
+        cache.put(entityId, new CachedWeaponAttributes(weaponKey, base));
         return new HashMap<>(base);
     }
 

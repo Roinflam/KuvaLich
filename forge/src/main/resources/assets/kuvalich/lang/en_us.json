@@ -1100,7 +1100,7 @@
   "kuvalich.guidebook.entry.kill_stack.p2": "$(l)Stack caps (defaults)$()$(br2)$(l)Weapon$()$(br)$(note)Base damage 20 (the highest cap)$(br)$(note)Fire rate 10$(br)$(note)Multishot / attack range 5$(br)$(note)Attack speed / blast radius 5$(br)$(note)Melee crit damage / trigger chance 4$(br2)$(l)Warframe$()$(br)$(note)All capped at 20$(br2)$(good)Warframe stacks are the steadier payoff$() -$(br)higher caps and slower decay.",
   "kuvalich.guidebook.entry.warframe_module": "Warframe Mods",
   "kuvalich.guidebook.entry.warframe_module.title": "Warframe Mods & Shields",
-  "kuvalich.guidebook.entry.warframe_module.p1": "Install at the $(thing)Warframe Arsenal$().$(br)Always active, no weapon needed.$(br)Up to 8, bound to you, kept on death.$(br2)$(l)Stat types$()$(br2)· Health, armour, shield capacity$(br)· Sprint speed, knockback resistance$(br)· Fire / electric / homologous resistance$(br)· Reach, mining speed$(br)· Regen and loot multipliers$(br)· Jump height, fall resistance",
+  "kuvalich.guidebook.entry.warframe_module.p1": "Install at the $(thing)Warframe Arsenal$().$(br)Always active, no weapon needed.$(br)Up to 8, bound to you, kept on death.$(br2)$(l)Stat types$()$(br2)· Health, armour, shield capacity$(br)· Sprint speed, knockback resistance$(br)· Fire / electric / homologous resistance$(br)· Reach, mining speed$(br)· Regen, loot and ore multipliers$(br)· Jump height, fall resistance",
   "kuvalich.guidebook.entry.warframe_module.p2": "$(l)Shield System$()$(br2)Equipping shield capacity mods$(br)grants an absorb shield (golden hearts).$(br2)After taking damage, enters cooldown.$(br)Shield slowly recovers after cooldown.$(br2)Full shield break = longer cooldown.",
   "kuvalich.guidebook.entry.warframe_module.p3": "Craft the Warframe Arsenal early!$(br2)The always-active bonuses from$(br)Warframe mods are more important than you think.$(br2)$(thing)Vitality$() and $(thing)Steel Fiber$()$(br)are essential for nearly every build.",
   "kuvalich.guidebook.entry.tacz_overview": "Gun Compat Overview",
@@ -1170,7 +1170,7 @@
   "kuvalich.guidebook.entry.warframe_attr_mobility": "Mobility & Tools",
   "kuvalich.guidebook.entry.warframe_attr_mobility.title": "Warframe Attributes · Mobility/Tools",
   "kuvalich.guidebook.entry.warframe_attr_mobility.p1": "· Sprint Speed sprintSpeed$(br)· Jump Height jumpBoost$(br2)· Reach Distance reachDistance$(br)· Mining Speed diggingSpeed$(br)  (synced server & client side)",
-  "kuvalich.guidebook.entry.warframe_attr_mobility.p2": "$(l)Loot Drop Multiplier$()$(br)itemDropMultiplier$(br2)Increases drops from killed mobs.$(br)Only affects non-equipment drops.$(br)Works on both animals and monsters.$(br2)Even better with the Executioner series$(br)kill stack version.",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.p2": "$(l)Loot Drop Multiplier$()$(br)itemDropMultiplier$(br2)Increases drops from killed mobs.$(br)Only affects non-equipment drops.$(br)Works on both animals and monsters.$(br2)Even better with the Executioner series$(br)kill stack version.$(br2)$(note)Capped at one stack per item$(br)per kill.",
   "kuvalich.guidebook.entry.warframe_attr_killstack": "Warframe Kill Stacks",
   "kuvalich.guidebook.entry.warframe_attr_killstack.title": "Warframe Attributes · Kill Stacks",
   "kuvalich.guidebook.entry.warframe_attr_killstack.p1": "From Executioner series mods:$(br2)· Health killStackHealth$(br)· Shield Capacity killStackShield$(br)· Armor killStackArmor$(br)· Sprint Speed killStackSprintSpeed$(br)· Shield Recharge Rate$(br)  killStackShieldRecoveryRate",
@@ -1787,5 +1787,6 @@
   "config.kuvalich.enableOreDropMultiplier": "Enable Ore Drop Multiplier",
   "config.kuvalich.enableOreDropMultiplier.tooltip": "§7Master switch for the 'Ore Drop Multiplier' warframe attribute\n§7When off the attribute stops working but cards still show it",
   "config.kuvalich.oreDropEffectMultiplier": "Ore Drop Effect Multiplier (%)",
-  "config.kuvalich.oreDropEffectMultiplier.tooltip": "§7How much of the module value actually applies\n§7100.0§r = full effect (default)\n§750.0§r = halved\n§70.0§r = disabled"
+  "config.kuvalich.oreDropEffectMultiplier.tooltip": "§7How much of the module value actually applies\n§7100.0§r = full effect (default)\n§750.0§r = halved\n§70.0§r = disabled",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.p3": "$(l)Ore Drop Multiplier$()$(br)oreDropMultiplier$(br2)Increases drops from mining $(l)ores$().$(br2)$(l)Independent bucket$() - applied$(br)AFTER vanilla Fortune, not$(br)pooled with it.$(br2)$(o)Silk Touch does not benefit$(), $(br)or you could replace and$(br)re-mine forever.$(br2)$(note)Uncapped; large amounts drop$(br)as several stacks."
 }

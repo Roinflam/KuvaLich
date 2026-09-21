@@ -1100,7 +1100,7 @@
   "kuvalich.guidebook.entry.kill_stack.p2": "$(l)各类叠层上限（默认）$()$(br2)$(l)武器类$()$(br)$(note)基础伤害 20 层（上限最高）$(br)$(note)射速 10 层$(br)$(note)多重射击 / 攻击范围 5 层$(br)$(note)攻击速度 / 爆炸半径 5 层$(br)$(note)近战暴伤 / 触发几率 4 层$(br2)$(l)战甲类$()$(br)$(note)全部为 20 层$(br2)$(good)刷怪场景下战甲叠层收益最稳$()，$(br)层数高、衰减也慢。",
   "kuvalich.guidebook.entry.warframe_module": "战甲模组",
   "kuvalich.guidebook.entry.warframe_module.title": "战甲模组与护盾",
-  "kuvalich.guidebook.entry.warframe_module.p1": "在$(thing)战甲军械库$()安装。$(br)全时段生效，不需手持武器。$(br)最多8个，绑定角色，死亡不丢。$(br2)$(l)属性类型$()$(br2)· 生命、护甲、护盾容量$(br)· 冲刺速度、击退抗性$(br)· 火焰/电击/同源抗性$(br)· 挖掘距离、挖掘速度$(br)· 恢复倍率、掉落倍率$(br)· 跳跃高度、摔落抗性",
+  "kuvalich.guidebook.entry.warframe_module.p1": "在$(thing)战甲军械库$()安装。$(br)全时段生效，不需手持武器。$(br)最多8个，绑定角色，死亡不丢。$(br2)$(l)属性类型$()$(br2)· 生命、护甲、护盾容量$(br)· 冲刺速度、击退抗性$(br)· 火焰/电击/同源抗性$(br)· 挖掘距离、挖掘速度$(br)· 恢复倍率、掉落倍率$(br)· 挖矿倍率$(br)· 跳跃高度、摔落抗性",
   "kuvalich.guidebook.entry.warframe_module.p2": "$(l)护盾系统$()$(br2)装备带护盾容量的模组后$(br)获得额外吸收护盾（金色心）。$(br2)受伤后进入冷却期，$(br)冷却结束后缓慢恢复。$(br2)护盾完全破碎时冷却更长。",
   "kuvalich.guidebook.entry.warframe_module.p3": "尽早制作战甲军械库！$(br2)战甲模组的全时段增益$(br)比想象中重要得多。$(br2)$(thing)生命力$()和$(thing)钢铁纤维$()$(br)几乎是所有方案的基础。",
   "kuvalich.guidebook.entry.tacz_overview": "枪械适配总览",
@@ -1170,7 +1170,7 @@
   "kuvalich.guidebook.entry.warframe_attr_mobility": "机动与工具词条",
   "kuvalich.guidebook.entry.warframe_attr_mobility.title": "战甲词条 · 机动/工具",
   "kuvalich.guidebook.entry.warframe_attr_mobility.p1": "· 冲刺速度 sprintSpeed$(br)· 跳跃高度 jumpBoost$(br2)· 挖掘距离 reachDistance$(br)· 挖掘速度 diggingSpeed$(br)  （服务端客户端同步）",
-  "kuvalich.guidebook.entry.warframe_attr_mobility.p2": "$(l)战利品掉落倍率$()$(br)itemDropMultiplier$(br2)提升击杀怪物时掉落物数量。$(br)仅对非装备类掉落物生效。$(br)对动物和怪物均有效。$(br2)配合执刑官系列的$(br)击杀叠层版本效果更佳。",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.p2": "$(l)战利品掉落倍率$()$(br)itemDropMultiplier$(br2)提升击杀怪物时掉落物数量。$(br)仅对非装备类掉落物生效。$(br)对动物和怪物均有效。$(br2)配合执刑官系列的$(br)击杀叠层版本效果更佳。$(br2)$(note)同一种物品单次击杀最多一组，$(br)不会掉一地。",
   "kuvalich.guidebook.entry.warframe_attr_killstack": "战甲叠层词条",
   "kuvalich.guidebook.entry.warframe_attr_killstack.title": "战甲词条 · 击杀叠层",
   "kuvalich.guidebook.entry.warframe_attr_killstack.p1": "来自执刑官系列模组：$(br2)· 生命值 killStackHealth$(br)· 护盾容量 killStackShield$(br)· 护甲 killStackArmor$(br)· 冲刺速度 killStackSprintSpeed$(br)· 护盾恢复速率$(br)  killStackShieldRecoveryRate",
@@ -1787,5 +1787,6 @@
   "config.kuvalich.enableOreDropMultiplier": "启用挖矿倍率",
   "config.kuvalich.enableOreDropMultiplier.tooltip": "§7战甲词条「挖矿倍率」的总开关\n§7关闭后该词条不再生效，卡面仍会显示",
   "config.kuvalich.oreDropEffectMultiplier": "挖矿倍率生效倍率(%)",
-  "config.kuvalich.oreDropEffectMultiplier.tooltip": "§7战甲模组的挖矿加成实际生效倍率\n§7100.0§r = 完全生效(默认)\n§750.0§r = 效果减半\n§70.0§r = 模组加成不生效"
+  "config.kuvalich.oreDropEffectMultiplier.tooltip": "§7战甲模组的挖矿加成实际生效倍率\n§7100.0§r = 完全生效(默认)\n§750.0§r = 效果减半\n§70.0§r = 模组加成不生效",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.p3": "$(l)挖矿倍率$()$(br)oreDropMultiplier$(br2)提升挖掘$(l)矿石$()时的掉落数量。$(br2)$(l)独立乘区$()——在原版时运$(br)结算完之后再乘一次，$(br)不和时运挤同一个池子。$(br2)$(o)精准采集不吃这个倍率$()，$(br)否则摆回去再挖就是永动机。$(br2)$(note)不封顶，数量够多会掉好几组。"
 }

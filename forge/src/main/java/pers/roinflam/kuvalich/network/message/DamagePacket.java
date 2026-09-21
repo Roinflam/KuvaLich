@@ -236,28 +236,6 @@ public class DamagePacket {
     }
 
     /**
-     * 将颜色值转换为§颜色代码
-     * Convert color value to § color code
-     *
-     * @param color ARGB颜色值
-     * @return § 颜色代码字符串（如 "§f", "§e"）
-     */
-    public static String getColorCode(int color) {
-        if (color == DamageInfo.DamageColor.WHITE.getColor()) {
-            return "§f";  // 白色
-        } else if (color == DamageInfo.DamageColor.YELLOW.getColor()) {
-            return "§e";  // 黄色
-        } else if (color == DamageInfo.DamageColor.ORANGE.getColor()) {
-            return "§6";  // 橙色（金色）
-        } else if (color == DamageInfo.DamageColor.RED.getColor()) {
-            return "§c";  // 红色
-        } else if (color == DamageInfo.DamageColor.BLUE.getColor()) {
-            return "§b";  // 蓝色
-        }
-        return "§f";  // 默认白色
-    }
-
-    /**
      * 按指定通道把一条伤害数字发给玩家
      *
      * <p>先看总开关，再走限流；两关都过了才真正发包。</p>

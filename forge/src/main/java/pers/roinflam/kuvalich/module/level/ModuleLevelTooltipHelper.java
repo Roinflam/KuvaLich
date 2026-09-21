@@ -103,17 +103,6 @@ public final class ModuleLevelTooltipHelper {
     }
 
     /**
-     * 仅在安魂之融界面中显示升级费用（兼容旧调用，按基础费用计算）
-     *
-     * @deprecated 请使用带 moduleStack 参数的重载版本
-     */
-    @Deprecated
-    public static int appendUpgradeCostTooltipIfInEvolve(List<Component> tooltip, int insertIndex,
-                                                         int currentLevel) {
-        return appendUpgradeCostTooltipIfInEvolve(tooltip, insertIndex, currentLevel, ItemStack.EMPTY);
-    }
-
-    /**
      * ⭐ 仅在安魂之融界面中显示裂罅循环费用（灰色）
      * <p>
      * 区分武器裂罅和战甲裂罅，使用与实际消耗一致的公式。
@@ -134,20 +123,6 @@ public final class ModuleLevelTooltipHelper {
         tooltip.add(insertIndex, Component.translatable("item.module.riven.cycle_cost", cost)
                 .withStyle(ChatFormatting.GRAY));
         return 1;
-    }
-
-    /**
-     * 兼容旧调用的重载方法（默认按武器裂罅计算）
-     *
-     * @param trend      裂罅倾向性（1~5）
-     * @param cycleCount 当前已循环次数（从0开始）
-     * @return 插入的行数（0或1）
-     * @deprecated 请使用带 isWarframe 参数的重载版本
-     */
-    @Deprecated
-    public static int appendRivenCycleCostTooltipIfInEvolve(List<Component> tooltip, int insertIndex,
-                                                            int trend, int cycleCount) {
-        return appendRivenCycleCostTooltipIfInEvolve(tooltip, insertIndex, trend, cycleCount, false);
     }
 
     /**
@@ -201,19 +176,6 @@ public final class ModuleLevelTooltipHelper {
         int baseCost = Math.min(cycleCount, 8);
         int trendCost = (int) Math.pow(trend, 2);
         return baseCost + trendCost;
-    }
-
-    /**
-     * 计算裂罅循环费用（兼容旧调用，默认按武器裂罅计算）
-     *
-     * @param trend      倾向性等级（1~5）
-     * @param cycleCount 当前已循环次数（getCycle返回值，0=尚未洗过）
-     * @return 本次循环所需赤毒数量
-     * @deprecated 请使用 getWeaponRivenCycleCost 或 getWarframeRivenCycleCost
-     */
-    @Deprecated
-    public static int getRivenCycleCost(int trend, int cycleCount) {
-        return getWeaponRivenCycleCost(trend, cycleCount);
     }
 
     /**
