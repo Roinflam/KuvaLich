@@ -13,8 +13,8 @@ import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttribute;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeInstance;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
-import pers.roinflam.kuvalich.render.particle.ElementParticleEffects;
-import pers.roinflam.kuvalich.render.particle.ParticleEmissionGuard;
+import pers.roinflam.kuvalich.module.weapon.element.ElementParticleEffects;
+import pers.roinflam.kuvalich.module.weapon.element.ParticleEmissionGuard;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Comparator;

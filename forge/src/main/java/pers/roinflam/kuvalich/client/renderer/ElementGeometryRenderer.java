@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.client.render;
+package pers.roinflam.kuvalich.client.renderer;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;

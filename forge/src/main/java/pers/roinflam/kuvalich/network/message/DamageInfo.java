@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.render.damagedisplay;
+package pers.roinflam.kuvalich.network.message;
 
 import net.minecraft.world.phys.Vec3;
 import pers.roinflam.kuvalich.module.weapon.DamageDisplayTracker;

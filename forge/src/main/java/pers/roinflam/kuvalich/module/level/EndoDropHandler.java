@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
-import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
+import pers.roinflam.kuvalich.utils.RandomUtil;
 
 import javax.annotation.Nonnull;
 

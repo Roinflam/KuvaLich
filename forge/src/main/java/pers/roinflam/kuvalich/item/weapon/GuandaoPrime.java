@@ -13,13 +13,13 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.module.weapon.DamageDisplayTracker;
-import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
-import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
-import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
-import pers.roinflam.kuvalich.utils.util.AttributesUtil;
-import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
-import pers.roinflam.kuvalich.utils.util.WeaponEventUtil;
+import pers.roinflam.kuvalich.utils.SynchronizationTask;
+import pers.roinflam.kuvalich.utils.RandomUtil;
+import pers.roinflam.kuvalich.utils.AttributesUtil;
+import pers.roinflam.kuvalich.utils.EntityLivingUtil;
+import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 
 import javax.annotation.Nonnull;
 

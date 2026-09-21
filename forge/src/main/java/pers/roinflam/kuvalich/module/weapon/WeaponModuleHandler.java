@@ -6,7 +6,7 @@ import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 import pers.roinflam.kuvalich.utils.Reference;
-import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
+import pers.roinflam.kuvalich.utils.RandomUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

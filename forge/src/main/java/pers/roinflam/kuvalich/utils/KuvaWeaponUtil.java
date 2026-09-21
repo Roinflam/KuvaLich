@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.weapon;
+package pers.roinflam.kuvalich.utils;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.Reference;
-import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
+import pers.roinflam.kuvalich.utils.RandomUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;

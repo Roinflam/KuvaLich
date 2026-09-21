@@ -7,7 +7,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
-import pers.roinflam.kuvalich.client.render.ClientElementDebuffTracker;
+import pers.roinflam.kuvalich.client.renderer.ClientElementDebuffTracker;
 
 import java.util.function.Supplier;
 

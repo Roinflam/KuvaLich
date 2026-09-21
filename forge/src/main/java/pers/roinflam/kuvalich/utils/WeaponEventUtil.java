@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.utils.util;
+package pers.roinflam.kuvalich.utils;
 
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;

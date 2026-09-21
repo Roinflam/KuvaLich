@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.utils.util;
+package pers.roinflam.kuvalich.utils;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;

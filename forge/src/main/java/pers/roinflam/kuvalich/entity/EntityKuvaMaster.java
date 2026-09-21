@@ -28,8 +28,8 @@ import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.item.module.item.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.network.message.DecryptionHudPacket;
-import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
-import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
+import pers.roinflam.kuvalich.utils.RandomUtil;
 
 import java.util.*;
 

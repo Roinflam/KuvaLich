@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.render.damagedisplay;
+package pers.roinflam.kuvalich.client.renderer.damage;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -22,6 +22,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import pers.roinflam.kuvalich.network.message.DamageInfo;
 
 /**
  * 伤害数字/文本渲染器(1.20.1)

@@ -28,7 +28,7 @@ import pers.roinflam.kuvalich.item.module.item.ItemRivenModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
-import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.LogUtil;
 
 /**

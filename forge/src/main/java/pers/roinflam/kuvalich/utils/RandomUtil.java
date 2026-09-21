@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.utils.java.random;
+package pers.roinflam.kuvalich.utils;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

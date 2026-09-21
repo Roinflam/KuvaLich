@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.utils.helper.task;
+package pers.roinflam.kuvalich.utils;
 
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
+import pers.roinflam.kuvalich.utils.RandomUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -9,8 +9,8 @@ import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.render.damagedisplay.DamageInfo;
-import pers.roinflam.kuvalich.render.damagedisplay.DamageRenderer;
+import pers.roinflam.kuvalich.network.message.DamageInfo;
+import pers.roinflam.kuvalich.client.renderer.damage.DamageRenderer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

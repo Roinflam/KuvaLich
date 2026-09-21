@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.utils.util;
+package pers.roinflam.kuvalich.utils;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;

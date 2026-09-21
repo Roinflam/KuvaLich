@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.module.weapon.MagicDamageClassifier;
-import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;

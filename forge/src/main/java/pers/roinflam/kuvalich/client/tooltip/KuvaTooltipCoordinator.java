@@ -19,7 +19,7 @@ import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.compat.tacz.TaczGunEnhanceUtil;
 import pers.roinflam.kuvalich.config.TooltipConfig;
 import pers.roinflam.kuvalich.utils.Reference;
-import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 import java.util.ArrayList;
 import java.util.List;

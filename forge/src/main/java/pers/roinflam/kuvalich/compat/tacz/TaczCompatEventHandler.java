@@ -28,7 +28,7 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.LogUtil;
-import pers.roinflam.kuvalich.utils.helper.task.SynchronizationTask;
+import pers.roinflam.kuvalich.utils.SynchronizationTask;
 
 import java.util.HashMap;
 import java.util.LinkedList;

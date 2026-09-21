@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.client.render;
+package pers.roinflam.kuvalich.client.renderer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.LivingEntity;

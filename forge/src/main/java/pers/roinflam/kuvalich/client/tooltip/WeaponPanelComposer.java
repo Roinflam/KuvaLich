@@ -18,7 +18,7 @@ import pers.roinflam.kuvalich.module.weapon.WeaponCombatHandler;
 import pers.roinflam.kuvalich.module.weapon.WeaponElementSystem;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.module.weapon.panel.*;
-import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 import javax.annotation.Nullable;
 import java.util.*;

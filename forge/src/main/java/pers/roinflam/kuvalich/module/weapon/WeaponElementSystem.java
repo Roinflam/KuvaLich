@@ -19,11 +19,11 @@ import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
 import pers.roinflam.kuvalich.network.ElementSyncGuard;
 import pers.roinflam.kuvalich.network.message.DamagePacket;
-import pers.roinflam.kuvalich.render.particle.ElementParticleEffects;
-import pers.roinflam.kuvalich.render.particle.ParticleEmissionGuard;
-import pers.roinflam.kuvalich.utils.util.EntityLivingUtil;
-import pers.roinflam.kuvalich.utils.util.EntityUtil;
-import pers.roinflam.kuvalich.weapon.KuvaWeaponUtil;
+import pers.roinflam.kuvalich.module.weapon.element.ElementParticleEffects;
+import pers.roinflam.kuvalich.module.weapon.element.ParticleEmissionGuard;
+import pers.roinflam.kuvalich.utils.EntityLivingUtil;
+import pers.roinflam.kuvalich.utils.EntityUtil;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 import javax.annotation.Nullable;
 import java.util.*;

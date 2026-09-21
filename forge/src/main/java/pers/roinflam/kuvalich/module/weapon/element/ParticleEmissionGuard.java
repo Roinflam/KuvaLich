@@ -1,4 +1,4 @@
-package pers.roinflam.kuvalich.render.particle;
+package pers.roinflam.kuvalich.module.weapon.element;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;

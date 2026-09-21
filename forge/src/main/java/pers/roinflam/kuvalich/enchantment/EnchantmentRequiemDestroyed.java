@@ -30,7 +30,7 @@ import pers.roinflam.kuvalich.item.module.warframe.WarframeCommonModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRareModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeUncommonModule;
 import pers.roinflam.kuvalich.utils.Reference;
-import pers.roinflam.kuvalich.utils.java.random.RandomUtil;
+import pers.roinflam.kuvalich.utils.RandomUtil;
 
 /**
  * 灭骸附魔
