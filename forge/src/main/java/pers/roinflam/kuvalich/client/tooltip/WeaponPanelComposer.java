@@ -138,9 +138,19 @@ public final class WeaponPanelComposer {
     private static PanelGridComponent buildGrid(ItemStack stack, List<ItemStack> modules,
                                                 HashMap<String, Double> attrs, HashMap<String, Double> extra,
                                                 StackCounts stacks, boolean applyGates, TooltipView view) {
+        return buildGrid(stack, modules, attrs, extra, stacks, applyGates, view, true);
+    }
+
+    /**
+     * @param useStackedValues true 显示「含当前叠层」的值（默认视图），
+     *                         false 显示不含叠层的基础值（SHIFT 视图）
+     */
+    private static PanelGridComponent buildGrid(ItemStack stack, List<ItemStack> modules,
+                                                HashMap<String, Double> attrs, HashMap<String, Double> extra,
+                                                StackCounts stacks, boolean applyGates, TooltipView view,
+                                                boolean useStackedValues) {
         List<PanelGridComponent.Section> sections = new ArrayList<>();
         int budget = ChipPacker.budget(TooltipConfig.PANEL.widthRatio.get());
-        LABEL_KEYS.clear();
 
         // Forma 锁定：独立一行，不参与任何分组与压缩
         if (WeaponModuleHandler.isFormaLocked(stack)) {
@@ -152,7 +162,8 @@ public final class WeaponPanelComposer {
         // ---- 成对词条的各组 ----
         EnumMap<PanelGroup, List<PanelGridComponent.Cell>> byGroup = new EnumMap<>(PanelGroup.class);
         for (PanelChip chip : WeaponPanelData.collect(stack, attrs, stacks, applyGates)) {
-            byGroup.computeIfAbsent(chip.spec().group(), g -> new ArrayList<>()).add(pairCell(chip));
+            byGroup.computeIfAbsent(chip.spec().group(), g -> new ArrayList<>())
+                    .add(pairCell(chip, useStackedValues));
         }
 
         // ⭐ 未登记的词条（整合包通过 JSON 自定义的）归入 OTHER 组，
@@ -221,44 +232,23 @@ public final class WeaponPanelComposer {
     // ==================== SHIFT：逐条完整 ====================
 
     /**
-     * SHIFT 视图：与默认视图同一套排版，但
+     * SHIFT 视图：与默认视图同一套排版与<b>同一套名字</b>，区别只有两点
      * <ul>
      *   <li><b>强制单列</b>：哪怕内容再多也一条一行</li>
      *   <li><b>不做门控</b>：近战武器也显示枪械词条（「我要看全部」就是全部）</li>
-     *   <li><b>用长名</b>：{@code item.module.<key>} 那套完整名称</li>
      * </ul>
+     *
+     * <p>⭐ 这里曾经额外做过一件事：把标签换成 {@code item.module.<key>} 那套「长名」。
+     * 那是个错误设计 —— 同一条属性在默认视图叫「触发时长」、按下 SHIFT 变成「触发时间」，
+     * 全项目有 17 条这样措辞不同的，玩家只会以为那是两条不同的属性。
+     * 视图之间该变的是<b>看到多少</b>，不是<b>怎么称呼</b>。</p>
      */
     private static PanelGridComponent buildFullGrid(ItemStack stack, List<ItemStack> modules,
                                                     HashMap<String, Double> attrs, HashMap<String, Double> extra,
                                                     StackCounts stacks, TooltipView view) {
-        PanelGridComponent base = buildGrid(stack, modules, attrs, extra, stacks, false, view);
-        List<PanelGridComponent.Section> sections = new ArrayList<>(base.sections().size());
-        for (PanelGridComponent.Section section : base.sections()) {
-            sections.add(section instanceof PanelGridComponent.Pairs pairs ? withLongLabels(pairs) : section);
-        }
-        return new PanelGridComponent(sections, 1);
+        return new PanelGridComponent(
+                buildGrid(stack, modules, attrs, extra, stacks, false, view, false).sections(), 1);
     }
-
-    /** 把一组单元格的标签换成长名 */
-    private static PanelGridComponent.Pairs withLongLabels(PanelGridComponent.Pairs pairs) {
-        List<PanelGridComponent.Cell> cells = new ArrayList<>(pairs.cells().size());
-        for (PanelGridComponent.Cell cell : pairs.cells()) {
-            String key = LABEL_KEYS.get(cell);
-            cells.add(key == null ? cell
-                    : new PanelGridComponent.Cell(label(PanelStyle.longNameOf(key)), cell.value()));
-        }
-        return new PanelGridComponent.Pairs(pairs.header(), cells);
-    }
-
-    /**
-     * 单元格 → 属性 key 的回查表
-     *
-     * <p>{@link PanelGridComponent.Cell} 里只存渲染好的 {@code Component}，
-     * 换长名时需要知道它原本是哪条属性。用 IdentityHashMap 而不是把 key 塞进
-     * {@code Cell}，是为了不让渲染层的数据结构背上只有一个视图才用的字段。
-     * 每次构建面板时清空，条目寿命就是这一帧。</p>
-     */
-    private static final Map<PanelGridComponent.Cell, String> LABEL_KEYS = new IdentityHashMap<>();
 
     // ==================== CTRL：词条来源 ====================
 
@@ -552,26 +542,39 @@ public final class WeaponPanelComposer {
      * <p>成对词条（近战 / 远程暴击）的两个值写在同一个数值格里；
      * 叠层箭头紧跟在<b>主值</b>后面，因为叠层只抬高近战那一侧。</p>
      */
-    private static PanelGridComponent.Cell pairCell(PanelChip chip) {
+    /**
+     * 一个「标签 + 数值」单元格
+     *
+     * <p><b>默认视图给的是「含当前叠层」的值</b>，也就是「我现在有多强」；
+     * 按住 SHIFT 给的是不含叠层的基础值，也就是「这把武器的底子」。
+     * 两个视图分工明确，面板上不再出现一个需要额外解释的箭头。</p>
+     *
+     * <p>被叠层抬高的那几条用青色标出来 —— 否则玩家看不出数字里哪些是临时的。
+     * 具体抬高了多少，下面的「击杀叠层」一组里逐条写着。</p>
+     *
+     * @param useStackedValues 取含叠层的值还是基础值
+     */
+    private static PanelGridComponent.Cell pairCell(PanelChip chip, boolean useStackedValues) {
         AttrSpec spec = chip.spec();
-        int color = chip.isNegative() ? PanelPalette.PENALTY : PanelPalette.value(spec.group());
+        boolean boosted = useStackedValues && chip.hasStackBonus();
 
-        MutableComponent v = Component.literal(chip.baseText()).withStyle(PanelPalette.bold(color));
+        int color = chip.isNegative() ? PanelPalette.PENALTY
+                : boosted ? PanelPalette.STACKED
+                : PanelPalette.value(spec.group());
 
-        if (TooltipConfig.PANEL.showStackArrow.get() && chip.hasStackBonus()) {
-            v.append(Component.literal(PanelStyle.arrow()).withStyle(PanelPalette.style(PanelPalette.MUTED)));
-            v.append(Component.literal(chip.stackedText()).withStyle(PanelPalette.bold(PanelPalette.STACKED)));
-        }
+        String text = useStackedValues ? chip.stackedText() : chip.baseText();
+        MutableComponent v = Component.literal(text).withStyle(PanelPalette.bold(color));
 
+        // 成对词条的第二个值（远程侧）不吃叠层 —— killStackMeleeCriticalMultiplier
+        // 在战斗端只在近战分支生效，所以这一侧永远是基础值
         if (spec.isPaired() && chip.secondaryText() != null) {
             v.append(Component.literal(" / ").withStyle(PanelPalette.style(PanelPalette.FAINT)));
-            v.append(Component.literal(chip.secondaryText()).withStyle(PanelPalette.bold(color)));
+            v.append(Component.literal(chip.secondaryText())
+                    .withStyle(PanelPalette.bold(chip.isNegative()
+                            ? PanelPalette.PENALTY : PanelPalette.value(spec.group()))));
         }
 
-        PanelGridComponent.Cell cell =
-                new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
-        LABEL_KEYS.put(cell, spec.key());
-        return cell;
+        return new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
     }
 
     /** 元素行：彩色名称 + 百分比，末尾跟一个总量 */

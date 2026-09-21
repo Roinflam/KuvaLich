@@ -1736,8 +1736,6 @@
   "config.kuvalich.panel.stackStyle.tooltip": "DOTS: filled/empty circles plus 3/5\nNUMERIC: just 3/5 - use this if a custom font turns the dots into tofu",
   "config.kuvalich.panel.showDecayTimer": "Show decay countdown",
   "config.kuvalich.panel.showDecayTimer.tooltip": "Estimated client-side; runs fast when the server TPS drops",
-  "config.kuvalich.panel.showStackArrow": "Show stack arrow",
-  "config.kuvalich.panel.showStackArrow.tooltip": "Shows base -> with-stacks on core panel lines, e.g. CritDmg x2.4->x3.0",
   "config.kuvalich.panel.showElements": "Show elemental damage",
   "config.kuvalich.panel.showElements.tooltip": "Element composition and total, on one line",
   "config.kuvalich.panel.showExtraSlots": "Show extra slot bonuses",
@@ -1768,11 +1766,13 @@
   "config.kuvalich.panel.rowHeight": "Panel row height (px)",
   "config.kuvalich.panel.rowHeight.tooltip": "Vanilla text rows are 10px. If another tooltip mod compacts text rows to 8px, this panel is a custom component and is unaffected - set 8 here to match",
   "kuvalich.panel.hint.hold": "Hold",
-  "kuvalich.panel.hint.full": "all stats",
+  "kuvalich.panel.hint.full": "base values",
   "kuvalich.panel.hint.source": "source",
   "kuvalich.panel.hint.live": "live status",
   "config.kuvalich.panel.position": "Panel position",
   "config.kuvalich.panel.position.tooltip": "BOTTOM: after everything else. Best for items that already ship a big info block of their own (TACZ guns: ammo, gun type, base damage)\nTOP: right under the item name. Better for this mod's own weapons",
   "kuvalich.panel.clamped.header": "Clamped by config",
-  "kuvalich.panel.source.none": "The installed mods have no attributes"
+  "kuvalich.panel.source.none": "The installed mods have no attributes",
+  "config.kuvalich.panel.showGroupBands": "Tint attribute groups",
+  "config.kuvalich.panel.showGroupBands.tooltip": "Alternating groups get a very faint background tint so blocks read apart at a glance"
 }

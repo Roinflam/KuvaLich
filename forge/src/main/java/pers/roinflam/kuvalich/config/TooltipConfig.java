@@ -124,8 +124,8 @@ public final class TooltipConfig {
         public final ForgeConfigSpec.EnumValue<StackStyle> stackStyle;
         /** 是否显示衰减倒计时 */
         public final ForgeConfigSpec.BooleanValue showDecayTimer;
-        /** 是否在核心面板行显示「基础 → 含叠层」的箭头 */
-        public final ForgeConfigSpec.BooleanValue showStackArrow;
+        /** 是否给分组加淡背景条 */
+        public final ForgeConfigSpec.BooleanValue showGroupBands;
 
         // ========== 区块开关 ==========
 
@@ -237,8 +237,11 @@ public final class TooltipConfig {
                     "服务端 TPS 偏低时会数得偏快，介意的话可以关掉。");
             showDecayTimer = builder.define("showDecayTimer", true);
 
-            builder.comment("是否在核心面板行显示「基础 → 含叠层」的箭头 / Show the base→stacked arrow");
-            showStackArrow = builder.define("showStackArrow", true);
+            builder.comment(
+                    "是否给分组加淡背景条 / Tint alternating attribute groups",
+                    "相邻两组交替上一层极淡的底色，块与块之间一眼分得开。",
+                    "本面板是自定义渲染组件才画得出来，原版的纯文本 tooltip 做不到。");
+            showGroupBands = builder.define("showGroupBands", true);
 
             builder.comment("").comment("─────────── 区块开关 / Sections ───────────");
 

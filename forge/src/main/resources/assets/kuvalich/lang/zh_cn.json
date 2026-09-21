@@ -1736,8 +1736,6 @@
   "config.kuvalich.panel.stackStyle.tooltip": "DOTS：实心/空心圆点 + 3/5\nNUMERIC：只显示 3/5（自装字体包导致圆点变豆腐块时用这个）",
   "config.kuvalich.panel.showDecayTimer": "显示衰减倒计时",
   "config.kuvalich.panel.showDecayTimer.tooltip": "倒计时由客户端本地推算，服务端 TPS 偏低时会数得偏快",
-  "config.kuvalich.panel.showStackArrow": "显示叠层箭头",
-  "config.kuvalich.panel.showStackArrow.tooltip": "在核心面板行显示「基础 → 含叠层」，如 暴伤 x2.4→x3.0",
   "config.kuvalich.panel.showElements": "显示元素伤害",
   "config.kuvalich.panel.showElements.tooltip": "元素组合与总伤害占一行",
   "config.kuvalich.panel.showExtraSlots": "显示额外槽位加成",
@@ -1768,11 +1766,13 @@
   "config.kuvalich.panel.rowHeight": "面板行高（像素）",
   "config.kuvalich.panel.rowHeight.tooltip": "原版一行文本是 10px。若其它 tooltip 模组开了「压缩行距」把文本压到 8px，本面板是自定义渲染组件不受影响，把这里也调成 8 可以与周围对齐",
   "kuvalich.panel.hint.hold": "按住",
-  "kuvalich.panel.hint.full": "全部属性",
+  "kuvalich.panel.hint.full": "基础值·全部",
   "kuvalich.panel.hint.source": "来源",
   "kuvalich.panel.hint.live": "实时状态",
   "config.kuvalich.panel.position": "面板位置",
   "config.kuvalich.panel.position.tooltip": "BOTTOM：接在其它内容后面。TACZ 枪械这类本身带一大块自带信息（弹药/枪种/基础伤害）的物品适合这个\nTOP：贴在物品名下面。本模组自己的武器用这个更顺",
   "kuvalich.panel.clamped.header": "被配置上限截断",
-  "kuvalich.panel.source.none": "这把武器的模组没有任何词条"
+  "kuvalich.panel.source.none": "这把武器的模组没有任何词条",
+  "config.kuvalich.panel.showGroupBands": "显示分组背景条",
+  "config.kuvalich.panel.showGroupBands.tooltip": "相邻两组交替一层极淡的底色，块与块之间一眼分得开"
 }

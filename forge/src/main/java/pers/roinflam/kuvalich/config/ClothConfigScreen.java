@@ -679,7 +679,7 @@ public class ClothConfigScreen {
                 .build());
 
         panel.addEntry(toggle(entryBuilder, "showDecayTimer", cfg.showDecayTimer, true));
-        panel.addEntry(toggle(entryBuilder, "showStackArrow", cfg.showStackArrow, true));
+        panel.addEntry(toggle(entryBuilder, "showGroupBands", cfg.showGroupBands, true));
         panel.addEntry(toggle(entryBuilder, "showElements", cfg.showElements, true));
         panel.addEntry(toggle(entryBuilder, "showExtraSlots", cfg.showExtraSlots, true));
         panel.addEntry(toggle(entryBuilder, "showModuleList", cfg.showModuleList, true));

@@ -63,6 +63,20 @@ public final class PanelPalette {
     /** Forma 锁定 */
     public static final int LOCKED = 0xE05C5C;
 
+    /**
+     * 分组背景条
+     *
+     * <p>ARGB，透明度刻意压得很低：它的作用是「让相邻两组一眼分得开」，
+     * 不是要成为一个视觉元素。</p>
+     *
+     * <p>⚠️ 这条是在 {@code renderImage} 里画的，而 1.20.1 的
+     * {@code GuiGraphics#renderTooltipInternal} 是先 {@code renderText} 再
+     * {@code renderImage}（两者同在 z=400 的 pose 里，文字进的是延迟批次）。
+     * 所以绘制时要把 z 往后挪一点让它落到文字下面；即便哪天被别的模组换掉渲染流程、
+     * z 没压住，这个透明度下也只是一层很淡的洗色，不会糊住字。</p>
+     */
+    public static final int GROUP_BAND = 0x16FFFFFF;
+
     // ==================== 叠层进度条 ====================
 
     /** 已点亮的圆点 */

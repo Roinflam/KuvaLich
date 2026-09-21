@@ -43,17 +43,24 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
     /** 相邻两列之间的间隙 */
     private static final int COLUMN_GAP = 10;
 
+    /** 背景条左右各外扩多少像素（让底色包住内容而不是刚好贴边） */
+    private static final int BAND_PAD = 2;
+
     // ==================== 排好版的结果 ====================
 
     /** 一段要绘制的文本：x 是左边界（LEFT）或右边界（RIGHT） */
     private record Piece(Component text, int x, PanelGridComponent.Align align) {
     }
 
-    private final List<List<Piece>> lines;
+    /** 一行：若干段文本 + 是否要画背景条 */
+    private record Line(List<Piece> pieces, boolean band) {
+    }
+
+    private final List<Line> lines;
     private final int width;
     private final int rowHeight;
 
-    private ClientPanelGrid(List<List<Piece>> lines, int width, int rowHeight) {
+    private ClientPanelGrid(List<Line> lines, int width, int rowHeight) {
         this.lines = lines;
         this.width = width;
         this.rowHeight = rowHeight;
@@ -94,10 +101,10 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
             best = build(data, font, 1);
         }
 
-        List<List<Piece>> lines = truncate(best.lines, maxLines, font);
+        List<Line> lines = truncate(best.lines, maxLines, font);
         int width = best.width;
-        for (List<Piece> line : lines) {
-            for (Piece piece : line) {
+        for (Line line : lines) {
+            for (Piece piece : line.pieces()) {
                 int right = piece.align() == PanelGridComponent.Align.RIGHT
                         ? piece.x() : piece.x() + font.width(piece.text());
                 width = Math.max(width, right);
@@ -116,41 +123,49 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
      * <p>截断从<b>末尾</b>开始，而分组顺序刻意把「核心面板 → 叠层 → 元素」排在最前，
      * 所以先被丢掉的一定是静态词条明细，不会是玩家最关心的实时状态。</p>
      */
-    private static List<List<Piece>> truncate(List<List<Piece>> lines, int maxLines, Font font) {
+    private static List<Line> truncate(List<Line> lines, int maxLines, Font font) {
         if (lines.size() <= maxLines) {
             return lines;
         }
         int keep = Math.max(1, maxLines - 1);
-        List<List<Piece>> out = new ArrayList<>(lines.subList(0, keep));
+        List<Line> out = new ArrayList<>(lines.subList(0, keep));
         Component note = Component.translatable("kuvalich.panel.truncated", lines.size() - keep)
                 .withStyle(PanelPalette.italic(PanelPalette.WARN));
-        out.add(List.of(new Piece(note, 0, PanelGridComponent.Align.LEFT)));
+        out.add(new Line(List.of(new Piece(note, 0, PanelGridComponent.Align.LEFT)), false));
         return out;
     }
 
-    private record Attempt(List<List<Piece>> lines, int width) {
+    private record Attempt(List<Line> lines, int width) {
     }
 
     private static Attempt build(PanelGridComponent data, Font font, int columns) {
-        List<List<Piece>> out = new ArrayList<>();
+        List<Line> out = new ArrayList<>();
         int maxWidth = 0;
+        // 只对「有标题的分组」交替上底色：Forma 锁定行、按键提示行这种游离的单行不参与
+        int bandIndex = 0;
 
         for (PanelGridComponent.Section section : data.sections()) {
+            boolean band = false;
             if (section.header() != null) {
                 // ⭐ 标题独立成行、不缩进，内容缩进在它下面 —— 层次靠位置和颜色，不靠符号
-                out.add(List.of(new Piece(section.header(), 0, PanelGridComponent.Align.LEFT)));
+                out.add(new Line(List.of(new Piece(section.header(), 0, PanelGridComponent.Align.LEFT)), false));
                 maxWidth = Math.max(maxWidth, font.width(section.header()));
+                band = bandIndex++ % 2 == 0;
             }
 
+            List<List<Piece>> rows = new ArrayList<>();
             if (section instanceof PanelGridComponent.Pairs pairs) {
-                maxWidth = Math.max(maxWidth, layoutPairs(pairs, font, columns, out));
+                maxWidth = Math.max(maxWidth, layoutPairs(pairs, font, columns, rows));
             } else if (section instanceof PanelGridComponent.Table table) {
-                maxWidth = Math.max(maxWidth, layoutTable(table, font, out));
+                maxWidth = Math.max(maxWidth, layoutTable(table, font, rows));
             } else if (section instanceof PanelGridComponent.Flow flow) {
                 for (Component line : flow.lines()) {
-                    out.add(List.of(new Piece(line, INDENT, PanelGridComponent.Align.LEFT)));
+                    rows.add(List.of(new Piece(line, INDENT, PanelGridComponent.Align.LEFT)));
                     maxWidth = Math.max(maxWidth, INDENT + font.width(line));
                 }
+            }
+            for (List<Piece> row : rows) {
+                out.add(new Line(row, band));
             }
         }
 
@@ -257,8 +272,8 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
     @Override
     public void renderText(Font font, int x, int y, Matrix4f matrix, MultiBufferSource.BufferSource buffer) {
         int lineY = y;
-        for (List<Piece> line : lines) {
-            for (Piece piece : line) {
+        for (Line line : lines) {
+            for (Piece piece : line.pieces()) {
                 int drawX = piece.align() == PanelGridComponent.Align.RIGHT
                         ? piece.x() - font.width(piece.text())
                         : piece.x();
@@ -269,8 +284,30 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
         }
     }
 
+    /**
+     * 分组背景条
+     *
+     * <p>⚠️ 1.20.1 的 {@code GuiGraphics#renderTooltipInternal} 是先 {@code renderText}
+     * 再 {@code renderImage}，两者同在 z=400 的 pose 里（已在字节码层确认：
+     * renderText@292 → renderImage@369 → popPose@407）。所以这里要把 z 往回挪一点，
+     * 让底色落到文字下面。颜色本身透明度很低，即便哪天渲染流程被别的模组换掉、z 没压住，
+     * 也只是一层很淡的洗色，不会糊住字。</p>
+     */
     @Override
     public void renderImage(Font font, int x, int y, GuiGraphics graphics) {
-        // 纯文本，不画图
+        if (!TooltipConfig.PANEL.showGroupBands.get()) {
+            return;
+        }
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, -1);
+        int lineY = y;
+        for (Line line : lines) {
+            if (line.band()) {
+                graphics.fill(x - BAND_PAD, lineY - 1,
+                        x + width + BAND_PAD, lineY + rowHeight - 1, PanelPalette.GROUP_BAND);
+            }
+            lineY += rowHeight;
+        }
+        graphics.pose().popPose();
     }
 }

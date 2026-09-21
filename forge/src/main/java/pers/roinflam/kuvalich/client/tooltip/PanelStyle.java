@@ -127,20 +127,6 @@ public final class PanelStyle {
         return key;
     }
 
-    /**
-     * 属性长名（SHIFT 完整视图用）
-     *
-     * <p>先查 {@code item.module.<key>}（改造前逐条视图用的就是这个命名空间），
-     * 没有就回落到短名。</p>
-     */
-    public static String longNameOf(String key) {
-        String k = "item.module." + key;
-        if (I18n.exists(k)) {
-            return firstLine(I18n.get(k));
-        }
-        return shortNameOf(key);
-    }
-
     /** 兼容旧签名：显式给一对 key 时仍按原来的两级回落 */
     public static String shortName(String shortKey, String longKey) {
         if (I18n.exists(shortKey)) {
