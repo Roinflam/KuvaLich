@@ -547,6 +547,18 @@ public class WeaponCombatHandler {
             return;
         }
 
+        // ⭐ 0 伤害直接放行。
+        //    TACZ 把一发子弹拆成两次 hurt()：普通段 damage×(1−armorIgnore) 与
+        //    破甲段 damage×armorIgnore，中间还把无敌帧清零。armor_ignore 为 0 或 1 的枪
+        //    必有一段是 0 伤害，而 Forge 的 ForgeHooks.onLivingHurt 是在
+        //    LivingEntity.actuallyHurt 里 `damage <= 0` 判断<b>之前</b>调用的，
+        //    所以那一段照样会跑完整套结算 —— 伤害数字有 totalDamage > 0 保护不会重复，
+        //    但元素触发、净化驱散、处决会各多掷一次，debuff 挂载频率直接翻倍。
+        //    0 伤害本来也算不出任何东西，提前返回即可。
+        if (evt.getAmount() <= 0) {
+            return;
+        }
+
         DamageSource damageSource = evt.getSource();
 
         if (!evt.getEntity().level().isClientSide()) {
@@ -810,7 +822,7 @@ public class WeaponCombatHandler {
 
                 for (int i = 0; i < rolls; i++) {
                     String element = WeaponElementSystem.triggerElementEffect(damageSource, hurter, attacker, weapon,
-                            elementPool, triggerTime, coreDamage, attributes, baneMultiplier);
+                            elementPool, triggerTime, coreDamage, attributes);
                     if (element != null) triggeredElements.add(element);
                 }
             }
