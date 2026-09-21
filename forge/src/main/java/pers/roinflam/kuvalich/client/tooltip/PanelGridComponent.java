@@ -29,7 +29,14 @@ import java.util.List;
  *
  * @author RoinFlam
  */
-public record PanelGridComponent(List<Section> sections) implements TooltipComponent {
+public record PanelGridComponent(List<Section> sections, int maxColumns) implements TooltipComponent {
+
+    /** 不限列数（由内容多少自适应） */
+    public static final int COLUMNS_AUTO = 0;
+
+    public PanelGridComponent(List<Section> sections) {
+        this(sections, COLUMNS_AUTO);
+    }
 
     /** 一个分组 */
     public sealed interface Section {

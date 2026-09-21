@@ -47,8 +47,16 @@ public final class TooltipConfig {
     /** 面板在 tooltip 里的位置 */
     public enum Position {
         /**
-         * 贴在物品名下面
-         * <p>本模组自己的武器适合这个位置（面板就是这把武器的全部信息）。</p>
+         * 自动（默认）：与改造前完全一致
+         *
+         * <p>实现上是在 {@code ItemTooltipEvent} 里放一个占位行，再在渲染阶段换成面板。
+         * 于是本模组自己的武器面板落在物品名下面，而 TACZ 枪械因为 TACZ 会重建整个
+         * tooltip，面板自然落在它那块弹药 / 枪种信息之后 —— 两边都是玩家熟悉的位置。</p>
+         */
+        AUTO,
+        /**
+         * 强制贴在物品名下面
+         * <p>注意：TACZ 枪械会因此把它自带的弹药 / 枪种 / 基础伤害整块挤下去。</p>
          */
         TOP,
         /**
@@ -142,11 +150,12 @@ public final class TooltipConfig {
 
             builder.comment(
                     "面板在 tooltip 里的位置 / Where the panel goes in the tooltip",
-                    "BOTTOM（默认）：接在其它内容后面。TACZ 枪械这类本身带一大块自带信息",
-                    "　　　　　　　 （弹药 / 枪种 / 基础伤害）的物品适合这个 —— 那是枪的身份信息，",
-                    "　　　　　　　 不该被本模组的面板挤下去。",
-                    "TOP：贴在物品名下面。本模组自己的武器用这个更顺。");
-            position = builder.defineEnum("position", Position.BOTTOM);
+                    "AUTO（默认）：与改造前完全一致 —— 本模组自己的武器面板贴在物品名下面；",
+                    "　　　　　　　TACZ 枪械因为 TACZ 会重建整个 tooltip，面板落在它那块",
+                    "　　　　　　　弹药 / 枪种信息之后。两边都是玩家熟悉的位置。",
+                    "TOP：强制贴在物品名下面（TACZ 枪械的自带信息块会被挤下去）。",
+                    "BOTTOM：强制接在所有内容之后。");
+            position = builder.defineEnum("position", Position.AUTO);
 
             builder.comment(
                     "面板密度 / Panel density",

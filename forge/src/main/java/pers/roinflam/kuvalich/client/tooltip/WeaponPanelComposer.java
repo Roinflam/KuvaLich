@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich.client.tooltip;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -82,20 +81,9 @@ public final class WeaponPanelComposer {
             return PanelResult.EMPTY;
         }
 
-        // Forma 锁定：永不参与 chip 压缩，固定排在最前的独立行
-        if (WeaponModuleHandler.isFormaLocked(stack)) {
-            out.add(Component.translatable("item.kuvalich.forma_locked").withStyle(ChatFormatting.DARK_RED));
-        }
-
         List<ItemStack> modules = WeaponModuleHandler.getModules(stack);
         if (modules.isEmpty()) {
-            appendBasePanel(stack, out);
-            // ⭐ 没装模组的武器正是新手拿到的第一把，也是最需要这行提示的人群 ——
-            //    不给入口的话，整套四视图对他们完全不可见。
-            if (TooltipConfig.PANEL.showKeyHint.get()) {
-                out.add(hintLine(view));
-            }
-            return PanelResult.text(out);
+            return PanelResult.grid(buildBaseGrid(stack, view));
         }
 
         // CLASSIC 密度：一律走逐条视图，作为与其它 tooltip 模组冲突时的总退路
@@ -122,22 +110,16 @@ public final class WeaponPanelComposer {
         //    「近战武器不显示枪械词条」就不再成立。
         boolean applyGates = TooltipConfig.PANEL.hideIrrelevantGroups.get();
 
-        // ⭐ 默认视图走结构化网格：列宽按像素实测、标签左对齐数值右对齐，
-        //    列数由内容多少自适应（属性少就一条一行，多到快超屏才切多列）。
-        if (effective == TooltipView.COMPACT) {
-            return PanelResult.grid(buildGrid(stack, modules, attrs, extra, stacks, applyGates, view));
-        }
-
-        switch (effective) {
-            case FULL -> appendFull(stack, modules, attrs, extra, stacks, applyGates, out);
-            case SOURCE -> appendSource(stack, modules, attrs, extra, out);
-            default -> appendLive(stack, modules, attrs, stacks, out);
-        }
-
-        if (TooltipConfig.PANEL.showKeyHint.get()) {
-            out.add(hintLine(view));
-        }
-        return PanelResult.text(out);
+        // ⭐ 四个视图<b>全部</b>走同一套结构化网格：列宽按像素实测、标签左对齐数值右对齐、
+        //    同一套 RGB 配色。改造中途只有默认视图换了新排版，三个功能键视图还留着
+        //    老的纯文本 + ChatFormatting，按下 SHIFT 就像换了个模组 —— 那是个遗留状态，
+        //    不是设计。
+        return PanelResult.grid(switch (effective) {
+            case FULL -> buildFullGrid(stack, modules, attrs, extra, stacks, view);
+            case SOURCE -> buildSourceGrid(modules, extra, view);
+            case LIVE -> buildLiveGrid(stack, modules, attrs, stacks, view);
+            default -> buildGrid(stack, modules, attrs, extra, stacks, applyGates, view);
+        });
     }
 
     // ==================== 默认视图：结构化网格 ====================
@@ -158,6 +140,7 @@ public final class WeaponPanelComposer {
                                                 StackCounts stacks, boolean applyGates, TooltipView view) {
         List<PanelGridComponent.Section> sections = new ArrayList<>();
         int budget = ChipPacker.budget(TooltipConfig.PANEL.widthRatio.get());
+        LABEL_KEYS.clear();
 
         // Forma 锁定：独立一行，不参与任何分组与压缩
         if (WeaponModuleHandler.isFormaLocked(stack)) {
@@ -230,12 +213,291 @@ public final class WeaponPanelComposer {
                     moduleNameLines(modules, budget)));
         }
 
-        // ---- 按键提示 ----
+        appendHint(sections, view);
+
+        return new PanelGridComponent(sections);
+    }
+
+    // ==================== SHIFT：逐条完整 ====================
+
+    /**
+     * SHIFT 视图：与默认视图同一套排版，但
+     * <ul>
+     *   <li><b>强制单列</b>：哪怕内容再多也一条一行</li>
+     *   <li><b>不做门控</b>：近战武器也显示枪械词条（「我要看全部」就是全部）</li>
+     *   <li><b>用长名</b>：{@code item.module.<key>} 那套完整名称</li>
+     * </ul>
+     */
+    private static PanelGridComponent buildFullGrid(ItemStack stack, List<ItemStack> modules,
+                                                    HashMap<String, Double> attrs, HashMap<String, Double> extra,
+                                                    StackCounts stacks, TooltipView view) {
+        PanelGridComponent base = buildGrid(stack, modules, attrs, extra, stacks, false, view);
+        List<PanelGridComponent.Section> sections = new ArrayList<>(base.sections().size());
+        for (PanelGridComponent.Section section : base.sections()) {
+            sections.add(section instanceof PanelGridComponent.Pairs pairs ? withLongLabels(pairs) : section);
+        }
+        return new PanelGridComponent(sections, 1);
+    }
+
+    /** 把一组单元格的标签换成长名 */
+    private static PanelGridComponent.Pairs withLongLabels(PanelGridComponent.Pairs pairs) {
+        List<PanelGridComponent.Cell> cells = new ArrayList<>(pairs.cells().size());
+        for (PanelGridComponent.Cell cell : pairs.cells()) {
+            String key = LABEL_KEYS.get(cell);
+            cells.add(key == null ? cell
+                    : new PanelGridComponent.Cell(label(PanelStyle.longNameOf(key)), cell.value()));
+        }
+        return new PanelGridComponent.Pairs(pairs.header(), cells);
+    }
+
+    /**
+     * 单元格 → 属性 key 的回查表
+     *
+     * <p>{@link PanelGridComponent.Cell} 里只存渲染好的 {@code Component}，
+     * 换长名时需要知道它原本是哪条属性。用 IdentityHashMap 而不是把 key 塞进
+     * {@code Cell}，是为了不让渲染层的数据结构背上只有一个视图才用的字段。
+     * 每次构建面板时清空，条目寿命就是这一帧。</p>
+     */
+    private static final Map<PanelGridComponent.Cell, String> LABEL_KEYS = new IdentityHashMap<>();
+
+    // ==================== CTRL：词条来源 ====================
+
+    /**
+     * CTRL 视图：每张模组卡各贡献了什么、额外槽位来自哪里、哪条被配置上限截断了
+     */
+    private static PanelGridComponent buildSourceGrid(List<ItemStack> modules,
+                                                      HashMap<String, Double> extra, TooltipView view) {
+        List<PanelGridComponent.Section> sections = new ArrayList<>();
+
+        for (ItemStack module : modules) {
+            List<PanelGridComponent.Cell> cells = new ArrayList<>();
+            double levelMult = ModuleLevelHelper.getEffectiveMultiplier(module);
+            for (Map.Entry<String, Double> e : AbstractModule.getAttributes(module)) {
+                double v = ModuleConfig.clampAttributeValue(e.getKey(), e.getValue()) * levelMult;
+                if (Math.abs(v) < 1.0e-3) {
+                    continue;
+                }
+                cells.add(new PanelGridComponent.Cell(
+                        label(PanelStyle.shortNameOf(e.getKey())),
+                        value(sourceFormat(e.getKey()).format(v),
+                                v >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY)));
+            }
+            if (cells.isEmpty()) {
+                continue;
+            }
+
+            // 卡名保留它自己的品质颜色；等级跟在后面用次要色
+            MutableComponent header = module.getHoverName().copy();
+            if (ModuleLevelHelper.isLevelSystemEnabled()) {
+                header.append(Component.literal(
+                        " Lv." + ModuleLevelHelper.getModuleLevel(module) + "/" + ModuleLevelHelper.getMaxLevel())
+                        .withStyle(PanelPalette.style(PanelPalette.MUTED)));
+            }
+            sections.add(new PanelGridComponent.Pairs(header, cells));
+        }
+
+        if (!extra.isEmpty()) {
+            List<PanelGridComponent.Cell> cells = extraCells(extra);
+            if (!cells.isEmpty()) {
+                sections.add(new PanelGridComponent.Pairs(header(PanelGroup.EXTRA), cells));
+            }
+        }
+
+        // ⭐ 被配置上限截断的词条：改造前是静默裁剪，面板显示 +300%、实战按 +150% 结算，
+        //    玩家会以为是 bug 或被偷偷削弱。这里把它显式说出来。
+        if (TooltipConfig.PANEL.showClampWarning.get()) {
+            List<Component> warnings = clampWarnings(modules);
+            if (!warnings.isEmpty()) {
+                sections.add(new PanelGridComponent.Flow(
+                        Component.translatable("kuvalich.panel.clamped.header")
+                                .withStyle(PanelPalette.style(PanelPalette.WARN)),
+                        warnings));
+            }
+        }
+
+        if (sections.isEmpty()) {
+            sections.add(new PanelGridComponent.Flow(header(PanelGroup.OTHER),
+                    List.of(Component.translatable("kuvalich.panel.source.none")
+                            .withStyle(PanelPalette.style(PanelPalette.MUTED)))));
+        }
+        appendHint(sections, view);
+        return new PanelGridComponent(sections, 1);
+    }
+
+    /** 来源视图一律用「加了多少」的口径，而不是「最终是多少」 */
+    private static ValueFmt sourceFormat(String key) {
+        AttrSpec spec = WeaponPanelCatalog.byKey(key);
+        if (spec == null) {
+            return ValueFmt.PERCENT_SIGNED;
+        }
+        ValueFmt fmt = spec.fmt();
+        if (fmt == ValueFmt.METERS_ABS) {
+            return ValueFmt.METERS_DELTA;
+        }
+        if (fmt == ValueFmt.PERCENT || fmt == ValueFmt.MULTIPLIER) {
+            return ValueFmt.PERCENT_SIGNED;
+        }
+        return fmt;
+    }
+
+    /** 找出「各卡之和」被 clampAttributeTotal 砍掉的词条 */
+    private static List<Component> clampWarnings(List<ItemStack> modules) {
+        HashMap<String, Double> raw = new HashMap<>();
+        for (ItemStack module : modules) {
+            double levelMult = ModuleLevelHelper.getEffectiveMultiplier(module);
+            for (Map.Entry<String, Double> e : AbstractModule.getAttributes(module)) {
+                raw.merge(e.getKey(),
+                        ModuleConfig.clampAttributeValue(e.getKey(), e.getValue()) * levelMult, Double::sum);
+            }
+        }
+        List<Component> out = new ArrayList<>();
+        List<String> keys = new ArrayList<>(raw.keySet());
+        Collections.sort(keys);
+        for (String key : keys) {
+            double before = raw.get(key);
+            double after = ModuleConfig.clampAttributeTotal(key, before);
+            if (Math.abs(before - after) < 1.0e-3) {
+                continue;
+            }
+            out.add(Component.translatable("kuvalich.panel.clamped",
+                            PanelStyle.shortNameOf(key),
+                            ValueFmt.PERCENT_SIGNED.format(before),
+                            ValueFmt.PERCENT_SIGNED.format(after))
+                    .withStyle(PanelPalette.style(PanelPalette.WARN)));
+        }
+        return out;
+    }
+
+    // ==================== ALT：实时状态 ====================
+
+    /**
+     * ALT 视图：此刻真正生效的东西 —— 叠层详情、元素怎么合成的、触发几率怎么算出来的
+     */
+    private static PanelGridComponent buildLiveGrid(ItemStack stack, List<ItemStack> modules,
+                                                    HashMap<String, Double> attrs, StackCounts stacks,
+                                                    TooltipView view) {
+        List<PanelGridComponent.Section> sections = new ArrayList<>();
+        int budget = ChipPacker.budget(TooltipConfig.PANEL.widthRatio.get());
+
+        // ---- 叠层详情：比默认视图多一列「每层多少」----
+        if (isGroupEnabled(PanelGroup.STACK)) {
+            List<StackRow> rows = WeaponPanelData.collectStacks(attrs, stacks);
+            if (rows.isEmpty()) {
+                sections.add(new PanelGridComponent.Flow(header(PanelGroup.STACK),
+                        List.of(Component.translatable("kuvalich.panel.stack.none")
+                                .withStyle(PanelPalette.style(PanelPalette.MUTED)))));
+            } else {
+                List<List<Component>> table = new ArrayList<>(rows.size());
+                for (int i = 0; i < rows.size(); i++) {
+                    List<Component> row = new ArrayList<>(stackTableRows(attrs, stacks).get(i));
+                    row.add(2, Component.translatable("kuvalich.panel.stack.per",
+                                    ValueFmt.PERCENT_SIGNED.format(rows.get(i).perStack()))
+                            .withStyle(PanelPalette.style(PanelPalette.MUTED)));
+                    table.add(row);
+                }
+                sections.add(new PanelGridComponent.Table(header(PanelGroup.STACK), table,
+                        new PanelGridComponent.Align[]{
+                                PanelGridComponent.Align.LEFT,
+                                PanelGridComponent.Align.LEFT,
+                                PanelGridComponent.Align.LEFT,
+                                PanelGridComponent.Align.RIGHT,
+                                PanelGridComponent.Align.RIGHT}));
+            }
+        }
+
+        // ---- 元素：投入 → 成池，看清哪两个基础元素合成了什么 ----
+        if (isGroupEnabled(PanelGroup.ELEMENT)) {
+            List<Component> input = new ArrayList<>();
+            for (String key : WeaponPanelCatalog.ELEMENTS) {
+                double v = attrs.getOrDefault(key, 0.0);
+                if (Math.abs(v) >= 1.0e-3) {
+                    input.add(Component.literal(I18n.get("kuvaweapon.type." + key)
+                                    + " " + ValueFmt.PERCENT_SIGNED.format(v))
+                            .withStyle(PanelPalette.style(PanelPalette.element(key))));
+                }
+            }
+            HashMap<String, String> pool = WeaponElementSystem.getTriggerElements(stack, modules);
+            List<Component> poolChips = new ArrayList<>(pool.size());
+            for (Map.Entry<String, String> e : pool.entrySet()) {
+                poolChips.add(Component.literal(I18n.get("kuvaweapon.type." + e.getKey()) + " " + e.getValue())
+                        .withStyle(PanelPalette.bold(PanelPalette.element(e.getKey()))));
+            }
+
+            List<Component> lines = new ArrayList<>();
+            if (!input.isEmpty()) {
+                lines.addAll(prefixed("kuvalich.panel.element.input", input, budget));
+            }
+            if (!poolChips.isEmpty()) {
+                lines.addAll(prefixed("kuvalich.panel.element.pool", poolChips, budget));
+            }
+            if (!lines.isEmpty()) {
+                sections.add(new PanelGridComponent.Flow(header(PanelGroup.ELEMENT), lines));
+            }
+        }
+
+        // ---- 触发几率分解 ----
+        sections.add(new PanelGridComponent.Flow(
+                Component.translatable("item.module.triggerChance")
+                        .withStyle(PanelPalette.style(PanelPalette.header(PanelGroup.PANEL))),
+                triggerBreakdown(stack, attrs, stacks)));
+
+        appendHint(sections, view);
+        return new PanelGridComponent(sections, 1);
+    }
+
+    /** 在一组 chip 前加一个小标题，然后按宽度打包 */
+    private static List<Component> prefixed(String headerKey, List<Component> chips, int budget) {
+        Component prefix = Component.translatable(headerKey)
+                .withStyle(PanelPalette.style(PanelPalette.MUTED))
+                .copy().append(Component.literal("  "));
+        return ChipPacker.pack(chips, prefix, Component.literal("   "), budget);
+    }
+
+    /** 触发几率的完整算式 */
+    private static List<Component> triggerBreakdown(ItemStack stack, HashMap<String, Double> attrs,
+                                                    StackCounts stacks) {
+        double baseTrigger = WeaponModuleHandler.getBaseAttribute(stack, "triggerChance");
+        double modTrigger = attrs.getOrDefault("triggerChance", 0.0);
+        int stackN = stacks.available() ? stacks.stacks(StackType.TRIGGER_CHANCE) : 0;
+        double stackTrigger = attrs.getOrDefault("killStackTriggerChance", 0.0) * stackN;
+        double uncapped = baseTrigger * (1 + modTrigger) * (1 + stackTrigger);
+
+        // ⭐ 战斗端在所有乘算做完后还有一道硬上限。本视图的卖点就是「这个数就是实战的数」，
+        //    不钳就会出现面板 700% / 实战 500%。
+        double cap = WeaponCombatHandler.MAX_ELEMENT_TRIGGER_PER_HIT;
+        double finalTrigger = Math.min(uncapped, cap);
+
+        List<Component> out = new ArrayList<>(3);
+        MutableComponent line = Component.translatable("kuvalich.panel.trigger.breakdown",
+                        ValueFmt.PERCENT.format(baseTrigger),
+                        ValueFmt.PERCENT_SIGNED.format(modTrigger),
+                        ValueFmt.PERCENT_SIGNED.format(stackTrigger),
+                        ValueFmt.PERCENT.format(finalTrigger))
+                .withStyle(PanelPalette.style(PanelPalette.MUTED));
+        if (uncapped > cap + 1.0e-6) {
+            line.append(Component.literal(" "))
+                    .append(Component.translatable("kuvalich.panel.trigger.capped")
+                            .withStyle(PanelPalette.style(PanelPalette.WARN)));
+        }
+        out.add(line);
+
+        // 冲刺攻击有额外的触发加成（战斗端在冲刺分支里多乘一个 dashTriggerChance）
+        double dash = attrs.getOrDefault("dashTriggerChance", 0.0);
+        if (Math.abs(dash) >= 1.0e-3) {
+            double dashFinal = Math.min(baseTrigger * (1 + modTrigger + dash) * (1 + stackTrigger), cap);
+            out.add(Component.translatable("kuvalich.panel.trigger.dash",
+                            ValueFmt.PERCENT_SIGNED.format(dash),
+                            ValueFmt.PERCENT.format(dashFinal))
+                    .withStyle(PanelPalette.style(PanelPalette.MUTED)));
+        }
+        return out;
+    }
+
+    /** 底部按键提示 */
+    private static void appendHint(List<PanelGridComponent.Section> sections, TooltipView view) {
         if (TooltipConfig.PANEL.showKeyHint.get()) {
             sections.add(new PanelGridComponent.Flow(null, List.of(hintLine(view))));
         }
-
-        return new PanelGridComponent(sections);
     }
 
     // ==================== 网格的各种单元格 ====================
@@ -306,7 +568,10 @@ public final class WeaponPanelComposer {
             v.append(Component.literal(chip.secondaryText()).withStyle(PanelPalette.bold(color)));
         }
 
-        return new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
+        PanelGridComponent.Cell cell =
+                new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
+        LABEL_KEYS.put(cell, spec.key());
+        return cell;
     }
 
     /** 元素行：彩色名称 + 百分比，末尾跟一个总量 */
@@ -495,463 +760,39 @@ public final class WeaponPanelComposer {
         };
     }
 
-    // ==================== 元素 ====================
-
-    private static void appendElementLine(ItemStack stack, List<ItemStack> modules,
-                                          HashMap<String, Double> attrs, int budget, List<Component> out) {
-        HashMap<String, String> pool = WeaponElementSystem.getTriggerElements(stack, modules);
-
-        double total = 0;
-        for (String key : WeaponPanelCatalog.ELEMENTS) {
-            total += attrs.getOrDefault(key, 0.0);
-        }
-        if (KuvaWeaponUtil.hasType(stack)) {
-            total += WeaponElementSystem.getKuvaWeaponElementDamage(stack);
-        }
-
-        if (pool.isEmpty() && Math.abs(total) < 1.0e-3) {
-            return;
-        }
-
-        List<Component> chips = new ArrayList<>(pool.size() + 1);
-        for (Map.Entry<String, String> e : pool.entrySet()) {
-            chips.add(Component.literal(I18n.get("kuvaweapon.type." + e.getKey()) + e.getValue())
-                    .withStyle(KuvaWeaponUtil.getColor(e.getKey()), ChatFormatting.BOLD));
-        }
-        if (Math.abs(total) >= 1.0e-3) {
-            chips.add(Component.literal("(" + I18n.get("item.module.triggerDamage") + " "
-                    + (total >= 0 ? "+" : "") + Math.round(total * 100) + "%)")
-                    .withStyle(ChatFormatting.DARK_GRAY));
-        }
-
-        out.addAll(ChipPacker.pack(chips, PanelStyle.groupPrefix(PanelGroup.ELEMENT),
-                PanelStyle.groupContinuation(PanelGroup.ELEMENT), budget));
-    }
-
-    // ==================== 叠层 ====================
-
-    /**
-     * 叠层区块
-     *
-     * @param detailed LIVE 视图为 true，会额外显示「每层 +X%」
-     */
-    private static void appendStackRows(HashMap<String, Double> attrs, StackCounts stacks,
-                                        List<Component> out, boolean detailed) {
-        List<StackRow> rows = WeaponPanelData.collectStacks(attrs, stacks);
-        if (rows.isEmpty()) {
-            return;
-        }
-
-        boolean first = true;
-        for (StackRow row : rows) {
-            Component prefix = first ? PanelStyle.groupPrefix(PanelGroup.STACK)
-                    : PanelStyle.groupContinuation(PanelGroup.STACK);
-            first = false;
-            out.add(prefix.copy().append(stackRowBody(row, detailed)));
-        }
-    }
-
-    private static Component stackRowBody(StackRow row, boolean detailed) {
-        String name = PanelStyle.shortNameOf(row.key());
-        MutableComponent c = Component.literal(name + " ").withStyle(ChatFormatting.GRAY);
-
-        if (!row.available()) {
-            // ⭐「不知道」与「确实是 0 层」必须可区分，否则玩家会把没数据误读成机制坏了
-            c.append(Component.literal("????? ").withStyle(ChatFormatting.DARK_GRAY));
-            c.append(Component.literal("—/" + row.max()).withStyle(ChatFormatting.DARK_GRAY));
-            c.append(Component.literal("  ").append(
-                    Component.translatable("kuvalich.panel.stack.unsynced")).withStyle(ChatFormatting.DARK_GRAY));
-            return c;
-        }
-
-        c.append(PanelStyle.progress(row.current(), row.max()));
-        c.append(Component.literal("  "));
-
-        if (detailed) {
-            c.append(Component.translatable("kuvalich.panel.stack.per",
-                    ValueFmt.PERCENT_SIGNED.format(row.perStack())).withStyle(ChatFormatting.DARK_GRAY));
-            c.append(Component.literal("  "));
-        }
-
-        if (row.isIdle()) {
-            // 零层：整行降为暗色，承诺值降级成「每层 +X%」
-            c.append(Component.translatable("kuvalich.panel.stack.per",
-                    ValueFmt.PERCENT_SIGNED.format(row.perStack())).withStyle(ChatFormatting.DARK_GRAY));
-            c.append(Component.literal("  ").append(
-                    Component.translatable("kuvalich.panel.stack.idle")).withStyle(ChatFormatting.DARK_GRAY));
-            return c;
-        }
-
-        if (row.dependsOnTarget()) {
-            // ⭐ killStackBaseDamage 的最终加成 = 每层 × 层数 × **目标身上的负面效果数**，
-            //    tooltip 时没有目标，所以只给出「每负面效果」的口径，不编一个总百分比。
-            c.append(Component.literal(ValueFmt.PERCENT_SIGNED.format(row.total()))
-                    .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-            c.append(Component.literal("/").withStyle(ChatFormatting.DARK_GRAY));
-            c.append(Component.translatable("kuvalich.panel.stack.per_debuff").withStyle(ChatFormatting.DARK_GRAY));
-        } else {
-            c.append(Component.literal(ValueFmt.PERCENT_SIGNED.format(row.total()))
-                    .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-        }
-
-        c.append(Component.literal("  "));
-        if (row.isFull()) {
-            // 满层时不显示秒数：满层继续击杀会刷新计时器但不改变层数，
-            // 服务端此时不发包，客户端的本地推算会一路数到 0 —— 显示「满层」永远不会错。
-            c.append(Component.translatable("kuvalich.panel.stack.full")
-                    .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-        } else if (TooltipConfig.PANEL.showDecayTimer.get() && row.decayTicks() > 0) {
-            double sec = row.decayTicks() / 20.0;
-            if (sec < 1.0) {
-                c.append(Component.translatable("kuvalich.panel.stack.decaying").withStyle(ChatFormatting.DARK_GRAY));
-            } else {
-                c.append(Component.literal(String.format(Locale.ROOT, "%.1fs", sec))
-                        .withStyle(ChatFormatting.DARK_GRAY));
-            }
-        }
-        return c;
-    }
-
-    // ==================== 额外槽位 ====================
-
-    /**
-     * 额外槽位加成的 chip
-     *
-     * <p>⭐ 遍历的是 {@code extra} 自己的 key，而<b>不是</b> {@code SPECS} 的 key。
-     * 两者并不重合：SPECS 里暴击相关的 key 是 {@code criticalStrikeProbability} /
-     * {@code criticalStrikeMultiplier}（它们的 provider 读的是 melee/remote 四个真实词条），
-     * 而 {@code extra} 表里存的正是那四个真实 key。
-     * 按 SPECS 取数的话 {@code extra.get("criticalStrikeProbability")} 永远是 null，
-     * 四条额外槽位暴击加成一条都不会出现 —— 数值进了主面板，来源却看不见。
-     * 顺带这样写也恢复了改造前「未登记词条兜底显示」的行为。</p>
-     */
-    private static List<Component> extraChips(HashMap<String, Double> extra) {
-        List<Component> chips = new ArrayList<>();
-        double elementSum = 0;
-
-        List<String> keys = new ArrayList<>(extra.keySet());
-        Collections.sort(keys);
-
-        for (String key : keys) {
-            double v = extra.getOrDefault(key, 0.0);
-
-            // 元素合并成一行，叠层单独用「每层」口径
-            if (WeaponPanelCatalog.isElement(key)) {
-                elementSum += v;
-                continue;
-            }
-            if (WeaponPanelCatalog.KILL_STACK_SPECS.containsKey(key)) {
-                continue;
-            }
-
-            AttrSpec spec = WeaponPanelCatalog.byKey(key);
-            // 额外槽位用「增量」口径：爆炸半径是「加了多少米」而不是「最终多少米」
-            ValueFmt fmt = ValueFmt.PERCENT_SIGNED;
-            if (spec != null) {
-                fmt = spec.fmt() == ValueFmt.METERS_ABS ? ValueFmt.METERS_DELTA : spec.fmt();
-                if (fmt == ValueFmt.PERCENT || fmt == ValueFmt.MULTIPLIER) {
-                    // 这几条在主面板是「最终值」口径，到额外槽位要换成「加了多少」
-                    fmt = ValueFmt.PERCENT_SIGNED;
-                }
-            }
-            if (Math.abs(v) < fmt.epsilon()) {
-                continue;
-            }
-            chips.add(Component.literal(PanelStyle.shortNameOf(key) + " ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(fmt.format(v))
-                            .withStyle(v >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED, ChatFormatting.BOLD)));
-        }
-
-        if (Math.abs(elementSum) >= 1.0e-3) {
-            chips.add(Component.literal(I18n.get("item.module.triggerDamage") + " ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(ValueFmt.PERCENT_SIGNED.format(elementSum))
-                            .withStyle(elementSum >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED, ChatFormatting.BOLD)));
-        }
-
-        // 叠层词条在额外槽位里用「每层」口径，避免与主面板的「当前总加成」混淆
-        for (String key : WeaponPanelCatalog.KILL_STACK_SPECS.keySet()) {
-            Double v = extra.get(key);
-            if (v == null || Math.abs(v) < 1.0e-3) {
-                continue;
-            }
-            chips.add(Component.literal(PanelStyle.shortNameOf(key) + " ")
-                    .withStyle(ChatFormatting.GRAY)
-                    .append(Component.translatable("kuvalich.panel.stack.per", ValueFmt.PERCENT_SIGNED.format(v))
-                            .withStyle(v >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED)));
-        }
-
-        return chips;
-    }
-
-    // ==================== SHIFT：逐条完整 ====================
-
-    private static void appendFull(ItemStack stack, List<ItemStack> modules,
-                                   HashMap<String, Double> attrs, HashMap<String, Double> extra,
-                                   StackCounts stacks, boolean applyGates, List<Component> out) {
-        out.add(Component.literal(I18n.get("item.module")).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
-
-        for (PanelChip chip : WeaponPanelData.collect(stack, attrs, stacks, applyGates)) {
-            AttrSpec spec = chip.spec();
-            if (!isGroupEnabled(spec.group())) {
-                continue;
-            }
-            MutableComponent line = Component.literal(" " + I18n.get(spec.longKey()) + " ")
-                    .withStyle(ChatFormatting.GRAY);
-
-            String value = spec.isPaired()
-                    ? chip.baseText() + " / " + chip.secondaryText()
-                    : chip.baseText();
-            line.append(Component.literal(value).withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD));
-
-            if (TooltipConfig.PANEL.showStackArrow.get() && chip.hasStackBonus()) {
-                line.append(Component.literal(" " + PanelStyle.arrow() + " ").withStyle(ChatFormatting.DARK_GRAY));
-                line.append(Component.literal(chip.stackedText()).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
-                if (spec.isPaired()) {
-                    // 只有主值（近战）被叠层抬高，远程那一侧照旧
-                    line.append(Component.translatable("kuvalich.panel.stack.melee_only")
-                            .withStyle(ChatFormatting.DARK_GRAY));
-                }
-            }
-            out.add(line);
-        }
-
-        appendElementLine(stack, modules, attrs, ChipPacker.budget(0.9), out);
-
-        if (TooltipConfig.PANEL.showStacks.get()) {
-            List<StackRow> rows = WeaponPanelData.collectStacks(attrs, stacks);
-            if (!rows.isEmpty()) {
-                out.add(Component.translatable("kuvalich.panel.group.stack")
-                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-                for (StackRow row : rows) {
-                    out.add(Component.literal(" ").append(stackRowBody(row, true)));
-                }
-            }
-        }
-
-        if (TooltipConfig.PANEL.showExtraSlots.get() && !extra.isEmpty()) {
-            List<Component> chips = extraChips(extra);
-            if (!chips.isEmpty()) {
-                out.add(Component.translatable("item.module.extra_slot_header")
-                        .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
-                for (Component chip : chips) {
-                    out.add(Component.literal("  ").append(chip));
-                }
-            }
-        }
-
-        if (TooltipConfig.PANEL.showModuleList.get()) {
-            out.add(Component.translatable("kuvaweapon.item_module_info")
-                    .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-            for (ItemStack module : modules) {
-                out.add(Component.literal(" - ").append(module.getHoverName()).withStyle(ChatFormatting.WHITE));
-            }
-        }
-    }
-
-    // ==================== CTRL：来源分解 ====================
-
-    private static void appendSource(ItemStack stack, List<ItemStack> modules,
-                                     HashMap<String, Double> attrs, HashMap<String, Double> extra,
-                                     List<Component> out) {
-        int budget = ChipPacker.budget(0.9);
-
-        out.add(Component.translatable("kuvalich.panel.group.source")
-                .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
-
-        // 每张卡贡献了什么
-        for (ItemStack module : modules) {
-            double levelMult = ModuleLevelHelper.getEffectiveMultiplier(module);
-            List<Component> chips = new ArrayList<>();
-            for (Map.Entry<String, Double> e : AbstractModule.getAttributes(module)) {
-                double v = ModuleConfig.clampAttributeValue(e.getKey(), e.getValue()) * levelMult;
-                if (Math.abs(v) < 1.0e-3) {
-                    continue;
-                }
-                chips.add(sourceChip(e.getKey(), v));
-            }
-            if (chips.isEmpty()) {
-                continue;
-            }
-
-            MutableComponent prefix = Component.literal(" ")
-                    .append(module.getHoverName().copy().withStyle(ChatFormatting.WHITE));
-            if (ModuleLevelHelper.isLevelSystemEnabled()) {
-                int lv = ModuleLevelHelper.getModuleLevel(module);
-                int max = ModuleLevelHelper.getMaxLevel();
-                prefix.append(Component.literal(" Lv." + lv + "/" + max).withStyle(ChatFormatting.DARK_GRAY));
-            }
-            prefix.append(Component.literal("  "));
-            out.addAll(ChipPacker.pack(chips, prefix, Component.literal("   "), budget));
-        }
-
-        // 额外装备槽位的来源
-        if (TooltipConfig.PANEL.showExtraSlots.get() && !extra.isEmpty()) {
-            List<Component> chips = extraChips(extra);
-            if (!chips.isEmpty()) {
-                out.addAll(ChipPacker.pack(chips,
-                        Component.literal(" ").append(Component.translatable("item.module.extra_slot_header")
-                                .withStyle(ChatFormatting.GREEN)).append(Component.literal("  ")),
-                        Component.literal("   "), budget));
-            }
-        }
-
-        // ⭐ 被配置上限截断的词条：改造前是静默裁剪，面板显示 +300%、实战按 +150% 结算，
-        //    玩家会以为是 bug 或被偷偷削弱。这里把它显式说出来。
-        if (TooltipConfig.PANEL.showClampWarning.get()) {
-            appendClampWarnings(modules, out);
-        }
-    }
-
-    private static Component sourceChip(String key, double value) {
-        AttrSpec spec = WeaponPanelCatalog.byKey(key);
-        ValueFmt fmt = ValueFmt.PERCENT_SIGNED;
-        if (spec != null) {
-            fmt = spec.fmt() == ValueFmt.METERS_ABS ? ValueFmt.METERS_DELTA : spec.fmt();
-            if (fmt == ValueFmt.PERCENT || fmt == ValueFmt.MULTIPLIER) {
-                // 来源视图里这几条也是「加了多少」而不是「最终是多少」
-                fmt = ValueFmt.PERCENT_SIGNED;
-            }
-        }
-        String name = PanelStyle.shortNameOf(key);
-        return Component.literal(name + " ").withStyle(ChatFormatting.GRAY)
-                .append(Component.literal(fmt.format(value))
-                        .withStyle(value >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED));
-    }
-
-    /** 找出「各卡之和」被 {@code clampAttributeTotal} 砍掉的词条 */
-    private static void appendClampWarnings(List<ItemStack> modules, List<Component> out) {
-        HashMap<String, Double> raw = new HashMap<>();
-        for (ItemStack module : modules) {
-            double levelMult = ModuleLevelHelper.getEffectiveMultiplier(module);
-            for (Map.Entry<String, Double> e : AbstractModule.getAttributes(module)) {
-                double v = ModuleConfig.clampAttributeValue(e.getKey(), e.getValue()) * levelMult;
-                raw.merge(e.getKey(), v, Double::sum);
-            }
-        }
-
-        for (Map.Entry<String, Double> e : raw.entrySet()) {
-            double before = e.getValue();
-            double after = ModuleConfig.clampAttributeTotal(e.getKey(), before);
-            if (Math.abs(before - after) < 1.0e-3) {
-                continue;
-            }
-            String name = PanelStyle.shortNameOf(e.getKey());
-            out.add(Component.literal(" ").append(Component.translatable("kuvalich.panel.clamped",
-                            name,
-                            ValueFmt.PERCENT_SIGNED.format(before),
-                            ValueFmt.PERCENT_SIGNED.format(after))
-                    .withStyle(ChatFormatting.RED)));
-        }
-    }
-
-    // ==================== ALT：实时状态 ====================
-
-    private static void appendLive(ItemStack stack, List<ItemStack> modules,
-                                   HashMap<String, Double> attrs, StackCounts stacks, List<Component> out) {
-        int budget = ChipPacker.budget(0.9);
-
-        out.add(Component.translatable("kuvalich.panel.group.live")
-                .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
-
-        // 叠层详情
-        // ⭐ showStacks 关掉时 stacks 是 StackCounts.NONE，available() 恒为 false，
-        //    直接渲染会把「玩家自己关掉了」误报成「????? （未同步）」——
-        //    而那个状态的语义是「服务端没装这个模组 / 同步坏了」。
-        List<StackRow> rows = isGroupEnabled(PanelGroup.STACK)
-                ? WeaponPanelData.collectStacks(attrs, stacks)
-                : List.of();
-        if (rows.isEmpty()) {
-            out.add(Component.literal(" ").append(
-                    Component.translatable("kuvalich.panel.stack.none").withStyle(ChatFormatting.DARK_GRAY)));
-        } else {
-            for (StackRow row : rows) {
-                out.add(Component.literal(" ").append(stackRowBody(row, true)));
-            }
-        }
-
-        // 元素：投入 → 成池，看清哪两个基础元素合成了什么
-        if (TooltipConfig.PANEL.showElements.get()) {
-            List<Component> raw = new ArrayList<>();
-            for (String key : WeaponPanelCatalog.ELEMENTS) {
-                double v = attrs.getOrDefault(key, 0.0);
-                if (Math.abs(v) >= 1.0e-3) {
-                    raw.add(Component.literal(I18n.get("kuvaweapon.type." + key)
-                                    + ValueFmt.PERCENT_SIGNED.format(v))
-                            .withStyle(KuvaWeaponUtil.getColor(key)));
-                }
-            }
-            if (!raw.isEmpty()) {
-                out.addAll(ChipPacker.pack(raw,
-                        Component.literal(" ").append(Component.translatable("kuvalich.panel.element.input")
-                                .withStyle(ChatFormatting.GRAY)).append(Component.literal("  ")),
-                        Component.literal("   "), budget));
-            }
-
-            HashMap<String, String> pool = WeaponElementSystem.getTriggerElements(stack, modules);
-            if (!pool.isEmpty()) {
-                List<Component> poolChips = new ArrayList<>();
-                for (Map.Entry<String, String> e : pool.entrySet()) {
-                    poolChips.add(Component.literal(I18n.get("kuvaweapon.type." + e.getKey()) + e.getValue())
-                            .withStyle(KuvaWeaponUtil.getColor(e.getKey()), ChatFormatting.BOLD));
-                }
-                out.addAll(ChipPacker.pack(poolChips,
-                        Component.literal(" ").append(Component.translatable("kuvalich.panel.element.pool")
-                                .withStyle(ChatFormatting.GRAY)).append(Component.literal("  ")),
-                        Component.literal("   "), budget));
-            }
-        }
-
-        // 触发几率分解
-        double baseTrigger = WeaponModuleHandler.getBaseAttribute(stack, "triggerChance");
-        double modTrigger = attrs.getOrDefault("triggerChance", 0.0);
-        int stackN = stacks.available() ? stacks.stacks(StackType.TRIGGER_CHANCE) : 0;
-        double stackTrigger = attrs.getOrDefault("killStackTriggerChance", 0.0) * stackN;
-        double uncapped = baseTrigger * (1 + modTrigger) * (1 + stackTrigger);
-
-        // ⭐ 战斗端在所有乘算做完后还有一道硬上限：
-        //    triggerChance = min(triggerChance, MAX_ELEMENT_TRIGGER_PER_HIT * 100)。
-        //    LIVE 视图的卖点就是「这个数就是实战的数」，不钳就会出现面板 700% / 实战 500%。
-        double cap = WeaponCombatHandler.MAX_ELEMENT_TRIGGER_PER_HIT;
-        double finalTrigger = Math.min(uncapped, cap);
-
-        MutableComponent breakdown = Component.literal(" ")
-                .append(Component.translatable("kuvalich.panel.trigger.breakdown",
-                        ValueFmt.PERCENT.format(baseTrigger),
-                        ValueFmt.PERCENT_SIGNED.format(modTrigger),
-                        ValueFmt.PERCENT_SIGNED.format(stackTrigger),
-                        ValueFmt.PERCENT.format(finalTrigger))
-                        .withStyle(ChatFormatting.DARK_GRAY));
-        if (uncapped > cap + 1.0e-6) {
-            breakdown.append(Component.literal(" ")).append(
-                    Component.translatable("kuvalich.panel.trigger.capped").withStyle(ChatFormatting.RED));
-        }
-        out.add(breakdown);
-
-        // 冲刺攻击有额外的触发加成（战斗端在冲刺分支里多乘一个 dashTriggerChance）
-        double dash = attrs.getOrDefault("dashTriggerChance", 0.0);
-        if (Math.abs(dash) >= 1.0e-3) {
-            double dashFinal = Math.min(baseTrigger * (1 + modTrigger + dash) * (1 + stackTrigger), cap);
-            out.add(Component.literal(" ").append(Component.translatable("kuvalich.panel.trigger.dash",
-                            ValueFmt.PERCENT_SIGNED.format(dash),
-                            ValueFmt.PERCENT.format(dashFinal))
-                    .withStyle(ChatFormatting.DARK_GRAY)));
-        }
-    }
-
     // ==================== 无模组时的基础面板 ====================
 
-    private static void appendBasePanel(ItemStack stack, List<Component> out) {
-        out.add(Component.translatable("item.base").withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
-        out.add(baseLine(stack, "item.base.damage", "damage", ValueFmt.PERCENT));
-        out.add(baseLine(stack, "item.base.criticalStrikeProbability", "criticalStrikeProbability", ValueFmt.PERCENT));
-        out.add(baseLine(stack, "item.base.criticalStrikeMultiplier", "criticalStrikeMultiplier", ValueFmt.MULTIPLIER));
-        out.add(baseLine(stack, "item.base.triggerChance", "triggerChance", ValueFmt.PERCENT));
+    /**
+     * 还没装模组的武器：只有四条基础数值
+     *
+     * <p>也走网格，与装了模组之后的面板是同一套排版和配色 ——
+     * 玩家插上第一张卡时不应该觉得换了个界面。</p>
+     */
+    private static PanelGridComponent buildBaseGrid(ItemStack stack, TooltipView view) {
+        List<PanelGridComponent.Section> sections = new ArrayList<>();
+
+        if (WeaponModuleHandler.isFormaLocked(stack)) {
+            sections.add(new PanelGridComponent.Flow(null,
+                    List.of(Component.translatable("item.kuvalich.forma_locked")
+                            .withStyle(PanelPalette.bold(PanelPalette.LOCKED)))));
+        }
+
+        sections.add(new PanelGridComponent.Pairs(header(PanelGroup.PANEL), List.of(
+                baseCell(stack, "damage", ValueFmt.PERCENT),
+                baseCell(stack, "criticalStrikeProbability", ValueFmt.PERCENT),
+                baseCell(stack, "criticalStrikeMultiplier", ValueFmt.MULTIPLIER),
+                baseCell(stack, "triggerChance", ValueFmt.PERCENT))));
+
+        // ⭐ 没装模组的武器正是新手拿到的第一把，也是最需要这行提示的人群 ——
+        //    不给入口的话，整套四视图对他们完全不可见。
+        appendHint(sections, view);
+        return new PanelGridComponent(sections, 1);
     }
 
-    private static Component baseLine(ItemStack stack, String langKey, String attr, ValueFmt fmt) {
-        return Component.literal(I18n.get(langKey) + " ")
-                .append(Component.literal(fmt.format(WeaponModuleHandler.getBaseAttribute(stack, attr)))
-                        .withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD));
+    private static PanelGridComponent.Cell baseCell(ItemStack stack, String attr, ValueFmt fmt) {
+        return new PanelGridComponent.Cell(
+                label(PanelStyle.shortNameOf(attr)),
+                value(fmt.format(WeaponModuleHandler.getBaseAttribute(stack, attr)), PanelPalette.VALUE));
     }
 
     // ==================== 提示行与行预算 ====================

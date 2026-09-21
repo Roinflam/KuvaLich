@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich.client.tooltip;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -180,6 +179,7 @@ public final class LiveStackView implements StackCounts {
         return Component.literal(" ")
                 .append(Component.translatable("kuvalich.panel.stack.current",
                                 Math.min(cur, max), max)
-                        .withStyle(cur >= max ? ChatFormatting.GOLD : ChatFormatting.DARK_GRAY));
+                        .withStyle(PanelPalette.style(
+                                cur >= max ? PanelPalette.STACK_ACTIVE : PanelPalette.MUTED)));
     }
 }

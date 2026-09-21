@@ -69,6 +69,7 @@ public final class KuvaTooltipCoordinator {
     private static final int MEMO_TTL_TICKS = 5;
 
     private static void clearMemo() {
+        placeholder = null;
         memoStack = null;
         memoTag = null;
         memoElements = null;
@@ -100,17 +101,60 @@ public final class KuvaTooltipCoordinator {
         }
     }
 
+    // ==================== 占位符 ====================
+
+    /**
+     * 占位行的标记文本
+     *
+     * <p><b>为什么要绕这一道</b>：面板的位置必须与改造前一致，而改造前是在
+     * {@code ItemTooltipEvent} 里插到 index 1 的 —— 那个事件发生在
+     * {@code ItemStack#getTooltipLines} 内部，所以：</p>
+     * <ul>
+     *   <li>本模组自己的武器：面板落在物品名下面（属性修饰符「在主手时」之前）</li>
+     *   <li>TACZ 枪械：TACZ 会在 {@code GatherComponents} 里<b>重建</b>整个 tooltip
+     *       （它那块带弹药图标的信息只能走那条路），把不认识的行挪到末尾 ——
+     *       于是面板自然落在 TACZ 信息块之后</li>
+     * </ul>
+     *
+     * <p>这两种位置都是玩家熟悉且合理的，但它们不是同一条规则能算出来的。
+     * 直接在 {@code GatherComponents} 里插入无论选 index 1 还是末尾都只能满足一边。</p>
+     *
+     * <p>所以：在 {@code ItemTooltipEvent} 里放一个<b>占位行</b>（位置规则完全复刻改造前），
+     * 再在 {@code GatherComponents} 里把它替换成渲染组件。
+     * 占位行经历了 TACZ 的重建之后停在哪儿，面板就在哪儿。</p>
+     *
+     * <p>占位行是一个<b>空的</b> {@code Component}，靠<b>对象身份</b>而不是文本内容识别：
+     * 万一哪条路径只调 {@code getTooltipLines} 而不走渲染（例如图鉴建索引），
+     * 留下的也只是一个空串，不会把一串标记文字暴露给玩家。</p>
+     */
+    private static Component placeholder;
+
     // ==================== 事件 ====================
 
     /**
-     * ⭐ {@link EventPriority#LOW}：让我们最后执行，这样插入位置相对其它模组是确定的。
+     * 第一步：在原版的 tooltip 装配过程中占好位置
      *
-     * <p><b>插到哪里</b>由 {@code panel.position} 决定，默认 BOTTOM。
-     * 这一条是踩过坑才定下来的：TACZ 枪械的弹药 / 枪种 / 基础伤害那一大块
-     * 是它通过本事件加的（里面有弹药图标，只能走这条路）。
-     * 我们既然跑在它后面，再插到 index 1 就会把它整块压下去 ——
-     * 一把枪的身份信息被别的模组挤到第二屏，观感很差。
-     * 默认接在后面，本模组自己的武器想贴着名字的话把配置改成 TOP。</p>
+     * <p>⭐ {@link EventPriority#LOW}：让其它模组先插完，我们的占位行落在它们之上，
+     * 与改造前三个监听器的净效果一致。</p>
+     */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public static void onItemTooltip(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
+        ItemStack stack = event.getItemStack();
+        if (stack == null || stack.isEmpty() || !hasPanel(stack)
+                || TooltipConfig.PANEL.position.get() != TooltipConfig.Position.AUTO) {
+            return;
+        }
+        List<Component> tooltip = event.getToolTip();
+        Component marker = Component.empty();
+        placeholder = marker;
+        tooltip.add(Math.min(1, tooltip.size()), marker);
+    }
+
+    /**
+     * 第二步：把占位行换成真正的渲染组件
+     *
+     * <p>找不到占位行时追加到末尾兜底 —— 万一哪个模组把它吃掉了，
+     * 面板也不该整块消失。</p>
      */
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void onGatherComponents(RenderTooltipEvent.GatherComponents event) {
@@ -119,41 +163,50 @@ public final class KuvaTooltipCoordinator {
             return;
         }
 
-        List<Either<FormattedText, TooltipComponent>> ours = build(stack);
-        if (ours.isEmpty()) {
+        List<Either<FormattedText, TooltipComponent>> elements = event.getTooltipElements();
+        int slot = indexOfPlaceholder(elements);
+        if (slot < 0 && !hasPanel(stack)) {
             return;
         }
 
-        List<Either<FormattedText, TooltipComponent>> elements = event.getTooltipElements();
+        List<Either<FormattedText, TooltipComponent>> ours = build(stack);
+        if (slot >= 0) {
+            elements.remove(slot);
+            if (!ours.isEmpty()) {
+                elements.addAll(slot, ours);
+            }
+            return;
+        }
+        if (ours.isEmpty()) {
+            return;
+        }
+        // 没有占位行：要么玩家选了强制位置，要么占位行被别的模组吃掉了（兜底）
         if (TooltipConfig.PANEL.position.get() == TooltipConfig.Position.TOP) {
             elements.addAll(Math.min(1, elements.size()), ours);
         } else {
-            elements.addAll(insertPoint(elements), ours);
+            elements.addAll(ours);
         }
     }
 
-    /**
-     * BOTTOM 模式的插入点：末尾，但要排在「高级信息」之前
-     *
-     * <p>开了 F3+H 时原版会在最末尾追加注册名与 NBT 标签数
-     * （{@code ItemStack#getTooltipLines} 在 {@code TooltipFlag#isAdvanced} 分支里加的）。
-     * 直接 append 会让面板跑到那堆调试信息下面，很别扭。
-     * 这里从末尾往回找，跳过那几行纯调试文本。</p>
-     */
-    private static int insertPoint(List<Either<FormattedText, TooltipComponent>> elements) {
-        int at = elements.size();
-        if (!Minecraft.getInstance().options.advancedItemTooltips) {
-            return at;
+    /** 这件物品归本面板管吗（占位前的快速判断，避免给无关物品塞空行） */
+    private static boolean hasPanel(ItemStack stack) {
+        return pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler.hasBase(stack)
+                || KuvaWeaponUtil.hasType(stack)
+                || TaczGunEnhanceUtil.getEnhanceCount(stack) > 0;
+    }
+
+    private static int indexOfPlaceholder(List<Either<FormattedText, TooltipComponent>> elements) {
+        Component marker = placeholder;
+        if (marker == null) {
+            return -1;
         }
-        // 高级信息最多两行（注册名 + NBT 标签数），且一定是纯文本
-        for (int i = 0; i < 2 && at > 1; i++) {
-            Either<FormattedText, TooltipComponent> last = elements.get(at - 1);
-            if (last.left().isEmpty()) {
-                break;
+        for (int i = 0; i < elements.size(); i++) {
+            Either<FormattedText, TooltipComponent> e = elements.get(i);
+            if (e.left().isPresent() && e.left().get() == marker) {
+                return i;
             }
-            at--;
         }
-        return at;
+        return -1;
     }
 
     /**

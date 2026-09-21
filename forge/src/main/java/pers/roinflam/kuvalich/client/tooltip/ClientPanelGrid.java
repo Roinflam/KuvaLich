@@ -72,8 +72,10 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
         int rowHeight = TooltipConfig.PANEL.rowHeight.get();
         int maxLines = TooltipConfig.PANEL.maxLines.get();
 
+        int columnCap = data.maxColumns() > 0 ? Math.min(data.maxColumns(), MAX_COLUMNS) : MAX_COLUMNS;
+
         Attempt best = null;
-        for (int columns = 1; columns <= MAX_COLUMNS; columns++) {
+        for (int columns = 1; columns <= columnCap; columns++) {
             Attempt attempt = build(data, font, columns);
 
             if (attempt.width > maxWidth) {
