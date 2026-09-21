@@ -89,10 +89,10 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
     public static ClientPanelGrid layout(PanelGridComponent data, Font font, int maxWidth, int screenHeight) {
         int rowHeight = TooltipConfig.PANEL.rowHeight.get();
 
-        // ⭐ 真正的硬约束是屏幕高度，不是配置值。
-        //    1.20.1 原版对超高 tooltip 既不裁剪也不滚动，超出去的部分是直接画到屏幕外面的
-        //    （DefaultTooltipPositioner 只钳上界，y 会变成负数），所以无论哪个视图
-        //    都必须先按「这块屏幕能放下多少行」来排。
+        // ⭐ 屏幕高度参与的是<b>列数选择</b>，不是截断。
+        //    屏幕矮时把内容压成多列（更宽更矮）能放下更多，这是有意义的；
+        //    但真放不下时<b>不截断</b> —— 整合包里有支持按住 SHIFT 滚动 tooltip 的模组，
+        //    截掉的内容玩家本来是能滚出来看的，截了反而是帮倒忙。
         int screenRows = Math.max(MIN_ROWS, (screenHeight - RESERVED_HEIGHT) / Math.max(1, rowHeight));
 
         // ⭐ 列数目标：四个视图<b>必须用同一个值</b>。
@@ -102,10 +102,6 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
         //    结果屏幕一高，SHIFT 视图的一列排版就「够用」了，于是停在一列、每条一行，
         //    而默认视图还是两列 —— 同一把武器按下 SHIFT 像换了个模组。
         int layoutTarget = Math.min(TooltipConfig.PANEL.maxLines.get(), screenRows);
-
-        // 截断阈值才是两者的区别：默认视图按玩家的偏好值截；
-        // 功能键视图只在屏幕真的放不下时才截（那是物理限制，不是偏好）
-        int truncateAt = data.respectConfiguredMaxLines() ? layoutTarget : screenRows;
 
         int columnCap = data.maxColumns() > 0 ? Math.min(data.maxColumns(), MAX_COLUMNS) : MAX_COLUMNS;
 
@@ -129,8 +125,7 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
             best = build(data, font, 1);
         }
 
-        // 走到这一步还超行，说明连排满列都放不下 —— 只能截，否则会画到屏幕外面
-        List<Line> lines = truncate(best.lines, truncateAt, data.respectConfiguredMaxLines());
+        List<Line> lines = best.lines;
         int width = best.width;
         for (Line line : lines) {
             for (Piece piece : line.pieces()) {
@@ -140,36 +135,6 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
             }
         }
         return new ClientPanelGrid(lines, width, rowHeight);
-    }
-
-    /**
-     * 行数硬上限兜底
-     *
-     * <p>1.20.1 原版对超高 tooltip 只做纵向钳位，<b>既不裁剪也不滚动</b> ——
-     * 高度超过屏幕时上下同时溢出，连物品名都会被切掉。
-     * 多列排版已经把最坏情况压下去很多，但毕业武器仍可能超出，所以要有这条硬约束。</p>
-     *
-     * <p>截断从<b>末尾</b>开始，而分组顺序刻意把「核心面板 → 叠层 → 元素」排在最前，
-     * 所以先被丢掉的一定是静态词条明细，不会是玩家最关心的实时状态。</p>
-     *
-     * @param byPreference true 表示这一刀是玩家自己配的 {@code maxLines} 划的；
-     *                     false 表示是屏幕实在放不下 —— 两者提示文案不同
-     */
-    private static List<Line> truncate(List<Line> lines, int maxLines, boolean byPreference) {
-        if (lines.size() <= maxLines) {
-            return lines;
-        }
-        int keep = Math.max(1, maxLines - 1);
-        List<Line> out = new ArrayList<>(lines.subList(0, keep));
-        // ⭐ 两条文案必须分开：默认视图截断时提示「按 SHIFT 查看全部」是对的，
-        //    但在 SHIFT / CTRL / ALT 视图里再这么说，就是让玩家去按一个他正按着的键。
-        //    功能键视图只会因为屏幕装不下而截断，得如实说明。
-        Component note = Component.translatable(
-                        byPreference ? "kuvalich.panel.truncated" : "kuvalich.panel.truncated.screen",
-                        lines.size() - keep)
-                .withStyle(PanelPalette.italic(PanelPalette.WARN));
-        out.add(new Line(List.of(new Piece(note, 0, PanelGridComponent.Align.LEFT)), false));
-        return out;
     }
 
     private record Attempt(List<Line> lines, int width) {

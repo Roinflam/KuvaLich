@@ -1669,7 +1669,6 @@
   "kuvalich.panel.element.pool": "成池",
   "kuvalich.panel.trigger.breakdown": "触发 %s × (1 模组%s) × (1 叠层%s) = %s",
   "kuvalich.panel.clamped": "%s 被配置上限截断：%s → %s",
-  "kuvalich.panel.truncated": "…… 还有 %s 行未显示（按 SHIFT 查看全部）",
   "kuvalich.panel.hint.keys": "按住 SHIFT 全部属性 · CTRL 来源 · ALT 实时状态",
   "kuvalich.panel.hint.release": "松开返回紧凑面板",
   "_comment.attr_short": "------- 属性短名（紧凑面板用）/ Short attribute names -------",
@@ -1776,6 +1775,5 @@
   "config.kuvalich.panel.showGroupBands": "显示分组背景条",
   "config.kuvalich.panel.showGroupBands.tooltip": "相邻两组交替一层极淡的底色，块与块之间一眼分得开",
   "config.kuvalich.cleanupEmptyItemTags": "清理空 NBT 标签",
-  "config.kuvalich.cleanupEmptyItemTags.tooltip": "§72.7.0 之前的版本会给鼠标划过的每个物品写一个空 NBT 标签，\n§7这种物品无法与干净的同种物品堆叠（常见于泥土、圆石等）。\n§7成因已修复，但已经写进存档的空标签不会自己消失，\n§7本选项会在服务端扫描玩家背包并清除它们。\n§a只有完全为空的标签才会被移除，带任何数据的物品都不会被动到。",
-  "kuvalich.panel.truncated.screen": "…… 还有 %s 行放不下（屏幕高度不够，可调小 GUI 缩放）"
+  "config.kuvalich.cleanupEmptyItemTags.tooltip": "§72.7.0 之前的版本会给鼠标划过的每个物品写一个空 NBT 标签，\n§7这种物品无法与干净的同种物品堆叠（常见于泥土、圆石等）。\n§7成因已修复，但已经写进存档的空标签不会自己消失，\n§7本选项会在服务端扫描玩家背包并清除它们。\n§a只有完全为空的标签才会被移除，带任何数据的物品都不会被动到。"
 }

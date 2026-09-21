@@ -226,7 +226,7 @@ public final class WeaponPanelComposer {
 
         appendHint(sections, view);
 
-        return PanelGridComponent.compact(sections);
+        return new PanelGridComponent(sections);
     }
 
     // ==================== SHIFT：逐条完整 ====================
@@ -249,7 +249,7 @@ public final class WeaponPanelComposer {
                                                     HashMap<String, Double> attrs, HashMap<String, Double> extra,
                                                     StackCounts stacks, TooltipView view) {
         boolean applyGates = TooltipConfig.PANEL.hideIrrelevantGroups.get();
-        return PanelGridComponent.detail(
+        return new PanelGridComponent(
                 buildGrid(stack, modules, attrs, extra, stacks, applyGates, view, false).sections());
     }
 
@@ -314,7 +314,7 @@ public final class WeaponPanelComposer {
                             .withStyle(PanelPalette.style(PanelPalette.MUTED)))));
         }
         appendHint(sections, view);
-        return PanelGridComponent.detail(sections);
+        return new PanelGridComponent(sections);
     }
 
     /** 来源视图一律用「加了多少」的口径，而不是「最终是多少」 */
@@ -435,7 +435,7 @@ public final class WeaponPanelComposer {
                 triggerBreakdown(stack, attrs, stacks)));
 
         appendHint(sections, view);
-        return PanelGridComponent.detail(sections);
+        return new PanelGridComponent(sections);
     }
 
     /** 在一组 chip 前加一个小标题，然后按宽度打包 */
@@ -811,7 +811,7 @@ public final class WeaponPanelComposer {
         // ⭐ 没装模组的武器正是新手拿到的第一把，也是最需要这行提示的人群 ——
         //    不给入口的话，整套四视图对他们完全不可见。
         appendHint(sections, view);
-        return PanelGridComponent.detail(sections);
+        return new PanelGridComponent(sections);
     }
 
     private static PanelGridComponent.Cell baseCell(ItemStack stack, String attr, ValueFmt fmt) {

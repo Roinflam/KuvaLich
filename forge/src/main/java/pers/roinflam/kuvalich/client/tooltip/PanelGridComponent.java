@@ -29,37 +29,21 @@ import java.util.List;
  *
  * @author RoinFlam
  */
-public record PanelGridComponent(List<Section> sections, int maxColumns, boolean respectConfiguredMaxLines)
-        implements TooltipComponent {
+public record PanelGridComponent(List<Section> sections, int maxColumns) implements TooltipComponent {
 
     /** 不限列数（由内容多少自适应） */
     public static final int COLUMNS_AUTO = 0;
 
     /**
-     * 默认视图：额外受玩家配置的 {@code panel.maxLines} 约束
+     * 四个视图共用同一种构造 —— 排版必须一致
      *
-     * <p>那个值是<b>偏好</b>不是安全阀 —— 玩家调小它是想让面板矮一点、早点压成多列。
-     * 真正的安全阀是屏幕高度，见 {@link ClientPanelGrid#layout}。</p>
+     * <p>⭐ 这里曾经分过 {@code compact} / {@code detail} 两种，给功能键视图更宽松的
+     * 行数预算。但列数是按行数预算反推的，预算不同就等于排版不同：屏幕一高，
+     * SHIFT 视图停在一列、每条一行，默认视图还是两列，同一把武器按下 SHIFT
+     * 像换了个模组。现在预算统一在 {@link ClientPanelGrid#layout} 里算。</p>
      */
-    public static PanelGridComponent compact(List<Section> sections) {
-        return new PanelGridComponent(sections, COLUMNS_AUTO, true);
-    }
-
-    /**
-     * 功能键视图：只受屏幕高度约束，尽量把内容<b>全部</b>排下
-     *
-     * <p>玩家按住 SHIFT / CTRL / ALT 就是明确要求看细节，这时候按偏好值截断是帮倒忙 ——
-     * 尤其 CTRL 的来源分解本来就是一张清单，「还有 2 行未显示」比多两行难受得多。</p>
-     *
-     * <p>⚠️ 但「不按偏好截断」不等于「不限高」：1.20.1 原版对超高 tooltip
-     * <b>既不裁剪也不滚动</b>（{@code DefaultTooltipPositioner} 只钳上界、y 会变成负数，
-     * {@code GuiGraphics#renderTooltipInternal} 里没有任何 scissor 调用），
-     * 一超屏物品名和顶部几行就直接画到屏幕外面，玩家反而什么都看不到。
-     * 所以这里用 {@link #COLUMNS_AUTO}：放不下时自动多排一列变矮，
-     * 而不是硬撑成一列然后溢出。</p>
-     */
-    public static PanelGridComponent detail(List<Section> sections) {
-        return new PanelGridComponent(sections, COLUMNS_AUTO, false);
+    public PanelGridComponent(List<Section> sections) {
+        this(sections, COLUMNS_AUTO);
     }
 
     /** 一个分组 */
