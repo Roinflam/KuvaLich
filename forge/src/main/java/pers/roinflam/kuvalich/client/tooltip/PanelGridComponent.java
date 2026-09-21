@@ -29,13 +29,37 @@ import java.util.List;
  *
  * @author RoinFlam
  */
-public record PanelGridComponent(List<Section> sections, int maxColumns) implements TooltipComponent {
+public record PanelGridComponent(List<Section> sections, int maxColumns, boolean respectConfiguredMaxLines)
+        implements TooltipComponent {
 
     /** 不限列数（由内容多少自适应） */
     public static final int COLUMNS_AUTO = 0;
 
-    public PanelGridComponent(List<Section> sections) {
-        this(sections, COLUMNS_AUTO);
+    /**
+     * 默认视图：额外受玩家配置的 {@code panel.maxLines} 约束
+     *
+     * <p>那个值是<b>偏好</b>不是安全阀 —— 玩家调小它是想让面板矮一点、早点压成多列。
+     * 真正的安全阀是屏幕高度，见 {@link ClientPanelGrid#layout}。</p>
+     */
+    public static PanelGridComponent compact(List<Section> sections) {
+        return new PanelGridComponent(sections, COLUMNS_AUTO, true);
+    }
+
+    /**
+     * 功能键视图：只受屏幕高度约束，尽量把内容<b>全部</b>排下
+     *
+     * <p>玩家按住 SHIFT / CTRL / ALT 就是明确要求看细节，这时候按偏好值截断是帮倒忙 ——
+     * 尤其 CTRL 的来源分解本来就是一张清单，「还有 2 行未显示」比多两行难受得多。</p>
+     *
+     * <p>⚠️ 但「不按偏好截断」不等于「不限高」：1.20.1 原版对超高 tooltip
+     * <b>既不裁剪也不滚动</b>（{@code DefaultTooltipPositioner} 只钳上界、y 会变成负数，
+     * {@code GuiGraphics#renderTooltipInternal} 里没有任何 scissor 调用），
+     * 一超屏物品名和顶部几行就直接画到屏幕外面，玩家反而什么都看不到。
+     * 所以这里用 {@link #COLUMNS_AUTO}：放不下时自动多排一列变矮，
+     * 而不是硬撑成一列然后溢出。</p>
+     */
+    public static PanelGridComponent detail(List<Section> sections) {
+        return new PanelGridComponent(sections, COLUMNS_AUTO, false);
     }
 
     /** 一个分组 */
@@ -79,7 +103,19 @@ public record PanelGridComponent(List<Section> sections, int maxColumns) impleme
     }
 
     /**
-     * 自由文本行的分组（已装备模组名单）
+     * 单值多列的分组（已装模组名单）
+     *
+     * <p>一串没有「值」的条目，按列数自适应排成对齐的几列。</p>
+     */
+    public record Columns(@Nullable Component header, List<Component> items) implements Section {
+        @Override
+        public int cellCount() {
+            return items.size();
+        }
+    }
+
+    /**
+     * 自由文本行的分组
      *
      * <p>内容已经在构建时按宽度折好行，渲染时逐行原样画出。</p>
      */

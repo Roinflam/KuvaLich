@@ -196,11 +196,11 @@ public final class WeaponPanelComposer {
             }
         }
 
-        // ---- 元素：名称与百分比打包成一两行 ----
+        // ---- 元素：与其它分组一样的对齐网格 ----
         if (isGroupEnabled(PanelGroup.ELEMENT)) {
-            List<Component> elementLines = elementLines(stack, modules, attrs, budget);
-            if (!elementLines.isEmpty()) {
-                sections.add(new PanelGridComponent.Flow(header(PanelGroup.ELEMENT), elementLines));
+            List<PanelGridComponent.Cell> cells = elementCells(stack, modules, attrs);
+            if (!cells.isEmpty()) {
+                sections.add(new PanelGridComponent.Pairs(header(PanelGroup.ELEMENT), cells));
             }
         }
 
@@ -219,14 +219,14 @@ public final class WeaponPanelComposer {
 
         // ---- 已装备模组 ----
         if (isGroupEnabled(PanelGroup.MODULES) && !modules.isEmpty()) {
-            sections.add(new PanelGridComponent.Flow(
+            sections.add(new PanelGridComponent.Columns(
                     headerWithCount(PanelGroup.MODULES, modules.size(), 8),
-                    moduleNameLines(modules, budget)));
+                    moduleNames(modules)));
         }
 
         appendHint(sections, view);
 
-        return new PanelGridComponent(sections);
+        return PanelGridComponent.compact(sections);
     }
 
     // ==================== SHIFT：逐条完整 ====================
@@ -246,8 +246,8 @@ public final class WeaponPanelComposer {
     private static PanelGridComponent buildFullGrid(ItemStack stack, List<ItemStack> modules,
                                                     HashMap<String, Double> attrs, HashMap<String, Double> extra,
                                                     StackCounts stacks, TooltipView view) {
-        return new PanelGridComponent(
-                buildGrid(stack, modules, attrs, extra, stacks, false, view, false).sections(), 1);
+        return PanelGridComponent.detail(
+                buildGrid(stack, modules, attrs, extra, stacks, false, view, false).sections());
     }
 
     // ==================== CTRL：词条来源 ====================
@@ -311,7 +311,7 @@ public final class WeaponPanelComposer {
                             .withStyle(PanelPalette.style(PanelPalette.MUTED)))));
         }
         appendHint(sections, view);
-        return new PanelGridComponent(sections, 1);
+        return PanelGridComponent.detail(sections);
     }
 
     /** 来源视图一律用「加了多少」的口径，而不是「最终是多少」 */
@@ -432,7 +432,7 @@ public final class WeaponPanelComposer {
                 triggerBreakdown(stack, attrs, stacks)));
 
         appendHint(sections, view);
-        return new PanelGridComponent(sections, 1);
+        return PanelGridComponent.detail(sections);
     }
 
     /** 在一组 chip 前加一个小标题，然后按宽度打包 */
@@ -577,9 +577,15 @@ public final class WeaponPanelComposer {
         return new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
     }
 
-    /** 元素行：彩色名称 + 百分比，末尾跟一个总量 */
-    private static List<Component> elementLines(ItemStack stack, List<ItemStack> modules,
-                                                HashMap<String, Double> attrs, int budget) {
+    /**
+     * 元素：每种元素一个「名称 + 占比」单元格，末尾跟一个总伤害
+     *
+     * <p>原先是把元素名和百分比拼成一串流式排开，末尾还硬接一个「元素伤害 +150%」——
+     * 后者是<b>总量</b>，跟前面那些<b>占比</b>不是一回事，混在一行里容易读串。
+     * 现在走和其它分组一样的对齐网格，列数自适应，总量单独成一格。</p>
+     */
+    private static List<PanelGridComponent.Cell> elementCells(ItemStack stack, List<ItemStack> modules,
+                                                              HashMap<String, Double> attrs) {
         HashMap<String, String> pool = WeaponElementSystem.getTriggerElements(stack, modules);
 
         double total = 0;
@@ -594,20 +600,22 @@ public final class WeaponPanelComposer {
             return List.of();
         }
 
-        List<Component> chips = new ArrayList<>(pool.size() + 1);
+        List<PanelGridComponent.Cell> cells = new ArrayList<>(pool.size() + 1);
         for (Map.Entry<String, String> e : pool.entrySet()) {
             // ⭐ 元素色走自己的 RGB 表：原版的 DARK_RED / DARK_GREEN / DARK_GRAY
             //    在深色背景上读不出来，而元素是靠颜色认的
-            chips.add(Component.literal(I18n.get("kuvaweapon.type." + e.getKey()) + " " + e.getValue())
-                    .withStyle(PanelPalette.bold(PanelPalette.element(e.getKey()))));
+            int rgb = PanelPalette.element(e.getKey());
+            cells.add(new PanelGridComponent.Cell(
+                    Component.literal(I18n.get("kuvaweapon.type." + e.getKey())).withStyle(PanelPalette.style(rgb)),
+                    Component.literal(e.getValue()).withStyle(PanelPalette.bold(rgb))));
         }
         if (Math.abs(total) >= 1.0e-3) {
-            chips.add(Component.literal(I18n.get("item.module.triggerDamage") + " "
-                    + (total >= 0 ? "+" : "") + Math.round(total * 100) + "%")
-                    .withStyle(PanelPalette.style(PanelPalette.MUTED)));
+            cells.add(new PanelGridComponent.Cell(
+                    label(I18n.get("item.module.triggerDamage")),
+                    value((total >= 0 ? "+" : "") + Math.round(total * 100) + "%", PanelPalette.value(PanelGroup.ELEMENT))));
         }
 
-        return ChipPacker.pack(chips, Component.empty(), Component.empty(), budget);
+        return cells;
     }
 
     /** 叠层表格的行：名称 | 进度 | 当前加成 | 状态 */
@@ -725,23 +733,26 @@ public final class WeaponPanelComposer {
         return cells;
     }
 
-    /** 模组名单：每个名字独立成 chip，超宽时才折行 */
-    private static List<Component> moduleNameLines(List<ItemStack> modules, int budget) {
+    /**
+     * 模组名单：排成对齐的几列
+     *
+     * <p>原先是流式打包 + 名字之间加「·」，结果行尾会挂一个孤零零的分隔符，
+     * 名字的左边界也参差不齐，跟面板其余部分那套列对齐完全不是一路。
+     * 现在交给 {@link PanelGridComponent.Columns} 排列，分隔符也不需要了 ——
+     * 卡名本来就各有品质颜色，靠颜色和列位就分得开。</p>
+     */
+    private static List<Component> moduleNames(List<ItemStack> modules) {
         List<Component> names = new ArrayList<>(modules.size());
-        for (int i = 0; i < modules.size(); i++) {
+        for (ItemStack module : modules) {
             // ⭐ 不覆盖模组卡自己的品质颜色（铜 / 银 / 金 / Prime / 裂罅），
             //    那是玩家一眼认卡的依据；只补一个默认色兜底没有样式的名字
-            MutableComponent name = modules.get(i).getHoverName().copy();
+            MutableComponent name = module.getHoverName().copy();
             if (name.getStyle().getColor() == null) {
                 name.withStyle(PanelPalette.style(PanelPalette.LABEL));
             }
-            if (i < modules.size() - 1) {
-                name.append(Component.literal(" " + PanelStyle.moduleSeparator())
-                        .withStyle(PanelPalette.style(PanelPalette.FAINT)));
-            }
             names.add(name);
         }
-        return ChipPacker.pack(names, Component.empty(), Component.empty(), budget);
+        return names;
     }
 
     /**
@@ -789,7 +800,7 @@ public final class WeaponPanelComposer {
         // ⭐ 没装模组的武器正是新手拿到的第一把，也是最需要这行提示的人群 ——
         //    不给入口的话，整套四视图对他们完全不可见。
         appendHint(sections, view);
-        return new PanelGridComponent(sections, 1);
+        return PanelGridComponent.detail(sections);
     }
 
     private static PanelGridComponent.Cell baseCell(ItemStack stack, String attr, ValueFmt fmt) {

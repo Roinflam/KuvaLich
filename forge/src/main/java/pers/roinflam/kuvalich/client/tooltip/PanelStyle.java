@@ -32,8 +32,6 @@ public final class PanelStyle {
     private static final char DOT_FILLED_ASCII = '*';
     private static final char DOT_EMPTY_UNICODE = '○';
     private static final char DOT_EMPTY_ASCII = 'o';
-    private static final String MODULE_SEP_UNICODE = "·";
-    private static final String MODULE_SEP_ASCII = ", ";
 
     private static boolean ascii() {
         return TooltipConfig.PANEL.symbolStyle.get() == TooltipConfig.SymbolStyle.ASCII;
@@ -57,11 +55,6 @@ public final class PanelStyle {
     /** 叠层进度条：空心 */
     public static char dotEmpty() {
         return ascii() ? DOT_EMPTY_ASCII : DOT_EMPTY_UNICODE;
-    }
-
-    /** 模组名之间的分隔符 */
-    public static String moduleSeparator() {
-        return ascii() ? MODULE_SEP_ASCII : MODULE_SEP_UNICODE;
     }
 
     /** 组前缀：装订线 + 组标题 + 两个空格 */

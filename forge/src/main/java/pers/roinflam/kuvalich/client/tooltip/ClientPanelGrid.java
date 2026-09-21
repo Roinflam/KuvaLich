@@ -46,6 +46,17 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
     /** 背景条左右各外扩多少像素（让底色包住内容而不是刚好贴边） */
     private static final int BAND_PAD = 2;
 
+    /**
+     * 估算要给「面板以外的东西」留多少像素高度
+     *
+     * <p>物品名一行、tooltip 背景上下各 3px 内边距，再加一点余量给同屏的其它内容
+     * （TACZ 的枪械信息块本身就有十几行）。这里拿不到它们的真实高度，只能留一个保守值。</p>
+     */
+    private static final int RESERVED_HEIGHT = 40;
+
+    /** 再挤也要留下的行数：宁可溢出也不能只画一两行 */
+    private static final int MIN_ROWS = 6;
+
     // ==================== 排好版的结果 ====================
 
     /** 一段要绘制的文本：x 是左边界（LEFT）或右边界（RIGHT） */
@@ -75,9 +86,19 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
      * @param font     字体（列宽全部按它实测，不做任何字符数估算）
      * @param maxWidth 允许的最大宽度（像素）
      */
-    public static ClientPanelGrid layout(PanelGridComponent data, Font font, int maxWidth) {
+    public static ClientPanelGrid layout(PanelGridComponent data, Font font, int maxWidth, int screenHeight) {
         int rowHeight = TooltipConfig.PANEL.rowHeight.get();
-        int maxLines = TooltipConfig.PANEL.maxLines.get();
+
+        // ⭐ 真正的硬约束是屏幕高度，不是配置值。
+        //    1.20.1 原版对超高 tooltip 既不裁剪也不滚动，超出去的部分是直接画到屏幕外面的
+        //    （DefaultTooltipPositioner 只钳上界，y 会变成负数），所以无论哪个视图
+        //    都必须先按「这块屏幕能放下多少行」来排。
+        int screenRows = Math.max(MIN_ROWS, (screenHeight - RESERVED_HEIGHT) / Math.max(1, rowHeight));
+
+        // 默认视图再叠一道玩家自己配的偏好值；功能键视图只受屏幕约束
+        int maxLines = data.respectConfiguredMaxLines()
+                ? Math.min(TooltipConfig.PANEL.maxLines.get(), screenRows)
+                : screenRows;
 
         int columnCap = data.maxColumns() > 0 ? Math.min(data.maxColumns(), MAX_COLUMNS) : MAX_COLUMNS;
 
@@ -101,7 +122,8 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
             best = build(data, font, 1);
         }
 
-        List<Line> lines = truncate(best.lines, maxLines, font);
+        // 走到这一步还超行，说明连排满列都放不下 —— 只能截，否则会画到屏幕外面
+        List<Line> lines = truncate(best.lines, maxLines, data.respectConfiguredMaxLines());
         int width = best.width;
         for (Line line : lines) {
             for (Piece piece : line.pieces()) {
@@ -122,14 +144,22 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
      *
      * <p>截断从<b>末尾</b>开始，而分组顺序刻意把「核心面板 → 叠层 → 元素」排在最前，
      * 所以先被丢掉的一定是静态词条明细，不会是玩家最关心的实时状态。</p>
+     *
+     * @param byPreference true 表示这一刀是玩家自己配的 {@code maxLines} 划的；
+     *                     false 表示是屏幕实在放不下 —— 两者提示文案不同
      */
-    private static List<Line> truncate(List<Line> lines, int maxLines, Font font) {
+    private static List<Line> truncate(List<Line> lines, int maxLines, boolean byPreference) {
         if (lines.size() <= maxLines) {
             return lines;
         }
         int keep = Math.max(1, maxLines - 1);
         List<Line> out = new ArrayList<>(lines.subList(0, keep));
-        Component note = Component.translatable("kuvalich.panel.truncated", lines.size() - keep)
+        // ⭐ 两条文案必须分开：默认视图截断时提示「按 SHIFT 查看全部」是对的，
+        //    但在 SHIFT / CTRL / ALT 视图里再这么说，就是让玩家去按一个他正按着的键。
+        //    功能键视图只会因为屏幕装不下而截断，得如实说明。
+        Component note = Component.translatable(
+                        byPreference ? "kuvalich.panel.truncated" : "kuvalich.panel.truncated.screen",
+                        lines.size() - keep)
                 .withStyle(PanelPalette.italic(PanelPalette.WARN));
         out.add(new Line(List.of(new Piece(note, 0, PanelGridComponent.Align.LEFT)), false));
         return out;
@@ -158,6 +188,8 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
                 maxWidth = Math.max(maxWidth, layoutPairs(pairs, font, columns, rows));
             } else if (section instanceof PanelGridComponent.Table table) {
                 maxWidth = Math.max(maxWidth, layoutTable(table, font, rows));
+            } else if (section instanceof PanelGridComponent.Columns cols) {
+                maxWidth = Math.max(maxWidth, layoutColumns(cols, font, columns, rows));
             } else if (section instanceof PanelGridComponent.Flow flow) {
                 for (Component line : flow.lines()) {
                     rows.add(List.of(new Piece(line, INDENT, PanelGridComponent.Align.LEFT)));
@@ -222,7 +254,50 @@ public final class ClientPanelGrid implements ClientTooltipComponent {
         return colRight[cols - 1];
     }
 
-    /** 固定列结构的表格（叠层 / 元素）：列宽取该列最宽的内容 */
+    /**
+     * 单值多列分组（已装模组名单）：把一串条目按列数自适应地排成对齐的几列
+     *
+     * <p>为什么不继续用流式打包：流式排出来行尾会挂一个孤零零的分隔符，
+     * 而且条目左边界参差不齐，跟面板其余部分那套「列对齐」的视觉完全不是一路。</p>
+     */
+    private static int layoutColumns(PanelGridComponent.Columns section, Font font, int columns,
+                                     List<List<Piece>> out) {
+        List<Component> items = section.items();
+        if (items.isEmpty()) {
+            return 0;
+        }
+        // 条目少时不必强行分列；条目多时跟随全局列数，但至少两列，否则 8 张卡要占 8 行
+        int cols = items.size() <= 2 ? items.size() : Math.max(2, Math.min(columns, items.size()));
+        int rows = (items.size() + cols - 1) / cols;
+
+        int[] colW = new int[cols];
+        for (int i = 0; i < items.size(); i++) {
+            int c = i % cols;
+            colW[c] = Math.max(colW[c], font.width(items.get(i)));
+        }
+
+        int[] colX = new int[cols];
+        int cursor = INDENT;
+        for (int c = 0; c < cols; c++) {
+            colX[c] = cursor;
+            cursor += colW[c] + COLUMN_GAP;
+        }
+
+        for (int r = 0; r < rows; r++) {
+            List<Piece> line = new ArrayList<>(cols);
+            for (int c = 0; c < cols; c++) {
+                int idx = r * cols + c;
+                if (idx >= items.size()) {
+                    break;
+                }
+                line.add(new Piece(items.get(idx), colX[c], PanelGridComponent.Align.LEFT));
+            }
+            out.add(line);
+        }
+        return cursor - COLUMN_GAP;
+    }
+
+    /** 固定列结构的表格（叠层）：列宽取该列最宽的内容 */
     private static int layoutTable(PanelGridComponent.Table table, Font font, List<List<Piece>> out) {
         if (table.rows().isEmpty()) {
             return 0;

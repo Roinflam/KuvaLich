@@ -69,7 +69,6 @@ public final class KuvaTooltipCoordinator {
     private static final int MEMO_TTL_TICKS = 5;
 
     private static void clearMemo() {
-        placeholder = null;
         memoStack = null;
         memoTag = null;
         memoElements = null;
@@ -87,13 +86,27 @@ public final class KuvaTooltipCoordinator {
     @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static final class Registration {
 
+        /** 功能键视图允许占到的屏幕宽度比例（不低于玩家为默认视图配的值） */
+        private static final double DETAIL_WIDTH_RATIO = 0.85;
+
         @SubscribeEvent
         public static void onRegisterTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
             event.register(PanelGridComponent.class, data -> {
                 Minecraft mc = Minecraft.getInstance();
-                int screen = mc.getWindow().getGuiScaledWidth();
-                int maxWidth = (int) (screen * TooltipConfig.PANEL.widthRatio.get());
-                return ClientPanelGrid.layout(data, mc.font, maxWidth);
+                int screenWidth = mc.getWindow().getGuiScaledWidth();
+
+                // ⭐ 功能键视图放宽宽度上限。
+                //    「变矮」唯一的手段就是「变宽」（多排一列），宽度卡死的话多列方案会被
+                //    整个挡掉，又退回去截断。而 widthRatio 这个偏好本来针对的是默认视图
+                //    ——玩家嫌它铺满屏幕；按住 SHIFT/CTRL/ALT 时他要的恰恰是看全。
+                double ratio = TooltipConfig.PANEL.widthRatio.get();
+                if (!data.respectConfiguredMaxLines()) {
+                    ratio = Math.max(ratio, DETAIL_WIDTH_RATIO);
+                }
+                int maxWidth = (int) (screenWidth * ratio);
+
+                // ⭐ 高度也要传进去：面板超屏时原版不裁剪也不滚动，只会把顶部推到屏幕外面
+                return ClientPanelGrid.layout(data, mc.font, maxWidth, mc.getWindow().getGuiScaledHeight());
             });
         }
 
@@ -101,60 +114,12 @@ public final class KuvaTooltipCoordinator {
         }
     }
 
-    // ==================== 占位符 ====================
-
-    /**
-     * 占位行的标记文本
-     *
-     * <p><b>为什么要绕这一道</b>：面板的位置必须与改造前一致，而改造前是在
-     * {@code ItemTooltipEvent} 里插到 index 1 的 —— 那个事件发生在
-     * {@code ItemStack#getTooltipLines} 内部，所以：</p>
-     * <ul>
-     *   <li>本模组自己的武器：面板落在物品名下面（属性修饰符「在主手时」之前）</li>
-     *   <li>TACZ 枪械：TACZ 会在 {@code GatherComponents} 里<b>重建</b>整个 tooltip
-     *       （它那块带弹药图标的信息只能走那条路），把不认识的行挪到末尾 ——
-     *       于是面板自然落在 TACZ 信息块之后</li>
-     * </ul>
-     *
-     * <p>这两种位置都是玩家熟悉且合理的，但它们不是同一条规则能算出来的。
-     * 直接在 {@code GatherComponents} 里插入无论选 index 1 还是末尾都只能满足一边。</p>
-     *
-     * <p>所以：在 {@code ItemTooltipEvent} 里放一个<b>占位行</b>（位置规则完全复刻改造前），
-     * 再在 {@code GatherComponents} 里把它替换成渲染组件。
-     * 占位行经历了 TACZ 的重建之后停在哪儿，面板就在哪儿。</p>
-     *
-     * <p>占位行是一个<b>空的</b> {@code Component}，靠<b>对象身份</b>而不是文本内容识别：
-     * 万一哪条路径只调 {@code getTooltipLines} 而不走渲染（例如图鉴建索引），
-     * 留下的也只是一个空串，不会把一串标记文字暴露给玩家。</p>
-     */
-    private static Component placeholder;
-
     // ==================== 事件 ====================
 
     /**
-     * 第一步：在原版的 tooltip 装配过程中占好位置
+     * ⭐ {@link EventPriority#LOW}：让其它模组先写完，我们最后落位，插入结果才是确定的。
      *
-     * <p>⭐ {@link EventPriority#LOW}：让其它模组先插完，我们的占位行落在它们之上，
-     * 与改造前三个监听器的净效果一致。</p>
-     */
-    @SubscribeEvent(priority = EventPriority.LOW)
-    public static void onItemTooltip(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
-        ItemStack stack = event.getItemStack();
-        if (stack == null || stack.isEmpty() || !hasPanel(stack)
-                || TooltipConfig.PANEL.position.get() != TooltipConfig.Position.AUTO) {
-            return;
-        }
-        List<Component> tooltip = event.getToolTip();
-        Component marker = Component.empty();
-        placeholder = marker;
-        tooltip.add(Math.min(1, tooltip.size()), marker);
-    }
-
-    /**
-     * 第二步：把占位行换成真正的渲染组件
-     *
-     * <p>找不到占位行时追加到末尾兜底 —— 万一哪个模组把它吃掉了，
-     * 面板也不该整块消失。</p>
+     * <p><b>插到哪里</b>见 {@link #insertIndex}。</p>
      */
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void onGatherComponents(RenderTooltipEvent.GatherComponents event) {
@@ -163,50 +128,57 @@ public final class KuvaTooltipCoordinator {
             return;
         }
 
-        List<Either<FormattedText, TooltipComponent>> elements = event.getTooltipElements();
-        int slot = indexOfPlaceholder(elements);
-        if (slot < 0 && !hasPanel(stack)) {
-            return;
-        }
-
         List<Either<FormattedText, TooltipComponent>> ours = build(stack);
-        if (slot >= 0) {
-            elements.remove(slot);
-            if (!ours.isEmpty()) {
-                elements.addAll(slot, ours);
-            }
-            return;
-        }
         if (ours.isEmpty()) {
             return;
         }
-        // 没有占位行：要么玩家选了强制位置，要么占位行被别的模组吃掉了（兜底）
-        if (TooltipConfig.PANEL.position.get() == TooltipConfig.Position.TOP) {
-            elements.addAll(Math.min(1, elements.size()), ours);
-        } else {
-            elements.addAll(ours);
-        }
+
+        List<Either<FormattedText, TooltipComponent>> elements = event.getTooltipElements();
+        elements.addAll(insertIndex(elements), ours);
     }
 
-    /** 这件物品归本面板管吗（占位前的快速判断，避免给无关物品塞空行） */
-    private static boolean hasPanel(ItemStack stack) {
-        return pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler.hasBase(stack)
-                || KuvaWeaponUtil.hasType(stack)
-                || TaczGunEnhanceUtil.getEnhanceCount(stack) > 0;
-    }
-
-    private static int indexOfPlaceholder(List<Either<FormattedText, TooltipComponent>> elements) {
-        Component marker = placeholder;
-        if (marker == null) {
-            return -1;
+    /**
+     * 插入点：物品名之后，但要排在物品<b>自带的渲染组件</b>之后
+     *
+     * <p><b>为什么是这条规则</b>：物品可以通过 {@code Item#getTooltipImage} 返回一个
+     * {@code TooltipComponent}，Forge 会在 {@code ForgeHooksClient.gatherTooltipComponents}
+     * 里用 {@code elements.add(1, Either.right(c))} 把它塞到下标 1，而且这一步<b>发生在
+     * 本事件 post 之前</b>。TACZ 的枪械信息（弹药 / 枪种 / 基础伤害 / 穿甲 / 爆头 / 重量 / 等级）
+     * 整块就是这么来的 —— 它是一个 {@code ClientGunTooltip} 组件画完的，不是若干文本行。</p>
+     *
+     * <p>那一块是这把枪的<b>身份信息</b>，不该被本模组的面板挤到下面去；
+     * 而对没有自带组件的武器（本模组自己的近战武器），下标 1 就是物品名的正下方 ——
+     * 正是改造前面板所在的位置。所以一条规则同时满足两边：
+     * <b>从下标 1 开始，跳过所有连续的渲染组件，插在它们后面。</b></p>
+     *
+     * <p>这样写还有一个好处：它不认 TACZ，只认「物品自带的组件」这个通用形态，
+     * 任何用同一套机制的模组都能正确避让。整合包里的 Iceberg 会以 HIGHEST 优先级
+     * 在物品名后插一个分隔组件，也一并被跳过。</p>
+     *
+     * <p>⭐ 这里曾经用过一套「在 ItemTooltipEvent 里放占位行、再在本事件里替换」的做法，
+     * 前提是「TACZ 会重建整个列表并把未知行挪到末尾」—— 那个前提是<b>错的</b>：
+     * 实测 TACZ 全 jar 里没有任何一处订阅 {@code RenderTooltipEvent}，
+     * 它唯一的 tooltip 监听器只是在 F3+H 时往末尾追加一行 {@code GunId: "..."}。
+     * 而跨两个事件用 static 字段做对象身份匹配本身也不可靠：JEI 有自己的
+     * {@code gatherTooltipComponents} 实现，根本不走 {@code getTooltipImage} 那条链路，
+     * 一进去就必然失配、落到兜底的「追加到末尾」。</p>
+     */
+    private static int insertIndex(List<Either<FormattedText, TooltipComponent>> elements) {
+        TooltipConfig.Position position = TooltipConfig.PANEL.position.get();
+        if (position == TooltipConfig.Position.BOTTOM) {
+            return elements.size();
         }
-        for (int i = 0; i < elements.size(); i++) {
-            Either<FormattedText, TooltipComponent> e = elements.get(i);
-            if (e.left().isPresent() && e.left().get() == marker) {
-                return i;
-            }
+        if (elements.isEmpty()) {
+            return 0;
         }
-        return -1;
+        if (position == TooltipConfig.Position.TOP) {
+            return Math.min(1, elements.size());
+        }
+        int at = Math.min(1, elements.size());
+        while (at < elements.size() && elements.get(at).right().isPresent()) {
+            at++;
+        }
+        return at;
     }
 
     /**
