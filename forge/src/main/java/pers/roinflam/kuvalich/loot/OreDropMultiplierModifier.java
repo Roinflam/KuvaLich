@@ -128,16 +128,21 @@ public class OreDropMultiplierModifier extends LootModifier {
      */
     private static void addMultiplied(ObjectArrayList<ItemStack> out, ItemStack stack,
                                       double multiplier, LootContext context) {
-        int whole = (int) multiplier;
-        if (context.getRandom().nextDouble() < multiplier - whole) {
-            whole++;
+        // ⭐ 进位要对「数量」做，不能对「倍率」做。
+        //    对倍率取整的话，+30% 会变成「70% 概率原样、30% 概率翻倍」——
+        //    期望值虽然一样，方差却大得多，手感是「大部分时候没反应，偶尔爆一堆」。
+        //    对数量取整则是 3 × 1.3 = 3.9 → 九成出 4 个，稳定得多，
+        //    也和战利品倍率（WarframeEffectHandler.onLivingDrops）的算法保持一致。
+        double scaled = stack.getCount() * multiplier;
+        int total = (int) scaled;
+        if (context.getRandom().nextDouble() < scaled - total) {
+            total++;
         }
-        if (whole <= 1) {
+        if (total <= stack.getCount()) {
             out.add(stack);
             return;
         }
 
-        int total = stack.getCount() * whole;
         int max = Math.max(1, stack.getMaxStackSize());
         while (total > 0) {
             int size = Math.min(total, max);
