@@ -51,7 +51,7 @@ public class MixinGunShootOnce {
             at = @At(value = "INVOKE", target = "Ljava/lang/Math;max(II)I", ordinal = 0),
             require = 0
     )
-    private int applyWarframeMultishot(int originalAmount) {
+    private int kuvalich$applyMultishot(int originalAmount) {
         if (itemStack == null || itemStack.isEmpty()) {
             // 无多重射击时也要存原始值，保证 ThreadLocal 状态一致
             WarframeTaczBridge.setOriginalBulletAmount(originalAmount);

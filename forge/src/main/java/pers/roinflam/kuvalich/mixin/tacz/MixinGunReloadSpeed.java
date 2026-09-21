@@ -52,7 +52,7 @@ public class MixinGunReloadSpeed {
      * @return 膨胀后的已耗时间
      */
     @ModifyReturnValue(method = "getReloadTime", at = @At("RETURN"), require = 0)
-    private long applyWarframeReloadSpeed(long original) {
+    private long kuvalich$applyReloadSpeed(long original) {
         if (itemStack == null || itemStack.isEmpty()) {
             return original;
         }
@@ -84,7 +84,7 @@ public class MixinGunReloadSpeed {
      * @return 膨胀后的拉栓已耗时间
      */
     @ModifyReturnValue(method = "getBoltTime", at = @At("RETURN"), require = 0)
-    private long applyWarframeBoltSpeed(long original) {
+    private long kuvalich$applyBoltSpeed(long original) {
         if (itemStack == null || itemStack.isEmpty()) {
             return original;
         }

@@ -29,7 +29,7 @@ public class MixinBulletDamageSpread {
      * @param ci          CallbackInfo，用于取消原方法执行
      */
     @Inject(method = "applyShotgunDamageSpread", at = @At("HEAD"), cancellable = true, require = 0)
-    private void overrideDamageSpread(int bulletCount, CallbackInfo ci) {
+    private void kuvalich$overrideDamageSpread(int bulletCount, CallbackInfo ci) {
         int originalAmount = WarframeTaczBridge.getOriginalBulletAmount();
         float firstBulletBonus = WarframeTaczBridge.getFirstBulletDamageBonus();
         float gunDamageBonus = WarframeTaczBridge.getGunDamageBonus();

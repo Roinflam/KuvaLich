@@ -54,7 +54,7 @@ public class MixinTaczBulletExplosion {
             at = @At("RETURN"),
             require = 0
     )
-    private void applyKuvaLichBulletModifiers(
+    private void kuvalich$applyBulletModifiers(
             EntityType<?> type,
             Level worldIn,
             LivingEntity throwerIn,

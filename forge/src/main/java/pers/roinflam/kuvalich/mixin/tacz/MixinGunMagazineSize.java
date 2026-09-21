@@ -36,7 +36,7 @@ public class MixinGunMagazineSize {
      * @return 叠加 KuvaLich 弹夹容量后的最终容量
      */
     @ModifyReturnValue(method = "getAmmoCountWithAttachment", at = @At("RETURN"), require = 0)
-    private static int applyWarframeMagazineSize(int original, ItemStack gunItem, GunData gunData) {
+    private static int kuvalich$applyMagazineSize(int original, ItemStack gunItem, GunData gunData) {
         if (gunItem == null || gunItem.isEmpty()) {
             return original;
         }

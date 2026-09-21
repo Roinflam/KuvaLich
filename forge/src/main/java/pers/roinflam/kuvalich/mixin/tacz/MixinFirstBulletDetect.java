@@ -44,7 +44,7 @@ public abstract class MixinFirstBulletDetect {
      * shootOnce 方法头部：检测满弹夹射击 + 设置枪械伤害 + 设置玄骸强化乘数 ThreadLocal。
      */
     @Inject(method = "shootOnce", at = @At("HEAD"), require = 0)
-    private void detectFirstBullet(boolean isAiming, CallbackInfo ci) {
+    private void kuvalich$detectFirstBullet(boolean isAiming, CallbackInfo ci) {
         // 默认清除，确保每次射击重新判定
         WarframeTaczBridge.clearFirstBulletDamageBonus();
         WarframeTaczBridge.clearGunDamageBonus();
@@ -86,7 +86,7 @@ public abstract class MixinFirstBulletDetect {
      * shootOnce 方法返回时清除所有 ThreadLocal，防止泄漏到后续射击。
      */
     @Inject(method = "shootOnce", at = @At("RETURN"), require = 0)
-    private void clearShootFlags(boolean isAiming, CallbackInfo ci) {
+    private void kuvalich$clearShootFlags(boolean isAiming, CallbackInfo ci) {
         WarframeTaczBridge.clearFirstBulletDamageBonus();
         WarframeTaczBridge.clearGunDamageBonus();
         WarframeTaczBridge.clearGunEnhanceMultiplier();

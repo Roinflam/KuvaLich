@@ -47,8 +47,8 @@ public class MixinCameraRecoil {
             index = 0,
             require = 0
     )
-    private static float applyWarframePitchRecoilReduction(float modifier) {
-        return applyRecoilReduction(modifier);
+    private static float kuvalich$applyPitchRecoilReduction(float modifier) {
+        return kuvalich$applyRecoilReduction(modifier);
     }
 
     /**
@@ -66,8 +66,8 @@ public class MixinCameraRecoil {
             index = 0,
             require = 0
     )
-    private static float applyWarframeYawRecoilReduction(float modifier) {
-        return applyRecoilReduction(modifier);
+    private static float kuvalich$applyYawRecoilReduction(float modifier) {
+        return kuvalich$applyRecoilReduction(modifier);
     }
 
     /**
@@ -85,7 +85,7 @@ public class MixinCameraRecoil {
      * @param modifier 原始后坐力倍率
      * @return 修正后的后坐力倍率
      */
-    private static float applyRecoilReduction(float modifier) {
+    private static float kuvalich$applyRecoilReduction(float modifier) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) {
             return modifier;

@@ -31,7 +31,7 @@ public class MixinGunShootInterval {
             at = @At("RETURN"),
             require = 0
     )
-    private long applyWarframeFireRate(long original, LivingEntity shooter, FireMode fireMode, ItemStack gunItem) {
+    private long kuvalich$applyFireRate(long original, LivingEntity shooter, FireMode fireMode, ItemStack gunItem) {
         float fireRateMod = WarframeTaczBridge.getFireRateMod(gunItem, shooter);
 
         // 无修正时直接返回

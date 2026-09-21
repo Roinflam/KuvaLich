@@ -48,7 +48,7 @@ public class MixinGunProjectileSpeed {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Mth;clamp(FFF)F", ordinal = 0),
             require = 0
     )
-    private float applyWarframeProjectileSpeed(float processedSpeed) {
+    private float kuvalich$applyProjectileSpeed(float processedSpeed) {
         if (itemStack == null || itemStack.isEmpty()) {
             return processedSpeed;
         }

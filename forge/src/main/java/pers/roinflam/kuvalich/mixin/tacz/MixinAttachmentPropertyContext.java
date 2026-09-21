@@ -30,7 +30,7 @@ public class MixinAttachmentPropertyContext {
      * @param ci      CallbackInfo
      */
     @Inject(method = "postChangeEvent", at = @At("HEAD"), require = 0)
-    private static void saveShooterContext(LivingEntity shooter, ItemStack gunItem, CallbackInfo ci) {
+    private static void kuvalich$saveShooterContext(LivingEntity shooter, ItemStack gunItem, CallbackInfo ci) {
         WarframeTaczBridge.setCacheContextShooter(shooter);
         WarframeTaczBridge.setCacheContextGunItem(gunItem);
     }
