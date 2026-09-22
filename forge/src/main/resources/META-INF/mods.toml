@@ -6,7 +6,11 @@ license="${mod_license}"
 modId="kuvalich"
 version="${version}"
 displayName="${mod_name}"
-updateJSONURL="https://www.curseforge.com/minecraft/mc-mods/kuvalich"
+# updateJSONURL 已去掉：这个字段要的是 Forge 版本检查用的 update JSON，
+# 原先填的是 CurseForge 的网页地址，Forge 拉回来一段 HTML 去解析 JSON，
+# 每次启动都抛一条 JsonSyntaxException（Expected BEGIN_OBJECT but was STRING）。
+# 本项目没有托管 update JSON，省掉这行即可关掉版本检查。
+# 将来真要开，格式见 https://docs.minecraftforge.net/en/1.20.1/misc/updatechecker/
 displayURL="https://www.curseforge.com/minecraft/mc-mods/kuvalich"
 logoFile=""
 credits="特别感谢 白狐大小姐 为本项目提供的支持和帮助"
