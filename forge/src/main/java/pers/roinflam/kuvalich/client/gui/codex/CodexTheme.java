@@ -132,27 +132,6 @@ public final class CodexTheme {
     // ==================== 框体 ====================
 
     /**
-     * 直角 1px 描边
-     *
-     * <p>大框体一律用斜切，但 18px 见方的槽位不能 —— 在那个尺度上切角会把四个角
-     * 吃掉将近一半，凹槽会糊成一个八边形。小元件用直角，大框体用斜切，
-     * 这个对比本身也是军械库那套语言的一部分。</p>
-     *
-     * @param g     画布
-     * @param x     左
-     * @param y     上
-     * @param w     宽
-     * @param h     高
-     * @param color 线色
-     */
-    public static void border(GuiGraphics g, int x, int y, int w, int h, int color) {
-        g.fill(x, y, x + w, y + 1, color);
-        g.fill(x, y + h - 1, x + w, y + h, color);
-        g.fill(x, y + 1, x + 1, y + h - 1, color);
-        g.fill(x + w - 1, y + 1, x + w, y + h - 1, color);
-    }
-
-    /**
      * 斜切板材：填充一个四角被斜切掉的矩形。
      *
      * @param g     画布

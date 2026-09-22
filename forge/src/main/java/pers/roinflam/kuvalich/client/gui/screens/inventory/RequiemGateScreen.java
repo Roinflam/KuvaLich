@@ -1,21 +1,23 @@
 package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
-import pers.roinflam.kuvalich.client.gui.ContainerChrome;
-import pers.roinflam.kuvalich.client.gui.codex.CodexTheme;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.network.packet.RequiemGateFillPacket;
+import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.world.inventory.RequiemGateMenu;
 
 /**
@@ -37,6 +39,9 @@ import pers.roinflam.kuvalich.world.inventory.RequiemGateMenu;
 @OnlyIn(Dist.CLIENT)
 public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> {
 
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
+            Reference.MOD_ID, "textures/gui/container/requiem_gate.png"
+    );
 
     private static final int PROGRESS_X_OFFSET = 12;
     private static final int PROGRESS_Y_OFFSET = 30;
@@ -56,6 +61,12 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
 
     // ==================== 进度条填充染色（奥罗金金色，可调；设为 1,1,1 即原色） ====================
 
+    /** 填充染色 R 分量 */
+    private static final float FILL_TINT_R = 1.00f;
+    /** 填充染色 G 分量 */
+    private static final float FILL_TINT_G = 0.82f;
+    /** 填充染色 B 分量 */
+    private static final float FILL_TINT_B = 0.40f;
 
     // ==================== 揭示成功闪光参数 ====================
 
@@ -103,15 +114,7 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
     private static final int FLASH_ALPHA_MAX = 140;
 
     /** 脉冲颜色RGB（不含alpha），Kuva红 */
-    /**
-     * 已揭示谜语位的常驻脉冲色
-     *
-     * <p>⭐ 从原先的红色（0xFF5555）改成科技青。原因是新主题把赤毒猩红定为
-     * <b>全屏唯一焦点色</b>，只给「悬停 / 选中 / 当前」这类即时交互反馈用；
-     * 而这个脉冲表达的是「这几个位置已经揭示了」——一个<b>常驻状态</b>。
-     * 两者同色的话，玩家分不清一圈红光到底是状态还是鼠标焦点。</p>
-     */
-    private static final int FLASH_RGB = 0x4FD6E8;
+    private static final int FLASH_RGB = 0xFF5555;
 
     // ==================== 谜语卡片缓存（避免每帧new ItemStack） ====================
 
@@ -216,23 +219,16 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
         updateProgressTween(now);
         updateRevealDetection(now);
 
-        int left = this.leftPos;
-        int top = this.topPos;
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.setShaderTexture(0, TEXTURE);
 
-        // 全自绘背景，不再使用任何贴图。
-        // 注意本类原先在三处把 imageHeight 当成 blit 的 v 坐标用（进度条轨道、
-        // 染色填充、未揭示槽图标），换自绘之后这层耦合断掉，
-        // imageHeight 回归成单纯的画布高度。
-        ContainerChrome.panel(guiGraphics, left, top, this.imageWidth, this.imageHeight);
-        ContainerChrome.zone(guiGraphics, left + 8, top + 4, this.imageWidth - 16, 70);
+        int left = (this.width - this.imageWidth) / 2;
+        int top = (this.height - this.imageHeight) / 2;
 
+        guiGraphics.blit(TEXTURE, left, top, 0, 0, this.imageWidth, this.imageHeight);
         drawProgressBar(guiGraphics, left, top);
         drawRiddleCards(guiGraphics, left, top, mouseX, mouseY);
-
-        ContainerChrome.slots(guiGraphics, this.menu, left, top,
-                (slot, index) -> index < 3
-                        ? ContainerChrome.SlotKind.INPUT
-                        : ContainerChrome.SlotKind.PLAYER);
     }
 
     // ==================== 进度条动画状态更新 ====================
@@ -303,6 +299,14 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
         int progressX = left + PROGRESS_X_OFFSET;
         int progressY = top + PROGRESS_Y_OFFSET;
 
+        // 进度条背景轨道
+        guiGraphics.blit(
+                TEXTURE,
+                progressX, progressY,
+                PROGRESS_HEIGHT, this.imageHeight,
+                PROGRESS_WIDTH, PROGRESS_HEIGHT
+        );
+
         // 使用平滑后的填充宽度（再次钳制确保安全）
         int fillWidth = Math.round(displayedProgressWidth);
         if (fillWidth < 0) {
@@ -311,16 +315,17 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
             fillWidth = PROGRESS_WIDTH;
         }
 
-        // ⭐ 轨道与填充都改自绘。原先是从贴图里 blit 两条子图，
-        //    填充那条还要靠 RenderSystem.setShaderColor 染成奥罗金金色 ——
-        //    自绘直接给颜色，不必再动全局着色器状态（那个状态忘了改回来会污染后续渲染）。
-        //
-        //    进度条刻意保持直角而不是斜切：drawRevealFlash 的色洗与光环是按矩形算的，
-        //    改成斜切会让方块从斜角上戳出去。
-        ContainerChrome.progressBar(guiGraphics, progressX, progressY,
-                PROGRESS_WIDTH, PROGRESS_HEIGHT,
-                PROGRESS_WIDTH > 0 ? (float) fillWidth / PROGRESS_WIDTH : 0f,
-                CodexTheme.EMBER);
+        if (fillWidth > 0) {
+            // 填充用奥罗金金色染色（轨道保持原色）
+            RenderSystem.setShaderColor(FILL_TINT_R, FILL_TINT_G, FILL_TINT_B, 1.0F);
+            guiGraphics.blit(
+                    TEXTURE,
+                    progressX, progressY,
+                    PROGRESS_HEIGHT, this.imageHeight + PROGRESS_HEIGHT,
+                    fillWidth, PROGRESS_HEIGHT
+            );
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        }
 
         // 揭示成功闪光叠加
         drawRevealFlash(guiGraphics, progressX, progressY);
@@ -463,11 +468,7 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
         for (int i = 0; i < 3; i++) {
             if (riddleIdBuffer[i] == -1) {
                 int x = left + RIDDLE_X_OFFSETS[i];
-                // ⭐ 原先是从贴图 blit 一个金色的「⊘」。删掉贴图就必须自己画一个，
-                //    否则未揭示的谜语槽会和普通空槽长得一模一样，
-                //    玩家会以为那里可以随便放卡。
-                ContainerChrome.forbidden(guiGraphics, x, riddleY, RIDDLE_SIZE,
-                        CodexTheme.withAlpha(CodexTheme.FAINT, 0xD0));
+                guiGraphics.blit(TEXTURE, x, riddleY, 0, this.imageHeight, RIDDLE_SIZE, RIDDLE_SIZE);
             }
         }
 
