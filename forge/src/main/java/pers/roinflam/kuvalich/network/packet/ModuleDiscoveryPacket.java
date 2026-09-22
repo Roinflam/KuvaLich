@@ -179,6 +179,26 @@ public class ModuleDiscoveryPacket {
      * @return 是否已发现
      */
     public static boolean isDiscovered(String discoveryKey) {
+        return isDiscovered(discoveryKey, null);
+    }
+
+    /**
+     * 查询发现状态（免分配版）
+     *
+     * <p>⭐ 为什么要这个重载：单参数版在「新格式未命中」时必然执行
+     * {@code discoveryKey.substring(0, colonIdx)} 新建一个字符串再查旧格式缓存。
+     * 而图鉴的标题计数会对<b>全量</b>条目（武器页 429 条）跑这个判定，
+     * 未发现的条目越多分配越多 —— 发现率 12% 时每次全量扫描就是约 379 次
+     * substring，图鉴只要开着就在持续制造纯属可避免的 GC 压力。</p>
+     *
+     * <p>调用方手上本来就有 type（{@code CodexEntry.moduleType}），
+     * 直接传进来就不必从 key 里再切一次。</p>
+     *
+     * @param discoveryKey 发现记录键（新格式 {@code type:rarityOrder}）
+     * @param legacyType   同一条目的纯 type；传 null 时退回从 key 里切
+     * @return 是否已发现
+     */
+    public static boolean isDiscovered(String discoveryKey, String legacyType) {
         if (discoveryKey == null || discoveryKey.isEmpty()) {
             return false;
         }
@@ -188,10 +208,12 @@ public class ModuleDiscoveryPacket {
             return true;
         }
         // ⭐ 旧存档兼容：新格式未命中时，检查旧格式纯type是否存在
+        if (legacyType != null) {
+            return !legacyType.isEmpty() && cache.contains(legacyType);
+        }
         int colonIdx = discoveryKey.indexOf(':');
         if (colonIdx > 0) {
-            String legacyType = discoveryKey.substring(0, colonIdx);
-            return cache.contains(legacyType);
+            return cache.contains(discoveryKey.substring(0, colonIdx));
         }
         return false;
     }

@@ -168,6 +168,29 @@ public class ModuleCodexData {
         cachedWarframeModules = null;
     }
 
+    /**
+     * 提前把图鉴数据建好
+     *
+     * <p>⭐ 为什么需要它：{@link #ensureInitialized()} 这条链路是<b>同步</b>的 ——
+     * {@code ModuleCodexScreen.init()} → {@code onSearchChanged()} →
+     * {@code getWeaponModules()} → 本类初始化 → {@code forceInitModuleLists()}
+     * → 八个原型池 {@code initializeModuleList()}（每个几十到上百个 register，
+     * 每个 register 都在 new ItemStack 并写 NBT）→ 再各建一遍 CodexEntry 列表。
+     * 而 {@code Minecraft.setScreen} 是在客户端渲染线程上同步调用的，
+     * 于是「按键打开图鉴」会当场卡一下（实测量级 20~35ms）。</p>
+     *
+     * <p>做法是在<b>进入世界时</b>先跑一遍：那时玩家正在看加载画面，
+     * 同样的耗时完全感知不到；之后打开图鉴 {@code initialized} 已经是 true，
+     * 直接返回。</p>
+     *
+     * <p>为什么不丢到后台线程：这条链路会 new 大量 ItemStack 并读注册表与配置，
+     * 在非主线程上碰这些东西是另一类风险。把耗时挪到「不被感知的时刻」
+     * 比挪到「另一个线程」稳妥得多。</p>
+     */
+    public static void prewarm() {
+        ensureInitialized();
+    }
+
     private static synchronized void ensureInitialized() {
         if (initialized) return;
         try {

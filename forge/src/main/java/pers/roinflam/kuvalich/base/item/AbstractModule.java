@@ -289,6 +289,19 @@ public abstract class AbstractModule extends Item {
     }
 
     private static void invalidateCache(ItemStack itemStack) {
+        // ⭐ 缓存本来就是空的时候直接走 —— 省掉一次 NBT hashCode 计算。
+        //
+        //    这不是微优化洁癖：模组原型池建表时（ModuleRegistryHelper.register）
+        //    每个属性都会走一遍 addAttributes，每次都调本方法，再加上 setType、
+        //    setConflictTags 各一次。八个池子几百个模组、每个模组好几条属性，
+        //    加起来是几千次「对一个刚 new 出来、绝不可能在缓存里的 ItemStack
+        //    算一遍 NBT 哈希再去空表里 remove」。配置热重载会让建表重跑，
+        //    所以这条路径不是只在启动时走一次。
+        //
+        //    语义完全不变：从空表里 remove 本来就是 no-op。
+        if (ATTRIBUTE_CACHE.isEmpty()) {
+            return;
+        }
         ATTRIBUTE_CACHE.remove(getCacheKey(itemStack));
     }
 

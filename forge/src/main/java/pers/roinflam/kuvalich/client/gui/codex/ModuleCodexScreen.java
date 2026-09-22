@@ -92,6 +92,24 @@ public class ModuleCodexScreen extends Screen {
     private ModuleCodexData.CodexEntry hoveredEntry = null;
     private int hoverMX, hoverMY;
 
+    // ==================== 每帧缓存 ====================
+    //
+    // ⭐ 下面三组缓存解决的是同一类问题：render() 每帧都在重算一些「其实很少变」的东西。
+    //    图鉴一旦开着，哪怕玩家什么都不做，这些计算也在以帧率持续发生。
+
+    /** 标题里的「已发现/总数」。原先每帧对全量条目重算。 */
+    private String cachedTitle = null;
+    /** 上次算标题时的全局已发现数，当变更戳用 —— 发现记录只增不减，size 变了就说明要重算。 */
+    private int titleDiscoveryStamp = -1;
+    /** 上次算标题时用的那张表，配置热重载换了表也要重算。 */
+    private List<ModuleCodexData.CodexEntry> titleCountedList = null;
+
+    /** 各品质在当前筛选结果里各有多少条，随 filtered 一起在 recalcContentH 里更新。 */
+    private final int[] rarityCounts = new int[4];
+
+    /** 量词后缀，原先每个可见分组头每帧都要 new 一次字符串。 */
+    private String countSuffix = null;
+
     private boolean dragging = false;
     private double dragStartY, dragStartScroll;
 
@@ -174,6 +192,17 @@ public class ModuleCodexScreen extends Screen {
     }
 
     private void recalcContentH() {
+        // ⭐ 顺手统计各品质条数：这个数 drawContent 画分组头时要用，
+        //    原先是每帧调 countRarity 对整个 filtered 做一次 O(n) 扫描重新数一遍，
+        //    而本方法在分组时本来就数过同样的东西，算完却丢掉了。
+        java.util.Arrays.fill(rarityCounts, 0);
+        if (filtered != null) {
+            for (ModuleCodexData.CodexEntry e : filtered) {
+                if (e.rarityOrder >= 0 && e.rarityOrder < rarityCounts.length) {
+                    rarityCounts[e.rarityOrder]++;
+                }
+            }
+        }
         if (filtered == null || filtered.isEmpty()) { totalContentH = 0; return; }
         int h = 0, lastR = -1, count = 0;
         for (ModuleCodexData.CodexEntry e : filtered) {
@@ -303,13 +332,20 @@ public class ModuleCodexScreen extends Screen {
         if (filtered == null) return;
         List<ModuleCodexData.CodexEntry> all = showWeapon ?
                 ModuleCodexData.getWeaponModules() : ModuleCodexData.getWarframeModules();
-        int total = all.size(), discovered = 0;
-        for (ModuleCodexData.CodexEntry e : all) {
-            // ⭐ 使用 discoveryKey 检查发现状态 / Use discoveryKey for discovery check
-            if (ModuleDiscoveryPacket.isDiscovered(e.discoveryKey)) discovered++;
+
+        // 只在真正可能变化时重算：全局已发现数变了，或 ModuleCodexData 换了表（配置热重载）。
+        int stamp = ModuleDiscoveryPacket.getDiscoveredCount();
+        if (cachedTitle == null || stamp != titleDiscoveryStamp || all != titleCountedList) {
+            int discovered = 0;
+            for (ModuleCodexData.CodexEntry e : all) {
+                // 传 moduleType 走免分配重载，省掉旧存档兼容分支里的 substring
+                if (ModuleDiscoveryPacket.isDiscovered(e.discoveryKey, e.moduleType)) discovered++;
+            }
+            titleDiscoveryStamp = stamp;
+            titleCountedList = all;
+            cachedTitle = this.getTitle().getString() + " \u00A77(" + discovered + "/" + all.size() + ")";
         }
-        String title = this.getTitle().getString() + " \u00A77(" + discovered + "/" + total + ")";
-        g.drawString(this.font, title, (this.width - this.font.width(title)) / 2, 4, 0xFFE0E0E0, true);
+        g.drawString(this.font, cachedTitle, (this.width - this.font.width(cachedTitle)) / 2, 4, 0xFFE0E0E0, true);
     }
 
     private void drawContent(GuiGraphics g, int mx, int my) {
@@ -336,10 +372,14 @@ public class ModuleCodexScreen extends Screen {
                 lastR = e.rarityOrder; idx = 0;
 
                 if (inView(drawY, SECTION_H)) {
-                    int count = countRarity(filtered, e.rarityOrder);
+                    int count = (e.rarityOrder >= 0 && e.rarityOrder < rarityCounts.length)
+                            ? rarityCounts[e.rarityOrder] : 0;
+                    if (countSuffix == null) {
+                        countSuffix = Component.translatable("kuvalich.codex.count_suffix").getString();
+                    }
                     String header = ModuleCodexData.getRarityName(e.rarityOrder)
                             + " \u00A78\u2014 " + count
-                            + Component.translatable("kuvalich.codex.count_suffix").getString();
+                            + countSuffix;
                     g.drawString(this.font, header, contentX, drawY + 4, 0xFFAAAAAA, false);
                     int lineX = contentX + this.font.width(header) + 6;
                     if (lineX < contentX + contentW)
@@ -355,7 +395,7 @@ public class ModuleCodexScreen extends Screen {
 
             if (inView(cy, CELL_H)) {
                 // ⭐ 使用 discoveryKey 检查发现状态 / Use discoveryKey for discovery check
-                boolean found = ModuleDiscoveryPacket.isDiscovered(e.discoveryKey);
+                boolean found = ModuleDiscoveryPacket.isDiscovered(e.discoveryKey, e.moduleType);
                 boolean hover = mx >= cx && mx < cx + CELL_W && my >= cy && my < cy + CELL_H
                         && my >= contentY && my < contentY + visibleH;
                 drawCell(g, e, cx, cy, found, hover);
@@ -448,7 +488,4 @@ public class ModuleCodexScreen extends Screen {
 
     private boolean inView(int y, int h) { return y + h > contentY - 10 && y < contentY + visibleH + 10; }
 
-    private int countRarity(List<ModuleCodexData.CodexEntry> list, int order) {
-        int c = 0; for (ModuleCodexData.CodexEntry e : list) if (e.rarityOrder == order) c++; return c;
-    }
 }
