@@ -166,10 +166,20 @@ public class ModuleCodexScreen extends Screen {
         //    onSearchChanged() 把筛选结果重置成全表，玩家已经输入的搜索词无声消失。
         String previousSearch = searchBox != null ? searchBox.getValue() : "";
 
-        // 搜索框跟着面板宽度走：面板收窄之后再固定 220 会显得一头沉
-        int boxW = Math.max(120, Math.min(panelW - CodexTheme.PAD * 2, contentW / 2));
-        int boxX = panelX + (panelW - boxW) / 2;
-        int boxY = panelY + 22;
+        // ⭐ 搜索框靠右、与计数徽章同排：原先它单独占第二行且居中，
+        //    左边的标题和它之间空出一大段，顶栏看着很散。
+        //
+        //    徽章宽度按「最宽可能文本」预留而不是按当前文本算 —— 当前文本会随
+        //    已发现数增长而变宽（"9 / 429" -> "129 / 429"），按实际宽度定位
+        //    会让搜索框在玩家解锁模组时莫名其妙地横向跳一下。
+        String titleText = this.getTitle().getString();
+        int titleZone = 12 + this.font.width(titleText) + 16;
+        int badgeReserve = this.font.width("9999 / 9999") + 12 + 8;
+
+        int boxW = panelW - CodexTheme.PAD * 2 - titleZone - badgeReserve;
+        boxW = Math.max(80, Math.min(boxW, 240));
+        int boxX = panelX + panelW - CodexTheme.PAD - badgeReserve - boxW;
+        int boxY = panelY + 7;
         // 原版 EditBox 自带的白框在这套暗色面板上很突兀，关掉自己画。
         // 注意：bordered=false 时 EditBox 的文字从 getX() 起画（bordered=true 时是 getX()+4），
         // 所以这里把控件本身内缩 4px，外面那圈框由 drawHeader 画在 boxX..boxX+boxW。
@@ -410,12 +420,14 @@ public class ModuleCodexScreen extends Screen {
         CodexTheme.holoSurface(g, hx, panelY + 1, hw, CodexTheme.HEADER_H - 1, 10);
 
         // 标题：左边一个赤毒色斜角标记，下面压一条短细线
+        // 标题与搜索框在同一行上垂直居中：搜索框高 18、顶在 panelY+7，中心在 +16；
+        // 标题文字高 9、顶在 panelY+11，中心也是 +15.5，两者对齐。
         int tx = panelX + CodexTheme.PAD;
-        CodexTheme.cornerTab(g, tx, panelY + 9, 7, CodexTheme.KUVA);
+        CodexTheme.cornerTab(g, tx, panelY + 11, 8, CodexTheme.KUVA);
         String title = this.getTitle().getString();
         int titleX = tx + 12;
-        g.drawString(this.font, title, titleX, panelY + 8, CodexTheme.BONE, false);
-        g.fill(titleX, panelY + 19, titleX + this.font.width(title), panelY + 20,
+        g.drawString(this.font, title, titleX, panelY + 11, CodexTheme.BONE, false);
+        g.fill(titleX, panelY + 22, titleX + this.font.width(title), panelY + 23,
                 CodexTheme.withAlpha(CodexTheme.KUVA, 0x90));
 
         // 已发现徽章（右上）。计数只在全局已发现数变化、或 ModuleCodexData 换了表
@@ -435,8 +447,9 @@ public class ModuleCodexScreen extends Screen {
                 cachedTitle = discovered + " / " + all.size();
             }
             int bw = this.font.width(cachedTitle) + 12;
+            // 徽章右对齐到面板内边距；它比搜索框矮，往下挪 2px 与之居中对齐
             CodexTheme.badge(g, this.font, cachedTitle,
-                    panelX + panelW - CodexTheme.PAD - bw, panelY + 7,
+                    panelX + panelW - CodexTheme.PAD - bw, panelY + 9,
                     CodexTheme.withAlpha(CodexTheme.TECH, 0x22), CodexTheme.EMBER);
         }
 
@@ -486,7 +499,7 @@ public class ModuleCodexScreen extends Screen {
                     }
                     // 品质角标 + 标题 + 延伸到右边的细线
                     int rc = ModuleCodexData.getRarityColor(e.rarityOrder);
-                    CodexTheme.cornerTab(g, contentX, drawY + 3, 6, rc);
+                    CodexTheme.cornerTab(g, contentX, drawY + 2, 9, rc);
 
                     String header = ModuleCodexData.getRarityName(e.rarityOrder)
                             + " \u00A78" + count + countSuffix;
@@ -541,8 +554,9 @@ public class ModuleCodexScreen extends Screen {
         g.fill(x, y + CELL_H - 1, x + CELL_W, y + CELL_H,
                 CodexTheme.withAlpha(CodexTheme.EDGE, found ? 0xFF : 0x80));
 
-        // 品质角标
-        CodexTheme.cornerTab(g, x + 1, y + 1, 5, rarity);
+        // 品质角标。5px 太小，三档品质色（青铜/白银/黄金）在网格里几乎分不出来；
+        // 放到 8px 之后一眼可辨。它画在图标之前，被图标压住的只是左上角几个像素。
+        CodexTheme.cornerTab(g, x + 1, y + 1, 8, rarity);
 
         // ⭐ 悬停底色必须画在图标**之前**：同样的 z 序原因，画在 renderItem 之后
         //    会落到图标背后，只能把格子边缘染上色，看起来像没生效。

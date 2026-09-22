@@ -74,8 +74,13 @@ public final class CodexTheme {
 
     /** 面板四周留白 */
     public static final int MARGIN = 14;
-    /** 顶栏高度 */
-    public static final int HEADER_H = 46;
+    /**
+     * 顶栏高度
+     *
+     * <p>从 46 降到 34：搜索框原先单独占第二行，现在与计数徽章同排靠右，
+     * 顶栏只需要容下一行内容。省下的 12px 全部还给网格。</p>
+     */
+    public static final int HEADER_H = 34;
     /** 底栏高度 */
     public static final int FOOTER_H = 24;
     /** 内边距 */
