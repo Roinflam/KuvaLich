@@ -10,8 +10,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
-import pers.roinflam.kuvalich.network.message.CodexGiveItemPacket;
-import pers.roinflam.kuvalich.network.message.ModuleDiscoveryPacket;
+import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
+import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
 
 import java.util.ArrayList;
 import java.util.List;

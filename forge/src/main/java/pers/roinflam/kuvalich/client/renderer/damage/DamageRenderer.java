@@ -22,7 +22,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import pers.roinflam.kuvalich.network.message.DamageInfo;
+import pers.roinflam.kuvalich.network.packet.DamageInfo;
 
 /**
  * 伤害数字/文本渲染器(1.20.1)

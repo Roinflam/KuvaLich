@@ -7,7 +7,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import pers.roinflam.kuvalich.world.inventory.MenuRequiemEvolve;
+import pers.roinflam.kuvalich.world.inventory.RequiemEvolveMenu;
 
 import java.util.List;
 
@@ -128,7 +128,7 @@ public final class ModuleLevelTooltipHelper {
     /**
      * 计算武器裂罅循环费用（赤毒数量）
      * <p>
-     * 公式与 MenuRequiemEvolve.processItemRivenCycle 完全一致：
+     * 公式与 RequiemEvolveMenu.processItemRivenCycle 完全一致：
      * cost = min(cycleCount, 8) + trend² - (trend-1)²
      *      = min(cycleCount, 8) + 2×trend - 1
      * <p>
@@ -155,7 +155,7 @@ public final class ModuleLevelTooltipHelper {
     /**
      * 计算战甲裂罅循环费用（赤毒数量）
      * <p>
-     * 公式与 MenuRequiemEvolve.processWarframeRivenCycle 完全一致：
+     * 公式与 RequiemEvolveMenu.processWarframeRivenCycle 完全一致：
      * cost = min(cycleCount, 8) + trend²
      * <p>
      * 费率表（部分）：
@@ -184,7 +184,7 @@ public final class ModuleLevelTooltipHelper {
     private static boolean isInEvolveMenu() {
         try {
             Minecraft mc = Minecraft.getInstance();
-            return mc.player != null && mc.player.containerMenu instanceof MenuRequiemEvolve;
+            return mc.player != null && mc.player.containerMenu instanceof RequiemEvolveMenu;
         } catch (Exception e) {
             return false;
         }

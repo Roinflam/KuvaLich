@@ -10,15 +10,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
-import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
+import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributeManager;
+import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributes;
 import pers.roinflam.kuvalich.module.weapon.DamageDisplayTracker;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
-import pers.roinflam.kuvalich.network.message.DamagePacket;
+import pers.roinflam.kuvalich.network.packet.DamagePacket;
 import pers.roinflam.kuvalich.utils.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 import pers.roinflam.kuvalich.utils.AttributesUtil;
-import pers.roinflam.kuvalich.utils.EntityLivingUtil;
+import pers.roinflam.kuvalich.utils.LivingEntityUtil;
 import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 
 import javax.annotation.Nonnull;
@@ -83,9 +83,9 @@ public class GuandaoPrime extends AbstractKuvaWeapon {
                     //    Boss 锁血、伤害上限等拦截直接扣血时，数字如实变小或不显示
                     float healthBefore = hurter.getHealth();
                     if (healthBefore - dotDamage > 0.01f) {
-                        EntityLivingUtil.damageHealthDirectly(hurter, dotDamage);
+                        LivingEntityUtil.damageHealthDirectly(hurter, dotDamage);
                     } else {
-                        EntityLivingUtil.kill(hurter, attacker.level().damageSources().indirectMagic(attacker, attacker));
+                        LivingEntityUtil.kill(hurter, attacker.level().damageSources().indirectMagic(attacker, attacker));
                         this.cancel();
                     }
 

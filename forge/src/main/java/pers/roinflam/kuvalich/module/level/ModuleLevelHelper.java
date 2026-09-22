@@ -8,7 +8,7 @@ import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.event.ModuleDiscoveryHandler;
-import pers.roinflam.kuvalich.item.module.item.*;
+import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -168,20 +168,20 @@ public final class ModuleLevelHelper {
         if (moduleStack == null || moduleStack.isEmpty()) { return 1.0; }
         Item item = moduleStack.getItem();
         // 紫卡（裂罅）和 Prime：全额
-        if (item instanceof ItemRivenModule || item instanceof WarframeRivenModule
-                || item instanceof ItemPrimeModule || item instanceof WarframePrimeModule) {
+        if (item instanceof WeaponRivenModule || item instanceof WarframeRivenModule
+                || item instanceof WeaponPrimeModule || item instanceof WarframePrimeModule) {
             return 1.0;
         }
         // 金卡（稀有）：3/4
-        if (item instanceof ItemRareModule || item instanceof WarframeRareModule) {
+        if (item instanceof WeaponRareModule || item instanceof WarframeRareModule) {
             return 0.75;
         }
         // 银卡（罕见）：2/4
-        if (item instanceof ItemUncommonModule || item instanceof WarframeUncommonModule) {
+        if (item instanceof WeaponUncommonModule || item instanceof WarframeUncommonModule) {
             return 0.5;
         }
         // 铜卡（普通）：1/4
-        if (item instanceof ItemCommonModule || item instanceof WarframeCommonModule) {
+        if (item instanceof WeaponCommonModule || item instanceof WarframeCommonModule) {
             return 0.25;
         }
         // 未知品质兜底：全额
@@ -218,13 +218,13 @@ public final class ModuleLevelHelper {
         if (type.isEmpty()) { return ""; }
 
         // 武器裂罅特殊处理：按模式分3键
-        if (type.equals(ItemRivenModule.RIVEN_TYPE) && moduleStack.getItem() instanceof ItemRivenModule) {
-            int mode = ItemRivenModule.getRivenMode(moduleStack);
+        if (type.equals(WeaponRivenModule.RIVEN_TYPE) && moduleStack.getItem() instanceof WeaponRivenModule) {
+            int mode = WeaponRivenModule.getRivenMode(moduleStack);
             String modeKey;
             switch (mode) {
-                case ItemRivenModule.MODE_MELEE: modeKey = type + "_melee"; break;
-                case ItemRivenModule.MODE_REMOTE: modeKey = type + "_remote"; break;
-                case ItemRivenModule.MODE_UNIVERSAL: modeKey = type + "_universal"; break;
+                case WeaponRivenModule.MODE_MELEE: modeKey = type + "_melee"; break;
+                case WeaponRivenModule.MODE_REMOTE: modeKey = type + "_remote"; break;
+                case WeaponRivenModule.MODE_UNIVERSAL: modeKey = type + "_universal"; break;
                 default: modeKey = type + "_melee"; break;
             }
             // ⭐ 追加品质后缀 / Append rarity suffix
@@ -248,12 +248,12 @@ public final class ModuleLevelHelper {
         if (moduleStack == null || moduleStack.isEmpty()) { return ""; }
         String type = AbstractModule.getType(moduleStack);
         if (type.isEmpty()) { return ""; }
-        if (type.equals(ItemRivenModule.RIVEN_TYPE) && moduleStack.getItem() instanceof ItemRivenModule) {
-            int mode = ItemRivenModule.getRivenMode(moduleStack);
+        if (type.equals(WeaponRivenModule.RIVEN_TYPE) && moduleStack.getItem() instanceof WeaponRivenModule) {
+            int mode = WeaponRivenModule.getRivenMode(moduleStack);
             switch (mode) {
-                case ItemRivenModule.MODE_MELEE: return type + "_melee";
-                case ItemRivenModule.MODE_REMOTE: return type + "_remote";
-                case ItemRivenModule.MODE_UNIVERSAL: return type + "_universal";
+                case WeaponRivenModule.MODE_MELEE: return type + "_melee";
+                case WeaponRivenModule.MODE_REMOTE: return type + "_remote";
+                case WeaponRivenModule.MODE_UNIVERSAL: return type + "_universal";
                 default: return type + "_melee";
             }
         }
@@ -316,7 +316,7 @@ public final class ModuleLevelHelper {
         if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
             String discoveryKey = ModuleDiscoveryHandler.buildDiscoveryKey(module);
             if (!discoveryKey.isEmpty()) {
-                pers.roinflam.kuvalich.network.message.ModuleDiscoveryPacket.discoverAndSync(sp, discoveryKey);
+                pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket.discoverAndSync(sp, discoveryKey);
             }
         }
     }

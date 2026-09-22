@@ -15,7 +15,7 @@ import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 import pers.roinflam.kuvalich.utils.AttributesUtil;
-import pers.roinflam.kuvalich.utils.EntityLivingUtil;
+import pers.roinflam.kuvalich.utils.LivingEntityUtil;
 import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 
 import javax.annotation.Nonnull;
@@ -85,9 +85,9 @@ public class Paracesis extends AbstractKuvaWeapon {
                     }
 
                     if (hurter.getHealth() - dotDamage > 0.01f) {
-                        EntityLivingUtil.damageHealthDirectly(hurter, dotDamage);
+                        LivingEntityUtil.damageHealthDirectly(hurter, dotDamage);
                     } else {
-                        EntityLivingUtil.kill(hurter, attacker.level().damageSources().indirectMagic(attacker, attacker));
+                        LivingEntityUtil.kill(hurter, attacker.level().damageSources().indirectMagic(attacker, attacker));
                         this.cancel();
                     }
                 }

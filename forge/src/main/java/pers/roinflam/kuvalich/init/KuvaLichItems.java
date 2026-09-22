@@ -7,7 +7,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import pers.roinflam.kuvalich.item.*;
 import pers.roinflam.kuvalich.item.card.*;
-import pers.roinflam.kuvalich.item.module.item.*;
+import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.item.weapon.*;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -197,19 +197,19 @@ public class KuvaLichItems {
     // ==================== 武器模组 / Item Modules ====================
 
     public static final RegistryObject<Item> ITEM_COMMON_MODULE = ITEMS.register("item_common_module",
-            () -> new ItemCommonModule(new Item.Properties()));
+            () -> new WeaponCommonModule(new Item.Properties()));
 
     public static final RegistryObject<Item> ITEM_UNCOMMON_MODULE = ITEMS.register("item_uncommon_module",
-            () -> new ItemUncommonModule(new Item.Properties()));
+            () -> new WeaponUncommonModule(new Item.Properties()));
 
     public static final RegistryObject<Item> ITEM_RARE_MODULE = ITEMS.register("item_rare_module",
-            () -> new ItemRareModule(new Item.Properties()));
+            () -> new WeaponRareModule(new Item.Properties()));
 
     public static final RegistryObject<Item> ITEM_PRIME_MODULE = ITEMS.register("item_prime_module",
-            () -> new ItemPrimeModule(new Item.Properties()));
+            () -> new WeaponPrimeModule(new Item.Properties()));
 
     public static final RegistryObject<Item> ITEM_RIVEN_MODULE = ITEMS.register("item_riven_module",
-            () -> new ItemRivenModule(new Item.Properties()));
+            () -> new WeaponRivenModule(new Item.Properties()));
 
     // ==================== 战甲模组 / Warframe Modules ====================
 

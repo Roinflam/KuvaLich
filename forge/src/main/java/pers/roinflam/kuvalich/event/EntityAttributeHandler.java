@@ -3,8 +3,8 @@ package pers.roinflam.kuvalich.event;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.entity.EntityKuvaMaster;
-import pers.roinflam.kuvalich.entity.EntityKuvaSlave;
+import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
+import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -22,9 +22,9 @@ public class EntityAttributeHandler {
     @SubscribeEvent
     public static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
         // 注册赤毒奴仆的属性
-        event.put(KuvaLichEntities.KUVA_SLAVE.get(), EntityKuvaSlave.createAttributes().build());
+        event.put(KuvaLichEntities.KUVA_SLAVE.get(), KuvaSlaveEntity.createAttributes().build());
 
         // 注册赤毒玄骸的属性
-        event.put(KuvaLichEntities.KUVA_MASTER.get(), EntityKuvaMaster.createAttributes().build());
+        event.put(KuvaLichEntities.KUVA_MASTER.get(), KuvaMasterEntity.createAttributes().build());
     }
 }

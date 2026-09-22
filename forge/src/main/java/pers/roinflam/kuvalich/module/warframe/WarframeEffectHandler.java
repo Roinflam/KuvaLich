@@ -33,10 +33,10 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
-import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
+import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributeManager;
+import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributes;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
-import pers.roinflam.kuvalich.network.message.WarframeModuleSyncPacket;
+import pers.roinflam.kuvalich.network.packet.WarframeModuleSyncPacket;
 
 import javax.annotation.Nonnull;
 import java.util.*;

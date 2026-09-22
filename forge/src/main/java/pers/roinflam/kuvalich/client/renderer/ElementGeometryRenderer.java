@@ -150,7 +150,7 @@ public final class ElementGeometryRenderer {
             if (firstPerson && entity == mc.getCameraEntity()) continue;
 
             // 只处理磁力 debuff
-            if (!ClientElementDebuffTracker.has(living, ELEM_MAGNETIC)) continue;
+            if (!ElementDebuffTracker.has(living, ELEM_MAGNETIC)) continue;
 
             // 距离裁剪
             double ex = entity.getX();

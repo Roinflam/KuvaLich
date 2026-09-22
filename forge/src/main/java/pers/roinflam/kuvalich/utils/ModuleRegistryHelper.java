@@ -3,7 +3,7 @@ package pers.roinflam.kuvalich.utils;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.config.ModuleConfig;
@@ -112,14 +112,14 @@ public class ModuleRegistryHelper {
                 attrValue = attrValue * generalMultiplier;
             }
 
-            AbstractItemModule.addAttributes(itemStack, attrName, (float) attrValue);
+            AbstractWeaponModule.addAttributes(itemStack, attrName, (float) attrValue);
         }
 
-        AbstractItemModule.setType(itemStack, type);
+        AbstractWeaponModule.setType(itemStack, type);
 
         // 设置冲突标签
         if (conflictTags != null && conflictTags.length > 0) {
-            AbstractItemModule.setConflictTags(itemStack, conflictTags);
+            AbstractWeaponModule.setConflictTags(itemStack, conflictTags);
         }
 
         if (items != null) {

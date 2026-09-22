@@ -14,7 +14,7 @@
     "MixinGunShootInterval",
     "MixinGunShootOnce",
     "MixinBulletModifiers",
-    "MixinTaczDamageDisplay"
+    "MixinDamageDisplay"
   ],
   "client": [
     "MixinCameraRecoil",

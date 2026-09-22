@@ -38,7 +38,7 @@ import java.util.List;
  * {@code ItemTooltipEvent}</b>：后者的列表只收 {@code Component}，也就是纯文本行，
  * 想让「值」对齐只能靠空格凑 —— 中文一个字约等于两个字符宽，必然错位。
  * 本事件的列表是 {@code Either<FormattedText, TooltipComponent>}，可以塞进自定义
- * 渲染组件（{@link PanelGridComponent} → {@link ClientPanelGrid}），
+ * 渲染组件（{@link PanelGridTooltip} → {@link ClientPanelGridTooltip}），
  * 由它按字体实测宽度做像素级列对齐。</p>
  *
  * @author RoinFlam
@@ -78,7 +78,7 @@ public final class KuvaTooltipCoordinator {
     // ==================== 渲染组件注册 ====================
 
     /**
-     * 把 {@link PanelGridComponent}（纯数据）接到 {@link ClientPanelGrid}（渲染器）上
+     * 把 {@link PanelGridTooltip}（纯数据）接到 {@link ClientPanelGridTooltip}（渲染器）上
      *
      * <p>排版在这里做而不是在构建内容时做，是因为列宽必须按<b>当前字体</b>实测，
      * 而字体随语言与资源包变化。</p>
@@ -88,7 +88,7 @@ public final class KuvaTooltipCoordinator {
 
         @SubscribeEvent
         public static void onRegisterTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
-            event.register(PanelGridComponent.class, data -> {
+            event.register(PanelGridTooltip.class, data -> {
                 Minecraft mc = Minecraft.getInstance();
                 int screenWidth = mc.getWindow().getGuiScaledWidth();
 
@@ -99,7 +99,7 @@ public final class KuvaTooltipCoordinator {
                 int maxWidth = (int) (screenWidth * TooltipConfig.PANEL.widthRatio.get());
 
                 // ⭐ 高度也要传进去：面板超屏时原版不裁剪也不滚动，只会把顶部推到屏幕外面
-                return ClientPanelGrid.layout(data, mc.font, maxWidth, mc.getWindow().getGuiScaledHeight());
+                return ClientPanelGridTooltip.layout(data, mc.font, maxWidth, mc.getWindow().getGuiScaledHeight());
             });
         }
 

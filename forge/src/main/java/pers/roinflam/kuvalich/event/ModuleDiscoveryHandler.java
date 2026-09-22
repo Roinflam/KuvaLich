@@ -10,13 +10,13 @@ import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.item.module.item.*;
+import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
-import pers.roinflam.kuvalich.network.message.ModuleDiscoveryPacket;
+import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -113,7 +113,7 @@ public class ModuleDiscoveryHandler {
             for (int i = 0; i < inv.getContainerSize(); i++) {
                 ItemStack stack = inv.getItem(i);
                 if (stack.isEmpty()) continue;
-                if (!(stack.getItem() instanceof AbstractItemModule) &&
+                if (!(stack.getItem() instanceof AbstractWeaponModule) &&
                         !(stack.getItem() instanceof AbstractWarframeModule)) continue;
                 if (AbstractModule.isRandom(stack)) continue;
                 // ⭐ 使用组合键 / Use compound key
@@ -135,7 +135,7 @@ public class ModuleDiscoveryHandler {
      */
     public static void tryDiscoverSingle(ServerPlayer player, ItemStack stack) {
         if (stack == null || stack.isEmpty()) return;
-        if (!(stack.getItem() instanceof AbstractItemModule) &&
+        if (!(stack.getItem() instanceof AbstractWeaponModule) &&
                 !(stack.getItem() instanceof AbstractWarframeModule)) return;
         if (AbstractModule.isRandom(stack)) return;
         // ⭐ 使用组合键 / Use compound key
@@ -193,11 +193,11 @@ public class ModuleDiscoveryHandler {
         if (stack == null || stack.isEmpty()) return -1;
         Item item = stack.getItem();
         // 武器模组 / Weapon modules
-        if (item instanceof ItemRivenModule) return 3;
-        if (item instanceof ItemPrimeModule) return 3;
-        if (item instanceof ItemRareModule) return 2;
-        if (item instanceof ItemUncommonModule) return 1;
-        if (item instanceof ItemCommonModule) return 0;
+        if (item instanceof WeaponRivenModule) return 3;
+        if (item instanceof WeaponPrimeModule) return 3;
+        if (item instanceof WeaponRareModule) return 2;
+        if (item instanceof WeaponUncommonModule) return 1;
+        if (item instanceof WeaponCommonModule) return 0;
         // 战甲模组 / Warframe modules
         if (item instanceof WarframeRivenModule) return 3;
         if (item instanceof WarframePrimeModule) return 3;

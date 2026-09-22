@@ -32,7 +32,7 @@ public class KuvaLichEnchantments {
      * Effect: Gain extra experience when mining blocks
      */
     public static final RegistryObject<Enchantment> EXPERIENCE_COLLECTOR =
-            ENCHANTMENTS.register("experience_collector", EnchantmentExperienceCollector::new);
+            ENCHANTMENTS.register("experience_collector", ExperienceCollectorEnchantment::new);
 
     /**
      * 灭骸
@@ -44,7 +44,7 @@ public class KuvaLichEnchantments {
      * 3. 增加安魂卡片和模组的掉落几率
      */
     public static final RegistryObject<Enchantment> REQUIEM_DESTROYED =
-            ENCHANTMENTS.register("requiem_destroyed", EnchantmentRequiemDestroyed::new);
+            ENCHANTMENTS.register("requiem_destroyed", RequiemDestroyedEnchantment::new);
 
     /**
      * 斩杀
@@ -54,7 +54,7 @@ public class KuvaLichEnchantments {
      * Effect: Deal more damage to enemies with lower health
      */
     public static final RegistryObject<Enchantment> LETHAL =
-            ENCHANTMENTS.register("lethal", EnchantmentLethal::new);
+            ENCHANTMENTS.register("lethal", LethalEnchantment::new);
 
     /**
      * 先攻
@@ -64,7 +64,7 @@ public class KuvaLichEnchantments {
      * Effect: Deal extra damage to enemies at full health and gain experience
      */
     public static final RegistryObject<Enchantment> FIRST_STRIKE =
-            ENCHANTMENTS.register("first_strike", EnchantmentFirstStrike::new);
+            ENCHANTMENTS.register("first_strike", FirstStrikeEnchantment::new);
 
     /**
      * 护卫
@@ -74,7 +74,7 @@ public class KuvaLichEnchantments {
      * Effect: Greatly reduce damage taken when at full health
      */
     public static final RegistryObject<Enchantment> ESCORT =
-            ENCHANTMENTS.register("escort", EnchantmentEscort::new);
+            ENCHANTMENTS.register("escort", EscortEnchantment::new);
 
     /**
      * 死亡抵抗
@@ -84,5 +84,5 @@ public class KuvaLichEnchantments {
      * Effect: Provide resistance to lethal damage
      */
     public static final RegistryObject<Enchantment> DEATH_RESISTANCE =
-            ENCHANTMENTS.register("death_resistance", EnchantmentDeathResistance::new);
+            ENCHANTMENTS.register("death_resistance", DeathResistanceEnchantment::new);
 }

@@ -17,7 +17,7 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.network.message.DecryptionHudPacket;
+import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.lang.ref.WeakReference;
@@ -29,7 +29,7 @@ import java.lang.ref.WeakReference;
  * <p>无需打开灭骸之扉界面，打怪获得解密进度时屏幕顶部弹出进度条：
  * <ul>
  *   <li>滑入 + 填充补间（指数平滑，帧率无关）+ 数秒后淡出。</li>
- *   <li>填充贴图复用灭骸之扉的 requiem_gate.png（UV 与 ScreenRequiemGate 完全一致）。</li>
+ *   <li>填充贴图复用灭骸之扉的 requiem_gate.png（UV 与 RequiemGateScreen 完全一致）。</li>
  *   <li>无论一次加很多、加一点还是连续多次加，都用同一套平滑补间，从旧值平滑过渡到新值。</li>
  *   <li>揭示新线索时金色脉冲闪光 + 音效；最终解密成功时更强的庆祝闪光 + 音效，并将条归零。</li>
  * </ul></p>
@@ -49,7 +49,7 @@ public final class DecryptionHudOverlay {
 
     // ==================== 贴图（复用灭骸之扉进度条） ====================
 
-    /** 进度条贴图（与 ScreenRequiemGate 同一张） */
+    /** 进度条贴图（与 RequiemGateScreen 同一张） */
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(Reference.MOD_ID, "textures/gui/container/requiem_gate.png");
 
@@ -57,7 +57,7 @@ public final class DecryptionHudOverlay {
     private static final int BAR_W = 152;
     /** 进度条高 / Bar height */
     private static final int BAR_H = 18;
-    /** 轨道贴图 U 偏移 / Track texture U（与 ScreenRequiemGate 一致：18） */
+    /** 轨道贴图 U 偏移 / Track texture U（与 RequiemGateScreen 一致：18） */
     private static final int TRACK_U = 18;
     /** 轨道贴图 V 偏移 / Track texture V（灭骸之扉 imageHeight = 166） */
     private static final int TRACK_V = 166;

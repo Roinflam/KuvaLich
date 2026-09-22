@@ -13,8 +13,8 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 import pers.roinflam.kuvalich.utils.AttributesUtil;
-import pers.roinflam.kuvalich.utils.EntityLivingUtil;
-import pers.roinflam.kuvalich.utils.EntityPlayerUtil;
+import pers.roinflam.kuvalich.utils.LivingEntityUtil;
+import pers.roinflam.kuvalich.utils.PlayerUtil;
 import pers.roinflam.kuvalich.utils.EntityUtil;
 import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 
@@ -58,7 +58,7 @@ public class GramPrime extends AbstractKuvaWeapon {
             );
 
             for (@Nonnull LivingEntity nearbyEnemy : entities) {
-                float mainTargetDamage = EntityPlayerUtil.getAttackDamage(attacker, nearbyEnemy);
+                float mainTargetDamage = PlayerUtil.getAttackDamage(attacker, nearbyEnemy);
                 float aoeDamage = mainTargetDamage * 0.66f * cooldownProgress;
 
                 nearbyEnemy.hurt(attacker.level().damageSources().playerAttack(attacker), aoeDamage);

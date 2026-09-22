@@ -12,13 +12,13 @@ import net.minecraftforge.client.event.ContainerScreenEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.base.item.AbstractItemModule;
+import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
-import pers.roinflam.kuvalich.item.module.item.ItemRivenModule;
+import pers.roinflam.kuvalich.item.module.weapon.WeaponRivenModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
-import pers.roinflam.kuvalich.world.inventory.MenuRequiemWarframeTable;
-import pers.roinflam.kuvalich.world.inventory.MenuRequiemWeaponTable;
+import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
+import pers.roinflam.kuvalich.world.inventory.RequiemWeaponTableMenu;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -106,8 +106,8 @@ public class ModuleConflictHighlighter {
         GuiGraphics guiGraphics = event.getGuiGraphics();
 
         // 非军械库界面直接跳过
-        boolean isWeaponTable = menu instanceof MenuRequiemWeaponTable;
-        boolean isWarframeTable = menu instanceof MenuRequiemWarframeTable;
+        boolean isWeaponTable = menu instanceof RequiemWeaponTableMenu;
+        boolean isWarframeTable = menu instanceof RequiemWarframeTableMenu;
         if (!isWeaponTable && !isWarframeTable) { return; }
 
         // 菜单切换时清空闪烁状态
@@ -120,9 +120,9 @@ public class ModuleConflictHighlighter {
         ItemStack carried = menu.getCarried();
         if (!carried.isEmpty()) {
             if (isWeaponTable) {
-                renderWeaponConflictPulse(guiGraphics, (MenuRequiemWeaponTable) menu, carried);
+                renderWeaponConflictPulse(guiGraphics, (RequiemWeaponTableMenu) menu, carried);
             } else {
-                renderWarframeConflictPulse(guiGraphics, (MenuRequiemWarframeTable) menu, carried);
+                renderWarframeConflictPulse(guiGraphics, (RequiemWarframeTableMenu) menu, carried);
             }
         }
 
@@ -160,11 +160,11 @@ public class ModuleConflictHighlighter {
         // 计算槽位在菜单中的索引，判断是否来自玩家背包
         int menuIndex = menu.slots.indexOf(hoveredSlot);
 
-        if (menu instanceof MenuRequiemWeaponTable weaponMenu) {
+        if (menu instanceof RequiemWeaponTableMenu weaponMenu) {
             // 武器军械库：模组槽0~7，武器槽8，玩家背包从索引9开始
             if (menuIndex < 9) { return; }
             triggerWeaponFlash(weaponMenu, clickedItem);
-        } else if (menu instanceof MenuRequiemWarframeTable warframeMenu) {
+        } else if (menu instanceof RequiemWarframeTableMenu warframeMenu) {
             // 战甲军械库：模组槽0~7，玩家背包从索引8开始
             if (menuIndex < 8) { return; }
             triggerWarframeFlash(warframeMenu, clickedItem);
@@ -181,9 +181,9 @@ public class ModuleConflictHighlighter {
      * @param carried     鼠标上拿着的物品
      */
     private static void renderWeaponConflictPulse(GuiGraphics guiGraphics,
-                                                  MenuRequiemWeaponTable menu,
+                                                  RequiemWeaponTableMenu menu,
                                                   ItemStack carried) {
-        if (!(carried.getItem() instanceof AbstractItemModule)) { return; }
+        if (!(carried.getItem() instanceof AbstractWeaponModule)) { return; }
         if (AbstractModule.isRandom(carried)) { return; }
 
         for (int i = 0; i < 8; i++) {
@@ -202,8 +202,8 @@ public class ModuleConflictHighlighter {
      * @param menu        武器军械库菜单
      * @param clickedItem 被Shift+点击的物品
      */
-    private static void triggerWeaponFlash(MenuRequiemWeaponTable menu, ItemStack clickedItem) {
-        if (!(clickedItem.getItem() instanceof AbstractItemModule)) { return; }
+    private static void triggerWeaponFlash(RequiemWeaponTableMenu menu, ItemStack clickedItem) {
+        if (!(clickedItem.getItem() instanceof AbstractWeaponModule)) { return; }
         if (AbstractModule.isRandom(clickedItem)) { return; }
 
         boolean hasConflict = false;
@@ -224,7 +224,7 @@ public class ModuleConflictHighlighter {
     }
 
     /**
-     * 判断武器模组是否冲突（与 MenuRequiemWeaponTable.ModuleSlot.mayPlace 逻辑一致）
+     * 判断武器模组是否冲突（与 RequiemWeaponTableMenu.ModuleSlot.mayPlace 逻辑一致）
      *
      * @param existing 槽位中已有的模组
      * @param carried  鼠标上/正在转移的模组
@@ -232,8 +232,8 @@ public class ModuleConflictHighlighter {
      */
     private static boolean isWeaponModuleConflict(ItemStack existing, ItemStack carried) {
         // 裂罅互斥：只能装1个裂罅
-        if (carried.getItem() instanceof ItemRivenModule
-                && existing.getItem() instanceof ItemRivenModule) {
+        if (carried.getItem() instanceof WeaponRivenModule
+                && existing.getItem() instanceof WeaponRivenModule) {
             return true;
         }
         // 双向冲突检测（同类型模组互斥）
@@ -250,7 +250,7 @@ public class ModuleConflictHighlighter {
      * @param carried     鼠标上拿着的物品
      */
     private static void renderWarframeConflictPulse(GuiGraphics guiGraphics,
-                                                    MenuRequiemWarframeTable menu,
+                                                    RequiemWarframeTableMenu menu,
                                                     ItemStack carried) {
         if (!(carried.getItem() instanceof AbstractWarframeModule)) { return; }
         if (AbstractModule.isRandom(carried)) { return; }
@@ -271,7 +271,7 @@ public class ModuleConflictHighlighter {
      * @param menu        战甲军械库菜单
      * @param clickedItem 被Shift+点击的物品
      */
-    private static void triggerWarframeFlash(MenuRequiemWarframeTable menu, ItemStack clickedItem) {
+    private static void triggerWarframeFlash(RequiemWarframeTableMenu menu, ItemStack clickedItem) {
         if (!(clickedItem.getItem() instanceof AbstractWarframeModule)) { return; }
         if (AbstractModule.isRandom(clickedItem)) { return; }
 
@@ -293,7 +293,7 @@ public class ModuleConflictHighlighter {
     }
 
     /**
-     * 判断战甲模组是否冲突（与 MenuRequiemWarframeTable.ModuleSlot.mayPlace 逻辑一致）
+     * 判断战甲模组是否冲突（与 RequiemWarframeTableMenu.ModuleSlot.mayPlace 逻辑一致）
      *
      * @param existing 槽位中已有的模组
      * @param carried  鼠标上/正在转移的模组

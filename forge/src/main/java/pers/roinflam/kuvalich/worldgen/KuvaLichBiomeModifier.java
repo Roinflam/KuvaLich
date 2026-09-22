@@ -21,6 +21,7 @@ import net.minecraftforge.common.world.MobSpawnSettingsBuilder;
 import net.minecraftforge.common.world.ModifiableBiomeInfo.BiomeInfo;
 
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.init.KuvaLichBiomeModifierSerializers;
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 
@@ -308,6 +309,6 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
 
     @Override
     public Codec<? extends BiomeModifier> codec() {
-        return KuvaLichBiomeModifiers.KUVALICH_MODIFIER_CODEC.get();
+        return KuvaLichBiomeModifierSerializers.KUVALICH_MODIFIER_CODEC.get();
     }
 }

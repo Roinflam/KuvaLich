@@ -18,7 +18,7 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
-import pers.roinflam.kuvalich.entity.EntityKuvaMaster;
+import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 
 import javax.annotation.Nonnull;
@@ -62,7 +62,7 @@ public class RequiemUltimatum extends Item {
             // 在玩家面前生成赤毒玄骸 / Spawn Kuva Lich in front of player
             BlockPos spawnPos = player.blockPosition().relative(player.getDirection(), 3);
 
-            EntityKuvaMaster kuvaMaster = new EntityKuvaMaster(KuvaLichEntities.KUVA_MASTER.get(), level);
+            KuvaMasterEntity kuvaMaster = new KuvaMasterEntity(KuvaLichEntities.KUVA_MASTER.get(), level);
             kuvaMaster.setPos(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
             level.addFreshEntity(kuvaMaster);
 
@@ -98,7 +98,7 @@ public class RequiemUltimatum extends Item {
         // 在点击的方块上方生成赤毒玄骸 / Spawn Kuva Lich above clicked block
         BlockPos spawnPos = pos.relative(facing);
 
-        EntityKuvaMaster kuvaMaster = new EntityKuvaMaster(KuvaLichEntities.KUVA_MASTER.get(), level);
+        KuvaMasterEntity kuvaMaster = new KuvaMasterEntity(KuvaLichEntities.KUVA_MASTER.get(), level);
         kuvaMaster.setPos(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
         level.addFreshEntity(kuvaMaster);
 

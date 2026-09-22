@@ -42,7 +42,7 @@ public final class WeaponPanelData {
                                           boolean applyGates) {
         List<PanelChip> out = new ArrayList<>(WeaponPanelCatalog.SPECS.size());
 
-        for (AttrSpec spec : WeaponPanelCatalog.SPECS) {
+        for (AttributeSpec spec : WeaponPanelCatalog.SPECS) {
             // ⭐ 门控：近战武器不生成枪械词条，这是压掉大半行数的关键一步
             if (applyGates && !spec.gate().accepts(stack)) {
                 continue;
@@ -72,7 +72,7 @@ public final class WeaponPanelData {
     /**
      * 一条词条是否该出现在面板上
      *
-     * <p>只有被 {@link AttrSpec#always()} 标记的四条（基伤 / 暴击 / 暴伤 / 触发）是
+     * <p>只有被 {@link AttributeSpec#always()} 标记的四条（基伤 / 暴击 / 暴伤 / 触发）是
      * 武器的身份信息，即使全是基础值也要显示；其余一律「真的有非零值」才占行。</p>
      *
      * <p>⭐ 这个判据以前挂在 {@link PanelGroup#alwaysVisible()} 上，是<b>组级</b>的，
@@ -80,7 +80,7 @@ public final class WeaponPanelData {
      * 一把只插了伤害卡的武器会平白多出「多重 +0%  攻速 0.0%  射速 +0%  范围 +0%
      * 触发时长 100%」五个零值 chip，而改造前它们都是 {@code != 0} 才显示的。</p>
      */
-    private static boolean isVisible(AttrSpec spec, Map<String, Double> attrs,
+    private static boolean isVisible(AttributeSpec spec, Map<String, Double> attrs,
                                      double base, Double second, double withStacks) {
         if (spec.always() && !spec.fmt().hiddenWhenZero()) {
             return true;

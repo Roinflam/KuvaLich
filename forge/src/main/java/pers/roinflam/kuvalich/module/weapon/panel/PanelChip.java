@@ -12,14 +12,14 @@ import javax.annotation.Nullable;
  *
  * @author RoinFlam
  */
-public record PanelChip(AttrSpec spec,
+public record PanelChip(AttributeSpec spec,
                         double base,
                         @Nullable Double secondary,
                         double withStacks) {
 
     /**
      * 当前是否有叠层在生效（决定是否画「基础 → 含叠层」的箭头）。
-     * <p>用 {@link ValueFmt#epsilon()} 而不是 {@code !=}：浮点相等判断在这里
+     * <p>用 {@link ValueFormat#epsilon()} 而不是 {@code !=}：浮点相等判断在这里
      * 会因为 {@code stacks * perStack} 的累加误差而误判成「有叠层」。</p>
      */
     public boolean hasStackBonus() {

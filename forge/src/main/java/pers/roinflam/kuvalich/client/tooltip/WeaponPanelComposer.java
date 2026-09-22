@@ -44,12 +44,12 @@ public final class WeaponPanelComposer {
 
     /**
      * 面板产出：要么是一组文本行（SHIFT / CTRL / ALT 视图与无模组的基础面板），
-     * 要么是一个结构化网格（默认视图，交给 {@link ClientPanelGrid} 做像素对齐渲染）
+     * 要么是一个结构化网格（默认视图，交给 {@link ClientPanelGridTooltip} 做像素对齐渲染）
      *
      * @param textLines 文本行
      * @param grid      结构化网格；null 表示本次没有网格
      */
-    public record PanelResult(List<Component> textLines, @Nullable PanelGridComponent grid) {
+    public record PanelResult(List<Component> textLines, @Nullable PanelGridTooltip grid) {
 
         static final PanelResult EMPTY = new PanelResult(List.of(), null);
 
@@ -57,7 +57,7 @@ public final class WeaponPanelComposer {
             return new PanelResult(lines, null);
         }
 
-        static PanelResult grid(PanelGridComponent grid) {
+        static PanelResult grid(PanelGridTooltip grid) {
             return new PanelResult(List.of(), grid);
         }
 
@@ -128,14 +128,14 @@ public final class WeaponPanelComposer {
      * 构建默认视图的结构化网格
      *
      * <p>这里只负责「有哪些分组、每组有哪些单元格」，
-     * 列数、列宽、对齐全部交给 {@link ClientPanelGrid} 在渲染时按字体实测决定。</p>
+     * 列数、列宽、对齐全部交给 {@link ClientPanelGridTooltip} 在渲染时按字体实测决定。</p>
      *
      * <p><b>第一版的教训</b>：当时是在这里就把词条流式打包成 {@code Component} 行，
      * 结果属性少的武器（比如只插一张卡的枪）也被挤成一行 ——
      * 名字被迫缩成两个字、tooltip 被撑得比周围都宽、还没有任何层次。
      * 「行数少」本身不是目标，好读才是；行数只在快超屏时才需要管。</p>
      */
-    private static PanelGridComponent buildGrid(ItemStack stack, List<ItemStack> modules,
+    private static PanelGridTooltip buildGrid(ItemStack stack, List<ItemStack> modules,
                                                 HashMap<String, Double> attrs, HashMap<String, Double> extra,
                                                 StackCounts stacks, boolean applyGates, TooltipView view) {
         return buildGrid(stack, modules, attrs, extra, stacks, applyGates, view, true);
@@ -145,22 +145,22 @@ public final class WeaponPanelComposer {
      * @param useStackedValues true 显示「含当前叠层」的值（默认视图），
      *                         false 显示不含叠层的基础值（SHIFT 视图）
      */
-    private static PanelGridComponent buildGrid(ItemStack stack, List<ItemStack> modules,
+    private static PanelGridTooltip buildGrid(ItemStack stack, List<ItemStack> modules,
                                                 HashMap<String, Double> attrs, HashMap<String, Double> extra,
                                                 StackCounts stacks, boolean applyGates, TooltipView view,
                                                 boolean useStackedValues) {
-        List<PanelGridComponent.Section> sections = new ArrayList<>();
+        List<PanelGridTooltip.Section> sections = new ArrayList<>();
         int budget = ChipPacker.budget(TooltipConfig.PANEL.widthRatio.get());
 
         // Forma 锁定：独立一行，不参与任何分组与压缩
         if (WeaponModuleHandler.isFormaLocked(stack)) {
-            sections.add(new PanelGridComponent.Flow(null,
+            sections.add(new PanelGridTooltip.Flow(null,
                     List.of(Component.translatable("item.kuvalich.forma_locked")
                             .withStyle(PanelPalette.bold(PanelPalette.LOCKED)))));
         }
 
         // ---- 成对词条的各组 ----
-        EnumMap<PanelGroup, List<PanelGridComponent.Cell>> byGroup = new EnumMap<>(PanelGroup.class);
+        EnumMap<PanelGroup, List<PanelGridTooltip.Cell>> byGroup = new EnumMap<>(PanelGroup.class);
         for (PanelChip chip : WeaponPanelData.collect(stack, attrs, stacks, applyGates)) {
             byGroup.computeIfAbsent(chip.spec().group(), g -> new ArrayList<>())
                     .add(pairCell(chip, useStackedValues));
@@ -171,9 +171,9 @@ public final class WeaponPanelComposer {
         if (TooltipConfig.PANEL.showUnknownAttributes.get()) {
             for (Map.Entry<String, Double> e : WeaponPanelData.collectUnknown(attrs).entrySet()) {
                 byGroup.computeIfAbsent(PanelGroup.OTHER, g -> new ArrayList<>())
-                        .add(new PanelGridComponent.Cell(
+                        .add(new PanelGridTooltip.Cell(
                                 label(PanelStyle.shortNameOf(e.getKey())),
-                                value(ValueFmt.PERCENT_SIGNED.format(e.getValue()),
+                                value(ValueFormat.PERCENT_SIGNED.format(e.getValue()),
                                         e.getValue() >= 0 ? PanelPalette.LABEL : PanelPalette.PENALTY)));
             }
         }
@@ -187,20 +187,20 @@ public final class WeaponPanelComposer {
         if (isGroupEnabled(PanelGroup.STACK)) {
             List<List<Component>> rows = stackTableRows(attrs, stacks);
             if (!rows.isEmpty()) {
-                sections.add(new PanelGridComponent.Table(header(PanelGroup.STACK), rows,
-                        new PanelGridComponent.Align[]{
-                                PanelGridComponent.Align.LEFT,
-                                PanelGridComponent.Align.LEFT,
-                                PanelGridComponent.Align.RIGHT,
-                                PanelGridComponent.Align.RIGHT}));
+                sections.add(new PanelGridTooltip.Table(header(PanelGroup.STACK), rows,
+                        new PanelGridTooltip.Align[]{
+                                PanelGridTooltip.Align.LEFT,
+                                PanelGridTooltip.Align.LEFT,
+                                PanelGridTooltip.Align.RIGHT,
+                                PanelGridTooltip.Align.RIGHT}));
             }
         }
 
         // ---- 元素：与其它分组一样的对齐网格 ----
         if (isGroupEnabled(PanelGroup.ELEMENT)) {
-            List<PanelGridComponent.Cell> cells = elementCells(stack, modules, attrs);
+            List<PanelGridTooltip.Cell> cells = elementCells(stack, modules, attrs);
             if (!cells.isEmpty()) {
-                sections.add(new PanelGridComponent.Pairs(header(PanelGroup.ELEMENT), cells));
+                sections.add(new PanelGridTooltip.Pairs(header(PanelGroup.ELEMENT), cells));
             }
         }
 
@@ -211,22 +211,22 @@ public final class WeaponPanelComposer {
 
         // ---- 额外装备槽位 ----
         if (TooltipConfig.PANEL.showExtraSlots.get() && !extra.isEmpty()) {
-            List<PanelGridComponent.Cell> cells = extraCells(extra);
+            List<PanelGridTooltip.Cell> cells = extraCells(extra);
             if (!cells.isEmpty()) {
-                sections.add(new PanelGridComponent.Pairs(header(PanelGroup.EXTRA), cells));
+                sections.add(new PanelGridTooltip.Pairs(header(PanelGroup.EXTRA), cells));
             }
         }
 
         // ---- 已装备模组 ----
         if (isGroupEnabled(PanelGroup.MODULES) && !modules.isEmpty()) {
-            sections.add(new PanelGridComponent.Columns(
+            sections.add(new PanelGridTooltip.Columns(
                     headerWithCount(PanelGroup.MODULES, modules.size(), 8),
                     moduleNames(modules)));
         }
 
         appendHint(sections, view);
 
-        return new PanelGridComponent(sections);
+        return new PanelGridTooltip(sections);
     }
 
     // ==================== SHIFT：逐条完整 ====================
@@ -245,11 +245,11 @@ public final class WeaponPanelComposer {
      * 全项目有 17 条这样措辞不同的，玩家只会以为那是两条不同的属性。
      * 视图之间该变的是<b>看到多少</b>，不是<b>怎么称呼</b>。</p>
      */
-    private static PanelGridComponent buildFullGrid(ItemStack stack, List<ItemStack> modules,
+    private static PanelGridTooltip buildFullGrid(ItemStack stack, List<ItemStack> modules,
                                                     HashMap<String, Double> attrs, HashMap<String, Double> extra,
                                                     StackCounts stacks, TooltipView view) {
         boolean applyGates = TooltipConfig.PANEL.hideIrrelevantGroups.get();
-        return new PanelGridComponent(
+        return new PanelGridTooltip(
                 buildGrid(stack, modules, attrs, extra, stacks, applyGates, view, false).sections());
     }
 
@@ -258,19 +258,19 @@ public final class WeaponPanelComposer {
     /**
      * CTRL 视图：每张模组卡各贡献了什么、额外槽位来自哪里、哪条被配置上限截断了
      */
-    private static PanelGridComponent buildSourceGrid(List<ItemStack> modules,
+    private static PanelGridTooltip buildSourceGrid(List<ItemStack> modules,
                                                       HashMap<String, Double> extra, TooltipView view) {
-        List<PanelGridComponent.Section> sections = new ArrayList<>();
+        List<PanelGridTooltip.Section> sections = new ArrayList<>();
 
         for (ItemStack module : modules) {
-            List<PanelGridComponent.Cell> cells = new ArrayList<>();
+            List<PanelGridTooltip.Cell> cells = new ArrayList<>();
             double levelMult = ModuleLevelHelper.getEffectiveMultiplier(module);
             for (Map.Entry<String, Double> e : AbstractModule.getAttributes(module)) {
                 double v = ModuleConfig.clampAttributeValue(e.getKey(), e.getValue()) * levelMult;
                 if (Math.abs(v) < 1.0e-3) {
                     continue;
                 }
-                cells.add(new PanelGridComponent.Cell(
+                cells.add(new PanelGridTooltip.Cell(
                         label(PanelStyle.shortNameOf(e.getKey())),
                         value(sourceFormat(e.getKey()).format(v),
                                 v >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY)));
@@ -286,13 +286,13 @@ public final class WeaponPanelComposer {
                         " Lv." + ModuleLevelHelper.getModuleLevel(module) + "/" + ModuleLevelHelper.getMaxLevel())
                         .withStyle(PanelPalette.style(PanelPalette.MUTED)));
             }
-            sections.add(new PanelGridComponent.Pairs(header, cells));
+            sections.add(new PanelGridTooltip.Pairs(header, cells));
         }
 
         if (!extra.isEmpty()) {
-            List<PanelGridComponent.Cell> cells = extraCells(extra);
+            List<PanelGridTooltip.Cell> cells = extraCells(extra);
             if (!cells.isEmpty()) {
-                sections.add(new PanelGridComponent.Pairs(header(PanelGroup.EXTRA), cells));
+                sections.add(new PanelGridTooltip.Pairs(header(PanelGroup.EXTRA), cells));
             }
         }
 
@@ -301,7 +301,7 @@ public final class WeaponPanelComposer {
         if (TooltipConfig.PANEL.showClampWarning.get()) {
             List<Component> warnings = clampWarnings(modules);
             if (!warnings.isEmpty()) {
-                sections.add(new PanelGridComponent.Flow(
+                sections.add(new PanelGridTooltip.Flow(
                         Component.translatable("kuvalich.panel.clamped.header")
                                 .withStyle(PanelPalette.style(PanelPalette.WARN)),
                         warnings));
@@ -309,26 +309,26 @@ public final class WeaponPanelComposer {
         }
 
         if (sections.isEmpty()) {
-            sections.add(new PanelGridComponent.Flow(header(PanelGroup.OTHER),
+            sections.add(new PanelGridTooltip.Flow(header(PanelGroup.OTHER),
                     List.of(Component.translatable("kuvalich.panel.source.none")
                             .withStyle(PanelPalette.style(PanelPalette.MUTED)))));
         }
         appendHint(sections, view);
-        return new PanelGridComponent(sections);
+        return new PanelGridTooltip(sections);
     }
 
     /** 来源视图一律用「加了多少」的口径，而不是「最终是多少」 */
-    private static ValueFmt sourceFormat(String key) {
-        AttrSpec spec = WeaponPanelCatalog.byKey(key);
+    private static ValueFormat sourceFormat(String key) {
+        AttributeSpec spec = WeaponPanelCatalog.byKey(key);
         if (spec == null) {
-            return ValueFmt.PERCENT_SIGNED;
+            return ValueFormat.PERCENT_SIGNED;
         }
-        ValueFmt fmt = spec.fmt();
-        if (fmt == ValueFmt.METERS_ABS) {
-            return ValueFmt.METERS_DELTA;
+        ValueFormat fmt = spec.fmt();
+        if (fmt == ValueFormat.METERS_ABS) {
+            return ValueFormat.METERS_DELTA;
         }
-        if (fmt == ValueFmt.PERCENT || fmt == ValueFmt.MULTIPLIER) {
-            return ValueFmt.PERCENT_SIGNED;
+        if (fmt == ValueFormat.PERCENT || fmt == ValueFormat.MULTIPLIER) {
+            return ValueFormat.PERCENT_SIGNED;
         }
         return fmt;
     }
@@ -354,8 +354,8 @@ public final class WeaponPanelComposer {
             }
             out.add(Component.translatable("kuvalich.panel.clamped",
                             PanelStyle.shortNameOf(key),
-                            ValueFmt.PERCENT_SIGNED.format(before),
-                            ValueFmt.PERCENT_SIGNED.format(after))
+                            ValueFormat.PERCENT_SIGNED.format(before),
+                            ValueFormat.PERCENT_SIGNED.format(after))
                     .withStyle(PanelPalette.style(PanelPalette.WARN)));
         }
         return out;
@@ -366,17 +366,17 @@ public final class WeaponPanelComposer {
     /**
      * ALT 视图：此刻真正生效的东西 —— 叠层详情、元素怎么合成的、触发几率怎么算出来的
      */
-    private static PanelGridComponent buildLiveGrid(ItemStack stack, List<ItemStack> modules,
+    private static PanelGridTooltip buildLiveGrid(ItemStack stack, List<ItemStack> modules,
                                                     HashMap<String, Double> attrs, StackCounts stacks,
                                                     TooltipView view) {
-        List<PanelGridComponent.Section> sections = new ArrayList<>();
+        List<PanelGridTooltip.Section> sections = new ArrayList<>();
         int budget = ChipPacker.budget(TooltipConfig.PANEL.widthRatio.get());
 
         // ---- 叠层详情：比默认视图多一列「每层多少」----
         if (isGroupEnabled(PanelGroup.STACK)) {
             List<StackRow> rows = WeaponPanelData.collectStacks(attrs, stacks);
             if (rows.isEmpty()) {
-                sections.add(new PanelGridComponent.Flow(header(PanelGroup.STACK),
+                sections.add(new PanelGridTooltip.Flow(header(PanelGroup.STACK),
                         List.of(Component.translatable("kuvalich.panel.stack.none")
                                 .withStyle(PanelPalette.style(PanelPalette.MUTED)))));
             } else {
@@ -384,17 +384,17 @@ public final class WeaponPanelComposer {
                 for (int i = 0; i < rows.size(); i++) {
                     List<Component> row = new ArrayList<>(stackTableRows(attrs, stacks).get(i));
                     row.add(2, Component.translatable("kuvalich.panel.stack.per",
-                                    ValueFmt.PERCENT_SIGNED.format(rows.get(i).perStack()))
+                                    ValueFormat.PERCENT_SIGNED.format(rows.get(i).perStack()))
                             .withStyle(PanelPalette.style(PanelPalette.MUTED)));
                     table.add(row);
                 }
-                sections.add(new PanelGridComponent.Table(header(PanelGroup.STACK), table,
-                        new PanelGridComponent.Align[]{
-                                PanelGridComponent.Align.LEFT,
-                                PanelGridComponent.Align.LEFT,
-                                PanelGridComponent.Align.LEFT,
-                                PanelGridComponent.Align.RIGHT,
-                                PanelGridComponent.Align.RIGHT}));
+                sections.add(new PanelGridTooltip.Table(header(PanelGroup.STACK), table,
+                        new PanelGridTooltip.Align[]{
+                                PanelGridTooltip.Align.LEFT,
+                                PanelGridTooltip.Align.LEFT,
+                                PanelGridTooltip.Align.LEFT,
+                                PanelGridTooltip.Align.RIGHT,
+                                PanelGridTooltip.Align.RIGHT}));
             }
         }
 
@@ -405,7 +405,7 @@ public final class WeaponPanelComposer {
                 double v = attrs.getOrDefault(key, 0.0);
                 if (Math.abs(v) >= 1.0e-3) {
                     input.add(Component.literal(I18n.get("kuvaweapon.type." + key)
-                                    + " " + ValueFmt.PERCENT_SIGNED.format(v))
+                                    + " " + ValueFormat.PERCENT_SIGNED.format(v))
                             .withStyle(PanelPalette.style(PanelPalette.element(key))));
                 }
             }
@@ -424,18 +424,18 @@ public final class WeaponPanelComposer {
                 lines.addAll(prefixed("kuvalich.panel.element.pool", poolChips, budget));
             }
             if (!lines.isEmpty()) {
-                sections.add(new PanelGridComponent.Flow(header(PanelGroup.ELEMENT), lines));
+                sections.add(new PanelGridTooltip.Flow(header(PanelGroup.ELEMENT), lines));
             }
         }
 
         // ---- 触发几率分解 ----
-        sections.add(new PanelGridComponent.Flow(
+        sections.add(new PanelGridTooltip.Flow(
                 Component.translatable("item.module.triggerChance")
                         .withStyle(PanelPalette.style(PanelPalette.header(PanelGroup.PANEL))),
                 triggerBreakdown(stack, attrs, stacks)));
 
         appendHint(sections, view);
-        return new PanelGridComponent(sections);
+        return new PanelGridTooltip(sections);
     }
 
     /** 在一组 chip 前加一个小标题，然后按宽度打包 */
@@ -462,10 +462,10 @@ public final class WeaponPanelComposer {
 
         List<Component> out = new ArrayList<>(3);
         MutableComponent line = Component.translatable("kuvalich.panel.trigger.breakdown",
-                        ValueFmt.PERCENT.format(baseTrigger),
-                        ValueFmt.PERCENT_SIGNED.format(modTrigger),
-                        ValueFmt.PERCENT_SIGNED.format(stackTrigger),
-                        ValueFmt.PERCENT.format(finalTrigger))
+                        ValueFormat.PERCENT.format(baseTrigger),
+                        ValueFormat.PERCENT_SIGNED.format(modTrigger),
+                        ValueFormat.PERCENT_SIGNED.format(stackTrigger),
+                        ValueFormat.PERCENT.format(finalTrigger))
                 .withStyle(PanelPalette.style(PanelPalette.MUTED));
         if (uncapped > cap + 1.0e-6) {
             line.append(Component.literal(" "))
@@ -479,30 +479,30 @@ public final class WeaponPanelComposer {
         if (Math.abs(dash) >= 1.0e-3) {
             double dashFinal = Math.min(baseTrigger * (1 + modTrigger + dash) * (1 + stackTrigger), cap);
             out.add(Component.translatable("kuvalich.panel.trigger.dash",
-                            ValueFmt.PERCENT_SIGNED.format(dash),
-                            ValueFmt.PERCENT.format(dashFinal))
+                            ValueFormat.PERCENT_SIGNED.format(dash),
+                            ValueFormat.PERCENT.format(dashFinal))
                     .withStyle(PanelPalette.style(PanelPalette.MUTED)));
         }
         return out;
     }
 
     /** 底部按键提示 */
-    private static void appendHint(List<PanelGridComponent.Section> sections, TooltipView view) {
+    private static void appendHint(List<PanelGridTooltip.Section> sections, TooltipView view) {
         if (TooltipConfig.PANEL.showKeyHint.get()) {
-            sections.add(new PanelGridComponent.Flow(null, List.of(hintLine(view))));
+            sections.add(new PanelGridTooltip.Flow(null, List.of(hintLine(view))));
         }
     }
 
     // ==================== 网格的各种单元格 ====================
 
-    private static void addPairs(List<PanelGridComponent.Section> sections,
-                                 EnumMap<PanelGroup, List<PanelGridComponent.Cell>> byGroup,
+    private static void addPairs(List<PanelGridTooltip.Section> sections,
+                                 EnumMap<PanelGroup, List<PanelGridTooltip.Cell>> byGroup,
                                  PanelGroup group) {
-        List<PanelGridComponent.Cell> cells = byGroup.get(group);
+        List<PanelGridTooltip.Cell> cells = byGroup.get(group);
         if (cells == null || cells.isEmpty() || !isGroupEnabled(group)) {
             return;
         }
-        sections.add(new PanelGridComponent.Pairs(header(group), cells));
+        sections.add(new PanelGridTooltip.Pairs(header(group), cells));
     }
 
 
@@ -557,8 +557,8 @@ public final class WeaponPanelComposer {
      *
      * @param useStackedValues 取含叠层的值还是基础值
      */
-    private static PanelGridComponent.Cell pairCell(PanelChip chip, boolean useStackedValues) {
-        AttrSpec spec = chip.spec();
+    private static PanelGridTooltip.Cell pairCell(PanelChip chip, boolean useStackedValues) {
+        AttributeSpec spec = chip.spec();
         boolean boosted = useStackedValues && chip.hasStackBonus();
 
         int color = chip.isNegative() ? PanelPalette.PENALTY
@@ -577,10 +577,10 @@ public final class WeaponPanelComposer {
                             ? PanelPalette.PENALTY : PanelPalette.value(spec.group()))));
             // ⭐ 「x4.5 / x2.8」比同组的「113%」宽两三倍，挤进列里会把整列撑开，
             //    害得旁边的词条标签与数值之间拉出一大段空白。让它整行独占反而齐整
-            return new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v, true);
+            return new PanelGridTooltip.Cell(label(PanelStyle.shortNameOf(spec.key())), v, true);
         }
 
-        return new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
+        return new PanelGridTooltip.Cell(label(PanelStyle.shortNameOf(spec.key())), v);
     }
 
     /**
@@ -590,7 +590,7 @@ public final class WeaponPanelComposer {
      * 后者是<b>总量</b>，跟前面那些<b>占比</b>不是一回事，混在一行里容易读串。
      * 现在走和其它分组一样的对齐网格，列数自适应，总量单独成一格。</p>
      */
-    private static List<PanelGridComponent.Cell> elementCells(ItemStack stack, List<ItemStack> modules,
+    private static List<PanelGridTooltip.Cell> elementCells(ItemStack stack, List<ItemStack> modules,
                                                               HashMap<String, Double> attrs) {
         HashMap<String, String> pool = WeaponElementSystem.getTriggerElements(stack, modules);
 
@@ -606,12 +606,12 @@ public final class WeaponPanelComposer {
             return List.of();
         }
 
-        List<PanelGridComponent.Cell> cells = new ArrayList<>(pool.size() + 1);
+        List<PanelGridTooltip.Cell> cells = new ArrayList<>(pool.size() + 1);
         for (Map.Entry<String, String> e : pool.entrySet()) {
             // ⭐ 元素色走自己的 RGB 表：原版的 DARK_RED / DARK_GREEN / DARK_GRAY
             //    在深色背景上读不出来，而元素是靠颜色认的
             int rgb = PanelPalette.element(e.getKey());
-            cells.add(new PanelGridComponent.Cell(
+            cells.add(new PanelGridTooltip.Cell(
                     Component.literal(I18n.get("kuvaweapon.type." + e.getKey())).withStyle(PanelPalette.style(rgb)),
                     Component.literal(e.getValue()).withStyle(PanelPalette.bold(rgb))));
         }
@@ -619,7 +619,7 @@ public final class WeaponPanelComposer {
             // ⭐ 独占一行：它是元素<b>总量</b>，与上面那些<b>占比</b>不是一回事，
             //    而且「元素伤害」这个标签比「冲击」「病毒」长一倍，
             //    混进同一列会把列宽撑开、把短元素的标签与数值拉散
-            cells.add(new PanelGridComponent.Cell(
+            cells.add(new PanelGridTooltip.Cell(
                     label(I18n.get("item.module.triggerDamage")),
                     value((total >= 0 ? "+" : "") + Math.round(total * 100) + "%",
                             PanelPalette.value(PanelGroup.ELEMENT)),
@@ -650,18 +650,18 @@ public final class WeaponPanelComposer {
             Component bonus;
             if (row.isIdle()) {
                 bonus = Component.translatable("kuvalich.panel.stack.per",
-                        ValueFmt.PERCENT_SIGNED.format(row.perStack()))
+                        ValueFormat.PERCENT_SIGNED.format(row.perStack()))
                         .withStyle(PanelPalette.style(PanelPalette.MUTED));
             } else if (row.dependsOnTarget()) {
                 // ⭐ killStackBaseDamage 的最终加成 = 每层 × 层数 × 目标身上的负面效果数，
                 //    tooltip 时没有目标，所以只给「每负面效果」的口径，不编一个总百分比
-                bonus = Component.literal(ValueFmt.PERCENT_SIGNED.format(row.total()))
+                bonus = Component.literal(ValueFormat.PERCENT_SIGNED.format(row.total()))
                         .withStyle(PanelPalette.bold(PanelPalette.STACK_ACTIVE))
                         .append(Component.literal("/").withStyle(PanelPalette.style(PanelPalette.FAINT)))
                         .append(Component.translatable("kuvalich.panel.stack.per_debuff")
                                 .withStyle(PanelPalette.style(PanelPalette.MUTED)));
             } else {
-                bonus = Component.literal(ValueFmt.PERCENT_SIGNED.format(row.total()))
+                bonus = Component.literal(ValueFormat.PERCENT_SIGNED.format(row.total()))
                         .withStyle(PanelPalette.bold(PanelPalette.STACK_ACTIVE));
             }
 
@@ -691,8 +691,8 @@ public final class WeaponPanelComposer {
     }
 
     /** 额外装备槽位的单元格 */
-    private static List<PanelGridComponent.Cell> extraCells(HashMap<String, Double> extra) {
-        List<PanelGridComponent.Cell> cells = new ArrayList<>();
+    private static List<PanelGridTooltip.Cell> extraCells(HashMap<String, Double> extra) {
+        List<PanelGridTooltip.Cell> cells = new ArrayList<>();
         double elementSum = 0;
 
         List<String> keys = new ArrayList<>(extra.keySet());
@@ -708,25 +708,25 @@ public final class WeaponPanelComposer {
                 continue;
             }
 
-            AttrSpec spec = WeaponPanelCatalog.byKey(key);
+            AttributeSpec spec = WeaponPanelCatalog.byKey(key);
             // 额外槽位用「增量」口径：爆炸半径是「加了多少米」而不是「最终多少米」
-            ValueFmt fmt = ValueFmt.PERCENT_SIGNED;
+            ValueFormat fmt = ValueFormat.PERCENT_SIGNED;
             if (spec != null) {
-                fmt = spec.fmt() == ValueFmt.METERS_ABS ? ValueFmt.METERS_DELTA : spec.fmt();
-                if (fmt == ValueFmt.PERCENT || fmt == ValueFmt.MULTIPLIER) {
-                    fmt = ValueFmt.PERCENT_SIGNED;
+                fmt = spec.fmt() == ValueFormat.METERS_ABS ? ValueFormat.METERS_DELTA : spec.fmt();
+                if (fmt == ValueFormat.PERCENT || fmt == ValueFormat.MULTIPLIER) {
+                    fmt = ValueFormat.PERCENT_SIGNED;
                 }
             }
             if (Math.abs(v) < fmt.epsilon()) {
                 continue;
             }
-            cells.add(new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(key)),
+            cells.add(new PanelGridTooltip.Cell(label(PanelStyle.shortNameOf(key)),
                     value(fmt.format(v), v >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY)));
         }
 
         if (Math.abs(elementSum) >= 1.0e-3) {
-            cells.add(new PanelGridComponent.Cell(label(I18n.get("item.module.triggerDamage")),
-                    value(ValueFmt.PERCENT_SIGNED.format(elementSum),
+            cells.add(new PanelGridTooltip.Cell(label(I18n.get("item.module.triggerDamage")),
+                    value(ValueFormat.PERCENT_SIGNED.format(elementSum),
                             elementSum >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY)));
         }
 
@@ -736,8 +736,8 @@ public final class WeaponPanelComposer {
             if (v == null || Math.abs(v) < 1.0e-3) {
                 continue;
             }
-            cells.add(new PanelGridComponent.Cell(label(PanelStyle.shortNameOf(key)),
-                    Component.translatable("kuvalich.panel.stack.per", ValueFmt.PERCENT_SIGNED.format(v))
+            cells.add(new PanelGridTooltip.Cell(label(PanelStyle.shortNameOf(key)),
+                    Component.translatable("kuvalich.panel.stack.per", ValueFormat.PERCENT_SIGNED.format(v))
                             .withStyle(PanelPalette.style(v >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY))));
         }
 
@@ -749,7 +749,7 @@ public final class WeaponPanelComposer {
      *
      * <p>原先是流式打包 + 名字之间加「·」，结果行尾会挂一个孤零零的分隔符，
      * 名字的左边界也参差不齐，跟面板其余部分那套列对齐完全不是一路。
-     * 现在交给 {@link PanelGridComponent.Columns} 排列，分隔符也不需要了 ——
+     * 现在交给 {@link PanelGridTooltip.Columns} 排列，分隔符也不需要了 ——
      * 卡名本来就各有品质颜色，靠颜色和列位就分得开。</p>
      */
     private static List<Component> moduleNames(List<ItemStack> modules) {
@@ -793,29 +793,29 @@ public final class WeaponPanelComposer {
      * <p>也走网格，与装了模组之后的面板是同一套排版和配色 ——
      * 玩家插上第一张卡时不应该觉得换了个界面。</p>
      */
-    private static PanelGridComponent buildBaseGrid(ItemStack stack, TooltipView view) {
-        List<PanelGridComponent.Section> sections = new ArrayList<>();
+    private static PanelGridTooltip buildBaseGrid(ItemStack stack, TooltipView view) {
+        List<PanelGridTooltip.Section> sections = new ArrayList<>();
 
         if (WeaponModuleHandler.isFormaLocked(stack)) {
-            sections.add(new PanelGridComponent.Flow(null,
+            sections.add(new PanelGridTooltip.Flow(null,
                     List.of(Component.translatable("item.kuvalich.forma_locked")
                             .withStyle(PanelPalette.bold(PanelPalette.LOCKED)))));
         }
 
-        sections.add(new PanelGridComponent.Pairs(header(PanelGroup.PANEL), List.of(
-                baseCell(stack, "damage", ValueFmt.PERCENT),
-                baseCell(stack, "criticalStrikeProbability", ValueFmt.PERCENT),
-                baseCell(stack, "criticalStrikeMultiplier", ValueFmt.MULTIPLIER),
-                baseCell(stack, "triggerChance", ValueFmt.PERCENT))));
+        sections.add(new PanelGridTooltip.Pairs(header(PanelGroup.PANEL), List.of(
+                baseCell(stack, "damage", ValueFormat.PERCENT),
+                baseCell(stack, "criticalStrikeProbability", ValueFormat.PERCENT),
+                baseCell(stack, "criticalStrikeMultiplier", ValueFormat.MULTIPLIER),
+                baseCell(stack, "triggerChance", ValueFormat.PERCENT))));
 
         // ⭐ 没装模组的武器正是新手拿到的第一把，也是最需要这行提示的人群 ——
         //    不给入口的话，整套四视图对他们完全不可见。
         appendHint(sections, view);
-        return new PanelGridComponent(sections);
+        return new PanelGridTooltip(sections);
     }
 
-    private static PanelGridComponent.Cell baseCell(ItemStack stack, String attr, ValueFmt fmt) {
-        return new PanelGridComponent.Cell(
+    private static PanelGridTooltip.Cell baseCell(ItemStack stack, String attr, ValueFormat fmt) {
+        return new PanelGridTooltip.Cell(
                 label(PanelStyle.shortNameOf(attr)),
                 value(fmt.format(WeaponModuleHandler.getBaseAttribute(stack, attr)), PanelPalette.VALUE));
     }

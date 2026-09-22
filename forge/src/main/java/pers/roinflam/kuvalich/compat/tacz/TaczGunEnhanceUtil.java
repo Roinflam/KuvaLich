@@ -113,7 +113,7 @@ public final class TaczGunEnhanceUtil {
      * ⭐ 全类<b>唯一</b>触碰 TACZ 类型的地方，单独成一个内部类。
      *
      * <p>为什么非要拆出去：本工具类是<b>无条件</b>被加载的 —— tooltip 对每个物品都调
-     * {@code appendEnhanceLine}，面板的 {@code Gate.RANGED} 和安魂之融的槽位判定也在调。
+     * {@code appendEnhanceLine}，面板的 {@code PanelRowGate.RANGED} 和安魂之融的槽位判定也在调。
      * 只要 {@code IGun} 出现在本类的常量池里，没装 TACZ 的玩家就有在类解析阶段
      * 吃 {@code NoClassDefFoundError} 的风险。
      *
@@ -219,7 +219,7 @@ public final class TaczGunEnhanceUtil {
      * <p>⭐ 放在本类而不是 {@code TaczCompatEventHandler}：后者直接 import 了
      * {@code com.tacz.guns.api.event.*} 等一整套 TACZ 类型，而 tooltip 是每帧走的路径，
      * 不该只为了画一行字就把那个类拖进来（本类只依赖 {@code IGun}，
-     * 且已经被 {@code MenuRequiemEvolve} 等无条件调用）。</p>
+     * 且已经被 {@code RequiemEvolveMenu} 等无条件调用）。</p>
      *
      * @param lines 待写入的行列表
      * @param stack 被查看的物品

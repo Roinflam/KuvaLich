@@ -34,14 +34,14 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import pers.roinflam.kuvalich.compat.curios.CuriosCompat;
 import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
-import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
+import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributeManager;
+import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributes;
 import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.module.KillStackManager.StackType;
-import pers.roinflam.kuvalich.network.message.DamagePacket;
+import pers.roinflam.kuvalich.network.packet.DamagePacket;
 import pers.roinflam.kuvalich.utils.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.RandomUtil;
-import pers.roinflam.kuvalich.utils.EntityLivingUtil;
+import pers.roinflam.kuvalich.utils.LivingEntityUtil;
 import pers.roinflam.kuvalich.utils.EntityUtil;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
@@ -1066,9 +1066,9 @@ public class WeaponCombatHandler {
                 // ⭐ 先记下扣血前的血量，扣完再测实际掉了多少
                 float healthBefore = hurter.getHealth();
                 if (healthBefore - finalTrueDamage > 0.01f) {
-                    EntityLivingUtil.damageHealthDirectly(hurter, finalTrueDamage);
+                    LivingEntityUtil.damageHealthDirectly(hurter, finalTrueDamage);
                 } else {
-                    EntityLivingUtil.kill(hurter, trueSource);
+                    LivingEntityUtil.kill(hurter, trueSource);
                 }
                 float shown = DamageDisplayTracker.resolveDirectLoss(hurter, healthBefore, finalTrueDamage);
 
@@ -1178,7 +1178,7 @@ public class WeaponCombatHandler {
             public void run() {
                 this.cancel();
                 if (hurter.isDeadOrDying()) { return; }
-                EntityLivingUtil.kill(hurter, exSource);
+                LivingEntityUtil.kill(hurter, exSource);
             }
         }.start();
     }
@@ -1237,7 +1237,7 @@ public class WeaponCombatHandler {
      * {@code new SynchronizationTask(20, 20)} 起一个<b>独立</b>任务，完全不去重，后果有两层：</p>
      * <ol>
      *   <li><b>平衡性（更严重）</b>：切割与带盾时的毒素走
-     *       {@code EntityLivingUtil.damageHealthDirectly}，<b>绕过无敌帧</b>，
+     *       {@code LivingEntityUtil.damageHealthDirectly}，<b>绕过无敌帧</b>，
      *       所以重复 DOT 的伤害是真·线性叠加 —— 一次命中触发 6 次切割，
      *       就是 6 份切割 DOT 同时扣血，秒杀任何血量。</li>
      *   <li><b>性能</b>：群体命中（横扫 / 霰弹打十几只怪）时几百个任务并存，
@@ -1614,12 +1614,12 @@ public class WeaponCombatHandler {
         if (usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem) { firingRate *= 2.0; }
         if (firingRate <= 0) return;
         int extraUpdates = (int) firingRate;
-        for (int i = 0; i < extraUpdates; i++) { EntityLivingUtil.updateHeld(entity); }
+        for (int i = 0; i < extraUpdates; i++) { LivingEntityUtil.updateHeld(entity); }
         double fractionalPart = firingRate - extraUpdates;
         // ⭐ 修复 2：本方法客户端、服务端都在跑（客户端跑是为了蓄力动画跟上实际进度）。
         //    小数部分原来用 RandomUtil 掷骰，两端各掷各的，动画和实际进度会对不上；
         //    现改为按「游戏时间 + 实体 ID」做确定性掷骰，两端同一 tick 得到同一结果
-        if (fractionalPart > 0 && deterministicChance(entity, fractionalPart)) { EntityLivingUtil.updateHeld(entity); }
+        if (fractionalPart > 0 && deterministicChance(entity, fractionalPart)) { LivingEntityUtil.updateHeld(entity); }
     }
 
     /**

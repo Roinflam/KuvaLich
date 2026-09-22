@@ -6,7 +6,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import pers.roinflam.kuvalich.config.TooltipConfig;
-import pers.roinflam.kuvalich.module.weapon.panel.AttrSpec;
+import pers.roinflam.kuvalich.module.weapon.panel.AttributeSpec;
 import pers.roinflam.kuvalich.module.weapon.panel.PanelGroup;
 
 /**
@@ -83,7 +83,7 @@ public final class PanelStyle {
      * 项目里 {@code kuvaweapon.item_attribute_type.*} 有不少是整句描述，
      * 直接拿来当 chip 名会一行吃掉半个屏幕。</p>
      */
-    public static String shortName(AttrSpec spec) {
+    public static String shortName(AttributeSpec spec) {
         return shortNameOf(spec.key());
     }
 

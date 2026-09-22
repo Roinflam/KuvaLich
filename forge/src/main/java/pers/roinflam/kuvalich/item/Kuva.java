@@ -49,7 +49,7 @@ public class Kuva extends Item implements GeoItem {
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (this.renderer == null) {
-                    this.renderer = new pers.roinflam.kuvalich.client.renderer.RenderKuvaItem();
+                    this.renderer = new pers.roinflam.kuvalich.client.renderer.KuvaItemRenderer();
                 }
                 return this.renderer;
             }

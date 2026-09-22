@@ -54,7 +54,7 @@ public class RivenSliver extends Item implements GeoItem {
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (this.renderer == null) {
-                    this.renderer = new pers.roinflam.kuvalich.client.renderer.RenderRivenSliverItem();
+                    this.renderer = new pers.roinflam.kuvalich.client.renderer.RivenSliverItemRenderer();
                 }
                 return this.renderer;
             }

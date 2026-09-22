@@ -11,7 +11,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.network.message.DamagePacket;
+import pers.roinflam.kuvalich.network.packet.DamagePacket;
 import pers.roinflam.kuvalich.utils.LogUtil;
 
 import javax.annotation.Nonnull;

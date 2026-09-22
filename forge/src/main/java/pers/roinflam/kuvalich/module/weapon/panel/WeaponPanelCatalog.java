@@ -15,7 +15,7 @@ import java.util.*;
  * {@code WeaponModuleHandler.onItemTooltip}（约 200 行）里，每条词条要复制粘贴一整段
  * {@code Component.literal(I18n.get(...)).append(Component.literal(Math.round(v*100) + "%")...)}。
  * 加一条新词条要同时改这里、{@code ExtraSlotTooltipHelper.ATTRIBUTE_ORDER}、
- * {@code AbstractItemModule.ITEM_ATTRIBUTE_TYPES} 三处，漏改任何一处都不报错。</p>
+ * {@code AbstractWeaponModule.ITEM_ATTRIBUTE_TYPES} 三处，漏改任何一处都不报错。</p>
  *
  * <p>现在这三处统一读这张表，{@link #findGaps} 在启动期自检漏登记的词条。</p>
  *
@@ -31,90 +31,90 @@ public final class WeaponPanelCatalog {
     /**
      * 面板属性描述表。**顺序即显示顺序**（组内），分组顺序见 {@link PanelGroup} 的声明顺序。
      */
-    public static final List<AttrSpec> SPECS = List.of(
+    public static final List<AttributeSpec> SPECS = List.of(
 
             // ── PANEL：最终面板核心，即使为 0 也显示 ────────────────────────
-            AttrSpec.of("damage", PanelGroup.PANEL, ValueFmt.PERCENT)
+            AttributeSpec.of("damage", PanelGroup.PANEL, ValueFormat.PERCENT)
                     .withProviderInternal(ValueProvider.base("damage"))
                     .markAlways(),
 
-            AttrSpec.of("criticalStrikeProbability", PanelGroup.PANEL, ValueFmt.PERCENT)
+            AttributeSpec.of("criticalStrikeProbability", PanelGroup.PANEL, ValueFormat.PERCENT)
                     .withProviderInternal(ValueProvider.scaledBase("criticalStrikeProbability", "meleeCriticalStrikeProbability"))
                     .paired(ValueProvider.scaledBase("criticalStrikeProbability", "remoteCriticalStrikeProbability"))
                     .markAlways(),
 
-            AttrSpec.of("criticalStrikeMultiplier", PanelGroup.PANEL, ValueFmt.MULTIPLIER)
+            AttributeSpec.of("criticalStrikeMultiplier", PanelGroup.PANEL, ValueFormat.MULTIPLIER)
                     .withProviderInternal(ValueProvider.scaledBase("criticalStrikeMultiplier", "meleeCriticalStrikeMultiplier"))
                     .paired(ValueProvider.scaledBase("criticalStrikeMultiplier", "remoteCriticalStrikeMultiplier"))
-                    .stacked(StackType.MELEE_CRIT_MULT, StackFn.mul("killStackMeleeCriticalMultiplier"))
+                    .stacked(StackType.MELEE_CRIT_MULT, StackFunction.mul("killStackMeleeCriticalMultiplier"))
                     .markAlways(),
 
-            AttrSpec.of("triggerChance", PanelGroup.PANEL, ValueFmt.PERCENT)
+            AttributeSpec.of("triggerChance", PanelGroup.PANEL, ValueFormat.PERCENT)
                     .withProviderInternal(ValueProvider.scaledBase("triggerChance", "triggerChance"))
-                    .stacked(StackType.TRIGGER_CHANCE, StackFn.mul("killStackTriggerChance"))
+                    .stacked(StackType.TRIGGER_CHANCE, StackFunction.mul("killStackTriggerChance"))
                     .markAlways(),
 
-            AttrSpec.pct("multishot", PanelGroup.PANEL)
-                    .stacked(StackType.MULTISHOT, StackFn.add("killStackMultishot")),
+            AttributeSpec.pct("multishot", PanelGroup.PANEL)
+                    .stacked(StackType.MULTISHOT, StackFunction.add("killStackMultishot")),
 
-            AttrSpec.of("attackSpeed", PanelGroup.PANEL, ValueFmt.PERCENT_1F)
-                    .stacked(StackType.ATTACK_SPEED, StackFn.add("killStackAttackSpeed")),
+            AttributeSpec.of("attackSpeed", PanelGroup.PANEL, ValueFormat.PERCENT_1F)
+                    .stacked(StackType.ATTACK_SPEED, StackFunction.add("killStackAttackSpeed")),
 
             // ⭐ 射速：弓的蓄力加速是双倍生效的，显示口径跟着翻倍（与改造前一致）。
             //    叠层部分同样要乘这个系数，否则弓上的箭头会指向一个偏小的数。
-            AttrSpec.of("firing_rate", PanelGroup.PANEL, ValueFmt.PERCENT_SIGNED)
+            AttributeSpec.of("firing_rate", PanelGroup.PANEL, ValueFormat.PERCENT_SIGNED)
                     .withProviderInternal((stack, attrs) -> attrs.getOrDefault("firing_rate", 0.0) * chargeFactor(stack))
                     .stacked(StackType.FIRING_RATE,
                             (stack, attrs, base, stacks) ->
                                     base + attrs.getOrDefault("killStackFiringRate", 0.0) * stacks * chargeFactor(stack))
                     .visibleWhen("firing_rate"),
 
-            AttrSpec.pct("attackRange", PanelGroup.PANEL)
-                    .stacked(StackType.ATTACK_RANGE, StackFn.add("killStackAttackRange")),
+            AttributeSpec.pct("attackRange", PanelGroup.PANEL)
+                    .stacked(StackType.ATTACK_RANGE, StackFunction.add("killStackAttackRange")),
 
             // ⭐ 爆炸半径：面板口径是「最终半径」= 1 + v*2（绝对值），
             //    与额外槽位的「加了多少」= v*2（增量）是两种不同语义，不要统一。
-            AttrSpec.of("bursting_radius", PanelGroup.PANEL, ValueFmt.METERS_ABS)
-                    .stacked(StackType.BURSTING_RADIUS, StackFn.addScaled("killStackBurstingRadius", 1.0)),
+            AttributeSpec.of("bursting_radius", PanelGroup.PANEL, ValueFormat.METERS_ABS)
+                    .stacked(StackType.BURSTING_RADIUS, StackFunction.addScaled("killStackBurstingRadius", 1.0)),
 
             // ⭐ provider 是 1+v，词条为 0 时结果是 1.0，直接拿它跟 epsilon 比会永远过阈值，
             //    渲染出一条「触发时长 100%」的空行，所以要显式指出存在性判据。
-            AttrSpec.of("triggerTime", PanelGroup.PANEL, ValueFmt.PERCENT)
+            AttributeSpec.of("triggerTime", PanelGroup.PANEL, ValueFormat.PERCENT)
                     .withProviderInternal(ValueProvider.onePlus("triggerTime"))
                     .visibleWhen("triggerTime"),
 
             // ── DAMAGE：伤害增益 ────────────────────────────────────────────
-            AttrSpec.pct("meleeDamage", PanelGroup.DAMAGE),
-            AttrSpec.pct("remoteDamage", PanelGroup.DAMAGE),
-            AttrSpec.pct("arrowDamage", PanelGroup.DAMAGE).gated(Gate.RANGED),
-            AttrSpec.pct("projectileDamage", PanelGroup.DAMAGE),
-            AttrSpec.pct("magicDamage", PanelGroup.DAMAGE),
-            AttrSpec.pct("baseDamageWhenNotCriticalStrike", PanelGroup.DAMAGE),
-            AttrSpec.pct("first_bullet_damage", PanelGroup.DAMAGE).gated(Gate.RANGED),
-            AttrSpec.pct("bane_of_undefined", PanelGroup.DAMAGE),
-            AttrSpec.pct("bane_of_undead", PanelGroup.DAMAGE),
-            AttrSpec.pct("bane_of_arthropod", PanelGroup.DAMAGE),
-            AttrSpec.pct("bane_of_illager", PanelGroup.DAMAGE),
-            AttrSpec.pct("dashMeleeCriticalStrikeProbability", PanelGroup.DAMAGE),
-            AttrSpec.pct("dashAttackRange", PanelGroup.DAMAGE),
-            AttrSpec.pct("dashTriggerChance", PanelGroup.DAMAGE),
+            AttributeSpec.pct("meleeDamage", PanelGroup.DAMAGE),
+            AttributeSpec.pct("remoteDamage", PanelGroup.DAMAGE),
+            AttributeSpec.pct("arrowDamage", PanelGroup.DAMAGE).gated(PanelRowGate.RANGED),
+            AttributeSpec.pct("projectileDamage", PanelGroup.DAMAGE),
+            AttributeSpec.pct("magicDamage", PanelGroup.DAMAGE),
+            AttributeSpec.pct("baseDamageWhenNotCriticalStrike", PanelGroup.DAMAGE),
+            AttributeSpec.pct("first_bullet_damage", PanelGroup.DAMAGE).gated(PanelRowGate.RANGED),
+            AttributeSpec.pct("bane_of_undefined", PanelGroup.DAMAGE),
+            AttributeSpec.pct("bane_of_undead", PanelGroup.DAMAGE),
+            AttributeSpec.pct("bane_of_arthropod", PanelGroup.DAMAGE),
+            AttributeSpec.pct("bane_of_illager", PanelGroup.DAMAGE),
+            AttributeSpec.pct("dashMeleeCriticalStrikeProbability", PanelGroup.DAMAGE),
+            AttributeSpec.pct("dashAttackRange", PanelGroup.DAMAGE),
+            AttributeSpec.pct("dashTriggerChance", PanelGroup.DAMAGE),
 
             // ── GUN：枪械专属，近战武器整组不生成 ────────────────────────────
-            AttrSpec.pct("reload_speed", PanelGroup.GUN).gated(Gate.GUN_ONLY),
-            AttrSpec.pct("magazine_size", PanelGroup.GUN).gated(Gate.GUN_ONLY),
-            AttrSpec.pct("projectile_speed", PanelGroup.GUN).gated(Gate.RANGED),
-            AttrSpec.pct("recoil_reduction", PanelGroup.GUN).gated(Gate.GUN_ONLY),
-            AttrSpec.pct("gun_damage", PanelGroup.GUN).gated(Gate.GUN_ONLY),
-            AttrSpec.pct("headshot_damage", PanelGroup.GUN).gated(Gate.GUN_ONLY),
-            AttrSpec.pct("aim_time", PanelGroup.GUN).gated(Gate.GUN_ONLY),
-            AttrSpec.pct("accuracy", PanelGroup.GUN).gated(Gate.GUN_ONLY),
-            AttrSpec.pct("true_bullet", PanelGroup.GUN).gated(Gate.GUN_ONLY),
-            AttrSpec.pct("gun_loot_drop", PanelGroup.GUN).gated(Gate.GUN_ONLY),
+            AttributeSpec.pct("reload_speed", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
+            AttributeSpec.pct("magazine_size", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
+            AttributeSpec.pct("projectile_speed", PanelGroup.GUN).gated(PanelRowGate.RANGED),
+            AttributeSpec.pct("recoil_reduction", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
+            AttributeSpec.pct("gun_damage", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
+            AttributeSpec.pct("headshot_damage", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
+            AttributeSpec.pct("aim_time", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
+            AttributeSpec.pct("accuracy", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
+            AttributeSpec.pct("true_bullet", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
+            AttributeSpec.pct("gun_loot_drop", PanelGroup.GUN).gated(PanelRowGate.GUN_ONLY),
 
             // ── RARE：稀有效果 ──────────────────────────────────────────────
-            AttrSpec.pct("execute_threshold", PanelGroup.RARE),
-            AttrSpec.pct("purge_buff", PanelGroup.RARE),
-            AttrSpec.of("execute_chance", PanelGroup.RARE, ValueFmt.MICRO_PERCENT)
+            AttributeSpec.pct("execute_threshold", PanelGroup.RARE),
+            AttributeSpec.pct("purge_buff", PanelGroup.RARE),
+            AttributeSpec.of("execute_chance", PanelGroup.RARE, ValueFormat.MICRO_PERCENT)
     );
 
     // ==================== 击杀叠层 ====================
@@ -152,18 +152,18 @@ public final class WeaponPanelCatalog {
 
     // ==================== 查询 ====================
 
-    private static final Map<String, AttrSpec> BY_KEY;
+    private static final Map<String, AttributeSpec> BY_KEY;
 
     static {
-        LinkedHashMap<String, AttrSpec> m = new LinkedHashMap<>();
-        for (AttrSpec s : SPECS) {
+        LinkedHashMap<String, AttributeSpec> m = new LinkedHashMap<>();
+        for (AttributeSpec s : SPECS) {
             m.put(s.key(), s);
         }
         BY_KEY = Collections.unmodifiableMap(m);
     }
 
     @Nullable
-    public static AttrSpec byKey(String key) {
+    public static AttributeSpec byKey(String key) {
         return BY_KEY.get(key);
     }
 
@@ -192,7 +192,7 @@ public final class WeaponPanelCatalog {
      *
      * <p>这类不一致是真实存在过的：{@code first_bullet_damage} 被
      * {@code WeaponModuleHandler} 读取并显示，却不在
-     * {@code AbstractItemModule.ITEM_ATTRIBUTE_TYPES} 的声明里。
+     * {@code AbstractWeaponModule.ITEM_ATTRIBUTE_TYPES} 的声明里。
      * 以前这种漏登记完全静默，现在会在日志里点名。</p>
      *
      * @param declaredTypes 模组系统声明支持的属性集合

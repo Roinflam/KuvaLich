@@ -11,7 +11,7 @@ import java.util.Map;
  * 击杀叠层词条 key → 叠层类型的完整映射（武器 8 种 + 战甲 12 种）
  *
  * <p>改造前这份对应关系以 {@code switch} 的形式在四个地方各写了一遍：
- * {@code AbstractItemModule.getMaxStacksForAttribute}、
+ * {@code AbstractWeaponModule.getMaxStacksForAttribute}、
  * {@code AbstractWarframeModule.getMaxStacksForAttribute}、
  * {@code WeaponCombatHandler.applyKillStackEffects}、
  * {@code WeaponCombatHandler.addWeaponKillStacks}。

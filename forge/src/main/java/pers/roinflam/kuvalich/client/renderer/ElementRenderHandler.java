@@ -34,7 +34,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  * 原 {@code getEntityTint} 通过 {@code getAllActiveElements} 拿一个 List，
  * 内部还要先做一次快照 List，而它在 Pre / Post 各被调用一次，
  * 即每实体每帧 2~4 次 List 分配。现改为
- * {@link ClientElementDebuffTracker#forEachActiveElement} 配合静态累加器，
+ * {@link ElementDebuffTracker#forEachActiveElement} 配合静态累加器，
  * 全程只在最终返回时分配一个 {@link Vector3f}。</p>
  *
  * <p><b>关于 {@code endBatch()} 强制 flush 的保留说明：</b>
@@ -177,7 +177,7 @@ public final class ElementRenderHandler {
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         // 冰块装饰同样遵守 64 格距离
-        if (visible && ClientElementDebuffTracker.has(entity, ELEM_ICE)) {
+        if (visible && ElementDebuffTracker.has(entity, ELEM_ICE)) {
             renderIceCrystalsOnEntity(entity, event.getPoseStack(),
                     event.getMultiBufferSource(), event.getPackedLight());
         }
@@ -213,7 +213,7 @@ public final class ElementRenderHandler {
         TINT_ACCUMULATOR[2] = 0f;
         TINT_ACCUMULATOR[3] = 0f;
 
-        ClientElementDebuffTracker.forEachActiveElement(entity, (element, amplifier) -> {
+        ElementDebuffTracker.forEachActiveElement(entity, (element, amplifier) -> {
             Vector3f tint = getElementTintForLevel(element, amplifier);
             if (tint == null) {
                 return;

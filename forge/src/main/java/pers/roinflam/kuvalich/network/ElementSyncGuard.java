@@ -6,7 +6,7 @@ import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.network.message.ElementDebuffPacket;
+import pers.roinflam.kuvalich.network.packet.ElementDebuffPacket;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.HashMap;

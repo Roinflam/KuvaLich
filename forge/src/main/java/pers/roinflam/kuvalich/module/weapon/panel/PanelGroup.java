@@ -98,7 +98,7 @@ public enum PanelGroup {
      * 以前 {@code WeaponPanelData.isVisible} 直接拿它做短路，导致同在 PANEL 组的
      * 多重 / 攻速 / 射速 / 范围 / 触发时长也被恒显 —— 一把只插了伤害卡的武器
      * 会平白多出四五个零值 chip。现在恒显标志下放到了
-     * {@link AttrSpec#always()}，只给基伤 / 暴击 / 暴伤 / 触发四条。</p>
+     * {@link AttributeSpec#always()}，只给基伤 / 暴击 / 暴伤 / 触发四条。</p>
      *
      * <p>保留本方法给「整组是否生成」一类的判断使用。</p>
      */

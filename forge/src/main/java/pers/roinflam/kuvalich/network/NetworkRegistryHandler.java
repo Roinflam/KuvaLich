@@ -4,12 +4,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import pers.roinflam.kuvalich.network.message.CodexGiveItemPacket;
-import pers.roinflam.kuvalich.network.message.DamagePacket;
-import pers.roinflam.kuvalich.network.message.DecryptionHudPacket;
-import pers.roinflam.kuvalich.network.message.ModuleDiscoveryPacket;
-import pers.roinflam.kuvalich.network.message.RequiemGateFillPacket;
-import pers.roinflam.kuvalich.network.message.WarframeModuleSyncPacket;
+import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
+import pers.roinflam.kuvalich.network.packet.DamagePacket;
+import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
+import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
+import pers.roinflam.kuvalich.network.packet.RequiemGateFillPacket;
+import pers.roinflam.kuvalich.network.packet.WarframeModuleSyncPacket;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 

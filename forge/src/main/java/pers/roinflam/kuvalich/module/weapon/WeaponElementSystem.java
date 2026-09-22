@@ -15,13 +15,13 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.dynamicattr.DynamicAttributeManager;
-import pers.roinflam.kuvalich.dynamicattr.dynamiceffect.DynamicAttributes;
+import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributeManager;
+import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributes;
 import pers.roinflam.kuvalich.network.ElementSyncGuard;
-import pers.roinflam.kuvalich.network.message.DamagePacket;
+import pers.roinflam.kuvalich.network.packet.DamagePacket;
 import pers.roinflam.kuvalich.module.weapon.element.ElementParticleEffects;
 import pers.roinflam.kuvalich.module.weapon.element.ParticleEmissionGuard;
-import pers.roinflam.kuvalich.utils.EntityLivingUtil;
+import pers.roinflam.kuvalich.utils.LivingEntityUtil;
 import pers.roinflam.kuvalich.utils.EntityUtil;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
@@ -616,8 +616,8 @@ public class WeaponElementSystem {
                                     // ⭐ 有护盾：毒素绕过护盾直接扣血，显示「扣之前 − 扣之后」的实际掉血
                                     float healthBefore = t.getHealth();
                                     boolean lethal = !(healthBefore - d > 0.01f);
-                                    if (lethal) { EntityLivingUtil.kill(t, attackSource); }
-                                    else { EntityLivingUtil.damageHealthDirectly(t, d); }
+                                    if (lethal) { LivingEntityUtil.kill(t, attackSource); }
+                                    else { LivingEntityUtil.damageHealthDirectly(t, d); }
                                     sendElementDirect(t, DamageDisplayTracker.resolveDirectLoss(t, healthBefore, d),
                                             dotAttacker, "poison");
                                     return !lethal;
@@ -688,8 +688,8 @@ public class WeaponElementSystem {
                                 // ⭐ 切割直接扣血：先扣、再显示「扣之前 − 扣之后」的实际掉血
                                 float healthBefore = t.getHealth();
                                 boolean lethal = !(healthBefore - d > 0.01f);
-                                if (lethal) { EntityLivingUtil.kill(t, attackSource); }
-                                else { EntityLivingUtil.damageHealthDirectly(t, d); }
+                                if (lethal) { LivingEntityUtil.kill(t, attackSource); }
+                                else { LivingEntityUtil.damageHealthDirectly(t, d); }
                                 sendElementDirect(t, DamageDisplayTracker.resolveDirectLoss(t, healthBefore, d),
                                         dotAttacker, "slash");
                                 return !lethal;

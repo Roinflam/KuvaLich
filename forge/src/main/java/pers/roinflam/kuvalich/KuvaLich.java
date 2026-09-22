@@ -19,10 +19,10 @@ import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
 import pers.roinflam.kuvalich.init.*;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
-import pers.roinflam.kuvalich.tabs.KuvaLichCreativeTabs;
+import pers.roinflam.kuvalich.init.KuvaLichCreativeTabs;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
-import pers.roinflam.kuvalich.worldgen.KuvaLichBiomeModifiers;
+import pers.roinflam.kuvalich.init.KuvaLichBiomeModifierSerializers;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -70,7 +70,7 @@ public class KuvaLich {
 
         // 注册自定义 BiomeModifier Codec（矿石/实体生成）
         // Register custom BiomeModifier Codec
-        KuvaLichBiomeModifiers.register(modEventBus);
+        KuvaLichBiomeModifierSerializers.register(modEventBus);
 
         // 注册生命周期事件
         // Register lifecycle events

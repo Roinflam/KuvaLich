@@ -26,7 +26,7 @@ import org.joml.Vector3f;
  *
  * <p>粒子均由服务端 {@link ServerLevel#sendParticles} 广播，32 格内客户端可见。
  * 染色与身上装饰由 {@code ElementRenderHandler} 负责，基于
- * {@code ClientElementDebuffTracker} 实现零延迟响应。</p>
+ * {@code ElementDebuffTracker} 实现零延迟响应。</p>
  *
  * @author RoinFlam
  */

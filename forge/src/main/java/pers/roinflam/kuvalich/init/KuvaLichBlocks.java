@@ -9,9 +9,9 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import pers.roinflam.kuvalich.block.ore.ExperienceOre;
-import pers.roinflam.kuvalich.block.ore.RequiemOre;
-import pers.roinflam.kuvalich.block.table.*;
+import pers.roinflam.kuvalich.block.ExperienceOreBlock;
+import pers.roinflam.kuvalich.block.RequiemOreBlock;
+import pers.roinflam.kuvalich.block.*;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
@@ -37,7 +37,7 @@ public class KuvaLichBlocks {
      * - 经验 / Experience: 50-100
      */
     public static final RegistryObject<Block> REQUIEM_ORE = BLOCKS.register("requiem_ore",
-            () -> new RequiemOre(BlockBehaviour.Properties.of()
+            () -> new RequiemOreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
@@ -55,7 +55,7 @@ public class KuvaLichBlocks {
      * - 经验 / Experience: 5-20 + 时运等级 / + fortune level
      */
     public static final RegistryObject<Block> EXPERIENCE_ORE = BLOCKS.register("experience_ore",
-            () -> new ExperienceOre(BlockBehaviour.Properties.of()
+            () -> new ExperienceOreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(3.0F, 3.0F)  // ✅ 硬度3, 抗性3
@@ -75,7 +75,7 @@ public class KuvaLichBlocks {
      * - 碰撞箱 / Collision: (0, 0, 0) -> (1, 1.15, 1)
      */
     public static final RegistryObject<Block> REQUIEM_GATE = BLOCKS.register("requiem_gate",
-            () -> new RequiemGate(BlockBehaviour.Properties.of()
+            () -> new RequiemGateBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
@@ -93,7 +93,7 @@ public class KuvaLichBlocks {
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
      */
     public static final RegistryObject<Block> REQUIEM_RECAST = BLOCKS.register("requiem_recast",
-            () -> new RequiemRecast(BlockBehaviour.Properties.of()
+            () -> new RequiemRecastBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
@@ -111,7 +111,7 @@ public class KuvaLichBlocks {
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
      */
     public static final RegistryObject<Block> REQUIEM_EVOLVE = BLOCKS.register("requiem_evolve",
-            () -> new RequiemEvolve(BlockBehaviour.Properties.of()
+            () -> new RequiemEvolveBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
@@ -129,7 +129,7 @@ public class KuvaLichBlocks {
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
      */
     public static final RegistryObject<Block> REQUIEM_WEAPON_TABLE = BLOCKS.register("requiem_weapon_table",
-            () -> new RequiemWeaponTable(BlockBehaviour.Properties.of()
+            () -> new RequiemWeaponTableBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
@@ -147,7 +147,7 @@ public class KuvaLichBlocks {
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
      */
     public static final RegistryObject<Block> REQUIEM_WARFRAME_TABLE = BLOCKS.register("requiem_warframe_table",
-            () -> new RequiemWarframeTable(BlockBehaviour.Properties.of()
+            () -> new RequiemWarframeTableBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000

@@ -13,8 +13,8 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 import pers.roinflam.kuvalich.utils.AttributesUtil;
-import pers.roinflam.kuvalich.utils.EntityLivingUtil;
-import pers.roinflam.kuvalich.utils.EntityPlayerUtil;
+import pers.roinflam.kuvalich.utils.LivingEntityUtil;
+import pers.roinflam.kuvalich.utils.PlayerUtil;
 import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 
 import javax.annotation.Nonnull;
@@ -48,7 +48,7 @@ public class DestrezaPrime extends AbstractKuvaWeapon {
 
         if (weapon != null) {
             float cooldownProgress = attacker.getAttackStrengthScale(0.5F);
-            float mainDamage = EntityPlayerUtil.getAttackDamage(attacker, hurter);
+            float mainDamage = PlayerUtil.getAttackDamage(attacker, hurter);
             float extraDamage = mainDamage * 0.333f * cooldownProgress;
 
             if (hurter.hurt(attacker.level().damageSources().playerAttack(attacker), extraDamage)) {

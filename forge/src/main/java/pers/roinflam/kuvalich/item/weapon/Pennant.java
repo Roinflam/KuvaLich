@@ -23,12 +23,12 @@ import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.module.weapon.DamageDisplayTracker;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
-import pers.roinflam.kuvalich.network.message.DamagePacket;
-import pers.roinflam.kuvalich.network.message.DamageInfo;
+import pers.roinflam.kuvalich.network.packet.DamagePacket;
+import pers.roinflam.kuvalich.network.packet.DamageInfo;
 import pers.roinflam.kuvalich.utils.SynchronizationTask;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 import pers.roinflam.kuvalich.utils.AttributesUtil;
-import pers.roinflam.kuvalich.utils.EntityLivingUtil;
+import pers.roinflam.kuvalich.utils.LivingEntityUtil;
 import pers.roinflam.kuvalich.utils.EntityUtil;
 import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 
@@ -125,10 +125,10 @@ public class Pennant extends AbstractKuvaWeapon {
                             //    Boss 锁血、伤害上限等拦截直接扣血时，数字如实变小或不显示
                             float healthBefore = hurter.getHealth();
                             if (healthBefore - damage > 0.01f) {
-                                EntityLivingUtil.damageHealthDirectly(hurter, damage);
+                                LivingEntityUtil.damageHealthDirectly(hurter, damage);
                             } else {
                                 // ✅ 使用indirectMagic
-                                EntityLivingUtil.kill(hurter, level.damageSources().indirectMagic(player, player));
+                                LivingEntityUtil.kill(hurter, level.damageSources().indirectMagic(player, player));
                                 this.cancel();
                             }
 

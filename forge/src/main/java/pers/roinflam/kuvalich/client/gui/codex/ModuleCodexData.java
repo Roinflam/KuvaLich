@@ -8,7 +8,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.custom.CustomModuleManager;
-import pers.roinflam.kuvalich.item.module.item.*;
+import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 import pers.roinflam.kuvalich.utils.LogUtil;
@@ -177,10 +177,10 @@ public class ModuleCodexData {
      */
     private static void forceInitModuleLists() {
         CreativeModeTab.Output noOp = (stack, visibility) -> {};
-        if (ItemCommonModule.itemStackList.isEmpty()) ItemCommonModule.registerCreativeTabItems(noOp);
-        if (ItemUncommonModule.itemStackList.isEmpty()) ItemUncommonModule.registerCreativeTabItems(noOp);
-        if (ItemRareModule.itemStackList.isEmpty()) ItemRareModule.registerCreativeTabItems(noOp);
-        if (ItemPrimeModule.itemStackList.isEmpty()) ItemPrimeModule.registerCreativeTabItems(noOp);
+        if (WeaponCommonModule.itemStackList.isEmpty()) WeaponCommonModule.registerCreativeTabItems(noOp);
+        if (WeaponUncommonModule.itemStackList.isEmpty()) WeaponUncommonModule.registerCreativeTabItems(noOp);
+        if (WeaponRareModule.itemStackList.isEmpty()) WeaponRareModule.registerCreativeTabItems(noOp);
+        if (WeaponPrimeModule.itemStackList.isEmpty()) WeaponPrimeModule.registerCreativeTabItems(noOp);
         if (WarframeCommonModule.itemStackList.isEmpty()) WarframeCommonModule.registerCreativeTabItems(noOp);
         if (WarframeUncommonModule.itemStackList.isEmpty()) WarframeUncommonModule.registerCreativeTabItems(noOp);
         if (WarframeRareModule.itemStackList.isEmpty()) WarframeRareModule.registerCreativeTabItems(noOp);
@@ -191,10 +191,10 @@ public class ModuleCodexData {
 
     private static List<CodexEntry> buildWeaponModuleList() {
         List<CodexEntry> entries = new ArrayList<>();
-        collectFromList(ItemCommonModule.itemStackList, RARITY_ORDER_COMMON, entries);
-        collectFromList(ItemUncommonModule.itemStackList, RARITY_ORDER_UNCOMMON, entries);
-        collectFromList(ItemRareModule.itemStackList, RARITY_ORDER_RARE, entries);
-        collectFromList(ItemPrimeModule.itemStackList, RARITY_ORDER_EPIC, entries);
+        collectFromList(WeaponCommonModule.itemStackList, RARITY_ORDER_COMMON, entries);
+        collectFromList(WeaponUncommonModule.itemStackList, RARITY_ORDER_UNCOMMON, entries);
+        collectFromList(WeaponRareModule.itemStackList, RARITY_ORDER_RARE, entries);
+        collectFromList(WeaponPrimeModule.itemStackList, RARITY_ORDER_EPIC, entries);
         try {
             CustomModuleManager mgr = CustomModuleManager.getInstance();
             for (int r = 0; r <= 3; r++) {
