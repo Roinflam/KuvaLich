@@ -10,16 +10,18 @@ import java.util.Map;
 /**
  * 图鉴格子上的一次性反馈动画（客户端）
  *
- * <p>三种反馈共用一张表，按 {@code discoveryKey} 索引：</p>
+ * <p>五种反馈共用一张表，按 {@code discoveryKey} 索引：</p>
  * <ul>
- *   <li>{@link Kind#INSTALLED} —— 一键装配成功</li>
+ *   <li>{@link Kind#INSTALLED} —— Shift+点击一键装配成功</li>
  *   <li>{@link Kind#REJECTED} —— 装不上（没空位 / 冲突 / 军械库里没放武器）</li>
+ *   <li>{@link Kind#TAKEN} —— 左键点击，已放进背包</li>
+ *   <li>{@link Kind#DROPPED} —— 左键点击但背包满了，掉在脚下</li>
  *   <li>{@link Kind#UNLOCKED} —— 这个模组刚刚被首次发现</li>
  * </ul>
  *
- * <p><b>为什么需要 REJECTED。</b>改造前一键装配失败是完全静默的：服务端判定装不上就
- * 直接 return，客户端连「请求被拒绝了」都不知道，玩家只会觉得「点了没反应」。
- * 现在服务端无论成功失败都回一个结果包，界面上才有得画。</p>
+ * <p><b>为什么这些都需要反馈。</b>改造前这几条路径在服务端都是「做完就 return」：
+ * 装不上是完全静默的，背包满了掉在脚下也完全看不出发生了什么 ——
+ * 玩家看到的都是「点了没反应」。现在服务端每条路径都回一个结果包，界面上才有得画。</p>
  *
  * <p><b>为什么用静态表而不是塞进 Screen。</b>反馈可能在图鉴关着的时候产生
  * （比如捡起一张没见过的卡），也可能在图鉴重新打开后才被看到；而 Screen 实例
@@ -41,6 +43,10 @@ public final class CodexFeedback {
         INSTALLED,
         /** 装不上 */
         REJECTED,
+        /** 已放进背包 */
+        TAKEN,
+        /** 背包满了，掉在脚下 */
+        DROPPED,
         /** 首次发现 */
         UNLOCKED
     }
@@ -48,6 +54,8 @@ public final class CodexFeedback {
     /** 每种反馈的动画时长（毫秒） */
     private static final long INSTALLED_MS = 520L;
     private static final long REJECTED_MS = 420L;
+    private static final long TAKEN_MS = 340L;
+    private static final long DROPPED_MS = 520L;
     private static final long UNLOCKED_MS = 900L;
 
     /**
@@ -80,6 +88,8 @@ public final class CodexFeedback {
             switch (kind) {
                 case INSTALLED: return INSTALLED_MS;
                 case REJECTED: return REJECTED_MS;
+                case TAKEN: return TAKEN_MS;
+                case DROPPED: return DROPPED_MS;
                 default: return UNLOCKED_MS;
             }
         }
@@ -101,7 +111,10 @@ public final class CodexFeedback {
     private static final Map<String, Entry> ACTIVE = new HashMap<>();
 
     /**
-     * 推入一条反馈。同一个 key 的旧反馈会被覆盖 —— 玩家连点时只看最后一次。
+     * 推入一条反馈
+     *
+     * <p>同一个 key 的旧反馈一般会被覆盖（玩家连点时只看最后一次），
+     * 唯一的例外是正在播放的解锁动画 —— 见方法体里的说明。</p>
      *
      * @param discoveryKey 模组的发现键（{@code type:rarityOrder}）
      * @param kind         反馈类型
@@ -111,7 +124,19 @@ public final class CodexFeedback {
         if (ACTIVE.size() >= MAX_ENTRIES) {
             ACTIVE.clear();
         }
-        ACTIVE.put(discoveryKey, new Entry(kind, Util.getMillis()));
+        long now = Util.getMillis();
+
+        // ⭐ 解锁优先：第一次拿到某个模组时，「拿到了」和「解锁了」会几乎同时到达
+        //    （服务端先给物品再记发现，两个包紧挨着发）。两者都往同一个 key 上写，
+        //    后到的会盖掉先到的 —— 而「首次解锁」显然是更值得看的那一个。
+        //    所以只要解锁动画还在播，就不让别的类型把它顶掉。
+        Entry existing = ACTIVE.get(discoveryKey);
+        if (kind != Kind.UNLOCKED && existing != null
+                && existing.kind == Kind.UNLOCKED
+                && now - existing.startedAt < existing.duration()) {
+            return;
+        }
+        ACTIVE.put(discoveryKey, new Entry(kind, now));
     }
 
     /**

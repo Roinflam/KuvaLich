@@ -9,6 +9,9 @@ import net.minecraftforge.network.NetworkEvent;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
+import net.minecraftforge.network.PacketDistributor;
+import pers.roinflam.kuvalich.event.ModuleDiscoveryHandler;
+import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.utils.LogUtil;
 
 import java.util.ArrayList;
@@ -84,7 +87,8 @@ public class CodexGiveItemPacket {
             // 给予物品：优先放背包，满了掉脚下
             // Give item: prefer inventory, drop at feet if full
             ItemStack give = found.copy();
-            if (!player.getInventory().add(give)) {
+            boolean intoInventory = player.getInventory().add(give);
+            if (!intoInventory) {
                 ItemEntity drop = new ItemEntity(
                         player.level(),
                         player.getX(), player.getY(), player.getZ(),
@@ -93,6 +97,24 @@ public class CodexGiveItemPacket {
                 player.level().addFreshEntity(drop);
                 LogUtil.debug("图鉴给予：背包已满，物品掉落在脚下");
             }
+
+            // ⭐ 必须显式记一次发现。
+            //
+            //    这里原先什么都没做，导致「创造模式点了拿到手，图鉴却迟迟不解锁」：
+            //    Inventory#add 是直接塞进背包，**不会**触发 EntityItemPickupEvent，
+            //    所以 ModuleDiscoveryHandler.onItemPickup 那条路径根本不跑，
+            //    要等下一次周期性扫描才补上。
+            //    顺带一提，解锁动画是挂在发现包的增量下发上的，所以这一条也顺便修好了
+            //    「解锁动画不出现」。
+            ModuleDiscoveryHandler.tryDiscoverSingle(player, found);
+
+            // ⭐ 回一个结果，让图鉴上那个格子有反馈。
+            //    「背包满了掉在脚下」尤其需要 —— 改造前这种情况玩家完全看不出发生了什么。
+            NetworkRegistryHandler.getChannel().send(
+                    PacketDistributor.PLAYER.with(() -> player),
+                    CodexActionResultPacket.of(msg.moduleType, msg.rarityOrder,
+                            intoInventory ? CodexActionResultPacket.TAKEN
+                                    : CodexActionResultPacket.DROPPED));
 
             LogUtil.debugEvent("图鉴创造给予", player.getName().getString(),
                     "type=" + msg.moduleType + " rarity=" + msg.rarityOrder

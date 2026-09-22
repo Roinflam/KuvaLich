@@ -684,6 +684,8 @@ public class ModuleCodexScreen extends Screen {
         switch (kind) {
             case INSTALLED: return CodexTheme.TECH;
             case REJECTED: return CodexTheme.KUVA;
+            case TAKEN: return CodexTheme.BONE;
+            case DROPPED: return CodexTheme.EMBER;
             default: return CodexTheme.EMBER;
         }
     }
@@ -721,6 +723,14 @@ public class ModuleCodexScreen extends Screen {
                 g.fill(x, sy + 1, x + CELL_W, sy + 2,
                         CodexTheme.withAlpha(color, (int) (0x60 * (1f - fp))));
             }
+        } else if (fb.kind == CodexFeedback.Kind.DROPPED) {
+            // 背包满、掉在脚下：一道向**下**离开格子的短线，
+            // 和「拿到手了」的向外脉冲区分开 —— 东西没进背包，是掉出去了
+            int sy = y + CELL_H - 2 + (int) (fp * 8f);
+            g.fill(x + CELL_W / 2 - 3, sy, x + CELL_W / 2 + 3, sy + 1,
+                    CodexTheme.withAlpha(color, (int) (0xE0 * (1f - fp))));
+            g.fill(x + CELL_W / 2 - 1, sy + 1, x + CELL_W / 2 + 1, sy + 3,
+                    CodexTheme.withAlpha(color, (int) (0xA0 * (1f - fp))));
         }
     }
 

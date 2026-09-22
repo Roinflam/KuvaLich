@@ -145,7 +145,9 @@ public class CodexInstallModulePacket {
             // ⭐ 成败都要回：改造前失败是完全静默的，玩家只会觉得「点了没反应」
             NetworkRegistryHandler.getChannel().send(
                     PacketDistributor.PLAYER.with(() -> player),
-                    CodexInstallResultPacket.of(msg.moduleType, msg.rarityOrder, installed));
+                    CodexActionResultPacket.of(msg.moduleType, msg.rarityOrder,
+                            installed ? CodexActionResultPacket.INSTALLED
+                                    : CodexActionResultPacket.REJECTED));
         });
     }
 
@@ -158,6 +160,7 @@ public class CodexInstallModulePacket {
     private static void reject(ServerPlayer player, CodexInstallModulePacket msg) {
         NetworkRegistryHandler.getChannel().send(
                 PacketDistributor.PLAYER.with(() -> player),
-                CodexInstallResultPacket.of(msg.moduleType, msg.rarityOrder, false));
+                CodexActionResultPacket.of(msg.moduleType, msg.rarityOrder,
+                        CodexActionResultPacket.REJECTED));
     }
 }
