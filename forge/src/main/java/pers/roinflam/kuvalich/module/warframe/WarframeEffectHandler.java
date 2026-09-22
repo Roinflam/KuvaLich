@@ -53,14 +53,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * ⭐ 第三批新词条：枪械战利品掉落（gun_loot_drop，武器专属，仅 TACZ 子弹击杀生效）在
  *    onLivingDrops 中加法叠加到战甲的 itemDropMultiplier 上，与战甲共享同一套配置生效倍率。
  *
- * ⭐ 上次改动：onLivingDrops 的实体类型判断新增自定义NPC模组(CustomNPCs)实体放行，
+ * ⭐ NPC 掉落放行：onLivingDrops 的实体类型判断新增自定义NPC模组(CustomNPCs)实体放行，
  *    使战甲 itemDropMultiplier 与武器 gun_loot_drop 对 NPC 掉落同样生效。
  *    通过注册表命名空间判断（见 {@link #isCustomNpc}），不引用该模组的 Java 类，
  *    因此本项目无需额外声明对自定义NPC模组的编译期依赖。
  *
- * ⭐ 本次改动：onLivingDrops 的装备判断由「盔甲/剑/有阶工具」扩大为一切装备、武器、工具
+ * ⭐ 装备判断口径：onLivingDrops 的装备判断由「盔甲/剑/有阶工具」扩大为一切装备、武器、工具
  *    （见 {@link #isEquipment}），与 WorldLevel 模组 ModEvents、ServerManager 插件
  *    DropBonusListener 的判定口径完全一致，确保同一次击杀中三套掉落倍率对物品的取舍相同。
+ *
+ * ⭐ 本次改动：onLivingDrops 不再把普通生物的掉落钳到「最多一组」，
+ *    超出堆叠上限的部分另起 ItemEntity 掉成好几堆；
+ *    自定义NPC 的掉落仍照旧钳。
  *
  * <p>⭐ 并发安全修复：{@code cooldownTicks} 由 {@link HashMap} 改为
  * {@link ConcurrentHashMap}，并加 {@code final} 防止被外部重新赋值。
@@ -262,9 +266,15 @@ public class WarframeEffectHandler {
      * <p>
      * 缩放后倍率 &lt; 1 时按概率决定是否掉落（每组独立判定）。
      * <p>
-     * ⭐ 本次改动：装备判断改为调用 {@link #isEquipment}，覆盖范围由「盔甲/剑/有阶工具」
+     * ⭐ 装备判断：装备判断改为调用 {@link #isEquipment}，覆盖范围由「盔甲/剑/有阶工具」
      *    扩大为一切装备、武器、工具。两个分支的语义保持不变——
      *    倍率 &lt;= 0 时装备仍被完整保留、只清除非装备掉落；倍率 &gt; 0 时装备不参与数量缩放。
+     * <p>
+     * ⭐ 本次改动：去掉普通生物（Animal / Monster）的「最多一组」上界，
+     *    词条堆到多少就掉多少；现有 ItemEntity 装不下的余量另起新实体，
+     *    每堆不超过该物品的堆叠上限，而不再把余量堆成一个超堆叠的实体。
+     *    自定义NPC（{@link #isCustomNpc}）例外：它的掉落表是包作者手配的，
+     *    仍然钳到 max(介入前总量, 堆叠上限)。
      *
      * @param evt 掉落事件
      */
@@ -310,17 +320,24 @@ public class WarframeEffectHandler {
 
                 // 倍率 > 0 时：缩放掉落物数量（装备、武器、工具不参与缩放）
                 //
-                // ⭐ 钳制规则：同一种物品在一次击杀里的总量不超过
-                //    max(本模组介入前的总量, 该物品的堆叠上限)。
+                // ⭐ 钳制规则：只有自定义NPC的掉落还保留「最多一组」的上界。
                 //
-                //    两头都要防：
-                //    · 上界用堆叠上限 —— 「杀一只僵尸掉 10 腐肉，世界等级 ×5 变 50，
-                //      战甲再 ×10」不应该变成 500 个、掉一地好几组，最多一组。
-                //    · 下界用「介入前的总量」—— 有些怪本来就掉不止一组，
-                //      不能因为钳制反而比不装这条词条掉得还少。
+                //    普通生物（Animal / Monster）不再钳上界 —— 词条堆到多少就掉多少，
+                //    超出堆叠上限的部分另起 ItemEntity 掉成好几堆（见下面的溢出分堆）。
+                //    代价是整合包里几套倍率会连乘：杀一只僵尸掉 10 腐肉，
+                //    世界等级 ×5 变 50，战甲再 ×10 就是 500，也就是 8 堆。
+                //    要收紧只能调配置里的 itemDropEffectMultiplier。
                 //
-                //    只能按「物品种类」汇总来钳：先跑的模组（如世界等级）会把超堆叠的量
-                //    拆成好几个 ItemEntity 再塞回列表，只看单个实体的 count 根本看不出总量。
+                //    自定义NPC照旧钳到 max(介入前总量, 堆叠上限)：NPC 的掉落表是
+                //    包作者一条条手配的，不该被词条放大成刷物品机。
+                //    下界用「介入前的总量」—— 有些 NPC 本来就掉不止一组，
+                //    不能因为钳制反而比不装这条词条掉得还少。
+                //
+                //    无论钳不钳，都只能按「物品种类」汇总来算：先跑的模组（如世界等级）
+                //    会把超堆叠的量拆成好几个 ItemEntity 再塞回列表，
+                //    只看单个实体的 count 根本看不出总量。
+                boolean capToOneStack = isCustomNpc(evt.getEntity());
+
                 Map<Item, Integer> beforeTotals = new HashMap<>();
                 for (ItemEntity drop : drops) {
                     ItemStack dropStack = drop.getItem();
@@ -337,11 +354,14 @@ public class WarframeEffectHandler {
                     if (Math.random() < scaled - scaledCount) {
                         scaledCount++;
                     }
-                    int cap = Math.max(before, e.getKey().getDefaultInstance().getMaxStackSize());
-                    remaining.put(e.getKey(), Math.max(0, Math.min(scaledCount, cap)));
+                    if (capToOneStack) {
+                        int cap = Math.max(before, e.getKey().getDefaultInstance().getMaxStackSize());
+                        scaledCount = Math.min(scaledCount, cap);
+                    }
+                    remaining.put(e.getKey(), Math.max(0, scaledCount));
                 }
 
-                // 把钳好的总量按原有实体逐个分配回去
+                // 把总量按原有实体逐个分配回去
                 //
                 // ⭐ 收尾必须<b>按物品种类各记各的</b>最后一个实体。
                 //    这里原先只用了一个 lastOf 变量，循环里被逐个覆盖，结束时它代表的是
@@ -349,6 +369,7 @@ public class WarframeEffectHandler {
                 //    一次掉出两种以上物品、而需要补余量的那种恰好不是最后遍历到的那种时，
                 //    多出来的数量会被静默丢弃 —— 玩家只会看到掉落莫名偏少，没有任何报错。
                 Map<Item, ItemEntity> lastEntityOf = new HashMap<>();
+                Map<Item, ItemStack> lastStackOf = new HashMap<>();
                 for (ItemEntity drop : drops) {
                     ItemStack dropStack = drop.getItem();
                     if (isEquipment(dropStack)) {
@@ -357,24 +378,48 @@ public class WarframeEffectHandler {
                     Item item = dropStack.getItem();
                     int left = remaining.getOrDefault(item, 0);
                     int give = Math.min(left, dropStack.getMaxStackSize());
+                    lastEntityOf.put(item, drop);
+                    // ⭐ 复制必须在 setCount 之前：这份原型要拿去做溢出分堆，
+                    //    改完 count 再复制就只能得到被截断后的数量，而且附魔/自定义名等 NBT 也要跟着走。
+                    lastStackOf.put(item, dropStack.copy());
                     dropStack.setCount(give);
                     remaining.put(item, left - give);
-                    lastEntityOf.put(item, drop);
                 }
 
-                // 现有实体按各自堆叠上限装不下的余量，补给该物品自己的最后一个实体。
-                // 原版 ItemEntity 允许 count 超过堆叠上限，捡起时会自动分摊到多个格子。
+                // ⭐ 溢出分堆：现有实体按各自堆叠上限装不下的余量，另起新的 ItemEntity 掉出来，
+                //    每堆都不超过该物品的堆叠上限。
+                //
+                //    原先是把余量全加到该物品最后一个实体上、让它的 count 超过堆叠上限
+                //    （原版 ItemEntity 容得下，玩家捡起时 Inventory#add 会自动分摊到多个格子）。
+                //    改成分堆有两个理由：
+                //    · 要的就是「不止一组」—— 地上看得见好几堆才是这个意思，
+                //      一个 count=500 的实体在地上仍然只是一小堆。
+                //    · count 超堆叠上限的 ItemEntity 在 Mohist 这类混合端上要过一遍
+                //      CraftItemStack 转换，超量部分不保证能活着回来。
+                List<ItemEntity> spilled = new ArrayList<>();
                 for (Map.Entry<Item, Integer> e : remaining.entrySet()) {
                     int left = e.getValue();
-                    if (left <= 0) {
+                    ItemStack proto = lastStackOf.get(e.getKey());
+                    ItemEntity template = lastEntityOf.get(e.getKey());
+                    if (left <= 0 || proto == null || proto.isEmpty() || template == null) {
                         continue;
                     }
-                    ItemEntity target = lastEntityOf.get(e.getKey());
-                    if (target != null) {
-                        ItemStack stack = target.getItem();
-                        stack.setCount(stack.getCount() + left);
+                    int perStack = Math.max(1, proto.getMaxStackSize());
+                    while (left > 0) {
+                        int give = Math.min(left, perStack);
+                        ItemStack piece = proto.copy();
+                        piece.setCount(give);
+                        ItemEntity extra = new ItemEntity(template.level(),
+                                template.getX(), template.getY(), template.getZ(), piece);
+                        extra.setDefaultPickUpDelay();
+                        spilled.add(extra);
+                        left -= give;
                     }
                 }
+
+                // Forge 在事件返回 false 之后会 drops.forEach(level::addFreshEntity)，
+                // 所以加进这个集合的新实体照常生成，不需要自己 addFreshEntity。
+                drops.addAll(spilled);
                 drops.removeIf(drop -> drop.getItem().isEmpty());
             }
         }
