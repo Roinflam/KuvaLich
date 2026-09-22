@@ -26,11 +26,6 @@ import java.util.*;
  * ⭐ 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
  * ⭐ 升级费用根据品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
  *
- * ⭐ v6 改动：特定元素属性词条使用元素专属颜色（覆盖模组品质颜色）：
- *    - virus 病毒 → LIGHT_PURPLE 粉色
- *    - gas 毒气  → AQUA 青色
- *    - 其他属性保持原有品质颜色（getModuleColor）
- *
  * ⭐ 第三批新词条：true_bullet（真实伤害）、gun_loot_drop（枪械战利品掉落，TACZ 专属），
  *    execute_threshold（收集者阈值）、purge_buff（净化驱散）、execute_chance（致命斩首，通用）。
  *    其中 execute_chance 数值极小（如 0.01%），显示时保留小数避免取整为 0%。
@@ -147,11 +142,14 @@ public abstract class AbstractWeaponModule extends AbstractModule {
                 attributeName = Component.translatable("kuvaweapon.item_attribute_type." + attributeKey);
             }
 
-            // ⭐ v6：特定元素使用专属颜色（病毒粉色、毒气青色），其他走原品质颜色
-            // 用装箱的 Integer 而不是 int：null 是「本条没有元素专属色，退回品质色」的哨兵值，
-            // 改成基本类型就没法表达「无覆盖」了。
-            Integer elementColor = getElementColor(attributeKey);
-            int color = elementColor != null ? elementColor : getModuleColor(item);
+            // ⭐ 词条颜色**只跟模组品质走**，不因为属性是哪种元素而变。
+            //
+            //    这里曾经有过一个「病毒粉 / 毒气青覆盖品质色」的机制（类注释里宣称过、
+            //    但 switch 里从来没写 case，所以其实一直没生效）。我按注释补齐过一版，
+            //    实机看下来是错的：同一张卡上的词条会因为元素种类蹦出两三种颜色，
+            //    品质色反而被淹掉，玩家一眼分不出手上这张是铜卡还是金卡。
+            //    元素的身份由词条名本身表达就够了，不需要再用颜色说一遍。
+            int color = getModuleColor(item);
             net.minecraft.network.chat.MutableComponent line = Component.literal(prefix + valueText + " ")
                     .append(attributeName)
                     .withStyle(KuvaPalette.style(color));
@@ -226,24 +224,5 @@ public abstract class AbstractWeaponModule extends AbstractModule {
         if (item instanceof WeaponRivenModule) return KuvaPalette.rarity(4);      // 裂罅
         // 防御性兜底：上面五个子类已穷尽全树所有 extends 本类的具体类型，实际走不到。
         return KuvaPalette.VALUE;
-    }
-
-    /**
-     * 根据属性 key 返回元素专属颜色（仅病毒粉色、毒气青色应用覆盖）
-     * <p>其他属性返回 null，调用方会 fallback 到 {@link #getModuleColor}。</p>
-     *
-     * @param attributeKey 属性 key（如 "virus"、"gas"、"meleeDamage"）
-     * @return 元素专属颜色，无匹配时 null
-     */
-    private static Integer getElementColor(String attributeKey) {
-        switch (attributeKey) {
-            // ⭐ 补上实现：改造前这个 switch 只有 default: return null，
-            //    也就是说类头与本方法 javadoc 宣称的「病毒粉 / 毒气青覆盖品质色」
-            //    从来没有生效过，一直在静默退回品质色。现在按注释的原意补齐，
-            //    取值复用 KuvaPalette 的元素表，不新造值。
-            case "virus":  return KuvaPalette.element("virus");
-            case "gas":    return KuvaPalette.element("gas");
-            default:       return null;
-        }
     }
 }

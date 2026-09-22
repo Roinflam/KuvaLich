@@ -98,15 +98,20 @@ public class CodexGiveItemPacket {
                 LogUtil.debug("图鉴给予：背包已满，物品掉落在脚下");
             }
 
-            // ⭐ 必须显式记一次发现。
+            // ⭐ 只有**真的进了背包**才算解锁。
             //
-            //    这里原先什么都没做，导致「创造模式点了拿到手，图鉴却迟迟不解锁」：
-            //    Inventory#add 是直接塞进背包，**不会**触发 EntityItemPickupEvent，
-            //    所以 ModuleDiscoveryHandler.onItemPickup 那条路径根本不跑，
-            //    要等下一次周期性扫描才补上。
-            //    顺带一提，解锁动画是挂在发现包的增量下发上的，所以这一条也顺便修好了
-            //    「解锁动画不出现」。
-            ModuleDiscoveryHandler.tryDiscoverSingle(player, found);
+            //    这里必须显式记一次发现：Inventory#add 是直接塞进背包，
+            //    **不会**触发 EntityItemPickupEvent，所以 ModuleDiscoveryHandler.onItemPickup
+            //    那条路径根本不跑，不显式记的话要等下一次周期性扫描才补上 ——
+            //    表现就是「点了拿到手，图鉴却迟迟不亮」。解锁动画也是挂在发现包的
+            //    增量下发上的，所以这一条同时决定了动画出不出现。
+            //
+            //    但背包满、物品掉在脚下的那种情况**不能**在这里记：玩家并没有真的拿到它，
+            //    图鉴却亮了，对不上。掉在地上的那份等玩家捡起来时会正常走
+            //    EntityItemPickupEvent，该解锁的一个也不会漏。
+            if (intoInventory) {
+                ModuleDiscoveryHandler.tryDiscoverSingle(player, found);
+            }
 
             // ⭐ 回一个结果，让图鉴上那个格子有反馈。
             //    「背包满了掉在脚下」尤其需要 —— 改造前这种情况玩家完全看不出发生了什么。
