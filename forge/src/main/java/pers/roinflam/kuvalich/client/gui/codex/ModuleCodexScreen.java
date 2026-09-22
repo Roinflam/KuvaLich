@@ -47,9 +47,18 @@ public class ModuleCodexScreen extends Screen {
 
     // ==================== 布局 ====================
 
-    /** 列数按面板宽度自适应，不再写死 10 列 —— 窄窗口下 10 列会把格子挤出面板。 */
+    /**
+     * 列数按可用宽度自适应
+     *
+     * <p>上限从 14 提到 20：14 列的网格只有 347px 宽，而面板在常见分辨率下能到 600px 以上，
+     * 剩下两百多像素全成了左右两侧的死空间。上限仍然要有 —— 1080p@缩放2 能排到 36 列，
+     * 那么长的一行扫视起来比滚动还累。</p>
+     */
     private static final int COLUMNS_MIN = 4;
-    private static final int COLUMNS_MAX = 14;
+    private static final int COLUMNS_MAX = 20;
+
+    /** 内容区左侧留给数据刻度条的宽度 */
+    private static final int STRIP_W = 8;
     private static final int CELL_W = 22;
     private static final int CELL_H = 23;
     private static final int GAP = 3;
@@ -127,19 +136,28 @@ public class ModuleCodexScreen extends Screen {
             openedAt = net.minecraft.Util.getMillis();
         }
 
-        // 面板：四周留白，内容全部画在这个框里
-        panelX = CodexTheme.MARGIN;
+        // ⭐ 布局顺序是「先按屏幕算能排几列 → 再把面板收到这几列真正需要的宽度」，
+        //    而不是「先铺满屏幕 → 再往里塞格子」。
+        //
+        //    反过来做就会出现之前那个问题：面板铺满屏幕、列数却卡在上限，
+        //    两侧各空出一百多像素的死区。现在面板宽度由内容决定，
+        //    多余的宽度还给背景（被遮罩压暗的游戏画面），看起来是一个居中的终端窗口，
+        //    而不是一个填不满的横幅。
         panelY = CodexTheme.MARGIN;
-        panelW = Math.max(160, this.width - CodexTheme.MARGIN * 2);
         panelH = Math.max(120, this.height - CodexTheme.MARGIN * 2);
 
-        // 列数按可用宽度自适应（参考 AlbionMastery 卡片网格的做法）：
-        // 先扣掉左右内边距和滚动条占的一条，再看能塞下几列。
-        int innerW = panelW - CodexTheme.PAD * 2 - CodexTheme.SCROLLBAR_W - 4;
-        columns = Math.max(COLUMNS_MIN, Math.min(COLUMNS_MAX, (innerW + GAP) / (CELL_W + GAP)));
+        // 面板内部的固定开销：左内边距 + 刻度条 + 右内边距（滚动条画在右内边距里）
+        int chromeW = CodexTheme.PAD * 2 + STRIP_W;
+        int availW = Math.max(160, this.width - CodexTheme.MARGIN * 2);
+        int innerAvail = Math.max(CELL_W, availW - chromeW);
 
+        columns = Math.max(COLUMNS_MIN, Math.min(COLUMNS_MAX, (innerAvail + GAP) / (CELL_W + GAP)));
         contentW = columns * (CELL_W + GAP) - GAP;
-        contentX = panelX + (panelW - CodexTheme.SCROLLBAR_W - 4 - contentW) / 2;
+
+        panelW = Math.min(availW, contentW + chromeW);
+        panelX = (this.width - panelW) / 2;
+
+        contentX = panelX + CodexTheme.PAD + STRIP_W;
         contentY = panelY + CodexTheme.HEADER_H + 4;
         visibleH = panelH - CodexTheme.HEADER_H - CodexTheme.FOOTER_H - 8;
 
@@ -148,7 +166,8 @@ public class ModuleCodexScreen extends Screen {
         //    onSearchChanged() 把筛选结果重置成全表，玩家已经输入的搜索词无声消失。
         String previousSearch = searchBox != null ? searchBox.getValue() : "";
 
-        int boxW = Math.min(panelW - CodexTheme.PAD * 2, 220);
+        // 搜索框跟着面板宽度走：面板收窄之后再固定 220 会显得一头沉
+        int boxW = Math.max(120, Math.min(panelW - CodexTheme.PAD * 2, contentW / 2));
         int boxX = panelX + (panelW - boxW) / 2;
         int boxY = panelY + 22;
         // 原版 EditBox 自带的白框在这套暗色面板上很突兀，关掉自己画。
@@ -355,7 +374,7 @@ public class ModuleCodexScreen extends Screen {
         drawFooter(g);
 
         // 左缘一条数据刻度，把留白仪器化
-        CodexTheme.tickStrip(g, panelX + 4, contentY, visibleH, CodexTheme.TECH);
+        CodexTheme.tickStrip(g, panelX + CodexTheme.PAD, contentY, visibleH, CodexTheme.TECH);
 
         CodexTheme.chamferGlow(g, panelX, panelY, panelW, panelH, CodexTheme.CHAMFER,
                 CodexTheme.withAlpha(CodexTheme.TECH, 0xB0), progress);
@@ -525,15 +544,28 @@ public class ModuleCodexScreen extends Screen {
         // 品质角标
         CodexTheme.cornerTab(g, x + 1, y + 1, 5, rarity);
 
-        // 图标
-        int iconX = x + (CELL_W - 16) / 2;
-        int iconY = y + (CELL_H - 16) / 2 + 1;
-        g.renderItem(e.displayStack, iconX, iconY);
+        // ⭐ 悬停底色必须画在图标**之前**：同样的 z 序原因，画在 renderItem 之后
+        //    会落到图标背后，只能把格子边缘染上色，看起来像没生效。
+        if (hover) {
+            g.fill(x, y, x + CELL_W, y + CELL_H,
+                    CodexTheme.withAlpha(found ? CodexTheme.KUVA : CodexTheme.TECH, 0x22));
+        }
 
-        if (!found) {
-            // 加密噪线：位置由 discoveryKey 的哈希决定，所以同一个模组每帧长得一样、不会闪，
-            // 不同模组之间又各不相同。
-            g.fill(x + 1, y + 1, x + CELL_W, y + CELL_H - 1, 0xC00A0D10);
+        if (found) {
+            int iconX = x + (CELL_W - 16) / 2;
+            int iconY = y + (CELL_H - 16) / 2 + 1;
+            g.renderItem(e.displayStack, iconX, iconY);
+        } else {
+            // ⭐ 未发现的**根本不画图标**，而不是画完再盖一层遮罩。
+            //
+            //    盖遮罩这条路走不通：GuiGraphics.renderItem 把物品渲染在 z=150，
+            //    而随后的 fill 落在 z=0，遮罩会跑到图标后面去 —— 表现就是
+            //    「明明只发现了 15/429，每个格子的图标却都看得清清楚楚」，
+            //    已发现/未发现的区分完全失效。（这个 z 序问题在改造前就存在，
+            //    老代码的 OVERLAY_MISS 同样是在 renderItem 之后画的。）
+            //
+            //    加密噪线的位置由 discoveryKey 的哈希决定，所以同一个模组每帧长得一样、
+            //    不会闪，不同模组之间又各不相同。
             int hash = e.discoveryKey.hashCode();
             for (int i = 0; i < 4; i++) {
                 int bits = (hash >>> (i * 7)) & 0x7F;
@@ -548,9 +580,9 @@ public class ModuleCodexScreen extends Screen {
         }
 
         if (hover) {
-            int edge = found ? CodexTheme.KUVA : CodexTheme.TECH;
-            g.fill(x, y, x + CELL_W, y + CELL_H, CodexTheme.withAlpha(edge, 0x1A));
-            CodexTheme.brackets(g, x, y, CELL_W, CELL_H, 5, edge);
+            // 括号画在最后没问题：它们贴着格子边框，而图标只占中间 16x16，互不遮挡。
+            CodexTheme.brackets(g, x, y, CELL_W, CELL_H, 5,
+                    found ? CodexTheme.KUVA : CodexTheme.TECH);
         }
     }
 
