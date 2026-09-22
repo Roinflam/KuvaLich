@@ -6,7 +6,9 @@ import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.item.module.weapon.WeaponRivenModule;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 /**
  * 模组能不能装进某个槽位 —— 唯一判定实现
@@ -64,11 +66,38 @@ public final class ModulePlacementValidator {
         if (weapon == null || weapon.isEmpty()) {
             return 0;
         }
+        // 显式写在 NBT 上的上限优先：这是留给「某把武器单独设定」的口子
         CompoundTag tag = weapon.getTag();
-        if (tag == null || !tag.contains(MODULE_LIMIT_KEY)) {
+        if (tag != null && tag.contains(MODULE_LIMIT_KEY)) {
+            return Math.max(0, Math.min(SLOT_COUNT, tag.getInt(MODULE_LIMIT_KEY)));
+        }
+        return limitFromLevel(KuvaWeaponUtil.getNumber(weapon));
+    }
+
+    /**
+     * 按赤毒等级算可用槽位数
+     *
+     * <p>总槽位永远是 8，等级决定其中有几个已解锁：
+     * {@code base + level / perUnlock}，夹到 [1, 8]。
+     * {@code perUnlock} 配成 0 就是关闭等级门槛、8 个全开。</p>
+     *
+     * <p><b>已装在锁定槽里的模组不会被清掉、也照常生效。</b>
+     * {@code WeaponModuleHandler.getModules} 读的是 NBT 里的全部 8 格，不看这个上限。
+     * 这是刻意的：玩家的武器可能是在挂上等级门槛之前装满的，
+     * 因为一条配置就把他已经装好的模组作废，比门槛本身更让人难受。
+     * 上限只拦「往锁定槽里放新的」。</p>
+     *
+     * @param level 赤毒等级
+     * @return 可用槽位数 [1,8]
+     */
+    public static int limitFromLevel(int level) {
+        int perUnlock = ModConfig.KUVA_LICH.moduleSlotLevelsPerUnlock.get();
+        if (perUnlock <= 0) {
             return SLOT_COUNT;
         }
-        return Math.max(0, Math.min(SLOT_COUNT, tag.getInt(MODULE_LIMIT_KEY)));
+        int base = ModConfig.KUVA_LICH.moduleSlotBaseCount.get();
+        int unlocked = base + Math.max(0, level) / perUnlock;
+        return Math.max(1, Math.min(SLOT_COUNT, unlocked));
     }
 
     /**

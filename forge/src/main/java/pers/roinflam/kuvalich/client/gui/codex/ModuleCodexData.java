@@ -276,14 +276,29 @@ public class ModuleCodexData {
 
     // ==================== 工具 ====================
 
-    /** 稀有度显示名 */
+    /**
+     * 稀有度显示名（纯文本，不带颜色）
+     *
+     * <p><b>这里原先返回的是带 § 颜色码的字符串</b>（{@code §e青铜 / §9白银 /
+     * §6黄金 / §bPrime}），而同一个类里的 {@link #getRarityColor(int)} 给的是
+     * 青铜色 / 银色 / 金色 / 青 —— 两套对不上：青铜被标成黄色、白银被标成蓝色。
+     * 图鉴的分组标题同时用到这两者，结果同一行里「青铜」两个字是黄的、
+     * 它左边的品质角标却是青铜色，同一件事说了两种颜色。</p>
+     *
+     * <p>现在名字只负责给字、颜色一律由 {@link #getRarityColor(int)} 决定，
+     * 两者不可能再漂移。（tooltip 的品质色早先也已经统一到同一张表，
+     * 见 {@code KuvaPalette.rarity(int)}。）</p>
+     *
+     * @param order 品质序号：0=青铜 1=白银 2=黄金 3=Prime
+     * @return 纯文本名字
+     */
     public static String getRarityName(int order) {
         switch (order) {
-            case 0: return "\u00A7e\u9752\u94DC";   // §e青铜
-            case 1: return "\u00A79\u767D\u94F6";    // §9白银
-            case 2: return "\u00A76\u9EC4\u91D1";    // §6黄金
-            case 3: return "\u00A7bPrime";            // §bPrime
-            default: return "\u00A7f???";
+            case 0: return "青铜";
+            case 1: return "白银";
+            case 2: return "黄金";
+            case 3: return "Prime";
+            default: return "???";
         }
     }
 

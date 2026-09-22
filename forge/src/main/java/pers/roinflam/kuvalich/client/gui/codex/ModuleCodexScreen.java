@@ -92,6 +92,17 @@ public class ModuleCodexScreen extends Screen {
     private int searchFrameX, searchFrameY, searchFrameW;
     /** 本帧时间，render 开头取一次，供所有绘制方法共用 */
     private long frameMillis = 0L;
+    /** 本帧玩家是否创造模式，render 开头取一次 */
+    private boolean creativeMode = false;
+    /** 本帧鼠标位置，供 drawHeader 做清除按钮的悬停判定 */
+    private int lastMouseX, lastMouseY;
+    /** 搜索框右侧「清除」按钮的命中区，只在有搜索词时有效 */
+    private int clearBtnX, clearBtnY, clearBtnSize;
+    /** 底栏提示文案缓存：两种模式各拼一次，不要每帧 new */
+    private String footerHintCreative = null;
+    private String footerHintSurvival = null;
+    /** 筛选结果前缀缓存 */
+    private String filterPrefix = null;
 
     private List<ModuleCodexData.CodexEntry> filtered = null;
     private String lastSearch = "";
@@ -321,10 +332,32 @@ public class ModuleCodexScreen extends Screen {
             }
         }
 
-        // 滚动条拖拽 / Scrollbar drag
+        // 清除搜索
+        if (btn == 0 && clearBtnSize > 0
+                && mx >= clearBtnX && mx < clearBtnX + clearBtnSize
+                && my >= clearBtnY && my < clearBtnY + clearBtnSize) {
+            searchBox.setValue("");
+            this.setFocused(searchBox);
+            searchBox.setFocused(true);
+            return true;
+        }
+
+        // 滚动条：命中滑块就原地开始拖，命中轨道空白处就跳过去
         if (btn == 0 && maxScroll() > 0) {
             int sbX = panelX + panelW - CodexTheme.PAD;
             if (mx >= sbX && mx <= sbX + CodexTheme.SCROLLBAR_W && my >= contentY && my < contentY + visibleH) {
+                // ⭐ 改造前整条轨道都只是「原地开始拖拽」：点一下轨道空白处再松手，
+                //    scrollOffset 一点没变，画面纹丝不动 —— 看起来就像滚动条失灵。
+                //    滑块往往比轨道短得多，所以这块「点了没反应」的死区还不小。
+                int trackH = visibleH;
+                int thumbH = Math.max(CodexTheme.THUMB_MIN_H,
+                        (int) (trackH * (trackH / (trackH + maxScroll()))));
+                int thumbY = contentY + (int) ((trackH - thumbH) * (scrollOffset / maxScroll()));
+                if (my < thumbY || my >= thumbY + thumbH) {
+                    // 点轨道：把滑块中心挪到点击处。瞬时跳转，与滚轮的手感一致，不加缓动。
+                    double target = (my - contentY - thumbH / 2.0) / Math.max(1, trackH - thumbH);
+                    scrollOffset = clamp(target * maxScroll());
+                }
                 dragging = true; dragStartY = my; dragStartScroll = scrollOffset;
                 return true;
             }
@@ -372,6 +405,8 @@ public class ModuleCodexScreen extends Screen {
     public void render(GuiGraphics g, int mx, int my, float pt) {
         float progress = openProgress();
         frameMillis = net.minecraft.Util.getMillis();
+        Minecraft mc0 = Minecraft.getInstance();
+        creativeMode = mc0.player != null && mc0.player.isCreative();
 
         g.fill(0, 0, this.width, this.height, CodexTheme.fade(CodexTheme.VOID, progress));
 
@@ -382,10 +417,12 @@ public class ModuleCodexScreen extends Screen {
         CodexTheme.motes(g, panelX + 2, contentY, panelW - 4, Math.max(0, visibleH), frameMillis, progress);
 
         hoveredEntry = null;
+        lastMouseX = mx;
+        lastMouseY = my;
         drawHeader(g);
         drawContent(g, mx, my);
         CodexTheme.scrollbar(g, panelX + panelW - CodexTheme.PAD, contentY, visibleH,
-                scrollOffset, maxScroll());
+                scrollOffset, maxScroll(), dragging || overScrollbar(mx, my));
         drawFooter(g);
 
         // 左缘一条数据刻度，把留白仪器化
@@ -398,6 +435,20 @@ public class ModuleCodexScreen extends Screen {
         if (hoveredEntry != null) {
             g.renderTooltip(this.font, hoveredEntry.displayStack, hoverMX, hoverMY);
         }
+    }
+
+    /**
+     * 鼠标是不是压在滚动条那一列上
+     *
+     * @param mx 鼠标 x
+     * @param my 鼠标 y
+     * @return 是否命中
+     */
+    private boolean overScrollbar(int mx, int my) {
+        if (maxScroll() <= 0) return false;
+        int sbX = panelX + panelW - CodexTheme.PAD;
+        return mx >= sbX - 2 && mx <= sbX + CodexTheme.SCROLLBAR_W + 2
+                && my >= contentY && my < contentY + visibleH;
     }
 
     /**
@@ -487,6 +538,26 @@ public class ModuleCodexScreen extends Screen {
         g.drawString(this.font, ">", searchFrameX + 3, searchFrameY + 4,
                 focused ? CodexTheme.TECH : CodexTheme.FAINT, true);
 
+        // ⭐ 清除按钮：只在有搜索词时出现。
+        //    改造前唯一的清空方式是按 ESC，而界面上没有任何地方提到这件事 ——
+        //    而且大多数人的第一反应是 ESC 会直接关掉整个图鉴（搜索框为空时它确实会），
+        //    所以根本不敢试。lang 里 kuvalich.codex.clear_search 早就写好了，只是没人接。
+        clearBtnSize = 0;
+        if (searchBox != null && !searchBox.getValue().isEmpty()) {
+            clearBtnSize = 9;
+            clearBtnX = searchFrameX + searchFrameW - clearBtnSize - 1;
+            clearBtnY = searchFrameY + 3;
+            boolean over = lastMouseX >= clearBtnX && lastMouseX < clearBtnX + clearBtnSize
+                    && lastMouseY >= clearBtnY && lastMouseY < clearBtnY + clearBtnSize;
+            int c = over ? CodexTheme.KUVA : CodexTheme.FAINT;
+            // 一个叉：两条对角线，逐像素点出来（9px 见方，成本可以忽略）
+            for (int i = 1; i < clearBtnSize - 1; i++) {
+                g.fill(clearBtnX + i, clearBtnY + i, clearBtnX + i + 1, clearBtnY + i + 1, c);
+                g.fill(clearBtnX + clearBtnSize - 1 - i, clearBtnY + i,
+                        clearBtnX + clearBtnSize - i, clearBtnY + i + 1, c);
+            }
+        }
+
         CodexTheme.dataLine(g, hx, panelY + CodexTheme.HEADER_H, hw, CodexTheme.TECH, frameMillis);
     }
 
@@ -533,9 +604,11 @@ public class ModuleCodexScreen extends Screen {
                     int gotN = roOk ? rarityFound[ro] : 0;
                     int totN = roOk ? rarityTotal[ro] : count;
 
+                    // 名字用该品质自己的颜色画，与左边的角标一致。
+                    // 改造前名字里内嵌 § 码，和角标的颜色对不上（青铜写成黄色、白银写成蓝色）。
                     String name = ModuleCodexData.getRarityName(ro);
                     int textX = contentX + 13;
-                    g.drawString(this.font, name, textX, drawY + 4, CodexTheme.ASH, true);
+                    g.drawString(this.font, name, textX, drawY + 4, rc, true);
                     int progX = textX + this.font.width(name) + 8;
                     String prog = gotN + " / " + totN;
                     int progColor = (totN > 0 && gotN >= totN) ? CodexTheme.EMBER : CodexTheme.ASH;
@@ -622,8 +695,8 @@ public class ModuleCodexScreen extends Screen {
         // ⭐ 悬停底色必须画在图标**之前**：同样的 z 序原因，画在 renderItem 之后
         //    会落到图标背后，只能把格子边缘染上色，看起来像没生效。
         if (hover) {
-            g.fill(x, y, x + CELL_W, y + CELL_H,
-                    CodexTheme.withAlpha(found ? CodexTheme.KUVA : CodexTheme.TECH, 0x22));
+            g.fill(x, y, x + CELL_W, y + CELL_H, CodexTheme.withAlpha(
+                    found ? CodexTheme.KUVA : CodexTheme.TECH, creativeMode ? 0x22 : 0x12));
         }
 
         // 反馈的整格闪光同理，也必须在图标之前
@@ -664,9 +737,19 @@ public class ModuleCodexScreen extends Screen {
         }
 
         if (hover) {
-            // 括号画在最后没问题：它们贴着格子边框，而图标只占中间 16x16，互不遮挡。
-            CodexTheme.brackets(g, x, y, CELL_W, CELL_H, 5,
-                    found ? CodexTheme.KUVA : CodexTheme.TECH);
+            // ⭐ 瞄准括号只在创造模式画。
+            //
+            //    括号是「这里能操作」的强视觉承诺，而点击拿取/装配只在创造模式生效。
+            //    生存玩家看到括号亮起、点下去却毫无反应（没有闪光、没有声音、没有提示），
+            //    和「压根没点中」是同一种观感，会反复点并怀疑功能坏了。
+            //    生存模式只保留一圈很弱的描边，表示「这格可以看 tooltip」。
+            if (creativeMode) {
+                CodexTheme.brackets(g, x, y, CELL_W, CELL_H, 5,
+                        found ? CodexTheme.KUVA : CodexTheme.TECH);
+            } else {
+                CodexTheme.border(g, x, y, CELL_W, CELL_H,
+                        CodexTheme.withAlpha(CodexTheme.EDGE, 0xFF));
+            }
         }
 
         if (fb != null) {
@@ -750,19 +833,27 @@ public class ModuleCodexScreen extends Screen {
             if (countSuffix == null) {
                 countSuffix = Component.translatable("kuvalich.codex.count_suffix").getString();
             }
-            String filterHint = Component.translatable("kuvalich.codex.filter_result").getString()
-                    + " " + filtered.size() + countSuffix;
+            if (filterPrefix == null) {
+                filterPrefix = Component.translatable("kuvalich.codex.filter_result").getString() + " ";
+            }
+            // 只有数字每帧会变，前后缀都是缓存的
+            String filterHint = filterPrefix + filtered.size() + countSuffix;
             g.drawString(this.font, filterHint, panelX + CodexTheme.PAD, textY, CodexTheme.EMBER, true);
         }
 
-        // 创造模式才提示两种点击 —— 生存模式下这两条操作都不存在，说了只会让人困惑
-        StringBuilder sb = new StringBuilder("[TAB] ")
-                .append(Component.translatable("kuvalich.codex.close_hint").getString());
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.player.isCreative()) {
-            sb.append("    ").append(Component.translatable("kuvalich.codex.creative_hint").getString());
+        // ⭐ 两种模式的提示各拼一次缓存起来。原先每帧都 new StringBuilder + 两次
+        //    Component.getString()，而这两句话在一次界面生命周期里根本不会变。
+        //
+        //    生存模式也给一行说明：改造前这里是空的，生存玩家既看不到操作提示、
+        //    点击又毫无反应，没有任何渠道弄清楚为什么。
+        if (footerHintCreative == null) {
+            String close = "[TAB] " + Component.translatable("kuvalich.codex.close_hint").getString();
+            footerHintCreative = close + "    "
+                    + Component.translatable("kuvalich.codex.creative_hint").getString();
+            footerHintSurvival = close + "    "
+                    + Component.translatable("kuvalich.codex.survival_hint").getString();
         }
-        String hint = sb.toString();
+        String hint = creativeMode ? footerHintCreative : footerHintSurvival;
         g.drawString(this.font, hint, panelX + panelW - CodexTheme.PAD - this.font.width(hint), textY,
                 CodexTheme.FAINT, false);
     }

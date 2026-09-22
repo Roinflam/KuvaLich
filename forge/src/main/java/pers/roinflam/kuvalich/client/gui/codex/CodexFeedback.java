@@ -67,16 +67,35 @@ public final class CodexFeedback {
      */
     private static final int MAX_ENTRIES = 256;
 
+    /**
+     * 反馈被推入后、还没被看到之前能等多久
+     *
+     * <p>计时是「第一次真正画出来」才开始的，所以一条始终没被看到的反馈本身不会过期。
+     * 给它一个兜底上限，免得玩家装配完就关掉图鉴、这条反馈一直挂在表里，
+     * 过很久之后再打开图鉴时莫名其妙地播一下。</p>
+     */
+    private static final long UNSEEN_TTL_MS = 30_000L;
+
     /** 一条活跃的反馈 */
     public static final class Entry {
         /** 类型 */
         public final Kind kind;
-        /** 起始时间 */
-        public final long startedAt;
+        /** 推入时间，用于给「一直没被看到」的反馈兜底过期 */
+        final long pushedAt;
+        /**
+         * 动画开始时间；0 表示还没被真正画出来过
+         *
+         * <p>⭐ 不是推入时间。反馈动画只在格子<b>可见</b>时才画，而玩家完全可能
+         * 装配完立刻滚走、或者改搜索词把这个条目筛掉 —— 按推入时间计时的话，
+         * 动画会在玩家看不到的地方悄悄播完然后彻底消失，等滚回来什么都没有了。
+         * 首次解锁尤其可惜，那是图鉴里最值得被看到的一刻。</p>
+         */
+        long startedAt;
 
-        Entry(Kind kind, long startedAt) {
+        Entry(Kind kind, long pushedAt) {
             this.kind = kind;
-            this.startedAt = startedAt;
+            this.pushedAt = pushedAt;
+            this.startedAt = 0L;
         }
 
         /**
@@ -131,9 +150,8 @@ public final class CodexFeedback {
         //    后到的会盖掉先到的 —— 而「首次解锁」显然是更值得看的那一个。
         //    所以只要解锁动画还在播，就不让别的类型把它顶掉。
         Entry existing = ACTIVE.get(discoveryKey);
-        if (kind != Kind.UNLOCKED && existing != null
-                && existing.kind == Kind.UNLOCKED
-                && now - existing.startedAt < existing.duration()) {
+        if (kind != Kind.UNLOCKED && existing != null && existing.kind == Kind.UNLOCKED
+                && (existing.startedAt == 0L || now - existing.startedAt < existing.duration())) {
             return;
         }
         ACTIVE.put(discoveryKey, new Entry(kind, now));
@@ -150,6 +168,16 @@ public final class CodexFeedback {
         if (ACTIVE.isEmpty() || discoveryKey == null) return null;
         Entry e = ACTIVE.get(discoveryKey);
         if (e == null) return null;
+
+        if (e.startedAt == 0L) {
+            // 这一帧是它第一次真正被画出来 —— 现在才开始计时，保证至少完整播一遍
+            if (now - e.pushedAt >= UNSEEN_TTL_MS) {
+                ACTIVE.remove(discoveryKey);
+                return null;
+            }
+            e.startedAt = now;
+            return e;
+        }
         if (now - e.startedAt >= e.duration()) {
             ACTIVE.remove(discoveryKey);
             return null;

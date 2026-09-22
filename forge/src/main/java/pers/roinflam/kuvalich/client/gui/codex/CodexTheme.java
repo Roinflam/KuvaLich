@@ -132,6 +132,27 @@ public final class CodexTheme {
     // ==================== 框体 ====================
 
     /**
+     * 直角 1px 描边
+     *
+     * <p>大框体一律用斜切，但格子这种小元件不能：18~22px 的尺度上切角会把四个角
+     * 吃掉将近一半，凹槽会糊成一个八边形。小元件用直角、大框体用斜切，
+     * 这个对比本身也是军械库那套语言的一部分。</p>
+     *
+     * @param g     画布
+     * @param x     左
+     * @param y     上
+     * @param w     宽
+     * @param h     高
+     * @param color 线色
+     */
+    public static void border(GuiGraphics g, int x, int y, int w, int h, int color) {
+        g.fill(x, y, x + w, y + 1, color);
+        g.fill(x, y + h - 1, x + w, y + h, color);
+        g.fill(x, y + 1, x + 1, y + h - 1, color);
+        g.fill(x + w - 1, y + 1, x + w, y + h - 1, color);
+    }
+
+    /**
      * 斜切板材：填充一个四角被斜切掉的矩形。
      *
      * @param g     画布
@@ -277,12 +298,19 @@ public final class CodexTheme {
      * @param millis 当前时间
      */
     public static void dataLine(GuiGraphics g, int x, int y, int w, int color, long millis) {
+        // ⭐ 只有两端的渐隐段需要逐像素，中段是同一个 alpha，一次 fill 就够。
+        //    改造前整条线逐像素画，一条装饰线每帧就要发起 w 次（面板宽时 500+）调用。
         int fadeW = Math.max(1, w / 6);
-        for (int i = 0; i < w; i++) {
-            int a = 0x55;
-            if (i < fadeW) a = (int) (0x55 * ((float) i / fadeW));
-            else if (i >= w - fadeW) a = (int) (0x55 * ((float) (w - i) / fadeW));
+        if (w > fadeW * 2) {
+            g.fill(x + fadeW, y, x + w - fadeW, y + 1, withAlpha(color, 0x55));
+        }
+        for (int i = 0; i < Math.min(fadeW, w); i++) {
+            int a = (int) (0x55 * ((float) i / fadeW));
             g.fill(x + i, y, x + i + 1, y + 1, withAlpha(color, a));
+            int r = x + w - i - 1;
+            if (r > x + fadeW) {
+                g.fill(r, y, r + 1, y + 1, withAlpha(color, a));
+            }
         }
         float phase = (millis % 9000L) / 9000f;
         float tri = phase < 0.5f ? phase * 2f : (1f - phase) * 2f;
@@ -371,14 +399,19 @@ public final class CodexTheme {
      * @param trackH    轨道高
      * @param scroll    当前滚动量
      * @param maxScroll 最大滚动量
+     * @param active    鼠标压在滚动条上或正在拖拽 —— 抓取状态要有明确反馈
      */
-    public static void scrollbar(GuiGraphics g, int x, int y, int trackH, double scroll, double maxScroll) {
+    public static void scrollbar(GuiGraphics g, int x, int y, int trackH,
+                                 double scroll, double maxScroll, boolean active) {
         if (maxScroll <= 0) return;
         g.fill(x, y, x + SCROLLBAR_W, y + trackH, withAlpha(EDGE, 0x90));
         double visibleRatio = trackH / (trackH + maxScroll);
         int thumbH = Math.max(THUMB_MIN_H, (int) (trackH * visibleRatio));
         int thumbY = y + (int) ((trackH - thumbH) * (scroll / maxScroll));
-        g.fill(x - 1, thumbY, x + SCROLLBAR_W + 1, thumbY + thumbH, withAlpha(TECH, 0x30));
-        g.fill(x, thumbY, x + SCROLLBAR_W, thumbY + thumbH, TECH);
+        // 激活时辉光加宽一圈并提亮，让「抓住了」看得出来
+        int halo = active ? 2 : 1;
+        g.fill(x - halo, thumbY, x + SCROLLBAR_W + halo, thumbY + thumbH,
+                withAlpha(TECH, active ? 0x60 : 0x30));
+        g.fill(x, thumbY, x + SCROLLBAR_W, thumbY + thumbH, active ? BONE : TECH);
     }
 }

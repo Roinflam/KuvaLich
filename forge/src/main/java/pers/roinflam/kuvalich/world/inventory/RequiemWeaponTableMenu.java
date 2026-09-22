@@ -260,11 +260,10 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
                     return;
                 }
 
-                int limit = 8;
+                // 日志用的上限也走同一套判定（NBT 显式值优先，否则按武器等级算），
+                // 只读 NBT 的话等级门槛生效时这条日志会报一个不对的数字
+                int limit = ModulePlacementValidator.readModuleLimit(weaponItemStack);
                 CompoundTag weaponTag = weaponItemStack.getTag();
-                if (weaponTag != null && weaponTag.contains(MODULE_LIMIT_KEY)) {
-                    limit = Math.max(0, Math.min(8, weaponTag.getInt(MODULE_LIMIT_KEY)));
-                }
 
                 LogUtil.debugEvent("武器放入军械库", "武器",
                         weaponItemStack.getHoverName().getString() + " (槽位限制: " + limit + ")");
@@ -280,7 +279,17 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
                 ListTag itemList = weaponModule.getList("modules", Tag.TAG_COMPOUND);
                 int loadedCount = 0;
                 menu.synchronize = true;
-                for (int i = 0; i < Math.min(limit, Math.min(8, itemList.size())); i++) {
+                // ⭐ 加载时**不能**按 limit 截断，必须把 8 格全读出来。
+                //
+                //    这里原先是 Math.min(limit, ...)。limit 恒为 8 的时候没事，
+                //    但 limit 一旦小于武器上已装的模组数，超出的那些就不会被读进 handler；
+                //    而关闭菜单时 syncAllModulesToWeapon() 会把**全部 8 格**写回武器 NBT，
+                //    没读进来的那几格是空的 —— 玩家的模组就这么被静默销毁了。
+                //    现在槽位上限挂到了武器等级上，这条路径随时会被走到。
+                //
+                //    上限只负责拦「往锁定槽里放新的」（见 ModuleSlot.mayPlace），
+                //    不负责决定「已经装着的能不能读出来」。
+                for (int i = 0; i < Math.min(8, itemList.size()); i++) {
                     CompoundTag itemTag = itemList.getCompound(i);
                     ItemStack stack = ItemStack.of(itemTag);
                     if (!stack.isEmpty()) {

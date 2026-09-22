@@ -79,7 +79,7 @@ public final class KuvaPalette {
      * <p><b>这里修了一个真 bug。</b>改造前同一件事有三套互相打架的表：</p>
      * <table border="1">
      *   <caption>改造前的三套品质色</caption>
-     *   <tr><th>档位</th><th>lang 里的叫法</th><th>图鉴指示器</th><th>图鉴 getRarityName 的 § 码</th><th>tooltip 词条色</th></tr>
+     *   <tr><th>档位</th><th>lang 里的叫法</th><th>图鉴指示器</th><th>图鉴分组标题（当时的 § 码）</th><th>tooltip 词条色</th></tr>
      *   <tr><td>0</td><td>青铜</td><td>#CD7F32 青铜</td><td>§e 黄</td><td>GOLD #FFAA00</td></tr>
      *   <tr><td>1</td><td>白银</td><td>#C0C0C0 银</td><td>§9 蓝</td><td>AQUA #55FFFF</td></tr>
      *   <tr><td>2</td><td>黄金</td><td>#FFD700 金</td><td>§6 金</td><td>YELLOW #FFFF55</td></tr>
