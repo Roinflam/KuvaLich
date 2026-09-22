@@ -1,18 +1,17 @@
 package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
+import pers.roinflam.kuvalich.client.gui.ContainerChrome;
+import pers.roinflam.kuvalich.client.gui.codex.CodexTheme;
 import pers.roinflam.kuvalich.client.gui.codex.ModuleCodexScreen;
-import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
 
 /**
@@ -25,9 +24,8 @@ import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
 @OnlyIn(Dist.CLIENT)
 public class RequiemWarframeTableScreen extends AbstractContainerScreen<RequiemWarframeTableMenu> {
 
-    private static final ResourceLocation TEXTURE = new ResourceLocation(
-            Reference.MOD_ID, "textures/gui/container/requiem_warframe_table.png"
-    );
+    /** 模组槽的下标区间（见 {@code RequiemWarframeTableMenu} 的 addSlot 顺序）：0~7 */
+    private static final int MODULE_SLOT_END = 8;
 
     public RequiemWarframeTableScreen(RequiemWarframeTableMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -46,20 +44,39 @@ public class RequiemWarframeTableScreen extends AbstractContainerScreen<RequiemW
         int hw = this.font.width(hint);
         int hx = (this.width - hw) / 2;
         int hy = (this.height + this.imageHeight) / 2 + 4;
-        guiGraphics.drawString(this.font, hint, hx, hy, 0xFFBBBBBB, false);
+        guiGraphics.drawString(this.font, hint, hx, hy, CodexTheme.ASH, true);
     }
 
+    /**
+     * 全自绘背景，不再使用任何贴图
+     *
+     * <p>与武器军械库的区别只有一处：<b>没有汇聚走线</b>。战甲模组直接挂在玩家的
+     * Capability 上，没有「输出槽」这个终点 —— 原贴图上也正是因此没有画汇聚线。
+     * 硬加一条走向不存在的终点的线，只会误导玩家去找那个并不存在的槽。</p>
+     *
+     * <p>第二次 blit（从 {@code v=imageHeight} 取条带）落在贴图可见区之下的透明像素上，
+     * 什么都没画出来，是历史遗留的空转调用，一并去掉。</p>
+     */
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+        int left = this.leftPos;
+        int top = this.topPos;
 
-        int left = (this.width - this.imageWidth) / 2;
-        int top = (this.height - this.imageHeight) / 2;
+        ContainerChrome.panel(guiGraphics, left, top, this.imageWidth, this.imageHeight);
+        ContainerChrome.zone(guiGraphics, left + 8, top + 6, this.imageWidth - 16, 51);
 
-        guiGraphics.blit(TEXTURE, left, top, 0, 0, this.imageWidth, this.imageHeight);
-        guiGraphics.blit(TEXTURE, left + 12, top + 30, 18, this.imageHeight, 152, 18);
+        // 模组区下方一条横向刻度，代替原贴图上那些零散的装饰描线
+        int barY = top + 60;
+        for (int x = left + 14; x < left + this.imageWidth - 14; x += 6) {
+            int len = ((x - left) / 6) % 4 == 0 ? 3 : 1;
+            guiGraphics.fill(x, barY, x + 1, barY + len,
+                    CodexTheme.withAlpha(CodexTheme.TECH, 0x70));
+        }
+
+        ContainerChrome.slots(guiGraphics, this.menu, left, top,
+                (slot, index) -> index < MODULE_SLOT_END
+                        ? ContainerChrome.SlotKind.INPUT
+                        : ContainerChrome.SlotKind.PLAYER);
     }
 
     @Override
