@@ -357,7 +357,8 @@ public final class CodexTheme {
         int h = font.lineHeight + 5;
         chamferFill(g, x, y, w, h, 3, bg);
         chamferOutline(g, x, y, w, h, 3, withAlpha(fg, 0x70));
-        g.drawString(font, text, x + 6, y + 3, fg, false);
+        // 带阴影：徽章里是细体数字，压在扫描线上不带阴影会糊掉
+        g.drawString(font, text, x + 6, y + 3, fg, true);
         return w;
     }
 

@@ -6,6 +6,7 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
 import pers.roinflam.kuvalich.network.packet.CodexInstallModulePacket;
+import pers.roinflam.kuvalich.network.packet.CodexInstallResultPacket;
 import pers.roinflam.kuvalich.network.packet.DamagePacket;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
@@ -149,6 +150,16 @@ public class NetworkRegistryHandler {
                 CodexInstallModulePacket::decode,
                 CodexInstallModulePacket::handle,
                 TO_SERVER
+        );
+
+        // 一键装配结果包（服务器 → 客户端）
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                CodexInstallResultPacket.class,
+                CodexInstallResultPacket::encode,
+                CodexInstallResultPacket::decode,
+                CodexInstallResultPacket::handle,
+                TO_CLIENT
         );
     }
 

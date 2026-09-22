@@ -155,15 +155,28 @@ public class ModuleDiscoveryPacket {
      */
     private static void handleClient(ModuleDiscoveryPacket packet) {
         if (packet.full) {
+            // 全量包是登录/重生时的整体同步，不是「刚刚解锁」，不触发解锁动画 ——
+            // 否则每次进世界都会有几百个格子一起闪。
             clientDiscoveredCache = new HashSet<>(packet.discoveredTypes);
-        } else {
-            if (packet.discoveredTypes.isEmpty()) {
-                return;
+            return;
+        }
+        if (packet.discoveredTypes.isEmpty()) {
+            return;
+        }
+        // 写时复制：新建集合后整体替换引用，避免读线程看到中间状态
+        Set<String> previous = clientDiscoveredCache;
+        Set<String> merged = new HashSet<>(previous);
+        merged.addAll(packet.discoveredTypes);
+        clientDiscoveredCache = merged;
+
+        // ⭐ 增量包里此前没见过的，才是真正「刚刚解锁」的，给它们排一段解锁动画。
+        //    服务端可能把同一个 key 重复发过来（比如反复捡同一种卡），
+        //    用 previous 做差集就能把重复的挡掉。
+        for (String key : packet.discoveredTypes) {
+            if (!previous.contains(key)) {
+                pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.push(
+                        key, pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.Kind.UNLOCKED);
             }
-            // 写时复制：新建集合后整体替换引用，避免读线程看到中间状态
-            Set<String> merged = new HashSet<>(clientDiscoveredCache);
-            merged.addAll(packet.discoveredTypes);
-            clientDiscoveredCache = merged;
         }
     }
 

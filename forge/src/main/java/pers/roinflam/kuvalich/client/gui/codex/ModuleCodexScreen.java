@@ -111,6 +111,10 @@ public class ModuleCodexScreen extends Screen {
     /** 上次算标题时用的那张表，配置热重载换了表也要重算。 */
     private List<ModuleCodexData.CodexEntry> titleCountedList = null;
 
+    /** 各品质的已发现数 / 总数。与标题计数同一次遍历算出来，共用同一套失效条件。 */
+    private final int[] rarityFound = new int[4];
+    private final int[] rarityTotal = new int[4];
+
     /** 各品质在当前筛选结果里各有多少条，随 filtered 一起在 recalcContentH 里更新。 */
     private final int[] rarityCounts = new int[4];
 
@@ -183,7 +187,8 @@ public class ModuleCodexScreen extends Screen {
         // 原版 EditBox 自带的白框在这套暗色面板上很突兀，关掉自己画。
         // 注意：bordered=false 时 EditBox 的文字从 getX() 起画（bordered=true 时是 getX()+4），
         // 所以这里把控件本身内缩 4px，外面那圈框由 drawHeader 画在 boxX..boxX+boxW。
-        searchBox = new EditBox(this.font, boxX + 4, boxY + 3, boxW - 8, 12, Component.empty());
+        // x 往右让开前导提示符 ">"，文字基线正好落在下划线之上
+        searchBox = new EditBox(this.font, boxX + 12, boxY + 3, boxW - 16, 12, Component.empty());
         searchBox.setMaxLength(50);
         searchBox.setBordered(false);
         searchBox.setTextColor(CodexTheme.BONE);
@@ -426,7 +431,8 @@ public class ModuleCodexScreen extends Screen {
         CodexTheme.cornerTab(g, tx, panelY + 11, 8, CodexTheme.KUVA);
         String title = this.getTitle().getString();
         int titleX = tx + 12;
-        g.drawString(this.font, title, titleX, panelY + 11, CodexTheme.BONE, false);
+        // 带阴影：细体字压在扫描线和网格上，不带阴影会糊进背景
+        g.drawString(this.font, title, titleX, panelY + 11, CodexTheme.BONE, true);
         g.fill(titleX, panelY + 22, titleX + this.font.width(title), panelY + 23,
                 CodexTheme.withAlpha(CodexTheme.KUVA, 0x90));
 
@@ -437,10 +443,19 @@ public class ModuleCodexScreen extends Screen {
                     ModuleCodexData.getWeaponModules() : ModuleCodexData.getWarframeModules();
             int stamp = ModuleDiscoveryPacket.getDiscoveredCount();
             if (cachedTitle == null || stamp != titleDiscoveryStamp || all != titleCountedList) {
+                // ⭐ 一次遍历同时算出总进度与各品质进度 —— 分组标题要用后者，
+                //    没必要为它再扫一遍 429 条。失效条件与总进度完全相同。
                 int discovered = 0;
+                java.util.Arrays.fill(rarityFound, 0);
+                java.util.Arrays.fill(rarityTotal, 0);
                 for (ModuleCodexData.CodexEntry e : all) {
                     // 传 moduleType 走免分配重载，省掉旧存档兼容分支里的 substring
-                    if (ModuleDiscoveryPacket.isDiscovered(e.discoveryKey, e.moduleType)) discovered++;
+                    boolean found = ModuleDiscoveryPacket.isDiscovered(e.discoveryKey, e.moduleType);
+                    if (found) discovered++;
+                    if (e.rarityOrder >= 0 && e.rarityOrder < rarityTotal.length) {
+                        rarityTotal[e.rarityOrder]++;
+                        if (found) rarityFound[e.rarityOrder]++;
+                    }
                 }
                 titleDiscoveryStamp = stamp;
                 titleCountedList = all;
@@ -453,15 +468,24 @@ public class ModuleCodexScreen extends Screen {
                     CodexTheme.withAlpha(CodexTheme.TECH, 0x22), CodexTheme.EMBER);
         }
 
-        // 搜索框外框：斜切；聚焦时换成科技青并发光
+        // ⭐ 搜索框从「一圈斜切描边」改成「前导提示符 + 底部下划线」。
+        //    整圈描边在这套以细线组织信息的界面里显得过重，而且框体本身比文字高一截，
+        //    文字浮在里面上不着天下不着地 —— 你看到的「文字歪了」就是这个。
+        //    下划线式的输入行把文字锚在一条基线上，也更像终端。
         boolean focused = searchBox != null && searchBox.isFocused();
+        int lineColor = focused ? CodexTheme.TECH : CodexTheme.EDGE;
+        int underY = searchFrameY + 15;
+        g.fill(searchFrameX, underY, searchFrameX + searchFrameW, underY + 1, lineColor);
         if (focused) {
-            CodexTheme.chamferGlow(g, searchFrameX, searchFrameY, searchFrameW, 18, 4,
-                    CodexTheme.TECH, 1f);
-        } else {
-            CodexTheme.chamferOutline(g, searchFrameX, searchFrameY, searchFrameW, 18, 4,
-                    CodexTheme.EDGE);
+            // 聚焦时下划线向外溢一层辉光，并在两端各加一个短竖标
+            g.fill(searchFrameX, underY + 1, searchFrameX + searchFrameW, underY + 2,
+                    CodexTheme.withAlpha(lineColor, 0x40));
         }
+        g.fill(searchFrameX, underY - 4, searchFrameX + 1, underY + 1, lineColor);
+        g.fill(searchFrameX + searchFrameW - 1, underY - 4, searchFrameX + searchFrameW, underY + 1, lineColor);
+        // 前导提示符
+        g.drawString(this.font, ">", searchFrameX + 3, searchFrameY + 4,
+                focused ? CodexTheme.TECH : CodexTheme.FAINT, true);
 
         CodexTheme.dataLine(g, hx, panelY + CodexTheme.HEADER_H, hw, CodexTheme.TECH, frameMillis);
     }
@@ -501,11 +525,37 @@ public class ModuleCodexScreen extends Screen {
                     int rc = ModuleCodexData.getRarityColor(e.rarityOrder);
                     CodexTheme.cornerTab(g, contentX, drawY + 2, 9, rc);
 
-                    String header = ModuleCodexData.getRarityName(e.rarityOrder)
-                            + " \u00A78" + count + countSuffix;
-                    int textX = contentX + 11;
-                    g.drawString(this.font, header, textX, drawY + 4, CodexTheme.ASH, false);
-                    int lineX = textX + this.font.width(header) + 6;
+                    // ⭐ 分组标题显示的是**收集进度**而不是条目数：条目数在底栏的搜索命中里
+                    //    已经有了，而「这一档收集了多少」才是玩家翻图鉴时真正想知道的。
+                    //    数字带阴影 —— 细体数字压在扫描线上很难读。
+                    int ro = e.rarityOrder;
+                    boolean roOk = ro >= 0 && ro < rarityTotal.length;
+                    int gotN = roOk ? rarityFound[ro] : 0;
+                    int totN = roOk ? rarityTotal[ro] : count;
+
+                    String name = ModuleCodexData.getRarityName(ro);
+                    int textX = contentX + 13;
+                    g.drawString(this.font, name, textX, drawY + 4, CodexTheme.ASH, true);
+                    int progX = textX + this.font.width(name) + 8;
+                    String prog = gotN + " / " + totN;
+                    int progColor = (totN > 0 && gotN >= totN) ? CodexTheme.EMBER : CodexTheme.ASH;
+                    g.drawString(this.font, prog, progX, drawY + 4, progColor, true);
+
+                    // 该档位的进度条：细细一条，长度跟着完成度走
+                    int barX = progX + this.font.width(prog) + 8;
+                    int barW = 48;
+                    if (barX + barW < contentX + contentW) {
+                        int barY = drawY + SECTION_H / 2;
+                        g.fill(barX, barY, barX + barW, barY + 1,
+                                CodexTheme.withAlpha(CodexTheme.EDGE, 0xC0));
+                        int fillW = totN > 0 ? (int) ((long) barW * gotN / totN) : 0;
+                        if (fillW > 0) {
+                            g.fill(barX, barY - 1, barX + fillW, barY + 2, rc);
+                        }
+                        barX += barW;
+                    }
+
+                    int lineX = barX + 8;
                     if (lineX < contentX + contentW) {
                         g.fill(lineX, drawY + SECTION_H / 2, contentX + contentW,
                                 drawY + SECTION_H / 2 + 1, CodexTheme.withAlpha(CodexTheme.EDGE, 0xC0));
@@ -543,6 +593,17 @@ public class ModuleCodexScreen extends Screen {
      */
     private void drawCell(GuiGraphics g, ModuleCodexData.CodexEntry e,
                           int x, int y, boolean found, boolean hover) {
+        // 反馈表绝大多数帧是空的，空表时连 key 都不去查
+        CodexFeedback.Entry fb = CodexFeedback.isEmpty()
+                ? null : CodexFeedback.peek(e.discoveryKey, frameMillis);
+        float fp = fb != null ? fb.progress(frameMillis) : 0f;
+
+        // 「装不上」用横向抖动表达：衰减的正弦，三个来回之后归零。
+        // 抖动必须在所有绘制之前改掉 x，否则格子的各层会互相错开。
+        if (fb != null && fb.kind == CodexFeedback.Kind.REJECTED) {
+            x += (int) (Math.sin(fp * Math.PI * 6.0) * 3.0 * (1f - fp));
+        }
+
         int rarity = found ? ModuleCodexData.getRarityColor(e.rarityOrder)
                 : ModuleCodexData.getRarityColorDim(e.rarityOrder);
 
@@ -563,6 +624,15 @@ public class ModuleCodexScreen extends Screen {
         if (hover) {
             g.fill(x, y, x + CELL_W, y + CELL_H,
                     CodexTheme.withAlpha(found ? CodexTheme.KUVA : CodexTheme.TECH, 0x22));
+        }
+
+        // 反馈的整格闪光同理，也必须在图标之前
+        if (fb != null) {
+            int flash = feedbackColor(fb.kind);
+            int a = (int) (0x80 * (1f - fp) * (1f - fp));
+            if (a > 2) {
+                g.fill(x, y, x + CELL_W, y + CELL_H, CodexTheme.withAlpha(flash, a));
+            }
         }
 
         if (found) {
@@ -598,6 +668,60 @@ public class ModuleCodexScreen extends Screen {
             CodexTheme.brackets(g, x, y, CELL_W, CELL_H, 5,
                     found ? CodexTheme.KUVA : CodexTheme.TECH);
         }
+
+        if (fb != null) {
+            drawFeedback(g, fb, fp, x, y);
+        }
+    }
+
+    /**
+     * 反馈动画的颜色
+     *
+     * @param kind 反馈类型
+     * @return 颜色
+     */
+    private static int feedbackColor(CodexFeedback.Kind kind) {
+        switch (kind) {
+            case INSTALLED: return CodexTheme.TECH;
+            case REJECTED: return CodexTheme.KUVA;
+            default: return CodexTheme.EMBER;
+        }
+    }
+
+    /**
+     * 画一次性反馈动画的外层部分（向外扩散的光环 / 解锁扫描线）
+     *
+     * <p>这部分画在图标之后没关系：光环在格子边框之外，扫描线是一条贯穿的横线，
+     * 都不依赖盖住图标。真正需要盖住内容的整格闪光已经在图标之前画过了。</p>
+     *
+     * @param g  画布
+     * @param fb 反馈
+     * @param fp 进度 0~1
+     * @param x  格子左（已含抖动偏移）
+     * @param y  格子上
+     */
+    private void drawFeedback(GuiGraphics g, CodexFeedback.Entry fb, float fp, int x, int y) {
+        int color = feedbackColor(fb.kind);
+
+        // 向外扩散的括号环：越扩越淡，像一次脉冲
+        int grow = (int) (fp * 7f);
+        int ringAlpha = (int) (0xE0 * (1f - fp));
+        if (ringAlpha > 4) {
+            CodexTheme.brackets(g, x - grow, y - grow,
+                    CELL_W + grow * 2, CELL_H + grow * 2, 4,
+                    CodexTheme.withAlpha(color, ringAlpha));
+        }
+
+        if (fb.kind == CodexFeedback.Kind.UNLOCKED) {
+            // 解锁：一条自上而下扫过格子的亮线，像刚刚被解密
+            int sy = y + (int) (fp * CELL_H);
+            if (sy >= y && sy < y + CELL_H) {
+                g.fill(x, sy, x + CELL_W, sy + 1,
+                        CodexTheme.withAlpha(color, (int) (0xE0 * (1f - fp))));
+                g.fill(x, sy + 1, x + CELL_W, sy + 2,
+                        CodexTheme.withAlpha(color, (int) (0x60 * (1f - fp))));
+            }
+        }
     }
 
 
@@ -618,7 +742,7 @@ public class ModuleCodexScreen extends Screen {
             }
             String filterHint = Component.translatable("kuvalich.codex.filter_result").getString()
                     + " " + filtered.size() + countSuffix;
-            g.drawString(this.font, filterHint, panelX + CodexTheme.PAD, textY, CodexTheme.EMBER, false);
+            g.drawString(this.font, filterHint, panelX + CodexTheme.PAD, textY, CodexTheme.EMBER, true);
         }
 
         // 创造模式才提示两种点击 —— 生存模式下这两条操作都不存在，说了只会让人困惑

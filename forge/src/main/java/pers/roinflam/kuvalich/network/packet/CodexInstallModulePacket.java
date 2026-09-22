@@ -5,6 +5,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.PacketDistributor;
+import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.event.ModuleDiscoveryHandler;
@@ -101,6 +103,7 @@ public class CodexInstallModulePacket {
             AbstractContainerMenu menu = player.containerMenu;
             if (!(menu instanceof RequiemWeaponTableMenu) && !(menu instanceof RequiemWarframeTableMenu)) {
                 LogUtil.debug("一键装配时玩家并未打开军械库，已拒绝");
+                reject(player, msg);
                 return;
             }
 
@@ -109,6 +112,7 @@ public class CodexInstallModulePacket {
             if (found.isEmpty()) {
                 LogUtil.debug("一键装配找不到模组 type=" + msg.moduleType
                         + " isWeapon=" + msg.isWeapon + " rarity=" + msg.rarityOrder);
+                reject(player, msg);
                 return;
             }
             ItemStack module = found.copy();
@@ -118,12 +122,14 @@ public class CodexInstallModulePacket {
                 // 类型与容器必须匹配：武器军械库只收武器模组
                 if (!(module.getItem() instanceof AbstractWeaponModule)) {
                     LogUtil.debug("一键装配：武器军械库收到非武器模组，已拒绝");
+                    reject(player, msg);
                     return;
                 }
                 installed = weaponMenu.installFirstAvailable(module);
             } else if (menu instanceof RequiemWarframeTableMenu warframeMenu) {
                 if (!(module.getItem() instanceof AbstractWarframeModule)) {
                     LogUtil.debug("一键装配：战甲军械库收到非战甲模组，已拒绝");
+                    reject(player, msg);
                     return;
                 }
                 installed = warframeMenu.installFirstAvailable(player, module);
@@ -136,6 +142,22 @@ public class CodexInstallModulePacket {
                 LogUtil.debugEvent("图鉴一键装配", player.getName().getString(),
                         (msg.isWeapon ? "武器" : "战甲") + "模组 " + msg.moduleType);
             }
+            // ⭐ 成败都要回：改造前失败是完全静默的，玩家只会觉得「点了没反应」
+            NetworkRegistryHandler.getChannel().send(
+                    PacketDistributor.PLAYER.with(() -> player),
+                    CodexInstallResultPacket.of(msg.moduleType, msg.rarityOrder, installed));
         });
+    }
+
+    /**
+     * 回一个「装不上」的结果。
+     *
+     * @param player 玩家
+     * @param msg    原请求
+     */
+    private static void reject(ServerPlayer player, CodexInstallModulePacket msg) {
+        NetworkRegistryHandler.getChannel().send(
+                PacketDistributor.PLAYER.with(() -> player),
+                CodexInstallResultPacket.of(msg.moduleType, msg.rarityOrder, false));
     }
 }

@@ -33,6 +33,16 @@ import pers.roinflam.kuvalich.utils.Reference;
 public class CodexPrewarmHandler {
 
     /**
+     * 退出世界时清空图鉴的一次性反馈表，避免跨存档残留。
+     *
+     * @param event 客户端玩家登出事件
+     */
+    @SubscribeEvent
+    public static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.clear();
+    }
+
+    /**
      * 登入世界后预热一次。
      *
      * @param event 客户端玩家登入事件
