@@ -1170,7 +1170,7 @@
   "kuvalich.guidebook.entry.warframe_attr_mobility": "Mobility & Tools",
   "kuvalich.guidebook.entry.warframe_attr_mobility.title": "Warframe Attributes · Mobility/Tools",
   "kuvalich.guidebook.entry.warframe_attr_mobility.p1": "· Sprint Speed sprintSpeed$(br)· Jump Height jumpBoost$(br2)· Reach Distance reachDistance$(br)· Mining Speed diggingSpeed$(br)  (synced server & client side)",
-  "kuvalich.guidebook.entry.warframe_attr_mobility.p2": "$(l)Loot Drop Multiplier$()$(br)itemDropMultiplier$(br2)Increases drops from killed mobs.$(br)Only affects non-equipment drops.$(br)Works on both animals and monsters.$(br2)Even better with the Executioner series$(br)kill stack version.$(br2)$(note)Capped at one stack per item$(br)per kill.",
+  "kuvalich.guidebook.entry.warframe_attr_mobility.p2": "$(l)Loot Drop Multiplier$()$(br)itemDropMultiplier$(br2)Increases drops from killed mobs.$(br)Only affects non-equipment drops.$(br)Works on both animals and monsters.$(br2)Even better with the Executioner series$(br)kill stack version.$(br2)$(note)No cap; anything over one stack$(br)drops as several piles.",
   "kuvalich.guidebook.entry.warframe_attr_killstack": "Warframe Kill Stacks",
   "kuvalich.guidebook.entry.warframe_attr_killstack.title": "Warframe Attributes · Kill Stacks",
   "kuvalich.guidebook.entry.warframe_attr_killstack.p1": "From Executioner series mods:$(br2)· Health killStackHealth$(br)· Shield Capacity killStackShield$(br)· Armor killStackArmor$(br)· Sprint Speed killStackSprintSpeed$(br)· Shield Recharge Rate$(br)  killStackShieldRecoveryRate",

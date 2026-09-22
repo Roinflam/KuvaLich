@@ -270,11 +270,10 @@ public class WarframeEffectHandler {
      *    扩大为一切装备、武器、工具。两个分支的语义保持不变——
      *    倍率 &lt;= 0 时装备仍被完整保留、只清除非装备掉落；倍率 &gt; 0 时装备不参与数量缩放。
      * <p>
-     * ⭐ 本次改动：去掉普通生物（Animal / Monster）的「最多一组」上界，
-     *    词条堆到多少就掉多少；现有 ItemEntity 装不下的余量另起新实体，
-     *    每堆不超过该物品的堆叠上限，而不再把余量堆成一个超堆叠的实体。
-     *    自定义NPC（{@link #isCustomNpc}）例外：它的掉落表是包作者手配的，
-     *    仍然钳到 max(介入前总量, 堆叠上限)。
+     * ⭐ 本次改动：「最多一组」上界已全面取消，普通生物（Animal / Monster）
+     *    与自定义NPC（{@link #isCustomNpc}）一视同仁：词条堆到多少就掉多少；
+     *    现有 ItemEntity 装不下的余量另起新实体，每堆不超过该物品的堆叠上限，
+     *    而不再把余量堆成一个超堆叠的实体。
      *
      * @param evt 掉落事件
      */
@@ -320,23 +319,17 @@ public class WarframeEffectHandler {
 
                 // 倍率 > 0 时：缩放掉落物数量（装备、武器、工具不参与缩放）
                 //
-                // ⭐ 钳制规则：只有自定义NPC的掉落还保留「最多一组」的上界。
-                //
-                //    普通生物（Animal / Monster）不再钳上界 —— 词条堆到多少就掉多少，
+                // ⭐ 不再设任何上界 —— 词条堆到多少就掉多少，
                 //    超出堆叠上限的部分另起 ItemEntity 掉成好几堆（见下面的溢出分堆）。
+                //    自定义NPC 曾经钳到 max(介入前总量, 堆叠上限)，现在跟普通生物走同一条路：
+                //    两边都能超过一组。
                 //    代价是整合包里几套倍率会连乘：杀一只僵尸掉 10 腐肉，
                 //    世界等级 ×5 变 50，战甲再 ×10 就是 500，也就是 8 堆。
                 //    要收紧只能调配置里的 itemDropEffectMultiplier。
                 //
-                //    自定义NPC照旧钳到 max(介入前总量, 堆叠上限)：NPC 的掉落表是
-                //    包作者一条条手配的，不该被词条放大成刷物品机。
-                //    下界用「介入前的总量」—— 有些 NPC 本来就掉不止一组，
-                //    不能因为钳制反而比不装这条词条掉得还少。
-                //
-                //    无论钳不钳，都只能按「物品种类」汇总来算：先跑的模组（如世界等级）
+                //    总量只能按「物品种类」汇总来算：先跑的模组（如世界等级）
                 //    会把超堆叠的量拆成好几个 ItemEntity 再塞回列表，
                 //    只看单个实体的 count 根本看不出总量。
-                boolean capToOneStack = isCustomNpc(evt.getEntity());
 
                 Map<Item, Integer> beforeTotals = new HashMap<>();
                 for (ItemEntity drop : drops) {
@@ -353,10 +346,6 @@ public class WarframeEffectHandler {
                     int scaledCount = (int) scaled;
                     if (Math.random() < scaled - scaledCount) {
                         scaledCount++;
-                    }
-                    if (capToOneStack) {
-                        int cap = Math.max(before, e.getKey().getDefaultInstance().getMaxStackSize());
-                        scaledCount = Math.min(scaledCount, cap);
                     }
                     remaining.put(e.getKey(), Math.max(0, scaledCount));
                 }
