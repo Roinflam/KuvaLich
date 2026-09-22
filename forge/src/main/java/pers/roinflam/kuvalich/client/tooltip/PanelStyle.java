@@ -57,25 +57,6 @@ public final class PanelStyle {
         return ascii() ? DOT_EMPTY_ASCII : DOT_EMPTY_UNICODE;
     }
 
-    /** 组前缀：装订线 + 组标题 + 两个空格 */
-    public static Component groupPrefix(PanelGroup group) {
-        MutableComponent c = Component.empty();
-        if (TooltipConfig.PANEL.showGutter.get()) {
-            c.append(Component.literal(gutter()).withStyle(group.gutterColor()));
-        }
-        c.append(Component.translatable(group.titleKey()).withStyle(group.titleColor()));
-        c.append(Component.literal("  "));
-        return c;
-    }
-
-    /** 续行前缀：与组前缀等宽的空白（保留装订线，让整组在视觉上连成一块） */
-    public static Component groupContinuation(PanelGroup group) {
-        Component gutterComponent = TooltipConfig.PANEL.showGutter.get()
-                ? Component.literal(gutter()).withStyle(group.gutterColor())
-                : Component.empty();
-        return ChipPacker.matchingIndent(groupPrefix(group), gutterComponent);
-    }
-
     /**
      * 属性短名（紧凑视图用）
      *

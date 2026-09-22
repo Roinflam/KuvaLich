@@ -5,6 +5,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import pers.roinflam.kuvalich.module.weapon.panel.PanelGroup;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
 
 /**
  * 面板配色 —— 24 位 RGB，不受原版那 16 个 {@code ChatFormatting} 限制
@@ -122,31 +123,24 @@ public final class PanelPalette {
     /**
      * 元素专属色
      *
-     * <p>⭐ 项目原有的 {@code KuvaWeaponUtil.getColor} 返回的是 {@code ChatFormatting}，
+     * <p>⭐ 起因：{@code KuvaWeaponUtil.getColor} 原先返回 {@code ChatFormatting}，
      * 里面有 {@code DARK_RED}（#AA0000）、{@code DARK_GREEN}（#00AA00）、
      * {@code DARK_GRAY}（#555555）、{@code DARK_BLUE}（#0000AA）这几个在深色 tooltip 背景上
-     * 几乎读不出来的颜色 —— 而元素恰恰是玩家靠颜色认的。这里给一套亮度足够的 RGB。</p>
+     * 几乎读不出来的颜色 —— 而元素恰恰是玩家靠颜色认的。</p>
+     *
+     * <p>现在那边也改成 RGB 了，并且两边共用同一张表：表本体在双端安全的
+     * {@link pers.roinflam.kuvalich.utils.KuvaPalette#element(String)}，本方法只做委托。
+     * 必须这样是因为 {@code KuvaWeaponUtil} 与 {@code AbstractWeaponModule} 都是双端类，
+     * 而本类是 {@code @OnlyIn(Dist.CLIENT)} 的，它们不能反过来依赖本类。</p>
      *
      * <p>色相沿用原来的语义（火=橙红、冰=青、毒=绿、电=蓝紫…），
      * 只是把明度提上来，所以不会破坏玩家已有的辨认习惯。</p>
      */
     public static int element(String type) {
-        return switch (type) {
-            case "fire" -> 0xFF7A4A;         // 火焰：橙红
-            case "ice" -> 0x6FD8F0;          // 冰冻：冰蓝
-            case "poison" -> 0x6BD96B;       // 毒素：绿
-            case "electricity" -> 0x8296FF;  // 电击：蓝紫
-            case "slash" -> 0xD8DCE2;        // 切割：亮灰
-            case "puncture" -> 0x9AA2AE;     // 穿刺：中灰（原版 DARK_GRAY 完全看不见）
-            case "impact" -> 0xF0F0F0;       // 冲击：白
-            case "gas" -> 0xA8E86B;          // 毒气：黄绿
-            case "radiation" -> 0xF0E060;    // 辐射：黄
-            case "magnetic" -> 0x7A8CFF;     // 磁力：蓝
-            case "corrosion" -> 0xC4DB4A;    // 腐蚀：黄绿偏亮
-            case "explosion" -> 0xFF9B4A;    // 爆炸：橙
-            case "virus" -> 0xFF7AB0;        // 病毒：粉
-            default -> LABEL;
-        };
+        // 表已搬到双端安全的 KuvaPalette，这里只委托：
+        // KuvaWeaponUtil / AbstractWeaponModule 都是双端类，用不了本类（@OnlyIn(Dist.CLIENT)），
+        // 而它们需要的正是同一批元素色。全仓库只留一份表，避免两处各自漂移。
+        return KuvaPalette.element(type);
     }
 
     // ==================== 工具 ====================

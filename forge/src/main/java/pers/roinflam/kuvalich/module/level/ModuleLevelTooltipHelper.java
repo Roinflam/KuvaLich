@@ -1,12 +1,12 @@
 package pers.roinflam.kuvalich.module.level;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import pers.roinflam.kuvalich.client.tooltip.PanelPalette;
 import pers.roinflam.kuvalich.world.inventory.RequiemEvolveMenu;
 
 import java.util.List;
@@ -43,28 +43,33 @@ public final class ModuleLevelTooltipHelper {
         double ratio = (double) currentLevel / (double) maxLevel;
         int filledCount = Math.max(0, Math.min((int) Math.round(ratio * BAR_LENGTH), BAR_LENGTH));
 
-        ChatFormatting filledColor;
-        if (ratio > 0.8) { filledColor = ChatFormatting.GREEN; }
-        else if (ratio > 0.5) { filledColor = ChatFormatting.YELLOW; }
-        else if (ratio > 0.25) { filledColor = ChatFormatting.GOLD; }
-        else { filledColor = ChatFormatting.RED; }
+        // 四档进度色。原版 YELLOW(#FFFF55) 与 GOLD(#FFAA00) 在条上已经够近，
+        // 这里刻意让四档跨越绿→青金→橙→红，相邻两档的色相差比原版更大。
+        int filledColor;
+        if (ratio > 0.8) { filledColor = PanelPalette.BONUS; }          // 接近满级
+        else if (ratio > 0.5) { filledColor = PanelPalette.STACK_ACTIVE; }
+        else if (ratio > 0.25) { filledColor = PanelPalette.WARN; }
+        else { filledColor = PanelPalette.PENALTY; }                    // 刚起步
 
         MutableComponent barComponent = Component.literal("");
 
         StringBuilder filledBar = new StringBuilder();
         for (int i = 0; i < filledCount; i++) { filledBar.append(BAR_FILLED); }
         if (filledBar.length() > 0) {
-            barComponent.append(Component.literal(filledBar.toString()).withStyle(filledColor));
+            barComponent.append(Component.literal(filledBar.toString()).withStyle(PanelPalette.style(filledColor)));
         }
 
         StringBuilder emptyBar = new StringBuilder();
         for (int i = filledCount; i < BAR_LENGTH; i++) { emptyBar.append(BAR_EMPTY); }
         if (emptyBar.length() > 0) {
-            barComponent.append(Component.literal(emptyBar.toString()).withStyle(ChatFormatting.DARK_GRAY));
+            // 空格必须看得见「还剩几格」——原版 DARK_GRAY(#555555) 在深色 tooltip 上基本消失，
+            // PanelStyle 里的圆点也踩过同一个坑。
+            barComponent.append(Component.literal(emptyBar.toString()).withStyle(PanelPalette.style(PanelPalette.DOT_OFF)));
         }
 
+        // 颜色 + 粗体原先靠 withStyle(ChatFormatting...) 变长参数一次传两个枚举值，换 RGB 后要先拼 Style
         barComponent.append(Component.literal(" Lv." + currentLevel + "/" + maxLevel)
-                .withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
+                .withStyle(PanelPalette.bold(PanelPalette.VALUE)));
 
         tooltip.add(insertIndex, barComponent);
         return 1;
@@ -80,7 +85,7 @@ public final class ModuleLevelTooltipHelper {
         int cost = ModuleLevelHelper.getUpgradeCost(currentLevel);
         if (cost <= 0) { return 0; }
         tooltip.add(insertIndex, Component.translatable("item.module.level.upgrade_cost", cost)
-                .withStyle(ChatFormatting.GRAY));
+                .withStyle(PanelPalette.style(PanelPalette.MUTED)));
         return 1;
     }
 
@@ -98,7 +103,7 @@ public final class ModuleLevelTooltipHelper {
         int cost = ModuleLevelHelper.getUpgradeCost(currentLevel, moduleStack);
         if (cost <= 0) { return 0; }
         tooltip.add(insertIndex, Component.translatable("item.module.level.upgrade_cost", cost)
-                .withStyle(ChatFormatting.GRAY));
+                .withStyle(PanelPalette.style(PanelPalette.MUTED)));
         return 1;
     }
 
@@ -121,7 +126,7 @@ public final class ModuleLevelTooltipHelper {
                 : getWeaponRivenCycleCost(trend, cycleCount);
         if (cost <= 0) { return 0; }
         tooltip.add(insertIndex, Component.translatable("item.module.riven.cycle_cost", cost)
-                .withStyle(ChatFormatting.GRAY));
+                .withStyle(PanelPalette.style(PanelPalette.MUTED)));
         return 1;
     }
 

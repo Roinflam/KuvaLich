@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich.item.module.warframe;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -12,6 +11,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.level.Level;
 
+import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
@@ -61,7 +61,18 @@ public class WarframeRivenModule extends AbstractWarframeModule {
 
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE.get());
-        itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + Component.translatable("kuvaweapon.warframe_type_riven_random.name").getString()));
+        // ⭐ 改造前是把 §5 这个传统颜色码直接拼进字符串：
+        //    Component.literal(ChatFormatting.DARK_PURPLE + name)。
+        //    § 码是内嵌在文本里的，Style 里并没有颜色，所以
+        //    WeaponPanelComposer.moduleNames() 里那句
+        //    「if (name.getStyle().getColor() == null) 补一个默认灰」永远判定为无色而去补灰，
+        //    只是渲染时字符串里的 §5 又把灰覆盖回紫色 —— 误判但结果凑巧对。
+        //    改成组件级样式后这条判断终于能正确识别「卡名自带品质色」。
+        //    注意：已经存在于玩家背包里的老卡，NBT 里仍是 §5 的旧格式，
+        //    setHoverName 是生成瞬间烘焙进 display.Name 的快照，无法也不应回溯改写；
+        //    两种格式都能正常显示颜色，全树也没有任何地方拿这个名字做格式匹配（已核实）。
+        itemStack.setHoverName(Component.literal(Component.translatable("kuvaweapon.warframe_type_riven_random.name").getString())
+                .withStyle(KuvaPalette.style(KuvaPalette.rarity(4))));
         AbstractModule.setRandom(itemStack, true);
         return itemStack;
     }
@@ -101,7 +112,8 @@ public class WarframeRivenModule extends AbstractWarframeModule {
         }
 
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE.get());
-        itemStack.setHoverName(Component.literal(ChatFormatting.DARK_PURPLE + "Warframe " + generateRivenName()));
+        itemStack.setHoverName(Component.literal("Warframe " + generateRivenName())
+                .withStyle(KuvaPalette.style(KuvaPalette.rarity(4))));
         setTrend(itemStack, trend);
         setCycle(itemStack, cycleNumber + 1);
 

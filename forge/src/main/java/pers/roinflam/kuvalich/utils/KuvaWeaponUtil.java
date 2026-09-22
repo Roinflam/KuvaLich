@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich.utils;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -90,47 +89,49 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * 根据等级获取颜色（业务逻辑100%不变）
-     * Get color by level (business logic 100% unchanged)
+     * 根据赤毒等级取强度梯度色（档位划分与改造前逐字一致，只换颜色值）
+     *
+     * <p>五档是拿 number 与配置项 {@code benchmarkLevel}（默认 45）的比值分的，
+     * 不是玩家等级。颜色值见 {@link KuvaPalette#TIER}。</p>
+     *
+     * @param number 该武器自身的赤毒等级词条
+     * @return RGB（不再是 ChatFormatting）
      */
-    public static ChatFormatting getColor(int number) {
+    public static int getColor(int number) {
         // ✅ 注意：所有配置值必须加.get()
         int benchmark = ModConfig.KUVA_LICH.benchmarkLevel.get();
 
         if (number < benchmark * 0.77777) {
-            return ChatFormatting.GRAY;
+            return KuvaPalette.TIER[0];
         } else if (number < benchmark) {
-            return ChatFormatting.AQUA;
+            return KuvaPalette.TIER[1];
         } else if (number < benchmark * 1.22222) {
-            return ChatFormatting.DARK_PURPLE;
+            return KuvaPalette.TIER[2];
         } else if (number < benchmark * 1.33333) {
-            return ChatFormatting.GOLD;
+            return KuvaPalette.TIER[3];
         } else {
-            return ChatFormatting.RED;
+            return KuvaPalette.TIER[4];
         }
     }
 
     /**
-     * 根据元素类型获取颜色（业务逻辑100%不变）
-     * Get color by element type (business logic 100% unchanged)
+     * 根据元素 / 物理伤害类型取标识色
+     *
+     * <p>直接委托 {@link KuvaPalette#element(String)}，与 tooltip 面板走同一张表。</p>
+     *
+     * <p><b>注意：这里只有 7 种类型真正会被走到。</b>唯一调用方
+     * {@link #appendTypeLine} 会先用 {@code DAMAGE_TYPE.contains(type)} 把不在
+     * {@code fire / poison / ice / electricity / impact / magnetic / radiation}
+     * 里的值统一替换成 {@code "unknown"}，所以 slash / puncture / virus /
+     * corrosion / explosion / gas 这 6 种在当前代码里走不到，会落到兜底。
+     * 委托给 KuvaPalette 之后这件事不再是问题 —— 那张表本来就是全的，
+     * 将来放开 DAMAGE_TYPE 就能直接用上。</p>
+     *
+     * @param type 伤害类型名
+     * @return RGB（不再是 ChatFormatting）
      */
-    public static ChatFormatting getColor(String type) {
-        switch (type) {
-            case "fire": return ChatFormatting.DARK_RED;
-            case "poison": return ChatFormatting.DARK_GREEN;
-            case "ice": return ChatFormatting.AQUA;
-            case "electricity": return ChatFormatting.BLUE;
-            case "impact": return ChatFormatting.WHITE;
-            case "magnetic": return ChatFormatting.DARK_BLUE;
-            case "radiation": return ChatFormatting.YELLOW;
-            case "slash": return ChatFormatting.GRAY;
-            case "puncture": return ChatFormatting.DARK_GRAY;
-            case "virus": return ChatFormatting.RED;
-            case "corrosion": return ChatFormatting.DARK_GREEN;
-            case "explosion": return ChatFormatting.RED;
-            case "gas": return ChatFormatting.GREEN;
-            default: return ChatFormatting.DARK_GRAY;
-        }
+    public static int getColor(String type) {
+        return KuvaPalette.element(type);
     }
 
     /**
@@ -200,11 +201,15 @@ public class KuvaWeaponUtil {
         lines.add(Component.translatable("kuvaweapon.type")
                 .append(" ")
                 .append(Component.translatable("kuvaweapon.type." + type)
-                        .withStyle(getColor(type)))
+                        .withStyle(KuvaPalette.style(getColor(type))))
                 .append(" ")
+                // 颜色 + 粗体原先是 withStyle(ChatFormatting...) 变长参数一次传两个枚举值，
+                // 颜色换成 int 之后只能先拼出 Style 再传。
                 .append(Component.literal(String.valueOf(number))
-                        .withStyle(getColor(number), ChatFormatting.BOLD))
-                .withStyle(ChatFormatting.GRAY));
+                        .withStyle(KuvaPalette.bold(getColor(number))))
+                // 这一句只作用于最外层「类型:」这个标签词本身，
+                // 不会级联覆盖上面 append 进来的子组件颜色（它们各自带 Style）。
+                .withStyle(KuvaPalette.style(KuvaPalette.MUTED)));
     }
 
     /**

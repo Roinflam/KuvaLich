@@ -9,6 +9,7 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 import pers.roinflam.kuvalich.module.level.ModuleLevelTooltipHelper;
@@ -89,7 +90,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
             //    普通模式下只有名称一行时一行都不显示，开了 F3+H 又会显示三行
             for (int i = 1; i <= 3; i++) {
                 tooltip.add(Math.min(i, tooltip.size()), Component.translatable("kuvaweapon.item_type_random.tooltip")
-                        .withStyle(ChatFormatting.GRAY));
+                        .withStyle(KuvaPalette.style(KuvaPalette.MUTED)));
             }
         } else {
             addAttributeTooltips(tooltip, itemStack, item, event.getEntity());
@@ -147,11 +148,13 @@ public abstract class AbstractWeaponModule extends AbstractModule {
             }
 
             // ⭐ v6：特定元素使用专属颜色（病毒粉色、毒气青色），其他走原品质颜色
-            ChatFormatting elementColor = getElementColor(attributeKey);
-            ChatFormatting color = elementColor != null ? elementColor : getModuleColor(item);
+            // 用装箱的 Integer 而不是 int：null 是「本条没有元素专属色，退回品质色」的哨兵值，
+            // 改成基本类型就没法表达「无覆盖」了。
+            Integer elementColor = getElementColor(attributeKey);
+            int color = elementColor != null ? elementColor : getModuleColor(item);
             net.minecraft.network.chat.MutableComponent line = Component.literal(prefix + valueText + " ")
                     .append(attributeName)
-                    .withStyle(color);
+                    .withStyle(KuvaPalette.style(color));
 
             // ⭐ 叠层词条追加玩家当前层数：卡面原先只写「至多 N 层」，
             //    玩家看不出这条词条现在到底生效了多少，容易低估它的强度。
@@ -163,7 +166,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
         }
 
         tooltip.add(number, Component.translatable("kuvaweapon.item_type.tooltip")
-                .withStyle(ChatFormatting.WHITE));
+                .withStyle(KuvaPalette.style(KuvaPalette.VALUE)));
     }
 
     private static int getMaxStacksForAttribute(String attributeKey) {
@@ -187,14 +190,15 @@ public abstract class AbstractWeaponModule extends AbstractModule {
         for (int i = trend; i < 5; i++) { trendBar.append("○"); }
         tooltip.add(startIndex++,
                 Component.translatable("kuvaweapon.item_type_riven_trend.tooltip")
+                        // 子组件只带 BOLD、自身不设颜色，颜色靠组件树从外层继承——不要给它塞一个不含颜色的新 Style
                         .append(" ").append(Component.literal(trendBar.toString()).withStyle(ChatFormatting.BOLD))
-                        .withStyle(ChatFormatting.DARK_PURPLE));
+                        .withStyle(KuvaPalette.style(KuvaPalette.rarity(4))));
         int cycle = WeaponRivenModule.getCycle(itemStack);
         if (cycle > 0) {
             tooltip.add(startIndex++,
                     Component.translatable("kuvaweapon.item_type_riven_cycle.tooltip")
                             .append(" ").append(Component.literal(String.valueOf(cycle)).withStyle(ChatFormatting.BOLD))
-                            .withStyle(ChatFormatting.DARK_PURPLE));
+                            .withStyle(KuvaPalette.style(KuvaPalette.rarity(4))));
         }
         // ⭐ 在安魂之融中显示洗卡所需赤毒（武器裂罅公式：min(cycle,8) + trend² - (trend-1)²）
         startIndex += ModuleLevelTooltipHelper.appendRivenCycleCostTooltipIfInEvolve(
@@ -202,13 +206,26 @@ public abstract class AbstractWeaponModule extends AbstractModule {
         return startIndex;
     }
 
-    private static ChatFormatting getModuleColor(Item item) {
-        if (item instanceof WeaponCommonModule) return ChatFormatting.GOLD;
-        if (item instanceof WeaponUncommonModule) return ChatFormatting.AQUA;
-        if (item instanceof WeaponRareModule) return ChatFormatting.YELLOW;
-        if (item instanceof WeaponPrimeModule) return ChatFormatting.WHITE;
-        if (item instanceof WeaponRivenModule) return ChatFormatting.LIGHT_PURPLE;
-        return ChatFormatting.WHITE;
+    /**
+     * 模组品质档位色
+     *
+     * <p><b>这里改掉了一处与模组自身命名自相矛盾的配色。</b>
+     * 改造前是 Common=GOLD / Uncommon=AQUA / Rare=YELLOW / Prime=WHITE，
+     * 而模组在 lang 与图鉴里的叫法是「青铜 / 白银 / 黄金 / Prime」——
+     * 青铜被涂成金色、黄金被涂成黄色，两者几乎同色，玩家分不出手上是铜卡还是金卡。
+     * 现在统一走 {@link KuvaPalette#rarity(int)}，与图鉴指示器（唯一对得上命名的那套）一致。</p>
+     *
+     * @param item 模组物品
+     * @return RGB（不再是 ChatFormatting）
+     */
+    private static int getModuleColor(Item item) {
+        if (item instanceof WeaponCommonModule) return KuvaPalette.rarity(0);     // 青铜
+        if (item instanceof WeaponUncommonModule) return KuvaPalette.rarity(1);   // 白银
+        if (item instanceof WeaponRareModule) return KuvaPalette.rarity(2);       // 黄金
+        if (item instanceof WeaponPrimeModule) return KuvaPalette.rarity(3);      // Prime
+        if (item instanceof WeaponRivenModule) return KuvaPalette.rarity(4);      // 裂罅
+        // 防御性兜底：上面五个子类已穷尽全树所有 extends 本类的具体类型，实际走不到。
+        return KuvaPalette.VALUE;
     }
 
     /**
@@ -218,9 +235,15 @@ public abstract class AbstractWeaponModule extends AbstractModule {
      * @param attributeKey 属性 key（如 "virus"、"gas"、"meleeDamage"）
      * @return 元素专属颜色，无匹配时 null
      */
-    private static ChatFormatting getElementColor(String attributeKey) {
+    private static Integer getElementColor(String attributeKey) {
         switch (attributeKey) {
-            default:      return null;
+            // ⭐ 补上实现：改造前这个 switch 只有 default: return null，
+            //    也就是说类头与本方法 javadoc 宣称的「病毒粉 / 毒气青覆盖品质色」
+            //    从来没有生效过，一直在静默退回品质色。现在按注释的原意补齐，
+            //    取值复用 KuvaPalette 的元素表，不新造值。
+            case "virus":  return KuvaPalette.element("virus");
+            case "gas":    return KuvaPalette.element("gas");
+            default:       return null;
         }
     }
 }
