@@ -1,14 +1,11 @@
 package pers.roinflam.kuvalich.module;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
-import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.item.module.weapon.WeaponRivenModule;
-import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 /**
  * 模组能不能装进某个槽位 —— 唯一判定实现
@@ -32,9 +29,6 @@ public final class ModulePlacementValidator {
     /** 固定 8 槽。仓库里没有「一个模组占多槽」或「额外槽位」的实现，{@code ExtraSlotTooltipHelper} 指的是副手/盔甲/Curios 的属性来源，不占模组槽。 */
     public static final int SLOT_COUNT = 8;
 
-    /** 武器顶层 NBT 里收紧可用槽位数的字段名，与 {@code RequiemWeaponTableMenu} 保持同名同义。 */
-    private static final String MODULE_LIMIT_KEY = "moduleLimit";
-
     private ModulePlacementValidator() {}
 
     /**
@@ -51,53 +45,23 @@ public final class ModulePlacementValidator {
     // ==================== 武器 ====================
 
     /**
-     * 读武器的可用槽位上限
+     * 可用槽位数：**恒定 8**
      *
-     * <p>与 {@code RequiemWeaponTableMenu.getModuleLimit()} 同款逻辑：读**顶层** NBT
-     * （不是模组子 tag）的 {@code moduleLimit}，不存在则 8（不限制），存在则夹到 [0,8]。</p>
+     * <p>曾经试过按武器等级解锁槽位，已整个撤掉 —— 槽位数永久固定为 8，
+     * 不随等级、配置或 NBT 变化。</p>
      *
-     * <p>⚠ 这个字段目前全仓库只有读、没有任何写入点，等价于恒定 8 —— 是个预留挂钩。
-     * 这里照样尊重它，免得将来某个强化系统开始写它之后，一键装上成了绕过限制的后门。</p>
+     * <p>保留这个方法而不是把 8 散在各处，是因为「可用槽位数」这个概念在三个地方
+     * 都要用到（两个军械库菜单的 mayPlace、图鉴一键装配找空槽）。留一个单点，
+     * 将来真要做槽位限制时只改这里，不必再去三处翻。</p>
      *
-     * @param weapon 武器物品（空则返回 0，与菜单一致）
-     * @return 可用槽位数 [0,8]
+     * @param weapon 武器物品；空物品返回 0（与菜单原有语义一致：没放武器就没有槽位）
+     * @return 可用槽位数
      */
     public static int readModuleLimit(ItemStack weapon) {
         if (weapon == null || weapon.isEmpty()) {
             return 0;
         }
-        // 显式写在 NBT 上的上限优先：这是留给「某把武器单独设定」的口子
-        CompoundTag tag = weapon.getTag();
-        if (tag != null && tag.contains(MODULE_LIMIT_KEY)) {
-            return Math.max(0, Math.min(SLOT_COUNT, tag.getInt(MODULE_LIMIT_KEY)));
-        }
-        return limitFromLevel(KuvaWeaponUtil.getNumber(weapon));
-    }
-
-    /**
-     * 按赤毒等级算可用槽位数
-     *
-     * <p>总槽位永远是 8，等级决定其中有几个已解锁：
-     * {@code base + level / perUnlock}，夹到 [1, 8]。
-     * {@code perUnlock} 配成 0 就是关闭等级门槛、8 个全开。</p>
-     *
-     * <p><b>已装在锁定槽里的模组不会被清掉、也照常生效。</b>
-     * {@code WeaponModuleHandler.getModules} 读的是 NBT 里的全部 8 格，不看这个上限。
-     * 这是刻意的：玩家的武器可能是在挂上等级门槛之前装满的，
-     * 因为一条配置就把他已经装好的模组作废，比门槛本身更让人难受。
-     * 上限只拦「往锁定槽里放新的」。</p>
-     *
-     * @param level 赤毒等级
-     * @return 可用槽位数 [1,8]
-     */
-    public static int limitFromLevel(int level) {
-        int perUnlock = ModConfig.KUVA_LICH.moduleSlotLevelsPerUnlock.get();
-        if (perUnlock <= 0) {
-            return SLOT_COUNT;
-        }
-        int base = ModConfig.KUVA_LICH.moduleSlotBaseCount.get();
-        int unlocked = base + Math.max(0, level) / perUnlock;
-        return Math.max(1, Math.min(SLOT_COUNT, unlocked));
+        return SLOT_COUNT;
     }
 
     /**

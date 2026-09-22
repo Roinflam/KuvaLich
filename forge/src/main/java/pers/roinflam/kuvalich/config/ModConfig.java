@@ -141,8 +141,6 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue maxStacksDiggingSpeed;
 
         // ===== 实体生成 / Entity Spawning =====
-        public final ForgeConfigSpec.IntValue moduleSlotBaseCount;
-        public final ForgeConfigSpec.IntValue moduleSlotLevelsPerUnlock;
         public final ForgeConfigSpec.IntValue kuvaLichSpawnWeight;
         public final ForgeConfigSpec.IntValue kuvaLichMinSpawnCount;
         public final ForgeConfigSpec.IntValue kuvaLichMaxSpawnCount;
@@ -625,21 +623,6 @@ public final class ModConfig {
                     .comment("Digging speed max stacks")
                     .comment("挖掘速度最大层数")
                     .defineInRange("maxStacksDiggingSpeed", 20, 1, 100);
-
-            builder.comment("")
-                    .comment("═══ Module Slots / 模组槽位 ═══")
-                    .comment("Total slots are always 8; these control how many of them are unlocked")
-                    .comment("总槽位数永远是 8，这里控制的是其中有几个已解锁");
-
-            moduleSlotBaseCount = builder
-                    .comment("Unlocked module slots at weapon level 0")
-                    .comment("武器 0 级时已解锁的模组槽位数")
-                    .defineInRange("moduleSlotBaseCount", 4, 1, 8);
-
-            moduleSlotLevelsPerUnlock = builder
-                    .comment("Weapon levels needed to unlock each additional slot (0 = disable level gating, all 8 unlocked)")
-                    .comment("每多少级解锁一个额外槽位（0 = 关闭等级门槛，8 个全开）")
-                    .defineInRange("moduleSlotLevelsPerUnlock", 12, 0, Integer.MAX_VALUE);
 
             builder.comment("")
                     .comment("═══ Entity Spawning / 实体生成 ═══")

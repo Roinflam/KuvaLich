@@ -408,28 +408,45 @@ public class ModuleCodexScreen extends Screen {
         Minecraft mc0 = Minecraft.getInstance();
         creativeMode = mc0.player != null && mc0.player.isCreative();
 
-        g.fill(0, 0, this.width, this.height, CodexTheme.fade(CodexTheme.VOID, progress));
-
-        // 主框体：斜切板材 -> 全息表面 -> 环境微粒 -> 内容 -> 发光轮廓。
-        // 顺序要紧：微粒在板材之上、格子之下；轮廓压在最外层。
-        CodexTheme.chamferFill(g, panelX, panelY, panelW, panelH, CodexTheme.CHAMFER, CodexTheme.PLATE);
-        CodexTheme.holoSurface(g, panelX + 2, panelY + 2, panelW - 4, panelH - 4, 12);
-        CodexTheme.motes(g, panelX + 2, contentY, panelW - 4, Math.max(0, visibleH), frameMillis, progress);
-
         hoveredEntry = null;
         lastMouseX = mx;
         lastMouseY = my;
-        drawHeader(g);
-        drawContent(g, mx, my);
-        CodexTheme.scrollbar(g, panelX + panelW - CodexTheme.PAD, contentY, visibleH,
-                scrollOffset, maxScroll(), dragging || overScrollbar(mx, my));
-        drawFooter(g);
 
-        // 左缘一条数据刻度，把留白仪器化
-        CodexTheme.tickStrip(g, panelX + CodexTheme.PAD, contentY, visibleH, CodexTheme.TECH);
+        // ⭐ 整块绘制包在 drawManaged 里 —— 这是这个界面最重要的一处性能处理。
+        //
+        //    GuiGraphics.fill 最终那个重载会调 flushIfUnmanaged()，也就是说
+        //    **每一次 fill 默认都会把批次 flush 掉、变成一个独立的 draw call**。
+        //    而这个界面是全自绘的：面板斜切、全息扫描线、刻度、微粒，再加上
+        //    每个可见格子十来次 fill（20 列 × 十几行 = 两三百个格子），
+        //    一帧下来是三千多次 fill —— 不包起来就是三千多个 draw call。
+        //
+        //    managed 期间 fill 只往缓冲里堆顶点，退出时一次性提交。
+        //    drawString 内部同样是 flushIfUnmanaged，在这里也一并被批住了；
+        //    renderItem 本身不做任何 flush，放在里面是安全的。
+        //
+        //    唯独 tooltip 不能放进来：renderTooltipInternal 自己用了 drawManaged，
+        //    嵌套会让内层退出时把 managed 置回 false，外层剩下的绘制又退化成逐次 flush。
+        g.drawManaged(() -> {
+            g.fill(0, 0, this.width, this.height, CodexTheme.fade(CodexTheme.VOID, progress));
 
-        CodexTheme.chamferGlow(g, panelX, panelY, panelW, panelH, CodexTheme.CHAMFER,
-                CodexTheme.withAlpha(CodexTheme.TECH, 0xB0), progress);
+            // 主框体：斜切板材 -> 全息表面 -> 环境微粒 -> 内容 -> 发光轮廓。
+            // 顺序要紧：微粒在板材之上、格子之下；轮廓压在最外层。
+            CodexTheme.chamferFill(g, panelX, panelY, panelW, panelH, CodexTheme.CHAMFER, CodexTheme.PLATE);
+            CodexTheme.holoSurface(g, panelX + 2, panelY + 2, panelW - 4, panelH - 4, 12);
+            CodexTheme.motes(g, panelX + 2, contentY, panelW - 4, Math.max(0, visibleH), frameMillis, progress);
+
+            drawHeader(g);
+            drawContent(g, mx, my);
+            CodexTheme.scrollbar(g, panelX + panelW - CodexTheme.PAD, contentY, visibleH,
+                    scrollOffset, maxScroll(), dragging || overScrollbar(mx, my));
+            drawFooter(g);
+
+            // 左缘一条数据刻度，把留白仪器化
+            CodexTheme.tickStrip(g, panelX + CodexTheme.PAD, contentY, visibleH, CodexTheme.TECH);
+
+            CodexTheme.chamferGlow(g, panelX, panelY, panelW, panelH, CodexTheme.CHAMFER,
+                    CodexTheme.withAlpha(CodexTheme.TECH, 0xB0), progress);
+        });
 
         super.render(g, mx, my, pt);
         if (hoveredEntry != null) {

@@ -42,7 +42,6 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
 
     private boolean synchronize = false;
 
-    private static final String MODULE_LIMIT_KEY = "moduleLimit";
 
     public RequiemWeaponTableMenu(int windowId, Inventory playerInventory, Level level, BlockPos pos) {
         super(KuvaLichMenuTypes.REQUIEM_WEAPON_TABLE.get(), windowId);
@@ -76,12 +75,12 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 可用槽位上限
+     * 可用槽位上限：放了武器就是 8，没放武器是 0
      *
      * <p>实现委托给 {@link ModulePlacementValidator#readModuleLimit(ItemStack)} ——
      * 图鉴一键装配也要按同一个上限找空槽，这段逻辑只该有一份。</p>
      *
-     * @return 可用槽位数 [0,8]；军械库里没放武器时为 0
+     * @return 可用槽位数；军械库里没放武器时为 0
      */
     public int getModuleLimit() {
         return ModulePlacementValidator.readModuleLimit(weaponHandler.getStackInSlot(0));
@@ -281,14 +280,14 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
                 menu.synchronize = true;
                 // ⭐ 加载时**不能**按 limit 截断，必须把 8 格全读出来。
                 //
-                //    这里原先是 Math.min(limit, ...)。limit 恒为 8 的时候没事，
-                //    但 limit 一旦小于武器上已装的模组数，超出的那些就不会被读进 handler；
+                //    这里原先是 Math.min(limit, ...)。槽位数恒为 8 的时候没事，
+                //    但只要上限一旦小于武器上已装的模组数，超出的那些就不会被读进 handler；
                 //    而关闭菜单时 syncAllModulesToWeapon() 会把**全部 8 格**写回武器 NBT，
                 //    没读进来的那几格是空的 —— 玩家的模组就这么被静默销毁了。
-                //    现在槽位上限挂到了武器等级上，这条路径随时会被走到。
                 //
-                //    上限只负责拦「往锁定槽里放新的」（见 ModuleSlot.mayPlace），
-                //    不负责决定「已经装着的能不能读出来」。
+                //    槽位现在固定 8、这条路径走不到，但这个写法本身就是错的：
+                //    「上限」管的是能不能**放新的**，不该决定「已经装着的能不能读出来」。
+                //    留着截断等于给将来任何槽位限制埋一颗静默毁档的雷。
                 for (int i = 0; i < Math.min(8, itemList.size()); i++) {
                     CompoundTag itemTag = itemList.getCompound(i);
                     ItemStack stack = ItemStack.of(itemTag);
