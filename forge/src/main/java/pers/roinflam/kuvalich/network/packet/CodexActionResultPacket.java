@@ -34,8 +34,6 @@ public class CodexActionResultPacket {
     public static final byte REJECTED = 1;
     /** 已放进背包 */
     public static final byte TAKEN = 2;
-    /** 背包满了，掉在脚下 */
-    public static final byte DROPPED = 3;
 
     /** 模组的发现键（{@code type:rarityOrder}），客户端用它定位是哪个格子 */
     private final String discoveryKey;
@@ -93,7 +91,6 @@ public class CodexActionResultPacket {
         switch (result) {
             case INSTALLED: return pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.Kind.INSTALLED;
             case TAKEN: return pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.Kind.TAKEN;
-            case DROPPED: return pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.Kind.DROPPED;
             default: return pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.Kind.REJECTED;
         }
     }

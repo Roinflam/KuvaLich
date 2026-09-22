@@ -2,7 +2,6 @@ package pers.roinflam.kuvalich.network.packet;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
@@ -84,42 +83,36 @@ public class CodexGiveItemPacket {
                 return;
             }
 
-            // 给予物品：优先放背包，满了掉脚下
-            // Give item: prefer inventory, drop at feet if full
+            // ⭐ 背包满就**直接拒绝**，什么都不发生。
+            //
+            //    原先是塞不下就丢到玩家脚下。但背包既然是满的，地上那份同样捡不起来，
+            //    只会一直躺在那儿 —— 玩家既没拿到卡，界面还给了个「掉出去了」的动画，
+            //    看不懂也没法处理。
+            //
+            //    现在和军械库那边的「装不上」统一：格子红闪 + 抖动，物品不生成。
             ItemStack give = found.copy();
-            boolean intoInventory = player.getInventory().add(give);
-            if (!intoInventory) {
-                ItemEntity drop = new ItemEntity(
-                        player.level(),
-                        player.getX(), player.getY(), player.getZ(),
-                        give);
-                drop.setNoPickUpDelay();
-                player.level().addFreshEntity(drop);
-                LogUtil.debug("图鉴给予：背包已满，物品掉落在脚下");
+            if (!player.getInventory().add(give)) {
+                LogUtil.debug("图鉴给予：背包已满，已拒绝 type=" + msg.moduleType);
+                NetworkRegistryHandler.getChannel().send(
+                        PacketDistributor.PLAYER.with(() -> player),
+                        CodexActionResultPacket.of(msg.moduleType, msg.rarityOrder,
+                                CodexActionResultPacket.REJECTED));
+                return;
             }
 
-            // ⭐ 只有**真的进了背包**才算解锁。
+            // 走到这里说明卡确实进背包了，记一次发现。
             //
-            //    这里必须显式记一次发现：Inventory#add 是直接塞进背包，
-            //    **不会**触发 EntityItemPickupEvent，所以 ModuleDiscoveryHandler.onItemPickup
-            //    那条路径根本不跑，不显式记的话要等下一次周期性扫描才补上 ——
-            //    表现就是「点了拿到手，图鉴却迟迟不亮」。解锁动画也是挂在发现包的
-            //    增量下发上的，所以这一条同时决定了动画出不出现。
-            //
-            //    但背包满、物品掉在脚下的那种情况**不能**在这里记：玩家并没有真的拿到它，
-            //    图鉴却亮了，对不上。掉在地上的那份等玩家捡起来时会正常走
-            //    EntityItemPickupEvent，该解锁的一个也不会漏。
-            if (intoInventory) {
-                ModuleDiscoveryHandler.tryDiscoverSingle(player, found);
-            }
+            // 必须显式记：Inventory#add 是直接塞进背包，不触发任何拾取事件，
+            // ModuleDiscoveryHandler 那几条路径一条都不跑，不记就得等下一次周期扫描补上 ——
+            // 表现就是「点了拿到手，图鉴却迟迟不亮」。解锁动画挂在发现包的增量下发上，
+            // 所以这一行同时决定了解锁动画出不出现。
+            ModuleDiscoveryHandler.tryDiscoverSingle(player, found);
 
-            // ⭐ 回一个结果，让图鉴上那个格子有反馈。
-            //    「背包满了掉在脚下」尤其需要 —— 改造前这种情况玩家完全看不出发生了什么。
+            // 回一个结果，让图鉴上那个格子有反馈
             NetworkRegistryHandler.getChannel().send(
                     PacketDistributor.PLAYER.with(() -> player),
                     CodexActionResultPacket.of(msg.moduleType, msg.rarityOrder,
-                            intoInventory ? CodexActionResultPacket.TAKEN
-                                    : CodexActionResultPacket.DROPPED));
+                            CodexActionResultPacket.TAKEN));
 
             LogUtil.debugEvent("图鉴创造给予", player.getName().getString(),
                     "type=" + msg.moduleType + " rarity=" + msg.rarityOrder

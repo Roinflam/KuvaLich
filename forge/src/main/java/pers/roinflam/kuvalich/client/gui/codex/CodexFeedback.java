@@ -10,12 +10,11 @@ import java.util.Map;
 /**
  * 图鉴格子上的一次性反馈动画（客户端）
  *
- * <p>五种反馈共用一张表，按 {@code discoveryKey} 索引：</p>
+ * <p>四种反馈共用一张表，按 {@code discoveryKey} 索引：</p>
  * <ul>
  *   <li>{@link Kind#INSTALLED} —— Shift+点击一键装配成功</li>
  *   <li>{@link Kind#REJECTED} —— 装不上（没空位 / 冲突 / 军械库里没放武器）</li>
- *   <li>{@link Kind#TAKEN} —— 左键点击，已放进背包</li>
- *   <li>{@link Kind#DROPPED} —— 左键点击但背包满了，掉在脚下</li>
+ *   <li>{@link Kind#TAKEN} —— 左键点击，已放进背包（背包满则走 REJECTED）</li>
  *   <li>{@link Kind#UNLOCKED} —— 这个模组刚刚被首次发现</li>
  * </ul>
  *
@@ -45,8 +44,6 @@ public final class CodexFeedback {
         REJECTED,
         /** 已放进背包 */
         TAKEN,
-        /** 背包满了，掉在脚下 */
-        DROPPED,
         /** 首次发现 */
         UNLOCKED
     }
@@ -55,7 +52,6 @@ public final class CodexFeedback {
     private static final long INSTALLED_MS = 520L;
     private static final long REJECTED_MS = 420L;
     private static final long TAKEN_MS = 340L;
-    private static final long DROPPED_MS = 520L;
     private static final long UNLOCKED_MS = 900L;
 
     /**
@@ -108,7 +104,6 @@ public final class CodexFeedback {
                 case INSTALLED: return INSTALLED_MS;
                 case REJECTED: return REJECTED_MS;
                 case TAKEN: return TAKEN_MS;
-                case DROPPED: return DROPPED_MS;
                 default: return UNLOCKED_MS;
             }
         }

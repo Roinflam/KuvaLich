@@ -1,12 +1,10 @@
 package pers.roinflam.kuvalich.event;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -26,7 +24,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  *
  * 四条发现路径，覆盖所有获取场景：
  *
- * 1. 玩家捡起模组时（EntityItemPickupEvent）
+ * 1. 玩家捡起模组时（PlayerEvent.ItemPickupEvent，拾取**成功之后**才触发）
  * 2. 玩家登录时扫描背包补录 + 同步客户端
  * 3. 模组揭示时（ModuleLevelHelper.applyRevealLevel 手动调用）
  * 4. ⭐ 每5秒定期扫描背包（兜底）
@@ -41,18 +39,28 @@ public class ModuleDiscoveryHandler {
     private static final int SCAN_INTERVAL = 100;
 
     /**
-     * 路径1：玩家捡起物品时检测
-     * Path 1: Detect on item pickup
+     * 路径1：玩家<b>成功</b>捡起物品时检测
+     * Path 1: Detect after a successful item pickup
+     *
+     * <p>⭐ 这里原先用的是 {@code EntityItemPickupEvent} —— 那是**拾取前**的事件。
+     * {@code ItemEntity.playerTouch} 里的顺序是：
+     * 先发 {@code EntityItemPickupEvent}，再 {@code Inventory.add}，
+     * add 成功了才发 {@code PlayerEvent.ItemPickupEvent}。</p>
+     *
+     * <p>用前一个事件的后果是：背包满的时候玩家踩在一个捡不起来的掉落物上，
+     * 每次碰撞都触发一次拾取前事件 —— 发现记下了、图鉴亮了，
+     * 但 add 从头到尾就没成功过，东西还躺在地上。
+     * <b>解锁了一张自己根本没拿到的卡。</b></p>
+     *
+     * <p>换成拾取后事件就只有真拿到才会走到这里，
+     * {@code getStack()} 给的正是实际进了背包的那份拷贝。</p>
      */
     @SubscribeEvent
-    public static void onItemPickup(EntityItemPickupEvent event) {
+    public static void onItemPickup(PlayerEvent.ItemPickupEvent event) {
         if (event.getEntity().level().isClientSide) return;
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-        ItemEntity entityItem = event.getItem();
-        if (entityItem == null) return;
-
-        tryDiscoverSingle(player, entityItem.getItem());
+        tryDiscoverSingle(player, event.getStack());
     }
 
     /**
