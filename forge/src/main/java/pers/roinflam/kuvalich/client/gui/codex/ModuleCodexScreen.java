@@ -47,7 +47,9 @@ public class ModuleCodexScreen extends Screen {
 
     // ==================== 布局 ====================
 
-    private static final int COLUMNS = 10;
+    /** 列数按面板宽度自适应，不再写死 10 列 —— 窄窗口下 10 列会把格子挤出面板。 */
+    private static final int COLUMNS_MIN = 4;
+    private static final int COLUMNS_MAX = 14;
     private static final int CELL_W = 22;
     private static final int CELL_H = 23;
     private static final int GAP = 3;
@@ -55,25 +57,10 @@ public class ModuleCodexScreen extends Screen {
     private static final int IND_H = 2;
     private static final int IND_TOTAL_W = IND_SOLID_W + 2;
     private static final int SECTION_H = 16;
-    private static final int SECTION_GAP = 6;
-    private static final int TITLE_H = 18;
-    private static final int SEARCH_H = 18;
-    private static final int TOP_H = TITLE_H + SEARCH_H + 8;
-    private static final int BOTTOM_H = 20;
-    private static final int SCROLLBAR_W = 4;
+    private static final int SECTION_GAP = 8;
 
-    // ==================== 颜色 ====================
-
-    private static final int BG = 0xD0000000;
-    private static final int CELL_BG_FOUND = 0x28FFFFFF;
-    private static final int CELL_BG_MISS = 0x10FFFFFF;
-    private static final int CELL_HOVER_FOUND = 0x45FFFFFF;
-    private static final int CELL_HOVER_MISS = 0x20FFFFFF;
-    private static final int OVERLAY_MISS = 0xA0080810;
-    private static final int SECTION_LINE_COLOR = 0x30FFFFFF;
-    private static final int HINT_TEXT = 0xFFBBBBBB;
-
-    private static final int FILTER_TEXT = 0xFFAAAAAA;
+    /** 开场动画时长。比参考实现的 220ms 略短 —— 图鉴是个会被反复开关的界面，动画太长会碍事。 */
+    private static final long OPEN_MS = 170L;
 
     // ==================== 状态 ====================
 
@@ -85,6 +72,15 @@ public class ModuleCodexScreen extends Screen {
     private int totalContentH = 0;
     private int visibleH = 0;
     private int contentX, contentY, contentW;
+
+    /** 面板边界（内容区之外的外框） */
+    private int panelX, panelY, panelW, panelH;
+    /** 当前列数，由面板宽度算出 */
+    private int columns = 10;
+    /** 开场时间戳，用于四角生长与淡入 */
+    private long openedAt = 0L;
+    /** 搜索框外框的位置（控件本身内缩 4px，框由我们画） */
+    private int searchFrameX, searchFrameY, searchFrameW;
 
     private List<ModuleCodexData.CodexEntry> filtered = null;
     private String lastSearch = "";
@@ -125,22 +121,41 @@ public class ModuleCodexScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        contentW = COLUMNS * (CELL_W + GAP) - GAP;
-        contentX = (this.width - contentW) / 2;
-        contentY = TOP_H;
-        visibleH = this.height - TOP_H - BOTTOM_H;
+        if (openedAt == 0L) {
+            openedAt = net.minecraft.Util.getMillis();
+        }
+
+        // 面板：四周留白，内容全部画在这个框里
+        panelX = CodexTheme.MARGIN;
+        panelY = CodexTheme.MARGIN;
+        panelW = Math.max(160, this.width - CodexTheme.MARGIN * 2);
+        panelH = Math.max(120, this.height - CodexTheme.MARGIN * 2);
+
+        // 列数按可用宽度自适应（参考 AlbionMastery 卡片网格的做法）：
+        // 先扣掉左右内边距和滚动条占的一条，再看能塞下几列。
+        int innerW = panelW - CodexTheme.PAD * 2 - CodexTheme.SCROLLBAR_W - 4;
+        columns = Math.max(COLUMNS_MIN, Math.min(COLUMNS_MAX, (innerW + GAP) / (CELL_W + GAP)));
+
+        contentW = columns * (CELL_W + GAP) - GAP;
+        contentX = panelX + (panelW - CodexTheme.SCROLLBAR_W - 4 - contentW) / 2;
+        contentY = panelY + CodexTheme.HEADER_H + 4;
+        visibleH = panelH - CodexTheme.HEADER_H - CodexTheme.FOOTER_H - 8;
 
         // ⭐ resize / 改 GUI 缩放会让 Minecraft 对同一个 Screen 实例重新调用 init()，
         //    这里必须先把旧搜索词存下来：不存的话新建的空 EditBox 会让紧随其后的
         //    onSearchChanged() 把筛选结果重置成全表，玩家已经输入的搜索词无声消失。
         String previousSearch = searchBox != null ? searchBox.getValue() : "";
 
-        int boxW = Math.min(contentW, 200);
-        int boxX = (this.width - boxW) / 2;
-        int boxY = TITLE_H + 2;
-        searchBox = new EditBox(this.font, boxX, boxY, boxW, 14, Component.empty());
+        int boxW = Math.min(panelW - CodexTheme.PAD * 2, 220);
+        int boxX = panelX + (panelW - boxW) / 2;
+        int boxY = panelY + 22;
+        // 原版 EditBox 自带的白框在这套暗色面板上很突兀，关掉自己画。
+        // 注意：bordered=false 时 EditBox 的文字从 getX() 起画（bordered=true 时是 getX()+4），
+        // 所以这里把控件本身内缩 4px，外面那圈框由 drawHeader 画在 boxX..boxX+boxW。
+        searchBox = new EditBox(this.font, boxX + 4, boxY + 3, boxW - 8, 12, Component.empty());
         searchBox.setMaxLength(50);
-        searchBox.setBordered(true);
+        searchBox.setBordered(false);
+        searchBox.setTextColor(CodexTheme.TEXT);
         searchBox.setHint(Component.translatable("kuvalich.codex.search_hint"));
         searchBox.setResponder(text -> onSearchChanged());
         if (!previousSearch.isEmpty()) {
@@ -148,6 +163,9 @@ public class ModuleCodexScreen extends Screen {
             searchBox.setValue(previousSearch);
         }
         this.addRenderableWidget(searchBox);
+        searchFrameX = boxX;
+        searchFrameY = boxY;
+        searchFrameW = boxW;
 
         onSearchChanged();
     }
@@ -217,7 +235,7 @@ public class ModuleCodexScreen extends Screen {
         totalContentH = h;
     }
 
-    private int groupH(int n) { return ((n + COLUMNS - 1) / COLUMNS) * (CELL_H + GAP) - GAP; }
+    private int groupH(int n) { return ((n + columns - 1) / columns) * (CELL_H + GAP) - GAP; }
     private double maxScroll() { return Math.max(0, totalContentH - visibleH); }
     private double clamp(double s) { return Math.max(0, Math.min(s, maxScroll())); }
 
@@ -269,8 +287,8 @@ public class ModuleCodexScreen extends Screen {
 
         // 滚动条拖拽 / Scrollbar drag
         if (btn == 0 && maxScroll() > 0) {
-            int sbX = contentX + contentW + 6;
-            if (mx >= sbX && mx <= sbX + SCROLLBAR_W && my >= contentY && my < contentY + visibleH) {
+            int sbX = panelX + panelW - CodexTheme.PAD;
+            if (mx >= sbX && mx <= sbX + CodexTheme.SCROLLBAR_W && my >= contentY && my < contentY + visibleH) {
                 dragging = true; dragStartY = my; dragStartScroll = scrollOffset;
                 return true;
             }
@@ -316,50 +334,95 @@ public class ModuleCodexScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
-        g.fill(0, 0, this.width, this.height, BG);
+        float progress = openProgress();
+
+        CodexTheme.scrim(g, this.width, this.height, progress);
+        CodexTheme.panel(g, panelX, panelY, panelW, panelH);
+        CodexTheme.vignette(g, panelX, panelY, panelW, panelH);
+
         hoveredEntry = null;
-        drawTitle(g);
+        drawHeader(g);
         drawContent(g, mx, my);
-        drawScrollbar(g);
-        drawBottom(g);
+        CodexTheme.scrollbar(g, panelX + panelW - CodexTheme.PAD, contentY, visibleH,
+                scrollOffset, maxScroll());
+        drawFooter(g);
+
+        // 四角画在最后：它要压住内容的边缘，而不是被内容盖掉
+        CodexTheme.corners(g, panelX, panelY, panelW, panelH, CodexTheme.ACCENT, progress);
+
         super.render(g, mx, my, pt);
         if (hoveredEntry != null) {
             g.renderTooltip(this.font, hoveredEntry.displayStack, hoverMX, hoverMY);
         }
     }
 
-    private void drawTitle(GuiGraphics g) {
-        if (filtered == null) return;
-        List<ModuleCodexData.CodexEntry> all = showWeapon ?
-                ModuleCodexData.getWeaponModules() : ModuleCodexData.getWarframeModules();
+    /**
+     * 开场进度 0~1（缓出三次方）。
+     *
+     * @return 进度
+     */
+    private float openProgress() {
+        if (openedAt == 0L) return 1f;
+        long dt = net.minecraft.Util.getMillis() - openedAt;
+        if (dt >= OPEN_MS) return 1f;
+        return CodexTheme.easeOutCubic((float) dt / OPEN_MS);
+    }
 
-        // 只在真正可能变化时重算：全局已发现数变了，或 ModuleCodexData 换了表（配置热重载）。
-        int stamp = ModuleDiscoveryPacket.getDiscoveredCount();
-        if (cachedTitle == null || stamp != titleDiscoveryStamp || all != titleCountedList) {
-            int discovered = 0;
-            for (ModuleCodexData.CodexEntry e : all) {
-                // 传 moduleType 走免分配重载，省掉旧存档兼容分支里的 substring
-                if (ModuleDiscoveryPacket.isDiscovered(e.discoveryKey, e.moduleType)) discovered++;
+    /**
+     * 顶栏：标题 + 已发现徽章 + 搜索框外框 + 分隔线
+     *
+     * <p>「已发现/总数」原先每帧对<b>全量</b>条目重算发现判定（武器页 429 条），
+     * 与玩家有没有操作无关。现在只在全局已发现数变化、或 ModuleCodexData 换了表
+     * （配置热重载）时重算 —— 发现记录只增不减，所以 Set.size() 是可靠且 O(1) 的变更戳。</p>
+     */
+    private void drawHeader(GuiGraphics g) {
+        g.fill(panelX + 1, panelY + 1, panelX + panelW - 1, panelY + CodexTheme.HEADER_H,
+                CodexTheme.PANEL_ALT);
+
+        String title = this.getTitle().getString();
+        g.drawString(this.font, title, panelX + CodexTheme.PAD, panelY + 7, CodexTheme.TEXT, false);
+
+        if (filtered != null) {
+            List<ModuleCodexData.CodexEntry> all = showWeapon ?
+                    ModuleCodexData.getWeaponModules() : ModuleCodexData.getWarframeModules();
+            int stamp = ModuleDiscoveryPacket.getDiscoveredCount();
+            if (cachedTitle == null || stamp != titleDiscoveryStamp || all != titleCountedList) {
+                int discovered = 0;
+                for (ModuleCodexData.CodexEntry e : all) {
+                    // 传 moduleType 走免分配重载，省掉旧存档兼容分支里的 substring
+                    if (ModuleDiscoveryPacket.isDiscovered(e.discoveryKey, e.moduleType)) discovered++;
+                }
+                titleDiscoveryStamp = stamp;
+                titleCountedList = all;
+                cachedTitle = discovered + " / " + all.size();
             }
-            titleDiscoveryStamp = stamp;
-            titleCountedList = all;
-            cachedTitle = this.getTitle().getString() + " \u00A77(" + discovered + "/" + all.size() + ")";
+            int bw = this.font.width(cachedTitle) + 8;
+            CodexTheme.badge(g, this.font, cachedTitle,
+                    panelX + panelW - CodexTheme.PAD - bw, panelY + 5,
+                    CodexTheme.ACCENT_SOFT, CodexTheme.TEXT);
         }
-        g.drawString(this.font, cachedTitle, (this.width - this.font.width(cachedTitle)) / 2, 4, 0xFFE0E0E0, true);
+
+        // 搜索框外框：控件本身是无边框的，框画在它外面；聚焦时描边换成强调色
+        CodexTheme.border(g, searchFrameX, searchFrameY, searchFrameW, 18,
+                searchBox != null && searchBox.isFocused() ? CodexTheme.ACCENT : CodexTheme.BORDER);
+
+        CodexTheme.divider(g, panelX + 1, panelY + CodexTheme.HEADER_H, panelW - 2, CodexTheme.BORDER);
     }
 
     private void drawContent(GuiGraphics g, int mx, int my) {
         if (filtered == null || filtered.isEmpty()) {
             String empty = Component.translatable("kuvalich.codex.empty").getString();
-            g.drawString(this.font, empty, (this.width - this.font.width(empty)) / 2,
-                    contentY + 30, 0xFF666666, false);
+            g.drawString(this.font, empty, panelX + (panelW - this.font.width(empty)) / 2,
+                    contentY + 30, CodexTheme.TEXT_FAINT, false);
             return;
         }
 
         Minecraft mc = Minecraft.getInstance();
         double s = mc.getWindow().getGuiScale();
-        RenderSystem.enableScissor(0, (int) ((this.height - contentY - visibleH) * s),
-                (int) (this.width * s), (int) (visibleH * s));
+        // 裁剪收到面板内容区：越界的格子不该画到顶栏/底栏上
+        RenderSystem.enableScissor(
+                (int) (panelX * s), (int) ((this.height - contentY - visibleH) * s),
+                (int) (panelW * s), (int) (visibleH * s));
 
         int drawY = contentY - (int) scrollOffset;
         int lastR = -1, idx = 0, groupY = drawY;
@@ -377,19 +440,25 @@ public class ModuleCodexScreen extends Screen {
                     if (countSuffix == null) {
                         countSuffix = Component.translatable("kuvalich.codex.count_suffix").getString();
                     }
+                    // 装订线：行首一条 2px 竖条，取该品质自己的颜色，
+                    // 让「这一整块属于哪个品质」在滚动时一眼可辨（参考 CarianStyle 的 gutter）
+                    int rc = ModuleCodexData.getRarityColor(e.rarityOrder);
+                    g.fill(contentX, drawY + 2, contentX + 2, drawY + SECTION_H - 2, rc);
+
                     String header = ModuleCodexData.getRarityName(e.rarityOrder)
-                            + " \u00A78\u2014 " + count
-                            + countSuffix;
-                    g.drawString(this.font, header, contentX, drawY + 4, 0xFFAAAAAA, false);
-                    int lineX = contentX + this.font.width(header) + 6;
+                            + " \u00A78" + count + countSuffix;
+                    int textX = contentX + 6;
+                    g.drawString(this.font, header, textX, drawY + 4, CodexTheme.TEXT_DIM, false);
+                    int lineX = textX + this.font.width(header) + 6;
                     if (lineX < contentX + contentW)
-                        g.fill(lineX, drawY + SECTION_H / 2, contentX + contentW, drawY + SECTION_H / 2 + 1, SECTION_LINE_COLOR);
+                        CodexTheme.divider(g, lineX, drawY + SECTION_H / 2, contentX + contentW - lineX,
+                                CodexTheme.withAlpha(CodexTheme.BORDER, 0xA0));
                 }
                 drawY += SECTION_H;
                 groupY = drawY;
             }
 
-            int col = idx % COLUMNS, row = idx / COLUMNS;
+            int col = idx % columns, row = idx / columns;
             int cx = contentX + col * (CELL_W + GAP);
             int cy = groupY + row * (CELL_H + GAP);
 
@@ -406,16 +475,25 @@ public class ModuleCodexScreen extends Screen {
         RenderSystem.disableScissor();
     }
 
+    /**
+     * 画一个模组格子
+     *
+     * <p>四种状态（已发现/未发现 × 悬停/常态）只靠<b>背景透明度 + 描边色 + 左侧竖条</b>
+     * 区分，不做缩放、不换图标、不加阴影 —— 这是从 AlbionMastery 的卡片那里学来的：
+     * 在这么小的尺寸上，位移和缩放只会让网格看起来在抖。</p>
+     */
     private void drawCell(GuiGraphics g, ModuleCodexData.CodexEntry e,
                           int x, int y, boolean found, boolean hover) {
-        int bg = found ? (hover ? CELL_HOVER_FOUND : CELL_BG_FOUND)
-                : (hover ? CELL_HOVER_MISS : CELL_BG_MISS);
+        int bg = found
+                ? (hover ? CodexTheme.PANEL_HOVER : CodexTheme.PANEL_ALT)
+                : (hover ? CodexTheme.withAlpha(CodexTheme.PANEL_HOVER, 0x80)
+                         : CodexTheme.withAlpha(CodexTheme.PANEL_ALT, 0x60));
         g.fill(x, y, x + CELL_W, y + CELL_H, bg);
 
-        // 稀有度薄条指示器
+        // 顶部稀有度薄条：两端渐隐，中间实色
         int baseColor = found ? ModuleCodexData.getRarityColor(e.rarityOrder)
                 : ModuleCodexData.getRarityColorDim(e.rarityOrder);
-        int fadeColor = (baseColor & 0x00FFFFFF) | (((baseColor >>> 24) / 2) << 24);
+        int fadeColor = CodexTheme.withAlpha(baseColor, ((baseColor >>> 24) & 0xFF) / 2);
         int indX = x + (CELL_W - IND_TOTAL_W) / 2;
         int indY = y + 1;
         g.fill(indX, indY, indX + 1, indY + IND_H, fadeColor);
@@ -427,61 +505,56 @@ public class ModuleCodexScreen extends Screen {
         int iconY = y + IND_H + 3;
         g.renderItem(e.displayStack, iconX, iconY);
 
-        // 未发现覆盖
+        // 未发现：压一层暗幕 + 问号
         if (!found) {
-            g.fill(x, y + IND_H + 2, x + CELL_W, y + CELL_H, OVERLAY_MISS);
+            g.fill(x, y + IND_H + 2, x + CELL_W, y + CELL_H, 0xB0100C0E);
             String q = "?";
             g.drawString(this.font, q,
                     x + (CELL_W - this.font.width(q)) / 2,
                     y + IND_H + (CELL_H - IND_H - 8) / 2,
-                    0x44FFFFFF, false);
+                    CodexTheme.withAlpha(CodexTheme.TEXT_FAINT, 0x90), false);
         }
 
-        // 悬停边框
+        // 悬停：描边 + 左侧 2px 竖条（竖条比纯描边更容易在密集网格里被看到）
         if (hover) {
-            int bc = (found ? ModuleCodexData.getRarityColor(e.rarityOrder) : 0xFFAAAAAA) & 0x60FFFFFF;
-            g.fill(x, y, x + CELL_W, y + 1, bc);
-            g.fill(x, y + CELL_H - 1, x + CELL_W, y + CELL_H, bc);
-            g.fill(x, y, x + 1, y + CELL_H, bc);
-            g.fill(x + CELL_W - 1, y, x + CELL_W, y + CELL_H, bc);
+            int edge = found ? baseColor : CodexTheme.TEXT_DIM;
+            CodexTheme.border(g, x, y, CELL_W, CELL_H, CodexTheme.withAlpha(edge, 0xC0));
+            g.fill(x, y, x + 2, y + CELL_H, edge);
         }
     }
 
-    private void drawScrollbar(GuiGraphics g) {
-        if (maxScroll() <= 0) return;
-        int sbX = contentX + contentW + 6;
-        g.fill(sbX, contentY, sbX + SCROLLBAR_W, contentY + visibleH, 0x20FFFFFF);
-        double ratio = (double) visibleH / totalContentH;
-        int thumbH = Math.max(16, (int) (visibleH * ratio));
-        int thumbY = contentY + (int) ((visibleH - thumbH) * (scrollOffset / maxScroll()));
-        g.fill(sbX, thumbY, sbX + SCROLLBAR_W, thumbY + thumbH, 0x60FFFFFF);
-    }
 
-    private void drawBottom(GuiGraphics g) {
-        // 筛选结果
+    /**
+     * 底栏：筛选结果计数（左）+ 操作提示（右）
+     */
+    private void drawFooter(GuiGraphics g) {
+        int fy = panelY + panelH - CodexTheme.FOOTER_H;
+        g.fill(panelX + 1, fy, panelX + panelW - 1, panelY + panelH - 1, CodexTheme.PANEL_ALT);
+        CodexTheme.divider(g, panelX + 1, fy, panelW - 2, CodexTheme.BORDER);
+
+        int textY = fy + (CodexTheme.FOOTER_H - this.font.lineHeight) / 2;
+
+        // 左：搜索命中数，没搜索时不占位
         if (filtered != null && !lastSearch.isEmpty()) {
+            if (countSuffix == null) {
+                countSuffix = Component.translatable("kuvalich.codex.count_suffix").getString();
+            }
             String filterHint = Component.translatable("kuvalich.codex.filter_result").getString()
-                    + " " + filtered.size()
-                    + Component.translatable("kuvalich.codex.count_suffix").getString();
-            int fw = this.font.width(filterHint);
-            int fx = (this.width - fw) / 2;
-            int fy = this.height - 26;
-            g.drawString(this.font, filterHint, fx, fy, FILTER_TEXT, false);
+                    + " " + filtered.size() + countSuffix;
+            g.drawString(this.font, filterHint, panelX + CodexTheme.PAD, textY,
+                    CodexTheme.TEXT_DIM, false);
         }
 
-        // [TAB] 返回
+        // 右：操作提示。创造模式才提示两种点击 —— 生存模式下这两条操作都不存在，说了只会让人困惑
         StringBuilder sb = new StringBuilder("[TAB] ")
                 .append(Component.translatable("kuvalich.codex.close_hint").getString());
-        // 创造模式才提示两种点击 —— 生存模式下这两条操作都不存在，说了只会让人困惑
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.player.isCreative()) {
             sb.append("    ").append(Component.translatable("kuvalich.codex.creative_hint").getString());
         }
         String hint = sb.toString();
-        int hw = this.font.width(hint);
-        int hx = (this.width - hw) / 2;
-        int hy = this.height - 14;
-        g.drawString(this.font, hint, hx, hy, HINT_TEXT, false);
+        g.drawString(this.font, hint, panelX + panelW - CodexTheme.PAD - this.font.width(hint), textY,
+                CodexTheme.TEXT_FAINT, false);
     }
 
     // ==================== 工具 ====================
