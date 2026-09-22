@@ -149,6 +149,7 @@ public class CodexInstallModulePacket {
                             installed ? CodexActionResultPacket.INSTALLED
                                     : CodexActionResultPacket.REJECTED));
         });
+        ctx.get().setPacketHandled(true);
     }
 
     /**
