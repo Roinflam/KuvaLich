@@ -1290,6 +1290,7 @@
   "kuvalich.codex.title.warframe": "Warframe Module Codex",
   "kuvalich.codex.empty": "No modules registered",
   "kuvalich.codex.close_hint": "Back",
+  "kuvalich.codex.creative_hint": "[Click] To inventory   [Shift+Click] Install into a free slot",
   "kuvalich.codex.open_hint": "Module Codex",
   "kuvalich.codex.count_suffix": " modules",
   "kuvalich.codex.search_hint": "Search attributes...",

@@ -1288,6 +1288,7 @@
   "kuvalich.codex.title.warframe": "战甲模组图鉴",
   "kuvalich.codex.empty": "暂无已注册的模组",
   "kuvalich.codex.close_hint": "返回",
+  "kuvalich.codex.creative_hint": "[左键] 拿到背包　[Shift+左键] 直接装到空槽",
   "kuvalich.codex.open_hint": "模组图鉴",
   "kuvalich.codex.count_suffix": "个",
   "kuvalich.codex.search_hint": "搜索词条...",

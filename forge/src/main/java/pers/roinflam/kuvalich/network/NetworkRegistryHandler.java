@@ -5,6 +5,7 @@ import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
+import pers.roinflam.kuvalich.network.packet.CodexInstallModulePacket;
 import pers.roinflam.kuvalich.network.packet.DamagePacket;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
@@ -135,6 +136,18 @@ public class NetworkRegistryHandler {
                 RequiemGateFillPacket::encode,
                 RequiemGateFillPacket::decode,
                 RequiemGateFillPacket::handle,
+                TO_SERVER
+        );
+
+        // 图鉴创造模式一键装配包（客户端 → 服务器）
+        // ⚠ 新包必须追加在最后：messageId 是顺序分配的，插在中间会让已有包的 id 全部后移，
+        //    与旧版客户端/服务端连接时就会对不上号。
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                CodexInstallModulePacket.class,
+                CodexInstallModulePacket::encode,
+                CodexInstallModulePacket::decode,
+                CodexInstallModulePacket::handle,
                 TO_SERVER
         );
     }

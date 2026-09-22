@@ -118,7 +118,25 @@ public class CodexGiveItemPacket {
      * @param rarityOrder 品质序号（0=青铜 1=白银 2=黄金 3=Prime）
      * @return 匹配的模组ItemStack，未找到返回EMPTY
      */
-    private static ItemStack findModule(String type, boolean isWeapon, int rarityOrder) {
+    /**
+     * 按 type 在**服务端自己的**注册列表里找权威实例
+     *
+     * <p>包内可见是为了让 {@link CodexInstallModulePacket} 复用同一套查找 ——
+     * 两个包都必须走「绝不根据客户端传来的字符串或 NBT 直接构造物品」这条底线，
+     * 各写一份迟早漂移。</p>
+     *
+     * <p>⭐ 修复：原先只搜八个内置原型池，漏了自定义模组。
+     * {@code ModuleCodexData.buildWeaponModuleList/buildWarframeModuleList} 会通过
+     * {@code CustomModuleManager} 把整合包作者在 custom_modules.json 里配的模组
+     * 一并放进图鉴，也就是**图鉴里点得到**；但服务端这边找不到，于是创造模式点击自定义模组
+     * 完全没反应、也没有任何提示。现在与图鉴的取数口径对齐。</p>
+     *
+     * @param type        模组 type 标识
+     * @param isWeapon    true=武器模组 false=战甲模组
+     * @param rarityOrder 品质序号 0~3
+     * @return 服务端的权威实例副本；找不到返回 {@link ItemStack#EMPTY}
+     */
+    static ItemStack findModule(String type, boolean isWeapon, int rarityOrder) {
         if (type == null || type.isEmpty()) return ItemStack.EMPTY;
 
         // 确保列表已初始化 / Ensure lists are initialized
@@ -133,6 +151,10 @@ public class CodexGiveItemPacket {
             if (!result.isEmpty()) return result;
         }
 
+        // ⭐ 自定义模组：与 ModuleCodexData 的取数口径一致（先查目标品质，再兜底全品质）
+        ItemStack custom = searchCustomModules(type, isWeapon, rarityOrder);
+        if (!custom.isEmpty()) return custom;
+
         // 兜底：全列表搜索（rarityOrder不匹配或目标列表中没找到时）
         // Fallback: search all lists
         List<List<ItemStack>> lists = isWeapon ? getWeaponLists() : getWarframeLists();
@@ -140,6 +162,48 @@ public class CodexGiveItemPacket {
             if (list == targetList) continue; // 跳过已搜索的列表 / Skip already searched list
             ItemStack result = searchInList(list, type);
             if (!result.isEmpty()) return result;
+        }
+        return ItemStack.EMPTY;
+    }
+
+    /**
+     * 在自定义模组里按 type 查找
+     *
+     * <p>品质序号到 {@code Rarity} 的映射与
+     * {@code ModuleCodexData.buildWeaponModuleList} 逐字一致（0=COMMON 1=UNCOMMON
+     * 2=RARE 3=EPIC），否则会出现「图鉴里是金卡、服务端按铜卡去找」的错位。</p>
+     *
+     * @param type        模组 type 标识
+     * @param isWeapon    true=武器模组
+     * @param rarityOrder 优先搜索的品质序号
+     * @return 找到的实例；没有返回 {@link ItemStack#EMPTY}
+     */
+    private static ItemStack searchCustomModules(String type, boolean isWeapon, int rarityOrder) {
+        try {
+            pers.roinflam.kuvalich.config.custom.CustomModuleManager mgr =
+                    pers.roinflam.kuvalich.config.custom.CustomModuleManager.getInstance();
+            // 先目标品质，再其余品质兜底
+            for (int pass = 0; pass < 2; pass++) {
+                for (int r = 0; r <= 3; r++) {
+                    boolean isTarget = (r == rarityOrder);
+                    if (pass == 0 && !isTarget) continue;
+                    if (pass == 1 && isTarget) continue;
+                    net.minecraft.world.item.Rarity rarity = r == 0 ? net.minecraft.world.item.Rarity.COMMON
+                            : r == 1 ? net.minecraft.world.item.Rarity.UNCOMMON
+                            : r == 2 ? net.minecraft.world.item.Rarity.RARE
+                            : net.minecraft.world.item.Rarity.EPIC;
+                    List<ItemStack> custom = new ArrayList<>();
+                    if (isWeapon) {
+                        mgr.addCustomItemModulesToCreativeTab(custom, rarity);
+                    } else {
+                        mgr.addCustomWarframeModulesToCreativeTab(custom, rarity);
+                    }
+                    ItemStack result = searchInList(custom, type);
+                    if (!result.isEmpty()) return result;
+                }
+            }
+        } catch (Exception e) {
+            LogUtil.error("在自定义模组中查找 " + type + " 时出错", e);
         }
         return ItemStack.EMPTY;
     }
@@ -189,7 +253,7 @@ public class CodexGiveItemPacket {
     /**
      * 确保模组静态列表已初始化（服务端可能未触发创造标签构建）
      */
-    private static void ensureListsInitialized(boolean isWeapon) {
+    static void ensureListsInitialized(boolean isWeapon) {
         CreativeModeTab.Output noOp = (stack, v) -> {};
         if (isWeapon) {
             if (WeaponCommonModule.itemStackList.isEmpty()) WeaponCommonModule.registerCreativeTabItems(noOp);

@@ -11,6 +11,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
+import pers.roinflam.kuvalich.network.packet.CodexInstallModulePacket;
 import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
 
 import java.util.ArrayList;
@@ -111,6 +112,11 @@ public class ModuleCodexScreen extends Screen {
         contentY = TOP_H;
         visibleH = this.height - TOP_H - BOTTOM_H;
 
+        // ⭐ resize / 改 GUI 缩放会让 Minecraft 对同一个 Screen 实例重新调用 init()，
+        //    这里必须先把旧搜索词存下来：不存的话新建的空 EditBox 会让紧随其后的
+        //    onSearchChanged() 把筛选结果重置成全表，玩家已经输入的搜索词无声消失。
+        String previousSearch = searchBox != null ? searchBox.getValue() : "";
+
         int boxW = Math.min(contentW, 200);
         int boxX = (this.width - boxW) / 2;
         int boxY = TITLE_H + 2;
@@ -119,6 +125,10 @@ public class ModuleCodexScreen extends Screen {
         searchBox.setBordered(true);
         searchBox.setHint(Component.translatable("kuvalich.codex.search_hint"));
         searchBox.setResponder(text -> onSearchChanged());
+        if (!previousSearch.isEmpty()) {
+            // setValue 会触发上面的 responder，onSearchChanged 因此会用新词跑一次
+            searchBox.setValue(previousSearch);
+        }
         this.addRenderableWidget(searchBox);
 
         onSearchChanged();
@@ -206,13 +216,24 @@ public class ModuleCodexScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
-        // ⭐ 创造模式：左键点击模组 → 发给背包（携带rarityOrder）
+        // ⭐ 创造模式：左键点击模组 → 发给背包；Shift+左键 → 直接装到第一个空槽
+        //    用 Shift 区分而不是改掉原有的「发给背包」：两个都是有用的操作，
+        //    Shift+点击在原版里本来就是「同一个位置的另一种动作」的惯例。
         if (btn == 0 && hoveredEntry != null) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.player.isCreative()) {
-                NetworkRegistryHandler.getChannel().sendToServer(
-                        new CodexGiveItemPacket(hoveredEntry.moduleType, showWeapon,
-                                hoveredEntry.rarityOrder));
+                if (hasShiftDown()) {
+                    // 能不能装、装到哪个槽，全部由服务端判定 —— 这里只是发起请求。
+                    // 客户端不做任何「看起来有空位」的预判，那种预判在改装客户端面前毫无意义，
+                    // 而且会和服务端的冲突判定产生不一致。
+                    NetworkRegistryHandler.getChannel().sendToServer(
+                            new CodexInstallModulePacket(hoveredEntry.moduleType, showWeapon,
+                                    hoveredEntry.rarityOrder));
+                } else {
+                    NetworkRegistryHandler.getChannel().sendToServer(
+                            new CodexGiveItemPacket(hoveredEntry.moduleType, showWeapon,
+                                    hoveredEntry.rarityOrder));
+                }
                 return true;
             }
         }
@@ -231,9 +252,27 @@ public class ModuleCodexScreen extends Screen {
     @Override
     public boolean mouseReleased(double mx, double my, int btn) { dragging = false; return super.mouseReleased(mx, my, btn); }
 
+    /**
+     * ⭐ 界面关闭时兜底复位拖拽状态
+     *
+     * <p>按住滚动条滑块的同时 Alt+Tab 切走、在失焦期间松手，这次 release 事件不会传到
+     * {@link #mouseReleased}，{@code dragging} 会一直是 true。切回来后只要在图鉴里
+     * 按下鼠标并轻微移动，就会复用上一次残留的 {@code dragStartY / dragStartScroll}，
+     * 把滚动位置跳到一个和鼠标位置毫不相干的值。</p>
+     */
+    @Override
+    public void removed() {
+        dragging = false;
+        super.removed();
+    }
+
     @Override
     public boolean mouseDragged(double mx, double my, int btn, double dx, double dy) {
-        if (dragging && maxScroll() > 0) {
+        // ⭐ 同时校验按键：残留的 dragging 配上一次非左键拖拽也会触发跳变
+        if (btn != 0) {
+            dragging = false;
+        }
+        if (dragging && btn == 0 && maxScroll() > 0) {
             double trackH = visibleH - 20.0;
             scrollOffset = clamp(dragStartScroll + (my - dragStartY) * (maxScroll() / trackH));
             return true;
@@ -391,7 +430,14 @@ public class ModuleCodexScreen extends Screen {
         }
 
         // [TAB] 返回
-        String hint = "[TAB] " + Component.translatable("kuvalich.codex.close_hint").getString();
+        StringBuilder sb = new StringBuilder("[TAB] ")
+                .append(Component.translatable("kuvalich.codex.close_hint").getString());
+        // 创造模式才提示两种点击 —— 生存模式下这两条操作都不存在，说了只会让人困惑
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.player.isCreative()) {
+            sb.append("    ").append(Component.translatable("kuvalich.codex.creative_hint").getString());
+        }
+        String hint = sb.toString();
         int hw = this.font.width(hint);
         int hx = (this.width - hw) / 2;
         int hy = this.height - 14;

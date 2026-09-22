@@ -45,9 +45,9 @@ public class ModuleCodexData {
     public static final int RARITY_ORDER_RARE = 2;
     public static final int RARITY_ORDER_EPIC = 3;
 
-    private static List<CodexEntry> cachedWeaponModules = null;
-    private static List<CodexEntry> cachedWarframeModules = null;
-    private static boolean initialized = false;
+    private static volatile List<CodexEntry> cachedWeaponModules = null;
+    private static volatile List<CodexEntry> cachedWarframeModules = null;
+    private static volatile boolean initialized = false;
 
     /**
      * 图鉴条目
@@ -149,7 +149,20 @@ public class ModuleCodexData {
         return cachedWarframeModules;
     }
 
-    public static void invalidateCache() {
+    /**
+     * 丢弃图鉴缓存，下一次访问时重建
+     *
+     * <p>⭐ 必须 {@code synchronized}，且三个字段必须 {@code volatile}：本方法是被
+     * Forge 的<b>配置监视线程</b>调用的（见 {@code ClientSetup.onConfigReload}），
+     * 而 {@link #ensureInitialized()} 在渲染线程上用 synchronized 块重建缓存。
+     * 两者不在同一把锁上就构不成 happens-before —— 渲染线程可能读到「initialized 仍是 true、
+     * 但 cached 列表已被置 null」的中间态（NPE），或者反过来一直看不到失效、
+     * 配置热重载对图鉴静默不生效。</p>
+     *
+     * <p>仓库里 {@code OreDropRules} 对同类场景已经专门加过 volatile 并写明了原因，
+     * 说明 ModConfigEvent 在本工程里确实会在非主线程触发。</p>
+     */
+    public static synchronized void invalidateCache() {
         initialized = false;
         cachedWeaponModules = null;
         cachedWarframeModules = null;
