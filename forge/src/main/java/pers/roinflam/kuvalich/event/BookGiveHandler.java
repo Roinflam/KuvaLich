@@ -11,6 +11,7 @@ import vazkii.patchouli.api.PatchouliAPI;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 /**
  * 教程书发放事件处理器
@@ -81,10 +82,8 @@ public class BookGiveHandler {
         }
 
         // 发放到玩家背包
-        if (!player.getInventory().add(bookStack)) {
-            // 背包满时掉落在地上
-            player.drop(bookStack, false);
-        }
+        // 背包满时掉落在地上（不能用 add 的返回值判断，创造模式下它会抹掉物品还返回 true）
+        InventoryUtil.giveOrDrop(player, bookStack);
 
         // 标记已发放
         forgeData.putBoolean(GUIDEBOOK_GIVEN_TAG, true);

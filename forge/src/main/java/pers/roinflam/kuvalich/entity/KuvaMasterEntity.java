@@ -30,6 +30,7 @@ import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 import java.util.*;
 
@@ -445,7 +446,11 @@ public class KuvaMasterEntity extends AbstractKuva {
         requiemCard.reset();
 
         for (ItemStack survivingCard : survivingCards) {
-            if (!player.getInventory().add(survivingCard)) {
+            // 掉落方式和别处不同（用 spawnItem 落在死亡点而不是玩家脚下），
+            // 所以只借用空间判断，不用 giveOrDrop
+            if (InventoryUtil.hasRoomFor(player, survivingCard)) {
+                player.getInventory().add(survivingCard);
+            } else {
                 spawnItem(pos, survivingCard);
             }
         }

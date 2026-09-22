@@ -24,6 +24,7 @@ import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 import java.util.*;
 
@@ -571,9 +572,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
                         cardHandler.setStackInSlot(i, ItemStack.EMPTY);
                         continue;
                     }
-                    if (!player.getInventory().add(stack)) {
-                        player.drop(stack, false);
-                    }
+                    InventoryUtil.giveOrDrop(player, stack);
                     cardHandler.setStackInSlot(i, ItemStack.EMPTY);
                 }
             }

@@ -30,6 +30,7 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 /**
  * 安魂之融菜单（1.20.1版本）
@@ -433,9 +434,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
     private void returnSlotToPlayer(ItemStackHandler handler, int slot, Player player) {
         ItemStack stack = handler.getStackInSlot(slot);
         if (!stack.isEmpty()) {
-            if (!player.getInventory().add(stack)) {
-                player.drop(stack, false);
-            }
+            InventoryUtil.giveOrDrop(player, stack);
             handler.setStackInSlot(slot, ItemStack.EMPTY);
         }
     }

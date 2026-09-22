@@ -20,6 +20,7 @@ import pers.roinflam.kuvalich.capability.WarframeModules;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
 import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 /**
  * 战甲军械库菜单（1.20.1版本，业务逻辑100%不变）
@@ -170,9 +171,7 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
                     if (!stack.isEmpty() && !(stack.getItem() instanceof AbstractWarframeModule)) {
                         LogUtil.warn("检测到非法物品在战甲军械库槽位" + i + ": " + stack.getHoverName().getString() + " - 正在返还");
                         // ⭐ 优先快捷栏
-                        if (!player.getInventory().add(stack.copy())) {
-                            player.drop(stack.copy(), false);
-                        }
+                        InventoryUtil.giveOrDrop(player, stack.copy());
                         moduleHandler.setStackInSlot(i, ItemStack.EMPTY);
                     }
                 }

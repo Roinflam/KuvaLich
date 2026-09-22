@@ -12,6 +12,7 @@ import net.minecraftforge.network.PacketDistributor;
 import pers.roinflam.kuvalich.event.ModuleDiscoveryHandler;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,15 +84,15 @@ public class CodexGiveItemPacket {
                 return;
             }
 
-            // ⭐ 背包满就**直接拒绝**，什么都不发生。
+            // ⭐ 背包满就**直接拒绝**，什么都不发生：格子红闪 + 抖动，和军械库「装不上」统一。
             //
-            //    原先是塞不下就丢到玩家脚下。但背包既然是满的，地上那份同样捡不起来，
-            //    只会一直躺在那儿 —— 玩家既没拿到卡，界面还给了个「掉出去了」的动画，
-            //    看不懂也没法处理。
-            //
-            //    现在和军械库那边的「装不上」统一：格子红闪 + 抖动，物品不生成。
+            //    ⚠ 这里**不能**写成 if (!inv.add(give))。图鉴给予是创造模式专用功能，
+            //    而创造模式下 Inventory#add 塞不下时会静默销毁物品并照样返回 true
+            //    （字节码见 InventoryUtil 类注释）—— 那个 if 一次都不会进，
+            //    等于这段拒绝逻辑完全不存在，玩家点一百次解锁一百张却一张也没拿到。
+            //    必须先问「有没有地方放」，再决定给不给。
             ItemStack give = found.copy();
-            if (!player.getInventory().add(give)) {
+            if (!InventoryUtil.hasRoomFor(player, give)) {
                 LogUtil.debug("图鉴给予：背包已满，已拒绝 type=" + msg.moduleType);
                 NetworkRegistryHandler.getChannel().send(
                         PacketDistributor.PLAYER.with(() -> player),
@@ -99,6 +100,7 @@ public class CodexGiveItemPacket {
                                 CodexActionResultPacket.REJECTED));
                 return;
             }
+            player.getInventory().add(give);
 
             // 走到这里说明卡确实进背包了，记一次发现。
             //

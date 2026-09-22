@@ -21,6 +21,7 @@ import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 /**
  * 灭骸之扉菜单类（1.20.1版本）
@@ -303,9 +304,7 @@ public class RequiemGateMenu extends AbstractContainerMenu {
         for (int i = 0; i < 3; i++) {
             ItemStack oldCard = cardHandler.getStackInSlot(i);
             if (!oldCard.isEmpty()) {
-                if (!serverPlayer.getInventory().add(oldCard.copy())) {
-                    serverPlayer.drop(oldCard.copy(), false);
-                }
+                InventoryUtil.giveOrDrop(serverPlayer, oldCard.copy());
                 cardHandler.setStackInSlot(i, ItemStack.EMPTY);
             }
         }

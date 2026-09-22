@@ -24,6 +24,7 @@ import pers.roinflam.kuvalich.item.module.weapon.WeaponRivenModule;
 import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 /**
  * 武器军械库菜单（1.20.1版本，已修复无限刷模组bug）
@@ -213,9 +214,10 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
         if (!level.isClientSide) {
             ItemStack weaponStack = weaponHandler.getStackInSlot(0);
             if (!weaponStack.isEmpty()) {
-                if (!player.getInventory().add(weaponStack)) {
-                    player.drop(weaponStack, false);
-                }
+                // ⚠ 这里返还的是军械库里那把武器本体。用 add 的返回值判断的话，
+                //    背包满的创造模式玩家关一次菜单就丢一把武器（add 抹掉物品还返回 true，
+                //    drop 进不去，下面照样把槽位清空）。
+                InventoryUtil.giveOrDrop(player, weaponStack);
                 weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
             }
         }
