@@ -98,8 +98,6 @@ public final class TooltipConfig {
         public final ForgeConfigSpec.IntValue rowHeight;
         /** 是否显示行首的分组装订线 */
         public final ForgeConfigSpec.BooleanValue showGutter;
-        /** 是否显示底部的按键提示行 */
-        public final ForgeConfigSpec.BooleanValue showKeyHint;
         /** 面板符号字符集 */
         public final ForgeConfigSpec.EnumValue<SymbolStyle> symbolStyle;
         /** 是否按武器类型隐藏无关词条组（近战武器不显示枪械词条等） */
@@ -189,9 +187,6 @@ public final class TooltipConfig {
                     "默认关闭：分组已经靠「暗灰色标题独立成行 + 内容缩进」表达层次了，",
                     "再加一竖反而显得噪。想要一点颜色提示的话可以打开（只画在标题行上）。");
             showGutter = builder.define("showGutter", false);
-
-            builder.comment("是否显示底部的按键提示行（SHIFT/CTRL/ALT）/ Show the key hint line");
-            showKeyHint = builder.define("showKeyHint", true);
 
             builder.comment(
                     "面板符号字符集 / Symbol character set",

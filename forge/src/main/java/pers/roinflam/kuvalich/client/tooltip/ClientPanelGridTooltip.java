@@ -143,7 +143,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
     private static Attempt build(PanelGridTooltip data, Font font, int columns) {
         List<Line> out = new ArrayList<>();
         int maxWidth = 0;
-        // 只对「有标题的分组」交替上底色：Forma 锁定行、按键提示行这种游离的单行不参与
+        // 只对「有标题的分组」交替上底色：Forma 锁定行这种游离的单行不参与
         int bandIndex = 0;
 
         for (PanelGridTooltip.Section section : data.sections()) {

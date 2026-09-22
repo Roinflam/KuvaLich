@@ -3,7 +3,6 @@ package pers.roinflam.kuvalich.client.tooltip;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
@@ -83,7 +82,7 @@ public final class WeaponPanelComposer {
 
         List<ItemStack> modules = WeaponModuleHandler.getModules(stack);
         if (modules.isEmpty()) {
-            return PanelResult.grid(buildBaseGrid(stack, view));
+            return PanelResult.grid(buildBaseGrid(stack));
         }
 
         // CLASSIC 密度：一律走逐条视图，作为与其它 tooltip 模组冲突时的总退路
@@ -115,10 +114,10 @@ public final class WeaponPanelComposer {
         //    老的纯文本 + ChatFormatting，按下 SHIFT 就像换了个模组 —— 那是个遗留状态，
         //    不是设计。
         return PanelResult.grid(switch (effective) {
-            case FULL -> buildFullGrid(stack, modules, attrs, extra, stacks, view);
-            case SOURCE -> buildSourceGrid(modules, extra, view);
-            case LIVE -> buildLiveGrid(stack, modules, attrs, stacks, view);
-            default -> buildGrid(stack, modules, attrs, extra, stacks, applyGates, view);
+            case FULL -> buildFullGrid(stack, modules, attrs, extra, stacks);
+            case SOURCE -> buildSourceGrid(modules, extra);
+            case LIVE -> buildLiveGrid(stack, modules, attrs, stacks);
+            default -> buildGrid(stack, modules, attrs, extra, stacks, applyGates);
         });
     }
 
@@ -137,8 +136,8 @@ public final class WeaponPanelComposer {
      */
     private static PanelGridTooltip buildGrid(ItemStack stack, List<ItemStack> modules,
                                                 HashMap<String, Double> attrs, HashMap<String, Double> extra,
-                                                StackCounts stacks, boolean applyGates, TooltipView view) {
-        return buildGrid(stack, modules, attrs, extra, stacks, applyGates, view, true);
+                                                StackCounts stacks, boolean applyGates) {
+        return buildGrid(stack, modules, attrs, extra, stacks, applyGates, true);
     }
 
     /**
@@ -147,7 +146,7 @@ public final class WeaponPanelComposer {
      */
     private static PanelGridTooltip buildGrid(ItemStack stack, List<ItemStack> modules,
                                                 HashMap<String, Double> attrs, HashMap<String, Double> extra,
-                                                StackCounts stacks, boolean applyGates, TooltipView view,
+                                                StackCounts stacks, boolean applyGates,
                                                 boolean useStackedValues) {
         List<PanelGridTooltip.Section> sections = new ArrayList<>();
         int budget = ChipPacker.budget(TooltipConfig.PANEL.widthRatio.get());
@@ -224,8 +223,6 @@ public final class WeaponPanelComposer {
                     moduleNames(modules)));
         }
 
-        appendHint(sections, view);
-
         return new PanelGridTooltip(sections);
     }
 
@@ -247,10 +244,10 @@ public final class WeaponPanelComposer {
      */
     private static PanelGridTooltip buildFullGrid(ItemStack stack, List<ItemStack> modules,
                                                     HashMap<String, Double> attrs, HashMap<String, Double> extra,
-                                                    StackCounts stacks, TooltipView view) {
+                                                    StackCounts stacks) {
         boolean applyGates = TooltipConfig.PANEL.hideIrrelevantGroups.get();
         return new PanelGridTooltip(
-                buildGrid(stack, modules, attrs, extra, stacks, applyGates, view, false).sections());
+                buildGrid(stack, modules, attrs, extra, stacks, applyGates, false).sections());
     }
 
     // ==================== CTRL：词条来源 ====================
@@ -259,7 +256,7 @@ public final class WeaponPanelComposer {
      * CTRL 视图：每张模组卡各贡献了什么、额外槽位来自哪里、哪条被配置上限截断了
      */
     private static PanelGridTooltip buildSourceGrid(List<ItemStack> modules,
-                                                      HashMap<String, Double> extra, TooltipView view) {
+                                                      HashMap<String, Double> extra) {
         List<PanelGridTooltip.Section> sections = new ArrayList<>();
 
         for (ItemStack module : modules) {
@@ -313,7 +310,6 @@ public final class WeaponPanelComposer {
                     List.of(Component.translatable("kuvalich.panel.source.none")
                             .withStyle(PanelPalette.style(PanelPalette.MUTED)))));
         }
-        appendHint(sections, view);
         return new PanelGridTooltip(sections);
     }
 
@@ -367,8 +363,7 @@ public final class WeaponPanelComposer {
      * ALT 视图：此刻真正生效的东西 —— 叠层详情、元素怎么合成的、触发几率怎么算出来的
      */
     private static PanelGridTooltip buildLiveGrid(ItemStack stack, List<ItemStack> modules,
-                                                    HashMap<String, Double> attrs, StackCounts stacks,
-                                                    TooltipView view) {
+                                                    HashMap<String, Double> attrs, StackCounts stacks) {
         List<PanelGridTooltip.Section> sections = new ArrayList<>();
         int budget = ChipPacker.budget(TooltipConfig.PANEL.widthRatio.get());
 
@@ -434,7 +429,6 @@ public final class WeaponPanelComposer {
                         .withStyle(PanelPalette.style(PanelPalette.header(PanelGroup.PANEL))),
                 triggerBreakdown(stack, attrs, stacks)));
 
-        appendHint(sections, view);
         return new PanelGridTooltip(sections);
     }
 
@@ -484,13 +478,6 @@ public final class WeaponPanelComposer {
                     .withStyle(PanelPalette.style(PanelPalette.MUTED)));
         }
         return out;
-    }
-
-    /** 底部按键提示 */
-    private static void appendHint(List<PanelGridTooltip.Section> sections, TooltipView view) {
-        if (TooltipConfig.PANEL.showKeyHint.get()) {
-            sections.add(new PanelGridTooltip.Flow(null, List.of(hintLine(view))));
-        }
     }
 
     // ==================== 网格的各种单元格 ====================
@@ -793,7 +780,7 @@ public final class WeaponPanelComposer {
      * <p>也走网格，与装了模组之后的面板是同一套排版和配色 ——
      * 玩家插上第一张卡时不应该觉得换了个界面。</p>
      */
-    private static PanelGridTooltip buildBaseGrid(ItemStack stack, TooltipView view) {
+    private static PanelGridTooltip buildBaseGrid(ItemStack stack) {
         List<PanelGridTooltip.Section> sections = new ArrayList<>();
 
         if (WeaponModuleHandler.isFormaLocked(stack)) {
@@ -808,9 +795,6 @@ public final class WeaponPanelComposer {
                 baseCell(stack, "criticalStrikeMultiplier", ValueFormat.MULTIPLIER),
                 baseCell(stack, "triggerChance", ValueFormat.PERCENT))));
 
-        // ⭐ 没装模组的武器正是新手拿到的第一把，也是最需要这行提示的人群 ——
-        //    不给入口的话，整套四视图对他们完全不可见。
-        appendHint(sections, view);
         return new PanelGridTooltip(sections);
     }
 
@@ -818,30 +802,6 @@ public final class WeaponPanelComposer {
         return new PanelGridTooltip.Cell(
                 label(PanelStyle.shortNameOf(attr)),
                 value(fmt.format(WeaponModuleHandler.getBaseAttribute(stack, attr)), PanelPalette.VALUE));
-    }
-
-    // ==================== 提示行与行预算 ====================
-
-    /**
-     * 底部按键提示
-     *
-     * <p>按键名单独提亮：整行都是暗色的话，玩家扫过去只会当成一句废话，
-     * 而这行是整套四视图的<b>唯一入口</b>。</p>
-     */
-    private static Component hintLine(TooltipView view) {
-        if (view != TooltipView.COMPACT) {
-            return Component.translatable("kuvalich.panel.hint.release")
-                    .withStyle(PanelPalette.style(PanelPalette.MUTED));
-        }
-        Style dim = PanelPalette.style(PanelPalette.MUTED);
-        Style key = PanelPalette.bold(PanelPalette.LABEL);
-        return Component.translatable("kuvalich.panel.hint.hold").withStyle(dim)
-                .append(Component.literal(" SHIFT ").withStyle(key))
-                .append(Component.translatable("kuvalich.panel.hint.full").withStyle(dim))
-                .append(Component.literal("  CTRL ").withStyle(key))
-                .append(Component.translatable("kuvalich.panel.hint.source").withStyle(dim))
-                .append(Component.literal("  ALT ").withStyle(key))
-                .append(Component.translatable("kuvalich.panel.hint.live").withStyle(dim));
     }
 
     private WeaponPanelComposer() {

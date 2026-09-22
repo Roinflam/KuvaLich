@@ -679,7 +679,6 @@ public class ClothConfigScreen {
                 .build());
 
         panel.addEntry(toggle(entryBuilder, "showGutter", cfg.showGutter, false));
-        panel.addEntry(toggle(entryBuilder, "showKeyHint", cfg.showKeyHint, true));
 
         panel.addEntry(entryBuilder.startEnumSelector(
                         Component.translatable("config.kuvalich.panel.symbolStyle"),

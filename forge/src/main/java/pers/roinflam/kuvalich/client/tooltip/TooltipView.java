@@ -47,11 +47,6 @@ public enum TooltipView {
         return id;
     }
 
-    /** 该视图的提示文案翻译键 */
-    public String hintKey() {
-        return "kuvalich.panel.hint." + id;
-    }
-
     /**
      * 根据当前按键状态决定视图
      *
