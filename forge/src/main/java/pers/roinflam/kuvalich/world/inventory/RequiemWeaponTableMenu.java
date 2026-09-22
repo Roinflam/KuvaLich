@@ -16,6 +16,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
+import pers.roinflam.kuvalich.module.ModulePlacementValidator;
 import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
@@ -74,18 +75,48 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
         LogUtil.debugEvent("武器军械库菜单创建", player.getName().getString(), "位置: " + pos.toString());
     }
 
+    /**
+     * 可用槽位上限
+     *
+     * <p>实现委托给 {@link ModulePlacementValidator#readModuleLimit(ItemStack)} ——
+     * 图鉴一键装配也要按同一个上限找空槽，这段逻辑只该有一份。</p>
+     *
+     * @return 可用槽位数 [0,8]；军械库里没放武器时为 0
+     */
     public int getModuleLimit() {
-        ItemStack weaponStack = weaponHandler.getStackInSlot(0);
-        if (weaponStack == null || weaponStack.isEmpty()) return 0;
-        CompoundTag tag = weaponStack.getTag();
-        if (tag == null) return 8;
-        if (!tag.contains(MODULE_LIMIT_KEY)) return 8;
-        int limit = tag.getInt(MODULE_LIMIT_KEY);
-        return Math.max(0, Math.min(8, limit));
+        return ModulePlacementValidator.readModuleLimit(weaponHandler.getStackInSlot(0));
     }
 
     public boolean isSlotUnlocked(int slotIndex) {
         return slotIndex < getModuleLimit();
+    }
+
+    /**
+     * 把一个模组装进第一个可用空槽（供图鉴的创造模式一键装配调用）
+     *
+     * <p><b>目标是军械库里放着的那把武器</b>，不是玩家主手拿的东西 ——
+     * 图鉴本来就只能从军械库界面进去，玩家的操作语境就是「给台面上这把武器插卡」。</p>
+     *
+     * <p>写入走 {@code moduleHandler} 再调既有的 {@code syncAllModulesToWeapon()}，
+     * 而不是自己拼武器 NBT：那段回写逻辑（包括非武器模组会被写成空槽的防御）
+     * 已经在菜单里了，绕过它等于再维护一份序列化代码。</p>
+     *
+     * @param module 服务端的权威模组实例
+     * @return 是否真的装上了；没空位、冲突、军械库里没放武器都返回 false
+     */
+    public boolean installFirstAvailable(ItemStack module) {
+        if (module == null || module.isEmpty()) return false;
+        if (weaponHandler.getStackInSlot(0).isEmpty()) return false;
+
+        int slot = ModulePlacementValidator.firstPlaceableWeaponSlot(
+                module, moduleHandler::getStackInSlot, getModuleLimit());
+        if (slot < 0) return false;
+
+        moduleHandler.setStackInSlot(slot, module);
+        syncAllModulesToWeapon();
+        broadcastChanges();
+        LogUtil.debugEvent("图鉴一键装配（武器）", module.getHoverName().getString(), "槽位: " + slot);
+        return true;
     }
 
     @Override
@@ -293,6 +324,13 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
             }
         }
 
+        /**
+         * ⭐ 判定本身已抽到 {@link ModulePlacementValidator}，与战甲军械库、
+         * 图鉴一键装配共用同一份实现 —— 三处各写一份的话，改一条规则要同步改三处。
+         *
+         * <p>留在这里的只有两条属于「军械库菜单」而不属于「放置规则」的前置条件：
+         * 物品非空，以及军械库里得先放了武器。槽位未解锁时的那条 debug 日志也留着。</p>
+         */
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
             if (stack == null || stack.isEmpty()) return false;
@@ -301,18 +339,9 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
                 LogUtil.debug("槽位 " + slotIndex + " 未解锁，当前限制: " + menu.getModuleLimit());
                 return false;
             }
-            if (!(stack.getItem() instanceof AbstractWeaponModule)) return false;
-            if (AbstractWeaponModule.isRandom(stack)) return false;
-            if (!this.getItemHandler().getStackInSlot(slotIndex).isEmpty()) return false;
-
-            for (int i = 0; i < 8; i++) {
-                if (i != slotIndex) {
-                    ItemStack existingStack = menu.moduleHandler.getStackInSlot(i);
-                    if (!existingStack.isEmpty()) {
-                        if (stack.getItem() instanceof WeaponRivenModule && existingStack.getItem() instanceof WeaponRivenModule) return false;
-                        if (AbstractModule.hasConflict(existingStack, stack)) return false;
-                    }
-                }
+            if (!ModulePlacementValidator.canPlaceWeapon(
+                    stack, menu.moduleHandler::getStackInSlot, slotIndex, menu.getModuleLimit())) {
+                return false;
             }
             return super.mayPlace(stack);
         }

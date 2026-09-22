@@ -1,58 +1,56 @@
 package pers.roinflam.kuvalich.network.packet;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
-import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
-import pers.roinflam.kuvalich.capability.WarframeModules;
 import pers.roinflam.kuvalich.event.ModuleDiscoveryHandler;
-import pers.roinflam.kuvalich.module.ModulePlacementValidator;
-import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.LogUtil;
-import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
+import pers.roinflam.kuvalich.world.inventory.RequiemWeaponTableMenu;
 
 import java.util.function.Supplier;
 
 /**
  * 图鉴创造模式一键装配包（客户端 → 服务器）
  *
- * <p>创造模式玩家在图鉴里 Shift+点击一个模组时，请求服务端把它装到
- * <b>当前主手武器</b>（武器模组）或<b>玩家自己</b>（战甲模组）的第一个空槽。
- * 没有可用空槽就什么也不做。</p>
+ * <p>创造模式玩家在图鉴里 Shift+点击一个模组时，请求服务端把它装进
+ * <b>当前打开的军械库</b>的第一个可用空槽。没有可用空槽、或与已装的模组冲突，
+ * 就什么也不做。</p>
  *
- * <h3>为什么每一层校验都必须在服务端做</h3>
- * <p>客户端说「看起来有空位」不能信 —— 改装客户端可以随便发这个包。所以：</p>
+ * <h3>为什么目标是军械库而不是主手</h3>
+ * <p>图鉴只能从军械库界面进去（{@code RequiemWeaponTableScreen} /
+ * {@code RequiemWarframeTableScreen} 里各有一个入口按钮，
+ * {@code new ModuleCodexScreen(this, ...)} 把军械库界面作为 parent 传进去）。
+ * 玩家此刻的操作语境就是「给台面上这把武器插卡」，而不是给手上拿的东西插卡。</p>
+ *
+ * <p>客户端切到图鉴 Screen 时并不会关掉容器：{@code Minecraft.setScreen} 走的是
+ * {@code removed()} 而不是 {@code onClose()}，只有后者才会发关闭容器的包。
+ * 所以服务端的 {@code player.containerMenu} 仍然是那个军械库菜单，
+ * 这正是本包定位目标的依据。</p>
+ *
+ * <h3>服务端校验</h3>
  * <ol>
- *   <li><b>创造模式</b>由服务端判定（照搬 {@link CodexGiveItemPacket} 的做法）。</li>
+ *   <li><b>创造模式</b>由服务端判定。</li>
  *   <li><b>物品实例</b>只从服务端自己的注册列表里按 type 查（复用
  *       {@code CodexGiveItemPacket.findModule}），绝不根据客户端传来的字符串或 NBT
  *       构造物品。这条是整套安全模型的底线。</li>
- *   <li><b>装配目标</b>服务端自己定位：武器取 {@code player.getMainHandItem()}，
- *       战甲取玩家 Capability。包里<b>不带</b>「装到哪个槽 / 哪把武器」这类参数，
- *       没有可伪造的余地。</li>
- *   <li><b>空槽与冲突</b>走 {@link ModulePlacementValidator}，与两个军械库菜单同一套判定 ——
- *       否则会出现「军械库里装不上、一键装却能装进去」这种能写坏存档的不一致。</li>
- *   <li><b>类型与容器匹配</b>再校验一次 {@code instanceof}，不能只信客户端传的
- *       {@code isWeapon} 布尔来决定往哪个容器里塞。</li>
+ *   <li><b>目标容器</b>由服务端当前打开的菜单决定，<b>不看</b>客户端传来的
+ *       {@code isWeapon}。那个布尔只用于在服务端列表里查物品，
+ *       伪造它最多只能让查找失败，不可能把战甲模组塞进武器。</li>
+ *   <li><b>空槽与冲突</b>走 {@code ModulePlacementValidator}，与两个军械库菜单
+ *       自己的 {@code mayPlace} 是同一份实现。</li>
+ *   <li><b>类型与容器匹配</b>再校验一次 {@code instanceof}。</li>
  * </ol>
  *
- * <h3>装完之后必须做的刷新</h3>
- * <p>这个包是直接改 NBT / Capability，没走标准的 {@code Slot.set()} 流程，
- * 所以刷新要自己触发：</p>
- * <ul>
- *   <li>武器侧显式 {@code broadcastChanges()}，否则客户端物品栏与 tooltip
- *       会停留在装之前的样子 —— 看起来像「点了没反应」。</li>
- *   <li>战甲侧主动 {@code WarframeModuleSyncPacket.syncToPlayer}，而不是等
- *       5-tick 轮询兜底。</li>
- *   <li>两侧都要记一次模组发现：一键装配直接进槽位、不经过背包，
- *       不会触发原有的「拾取时发现」路径，漏了图鉴会少标一个「已发现」。</li>
- * </ul>
+ * <p>写入与刷新都交给菜单自己的 {@code installFirstAvailable}：它走的是菜单既有的
+ * 回写路径（武器 {@code syncAllModulesToWeapon}、战甲 {@code saveModulesToCapability}），
+ * 与玩家手动拖卡进槽位完全同一条路。这样既不用再写一份 NBT 序列化，
+ * 也不会漏掉那两条路径里已有的防御（比如非武器模组会被写成空槽、
+ * 非法物品会被返还给玩家）。</p>
  *
  * @author RoinFlam
  */
@@ -60,7 +58,7 @@ public class CodexInstallModulePacket {
 
     /** 目标模组的 type 标识 */
     private final String moduleType;
-    /** 是否为武器模组（false=战甲） */
+    /** 图鉴当前在看武器页还是战甲页；只用于在服务端列表里查物品，不决定往哪个容器塞 */
     private final boolean isWeapon;
     /** 模组品质序号（0=青铜 1=白银 2=黄金 3=Prime） */
     private final int rarityOrder;
@@ -99,6 +97,13 @@ public class CodexInstallModulePacket {
                 return;
             }
 
+            // 目标容器由服务端当前打开的菜单决定
+            AbstractContainerMenu menu = player.containerMenu;
+            if (!(menu instanceof RequiemWeaponTableMenu) && !(menu instanceof RequiemWarframeTableMenu)) {
+                LogUtil.debug("一键装配时玩家并未打开军械库，已拒绝");
+                return;
+            }
+
             // 权威实例只从服务端列表里取
             ItemStack found = CodexGiveItemPacket.findModule(msg.moduleType, msg.isWeapon, msg.rarityOrder);
             if (found.isEmpty()) {
@@ -108,149 +113,29 @@ public class CodexInstallModulePacket {
             }
             ItemStack module = found.copy();
 
-            boolean installed = msg.isWeapon
-                    ? installIntoWeapon(player, module)
-                    : installIntoWarframe(player, module);
+            boolean installed = false;
+            if (menu instanceof RequiemWeaponTableMenu weaponMenu) {
+                // 类型与容器必须匹配：武器军械库只收武器模组
+                if (!(module.getItem() instanceof AbstractWeaponModule)) {
+                    LogUtil.debug("一键装配：武器军械库收到非武器模组，已拒绝");
+                    return;
+                }
+                installed = weaponMenu.installFirstAvailable(module);
+            } else if (menu instanceof RequiemWarframeTableMenu warframeMenu) {
+                if (!(module.getItem() instanceof AbstractWarframeModule)) {
+                    LogUtil.debug("一键装配：战甲军械库收到非战甲模组，已拒绝");
+                    return;
+                }
+                installed = warframeMenu.installFirstAvailable(player, module);
+            }
 
             if (installed) {
-                // 一键装配不经过背包，不会触发「拾取时发现」，这里补记一次
+                // 一键装配直接进槽位、不经过背包，不会触发原有的「拾取时发现」路径，
+                // 漏了的话图鉴会少标一个「已发现」
                 ModuleDiscoveryHandler.tryDiscoverSingle(player, module);
                 LogUtil.debugEvent("图鉴一键装配", player.getName().getString(),
                         (msg.isWeapon ? "武器" : "战甲") + "模组 " + msg.moduleType);
             }
         });
-    }
-
-    // ==================== 武器侧 ====================
-
-    /**
-     * 把模组写进当前主手武器的第一个可用空槽
-     *
-     * <p>存储路径与 {@code RequiemWeaponTableMenu.syncWeaponNBT()} 一致：
-     * 顶层 NBT 的 {@code <modid>_weaponModules} compound 下的 {@code modules} 列表，
-     * 固定 8 项，空槽是一个空 CompoundTag。</p>
-     *
-     * @param player 玩家
-     * @param module 服务端权威实例
-     * @return 是否真的装上了
-     */
-    private static boolean installIntoWeapon(ServerPlayer player, ItemStack module) {
-        // 二次确认类型与容器匹配，不信客户端传的 isWeapon
-        if (!(module.getItem() instanceof AbstractWeaponModule)) {
-            LogUtil.debug("一键装配：客户端声称是武器模组，实际不是，已拒绝");
-            return false;
-        }
-
-        ItemStack weapon = player.getMainHandItem();
-        // hasBase 确认这确实是一把已初始化过的赤毒武器，而不是随手拿的普通物品
-        if (weapon.isEmpty() || !WeaponModuleHandler.hasBase(weapon)) {
-            return false;
-        }
-
-        CompoundTag tag = weapon.getOrCreateTag();
-        CompoundTag weaponModules = tag.getCompound(Reference.MOD_ID + "_weaponModules");
-        final ListTag list = weaponModules.getList("modules", Tag.TAG_COMPOUND);
-        // 归一化到 8 项：老武器的列表可能短于 8，直接按下标 set 会越界
-        while (list.size() < ModulePlacementValidator.SLOT_COUNT) {
-            list.add(new CompoundTag());
-        }
-
-        int limit = ModulePlacementValidator.readModuleLimit(weapon);
-        int slot = ModulePlacementValidator.firstPlaceableWeaponSlot(
-                module, i -> ItemStack.of(list.getCompound(i)), limit);
-        if (slot < 0) {
-            // 没空位，或与已装的模组冲突 —— 这就是「有空位才行」的服务端判定点
-            return false;
-        }
-
-        CompoundTag saved = new CompoundTag();
-        module.save(saved);
-        list.set(slot, saved);
-        weaponModules.put("modules", list);
-        tag.put(Reference.MOD_ID + "_weaponModules", weaponModules);
-
-        // 直接改 NBT 没走 Slot.set()，必须显式广播，否则客户端物品栏与 tooltip 不会刷新
-        player.inventoryMenu.broadcastChanges();
-        if (player.containerMenu != player.inventoryMenu) {
-            player.containerMenu.broadcastChanges();
-        }
-        return true;
-    }
-
-    // ==================== 战甲侧 ====================
-
-    /**
-     * 把模组写进玩家 Capability 的第一个可用空槽
-     *
-     * <p>战甲模组不挂在任何护甲物品上，而是挂在玩家身上 —— 没穿甲也照样生效。</p>
-     *
-     * @param player 玩家
-     * @param module 服务端权威实例
-     * @return 是否真的装上了
-     */
-    private static boolean installIntoWarframe(ServerPlayer player, ItemStack module) {
-        if (!(module.getItem() instanceof AbstractWarframeModule)) {
-            LogUtil.debug("一键装配：客户端声称是战甲模组，实际不是，已拒绝");
-            return false;
-        }
-
-        final ItemStack finalModule = module;
-        final boolean[] ok = { false };
-        player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).ifPresent(caps -> {
-            int slot = ModulePlacementValidator.firstPlaceableWarframeSlot(
-                    finalModule, i -> slotOf(caps, i));
-            if (slot < 0) return;
-            setSlot(caps, slot, finalModule);
-            ok[0] = true;
-        });
-
-        if (ok[0]) {
-            // 主动同步，不等 5-tick 轮询兜底
-            WarframeModuleSyncPacket.syncToPlayer(player);
-        }
-        return ok[0];
-    }
-
-    /**
-     * Capability 的八个具名字段按下标读
-     *
-     * @param caps 战甲模组 Capability
-     * @param i    槽位下标 0~7
-     * @return 该槽内容
-     */
-    private static ItemStack slotOf(WarframeModules caps, int i) {
-        switch (i) {
-            case 0: return caps.getOne();
-            case 1: return caps.getTwo();
-            case 2: return caps.getThree();
-            case 3: return caps.getFour();
-            case 4: return caps.getFive();
-            case 5: return caps.getSix();
-            case 6: return caps.getSeven();
-            default: return caps.getEight();
-        }
-    }
-
-    /**
-     * Capability 的八个具名字段按下标写
-     *
-     * <p>setter 内部用 {@code ItemStack.matches} 做变更检测并 {@code markDirty()}，
-     * 这正是 {@code WarframeModuleSyncPacket} 的脏标记来源。</p>
-     *
-     * @param caps  战甲模组 Capability
-     * @param i     槽位下标 0~7
-     * @param stack 要写入的模组
-     */
-    private static void setSlot(WarframeModules caps, int i, ItemStack stack) {
-        switch (i) {
-            case 0: caps.setOne(stack); break;
-            case 1: caps.setTwo(stack); break;
-            case 2: caps.setThree(stack); break;
-            case 3: caps.setFour(stack); break;
-            case 4: caps.setFive(stack); break;
-            case 5: caps.setSix(stack); break;
-            case 6: caps.setSeven(stack); break;
-            default: caps.setEight(stack); break;
-        }
     }
 }

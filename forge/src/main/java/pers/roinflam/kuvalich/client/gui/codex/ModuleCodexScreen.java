@@ -81,6 +81,8 @@ public class ModuleCodexScreen extends Screen {
     private long openedAt = 0L;
     /** 搜索框外框的位置（控件本身内缩 4px，框由我们画） */
     private int searchFrameX, searchFrameY, searchFrameW;
+    /** 本帧时间，render 开头取一次，供所有绘制方法共用 */
+    private long frameMillis = 0L;
 
     private List<ModuleCodexData.CodexEntry> filtered = null;
     private String lastSearch = "";
@@ -155,7 +157,7 @@ public class ModuleCodexScreen extends Screen {
         searchBox = new EditBox(this.font, boxX + 4, boxY + 3, boxW - 8, 12, Component.empty());
         searchBox.setMaxLength(50);
         searchBox.setBordered(false);
-        searchBox.setTextColor(CodexTheme.TEXT);
+        searchBox.setTextColor(CodexTheme.BONE);
         searchBox.setHint(Component.translatable("kuvalich.codex.search_hint"));
         searchBox.setResponder(text -> onSearchChanged());
         if (!previousSearch.isEmpty()) {
@@ -335,10 +337,15 @@ public class ModuleCodexScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
         float progress = openProgress();
+        frameMillis = net.minecraft.Util.getMillis();
 
-        CodexTheme.scrim(g, this.width, this.height, progress);
-        CodexTheme.panel(g, panelX, panelY, panelW, panelH);
-        CodexTheme.vignette(g, panelX, panelY, panelW, panelH);
+        g.fill(0, 0, this.width, this.height, CodexTheme.fade(CodexTheme.VOID, progress));
+
+        // 主框体：斜切板材 -> 全息表面 -> 环境微粒 -> 内容 -> 发光轮廓。
+        // 顺序要紧：微粒在板材之上、格子之下；轮廓压在最外层。
+        CodexTheme.chamferFill(g, panelX, panelY, panelW, panelH, CodexTheme.CHAMFER, CodexTheme.PLATE);
+        CodexTheme.holoSurface(g, panelX + 2, panelY + 2, panelW - 4, panelH - 4, 12);
+        CodexTheme.motes(g, panelX + 2, contentY, panelW - 4, Math.max(0, visibleH), frameMillis, progress);
 
         hoveredEntry = null;
         drawHeader(g);
@@ -347,8 +354,11 @@ public class ModuleCodexScreen extends Screen {
                 scrollOffset, maxScroll());
         drawFooter(g);
 
-        // 四角画在最后：它要压住内容的边缘，而不是被内容盖掉
-        CodexTheme.corners(g, panelX, panelY, panelW, panelH, CodexTheme.ACCENT, progress);
+        // 左缘一条数据刻度，把留白仪器化
+        CodexTheme.tickStrip(g, panelX + 4, contentY, visibleH, CodexTheme.TECH);
+
+        CodexTheme.chamferGlow(g, panelX, panelY, panelW, panelH, CodexTheme.CHAMFER,
+                CodexTheme.withAlpha(CodexTheme.TECH, 0xB0), progress);
 
         super.render(g, mx, my, pt);
         if (hoveredEntry != null) {
@@ -376,12 +386,21 @@ public class ModuleCodexScreen extends Screen {
      * （配置热重载）时重算 —— 发现记录只增不减，所以 Set.size() 是可靠且 O(1) 的变更戳。</p>
      */
     private void drawHeader(GuiGraphics g) {
-        g.fill(panelX + 1, panelY + 1, panelX + panelW - 1, panelY + CodexTheme.HEADER_H,
-                CodexTheme.PANEL_ALT);
+        int hx = panelX + 1, hw = panelW - 2;
+        g.fill(hx, panelY + 1, hx + hw, panelY + CodexTheme.HEADER_H, CodexTheme.PLATE_HI);
+        CodexTheme.holoSurface(g, hx, panelY + 1, hw, CodexTheme.HEADER_H - 1, 10);
 
+        // 标题：左边一个赤毒色斜角标记，下面压一条短细线
+        int tx = panelX + CodexTheme.PAD;
+        CodexTheme.cornerTab(g, tx, panelY + 9, 7, CodexTheme.KUVA);
         String title = this.getTitle().getString();
-        g.drawString(this.font, title, panelX + CodexTheme.PAD, panelY + 7, CodexTheme.TEXT, false);
+        int titleX = tx + 12;
+        g.drawString(this.font, title, titleX, panelY + 8, CodexTheme.BONE, false);
+        g.fill(titleX, panelY + 19, titleX + this.font.width(title), panelY + 20,
+                CodexTheme.withAlpha(CodexTheme.KUVA, 0x90));
 
+        // 已发现徽章（右上）。计数只在全局已发现数变化、或 ModuleCodexData 换了表
+        // （配置热重载）时重算 —— 发现记录只增不减，Set.size() 是可靠且 O(1) 的变更戳。
         if (filtered != null) {
             List<ModuleCodexData.CodexEntry> all = showWeapon ?
                     ModuleCodexData.getWeaponModules() : ModuleCodexData.getWarframeModules();
@@ -396,24 +415,30 @@ public class ModuleCodexScreen extends Screen {
                 titleCountedList = all;
                 cachedTitle = discovered + " / " + all.size();
             }
-            int bw = this.font.width(cachedTitle) + 8;
+            int bw = this.font.width(cachedTitle) + 12;
             CodexTheme.badge(g, this.font, cachedTitle,
-                    panelX + panelW - CodexTheme.PAD - bw, panelY + 5,
-                    CodexTheme.ACCENT_SOFT, CodexTheme.TEXT);
+                    panelX + panelW - CodexTheme.PAD - bw, panelY + 7,
+                    CodexTheme.withAlpha(CodexTheme.TECH, 0x22), CodexTheme.EMBER);
         }
 
-        // 搜索框外框：控件本身是无边框的，框画在它外面；聚焦时描边换成强调色
-        CodexTheme.border(g, searchFrameX, searchFrameY, searchFrameW, 18,
-                searchBox != null && searchBox.isFocused() ? CodexTheme.ACCENT : CodexTheme.BORDER);
+        // 搜索框外框：斜切；聚焦时换成科技青并发光
+        boolean focused = searchBox != null && searchBox.isFocused();
+        if (focused) {
+            CodexTheme.chamferGlow(g, searchFrameX, searchFrameY, searchFrameW, 18, 4,
+                    CodexTheme.TECH, 1f);
+        } else {
+            CodexTheme.chamferOutline(g, searchFrameX, searchFrameY, searchFrameW, 18, 4,
+                    CodexTheme.EDGE);
+        }
 
-        CodexTheme.divider(g, panelX + 1, panelY + CodexTheme.HEADER_H, panelW - 2, CodexTheme.BORDER);
+        CodexTheme.dataLine(g, hx, panelY + CodexTheme.HEADER_H, hw, CodexTheme.TECH, frameMillis);
     }
 
     private void drawContent(GuiGraphics g, int mx, int my) {
         if (filtered == null || filtered.isEmpty()) {
             String empty = Component.translatable("kuvalich.codex.empty").getString();
             g.drawString(this.font, empty, panelX + (panelW - this.font.width(empty)) / 2,
-                    contentY + 30, CodexTheme.TEXT_FAINT, false);
+                    contentY + 30, CodexTheme.FAINT, false);
             return;
         }
 
@@ -440,19 +465,19 @@ public class ModuleCodexScreen extends Screen {
                     if (countSuffix == null) {
                         countSuffix = Component.translatable("kuvalich.codex.count_suffix").getString();
                     }
-                    // 装订线：行首一条 2px 竖条，取该品质自己的颜色，
-                    // 让「这一整块属于哪个品质」在滚动时一眼可辨（参考 CarianStyle 的 gutter）
+                    // 品质角标 + 标题 + 延伸到右边的细线
                     int rc = ModuleCodexData.getRarityColor(e.rarityOrder);
-                    g.fill(contentX, drawY + 2, contentX + 2, drawY + SECTION_H - 2, rc);
+                    CodexTheme.cornerTab(g, contentX, drawY + 3, 6, rc);
 
                     String header = ModuleCodexData.getRarityName(e.rarityOrder)
                             + " \u00A78" + count + countSuffix;
-                    int textX = contentX + 6;
-                    g.drawString(this.font, header, textX, drawY + 4, CodexTheme.TEXT_DIM, false);
+                    int textX = contentX + 11;
+                    g.drawString(this.font, header, textX, drawY + 4, CodexTheme.ASH, false);
                     int lineX = textX + this.font.width(header) + 6;
-                    if (lineX < contentX + contentW)
-                        CodexTheme.divider(g, lineX, drawY + SECTION_H / 2, contentX + contentW - lineX,
-                                CodexTheme.withAlpha(CodexTheme.BORDER, 0xA0));
+                    if (lineX < contentX + contentW) {
+                        g.fill(lineX, drawY + SECTION_H / 2, contentX + contentW,
+                                drawY + SECTION_H / 2 + 1, CodexTheme.withAlpha(CodexTheme.EDGE, 0xC0));
+                    }
                 }
                 drawY += SECTION_H;
                 groupY = drawY;
@@ -478,74 +503,79 @@ public class ModuleCodexScreen extends Screen {
     /**
      * 画一个模组格子
      *
-     * <p>四种状态（已发现/未发现 × 悬停/常态）只靠<b>背景透明度 + 描边色 + 左侧竖条</b>
-     * 区分，不做缩放、不换图标、不加阴影 —— 这是从 AlbionMastery 的卡片那里学来的：
-     * 在这么小的尺寸上，位移和缩放只会让网格看起来在抖。</p>
+     * <p>格子是「嵌进面板的凹槽」：底色比面板更暗，左上角一个斜角标记表示品质。
+     * 未发现的不画问号而画几段加密噪线 —— 问号看起来像出错，噪线看起来像「还没解密」。</p>
+     *
+     * <p>悬停不做缩放也不换图标，只加一圈瞄准括号和一层极淡的底色：在这么小的尺寸上
+     * 位移和缩放只会让整片网格看起来在抖。</p>
      */
     private void drawCell(GuiGraphics g, ModuleCodexData.CodexEntry e,
                           int x, int y, boolean found, boolean hover) {
-        int bg = found
-                ? (hover ? CodexTheme.PANEL_HOVER : CodexTheme.PANEL_ALT)
-                : (hover ? CodexTheme.withAlpha(CodexTheme.PANEL_HOVER, 0x80)
-                         : CodexTheme.withAlpha(CodexTheme.PANEL_ALT, 0x60));
-        g.fill(x, y, x + CELL_W, y + CELL_H, bg);
-
-        // 顶部稀有度薄条：两端渐隐，中间实色
-        int baseColor = found ? ModuleCodexData.getRarityColor(e.rarityOrder)
+        int rarity = found ? ModuleCodexData.getRarityColor(e.rarityOrder)
                 : ModuleCodexData.getRarityColorDim(e.rarityOrder);
-        int fadeColor = CodexTheme.withAlpha(baseColor, ((baseColor >>> 24) & 0xFF) / 2);
-        int indX = x + (CELL_W - IND_TOTAL_W) / 2;
-        int indY = y + 1;
-        g.fill(indX, indY, indX + 1, indY + IND_H, fadeColor);
-        g.fill(indX + 1, indY, indX + 1 + IND_SOLID_W, indY + IND_H, baseColor);
-        g.fill(indX + 1 + IND_SOLID_W, indY, indX + IND_TOTAL_W, indY + IND_H, fadeColor);
 
-        // 物品图标
+        // 凹槽底
+        g.fill(x, y, x + CELL_W, y + CELL_H,
+                found ? CodexTheme.PLATE_DEEP : CodexTheme.withAlpha(CodexTheme.PLATE_DEEP, 0xB0));
+        // 结构边只画左、下两条，制造「嵌进去」的方向感
+        g.fill(x, y, x + 1, y + CELL_H, CodexTheme.withAlpha(CodexTheme.EDGE, found ? 0xFF : 0x80));
+        g.fill(x, y + CELL_H - 1, x + CELL_W, y + CELL_H,
+                CodexTheme.withAlpha(CodexTheme.EDGE, found ? 0xFF : 0x80));
+
+        // 品质角标
+        CodexTheme.cornerTab(g, x + 1, y + 1, 5, rarity);
+
+        // 图标
         int iconX = x + (CELL_W - 16) / 2;
-        int iconY = y + IND_H + 3;
+        int iconY = y + (CELL_H - 16) / 2 + 1;
         g.renderItem(e.displayStack, iconX, iconY);
 
-        // 未发现：压一层暗幕 + 问号
         if (!found) {
-            g.fill(x, y + IND_H + 2, x + CELL_W, y + CELL_H, 0xB0100C0E);
-            String q = "?";
-            g.drawString(this.font, q,
-                    x + (CELL_W - this.font.width(q)) / 2,
-                    y + IND_H + (CELL_H - IND_H - 8) / 2,
-                    CodexTheme.withAlpha(CodexTheme.TEXT_FAINT, 0x90), false);
+            // 加密噪线：位置由 discoveryKey 的哈希决定，所以同一个模组每帧长得一样、不会闪，
+            // 不同模组之间又各不相同。
+            g.fill(x + 1, y + 1, x + CELL_W, y + CELL_H - 1, 0xC00A0D10);
+            int hash = e.discoveryKey.hashCode();
+            for (int i = 0; i < 4; i++) {
+                int bits = (hash >>> (i * 7)) & 0x7F;
+                int ly = y + 5 + i * 4;
+                if (ly >= y + CELL_H - 3) break;
+                int lx = x + 3 + (bits % 6);
+                int lw = 4 + (bits % 9);
+                if (lx + lw > x + CELL_W - 3) lw = x + CELL_W - 3 - lx;
+                if (lw <= 0) continue;
+                g.fill(lx, ly, lx + lw, ly + 1, CodexTheme.withAlpha(CodexTheme.TECH, 0x55));
+            }
         }
 
-        // 悬停：描边 + 左侧 2px 竖条（竖条比纯描边更容易在密集网格里被看到）
         if (hover) {
-            int edge = found ? baseColor : CodexTheme.TEXT_DIM;
-            CodexTheme.border(g, x, y, CELL_W, CELL_H, CodexTheme.withAlpha(edge, 0xC0));
-            g.fill(x, y, x + 2, y + CELL_H, edge);
+            int edge = found ? CodexTheme.KUVA : CodexTheme.TECH;
+            g.fill(x, y, x + CELL_W, y + CELL_H, CodexTheme.withAlpha(edge, 0x1A));
+            CodexTheme.brackets(g, x, y, CELL_W, CELL_H, 5, edge);
         }
     }
 
 
     /**
-     * 底栏：筛选结果计数（左）+ 操作提示（右）
+     * 底栏：筛选命中数（左）+ 操作提示（右）
      */
     private void drawFooter(GuiGraphics g) {
         int fy = panelY + panelH - CodexTheme.FOOTER_H;
-        g.fill(panelX + 1, fy, panelX + panelW - 1, panelY + panelH - 1, CodexTheme.PANEL_ALT);
-        CodexTheme.divider(g, panelX + 1, fy, panelW - 2, CodexTheme.BORDER);
+        g.fill(panelX + 1, fy, panelX + panelW - 1, panelY + panelH - 1, CodexTheme.PLATE_HI);
+        CodexTheme.holoSurface(g, panelX + 1, fy, panelW - 2, CodexTheme.FOOTER_H - 1, 10);
+        g.fill(panelX + 1, fy, panelX + panelW - 1, fy + 1, CodexTheme.withAlpha(CodexTheme.EDGE, 0xE0));
 
         int textY = fy + (CodexTheme.FOOTER_H - this.font.lineHeight) / 2;
 
-        // 左：搜索命中数，没搜索时不占位
         if (filtered != null && !lastSearch.isEmpty()) {
             if (countSuffix == null) {
                 countSuffix = Component.translatable("kuvalich.codex.count_suffix").getString();
             }
             String filterHint = Component.translatable("kuvalich.codex.filter_result").getString()
                     + " " + filtered.size() + countSuffix;
-            g.drawString(this.font, filterHint, panelX + CodexTheme.PAD, textY,
-                    CodexTheme.TEXT_DIM, false);
+            g.drawString(this.font, filterHint, panelX + CodexTheme.PAD, textY, CodexTheme.EMBER, false);
         }
 
-        // 右：操作提示。创造模式才提示两种点击 —— 生存模式下这两条操作都不存在，说了只会让人困惑
+        // 创造模式才提示两种点击 —— 生存模式下这两条操作都不存在，说了只会让人困惑
         StringBuilder sb = new StringBuilder("[TAB] ")
                 .append(Component.translatable("kuvalich.codex.close_hint").getString());
         Minecraft mc = Minecraft.getInstance();
@@ -554,7 +584,7 @@ public class ModuleCodexScreen extends Screen {
         }
         String hint = sb.toString();
         g.drawString(this.font, hint, panelX + panelW - CodexTheme.PAD - this.font.width(hint), textY,
-                CodexTheme.TEXT_FAINT, false);
+                CodexTheme.FAINT, false);
     }
 
     // ==================== 工具 ====================

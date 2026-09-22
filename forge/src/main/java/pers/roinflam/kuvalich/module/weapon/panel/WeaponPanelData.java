@@ -75,7 +75,7 @@ public final class WeaponPanelData {
      * <p>只有被 {@link AttributeSpec#always()} 标记的四条（基伤 / 暴击 / 暴伤 / 触发）是
      * 武器的身份信息，即使全是基础值也要显示；其余一律「真的有非零值」才占行。</p>
      *
-     * <p>⭐ 这个判据以前挂在 {@link PanelGroup#alwaysVisible()} 上，是<b>组级</b>的，
+     * <p>⭐ 这个判据以前挂在 {@code PanelGroup.alwaysVisible()}（已删除）上，是<b>组级</b>的，
      * 于是同在 PANEL 组的多重 / 攻速 / 射速 / 范围 / 触发时长也被顺带恒显 ——
      * 一把只插了伤害卡的武器会平白多出「多重 +0%  攻速 0.0%  射速 +0%  范围 +0%
      * 触发时长 100%」五个零值 chip，而改造前它们都是 {@code != 0} 才显示的。</p>

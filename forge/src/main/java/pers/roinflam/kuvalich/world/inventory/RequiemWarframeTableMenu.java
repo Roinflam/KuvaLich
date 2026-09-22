@@ -12,6 +12,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
+import pers.roinflam.kuvalich.module.ModulePlacementValidator;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
@@ -131,6 +132,33 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
     }
 
     /**
+     * 把一个模组装进第一个可用空槽（供图鉴的创造模式一键装配调用）
+     *
+     * <p>战甲模组挂在玩家身上而不是某件护甲物品上，所以没穿甲也照样生效；
+     * 但入口仍然是军械库 —— 图鉴只能从这里进去。</p>
+     *
+     * <p>写入走 {@code moduleHandler} 再调既有的 {@code saveModulesToCapability()}，
+     * 与关闭菜单时走的是同一条回写路径（包含非法物品返还的防御），不另写一份。</p>
+     *
+     * @param player 玩家
+     * @param module 服务端的权威模组实例
+     * @return 是否真的装上了；没空位或冲突返回 false
+     */
+    public boolean installFirstAvailable(Player player, ItemStack module) {
+        if (module == null || module.isEmpty()) return false;
+
+        int slot = ModulePlacementValidator.firstPlaceableWarframeSlot(
+                module, moduleHandler::getStackInSlot);
+        if (slot < 0) return false;
+
+        moduleHandler.setStackInSlot(slot, module);
+        saveModulesToCapability(player);
+        broadcastChanges();
+        LogUtil.debugEvent("图鉴一键装配（战甲）", module.getHoverName().getString(), "槽位: " + slot);
+        return true;
+    }
+
+    /**
      * 保存模组到Capability
      * ⭐ 非法物品返还使用 Inventory.add() 优先快捷栏
      */
@@ -190,20 +218,16 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
             }
         }
 
+        /**
+         * ⭐ 判定本身已抽到 {@link ModulePlacementValidator}，与武器军械库、
+         * 图鉴一键装配共用同一份实现。战甲侧没有「先放武器才解锁槽位」那一层，
+         * 也没有 moduleLimit 的概念。
+         */
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            if (!(stack.getItem() instanceof AbstractWarframeModule)) return false;
-            if (AbstractWarframeModule.isRandom(stack)) return false;
-            if (!this.getItemHandler().getStackInSlot(slotIndex).isEmpty()) return false;
-
-            for (int i = 0; i < 8; i++) {
-                if (i != slotIndex) {
-                    ItemStack existingStack = menu.moduleHandler.getStackInSlot(i);
-                    if (!existingStack.isEmpty()) {
-                        if (stack.getItem() instanceof WarframeRivenModule && existingStack.getItem() instanceof WarframeRivenModule) return false;
-                        if (AbstractModule.hasConflict(existingStack, stack)) return false;
-                    }
-                }
+            if (!ModulePlacementValidator.canPlaceWarframe(
+                    stack, menu.moduleHandler::getStackInSlot, slotIndex)) {
+                return false;
             }
             return super.mayPlace(stack);
         }

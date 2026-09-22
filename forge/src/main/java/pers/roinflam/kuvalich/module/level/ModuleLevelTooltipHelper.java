@@ -76,20 +76,6 @@ public final class ModuleLevelTooltipHelper {
     }
 
     /**
-     * 向Tooltip插入升级费用（无条件，灰色）
-     */
-    public static int appendUpgradeCostTooltip(List<Component> tooltip, int insertIndex,
-                                               int currentLevel) {
-        if (!ModuleLevelHelper.isLevelSystemEnabled()) { return 0; }
-        if (currentLevel >= ModuleLevelHelper.getMaxLevel()) { return 0; }
-        int cost = ModuleLevelHelper.getUpgradeCost(currentLevel);
-        if (cost <= 0) { return 0; }
-        tooltip.add(insertIndex, Component.translatable("item.module.level.upgrade_cost", cost)
-                .withStyle(PanelPalette.style(PanelPalette.MUTED)));
-        return 1;
-    }
-
-    /**
      * ⭐ 仅在安魂之融界面中显示升级费用（含品质缩放，灰色）
      *
      * @param moduleStack 模组物品栈（用于计算品质费用系数）

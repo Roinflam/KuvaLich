@@ -75,19 +75,4 @@ public enum PanelGroup {
     public String titleKey() {
         return "kuvalich.panel.group." + id;
     }
-
-    /**
-     * 该组是否属于「武器身份信息」
-     *
-     * <p>⚠️ <b>这个判据不再用于决定单条词条的可见性</b>。
-     * 以前 {@code WeaponPanelData.isVisible} 直接拿它做短路，导致同在 PANEL 组的
-     * 多重 / 攻速 / 射速 / 范围 / 触发时长也被恒显 —— 一把只插了伤害卡的武器
-     * 会平白多出四五个零值 chip。现在恒显标志下放到了
-     * {@link AttributeSpec#always()}，只给基伤 / 暴击 / 暴伤 / 触发四条。</p>
-     *
-     * <p>保留本方法给「整组是否生成」一类的判断使用。</p>
-     */
-    public boolean alwaysVisible() {
-        return this == PANEL;
-    }
 }

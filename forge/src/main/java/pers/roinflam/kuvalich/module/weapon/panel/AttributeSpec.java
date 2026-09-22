@@ -64,7 +64,7 @@ public record AttributeSpec(String key,
      *
      * <p>⭐ 只有基伤 / 暴击 / 暴伤 / 触发这四条是武器的<b>身份信息</b>，
      * 哪怕全是基础值也必须让玩家看到。
-     * 这个标志以前挂在 {@link PanelGroup#alwaysVisible()} 上，是<b>组级</b>的，
+     * 这个标志以前挂在 {@code PanelGroup.alwaysVisible()}（已删除）上，是<b>组级</b>的，
      * 于是同在 PANEL 组的多重 / 攻速 / 射速 / 范围 / 触发时长也被顺带恒显了 ——
      * 一把只插了伤害卡的武器会平白多出「多重 +0%  攻速 0.0%  射速 +0%  范围 +0%」
      * 四个零值 chip，而改造前这几条都是 {@code != 0} 才显示的。</p>

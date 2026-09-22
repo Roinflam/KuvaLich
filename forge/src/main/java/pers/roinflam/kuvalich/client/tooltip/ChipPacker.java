@@ -113,20 +113,6 @@ public final class ChipPacker {
      * <p>用空格凑宽度只能做到「接近」，但续行本来就只需要视觉上缩进，
      * 不需要与上一行严格对齐，误差一两个像素看不出来。</p>
      */
-    public static Component matchingIndent(Component prefix, Component gutter) {
-        Font font = Minecraft.getInstance().font;
-        int target = font.width(prefix);
-        int gutterWidth = font.width(gutter);
-        int spaceWidth = Math.max(1, font.width(" "));
-        int count = Math.max(0, (target - gutterWidth) / spaceWidth);
-
-        StringBuilder sb = new StringBuilder(count);
-        for (int i = 0; i < count; i++) {
-            sb.append(' ');
-        }
-        return gutter.copy().append(Component.literal(sb.toString()));
-    }
-
     private ChipPacker() {
     }
 }
