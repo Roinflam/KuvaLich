@@ -6,6 +6,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import pers.roinflam.kuvalich.module.weapon.MagicDamageClassifier;
 import pers.roinflam.kuvalich.loot.OreDropRules;
+import pers.roinflam.kuvalich.item.module.warframe.*;
+import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Arrays;
@@ -1329,5 +1331,23 @@ public final class ModConfig {
         MagicDamageClassifier.invalidateCache();
         // 挖矿倍率的白/黑名单是解析成 ResourceLocation 后缓存的，配置改了要重解析
         OreDropRules.invalidateCache();
+
+        // ⭐ 模组原型池：ModuleRegistryHelper#register 在建表时就把
+        //    moduleAttributeMultiplier / keyAttributeMultiplier 乘进了每个原型的 NBT，
+        //    disabledModuleTypes 也是那时做的取舍。不重建的话这三条配置改完要重启才生效，
+        //    而其余配置靠 ForgeConfigSpec.ConfigValue#get() 本身就是热的（重载时 Forge 会清掉 cachedValue）。
+        //
+        //    只在 COMMON 配置变动时重建：三份配置里只有 kuvalich-common / kuvalich-modules
+        //    带这几条，kuvalich-tooltip 是纯观感项，没必要为它拆掉整个池子。
+        if (event.getConfig().getType() == net.minecraftforge.fml.config.ModConfig.Type.COMMON) {
+            WeaponCommonModule.invalidateModuleList();
+            WeaponUncommonModule.invalidateModuleList();
+            WeaponRareModule.invalidateModuleList();
+            WeaponPrimeModule.invalidateModuleList();
+            WarframeCommonModule.invalidateModuleList();
+            WarframeUncommonModule.invalidateModuleList();
+            WarframeRareModule.invalidateModuleList();
+            WarframePrimeModule.invalidateModuleList();
+        }
     }
 }

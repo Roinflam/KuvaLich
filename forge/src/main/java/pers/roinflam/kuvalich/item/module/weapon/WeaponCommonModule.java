@@ -45,7 +45,7 @@ public class WeaponCommonModule extends AbstractWeaponModule {
     /**
      * 静态模组列表,用于随机获取
      */
-    public static List<ItemStack> itemStackList = new ArrayList<>();
+    public static volatile List<ItemStack> itemStackList = new ArrayList<>();
 
     /**
      * 标记是否已初始化（用于服务器端懒加载）
@@ -77,10 +77,37 @@ public class WeaponCommonModule extends AbstractWeaponModule {
     }
 
     /**
+     * 配置热重载后丢掉已构建的原型池，下一次访问时按新配置重建。
+     *
+     * <p>模组原型里烧进了 {@code moduleAttributeMultiplier} /
+     * {@code keyAttributeMultiplier} 两条配置以及 {@code disabledModuleTypes} 的取舍
+     * （见 {@code ModuleRegistryHelper#register}），不重建的话改完配置要重启才生效。</p>
+     *
+     * <p>只翻标志位、不在这里重建：重建要跑完整张表（几十到上百个 register），
+     * 而本方法是被 Forge 的配置监视线程调用的，不该在那上面做重活；
+     * 等真正有人取模组时再走 {@code ensureInitialized()}。</p>
+     *
+     * <p>同时把静态表换成一张新的空表：图鉴（{@code ModuleCodexData})与
+     * {@code registerCreativeTabItems} 都是用 {@code itemStackList.isEmpty()} 做守卫的，
+     * 换成空表才能让那些守卫重新触发。</p>
+     */
+    public static synchronized void invalidateModuleList() {
+        isInitialized = false;
+        itemStackList = new ArrayList<>();
+    }
+
+    /**
      * 初始化模组列表
      */
     private static void initializeModuleList() {
-        itemStackList.clear();
+        // ⭐ 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
+        //    填完之后在方法末尾一次性换掉静态字段的引用。
+        //
+        //    不能就地 clear() 再填：配置热重载后本方法会被再次调用，
+        //    而图鉴界面与创造栏都是直接读这个 public 静态表的，
+        //    就地清空再慢慢填会让它们看到半成品。
+        //    换引用则让旧表对读者保持完整，字段已声明 volatile 保证可见性。
+        List<ItemStack> itemStackList = new ArrayList<>();
 
         // 压力点
         ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
@@ -560,6 +587,9 @@ public class WeaponCommonModule extends AbstractWeaponModule {
                     "kuvaweapon.item_module.headshot_precision", "headshot_precision",
                     new Object[]{"headshot_damage", 0.60001f, "accuracy", 0.30001f});
         }
+
+        // 填完才发布：读者要么看到旧表，要么看到完整的新表。
+        WeaponCommonModule.itemStackList = itemStackList;
     }
 
     /**

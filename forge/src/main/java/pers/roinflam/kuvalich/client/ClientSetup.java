@@ -44,6 +44,25 @@ public class ClientSetup {
     }
 
     /**
+     * 配置变动后丢掉图鉴缓存（客户端专有）。
+     *
+     * <p>图鉴是在八个模组原型池之上再建的一层缓存（{@code CodexEntry} 列表），
+     * {@code ModConfig#onConfigReload} 拆掉池子之后它也必须跟着丢，
+     * 否则图鉴会一直显示旧数值。</p>
+     *
+     * <p>为何不写在 {@code ModConfig} 里：{@code ModuleCodexData} 引用了
+     * {@code net.minecraft.client.Minecraft}，从两端共用的配置类去碰它会在
+     * 专用服务端上加载到客户端专有类。放在这个 {@code Dist.CLIENT}
+     * 的订阅者里就不存在这个问题。</p>
+     *
+     * @param event 配置变动事件
+     */
+    @SubscribeEvent
+    public static void onConfigReload(net.minecraftforge.fml.event.config.ModConfigEvent event) {
+        pers.roinflam.kuvalich.client.gui.codex.ModuleCodexData.invalidateCache();
+    }
+
+    /**
      * 面板描述表自检
      *
      * <p>{@code WeaponPanelCatalog.SPECS} 是面板「有哪些词条」的唯一真相来源，
