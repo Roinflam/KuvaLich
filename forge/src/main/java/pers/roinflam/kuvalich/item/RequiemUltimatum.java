@@ -1,9 +1,10 @@
 package pers.roinflam.kuvalich.item;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -46,7 +47,7 @@ public class RequiemUltimatum extends Item {
         if (item instanceof RequiemUltimatum) {
             List<Component> tooltip = event.getToolTip();
             tooltip.add(1, Component.translatable(item.getDescriptionId() + ".tooltip")
-                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+                    .withStyle(style -> style.withColor(TextColor.fromRgb(KuvaPalette.MUTED)).withItalic(true)));
         }
     }
 

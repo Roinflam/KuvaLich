@@ -1,7 +1,6 @@
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -26,6 +25,8 @@ import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.utils.RandomUtil;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
 /**
  * 赤毒奴仆实体
@@ -205,17 +206,18 @@ public class KuvaSlaveEntity extends AbstractKuva {
             DecryptionHudPacket.sendProgress(player, requiemCard, addPotion, levelBefore);
 
             boolean max = requiemCard.getPointsRequired() == -1;
-            player.sendSystemMessage(Component.translatable(
+            // 走动作栏而不是聊天框：刷奴仆时这条每杀一只发一次，
+            // 而顶部的解密 HUD 已经在显示同一件事，进聊天历史纯属刷屏。
+            PlayerFeedback.actionBar(player, KuvaPalette.PROGRESS,
                     "message.kuvalich.getPoints",
                     addPotion,
                     max ? "Max" : requiemCard.getDecryptionProgress(),
-                    max ? "Max" : requiemCard.getPointsRequired()
-            ));
+                    max ? "Max" : requiemCard.getPointsRequired());
         } else {
             // 已满级（线索全部揭示）：进度未变化，但仍补发一个 added=0 的进度包，
             // 使顶部HUD在满级后继续击杀时也能弹出（显示满进度条与提示，不触发闪光）
             DecryptionHudPacket.sendProgress(player, requiemCard, 0, levelBefore);
-            player.sendSystemMessage(Component.translatable("message.kuvalich.maxLevel"));
+            PlayerFeedback.actionBar(player, KuvaPalette.ACCENT, "message.kuvalich.maxLevel");
         }
     }
 

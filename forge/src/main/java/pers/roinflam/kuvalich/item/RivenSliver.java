@@ -1,8 +1,9 @@
 package pers.roinflam.kuvalich.item;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
@@ -91,7 +92,7 @@ public class RivenSliver extends Item implements GeoItem {
         if (item instanceof RivenSliver) {
             List<Component> tooltip = event.getToolTip();
             tooltip.add(1, Component.translatable(item.getDescriptionId() + ".tooltip")
-                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+                    .withStyle(style -> style.withColor(TextColor.fromRgb(KuvaPalette.MUTED)).withItalic(true)));
         }
     }
 

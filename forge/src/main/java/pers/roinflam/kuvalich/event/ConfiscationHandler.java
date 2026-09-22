@@ -1,7 +1,5 @@
 package pers.roinflam.kuvalich.event;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -11,6 +9,8 @@ import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.RandomUtil;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
 /**
  * 赤毒玄骸没收物品事件处理器（1.20.1版本）
@@ -108,6 +108,6 @@ public class ConfiscationHandler {
      */
     private static void sendConfiscationMessage(Player player) {
         String messageKey = CONFISCATION_MESSAGES[RandomUtil.getInt(0, CONFISCATION_MESSAGES.length - 1)];
-        player.sendSystemMessage(Component.translatable(messageKey).withStyle(ChatFormatting.DARK_RED));
+        PlayerFeedback.chat(player, KuvaPalette.LICH, messageKey);
     }
 }

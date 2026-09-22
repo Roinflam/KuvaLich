@@ -1,7 +1,8 @@
 package pers.roinflam.kuvalich.base.item;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
@@ -51,10 +52,10 @@ public abstract class AbstractRequiemCard extends Item {
             String descriptionId = item.getDescriptionId();
 
             tooltip.add(1, Component.translatable(descriptionId + ".first_tooltip")
-                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+                    .withStyle(style -> style.withColor(TextColor.fromRgb(KuvaPalette.MUTED)).withItalic(true)));
 
             tooltip.add(2, Component.translatable(descriptionId + ".second_tooltip")
-                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+                    .withStyle(style -> style.withColor(TextColor.fromRgb(KuvaPalette.MUTED)).withItalic(true)));
         }
     }
 

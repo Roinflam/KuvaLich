@@ -1,7 +1,5 @@
 package pers.roinflam.kuvalich.enchantment;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
@@ -18,6 +16,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
 import pers.roinflam.kuvalich.base.enchantment.AbstractEnchantment;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -96,8 +96,7 @@ public class DeathResistanceEnchantment extends AbstractEnchantment {
         evt.setAmount(newDamage);
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 0.6F, 1.4F);
-        player.displayClientMessage(Component.translatable("message.kuvalich.deathResistance", cost)
-                .withStyle(ChatFormatting.GOLD), true);
+        PlayerFeedback.actionBar(player, KuvaPalette.ACCENT, "message.kuvalich.deathResistance", cost);
         LogUtil.debugEvent("死亡抵抗", player.getName().getString(),
                 "等级=" + level + " 致命伤害=" + damage + " 消耗经验=" + cost);
     }

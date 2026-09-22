@@ -1,7 +1,7 @@
 package pers.roinflam.kuvalich.item;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -16,6 +16,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -42,7 +44,7 @@ public class RequiemRiddle extends Item {
         if (item instanceof RequiemRiddle) {
             List<Component> tooltip = event.getToolTip();
             tooltip.add(1, Component.translatable(item.getDescriptionId() + ".tooltip")
-                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+                    .withStyle(style -> style.withColor(TextColor.fromRgb(KuvaPalette.MUTED)).withItalic(true)));
         }
     }
 
@@ -71,19 +73,17 @@ public class RequiemRiddle extends Item {
                     // 尚未解密完成 / Not yet fully decrypted
                     // ⭐ 这里原先多传了一个 getKuvaLevel()，但译文里没有任何占位符，
                     //    Component.translatable 会把多余参数静默丢弃 —— 删掉以免误导
-                    player.sendSystemMessage(Component.translatable(
-                            "message.kuvalich.requiemRiddleNotAnswer"
-                    ).withStyle(ChatFormatting.RED));
+                    PlayerFeedback.chat(player, KuvaPalette.DANGER,
+                            "message.kuvalich.requiemRiddleNotAnswer");
 
                     player.getCooldowns().addCooldown(itemstack.getItem(), 200);
                 } else {
                     // 显示答案 / Show answers
-                    player.sendSystemMessage(Component.translatable(
+                    PlayerFeedback.chat(player, KuvaPalette.ACCENT,
                             "message.kuvalich.requiemRiddleAnswer",
                             getCardName(requiemCard.getOneAnswer()),
                             getCardName(requiemCard.getTwoAnswer()),
-                            getCardName(requiemCard.getThreeAnswer())
-                    ).withStyle(ChatFormatting.GOLD));
+                            getCardName(requiemCard.getThreeAnswer()));
 
                     itemstack.shrink(1);
                 }

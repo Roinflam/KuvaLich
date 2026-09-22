@@ -1,9 +1,7 @@
 package pers.roinflam.kuvalich.entity;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -30,6 +28,8 @@ import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.RandomUtil;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
 import java.util.*;
 
@@ -501,8 +501,8 @@ public class KuvaMasterEntity extends AbstractKuva {
         }
 
         int itemCount = requiemCard.getConfiscatedItemCount();
-        player.sendSystemMessage(Component.translatable("message.kuvalich.confiscation.return", itemCount)
-                .withStyle(ChatFormatting.DARK_RED));
+        // 物品被还回来了是好消息，不该和玄骸的嘲讽同色
+        PlayerFeedback.chat(player, KuvaPalette.SUCCESS, "message.kuvalich.confiscation.return", itemCount);
 
         List<ItemStack> confiscatedItems = requiemCard.clearAndGetConfiscatedItems();
         for (ItemStack item : confiscatedItems) {
@@ -517,7 +517,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      */
     private void sendDeathMessage(Player player) {
         String messageKey = DEATH_MESSAGES[RandomUtil.getInt(0, DEATH_MESSAGES.length - 1)];
-        player.sendSystemMessage(Component.translatable(messageKey).withStyle(ChatFormatting.DARK_RED));
+        PlayerFeedback.chat(player, KuvaPalette.LICH, messageKey);
     }
 
     /**
@@ -559,7 +559,7 @@ public class KuvaMasterEntity extends AbstractKuva {
                     Math.min(ModConfig.KUVA_LICH.minimumLevel.get(),
                             requiemCard.getMinimumLevelWeapon() + randomNum)
             );
-            sendMessage(player, "message.kuvalich.minimumLevelWeapon",
+            PlayerFeedback.chat(player, KuvaPalette.SUCCESS, "message.kuvalich.minimumLevelWeapon",
                     requiemCard.getMinimumLevelWeapon());
         }
 
@@ -568,7 +568,7 @@ public class KuvaMasterEntity extends AbstractKuva {
                     Math.min(ModConfig.KUVA_LICH.maximumLevel.get(),
                             requiemCard.getMaximumLevelWeapon() + randomNum)
             );
-            sendMessage(player, "message.kuvalich.maximumLevelWeapon",
+            PlayerFeedback.chat(player, KuvaPalette.SUCCESS, "message.kuvalich.maximumLevelWeapon",
                     requiemCard.getMaximumLevelWeapon());
         }
     }
@@ -582,15 +582,16 @@ public class KuvaMasterEntity extends AbstractKuva {
      */
     private void handleFailedDecryption(Player player, RequiemCard requiemCard) {
         if (requiemCard.isFirstCorrectAnswer()) {
-            sendMessage(player, "message.kuvalich.firstCorrect", ChatFormatting.RED);
+            // 猜对一部分是半好半坏，用 WARN 与整条失败的 DANGER 分开
+            PlayerFeedback.chat(player, KuvaPalette.WARN, "message.kuvalich.firstCorrect");
             if (requiemCard.isTwoCorrectAnswer()) {
-                sendMessage(player, "message.kuvalich.secondCorrect", ChatFormatting.RED);
+                PlayerFeedback.chat(player, KuvaPalette.WARN, "message.kuvalich.secondCorrect");
             }
         }
 
         requiemCard.setKuvaLevel(requiemCard.getKuvaLevel() + 1);
-        sendMessage(player, "message.kuvalich.failedToDecrypt",
-                ChatFormatting.RED, requiemCard.getKuvaLevel());
+        PlayerFeedback.chat(player, KuvaPalette.DANGER, "message.kuvalich.failedToDecrypt",
+                requiemCard.getKuvaLevel());
     }
 
     /**
@@ -613,8 +614,9 @@ public class KuvaMasterEntity extends AbstractKuva {
             DecryptionHudPacket.sendProgress(player, requiemCard, addPotion, levelBefore);
 
             boolean max = requiemCard.getPointsRequired() == -1;
-            sendMessage(player, "message.kuvalich.getPoints",
-                    ChatFormatting.RED,
+            // 与奴仆那条同通道：顶部解密 HUD 已经在显示，这里只做一次性确认
+            PlayerFeedback.actionBar(player, KuvaPalette.PROGRESS,
+                    "message.kuvalich.getPoints",
                     addPotion,
                     max ? "Max" : requiemCard.getDecryptionProgress(),
                     max ? "Max" : requiemCard.getPointsRequired());
@@ -623,20 +625,12 @@ public class KuvaMasterEntity extends AbstractKuva {
             // 使顶部HUD在满级后继续击杀时也能弹出（显示满进度条与提示，不触发闪光）
             DecryptionHudPacket.sendProgress(player, requiemCard, 0, levelBefore);
             if (!requiemCard.isCorrectAnswer() && !requiemCard.isReadyCard()) {
-                sendMessage(player, "message.kuvalich.maxLevel", ChatFormatting.RED);
+                PlayerFeedback.actionBar(player, KuvaPalette.ACCENT, "message.kuvalich.maxLevel");
             }
         }
     }
 
     // ==================== 工具方法 ====================
-
-    private void sendMessage(Player player, String key, Object... args) {
-        sendMessage(player, key, ChatFormatting.GREEN, args);
-    }
-
-    private void sendMessage(Player player, String key, ChatFormatting color, Object... args) {
-        player.sendSystemMessage(Component.translatable(key, args).withStyle(color));
-    }
 
     /**
      * 在指定位置生成掉落物实体
