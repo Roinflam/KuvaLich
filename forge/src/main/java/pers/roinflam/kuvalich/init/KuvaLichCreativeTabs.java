@@ -85,6 +85,7 @@ public class KuvaLichCreativeTabs {
                         output.accept(KuvaLichBlocks.REQUIEM_WEAPON_TABLE.get());
                         output.accept(KuvaLichBlocks.REQUIEM_WARFRAME_TABLE.get());
                         output.accept(KuvaLichItems.FORMA.get());
+                        output.accept(KuvaLichItems.SHADOW_FORMA.get());
 
                         // ========== 武器模组 / Item Modules ==========
                         WeaponCommonModule.registerCreativeTabItems(output);

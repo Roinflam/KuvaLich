@@ -16,7 +16,7 @@ import java.util.List;
  * 整行挤成一堵墙，tooltip 还被撑得很宽。</p>
  *
  * <p>现在把内容按「分组 + 单元格」描述出来，渲染时用 {@code Font#width} 按像素算列宽，
- * 标签左对齐、数值右对齐，中文和任何字体包下都不会错位；
+ * 标签、数值各自左对齐成竖线，中文和任何字体包下都不会错位；
  * 列数由 {@link ClientPanelGridTooltip} 根据内容多少自适应：
  * 属性少就一条一行（宽松好读），多到快超屏才自动切两列 / 三列。</p>
  *
@@ -60,7 +60,7 @@ public record PanelGridTooltip(List<Section> sections, int maxColumns) implement
     /**
      * 「标签 + 数值」成对的分组（最终面板 / 伤害增益 / 枪械 / 稀有 / 额外 / 其它）
      *
-     * <p>渲染时标签左对齐、数值右对齐，列数自适应。</p>
+     * <p>渲染时标签、数值各自左对齐，列数自适应。</p>
      */
     public record Pairs(@Nullable Component header, List<Cell> cells) implements Section {
         @Override

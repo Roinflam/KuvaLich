@@ -21,6 +21,7 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
 import pers.roinflam.kuvalich.item.Endo;
 import pers.roinflam.kuvalich.item.Forma;
+import pers.roinflam.kuvalich.item.ShadowForma;
 import pers.roinflam.kuvalich.item.Kuva;
 import pers.roinflam.kuvalich.item.LichReliquary;
 import pers.roinflam.kuvalich.item.RivenSliver;
@@ -207,6 +208,11 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
         if (weaponStack.getItem() instanceof WarframeRivenModule && materialStack.getItem() instanceof Kuva) {
             processWarframeRivenCycle(weaponStack, materialStack); return;
         }
+        // 暗影塑形块必须排在普通 Forma 之前：它也是 Forma 子类，未锁定时会被下一条分支截走并掷锁定
+        if (materialStack.getItem() instanceof ShadowForma && WeaponModuleHandler.hasBase(weaponStack)
+                && !KuvaWeaponUtil.hasType(weaponStack) && weaponStack.getCount() == 1) {
+            processShadowFormaReroll(weaponStack, materialStack); return;
+        }
         if (materialStack.getItem() instanceof Forma && WeaponModuleHandler.hasBase(weaponStack)
                 && !KuvaWeaponUtil.hasType(weaponStack) && !WeaponModuleHandler.isFormaLocked(weaponStack)
                 && weaponStack.getCount() == 1) {
@@ -313,6 +319,22 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
             weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
             baseAttributeJustProcessed = true;
         } catch (Exception e) { LogUtil.error("Forma洗面板失败", e); }
+    }
+
+    /** 暗影塑形块：先解锁再洗面板，本次不掷锁定概率 */
+    private void processShadowFormaReroll(ItemStack weaponStack, ItemStack materialStack) {
+        try {
+            ItemStack newWeapon = weaponStack.copy();
+            WeaponModuleHandler.clearFormaLocked(newWeapon);
+            if (!WeaponModuleHandler.clearBaseAttribute(newWeapon)) { return; }
+            WeaponModuleHandler.setBaseAttribute(newWeapon);
+            ItemStack newMaterial = materialStack.copy();
+            newMaterial.shrink(1);
+            materialHandler.setStackInSlot(0, newMaterial);
+            resultHandler.setStackInSlot(0, newWeapon);
+            weaponHandler.setStackInSlot(0, ItemStack.EMPTY);
+            baseAttributeJustProcessed = true;
+        } catch (Exception e) { LogUtil.error("暗影Forma洗面板失败", e); }
     }
 
     private void processAddBaseAttribute(ItemStack weaponStack, ItemStack materialStack) {

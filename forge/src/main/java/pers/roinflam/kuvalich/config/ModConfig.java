@@ -182,9 +182,6 @@ public final class ModConfig {
         // ===== 教程书 / Guidebook =====
         public final ForgeConfigSpec.BooleanValue enableGuidebook;
 
-        // ===== 空 NBT 清理 / Empty NBT Cleanup =====
-        public final ForgeConfigSpec.BooleanValue cleanupEmptyItemTags;
-
         // ===== 挖矿倍率 / Ore Drop Multiplier =====
         public final ForgeConfigSpec.BooleanValue enableOreDropMultiplier;
         public final ForgeConfigSpec.DoubleValue oreDropEffectMultiplier;
@@ -789,22 +786,6 @@ public final class ModConfig {
                     .comment("Give guidebook on first join (requires Patchouli)")
                     .comment("首次进服时发放教程书(需要安装帕秋莉)")
                     .define("enableGuidebook", true);
-
-            builder.comment("")
-                    .comment("═══ Empty NBT Cleanup / 空 NBT 清理 ═══")
-                    .comment("Versions before 2.7.0 wrote an empty {} NBT tag onto every item the mouse")
-                    .comment("hovered over. Such items no longer stack with clean ones, and the damage")
-                    .comment("persists in existing saves even after the bug itself was fixed.")
-                    .comment("2.7.0 之前的版本会给鼠标划过的每个物品写一个空 {} NBT 标签。")
-                    .comment("这种物品无法与干净的同种物品堆叠，且即使 bug 本身修好了，")
-                    .comment("已经受损的存档里的物品依然是坏的。");
-
-            cleanupEmptyItemTags = builder
-                    .comment("Strip empty {} NBT tags from player inventories on the server")
-                    .comment("在服务端清除玩家背包里的空 {} NBT 标签")
-                    .comment("Only a COMPLETELY empty tag is removed - any item carrying real data is untouched.")
-                    .comment("只有完全为空的标签才会被移除，带任何真实数据的物品都不会被动到。")
-                    .define("cleanupEmptyItemTags", true);
 
             builder.comment("")
                     .comment("═══ Ore Drop Multiplier / 挖矿倍率 ═══")

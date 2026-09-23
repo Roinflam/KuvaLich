@@ -109,7 +109,7 @@ public final class WeaponPanelComposer {
         //    「近战武器不显示枪械词条」就不再成立。
         boolean applyGates = TooltipConfig.PANEL.hideIrrelevantGroups.get();
 
-        // ⭐ 四个视图<b>全部</b>走同一套结构化网格：列宽按像素实测、标签左对齐数值右对齐、
+        // ⭐ 四个视图<b>全部</b>走同一套结构化网格：列宽按像素实测、标签与数值各自左对齐、
         //    同一套 RGB 配色。改造中途只有默认视图换了新排版，三个功能键视图还留着
         //    老的纯文本 + ChatFormatting，按下 SHIFT 就像换了个模组 —— 那是个遗留状态，
         //    不是设计。

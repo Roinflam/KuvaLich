@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 武器面板的渲染器：按像素算列宽，标签左对齐、数值右对齐，列数自适应
+ * 武器面板的渲染器：按像素算列宽，标签与数值各自左对齐成两条竖线，列数自适应
  *
  * <p><b>自适应规则</b>：先按一列（一条属性一行）排；如果总行数超过
  * {@code panel.maxLines}，再试两列、三列，取<b>第一个放得下</b>的方案。
@@ -42,6 +42,9 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
 
     /** 相邻两列之间的间隙 */
     private static final int COLUMN_GAP = 10;
+
+    /** 模组名单的列间隙：卡名各有品质颜色，靠颜色就分得开，不必像「标签 数值」那样留宽缝 */
+    private static final int NAME_GAP = 6;
 
     /** 背景条左右各外扩多少像素（让底色包住内容而不是刚好贴边） */
     private static final int BAND_PAD = 2;
@@ -107,7 +110,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
 
         Attempt best = null;
         for (int columns = 1; columns <= columnCap; columns++) {
-            Attempt attempt = build(data, font, columns);
+            Attempt attempt = build(data, font, columns, maxWidth);
 
             if (attempt.width > maxWidth) {
                 // 再加列只会更宽，用上一个能放下的方案
@@ -122,7 +125,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
         if (best == null) {
             // 连一列都塞不进 maxWidth（极窄屏 / 极端 GUI 缩放）：还是按一列画，让它自己溢出，
             // 总比整块不显示强
-            best = build(data, font, 1);
+            best = build(data, font, 1, maxWidth);
         }
 
         List<Line> lines = best.lines;
@@ -140,35 +143,52 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
     private record Attempt(List<Line> lines, int width) {
     }
 
-    private static Attempt build(PanelGridTooltip data, Font font, int columns) {
-        List<Line> out = new ArrayList<>();
+    private static Attempt build(PanelGridTooltip data, Font font, int columns, int widthCap) {
+        List<PanelGridTooltip.Section> sections = data.sections();
+        List<List<List<Piece>>> sectionRows = new ArrayList<>(sections.size());
         int maxWidth = 0;
-        // 只对「有标题的分组」交替上底色：Forma 锁定行这种游离的单行不参与
-        int bandIndex = 0;
 
-        for (PanelGridTooltip.Section section : data.sections()) {
-            boolean band = false;
+        // 第一遍：除模组名单外的分组先排，得出面板本来就有的宽度
+        for (PanelGridTooltip.Section section : sections) {
             if (section.header() != null) {
-                // ⭐ 标题独立成行、不缩进，内容缩进在它下面 —— 层次靠位置和颜色，不靠符号
-                out.add(new Line(List.of(new Piece(section.header(), 0, PanelGridTooltip.Align.LEFT)), false));
                 maxWidth = Math.max(maxWidth, font.width(section.header()));
-                band = bandIndex++ % 2 == 0;
             }
-
             List<List<Piece>> rows = new ArrayList<>();
             if (section instanceof PanelGridTooltip.Pairs pairs) {
                 maxWidth = Math.max(maxWidth, layoutPairs(pairs, font, columns, rows));
             } else if (section instanceof PanelGridTooltip.Table table) {
                 maxWidth = Math.max(maxWidth, layoutTable(table, font, rows));
-            } else if (section instanceof PanelGridTooltip.Columns cols) {
-                maxWidth = Math.max(maxWidth, layoutColumns(cols, font, columns, rows));
             } else if (section instanceof PanelGridTooltip.Flow flow) {
                 for (Component line : flow.lines()) {
                     rows.add(List.of(new Piece(line, INDENT, PanelGridTooltip.Align.LEFT)));
                     maxWidth = Math.max(maxWidth, INDENT + font.width(line));
                 }
             }
-            for (List<Piece> row : rows) {
+            sectionRows.add(rows);
+        }
+
+        // 第二遍：模组名单可以往宽里多排一列来消掉末行空格，上限是面板允许的最大宽度
+        //
+        // ⭐ 曾经把上限定为「其余分组的宽度」，结果装满 8 张 Prime 卡时名字太长，四列永远超预算，
+        //    末行空格照旧。三列模式本来就是因为太高才启用的，拿宽度换掉一行 + 空格正合其意。
+        for (int i = 0; i < sections.size(); i++) {
+            if (sections.get(i) instanceof PanelGridTooltip.Columns cols) {
+                maxWidth = Math.max(maxWidth, layoutColumns(cols, font, columns, widthCap, sectionRows.get(i)));
+            }
+        }
+
+        List<Line> out = new ArrayList<>();
+        // 只对「有标题的分组」交替上底色：Forma 锁定行这种游离的单行不参与
+        int bandIndex = 0;
+        for (int i = 0; i < sections.size(); i++) {
+            PanelGridTooltip.Section section = sections.get(i);
+            boolean band = false;
+            if (section.header() != null) {
+                // ⭐ 标题独立成行、不缩进，内容缩进在它下面 —— 层次靠位置和颜色，不靠符号
+                out.add(new Line(List.of(new Piece(section.header(), 0, PanelGridTooltip.Align.LEFT)), false));
+                band = bandIndex++ % 2 == 0;
+            }
+            for (List<Piece> row : sectionRows.get(i)) {
                 out.add(new Line(row, band));
             }
         }
@@ -191,8 +211,8 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
         // ⭐ 只要组里有一条「排不进格子」的宽词条，<b>整组</b>就退回单列。
         //
         //    试过只让那一条独占行、其余照常分列，结果更难看：同一组里出现了三个
-        //    不同的右边界（第一列的值、第二列的值、独占行的值各对齐各的），
-        //    数值参差不齐。单列虽然多占几行，但所有数值共用一个右边界，
+        //    不同的数值起点（第一列的值、第二列的值、独占行的值各对齐各的），
+        //    数值参差不齐。单列虽然多占几行，但所有数值共用一条起始竖线，
         //    一眼扫下去是一条直线。
         for (PanelGridTooltip.Cell cell : cells) {
             if (cell.wide()) {
@@ -205,6 +225,11 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
 
         // 每一列各自算标签宽与数值宽 —— 列宽按该列实际内容定，不搞全局统一宽度，
         // 否则一条特别长的词条会把所有列都撑开
+        //
+        // ⭐ 数值左对齐（紧跟标签列之后），不贴列右边界。原先右对齐时，同列里一个长值
+        //    会把短值往右推，短值与自己标签的间隙大过列间距，看起来像是下一列的值。
+        //    各行单位混杂（% / x / m），右对齐带来的「上下比大小」本来也用不上。
+        //    击杀叠层表（layoutTable）的数值列是同类加成，那里仍按各列声明的对齐方式（右对齐）。
         int[] labelW = new int[cols];
         int[] valueW = new int[cols];
         for (int i = 0; i < cells.size(); i++) {
@@ -214,11 +239,13 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
         }
 
         int[] colX = new int[cols];
+        int[] valueX = new int[cols];
         int[] colRight = new int[cols];
         int cursor = INDENT;
         for (int c = 0; c < cols; c++) {
             colX[c] = cursor;
-            colRight[c] = cursor + labelW[c] + LABEL_VALUE_GAP + valueW[c];
+            valueX[c] = cursor + labelW[c] + LABEL_VALUE_GAP;
+            colRight[c] = valueX[c] + valueW[c];
             cursor = colRight[c] + COLUMN_GAP;
         }
 
@@ -231,7 +258,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
                 }
                 PanelGridTooltip.Cell cell = cells.get(idx);
                 line.add(new Piece(cell.label(), colX[c], PanelGridTooltip.Align.LEFT));
-                line.add(new Piece(cell.value(), colRight[c], PanelGridTooltip.Align.RIGHT));
+                line.add(new Piece(cell.value(), valueX[c], PanelGridTooltip.Align.LEFT));
             }
             out.add(line);
         }
@@ -240,7 +267,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
     }
 
     /**
-     * 整组单列：一条一行，所有数值共用同一个右边界
+     * 整组单列：一条一行，所有数值共用同一条起始竖线（左对齐，理由见 {@link #layoutPairs}）
      *
      * <p>保持声明顺序，不把宽词条挪到末尾 —— 顺序本身是有意义的
      * （「最终数值」组就是按基础伤害 → 攻击速度 → 触发几率 → 暴击的顺序读的）。</p>
@@ -248,17 +275,19 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
      * @return 这一组占到的右边界
      */
     private static int layoutSingleColumn(List<PanelGridTooltip.Cell> cells, Font font, List<List<Piece>> out) {
-        int right = INDENT;
+        int labelW = 0;
+        int valueW = 0;
         for (PanelGridTooltip.Cell cell : cells) {
-            right = Math.max(right,
-                    INDENT + font.width(cell.label()) + LABEL_VALUE_GAP + font.width(cell.value()));
+            labelW = Math.max(labelW, font.width(cell.label()));
+            valueW = Math.max(valueW, font.width(cell.value()));
         }
+        int valueX = INDENT + labelW + LABEL_VALUE_GAP;
         for (PanelGridTooltip.Cell cell : cells) {
             out.add(List.of(
                     new Piece(cell.label(), INDENT, PanelGridTooltip.Align.LEFT),
-                    new Piece(cell.value(), right, PanelGridTooltip.Align.RIGHT)));
+                    new Piece(cell.value(), valueX, PanelGridTooltip.Align.LEFT)));
         }
-        return right;
+        return valueX + valueW;
     }
 
     /**
@@ -266,42 +295,119 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
      *
      * <p>为什么不继续用流式打包：流式排出来行尾会挂一个孤零零的分隔符，
      * 而且条目左边界参差不齐，跟面板其余部分那套「列对齐」的视觉完全不是一路。</p>
+     *
+     * <p>⭐ 列数不死跟全局列数。装满 8 张卡时全局三列会排成 3+3+2，末行空一格很扎眼；
+     * 所以在「不增加行数、不超过面板最大宽度」的前提下，挑末行空格最少的列数 ——
+     * 8 张卡就变成 4×2（还少占一行）。只有窄屏下四列连最大宽度都放不下时才维持原列数。</p>
+     *
+     * @param budget 面板允许的最大宽度；多排一列不许超过它
      */
-    private static int layoutColumns(PanelGridTooltip.Columns section, Font font, int columns,
+    private static int layoutColumns(PanelGridTooltip.Columns section, Font font, int columns, int budget,
                                      List<List<Piece>> out) {
         List<Component> items = section.items();
         if (items.isEmpty()) {
             return 0;
         }
+        int n = items.size();
         // 条目少时不必强行分列；条目多时跟随全局列数，但至少两列，否则 8 张卡要占 8 行
-        int cols = items.size() <= 2 ? items.size() : Math.max(2, Math.min(columns, items.size()));
-        int rows = (items.size() + cols - 1) / cols;
+        int base = n <= 2 ? n : Math.max(2, Math.min(columns, n));
+        int baseRows = (n + base - 1) / base;
+        int allowedWidth = Math.max(budget, columnsWidth(items, font, base));
 
-        int[] colW = new int[cols];
-        for (int i = 0; i < items.size(); i++) {
-            int c = i % cols;
-            colW[c] = Math.max(colW[c], font.width(items.get(i)));
+        int cols = base;
+        int bestEmpty = base * baseRows - n;
+        for (int c = 2; c <= Math.min(n, base + 1) && bestEmpty > 0; c++) {
+            int rows = (n + c - 1) / c;
+            int empty = c * rows - n;
+            if (c == base || rows > baseRows || empty >= bestEmpty) {
+                continue;
+            }
+            if (columnsWidth(items, font, c) > allowedWidth) {
+                continue;
+            }
+            cols = c;
+            bestEmpty = empty;
         }
 
-        int[] colX = new int[cols];
+        int[][] grid = arrange(items, font, cols);
+        int[] colW = columnWidths(grid, items, font);
+        int[] colX = new int[colW.length];
         int cursor = INDENT;
-        for (int c = 0; c < cols; c++) {
+        for (int c = 0; c < colW.length; c++) {
             colX[c] = cursor;
-            cursor += colW[c] + COLUMN_GAP;
+            cursor += colW[c] + NAME_GAP;
         }
 
-        for (int r = 0; r < rows; r++) {
-            List<Piece> line = new ArrayList<>(cols);
-            for (int c = 0; c < cols; c++) {
-                int idx = r * cols + c;
-                if (idx >= items.size()) {
-                    break;
+        for (int[] row : grid) {
+            List<Piece> line = new ArrayList<>(row.length);
+            for (int c = 0; c < row.length; c++) {
+                if (row[c] >= 0) {
+                    line.add(new Piece(items.get(row[c]), colX[c], PanelGridTooltip.Align.LEFT));
                 }
-                line.add(new Piece(items.get(idx), colX[c], PanelGridTooltip.Align.LEFT));
             }
             out.add(line);
         }
-        return cursor - COLUMN_GAP;
+        return cursor - NAME_GAP;
+    }
+
+    /**
+     * 把条目摆进 {@code cols} 列：返回 [行][列] 的条目下标，空位为 -1
+     *
+     * <p>⭐ 多行时<b>按名字宽度从长到短、逐列往下填</b>，而不是按装配顺序逐行填。
+     * 每列宽度取该列最长的名字，按装配顺序排时「屠魔圣典 Prime」和「辐射弹药」会落在同一列，
+     * 短名后面白白空出一大截；长名跟长名、短名跟短名放一起，整块能窄一截
+     * （满装 8 张 Prime 为主的卡约省 30px）。代价是名单不再对应槽位顺序 —— 名单只用来认卡，
+     * 槽位顺序对玩家没有意义。只有一行时保持原顺序（一行怎么排总宽都一样）。</p>
+     */
+    private static int[][] arrange(List<Component> items, Font font, int cols) {
+        int n = items.size();
+        int rows = (n + cols - 1) / cols;
+        if (rows > 1) {
+            // 逐列往下填时实际用到的列数（如 6 条要 4 列 → 两行 → 只用满 3 列），别留一整列空的
+            cols = (n + rows - 1) / rows;
+        }
+        int[][] grid = new int[rows][cols];
+        for (int[] row : grid) {
+            java.util.Arrays.fill(row, -1);
+        }
+        if (rows == 1) {
+            for (int i = 0; i < n; i++) {
+                grid[0][i] = i;
+            }
+            return grid;
+        }
+        List<Integer> order = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            order.add(i);
+        }
+        // 稳定排序：等宽的名字保持原先的相对顺序
+        order.sort((a, b) -> Integer.compare(font.width(items.get(b)), font.width(items.get(a))));
+        for (int k = 0; k < n; k++) {
+            grid[k % rows][k / rows] = order.get(k);
+        }
+        return grid;
+    }
+
+    /** 每一列的宽度（取该列最长的名字） */
+    private static int[] columnWidths(int[][] grid, List<Component> items, Font font) {
+        int[] colW = new int[grid[0].length];
+        for (int[] row : grid) {
+            for (int c = 0; c < row.length; c++) {
+                if (row[c] >= 0) {
+                    colW[c] = Math.max(colW[c], font.width(items.get(row[c])));
+                }
+            }
+        }
+        return colW;
+    }
+
+    /** 按 {@code cols} 列摆开后的右边界 */
+    private static int columnsWidth(List<Component> items, Font font, int cols) {
+        int width = INDENT - NAME_GAP;
+        for (int w : columnWidths(arrange(items, font, cols), items, font)) {
+            width += w + NAME_GAP;
+        }
+        return width;
     }
 
     /** 固定列结构的表格（叠层）：列宽取该列最宽的内容 */

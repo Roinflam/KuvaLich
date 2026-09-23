@@ -142,6 +142,12 @@ public class WeaponModuleHandler {
         itemStack.setTag(nbt);
     }
 
+    public static void clearFormaLocked(ItemStack itemStack) {
+        var nbt = itemStack.getTag();
+        if (nbt == null) { return; }
+        nbt.remove(FORMA_LOCK_KEY);
+    }
+
     // ========== 运行时属性收集 / Runtime Attribute Collection ==========
 
     /**

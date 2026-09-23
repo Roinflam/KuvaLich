@@ -259,6 +259,10 @@ public class KuvaLichItems {
     public static final RegistryObject<Item> FORMA = ITEMS.register("forma",
             () -> new Forma(new Item.Properties()));
 
+    // 暗影塑形块：无视锁定洗面板并解锁；无配方，仅创造模式获取
+    public static final RegistryObject<Item> SHADOW_FORMA = ITEMS.register("shadow_forma",
+            () -> new pers.roinflam.kuvalich.item.ShadowForma(new Item.Properties()));
+
     // ⭐ 内融核心（模组等级升级消耗品）/ Endo (Module level upgrade material)
     public static final RegistryObject<Item> ENDO = ITEMS.register("endo",
             () -> new pers.roinflam.kuvalich.item.Endo(new Item.Properties()));
