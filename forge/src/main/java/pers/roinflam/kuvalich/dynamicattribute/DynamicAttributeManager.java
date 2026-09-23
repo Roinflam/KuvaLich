@@ -95,6 +95,39 @@ public class DynamicAttributeManager {
         DynamicAttributeInstance old = findInstance(instances, instance.getAttribute());
 
         if (old != null) {
+            // ⭐ 性能优化（2026-09-23）：等级（amplifier）未变、且实体身上的修饰符完好时，
+            //    只刷新剩余时间，不摘/不重装 AttributeModifier。
+            //
+            //    背景：WarframeEffectHandler（每 5 tick）、WeaponCombatHandler（每 20 tick）
+            //    是把这套系统当"周期性心跳刷新"用的——不管等级变没变，每次都 new 一个
+            //    duration=常量 的新实例调 apply()。shouldOverride() 的判据里有一条"同级且时间更长"，
+            //    旧实例的 duration 每 tick 递减，新实例带着满时长进来，于是等级完全相同时
+            //    每次心跳也走"覆盖"分支：removeModifiers → instances.remove → instances.add →
+            //    applyModifiers，对每个目标属性做一次真实的 removeModifier + addPermanentModifier
+            //    （两次 setDirty；再加两次 getModifierUUID 的 MD5）。
+            //    量级：r3 白天高峰批 WarframeEffectHandler.onPlayerTick 下 apply() 子树
+            //    A 服 0.025 ms/tick、B 服 0.015 ms/tick（MFS 采样报告，stackq 口径）。
+            //
+            //    等价性：
+            //    - 同级时两条旧分支的结果都是 duration = max(旧, 新)，这里一致；
+            //    - ModifierConfig#calculate(amplifier) 只依赖 amplifier（DynamicAttributes 里
+            //      逐条核对过：固定值 baseValue*(amplifier+1) 或只读 level 的 lambda），同级算出的值相同；
+            //    - 旧流程每次心跳都会把修饰符按 UUID 重写一遍，顺带有"自愈"效果（修饰符若被别的代码/指令
+            //      摘掉或改值，下一次心跳就补回）。为保住这一点，modifiersIntact() 逐个核对
+            //      目标属性上同 UUID 修饰符的 operation 与数值，任何一个缺失或不符就退回原逻辑；
+            //    - 覆盖分支会把新实例换进列表（重置 tickCounter / totalTicksTriggered / initialDuration、
+            //      并把它挪到列表末尾）。这三个字段只经由 onTick 回调（EffectContext）被读取，
+            //      列表顺序只影响遍历顺序，无人依赖；所以范围收窄到"无 onTick 回调"的属性。
+            //      带 onTick 的 FIRE/ICE/POISON/RADIATION/CORROSION/PUNCTURE/VIRUS 完全走原逻辑。
+            //    唯一可观测差异：少了"值没变"的两次 setDirty，属性不再被无谓标脏
+            //    （客户端看到的属性值不变；本服 MFS 的 VanillaAttributeSyncMixin 本来也会按值去重）。
+            if (instance.getAmplifier() == old.getAmplifier()
+                    && old.getAttribute().getOnTickCallback() == null
+                    && modifiersIntact(entity, old)) {
+                old.refresh(Math.max(old.getDuration(), instance.getDuration()));
+                return;
+            }
+
             if (instance.shouldOverride(old)) {
                 // 新实例等级更高或时间更长,覆盖旧实例
                 // ⭐ 这里绝不能调用 remove(entity, old)：那条路径在列表变空时会把外层 key 一起删掉
@@ -111,6 +144,37 @@ public class DynamicAttributeManager {
 
         instances.add(instance);
         applyModifiers(entity, instance);
+    }
+
+    /**
+     * ⭐ 核对实例对应的全部修饰符是否仍按 {@link #applyModifiers} 会写入的样子挂在实体上
+     *
+     * <p>供 {@link #apply} 的同级快速路径使用：只有这里返回 true，跳过"摘 + 重装"才与原逻辑
+     * 结果完全一致。判据与 {@link #applyModifiers} 一一对应——目标属性不存在时同样跳过；
+     * 存在时要求同 UUID 修饰符存在、operation 相同、数值等于 {@code calculate(amplifier)}。</p>
+     *
+     * <p>成本：每个目标属性一次 {@code getAttribute} + 一次 {@code getModifier}（按 UUID 查表），
+     * 不写任何状态。</p>
+     *
+     * @param entity   目标实体
+     * @param instance 已在列表里的实例
+     * @return 全部修饰符完好返回 true
+     */
+    private static boolean modifiersIntact(@Nonnull LivingEntity entity, @Nonnull DynamicAttributeInstance instance) {
+        DynamicAttribute attribute = instance.getAttribute();
+        for (Map.Entry<Attribute, DynamicAttribute.ModifierConfig> entry : attribute.getModifierConfigs().entrySet()) {
+            AttributeInstance attrInstance = entity.getAttribute(entry.getKey());
+            if (attrInstance == null) continue;
+
+            AttributeModifier existing = attrInstance.getModifier(getModifierUUID(attribute.getRegistryName(), entry.getKey()));
+            DynamicAttribute.ModifierConfig config = entry.getValue();
+            if (existing == null
+                    || existing.getOperation() != config.operation
+                    || Double.compare(existing.getAmount(), config.calculate(instance.getAmplifier())) != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -316,6 +380,17 @@ public class DynamicAttributeManager {
     }
 
     /**
+     * ⭐ 性能优化（2026-09-23）：UUID 结果缓存。
+     * <p>{@code UUID.nameUUIDFromBytes} 内部每次都要 {@code MessageDigest.getInstance("MD5")}
+     * 再跑一遍摘要，外加一次 {@code String.getBytes}。r3 白天高峰批里 {@code getModifierUUID}
+     * 子树（{@code UUID.nameUUIDFromBytes} + {@code String.getBytes}）A 服约 0.008 ms/tick、
+     * B 服约 0.0045 ms/tick（MFS 采样报告，stackq 口径）。输入（attributeName + targetAttr）
+     * 只有 {@code DynamicAttributes} 里那几十种固定组合，结果是确定性哈希，
+     * 缓存对新等级/新实体同样有效，不是"越攒越多"的无界缓存。</p>
+     */
+    private static final Map<String, UUID> MODIFIER_UUID_CACHE = new ConcurrentHashMap<>();
+
+    /**
      * 使用确定性方法生成修改器UUID
      * 基于属性名和目标属性名生成固定的UUID，确保游戏重启后UUID保持一致
      *
@@ -328,9 +403,10 @@ public class DynamicAttributeManager {
         String namespace = "kuvalich:dynamic_attribute:";
         String fullName = namespace + attributeName + ":" + targetAttr.getDescriptionId();
 
-        // 使用UUID.nameUUIDFromBytes生成确定性UUID
+        // 使用UUID.nameUUIDFromBytes生成确定性UUID，结果缓存，避免重复算MD5
         // 相同的输入永远生成相同的UUID
-        return UUID.nameUUIDFromBytes(fullName.getBytes(StandardCharsets.UTF_8));
+        return MODIFIER_UUID_CACHE.computeIfAbsent(fullName,
+                key -> UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**

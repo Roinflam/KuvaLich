@@ -10,74 +10,27 @@ import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 模组基类（1.20.1版本，业务逻辑100%不变）
  * Module Base Class (1.20.1 version, business logic 100% unchanged)
  *
- * <p>⭐ 正确性修复：属性缓存此前直接用 {@code nbt.hashCode()}（32 位 int）当唯一键，
- * 两个 NBT 内容不同但哈希相同的模组会互相命中对方的缓存，
- * 静默返回错误的属性集合（战斗数值直接算错，且没有任何报错）。
- * 现在缓存条目额外保存一份建立时的 NBT 快照，命中时用 {@code equals} 校验，
- * 校验不通过视为未命中并重新计算覆盖，从而把哈希从"唯一键"降级为"索引"。</p>
- *
- * <p>⭐ 性能修复（本次）：缓存的键计算与内容校验此前基于
- * {@code itemStack.getTag()}（整把武器的完整 NBT，含 8 个模组的全部嵌套数据），
- * 一次 {@link #getAttributes} 最坏会做三次全树递归：
- * <ol>
- *   <li>{@code hashCode()} 递归整棵 NBT 树算索引；</li>
- *   <li>{@code equals()} 再递归整棵树做防碰撞校验；</li>
- *   <li>未命中时 {@code copy()} 深拷贝整棵树存快照。</li>
- * </ol>
- * 这三次遍历的成本远超"直接读一遍 attributeList"本身，缓存反而成了负优化。
- * 现在改为只基于模组自身的 {@code <modid>_modules} 子 tag，
- * 数据体积小一个数量级，防碰撞语义完全不变。</p>
+ * <p>⭐ 2026-09-23 性能修复：{@link #getAttributes} 的哈希校验缓存已整体移除，改为直接解析。
+ * 历史上这里先后有过两版缓存（完整 ItemStack NBT → 模组子 tag），都基于
+ * "{@code hashCode()} 当索引 + {@code equals()} 防碰撞校验" 的思路，命中一次要递归遍历
+ * 两遍模组子 tag（attributeList 的每个词条各算一次 hashCode、再 equals 一次），
+ * 未命中还要再加一次 {@code copy()} 深拷贝存快照——而"递归遍历一遍 attributeList 取值"
+ * 本身只需要一遍遍历。也就是说，命中时的缓存开销（两遍遍历）天然大于不缓存直接解析（一遍遍历），
+ * 缓存在这个访问模式下无论命中与否都不可能是净赢。
+ * 量级（MFS r3 采样报告，白天高峰批，stackq 口径）：{@code WarframeEffectHandler.onPlayerTick}
+ * 调用链下，{@code getAttributes} 里 {@code CompoundTag.hashCode} + {@code CacheEntry.matches}
+ * 两帧合计 A 服约 0.022 ms/tick（占该链 0.094 的约 24%）、B 服约 0.016 ms/tick（约 22%）。
+ * 直接解析后 {@code getAttributes} 退化成纯函数（无副作用、无跨调用状态），
+ * 输出内容与旧实现相同（旧缓存命中时已用 equals 保证内容一致），不存在旧版两次修过的哈希碰撞类问题。</p>
  */
 @Mod.EventBusSubscriber
 public abstract class AbstractModule extends Item {
-
-    private static final int MAX_CACHE_SIZE = 1000;
-    private static final long CACHE_DURATION_MS = 30000;
-    private static final Map<Integer, CacheEntry> ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
-
-    private static class CacheEntry {
-        final Set<Map.Entry<String, Double>> attributes;
-        final long timestamp;
-        /**
-         * ⭐ 建立缓存时的模组子 tag 快照（深拷贝）。
-         * <p>用于命中时校验内容是否真的一致，防止 hashCode 碰撞导致返回其他物品的属性。
-         * 必须是拷贝而非引用：若持有活引用，物品原地修改 NBT 后校验仍会通过，
-         * 反而会掩盖真实的缓存失效。</p>
-         */
-        @Nullable
-        final CompoundTag nbtSnapshot;
-
-        CacheEntry(Set<Map.Entry<String, Double>> attributes, @Nullable CompoundTag nbtSnapshot) {
-            this.attributes = attributes;
-            this.timestamp = System.currentTimeMillis();
-            this.nbtSnapshot = nbtSnapshot;
-        }
-
-        boolean isExpired() {
-            return System.currentTimeMillis() - timestamp > CACHE_DURATION_MS;
-        }
-
-        /**
-         * ⭐ 校验缓存条目是否真的属于给定的模组子 tag（防哈希碰撞）
-         *
-         * @param moduleNbt 当前物品的模组子 tag（可为 null）
-         * @return 内容一致返回 true
-         */
-        boolean matches(@Nullable CompoundTag moduleNbt) {
-            if (nbtSnapshot == null) {
-                return moduleNbt == null;
-            }
-            return nbtSnapshot.equals(moduleNbt);
-        }
-    }
 
     /**
      * 1.20.1构造函数：只接收Properties，不需要name参数
@@ -105,17 +58,14 @@ public abstract class AbstractModule extends Item {
         }
         CompoundTag kuvalichModule = itemStack.getOrCreateTagElement(Reference.MOD_ID + "_modules");
         kuvalichModule.putBoolean("Random", random);
-        invalidateCache(itemStack);
     }
 
     /**
-     * 读取模组的属性集合（带缓存）
+     * 读取模组的属性集合（直接解析，无缓存）
      *
-     * <p>⭐ 缓存命中条件：「模组子 tag 哈希相同 且 未过期 且 子 tag 内容一致」。
-     * 第三个条件用于消除哈希碰撞导致的错值。</p>
-     *
-     * <p>⭐ 性能：键与校验均只基于 {@code <modid>_modules} 子 tag，
-     * 不再遍历整把武器的完整 NBT。</p>
+     * <p>⭐ 2026-09-23：不再缓存。见类头 javadoc——这里的哈希校验缓存命中一次要遍历两遍
+     * attributeList（hashCode + equals），比直接解析一遍还贵，缓存不了了之。
+     * 纯函数：只读 {@code <modid>_modules} 子 tag 的 attributeList，无副作用。</p>
      *
      * @param itemStack 模组物品栈
      * @return 属性键值对集合，无模组数据时返回空集合
@@ -125,18 +75,9 @@ public abstract class AbstractModule extends Item {
             return Collections.emptySet();
         }
 
-        // ⭐ 只取模组自身的子 tag：既是缓存键的来源，也是属性数据的来源，一次读取复用
         CompoundTag moduleNbt = itemStack.getTagElement(Reference.MOD_ID + "_modules");
         if (moduleNbt == null) {
             return Collections.emptySet();
-        }
-
-        int cacheKey = moduleNbt.hashCode();
-
-        CacheEntry cached = ATTRIBUTE_CACHE.get(cacheKey);
-        // ⭐ matches 校验：哈希相同但内容不同时视为未命中
-        if (cached != null && !cached.isExpired() && cached.matches(moduleNbt)) {
-            return cached.attributes;
         }
 
         Map<String, Double> attributeMap = new LinkedHashMap<>();
@@ -150,18 +91,7 @@ public abstract class AbstractModule extends Item {
             );
         }
 
-        Set<Map.Entry<String, Double>> result = attributeMap.entrySet();
-
-        if (ATTRIBUTE_CACHE.size() >= MAX_CACHE_SIZE) {
-            cleanExpiredCache();
-            if (ATTRIBUTE_CACHE.size() >= MAX_CACHE_SIZE) {
-                cleanOldestCache();
-            }
-        }
-
-        // ⭐ 存快照而非引用：物品 NBT 原地变更后校验会失败，从而正确地重新计算
-        ATTRIBUTE_CACHE.put(cacheKey, new CacheEntry(result, moduleNbt.copy()));
-        return result;
+        return attributeMap.entrySet();
     }
 
     public static void addAttributes(ItemStack itemStack, String attributeType, double attributeValue) {
@@ -178,7 +108,6 @@ public abstract class AbstractModule extends Item {
         attributeList.add(attributeTag);
 
         kuvalichModule.put("attributeList", attributeList);
-        invalidateCache(itemStack);
     }
 
     public static void setType(ItemStack itemStack, String type) {
@@ -187,7 +116,6 @@ public abstract class AbstractModule extends Item {
         }
         CompoundTag kuvalichModule = itemStack.getOrCreateTagElement(Reference.MOD_ID + "_modules");
         kuvalichModule.putString("type", type);
-        invalidateCache(itemStack);
     }
 
     public static String getType(ItemStack itemStack) {
@@ -215,7 +143,6 @@ public abstract class AbstractModule extends Item {
         }
 
         kuvalichModule.put("conflictTags", tagList);
-        invalidateCache(itemStack);
     }
 
     public static void setConflictTags(ItemStack itemStack, String... tags) {
@@ -270,63 +197,12 @@ public abstract class AbstractModule extends Item {
     // ========== 缓存管理 ==========
 
     /**
-     * 计算物品的缓存索引
-     *
-     * <p>⭐ 注意：返回值只作为哈希索引使用，不再被当作唯一键。
-     * 真正的身份校验由 {@link CacheEntry#matches(CompoundTag)} 完成。</p>
-     *
-     * <p>⭐ 只基于模组自身的子 tag，不再遍历整把武器的完整 NBT。</p>
-     *
-     * @param itemStack 物品栈
-     * @return 缓存索引
+     * ⭐ 2026-09-23：{@link #getAttributes} 的哈希校验缓存已整体移除（见类头 javadoc），
+     * 本方法保留为空实现，只为不去动 {@code KuvaLich.java} 里那个每 5 分钟跑一次的
+     * 后台 {@code Timer}（不在主线程/tick 路径上，不属于本次优化范围，改动它没有收益
+     * 反而多一处要核对的 diff）。
      */
-    private static int getCacheKey(ItemStack itemStack) {
-        if (itemStack == null || itemStack.isEmpty()) {
-            return 0;
-        }
-        CompoundTag moduleNbt = itemStack.getTagElement(Reference.MOD_ID + "_modules");
-        return moduleNbt != null ? moduleNbt.hashCode() : 0;
-    }
-
-    private static void invalidateCache(ItemStack itemStack) {
-        // ⭐ 缓存本来就是空的时候直接走 —— 省掉一次 NBT hashCode 计算。
-        //
-        //    这不是微优化洁癖：模组原型池建表时（ModuleRegistryHelper.register）
-        //    每个属性都会走一遍 addAttributes，每次都调本方法，再加上 setType、
-        //    setConflictTags 各一次。八个池子几百个模组、每个模组好几条属性，
-        //    加起来是几千次「对一个刚 new 出来、绝不可能在缓存里的 ItemStack
-        //    算一遍 NBT 哈希再去空表里 remove」。配置热重载会让建表重跑，
-        //    所以这条路径不是只在启动时走一次。
-        //
-        //    语义完全不变：从空表里 remove 本来就是 no-op。
-        if (ATTRIBUTE_CACHE.isEmpty()) {
-            return;
-        }
-        ATTRIBUTE_CACHE.remove(getCacheKey(itemStack));
-    }
-
     public static void cleanExpiredCache() {
-        ATTRIBUTE_CACHE.entrySet().removeIf(entry -> entry.getValue().isExpired());
-    }
-
-    private static void cleanOldestCache() {
-        if (ATTRIBUTE_CACHE.isEmpty()) return;
-
-        List<Map.Entry<Integer, CacheEntry>> entries = new ArrayList<>(ATTRIBUTE_CACHE.entrySet());
-        entries.sort(Comparator.comparingLong(e -> e.getValue().timestamp));
-
-        int removeCount = entries.size() / 2;
-        for (int i = 0; i < removeCount; i++) {
-            ATTRIBUTE_CACHE.remove(entries.get(i).getKey());
-        }
-    }
-
-    public static String getCacheStats() {
-        long expired = ATTRIBUTE_CACHE.values().stream().filter(CacheEntry::isExpired).count();
-        return String.format("缓存总数: %d, 过期: %d, 有效: %d, 容量: %d%%",
-                ATTRIBUTE_CACHE.size(),
-                expired,
-                ATTRIBUTE_CACHE.size() - expired,
-                ATTRIBUTE_CACHE.size() * 100 / MAX_CACHE_SIZE);
+        // no-op：缓存已移除
     }
 }
