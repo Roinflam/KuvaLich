@@ -1,0 +1,1112 @@
+{
+  "id": "combat",
+  "order": 50,
+  "title": "Combat Mechanics",
+  "subtitle": "Damage, crits, elements & kill stacks",
+  "icon": "kuvalich:gram_prime",
+  "entries": [
+    {
+      "id": "damage",
+      "title": "How Damage Works",
+      "icon": "kuvalich:gram_prime",
+      "summary": "How one hit goes from swing to health loss",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "This page explains how much health one of your hits actually takes off. The takeaways below are all you need to start; the full formula is at the end. Unfamiliar words: see [[start/glossary]]."
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "Consecrate",
+              "Gives a weapon its own <t>stat panel</t> (a set of random base stats) so it can hold mods. Ordinary weapons are consecrated at the {item:kuvalich:requiem_evolve}"
+            ],
+            [
+              "Kuva weapon",
+              "A weapon dropped by the boss {lang:entity.kuvalich.kuva_master}; it comes already consecrated"
+            ],
+            [
+              "Mod / attribute",
+              "An upgrade card slotted into a weapon (not a Minecraft mod); each stat line on the card is an attribute"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Key Takeaways"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Only damage from a consecrated weapon in your <em>main hand</em> gets mod bonuses; unconsecrated weapons use plain vanilla damage.",
+            "Every hit has a <t>physical</t> part and an <t>elemental</t> part. <w>Crits only boost the physical part</w>; bane boosts both.",
+            "Swing melee weapons at <em>full charge</em>: below full charge, vanilla already lowers the damage, and then the physical and elemental multipliers are scaled down by the charge again — a half-charged swing deals only <w>about a fifth</w> of a full-charge hit.",
+            "Damage never goes below 0, however many negative attributes you stack.",
+            {
+              "if": "cfg:kuva_lich.enableDamageNumbers",
+              "text": "Armor, shields and other reductions come <em>last</em>; damage numbers show the health actually lost after them."
+            },
+            {
+              "if": "!cfg:kuva_lich.enableDamageNumbers",
+              "text": "Armor, shields and other reductions come <em>last</em>."
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "From Swing to Health Loss"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "<em>Classify</em>: you hit the target yourself (sweep hits included) → <t>melee</t>; an arrow, projectile or bullet you fired hit it → <t>ranged</t>.",
+            "<em>Add damage bonuses</em>: melee and ranged each use their own bonus attributes — see the table at the end.",
+            "<em>Sum the elements</em>: the Kuva weapon's innate element + every elemental attribute (see [[combat/elements]]).",
+            "<em>Multiply by {lang:item.module.damage}</em>: both parts.",
+            "<em>Multiply by charge</em> (melee only): both parts; full charge is ×1.",
+            "<em>Roll the crit</em>: physical part only (see [[combat/crit]]).",
+            "<em>Multiply by bane</em>: both parts (see [[combat/bane]]).",
+            "<em>Add up</em>: that is this hit's damage, never below 0.",
+            "<em>Roll status procs</em>: apply status effects to the target (see [[combat/element_status]])."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "After the Hit"
+        },
+        {
+          "type": "list",
+          "items": [
+            "On a ranged hit with {lang:item.module.bursting_radius}, other mobs around the target take <t>50%</t> of this hit as splash. <w>Splash only spares you</w> — pets and villagers get hit too.",
+            "Special attributes such as execution and buff removal resolve (see [[reference/weapon_attr_special]]).",
+            "If this hit is enough to kill, kill stacks +1 (see [[combat/kill_stack]]).",
+            "Only then do the target's armor, Protection, shield and other mods' reductions apply."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Easy Mistakes",
+          "text": "What counts is the item in your main hand <em>at the moment of impact</em>: swap weapons while an arrow is in flight and the new weapon is used; shoot a bow from the off-hand and you still get the main-hand item's panel."
+        },
+        {
+          "type": "h",
+          "text": "Advanced Details"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Attack",
+            "Bonus attributes used"
+          ],
+          "widths": [
+            2,
+            3
+          ],
+          "rows": [
+            [
+              "Melee (incl. sweep)",
+              "{lang:item.module.meleeDamage}"
+            ],
+            [
+              "Normal / tipped arrow",
+              "{lang:item.module.remoteDamage} + {lang:item.module.arrowDamage}"
+            ],
+            [
+              "Other projectile",
+              "{lang:item.module.remoteDamage} + {lang:item.module.projectileDamage}"
+            ],
+            [
+              "Counts as magic",
+              "adds {lang:item.module.magicDamage} on top of the above"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "“Other projectile” covers spectral arrows, tridents, gun bullets and so on.",
+            "Counts as magic: vanilla magic-type damage.",
+            {
+              "if": "cfg:kuva_lich.enableThirdPartyMagicRecognition",
+              "text": "Spell damage from other magic mods is recognised as magic too."
+            },
+            "The base-damage kill stack bonus is added to the melee and ranged bonuses.",
+            "Splash never procs elements and never builds weapon kill stacks."
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "Final damage = Raw damage × (Physical mult + Elemental mult) × Bane mult"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "Raw damage",
+              "the hit before this pipeline: weapon damage, charge, vanilla jump crits and enchantments such as Sharpness are already in it"
+            ],
+            [
+              "Physical mult",
+              "(1 + sum of damage bonuses) × Base Damage × charge × crit tier multiplier"
+            ],
+            [
+              "On a non-crit",
+              "((1 + sum of damage bonuses) × Base Damage + {lang:item.module.baseDamageWhenNotCriticalStrike}) × charge"
+            ],
+            [
+              "Elemental mult",
+              "sum of elemental attributes × Base Damage × charge (crits do not apply)"
+            ],
+            [
+              "Charge",
+              "melee = how charged the swing was (0 ~ 1, full charge = 1); always 1 for ranged"
+            ],
+            [
+              "Base Damage below 100%",
+              "<w>squared</w>: 80% on the panel is really 64%"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Vanilla already lowers raw damage for an uncharged swing; charge scales it down <em>again</em> on top of that. It only follows swings you make yourself (sweep hits use the same swing); pets and other attackers count as fully charged."
+        },
+        {
+          "type": "p",
+          "text": "Debuffs on the target such as Magnetic, and Kuva enemies' resistances (see [[enemies/lich_resistance]]), are already applied to the raw damage. Status procs use this hit's physical part as their base."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "mod:tacz",
+          "text": "TACZ gun bullets resolve as ranged hits and use {lang:item.module.projectileDamage}. Gun-only attributes: see [[tacz/tacz_gun_attributes]]."
+        }
+      ]
+    },
+    {
+      "id": "crit",
+      "title": "Critical Hits",
+      "icon": "kuvalich:destreza_prime",
+      "summary": "Crit chance, the three crit tiers and multipliers",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "A <hl>crit</hl> is a chance for a hit's physical damage to be multiplied by the <t>Critical Multiplier</t> (M below). Both the chance and the multiplier are on the weapon's stat panel."
+        },
+        {
+          "type": "p",
+          "text": "{lang:item.module.criticalStrikeProbability} can go above 100%. The excess is not wasted — it <em>upgrades</em> your crits: <c:FFFF55>yellow</c> → <c:FFAA00>orange</c> → <c:FF5555>red</c>, each tier hitting harder."
+        },
+        {
+          "type": "table",
+          "header": [
+            "Crit Chance",
+            "Result"
+          ],
+          "widths": [
+            1,
+            3
+          ],
+          "rows": [
+            [
+              "0 ~ 100%",
+              "roll for a <c:FFFF55>yellow crit ×M</c>, otherwise no crit"
+            ],
+            [
+              "100% ~ 200%",
+              "at least yellow; the part above 100% is the chance of an <c:FFAA00>orange crit ×2M</c>"
+            ],
+            [
+              "200% ~ 300%",
+              "at least orange; the part above 200% is the chance of a <c:FF5555>red crit ×3M</c>"
+            ],
+            [
+              "Above 300%",
+              "always red ×3M — <w>anything higher does nothing</w>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Example",
+          "text": "M = 2.5 at 150% crit chance → half your hits deal ×2.5, half deal ×5. At exactly 100% / 200% / 300% you are <em>guaranteed</em> yellow / orange / red."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In Warframe, crit chance can also exceed 100%, and crit numbers turn from yellow to orange to red as the tier rises. “Red crits” are tier 3 and above."
+        },
+        {
+          "type": "h",
+          "text": "Raising Your Crits"
+        },
+        {
+          "type": "list",
+          "items": [
+            "The base crit chance and multiplier are on the stat panel, rolled at random when the weapon was <t>consecrated</t> and got its panel; see [[weapons/weapon_panel]].",
+            "<t>Mods</t> (weapon upgrade cards) with crit chance or crit multiplier attributes raise the base values by a percentage.",
+            "Swing melee weapons at <em>full charge</em>: below full charge, crit chance is scaled down by the charge (damage multipliers too, see [[combat/damage]]) — spam-clicking almost never crits.",
+            "Sprinting melee attacks also get {lang:item.module.dashMeleeCriticalStrikeProbability}.",
+            "<w>Crits only boost the physical part</w>; elemental damage ignores the crit multiplier."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Advanced Details"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "Melee crit chance",
+              "base crit chance × charge × (1 + {lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}, plus {lang:item.module.dashMeleeCriticalStrikeProbability} while sprinting)"
+            ],
+            [
+              "Ranged crit chance",
+              "base crit chance × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability})"
+            ],
+            [
+              "Melee crit multiplier",
+              "base crit multiplier × (1 + {lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier}) × (1 + melee crit damage stacks)"
+            ],
+            [
+              "Ranged crit multiplier",
+              "base crit multiplier × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier})"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Status DoTs use the physical part as their base, so a crit hit applies a stronger DoT.",
+            "On a non-crit, the hit gains {lang:item.module.baseDamageWhenNotCriticalStrike}; on melee hits this bonus is scaled by charge too.",
+            {
+              "if": "mod:tacz",
+              "text": "TACZ splits each bullet into two damage instances (normal + armor-piercing); when both deal damage, <em>each rolls its own crit</em>."
+            },
+            {
+              "if": [
+                "mod:tacz",
+                "cfg:kuva_lich.enableDamageNumbers",
+                "cfg:kuva_lich.mergeDamageNumbers",
+                "cfg:kuva_lich.mergeDamageWindowMs>0"
+              ],
+              "text": "The two instances show as one damage number in the higher tier's color (see [[combat/damage_numbers]])."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bane",
+      "title": "Bane",
+      "icon": "minecraft:zombie_head",
+      "summary": "Bonus damage against specific mob types",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>Bane</hl> attributes (players often call them “discrimination”) make you hit <em>one type</em> of mob harder. Each hit only looks at the target's own type and uses that one attribute:"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Target type",
+            "Attribute used",
+            "Examples"
+          ],
+          "widths": [
+            2,
+            3,
+            5
+          ],
+          "rows": [
+            [
+              "Unknown (default)",
+              "{lang:item.module.bane_of_undefined}",
+              "most mobs: players, creepers, endermen, villagers, witches, ravagers, iron golems…"
+            ],
+            [
+              "Undead",
+              "{lang:item.module.bane_of_undead}",
+              "zombies, skeletons, phantoms, the Wither; <hl>this mod's enemies {lang:entity.kuvalich.kuva_slave} and {lang:entity.kuvalich.kuva_master} count too</hl>"
+            ],
+            [
+              "Arthropod",
+              "{lang:item.module.bane_of_arthropod}",
+              "spiders, cave spiders, silverfish, endermites, bees"
+            ],
+            [
+              "Illager",
+              "{lang:item.module.bane_of_illager}",
+              "pillagers, vindicators, evokers"
+            ],
+            [
+              "Aquatic",
+              "{lang:item.module.bane_of_illager}",
+              "guardians, squid, fish, dolphins; <w>no attribute of their own, they use the Illager one</w>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "“Unknown” does not mean rare — it is simply the type for mobs nobody assigned one to. Most mobs from other mods fall here too, unless their author set a type."
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "Fighting Kuva Enemies",
+          "text": "This mod's two enemies, the {lang:entity.kuvalich.kuva_slave} and the {lang:entity.kuvalich.kuva_master} (the boss), are both <t>undead</t>: stack {lang:item.module.bane_of_undead}. Element tips are at the end."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "Warframe has faction mods, such as Bane of Grineer, that add damage against one enemy faction. Here the factions are replaced by Minecraft mob types."
+        },
+        {
+          "type": "h",
+          "text": "Advanced Details"
+        },
+        {
+          "type": "formula",
+          "text": "Bane multiplier = 1 + sum of bane attributes for the target's type"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Physical and elemental parts are both multiplied; splash inherits the main target's result.",
+            "Status damage (DoTs, Electricity, Blast) uses the already-baned physical part as its base and <em>multiplies by bane again</em> — effectively squared: +50% bane becomes ×2.25 on that damage.",
+            "Negative bane lowers damage, but only against <em>that</em> type; other types are unaffected. Damage bottoms out at 0.",
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "text": "Elements against Kuva enemies: Electricity proc damage is ×1.5 against undead (see [[combat/element_status]])."
+            },
+            "Elements against Kuva enemies: Heat DoT is halved on undead, and the {lang:entity.kuvalich.kuva_master} is <w>fire-immune</w>, so Heat only strips its armor (see [[combat/element_status]])."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elements",
+      "title": "Elements & Combinations",
+      "icon": "minecraft:blaze_powder",
+      "summary": "13 damage types, combos and status procs",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>Elements</hl> are damage types added to your attacks, such as Heat, Cold and Electricity. Elemental attributes do two things: they add <t>elemental damage</t> to every hit, and they decide which status a <t>status proc</t> applies."
+        },
+        {
+          "type": "p",
+          "text": "<t>Status proc</t>: based on {lang:item.module.triggerChance}, the hit applies a status effect to the target, such as burning, slowing or poison (see [[combat/element_status]]). There are 13 elements:"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Class",
+            "Elements"
+          ],
+          "widths": [
+            1,
+            5
+          ],
+          "rows": [
+            [
+              "Physical",
+              "<c:D8DCE2>{lang:kuvaweapon.type.slash}</c>, <c:9AA2AE>{lang:kuvaweapon.type.puncture}</c>, <c:F0F0F0>{lang:kuvaweapon.type.impact}</c>"
+            ],
+            [
+              "Base",
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>, <c:6FD8F0>{lang:kuvaweapon.type.ice}</c>, <c:8296FF>{lang:kuvaweapon.type.electricity}</c>, <c:6BD96B>{lang:kuvaweapon.type.poison}</c>"
+            ],
+            [
+              "Combined",
+              "<c:A8E86B>{lang:kuvaweapon.type.gas}</c>, <c:F0E060>{lang:kuvaweapon.type.radiation}</c>, <c:7A8CFF>{lang:kuvaweapon.type.magnetic}</c>, <c:C4DB4A>{lang:kuvaweapon.type.corrosion}</c>, <c:FF9B4A>{lang:kuvaweapon.type.explosion}</c>, <c:FF7AB0>{lang:kuvaweapon.type.virus}</c>"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Pairs of the four base elements combine automatically into a combined element:"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Base element",
+            "+ Base element",
+            "= Combined"
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "<c:A8E86B>{lang:kuvaweapon.type.gas}</c>"
+            ],
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+              "<c:F0E060>{lang:kuvaweapon.type.radiation}</c>"
+            ],
+            [
+              "<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>",
+              "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+              "<c:7A8CFF>{lang:kuvaweapon.type.magnetic}</c>"
+            ],
+            [
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+              "<c:C4DB4A>{lang:kuvaweapon.type.corrosion}</c>"
+            ],
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>",
+              "<c:FF9B4A>{lang:kuvaweapon.type.explosion}</c>"
+            ],
+            [
+              "<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>",
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "<c:FF7AB0>{lang:kuvaweapon.type.virus}</c>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "Warframe works the same way: Heat, Cold, Electricity and Toxin combine in pairs, and the result depends on the order of your mods. Building a weapon often means shuffling that order."
+        },
+        {
+          "type": "h",
+          "text": "Combination Order"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Queue up: a <t>Kuva weapon</t> (a boss drop) puts its innate element first.",
+            "The rest follow the order of the <t>mod</t> (upgrade card) slots on the weapon; within one mod, attribute order.",
+            "An element that appears more than once merges into its first position.",
+            "Walk front to back: each base element combines with the first earlier base element that is <em>not yet combined</em> and forms a valid pair.",
+            "Physical and already-combined elements never combine; a base element with no partner stays as it is."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Example",
+          "text": "{lang:kuvaweapon.type.fire} (slot 1), {lang:kuvaweapon.type.ice} (slot 2), {lang:kuvaweapon.type.electricity} (slot 3) → the first two become {lang:kuvaweapon.type.explosion} and {lang:kuvaweapon.type.electricity} is left alone: {lang:kuvaweapon.type.explosion} + {lang:kuvaweapon.type.electricity}. Want {lang:kuvaweapon.type.radiation}? Move {lang:kuvaweapon.type.electricity} ahead of {lang:kuvaweapon.type.ice}."
+        },
+        {
+          "type": "h",
+          "text": "Status Chance"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Above 100%, the whole-number part is guaranteed procs and the remainder rolls once more: 250% = 2 guaranteed + 50% for a third.",
+            "Each proc picks one element at random, <em>weighted</em> by each element's share: the bigger the share, the likelier the pick.",
+            "Combining only changes what can be picked. Total elemental damage never changes — it is always the plain sum of all elemental attributes."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Easy Mistakes",
+          "text": "A weapon with no element on itself (innate Kuva element included) never procs, however high its status chance. Whatever you want to proc has to be on the weapon itself."
+        },
+        {
+          "type": "h",
+          "text": "Advanced Details"
+        },
+        {
+          "type": "formula",
+          "text": "Status chance = weapon base status chance × (1 + {lang:item.module.triggerChance}, plus {lang:item.module.dashTriggerChance} while sprinting) × (1 + status chance stacks)"
+        },
+        {
+          "type": "list",
+          "items": [
+            "At most <t>5</t> procs per hit — nothing gained past 500%.",
+            "Everyone's hits combined can proc at most <t>100</t> times per tick (1/20 s): when a big crowd is hit at once, the last ones may miss out.",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
+              "text": "Elemental attributes in extra slots such as the off-hand (see [[modules/multi_slot]]) only add elemental damage (including proc damage of the same element) — they do <w>not</w> add new elements to the proc pool."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "element_status",
+      "title": "Status Effects",
+      "icon": "minecraft:fermented_spider_eye",
+      "summary": "What each element does when it procs",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "When a status procs, the target gets the picked element's effect: some deal damage over time, some weaken the target. Effects first; the exact damage math is at the end."
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "t",
+              "1 + {lang:item.module.triggerTime}; sets how long effects last. Without that attribute t = 1, so “6t s” means 6 seconds"
+            ],
+            [
+              "Shield",
+              "yellow hearts (absorption) on the target, whether from a Warframe shield or a golden apple (see [[warframe/shield]]). Most mobs have none"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Damaging Elements"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Element",
+            "Effect",
+            "Duration"
+          ],
+          "widths": [
+            2,
+            6,
+            3
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "Sets the target on fire and burns it every second; also strips armor and toughness step by step",
+              "burn ~6t s"
+            ],
+            [
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "Poison damage every second. If the target has a shield it skips the shield and hits <em>health directly</em>",
+              "~6t s"
+            ],
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+                "One instant shock plus paralysis (−99% movement speed)",
+                "paralysis 0.5t s"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier==0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+                "A proc does nothing: no damage and no paralysis",
+                "—"
+              ]
+            },
+            [
+              "<c:D8DCE2>{lang:kuvaweapon.type.slash}</c>",
+              "Damages <em>health directly</em> every second, ignoring armor, shield and i-frames",
+              "~6t s"
+            ],
+            [
+              "<c:A8E86B>{lang:kuvaweapon.type.gas}</c>",
+              "Leaves a 3-block-radius cloud at the hit point that damages every mob inside each second",
+              "~6t s"
+            ],
+            [
+              "<c:FF9B4A>{lang:kuvaweapon.type.explosion}</c>",
+              "Blasts the target and every mob within 3 blocks of it; no block damage",
+              "instant"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Debuff Elements"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Element",
+            "Effect",
+            "1st stack → max",
+            "Duration"
+          ],
+          "widths": [
+            2,
+            5,
+            4,
+            2
+          ],
+          "rows": [
+            [
+              "<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>",
+              "Slows movement, attack and flying speed",
+              "50% → 90% (9 stacks)",
+              "6t s"
+            ],
+            [
+              "<c:9AA2AE>{lang:kuvaweapon.type.puncture}</c>",
+              "The target <g>deals less damage</g>: melee, arrows and other projectiles it fires all count; your hits on it are unaffected",
+              "40% → 70% (4 stacks)",
+              "6t s"
+            ],
+            [
+              "<c:F0F0F0>{lang:kuvaweapon.type.impact}</c>",
+              "Knocks the target back and pops it up slightly; more Impact pushes farther",
+              "—",
+              "instant"
+            ],
+            [
+              "<c:F0E060>{lang:kuvaweapon.type.radiation}</c>",
+              "The target goes berserk: it attacks nearby mobs of its own kind first, otherwise the nearest mob (possibly you)",
+              "vs own kind ×2 → ×6.5 (10 stacks)",
+              "12t s"
+            ],
+            [
+              "<c:7A8CFF>{lang:kuvaweapon.type.magnetic}</c>",
+              "While the target has a shield, all damage it takes is increased",
+              "×2 → ×4.25 (10 stacks)",
+              "6t s"
+            ],
+            [
+              "<c:C4DB4A>{lang:kuvaweapon.type.corrosion}</c>",
+              "Strips armor and toughness",
+              "26% → 80% (10 stacks)",
+              "8t s"
+            ],
+            [
+              "<c:FF7AB0>{lang:kuvaweapon.type.virus}</c>",
+              "At full stacks the target's max health is halved; makes Slash DoT hurt more",
+              "−50% max health at 10 stacks; Slash ×2 → ×4.25",
+              "6t s"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Proccing the same debuff again adds a stack and refreshes its duration.",
+            "A target only ever has <em>one</em> DoT of each element: a new proc just refreshes it — DoTs do <w>not</w> stack.",
+            "<g>Puncture weakens enemy damage</g>: while a mob carries Puncture, the damage it deals drops by 40%~70%, which helps a lot in tough fights.",
+            "<b>Gas clouds and Blast hit friend and foe alike</b>: apart from you, pets, villagers and other players in range get hurt too."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In Warframe, a {lang:kuvaweapon.type.slash} proc causes Bleed, which ignores armor and shields; {lang:kuvaweapon.type.magnetic} is the anti-shield element and {lang:kuvaweapon.type.corrosion} strips armor. This mod follows the same ideas."
+        },
+        {
+          "type": "h",
+          "text": "Advanced Details"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "Base",
+              "this hit's physical part (crit and bane included)"
+            ],
+            [
+              "Element value",
+              "total of that element's attributes; a combined element uses the sum of its two base elements, and the innate Kuva element counts too"
+            ]
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "Each hit = coefficient × Base × Element value × Bane"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Element",
+            "Coefficient",
+            "Modifiers"
+          ],
+          "widths": [
+            2,
+            3,
+            6
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "0.5",
+              "arthropods ×1.5, undead ×0.5; fire-immune targets take no burn damage"
+            ],
+            [
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "0.5",
+              "illagers ×1.5, arthropods ×0.5"
+            ],
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+                "0.5",
+                "undead ×1.5; shielded target ×0.5"
+              ]
+            },
+            [
+              "<c:D8DCE2>{lang:kuvaweapon.type.slash}</c>",
+              "0.35, <w>no element value</w>",
+              "×2 ~ ×4.25 more if the target has Viral"
+            ],
+            [
+              "<c:A8E86B>{lang:kuvaweapon.type.gas}</c>",
+              "0.5",
+              "arthropods ×1.5; shielded target ×0.5"
+            ],
+            [
+              "<c:FF9B4A>{lang:kuvaweapon.type.explosion}</c>",
+              "0.5",
+              "shielded target ×1.5, otherwise ×0.5"
+            ]
+          ]
+        },
+        {
+          "type": "kv",
+          "rows": [
+            {
+              "if": "cfg:kuva_lich.elementFireDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.fire} proc damage also ×",
+                "{cfg:kuva_lich.elementFireDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementPoisonDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.poison} proc damage also ×",
+                "{cfg:kuva_lich.elementPoisonDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.elementElectricityDamageMultiplier!=1",
+                "cfg:kuva_lich.elementElectricityDamageMultiplier!=0"
+              ],
+              "cells": [
+                "{lang:kuvaweapon.type.electricity} proc damage also ×",
+                "{cfg:kuva_lich.elementElectricityDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementSlashDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.slash} proc damage also ×",
+                "{cfg:kuva_lich.elementSlashDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementGasDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.gas} proc damage also ×",
+                "{cfg:kuva_lich.elementGasDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementExplosionDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.explosion} proc damage also ×",
+                "{cfg:kuva_lich.elementExplosionDamageMultiplier|x}"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "DoTs pulse once per second, ⌈6t⌉ pulses in total (6t rounded up).",
+            "{lang:kuvaweapon.type.fire}: the target burns for 6 s; the armor strip deepens about every 0.5 s (15% → 30% → 40% → 50%) and lasts 6t s.",
+            "{lang:kuvaweapon.type.poison}: without a shield it is magic damage; with a shield it goes straight to health, also ignoring armor and i-frames.",
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "text": "{lang:kuvaweapon.type.electricity}: only hits the struck target; the lightning is visual only and ignites nothing."
+            },
+            "{lang:kuvaweapon.type.slash}: its damage does not depend on the size of your Slash attributes.",
+            "{lang:kuvaweapon.type.gas}: the cloud stays where it was placed and does not follow the target; it is tied to the struck mob and fades at most one pulse after it dies. A new proc moves the cloud to the latest hit point.",
+            "A new proc of the same DoT refreshes the remaining pulses and keeps the higher per-pulse damage.",
+            "Per-stack increase: {lang:kuvaweapon.type.ice} +5%, {lang:kuvaweapon.type.puncture} +10%, {lang:kuvaweapon.type.radiation} +0.5, {lang:kuvaweapon.type.magnetic} +0.25, {lang:kuvaweapon.type.corrosion} +6%.",
+            "{lang:kuvaweapon.type.radiation}: the berserk target looks for victims within 24 blocks.",
+            "{lang:kuvaweapon.type.impact}: knockback strength = Impact element value × 3.",
+            "Electricity and Blast on the struck target are often partly eaten by vanilla hit invulnerability (smaller or missing numbers); nearby mobs are not affected by this.",
+            "These statuses are not potion effects: they do not show in the effect list and do not count as “debuffs” for kill stacks (see [[combat/kill_stack]]).",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
+              "text": "Elemental attributes in extra slots such as the off-hand count toward the element value too."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Gas / Blast Attribute Trap",
+          "text": "The <em>proc</em> damage of Gas and Blast only counts {lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.poison} (Gas) or {lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.ice} (Blast) attributes plus the innate Kuva element. Attributes that literally read Gas Damage / Blast Damage only add hit damage and raise the pick chance — with nothing but those on the weapon, a Gas or Blast proc deals no proc damage."
+        }
+      ]
+    },
+    {
+      "id": "kill_stack",
+      "title": "Kill Stacks",
+      "icon": "minecraft:skeleton_skull",
+      "summary": "Temporary buffs from kill streaks, and how they decay",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Attributes marked “Gained on kill” are <hl>kill stacks</hl>: each kill adds 1 stack, more stacks mean a stronger effect, and they slowly fall off when you stop killing."
+        },
+        {
+          "type": "p",
+          "text": "Stacks are stored on <em>you</em>, not on the weapon: switch to another weapon with the same stack attribute and your current stacks still apply."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Holding a <t>consecrated</t> weapon (one with a panel that can hold mods) with stack attributes, land a <t>lethal</t> hit (or trigger an execution) → every stack type the weapon carries gains 1 and its timer restarts.",
+            "With no new kills you lose 1 stack every interval, one at a time: weapon stacks <t>{cfg:kuva_lich.weaponStackDecayTicks|sec}</t>, Warframe stacks (see below) <t>{cfg:kuva_lich.warframeStackDecayTicks|sec}</t>.",
+            "Logging out clears everything; dying does not."
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "Weapon stack",
+            "Per-stack effect",
+            "Max"
+          ],
+          "widths": [
+            3,
+            6,
+            1
+          ],
+          "rows": [
+            [
+              "{lang:item.module.killStackBaseDamage}",
+              "melee and ranged damage bonus + value × stacks × <em>number of debuffs on the target</em>",
+              "{cfg:kuva_lich.maxStacksBaseDamage}"
+            ],
+            [
+              "{lang:item.module.killStackMultishot}",
+              "{lang:item.module.multishot} + value × stacks",
+              "{cfg:kuva_lich.maxStacksMultishot}"
+            ],
+            [
+              "{lang:item.module.killStackMeleeCriticalMultiplier}",
+              "melee crit multiplier × (1 + value × stacks)",
+              "{cfg:kuva_lich.maxStacksMeleeCritMult}"
+            ],
+            [
+              "{lang:item.module.killStackTriggerChance}",
+              "status chance × (1 + value × stacks)",
+              "{cfg:kuva_lich.maxStacksTriggerChance}"
+            ],
+            [
+              "{lang:item.module.killStackAttackRange}",
+              "{lang:item.module.attackRange} + value × stacks",
+              "{cfg:kuva_lich.maxStacksAttackRange}"
+            ],
+            [
+              "{lang:item.module.killStackAttackSpeed}",
+              "{lang:item.module.attackSpeed} + value × stacks",
+              "{cfg:kuva_lich.maxStacksAttackSpeed}"
+            ],
+            [
+              "{lang:item.module.killStackBurstingRadius}",
+              "ranged splash radius + value × 2 × stacks (blocks)",
+              "{cfg:kuva_lich.maxStacksBurstingRadius}"
+            ],
+            [
+              "{lang:item.module.killStackFiringRate}",
+              "{lang:item.module.firing_rate} + value × stacks; doubled for bows and crossbows",
+              "{cfg:kuva_lich.maxStacksFiringRate}"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Base Damage Stack Trap",
+          "text": "Its bonus is multiplied by the <em>number of debuffs on the target</em>, and only potion-style debuffs count (Slowness, Weakness, Poison, Wither and so on, other mods' ones included). This mod's element statuses do <w>not</w> count. With none on the target, even max stacks give +0."
+        },
+        {
+          "type": "list",
+          "items": [
+            "A stack type only builds while your weapon carries that stack attribute.",
+            "The weapon panel shows the current stacks of each type (see [[weapons/weapon_panel]])."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "Warframe has on-kill stacking mods too, such as the Galvanized series: kills stack up Multishot or damage bonuses for a while."
+        },
+        {
+          "type": "h",
+          "text": "Warframe Stacks"
+        },
+        {
+          "type": "p",
+          "text": "<t>Warframe mods</t> are mods installed in the {item:kuvalich:requiem_warframe_table} that boost you yourself. They have kill-stack attributes too (12 kinds: health, shield, armor, resistances…) with the same rules, but they build more easily:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Any killing blow <em>credited to you</em> counts: melee, arrows, bullets or splash; any weapon, consecrated or not.",
+            "Whether the hit was lethal is judged on the real damage after armor and shield.",
+            "Kills by element DoTs, Electricity or Blast still do not count.",
+            "Effects and caps: see [[reference/warframe_attr_killstack]]."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Advanced Details"
+        },
+        {
+          "type": "list",
+          "items": [
+            "The weapon-stack kill check asks whether this hit's computed damage (before armor and shield) is at least the target's remaining health — so now and then you gain a stack while the mob survives.",
+            "<b>Kills by element DoTs, Electricity, Blast or splash do not count for weapon stacks.</b>",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
+              "text": "Stack attributes in extra slots such as the off-hand (see [[modules/multi_slot]]) count too: if the weapon or one of those slots carries it, that type builds."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "damage_numbers",
+      "title": "Damage Numbers",
+      "icon": "minecraft:name_tag",
+      "summary": "Colors, icons and merging of damage numbers",
+      "if": "cfg:kuva_lich.enableDamageNumbers",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "When you deal damage with a <t>consecrated</t> weapon (one with a panel that can hold mods), a number floats up from the target and stays for about 2 seconds. Its color tells you whether the hit crit:"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Color",
+            "Meaning"
+          ],
+          "widths": [
+            1,
+            5
+          ],
+          "rows": [
+            [
+              "<c:FFFFFF>White</c>",
+              "no crit; elemental damage is white too, followed by element icons"
+            ],
+            [
+              "<c:55FFFF>Aqua</c>",
+              "no crit, but the target has a shield (yellow hearts)"
+            ],
+            [
+              "<c:FFFF55>Yellow</c>",
+              "crit ×M (M = Critical Multiplier)"
+            ],
+            [
+              "<c:FFAA00>Orange</c>",
+              "tier-2 crit ×2M"
+            ],
+            [
+              "<c:FF5555>Red</c>",
+              "tier-3 crit ×3M"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "The number is the <em>health actually lost</em>: armor, resistances, other mods' reductions and hit invulnerability are already taken off, and damage absorbed by a shield is included.",
+            "Higher crit tiers use bigger text: white is smallest, then yellow / blue, then orange, and red is biggest.",
+            {
+              "if": "cfg:kuva_lich.damageDisplay",
+              "text": "Damage from unconsecrated weapons shows white numbers too."
+            },
+            {
+              "if": "!cfg:kuva_lich.damageDisplay",
+              "text": "Damage from unconsecrated weapons shows no numbers."
+            },
+            {
+              "if": "!cfg:kuva_lich.mergeDamageNumbers",
+              "text": "Every hit shows its own number."
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mergeDamageNumbers",
+                "cfg:kuva_lich.mergeDamageWindowMs==0"
+              ],
+              "text": "Every hit shows its own number."
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Icons Next to Numbers"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Element icons after a hit number: which debuff elements this hit applied (Cold, Puncture, Impact, Radiation, Magnetic, Corrosive, Viral).",
+            "Shield icon: part of the hit landed on a shield.",
+            "Damaging elements (Heat, Toxin, Electricity, Slash, Gas, Blast) add no icon to the hit number; each floats its own white number with the matching element icon instead.",
+            {
+              "if": "mod:tacz",
+              "text": "Dagger icon: direct health loss from {lang:item.module.true_bullet}; on its own it shows in <c:AA00AA>purple</c>."
+            },
+            "Ribbon icon (in front of the number): damage your tamed creatures (maids, for example) deal with consecrated weapons is shown to you too; their elemental damage numbers are not shown."
+          ]
+        },
+        {
+          "type": "h",
+          "if": [
+            "cfg:kuva_lich.mergeDamageNumbers",
+            "cfg:kuva_lich.mergeDamageWindowMs>0"
+          ],
+          "text": "Merged Numbers"
+        },
+        {
+          "type": "list",
+          "if": [
+            "cfg:kuva_lich.mergeDamageNumbers",
+            "cfg:kuva_lich.mergeDamageWindowMs>0"
+          ],
+          "items": [
+            "Numbers on the same mob within <t>{cfg:kuva_lich.mergeDamageWindowMs} ms</t> merge into one: values add up, the color takes the highest tier and icons are combined.",
+            "Elemental damage only merges with numbers of the <em>same element</em>, never into hit numbers.",
+            {
+              "if": "mod:tacz",
+              "text": "{lang:item.module.true_bullet} numbers usually fold into that shot's hit number, which turns purple if it was not a crit."
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Advanced Details"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Nothing shows when a hit is fully blocked (hit invulnerability, immunity, shield block).",
+            "When numbers get too dense some are dropped — actual damage is unaffected."
+          ]
+        }
+      ]
+    }
+  ]
+}

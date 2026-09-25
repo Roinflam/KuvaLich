@@ -266,4 +266,8 @@ public class KuvaLichItems {
     // ⭐ 内融核心（模组等级升级消耗品）/ Endo (Module level upgrade material)
     public static final RegistryObject<Item> ENDO = ITEMS.register("endo",
             () -> new pers.roinflam.kuvalich.item.Endo(new Item.Properties()));
+
+    // 冒险指南：右键打开自带指南界面（取代帕秋莉教程书；注册名沿用旧书的模型/贴图名 kuvalich_guide）
+    public static final RegistryObject<Item> KUVALICH_GUIDE = ITEMS.register("kuvalich_guide",
+            () -> new pers.roinflam.kuvalich.item.GuideBook(new Item.Properties()));
 }

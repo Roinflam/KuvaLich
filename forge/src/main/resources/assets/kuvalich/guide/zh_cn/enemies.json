@@ -1,0 +1,430 @@
+{
+  "id": "enemies",
+  "order": 30,
+  "title": "敌人",
+  "subtitle": "奴仆与玄骸：生成、掉落与打法",
+  "icon": "kuvalich:kuva_master_spawn_egg",
+  "entries": [
+    {
+      "id": "kuva_slave",
+      "title": "赤毒奴仆",
+      "icon": "kuvalich:kuva_slave_spawn_egg",
+      "summary": "最常打的小兵：攒解密进度、掉材料和模组",
+      "blocks": [
+        { "type": "p", "text": "<hl>{lang:entity.kuvalich.kuva_slave}</hl>是本模组的小兵，也是最常见的赤毒敌人。每亲手杀一只，就离打败 Boss {lang:entity.kuvalich.kuva_master}近一步，还可能掉材料和模组。" },
+        { "type": "entity", "id": "kuvalich:kuva_slave", "height": 88 },
+        { "type": "p", "text": "<dim>「赤毒」「玄骸」「模组」这些叫法都来自《星际战甲》，不熟悉的话可以翻[[start/glossary|名词速查]]。</dim>" },
+        { "type": "h", "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0", "text": "在哪遇到" },
+        { "type": "kv", "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0", "rows": [
+          ["地点", "主世界任意生物群系，<b>蘑菇岛除外</b>"],
+          ["亮度", "和僵尸一样，只在够暗的地方刷新；<t>和平</t>难度不刷"],
+          ["空间", "体型大，要 <t>3×3</t>、<t>3</t> 格高的空位，低矮的洞穴里很少见"],
+          ["每群数量", "<t>{cfg:kuva_lich.kuvaSlaveMinSpawnCount}~{cfg:kuva_lich.kuvaSlaveMaxSpawnCount}</t> 只"],
+          ["刷新权重", "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>，越大越常见 <dim>（原版僵尸 95）</dim>"]
+        ] },
+        { "type": "h", "text": "它怎么打你" },
+        { "type": "list", "items": [
+          "下手很重：每下 简单 <t>6.8</t>、普通 <t>13.6</t>、困难 <t>20.4</t>",
+          "命中会把你<w>大幅击飞</w>，它自己顺势扑过来，并回复 <t>0.8</t> 点生命",
+          "跑得比僵尸快一半，<t>32</t> 格内看见你就会追过来",
+          "会慢慢回血：每秒 <t>1</t> 点，没有攻击目标时 <t>0.5</t> 点",
+          "见怪就打：会主动攻击附近的其他怪物，末影人这类中立怪也不例外，只放过苦力怕和赤毒敌人",
+          { "if": "cfg:kuva_lich.battleBoost>0", "text": "战斗拖得越久，它打得越痛，见[[enemies/battle_boost]]" }
+        ] },
+        { "type": "h", "text": "基础属性" },
+        { "type": "kv", "rows": [
+          ["生命", "<t>100</t>"],
+          ["护甲", "<t>4</t>"],
+          ["击退抗性", "<t>40%</t>"],
+          ["移动速度", "<t>0.35</t> <dim>（僵尸 0.23）</dim>"],
+          ["索敌范围", "<t>32</t> 格"],
+          ["体型", "宽 <t>1.5</t> × 高 <t>2.9</t> 格"],
+          ["生物类型", "<t>亡灵</t>，但不会像僵尸那样被太阳晒着"],
+          ["免疫", "摔落伤害"],
+          ["自带减伤", "受到的伤害一律 <b>×0.75</b>，见[[enemies/lich_resistance]]"]
+        ] },
+        { "type": "p", "text": "作为亡灵，亡灵杀手附魔和模组上的「{lang:item.module.bane_of_undead}」词条对它有效，治疗 / 伤害药水的效果也是反过来的。" },
+        { "type": "h", "text": "击杀掉落" },
+        { "type": "table", "header": ["内容", "概率", "数量"], "widths": [3, 4, 2], "rows": [
+          ["解密进度", "必得", "<t>{cfg:kuva_lich.minDecryptionProgress}~{cfg:kuva_lich.maxDecryptionProgress}</t> 点"],
+          { "if": "cfg:kuva_lich.slaveKuvaDropChance>0", "cells": ["{item:kuvalich:kuva}", "<t>{cfg:kuva_lich.slaveKuvaDropChance|pctv}</t>", "<t>{cfg:kuva_lich.slaveKuvaMinAmount}~{cfg:kuva_lich.slaveKuvaMaxAmount}</t>"] },
+          { "if": "cfg:kuva_lich.slaveRivenSliverDropChance>0", "cells": ["{item:kuvalich:riven_sliver}", "<t>{cfg:kuva_lich.slaveRivenSliverDropChance|pctv}</t>", "1"] },
+          ["{item:kuvalich:requiem_gem}", "<t>{cfg:kuva_lich.slaveRequiemGemBaseChance|pctv}</t> + 每级抢夺 <t>{cfg:kuva_lich.slaveRequiemGemLootingBonus|pctv}</t>", "1"],
+          { "if": "cfg:kuva_lich.commonModuleDropChance>0", "cells": ["<c:CD7F32>青铜</c>模组", "<t>{cfg:kuva_lich.commonModuleDropChance|pctv}</t>", "1"] },
+          { "if": "cfg:kuva_lich.uncommonModuleDropChance>0", "cells": ["<c:C0C0C0>白银</c>模组", "<t>{cfg:kuva_lich.uncommonModuleDropChance|pctv}</t>", "1"] },
+          { "if": "cfg:kuva_lich.rareModuleDropChance>0", "cells": ["<c:FFD700>黄金</c>模组", "<t>{cfg:kuva_lich.rareModuleDropChance|pctv}</t>", "1"] }
+        ] },
+        { "type": "list", "items": [
+          "<t>解密进度</t>：攒够了会逐条揭示打败玄骸需要的安魂卡，见[[requiem/decryption]]。三条线索都揭示后，再杀就不加了",
+          "<t>模组</t>：装在武器或你自己身上的强化卡，见[[modules/module_overview]]。掉出的模组有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模组，其余是装在你身上的战甲模组",
+          "三种品质的模组共用一次抽取，一只最多掉一张；品质见[[modules/module_rarity]]",
+          "赤毒、裂罅碎块、安魂宝石各自独立判定，用途见[[start/materials]]"
+        ] },
+        { "type": "tip", "style": "bad", "title": "最后一击必须是你", "text": "用武器、弓箭、投掷物打死都算你的。被宠物、别的怪、岩浆收掉的不算；被火烧死的也不算，哪怕火是你用火焰附加、火矢点的。这些情况<b>没有进度，也不掉东西</b>。" },
+        { "type": "tip", "style": "wf", "text": "《星际战甲》里，奴仆（Thrall）是替玄骸卖命的手下，出没在玄骸的地盘上。处决它们能一点点揭示打败玄骸所需的安魂模组，这就是本模组「解密进度」的原型。" },
+        { "type": "h", "text": "进阶细节" },
+        { "type": "list", "items": [
+          "伤害公式：8 × 难度系数 × 0.85，难度系数简单 1、普通 2、困难 3。打在玩家身上时，原版还会按难度再调整一次，然后才算护甲",
+          "击飞力度：你的水平速度 ×3、垂直速度 ×2",
+          "被元素伤害收尾也不算你的：{lang:kuvaweapon.type.fire}灼烧、{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素打出的最后一击都不结算。元素见[[combat/elements]]",
+          "安魂宝石只看<em>击杀那一刻主手物品</em>上的<t>抢夺</t>，时运没用。用弓射死时主手是弓，抢夺按 0 算",
+          "这些掉落直接生成在它倒下的位置，战甲模组上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」词条对它们无效"
+        ] }
+      ],
+      "_src": [
+        "entity/KuvaSlaveEntity.java:38 — 继承 AbstractKuva；AbstractKuva.java:271-273 生物类型 UNDEAD",
+        "worldgen/KuvaLichBiomeModifier.java:93-95 — 仅主世界（is_overworld）且排除蘑菇岛才加刷怪",
+        "worldgen/KuvaLichBiomeModifier.java:299-307 — MONSTER 类别，权重 kuvaSlaveSpawnWeight，数量 kuvaSlaveMin/MaxSpawnCount；权重 0 不加（所以「在哪遇到」整节用 kuvaSlaveSpawnWeight>0 控制）",
+        "init/KuvaLichSpawnPlacements.java:40-46 — ON_GROUND + MOTION_BLOCKING_NO_LEAVES + Monster::checkMonsterSpawnRules（同僵尸：非和平、够暗）",
+        "init/KuvaLichEntities.java:28-33 + 原版 NaturalSpawner.isValidSpawnPostitionForType 末尾 level.noCollision(type.getAABB(x+0.5,y,z+0.5)) — 宽 1.5 的碰撞箱跨 x-0.25~x+1.25，占 3×3 格；高 2.9 占 3 格",
+        "原版 BiomeDefaultFeatures.monsters — 僵尸权重 95（对比用）；权重越大同类别里被抽中的机会越大",
+        "entity/KuvaSlaveEntity.java:78-86 — 生命 100 / 攻击 8 / 击退抗性 0.4 / 移速 0.35 / 追踪 32 / 护甲 4；原版 Zombie 移速 0.23",
+        "init/KuvaLichEntities.java:28-33 — 尺寸 1.5 × 2.9",
+        "原版 DamageEnchantment（亡灵杀手）、LivingEntity.isInvertedHealAndHarm（UNDEAD 药水颠倒）；module/weapon/WeaponCombatHandler.java:769-770 bane_of_undead 对 UNDEAD 生效",
+        "entity/KuvaSlaveEntity.java:67,99-101 — 高级抗性 = 固定 ×0.75",
+        "base/entity/AbstractKuva.java:46 — 直接继承 Monster，不是 Zombie / AbstractSkeleton；原版晒太阳着火写在 Zombie.aiStep / AbstractSkeleton.aiStep（isSunBurnTick），AbstractKuva.aiStep（323-338）没有",
+        "entity/KuvaSlaveEntity.java:54,127-128 — 伤害 = 攻击力 × 难度 id(1/2/3) × 0.85；原版 Player.hurt 对 mob_attack 另做难度缩放",
+        "entity/KuvaSlaveEntity.java:56-62,145-158 — 目标速度 ×3 / ×2，自身速度 = 目标速度 ×1.15（「顺势扑过来」）；命中回血 攻击力 × 0.1 = 0.8",
+        "entity/KuvaSlaveEntity.java:43-49,106-113 + AbstractKuva.java:356-366 — 每 20 tick 回血：有目标 max(1, 缺失×1%)，无目标 max(0.5, 缺失×0.5%)；满血 100 时即恒为 1 / 0.5",
+        "base/entity/AbstractKuva.java:305-308 — 反击 + 索敌玩家（mustSee，半径 = FOLLOW_RANGE 32）+ 索敌其他 Monster（排除 Creeper 与 AbstractKuva）；原版 EnderMan / ZombifiedPiglin 继承 Monster，史莱姆、恶魂、幻翼不是 Monster",
+        "base/entity/AbstractKuva.java:381-387 — 免疫 IS_FALL",
+        "entity/KuvaSlaveEntity.java:164-174 — 只在 damageSource.getEntity() 是 Player 时结算（宠物、环境、无归属伤害源都不算）；原版燃烧 on_fire、岩浆 lava 无归属实体；摔落已被 AbstractKuva.java:381-387 免疫，所以不列",
+        "module/weapon/WeaponElementSystem.java:578,587-589 — 火焰元素 setSecondsOnFire + inFire；626,659,817,863 — 毒素 magic() / 电击 lightningBolt() / 爆炸 explosion(null) / 毒气 magic()，均无归属实体，收尾则不结算",
+        "entity/KuvaSlaveEntity.java:195-199 — 进度 = random(minDecryptionProgress, maxDecryptionProgress)（RandomUtil.getInt 含两端）；capability/RequiemCard.java:245-255 unlockedCardStatus ≥ 3 时 addPotion 返回 false、进度不变",
+        "entity/KuvaSlaveEntity.java:294-301 — 掉落用 addFreshEntity 直接生成，在 super.die() 的 LivingDropsEvent 之后，所以 WarframeEffectHandler.java:290-311 的 itemDropMultiplier（LivingDropsEvent）不作用于这些掉落",
+        "entity/KuvaSlaveEntity.java:234-246 — 赤毒 slaveKuvaDropChance% × slaveKuvaMin~MaxAmount；裂罅碎块 slaveRivenSliverDropChance% × 1（写死 1）；概率 0 的行用行级 if 隐藏",
+        "entity/KuvaSlaveEntity.java:248-253 — 宝石概率 = slaveRequiemGemBaseChance + slaveRequiemGemLootingBonus × 主手 MOB_LOOTING 等级（配置注释写「时运」，代码是抢夺）；基础为 0 时抢夺仍可能掉，所以这一行不加条件",
+        "entity/KuvaSlaveEntity.java:262-286 — 模组单次掷骰 0~99：< common 铜 / < common+uncommon 银 / < 三者和 金；武器/战甲按 moduleWeaponRatio%",
+        "utils/RandomUtil.java:37-57 — percentageChance 参数是 0~100 百分数（所以用 pctv）",
+        "utils/KuvaPalette.java:96-100 — 品质色 青铜 CD7F32 / 白银 C0C0C0 / 黄金 FFD700",
+        "星际战甲小知识：原作 Kuva Thrall 出现在玄骸影响的节点，处决（Mercy）后积累 Murmur 进度揭示 Requiem 模组"
+      ]
+    },
+    {
+      "id": "kuva_master",
+      "title": "赤毒玄骸",
+      "icon": "kuvalich:kuva_master_spawn_egg",
+      "summary": "Boss：怎么遇到、打赢后得到什么",
+      "blocks": [
+        { "type": "p", "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是本模组的 Boss，也是安魂解密这条玩法的终点。你攒进度、猜卡片顺序，最后都要在它身上验证：猜对了，就能拿到赤毒武器等大奖。" },
+        { "type": "entity", "id": "kuvalich:kuva_master", "height": 96 },
+        { "type": "h", "text": "讨伐流程" },
+        { "type": "steps", "items": [
+          "击杀奴仆攒[[requiem/decryption|解密进度]]，逐条揭示答案。每条<t>线索</t>是答案里的一张<t>安魂卡</t>，三张卡排对顺序，就是打败它的密码",
+          "把三张卡按你猜的顺序，放进专门摆卡的方块[[requiem/requiem_gate|灭骸之扉]]",
+          "找到或召唤一只玄骸，<em>亲手</em>打出最后一击",
+          "击杀那一刻自动验证：猜对拿奖励，猜错[[enemies/kuva_escalation|玄骸等级]] +1"
+        ] },
+        { "type": "tip", "style": "wf", "text": "《星际战甲》里，玄骸（Kuva Lich）是每个玩家专属的宿敌。只有把三张安魂模组装上处决刀、按对顺序处决它，才能彻底打败它，并拿走它的赤毒武器。" },
+        { "type": "h", "text": "怎么遇到" },
+        { "type": "kv", "rows": [
+          { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["野外", "和奴仆一样在主世界暗处刷新，蘑菇岛除外；它更高，要 <t>3×3</t>、<t>4</t> 格高的空位"] },
+          { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["刷新权重", "<t>{cfg:kuva_lich.kuvaLichSpawnWeight}</t> <dim>（奴仆 {cfg:kuva_lich.kuvaSlaveSpawnWeight}，原版僵尸 95）</dim>"] },
+          { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["每群数量", "<t>{cfg:kuva_lich.kuvaLichMinSpawnCount}~{cfg:kuva_lich.kuvaLichMaxSpawnCount}</t> 只"] },
+          { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "cells": ["召唤", "用{item:kuvalich:requiem_ultimatum}，不限时间、地点，每次用掉 1 个"] }
+        ] },
+        { "type": "p", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "通牒对着空中右键，玄骸出现在你面朝的水平方向 <t>3</t> 格处，和你脚下同高；对着方块右键，出现在点中的那一面。创造模式不消耗。" },
+        { "type": "tip", "style": "warn", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "title": "召出来的也会消失", "text": "和野生的一样会被刷掉：所有玩家都离它 <t>128</t> 格以上时会被清掉；离最近的玩家超过 <t>32</t> 格且 <t>30</t> 秒以上没挨打，也可能随时消失；<t>和平</t>难度下召出来就没。通牒不退。" },
+        { "type": "h", "text": "基础属性" },
+        { "type": "kv", "rows": [
+          ["生命", "<t>200</t>"],
+          ["护甲", "<t>8</t>"],
+          ["击退抗性", "<t>65%</t>"],
+          ["移动速度", "<t>0.35</t>"],
+          ["索敌范围", "<t>64</t> 格"],
+          ["体型", "宽 <t>1.75</t> × 高 <t>3.4</t> 格"],
+          ["生物类型", "<t>亡灵</t>，同奴仆"],
+          ["免疫", "<b>火焰</b>和摔落：燃烧、岩浆、{lang:kuvaweapon.type.fire}元素的灼烧都伤不到它"]
+        ] },
+        { "type": "h", "text": "它怎么打你" },
+        { "type": "list", "items": [
+          "下手更重：每下 简单 <t>11.05</t>、普通 <t>22.1</t>、困难 <t>33.15</t>",
+          "<w>范围攻击</w>：每次出手，身体周围 <t>3</t> 格内的其他生物都吃一份同样的伤害，宠物、队友都会被波及，只有赤毒敌人不受影响",
+          "命中后把你<w>远远击飞</w>，并回复 <t>2.6</t> 点生命",
+          "每秒回血：有目标时 <t>2</t> 点或已损失生命的 <t>2%</t>，取大者；没目标时 <t>1</t> 点或 <t>1%</t>",
+          { "if": "cfg:kuva_lich.battleBoost>0", "text": "战斗拖得越久，它打得越痛，见[[enemies/battle_boost]]" },
+          "你打它的伤害要先过好几道减伤，见[[enemies/lich_resistance]]"
+        ] },
+        { "type": "h", "text": "击杀之后" },
+        { "type": "table", "header": ["你的状态", "结果"], "widths": [2, 4], "rows": [
+          ["灭骸之扉里没放满 3 张卡", "只拿解密进度，是奴仆的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"],
+          ["放满 3 张，<g>顺序全对</g>", "<g>解密成功</g>：拿下面的奖励，开始新一轮"],
+          ["放满 3 张，<b>有错</b>", "<b>解密失败</b>：[[enemies/kuva_escalation|玄骸等级]] +1，照常拿进度"]
+        ] },
+        { "type": "list", "items": [
+          "成功后，解密进度、线索、玄骸等级全部清零，下一轮的答案重新随机",
+          "失败时聊天栏会提示第 1 张是否猜对，第 1 张对了再提示第 2 张；怎么试顺序见[[requiem/decrypt_failure]]",
+          "<w>一条线索都还没揭示时，答案还没生成，放满 3 张必定失败</w>",
+          "多人一起打时，只结算补最后一刀的那个人：用他的卡，给他进度"
+        ] },
+        { "type": "h", "text": "解密成功的奖励" },
+        { "type": "table", "header": ["奖励", "数量 / 说明"], "widths": [2, 5], "rows": [
+          ["[[weapons/kuva_weapons|赤毒武器]]", "随机 1 把本模组的专属武器，等级在你当前的武器等级范围内随机"],
+          ["{item:kuvalich:lich_reliquary}", "1 个，合成三种工作台要用，见[[requiem/requiem_items]]"],
+          ["{item:kuvalich:kuva}", "<t>{cfg:kuva_lich.masterKuvaMinAmount}~{cfg:kuva_lich.masterKuvaMaxAmount}</t>"],
+          ["{item:kuvalich:riven_sliver}", "<t>{cfg:kuva_lich.masterRivenSliverMinAmount}~{cfg:kuva_lich.masterRivenSliverMaxAmount}</t>"],
+          ["高级模组", "必出 1 张：<t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> 是 <c:55FFFF>Prime</c>，其余是 <c:FF55FF>裂罅</c>；其中 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模组"],
+          { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "cells": ["{item:kuvalich:requiem_ultimatum}", "<t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> 概率掉 1 个"] },
+          { "if": ["cfg:kuva_lich.confiscationChance", "cfg:kuva_lich.maxConfiscatedItems"], "cells": ["被没收的物品", "全部掉回来，见[[requiem/confiscation]]"] },
+          ["放进去的三张卡", "各扣 1 点耐久，没用坏的回到背包，见[[requiem/requiem_cards]]"],
+          ["武器等级范围", "上限和下限一起提高，见下"]
+        ] },
+        { "type": "list", "items": [
+          "<c:55FFFF>Prime</c> 和 <c:FF55FF>裂罅</c>是模组的两档高级品质，区别见[[modules/module_rarity]]",
+          "武器等级范围：下限和上限各提高同一个随机值 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>；下限最多到 <t>{cfg:kuva_lich.minimumLevel}</t>，上限最多到 <t>{cfg:kuva_lich.maximumLevel}</t>，见[[weapons/weapon_level]]",
+          "这次掉的赤毒武器按<em>提升前</em>的范围生成，新范围从下一次解密起才生效"
+        ] },
+        { "type": "tip", "style": "warn", "text": "除了回背包的安魂卡，所有奖励都<w>掉在玄骸倒下的位置</w>，背包放不下的卡也掉在这里。别在岩浆、虚空边上收尾。" },
+        { "type": "tip", "style": "bad", "title": "最后一击必须是你", "text": "只有玩家亲手打死的玄骸才结算，弓箭、投掷物都算。被宠物、别的怪或环境伤害收掉的，<b>没有进度、没有奖励，也不算一次解密</b>。" },
+        { "type": "h", "text": "进阶细节" },
+        { "type": "list", "items": [
+          "伤害公式：13 × 难度系数 × 0.85，和奴仆同一套算法",
+          "击飞力度：水平 ×3.15、垂直 ×2.15",
+          "被{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素伤害收尾的也不结算",
+          "{lang:kuvaweapon.type.slash}元素的持续伤害、「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」词条、赤毒武器特效打出的最后一击，都算你的",
+          "奖励直接生成在地上，战甲模组上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」词条对它们无效"
+        ] }
+      ],
+      "_src": [
+        "entity/KuvaMasterEntity.java:485 — 通牒唯一产出（解密成功时按 requiemUltimatumDropChance 掉；RandomUtil.percentageChance ≤0 恒 false，data 里无配方 / 战利品表） → 教玩家用通牒召唤的句子都带 requiemUltimatumDropChance>0",
+        "entity/KuvaMasterEntity.java:50 — 继承 AbstractKuva（UNDEAD、免摔落、战斗增幅、类型修正同奴仆）",
+        "worldgen/KuvaLichBiomeModifier.java:289-297 — 权重 kuvaLichSpawnWeight（0 不加，所以野外三行用行级 if），数量 kuvaLichMin/MaxSpawnCount；93-95 仅主世界且排除蘑菇岛",
+        "init/KuvaLichSpawnPlacements.java:50-56 — 亮度规则同僵尸；init/KuvaLichEntities.java:44 尺寸 1.75×3.4 → 原版 NaturalSpawner noCollision(getAABB) 占 3×3 格、4 格高",
+        "item/RequiemUltimatum.java:59-76 — 右键空气：player.blockPosition().relative(player.getDirection(), 3)（水平四向、脚下同高）生成，非创造消耗 1",
+        "item/RequiemUltimatum.java:83-111 — 右键方块：pos.relative(点击面) 生成；两处均无任何条件检查，也不调用 finalizeSpawn / setPersistenceRequired",
+        "原版 Mob.checkDespawn — 和平且 Monster.shouldDespawnInPeaceful → discard；最近玩家 >128 格（MONSTER despawnDistance）立即 discard；>32 格（noDespawnDistance）且 noActionTime>600 时每 tick 1/800 概率 discard；全模组 grep 无 Persistence / removeWhenFarAway / checkDespawn 重写；checkDespawn 只对仍在实体运行范围内的区块生效（模拟距离很小时，人走远后区块先停转、实体随区块存盘，不一定被清），所以书里没写「立刻」",
+        "entity/KuvaMasterEntity.java:160-168 — 生命 200 / 攻击 13 / 击退抗性 0.65 / 移速 0.35 / 追踪 64 / 护甲 8",
+        "init/KuvaLichEntities.java:42-48 — 尺寸 1.75 × 3.4，fireImmune()（原版 Entity.isInvulnerableTo 对 IS_FIRE 免疫，发生在 LivingHurtEvent 之前）",
+        "entity/KuvaMasterEntity.java:66,336-337 — 伤害 = 攻击力 × 难度 id × 0.85",
+        "entity/KuvaMasterEntity.java:76,339,357-370 — AOE：包围盒 inflate(3)，排除 AbstractKuva 与主目标，同额伤害并击退",
+        "entity/KuvaMasterEntity.java:68-74,341-344,378-392 — 击退 ×3.15/×2.15，自身 ×1.15；命中回血 13 × 0.2 = 2.6",
+        "entity/KuvaMasterEntity.java:55-61,314-322 — 回血：有目标 max(2, 缺失×2%)，无目标 max(1, 缺失×1%)；AbstractKuva.java:356-366 每 20 tick 一次",
+        "entity/KuvaMasterEntity.java:397-407 — 只在 damageSource.getEntity() 是 Player 且真正死亡时结算",
+        "entity/KuvaMasterEntity.java:415-430 — isReadyCard（三槽全满）→ 全对成功（return）/ 否则失败后继续给进度；未放满 → 给进度",
+        "capability/RequiemCard.java:197-209 — isReadyCard = 三张卡都非空；isCorrectAnswer 要求 unlockedCardStatus > 0，答案在 244-250 processStage 首次过第一阶段时才 generateAnswers（之前为 -1），所以零线索放满必判失败",
+        "entity/KuvaMasterEntity.java:608-612 — 进度 = random(int(min×masterPotionMultiplier), int(max×masterPotionMultiplier))",
+        "entity/KuvaMasterEntity.java:588-600 — 失败：firstCorrect / secondCorrect 提示（第二条嵌套在第一条里），kuvaLevel + 1",
+        "entity/KuvaMasterEntity.java:440-494 — 成功：台词、归还没收、消耗卡、武器、玄骸之遗、裂罅碎块、赤毒、高级模组、通牒概率、提升等级范围",
+        "capability/RequiemCard.java:283-331 — 卡耐久 +1，未坏的返还；reset() 清空卡、线索、答案、进度、kuvaLevel（不清武器等级范围和没收列表）；下一轮答案在重新过第一阶段时 generateAnswers 重新随机",
+        "base/item/AbstractRequiemCard.java:28 — 安魂卡耐久 3",
+        "entity/KuvaMasterEntity.java:448-456 — 幸存卡优先放进背包，放不下 spawnItem 在死亡点；其余奖励都 spawnItem(pos)（646-653 addFreshEntity，在 super.die() 的 LivingDropsEvent 之后，不吃 itemDropMultiplier）",
+        "击杀归属：WeaponElementSystem.java:679-692 切割致死走 LivingEntityUtil.kill(t, playerAttack)；WeaponCombatHandler.java:1174-1181 处决 kill(exSource=playerAttack)；GuandaoPrime.java:88 / Paracesis.java:90 / Pennant.java:131 kill(indirectMagic(玩家, 玩家)) —— getEntity() 都是玩家；LivingEntityUtil.java:127-132 kill() 调 die(source)",
+        "entity/KuvaMasterEntity.java:458-463 — 武器 = 随机 KUVA_WEAPONS，等级 random(当前下限, 当前上限)，在 upgradeWeaponLevelCap 之前生成",
+        "data/kuvalich/recipes/requiem_evolve.json、requiem_weapon_table.json、requiem_warframe_table.json — 三个配方都要玄骸之遗（「合成三种工作台要用」；其余配方 forma / requiem_gate / requiem_recast 不用）",
+        "entity/KuvaMasterEntity.java:534-548 — masterPrimeModuleChance% Prime，否则裂罅；再按 moduleWeaponRatio% 分武器/战甲",
+        "entity/KuvaMasterEntity.java:485-487 — requiemUltimatumDropChance%（0~100）；为 0 时该行用行级 if 隐藏",
+        "奖励表「被没收的物品」行的条件与 requiem/confiscation 一致：confiscationChance 与 maxConfiscatedItems 都非 0 才有没收",
+        "entity/KuvaMasterEntity.java:556-579 — 同一个 random(minimumLevelCapIncrease, maximumLevelCapIncrease) 同时加到下限和上限，分别封顶 minimumLevel / maximumLevel",
+        "utils/KuvaPalette.java:101-102 — Prime 55FFFF / 裂罅 FF55FF",
+        "星际战甲小知识：原作 Kuva Lich 是玩家自己产生的宿敌；Requiem 模组装在 Parazon 上，按正确顺序 Mercy 才能 Vanquish，并获得其 Kuva 武器"
+      ]
+    },
+    {
+      "id": "kuva_escalation",
+      "title": "玄骸等级",
+      "icon": "kuvalich:requiem_gate",
+      "summary": "猜错一次升一级，只有解密成功才清零",
+      "blocks": [
+        { "type": "p", "text": "<hl>玄骸等级</hl>记录你猜错了几次：每次带着猜错的三张卡击杀{lang:entity.kuvalich.kuva_master}，它就 +1，聊天栏会报当前等级。" },
+        { "type": "list", "items": [
+          "等级记在<em>你自己</em>身上，不属于哪一只玄骸",
+          "<b>死亡不会清零</b>，只有解密成功才归零",
+          "还没揭示出任何一张答案卡时就放满三张去打，也算猜错"
+        ] },
+        { "type": "h", "text": "对你的影响" },
+        { "type": "p", "if": "cfg:kuva_lich.increaseDamage>0", "text": "每级让赤毒敌人（奴仆、玄骸）打你的伤害 +<t>{cfg:kuva_lich.increaseDamage|pct}</t>。只算它们：别的怪物、摔落、岩浆都不受影响。" },
+        { "type": "table", "if": "cfg:kuva_lich.increaseDamage>0", "header": ["玄骸等级", "赤毒敌人打你的伤害"], "rows": [
+          ["1", "<t>{cfg:kuva_lich.increaseDamage|add:1|round:2|x}</t>"],
+          ["2", "<t>{cfg:kuva_lich.increaseDamage|mul:2|add:1|round:2|x}</t>"],
+          ["3", "<w>{cfg:kuva_lich.increaseDamage|mul:3|add:1|round:2|x}</w>"],
+          ["5", "<b>{cfg:kuva_lich.increaseDamage|mul:5|add:1|round:2|x}</b>"]
+        ] },
+        { "type": "p", "if": "cfg:kuva_lich.reducedDamage>0", "text": "每级还让你打赤毒敌人的伤害 -<t>{cfg:kuva_lich.reducedDamage|pct}</t>，最多削减 99.9%；打别的目标不受影响。" },
+        { "type": "tip", "if": ["!cfg:kuva_lich.increaseDamage>0", "!cfg:kuva_lich.reducedDamage>0"], "style": "good", "text": "玄骸等级只记录你猜错的次数，不会削弱你：猜错只是少一次成功。" },
+        { "type": "tip", "style": "warn", "title": "猜错后记得换卡", "text": "猜错后三张卡<em>不会被收走</em>，仍放在摆卡的[[requiem/requiem_gate|灭骸之扉]]里。不换卡就去杀下一只玄骸，会按同样的错误组合再失败一次、再 +1 级。" },
+        { "type": "p", "text": "怎么用最少的次数试出正确顺序，见[[requiem/decrypt_failure]]。" },
+        { "type": "tip", "style": "wf", "text": "《星际战甲》里，用错误的安魂模组顺序处决玄骸会失败：它不但活下来，还会升一级、变得更强。本模组里，这个等级改成记在你自己身上。" }
+      ],
+      "_src": [
+        "capability/RequiemCard.java:201-209 + KuvaMasterEntity.java:419-428 — unlockedCardStatus = 0 时 isCorrectAnswer 恒 false，放满即走失败分支 +1 级",
+        "entity/KuvaMasterEntity.java:588-600 — 解密失败 kuvaLevel + 1，failedToDecrypt 消息带等级",
+        "capability/RequiemCard.java — kuvaLevel 是玩家 capability 上的字段（记在玩家身上，与哪只玄骸无关）",
+        "capability/RequiemCard.java:317-331 — reset()（仅解密成功时调用）把 kuvaLevel 归零；CapabilityRegistryHandler.java:111-121 死亡/换维度克隆全部数据",
+        "base/entity/AbstractKuva.java:122-126 onLivingHurt + :169-174 applyPlayerDefense — 伤害归属者（getEntity）是赤毒实体且目标是玩家时 × (1 + kuvaLevel × increaseDamage)；别的来源不动",
+        "base/entity/AbstractKuva.java:127-129 onLivingHurt + :154-161 applyPlayerDamageModifier — 归属者是玩家且目标是赤毒实体时 × (1 − min(0.999, kuvaLevel × reducedDamage))，默认 reducedDamage=0；entity/KuvaSlaveEntity.java:38、KuvaMasterEntity.java:50 都继承 AbstractKuva",
+        "increaseDamage 与 reducedDamage 都为 0 时，等级照常 +1 并在聊天栏显示，但不影响任何伤害（good tip 描述的就是这种实际行为）",
+        "entity/KuvaMasterEntity.java:588-600 — 失败分支不动卡；RequiemCard 只有 consumeCardsAndGetSurvivors（成功时）清卡",
+        "星际战甲小知识：原作用错误 Requiem 顺序 Mercy 玄骸会失败，玄骸 Rank 提升；末句「本模组里记在你身上」对应上面 kuvaLevel 在玩家 capability 上（不写「代价」，因为 increaseDamage / reducedDamage 都为 0 时没有惩罚）"
+      ]
+    },
+    {
+      "id": "battle_boost",
+      "title": "战斗增幅",
+      "icon": "minecraft:clock",
+      "summary": "赤毒敌人打得越久，下手越重",
+      "if": "cfg:kuva_lich.battleBoost>0",
+      "blocks": [
+        { "type": "p", "text": "赤毒敌人越打越凶：<hl>战斗拖得越久，它们造成的伤害越高</hl>，而且没有上限。所以打它们要速战速决。" },
+        { "type": "formula", "text": "赤毒敌人造成的伤害 × (1 + 战斗秒数 × {cfg:kuva_lich.battleBoost|pct})" },
+        { "type": "table", "header": ["战斗时长", "伤害倍率"], "rows": [
+          ["10 秒", "<t>{cfg:kuva_lich.battleBoost|mul:10|add:1|round:2|x}</t>"],
+          ["30 秒", "<t>{cfg:kuva_lich.battleBoost|mul:30|add:1|round:2|x}</t>"],
+          ["60 秒", "<w>{cfg:kuva_lich.battleBoost|mul:60|add:1|round:2|x}</w>"],
+          ["120 秒", "<b>{cfg:kuva_lich.battleBoost|mul:120|add:1|round:2|x}</b>"]
+        ] },
+        { "type": "h", "text": "怎么计时" },
+        { "type": "list", "items": [
+          "奴仆和玄骸<em>各自</em>计时",
+          "从它<w>锁定目标那一刻</w>就开始算，不是从交手才开始：奴仆在 <t>32</t> 格、玄骸在 <t>64</t> 格内看见你就会锁定",
+          "只要它有攻击目标就一直涨：目标可以是你、你的宠物，或它正在打的其他怪",
+          "失去目标后按同样的速度往回退：打了 60 秒，要脱战 60 秒才完全归零",
+          "计时跟着实体一起存盘，区块卸载再加载不会清零"
+        ] }
+      ],
+      "_src": [
+        "base/entity/AbstractKuva.java:122-123,143-146 — 攻击方是 AbstractKuva：伤害 × (1 + battleTick/20 × battleBoost)，无上限；battleBoost = 0 时倍率恒为 1，所以整篇用 battleBoost>0 控制",
+        "base/entity/AbstractKuva.java:372-378 — 有目标每 tick +1，无目标每 tick -1（至 0）；HAS_TARGET 来自当前 target（玩家或其他 Monster），343-347 只看 target 非空且存活，不看是否已交手",
+        "base/entity/AbstractKuva.java:306 — NearestAttackableTargetGoal<Player>(mustSee=true)，搜索半径 = FOLLOW_RANGE：KuvaSlaveEntity.java:84 = 32，KuvaMasterEntity.java:166 = 64",
+        "base/entity/AbstractKuva.java:413-422 — BattleTick 写入 NBT"
+      ]
+    },
+    {
+      "id": "lich_resistance",
+      "title": "玄骸的抗性机制",
+      "icon": "minecraft:shield",
+      "summary": "伤害为什么越打越低：四道减伤逐一拆解",
+      "blocks": [
+        { "type": "p", "text": "打玄骸时伤害越打越低，不是错觉：你打在赤毒敌人身上的每一下，都要先过几道减伤关卡。奴仆只有前两道，玄骸有全部四道。" },
+        { "type": "table", "header": ["关卡", "效果", "谁有"], "widths": [3, 6, 2], "rows": [
+          ["① 伤害类型修正", "箭矢 <g>×1.25</g>；其他弹射物、魔法 <b>×0.75</b>", "都有"],
+          ["② 固定减伤", "一律 <b>×0.75</b>", "奴仆"],
+          ["② 适应性抗性", "同一类伤害连续打，每层 <b>-5%</b>，最多 <b>-30%</b>", "玄骸"],
+          ["③ 连击递减", "2 秒内挨打越多越低，最低 <b>40%</b>", "玄骸"],
+          ["④ 单次伤害软上限", "超过最大生命 <t>15%</t> 的部分被大幅压缩", "玄骸"]
+        ] },
+        { "type": "tip", "style": "info", "title": "只打折原始伤害", "text": "这几关只打折这一下的<t>原始伤害</t>：武器攻击力、附魔、跳劈暴击。模组词条、模组暴击、元素伤害的倍率在过关<em>之后</em>才乘，<g>软上限压不到它们</g>，见[[combat/damage]]。" },
+        { "type": "h", "text": "① 伤害类型修正" },
+        { "type": "table", "header": ["类别", "包括", "修正"], "widths": [2, 6, 2], "rows": [
+          ["箭矢", "直接打中它的是箭：弓箭、弩箭、投掷的三叉戟", "<g>×1.25</g>"],
+          ["弹射物", "其余算作弹射物的伤害：雪球、其他模组的飞行物等", "<b>×0.75</b>"],
+          ["魔法", "药水、荆棘等魔法伤害，以及被认作魔法的模组法术", "<b>×0.75</b>"],
+          ["近战", "直接打到它的是生物：你自己挥砍，宠物和召唤物的攻击", "×1"],
+          ["其他", "以上都不是：爆炸、闪电、燃烧等", "×1"]
+        ] },
+        { "type": "p", "text": "从上往下判定，先符合哪类就算哪类。这 5 类也是第②关分开记层的依据。" },
+        { "type": "h", "text": "② 适应性抗性（玄骸）" },
+        { "type": "p", "text": "玄骸会「适应」你的打法：同一类伤害打得越多，这一类被减得越多。" },
+        { "type": "list", "items": [
+          "5 类伤害<em>各自</em>记层",
+          "每次挨打，先按这一类当前的层数减伤，每层 <t>5%</t>；然后这一类 +1 层。所以第一下不减伤",
+          "最多 <t>6</t> 层，也就是这一类伤害 <b>-30%</b>",
+          "某一类 <t>4~5</t> 秒没再打中，这一类掉 1 层，之后每 <t>5</t> 秒再掉 1 层",
+          "超过 <t>10</t> 秒没受到任何伤害，所有类别清零"
+        ] },
+        { "type": "tip", "style": "good", "text": "<g>轮换伤害类型</g>最划算：近战打一阵换弓，再换法术，让闲着的类别掉层。<w>换武器不等于换类别</w>：两把剑都是近战，共用一个计数。" },
+        { "type": "tip", "style": "wf", "text": "《星际战甲》里有张战甲模组叫 Adaptation（适应）：受到某种伤害后，对这种伤害叠加抗性。玄骸的适应性抗性是同一个思路，只是用在了敌人身上。" },
+        { "type": "h", "text": "③ 连击递减（玄骸）" },
+        { "type": "p", "text": "短时间内挨打越多，每一下越不疼。" },
+        { "type": "formula", "text": "本次伤害倍率 = max(40%, 1 − 过去 2 秒内已被打中的次数 × 5%)" },
+        { "type": "table", "header": ["2 秒内的第几下", "倍率"], "rows": [
+          ["第 1 下", "100%"],
+          ["第 3 下", "90%"],
+          ["第 5 下", "80%"],
+          ["第 9 下", "60%"],
+          ["第 13 下起", "<b>40%</b>"]
+        ] },
+        { "type": "tip", "style": "warn", "title": "哪些算一次「被打中」", "text": "<w>每一下真正结算的伤害都算</w>，也都叠层：{lang:kuvaweapon.type.poison} / {lang:kuvaweapon.type.gas}持续伤害的每一跳、{lang:kuvaweapon.type.electricity} / {lang:kuvaweapon.type.explosion}的附加伤害、荆棘、宠物攻击……没蓄满力的挥砍也算。持续伤害越多，主力输出被压得越低。" },
+        { "type": "h", "text": "④ 单次伤害软上限（玄骸）" },
+        { "type": "p", "text": "一下打得太狠，超出的部分会被大幅压缩。所以武器本身攻击力越高，被压得越狠。" },
+        { "type": "formula", "text": "阈值 = 最大生命 × 15%（默认 200 × 15% = 30）；超出时：实际伤害 = 阈值 + ln(1 + 超出部分 × 0.5) ÷ 0.5" },
+        { "type": "table", "header": ["经过前三关后的这一下", "实际生效（默认 200 生命）"], "rows": [
+          ["30 以内", "原样"],
+          ["40", "≈ 33.6"],
+          ["60", "≈ 35.5"],
+          ["100", "≈ 37.2"],
+          ["200", "≈ 38.9"]
+        ] },
+        { "type": "h", "text": "进阶细节" },
+        { "type": "list", "items": [
+          "被受击无敌时间整个挡掉的攻击，不算一次被打中",
+          "{lang:kuvaweapon.type.slash}元素的持续伤害直接扣血，不过任何一关，也不叠层、不占连击计数",
+          { "if": ["cfg:kuva_lich.enableThirdPartyMagicRecognition", "cfg:kuva_lich.magicDamageNamespaces"], "text": "这些模组造成的伤害整体算作魔法：<t>{cfg:kuva_lich.magicDamageNamespaces|list}</t>" },
+          "能整个绕过这几关的手段，见[[enemies/lich_tactics]]"
+        ] }
+      ],
+      "_src": [
+        "base/entity/AbstractKuva.java:106-135 — LivingHurtEvent（默认 NORMAL 优先级）里对 AbstractKuva 目标调用 applyResistance",
+        "module/weapon/WeaponCombatHandler.java:543-590 — 武器模组结算在 LivingHurtEvent LOWEST，读取的 evt.getAmount() 已被赤毒抗性改过，所以抗性作用在模组倍率之前",
+        "base/entity/AbstractKuva.java:214-220 — 先 applyBaseDamageTypeModifier 再 applyAdvancedResistance",
+        "base/entity/AbstractKuva.java:51-55,233-246 — 直接实体 AbstractArrow ×1.25；否则 IS_PROJECTILE ×0.75；魔法且非 IS_PROJECTILE ×0.75（原版 ThrownTrident 继承 AbstractArrow）",
+        "entity/KuvaSlaveEntity.java:67,99-101 — 奴仆固定 ×0.75",
+        "entity/KuvaMasterEntity.java:181-198 — 玄骸：适应性 → 连击递减 → 软上限",
+        "base/entity/AbstractKuva.java:190-204 — 分类优先级 ARROW > PROJECTILE > MAGIC > MELEE（直接实体是 LivingEntity）> OTHER",
+        "module/weapon/MagicDamageClassifier.java:107-132,144-147,179-183 — 魔法 = 原版（msgId 含 magic 或 witch_resistant_to：magic / indirect_magic / sonic_boom / thorns，许多模组法术 msgId 带 magic 也命中这条）或第三方（开关 enableThirdPartyMagicRecognition：白名单、forge:is_magic、命名空间）；召唤物挥砍按近战。所以「被认作魔法的模组法术」一句不随开关隐藏",
+        "config/ModConfig.java:243-244 — 默认命名空间 irons_spellbooks / gtbcs_geomancy_plus / goety / ars_nouveau / sweetmagic；命名空间那一项加了「开关开启 + 列表非空」的行级条件",
+        "entity/KuvaMasterEntity.java:81-87,211-226 — 每层 0.05，最多 6 层；先按当前层减伤再 +1",
+        "entity/KuvaMasterEntity.java:291-310 + AbstractKuva.java:335-337 — 每 20 tick 检查：距上次任意受击 >200 tick 全清；某类 >80 tick 未命中则 -1 层并把该类计时设为当前 tick（检查粒度 20 tick，所以首次 81~100 tick、之后每 100 tick 掉一层）",
+        "entity/KuvaMasterEntity.java:92-98,238-263 — 统计 40 tick 内已有命中数（不含本次），倍率 max(0.4, 1 − hits×0.05)",
+        "base/entity/AbstractKuva.java:132-133 — 每次 LivingHurtEvent 都走抗性（不看伤害是否为 0），即每跳 DoT / 荆棘 / 宠物攻击都记层记次；原版 LivingEntity.hurt 在受击无敌 >10 且 amount ≤ lastHurt 时直接 return false，不进 actuallyHurt，也就没有 LivingHurtEvent",
+        "module/weapon/WeaponElementSystem.java:626,659,817,863 — 毒素/毒气用 magic()、电击 lightningBolt()、爆炸 explosion(null)，都经 hurt() 触发 LivingHurtEvent；679-692 切割走 damageHealthDirectly，不触发",
+        "原版 DamageTypeTags.IS_FIRE 含 fireball / unattributed_fireball，玄骸 fireImmune（init/KuvaLichEntities.java:47）→ 火球对玄骸无效，所以弹射物举例里不写火球",
+        "entity/KuvaMasterEntity.java:103-105,274-283 — 阈值 = 最大生命 × 0.15；超出按 ln(1 + excess×0.5)/0.5 压缩；200→约 38.9 与源码注释一致",
+        "星际战甲小知识：原作 Adaptation 战甲模组——受伤时对该伤害类型叠加伤害抗性"
+      ]
+    },
+    {
+      "id": "lich_tactics",
+      "title": "讨伐玄骸的打法",
+      "icon": "kuvalich:lich_reliquary",
+      "summary": "把机制串起来：准备、输出、收尾",
+      "blocks": [
+        { "type": "p", "text": "这一篇把前面的机制串成一套打法：开打前准备好，输出时避开减伤，最后亲手收尾。照着做，能少踩很多坑。" },
+        { "type": "h", "text": "开打前" },
+        { "type": "steps", "items": [
+          "检查[[requiem/requiem_gate|灭骸之扉]]里的三张卡是不是这次想试的顺序。没放满只是刷进度；一条线索都没揭示时放满必败",
+          "至少带两三种伤害类型：近战武器 + 弓或弩 + 法术，最好有一把模组倍率高的[[weapons/kuva_weapons|赤毒武器]]",
+          "选开阔平坦、远离宠物和村民的场地：它的范围攻击会波及周围 3 格，击飞还可能把你甩下悬崖",
+          { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "想挑场地，就在准备好的地方用{item:kuvalich:requiem_ultimatum}召唤" }
+        ] },
+        { "type": "h", "text": "输出" },
+        { "type": "list", "items": [
+          "<g>弓弩优先</g>：箭矢是唯一吃 ×1.25 的类别，而且和近战分开记层",
+          "按类别轮换，每类打几下就换，别让任何一类叠到 6 层",
+          "节奏比手速重要：2 秒内第 13 下起只剩 40%，一记蓄满力的攻击比两下半蓄力划算",
+          "单下原始伤害别远超 30（默认生命时）：超出的部分几乎全被软上限吃掉，把资源花在模组倍率上",
+          { "if": "cfg:kuva_lich.battleBoost>0", "text": "<w>速战速决</w>：它的伤害按战斗秒数一路上涨，每秒 +<t>{cfg:kuva_lich.battleBoost|pct}</t>，见[[enemies/battle_boost]]" }
+        ] },
+        { "type": "h", "text": "绕过抗性的手段" },
+        { "type": "list", "items": [
+          "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」词条：触发时直接击杀，对玄骸同样有效，见[[reference/weapon_attr_special]]",
+          "直接扣血的伤害：{lang:kuvaweapon.type.slash}元素的持续伤害、部分[[weapons/weapon_list|赤毒武器]]特效的持续伤害。它们不过任何一关，也不叠层、不占连击计数"
+        ] },
+        { "type": "tip", "if": "mod:tacz", "style": "info", "title": "用枪打", "text": "TACZ 的子弹按「其他」类结算（×1）。每发子弹算两次被打中，哪怕其中一段是 0 伤害，所以连击递减和适应性抗性涨得快一倍。「{lang:item.module.true_bullet}」词条附加的伤害直接扣血，绕过抗性。" },
+        { "type": "h", "text": "收尾" },
+        { "type": "list", "items": [
+          "残血时换成直接攻击补刀，别等{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素伤害把它磨死，那样不结算",
+          "{lang:kuvaweapon.type.slash}持续伤害、处决 / 秒杀、赤毒武器特效收的尾，都算你的",
+          "多人讨伐：只结算补最后一刀的那个人，用的是他的卡和进度"
+        ] }
+      ],
+      "_src": [
+        "entity/KuvaMasterEntity.java:485 — 通牒唯一产出（解密成功时按 requiemUltimatumDropChance 掉；RandomUtil.percentageChance ≤0 恒 false，data 里无配方 / 战利品表） → 教玩家用通牒召唤的句子都带 requiemUltimatumDropChance>0",
+        "entity/KuvaMasterEntity.java:415-430 — 三槽全满才判定解密，否则只给进度",
+        "entity/KuvaMasterEntity.java:357-370 — AOE inflate(3)；378-392 击退 ×3.15/×2.15",
+        "base/entity/AbstractKuva.java:51,233-235 — 箭矢 ×1.25；190-204 箭矢与近战是不同类别",
+        "entity/KuvaMasterEntity.java:92-98,238-263 — 连击递减；原版 Player.attack 伤害 × (0.2 + 蓄力²×0.8)",
+        "entity/KuvaMasterEntity.java:103-105,274-283 — 软上限阈值 = 最大生命 15%（200 → 30）；WeaponCombatHandler.java:543 模组在 LOWEST 之后乘",
+        "base/entity/AbstractKuva.java:143-146 — battleBoost 每秒增幅",
+        "module/weapon/WeaponCombatHandler.java:1142-1183 — execute_threshold（生命 ≤ 最大生命×阈值）/ execute_chance 触发后下一 tick LivingEntityUtil.kill，无 Boss 例外",
+        "utils/LivingEntityUtil.java:127-132,148-180 — kill / damageHealthDirectly 直接改血量，不触发 LivingHurtEvent",
+        "module/weapon/WeaponElementSystem.java:679-692 — 切割 DoT 走 damageHealthDirectly；item/weapon/GuandaoPrime.java:84-89、Paracesis.java:86-91、Pennant.java:126-132 特效 DoT 同样直接扣血",
+        "module/weapon/WeaponCombatHandler.java:1047-1076 — true_bullet 仅 TACZ 子弹，下一 tick damageHealthDirectly",
+        "tacz-1.20.1-1.1.7-hotfix.jar data/minecraft/tags/damage_type — 只有 bypasses_armor / bypasses_invulnerability，tacz:bullet 不在 is_projectile；子弹实体不是 AbstractArrow → OTHER",
+        "module/weapon/WeaponCombatHandler.java:550-559 — TACZ 每发子弹拆两次 hurt()、中间清无敌帧，0 伤害段也触发 LivingHurtEvent；已用 javap 核对 tacz-1.20.1-1.1.7-hotfix.jar 的 EntityKineticBullet.tacAttackEntity：两次 invulnerableTime=0 + hurt(普通段 ×(1−armorIgnore)) + hurt(破甲段 ×armorIgnore)；EntityKineticBullet extends Projectile（非 AbstractArrow），伤害源 tacz:bullet / bullet_ignore_armor（msgId tacz.bullet），目标在 tacz:use_magic_damage_on（默认只有末影人）时才改用 indirectMagic；AbstractKuva.java:132-133 每次事件都记层记次",
+        "entity/KuvaMasterEntity.java:397-407 + WeaponElementSystem.java:626,659,817,863 — 无归属伤害源收尾不结算；结算对象是 damageSource.getEntity() 那名玩家",
+        "WeaponElementSystem.java:690-691、WeaponCombatHandler.java:1174-1181、GuandaoPrime.java:88 / Paracesis.java:90 / Pennant.java:131 — 切割、处决、武器特效的致死一下都走 LivingEntityUtil.kill(玩家伤害源)，归属玩家，会结算",
+        "capability/RequiemCard.java:201-209 — 零线索时 isCorrectAnswer 恒 false"
+      ]
+    }
+  ]
+}

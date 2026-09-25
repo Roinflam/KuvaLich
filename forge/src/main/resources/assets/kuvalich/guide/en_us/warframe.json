@@ -1,0 +1,530 @@
+{
+  "id": "warframe",
+  "order": 70,
+  "title": "Warframe",
+  "subtitle": "Eight always-on mod slots and shields",
+  "icon": "kuvalich:requiem_warframe_table",
+  "entries": [
+    {
+      "id": "warframe_table",
+      "title": "Warframe Arsenal",
+      "icon": "kuvalich:requiem_warframe_table",
+      "summary": "Where Warframe mods go: recipe and use",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The {item:kuvalich:requiem_warframe_table} is where you install <hl>Warframe mods</hl> on yourself. Installed mods are <g>always active</g> - you do not need to hold anything or wear armor."
+        },
+        {
+          "type": "p",
+          "text": "Here, \"Warframe\" simply means you, the player. \"Mods\" are cards that add stats, and they come in two kinds: weapon mods and Warframe mods. For any other unfamiliar term, see the [[start/glossary|Glossary]]."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the original game, a Warframe is a biomechanical combat suit the player controls, each with its own look and abilities. The Arsenal is the station on your ship where you pick Warframes and weapons and install mods."
+        },
+        {
+          "type": "h",
+          "text": "How to build it"
+        },
+        {
+          "type": "recipe",
+          "item": "kuvalich:requiem_warframe_table"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "{item:kuvalich:riven_sliver}",
+              "<t>×4</t>"
+            ],
+            [
+              "{item:kuvalich:lich_reliquary}",
+              "<t>×1</t>"
+            ],
+            [
+              "{item:kuvalich:requiem_evolve}",
+              "<t>×1</t> <w>the whole block is consumed</w> - [[weapons/requiem_evolve|build another]] if you still need one"
+            ],
+            [
+              "{item:minecraft:obsidian}",
+              "<t>×3</t>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Not an early-game build",
+          "text": "A {item:kuvalich:lich_reliquary} drops only when you kill the [[enemies/kuva_master|Kuva Lich]] boss with a successful [[requiem/decryption|decryption]] - that is, you got all three Requiem cards and their order right. <t>1</t> per kill.\nThe {item:kuvalich:requiem_evolve} (the workbench for upgrading weapons) also takes <t>1</t> in its own recipe, so you need at least two Lich victories."
+        },
+        {
+          "type": "p",
+          "text": "<dim>Where each material comes from: [[start/materials]].</dim>"
+        },
+        {
+          "type": "h",
+          "text": "How to use it"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Place it and right-click. The two top rows, <t>8</t> slots in total, are your Warframe mod slots.",
+            "Drag a mod into an empty slot, or <t>Shift + left-click</t> it in your inventory to send it to the first slot that accepts it. Only Warframe mods fit here.",
+            "A mod <g>takes effect the moment it goes in</g> and stops the moment it comes out - no need to close the screen.",
+            "Press <t>Tab</t> to open the Warframe side of the [[modules/module_codex|Mod Codex]]."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Mod won't go in?"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<w>Not revealed yet</w>: a mod whose stats show ??? must be revealed first - hold it in your main hand and right-click. The revealed mod drops at your feet.",
+            "<w>Only one mod per family</w>: e.g. Vitality, Vitality Prime and Executioner Vitality are versions of one family, so only one of them can go in.",
+            "Mods with unrelated names can share a family too, such as Athena and Redirection.",
+            "At most <t>1</t> [[modules/riven_module|Riven mod]] (a mod whose stats are all random) can be installed.",
+            "Mods that add <t>loot drop multiplier</t> exclude each other, and so do mods that add <t>ore drop multiplier</t>; Riven mods are exempt from this rule.",
+            "While you hold a mod on the cursor, installed mods that conflict with it <b>flash red</b>."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "Mods live on you, not in the block",
+          "text": "Your eight slots follow <em>you</em>: any Arsenal you open shows your own mods, and other players see theirs.\nDeath, changing dimension and returning from the End all <g>keep them intact - they never drop</g>. Breaking the Arsenal does not touch them either."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Mine it with diamond",
+          "text": "You need a <em>diamond pickaxe or better</em> to get the Arsenal back - the wrong tool destroys it with no drop. It is twice as hard as obsidian, so it takes a while."
+        }
+      ]
+    },
+    {
+      "id": "warframe_module",
+      "title": "How Warframe Mods Work",
+      "icon": "kuvalich:warframe_rare_module",
+      "summary": "Always on, how values stack, when each stat applies",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Mods installed in the [[warframe/warframe_table|Warframe Arsenal]] are <g>active at all times</g>: fighting, mining, travelling, even empty-handed, and no armor is required."
+        },
+        {
+          "type": "p",
+          "text": "How to tell: a Warframe mod's last tooltip line reads \"{lang:kuvaweapon.warframe_type.tooltip}\"; a weapon mod's reads \"{lang:kuvaweapon.item_type.tooltip}\". Neither kind fits the other's slots."
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:warframe_common_module",
+            "kuvalich:warframe_uncommon_module",
+            "kuvalich:warframe_rare_module",
+            "kuvalich:warframe_prime_module",
+            "kuvalich:warframe_riven_module"
+          ],
+          "caption": "The five Warframe mod tiers (rarities) - see [[modules/module_rarity]]"
+        },
+        {
+          "type": "h",
+          "text": "Where they come from, and spares"
+        },
+        {
+          "type": "list",
+          "items": [
+            {
+              "if": "cfg:kuva_lich.moduleWeaponRatio<100",
+              "text": "Mining [[world/requiem_ore|Requiem Ore]] and fighting [[enemies/kuva_slave|Kuva Thralls]] and the [[enemies/kuva_master|Kuva Lich]] boss can all drop mods; <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> of them are Warframe mods, the rest are weapon mods."
+            },
+            {
+              "if": "!cfg:kuva_lich.moduleWeaponRatio<100",
+              "text": "Mods from mining [[world/requiem_ore|Requiem Ore]] and from [[enemies/kuva_slave|Kuva Thralls]] and the [[enemies/kuva_master|Kuva Lich]] boss are all weapon mods - Warframe mods never drop from them."
+            },
+            {
+              "if": "cfg:kuva_lich.enableWarframeModuleRecast",
+              "text": "Put three spare Warframe mods into the [[weapons/requiem_recast|Requiem Recast]] to combine them into one."
+            },
+            "A single Warframe mod placed in the [[weapons/requiem_recast|Requiem Recast]] on its own is broken down into {item:kuvalich:endo}."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the original game, mods are sorted by what they fit: Warframe mods go only on Warframes, and rifle, shotgun, melee and other weapon mods only on that kind of weapon."
+        },
+        {
+          "type": "h",
+          "text": "How values stack"
+        },
+        {
+          "type": "list",
+          "items": [
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "Each mod's real value = its max-rank value × current rank ÷ <t>{cfg:kuva_lich.moduleMaxLevel}</t>. The tooltip already shows the adjusted number; ranking up uses {item:kuvalich:endo} - see [[modules/module_level]]."
+            },
+            {
+              "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "Mods have no ranks - every mod works at full value."
+            },
+            "The same stat across your eight mods is <em>simply added up</em>; negative values cancel out positive ones.",
+            "Exceptions: {lang:kuvaweapon.warframe_attribute_type.fireProtection}, {lang:kuvaweapon.warframe_attribute_type.electricProtection}, {lang:kuvaweapon.warframe_attribute_type.homologousProtection}, {lang:kuvaweapon.warframe_attribute_type.fallProtection} and {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay} <em>multiply</em>, and resistance from kill stacks multiplies on top."
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "60% {lang:kuvaweapon.warframe_attribute_type.fireProtection} on a mod + 50% from stacks → you take 40% × 50% = 20% (not 110% immunity)"
+        },
+        {
+          "type": "h",
+          "text": "Five stats that become vanilla attributes"
+        },
+        {
+          "type": "p",
+          "text": "{lang:kuvaweapon.warframe_attribute_type.health}, {lang:kuvaweapon.warframe_attribute_type.armor}, {lang:kuvaweapon.warframe_attribute_type.sprintSpeed}, {lang:kuvaweapon.warframe_attribute_type.knockbackResistance} and {lang:kuvaweapon.warframe_attribute_type.reachDistance} are converted into vanilla attributes, refreshed every <t>0.25</t> s."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Remainders are dropped",
+          "text": "These five count in whole <t>10%</t> steps, <w>rounded down</w>: +25% is really +20%, and anything under +10% does nothing. Negative values count in steps too, and {lang:kuvaweapon.warframe_attribute_type.health} never goes below -90%."
+        },
+        {
+          "type": "list",
+          "items": [
+            "{lang:kuvaweapon.warframe_attribute_type.armor} scales the armor and armor toughness you <em>already have</em> - with no armor on and no other armor source, any percentage is still 0.",
+            "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed} actually raises movement speed, so walking gets faster too.",
+            "{lang:kuvaweapon.warframe_attribute_type.reachDistance} only extends how far you can reach blocks, not your attack reach."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Other stats"
+        },
+        {
+          "type": "p",
+          "text": "{lang:kuvaweapon.warframe_attribute_type.fireProtection}, {lang:kuvaweapon.warframe_attribute_type.electricProtection}, {lang:kuvaweapon.warframe_attribute_type.homologousProtection}, {lang:kuvaweapon.warframe_attribute_type.fallProtection}: when you are hit, they cut the part of that hit that reaches your <em>health</em> by a percentage. \"Homologous\" means damage from other players."
+        },
+        {
+          "type": "table",
+          "header": [
+            "Stat",
+            "Effect"
+          ],
+          "widths": [
+            2,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.shield}, {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}, {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}",
+              "Applied every second - see [[warframe/shield]]"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.responseRate}",
+              "All healing × (1 + value); at a total of -100% or lower you <b>cannot heal at all</b>"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}",
+              "Mining speed × (1 + value); at a total of -100% or lower you <b>cannot break any block</b>"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.jumpBoost}",
+              "Jump velocity × √(1 + value)"
+            ],
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}",
+                "Animals and monsters you kill drop more, at <t>{cfg:kuva_lich.itemDropEffectMultiplier|pctv}</t> effectiveness"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableOreDropMultiplier",
+                "cfg:kuva_lich.oreDropEffectMultiplier"
+              ],
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}",
+                "Ores you mine drop more - see [[world/ore_drop_multiplier]]"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Kill-stack stats"
+        },
+        {
+          "type": "p",
+          "text": "Stats whose name says \"Gained on kill\" are <hl>kill stacks</hl>: the more you kill, the bigger the bonus, and it fades once you stop killing. Details in [[combat/kill_stack]]."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Each killing blow you land (melee or ranged) gives every kill-stack stat you have <t>+1</t> stack, up to its own cap - caps are in [[reference/warframe_attr_killstack]].",
+            "The bonus = value per stack × current stacks.",
+            "After your last kill you lose <t>1</t> stack every <t>{cfg:kuva_lich.warframeStackDecayTicks|sec}</t>; logging out clears them."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Advanced details"
+        },
+        {
+          "type": "list",
+          "items": [
+            "If the final blow is damage triggered by an [[combat/elements|element]], you gain no Warframe stacks - e.g. burning, Toxin or Slash damage over time, or the extra Electric or Blast damage.",
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}: gear and tools with durability are not multiplied; slimes, ghasts, phantoms and the like do not count as monsters and get no bonus."
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
+              "text": "Consecrated items (items that can hold mods) in the offhand, armor slots and Curios slots lend <em>weapon mods</em> to your main hand - a separate system from Warframe mods; see [[modules/multi_slot]]."
+            },
+            "Limits on mod values apply to Warframe mods too - see [[modules/module_limits]].",
+            "Stat-by-stat details: [[reference/warframe_attr_survival]], [[reference/warframe_attr_resist]], [[reference/warframe_attr_mobility]], [[reference/warframe_attr_killstack]]."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shield",
+      "title": "Shields",
+      "icon": "kuvalich:warframe_uncommon_module",
+      "summary": "Yellow-heart shields: cap, recharge, delay, pitfalls",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Your <hl>shield</hl> is vanilla's <t>yellow hearts</t> (absorption). When you are hit, armor reduces the damage first, then yellow hearts soak it up, and only what is left hits your health."
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "As long as your [[warframe/warframe_module|Warframe mods]] give a total {lang:kuvaweapon.warframe_attribute_type.shield} above 0, your yellow hearts slowly refill to the cap on their own."
+        },
+        {
+          "type": "tip",
+          "style": "bad",
+          "if": "!cfg:kuva_lich.shieldCapMultiplier",
+          "title": "Shield Capacity backfires",
+          "text": "{lang:kuvaweapon.warframe_attribute_type.shield} gives you no yellow hearts at all. While you have it, yellow hearts from other sources such as golden apples get wiped too - they only last for a while after you get hit or hit something."
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "Shield cap"
+        },
+        {
+          "type": "formula",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "Shield cap = max health × {lang:kuvaweapon.warframe_attribute_type.shield} × {cfg:kuva_lich.shieldCapMultiplier}"
+        },
+        {
+          "type": "kv",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "rows": [
+            [
+              "20 health, {lang:kuvaweapon.warframe_attribute_type.shield} +100%",
+              "Cap <t>{cfg:kuva_lich.shieldCapMultiplier|mul:20|round:2}</t> points = <t>{cfg:kuva_lich.shieldCapMultiplier|mul:10|round:2}</t> yellow hearts"
+            ],
+            [
+              "Same +100%, 40 health",
+              "Cap <t>{cfg:kuva_lich.shieldCapMultiplier|mul:40|round:2}</t> points"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "Max health is one of the factors, so stacking {lang:kuvaweapon.warframe_attribute_type.health} raises your shield cap as well."
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "When recharging starts"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "Shields do not recharge all the time: after you <em>take damage</em> or <em>hit something</em>, there is a wait before they start."
+        },
+        {
+          "type": "table",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "header": [
+            "Situation",
+            "Result"
+          ],
+          "widths": [
+            3,
+            4
+          ],
+          "rows": [
+            [
+              "You got hit or hit something, yellow hearts left",
+              "Wait <t>10 s</t> × delay factor, then start recharging"
+            ],
+            [
+              "Yellow hearts <b>empty</b> after that hit",
+              "The wait is <b>×3</b> (base <t>30 s</t>)"
+            ],
+            [
+              "Once the wait is over",
+              "Each second: cap × <t>1%</t> × (1 + {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate})"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "items": [
+            "With no {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}, empty to full takes <t>100 s</t>; with +100% it takes <t>50 s</t>.",
+            "Delay factor = the product of (1 + {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}) over your mods; negative values shorten the wait.",
+            "Kill stacks can feed shields too (see [[combat/kill_stack]]): {lang:kuvaweapon.warframe_attribute_type.shield} stacks up to <t>{cfg:kuva_lich.maxStacksShield}</t> times, {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate} up to <t>{cfg:kuva_lich.maxStacksShieldRecoveryRate}</t>, {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay} up to <t>{cfg:kuva_lich.maxStacksShieldRecoveryDelay}</t>."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "title": "Hitting things also resets the wait",
+          "text": "Shields barely recharge while you keep fighting and only come back once you stop.\nOnce your yellow hearts are empty, every hit you take or land restarts the tripled wait (base <t>30 s</t>)."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "In the original game, Warframe shields also take damage before health and recharge on their own after a short time without being hit; if they are fully depleted, the wait before recharging is longer."
+        },
+        {
+          "type": "h",
+          "text": "Advanced details"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Shields block first, resistances apply after: {lang:kuvaweapon.warframe_attribute_type.fireProtection} and the like only reduce the part that gets through to your health.",
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "text": "The wait is rounded down to whole seconds. Mod values carry a tiny extra fraction (a tooltip -30% is really -30.01%), so -30% gives <t>6</t> s, not 7."
+            },
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "text": "While you have {lang:kuvaweapon.warframe_attribute_type.shield}, yellow hearts above the cap (e.g. from an enchanted golden apple) are trimmed to the cap whenever you are not in the wait."
+            },
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "text": "After respawning, yellow hearts start from 0. The killing blow has usually already started a tripled wait, which must run out before they recharge; time on the death screen does not count."
+            },
+            "{lang:kuvaweapon.warframe_attribute_type.fixedShield}: none of the built-in mods have it; it only appears on extra custom mods. When present, the cap is exactly that many points instead of being based on {lang:kuvaweapon.warframe_attribute_type.shield}."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "If whoever hits you holds a consecrated weapon (a weapon that can hold mods) - another player, for example - some elements act differently against yellow hearts. Details in [[combat/element_status]]:"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Element",
+            "Against yellow hearts"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "<b>Toxin</b>",
+              "Damage over time goes around them straight to health"
+            ],
+            [
+              "<b>Slash</b>",
+              "Damage over time always hits health directly"
+            ],
+            [
+              "<b>Magnetic</b>",
+              "Under Magnetic status, you take more damage while you have them"
+            ],
+            [
+              "<b>Blast</b>",
+              "Deals <t>3</t> times as much to a target with them as to one without"
+            ],
+            [
+              "<g>Electric</g>, <g>Gas</g>",
+              "Half damage to targets with them"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "curios",
+      "title": "Curios Slots",
+      "icon": "kuvalich:item_rare_module",
+      "summary": "Consecrated trinkets lend weapon mods to your main hand",
+      "if": [
+        "mod:curios",
+        "cfg:kuva_lich.enableCuriosModule",
+        "cfg:kuva_lich.curiosEffectMultiplier>0"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "A <em>consecrated item</em> (an item that can hold mods) worn in a Curios slot can lend the <hl>weapon mods</hl> on it to your main-hand weapon, at a reduced rate."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Not the same as Warframe mods",
+          "text": "Warframe mods only go in the {item:kuvalich:requiem_warframe_table} and never need a Curios slot."
+        },
+        {
+          "type": "h",
+          "text": "How to set it up"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Pick an item that can be worn in a Curios slot. This mod adds no trinkets of its own, so use a ring, necklace or similar from another mod.",
+            "Put it (a single item) into the {item:kuvalich:requiem_evolve} with a {item:kuvalich:riven_sliver} to <hl>consecrate</hl> it.",
+            "Install weapon mods on it in the {item:kuvalich:requiem_weapon_table}.",
+            "Wear it. From then on, whenever your main hand holds a <em>consecrated weapon</em>, those stats are added to it using the formula below."
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "Stat from a trinket = its weapon mods' value × {cfg:kuva_lich.curiosEffectMultiplier|pctv} × the trinket's own {lang:kuvalich.attr.short.damage}"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Every consecrated item you wear counts, each worked out separately.",
+            {
+              "if": "cfg:kuva_lich.curiosModuleMaxSlots<999",
+              "text": "Only the first <t>{cfg:kuva_lich.curiosModuleMaxSlots}</t> Curios slots count; trinkets in later slots do not."
+            },
+            "The {lang:kuvalich.attr.short.damage} the trinket rolled when consecrated is a factor too: 150% counts as ×1.5, 60% leaves only 60%. Reroll it with a [[weapons/forma|Forma]] if you are unhappy with it.",
+            "<w>If your main hand is not a consecrated weapon, trinkets give nothing.</w>",
+            "Your main-hand weapon's panel includes the trinket bonuses. <dim>The panel may not match exactly; actual damage is what counts.</dim>"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "The offhand and armor slots follow the same rules with different rates - see [[modules/multi_slot]]."
+        }
+      ]
+    }
+  ]
+}

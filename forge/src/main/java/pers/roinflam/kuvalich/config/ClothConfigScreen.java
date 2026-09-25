@@ -597,7 +597,7 @@ public class ClothConfigScreen {
                 .build());
 
         // ═══════════════════════════════════════════════════════════════
-        // 教程书
+        // 冒险指南
         // ═══════════════════════════════════════════════════════════════
         ConfigCategory guidebookCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.guidebook"));

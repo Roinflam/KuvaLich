@@ -261,7 +261,7 @@ Mod values are based on original Warframe values. Single mods aren't too overpow
 <details>
 <summary><b>📦 Prerequisite: the TACZ jar (required!)</b></summary>
 
-**TACZ** (*Timeless and Classics Zero*, the gun mod) is a **compile-time hard dependency** - 18 source files reference `com.tacz`, and `mods.toml` declares it as mandatory. It is **not** pulled from Maven: `forge/build.gradle` simply scans a local folder:
+**TACZ** (*Timeless and Classics Zero*, the gun mod) is a **compile-time hard dependency** - 18 source files reference `com.tacz`, so the jar is needed to compile; at runtime TACZ is optional (`mandatory=false` in `mods.toml`). It is **not** pulled from Maven: `forge/build.gradle` simply scans a local folder:
 
 ```groovy
 fileTree(dir: 'dependencies', include: '*.jar').each { File file ->
@@ -283,7 +283,7 @@ If that folder is empty, the build fails with `package com.tacz does not exist`.
    ```
    - Output jar: `forge/build/libs/`
 
-Everything else (Forge, Architectury, GeckoLib, Curios, Patchouli, MixinExtras...) is resolved from Maven automatically - the TACZ jar is the only one you have to place by hand. Building requires **JDK 17**.
+Everything else (Forge, Architectury, GeckoLib, Curios, MixinExtras...) is resolved from Maven automatically - the TACZ jar is the only one you have to place by hand. Building requires **JDK 17**.
 
 </details>
 
@@ -549,7 +549,7 @@ Everything else (Forge, Architectury, GeckoLib, Curios, Patchouli, MixinExtras..
 <details>
 <summary><b>📦 前置：TACZ 依赖 jar（必需！）</b></summary>
 
-**TACZ**（*Timeless and Classics Zero*，枪械模组）是**编译期硬依赖**——仓库里有 18 个源文件引用 `com.tacz`，`mods.toml` 里也把它声明为必需前置。它**不会**从 Maven 拉取，`forge/build.gradle` 只是扫描本地目录：
+**TACZ**（*Timeless and Classics Zero*，枪械模组）是**编译期硬依赖**——仓库里有 18 个源文件引用 `com.tacz`，编译时需要这个 jar；运行时 TACZ 是可选前置（`mods.toml` 里 `mandatory=false`）。它**不会**从 Maven 拉取，`forge/build.gradle` 只是扫描本地目录：
 
 ```groovy
 fileTree(dir: 'dependencies', include: '*.jar').each { File file ->
@@ -571,7 +571,7 @@ fileTree(dir: 'dependencies', include: '*.jar').each { File file ->
    ```
    - 产物 jar 位于 `forge/build/libs/`
 
-其余依赖（Forge、Architectury、GeckoLib、Curios、Patchouli、MixinExtras 等）都由 Gradle 从 Maven 自动解析，只有 TACZ 这个 jar 需要手动放置。构建需要 **JDK 17**。
+其余依赖（Forge、Architectury、GeckoLib、Curios、MixinExtras 等）都由 Gradle 从 Maven 自动解析，只有 TACZ 这个 jar 需要手动放置。构建需要 **JDK 17**。
 
 </details>
 

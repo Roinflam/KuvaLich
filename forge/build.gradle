@@ -15,10 +15,6 @@ repositories {
         }
     }
     maven {
-        name = "Blamejared"
-        url = "https://maven.blamejared.com"
-    }
-    maven {
         name = "Curios"
         url = "https://maven.theillusivec4.top/"
     }
@@ -64,9 +60,6 @@ dependencies {
     include "me.shedaniel.cloth:cloth-config-forge:11.1.136"
 
     // ==================== 可选依赖 ====================
-
-    // Patchouli（可选依赖，仅编译期 + 运行时测试）
-    modApi "vazkii.patchouli:Patchouli:1.20.1-84-FORGE"
 
     // Curios（可选依赖，饰品栏 API）
     modApi "top.theillusivec4.curios:curios-forge:${rootProject.curios_version}"

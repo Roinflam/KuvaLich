@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:book"
+    },
+    {
+      "item": "kuvalich:kuva"
+    }
+  ],
+  "result": {
+    "item": "kuvalich:kuvalich_guide"
+  }
+}

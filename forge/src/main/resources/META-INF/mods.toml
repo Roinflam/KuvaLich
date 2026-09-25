@@ -41,13 +41,6 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.kuvalich]]
-modId="patchouli"
-mandatory=false
-versionRange="[1.20.1-84,)"
-ordering="AFTER"
-side="BOTH"
-
-[[dependencies.kuvalich]]
 modId="tacz"
 # 可选：没装 TACZ 时本模组的枪械相关功能整体静默关闭，不影响近战与战甲系统。
 # ⚠️ 改这里必须同步改 kuvalich.tacz.mixins.json 的 "required"：

@@ -1,0 +1,785 @@
+{
+  "id": "requiem",
+  "order": 20,
+  "title": "安魂與解密",
+  "subtitle": "攢線索、排卡序、討伐玄骸",
+  "icon": "kuvalich:requiem_gate",
+  "entries": [
+    {
+      "id": "hunt_overview",
+      "title": "一輪討伐怎麼走",
+      "icon": "kuvalich:lich_reliquary",
+      "summary": "從攢線索到領獎，一輪討伐的全過程",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "這一章教你打敗本模組的 Boss：{lang:entity.kuvalich.kuva_master}。光打死它不算贏，你得先猜出一道只屬於你的<hl>答案</hl>，帶着答案擊殺它，才算討伐成功。"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "<em>攢線索</em>：親手擊殺{lang:entity.kuvalich.kuva_slave}這樣的赤毒敵人，攢<t>解密進度</t>。每攢滿一段，答案裏的一張卡就會揭示出來。[[requiem/decryption|詳情]]",
+            "<em>備卡</em>：<t>安魂卡</t>是 8 種卡片道具，答案就是其中 3 張，這三張你得真的有。挖{item:kuvalich:requiem_ore}會掉，3 張用不上的卡還能換 1 張隨機新卡。[[requiem/requiem_cards|詳情]]",
+            "<em>擺卡</em>：在{item:kuvalich:requiem_gate}裏，按你猜的順序放好三張卡。[[requiem/requiem_gate|詳情]]",
+            "<em>討伐</em>：親手擊殺一隻{lang:entity.kuvalich.kuva_master}，擊殺那一刻自動核對答案。",
+            "<em>結算</em>：猜對就是<g>解密成功</g>，領獎後開始新一輪；猜錯則<b>玄骸等級 +1</b>，調整卡片再來。[[requiem/decrypt_failure|詳情]]"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "不認識的名詞，可以在[[start/glossary]]裏查。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "《星際戰甲》裏的玄骸會霸佔星圖上的星球：你在它的地盤上做任務，它會從你的收穫裏抽走一部分，要等打敗它才拿得回來。"
+        }
+      ]
+    },
+    {
+      "id": "decryption",
+      "title": "解密進度",
+      "icon": "kuvalich:requiem_riddle",
+      "summary": "擊殺赤毒敵人攢進度，三階段各揭示一條線索",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "每個玩家都有一道只屬於自己的<hl>答案</hl>：3 張[[requiem/requiem_cards|安魂卡]]按固定順序排成一串。答案一開始是藏着的，要靠擊殺赤毒敵人攢<t>解密進度</t>，一張張挖出來。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "擊殺",
+            "每隻加的進度"
+          ],
+          "widths": [
+            2,
+            3
+          ],
+          "rows": [
+            [
+              "小怪 {lang:entity.kuvalich.kuva_slave}",
+              "<t>{cfg:kuva_lich.minDecryptionProgress}~{cfg:kuva_lich.maxDecryptionProgress}</t> 點，隨機"
+            ],
+            [
+              "Boss {lang:entity.kuvalich.kuva_master}",
+              "奴僕的範圍 × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
+            ],
+            [
+              "其它生物",
+              "<dim>不加</dim>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight",
+          "text": "{lang:entity.kuvalich.kuva_slave}不會在野外出現，解密進度要靠擊殺{lang:entity.kuvalich.kuva_master}來攢。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "最後一擊必須是你",
+          "text": "進度只給<em>親手打出最後一擊的玩家</em>，組隊時只有補刀的人拿。寵物、巖漿，或燃燒、電擊這類元素額外傷害收掉的都不算。收尾時自己動手，近戰、弓箭都行。"
+        },
+        {
+          "type": "h",
+          "text": "三段進度"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "第 1 條線索",
+              "攢滿 <t>{cfg:kuva_lich.firstStage}</t> 點"
+            ],
+            [
+              "第 2 條線索",
+              "再攢 <t>{cfg:kuva_lich.secondStage}</t> 點"
+            ],
+            [
+              "第 3 條線索",
+              "再攢 <t>{cfg:kuva_lich.thirdStage}</t> 點"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "攢滿一段，就揭示一張答案卡，進度條從頭開始；<g>多出來的點數會帶進下一段</g>。",
+            "<hl>第 1 條線索出現時，完整答案就定了</hl>：哪 3 張、什麼順序，之後都不會變。從這時起隨時可以去挑戰。",
+            "揭示的卡顯示在[[requiem/requiem_gate]]下排的線索格裏。<w>線索格的位置是隨機的，不代表順序。</w>",
+            "三條線索都揭示後，再殺怪不加進度，動作欄會提醒你去擺卡。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作裏，揭示線索的進度叫「低語」（Murmur）：每攢滿一段，就揭示一個安魂模組；三段都攢滿，三張答案就全知道了。"
+        },
+        {
+          "type": "p",
+          "text": "每次加進度，屏幕頂部都會彈出進度條，顯示<t>線索 N/3</t>和當前點數，約 <t>4</t> 秒後淡出。動作欄也會報這次加了多少點。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "進度跟着你走",
+          "text": "進度、線索和答案都存在你自己身上：死亡、下線、換維度都不會丟，每個玩家各算各的。只有<g>解密成功</g>才會清零，下一輪的答案重新隨機。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": [
+            "cfg:kuva_lich.confiscationChance",
+            "cfg:kuva_lich.maxConfiscatedItems"
+          ],
+          "text": "從第 1 條線索出現開始，你撿東西時有概率被玄骸沒收，見[[requiem/confiscation]]。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "玄骸給的進度：奴僕的上下限各乘倍率、向下取整，再在這個範圍裏隨機。",
+            "解密成功的那一擊不加進度，這一輪直接清零。",
+            "一次擊殺最多揭示一張卡，哪怕點數夠跨兩段。",
+            "燃燒、毒氣的持續傷害，電擊、爆炸的追加傷害，這類[[combat/elements|元素]]額外傷害打出的最後一擊<b>完全不結算</b>：沒有進度，也沒有本模組的掉落。寵物、巖漿收掉的也一樣。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "requiem_cards",
+      "title": "安魂卡",
+      "icon": "kuvalich:khra",
+      "summary": "8 種卡，3 次耐久，只有解密成功才消耗",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "安魂卡是填進[[requiem/requiem_gate]]的鑰匙，一共 8 種。你的答案就是其中 <t>3 張不同的卡</t>，按固定順序排列。"
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:khra",
+            "kuvalich:jahu",
+            "kuvalich:fass",
+            "kuvalich:lohk",
+            "kuvalich:netra",
+            "kuvalich:vome",
+            "kuvalich:xata",
+            "kuvalich:ris"
+          ],
+          "caption": "全部 8 種安魂卡"
+        },
+        {
+          "type": "p",
+          "text": "3 張卡互不相同，排法共 8 × 7 × 6 = <t>336</t> 種。所以同一種卡放兩張，永遠不會對。"
+        },
+        {
+          "type": "h",
+          "text": "耐久：只有成功才扣"
+        },
+        {
+          "type": "table",
+          "header": [
+            "卡名顏色",
+            "還能用幾次"
+          ],
+          "rows": [
+            [
+              "<c:FF55FF>紫色</c>",
+              "3 次（新卡）"
+            ],
+            [
+              "<c:55FFFF>淺藍色</c>",
+              "2 次"
+            ],
+            [
+              "<c:FFFF55>黃色</c>",
+              "1 次，下次成功後消失"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "每次<g>解密成功</g>，門裏的三張卡各扣 1 次。一套卡最多撐 <t>3</t> 次成功。",
+            "<g>解密失敗不扣耐久</g>，放進、取出、換位置也不扣，試順序不花卡。",
+            "成功後還有次數的卡自動回到背包；背包滿了，就掉在[[enemies/kuva_master|玄骸]]死亡的位置。",
+            "安魂卡不能堆疊，每格只放 1 張。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "這 8 張卡的名字都來自原作的<em>安魂模組</em>（Requiem Mod）。原作裏它們同樣有使用次數，用光就沒了。"
+        },
+        {
+          "type": "h",
+          "text": "怎麼獲得"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "挖{item:kuvalich:requiem_ore}",
+              "每塊有概率掉 1 張隨機卡，概率看下表，詳見[[world/requiem_ore]]"
+            ],
+            [
+              "{item:kuvalich:requiem_recast}",
+              "任意 3 張卡換 1 張隨機<g>新卡</g>，見[[weapons/requiem_recast]]"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "挖礦工具",
+            "每塊掉卡概率"
+          ],
+          "widths": [
+            2,
+            3
+          ],
+          "rows": [
+            [
+              "帶{lang:enchantment.kuvalich.requiem_destroyed}附魔",
+              "<t>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</t>"
+            ],
+            [
+              "不帶這個附魔",
+              "<t>{cfg:kuva_lich.baseCardDropChance|pctv}</t>，每級幸運<w>反而 −{cfg:kuva_lich.fortuneReductionPerLevel|pctv}</w>，最低 <t>{cfg:kuva_lich.minCardDropChance|pctv}</t>"
+            ],
+            [
+              "絲綢之觸或空手",
+              "<b>不掉卡</b>，帶不帶附魔都一樣"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "舊卡回收",
+          "text": "三張只剩 1 次的黃卡丟進{item:kuvalich:requiem_recast}，能換回 1 張 3 次耐久的新卡。新卡在 8 種裏等概率隨機，可能和放進去的重複。"
+        }
+      ]
+    },
+    {
+      "id": "requiem_gate",
+      "title": "滅骸之扉",
+      "icon": "kuvalich:requiem_gate",
+      "summary": "放卡、挑戰流程與成功獎勵",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "{item:kuvalich:requiem_gate}是擺放答案的方塊。把三張[[requiem/requiem_cards|安魂卡]]按你猜的順序放進去，再去擊殺一隻[[enemies/kuva_master]]，擊殺那一刻自動核對。"
+        },
+        {
+          "type": "recipe",
+          "item": "kuvalich:requiem_gate"
+        },
+        {
+          "type": "h",
+          "text": "界面"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "上排三格",
+              "你的答案：從左到右是第 1、2、3 位"
+            ],
+            [
+              "中間金色進度條",
+              "當前這一段的解密進度"
+            ],
+            [
+              "下排三個線索格",
+              "已揭示的線索卡；<w>位置隨機，不代表順序</w>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "卡存在你身上，不在方塊裏",
+          "text": "關閉界面時，卡片存進你自己的數據。哪一座滅骸之扉打開都是你自己的卡，別人看到的是他們的；拆掉方塊，卡也不會掉出來。"
+        },
+        {
+          "type": "h",
+          "text": "挑戰流程"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "先攢到至少揭示 <t>1</t> 條線索，見[[requiem/decryption]]。<b>一條都沒有時去挑戰，必定失敗。</b>",
+            "右鍵打開滅骸之扉，三格放滿安魂卡，關閉界面儲存。",
+            {
+              "if": [
+                "cfg:kuva_lich.kuvaLichSpawnWeight",
+                "cfg:kuva_lich.requiemUltimatumDropChance>0"
+              ],
+              "text": "找一隻{lang:entity.kuvalich.kuva_master}：野外會遇到，也能用{item:kuvalich:requiem_ultimatum}召喚。<em>親手</em>打出最後一擊。"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.kuvaLichSpawnWeight",
+                "!cfg:kuva_lich.requiemUltimatumDropChance>0"
+              ],
+              "text": "找一隻{lang:entity.kuvalich.kuva_master}：野外會遇到。<em>親手</em>打出最後一擊。"
+            },
+            {
+              "if": [
+                "!cfg:kuva_lich.kuvaLichSpawnWeight",
+                "cfg:kuva_lich.requiemUltimatumDropChance>0"
+              ],
+              "text": "用{item:kuvalich:requiem_ultimatum}召喚一隻{lang:entity.kuvalich.kuva_master}，<em>親手</em>打出最後一擊。"
+            },
+            "看結果：成功就掉獎勵；失敗時，聊天欄會提示你從第 1 位起連續猜對了幾位，見[[requiem/decrypt_failure]]。"
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "擊殺時門裏",
+            "結果"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "沒放滿 3 張",
+              "不算挑戰：只拿解密進度，沒有懲罰"
+            ],
+            [
+              "放滿，順序全對",
+              "<g>解密成功</g>：領下面的獎勵，這一輪清零"
+            ],
+            [
+              "放滿，但不對",
+              "<b>解密失敗</b>：[[requiem/decrypt_failure|玄骸等級]] +1。卡不扣耐久，照樣拿進度"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "成功獎勵"
+        },
+        {
+          "type": "table",
+          "header": [
+            "獎勵",
+            "數量"
+          ],
+          "widths": [
+            3,
+            4
+          ],
+          "rows": [
+            [
+              "赤毒武器",
+              "1 把，種類和元素隨機"
+            ],
+            [
+              "{item:kuvalich:lich_reliquary}",
+              "1 個，必掉"
+            ],
+            [
+              "{item:kuvalich:kuva}",
+              "<t>{cfg:kuva_lich.masterKuvaMinAmount}~{cfg:kuva_lich.masterKuvaMaxAmount}</t> 個"
+            ],
+            [
+              "{item:kuvalich:riven_sliver}",
+              "<t>{cfg:kuva_lich.masterRivenSliverMinAmount}~{cfg:kuva_lich.masterRivenSliverMaxAmount}</t> 個"
+            ],
+            [
+              "高級模組",
+              "1 個，Prime 或裂罅"
+            ],
+            {
+              "if": "cfg:kuva_lich.requiemUltimatumDropChance",
+              "cells": [
+                "{item:kuvalich:requiem_ultimatum}",
+                "<t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> 概率掉 1 個"
+              ]
+            },
+            [
+              "沒用完的安魂卡",
+              "回到背包"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "<em>赤毒武器</em>是本模組的專屬武器，見[[weapons/kuva_weapons]]。它的等級在你的<t>武器等級範圍</t>內隨機。",
+            "新角色的武器等級範圍是 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t>，第一次成功掉的武器就在這裏面隨機。之後每次成功，範圍都會上調，直到封頂，見[[weapons/weapon_level]]。",
+            "<em>高級模組</em>：模組是裝在武器或你身上的強化卡。這裏掉的是最高的兩檔品質，<t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> 是 Prime，否則是裂罅，見[[modules/module_rarity]]。",
+            "其中 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模組，其餘是戰甲模組。「戰甲」指的就是你自己，戰甲模組裝在你身上。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "獎勵掉在玄骸腳下",
+          "text": "除了回背包的安魂卡，其它獎勵都<w>掉在玄骸死亡的位置</w>。別在巖漿、虛空、深水旁邊收尾。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "界面開着時，要待在方塊 <t>8</t> 格以內。",
+            "揭示兩張以上時，下排的線索卡會來回洗牌。",
+            "只想殺玄骸刷進度、不想冒失敗的險：先從門裏取出一張卡。",
+            "沒用完的安魂卡在背包滿時，掉在玄骸死亡的位置。",
+            "武器等級範圍：每次成功後，上下限各提高<em>同一個</em>隨機數 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，分別封頂 <t>{cfg:kuva_lich.minimumLevel}</t> / <t>{cfg:kuva_lich.maximumLevel}</t>。",
+            "上下限漲得一樣多，所以兩頭都沒到頂時，範圍的寬度保持不變。這次掉的武器按提升前的範圍生成。",
+            "創造模式下打開滅骸之扉按 <t>TAB</t>，可一鍵填入正確答案。揭示至少 1 條線索後才有效，原來的卡退回背包。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decrypt_failure",
+      "title": "失敗與試順序",
+      "icon": "kuvalich:jahu",
+      "summary": "猜錯會怎樣、最多要試幾次",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "三張卡放滿但不對，擊殺[[enemies/kuva_master|玄骸]]就是一次<b>解密失敗</b>。聊天欄會給提示，幫你縮小範圍；代價是<hl>玄骸等級</hl> +1。"
+        },
+        {
+          "type": "h",
+          "text": "失敗時的提示"
+        },
+        {
+          "type": "table",
+          "header": [
+            "聊天欄提示",
+            "説明"
+          ],
+          "widths": [
+            3,
+            4
+          ],
+          "rows": [
+            [
+              "<w>{lang:message.kuvalich.firstCorrect}</w>",
+              "第 1 位對了"
+            ],
+            [
+              "再多一條 <w>{lang:message.kuvalich.secondCorrect}</w>",
+              "第 1、2 位都對，只有第 3 位錯"
+            ],
+            [
+              "兩條都沒有",
+              "<b>第 1 位不對</b>，後兩位不告訴你"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "提示只從左往右數：第 1 位對了，才會接着檢查第 2 位。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "前兩位對時",
+          "text": "如果你放的三張卡互不相同，「前兩位都對」就説明第 3 張根本不在答案裏，得換一張別的卡。"
+        },
+        {
+          "type": "h",
+          "text": "三張都知道時怎麼試"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "三張卡隨便排一個順序，去殺玄骸。",
+            "提示第 1 位對了 → 後兩張對調，下次必中。",
+            "沒有提示 → 第 1 位換成另外兩張中的一張，再試。",
+            "還是沒有提示 → 第 1 位就是剩下那張。最多再錯 1 次：後兩張對調。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "text": "照這個辦法，最多失敗 3 次，<em>第 4 次必中</em>。手裏有{item:kuvalich:requiem_riddle}就直接用，一次都不用錯。"
+        },
+        {
+          "type": "h",
+          "text": "失敗的代價：玄骸等級"
+        },
+        {
+          "type": "p",
+          "text": "每失敗一次，<hl>玄骸等級</hl> +1，聊天欄會報當前等級。它記在<em>你自己</em>身上，死亡、下線都不會清，<g>只有解密成功才歸零</g>。"
+        },
+        {
+          "type": "formula",
+          "if": "cfg:kuva_lich.increaseDamage",
+          "text": "赤毒敵人打你的傷害 × (1 + 玄骸等級 × {cfg:kuva_lich.increaseDamage})"
+        },
+        {
+          "type": "formula",
+          "if": "cfg:kuva_lich.reducedDamage",
+          "text": "你打赤毒敵人的傷害 × (1 − 玄骸等級 × {cfg:kuva_lich.reducedDamage})，最多削減 99.9%"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.increaseDamage||cfg:kuva_lich.reducedDamage",
+          "title": "只算赤毒敵人",
+          "text": "玄骸等級只影響你和赤毒敵人（奴僕、玄骸）之間的傷害。摔落、其它怪物、其它玩家都不受影響，平時探索照常。"
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "if": [
+            "!cfg:kuva_lich.increaseDamage",
+            "!cfg:kuva_lich.reducedDamage"
+          ],
+          "text": "玄骸等級不會改變你打出或受到的傷害，猜錯只是讓這個數字 +1。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作裏拿錯誤的安魂模組去刺玄骸，它不會死，反而會升級、變得更強。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": "cfg:kuva_lich.battleBoost",
+          "title": "拖得越久越危險",
+          "text": "討伐時還要注意：赤毒敵人鎖定目標後，每過 1 秒，傷害多出基礎值的 <t>{cfg:kuva_lich.battleBoost|pct}</t>；沒有目標時按同樣速度回落。打不過就先拉開距離，見[[enemies/battle_boost]]。"
+        }
+      ]
+    },
+    {
+      "id": "confiscation",
+      "title": "物品沒收與歸還",
+      "icon": "minecraft:chest",
+      "summary": "解密期間撿東西可能被玄骸拿走，成功後歸還",
+      "if": [
+        "cfg:kuva_lich.confiscationChance",
+        "cfg:kuva_lich.maxConfiscatedItems"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "從你揭示第 1 條線索起，到這一輪解密成功為止，你撿東西時，[[enemies/kuva_master|玄骸]]有概率把它整組沒收。解密成功後，沒收的東西全部還你。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "什麼時候判定",
+              "碰到地上的掉落物、要撿起它時"
+            ],
+            [
+              "概率",
+              "每次 <t>{cfg:kuva_lich.confiscationChance|pctv}</t>"
+            ],
+            [
+              "每輪上限",
+              "<t>{cfg:kuva_lich.maxConfiscatedItems}</t> 次，滿了就不再沒收"
+            ],
+            [
+              "生效期間",
+              "揭示第 1 條線索 → 解密成功"
+            ],
+            [
+              "歸還",
+              "解密成功時一次性全部還你"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "一次拿走一整組",
+          "text": "沒收的是你正要撿的<w>一整組</w>：地上一組 64 個鑽石，就是 64 個全拿走。上限按次數算，一次記 1，不按個數。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "背包裏已有的東西不會被沒收。",
+            "被沒收時，聊天欄會彈出一句玄骸的嘲諷。",
+            "沒收的東西記在你身上，死亡、下線、換維度都不會丟。",
+            "解密失敗不歸還，也不清空上限計數，只認成功的那一次。",
+            "死後跑回去撿自己的掉落物，每一組同樣會判定。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "背包滿了別站在掉落物上",
+          "text": "正常撿起只判定一次。背包滿了撿不起來時，卻是每秒判定 20 次，站得越久越容易被沒收。"
+        },
+        {
+          "type": "h",
+          "text": "怎麼拿回來"
+        },
+        {
+          "type": "p",
+          "text": "解密成功擊殺玄骸時，沒收的東西<g>一件不少</g>地掉在<em>玄骸死亡的位置</em>，聊天欄會提示。這時本輪已經結束，撿回來不會再被沒收。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "它們是普通掉落物：放久了會消失，也會被巖漿燒掉，趕緊撿。"
+        }
+      ]
+    },
+    {
+      "id": "requiem_items",
+      "title": "安魂相關道具",
+      "icon": "kuvalich:requiem_ultimatum",
+      "summary": "寶石、謎語、通牒與玄骸之遺",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "解密和討伐要用到的四種道具：做方塊用的寶石、直接看答案的謎語、召喚[[enemies/kuva_master|玄骸]]的通牒，以及討伐成功才有的玄骸之遺。"
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:requiem_gem",
+            "kuvalich:requiem_riddle",
+            "kuvalich:requiem_ultimatum",
+            "kuvalich:lich_reliquary"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:requiem_gem}"
+        },
+        {
+          "type": "p",
+          "text": "親手擊殺{lang:entity.kuvalich.kuva_slave}時掉落。基礎概率 <t>{cfg:kuva_lich.slaveRequiemGemBaseChance|pctv}</t>，主手武器每級<t>掠奪</t>再加 <t>{cfg:kuva_lich.slaveRequiemGemLootingBonus|pctv}</t>。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "用它合成",
+            "寶石",
+            "用來"
+          ],
+          "widths": [
+            3,
+            2,
+            4
+          ],
+          "rows": [
+            [
+              "{item:kuvalich:requiem_gate}",
+              "5",
+              "擺放答案"
+            ],
+            [
+              "{item:kuvalich:requiem_recast}",
+              "5",
+              "[[weapons/requiem_recast|卡片、模組三合一]]"
+            ],
+            [
+              "{item:kuvalich:requiem_evolve}",
+              "4",
+              "[[weapons/requiem_evolve|養武器的工作台]]"
+            ],
+            [
+              "{item:kuvalich:forma}",
+              "2，出 3 個",
+              "[[weapons/forma|重洗非赤毒武器的面板]]"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:requiem_riddle}"
+        },
+        {
+          "type": "p",
+          "text": "右鍵使用，聊天欄直接告訴你本輪答案的<hl>三張卡和正確順序</hl>，用掉 1 個。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "要先揭示至少 1 條線索。用得太早不會消耗，只提示還沒有答案，並冷卻 <t>10</t> 秒。",
+            "本模組不產出它：沒有配方，也不會掉落，只在創造物品欄裏。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:requiem_ultimatum}"
+        },
+        {
+          "type": "p",
+          "text": "右鍵召喚一隻{lang:entity.kuvalich.kuva_master}，用掉 1 個，創造模式不消耗。對着空氣用，它出現在你面前 <t>3</t> 格；對着方塊用，出現在你點的那一面上。"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.requiemUltimatumDropChance",
+          "text": "解密成功時，有 <t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> 概率掉一個。"
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.requiemUltimatumDropChance",
+          "text": "本模組不產出它：沒有配方，也不會掉落，只在創造物品欄裏。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "召喚出來的就是真正的 Boss。先擺好卡、備好裝備，找塊空曠安全的地方再用。"
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:lich_reliquary}"
+        },
+        {
+          "type": "p",
+          "text": "每次解密成功必掉 1 個。下面三個方塊都要用它合成，所以<em>第一次討伐成功之前，它們都造不出來</em>。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "{item:kuvalich:requiem_evolve}",
+              "養武器的核心工作台"
+            ],
+            [
+              "{item:kuvalich:requiem_weapon_table}",
+              "給武器裝模組"
+            ],
+            [
+              "{item:kuvalich:requiem_warframe_table}",
+              "給你自己裝戰甲模組"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "if": [
+            "mod:tacz",
+            "cfg:kuva_lich.taczGunEnhanceEnable"
+          ],
+          "text": "裝了 TACZ 槍械模組時，它還能在{item:kuvalich:requiem_evolve}裏永久強化槍械，見[[tacz/tacz_enhance]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "{item:kuvalich:kuva}和{item:kuvalich:riven_sliver}也是討伐的主要產出，用途見[[start/materials]]。"
+        }
+      ]
+    }
+  ]
+}

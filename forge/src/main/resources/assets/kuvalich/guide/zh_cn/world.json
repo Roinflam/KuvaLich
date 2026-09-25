@@ -1,0 +1,366 @@
+{
+  "id": "world",
+  "order": 90,
+  "title": "世界与附魔",
+  "subtitle": "矿石、专属附魔与掉落倍率",
+  "icon": "kuvalich:requiem_ore",
+  "entries": [
+    {
+      "id": "requiem_ore",
+      "title": "安魂矿石",
+      "icon": "kuvalich:requiem_ore",
+      "summary": "安魂卡的唯一来源，最好用灭骸镐挖",
+      "blocks": [
+        { "type": "p", "text": "{item:kuvalich:requiem_ore}是<hl>安魂卡</hl>的唯一来源，挖它最好用一把带{lang:enchantment.kuvalich.requiem_destroyed}附魔的镐子。安魂卡是破解 Boss {lang:entity.kuvalich.kuva_master}用的钥匙卡，见[[requiem/requiem_cards]]。" },
+        { "type": "h", "if": "cfg:ore_gen.requiemOreVeinCount", "text": "在哪找" },
+        { "type": "kv", "if": "cfg:ore_gen.requiemOreVeinCount", "rows": [
+          ["高度", "Y <t>{cfg:ore_gen.requiemOreMinHeight}</t> ~ <t>{cfg:ore_gen.requiemOreMaxHeight}</t>，中间最多，两头最少"],
+          ["数量", "每个区块 <t>{cfg:ore_gen.requiemOreVeinCount}</t> 处矿脉，每处最多约 <t>{cfg:ore_gen.requiemOreVeinSize}</t> 块"],
+          ["维度", "藏在石头和深板岩里：主世界和其它地下是石头的维度有，下界、末地没有"]
+        ] },
+        { "type": "h", "text": "怎么挖" },
+        { "type": "steps", "items": [
+          "弄一把带{lang:enchantment.kuvalich.requiem_destroyed}附魔的镐子，拿法见[[world/enchantments]]",
+          "钻石镐或下界合金镐最快；铁镐等其它挖掘工具也能掉东西，只是慢一些",
+          "镐子上<b>不要</b>有精准采集，时运有没有都无所谓",
+          "找到矿就挖碎，捡起掉出来的东西"
+        ] },
+        { "type": "h", "text": "挖碎时掉什么" },
+        { "type": "p", "text": "每挖碎一块只判定<em>一次</em>：成功就把下表的东西<g>一起</g>掉出来，失败就<b>什么都没有</b>。矿石方块本身永远不掉。" },
+        { "type": "table", "header": ["掉落", "数量 / 概率"], "widths": [3, 4], "rows": [
+          ["安魂卡（8 种随机一张）", "1 张"],
+          ["{item:kuvalich:riven_sliver}", "1 个"],
+          ["{item:kuvalich:kuva}", "2~4 个"],
+          { "if": "cfg:kuva_lich.commonModuleDropChance>0", "cells": ["青铜模组", "{cfg:kuva_lich.commonModuleDropChance|pctv}"] },
+          { "if": "cfg:kuva_lich.uncommonModuleDropChance>0", "cells": ["白银模组", "{cfg:kuva_lich.uncommonModuleDropChance|pctv}"] },
+          { "if": "cfg:kuva_lich.rareModuleDropChance>0", "cells": ["黄金模组", "{cfg:kuva_lich.rareModuleDropChance|pctv}"] }
+        ] },
+        { "type": "list", "items": [
+          "{item:kuvalich:kuva}和{item:kuvalich:riven_sliver}是养成材料，用处见[[start/materials]]",
+          "模组是装在武器或你身上的强化卡，分武器模组和战甲模组两种；品质说明见[[modules/module_rarity]]",
+          "掉出来的模组是<t>未揭示</t>的：拿在主手右键，会变成这个品质里随机的一张，见[[modules/module_overview]]",
+          "出模组时，有 {cfg:kuva_lich.moduleWeaponRatio|pctv} 是武器模组，其余是战甲模组"
+        ] },
+        { "type": "p", "text": "<em>经验</em>另算，不看上面的判定：用钻石镐或更好的镐子挖碎，每块掉 <t>50~100</t> 点经验；带{lang:enchantment.kuvalich.requiem_destroyed}时再乘 <g>{cfg:kuva_lich.expMultiplier|x}</g>。用其它工具、或带精准采集时没有经验。" },
+        { "type": "items", "items": ["kuvalich:fass", "kuvalich:jahu", "kuvalich:khra", "kuvalich:lohk", "kuvalich:netra", "kuvalich:ris", "kuvalich:vome", "kuvalich:xata"], "caption": "八种安魂卡，每次随机掉一张" },
+        { "type": "tip", "style": "wf", "text": "原作里这八张叫<t>安魂模组</t>，是开启安魂遗物（Requiem Relic）得来的，不靠挖矿。" },
+        { "type": "h", "text": "成功率" },
+        { "type": "table", "header": ["主手拿的东西", "成功率"], "widths": [3, 5], "rows": [
+          ["带{lang:enchantment.kuvalich.requiem_destroyed}的工具", "<g>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</g>，时运不影响"],
+          ["其它东西，不带灭骸", "{cfg:kuva_lich.baseCardDropChance|pctv} − 时运等级 × {cfg:kuva_lich.fortuneReductionPerLevel|pctv}，最低 {cfg:kuva_lich.minCardDropChance|pctv}"],
+          ["带精准采集的工具", "<b>0</b>，有灭骸也一样"],
+          ["空手", "<b>0</b>"]
+        ] },
+        { "type": "h", "text": "挖一块要多久" },
+        { "type": "table", "header": ["工具", "大约用时"], "widths": [5, 2], "rows": [
+          ["灭骸 + 钻石镐或更好", "<g>0.5 秒</g>"],
+          ["灭骸 + 铁镐等其它挖掘工具", "1.7 秒"],
+          ["钻石镐或更好，不带灭骸", "<b>2.5 分钟</b>"],
+          ["低级镐、其它东西或空手，不带灭骸", "<b>8 分钟</b>"]
+        ] },
+        { "type": "tip", "style": "warn", "title": "效率、急迫都没用", "text": "只要手里拿着东西，挖它的速度就是固定的，效率附魔和急迫都不起作用。反过来，在水下、悬空时也不会变慢。" },
+        { "type": "h", "text": "进阶细节" },
+        { "type": "list", "items": [
+          "三档模组每次最多出一张，按黄金、白银、青铜的顺序判定；三项加起来超过 100% 时，排在后面的档位拿不满",
+          "{item:kuvalich:requiem_gate}、{item:kuvalich:requiem_recast}、{item:kuvalich:requiem_evolve}这三台机器的挖掘速度，也按上面「挖一块要多久」的规则算"
+        ] },
+        { "type": "tip", "style": "bad", "title": "拆机器要用钻石镐", "text": "拆上面这三台机器，以及{item:kuvalich:requiem_weapon_table}和{item:kuvalich:requiem_warframe_table}，必须用<em>钻石镐或更好</em>，否则方块会直接消失，什么都不掉。" }
+      ],
+      "_src": [
+        "block/RequiemOreBlock.java:57-62 — getDrops 返回空列表：不掉矿石方块本身（精准采集也拿不到）",
+        "block/RequiemOreBlock.java:77-82 getExpDrop — silkTouchLevel 为 0 时 UniformInt(50,100)，否则 0（:30-34 常量，写死）；Forge BlockEvent.BreakEvent 构造器只在 isCorrectToolForDrops（钻石级镐）时用它当初值，否则经验 0；ServerPlayerGameMode.destroyBlock 按事件里的经验 popExperience，和出货判定无关",
+        "enchantment/RequiemDestroyedEnchantment.java:160-163 onBreak — 主手带灭骸时 setExpToDrop(经验 × expMultiplier)；精准采集在 :152-154 先 return（经验本来就是 0）",
+        "init/KuvaLichBlocks.java:39-44 — 硬度 100、抗性 2000、requiresCorrectToolForDrops；resources/data/minecraft/tags/blocks/needs_diamond_tool.json + mineable/pickaxe.json → 钻石级镐才是正确工具",
+        "worldgen/KuvaLichBiomeModifier.java:200-235 — Feature.ORE 只替换 stone/deepslate_ore_replaceables；CountPlacement(requiemOreVeinCount)、脉体大小 requiemOreVeinSize；HeightRangePlacement.triangle(min,max)（三角分布，正中最多）；veinCount<=0 直接不加（「在哪找」小标题和 kv 一起按 if 隐藏）",
+        "worldgen/KuvaLichBiomeModifier.java:79-89 — 末地生物群系跳过；其余维度都加，但下界是地狱岩不在替换 tag 里 → 下界没有",
+        "enchantment/RequiemDestroyedEnchantment.java:130-173 — BreakEvent（LOWEST）：主手空 / 带精准采集直接返回；只做一次 shouldDropCard 判定，成功则 卡 + 模组 + 碎块赤毒 一起掉；不检查镐子等级",
+        "enchantment/RequiemDestroyedEnchantment.java:175-184 — 有灭骸：cardDropChanceWithEnchant；无灭骸（主手任意非空物品）：max(minCardDropChance, baseCardDropChance − fortuneReductionPerLevel×时运)（均为 0~100 百分数，RandomUtil.percentageChance 取 0-100）",
+        "enchantment/RequiemDestroyedEnchantment.java:64-79,186-191 — 8 张卡 FASS/JAHU/KHRA/LOHK/NETRA/RIS/VOME/XATA 等概率随机一张",
+        "enchantment/RequiemDestroyedEnchantment.java:202-230 — roll 0~99，依次 rare / rare+uncommon / +common 分段（每档概率即各自配置值），moduleWeaponRatio% 为武器模组；某档配置为 0 时该档永不出（表格行按 if 隐藏）",
+        "enchantment/RequiemDestroyedEnchantment.java:232-235 — 裂罅碎块 1 个、赤毒 RandomUtil.getInt(2,4)（写死，含两端）",
+        "enchantment/RequiemDestroyedEnchantment.java:50-52,90-117,250-255 — BreakSpeed：安魂矿石/灭骸之扉/安魂之铸/安魂之融；主手带灭骸 setNewSpeed(300)，否则 min(工具对该方块的速度, 1.0)；主手空则不干预",
+        "Forge Player.getDigSpeed — BreakSpeed 事件在效率、急迫、挖掘疲劳、水下、悬空修正之后触发，setNewSpeed 覆盖全部修正",
+        "Forge BlockBehaviour.getDestroyProgress:364-372 — 每刻进度 = 速度 / 硬度 / (正确工具?30:100)：300/100/30 → 10 刻≈0.5 秒；300/100/100 → 34 刻≈1.7 秒；1/100/30 → 3000 刻=2.5 分钟；1/100/100 → 10000 刻≈8.3 分钟",
+        "block/RequiemGateBlock.java:79-82（RequiemRecastBlock/RequiemEvolveBlock/RequiemWeaponTableBlock/RequiemWarframeTableBlock 同）— getDrops 掉自身；五个都在 needs_diamond_tool；Forge ServerPlayerGameMode.destroyBlock:257-265 只在 canHarvestBlock（钻石级镐）时才调 playerDestroy → 否则方块被移除但不掉；这些方块都不是 EntityBlock，没有内部存货",
+        "Forge ForgeHooks.onBlockBreakEvent:514-546 — BreakEvent 在判定 canHarvestBlock 之前就发出，所以带灭骸的铁镐挖安魂矿石照样掉卡（只是不算正确工具，速度 ÷100）",
+        "item/module/warframe/WarframeRareModule.java:38-43（其余 Weapon*/Warframe* getRandomModule 同）— 掉出的是 setRandom(true) 的未揭示模组",
+        "item/module/warframe/WarframeCommonModule.java:195-215（其余品质 use 同）— 未揭示模组只在主手右键时揭示：从该品质未禁用的模组列表里随机取一张生成，原物品清空",
+        "enchantment/RequiemDestroyedEnchantment.java:210-225 — 同一个 roll 0~99 依次比 rare、rare+uncommon、rare+uncommon+common：三项合计超过 100 时青铜（再超则白银）的实际概率被截断",
+        "Forge Player.getDigSpeed — 空手时 BreakSpeed 处理器直接返回（RequiemDestroyedEnchantment.java:102-105），急迫等原版修正照常生效，但空手本来就不掉东西（所以提示写「只要手里拿着东西」）",
+        "config/ModConfig.java:667-702,771,1109-1124 — 相关配置键定义与范围（三档模组概率 0~100）；baseCardDropChance 默认 25 → 不带灭骸也有机会出卡，所以开头写「最好用」而不是「要」",
+        "entity/KuvaMasterEntity.java:420-428 — 击杀赤毒玄骸时核对灭骸之扉里的三张卡（isCorrectAnswer → 解密成功 / 失败），开头「破解 Boss 用的钥匙卡」即指此；详见 requiem/requiem_cards",
+        "原作事实（wf 小知识）：《星际战甲》的安魂模组 Fass/Jahu/Khra/Lohk/Netra/Ris/Vome/Xata 装在 Parazon 上，三张按正确顺序才能终结赤毒玄骸；来源是安魂遗物"
+      ]
+    },
+    {
+      "id": "experience_ore",
+      "title": "经验矿石",
+      "icon": "kuvalich:experience_ore",
+      "summary": "石镐就能挖，出经验和内融核心",
+      "blocks": [
+        { "type": "p", "text": "{item:kuvalich:experience_ore}是一种<t>石镐</t>就能挖的矿。挖碎时掉经验，还有一半机会掉{item:kuvalich:endo}。" },
+        { "type": "p", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "内融核心是给模组升级的材料，模组就是装在武器或你身上的强化卡。升级方法见[[modules/module_level]]，内融核心的其它来源见[[world/loot]]。" },
+        { "type": "p", "if": "!cfg:kuva_lich.enableModuleLevelSystem", "text": "模组（装在武器或你身上的强化卡）一装上就是满效果，不需要升级，所以内融核心没有用处。" },
+        { "type": "h", "if": "cfg:ore_gen.experienceOreVeinCount", "text": "在哪找" },
+        { "type": "kv", "if": "cfg:ore_gen.experienceOreVeinCount", "rows": [
+          ["高度", "Y <t>{cfg:ore_gen.experienceOreMinHeight}</t> ~ <t>{cfg:ore_gen.experienceOreMaxHeight}</t>，整段均匀分布"],
+          ["数量", "每个区块 <t>{cfg:ore_gen.experienceOreVeinCount}</t> 处矿脉，每处最多约 <t>{cfg:ore_gen.experienceOreVeinSize}</t> 块"],
+          ["维度", "藏在石头和深板岩里：主世界和其它地下是石头的维度有，下界、末地没有"]
+        ] },
+        { "type": "h", "text": "挖碎时掉什么" },
+        { "type": "table", "header": ["掉落", "数量", "备注"], "widths": [2, 3, 3], "rows": [
+          ["经验", "5~20 点 + 时运等级", "时运每级只多 1 点"],
+          ["{item:kuvalich:endo}", "<g>50%</g> 概率掉 1~2 个", "不受时运影响"]
+        ] },
+        { "type": "tip", "style": "bad", "title": "什么都不掉的情况", "text": "用<b>木镐、金镐、空手或不是镐的东西</b>挖，或者工具带<b>精准采集</b>，就什么都不掉，矿石方块本身也拿不到。" },
+        { "type": "tip", "style": "wf", "text": "原作里的内融核心（Endo）也能在任务里直接捡到；另一个大头是阿耶檀雕塑（Ayatan Sculpture）：镶满星辰后交给商人 Maroo，能换一大笔。" },
+        { "type": "h", "text": "进阶细节" },
+        { "type": "list", "items": [
+          "{lang:enchantment.kuvalich.experience_collector}附魔对经验矿石<b>无效</b>，见[[world/enchantments]]",
+          { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier>0"], "text": "战甲模组的{lang:item.module.oreDropMultiplier}词条不会让内融核心变多，见[[world/ore_drop_multiplier]]" }
+        ] }
+      ],
+      "_src": [
+        "block/ExperienceOreBlock.java:48-58 — MIN_EXP 5、MAX_EXP 20、ENDO_DROP_CHANCE 0.5、ENDO 数量 1~2（全部写死）",
+        "block/ExperienceOreBlock.java:101-147 — playerDestroy：带精准采集直接返回；经验 = nextInt(5, 21) + 时运等级；nextDouble() < 0.5 时掉 1 + nextInt(2) 个内融核心，不看时运，也不看等级系统开关",
+        "block/ExperienceOreBlock.java:77-81 — getDrops 返回空：不掉矿石方块本身",
+        "Forge ServerPlayerGameMode.destroyBlock:257-265 — playerDestroy 只在 canHarvestBlock 时调用；resources/data/minecraft/tags/blocks/needs_stone_tool.json + mineable/pickaxe.json → 石镐及以上才掉东西；Forge TierSortingRegistry.java:208-213 金排在木与石之间，金镐挖不了 needs_stone_tool",
+        "worldgen/KuvaLichBiomeModifier.java:243-278 — HeightRangePlacement.uniform(min,max)（均匀分布）、CountPlacement(experienceOreVeinCount)、替换石头/深板岩；veinCount<=0 不生成（「在哪找」小标题和 kv 一起按 if 隐藏）",
+        "enchantment/ExperienceCollectorEnchantment.java:43-46 — 只在 BreakEvent 经验 > 0 时加；ExperienceOreBlock 没覆写 getExpDrop，BreakEvent 经验为 0，经验是 playerDestroy 里另外 popExperience 的 → 经验之运无效",
+        "block/ExperienceOreBlock.java:131-138 — 内融核心用 popResource 直接生成，不走战利品表 → 挖矿倍率（Global Loot Modifier）碰不到；挖矿倍率关闭或生效倍率为 0 时这一行按行级 if 隐藏",
+        "module/level/ModuleLevelHelper.java:42-44,102-108 — enableModuleLevelSystem 关闭时模组按满效果算；world/inventory/RequiemEvolveMenu.java:228-233 — 用内融核心升级要求等级系统开启",
+        "item/Endo.java + world/inventory/RequiemEvolveMenu.java:137,229,508 — 内融核心唯一的消耗处是安魂之融升级模组；data/ 下没有用到 kuvalich:endo 的配方 → 等级系统关闭时内融核心没有用处",
+        "原作事实（wf 小知识）：《星际战甲》里升级（融合）模组消耗 Endo 和现金（Credits）；分解（Dissolve）模组可换回 Endo"
+      ]
+    },
+    {
+      "id": "enchantments",
+      "title": "专属附魔",
+      "icon": "minecraft:enchanted_book",
+      "summary": "六个附魔一览；灭骸与经验之运",
+      "blocks": [
+        { "type": "p", "text": "本模组加了 6 个附魔，和原版附魔一样从附魔台、附魔书里来，<em>没有专门的配方</em>。挖安魂矿石必备的{lang:enchantment.kuvalich.requiem_destroyed}就在其中。" },
+        { "type": "table", "header": ["附魔", "能附在", "最高级", "作用"], "widths": [2, 3, 1, 4], "rows": [
+          ["{lang:enchantment.kuvalich.requiem_destroyed}", "镐、斧、锹、锄", "1", "挖安魂矿石必备"],
+          ["{lang:enchantment.kuvalich.experience_collector}", "镐、斧、锹、锄", "5", "挖会掉经验的方块时多给经验"],
+          ["{lang:enchantment.kuvalich.lethal}", "剑、[[weapons/kuva_weapons|赤毒武器]]", "5", "目标越残血，伤害越高"],
+          ["{lang:enchantment.kuvalich.first_strike}", "剑、[[weapons/kuva_weapons|赤毒武器]]", "3", "打满血目标伤害 ×2~×3，还给经验"],
+          ["{lang:enchantment.kuvalich.escort}", "盔甲", "3", "自己满血时减伤"],
+          ["{lang:enchantment.kuvalich.death_resistance}", "盔甲", "3", "花经验挡下一次致命伤"]
+        ] },
+        { "type": "p", "text": "后四个战斗附魔的细节见[[world/combat_enchantments]]。" },
+        { "type": "h", "text": "怎么弄到" },
+        { "type": "list", "items": [
+          "附魔台：能出，但它们都很稀有，高等级很难出",
+          "附魔书：战利品箱里、图书管理员村民那里都可能有，用铁砧附到工具、武器或盔甲上",
+          "想要高等级：找图书管理员交易、翻战利品箱，或在铁砧上把两本同级的书合成"
+        ] },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.requiem_destroyed}" },
+        { "type": "list", "items": [
+          "挖{item:kuvalich:requiem_ore}，以及本模组的三台机器{item:kuvalich:requiem_gate}、{item:kuvalich:requiem_recast}、{item:kuvalich:requiem_evolve}时，速度<g>固定为极快</g>，配钻石镐约 0.5 秒一块",
+          "不带它时，这四种方块都慢得离谱",
+          "安魂矿石的判定成功率变为 <g>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</g>，时运不再有影响",
+          "挖安魂矿石掉的经验再乘 <g>{cfg:kuva_lich.expMultiplier|x}</g>（要用钻石镐或更好的镐子才有经验）",
+          "<b>别和精准采集放在同一把工具上</b>：带精准采集挖安魂矿石什么都不掉"
+        ] },
+        { "type": "p", "text": "掉落和用时的细节见[[world/requiem_ore]]。" },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.experience_collector}" },
+        { "type": "p", "text": "挖碎一块<em>本来就会掉经验</em>的方块时，额外多掉一些经验，比如煤、钻石、青金石、红石、绿宝石、下界石英矿石，还有{item:kuvalich:requiem_ore}。不能和精准采集共存。" },
+        { "type": "p", "text": "每块额外经验：1 级 <g>+2</g>，2 级 <g>+4</g>，3 级 <g>+5</g>，4 级 <g>+7</g>，5 级 <g>+8</g>。" },
+        { "type": "tip", "style": "warn", "text": "对{item:kuvalich:experience_ore}<b>无效</b>。这一块本来就掉 0 经验时也不加，比如煤矿偶尔不掉经验，或者用错了镐。和{lang:enchantment.kuvalich.requiem_destroyed}在同一把镐上挖安魂矿石时，多给的这份也会一起乘上灭骸的倍率。" }
+      ],
+      "_src": [
+        "init/KuvaLichEnchantments.java:16-32 — 注册 experience_collector、requiem_destroyed、lethal、first_strike、escort、death_resistance 六个附魔",
+        "base/enchantment/AbstractEnchantment.java:12-50 + enchantment/*.java — 都没覆写 isTreasureOnly / isTradeable / isDiscoverable，走原版附魔台、附魔书（战利品、村民交易）渠道；resources/data/kuvalich/recipes 里没有附魔相关配方",
+        "各附魔 getMinCost：灭骸 35；经验之运 15+10×(级−1)；斩杀 10+10×(级−1)；先攻 25+10×(级−1)；护卫/死亡抵抗 25+25×(级−1)。原版附魔台 30 级时的修正等级约 31~49（看物品附魔能力），所以斩杀 5、经验之运 5、护卫/死亡抵抗 2 级以上从附魔台出不来；原版图书管理员交易与 enchant_randomly 在 [1, 最高级] 里随机等级，可直接给满级",
+        "enchantment/RequiemDestroyedEnchantment.java:84-87,257-260 — VERY_RARE、EnchantmentCategory.DIGGER、没覆写 getMaxLevel（原版默认 1）、最低附魔等级 35",
+        "enchantment/ExperienceCollectorEnchantment.java:29-39 — MAX_LEVEL 5、RARE、DIGGER；:66 额外经验 = (int)(1 + 等级 × 1.5) → 2/4/5/7/8；:43-46 BreakEvent 经验 ≤ 0 时不加；:81-83 与精准采集互斥",
+        "enchantment/LethalEnchantment.java:28-37 — 5 级、VERY_RARE、WEAPON；FirstStrikeEnchantment.java:31-46 — 3 级、WEAPON；EscortEnchantment.java:38-54 — 3 级、ARMOR；DeathResistanceEnchantment.java:39-59,155-158 — 3 级、ARMOR",
+        "原版 EnchantmentCategory：DIGGER = DiggerItem（镐斧锹锄），WEAPON = SwordItem；base/item/AbstractKuvaWeapon.java:23 — 赤毒武器继承 SwordItem",
+        "enchantment/RequiemDestroyedEnchantment.java:90-117,152-154,176-177 — 四种安魂方块挖掘速度、精准采集直接返回、带灭骸的成功率",
+        "Forge BlockEvent.BreakEvent 构造器 — 工具不对（!isCorrectToolForDrops）时经验为 0 → 经验之运也不加",
+        "block/RequiemOreBlock.java:77-82 getExpDrop — 安魂矿石非精准采集 50~100，BreakEvent 初值 > 0 → 经验之运对它有效；ExperienceOreBlock 没覆写 getExpDrop → 仍无效",
+        "enchantment/RequiemDestroyedEnchantment.java:130,160-163 onBreak（LOWEST）— 经验 × expMultiplier；经验之运 onBreak 是默认 NORMAL，先加后乘，所以多给的那份也被乘；两附魔都是 DIGGER，灭骸没覆写 checkCompatibility，可同在一把镐上"
+      ]
+    },
+    {
+      "id": "combat_enchantments",
+      "title": "战斗附魔",
+      "icon": "minecraft:diamond_sword",
+      "summary": "斩杀、先攻、护卫、死亡抵抗",
+      "blocks": [
+        { "type": "p", "text": "四个战斗附魔：两个附在剑上加伤害，两个附在盔甲上保命。怎么弄到见[[world/enchantments]]。" },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.lethal}" },
+        { "type": "p", "text": "目标越残血，这一击加得越多；目标满血时没有加成。" },
+        { "type": "formula", "text": "额外伤害 = 这一击伤害 × 目标已损失生命的比例 × 15% × 等级" },
+        { "type": "p", "text": "5 级打半血目标 <g>+37.5%</g>，打几乎空血的目标约 <g>+75%</g>。" },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.first_strike}" },
+        { "type": "p", "text": "打<em>满血</em>目标时，这一击伤害成倍增加，还顺带给你经验。对方掉了一丝血就不再触发。" },
+        { "type": "table", "header": ["等级", "这一击伤害", "触发时给的经验"], "rows": [
+          ["1", "×2", "原伤害的 10%"],
+          ["2", "×2.5", "原伤害的 22.5%"],
+          ["3", "×3", "原伤害的 40%"]
+        ] },
+        { "type": "p", "text": "经验向下取整，不超过目标最大生命的 33%，也不超过 1000 点。所以打小怪几乎拿不到经验，打高血量目标才划算。" },
+        { "type": "tip", "style": "warn", "text": "斩杀和先攻<b>不能附在同一件武器上</b>。两者都只算<em>近战直接命中</em>，弓箭、枪械子弹这类弹射物打中不触发。" },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.escort}" },
+        { "type": "p", "text": "你<em>满血</em>时受到的伤害降低：1 级 <g>−25%</g>、2 级 <g>−50%</g>、3 级 <g>−75%</g>。一掉血就不再生效——它挡的是「第一下」，不是整场战斗。" },
+        { "type": "list", "items": [
+          "几件盔甲都有时，只取最高的一件，不叠加",
+          "黄心先挡：本模组的[[warframe/shield|护盾]]、金苹果给的伤害吸收都算黄心。护卫只减穿过黄心、落到生命上的那部分",
+          "黄心撑着时生命一直是满的，所以护卫也一直有效"
+        ] },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.death_resistance}" },
+        { "type": "p", "text": "受到一下<b>会让你死掉</b>的伤害时，自动扣经验把你保在 <g>1 点生命</g>（半颗心），同时响起图腾的声音。" },
+        { "type": "formula", "text": "扣除的经验点 = 这一下的伤害 × 4 ÷ 附魔等级（向上取整）" },
+        { "type": "list", "items": [
+          "例：3 级时挨一下 30 点伤害，扣 40 点经验；30 级的经验条总共约 1395 点",
+          "经验不够扣就<b>不触发</b>：照常死亡，经验也不扣",
+          "触发时快捷栏上方会提示这次扣了多少经验",
+          "几件盔甲都有时取最高等级"
+        ] },
+        { "type": "h", "text": "进阶细节" },
+        { "type": "list", "items": [
+          "死亡抵抗的伤害按扣完护甲、抗性、黄心之后，真正落到生命上的数值算",
+          "死亡抵抗挡不住 /kill 和掉进虚空",
+          "死亡抵抗比不死图腾先生效：经验够扣时，图腾不会被消耗"
+        ] }
+      ],
+      "_src": [
+        "enchantment/LethalEnchantment.java:40-74 — LivingHurtEvent：getDirectEntity 必须是 LivingEntity（弹射物的直接实体是箭 / 子弹，不触发）；额外伤害 = amount × (1 − 当前生命/最大生命) × 0.15 × 等级",
+        "enchantment/LethalEnchantment.java:86-89 — checkCompatibility 排除 FIRST_STRIKE（原版 isCompatibleWith 双向检查，所以互斥）",
+        "enchantment/FirstStrikeEnchantment.java:49-96 — LivingHurtEvent LOWEST；目标 getHealth()==getMaxHealth() 才触发；倍率 = 2 + (等级−1)×0.5；0.99×最大生命的上限只在非秒杀时取 min，而非秒杀时本来就小于它，实际不生效；同样要求直接实体是 LivingEntity",
+        "enchantment/FirstStrikeEnchantment.java:107-114 — 经验 = (int)min(1000, min(最大生命×0.33, 0.1×(额外伤害 + 额外伤害×(等级−1)×0.5)))；额外伤害 = 原伤害×(倍率−1) → 原伤害的 10% / 22.5% / 40%",
+        "enchantment/EscortEnchantment.java:57-82 — LivingDamageEvent LOW；目标满血才生效；四件盔甲取最高等级并封顶 3；伤害 × max(0.01, 1 − 0.25×等级)",
+        "Forge Player.actuallyHurt:907-924 — 先扣伤害吸收（本模组护盾就是 absorption，即黄心：module/warframe/WarframeEffectHandler.java:642-661 setAbsorptionAmount），剩下的才进 LivingDamageEvent → 护卫只减落到生命上的部分；护盾挡住时 getHealth 不变，满血判定一直成立",
+        "enchantment/DeathResistanceEnchantment.java:73-102 — LivingDamageEvent LOWEST；只对玩家；跳过 BYPASSES_INVULNERABILITY（/kill、虚空）；伤害 ≥ 当前生命才触发；消耗 = ceil(伤害×4/等级)；经验点不足则不触发；伤害改为 当前生命−1；播放 TOTEM_USE 音效；:99 PlayerFeedback.actionBar 提示 message.kuvalich.deathResistance（「死亡抵抗生效，消耗了 %s 点经验」）",
+        "enchantment/DeathResistanceEnchantment.java:110-153 — 四件盔甲取最高等级；经验点按原版升级公式从等级和进度换算（0~30 级合计 1395 点）",
+        "Forge LivingEntity.actuallyHurt — LivingDamageEvent 在护甲、抗性、伤害吸收之后触发；不死图腾在 hurt() 里生命 ≤ 0 时才判定 → 死亡抵抗先生效"
+      ]
+    },
+    {
+      "id": "ore_drop_multiplier",
+      "title": "挖矿倍率",
+      "icon": "minecraft:raw_iron",
+      "summary": "战甲词条：矿物掉落在时运后再乘",
+      "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier>0"],
+      "blocks": [
+        { "type": "p", "text": "{lang:item.module.oreDropMultiplier}是<hl>战甲模组</hl>上的一条词条：装上带它的模组，你亲手挖碎矿石时，矿物会掉得更多。" },
+        { "type": "p", "text": "战甲模组是装在[[warframe/warframe_table]]里、对你自己一直生效的强化卡；词条就是卡上写的一条条属性。" },
+        { "type": "formula", "text": "最终数量 = 原本的掉落数量 × (1 + 词条合计 × {cfg:kuva_lich.oreDropEffectMultiplier|pctv})" },
+        { "type": "list", "items": [
+          "在时运算完之后<em>再乘一次</em>",
+          "小数按概率进位：3 个粗铁 × 1.3 = 3.9，九成掉 4 个、一成掉 3 个",
+          "没有上限，超过一组会分成几堆掉出来",
+          "词条合计为负数时<g>不会</g>减少掉落"
+        ] },
+        { "type": "h", "text": "哪些方块算矿石" },
+        { "type": "p", "text": "原版所有矿石，以及其它模组登记为矿石的方块。放大的只是粗矿、钻石、红石这类<em>矿物</em>。" },
+        { "type": "kv", "rows": [
+          { "if": "cfg:kuva_lich.oreDropWhitelist", "cells": ["也算矿石", "{cfg:kuva_lich.oreDropWhitelist}"] },
+          { "if": "cfg:kuva_lich.oreDropBlacklist", "cells": ["不算矿石", "{cfg:kuva_lich.oreDropBlacklist}"] }
+        ] },
+        { "type": "h", "text": "带这条词条的模组" },
+        { "type": "table", "header": ["模组", "品质", "挖矿倍率", "其它词条"], "widths": [3, 2, 2, 4], "rows": [
+          { "if": "module:miner_instinct", "cells": ["{lang:kuvaweapon.warframe_module.miner_instinct}", "青铜", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:15|round:1|pctv}", "挖掘速度 −{cfg:kuva_lich.moduleAttributeMultiplier|mul:40|round:1|pctv}"] },
+          { "if": "module:vein_resonance", "cells": ["{lang:kuvaweapon.warframe_module.vein_resonance}", "白银", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:22.5|round:1|pctv}", "护盾 −{cfg:kuva_lich.moduleAttributeMultiplier|mul:60|round:1|pctv}"] },
+          { "if": "module:vein_sense", "cells": ["{lang:kuvaweapon.warframe_module.vein_sense}", "黄金", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:30|round:1|pctv}", "无"] },
+          { "if": "module:deep_delver", "cells": ["{lang:kuvaweapon.warframe_module.deep_delver}", "黄金", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:45|round:1|pctv}", "护甲 −{cfg:kuva_lich.moduleAttributeMultiplier|mul:60|round:1|pctv}，挖掘速度 +{cfg:kuva_lich.moduleAttributeMultiplier|mul:30|round:1|pctv}"] },
+          { "if": "module:astral_drill_prime", "cells": ["{lang:kuvaweapon.warframe_module.astral_drill_prime}", "Prime", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:45|round:1|pctv}", "无"] },
+          ["裂罅模组", "裂罅", "随机", "随机"]
+        ] },
+        { "type": "p", "text": "<dim>青铜、白银、黄金、Prime、裂罅都是模组的品质，见[[modules/module_rarity]]。</dim>" },
+        { "type": "tip", "style": "warn", "text": "表里的固定模组<b>互相冲突</b>，只能装其中一张。想再高，可以另配一张带这条词条的[[modules/riven_module|裂罅模组]]：词条随机的特殊模组，也只能装一张。" },
+        { "type": "p", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "<dim>表中是满级数值；没升满级的模组只发挥一部分，见[[modules/module_level]]。</dim>" },
+        { "type": "tip", "style": "wf", "text": "原作的开放世界地图里也能挖矿：用采矿工具对准岩壁上发光的矿点，就能采出矿石和宝石。" },
+        { "type": "h", "text": "进阶细节" },
+        { "type": "list", "items": [
+          "精准采集挖到的矿石方块、掉出来仍是矿石方块的东西都不放大，防止放回去反复刷",
+          "TNT、苦力怕等爆炸炸出来的不算",
+          "{item:kuvalich:requiem_ore}和{item:kuvalich:experience_ore}的掉落是另外判定的，<b>不吃</b>挖矿倍率",
+          "单条词条的数值范围限制见[[modules/module_limits]]"
+        ] }
+      ],
+      "_src": [
+        "loot/OreDropMultiplierModifier.java:59-99 — 开关 enableOreDropMultiplier（关闭时整条目按 if 隐藏）；:69 工具带精准采集原样放行；方块须 isApplicableOre；THIS_ENTITY 必须是玩家（TNT/苦力怕爆炸的战利品参数不是玩家）；:86 倍率 ≤ 1 原样返回（负数不减）",
+        "loot/OreDropMultiplierModifier.java:106-117 — 倍率 = 1 + 词条合计 × oreDropEffectMultiplier/100（配置是 0~1000 的百分数 → pctv）；为 0 时倍率恒为 1、掉落不变，等于没有这条机制（条目按 if 隐藏）；词条含战甲击杀叠层",
+        "loot/OreDropMultiplierModifier.java:129-154 — 数量 × 倍率，小数部分按概率进位；超过堆叠上限拆成多堆，总量不封顶",
+        "loot/OreDropRules.java:70-80 — 黑名单优先，其次 tag kuvalich:mining_multiplier_ores 或配置白名单（两行 kv 各自按列表非空显示）",
+        "loot/OreDropRules.java:100-116 — 掉落物是方块自己、或是另一个矿石方块（mining_multiplier_ores / 白名单 / forge:ores）时不放大",
+        "resources/data/kuvalich/tags/blocks/mining_multiplier_ores.json — #forge:ores + 原版 8 类矿石 tag + huajiage:ore_huaji + 本模组两种矿；resources/data/forge/loot_modifiers/global_loot_modifiers.json 注册该 GLM（在战利品表含时运之后执行）",
+        "block/RequiemOreBlock.java:57 / block/ExperienceOreBlock.java:77 — 覆写 getDrops 不走战利品表，掉落另外直接生成 → GLM 碰不到（虽然在 tag 里）",
+        "module/warframe/WarframeModuleHandler.java:186-242 — 战甲模组取自战甲军械库 capability；各模组词条相加，× 等级系数，× ModuleConfig.clampAttributeValue",
+        "item/module/warframe/WarframeCommonModule.java:153-157 矿工直觉 oreDrop 0.1501 / diggingSpeed −0.4001；WarframeUncommonModule.java:134-138 矿脉共鸣 0.2251 / shield −0.6001；WarframeRareModule.java:108-118 矿脉嗅探 0.3001、深掘者 0.4501 + diggingSpeed 0.3001 / armor −0.6001；WarframePrimeModule.java:118-122 星髓钻探 Prime 0.4501；都带冲突标签 ore_drop_multiplier",
+        "utils/ModuleRegistryHelper.java:94-113 — 非关键词条注册时 × moduleAttributeMultiplier（oreDropMultiplier/diggingSpeed/shield/armor 都不在 KEY_ATTRIBUTES）",
+        "utils/ModuleRegistryHelper.java:77-89,154-163 — register 的第 5 个参数是模组 type，type 在 modules.disabledModuleTypes 里时直接不注册、随机揭示也被 filterDisabled 滤掉；五张固定模组的 type 依次是 miner_instinct / vein_resonance / vein_sense / deep_delver / astral_drill_prime（见上一条各 Warframe*Module 行号）→ 表格各行按 module: 行级 if 显示，冲突提示因此不写死「五张」",
+        "模组名用 {lang:kuvaweapon.warframe_module.*}（lang/zh_cn.json:1440-1444）：client/gui/guide/GuideValues.java:128-137 取语言值时 stripFormatting 去掉 § 颜色码",
+        "config/custom/CustomModuleManager.java — 可在 config/kuvalich/custom_modules.json 加自定义模组，可能也带这条词条，所以提示里不写「只能靠裂罅」",
+        "item/module/warframe/WarframeRivenModule.java:252-256 — 裂罅挖矿倍率基准 0.3，实际数值随机",
+        "base/item/AbstractModule.java:177-194 + module/ModulePlacementValidator.java:134-152 — 冲突标签有交集不能同装；裂罅不带冲突标签，但一套只能装一张裂罅",
+        "module/level/ModuleLevelHelper.java:102-108 — 等级系统开启时效果 = 等级 / 最大等级",
+        "原作事实（wf 小知识）：《星际战甲》开放世界（如夜灵平野）可用采矿工具开采矿脉，获得矿石与宝石"
+      ]
+    },
+    {
+      "id": "loot",
+      "title": "其它战利品来源",
+      "icon": "kuvalich:endo",
+      "summary": "击杀掉内融核心、战利品倍率、砍刀",
+      "blocks": [
+        { "type": "p", "text": "挖矿以外，这几种办法也能多拿东西。本模组敌人{lang:entity.kuvalich.kuva_slave}和 Boss {lang:entity.kuvalich.kuva_master}的专属掉落，见[[enemies/kuva_slave]]和[[enemies/kuva_master]]。" },
+        { "type": "h", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "{item:kuvalich:endo}" },
+        { "type": "p", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "内融核心是给模组升级的材料，模组就是装在武器或你身上的强化卡。挖[[world/experience_ore]]、在[[weapons/requiem_recast]]里分解用不上的模组都能拿到。" },
+        { "type": "p", "if": ["cfg:kuva_lich.enableModuleLevelSystem", "cfg:kuva_lich.endoDropChance>0"], "text": "打怪也会掉：主手拿着<t>已开光</t>的武器击杀<em>怪物</em>时，有 <t>{cfg:kuva_lich.endoDropChance|pctv}</t> 的概率掉 <t>{cfg:kuva_lich.endoDropMinAmount}~{cfg:kuva_lich.endoDropMaxAmount}</t> 个。" },
+        { "type": "list", "if": ["cfg:kuva_lich.enableModuleLevelSystem", "cfg:kuva_lich.endoDropChance>0"], "items": [
+          "开光就是让武器能装模组。[[weapons/kuva_weapons|赤毒武器]]生来就是开光的，普通武器要先开光，见[[weapons/requiem_evolve]]",
+          "只算怪物：僵尸、骷髅、苦力怕、赤毒奴仆等。动物（包括疣猪兽）、史莱姆、恶魂、幻翼、潜影贝不算",
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "这份掉落<b>不吃</b>下面的战利品掉落倍率" }
+        ] },
+        { "type": "h", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}" },
+        { "type": "p", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "这是<hl>战甲模组</hl>上的一条词条，让你打怪时掉更多东西。战甲模组装在{item:kuvalich:requiem_warframe_table}里，对你自己一直生效。" },
+        { "type": "formula", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "掉落数量 × (1 + 词条合计 × {cfg:kuva_lich.itemDropEffectMultiplier|pctv})" },
+        { "type": "list", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "items": [
+          "你亲手击杀<em>动物或怪物</em>时生效，弓箭、枪械击杀也算",
+          "放大它们原本就会掉的东西，比如腐肉、骨头、火药",
+          "装备、武器、工具以及一切带耐久的东西<t>不参与</t>放大",
+          "没有上限，超过一组会分成几堆掉",
+          "<b>合计为负数会减少掉落</b>：降到 0 或以下时，除装备外什么都不掉",
+          "击杀叠层版的这条词条每杀一只叠一层，最多 {cfg:kuva_lich.maxStacksItemDropMultiplier} 层，见[[combat/kill_stack]]",
+          { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier>0"], "text": "和[[world/ore_drop_multiplier|挖矿倍率]]互不相干，各乘各的" }
+        ] },
+        { "type": "tip", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "style": "wf", "text": "原作里想多刷掉落，玩家常带战甲 Nekros：他的技能 Desecrate（亵渎）能让周围的尸体有机会再掉一次战利品。" },
+        { "type": "h", "text": "{item:kuvalich:machete}" },
+        { "type": "p", "text": "{item:kuvalich:machete}是一把[[weapons/kuva_weapons|赤毒武器]]，特效是让掉落变多。拿在主手击杀动物或怪物时，每一堆掉落的数量各自随机变成原来的 <g>1~3 倍</g>。" },
+        { "type": "list", "items": [
+          "盔甲和剑、镐、斧、锹、锄这类掉落不参与",
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "砍刀先算，战利品掉落倍率再在它的结果上乘，两者可以叠加" },
+          "武器本身见[[weapons/weapon_list]]"
+        ] },
+        { "type": "h", "text": "进阶细节" },
+        { "type": "list", "items": [
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "史莱姆、岩浆怪、恶魂、幻翼、潜影贝、鱿鱼、鱼、村民和傀儡都不算动物或怪物，打它们不吃战利品掉落倍率" },
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "赤毒奴仆、赤毒玄骸额外给的赤毒、裂罅碎块和模组，都<b>不吃</b>战利品掉落倍率" },
+          { "if": ["cfg:kuva_lich.itemDropEffectMultiplier>0", "mod:customnpcs"], "text": "CustomNPCs 的 NPC 也算在内，击杀它们同样吃战利品掉落倍率" },
+          { "if": ["cfg:kuva_lich.itemDropEffectMultiplier>0", "mod:tacz"], "text": "用 TACZ 枪械击杀时，枪上的{lang:item.module.gun_loot_drop}也会加进合计，见[[tacz/tacz_gun_attributes]]" },
+          "凋灵这类不能穿过传送门的 Boss 不受砍刀影响"
+        ] }
+      ],
+      "_src": [
+        "module/level/EndoDropHandler.java:34-62 — LivingDeathEvent：等级系统开启 + 死者是 Monster + 击杀者（任意 LivingEntity）主手武器 hasBase → endoDropChance%（0~100）掉 endoDropMinAmount~endoDropMaxAmount 个；直接 addFreshEntity，不经 LivingDropsEvent → 不吃战利品倍率；等级系统关闭或概率为 0 时相关块按 if 隐藏",
+        "module/weapon/WeaponModuleHandler.java:201-204 — 开光 = 物品带 kuvalich_weaponModules 标签（能装武器模组）；base/item/AbstractKuvaWeapon.java:173-187 — 赤毒武器生成时自带",
+        "base/entity/AbstractKuva.java:46 — 赤毒实体 extends Monster；原版 Slime extends Mob、Ghast/Phantom extends FlyingMob、Shulker extends AbstractGolem、Hoglin extends Animal，都不是 Monster",
+        "module/warframe/WarframeEffectHandler.java:292-293 — 战利品倍率：source.getEntity() 是玩家（远程击杀也算）且死者是 Animal / Monster / customnpcs 命名空间实体；原版 Squid/鱼 extends WaterAnimal、村民 AgeableMob、傀儡 AbstractGolem、MagmaCube extends Slime，都不在内；:101 CUSTOM_NPC_NAMESPACE = customnpcs",
+        "world/inventory/RequiemRecastMenu.java:183-188,431-446,463-489 — 安魂之铸里只放一张模组时可分解为内融核心（不看等级系统开关，但等级系统关闭时内融核心没有用处，整节按 if 隐藏）",
+        "module/warframe/WarframeEffectHandler.java:290-412 — LivingDropsEvent LOWEST：玩家击杀 Animal/Monster/CustomNPC；倍率 = 1 + (战甲词条 + TACZ 枪械 gun_loot_drop) × itemDropEffectMultiplier/100；≤ 0 时删除全部非装备掉落；按物品种类汇总总量后缩放，小数按概率进位，溢出分堆，无上限",
+        "module/warframe/WarframeEffectHandler.java:306-310 — itemDropEffectMultiplier 为 0 时倍率恒为 1，掉落不变，等于没有这条机制（相关块 / 行按 if 隐藏）",
+        "module/warframe/WarframeEffectHandler.java:453-470 — 装备判定：有耐久、盔甲、鞘翅、盾牌等不参与缩放",
+        "module/warframe/WarframeModuleHandler.java:276-330 — killStackItemDropMultiplier × 层数加到 itemDropMultiplier；层数上限配置 maxStacksItemDropMultiplier",
+        "module/warframe/WarframeEffectHandler.java:481-491 — TACZ 子弹击杀且手持开光枪械时加上武器词条 gun_loot_drop",
+        "entity/KuvaSlaveEntity.java:163-173,230-256；entity/KuvaMasterEntity.java:396-407,455-490 — 专属掉落在 super.die() 之后直接生成实体，不进 LivingDropsEvent → 不吃战利品倍率",
+        "item/weapon/Machete.java:30 — Machete extends AbstractKuvaWeapon：砍刀是赤毒武器之一",
+        "item/weapon/Machete.java:42-63 — 玩家用砍刀（WeaponEventUtil.getActiveWeapon，平时即主手）击杀 Animal/Monster 且 canChangeDimensions（凋灵为 false）；排除 ArmorItem / SwordItem / TieredItem（剑与镐斧锹锄），其余每个掉落实体数量各自 × RandomUtil.getInt(1,3)（弓、弩等不在排除之列）；默认优先级 NORMAL，早于 WarframeEffectHandler.onLivingDrops 的 LOWEST → 战利品倍率乘在砍刀结果上",
+        "原作事实（wf 小知识）：《星际战甲》战甲 Nekros 的技能 Desecrate 让附近尸体有概率再掉一次战利品"
+      ]
+    }
+  ]
+}

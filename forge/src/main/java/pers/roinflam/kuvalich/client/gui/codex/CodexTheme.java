@@ -220,6 +220,106 @@ public final class CodexTheme {
     }
 
     /**
+     * 斜切轮廓的周长：{@link #chamferOutline} 那一圈的像素数（四条直边 + 四条切角斜边）。
+     *
+     * @param w   宽
+     * @param h   高
+     * @param cut 切角边长
+     * @return 像素数
+     */
+    public static int chamferPerimeter(int w, int h, int cut) {
+        return 2 * w + 2 * h - 4 * cut;
+    }
+
+    /**
+     * 斜切轮廓的一段弧：「描线」动画用
+     *
+     * <p>画的像素和 {@link #chamferOutline} 完全是同一圈，只是按弧长截取其中一段。
+     * 弧长从<b>顶边中点</b>起算、顺时针增加（顶边右半 → 右上切角 → 右边 → 右下切角 → 底边 →
+     * 左下切角 → 左边 → 左上切角 → 顶边左半），周长见 {@link #chamferPerimeter}。
+     * {@code from} / {@code to} 可以是负数或超过周长，按周长取模；跨过起点时自动拆成两段。
+     * 直边一段只要一次 fill，斜边逐像素（最多 cut 次）。</p>
+     *
+     * @param g     画布
+     * @param x     左
+     * @param y     上
+     * @param w     宽
+     * @param h     高
+     * @param cut   切角边长
+     * @param from  起点弧长（像素，含）
+     * @param to    终点弧长（像素，不含）
+     * @param color 线色
+     */
+    public static void chamferArc(GuiGraphics g, int x, int y, int w, int h, int cut, float from, float to, int color) {
+        if (w <= cut * 2 || h <= cut * 2 || to <= from) {
+            return;
+        }
+        int per = chamferPerimeter(w, h, cut);
+        int start = (int) Math.floor(from);
+        int len = (int) Math.floor(to) - start;
+        if (len >= per) {
+            chamferOutline(g, x, y, w, h, cut, color);
+            return;
+        }
+        if (len <= 0) {
+            return;
+        }
+        int s = Math.floorMod(start, per);
+        if (s + len <= per) {
+            arcRange(g, x, y, w, h, cut, s, s + len, color);
+        } else {
+            arcRange(g, x, y, w, h, cut, s, per, color);
+            arcRange(g, x, y, w, h, cut, 0, s + len - per, color);
+        }
+    }
+
+    /** 画弧长落在 [lo, hi) 里的轮廓像素（0 ≤ lo < hi ≤ 周长） */
+    private static void arcRange(GuiGraphics g, int x, int y, int w, int h, int cut, int lo, int hi, int color) {
+        int cx = x + w / 2;
+        int o = 0;
+        // 顶边右半 → 右上切角 → 右边 → 右下切角
+        o = arcRun(g, lo, hi, o, x + w - cut - cx, cx, y, 1, 0, color);
+        o = arcRun(g, lo, hi, o, cut, x + w - cut, y, 1, 1, color);
+        o = arcRun(g, lo, hi, o, h - cut * 2, x + w - 1, y + cut, 0, 1, color);
+        o = arcRun(g, lo, hi, o, cut, x + w - 1, y + h - cut, -1, 1, color);
+        // 底边（向左）→ 左下切角 → 左边（向上）→ 左上切角 → 顶边左半
+        o = arcRun(g, lo, hi, o, w - cut * 2, x + w - cut - 1, y + h - 1, -1, 0, color);
+        o = arcRun(g, lo, hi, o, cut, x + cut - 1, y + h - 1, -1, -1, color);
+        o = arcRun(g, lo, hi, o, h - cut * 2, x, y + h - cut - 1, 0, -1, color);
+        o = arcRun(g, lo, hi, o, cut, x, y + cut - 1, 1, -1, color);
+        arcRun(g, lo, hi, o, cx - x - cut, x + cut, y, 1, 0, color);
+    }
+
+    /**
+     * 轮廓上的一段（直边或 45° 斜边）：只画它落在 [lo, hi) 里的部分
+     *
+     * @return 下一段的起点弧长
+     */
+    private static int arcRun(GuiGraphics g, int lo, int hi, int start, int len, int x0, int y0, int dx, int dy, int color) {
+        if (len <= 0) {
+            return start;
+        }
+        int a = Math.max(lo, start) - start;
+        int b = Math.min(hi, start + len) - start;
+        if (b > a) {
+            if (dx != 0 && dy != 0) {
+                for (int k = a; k < b; k++) {
+                    int px = x0 + dx * k;
+                    int py = y0 + dy * k;
+                    g.fill(px, py, px + 1, py + 1, color);
+                }
+            } else {
+                int x1 = x0 + dx * a;
+                int y1 = y0 + dy * a;
+                int x2 = x0 + dx * (b - 1);
+                int y2 = y0 + dy * (b - 1);
+                g.fill(Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2) + 1, Math.max(y1, y2) + 1, color);
+            }
+        }
+        return start + len;
+    }
+
+    /**
      * 全息表面：扫描线 + 极低对比的竖向网格
      *
      * <p>整套观感里性价比最高的一笔 —— 它让平涂的板材看起来是投影出来的。

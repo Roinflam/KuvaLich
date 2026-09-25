@@ -157,22 +157,15 @@ public class KuvaLich {
                 }
 
                 // ================================================================
-                // Patchouli 教程书系统注册
-                // Patchouli guidebook system registration
+                // 冒险指南发放
+                // Guidebook give-on-first-join
                 //
-                // 仅在 Patchouli 已加载时注册教程书发放事件处理器。
-                // 玩家首次进服时自动发放赤毒玄骸教程书，可通过配置关闭。
-                // Only register guidebook handler when Patchouli is loaded.
-                // Automatically gives the guidebook on first join, configurable.
+                // 自带指南界面，不再依赖帕秋莉。玩家首次进服发一本，可通过配置关闭。
+                // Built-in guide screen (no Patchouli). Given once on first join, configurable.
                 // ================================================================
-                if (ModList.get().isLoaded("patchouli")) {
-                    MinecraftForge.EVENT_BUS.register(
-                            new pers.roinflam.kuvalich.event.BookGiveHandler()
-                    );
-                    LogUtil.info("检测到 Patchouli，教程书系统已启用");
-                } else {
-                    LogUtil.debug("未检测到 Patchouli，跳过教程书系统注册");
-                }
+                MinecraftForge.EVENT_BUS.register(
+                        new pers.roinflam.kuvalich.event.BookGiveHandler()
+                );
 
                 // 启动缓存清理定时器（每 5 分钟清理一次）
                 // Start cache cleanup timer (every 5 minutes)

@@ -1,0 +1,567 @@
+{
+  "id": "requiem",
+  "order": 20,
+  "title": "Requiem & Decryption",
+  "subtitle": "Clues, card order and Lich hunts",
+  "icon": "kuvalich:requiem_gate",
+  "entries": [
+    {
+      "id": "hunt_overview",
+      "title": "How a Hunt Works",
+      "icon": "kuvalich:lich_reliquary",
+      "summary": "One full round, from clues to rewards",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "This chapter teaches you to defeat this mod's boss, the {lang:entity.kuvalich.kuva_master}. Just killing it is not a win: first you work out an <hl>answer</hl> that belongs only to you, then kill it with that answer in place."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "<em>Gather clues</em>: personally kill Kuva enemies such as the {lang:entity.kuvalich.kuva_slave} to build <t>decryption progress</t>. Each time a stage fills, one card of the answer is revealed. [[requiem/decryption|More]]",
+            "<em>Get the cards</em>: <t>Requiem Cards</t> are 8 kinds of card items, and the answer is 3 of them, so you need those actual three. Mining {item:kuvalich:requiem_ore} drops them, and 3 cards you do not need can be traded for 1 random new one. [[requiem/requiem_cards|More]]",
+            "<em>Set the cards</em>: place the three cards in the {item:kuvalich:requiem_gate} in the order you think is right. [[requiem/requiem_gate|More]]",
+            "<em>Hunt</em>: personally kill a {lang:entity.kuvalich.kuva_master}. The answer is checked the moment it dies.",
+            "<em>Result</em>: a right guess is a <g>decryption success</g>; collect your rewards and a new round begins. A wrong guess means <b>Lich level +1</b>; adjust your cards and try again. [[requiem/decrypt_failure|More]]"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "Unfamiliar terms can be looked up in [[start/glossary]]."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In Warframe, a Kuva Lich takes over planets on the Star Chart: run missions in its territory and it skims a share of your rewards, which you only get back by defeating it."
+        }
+      ]
+    },
+    {
+      "id": "decryption",
+      "title": "Decryption Progress",
+      "icon": "kuvalich:requiem_riddle",
+      "summary": "Kill Kuva enemies to reveal three clues",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Every player has an <hl>answer</hl> of their own: 3 [[requiem/requiem_cards|Requiem Cards]] in a fixed order. It starts out hidden, and you dig it out one card at a time by killing Kuva enemies to build <t>decryption progress</t>."
+        },
+        {
+          "type": "table",
+          "header": ["Kill", "Progress per kill"],
+          "widths": [2, 3],
+          "rows": [
+            ["Minion: {lang:entity.kuvalich.kuva_slave}", "<t>{cfg:kuva_lich.minDecryptionProgress}~{cfg:kuva_lich.maxDecryptionProgress}</t> points, random"],
+            ["Boss: {lang:entity.kuvalich.kuva_master}", "The Thrall range × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"],
+            ["Anything else", "<dim>None</dim>"]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight",
+          "text": "The {lang:entity.kuvalich.kuva_slave} never appears in the wild, so you build progress by killing the {lang:entity.kuvalich.kuva_master} instead."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "You must land the killing blow",
+          "text": "Progress goes only to <em>the player who personally lands the killing blow</em>; in a group, only the finisher gets it. Kills by pets, lava, or bonus element damage such as burning or electricity do not count. Finish enemies off yourself; melee or arrows both work."
+        },
+        {
+          "type": "h",
+          "text": "Three stages"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            ["Clue 1", "Reach <t>{cfg:kuva_lich.firstStage}</t> points"],
+            ["Clue 2", "Another <t>{cfg:kuva_lich.secondStage}</t> points"],
+            ["Clue 3", "Another <t>{cfg:kuva_lich.thirdStage}</t> points"]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Each full stage reveals one answer card and the bar starts over; <g>leftover points carry into the next stage</g>.",
+            "<hl>The moment Clue 1 appears, the whole answer is locked in</hl>: which 3 cards and in what order never change after that. From then on you can challenge at any time.",
+            "Revealed cards show up in the clue slots on the bottom row of the [[requiem/requiem_gate]] screen. <w>Clue slot positions are random and do not show the order.</w>",
+            "After all three clues are revealed, kills stop adding progress and the action bar reminds you to set your cards."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In Warframe this progress is called Murmurs: each full stage reveals one Requiem mod, and once all three stages are full you know the whole answer."
+        },
+        {
+          "type": "p",
+          "text": "Whenever you gain progress, a bar pops up at the top of the screen with <t>Clue N/3</t> and your current points, then fades after about <t>4</t> seconds. The action bar also reports how many points you just gained."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Progress stays with you",
+          "text": "Progress, clues and the answer are stored on you: dying, logging out or changing dimensions loses nothing, and every player has their own. Only a <g>successful decryption</g> clears them, and the next round rolls a new answer."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": ["cfg:kuva_lich.confiscationChance", "cfg:kuva_lich.maxConfiscatedItems"],
+          "text": "From Clue 1 onward, anything you pick up may be confiscated by the Lich, see [[requiem/confiscation]]."
+        },
+        {
+          "type": "h",
+          "text": "Advanced details"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Progress from a Lich: both ends of the Thrall range are multiplied and rounded down, then a random value is picked between them.",
+            "The kill that completes a successful decryption adds no progress; the round simply resets.",
+            "One kill reveals at most one card, even if the points would cover two stages.",
+            "A killing blow from bonus [[combat/elements|element]] damage, such as burning or gas damage-over-time or the extra hit from electricity or blast, <b>does not count at all</b>: no progress and none of this mod's drops. The same goes for kills by pets or lava."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "requiem_cards",
+      "title": "Requiem Cards",
+      "icon": "kuvalich:khra",
+      "summary": "8 cards, 3 uses, spent only on success",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Requiem Cards are the keys you slot into the [[requiem/requiem_gate]], and there are 8 kinds. Your answer is <t>3 different cards</t> from them, in a fixed order."
+        },
+        {
+          "type": "items",
+          "items": ["kuvalich:khra", "kuvalich:jahu", "kuvalich:fass", "kuvalich:lohk", "kuvalich:netra", "kuvalich:vome", "kuvalich:xata", "kuvalich:ris"],
+          "caption": "All 8 Requiem Cards"
+        },
+        {
+          "type": "p",
+          "text": "The 3 cards are all different, so there are 8 × 7 × 6 = <t>336</t> possible sequences. Two copies of the same card can never be right."
+        },
+        {
+          "type": "h",
+          "text": "Durability: only success costs a use"
+        },
+        {
+          "type": "table",
+          "header": ["Name color", "Uses left"],
+          "rows": [
+            ["<c:FF55FF>Purple</c>", "3 (new card)"],
+            ["<c:55FFFF>Aqua</c>", "2"],
+            ["<c:FFFF55>Yellow</c>", "1, gone after the next success"]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Each <g>successful decryption</g> takes 1 use from each of the three cards in the Gate. One set lasts at most <t>3</t> successes.",
+            "<g>A failed decryption costs no durability</g>. Inserting, removing or reordering cards costs nothing either, so testing orders is free.",
+            "After a success, cards with uses left go back to your inventory; if it is full, they drop where the [[enemies/kuva_master|Lich]] died.",
+            "Requiem Cards do not stack, one per slot."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "The names of these 8 cards all come from Warframe's <em>Requiem mods</em>. There, too, each one has a limited number of uses and is gone once they run out."
+        },
+        {
+          "type": "h",
+          "text": "Where to get them"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            ["Mining {item:kuvalich:requiem_ore}", "Each block may drop 1 random card; chances below, details in [[world/requiem_ore]]"],
+            ["{item:kuvalich:requiem_recast}", "Any 3 cards become 1 random <g>new card</g>, see [[weapons/requiem_recast]]"]
+          ]
+        },
+        {
+          "type": "table",
+          "header": ["Mining tool", "Card chance per block"],
+          "widths": [2, 3],
+          "rows": [
+            ["With {lang:enchantment.kuvalich.requiem_destroyed}", "<t>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</t>"],
+            ["Without it", "<t>{cfg:kuva_lich.baseCardDropChance|pctv}</t>; <w>each Fortune level lowers it by {cfg:kuva_lich.fortuneReductionPerLevel|pctv}</w>, down to <t>{cfg:kuva_lich.minCardDropChance|pctv}</t>"],
+            ["Silk Touch or bare hands", "<b>No cards</b>, enchanted or not"]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "Recycle worn cards",
+          "text": "Put three yellow cards with 1 use left into the {item:kuvalich:requiem_recast} to get back 1 fresh card with 3 uses. The new card is equally likely to be any of the 8 and may repeat one you put in."
+        }
+      ]
+    },
+    {
+      "id": "requiem_gate",
+      "title": "Requiem Gate",
+      "icon": "kuvalich:requiem_gate",
+      "summary": "Setting cards, the challenge and rewards",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The {item:kuvalich:requiem_gate} is the block where you set your answer. Put three [[requiem/requiem_cards|Requiem Cards]] in it in the order you think is right, then kill a [[enemies/kuva_master]]. The answer is checked the moment it dies."
+        },
+        {
+          "type": "recipe",
+          "item": "kuvalich:requiem_gate"
+        },
+        {
+          "type": "h",
+          "text": "The screen"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            ["Top row, three slots", "Your answer: positions 1, 2, 3 from left to right"],
+            ["Gold bar in the middle", "Decryption progress for the current stage"],
+            ["Bottom row, three clue slots", "Revealed clue cards; <w>positions are random, not the order</w>"]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Cards live on you, not in the block",
+          "text": "Closing the screen saves the cards to your own data. Any Requiem Gate shows your own cards and other players see theirs; breaking the block drops no cards."
+        },
+        {
+          "type": "h",
+          "text": "The challenge"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Reveal at least <t>1</t> clue first, see [[requiem/decryption]]. <b>Challenging with no clue revealed always fails.</b>",
+            "Right-click the Requiem Gate, fill all three slots with cards and close the screen to save.",
+            {"if": ["cfg:kuva_lich.kuvaLichSpawnWeight", "cfg:kuva_lich.requiemUltimatumDropChance>0"], "text": "Find a {lang:entity.kuvalich.kuva_master}: they turn up in the wild, or you can summon one with a {item:kuvalich:requiem_ultimatum}. Land the killing blow <em>yourself</em>."},
+            {"if": ["cfg:kuva_lich.kuvaLichSpawnWeight", "!cfg:kuva_lich.requiemUltimatumDropChance>0"], "text": "Find a {lang:entity.kuvalich.kuva_master}: they turn up in the wild. Land the killing blow <em>yourself</em>."},
+            {"if": ["!cfg:kuva_lich.kuvaLichSpawnWeight", "cfg:kuva_lich.requiemUltimatumDropChance>0"], "text": "Summon a {lang:entity.kuvalich.kuva_master} with a {item:kuvalich:requiem_ultimatum} and land the killing blow <em>yourself</em>."},
+            "Check the result: a success drops rewards; a failure tells you in chat how many positions in a row you got right, counting from the first, see [[requiem/decrypt_failure]]."
+          ]
+        },
+        {
+          "type": "table",
+          "header": ["In the Gate at the kill", "Result"],
+          "widths": [2, 5],
+          "rows": [
+            ["Fewer than 3 cards", "Not a challenge: progress only, no penalty"],
+            ["3 cards, exact order", "<g>Decryption success</g>: rewards below, the round resets"],
+            ["3 cards, wrong", "<b>Decryption failure</b>: [[requiem/decrypt_failure|Lich level]] +1. No durability lost, and you still get progress"]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Success rewards"
+        },
+        {
+          "type": "table",
+          "header": ["Reward", "Amount"],
+          "widths": [3, 4],
+          "rows": [
+            ["Kuva weapon", "1, random weapon and element"],
+            ["{item:kuvalich:lich_reliquary}", "1, guaranteed"],
+            ["{item:kuvalich:kuva}", "<t>{cfg:kuva_lich.masterKuvaMinAmount}~{cfg:kuva_lich.masterKuvaMaxAmount}</t>"],
+            ["{item:kuvalich:riven_sliver}", "<t>{cfg:kuva_lich.masterRivenSliverMinAmount}~{cfg:kuva_lich.masterRivenSliverMaxAmount}</t>"],
+            ["High-tier mod", "1, Prime or Riven"],
+            {"if": "cfg:kuva_lich.requiemUltimatumDropChance", "cells": ["{item:kuvalich:requiem_ultimatum}", "<t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> chance for 1"]},
+            ["Unspent Requiem Cards", "Back to your inventory"]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "<em>Kuva weapons</em> are this mod's own weapons, see [[weapons/kuva_weapons]]. Their level is rolled within your <t>weapon level range</t>.",
+            "A new character's range is <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t>, and your first success rolls a weapon level inside it. Each later success raises it until it hits its cap, see [[weapons/weapon_level]].",
+            "<em>High-tier mod</em>: mods are upgrade cards you fit to a weapon or to yourself. This one comes from the top two quality tiers: <t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> Prime, otherwise Riven, see [[modules/module_rarity]].",
+            "<t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> of them are weapon mods and the rest are Warframe mods. 'Warframe' here simply means you: Warframe mods go on yourself."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Rewards drop where the Lich dies",
+          "text": "Apart from the cards returned to your inventory, every reward <w>drops at the Lich's death spot</w>. Do not finish it near lava, the void or deep water."
+        },
+        {
+          "type": "h",
+          "text": "Advanced details"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Stay within <t>8</t> blocks of the Gate while its screen is open.",
+            "Once two or more clues are revealed, the bottom-row clue cards keep shuffling.",
+            "Want progress from a Lich kill without risking a failure? Take one card out of the Gate first.",
+            "If your inventory is full, unspent Requiem Cards drop at the Lich's death spot.",
+            "Weapon level range: after each success the minimum and maximum both rise by <em>the same</em> random amount, <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>, capped at <t>{cfg:kuva_lich.minimumLevel}</t> / <t>{cfg:kuva_lich.maximumLevel}</t>.",
+            "Both ends rise by the same amount, so the range keeps its width until one end hits its cap. This kill's weapon uses the range from before the increase.",
+            "In Creative mode, press <t>TAB</t> in the Requiem Gate to fill in the correct answer. It only works once at least 1 clue is revealed, and your old cards go back to your inventory."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decrypt_failure",
+      "title": "Failure & Guessing the Order",
+      "icon": "kuvalich:jahu",
+      "summary": "What a wrong guess costs, and max tries",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "If all three slots are filled but wrong, killing a [[enemies/kuva_master|Lich]] is a <b>decryption failure</b>. Chat gives you a hint to narrow things down; the cost is <hl>Lich level</hl> +1."
+        },
+        {
+          "type": "h",
+          "text": "Hints on failure"
+        },
+        {
+          "type": "table",
+          "header": ["Chat message", "Meaning"],
+          "widths": [3, 4],
+          "rows": [
+            ["<w>{lang:message.kuvalich.firstCorrect}</w>", "Position 1 is right"],
+            ["Plus <w>{lang:message.kuvalich.secondCorrect}</w>", "Positions 1 and 2 are right; only position 3 is wrong"],
+            ["Neither message", "<b>Position 1 is wrong</b>; nothing about the other two"]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Hints only count from the left: position 2 is checked only when position 1 is right."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "When the first two are right",
+          "text": "If your three cards are all different, 'first two right' means the third card is not in the answer at all. Swap in a different card."
+        },
+        {
+          "type": "h",
+          "text": "When you know all three cards"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Put the three cards in any order and kill a Lich.",
+            "Position 1 right → swap the last two; the next try wins.",
+            "No hint → move one of the other two cards into position 1 and try again.",
+            "Still no hint → position 1 is the remaining card. At most one more miss: swap the last two."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "text": "With this method you fail at most 3 times, and <em>the 4th try always wins</em>. If you have a {item:kuvalich:requiem_riddle}, just use it and never miss."
+        },
+        {
+          "type": "h",
+          "text": "The cost of failing: Lich level"
+        },
+        {
+          "type": "p",
+          "text": "Each failure raises your <hl>Lich level</hl> by 1, and chat reports the new level. It is stored on <em>you</em>, survives death and logging out, and <g>only resets on a successful decryption</g>."
+        },
+        {
+          "type": "formula",
+          "if": "cfg:kuva_lich.increaseDamage",
+          "text": "Damage Kuva enemies deal to you × (1 + Lich level × {cfg:kuva_lich.increaseDamage})"
+        },
+        {
+          "type": "formula",
+          "if": "cfg:kuva_lich.reducedDamage",
+          "text": "Damage you deal to Kuva enemies × (1 − Lich level × {cfg:kuva_lich.reducedDamage}), reduced by at most 99.9%"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.increaseDamage||cfg:kuva_lich.reducedDamage",
+          "title": "Only against Kuva enemies",
+          "text": "Your Lich level only affects damage between you and Kuva enemies (Thralls and Liches). Falls, other mobs and other players are unaffected, so everyday exploring is as usual."
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "if": ["!cfg:kuva_lich.increaseDamage", "!cfg:kuva_lich.reducedDamage"],
+          "text": "Your Lich level does not change the damage you deal or take; a wrong guess just adds 1 to the number."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In Warframe, stabbing a Lich with the wrong Requiem mods does not kill it; it ranks up and grows stronger instead."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": "cfg:kuva_lich.battleBoost",
+          "title": "Long fights get dangerous",
+          "text": "Also keep in mind while hunting: once a Kuva enemy has a target, its damage grows by <t>{cfg:kuva_lich.battleBoost|pct}</t> of its base every second; without a target it drains at the same rate. If you are losing, back off first. See [[enemies/battle_boost]]."
+        }
+      ]
+    },
+    {
+      "id": "confiscation",
+      "title": "Confiscation & Return",
+      "icon": "minecraft:chest",
+      "summary": "The Lich takes pickups until you win",
+      "if": ["cfg:kuva_lich.confiscationChance", "cfg:kuva_lich.maxConfiscatedItems"],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "From the moment you reveal Clue 1 until you win the round, whenever you pick something up, the [[enemies/kuva_master|Lich]] may confiscate the whole stack. A successful decryption gives everything back."
+        },
+        {
+          "type": "kv",
+          "rows": [
+            ["When it rolls", "When you touch a dropped item to pick it up"],
+            ["Chance", "<t>{cfg:kuva_lich.confiscationChance|pctv}</t> each time"],
+            ["Limit per round", "<t>{cfg:kuva_lich.maxConfiscatedItems}</t> confiscations, then it stops"],
+            ["Active", "Clue 1 revealed → successful decryption"],
+            ["Return", "Everything at once on a successful decryption"]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "It takes the whole stack",
+          "text": "It takes <w>the entire stack</w> you were picking up: a dropped stack of 64 diamonds means all 64 are gone. The limit counts confiscations, one per stack, not individual items."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Items already in your inventory are never taken.",
+            "When something is confiscated, the Lich taunts you in chat.",
+            "Confiscated items are recorded on you; dying, logging out or changing dimensions does not lose them.",
+            "A failed decryption returns nothing and does not reset the limit; only a success counts.",
+            "Picking up your own drops after dying rolls for every stack as well."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Full inventory? Do not stand on drops",
+          "text": "A normal pickup rolls once. But when a full inventory stops you picking an item up, it rolls 20 times a second, so the longer you stand there, the more likely you lose it."
+        },
+        {
+          "type": "h",
+          "text": "Getting it back"
+        },
+        {
+          "type": "p",
+          "text": "When you kill the Lich with a successful decryption, <g>every last</g> confiscated item drops at <em>the Lich's death spot</em>, and chat tells you so. The round is over by then, so picking them up is safe."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "They are ordinary dropped items: they despawn if left too long and burn in lava, so grab them quickly."
+        }
+      ]
+    },
+    {
+      "id": "requiem_items",
+      "title": "Requiem Items",
+      "icon": "kuvalich:requiem_ultimatum",
+      "summary": "Gem, Riddle, Ultimatum and Reliquary",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Four items used for decryption and hunts: a gem for crafting blocks, a riddle that shows the answer, an ultimatum that summons a [[enemies/kuva_master|Lich]], and the reliquary you only get from a successful hunt."
+        },
+        {
+          "type": "items",
+          "items": ["kuvalich:requiem_gem", "kuvalich:requiem_riddle", "kuvalich:requiem_ultimatum", "kuvalich:lich_reliquary"]
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:requiem_gem}"
+        },
+        {
+          "type": "p",
+          "text": "Dropped by {lang:entity.kuvalich.kuva_slave}s you kill yourself. Base chance <t>{cfg:kuva_lich.slaveRequiemGemBaseChance|pctv}</t>, plus <t>{cfg:kuva_lich.slaveRequiemGemLootingBonus|pctv}</t> per level of <t>Looting</t> on your main-hand weapon."
+        },
+        {
+          "type": "table",
+          "header": ["Crafts", "Gems", "Used for"],
+          "widths": [3, 2, 4],
+          "rows": [
+            ["{item:kuvalich:requiem_gate}", "5", "Setting your answer"],
+            ["{item:kuvalich:requiem_recast}", "5", "[[weapons/requiem_recast|Three-into-one for cards and mods]]"],
+            ["{item:kuvalich:requiem_evolve}", "4", "[[weapons/requiem_evolve|The weapon upgrade station]]"],
+            ["{item:kuvalich:forma}", "2, makes 3", "[[weapons/forma|Rerolling non-Kuva weapon stats]]"]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:requiem_riddle}"
+        },
+        {
+          "type": "p",
+          "text": "Right-click it and chat tells you this round's <hl>three cards in the correct order</hl>. Uses up 1."
+        },
+        {
+          "type": "list",
+          "items": [
+            "You need at least 1 clue revealed first. Used too early, it is not consumed; it only says there is no answer yet and goes on a <t>10</t>-second cooldown.",
+            "This mod never produces it: no recipe and no drops. It is only in the Creative tab."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:requiem_ultimatum}"
+        },
+        {
+          "type": "p",
+          "text": "Right-click to summon a {lang:entity.kuvalich.kuva_master}. It uses up 1, except in Creative. Used on air, the Lich appears <t>3</t> blocks in front of you; used on a block, it appears on the face you clicked."
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.requiemUltimatumDropChance",
+          "text": "A successful decryption has a <t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> chance to drop one."
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.requiemUltimatumDropChance",
+          "text": "This mod never produces it: no recipe and no drops. It is only in the Creative tab."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "What you summon is the real boss. Set your cards and gear up first, and use it somewhere open and safe."
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:lich_reliquary}"
+        },
+        {
+          "type": "p",
+          "text": "Every successful decryption drops exactly 1. The three blocks below all need one to craft, so <em>you cannot build any of them before your first successful hunt</em>."
+        },
+        {
+          "type": "kv",
+          "rows": [
+            ["{item:kuvalich:requiem_evolve}", "The core weapon upgrade station"],
+            ["{item:kuvalich:requiem_weapon_table}", "Fits mods to weapons"],
+            ["{item:kuvalich:requiem_warframe_table}", "Fits Warframe mods to yourself"]
+          ]
+        },
+        {
+          "type": "p",
+          "if": ["mod:tacz", "cfg:kuva_lich.taczGunEnhanceEnable"],
+          "text": "With the TACZ gun mod installed, it can also permanently enhance guns in the {item:kuvalich:requiem_evolve}, see [[tacz/tacz_enhance]]."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "{item:kuvalich:kuva} and {item:kuvalich:riven_sliver} are the other main hunt rewards; see [[start/materials]] for their uses."
+        }
+      ]
+    }
+  ]
+}

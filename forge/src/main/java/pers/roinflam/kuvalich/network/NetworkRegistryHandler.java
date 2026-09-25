@@ -9,6 +9,7 @@ import pers.roinflam.kuvalich.network.packet.CodexInstallModulePacket;
 import pers.roinflam.kuvalich.network.packet.CodexActionResultPacket;
 import pers.roinflam.kuvalich.network.packet.DamagePacket;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
+import pers.roinflam.kuvalich.network.packet.GuideConfigSyncPacket;
 import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
 import pers.roinflam.kuvalich.network.packet.RequiemGateFillPacket;
 import pers.roinflam.kuvalich.network.packet.WarframeModuleSyncPacket;
@@ -23,10 +24,10 @@ import java.util.Optional;
  *
  * 统一管理所有网络包的注册
  *
- * <p>⭐ 协议版本升级为 "7"：{@link DamagePacket} 改为传拆开的字段（伤害数字合并），
- * {@link WarframeModuleSyncPacket} 追加了武器类击杀叠层数组（客户端射速 / 多重射击与服务端对齐），
+ * <p>⭐ 协议版本现为 "8"（各版本改了什么见 {@link #PROTOCOL_VERSION}）。"7" 时 {@link DamagePacket} 改为传拆开的字段
+ * （伤害数字合并）、{@link WarframeModuleSyncPacket} 追加了武器类击杀叠层数组（客户端射速 / 多重射击与服务端对齐），
  * 字节流格式发生变化，与 "6" 及更早版本的客户端不兼容，必须提版本号强制握手拒绝，
- * 否则旧客户端会按老格式解码出错位数据。</p>
+ * 否则旧客户端会按老格式解码出错位数据。"8" 新增 {@link GuideConfigSyncPacket}（冒险指南的服务端配置快照）。</p>
  *
  * <p>⭐ 安全：所有包在注册时都显式声明 {@link NetworkDirection}。
  * 不带方向的 5 参 {@code registerMessage} 重载会让 Forge 允许包双向收发，
@@ -42,8 +43,12 @@ public class NetworkRegistryHandler {
      * 网络协议版本
      * ⭐ "6"：DamagePacket 改为传拆开的字段（伤害数字合并），字节流格式变更
      * ⭐ "7"：WarframeModuleSyncPacket 追加武器类击杀叠层数组，字节流格式变更
+     * ⭐ "8"：新增 GuideConfigSyncPacket（冒险指南的服务端配置快照）。旧客户端收到不认识的包 id
+     *         并不会断线（Forge 47 的 IndexedMessageCodec 只记一条 error 就丢弃；旧客户端本来也没有这套指南）；
+     *         提版本是为了让旧客户端在握手阶段就被拒绝、看到明确的「版本不符」提示，强制所有人更新 jar。
+     *         所以「新增 S2C 包」本身不是必须提版本的理由，改了已有包的字节格式才是
      */
-    private static final String PROTOCOL_VERSION = "7";
+    private static final String PROTOCOL_VERSION = "8";
 
     /** 消息ID计数器 / Message ID counter */
     private static int messageId = 0;
@@ -159,6 +164,16 @@ public class NetworkRegistryHandler {
                 CodexActionResultPacket::encode,
                 CodexActionResultPacket::decode,
                 CodexActionResultPacket::handle,
+                TO_CLIENT
+        );
+
+        // 冒险指南：服务端配置快照（服务器 → 客户端，登录与配置热重载时发送）
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                GuideConfigSyncPacket.class,
+                GuideConfigSyncPacket::encode,
+                GuideConfigSyncPacket::decode,
+                GuideConfigSyncPacket::handle,
                 TO_CLIENT
         );
     }

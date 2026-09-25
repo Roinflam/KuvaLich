@@ -1,0 +1,1263 @@
+{
+  "id": "combat",
+  "order": 50,
+  "title": "战斗机制",
+  "subtitle": "伤害结算、暴击、元素与叠层",
+  "icon": "kuvalich:gram_prime",
+  "entries": [
+    {
+      "id": "damage",
+      "title": "伤害怎么算",
+      "icon": "kuvalich:gram_prime",
+      "summary": "一下攻击从出手到扣血的全过程",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "这一篇讲你打出的一下，最后会让对方掉多少血。先记住下面几条结论就够用，完整公式放在篇末。看不懂的名词可以查[[start/glossary]]。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "开光",
+              "让一件武器拥有自己的<t>武器面板</t>（一套随机的基础属性），从此能装模组。普通武器在{item:kuvalich:requiem_evolve}里开光"
+            ],
+            [
+              "赤毒武器",
+              "Boss {lang:entity.kuvalich.kuva_master}掉落的武器，天生开过光"
+            ],
+            [
+              "模组 / 词条",
+              "插在武器上的强化卡（不是指 MC 的模组）；卡上的每一条属性叫词条"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "先记住这几条"
+        },
+        {
+          "type": "list",
+          "items": [
+            "只有<em>主手</em>拿着开光武器打出的伤害才吃模组加成；没开光的武器完全按原版算。",
+            "每一下分成<t>物理</t>和<t>元素</t>两部分。<w>暴击只放大物理部分</w>，克制对两部分都有效。",
+            "近战要<em>蓄满力</em>再出手：没蓄满时原版先压低一次伤害，物理和元素倍率再按蓄力比例打一次折，蓄一半力出手只剩满蓄力的约<w>五分之一</w>。",
+            "伤害最低是 0：负面词条再多，也不会变成负数。",
+            {
+              "if": "cfg:kuva_lich.enableDamageNumbers",
+              "text": "护甲、护盾这类减伤<em>最后</em>才扣；伤害数字显示的是扣完之后实际掉的血。"
+            },
+            {
+              "if": "!cfg:kuva_lich.enableDamageNumbers",
+              "text": "护甲、护盾这类减伤<em>最后</em>才扣。"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "从出手到扣血"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "<em>分类</em>：你亲手打中（横扫波及的也算）是<t>近战</t>；你射出的箭、弹射物、子弹打中是<t>远程</t>。",
+            "<em>加上伤害加成</em>：近战、远程各吃各的加成词条，对照表在篇末。",
+            "<em>汇总元素</em>：赤毒武器自带的元素 + 所有元素词条（见[[combat/elements]]）。",
+            "<em>乘{lang:item.module.damage}</em>：物理和元素都乘。",
+            "<em>乘蓄力比例</em>（只有近战）：物理和元素都乘，满蓄力是 ×1。",
+            "<em>掷暴击</em>：只乘物理部分（见[[combat/crit]]）。",
+            "<em>乘克制倍率</em>：物理和元素都乘（见[[combat/bane]]）。",
+            "<em>合算</em>：得到这一下的伤害，最低为 0。",
+            "<em>掷元素触发</em>：给目标挂上状态效果（见[[combat/element_status]]）。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "打中之后"
+        },
+        {
+          "type": "list",
+          "items": [
+            "远程命中、且带有{lang:item.module.bursting_radius}时，目标周围的其它生物受到这一下 <t>50%</t> 的溅射伤害。<w>溅射只绕开你本人</w>，宠物、村民也会挨打。",
+            "结算处决、抹除增益等特殊词条（见[[reference/weapon_attr_special]]）。",
+            "这一下足以打死目标时，击杀叠层 +1（见[[combat/kill_stack]]）。",
+            "最后才轮到目标的护甲、保护附魔、护盾和其它模组的减伤。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "容易踩的坑",
+          "text": "算的是<em>命中那一刻</em>主手上的物品：箭飞出去后换了武器，就按新武器算；副手拿弓射箭，吃的也是主手那件的面板。"
+        },
+        {
+          "type": "h",
+          "text": "进阶细节"
+        },
+        {
+          "type": "table",
+          "header": [
+            "攻击方式",
+            "吃哪些加成词条"
+          ],
+          "widths": [
+            2,
+            3
+          ],
+          "rows": [
+            [
+              "近战（含横扫）",
+              "{lang:item.module.meleeDamage}"
+            ],
+            [
+              "普通箭、药箭",
+              "{lang:item.module.remoteDamage} + {lang:item.module.arrowDamage}"
+            ],
+            [
+              "其它弹射物",
+              "{lang:item.module.remoteDamage} + {lang:item.module.projectileDamage}"
+            ],
+            [
+              "算作魔法的伤害",
+              "在上面的基础上再加 {lang:item.module.magicDamage}"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "「其它弹射物」包括光灵箭、三叉戟、枪械子弹等。",
+            "算作魔法的伤害：原版的魔法类伤害。",
+            {
+              "if": "cfg:kuva_lich.enableThirdPartyMagicRecognition",
+              "text": "其它魔法模组的法术伤害也会被识别为魔法。"
+            },
+            "击杀叠层的基础伤害加成并入近战和远程加成。",
+            "溅射不触发元素，也不叠武器击杀叠层。"
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "最终伤害 = 原始伤害 × (物理倍率 + 元素倍率) × 克制倍率"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "原始伤害",
+              "进入结算前的那一下：武器攻击力、蓄力、原版跳劈暴击、锋利等附魔都已算在内"
+            ],
+            [
+              "物理倍率",
+              "(1 + 伤害加成之和) × 基础伤害 × 蓄力比例 × 暴击档倍率"
+            ],
+            [
+              "未暴击时",
+              "((1 + 伤害加成之和) × 基础伤害 + {lang:item.module.baseDamageWhenNotCriticalStrike}) × 蓄力比例"
+            ],
+            [
+              "元素倍率",
+              "元素词条之和 × 基础伤害 × 蓄力比例（不吃暴击）"
+            ],
+            [
+              "蓄力比例",
+              "近战 = 出手时的蓄力进度（0 ~ 1，满蓄力为 1）；远程恒为 1"
+            ],
+            [
+              "基础伤害低于 100%",
+              "<w>按平方算</w>：面板 80% 实际只有 64%"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "原版本身已经按蓄力降低了原始伤害，蓄力比例是在这之上<em>额外</em>再打一次折。它只看你亲手挥出的那一下（横扫波及的也按它算）；宠物等其它攻击者按满蓄力算。"
+        },
+        {
+          "type": "p",
+          "text": "目标身上的磁力等元素减益，以及赤毒敌人的抗性（见[[enemies/lich_resistance]]），都已经先乘进了原始伤害。元素触发以这一下的物理部分为基数。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "mod:tacz",
+          "text": "TACZ 枪械的子弹按远程结算，吃{lang:item.module.projectileDamage}。枪械专属词条见[[tacz/tacz_gun_attributes]]。"
+        }
+      ],
+      "_src": [
+        "module/weapon/WeaponCombatHandler.java ENABLE_ATTACK_STRENGTH_SCALING 注释 — 原版 Player.attack 先 ×(0.2+0.8f²)，processDamage 再 ×f（物理、元素都乘）：半蓄力 0.4×0.5≈满蓄力的 1/5 → 「先记住这几条」写约五分之一",
+        "module/weapon/WeaponCombatHandler.java:571-617 — LOWEST 优先级；主手物品 hasBase（开光）才进 processDamage，否则只登记普通白字",
+        "module/weapon/WeaponModuleHandler.java:201-204,213-257 + world/inventory/RequiemEvolveMenu.java:307,330,344 — 开光 = 写入 kuvalich_weaponModules 面板，由安魂之融完成",
+        "utils/KuvaWeaponUtil.java:38-54 + base/item/AbstractKuvaWeapon.java:173-188 + entity/KuvaMasterEntity.java:458-463 — 玄骸掉落的赤毒武器生成时即写入面板（自带开光）",
+        "module/weapon/WeaponCombatHandler.java:640-642 — 面板的基础暴击几率/倍率/触发几率是开光时掷出的（「一套随机的基础属性」）",
+        "dynamicattribute/DynamicAttributes.java:336-351 ElementCombatHandler.onLivingHurt + base/entity/AbstractKuva.java:107-135 onLivingHurt — 磁力/穿刺/辐射修正与赤毒实体抗性都在 NORMAL 优先级的 LivingHurtEvent 里改 amount，先于本模组 LOWEST 结算，所以已含在原始伤害里；穿刺现在看的是攻击方身上的（applyPuncture），玩家打挂穿刺的怪不再被削，所以正文只举磁力",
+        "module/weapon/WeaponCombatHandler.java:16,689-693 — 只认 net.minecraft...projectile.Arrow（普通箭/药箭）吃 arrowDamage；光灵箭、三叉戟是 AbstractArrow 子类但不是 Arrow，落进 Projectile 分支",
+        "module/weapon/WeaponCombatHandler.java:940-941 — 溅射目标只排除主目标和攻击者本人（宠物、村民照打）",
+        "module/weapon/WeaponCombatHandler.java:596-602 — directEntity 是攻击者本人=近战，否则归属实体是攻击者=远程",
+        "mixin/MixinPlayerSweep.java — 横扫伤害源 playerAttack(player)，directEntity=玩家，走近战分支",
+        "module/weapon/WeaponCombatHandler.java:664-693 — 近战加 meleeDamage；远程加 remoteDamage，Arrow 加 arrowDamage，其它 Projectile 加 projectileDamage",
+        "TACZ jar javap：EntityKineticBullet extends Projectile → 子弹吃 projectileDamage",
+        "module/weapon/WeaponCombatHandler.java:721-723 + MagicDamageClassifier.java:23-50 — 魔法是独立叠加层，加 magicDamage；原版规则恒生效，第三方规则（forge:is_magic tag / 白名单 / 命名空间）只在 enableThirdPartyMagicRecognition 开启时生效 → 那一行加 if",
+        "module/weapon/WeaponCombatHandler.java:660,973-988 — 击杀叠层基础伤害加成并入 meleeDamage/remoteDamage",
+        "module/weapon/WeaponCombatHandler.java:726-742 — 元素总和 = 赤毒自带元素 + 13 种元素词条",
+        "module/weapon/WeaponCombatHandler.java:745-753 — 基础伤害 ≥1 线性乘，0~1 之间按平方乘，物理元素都乘",
+        "module/weapon/WeaponCombatHandler.java:136-141,183-192,520-557,755-760,796 — 蓄力折算（2026-09-25 作者要求的代码改动，v1 之后加的）：近战时基础面板倍率之后再乘本次挥击的蓄力比例 getAttackStrengthScale(0.5)，物理、元素、未暴击加成一起乘；远程恒 1；Swing 记攻击者，本 tick 内主击/横扫/附加伤害共用，别的攻击者（宠物等）取 1.0；类注释写明原版已用 0.2+0.8f² 缩放过原始伤害，这是额外约束",
+        "module/weapon/WeaponCombatHandler.java:766-798 — 暴击只乘 baseDamage（物理）；未暴击加 baseDamageWhenNotCriticalStrike × 蓄力比例（在面板倍率之后加）",
+        "module/weapon/WeaponCombatHandler.java:801-817 — 克制倍率物理、元素都乘；最终 = 原始 × 物理 × 克制 + 原始 × 元素 × 克制",
+        "module/weapon/WeaponCombatHandler.java:866-867 — totalDamage = max(total, 0)",
+        "module/weapon/WeaponCombatHandler.java:840-863 — 元素触发以 coreDamage（物理部分）为基数",
+        "module/weapon/WeaponCombatHandler.java:178,873,928-961 — 溅射 = 主目标最终伤害 × 0.5，仅远程且非爆炸伤害；不触发元素、不累加叠层",
+        "module/weapon/WeaponCombatHandler.java:876-887 — 之后依次：真实子弹、抹除增益、击杀叠层（hurter.getHealth()-totalDamage<=0）、处决",
+        "module/weapon/WeaponCombatHandler.java:605 — 命中时取 attacker.getMainHandItem()，不是射出时的物品",
+        "module/weapon/DamageDisplayTracker.java:330-347 — 伤害数字取 ForgeHooks.onLivingDamage 返回值（护甲、减伤之后）+ 护盾吃掉的部分；DamageDisplayTracker.java:201-215 enableDamageNumbers 关闭时不显示 → 「先记住这几条」里提伤害数字的那一项分 enableDamageNumbers 开 / 关两种写法",
+        "module/weapon/WeaponCombatHandler.java:696-712 + 364-413 — 溅射半径来自合并后的 attributes（武器 + 额外槽位 + 叠层），所以写「带有爆炸半径」而不是「武器有」",
+        "base/entity/AbstractKuva.java:106-134 — 赤毒实体受伤时的 applyResistance 在 NORMAL 优先级执行（先于 processDamage）"
+      ]
+    },
+    {
+      "id": "crit",
+      "title": "暴击",
+      "icon": "kuvalich:destreza_prime",
+      "summary": "暴击几率、三档暴击与倍率",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>暴击</hl>：有一定几率让这一下的物理伤害乘上<t>暴击倍率</t>（下文记作 M）。几率和倍率都写在武器面板上。"
+        },
+        {
+          "type": "p",
+          "text": "{lang:item.module.criticalStrikeProbability}可以超过 100%。超出的部分不会浪费，而是把暴击<em>升档</em>：<c:FFFF55>黄暴</c> → <c:FFAA00>橙暴</c> → <c:FF5555>红暴</c>，一档比一档痛。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "暴击几率",
+            "结果"
+          ],
+          "widths": [
+            1,
+            3
+          ],
+          "rows": [
+            [
+              "0 ~ 100%",
+              "按几率出<c:FFFF55>黄暴 ×M</c>，否则不暴击"
+            ],
+            [
+              "100% ~ 200%",
+              "至少黄暴；超出 100% 的部分是出<c:FFAA00>橙暴 ×2M</c> 的几率"
+            ],
+            [
+              "200% ~ 300%",
+              "至少橙暴；超出 200% 的部分是出<c:FF5555>红暴 ×3M</c> 的几率"
+            ],
+            [
+              "超过 300%",
+              "必定红暴 ×3M，<w>再高没有额外收益</w>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "例子",
+          "text": "M = 2.5、暴击几率 150% → 一半的攻击 ×2.5，一半 ×5。正好 100% / 200% / 300% 时分别<em>必定</em>黄暴 / 橙暴 / 红暴。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "《星际战甲》里暴击几率同样能超过 100%，档位越高，暴击数字从黄色变成橙色、红色。玩家常说的「红暴」指第三档及以上的暴击。"
+        },
+        {
+          "type": "h",
+          "text": "怎么提高暴击"
+        },
+        {
+          "type": "list",
+          "items": [
+            "基础暴击几率和倍率写在武器面板上，是武器<t>开光</t>、获得面板时随机掷出来的，见[[weapons/weapon_panel]]。",
+            "装上带暴击几率、暴击倍率词条的<t>模组</t>（武器强化卡），能按百分比在基础值上往上加。",
+            "近战要<em>蓄满力</em>再出手：没蓄满时暴击几率按蓄力比例打折（伤害倍率也一样，见[[combat/damage]]），连点轻击几乎不会暴击。",
+            "近战疾跑时，还能额外吃{lang:item.module.dashMeleeCriticalStrikeProbability}。",
+            "<w>暴击只放大物理部分</w>，元素伤害不吃暴击倍率。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "进阶细节"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "近战暴击几率",
+              "基础暴击几率 × 蓄力比例 × (1 + {lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}，疾跑时再 + {lang:item.module.dashMeleeCriticalStrikeProbability})"
+            ],
+            [
+              "远程暴击几率",
+              "基础暴击几率 × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability})"
+            ],
+            [
+              "近战暴击倍率",
+              "基础暴击倍率 × (1 + {lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier}) × (1 + 近战暴伤叠层)"
+            ],
+            [
+              "远程暴击倍率",
+              "基础暴击倍率 × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier})"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "元素触发的持续伤害以物理部分为基数，所以暴击那一下挂上的持续伤害也更高。",
+            "没暴击时，这一下额外加上{lang:item.module.baseDamageWhenNotCriticalStrike}；近战时这份加成也按蓄力比例打折。",
+            {
+              "if": "mod:tacz",
+              "text": "TACZ 会把一发子弹拆成「普通段 + 穿甲段」两次伤害；两段都有伤害时<em>各掷一次暴击</em>。"
+            },
+            {
+              "if": [
+                "mod:tacz",
+                "cfg:kuva_lich.enableDamageNumbers",
+                "cfg:kuva_lich.mergeDamageNumbers",
+                "cfg:kuva_lich.mergeDamageWindowMs>0"
+              ],
+              "text": "这两段的伤害数字会合成一条，颜色取较高的那档（见[[combat/damage_numbers]]）。"
+            }
+          ]
+        }
+      ],
+      "_src": [
+        "module/weapon/WeaponCombatHandler.java:767-769 — 暴击几率 >300 必定 ×M×3（§c 红），不再掷骰",
+        "module/weapon/WeaponCombatHandler.java:770-777 — 200<p≤300：掷 (p-200)% 出 ×3M 红，否则 ×2M 橙",
+        "module/weapon/WeaponCombatHandler.java:778-785 — 100<p≤200：掷 (p-100)% 出 ×2M 橙，否则 ×M 黄",
+        "module/weapon/WeaponCombatHandler.java:786-797 — p≤100：掷 p% 出 ×M 黄；否则白（目标有吸收护盾为蓝）并加 baseDamageWhenNotCriticalStrike",
+        "utils/RandomUtil.java:percentageChance — probability>=100 直接 true，所以正好 100/200/300 必定黄/橙/红",
+        "module/weapon/WeaponCombatHandler.java:640-641 — 基础暴击几率/倍率取武器开光面板 criticalStrikeProbability×100 / criticalStrikeMultiplier",
+        "module/weapon/WeaponCombatHandler.java:192,520-539,551-557,647-649 — 近战暴击几率 × 蓄力比例（getAttackStrengthScale，开关常量为 true）；755-760,796 — 基础面板倍率与未暴击加成同样 × 蓄力比例（2026-09-25 代码改动）",
+        "module/weapon/WeaponCombatHandler.java:669-674 — 疾跑时 dashMeleeCriticalStrikeProbability 与 meleeCriticalStrikeProbability 同括号相加",
+        "module/weapon/WeaponCombatHandler.java:676-683 — 近战暴击倍率 × (1+叠层值×层数) × (1+meleeCriticalStrikeMultiplier)",
+        "module/weapon/WeaponCombatHandler.java:686-687 — 远程暴击几率/倍率各 × (1+remote*)",
+        "module/weapon/WeaponCombatHandler.java:814-817 — 暴击只进 physicalDamage，elementalDamage 不含暴击（作者确认的有意设计）",
+        "module/weapon/WeaponCombatHandler.java:817,860 — coreDamage=physicalDamage（含暴击）作为元素触发基数",
+        "module/weapon/WeaponCombatHandler.java:578-586 — TACZ 一发子弹拆两次 hurt（普通段/破甲段），0 伤害段直接跳过",
+        "network/packet/DamageInfo.java:142-156,193-209 — 合并时颜色取档位最高；合并那一行随 enableDamageNumbers + mergeDamageNumbers + 窗口>0 才出现（ModConfig.java:339-365）",
+        "星际战甲小知识：原作暴击率可超过 100%，按档位显示黄（1 档）/ 橙（2 档）/ 红（3 档及以上）暴击数字；原作档位不封顶，所以「红暴」写成「第三档及以上」而不是「最高一档」（原作知识，非本项目代码）"
+      ]
+    },
+    {
+      "id": "bane",
+      "title": "克制（歧视）",
+      "icon": "minecraft:zombie_head",
+      "summary": "对特定生物类型的额外伤害",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>克制</hl>词条（玩家常叫「歧视」）让你对<em>某一类</em>生物多打伤害。每一下只看目标自己属于哪一类，只用那一类的克制词条："
+        },
+        {
+          "type": "table",
+          "header": [
+            "目标类型",
+            "吃哪条词条",
+            "例子"
+          ],
+          "widths": [
+            2,
+            3,
+            5
+          ],
+          "rows": [
+            [
+              "奇特生物",
+              "{lang:item.module.bane_of_undefined}",
+              "绝大多数生物：玩家、苦力怕、末影人、村民、女巫、劫掠兽、铁傀儡……"
+            ],
+            [
+              "亡灵生物",
+              "{lang:item.module.bane_of_undead}",
+              "僵尸、骷髅、幻翼、凋灵；<hl>本模组的敌人{lang:entity.kuvalich.kuva_slave}、{lang:entity.kuvalich.kuva_master}也算</hl>"
+            ],
+            [
+              "节肢动物",
+              "{lang:item.module.bane_of_arthropod}",
+              "蜘蛛、洞穴蜘蛛、蠹虫、末影螨、蜜蜂"
+            ],
+            [
+              "灾厄生物",
+              "{lang:item.module.bane_of_illager}",
+              "掠夺者、卫道士、唤魔者"
+            ],
+            [
+              "水生生物",
+              "{lang:item.module.bane_of_illager}",
+              "守卫者、鱿鱼、鱼类、海豚；<w>没有专属词条，吃灾厄那条</w>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "「奇特生物」不是指稀有怪，而是没被指定类型的生物。其它模组的怪大多也属于这一类，除非作者专门给它设了类型。"
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "打赤毒敌人",
+          "text": "本模组的两种敌人{lang:entity.kuvalich.kuva_slave}和{lang:entity.kuvalich.kuva_master}（Boss）都是<t>亡灵生物</t>：堆{lang:item.module.bane_of_undead}就对了。元素怎么配见篇末。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作里有一类模组只对某一个敌对派系增伤，中文玩家管它们叫「歧视卡」。这里把「派系」换成了 MC 的生物类型。"
+        },
+        {
+          "type": "h",
+          "text": "进阶细节"
+        },
+        {
+          "type": "formula",
+          "text": "克制倍率 = 1 + 目标所属类型的克制词条之和"
+        },
+        {
+          "type": "list",
+          "items": [
+            "物理和元素部分都乘克制倍率；溅射直接继承主目标的结果。",
+            "元素触发的伤害（持续伤害、电击、爆炸）以乘过克制的物理部分为基数，<em>还要再乘一次</em>克制，相当于平方：+50% 克制在这些伤害上是 ×2.25。",
+            "负数克制会降伤，但只在打<em>那一类</em>目标时生效，打别的类型不受影响；伤害最低压到 0。",
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "text": "打赤毒敌人的元素：电击的触发伤害对亡灵 ×1.5（见[[combat/element_status]]）。"
+            },
+            "打赤毒敌人的元素：火焰的持续伤害对亡灵减半，而{lang:entity.kuvalich.kuva_master}<w>免疫火焰</w>，火焰对它只剩削甲（见[[combat/element_status]]）。"
+          ]
+        }
+      ],
+      "_src": [
+        "module/weapon/WeaponCombatHandler.java:801-810 — 只按目标 MobType 取一条：UNDEFINED→bane_of_undefined，UNDEAD→bane_of_undead，ARTHROPOD→bane_of_arthropod，其余（ILLAGER、WATER）→bane_of_illager",
+        "module/weapon/WeaponCombatHandler.java:814-815 — 物理、元素两部分都 × baneMultiplier",
+        "module/weapon/WeaponCombatHandler.java:866 — 总伤害 max(0)，负克制不会变负",
+        "module/weapon/WeaponCombatHandler.java:928-935 — 溅射以主目标最终伤害为基数，继承克制",
+        "module/weapon/WeaponElementSystem.java:579,606,652,669,798,835 — 元素触发伤害 = 系数 × coreDamage（已含克制）× … × baneMultiplier，克制按平方生效（作者确认的有意设计）",
+        "base/entity/AbstractKuva.java:271-273 — 赤毒实体 getMobType() 返回 UNDEAD",
+        "init/KuvaLichEntities.java:28,42 — 本模组只注册了 kuva_slave、kuva_master 两种实体（「两种敌人」）",
+        "module/weapon/WeaponElementSystem.java:561-562,650 — 火焰对亡灵 ×0.5，电击对亡灵 ×1.5；电击那一项随 elementElectricityDamageMultiplier!=0 显示（=0 时电击触发什么都不做，见 element_status 的 _src）",
+        "init/KuvaLichEntities.java:42-48 — kuva_master 的 EntityType 带 .fireImmune()（kuva_slave 没有）；火焰 DOT 伤害源 inFire 属 IS_FIRE，被原版 isInvulnerableTo 挡掉；削甲是 DynamicAttribute 修饰符，不受免疫影响（WeaponElementSystem.java:564-573,589）",
+        "lang item.module.bane_of_undefined = 对 奇特生物 伤害；原版 MobType 默认 UNDEFINED（女巫/劫掠兽继承 Raider 未覆盖，属 UNDEFINED——原版知识，非本项目代码）",
+        "2026-09-24 核过代码（装的 jar 与源码一致）：不存在「负歧视串类型」",
+        "星际战甲小知识：原作的派系增伤模组（Bane of Grineer 等）被中文玩家称作「歧视卡」（原作知识，非本项目代码）"
+      ]
+    },
+    {
+      "id": "elements",
+      "title": "元素与复合元素",
+      "icon": "minecraft:blaze_powder",
+      "summary": "13 种伤害类型、组合规则与触发",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>元素</hl>是附加在攻击上的伤害类型，比如火焰、冰冻、电击。元素词条做两件事：给每一下附加<t>元素伤害</t>，并决定<t>元素触发</t>时挂什么状态。"
+        },
+        {
+          "type": "p",
+          "text": "<t>触发</t>：按{lang:item.module.triggerChance}给目标挂上状态效果，比如着火、减速、中毒（见[[combat/element_status]]）。元素一共 13 种："
+        },
+        {
+          "type": "table",
+          "header": [
+            "类别",
+            "元素"
+          ],
+          "widths": [
+            1,
+            5
+          ],
+          "rows": [
+            [
+              "物理",
+              "<c:D8DCE2>{lang:kuvaweapon.type.slash}</c>、<c:9AA2AE>{lang:kuvaweapon.type.puncture}</c>、<c:F0F0F0>{lang:kuvaweapon.type.impact}</c>"
+            ],
+            [
+              "基础",
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>、<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>、<c:8296FF>{lang:kuvaweapon.type.electricity}</c>、<c:6BD96B>{lang:kuvaweapon.type.poison}</c>"
+            ],
+            [
+              "复合",
+              "<c:A8E86B>{lang:kuvaweapon.type.gas}</c>、<c:F0E060>{lang:kuvaweapon.type.radiation}</c>、<c:7A8CFF>{lang:kuvaweapon.type.magnetic}</c>、<c:C4DB4A>{lang:kuvaweapon.type.corrosion}</c>、<c:FF9B4A>{lang:kuvaweapon.type.explosion}</c>、<c:FF7AB0>{lang:kuvaweapon.type.virus}</c>"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "四种基础元素两两搭配，会自动合成复合元素："
+        },
+        {
+          "type": "table",
+          "header": [
+            "基础元素",
+            "+ 基础元素",
+            "= 复合元素"
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "<c:A8E86B>{lang:kuvaweapon.type.gas}</c>"
+            ],
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+              "<c:F0E060>{lang:kuvaweapon.type.radiation}</c>"
+            ],
+            [
+              "<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>",
+              "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+              "<c:7A8CFF>{lang:kuvaweapon.type.magnetic}</c>"
+            ],
+            [
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+              "<c:C4DB4A>{lang:kuvaweapon.type.corrosion}</c>"
+            ],
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>",
+              "<c:FF9B4A>{lang:kuvaweapon.type.explosion}</c>"
+            ],
+            [
+              "<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>",
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "<c:FF7AB0>{lang:kuvaweapon.type.virus}</c>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "《星际战甲》的元素也是这样：火焰、冰冻、电击、毒素两两合成复合元素，合成结果取决于模组摆放的先后顺序。玩家配卡时，常常就是在调这个顺序。"
+        },
+        {
+          "type": "h",
+          "text": "合成顺序"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "排队：<t>赤毒武器</t>（Boss 掉落的武器）天生自带的元素排第一。",
+            "其余元素按武器上<t>模组</t>（强化卡）的槽位顺序排，同一张模组按词条顺序。",
+            "同一种元素出现多次，合并到它第一次出现的位置。",
+            "从前往后看：每个基础元素，和排在它前面、<em>还没合成过</em>的第一个能搭配的基础元素合成。",
+            "物理元素和本来就是复合的元素不参与合成；找不到搭档的基础元素保持原样。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "例子",
+          "text": "{lang:kuvaweapon.type.fire}（槽 1）、{lang:kuvaweapon.type.ice}（槽 2）、{lang:kuvaweapon.type.electricity}（槽 3）→ 前两个先合成{lang:kuvaweapon.type.explosion}，{lang:kuvaweapon.type.electricity}落单，结果是{lang:kuvaweapon.type.explosion} + {lang:kuvaweapon.type.electricity}。想要{lang:kuvaweapon.type.radiation}，就把{lang:kuvaweapon.type.electricity}挪到{lang:kuvaweapon.type.ice}前面。"
+        },
+        {
+          "type": "h",
+          "text": "触发几率"
+        },
+        {
+          "type": "list",
+          "items": [
+            "超过 100% 时，整数部分是必定触发的次数，小数部分再掷一次：250% = 必定 2 次 + 50% 几率第 3 次。",
+            "每次触发按各元素的占比<em>加权随机</em>抽一种：占比越大越容易抽到。",
+            "合成只影响抽到什么，不改变元素伤害的总量：总量永远是所有元素词条相加。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "容易踩的坑",
+          "text": "武器本身（含赤毒武器自带元素）一个元素都没有时，触发几率再高也不会触发。想触发什么，就得装在武器本身上。"
+        },
+        {
+          "type": "h",
+          "text": "进阶细节"
+        },
+        {
+          "type": "formula",
+          "text": "触发几率 = 武器基础触发几率 × (1 + {lang:item.module.triggerChance}，疾跑时再 + {lang:item.module.dashTriggerChance}) × (1 + 触发叠层)"
+        },
+        {
+          "type": "list",
+          "items": [
+            "单次命中最多触发 <t>5</t> 次，超过 500% 没有额外收益。",
+            "所有人的攻击加起来，每 tick（1/20 秒）最多触发 <t>100</t> 次：一大群怪同时挨打时，排在后面的可能轮不到。",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
+              "text": "副手等额外槽位（见[[modules/multi_slot]]）上的元素词条只增加元素伤害（也会加到同种元素的触发伤害上），<w>不会</w>把新元素加进触发池。"
+            }
+          ]
+        }
+      ],
+      "_src": [
+        "module/weapon/WeaponElementSystem.java:407-422 — 基础 fire/ice/poison/electricity，物理 slash/puncture/impact，复合 gas/radiation/magnetic/corrosion/explosion/virus，共 13 种",
+        "module/weapon/WeaponElementSystem.java:431-445 — 复合配方：火+毒=毒气，火+电=辐射，冰+电=磁力，毒+电=腐蚀，火+冰=爆炸，毒+冰=病毒",
+        "module/weapon/WeaponElementSystem.java:183-253 — 元素池：赤毒自带元素先放，再按模组列表与词条顺序 merge（同键合并到首次位置），剔除 ≤0；基础元素与前面第一个未组合、可配对的基础元素合成；复合与物理不再组合",
+        "module/weapon/WeaponModuleHandler.java:187-199 — 模组按 8 个槽位顺序读取",
+        "module/weapon/WeaponElementSystem.java:81-87 — 赤毒武器自带元素 = 武器等级/100",
+        "module/weapon/WeaponCombatHandler.java:726-742,814-815 — 附加元素伤害 = 原始 × 全部元素词条之和 × 面板 × 克制，与组合无关、不吃暴击",
+        "module/weapon/WeaponElementSystem.java:133-149 — 触发时按池内权重加权随机抽一种",
+        "module/weapon/WeaponCombatHandler.java:642,822-832 — 触发几率 = 基础×100 × (1+triggerChance[+dashTriggerChance 疾跑时]) × (1+叠层值×层数)",
+        "module/weapon/WeaponCombatHandler.java:263,835 — 单次命中上限 5 次（钳到 500%）",
+        "module/weapon/WeaponCombatHandler.java:846-856 — >100 时整数部分必触发 + 小数部分掷一次；≤100 掷一次",
+        "module/weapon/WeaponCombatHandler.java:265-306 — MAX_ELEMENT_TRIGGER_PER_TICK=100，静态全局预算「跨所有攻击者与所有目标」，按 gameTime 每 tick 重置 → 写「所有人的攻击加起来」（v1 的「全服」），别人的攻击也占这份额度",
+        "module/weapon/WeaponCombatHandler.java:652,841-842 — 元素池只用武器自身 getModules(weapon)，额外槽位属性只进 attributes（加伤害），池为空不触发",
+        "module/weapon/WeaponCombatHandler.java:408-413 + WeaponElementSystem.java:457-523,556 — 额外槽位属性按键 merge 进 attributes，触发伤害的元素值从 attributes 取，所以副手等槽位的元素词条会抬高同种元素的触发伤害",
+        "config/ModConfig.java:838-841,875-880 + WeaponCombatHandler.java:367-370,426-428 — enableOffhandModule（默认 true）且 offhandEffectMultiplier>0（为 0 时 mergeSlotAttributes 直接跳过）才显示额外槽位那一行，与 modules/multi_slot 同一写法（两组 || 条件：任一额外位置开启；只开饰品位时还要装了 Curios）",
+        "utils/KuvaPalette.java:125-141 — 元素标识色（与 tooltip 同一张表）",
+        "星际战甲小知识：原作四种基础元素两两合成复合元素，结果取决于模组顺序（原作知识，非本项目代码）"
+      ]
+    },
+    {
+      "id": "element_status",
+      "title": "元素状态效果",
+      "icon": "minecraft:fermented_spider_eye",
+      "summary": "每种元素触发后会发生什么",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "元素触发时，目标会挂上抽中那种元素的状态：有的让它持续掉血，有的削弱它。先看效果，精确的伤害算法在篇末。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "t",
+              "1 + {lang:item.module.triggerTime}，决定持续多久。没有这条词条时 t = 1，「6t 秒」就是 6 秒"
+            ],
+            [
+              "护盾",
+              "目标身上的黄心（伤害吸收），战甲护盾、金苹果给的都算（见[[warframe/shield]]）。大多数怪没有"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "造成伤害的元素"
+        },
+        {
+          "type": "table",
+          "header": [
+            "元素",
+            "效果",
+            "持续"
+          ],
+          "widths": [
+            2,
+            6,
+            3
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "点燃并每秒灼烧；同时逐步削减护甲和韧性",
+              "灼烧约 6t 秒"
+            ],
+            [
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "每秒毒伤。目标有护盾时无视护盾<em>直接扣血</em>",
+              "约 6t 秒"
+            ],
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+                "瞬间电一下，并麻痹目标（移速 -99%）",
+                "麻痹 0.5t 秒"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier==0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+                "触发时没有任何效果：不造成伤害，也不会麻痹",
+                "—"
+              ]
+            },
+            [
+              "<c:D8DCE2>{lang:kuvaweapon.type.slash}</c>",
+              "每秒<em>直接扣血</em>，无视护甲、护盾和无敌帧",
+              "约 6t 秒"
+            ],
+            [
+              "<c:A8E86B>{lang:kuvaweapon.type.gas}</c>",
+              "在命中点留下半径 3 格的毒云，每秒伤害云里所有生物",
+              "约 6t 秒"
+            ],
+            [
+              "<c:FF9B4A>{lang:kuvaweapon.type.explosion}</c>",
+              "炸伤目标和它周围 3 格内的所有生物，不破坏方块",
+              "瞬间"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "减益类元素"
+        },
+        {
+          "type": "table",
+          "header": [
+            "元素",
+            "效果",
+            "首层 → 满层",
+            "持续"
+          ],
+          "widths": [
+            2,
+            5,
+            4,
+            2
+          ],
+          "rows": [
+            [
+              "<c:6FD8F0>{lang:kuvaweapon.type.ice}</c>",
+              "减慢移动、攻击和飞行速度",
+              "50% → 90%（9 层）",
+              "6t 秒"
+            ],
+            [
+              "<c:9AA2AE>{lang:kuvaweapon.type.puncture}</c>",
+              "目标<g>造成的伤害降低</g>：近战、射出的箭和弹射物都算；你打它不受影响",
+              "40% → 70%（4 层）",
+              "6t 秒"
+            ],
+            [
+              "<c:F0F0F0>{lang:kuvaweapon.type.impact}</c>",
+              "把目标击退并略微挑起，冲击越高推得越远",
+              "—",
+              "瞬间"
+            ],
+            [
+              "<c:F0E060>{lang:kuvaweapon.type.radiation}</c>",
+              "目标发狂：优先攻击附近的同种生物，没有同种就打最近的生物（可能是你）",
+              "打同种 ×2 → ×6.5（10 层）",
+              "12t 秒"
+            ],
+            [
+              "<c:7A8CFF>{lang:kuvaweapon.type.magnetic}</c>",
+              "目标有护盾时，受到的所有伤害提高",
+              "×2 → ×4.25（10 层）",
+              "6t 秒"
+            ],
+            [
+              "<c:C4DB4A>{lang:kuvaweapon.type.corrosion}</c>",
+              "削减护甲和韧性",
+              "26% → 80%（10 层）",
+              "8t 秒"
+            ],
+            [
+              "<c:FF7AB0>{lang:kuvaweapon.type.virus}</c>",
+              "叠满时最大生命值减半；让切割的持续伤害更痛",
+              "满 10 层 -50% 生命上限；切割 ×2 → ×4.25",
+              "6t 秒"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "同一种减益再次触发会 +1 层，并刷新持续时间。",
+            "同一目标身上，同一种持续伤害<em>只有一条</em>：再次触发只刷新，<w>不会叠加</w>。",
+            "<g>穿刺削弱敌人的输出</g>：怪身上挂着穿刺时，它打出的伤害降低 40%~70%，打硬仗时很实用。",
+            "<b>毒云和爆炸不分敌我</b>：除你本人以外，范围内的宠物、村民、其他玩家都会受伤。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作里{lang:kuvaweapon.type.slash}触发叫「出血」，伤害无视护甲和护盾；{lang:kuvaweapon.type.magnetic}专克护盾，{lang:kuvaweapon.type.corrosion}专削护甲。这里沿用了同样的思路。"
+        },
+        {
+          "type": "h",
+          "text": "进阶细节"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "基数",
+              "这一下的物理部分（已含暴击和克制）"
+            ],
+            [
+              "元素值",
+              "该元素的词条总和；复合元素取两种基础元素之和，赤毒武器自带元素也算在内"
+            ]
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "每次伤害 = 系数 × 基数 × 元素值 × 克制倍率"
+        },
+        {
+          "type": "table",
+          "header": [
+            "元素",
+            "系数",
+            "修正"
+          ],
+          "widths": [
+            2,
+            3,
+            6
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.type.fire}</c>",
+              "0.5",
+              "节肢 ×1.5，亡灵 ×0.5；免疫火焰的目标不吃灼烧伤害"
+            ],
+            [
+              "<c:6BD96B>{lang:kuvaweapon.type.poison}</c>",
+              "0.5",
+              "灾厄 ×1.5，节肢 ×0.5"
+            ],
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.type.electricity}</c>",
+                "0.5",
+                "亡灵 ×1.5；目标有护盾 ×0.5"
+              ]
+            },
+            [
+              "<c:D8DCE2>{lang:kuvaweapon.type.slash}</c>",
+              "0.35，<w>不乘元素值</w>",
+              "目标带病毒时再 ×2 ~ ×4.25"
+            ],
+            [
+              "<c:A8E86B>{lang:kuvaweapon.type.gas}</c>",
+              "0.5",
+              "节肢 ×1.5；目标有护盾 ×0.5"
+            ],
+            [
+              "<c:FF9B4A>{lang:kuvaweapon.type.explosion}</c>",
+              "0.5",
+              "目标有护盾 ×1.5，没有 ×0.5"
+            ]
+          ]
+        },
+        {
+          "type": "kv",
+          "rows": [
+            {
+              "if": "cfg:kuva_lich.elementFireDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.fire}的触发伤害再乘",
+                "{cfg:kuva_lich.elementFireDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementPoisonDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.poison}的触发伤害再乘",
+                "{cfg:kuva_lich.elementPoisonDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.elementElectricityDamageMultiplier!=1",
+                "cfg:kuva_lich.elementElectricityDamageMultiplier!=0"
+              ],
+              "cells": [
+                "{lang:kuvaweapon.type.electricity}的触发伤害再乘",
+                "{cfg:kuva_lich.elementElectricityDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementSlashDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.slash}的触发伤害再乘",
+                "{cfg:kuva_lich.elementSlashDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementGasDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.gas}的触发伤害再乘",
+                "{cfg:kuva_lich.elementGasDamageMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementExplosionDamageMultiplier!=1",
+              "cells": [
+                "{lang:kuvaweapon.type.explosion}的触发伤害再乘",
+                "{cfg:kuva_lich.elementExplosionDamageMultiplier|x}"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "持续伤害每秒跳 1 次，共 ⌈6t⌉ 跳（6t 向上取整）。",
+            "{lang:kuvaweapon.type.fire}：目标着火 6 秒；削甲约每 0.5 秒加深一档（15% → 30% → 40% → 50%），持续 6t 秒。",
+            "{lang:kuvaweapon.type.poison}：目标没有护盾时按魔法伤害结算；有护盾时直接扣血，同时无视护甲和无敌帧。",
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "text": "{lang:kuvaweapon.type.electricity}：只打被命中的那只；闪电只是特效，不会引雷。"
+            },
+            "{lang:kuvaweapon.type.slash}：伤害和切割词条大小无关。",
+            "{lang:kuvaweapon.type.gas}：云留在命中点不动，不跟着目标走；云挂在被命中的那只身上，它死后最多再跳一次就散。再次触发会把云挪到最新的命中点。",
+            "同种持续伤害再次触发时，刷新剩余跳数，每跳伤害取较高的那次。",
+            "每层增量：{lang:kuvaweapon.type.ice} +5%、{lang:kuvaweapon.type.puncture} +10%、{lang:kuvaweapon.type.radiation} +0.5、{lang:kuvaweapon.type.magnetic} +0.25、{lang:kuvaweapon.type.corrosion} +6%。",
+            "{lang:kuvaweapon.type.radiation}：发狂的目标在 24 格内找攻击对象。",
+            "{lang:kuvaweapon.type.impact}：击退力度 = 冲击元素值 × 3。",
+            "电击和爆炸打在被命中的那只身上时，常被原版的受击无敌吃掉一部分（数字偏小或不显示）；对周围其它生物不受影响。",
+            "这些状态不是药水效果：不显示在药水栏，也不算击杀叠层里的「负面效果」（见[[combat/kill_stack]]）。",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
+              "text": "副手等额外槽位上的元素词条也算进元素值。"
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "毒气 / 爆炸词条的坑",
+          "text": "毒气和爆炸<em>触发时</em>的伤害，只按{lang:kuvaweapon.type.fire}+{lang:kuvaweapon.type.poison}（毒气）或{lang:kuvaweapon.type.fire}+{lang:kuvaweapon.type.ice}（爆炸）的词条与赤毒自带元素计算。直接写着「毒气伤害 / 爆炸伤害」的词条只增加命中伤害、提高抽中概率——武器上只有这种词条时，抽中毒气或爆炸不会造成触发伤害。"
+        }
+      ],
+      "_src": [
+        "module/weapon/WeaponCombatHandler.java:817,820,860 — 基数 coreDamage=physicalDamage（含暴击、克制）；t = 1 + triggerTime（triggerTime 缺省 0 → t=1）",
+        "module/weapon/WeaponElementSystem.java:457-523 — 元素值：普通元素取该词条；复合元素取两种基础元素词条之和（不含复合词条本身）+ 匹配的赤毒自带元素；attributes 已 merge 额外槽位（WeaponCombatHandler.java:653-656,408-413）",
+        "module/weapon/WeaponElementSystem.java:559-594 + dynamicattribute/DynamicAttributes.java:96-124 — 火焰：0.5×…×火焰倍率，节肢1.5/亡灵0.5，inFire 伤害源；setSecondsOnFire(6)；削甲 15/30/40/50%，tickInterval 10 升一级；时长 120×t tick；⌈6t⌉ 跳",
+        "module/weapon/WeaponElementSystem.java:595-631 — 毒素：0.5×…，灾厄1.5/节肢0.5；有吸收护盾 damageHealthDirectly，否则 magic() 伤害",
+        "module/weapon/WeaponElementSystem.java:648-663 + DynamicAttributes.java:166-168 — 电击：只打 hurter，亡灵1.5，有护盾×0.5，LightningBolt 仅视觉；麻痹 -99% 移速，10×t tick",
+        "module/weapon/WeaponElementSystem.java:664-699 — 切割：0.35×core×克制×切割倍率（不乘 elementValue），病毒时 ×(2+0.25×等级)，直接扣血",
+        "module/weapon/WeaponElementSystem.java:831-869 — 毒气：半径 3 的云，中心 gasCenter 取触发时目标坐标、之后不动；0.5×…，节肢1.5，有护盾×0.5；打范围内除攻击者外所有 LivingEntity；stopOnDeath=false",
+        "module/weapon/WeaponCombatHandler.java:1397-1404,1528-1535 — 毒气虽 stopOnDeath=false，但任务仍在 target.isRemoved() 时结束，EntityLeaveLevelEvent 也会 clear；原版死亡 20 tick 后移除实体 → 锚点死后最多再跳一轮（轮间隔 20 tick）",
+        "module/weapon/WeaponCombatHandler.java:1376-1387 — 再次触发时 existing.action = 新闭包（新 gasCenter），云挪到最新命中点",
+        "module/weapon/WeaponElementSystem.java:652-661 — 电击：lightningDamage>0 才打伤害并挂麻痹；elementElectricityDamageMultiplier=0 时两者都没有 → 电击行按 !=0 / ==0 分两种写法",
+        "dynamicattribute/DynamicAttributes.java:383-398 applyPuncture — 看伤害归属者（getSource().getEntity()，含它射出的箭 / 弹射物）身上的穿刺，× (1 − (0.4 + 0.1×min(级,3)))；没有归属者的伤害（摔落、持续伤害）不受影响；溅射（WeaponCombatHandler.isApplyingSplash）跳过，避免削两次；受击方身上的穿刺不再影响别人打它",
+        "module/warframe/WarframeEffectHandler.java:642-661 — 护盾 = absorption（setAbsorptionAmount）；元素里所有「有护盾」判定都是 getAbsorptionAmount()>0",
+        "module/weapon/WeaponElementSystem.java:796-830 — 爆炸：0.5×…×(有护盾1.5/无0.5)；主目标 + 3 格内除攻击者外所有生物；只放特效不炸方块",
+        "module/weapon/WeaponElementSystem.java:632-647 + DynamicAttributes.java:130-147 — 冰冻：等级 0~8，移速/攻速/飞行 -(50%+5%×等级)",
+        "module/weapon/WeaponElementSystem.java:700-715 + DynamicAttributes.java:323-329,383-398 applyPuncture — 穿刺：等级 0~3；挂着它的生物（作为伤害归属者）造成的伤害 ×(1-(0.4+0.1×等级))，即 40%~70%",
+        "module/weapon/WeaponElementSystem.java:716-734 — 冲击：击退力度 = (impact 词条 + 自带冲击) × 3，额外上抛 0.2×力度",
+        "module/weapon/WeaponElementSystem.java:748-763 + DynamicAttributes.java:182-217,319-322,411-425 — 辐射：等级 0~9，240×t tick；24 格内优先同种（getType() 相同，不是同一 MobType，所以写「同种」不写「同类」，免得和克制的「类」混淆）、否则最近生物；攻击同种 ×(2+0.5×等级)",
+        "module/weapon/WeaponElementSystem.java:735-747 + DynamicAttributes.java:314-317,361-372 — 磁力：等级 0~9；受击方有吸收护盾时 ×(2+0.25×等级)",
+        "module/weapon/WeaponElementSystem.java:780-795 + DynamicAttributes.java:223-237 — 腐蚀：等级 0~9，160×t tick，护甲/韧性 -(26%+6%×等级)",
+        "module/weapon/WeaponElementSystem.java:764-779 + DynamicAttributes.java:272-283 — 病毒：等级 0~9，等级≥9 生命上限 -50%",
+        "module/weapon/WeaponCombatHandler.java:1303,1376-1388 — DOT 每 20 tick 一跳；同目标同元素去重：伤害取 max、轮数刷新为满",
+        "dynamicattribute/DynamicAttributeManager.java:89-147 — 同属性更高等级/更长时间覆盖旧实例（刷新时长）",
+        "module/weapon/WeaponElementSystem.java:657-658 — 电击嵌套在主目标受击事件里，常被受击无敌吃掉（代码注释）",
+        "config/ModConfig.java:400-428 — 六个元素伤害倍率（默认 1.0，范围 0~100），直接相乘（x 格式）；只在 ≠1 时列出「再乘」那一行",
+        "config/ModConfig.java:838-841,875-880 + WeaponCombatHandler.java:426-428 — enableOffhandModule（默认 true）且 offhandEffectMultiplier>0 才显示额外槽位那一行（比例为 0 时副手不贡献任何属性）",
+        "全仓库无 addEffect；元素状态是 DynamicAttribute 而非 MobEffect，killStackBaseDamage 只数 MobEffectCategory.HARMFUL（WeaponCombatHandler.java:978-981）",
+        "星际战甲小知识：原作切割触发为「出血」，真实伤害无视护甲与护盾；磁力克护盾、腐蚀削护甲（原作知识，非本项目代码）"
+      ]
+    },
+    {
+      "id": "kill_stack",
+      "title": "击杀叠层",
+      "icon": "minecraft:skeleton_skull",
+      "summary": "连杀获得的临时增益与衰减规则",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "名字里带「击杀时获取」的词条是<hl>击杀叠层</hl>：每杀一个生物叠 1 层，层数越多效果越强；一段时间不杀，就慢慢掉层。"
+        },
+        {
+          "type": "p",
+          "text": "层数记在<em>你本人</em>身上，不在武器上：换一把同样带这种叠层词条的武器，已有的层数照样生效。"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "拿着带叠层词条的<t>开光</t>武器（有面板、能装模组的武器），打出一下<t>足以致死</t>的攻击（或触发处决）→ 武器带着的每种叠层各 +1，并重新开始计时。",
+            "一段时间没有新的击杀，就每隔这么久掉 1 层，逐层往下掉：武器叠层 <t>{cfg:kuva_lich.weaponStackDecayTicks|sec}</t>，战甲叠层（见下文）<t>{cfg:kuva_lich.warframeStackDecayTicks|sec}</t>。",
+            "下线时全部清空；死亡不会清空。"
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "武器叠层",
+            "每层效果",
+            "上限"
+          ],
+          "widths": [
+            3,
+            6,
+            1
+          ],
+          "rows": [
+            [
+              "{lang:item.module.killStackBaseDamage}",
+              "近战和远程伤害加成 + 每层值 × 层数 × <em>目标身上的负面效果数</em>",
+              "{cfg:kuva_lich.maxStacksBaseDamage}"
+            ],
+            [
+              "{lang:item.module.killStackMultishot}",
+              "{lang:item.module.multishot} + 每层值 × 层数",
+              "{cfg:kuva_lich.maxStacksMultishot}"
+            ],
+            [
+              "{lang:item.module.killStackMeleeCriticalMultiplier}",
+              "近战暴击倍率 × (1 + 每层值 × 层数)",
+              "{cfg:kuva_lich.maxStacksMeleeCritMult}"
+            ],
+            [
+              "{lang:item.module.killStackTriggerChance}",
+              "触发几率 × (1 + 每层值 × 层数)",
+              "{cfg:kuva_lich.maxStacksTriggerChance}"
+            ],
+            [
+              "{lang:item.module.killStackAttackRange}",
+              "{lang:item.module.attackRange} + 每层值 × 层数",
+              "{cfg:kuva_lich.maxStacksAttackRange}"
+            ],
+            [
+              "{lang:item.module.killStackAttackSpeed}",
+              "{lang:item.module.attackSpeed} + 每层值 × 层数",
+              "{cfg:kuva_lich.maxStacksAttackSpeed}"
+            ],
+            [
+              "{lang:item.module.killStackBurstingRadius}",
+              "远程溅射半径 + 每层值 × 2 × 层数（格）",
+              "{cfg:kuva_lich.maxStacksBurstingRadius}"
+            ],
+            [
+              "{lang:item.module.killStackFiringRate}",
+              "{lang:item.module.firing_rate} + 每层值 × 层数；弓、弩翻倍",
+              "{cfg:kuva_lich.maxStacksFiringRate}"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "基础伤害叠层的坑",
+          "text": "它的加成要乘<em>目标身上负面效果的个数</em>，只数药水类负面效果（缓慢、虚弱、中毒、凋零等，其它模组的也算）。本模组的元素状态<w>不算</w>。目标身上一个都没有时，层数再满也是 +0。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "武器带着某条叠层词条，才会叠那一种。",
+            "武器面板上能看到每种叠层的当前层数（见[[weapons/weapon_panel]]）。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "《星际战甲》里也有「击杀后叠层」的模组，例如 Galvanized 系列：击杀后在一段时间内叠加多重射击或伤害加成。"
+        },
+        {
+          "type": "h",
+          "text": "战甲叠层"
+        },
+        {
+          "type": "p",
+          "text": "<t>战甲模组</t>是装在{item:kuvalich:requiem_warframe_table}里、给你本人加属性的模组。它们也有叠层词条（生命、护盾、护甲、抗性等 12 种），规则相同，但更容易叠："
+        },
+        {
+          "type": "list",
+          "items": [
+            "只要致命一击<em>记在你名下</em>就算：近战、箭、子弹、溅射都行，任何武器，没开光也行。",
+            "按护甲、护盾结算后的实际伤害判断是否致命。",
+            "元素持续伤害、电击、爆炸造成的击杀同样不算。",
+            "各种效果与上限见[[reference/warframe_attr_killstack]]。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "进阶细节"
+        },
+        {
+          "type": "list",
+          "items": [
+            "武器叠层的击杀判定：看这一下结算出的伤害（护甲、护盾减免之前）够不够打掉目标剩余的生命。所以偶尔会叠了层，怪却没死。",
+            "<b>元素持续伤害、电击、爆炸、溅射打死的，都不算武器叠层。</b>",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
+              "text": "副手等额外槽位（见[[modules/multi_slot]]）上的叠层词条也算：武器或这些槽位带着它，就会叠那一种。"
+            }
+          ]
+        }
+      ],
+      "_src": [
+        "module/KillStackManager.java:53-100 — 每种上限读 maxStacks* 配置（范围 1~100，不会为 0）",
+        "module/KillStackManager.java:105-134 — 武器 8 种共用 weaponStackDecayTicks，战甲 12 种共用 warframeStackDecayTicks（单位 tick）",
+        "module/KillStackManager.java:151-170 — 击杀 +1 层并把该类型计时重置；计时到期掉 1 层后重新计时",
+        "module/KillStackManager.java:176,217-235,240-276 — 层数按玩家 UUID 存，不在物品上",
+        "module/KillStackManager.java:359-362 — 下线 clearStacks；全仓库无其它 clearStacks 调用（死亡不清）",
+        "module/weapon/WeaponCombatHandler.java:882-884 — 击杀判定 hurter.getHealth() - totalDamage <= 0（LivingHurtEvent 阶段，护甲/护盾之前）",
+        "module/weapon/WeaponCombatHandler.java:1202-1205 — 处决也加叠层",
+        "module/weapon/WeaponCombatHandler.java:928-961,1356-1419 — 溅射、元素 DOT 不走击杀判定",
+        "module/weapon/WeaponCombatHandler.java:1032-1057 — containsKey 判定：武器（含额外槽位合并属性）带该词条才加那一种",
+        "config/ModConfig.java:838-841,875-880 + WeaponCombatHandler.java:426-428 — enableOffhandModule（默认 true）且 offhandEffectMultiplier>0 才显示额外槽位那一行（比例为 0 时副手不贡献任何属性）",
+        "module/weapon/WeaponCombatHandler.java:973-988 — 基础伤害叠层 = 每层值×层数×目标 HARMFUL MobEffect 个数，加到 meleeDamage 与 remoteDamage",
+        "module/weapon/WeaponCombatHandler.java:676-680 — 近战暴伤叠层 criticalStrikeMultiplier *= 1+v×层数（仅近战分支）",
+        "module/weapon/WeaponCombatHandler.java:828-832 — 触发几率 *= 1+v×层数",
+        "module/weapon/WeaponCombatHandler.java:697-701 — 爆炸半径 range += v×层数×2",
+        "module/weapon/WeaponCombatHandler.java:1559-1565,1581-1587 — 攻击速度、攻击范围加算",
+        "module/weapon/WeaponCombatHandler.java:1614-1619,1644-1649 — 射速加算，弓/弩 ×2",
+        "module/weapon/WeaponCombatHandler.java:1711-1715 — 多重射击加算",
+        "module/warframe/WarframeEffectHandler.java:153,196-216 — 战甲叠层：LivingDamageEvent（护甲/护盾之后），伤害来源实体是玩家且 health-amount<=0 即叠",
+        "module/weapon/WeaponElementSystem.java:589,626,659,817-820,863 — 火焰 inFire、毒素 magic()、电击 lightningBolt、爆炸 explosion(null)、毒气 magic() 均无归属实体，战甲叠层不认；切割/带盾毒素致死走 LivingEntityUtil.kill → die()，不触发 LivingDamageEvent（utils/LivingEntityUtil.java:127-132）",
+        "module/weapon/WeaponCombatHandler.java:946,954 — 溅射伤害源 playerAttack(player)，getEntity()=玩家，所以溅射击杀算战甲叠层",
+        "module/warframe/WarframeModuleHandler.java:355-379 + module/weapon/panel/KillStackKeys.java — 战甲 12 种叠层词条",
+        "warframe/warframe_table 条目 — 战甲模组装在战甲军械库、给玩家本人加属性",
+        "星际战甲小知识：原作 Galvanized 系列模组击杀后限时叠加多重射击 / 伤害加成（原作知识，非本项目代码）"
+      ]
+    },
+    {
+      "id": "damage_numbers",
+      "title": "伤害数字显示",
+      "icon": "minecraft:name_tag",
+      "summary": "伤害数字的颜色、图标与合并",
+      "if": "cfg:kuva_lich.enableDamageNumbers",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "用<t>开光</t>武器（有面板、能装模组的武器）打出伤害时，目标身上会飘出数字，停留约 2 秒。看颜色就知道这一下有没有暴击："
+        },
+        {
+          "type": "table",
+          "header": [
+            "颜色",
+            "含义"
+          ],
+          "widths": [
+            1,
+            5
+          ],
+          "rows": [
+            [
+              "<c:FFFFFF>白</c>",
+              "没暴击；元素伤害也是白字，后面带元素图标"
+            ],
+            [
+              "<c:55FFFF>浅蓝</c>",
+              "没暴击，但目标身上有护盾（黄心）"
+            ],
+            [
+              "<c:FFFF55>黄</c>",
+              "暴击 ×M（M = 暴击倍率）"
+            ],
+            [
+              "<c:FFAA00>橙</c>",
+              "二档暴击 ×2M"
+            ],
+            [
+              "<c:FF5555>红</c>",
+              "三档暴击 ×3M"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "数字是<em>实际掉的血</em>：护甲、抗性、其它模组的减伤和受击无敌都已扣掉，打在护盾上的部分也算在内。",
+            "暴击档越高字越大：白字最小，黄 / 蓝其次，橙更大，红最大。",
+            {
+              "if": "cfg:kuva_lich.damageDisplay",
+              "text": "没开光的武器打出的伤害也会显示白字。"
+            },
+            {
+              "if": "!cfg:kuva_lich.damageDisplay",
+              "text": "没开光的武器打出的伤害不显示数字。"
+            },
+            {
+              "if": "!cfg:kuva_lich.mergeDamageNumbers",
+              "text": "每一下伤害都单独显示一个数字。"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mergeDamageNumbers",
+                "cfg:kuva_lich.mergeDamageWindowMs==0"
+              ],
+              "text": "每一下伤害都单独显示一个数字。"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "数字旁的图标"
+        },
+        {
+          "type": "list",
+          "items": [
+            "命中数字后面的元素图标：这一下挂上了哪些减益类元素（冰冻、穿刺、冲击、辐射、磁力、腐蚀、病毒）。",
+            "护盾图标：有一部分打在了护盾上。",
+            "会造成伤害的元素（火焰、毒素、电击、切割、毒气、爆炸）不往命中数字上加图标，而是各自单独飘白字，后面带对应元素的图标。",
+            {
+              "if": "mod:tacz",
+              "text": "匕首图标：{lang:item.module.true_bullet}的直接扣血，单独显示时是<c:AA00AA>紫字</c>。"
+            },
+            "蝴蝶结图标（在数字前面）：你驯服的生物（例如女仆）拿开光武器打出的伤害，也会显示给你；它们的元素伤害数字不显示。"
+          ]
+        },
+        {
+          "type": "h",
+          "if": [
+            "cfg:kuva_lich.mergeDamageNumbers",
+            "cfg:kuva_lich.mergeDamageWindowMs>0"
+          ],
+          "text": "合并显示"
+        },
+        {
+          "type": "list",
+          "if": [
+            "cfg:kuva_lich.mergeDamageNumbers",
+            "cfg:kuva_lich.mergeDamageWindowMs>0"
+          ],
+          "items": [
+            "同一只怪身上 <t>{cfg:kuva_lich.mergeDamageWindowMs} 毫秒</t>内的多条数字合成一条：数值相加、颜色取最高一档、图标取并集。",
+            "元素伤害只和<em>同一种元素</em>的数字合并，不会混进命中数字。",
+            {
+              "if": "mod:tacz",
+              "text": "{lang:item.module.true_bullet}的数字通常会并进这一枪的命中数字里；没暴击时整条变紫。"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "进阶细节"
+        },
+        {
+          "type": "list",
+          "items": [
+            "这一下被完全挡掉（受击无敌、免疫、格挡）时不显示。",
+            "数字太密时会丢掉一部分，不影响实际伤害。"
+          ]
+        }
+      ],
+      "_src": [
+        "module/weapon/DamageDisplayTracker.java:201-215 — enableDamageNumbers 关闭时不登记、不发包 → 整个条目加 if，关闭时不出现",
+        "module/weapon/DamageDisplayTracker.java:330-347 — 显示值 = ForgeHooks.onLivingDamage 返回值 + 护盾吃掉的部分，打到护盾追加护盾图标",
+        "mixin/MixinForgeHooksFinalDamage.java — 在 ForgeHooks.onLivingDamage 返回处回调",
+        "module/weapon/WeaponCombatHandler.java:766-798 — 颜色码与倍率同分支赋值：§e 黄 ×M、§6 橙 ×2M、§c 红 ×3M、§f 白、目标有吸收护盾 §b 蓝",
+        "network/packet/DamageInfo.java:26-37 — 颜色：白/蓝/紫/黄/橙/红（原版 § 色 FFFFFF/55FFFF/AA00AA/FFFF55/FFAA00/FF5555）",
+        "module/weapon/WeaponCombatHandler.java:1088-1112,1133-1135 — 真实子弹仅 TACZ 子弹，§5 紫 + 匕首图标",
+        "client/renderer/damage/DamageRenderer.java:72-75,312-323 — 字号：白最小、黄/蓝、橙、红依次变大",
+        "module/weapon/WeaponElementSystem.java:318,347-365,929-946 — 元素数字白字 + 元素图标，合并分组=元素名",
+        "module/weapon/WeaponElementSystem.java:593,630,662,698,829,868 vs 646,714,733,746,762,778,794 — 火焰/毒素/电击/切割/爆炸/毒气分支 return null（不进命中数字后缀），冰冻/穿刺/冲击/磁力/辐射/病毒/腐蚀返回元素名 → WeaponCombatHandler.java:859-861,893 拼成命中数字的图标后缀",
+        "module/weapon/WeaponElementSystem.java:329-332 — 元素数字接收者只认攻击者本人是 ServerPlayer（宠物、女仆的元素伤害不显示）",
+        "module/weapon/WeaponCombatHandler.java:1095-1112 + network/packet/DamagePacket.java:80-81 + DamageInfo.java:142-156,193-209 — 真伤下一 tick 用 sendDirect 发（合并分组=普通组），落在合并窗口内就并进命中数字；紫(档位2)高于白/蓝、低于黄/橙/红",
+        "module/weapon/WeaponCombatHandler.java:465-486 — 驯服生物（TamableAnimal）攻击时数字发给主人，前缀 🎀",
+        "module/weapon/DamageDisplayTracker.java:302-314,350-361 — damageDisplay 开启时非开光武器的伤害显示白字",
+        "network/packet/DamagePacket.java:63-75 — 每玩家每 500ms 主/附加通道各 200 条限流；显示 2000ms",
+        "client/renderer/damage/DamageRenderer.java:104-137 + network/packet/DamageInfo.java:142-156,193-209 — 合并：同实体同分组、窗口内；数值累加、颜色取最高、图标并集",
+        "config/ModConfig.java:339-365 — damageDisplay(false)、enableDamageNumbers(true)、mergeDamageNumbers(true)、mergeDamageWindowMs(200，0=不合并)",
+        "client/renderer/damage/DamageRenderer.java:117-120 — 合并开关与窗口在客户端读取本机 ModConfig（COMMON 配置不随服务端同步）；v1 那条「由你自己客户端决定」的提示按第二轮要求删了（正文不谈配置），整合包里两边一致"
+      ]
+    }
+  ]
+}

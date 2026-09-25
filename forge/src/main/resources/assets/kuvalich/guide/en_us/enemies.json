@@ -1,0 +1,315 @@
+{
+  "id": "enemies",
+  "order": 30,
+  "title": "Enemies",
+  "subtitle": "Thralls & Liches: spawns, loot, tactics",
+  "icon": "kuvalich:kuva_master_spawn_egg",
+  "entries": [
+    {
+      "id": "kuva_slave",
+      "title": "Kuva Thrall",
+      "icon": "kuvalich:kuva_slave_spawn_egg",
+      "summary": "Your everyday foe: progress, materials, mods",
+      "blocks": [
+        { "type": "p", "text": "The <hl>{lang:entity.kuvalich.kuva_slave}</hl> is this mod's basic enemy and the most common Kuva enemy. Every one you kill yourself brings you a step closer to beating the boss, the {lang:entity.kuvalich.kuva_master}, and may drop materials and mods." },
+        { "type": "entity", "id": "kuvalich:kuva_slave", "height": 88 },
+        { "type": "p", "text": "<dim>Names like \"Kuva\", \"Lich\" and \"mod\" come from Warframe. If they are new to you, see the [[start/glossary|glossary]].</dim>" },
+        { "type": "h", "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0", "text": "Where to find it" },
+        { "type": "kv", "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0", "rows": [
+          ["Where", "Any Overworld biome <b>except Mushroom Fields</b>"],
+          ["Light", "Like zombies: only where it is dark enough, never on <t>Peaceful</t>"],
+          ["Space", "It is big: it needs a clear <t>3×3</t> area <t>3</t> blocks high, so it is rare in low caves"],
+          ["Group size", "<t>{cfg:kuva_lich.kuvaSlaveMinSpawnCount}-{cfg:kuva_lich.kuvaSlaveMaxSpawnCount}</t>"],
+          ["Spawn weight", "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>; higher means more common <dim>(vanilla zombie: 95)</dim>"]
+        ] },
+        { "type": "h", "text": "How it fights" },
+        { "type": "list", "items": [
+          "Hits hard: Easy <t>6.8</t>, Normal <t>13.6</t>, Hard <t>20.4</t> per hit",
+          "A hit <w>launches you</w>, while the Thrall lunges after you and heals <t>0.8</t>",
+          "Half again as fast as a zombie; it comes for you once it sees you within <t>32</t> blocks",
+          "Slowly regenerates: <t>1</t> health per second, <t>0.5</t> when it has no target",
+          "Picks fights: it attacks other monsters nearby, even neutral ones such as Endermen, and only spares Creepers and other Kuva enemies",
+          { "if": "cfg:kuva_lich.battleBoost>0", "text": "The longer the fight, the harder it hits, see [[enemies/battle_boost]]" }
+        ] },
+        { "type": "h", "text": "Base stats" },
+        { "type": "kv", "rows": [
+          ["Health", "<t>100</t>"],
+          ["Armor", "<t>4</t>"],
+          ["Knockback resistance", "<t>40%</t>"],
+          ["Movement speed", "<t>0.35</t> <dim>(zombie: 0.23)</dim>"],
+          ["Follow range", "<t>32</t> blocks"],
+          ["Size", "<t>1.5</t> wide × <t>2.9</t> tall"],
+          ["Creature type", "<t>Undead</t>, but it does not burn in sunlight like zombies"],
+          ["Immune to", "Fall damage"],
+          ["Built-in reduction", "All damage taken <b>×0.75</b>, see [[enemies/lich_resistance]]"]
+        ] },
+        { "type": "p", "text": "Being undead, it is hurt more by Smite and by the \"{lang:item.module.bane_of_undead}\" stat on mods, and Healing / Harming potions work the other way round." },
+        { "type": "h", "text": "Drops" },
+        { "type": "table", "header": ["Drop", "Chance", "Amount"], "widths": [3, 4, 2], "rows": [
+          ["Decryption progress", "Always", "<t>{cfg:kuva_lich.minDecryptionProgress}-{cfg:kuva_lich.maxDecryptionProgress}</t> points"],
+          { "if": "cfg:kuva_lich.slaveKuvaDropChance>0", "cells": ["{item:kuvalich:kuva}", "<t>{cfg:kuva_lich.slaveKuvaDropChance|pctv}</t>", "<t>{cfg:kuva_lich.slaveKuvaMinAmount}-{cfg:kuva_lich.slaveKuvaMaxAmount}</t>"] },
+          { "if": "cfg:kuva_lich.slaveRivenSliverDropChance>0", "cells": ["{item:kuvalich:riven_sliver}", "<t>{cfg:kuva_lich.slaveRivenSliverDropChance|pctv}</t>", "1"] },
+          ["{item:kuvalich:requiem_gem}", "<t>{cfg:kuva_lich.slaveRequiemGemBaseChance|pctv}</t> + <t>{cfg:kuva_lich.slaveRequiemGemLootingBonus|pctv}</t> per Looting level", "1"],
+          { "if": "cfg:kuva_lich.commonModuleDropChance>0", "cells": ["<c:CD7F32>Bronze</c> mod", "<t>{cfg:kuva_lich.commonModuleDropChance|pctv}</t>", "1"] },
+          { "if": "cfg:kuva_lich.uncommonModuleDropChance>0", "cells": ["<c:C0C0C0>Silver</c> mod", "<t>{cfg:kuva_lich.uncommonModuleDropChance|pctv}</t>", "1"] },
+          { "if": "cfg:kuva_lich.rareModuleDropChance>0", "cells": ["<c:FFD700>Gold</c> mod", "<t>{cfg:kuva_lich.rareModuleDropChance|pctv}</t>", "1"] }
+        ] },
+        { "type": "list", "items": [
+          "<t>Decryption progress</t>: enough of it reveals, one by one, the Requiem cards you need to beat the Lich, see [[requiem/decryption]]. Once all three clues are revealed, kills stop adding progress",
+          "<t>Mods</t>: upgrade cards you fit to a weapon or to yourself, see [[modules/module_overview]]. <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> of dropped mods are weapon mods; the rest are Warframe mods, which you fit to yourself",
+          "The three mod tiers share a single roll, so at most one mod drops per kill; tiers: [[modules/module_rarity]]",
+          "Kuva, Riven Slivers and Requiem Gems each roll independently; what they are for: [[start/materials]]"
+        ] },
+        { "type": "tip", "style": "bad", "title": "You must land the killing blow", "text": "Weapons, arrows and thrown items all count as yours. A kill by a pet, another mob or lava does not count, and neither does burning to death, even from your own Fire Aspect or Flame arrows. Then you get <b>no progress and no drops</b>." },
+        { "type": "tip", "style": "wf", "text": "In Warframe, Thralls are a Lich's underlings, found in the territory it controls. Finishing them off slowly reveals the Requiem mods needed to defeat the Lich, which is where this mod's decryption progress comes from." },
+        { "type": "h", "text": "Advanced details" },
+        { "type": "list", "items": [
+          "Damage formula: 8 × difficulty factor × 0.85, where the factor is 1 on Easy, 2 on Normal and 3 on Hard. Against players, vanilla then applies its own difficulty scaling, then armor",
+          "Knockback strength: your horizontal speed ×3, vertical ×2",
+          "Elemental kills do not count either: a killing blow from {lang:kuvaweapon.type.fire} burn, {lang:kuvaweapon.type.poison}, {lang:kuvaweapon.type.gas}, {lang:kuvaweapon.type.electricity} or {lang:kuvaweapon.type.explosion} damage gives you nothing. Elements: [[combat/elements]]",
+          "Requiem Gems only check <t>Looting</t> on the item <em>in your main hand at the moment of the kill</em>; Fortune does nothing. Shoot it dead with a bow and your main hand holds the bow, so Looting counts as 0",
+          "These drops are spawned directly where it fell, so the \"{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}\" stat on Warframe mods does not boost them"
+        ] }
+      ]
+    },
+    {
+      "id": "kuva_master",
+      "title": "Kuva Lich",
+      "icon": "kuvalich:kuva_master_spawn_egg",
+      "summary": "The boss: how to meet it and what winning gives you",
+      "blocks": [
+        { "type": "p", "text": "The <hl>{lang:entity.kuvalich.kuva_master}</hl> is this mod's boss and the end of the Requiem decryption loop. All your progress and card guessing gets tested on it: guess right and you win a Kuva weapon and other big rewards." },
+        { "type": "entity", "id": "kuvalich:kuva_master", "height": 96 },
+        { "type": "h", "text": "The hunt, step by step" },
+        { "type": "steps", "items": [
+          "Kill Thralls to build [[requiem/decryption|decryption progress]] and reveal the answer bit by bit. Each <t>clue</t> is one <t>Requiem card</t> of the answer; three cards in the right order are the password that defeats the Lich",
+          "Put three cards, in the order you guess, into the [[requiem/requiem_gate|Requiem Gate]], the block made for holding them",
+          "Find or summon a Lich and land the killing blow <em>yourself</em>",
+          "The kill checks your answer: right means rewards, wrong means [[enemies/kuva_escalation|Lich level]] +1"
+        ] },
+        { "type": "tip", "style": "wf", "text": "In Warframe, a Kuva Lich is a nemesis unique to each player. Only by fitting three Requiem mods to your Parazon and finishing it with them in the right order do you defeat it for good and win its Kuva weapon." },
+        { "type": "h", "text": "How to meet it" },
+        { "type": "kv", "rows": [
+          { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["In the wild", "Spawns in dark Overworld spots like Thralls, except in Mushroom Fields; it is taller and needs a clear <t>3×3</t> area <t>4</t> blocks high"] },
+          { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["Spawn weight", "<t>{cfg:kuva_lich.kuvaLichSpawnWeight}</t> <dim>(Thrall {cfg:kuva_lich.kuvaSlaveSpawnWeight}, vanilla zombie 95)</dim>"] },
+          { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["Group size", "<t>{cfg:kuva_lich.kuvaLichMinSpawnCount}-{cfg:kuva_lich.kuvaLichMaxSpawnCount}</t>"] },
+          { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "cells": ["Summon", "Use a {item:kuvalich:requiem_ultimatum}: any time, any place, one per summon"] }
+        ] },
+        { "type": "p", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "Right-click the air with it and the Lich appears <t>3</t> blocks away in the horizontal direction you face, at your foot level; right-click a block and it appears on the clicked face. Creative mode does not use one up." },
+        { "type": "tip", "style": "warn", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "title": "Summoned Liches can vanish too", "text": "It despawns like a wild one: with every player over <t>128</t> blocks away it gets removed; over <t>32</t> blocks from the nearest player and untouched for over <t>30</t> seconds, it can vanish at any moment; on <t>Peaceful</t> it disappears at once. The Ultimatum is not refunded." },
+        { "type": "h", "text": "Base stats" },
+        { "type": "kv", "rows": [
+          ["Health", "<t>200</t>"],
+          ["Armor", "<t>8</t>"],
+          ["Knockback resistance", "<t>65%</t>"],
+          ["Movement speed", "<t>0.35</t>"],
+          ["Follow range", "<t>64</t> blocks"],
+          ["Size", "<t>1.75</t> wide × <t>3.4</t> tall"],
+          ["Creature type", "<t>Undead</t>, like Thralls"],
+          ["Immune to", "<b>Fire</b> and falling: burning, lava and {lang:kuvaweapon.type.fire} elemental burn cannot hurt it"]
+        ] },
+        { "type": "h", "text": "How it fights" },
+        { "type": "list", "items": [
+          "Hits even harder: Easy <t>11.05</t>, Normal <t>22.1</t>, Hard <t>33.15</t> per hit",
+          "<w>Area attack</w>: every swing also deals the same damage to every other creature within <t>3</t> blocks of its body, pets and teammates included; only Kuva enemies are spared",
+          "A hit <w>sends you flying</w> and heals the Lich <t>2.6</t>",
+          "Regeneration per second: <t>2</t> or <t>2%</t> of missing health, whichever is larger, with a target; <t>1</t> or <t>1%</t> without",
+          { "if": "cfg:kuva_lich.battleBoost>0", "text": "The longer the fight, the harder it hits, see [[enemies/battle_boost]]" },
+          "Your damage against it has to get through several reduction layers first, see [[enemies/lich_resistance]]"
+        ] },
+        { "type": "h", "text": "When it dies" },
+        { "type": "table", "header": ["Your state", "Outcome"], "widths": [2, 4], "rows": [
+          ["Fewer than 3 cards in the Requiem Gate", "Decryption progress only, <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's"],
+          ["3 cards, <g>all in the right order</g>", "<g>Decryption succeeds</g>: rewards below, and a new cycle starts"],
+          ["3 cards, <b>any wrong</b>", "<b>Decryption fails</b>: [[enemies/kuva_escalation|Lich level]] +1; you still gain progress"]
+        ] },
+        { "type": "list", "items": [
+          "On success, progress, clues and Lich level all reset, and the next cycle's answer is rolled anew",
+          "On failure, chat tells you whether card 1 was right, and card 2 as well if card 1 was; how to test orders: [[requiem/decrypt_failure]]",
+          "<w>Until at least one clue is revealed, no answer exists yet, so a full set always fails</w>",
+          "In a group fight only the player who lands the last hit counts: their cards are checked and they get the progress"
+        ] },
+        { "type": "h", "text": "Rewards for a successful decryption" },
+        { "type": "table", "header": ["Reward", "Amount / notes"], "widths": [2, 5], "rows": [
+          ["[[weapons/kuva_weapons|Kuva weapon]]", "1 random weapon unique to this mod, its level rolled within your current weapon level range"],
+          ["{item:kuvalich:lich_reliquary}", "1; needed to craft three workstations, see [[requiem/requiem_items]]"],
+          ["{item:kuvalich:kuva}", "<t>{cfg:kuva_lich.masterKuvaMinAmount}-{cfg:kuva_lich.masterKuvaMaxAmount}</t>"],
+          ["{item:kuvalich:riven_sliver}", "<t>{cfg:kuva_lich.masterRivenSliverMinAmount}-{cfg:kuva_lich.masterRivenSliverMaxAmount}</t>"],
+          ["Advanced mod", "Always 1: <t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> <c:55FFFF>Prime</c>, otherwise <c:FF55FF>Riven</c>; <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> of them are weapon mods"],
+          { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "cells": ["{item:kuvalich:requiem_ultimatum}", "<t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> chance of 1"] },
+          { "if": ["cfg:kuva_lich.confiscationChance", "cfg:kuva_lich.maxConfiscatedItems"], "cells": ["Confiscated items", "All dropped back, see [[requiem/confiscation]]"] },
+          ["Your three cards", "Each loses 1 durability; survivors return to your inventory, see [[requiem/requiem_cards]]"],
+          ["Weapon level range", "Minimum and maximum both rise, see below"]
+        ] },
+        { "type": "list", "items": [
+          "<c:55FFFF>Prime</c> and <c:FF55FF>Riven</c> are two advanced mod tiers; how they differ: [[modules/module_rarity]]",
+          "Weapon level range: minimum and maximum both rise by the same random amount <t>{cfg:kuva_lich.minimumLevelCapIncrease}-{cfg:kuva_lich.maximumLevelCapIncrease}</t>; the minimum caps at <t>{cfg:kuva_lich.minimumLevel}</t>, the maximum at <t>{cfg:kuva_lich.maximumLevel}</t>, see [[weapons/weapon_level]]",
+          "This kill's Kuva weapon is rolled from the range <em>before</em> the increase; the new range applies from your next decryption"
+        ] },
+        { "type": "tip", "style": "warn", "text": "Apart from Requiem cards going back to your inventory, every reward <w>drops where the Lich fell</w>, and so do cards that do not fit in your inventory. Do not finish it next to lava or the void." },
+        { "type": "tip", "style": "bad", "title": "You must land the killing blow", "text": "Only a Lich killed by a player counts; arrows and thrown items are fine. If a pet, another mob or environmental damage finishes it, you get <b>no progress, no rewards, and no decryption attempt</b>." },
+        { "type": "h", "text": "Advanced details" },
+        { "type": "list", "items": [
+          "Damage formula: 13 × difficulty factor × 0.85, the same formula as Thralls",
+          "Knockback strength: horizontal ×3.15, vertical ×2.15",
+          "A killing blow from {lang:kuvaweapon.type.poison}, {lang:kuvaweapon.type.gas}, {lang:kuvaweapon.type.electricity} or {lang:kuvaweapon.type.explosion} elemental damage does not count either",
+          "Killing blows from {lang:kuvaweapon.type.slash} damage over time, the \"{lang:item.module.execute_threshold}\" and \"{lang:item.module.execute_chance}\" stats, or Kuva weapon effects do count as yours",
+          "Rewards are spawned straight onto the ground, so the \"{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}\" stat on Warframe mods does not boost them"
+        ] }
+      ]
+    },
+    {
+      "id": "kuva_escalation",
+      "title": "Lich Level",
+      "icon": "kuvalich:requiem_gate",
+      "summary": "Each wrong guess adds a level; only success clears it",
+      "blocks": [
+        { "type": "p", "text": "Your <hl>Lich level</hl> counts your wrong guesses: each time you kill a {lang:entity.kuvalich.kuva_master} with a wrong set of three cards in place, it goes up by 1 and chat shows the new level." },
+        { "type": "list", "items": [
+          "The level belongs to <em>you</em>, not to any particular Lich",
+          "<b>Dying does not reset it</b>; only a successful decryption does",
+          "Killing a Lich with a full set before any answer card has been revealed also counts as a wrong guess"
+        ] },
+        { "type": "h", "text": "What it does to you" },
+        { "type": "p", "if": "cfg:kuva_lich.increaseDamage>0", "text": "Each level adds <t>{cfg:kuva_lich.increaseDamage|pct}</t> to the damage Kuva enemies (Thralls and Liches) deal to you. Only theirs: other mobs, falls and lava are unaffected." },
+        { "type": "table", "if": "cfg:kuva_lich.increaseDamage>0", "header": ["Lich level", "Damage Kuva enemies deal to you"], "rows": [
+          ["1", "<t>{cfg:kuva_lich.increaseDamage|add:1|round:2|x}</t>"],
+          ["2", "<t>{cfg:kuva_lich.increaseDamage|mul:2|add:1|round:2|x}</t>"],
+          ["3", "<w>{cfg:kuva_lich.increaseDamage|mul:3|add:1|round:2|x}</w>"],
+          ["5", "<b>{cfg:kuva_lich.increaseDamage|mul:5|add:1|round:2|x}</b>"]
+        ] },
+        { "type": "p", "if": "cfg:kuva_lich.reducedDamage>0", "text": "Each level also cuts your damage to Kuva enemies by <t>{cfg:kuva_lich.reducedDamage|pct}</t>, up to 99.9%; other targets are unaffected." },
+        { "type": "tip", "if": ["!cfg:kuva_lich.increaseDamage>0", "!cfg:kuva_lich.reducedDamage>0"], "style": "good", "text": "Your Lich level only counts wrong guesses and does not weaken you: a wrong guess just costs you a success." },
+        { "type": "tip", "style": "warn", "title": "Swap cards after a wrong guess", "text": "A wrong guess does <em>not</em> take your three cards; they stay in the [[requiem/requiem_gate|Requiem Gate]] that holds them. Kill the next Lich without changing them and the same wrong set fails again, for another +1 level." },
+        { "type": "p", "text": "How to find the right order in as few tries as possible: [[requiem/decrypt_failure]]." },
+        { "type": "tip", "style": "wf", "text": "In Warframe, finishing a Lich with the wrong Requiem sequence fails: the Lich survives and ranks up, growing stronger. In this mod, that level is kept on you instead." }
+      ]
+    },
+    {
+      "id": "battle_boost",
+      "title": "Battle Boost",
+      "icon": "minecraft:clock",
+      "summary": "The longer a fight lasts, the harder they hit",
+      "if": "cfg:kuva_lich.battleBoost>0",
+      "blocks": [
+        { "type": "p", "text": "Kuva enemies get nastier as a fight goes on: <hl>the longer the fight, the more damage they deal</hl>, with no cap. So finish them fast." },
+        { "type": "formula", "text": "Damage dealt by Kuva enemies × (1 + seconds in combat × {cfg:kuva_lich.battleBoost|pct})" },
+        { "type": "table", "header": ["Fight length", "Damage multiplier"], "rows": [
+          ["10 s", "<t>{cfg:kuva_lich.battleBoost|mul:10|add:1|round:2|x}</t>"],
+          ["30 s", "<t>{cfg:kuva_lich.battleBoost|mul:30|add:1|round:2|x}</t>"],
+          ["60 s", "<w>{cfg:kuva_lich.battleBoost|mul:60|add:1|round:2|x}</w>"],
+          ["120 s", "<b>{cfg:kuva_lich.battleBoost|mul:120|add:1|round:2|x}</b>"]
+        ] },
+        { "type": "h", "text": "How the timer works" },
+        { "type": "list", "items": [
+          "Every Thrall and Lich keeps <em>its own</em> timer",
+          "It starts <w>the moment it locks on</w>, not when blows are exchanged: a Thrall locks on when it sees you within <t>32</t> blocks, a Lich within <t>64</t>",
+          "It keeps climbing as long as it has a target: you, your pets, or a mob it is fighting",
+          "Without a target it counts back down at the same rate: after 60 seconds of fighting, it takes 60 seconds out of combat to reach zero",
+          "The timer is saved with the entity; unloading and reloading the chunk does not clear it"
+        ] }
+      ]
+    },
+    {
+      "id": "lich_resistance",
+      "title": "Lich Resistances",
+      "icon": "minecraft:shield",
+      "summary": "Why your damage falls off: four layers, one by one",
+      "blocks": [
+        { "type": "p", "text": "If your damage on a Lich keeps shrinking, you are not imagining it: every hit you land on a Kuva enemy must pass several reduction layers first. Thralls have the first two; the Lich has all four." },
+        { "type": "table", "header": ["Layer", "Effect", "Who"], "widths": [3, 6, 2], "rows": [
+          ["1. Damage type modifier", "Arrows <g>×1.25</g>; other projectiles and magic <b>×0.75</b>", "Both"],
+          ["2. Flat reduction", "Always <b>×0.75</b>", "Thrall"],
+          ["2. Adaptive resistance", "Repeated hits of one type stack <b>-5%</b> each, up to <b>-30%</b>", "Lich"],
+          ["3. Burst diminishing", "The more hits within 2 seconds, the less each does, down to <b>40%</b>", "Lich"],
+          ["4. Soft damage cap", "The part above <t>15%</t> of max health is heavily compressed", "Lich"]
+        ] },
+        { "type": "tip", "style": "info", "title": "Only raw damage is reduced", "text": "These layers only reduce the hit's <t>raw damage</t>: weapon attack damage, enchantments, jump crits. Mod stats, mod crits and elemental multipliers are applied <em>after</em> the layers, so <g>the soft cap never touches them</g>, see [[combat/damage]]." },
+        { "type": "h", "text": "1. Damage type modifier" },
+        { "type": "table", "header": ["Type", "Includes", "Modifier"], "widths": [2, 6, 2], "rows": [
+          ["Arrow", "The thing that hit it is an arrow: bow arrows, crossbow bolts, thrown tridents", "<g>×1.25</g>"],
+          ["Projectile", "Any other damage counted as a projectile: snowballs, other mods' projectiles, etc.", "<b>×0.75</b>"],
+          ["Magic", "Potions, Thorns and other magic damage, plus mod spells recognised as magic", "<b>×0.75</b>"],
+          ["Melee", "A living creature hit it directly: your own swings, pets and summons", "×1"],
+          ["Other", "None of the above: explosions, lightning, burning, etc.", "×1"]
+        ] },
+        { "type": "p", "text": "Types are checked from top to bottom; the first match wins. Layer 2 keeps separate stacks for these same five types." },
+        { "type": "h", "text": "2. Adaptive resistance (Lich)" },
+        { "type": "p", "text": "The Lich \"adapts\" to how you fight: the more you use one damage type, the more that type gets reduced." },
+        { "type": "list", "items": [
+          "Each of the five types keeps <em>its own</em> stacks",
+          "On every hit, damage is first reduced by that type's current stacks, <t>5%</t> each; then that type gains a stack. So the first hit is not reduced",
+          "Up to <t>6</t> stacks, i.e. <b>-30%</b> for that type",
+          "No hit of a type for <t>4-5</t> seconds: that type loses a stack, then one more every <t>5</t> seconds",
+          "No damage of any kind for over <t>10</t> seconds: every type resets to zero"
+        ] },
+        { "type": "tip", "style": "good", "text": "<g>Rotating damage types</g> pays off: melee for a while, switch to the bow, then spells, and let the idle types bleed stacks. <w>Switching weapons is not switching types</w>: two swords are both melee and share one counter." },
+        { "type": "tip", "style": "wf", "text": "Warframe has a Warframe mod called Adaptation: taking damage builds up resistance to that damage type. The Lich's adaptive resistance runs on the same idea, only on an enemy." },
+        { "type": "h", "text": "3. Burst diminishing (Lich)" },
+        { "type": "p", "text": "The more hits it takes in a short time, the less each one hurts." },
+        { "type": "formula", "text": "Damage multiplier = max(40%, 1 − hits already taken in the last 2 seconds × 5%)" },
+        { "type": "table", "header": ["Hit within 2 s", "Multiplier"], "rows": [
+          ["1st", "100%"],
+          ["3rd", "90%"],
+          ["5th", "80%"],
+          ["9th", "60%"],
+          ["13th onward", "<b>40%</b>"]
+        ] },
+        { "type": "tip", "style": "warn", "title": "What counts as a hit", "text": "<w>Every hit that actually lands counts</w> and adds a stack: every tick of {lang:kuvaweapon.type.poison} / {lang:kuvaweapon.type.gas} damage over time, the extra {lang:kuvaweapon.type.electricity} / {lang:kuvaweapon.type.explosion} damage, Thorns, pet attacks... Uncharged swings count too. The more damage over time you bring, the lower your main hits sink." },
+        { "type": "h", "text": "4. Soft damage cap (Lich)" },
+        { "type": "p", "text": "When a single hit is too big, the excess is heavily compressed. So the higher your weapon's own attack damage, the harder it gets squashed." },
+        { "type": "formula", "text": "Threshold = max health × 15% (default 200 × 15% = 30); above it: damage = threshold + ln(1 + excess × 0.5) ÷ 0.5" },
+        { "type": "table", "header": ["Hit after the first three layers", "Damage dealt (default 200 health)"], "rows": [
+          ["Up to 30", "Unchanged"],
+          ["40", "≈ 33.6"],
+          ["60", "≈ 35.5"],
+          ["100", "≈ 37.2"],
+          ["200", "≈ 38.9"]
+        ] },
+        { "type": "h", "text": "Advanced details" },
+        { "type": "list", "items": [
+          "Attacks fully blocked by hit invulnerability do not count as a hit",
+          "{lang:kuvaweapon.type.slash} elemental damage over time removes health directly: it skips every layer, adds no stacks and takes no burst slot",
+          { "if": ["cfg:kuva_lich.enableThirdPartyMagicRecognition", "cfg:kuva_lich.magicDamageNamespaces"], "text": "All damage from these mods counts as magic: <t>{cfg:kuva_lich.magicDamageNamespaces|list}</t>" },
+          "Ways around all of these layers: [[enemies/lich_tactics]]"
+        ] }
+      ]
+    },
+    {
+      "id": "lich_tactics",
+      "title": "Hunting the Lich",
+      "icon": "kuvalich:lich_reliquary",
+      "summary": "Putting it together: prepare, deal damage, finish",
+      "blocks": [
+        { "type": "p", "text": "This page turns the mechanics above into a plan: prepare before the fight, work around the reductions while dealing damage, and land the final blow yourself. Follow it to avoid the common mistakes." },
+        { "type": "h", "text": "Before the fight" },
+        { "type": "steps", "items": [
+          "Check that the three cards in the [[requiem/requiem_gate|Requiem Gate]] are the order you want to test. With fewer than three it is just a progress run; with no clue revealed a full set always fails",
+          "Bring at least two or three damage types: a melee weapon + a bow or crossbow + spells, ideally a [[weapons/kuva_weapons|Kuva weapon]] with strong mod multipliers",
+          "Pick flat, open ground away from pets and villagers: its area attack hits everything within 3 blocks, and the knockback can throw you off a cliff",
+          { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "To choose the arena, summon it there with a {item:kuvalich:requiem_ultimatum}" }
+        ] },
+        { "type": "h", "text": "Dealing damage" },
+        { "type": "list", "items": [
+          "<g>Bows and crossbows first</g>: Arrow is the only type with ×1.25, and it stacks separately from melee",
+          "Rotate types every few hits so no type reaches 6 stacks",
+          "Pacing beats speed: from the 13th hit within 2 seconds you deal only 40%, so one fully charged hit beats two half-charged ones",
+          "Don't push raw damage per hit far past 30 (at default health): the excess is almost entirely eaten by the soft cap, so invest in mod multipliers instead",
+          { "if": "cfg:kuva_lich.battleBoost>0", "text": "<w>Finish fast</w>: its damage keeps rising with every second of combat, +<t>{cfg:kuva_lich.battleBoost|pct}</t> per second, see [[enemies/battle_boost]]" }
+        ] },
+        { "type": "h", "text": "Getting around the resistances" },
+        { "type": "list", "items": [
+          "\"{lang:item.module.execute_threshold}\" and \"{lang:item.module.execute_chance}\" stats: when they trigger the target simply dies, the Lich included (see [[reference/weapon_attr_special]])",
+          "Damage that removes health directly: {lang:kuvaweapon.type.slash} elemental damage over time and the damage-over-time effects of some [[weapons/weapon_list|Kuva weapons]]. It skips every layer and adds no stacks or burst hits"
+        ] },
+        { "type": "tip", "if": "mod:tacz", "style": "info", "title": "With guns", "text": "TACZ bullets resolve as Other (×1). Each bullet registers as two hits, even when one part deals 0 damage, so burst diminishing and adaptive stacks climb twice as fast. The extra damage from the \"{lang:item.module.true_bullet}\" stat removes health directly, bypassing the resistances." },
+        { "type": "h", "text": "Finishing" },
+        { "type": "list", "items": [
+          "At low health switch to direct attacks for the kill; do not let {lang:kuvaweapon.type.poison}, {lang:kuvaweapon.type.gas}, {lang:kuvaweapon.type.electricity} or {lang:kuvaweapon.type.explosion} damage wear it down, because that kill does not count",
+          "Finishing it with {lang:kuvaweapon.type.slash} damage over time, an execution / instant kill or a Kuva weapon effect does count as yours",
+          "Group hunts: only the player who lands the last hit counts, using their cards and progress"
+        ] }
+      ]
+    }
+  ]
+}

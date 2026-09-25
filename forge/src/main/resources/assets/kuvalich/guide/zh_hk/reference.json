@@ -1,0 +1,1583 @@
+{
+  "id": "reference",
+  "order": 100,
+  "title": "詞條速查",
+  "subtitle": "每條詞條怎麼生效、怎麼疊加",
+  "icon": "kuvalich:item_riven_module",
+  "entries": [
+    {
+      "id": "attr_rules",
+      "title": "通用規則",
+      "icon": "kuvalich:item_riven_module",
+      "summary": "先讀這篇：表裏的説法和疊加規則",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>模組</hl>是一張張強化卡：武器模組裝在武器上，戰甲模組裝給你自己。卡上的每一行加成叫一條<hl>詞條</hl>。這一分類把所有詞條按用途列成表，隨用隨查。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "值",
+              "卡面上的百分比：+30% 在公式裏記作 <t>0.3</t>"
+            ],
+            [
+              "同名詞條",
+              "一把武器（或一套戰甲）上所有模組的同名詞條<g>直接相加</g>，再統一結算"
+            ],
+            [
+              "負面詞條",
+              "[[start/glossary|裂罅模組]]（詞條隨機的模組）可能帶負值，會從總和裏扣掉；總和為負就是反效果"
+            ],
+            [
+              "逐張相乘",
+              "例外：戰甲的四種抗性和{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}是每張卡單獨相乘，見各自條目"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "模組等級",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "沒升滿級的模組按 <t>當前等級 ÷ {cfg:kuva_lich.moduleMaxLevel}</t> 折算生效。卡面上的數字已經折算好了，所見即所得。升級見[[modules/module_level]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "卡面數值",
+          "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "每張模組都按卡面上的數值滿額生效。"
+        },
+        {
+          "type": "h",
+          "text": "只認整 10% 的詞條"
+        },
+        {
+          "type": "p",
+          "text": "下面這些詞條<w>只認整 10%</w>，零頭直接捨去：25% 按 20% 算，9% 等於沒有。湊數值時儘量湊整。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "{lang:item.module.attackSpeed}",
+            "{lang:item.module.attackRange}（每一檔只加 5% 觸及距離）",
+            "{lang:kuvaweapon.warframe_attribute_type.health}",
+            "{lang:kuvaweapon.warframe_attribute_type.armor}",
+            "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}",
+            "{lang:kuvaweapon.warframe_attribute_type.knockbackResistance}",
+            "{lang:kuvaweapon.warframe_attribute_type.reachDistance}"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "卡面上的數字只算這一張卡；武器面板上顯示的，才是這把武器所有詞條合併後的結果，讀法見[[weapons/weapon_panel]]。",
+            {
+              "if": "cfg:modules.attributeValueRanges",
+              "text": "部分詞條的單張數值有上下限，超出的按邊界算；卡面上的數字不反映這一點，見[[modules/module_limits]]。"
+            },
+            {
+              "if": "cfg:modules.attributeTotalCaps",
+              "text": "部分詞條的同名總和有封頂，超出的部分不算，見[[modules/module_limits]]。"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "[[modules/multi_slot|這些位置裝了模組的物品]]",
+            "詞條計入主手武器的比例"
+          ],
+          "widths": [
+            2,
+            3
+          ],
+          "rows": [
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule",
+                "cfg:kuva_lich.offhandEffectMultiplier"
+              ],
+              "cells": [
+                "副手",
+                "{cfg:kuva_lich.offhandEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableHelmetModule",
+                "cfg:kuva_lich.armorEffectMultiplier"
+              ],
+              "cells": [
+                "頭盔",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableChestplateModule",
+                "cfg:kuva_lich.armorEffectMultiplier"
+              ],
+              "cells": [
+                "胸甲",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableLeggingsModule",
+                "cfg:kuva_lich.armorEffectMultiplier"
+              ],
+              "cells": [
+                "護腿",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableBootsModule",
+                "cfg:kuva_lich.armorEffectMultiplier"
+              ],
+              "cells": [
+                "靴子",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "mod:curios",
+                "cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.curiosEffectMultiplier"
+              ],
+              "cells": [
+                "飾品欄",
+                "{cfg:kuva_lich.curiosEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "weapon_attr_damage",
+      "title": "武器 · 傷害類",
+      "icon": "kuvalich:kuva_shildeg",
+      "summary": "近戰、遠程、魔法與剋制增傷",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "這組詞條直接加傷害：按出手方式加（近戰、遠程、魔法），或者專打某一類生物（剋制）。"
+        },
+        {
+          "type": "p",
+          "text": "前幾條都加進同一個<hl>傷害池</hl>：先相加，再一起放大這一擊。同一擊只算近戰或遠程其中一邊。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "什麼時候生效",
+            "怎麼算"
+          ],
+          "widths": [
+            3,
+            5,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:item.module.meleeDamage}",
+              "近戰：你親手打中（揮砍、橫掃）",
+              "加進傷害池"
+            ],
+            [
+              "{lang:item.module.remoteDamage}",
+              "遠程：你射出去的東西打中（箭、彈射物、子彈）",
+              "加進傷害池"
+            ],
+            [
+              "{lang:item.module.arrowDamage}",
+              "遠程，且打中的是普通箭或藥水箭",
+              "和遠程傷害一起加進池"
+            ],
+            [
+              "{lang:item.module.projectileDamage}",
+              "遠程，且打中的是其他彈射物：雪球、追跡之箭、三叉戟、槍械子彈",
+              "和遠程傷害一起加進池"
+            ],
+            [
+              "{lang:item.module.magicDamage}",
+              "這一擊算魔法傷害",
+              "在近戰 / 遠程之外<g>再加</g>進傷害池"
+            ],
+            [
+              "{lang:item.module.baseDamageWhenNotCriticalStrike}",
+              "這一擊沒有暴擊",
+              "直接加上，<w>不乘</w>面板基礎傷害；近戰按蓄力折算"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "暴擊幾率超過 100% 後必定暴擊，{lang:item.module.baseDamageWhenNotCriticalStrike}就再也用不上了。"
+        },
+        {
+          "type": "h",
+          "text": "剋制詞條"
+        },
+        {
+          "type": "p",
+          "text": "剋制詞條只對一類目標加傷害，玩家也叫它「歧視」。它單獨乘一次 <t>× (1 + 值)</t>，物理和元素部分一起乘。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "對哪些目標"
+          ],
+          "widths": [
+            2,
+            3
+          ],
+          "rows": [
+            [
+              "{lang:item.module.bane_of_undefined}",
+              "奇特生物：原版的預設類型，絕大多數生物都是"
+            ],
+            [
+              "{lang:item.module.bane_of_undead}",
+              "亡靈：喪屍、骷髏骨、凋零怪等"
+            ],
+            [
+              "{lang:item.module.bane_of_arthropod}",
+              "節肢動物：蜘蛛、蠹魚、蜜蜂等"
+            ],
+            [
+              "{lang:item.module.bane_of_illager}",
+              "災厄村民；<dim>水生生物也歸這一類</dim>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "《星際戰甲》裏也有「對某一派系傷害 +X%」的模組，中文玩家叫它「歧視卡」。原作的派系是 Grineer、Corpus 等勢力，這裏換成了原版的生物種類。"
+        },
+        {
+          "type": "h",
+          "text": "怎麼算"
+        },
+        {
+          "type": "formula",
+          "text": "物理傷害 = 原始傷害 × (1 + 傷害池) × 面板基礎傷害 × 蓄力 × 暴擊 × 剋制"
+        },
+        {
+          "type": "formula",
+          "text": "元素傷害 = 原始傷害 × 元素總值 × 面板基礎傷害 × 蓄力 × 剋制（不吃暴擊）"
+        },
+        {
+          "type": "p",
+          "text": "<t>蓄力</t>：近戰按這一下揮擊的蓄力比例折算，蓄滿才是 1，所以沒蓄滿就出手很虧；遠程恆為 1。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "面板基礎傷害低於 100%",
+          "text": "武器面板上的{lang:item.module.damage}低於 100% 時按<w>平方</w>算：80% 實際只有 64%，50% 只有 25%。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "命中時結算的詞條（傷害、暴擊、元素、處決等）要求<em>主手</em>拿着能裝模組的武器，否則一概不生效。",
+            "遠程按<w>命中那一刻</w>主手上的武器算：箭還在天上時換了武器，就按新武器的詞條結算。",
+            "[[start/glossary|裂罅模組]]的負面傷害詞條會從傷害池裏扣；扣到底這一擊就是 0 傷害，不會變成負數。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "完整的結算順序和魔法傷害的判定見[[combat/damage]]，剋制見[[combat/bane]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "module:chambered"
+          ],
+          "text": "{lang:item.module.first_bullet_damage}、{lang:item.module.gun_damage}、{lang:item.module.headshot_damage}只對槍械生效，見[[tacz/tacz_gun_attributes]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "!module:chambered"
+          ],
+          "text": "{lang:item.module.gun_damage}、{lang:item.module.headshot_damage}只對槍械生效，見[[tacz/tacz_gun_attributes]]。"
+        }
+      ]
+    },
+    {
+      "id": "weapon_attr_crit",
+      "title": "武器 · 暴擊類",
+      "icon": "kuvalich:gram_prime",
+      "summary": "暴擊率、暴擊倍率與分檔",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "暴擊就是有幾率打出成倍的傷害。這組詞條提高暴擊的幾率和倍率。"
+        },
+        {
+          "type": "p",
+          "text": "面板上的{lang:item.module.criticalStrikeProbability}和{lang:item.module.criticalStrikeMultiplier}都等於「武器自帶的基礎值 × (1 + 詞條)」。近戰和遠程各用各的詞條。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "作用",
+            "怎麼算"
+          ],
+          "widths": [
+            4,
+            3,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}",
+              "近戰更容易暴擊",
+              "基礎暴擊幾率 × (1 + 值)"
+            ],
+            [
+              "{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier}",
+              "近戰暴擊更痛",
+              "基礎暴擊倍率 × (1 + 值)"
+            ],
+            [
+              "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}",
+              "遠程更容易暴擊",
+              "基礎暴擊幾率 × (1 + 值)"
+            ],
+            [
+              "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier}",
+              "遠程暴擊更痛",
+              "基礎暴擊倍率 × (1 + 值)"
+            ],
+            [
+              "{lang:item.module.dashMeleeCriticalStrikeProbability}",
+              "衝刺中近戰更容易暴擊",
+              "衝刺時先和近戰暴擊幾率<g>相加</g>，再乘"
+            ],
+            [
+              "{lang:item.module.killStackMeleeCriticalMultiplier}（[[reference/weapon_attr_killstack|擊殺疊層]]）",
+              "越殺近戰暴擊越痛",
+              "<w>單獨乘區</w>：× (1 + 值 × 層數)"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "暴擊分檔"
+        },
+        {
+          "type": "p",
+          "text": "暴擊幾率可以超過 100%：超過後必定暴擊，多出來的部分是升到更高一檔的幾率。"
+        },
+        {
+          "type": "table",
+          "if": "!cfg:kuva_lich.enableDamageNumbers",
+          "header": [
+            "最終暴擊幾率",
+            "結果"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "100% 及以下",
+              "按幾率暴擊：× 暴擊倍率"
+            ],
+            [
+              "100% ~ 200%",
+              "必定暴擊；超出 100% 的部分是升二檔的幾率。二檔 × 暴擊倍率 × 2"
+            ],
+            [
+              "200% ~ 300%",
+              "至少二檔；超出 200% 的部分是升三檔的幾率。三檔 × 暴擊倍率 × 3"
+            ],
+            [
+              "300% 以上",
+              "必定三檔；<w>再高也沒有額外收益</w>"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "if": "cfg:kuva_lich.enableDamageNumbers",
+          "header": [
+            "最終暴擊幾率",
+            "結果",
+            "數字顏色"
+          ],
+          "widths": [
+            2,
+            5,
+            2
+          ],
+          "rows": [
+            [
+              "100% 及以下",
+              "按幾率暴擊：× 暴擊倍率",
+              "<c:FFFF55>黃</c>"
+            ],
+            [
+              "100% ~ 200%",
+              "必定暴擊；超出 100% 的部分是升二檔的幾率。二檔 × 暴擊倍率 × 2",
+              "<c:FFFF55>黃</c> / <c:FFAA00>橙</c>"
+            ],
+            [
+              "200% ~ 300%",
+              "至少二檔；超出 200% 的部分是升三檔的幾率。三檔 × 暴擊倍率 × 3",
+              "<c:FFAA00>橙</c> / <c:FF5555>紅</c>"
+            ],
+            [
+              "300% 以上",
+              "必定三檔；<w>再高也沒有額外收益</w>",
+              "<c:FF5555>紅</c>"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableDamageNumbers",
+          "text": "每一檔的傷害數字顏色不同（見上表）；沒暴擊時數字是白色，目標帶護盾時是<c:55FFFF>淺藍</c>。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "《星際戰甲》裏暴擊幾率同樣能超過 100%，打出更高檔的暴擊。玩家按傷害數字的顏色，把它們叫作黃暴、橙暴、紅暴。"
+        },
+        {
+          "type": "h",
+          "text": "要注意的"
+        },
+        {
+          "type": "list",
+          "items": [
+            "近戰沒蓄滿力就出手，暴擊幾率按蓄力比例打折：蓄一半只剩一半。傷害折得更狠：蓄一半只剩滿蓄力的約<w>五分之一</w>，見[[reference/weapon_attr_damage]]。",
+            "暴擊只乘<hl>物理部分</hl>，元素傷害不吃暴擊倍率（設計如此）。",
+            "暴擊幾率一旦超過 100%，{lang:item.module.baseDamageWhenNotCriticalStrike}就永遠不會生效。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "cfg:kuva_lich.enableDamageNumbers"
+          ],
+          "text": "TACZ 槍械：一發子彈的傷害分成兩段結算時，暴擊會各擲一次（設計如此），元素觸發和處決也各判定一次。傷害數字怎麼顯示見[[combat/damage_numbers]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "!cfg:kuva_lich.enableDamageNumbers"
+          ],
+          "text": "TACZ 槍械：一發子彈的傷害分成兩段結算時，暴擊會各擲一次（設計如此），元素觸發和處決也各判定一次。"
+        },
+        {
+          "type": "p",
+          "text": "例子與更多細節見[[combat/crit]]。"
+        }
+      ]
+    },
+    {
+      "id": "weapon_attr_utility",
+      "title": "武器 · 功能類",
+      "icon": "kuvalich:item_uncommon_module",
+      "summary": "攻速、範圍、射速、多重、觸發",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "這組詞條不直接加傷害，而是讓你出手更快、打得更遠、一次射更多箭、波及周圍，或者更容易觸發元素狀態。"
+        },
+        {
+          "type": "p",
+          "text": "<hl>觸發</hl>：命中時有幾率給目標掛上着火、冰凍之類的元素狀態。各種狀態見[[combat/element_status]]。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "效果",
+            "怎麼算"
+          ],
+          "widths": [
+            3,
+            4,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:item.module.attackSpeed}",
+              "揮得更快",
+              "每滿 10% → 攻速 +10%"
+            ],
+            [
+              "{lang:item.module.attackRange}",
+              "近戰夠得更遠，橫掃範圍也變大",
+              "每滿 10% → 觸及距離 +5%"
+            ],
+            [
+              "{lang:item.module.dashAttackRange}",
+              "衝刺時近戰夠得更遠",
+              "衝刺時和攻擊範圍相加"
+            ],
+            [
+              "{lang:item.module.firing_rate}",
+              "拉弓、蓄力更快",
+              "<w>弓和弩效果翻倍</w>；算法見篇末"
+            ],
+            [
+              "{lang:item.module.multishot}",
+              "弓每次多射幾支箭",
+              "整數部分必定多射，小數部分是再多一支的幾率"
+            ],
+            [
+              "{lang:item.module.triggerChance}",
+              "更容易觸發元素狀態",
+              "基礎觸發幾率 × (1 + 值)"
+            ],
+            [
+              "{lang:item.module.dashTriggerChance}",
+              "衝刺時更容易觸發",
+              "衝刺時和觸發幾率相加"
+            ],
+            [
+              "{lang:item.module.triggerTime}",
+              "元素狀態持續更久",
+              "持續時間和持續傷害的跳數 × (1 + 值)"
+            ],
+            [
+              "{lang:item.module.bursting_radius}",
+              "遠程命中時波及周圍（濺射）",
+              "半徑 = 1 + 值 × 2 格；每個被波及者受主目標最終傷害的 50%"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "攻擊速度、攻擊範圍只認整 10%，零頭捨去；攻擊速度為負時同樣按檔減速。",
+            "多重射擊只對弓有效，弩不吃；多射的箭不耗箭，也撿不回來。",
+            "觸發幾率超過 100% 時，整數部分必定觸發，餘數是再觸發一次的幾率。單次命中最多觸發 <t>5</t> 次（按 500% 封頂）。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "濺射不分敵我",
+          "text": "除了你和主目標，半徑內的所有生物都會被波及，寵物和村民也不例外。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "射速的算法：每 tick 額外推進「整數部分」次蓄力，小數部分按幾率再推一次；弓和弩翻倍。",
+            "射速為負時拖慢蓄力；總值 ≤ -100% 時根本拉不開。弓弩翻倍，所以詞條 -50% 就到了。",
+            "副手用不能裝模組的東西（吃喝、舉盾）時，也按主手武器的射速算。",
+            "多重射擊為負時，按幾率射不出箭。",
+            "衝刺攻擊範圍每秒檢查一次：開始 / 停止衝刺後約 1 秒才跟上。",
+            "衝刺觸發幾率對遠程也有效，只要出手時你在衝刺。",
+            "觸發時間在面板上顯示為相對原時長的百分比。",
+            "濺射只結算傷害：不觸發元素、不疊武器擊殺層（戰甲擊殺層照算）、不判定處決，數字顏色沿用主目標的暴擊色。爆炸類傷害不會再濺射。",
+            "所有玩家合計，每 tick 最多觸發 <t>100</t> 次元素。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "mod:tacz",
+          "text": "裝在槍上時：{lang:item.module.firing_rate}改射擊間隔，{lang:item.module.multishot}加每發彈丸數，{lang:item.module.bursting_radius}對自帶爆炸的槍改為放大爆炸半徑。詳見[[tacz/tacz_multishot]]。"
+        }
+      ]
+    },
+    {
+      "id": "weapon_attr_element",
+      "title": "武器 · 元素類",
+      "icon": "minecraft:blaze_powder",
+      "summary": "十三種元素與複合規則",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "元素詞條讓每一擊多帶一份元素傷害，還決定觸發時給目標掛上哪種狀態（着火、冰凍、中毒……）。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<g>加傷害</g>：每一擊按所有元素詞條的總值，追加一份元素傷害，不吃暴擊。",
+            "<g>定狀態</g>：觸發時按各元素數值的佔比隨機抽一種狀態，數值越高越容易抽到。"
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "元素傷害 = 原始傷害 × 元素總值 × 面板基礎傷害 × 蓄力 × 剋制（不吃暴擊）"
+        },
+        {
+          "type": "h",
+          "text": "基礎元素"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "觸發時的效果",
+            "備註"
+          ],
+          "widths": [
+            2,
+            5,
+            3
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.item_attribute_type.fire}</c>",
+              "點燃並造成持續傷害，同時逐步削減護甲（最多 -50%）",
+              "對節肢 ×1.5、亡靈 ×0.5"
+            ],
+            [
+              "<c:6FD8F0>{lang:kuvaweapon.item_attribute_type.ice}</c>",
+              "減移速和攻速，可疊 9 級（-50% → -90%）",
+              "只掛狀態，不額外造成傷害"
+            ],
+            [
+              "<c:6BD96B>{lang:kuvaweapon.item_attribute_type.poison}</c>",
+              "持續傷害；目標有護盾時<w>繞過護盾</w>直接扣血",
+              "對災厄 ×1.5、節肢 ×0.5"
+            ],
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>",
+                "電一下（閃電只是特效），並麻痹目標 0.5 秒（幾乎定身）",
+                "對亡靈 ×1.5；目標有護盾時 ×0.5"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier==0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>",
+                "觸發時沒有效果：不造成傷害，也不會麻痹",
+                "—"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "物理元素"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "觸發時的效果",
+            "備註"
+          ],
+          "widths": [
+            2,
+            5,
+            3
+          ],
+          "rows": [
+            [
+              "<c:D8DCE2>{lang:kuvaweapon.item_attribute_type.slash}</c>",
+              "流血：直接扣血的持續傷害，無視護甲和護盾",
+              "目標帶病毒狀態時更痛"
+            ],
+            [
+              "<c:9AA2AE>{lang:kuvaweapon.item_attribute_type.puncture}</c>",
+              "目標<g>造成的傷害</g> -40%，每級再 -10%，最多 4 級（-70%）",
+              "近戰和它射出的東西都算；你打它不受影響"
+            ],
+            [
+              "<c:F0F0F0>{lang:kuvaweapon.item_attribute_type.impact}</c>",
+              "把目標擊退並掀起",
+              "力度隨衝擊數值增加"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "複合元素"
+        },
+        {
+          "type": "p",
+          "text": "兩種基礎元素會合成一種複合元素，合成表如下。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "組合",
+            "結果"
+          ],
+          "widths": [
+            3,
+            2
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>火焰</c> + <c:6BD96B>毒素</c>",
+              "<c:A8E86B>毒氣</c>"
+            ],
+            [
+              "<c:FF7A4A>火焰</c> + <c:8296FF>電擊</c>",
+              "<c:F0E060>輻射</c>"
+            ],
+            [
+              "<c:6FD8F0>冰凍</c> + <c:8296FF>電擊</c>",
+              "<c:7A8CFF>磁力</c>"
+            ],
+            [
+              "<c:6BD96B>毒素</c> + <c:8296FF>電擊</c>",
+              "<c:C4DB4A>腐蝕</c>"
+            ],
+            [
+              "<c:FF7A4A>火焰</c> + <c:6FD8F0>冰凍</c>",
+              "<c:FF9B4A>爆炸</c>"
+            ],
+            [
+              "<c:6FD8F0>冰凍</c> + <c:6BD96B>毒素</c>",
+              "<c:FF7AB0>病毒</c>"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "觸發時的效果",
+            "備註"
+          ],
+          "widths": [
+            2,
+            5,
+            3
+          ],
+          "rows": [
+            [
+              "<c:A8E86B>{lang:kuvaweapon.item_attribute_type.gas}</c>",
+              "在命中點留下半徑 3 格的毒雲，持續傷害雲裏<w>除你以外</w>的所有生物",
+              "倍率看被命中的目標：節肢 ×1.5、有護盾 ×0.5"
+            ],
+            [
+              "<c:F0E060>{lang:kuvaweapon.item_attribute_type.radiation}</c>",
+              "目標陷入混亂，轉去攻擊附近的同類；打同類時傷害 +100%，可疊 10 級（最高 +550%）",
+              "找 24 格內最近的同類，沒有就打最近的生物；基礎持續 12 秒"
+            ],
+            [
+              "<c:7A8CFF>{lang:kuvaweapon.item_attribute_type.magnetic}</c>",
+              "目標有護盾時受到的傷害 +100%，可疊 10 級（最高 +325%）",
+              "對沒護盾的目標無效"
+            ],
+            [
+              "<c:C4DB4A>{lang:kuvaweapon.item_attribute_type.corrosion}</c>",
+              "削減護甲 -26%，可疊 10 級（最高 -80%）",
+              "基礎持續 8 秒"
+            ],
+            [
+              "<c:FF9B4A>{lang:kuvaweapon.item_attribute_type.explosion}</c>",
+              "對目標和周圍 3 格內<w>除你以外</w>的所有生物造成爆炸傷害",
+              "不破壞方塊；目標有護盾 ×1.5，否則 ×0.5"
+            ],
+            [
+              "<c:FF7AB0>{lang:kuvaweapon.item_attribute_type.virus}</c>",
+              "疊滿 10 級時生命上限 -50%；還會讓切割的流血更痛",
+              "—"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "合成順序"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "同名元素先合併成一份。",
+            "按出現順序排隊：[[start/glossary|赤毒武器]]自帶的元素排最前，然後按模組槽位順序。",
+            "每個基礎元素，和排在它前面、還沒合成、能配對的第一個基礎元素合成。",
+            "物理三種（切割、穿刺、衝擊）從不參與合成。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "所以同樣三種元素，換個槽位順序，合出來的結果可能不同。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "《星際戰甲》裏也是火、冰、電、毒四種基礎元素兩兩合成這六種複合元素，合成結果同樣取決於模組在武器上的排列順序。"
+        },
+        {
+          "type": "h",
+          "text": "狀態的通用規則"
+        },
+        {
+          "type": "list",
+          "items": [
+            "除註明外，狀態持續 6 秒；持續傷害每秒一跳，共 6 跳。兩者都按{lang:item.module.triggerTime}延長。",
+            "同一目標身上的同種持續傷害不疊加：再次觸發時取較高的每跳傷害，並重新計滿跳數。",
+            "觸發傷害以<t>這一擊的物理傷害</t>（含暴擊與剋制）為基數。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "元素觸發傷害倍率"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "<c:FF7A4A>火焰</c>",
+              "{cfg:kuva_lich.elementFireDamageMultiplier|x}"
+            ],
+            [
+              "<c:6BD96B>毒素</c>",
+              "{cfg:kuva_lich.elementPoisonDamageMultiplier|x}"
+            ],
+            [
+              "<c:D8DCE2>切割</c>",
+              "{cfg:kuva_lich.elementSlashDamageMultiplier|x}"
+            ],
+            [
+              "<c:A8E86B>毒氣</c>",
+              "{cfg:kuva_lich.elementGasDamageMultiplier|x}"
+            ],
+            [
+              "<c:8296FF>電擊</c>",
+              "{cfg:kuva_lich.elementElectricityDamageMultiplier|x}"
+            ],
+            [
+              "<c:FF9B4A>爆炸</c>",
+              "{cfg:kuva_lich.elementExplosionDamageMultiplier|x}"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "這些倍率只影響觸發後的持續 / 瞬發傷害，不影響每一擊追加的元素傷害。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "抽狀態只看主手武器自己裝的模組。",
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "抽狀態按滿級數值算佔比，模組沒升滿也一樣。"
+            },
+            "毒氣、爆炸的觸發傷害只按組成它的兩種基礎元素詞條算：毒氣 = 火焰 + 毒素，爆炸 = 火焰 + 冰凍，含赤毒武器自帶的那一種。",
+            "卡上的毒氣 / 爆炸詞條本身<w>不算進</w>觸發傷害：只靠它們時，觸發不造成傷害；每一擊追加的元素傷害不受影響。",
+            "電擊、爆炸打在主目標身上的那一下會被原版受擊無敵吃掉：只有超出這一擊原始傷害的部分打得進去，數字常偏小或不顯示。爆炸波及的周圍生物不受影響。",
+            "被毒氣命中的目標死後約 1 秒，毒雲消散。",
+            "剋制倍率在元素觸發傷害上按<w>平方</w>生效（設計如此）。",
+            "[[start/glossary|裂罅模組]]洗不出複合元素詞條，想要只能靠詞條固定的模組。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "每種狀態的完整數值見[[combat/element_status]]。"
+        }
+      ]
+    },
+    {
+      "id": "weapon_attr_special",
+      "title": "武器 · 特殊類",
+      "icon": "kuvalich:reaper_prime",
+      "summary": "處決、秒殺與抹除增益",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "這組詞條能直接處死血量夠低或運氣不好的目標，或者扒掉它身上的增益效果。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "效果",
+            "怎麼算"
+          ],
+          "widths": [
+            3,
+            4,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:item.module.execute_threshold}",
+              "目標血量夠低時，直接處死",
+              "命中<w>之前</w>的血量 ≤ 最大生命 × 值"
+            ],
+            [
+              "{lang:item.module.execute_chance}",
+              "每次命中有幾率直接處死，不看血量",
+              "幾率 = 值，處決閾值沒觸發時才擲；數值很小，卡面保留三位小數"
+            ],
+            [
+              "{lang:item.module.purge_buff}",
+              "命中時隨機移除目標的增益藥水效果（減益不動）",
+              "整數部分 = 必定移除幾個；小數部分 = 再多移除 1 個的幾率"
+            ]
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "例：{lang:item.module.purge_buff} 150% → 必定移除 1 個，另有 50% 再移除 1 個"
+        },
+        {
+          "type": "list",
+          "items": [
+            "處決在命中後 <t>1</t> tick 執行：閾值處決冒靈魂粒子，秒殺冒暴擊星。",
+            "只在能裝模組的武器<em>直接命中</em>時判定：多重射擊的每支箭各判定一次；濺射和元素持續傷害不判定。",
+            "處決打死的算一次擊殺：武器[[reference/weapon_attr_killstack|擊殺疊層]] +1（戰甲擊殺疊層不加）。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "本模組不給 Boss 豁免，[[start/glossary|赤毒玄骸]]（本模組的 Boss）也能被處決；其他模組的 Boss 若有鎖血或復活機制，則不一定。",
+            "[[start/glossary|裂罅模組]]不會把這三條洗成負面詞條。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "mod:tacz",
+          "text": "{lang:item.module.true_bullet}和{lang:item.module.gun_loot_drop}只對槍械子彈生效，見[[tacz/tacz_gun_attributes]]。"
+        }
+      ]
+    },
+    {
+      "id": "weapon_attr_killstack",
+      "title": "武器 · 擊殺疊層",
+      "icon": "kuvalich:item_prime_module",
+      "summary": "擊殺疊層，越殺越強",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "卡面帶「擊殺時獲取」字樣的詞條會疊層：用能裝模組的武器每打死一個目標 +1 層，層數越多加成越高。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "生效",
+              "每層數值 × 層數，最多疊到上限"
+            ],
+            [
+              "每層計時",
+              "{cfg:kuva_lich.weaponStackDecayTicks|sec}；期間再擊殺就重新計時"
+            ],
+            [
+              "掉層",
+              "超時沒有擊殺就掉 <t>1</t> 層，然後重新計時"
+            ],
+            [
+              "清空",
+              "下線清空；<g>死亡不清空</g>"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "表裏的「+值」表示每層把這個值加到同名詞條上。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "每層效果",
+            "上限"
+          ],
+          "widths": [
+            3,
+            6,
+            2
+          ],
+          "rows": [
+            [
+              "{lang:item.module.killStackBaseDamage}",
+              "傷害 +值 × 目標身上<w>負面藥水效果</w>的種類數；加進傷害池，近戰遠程都吃",
+              "{cfg:kuva_lich.maxStacksBaseDamage} 層"
+            ],
+            [
+              "{lang:item.module.killStackMultishot}",
+              "{lang:item.module.multishot} +值",
+              "{cfg:kuva_lich.maxStacksMultishot} 層"
+            ],
+            [
+              "{lang:item.module.killStackMeleeCriticalMultiplier}",
+              "近戰暴擊倍率 × (1 + 值 × 層數)，<w>單獨乘區</w>",
+              "{cfg:kuva_lich.maxStacksMeleeCritMult} 層"
+            ],
+            [
+              "{lang:item.module.killStackTriggerChance}",
+              "{lang:item.module.triggerChance} × (1 + 值 × 層數)，<w>單獨乘區</w>",
+              "{cfg:kuva_lich.maxStacksTriggerChance} 層"
+            ],
+            [
+              "{lang:item.module.killStackAttackRange}",
+              "{lang:item.module.attackRange} +值",
+              "{cfg:kuva_lich.maxStacksAttackRange} 層"
+            ],
+            [
+              "{lang:item.module.killStackAttackSpeed}",
+              "{lang:item.module.attackSpeed} +值",
+              "{cfg:kuva_lich.maxStacksAttackSpeed} 層"
+            ],
+            [
+              "{lang:item.module.killStackBurstingRadius}",
+              "濺射半徑 +值 × 2 格",
+              "{cfg:kuva_lich.maxStacksBurstingRadius} 層"
+            ],
+            [
+              "{lang:item.module.killStackFiringRate}",
+              "{lang:item.module.firing_rate} +值，弓弩同樣翻倍",
+              "{cfg:kuva_lich.maxStacksFiringRate} 層"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "層數按詞條種類記在你身上，不跟着武器走：換武器不清層，但只有當前武器的面板上有這條詞條時才生效。",
+            "{lang:item.module.killStackBaseDamage}只數<w>藥水類</w>負面效果（緩慢、中毒、虛弱等）；本模組的元素狀態不是藥水效果，不算數。",
+            "必須是武器這一擊打死目標才算；元素持續傷害、濺射打死的不算。處決也算一次擊殺。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "《星際戰甲》裏的鍍層（Galvanized）系列模組就是這種設計：擊殺後獲得一段時間的加成，最多能疊好幾層。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "進階細節",
+          "text": "是否打死目標，按扣護甲之前的傷害判斷，所以偶爾沒打死也會 +1 層。"
+        },
+        {
+          "type": "p",
+          "text": "疊層機制的完整説明見[[combat/kill_stack]]；面板上怎麼看當前層數見[[weapons/weapon_panel]]。"
+        }
+      ]
+    },
+    {
+      "id": "warframe_attr_survival",
+      "title": "戰甲 · 生存類",
+      "icon": "kuvalich:warframe_rare_module",
+      "summary": "生命、護甲與護盾",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "[[start/glossary|戰甲模組]]是裝給你自己的模組，放在[[warframe/warframe_table]]裏，共 <t>8</t> 個槽。這組詞條管你的生命、護甲和護盾。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "效果",
+            "怎麼算"
+          ],
+          "widths": [
+            3,
+            4,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.health}",
+              "最大生命更高",
+              "每滿 10% → +10%；負值最多 -90%"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.armor}",
+              "護甲和盔甲韌性更高",
+              "每滿 10% → 兩者各 +10%；負值同樣按檔降低"
+            ],
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shield}",
+                "獲得護盾，先替你擋傷害",
+                "護盾上限 = 最大生命 × 值 × {cfg:kuva_lich.shieldCapMultiplier}"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shield}",
+                "<b>不給黃心</b>，裝着它時金蘋果等別處給的黃心也會被清掉",
+                "只有捱打或打中別人後的等待期間能保住"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}",
+                "護盾回得更快",
+                "每秒回 護盾上限 × 1% × (1 + 值)，多張相加"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}",
+                "護盾隔多久才開始回",
+                "<w>逐張相乘</w>：約 10 秒 × (1 + 值) × (1 + 值)……；負值縮短"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "護盾怎麼回"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "<hl>護盾</hl>就是原版的黃心（傷害吸收），捱打時先扣它。回復分三步："
+        },
+        {
+          "type": "steps",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "items": [
+            "你<w>捱打或打中別人</w>時，護盾回復進入等待：約 10 秒 × 延遲倍率（取整到秒）。",
+            "如果這一下之後護盾已經歸零，等待時間 <b>×3</b>。",
+            "等待結束後每秒回復一次，直到回滿上限。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "戰甲詞條大約每 0.25 秒刷新一次。",
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "text": "金蘋果等給的黃心，超出護盾上限的部分會被削掉。"
+            }
+          ]
+        },
+        {
+          "type": "p",
+          "text": "<dim>下面三條「固定」詞條不會出現在內置模組和[[start/glossary|裂罅模組]]上，只會來自整合包另外添加的自訂模組。</dim>"
+        },
+        {
+          "type": "table",
+          "header": [
+            "固定數值詞條",
+            "效果"
+          ],
+          "widths": [
+            3,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fixedHealth}",
+              "最大生命<w>固定</w>為該數值；多張相加；百分比生命不再生效"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fixedArmor}",
+              "護甲固定為該數值；多張相加；身上盔甲的護甲和百分比護甲都不再起作用"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fixedShield}",
+              "護盾上限固定為該數值；多張相加；百分比護盾不再生效"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "護盾細節見[[warframe/shield]]；生命、護甲為什麼只認整 10% 見[[reference/attr_rules]]。"
+        }
+      ]
+    },
+    {
+      "id": "warframe_attr_resist",
+      "title": "戰甲 · 抗性類",
+      "icon": "kuvalich:warframe_uncommon_module",
+      "summary": "四種抗性、擊退與回血",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "這組[[start/glossary|戰甲]]詞條讓你少受某一類傷害、少被擊退，或者回血更多。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "效果",
+            "怎麼算"
+          ],
+          "widths": [
+            3,
+            5,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fireProtection}",
+              "少受火焰類傷害（着火、巖漿、火球等）",
+              "<w>逐張相乘</w>：受傷 × (1 − 值)"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.electricProtection}",
+              "少受閃電類傷害（雷擊、電擊元素）",
+              "同上"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.homologousProtection}",
+              "少受其他玩家的傷害（PvP 用）",
+              "同上"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fallProtection}",
+              "少受摔落傷害",
+              "同上"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.knockbackResistance}",
+              "更不容易被擊退",
+              "每滿 10% → 擊退抗性 +0.1；多張相加"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.responseRate}",
+              "回血更多（自然回復、生命恢復、治療藥水等）",
+              "回血量 × (1 + 值)；多張相加"
+            ]
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "例：兩張 60% 火焰抗性 → 受傷 × 0.4 × 0.4 = 0.16，減傷 84%（不是 120%）"
+        },
+        {
+          "type": "list",
+          "items": [
+            "相乘意味着越堆越難漲：要完全免疫，得有單張 100%（或疊層版疊到 值 × 層數 = 100%）。",
+            "擊退抗性疊到 100% 就完全不被擊退。",
+            "負值抗性會讓你受到更多傷害；回血倍率總和 ≤ -100% 時完全無法回血。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "抗性只減<w>穿過護盾之後</w>真正扣血的那部分；護盾吸收掉的部分不吃抗性。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "進階細節",
+          "text": "其他模組的「電系」傷害不一定算閃電類。"
+        },
+        {
+          "type": "p",
+          "text": "抗性的擊殺疊層版本見[[reference/warframe_attr_killstack]]。"
+        }
+      ]
+    },
+    {
+      "id": "warframe_attr_mobility",
+      "title": "戰甲 · 機動與工具",
+      "icon": "kuvalich:warframe_common_module",
+      "summary": "移速、跳躍、挖掘與掉落",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "這組[[start/glossary|戰甲]]詞條管跑多快、跳多高、手夠多遠、挖多快這些日常能力。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條",
+            "效果",
+            "怎麼算"
+          ],
+          "widths": [
+            3,
+            4,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}",
+              "移動更快；名字叫衝刺，<w>走路也加</w>",
+              "每滿 10% → 移速 +10%"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.jumpBoost}",
+              "跳得更高",
+              "高度約為原來的 (1 + 值) 倍"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.reachDistance}",
+              "夠方塊更遠（挖、放、交互）",
+              "每滿 10% → +10%"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}",
+              "挖得更快",
+              "挖掘速度 × (1 + 值)"
+            ],
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}",
+                "打怪掉得更多",
+                "掉落 × (1 + 值 × {cfg:kuva_lich.itemDropEffectMultiplier|pctv})"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableOreDropMultiplier",
+                "cfg:kuva_lich.oreDropEffectMultiplier"
+              ],
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}",
+                "挖礦掉得更多",
+                "幸運結算後再 × (1 + 值 × {cfg:kuva_lich.oreDropEffectMultiplier|pctv})"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "{lang:kuvaweapon.warframe_attribute_type.reachDistance}不影響打怪的距離，那是武器的{lang:item.module.attackRange}。",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOreDropMultiplier",
+                "cfg:kuva_lich.oreDropEffectMultiplier"
+              ],
+              "text": "{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}只對親手挖的礦生效，絲綢之觸不吃。詳見[[world/ore_drop_multiplier]]。"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+          "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+          "items": [
+            "只算傷害記在你名下的擊殺：近戰、箭、槍都行，寵物打死的不算。",
+            "只對動物和「怪物」類生物生效。",
+            "裝備、武器、工具（有耐久的東西）不參與放大。",
+            "數量的小數部分按幾率進位；總倍率 ≤ 0 時，非裝備掉落全部消失。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "cfg:kuva_lich.itemDropEffectMultiplier"
+          ],
+          "text": "用槍擊殺時，槍上的{lang:item.module.gun_loot_drop}會加進這條一起算，見[[tacz/tacz_gun_attributes]]。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "跳躍的算法：起跳速度 × √(1 + 值)。",
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "text": "史萊姆、巖漿史萊姆、地獄幽靈、夜魅、界伏蚌、終界龍，以及魚、墨魚等水生生物，在原版裏不算動物或怪物，不吃掉落倍率。自訂 NPC 模組的 NPC 例外，也吃。"
+            },
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "text": "掉落倍率不封頂，超過一組的分幾堆掉。"
+            },
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "text": "整合包裏其他模組的掉落加成先算，這條最後再乘，會連乘。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "warframe_attr_killstack",
+      "title": "戰甲 · 擊殺疊層",
+      "icon": "kuvalich:warframe_prime_module",
+      "summary": "擊殺疊層，戰甲越打越硬",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "卡面帶「擊殺時獲取」字樣的[[start/glossary|戰甲]]詞條會疊層：每打死一個目標 +1 層，讓你越打越硬。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "怎樣算擊殺",
+              "傷害記在你名下、這一下打死了目標：近戰、箭、槍都算"
+            ],
+            [
+              "每層計時",
+              "{cfg:kuva_lich.warframeStackDecayTicks|sec}；期間再擊殺就重新計時"
+            ],
+            [
+              "掉層",
+              "超時沒有擊殺就掉 <t>1</t> 層，然後重新計時"
+            ],
+            [
+              "清空",
+              "下線清空；<g>死亡不清空</g>"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "表裏的「+值」表示每層把這個值加到普通版的同名詞條上。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "詞條（疊層版）",
+            "每層效果",
+            "上限"
+          ],
+          "widths": [
+            3,
+            6,
+            2
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.health}",
+              "+值（仍按 10% 一檔）",
+              "{cfg:kuva_lich.maxStacksHealth} 層"
+            ],
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shield}",
+                "+值",
+                "{cfg:kuva_lich.maxStacksShield} 層"
+              ]
+            },
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.armor}",
+              "+值（仍按 10% 一檔）",
+              "{cfg:kuva_lich.maxStacksArmor} 層"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}",
+              "+值（仍按 10% 一檔）",
+              "{cfg:kuva_lich.maxStacksSprintSpeed} 層"
+            ],
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}",
+                "+值",
+                "{cfg:kuva_lich.maxStacksShieldRecoveryRate} 層"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}",
+                "護盾回復前的等待 × (1 + 值 × 層數)，單獨一個乘區",
+                "{cfg:kuva_lich.maxStacksShieldRecoveryDelay} 層"
+              ]
+            },
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fireProtection}",
+              "火焰受傷 × (1 − 值 × 層數)，單獨一個乘區",
+              "{cfg:kuva_lich.maxStacksFireProtection} 層"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.electricProtection}",
+              "閃電受傷 × (1 − 值 × 層數)，單獨一個乘區",
+              "{cfg:kuva_lich.maxStacksElectricProtection} 層"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.homologousProtection}",
+              "玩家傷害 × (1 − 值 × 層數)，單獨一個乘區",
+              "{cfg:kuva_lich.maxStacksHomologousProtection} 層"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.responseRate}",
+              "+值",
+              "{cfg:kuva_lich.maxStacksResponseRate} 層"
+            ],
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}",
+                "+值",
+                "{cfg:kuva_lich.maxStacksItemDropMultiplier} 層"
+              ]
+            },
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}",
+              "+值",
+              "{cfg:kuva_lich.maxStacksDiggingSpeed} 層"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "寵物、元素持續傷害、處決 / 秒殺打死的不算擊殺；武器濺射打死的算。",
+            "層數記在你身上：卸下對應模組後不再生效，重新裝上時剩下的層數照舊算。",
+            "疊層版和普通版同名，卡面帶「擊殺時獲取」字樣的才是疊層版。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "疊層機制見[[combat/kill_stack]]；普通版詞條見[[reference/warframe_attr_survival]]、[[reference/warframe_attr_resist]]。"
+        }
+      ]
+    }
+  ]
+}

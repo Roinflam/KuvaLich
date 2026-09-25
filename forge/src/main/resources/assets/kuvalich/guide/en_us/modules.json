@@ -1,0 +1,1266 @@
+{
+  "id": "modules",
+  "order": 60,
+  "title": "Mod System",
+  "subtitle": "Slot mods into weapons and Warframes",
+  "icon": "kuvalich:item_prime_module",
+  "entries": [
+    {
+      "id": "module_overview",
+      "title": "What mods are and how to install them",
+      "icon": "kuvalich:item_common_module",
+      "summary": "Mod types, sources, revealing and installing",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>Mods</hl> are upgrade cards you slot into weapons or Warframes. Each card carries a few <t>stats</t>, such as '+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}'. Installing a mod doesn't use it up; you can pull it out and move it elsewhere at any time."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In Warframe, Mods are the upgrade cards you slot into your Warframe and weapons. Each piece of gear only has room for so many, so picking the right combination is the heart of building your gear."
+        },
+        {
+          "type": "p",
+          "text": "<dim>Stuck on a Warframe term (Kuva, Requiem, Riven...)? Look it up in [[start/glossary]].</dim>"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Type",
+            "Installed on",
+            "When it works"
+          ],
+          "rows": [
+            [
+              "<t>Weapon mods</t>",
+              "A consecrated weapon, <t>8</t> slots each; the mods travel with that weapon",
+              "When you attack with it in your main hand"
+            ],
+            [
+              "<t>Warframe mods</t>",
+              "You yourself, <t>8</t> slots",
+              "Always on once installed"
+            ]
+          ],
+          "widths": [
+            2,
+            4,
+            3
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "What 'consecrated' means",
+          "text": "<hl>Consecrating</hl> gives an item a weapon stat panel; only consecrated items can take weapon mods. [[weapons/kuva_weapons|Kuva weapons]] come consecrated; swords, bows, shields, armour and so on must first be consecrated in the {item:kuvalich:requiem_evolve} with a {item:kuvalich:riven_sliver}, see [[weapons/requiem_evolve]]."
+        },
+        {
+          "type": "h",
+          "text": "Step 1: get mods"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Source",
+            "Drops",
+            "Chance"
+          ],
+          "rows": [
+            [
+              "When [[world/requiem_ore|Requiem Ore]] drops a Requiem card",
+              "An unrevealed Bronze / Silver / Gold mod",
+              "Gold {cfg:kuva_lich.rareModuleDropChance|pctv}, Silver {cfg:kuva_lich.uncommonModuleDropChance|pctv}, Bronze {cfg:kuva_lich.commonModuleDropChance|pctv}"
+            ],
+            [
+              "A player kills a [[enemies/kuva_slave|Kuva Thrall]]",
+              "Same as above",
+              "Same as above"
+            ],
+            [
+              "Killing a [[enemies/kuva_master|Kuva Lich]] on a successful decryption",
+              "Always one unrevealed Prime or Riven mod",
+              "Prime {cfg:kuva_lich.masterPrimeModuleChance|pctv}, otherwise Riven"
+            ],
+            [
+              "Merging three into one at the [[weapons/requiem_recast|Requiem Recast]]",
+              "One unrevealed mod",
+              "See the link"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "<t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> of dropped mods are weapon mods; the rest are Warframe mods."
+        },
+        {
+          "type": "h",
+          "text": "Step 2: reveal"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "A fresh drop is <t>unrevealed</t>: its name marks it as unrevealed and its stats read <dim>+??% ???</dim>. It can't be installed yet.",
+            "Hold it in your <w>main hand</w> and right-click. The off-hand does nothing.",
+            "The card vanishes and a revealed mod drops at your feet. Pick it up."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Step 3: install"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Put a consecrated weapon into the weapon slot of the {item:kuvalich:requiem_weapon_table}.",
+            "Drag mods into the 8 mod slots. <t>Shift + click</t> in your inventory drops one into a slot that accepts it.",
+            "Take the weapon out; the mods are now written onto it. To swap, put it back and pull the card out. Removing mods costs nothing."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Warframe mods are simpler: open the {item:kuvalich:requiem_warframe_table} and drop them straight into its slots, see [[warframe/warframe_module]]."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Check the level first",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "A newly revealed mod is usually level <t>1</t> and gives only 1/{cfg:kuva_lich.moduleMaxLevel} of its full effect, so it may seem to do little at first. To level it up, see [[modules/module_level]]."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Won't go in?",
+          "text": "Common reasons: two copies of the same mod, more than 1 Riven mod, or a card that isn't revealed yet. When you pick up a mod in an arsenal, conflicting slots <b>pulse red</b>. Full rules: [[modules/module_limits]]."
+        }
+      ]
+    },
+    {
+      "id": "module_limits",
+      "title": "Mod rules and limits",
+      "icon": "minecraft:barrier",
+      "summary": "Slots, conflicts, one Riven and other rules",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "These rules decide which mods a weapon or Warframe can take. When an arsenal won't let you place a mod, go down the list to find out why."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Every weapon / Warframe has exactly <t>8</t> slots; levels don't change that.",
+            "<b>One copy of each mod</b>: the normal, Prime and [[modules/module_rarity|Galvanized]] versions count as the same mod, e.g. Fury, Fury Prime and Galvanized Fury - pick one.",
+            "<b>Mods that boost the same stat may also conflict</b>: True Steel and Lethal Combo both add melee critical chance, so only one fits.",
+            "At most <t>1</t> [[modules/riven_module|Riven mod]] per item.",
+            "Unrevealed cards can't be installed; reveal them first with a main-hand right-click."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Watch for red",
+          "text": "When you pick up a mod in an arsenal, the slots that conflict with it <b>pulse red</b>; when a Shift + click fails, the conflicting slots flash a few times. Red means: pick another mod."
+        },
+        {
+          "type": "h",
+          "if": "cfg:modules.disabledModuleTypes",
+          "text": "Mods that never come out of reveals"
+        },
+        {
+          "type": "p",
+          "if": "cfg:modules.disabledModuleTypes",
+          "text": "These types are never produced when you reveal a card: <b>{cfg:modules.disabledModuleTypes|list}</b><dim> (internal type names)</dim>"
+        },
+        {
+          "type": "list",
+          "if": "cfg:modules.disabledModuleTypes",
+          "items": [
+            "Every version of such a type is included: normal, Prime, Galvanized / Executioner.",
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "<g>Mods you already own are unaffected</g>: they can still be installed, work and level up."
+            },
+            {
+              "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "<g>Mods you already own are unaffected</g>: they can still be installed and work."
+            },
+            {
+              "if": "!module:riven_weapon_module",
+              "text": "Weapon Rivens are among them: unrevealed weapon Rivens can't be revealed, and cycling one you already have <b>wastes the Kuva</b>."
+            },
+            {
+              "if": "!module:riven_warframe_module",
+              "text": "Warframe Rivens are among them: unrevealed Warframe Rivens can't be revealed, and cycling one you already have <b>wastes the Kuva</b>."
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:modules.attributeValueRanges",
+          "text": "Value range per card"
+        },
+        {
+          "type": "p",
+          "if": "cfg:modules.attributeValueRanges",
+          "text": "Some stats have a minimum and maximum on a single card, written as 'stat:min:max': <t>{cfg:modules.attributeValueRanges|list}</t>"
+        },
+        {
+          "type": "list",
+          "if": "cfg:modules.attributeValueRanges",
+          "items": [
+            "Values outside the range count as the boundary; unlisted stats are unrestricted.",
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "The range applies to the <em>max-level</em> value, before level scaling: with a max of 3 (300%), a max-level +400% card counts as +300%, and as +150% at half level."
+            },
+            {
+              "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "With a max of 3 (300%), a +400% card counts as +300%."
+            },
+            "The card itself still shows the original number. Hold <t>Ctrl</t> on the weapon panel for the source view, which shows each card's value after the range is applied."
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:modules.attributeTotalCaps",
+          "text": "Total cap per stat"
+        },
+        {
+          "type": "p",
+          "if": "cfg:modules.attributeTotalCaps",
+          "text": "When several cards add the same stat, their total is capped, written as 'stat:cap': <t>{cfg:modules.attributeTotalCaps|list}</t>"
+        },
+        {
+          "type": "list",
+          "if": "cfg:modules.attributeTotalCaps",
+          "items": [
+            "Only positive totals are capped; negative totals are untouched, and unlisted stats are unrestricted.",
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "The cap applies to values after level scaling."
+            },
+            "[[combat/kill_stack|Kill stack]] bonuses are added after the cap, so they can go past it.",
+            {
+              "if": ["cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule", "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"],
+              "text": "Counted per item: the 8 mods on your main-hand weapon are capped together, and so are your 8 Warframe mods; items in extra slots such as the off-hand are capped on their own and then added at their rate, see [[modules/multi_slot]]."
+            },
+            {
+              "if": ["!cfg:kuva_lich.enableOffhandModule", "!cfg:kuva_lich.enableHelmetModule", "!cfg:kuva_lich.enableChestplateModule", "!cfg:kuva_lich.enableLeggingsModule", "!cfg:kuva_lich.enableBootsModule", "!cfg:kuva_lich.enableCuriosModule||!mod:curios"],
+              "text": "Counted per item: the 8 mods on your main-hand weapon are capped together, and so are your 8 Warframe mods."
+            },
+            "Warframe fire / electric / homologous / fall resistance and shield recharge delay multiply rather than add, so this cap doesn't apply to them.",
+            "When a stat gets cut, holding Ctrl on the weapon panel shows an extra section with the values before and after the cut."
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:modules.attributeValueRanges",
+          "text": "Stat names in the rules"
+        },
+        {
+          "type": "h",
+          "if": [
+            "!cfg:modules.attributeValueRanges",
+            "cfg:modules.attributeTotalCaps"
+          ],
+          "text": "Stat names in the rules"
+        },
+        {
+          "type": "p",
+          "if": "cfg:modules.attributeValueRanges",
+          "text": "Values in the rules are decimals: <t>1</t> means 100%, <t>-0.5</t> means −50%; fixed-value stats such as fixed health / shield / armour are plain points. Common stat names are listed below; for the rest see [[reference]]."
+        },
+        {
+          "type": "p",
+          "if": [
+            "!cfg:modules.attributeValueRanges",
+            "cfg:modules.attributeTotalCaps"
+          ],
+          "text": "Values in the rules are decimals: <t>1</t> means 100%, <t>-0.5</t> means −50%; fixed-value stats such as fixed health / shield / armour are plain points. Common stat names are listed below; for the rest see [[reference]]."
+        },
+        {
+          "type": "table",
+          "if": "cfg:modules.attributeValueRanges",
+          "header": [
+            "Written in the rule",
+            "In-game name"
+          ],
+          "rows": [
+            [
+              "meleeDamage",
+              "{lang:kuvaweapon.item_attribute_type.meleeDamage}"
+            ],
+            [
+              "remoteDamage",
+              "{lang:kuvaweapon.item_attribute_type.remoteDamage}"
+            ],
+            [
+              "multishot",
+              "{lang:kuvaweapon.item_attribute_type.multishot}"
+            ],
+            [
+              "attackSpeed",
+              "{lang:kuvaweapon.item_attribute_type.attackSpeed}"
+            ],
+            [
+              "triggerChance",
+              "{lang:kuvaweapon.item_attribute_type.triggerChance}"
+            ],
+            [
+              "meleeCriticalStrikeProbability",
+              "{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}"
+            ],
+            [
+              "meleeCriticalStrikeMultiplier",
+              "{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier}"
+            ],
+            [
+              "remoteCriticalStrikeProbability",
+              "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}"
+            ],
+            [
+              "remoteCriticalStrikeMultiplier",
+              "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier}"
+            ],
+            [
+              "health",
+              "{lang:kuvaweapon.warframe_attribute_type.health}"
+            ],
+            [
+              "shield",
+              "{lang:kuvaweapon.warframe_attribute_type.shield}"
+            ],
+            [
+              "armor",
+              "{lang:kuvaweapon.warframe_attribute_type.armor}"
+            ]
+          ],
+          "widths": [
+            3,
+            2
+          ]
+        },
+        {
+          "type": "table",
+          "if": [
+            "!cfg:modules.attributeValueRanges",
+            "cfg:modules.attributeTotalCaps"
+          ],
+          "header": [
+            "Written in the rule",
+            "In-game name"
+          ],
+          "rows": [
+            [
+              "meleeDamage",
+              "{lang:kuvaweapon.item_attribute_type.meleeDamage}"
+            ],
+            [
+              "remoteDamage",
+              "{lang:kuvaweapon.item_attribute_type.remoteDamage}"
+            ],
+            [
+              "multishot",
+              "{lang:kuvaweapon.item_attribute_type.multishot}"
+            ],
+            [
+              "attackSpeed",
+              "{lang:kuvaweapon.item_attribute_type.attackSpeed}"
+            ],
+            [
+              "triggerChance",
+              "{lang:kuvaweapon.item_attribute_type.triggerChance}"
+            ],
+            [
+              "meleeCriticalStrikeProbability",
+              "{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}"
+            ],
+            [
+              "meleeCriticalStrikeMultiplier",
+              "{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier}"
+            ],
+            [
+              "remoteCriticalStrikeProbability",
+              "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}"
+            ],
+            [
+              "remoteCriticalStrikeMultiplier",
+              "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier}"
+            ],
+            [
+              "health",
+              "{lang:kuvaweapon.warframe_attribute_type.health}"
+            ],
+            [
+              "shield",
+              "{lang:kuvaweapon.warframe_attribute_type.shield}"
+            ],
+            [
+              "armor",
+              "{lang:kuvaweapon.warframe_attribute_type.armor}"
+            ]
+          ],
+          "widths": [
+            3,
+            2
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.moduleAttributeMultiplier!=1",
+          "text": "Card value multipliers"
+        },
+        {
+          "type": "h",
+          "if": [
+            "cfg:kuva_lich.moduleAttributeMultiplier==1",
+            "cfg:kuva_lich.keyAttributeMultiplier!=1"
+          ],
+          "text": "Card value multipliers"
+        },
+        {
+          "type": "kv",
+          "if": "cfg:kuva_lich.moduleAttributeMultiplier!=1",
+          "rows": [
+            [
+              "General stat multiplier",
+              "{cfg:kuva_lich.moduleAttributeMultiplier|x}"
+            ],
+            [
+              "Key stat multiplier",
+              "{cfg:kuva_lich.keyAttributeMultiplier|x}"
+            ]
+          ]
+        },
+        {
+          "type": "kv",
+          "if": [
+            "cfg:kuva_lich.moduleAttributeMultiplier==1",
+            "cfg:kuva_lich.keyAttributeMultiplier!=1"
+          ],
+          "rows": [
+            [
+              "General stat multiplier",
+              "{cfg:kuva_lich.moduleAttributeMultiplier|x}"
+            ],
+            [
+              "Key stat multiplier",
+              "{cfg:kuva_lich.keyAttributeMultiplier|x}"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.moduleAttributeMultiplier!=1",
+          "items": [
+            "Multipliers are applied when a card is <em>created</em> (revealed or Riven-cycled); the numbers on the card already include them.",
+            "<em>Key stats</em>: critical chance, critical damage, status chance, status duration (including critical chance / status chance on dash attacks), shield recharge rate / delay.",
+            "The kill stack versions of melee critical damage, status chance and shield recharge are key stats too; everything else is a <em>general stat</em>.",
+            "Riven mods use only the general multiplier for all their stats."
+          ]
+        },
+        {
+          "type": "list",
+          "if": [
+            "cfg:kuva_lich.moduleAttributeMultiplier==1",
+            "cfg:kuva_lich.keyAttributeMultiplier!=1"
+          ],
+          "items": [
+            "Multipliers are applied when a card is <em>created</em> (revealed or Riven-cycled); the numbers on the card already include them.",
+            "<em>Key stats</em>: critical chance, critical damage, status chance, status duration (including critical chance / status chance on dash attacks), shield recharge rate / delay.",
+            "The kill stack versions of melee critical damage, status chance and shield recharge are key stats too; everything else is a <em>general stat</em>.",
+            "Riven mods use only the general multiplier for all their stats."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module_rarity",
+      "title": "Mod rarity",
+      "icon": "kuvalich:item_prime_module",
+      "summary": "The five rarities: colours, sources, differences",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Mods come in five rarities. The <em>colour of the stat lines</em> on a card is its rarity colour, so you can tell at a glance. Weapon and Warframe mods use the same five tiers."
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:item_common_module",
+            "kuvalich:item_uncommon_module",
+            "kuvalich:item_rare_module",
+            "kuvalich:item_prime_module",
+            "kuvalich:item_riven_module"
+          ],
+          "caption": "The five weapon mod tiers (Warframe mods look different but use the same tiers)"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Rarity",
+            "Source"
+          ],
+          "rows": [
+            [
+              "<c:CD7F32>Bronze</c>",
+              "[[world/requiem_ore|Requiem Ore]], [[enemies/kuva_slave|Kuva Thralls]]"
+            ],
+            [
+              "<c:C0C0C0>Silver</c>",
+              "Same as above"
+            ],
+            [
+              "<c:FFD700>Gold</c>",
+              "Same as above"
+            ],
+            [
+              "<c:55FFFF>Prime</c>",
+              "Killing a [[enemies/kuva_master|Kuva Lich]] on a successful decryption"
+            ],
+            [
+              "<c:FF55FF>Riven</c>",
+              "Same as above"
+            ]
+          ],
+          "widths": [
+            1,
+            3
+          ]
+        },
+        {
+          "type": "p",
+          "text": "<c:FF55FF>Riven mods</c> have fully random stats; see [[modules/riven_module]]. Spare cards can be merged three-into-one at the [[weapons/requiem_recast|Requiem Recast]]."
+        },
+        {
+          "type": "h",
+          "text": "Three series in the Prime tier"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Series",
+            "What it does",
+            "Examples"
+          ],
+          "rows": [
+            [
+              "Prime",
+              "A stronger version of a normal mod; only one of the two fits",
+              "Pressure Point Prime, Vitality Prime"
+            ],
+            [
+              "<t>Galvanized</t> (weapon)",
+              "Carries <hl>kill stack</hl> stats: stronger with every kill",
+              "Galvanized Chamber, Galvanized Steel"
+            ],
+            [
+              "<t>Executioner</t> (Warframe)",
+              "Carries kill stack stats, mostly survivability, plus some speed, loot and digging",
+              "Executioner Vitality, Executioner Steel Fiber"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "How kill stacks build up and fall off: see [[combat/kill_stack]]."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "Warframe's own mods also come in Bronze, Silver and Gold tiers. Primed mods are stronger versions of normal mods, while Galvanized mods build up bonuses on kills."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "The same mod can exist in several tiers, e.g. Silver 'Fury' and Prime 'Fury Prime'. They <w>count as the same mod</w> and can't be installed together."
+        }
+      ]
+    },
+    {
+      "id": "module_level",
+      "title": "Mod levels and Endo",
+      "icon": "kuvalich:endo",
+      "summary": "Level scaling, upgrade costs, Endo sources",
+      "blocks": [
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Mods have no levels: every card works at full strength as soon as you get it, no upgrading needed."
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Mods have levels; the max level is <t>{cfg:kuva_lich.moduleMaxLevel}</t>. A newly revealed mod is usually level 1, and you raise it one level at a time with <hl>{item:kuvalich:endo}</hl>, the mod upgrade material."
+        },
+        {
+          "type": "formula",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Actual effect = max-level value × current level ÷ {cfg:kuva_lich.moduleMaxLevel}"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "<b>A level 1 mod gives only 1/{cfg:kuva_lich.moduleMaxLevel} of its full value</b> - that is why a new mod seems to do nothing."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "The numbers on a card are already scaled to its level. The progress bar is followed by <t>Lv.current/max</t> and disappears at max level."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "In Warframe, Endo is the material you spend to rank up mods, and dissolving mods you don't need gives some back."
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Upgrading at the Requiem Forge"
+        },
+        {
+          "type": "steps",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "items": [
+            "Open the {item:kuvalich:requiem_evolve} and put one revealed, not-yet-maxed mod in the left slot, one at a time.",
+            "Put {item:kuvalich:endo} in the material slot. The card now shows <t>Upgrade cost: N Endo</t>.",
+            "If you have enough, the right slot shows the mod one level higher. <g>Endo is only spent when you take it</g>.",
+            "Each upgrade adds just 1 level; put the new card back in the left slot to keep going."
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "How much Endo it takes"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Higher levels cost more, lower rarities cost less. The last Prime level alone takes <t>{cfg:kuva_lich.endoLastLevelCost}</t>."
+        },
+        {
+          "type": "table",
+          "if": [
+            "cfg:kuva_lich.enableModuleLevelSystem",
+            "cfg:kuva_lich.moduleMaxLevel==10",
+            "cfg:kuva_lich.endoLastLevelCost==64",
+            "cfg:kuva_lich.endoCostExponent==2"
+          ],
+          "header": [
+            "Rarity",
+            "Cost per level (1→2 to 9→10)",
+            "Total"
+          ],
+          "rows": [
+            [
+              "<c:CD7F32>Bronze</c>",
+              "1, 1, 2, 4, 5, 7, 10, 13, 16",
+              "<em>59</em>"
+            ],
+            [
+              "<c:C0C0C0>Silver</c>",
+              "1, 2, 4, 7, 10, 14, 20, 26, 32",
+              "<em>116</em>"
+            ],
+            [
+              "<c:FFD700>Gold</c>",
+              "1, 3, 6, 10, 15, 21, 30, 39, 48",
+              "<em>173</em>"
+            ],
+            [
+              "<c:55FFFF>Prime</c> / <c:FF55FF>Riven</c>",
+              "1, 3, 7, 13, 20, 28, 39, 51, 64",
+              "<em>226</em>"
+            ]
+          ],
+          "widths": [
+            2,
+            5,
+            1
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Where Endo comes from"
+        },
+        {
+          "type": "table",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "header": [
+            "Source",
+            "Amount"
+          ],
+          "rows": [
+            {
+              "if": "cfg:kuva_lich.endoDropChance>0",
+              "cells": [
+                "Killing a hostile monster with a consecrated weapon in your main hand",
+                "{cfg:kuva_lich.endoDropChance|pctv} chance for {cfg:kuva_lich.endoDropMinAmount}-{cfg:kuva_lich.endoDropMaxAmount}"
+              ]
+            },
+            [
+              "Mining [[world/experience_ore|Experience Ore]]",
+              "50% chance for 1-2"
+            ],
+            [
+              "Dismantling a mod at the [[weapons/requiem_recast|Requiem Recast]]",
+              "Depends on rarity and level, at most 64"
+            ]
+          ],
+          "widths": [
+            3,
+            2
+          ]
+        },
+        {
+          "type": "h",
+          "if": [
+            "cfg:kuva_lich.enableModuleLevelSystem",
+            "cfg:kuva_lich.enableMasteryOnReveal"
+          ],
+          "text": "Mastery: levelling is never wasted"
+        },
+        {
+          "type": "p",
+          "if": [
+            "cfg:kuva_lich.enableModuleLevelSystem",
+            "cfg:kuva_lich.enableMasteryOnReveal"
+          ],
+          "text": "Once you've levelled a mod to some level at the Requiem Forge, every mod of the same type and rarity you <t>reveal</t> later comes out at that level."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": [
+            "cfg:kuva_lich.enableModuleLevelSystem",
+            "cfg:kuva_lich.enableMasteryOnReveal"
+          ],
+          "text": "Mastery only applies at the moment you <em>right-click to reveal</em>, and only counts levels gained at the Requiem Forge. Mods that are already revealed never level themselves up."
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Advanced details"
+        },
+        {
+          "type": "formula",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Level n → n+1 = {cfg:kuva_lich.endoLastLevelCost} × (n ÷ {cfg:kuva_lich.moduleMaxLevel|add:-1}) ^ {cfg:kuva_lich.endoCostExponent} × rarity factor"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Rarity factors: <c:CD7F32>Bronze</c> 25%, <c:C0C0C0>Silver</c> 50%, <c:FFD700>Gold</c> 75%, <c:55FFFF>Prime</c> and <c:FF55FF>Riven</c> 100%. The first part is rounded, then multiplied by the rarity factor and rounded up, minimum 1."
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "items": [
+            {
+              "if": "cfg:kuva_lich.endoDropChance>0",
+              "text": "Endo from kills only counts hostile monsters: slimes, ghasts, phantoms and the like don't count."
+            },
+            "Mining Experience Ore with Silk Touch gives no Endo.",
+            "Dismantling a mod: Bronze 1, Silver 2, Gold 4, Prime / Riven 8, +1 per level above 1, at most 64. The card is used up.",
+            "Rivens give extra when dismantled: +1 per cycle so far, plus +2 / +4 / +8 / +16 at disposition 2-5.",
+            {
+              "if": "cfg:kuva_lich.enableMasteryOnReveal",
+              "text": "Mastery is tracked per 'type + rarity': cards of the same type in the same tier share one record (e.g. Fury Prime and Galvanized Fury); weapon Rivens are tracked separately for melee / ranged / universal, while Warframe Rivens share one record."
+            },
+            "Cycling a Riven <g>keeps its level</g>, so level it first and cycle later, see [[modules/riven_module]]."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module_codex",
+      "title": "Mod codex",
+      "icon": "kuvalich:requiem_weapon_table",
+      "summary": "Press Tab in an arsenal to browse all mods",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "There are hundreds of mods and no need to memorise them. Each arsenal has a built-in codex, the '{lang:kuvalich.codex.title.weapon}' and the '{lang:kuvalich.codex.title.warframe}', where you can browse mods and see their full cards."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Open the {item:kuvalich:requiem_weapon_table} (or the {item:kuvalich:requiem_warframe_table}).",
+            "Press <t>Tab</t> to open the matching codex.",
+            "Press Tab again to return to the arsenal; Esc first clears the search box, then returns on a second press."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "What's in the codex"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Grouped by rarity (Bronze / Silver / Gold / Prime); each group header shows that tier's discovered / total.",
+            "The badge at the top right shows <t>discovered / total</t> for the whole codex.",
+            "Hover a mod to see its full card.",
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "Values in the codex are shown at <em>max level</em>."
+            },
+            "Search box at the top: matches the name or any text on the card (stat names, numbers), case-insensitive; the whole input counts as one keyword.",
+            "Scroll with the mouse wheel or drag the scrollbar on the right."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "The codex doesn't list <c:FF55FF>Riven mods</c>: their stats are random; see [[modules/riven_module]] for how they roll."
+        },
+        {
+          "type": "h",
+          "text": "What counts as discovered"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Picking up a revealed mod, or simply having one in your inventory, marks it as discovered.",
+            "Your inventory is scanned when you join the game and every 5 seconds after that.",
+            "Mods installed on a weapon / Warframe are not scanned.",
+            "Different rarities of the same mod are recorded separately.",
+            "Undiscovered cells show no icon, only a few scrambled lines - but hovering still shows the stats."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Creative mode"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "Click",
+              "Put one in your inventory; refused (the cell flashes red) if your inventory is full"
+            ],
+            [
+              "Shift + click",
+              "Install it straight into the first free valid slot of the current weapon (or your Warframe)"
+            ],
+            [
+              "When it won't fit",
+              "Refused on a conflict, when no slot is free, or when the Weapon Arsenal holds no weapon"
+            ],
+            [
+              "Survival mode",
+              "View only; clicking does nothing"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "riven_module",
+      "title": "Riven mods",
+      "icon": "kuvalich:item_riven_module",
+      "summary": "Random stats, disposition and cycling",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<c:FF55FF>Riven mods</c> have fully random stats: 2-3 positive stats, possibly plus 1 negative one. They mainly drop when you kill a [[enemies/kuva_master|Kuva Lich]] on a successful decryption."
+        },
+        {
+          "type": "p",
+          "text": "There are weapon Rivens and Warframe Rivens, and both must be revealed with a main-hand right-click first. Each weapon / Warframe can hold only <t>1</t>."
+        },
+        {
+          "type": "table",
+          "header": [
+            "Weapon Riven mode",
+            "Name starts with",
+            "Chance on reveal",
+            "Possible stats"
+          ],
+          "rows": [
+            [
+              "Melee",
+              "MeleeRiven",
+              "25%",
+              "Melee stats + shared stats"
+            ],
+            [
+              "Ranged",
+              "RemoteRiven",
+              "25%",
+              "Ranged stats + shared stats"
+            ],
+            [
+              "Universal",
+              "OmniRiven",
+              "50%",
+              "Any weapon stat"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "The mode is fixed on reveal and never changes. Warframe Rivens have no mode; their names start with Warframe."
+        },
+        {
+          "type": "h",
+          "text": "{lang:kuvaweapon.item_type_riven_trend.tooltip} (●●●○○)"
+        },
+        {
+          "type": "p",
+          "text": "Disposition is shown as 1-5 filled dots. It's decided on reveal and <w>never changes, not even when cycling</w>. More dots mean stronger stats but pricier cycles."
+        },
+        {
+          "type": "table",
+          "header": [
+            "Disposition",
+            "Positive factor",
+            "Negative factor"
+          ],
+          "rows": [
+            [
+              "●○○○○",
+              "×0.6",
+              "×0.7"
+            ],
+            [
+              "●●○○○",
+              "×0.8",
+              "×0.9"
+            ],
+            [
+              "●●●○○",
+              "×1.0",
+              "×1.1"
+            ],
+            [
+              "●●●●○",
+              "×1.2",
+              "×1.3"
+            ],
+            [
+              "●●●●●",
+              "×1.4",
+              "×1.5"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "How the numbers are rolled"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Layout (25% each)",
+            "Positive factor",
+            "Negative factor"
+          ],
+          "rows": [
+            [
+              "2 positive",
+              "×1.0",
+              "—"
+            ],
+            [
+              "2 positive + 1 negative",
+              "<g>×1.2</g>",
+              "×0.75"
+            ],
+            [
+              "3 positive",
+              "<b>×0.75</b>",
+              "—"
+            ],
+            [
+              "3 positive + 1 negative",
+              "×0.9",
+              "×1.125"
+            ]
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "Each stat = base value × layout factor × disposition factor × random roll"
+        },
+        {
+          "type": "p",
+          "text": "Random roll: 0.9-1.1 for positive stats, 0.8-1.2 for the negative one."
+        },
+        {
+          "type": "p",
+          "text": "Example: disposition 3, 2 positive + 1 negative, {lang:kuvaweapon.item_attribute_type.meleeDamage} (base 165%) ≈ 165% × 1.2 × 1.0 × 0.9-1.1 = <t>178%-218%</t> (at max level)."
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.moduleAttributeMultiplier!=1",
+          "text": "All of the above is then multiplied by the general stat multiplier, <t>{cfg:kuva_lich.moduleAttributeMultiplier|x}</t>; see [[modules/module_limits]]."
+        },
+        {
+          "type": "h",
+          "text": "Cycling: rerolling with Kuva"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Put a revealed Riven in the left slot of the {item:kuvalich:requiem_evolve} and enough {item:kuvalich:kuva} in the material slot. Where to get Kuva: [[start/materials]].",
+            "A card with new stats appears on the right at once. <w>This is when you pay for this cycle</w>, and the original card's cycle count goes up by 1.",
+            "To take the new stats: take the right-hand card; the original disappears.",
+            "To keep the old stats: take the original back out of the left slot, or just close the screen. The new card is discarded and the Kuva already paid is not refunded."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Every preview costs Kuva",
+          "text": "Each preview is paid for once. If you change the Kuva stack after the preview (adding some or taking some out), it previews again with the new material and charges again, as long as what's left can pay. So rerolling has a real cost: you pay once per reroll."
+        },
+        {
+          "type": "h",
+          "text": "How much Kuva a cycle costs"
+        },
+        {
+          "type": "formula",
+          "text": "Weapon Riven: min(cycles so far, 8) + 2 × disposition − 1　|　Warframe Riven: min(cycles so far, 8) + disposition²"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Disposition",
+            "Weapon Riven",
+            "Warframe Riven"
+          ],
+          "rows": [
+            [
+              "1",
+              "1 - 9",
+              "1 - 9"
+            ],
+            [
+              "2",
+              "3 - 11",
+              "4 - 12"
+            ],
+            [
+              "3",
+              "5 - 13",
+              "9 - 17"
+            ],
+            [
+              "4",
+              "7 - 15",
+              "16 - 24"
+            ],
+            [
+              "5",
+              "9 - 17",
+              "25 - 33"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Each cell reads 'first cycle - cap': every cycle costs 1 more, and the cost stops rising after 8 cycles."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "The cycle count appears on the card as '{lang:kuvaweapon.item_type_riven_cycle.tooltip}', hidden at 0. While the Requiem Forge screen is open, the card shows <t>Cycle cost: N Kuva</t> directly."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In Warframe, Riven mods also have to be unveiled by completing a challenge, and cycling them costs Kuva too. Disposition there varies by weapon: the higher it is, the stronger the Riven's stats."
+        },
+        {
+          "type": "tip",
+          "style": "bad",
+          "if": "!module:riven_weapon_module",
+          "title": "Weapon Rivens can't be revealed",
+          "text": "Kuva Liches can still drop unrevealed weapon Rivens, but right-clicking won't reveal them. <b>Don't cycle</b> the weapon Rivens you already have: the Kuva is taken but no new card comes out. Unwanted ones can be dismantled at the [[weapons/requiem_recast|Requiem Recast]]."
+        },
+        {
+          "type": "tip",
+          "style": "bad",
+          "if": "!module:riven_warframe_module",
+          "title": "Warframe Rivens can't be revealed",
+          "text": "Kuva Liches can still drop unrevealed Warframe Rivens, but right-clicking won't reveal them. <b>Don't cycle</b> the Warframe Rivens you already have: the Kuva is taken but no new card comes out. Unwanted ones can be dismantled at the [[weapons/requiem_recast|Requiem Recast]]."
+        },
+        {
+          "type": "h",
+          "text": "Advanced details"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Disposition odds on reveal: 5 dots 2.5%, 4 dots about 4.9%, 1-3 dots about 30.9% each.",
+            "Weapon Rivens <b>never roll [[combat/elements|combined elements]]</b> (Gas, Radiation, Magnetic, Corrosive, Blast, Viral); combined elements are mostly found on Gold / Prime mods.",
+            "The negative stat is never a kill stack stat.",
+            "On weapon Rivens the negative stat is also never one of the four base elements, {lang:kuvaweapon.item_attribute_type.true_bullet}, {lang:kuvaweapon.item_attribute_type.gun_loot_drop}, {lang:kuvaweapon.item_attribute_type.execute_threshold}, {lang:kuvaweapon.item_attribute_type.purge_buff} or {lang:kuvaweapon.item_attribute_type.execute_chance}.",
+            {
+              "if": "mod:tacz",
+              "text": "Gun-only stats (including multishot, fire rate and burst radius) can also appear on ranged and universal weapon Rivens."
+            },
+            "Warframe Rivens never roll fixed-value stats (fixed health / shield / armour).",
+            "A cycled card keeps the original's mode and disposition; its name is re-rolled.",
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "Cycling keeps the level too, so you can level a Riven first and cycle later."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "multi_slot",
+      "title": "Multi-slot bonuses",
+      "icon": "minecraft:shield",
+      "summary": "Mods on off-hand and other slots add bonuses",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Mods on your main-hand weapon always work at full strength. Items in the slots listed below can also add their mod bonuses to your attacks at a reduced rate, as long as they are <hl>consecrated and modded</hl>."
+        },
+        {
+          "type": "table",
+          "header": [
+            "Slot",
+            "Effect rate"
+          ],
+          "rows": [
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule",
+                "cfg:kuva_lich.offhandEffectMultiplier>0"
+              ],
+              "cells": [
+                "Off-hand",
+                "{cfg:kuva_lich.offhandEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableHelmetModule",
+                "cfg:kuva_lich.armorEffectMultiplier>0"
+              ],
+              "cells": [
+                "Helmet",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableChestplateModule",
+                "cfg:kuva_lich.armorEffectMultiplier>0"
+              ],
+              "cells": [
+                "Chestplate",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableLeggingsModule",
+                "cfg:kuva_lich.armorEffectMultiplier>0"
+              ],
+              "cells": [
+                "Leggings",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableBootsModule",
+                "cfg:kuva_lich.armorEffectMultiplier>0"
+              ],
+              "cells": [
+                "Boots",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": [
+                "mod:curios",
+                "cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.curiosEffectMultiplier>0",
+                "cfg:kuva_lich.curiosModuleMaxSlots>=999"
+              ],
+              "cells": [
+                "Curios slots",
+                "{cfg:kuva_lich.curiosEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": [
+                "mod:curios",
+                "cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.curiosEffectMultiplier>0",
+                "cfg:kuva_lich.curiosModuleMaxSlots<999"
+              ],
+              "cells": [
+                "Curios slots",
+                "{cfg:kuva_lich.curiosEffectMultiplier|pctv}, first {cfg:kuva_lich.curiosModuleMaxSlots} slots only"
+              ]
+            }
+          ],
+          "widths": [
+            1,
+            2
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "Extra bonus = mod bonuses on that item × the slot's effect rate × that item's panel damage multiplier"
+        },
+        {
+          "type": "p",
+          "text": "So items with a higher panel damage multiplier make better carriers."
+        },
+        {
+          "type": "p",
+          "if": [
+            "cfg:kuva_lich.enableOffhandModule",
+            "cfg:kuva_lich.offhandEffectMultiplier>0"
+          ],
+          "text": "Example: an off-hand shield carries a max-level +100% {lang:kuvaweapon.item_attribute_type.meleeDamage}, its panel damage multiplier is 1.2 and the off-hand rate is {cfg:kuva_lich.offhandEffectMultiplier|pctv}, so you gain an extra <t>+{cfg:kuva_lich.offhandEffectMultiplier|mul:1.2|pctv}</t>."
+        },
+        {
+          "type": "h",
+          "text": "How to use it"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Consecrate the item in the {item:kuvalich:requiem_evolve} using a {item:kuvalich:riven_sliver}.",
+            "Put it in the {item:kuvalich:requiem_weapon_table} and install <em>weapon mods</em> on it as you would on a weapon.",
+            "Put it in one of the slots listed above.",
+            "Attack with a consecrated weapon in your main hand; the bonus is added then."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "Two requirements",
+          "text": "1) Items in these slots <b>must be consecrated</b>, or their mods don't count. 2) <b>Your main hand must hold a consecrated weapon too</b>: with an ordinary item in your main hand, the whole mod system stays out of damage calculation, extra bonuses included."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "These bonuses are merged into your main-hand weapon's panel (see [[weapons/weapon_panel]]), and they don't use up any of its 8 slots."
+        },
+        {
+          "type": "p",
+          "if": "cfg:modules.attributeTotalCaps",
+          "text": "<dim>Total caps are counted per item here: each item is capped on its own, separately from the main hand, see [[modules/module_limits]].</dim>"
+        }
+      ],
+      "if": [
+        "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+        "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+      ]
+    }
+  ]
+}

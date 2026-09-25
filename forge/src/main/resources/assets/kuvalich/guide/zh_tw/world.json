@@ -1,0 +1,869 @@
+{
+  "id": "world",
+  "order": 90,
+  "title": "世界與附魔",
+  "subtitle": "礦石、專屬附魔與掉落倍率",
+  "icon": "kuvalich:requiem_ore",
+  "entries": [
+    {
+      "id": "requiem_ore",
+      "title": "安魂礦石",
+      "icon": "kuvalich:requiem_ore",
+      "summary": "安魂卡的唯一來源，最好用滅骸鎬挖",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "{item:kuvalich:requiem_ore}是<hl>安魂卡</hl>的唯一來源，挖它最好用一把帶{lang:enchantment.kuvalich.requiem_destroyed}附魔的鎬子。安魂卡是破解 Boss {lang:entity.kuvalich.kuva_master}用的鑰匙卡，見[[requiem/requiem_cards]]。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:ore_gen.requiemOreVeinCount",
+          "text": "在哪找"
+        },
+        {
+          "type": "kv",
+          "if": "cfg:ore_gen.requiemOreVeinCount",
+          "rows": [
+            [
+              "高度",
+              "Y <t>{cfg:ore_gen.requiemOreMinHeight}</t> ~ <t>{cfg:ore_gen.requiemOreMaxHeight}</t>，中間最多，兩頭最少"
+            ],
+            [
+              "數量",
+              "每個區塊 <t>{cfg:ore_gen.requiemOreVeinCount}</t> 處礦脈，每處最多約 <t>{cfg:ore_gen.requiemOreVeinSize}</t> 塊"
+            ],
+            [
+              "維度",
+              "藏在石頭和深板岩裡：主世界和其它地下是石頭的維度有，地獄、終界沒有"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "怎麼挖"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "弄一把帶{lang:enchantment.kuvalich.requiem_destroyed}附魔的鎬子，拿法見[[world/enchantments]]",
+            "鑽石鎬或獄髓鎬最快；鐵鎬等其它挖掘工具也能掉東西，只是慢一些",
+            "鎬子上<b>不要</b>有絲綢之觸，幸運有沒有都無所謂",
+            "找到礦就挖碎，撿起掉出來的東西"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "挖碎時掉什麼"
+        },
+        {
+          "type": "p",
+          "text": "每挖碎一塊只判定<em>一次</em>：成功就把下表的東西<g>一起</g>掉出來，失敗就<b>什麼都沒有</b>。礦石方塊本身永遠不掉。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "掉落",
+            "數量 / 機率"
+          ],
+          "widths": [
+            3,
+            4
+          ],
+          "rows": [
+            [
+              "安魂卡（8 種隨機一張）",
+              "1 張"
+            ],
+            [
+              "{item:kuvalich:riven_sliver}",
+              "1 個"
+            ],
+            [
+              "{item:kuvalich:kuva}",
+              "2~4 個"
+            ],
+            {
+              "if": "cfg:kuva_lich.commonModuleDropChance>0",
+              "cells": [
+                "青銅模組",
+                "{cfg:kuva_lich.commonModuleDropChance|pctv}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.uncommonModuleDropChance>0",
+              "cells": [
+                "白銀模組",
+                "{cfg:kuva_lich.uncommonModuleDropChance|pctv}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.rareModuleDropChance>0",
+              "cells": [
+                "黃金模組",
+                "{cfg:kuva_lich.rareModuleDropChance|pctv}"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "{item:kuvalich:kuva}和{item:kuvalich:riven_sliver}是養成材料，用處見[[start/materials]]",
+            "模組是裝在武器或你身上的強化卡，分武器模組和戰甲模組兩種；品質說明見[[modules/module_rarity]]",
+            "掉出來的模組是<t>未揭示</t>的：拿在主手右鍵，會變成這個品質裡隨機的一張，見[[modules/module_overview]]",
+            "出模組時，有 {cfg:kuva_lich.moduleWeaponRatio|pctv} 是武器模組，其餘是戰甲模組"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "<em>經驗</em>另算，不看上面的判定：用鑽石鎬或更好的鎬子挖碎，每塊掉 <t>50~100</t> 點經驗；帶{lang:enchantment.kuvalich.requiem_destroyed}時再乘 <g>{cfg:kuva_lich.expMultiplier|x}</g>。用其它工具、或帶絲綢之觸時沒有經驗。"
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:fass",
+            "kuvalich:jahu",
+            "kuvalich:khra",
+            "kuvalich:lohk",
+            "kuvalich:netra",
+            "kuvalich:ris",
+            "kuvalich:vome",
+            "kuvalich:xata"
+          ],
+          "caption": "八種安魂卡，每次隨機掉一張"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作裡這八張叫<t>安魂模組</t>，是開啟安魂遺物（Requiem Relic）得來的，不靠挖礦。"
+        },
+        {
+          "type": "h",
+          "text": "成功率"
+        },
+        {
+          "type": "table",
+          "header": [
+            "主手拿的東西",
+            "成功率"
+          ],
+          "widths": [
+            3,
+            5
+          ],
+          "rows": [
+            [
+              "帶{lang:enchantment.kuvalich.requiem_destroyed}的工具",
+              "<g>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</g>，幸運不影響"
+            ],
+            [
+              "其它東西，不帶滅骸",
+              "{cfg:kuva_lich.baseCardDropChance|pctv} − 幸運等級 × {cfg:kuva_lich.fortuneReductionPerLevel|pctv}，最低 {cfg:kuva_lich.minCardDropChance|pctv}"
+            ],
+            [
+              "帶絲綢之觸的工具",
+              "<b>0</b>，有滅骸也一樣"
+            ],
+            [
+              "空手",
+              "<b>0</b>"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "挖一塊要多久"
+        },
+        {
+          "type": "table",
+          "header": [
+            "工具",
+            "大約用時"
+          ],
+          "widths": [
+            5,
+            2
+          ],
+          "rows": [
+            [
+              "滅骸 + 鑽石鎬或更好",
+              "<g>0.5 秒</g>"
+            ],
+            [
+              "滅骸 + 鐵鎬等其它挖掘工具",
+              "1.7 秒"
+            ],
+            [
+              "鑽石鎬或更好，不帶滅骸",
+              "<b>2.5 分鐘</b>"
+            ],
+            [
+              "低階鎬、其它東西或空手，不帶滅骸",
+              "<b>8 分鐘</b>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "效率、挖掘加速都沒用",
+          "text": "只要手裡拿著東西，挖它的速度就是固定的，效率附魔和挖掘加速都不起作用。反過來，在水下、懸空時也不會變慢。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "三檔模組每次最多出一張，按黃金、白銀、青銅的順序判定；三項加起來超過 100% 時，排在後面的檔位拿不滿",
+            "{item:kuvalich:requiem_gate}、{item:kuvalich:requiem_recast}、{item:kuvalich:requiem_evolve}這三台機器的挖掘速度，也按上面「挖一塊要多久」的規則算"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "bad",
+          "title": "拆機器要用鑽石鎬",
+          "text": "拆上面這三台機器，以及{item:kuvalich:requiem_weapon_table}和{item:kuvalich:requiem_warframe_table}，必須用<em>鑽石鎬或更好</em>，否則方塊會直接消失，什麼都不掉。"
+        }
+      ]
+    },
+    {
+      "id": "experience_ore",
+      "title": "經驗礦石",
+      "icon": "kuvalich:experience_ore",
+      "summary": "石鎬就能挖，出經驗和內融核心",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "{item:kuvalich:experience_ore}是一種<t>石鎬</t>就能挖的礦。挖碎時掉經驗，還有一半機會掉{item:kuvalich:endo}。"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "內融核心是給模組升級的材料，模組就是裝在武器或你身上的強化卡。升級方法見[[modules/module_level]]，內融核心的其它來源見[[world/loot]]。"
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "模組（裝在武器或你身上的強化卡）一裝上就是滿效果，不需要升級，所以內融核心沒有用處。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:ore_gen.experienceOreVeinCount",
+          "text": "在哪找"
+        },
+        {
+          "type": "kv",
+          "if": "cfg:ore_gen.experienceOreVeinCount",
+          "rows": [
+            [
+              "高度",
+              "Y <t>{cfg:ore_gen.experienceOreMinHeight}</t> ~ <t>{cfg:ore_gen.experienceOreMaxHeight}</t>，整段均勻分佈"
+            ],
+            [
+              "數量",
+              "每個區塊 <t>{cfg:ore_gen.experienceOreVeinCount}</t> 處礦脈，每處最多約 <t>{cfg:ore_gen.experienceOreVeinSize}</t> 塊"
+            ],
+            [
+              "維度",
+              "藏在石頭和深板岩裡：主世界和其它地下是石頭的維度有，地獄、終界沒有"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "挖碎時掉什麼"
+        },
+        {
+          "type": "table",
+          "header": [
+            "掉落",
+            "數量",
+            "備註"
+          ],
+          "widths": [
+            2,
+            3,
+            3
+          ],
+          "rows": [
+            [
+              "經驗",
+              "5~20 點 + 幸運等級",
+              "幸運每級只多 1 點"
+            ],
+            [
+              "{item:kuvalich:endo}",
+              "<g>50%</g> 機率掉 1~2 個",
+              "不受幸運影響"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "bad",
+          "title": "什麼都不掉的情況",
+          "text": "用<b>木鎬、金鎬、空手或不是鎬的東西</b>挖，或者工具帶<b>絲綢之觸</b>，就什麼都不掉，礦石方塊本身也拿不到。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作裡的內融核心（Endo）也能在任務裡直接撿到；另一個大頭是阿耶檀雕塑（Ayatan Sculpture）：鑲滿星辰後交給商人 Maroo，能換一大筆。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "{lang:enchantment.kuvalich.experience_collector}附魔對經驗礦石<b>無效</b>，見[[world/enchantments]]",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOreDropMultiplier",
+                "cfg:kuva_lich.oreDropEffectMultiplier>0"
+              ],
+              "text": "戰甲模組的{lang:item.module.oreDropMultiplier}詞條不會讓內融核心變多，見[[world/ore_drop_multiplier]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "enchantments",
+      "title": "專屬附魔",
+      "icon": "minecraft:enchanted_book",
+      "summary": "六個附魔一覽；滅骸與經驗之運",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "本模組加了 6 個附魔，和原版附魔一樣從附魔台、附魔書裡來，<em>沒有專門的配方</em>。挖安魂礦石必備的{lang:enchantment.kuvalich.requiem_destroyed}就在其中。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "附魔",
+            "能附在",
+            "最高階",
+            "作用"
+          ],
+          "widths": [
+            2,
+            3,
+            1,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:enchantment.kuvalich.requiem_destroyed}",
+              "鎬、斧、鍬、鋤",
+              "1",
+              "挖安魂礦石必備"
+            ],
+            [
+              "{lang:enchantment.kuvalich.experience_collector}",
+              "鎬、斧、鍬、鋤",
+              "5",
+              "挖會掉經驗的方塊時多給經驗"
+            ],
+            [
+              "{lang:enchantment.kuvalich.lethal}",
+              "劍、[[weapons/kuva_weapons|赤毒武器]]",
+              "5",
+              "目標越殘血，傷害越高"
+            ],
+            [
+              "{lang:enchantment.kuvalich.first_strike}",
+              "劍、[[weapons/kuva_weapons|赤毒武器]]",
+              "3",
+              "打滿血目標傷害 ×2~×3，還給經驗"
+            ],
+            [
+              "{lang:enchantment.kuvalich.escort}",
+              "盔甲",
+              "3",
+              "自己滿血時減傷"
+            ],
+            [
+              "{lang:enchantment.kuvalich.death_resistance}",
+              "盔甲",
+              "3",
+              "花經驗擋下一次致命傷"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "後四個戰鬥附魔的細節見[[world/combat_enchantments]]。"
+        },
+        {
+          "type": "h",
+          "text": "怎麼弄到"
+        },
+        {
+          "type": "list",
+          "items": [
+            "附魔台：能出，但它們都很稀有，高等級很難出",
+            "附魔書：戰利品箱裡、圖書管理員村民那裡都可能有，用鐵砧附到工具、武器或盔甲上",
+            "想要高等級：找圖書管理員交易、翻戰利品箱，或在鐵砧上把兩本同級的書合成"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "{lang:enchantment.kuvalich.requiem_destroyed}"
+        },
+        {
+          "type": "list",
+          "items": [
+            "挖{item:kuvalich:requiem_ore}，以及本模組的三台機器{item:kuvalich:requiem_gate}、{item:kuvalich:requiem_recast}、{item:kuvalich:requiem_evolve}時，速度<g>固定為極快</g>，配鑽石鎬約 0.5 秒一塊",
+            "不帶它時，這四種方塊都慢得離譜",
+            "安魂礦石的判定成功率變為 <g>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</g>，幸運不再有影響",
+            "挖安魂礦石掉的經驗再乘 <g>{cfg:kuva_lich.expMultiplier|x}</g>（要用鑽石鎬或更好的鎬子才有經驗）",
+            "<b>別和絲綢之觸放在同一把工具上</b>：帶絲綢之觸挖安魂礦石什麼都不掉"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "掉落和用時的細節見[[world/requiem_ore]]。"
+        },
+        {
+          "type": "h",
+          "text": "{lang:enchantment.kuvalich.experience_collector}"
+        },
+        {
+          "type": "p",
+          "text": "挖碎一塊<em>本來就會掉經驗</em>的方塊時，額外多掉一些經驗，比如煤、鑽石、青金石、紅石、綠寶石、地獄石英礦，還有{item:kuvalich:requiem_ore}。不能和絲綢之觸共存。"
+        },
+        {
+          "type": "p",
+          "text": "每塊額外經驗：1 級 <g>+2</g>，2 級 <g>+4</g>，3 級 <g>+5</g>，4 級 <g>+7</g>，5 級 <g>+8</g>。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "對{item:kuvalich:experience_ore}<b>無效</b>。這一塊本來就掉 0 經驗時也不加，比如煤礦偶爾不掉經驗，或者用錯了鎬。和{lang:enchantment.kuvalich.requiem_destroyed}在同一把鎬上挖安魂礦石時，多給的這份也會一起乘上滅骸的倍率。"
+        }
+      ]
+    },
+    {
+      "id": "combat_enchantments",
+      "title": "戰鬥附魔",
+      "icon": "minecraft:diamond_sword",
+      "summary": "斬殺、先攻、護衛、死亡抵抗",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "四個戰鬥附魔：兩個附在劍上加傷害，兩個附在盔甲上保命。怎麼弄到見[[world/enchantments]]。"
+        },
+        {
+          "type": "h",
+          "text": "{lang:enchantment.kuvalich.lethal}"
+        },
+        {
+          "type": "p",
+          "text": "目標越殘血，這一擊加得越多；目標滿血時沒有加成。"
+        },
+        {
+          "type": "formula",
+          "text": "額外傷害 = 這一擊傷害 × 目標已損失生命的比例 × 15% × 等級"
+        },
+        {
+          "type": "p",
+          "text": "5 級打半血目標 <g>+37.5%</g>，打幾乎空血的目標約 <g>+75%</g>。"
+        },
+        {
+          "type": "h",
+          "text": "{lang:enchantment.kuvalich.first_strike}"
+        },
+        {
+          "type": "p",
+          "text": "打<em>滿血</em>目標時，這一擊傷害成倍增加，還順帶給你經驗。對方掉了一絲血就不再觸發。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "等級",
+            "這一擊傷害",
+            "觸發時給的經驗"
+          ],
+          "rows": [
+            [
+              "1",
+              "×2",
+              "原傷害的 10%"
+            ],
+            [
+              "2",
+              "×2.5",
+              "原傷害的 22.5%"
+            ],
+            [
+              "3",
+              "×3",
+              "原傷害的 40%"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "經驗向下取整，不超過目標最大生命的 33%，也不超過 1000 點。所以打小怪幾乎拿不到經驗，打高血量目標才划算。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "斬殺和先攻<b>不能附在同一件武器上</b>。兩者都只算<em>近戰直接命中</em>，弓箭、槍械子彈這類彈射物打中不觸發。"
+        },
+        {
+          "type": "h",
+          "text": "{lang:enchantment.kuvalich.escort}"
+        },
+        {
+          "type": "p",
+          "text": "你<em>滿血</em>時受到的傷害降低：1 級 <g>−25%</g>、2 級 <g>−50%</g>、3 級 <g>−75%</g>。一掉血就不再生效——它擋的是「第一下」，不是整場戰鬥。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "幾件盔甲都有時，只取最高的一件，不疊加",
+            "黃心先擋：本模組的[[warframe/shield|護盾]]、金蘋果給的傷害吸收都算黃心。護衛只減穿過黃心、落到生命上的那部分",
+            "黃心撐著時生命一直是滿的，所以護衛也一直有效"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "{lang:enchantment.kuvalich.death_resistance}"
+        },
+        {
+          "type": "p",
+          "text": "受到一下<b>會讓你死掉</b>的傷害時，自動扣經驗把你保在 <g>1 點生命</g>（半顆心），同時響起圖騰的聲音。"
+        },
+        {
+          "type": "formula",
+          "text": "扣除的經驗點 = 這一下的傷害 × 4 ÷ 附魔等級（向上取整）"
+        },
+        {
+          "type": "list",
+          "items": [
+            "例：3 級時挨一下 30 點傷害，扣 40 點經驗；30 級的經驗條總共約 1395 點",
+            "經驗不夠扣就<b>不觸發</b>：照常死亡，經驗也不扣",
+            "觸發時快捷欄上方會提示這次扣了多少經驗",
+            "幾件盔甲都有時取最高等級"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "死亡抵抗的傷害按扣完護甲、抗性、黃心之後，真正落到生命上的數值算",
+            "死亡抵抗擋不住 /kill 和掉進虛空",
+            "死亡抵抗比不死圖騰先生效：經驗夠扣時，圖騰不會被消耗"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ore_drop_multiplier",
+      "title": "挖礦倍率",
+      "icon": "minecraft:raw_iron",
+      "summary": "戰甲詞條：礦物掉落在幸運後再乘",
+      "if": [
+        "cfg:kuva_lich.enableOreDropMultiplier",
+        "cfg:kuva_lich.oreDropEffectMultiplier>0"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "{lang:item.module.oreDropMultiplier}是<hl>戰甲模組</hl>上的一條詞條：裝上帶它的模組，你親手挖碎礦石時，礦物會掉得更多。"
+        },
+        {
+          "type": "p",
+          "text": "戰甲模組是裝在[[warframe/warframe_table]]裡、對你自己一直生效的強化卡；詞條就是卡上寫的一條條屬性。"
+        },
+        {
+          "type": "formula",
+          "text": "最終數量 = 原本的掉落數量 × (1 + 詞條合計 × {cfg:kuva_lich.oreDropEffectMultiplier|pctv})"
+        },
+        {
+          "type": "list",
+          "items": [
+            "在幸運算完之後<em>再乘一次</em>",
+            "小數按機率進位：3 個鐵原礦 × 1.3 = 3.9，九成掉 4 個、一成掉 3 個",
+            "沒有上限，超過一組會分成幾堆掉出來",
+            "詞條合計為負數時<g>不會</g>減少掉落"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "哪些方塊算礦石"
+        },
+        {
+          "type": "p",
+          "text": "原版所有礦石，以及其它模組登記為礦石的方塊。放大的只是粗礦、鑽石、紅石這類<em>礦物</em>。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            {
+              "if": "cfg:kuva_lich.oreDropWhitelist",
+              "cells": [
+                "也算礦石",
+                "{cfg:kuva_lich.oreDropWhitelist}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.oreDropBlacklist",
+              "cells": [
+                "不算礦石",
+                "{cfg:kuva_lich.oreDropBlacklist}"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "帶這條詞條的模組"
+        },
+        {
+          "type": "table",
+          "header": [
+            "模組",
+            "品質",
+            "挖礦倍率",
+            "其它詞條"
+          ],
+          "widths": [
+            3,
+            2,
+            2,
+            4
+          ],
+          "rows": [
+            {
+              "if": "module:miner_instinct",
+              "cells": [
+                "{lang:kuvaweapon.warframe_module.miner_instinct}",
+                "青銅",
+                "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:15|round:1|pctv}",
+                "挖掘速度 −{cfg:kuva_lich.moduleAttributeMultiplier|mul:40|round:1|pctv}"
+              ]
+            },
+            {
+              "if": "module:vein_resonance",
+              "cells": [
+                "{lang:kuvaweapon.warframe_module.vein_resonance}",
+                "白銀",
+                "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:22.5|round:1|pctv}",
+                "護盾 −{cfg:kuva_lich.moduleAttributeMultiplier|mul:60|round:1|pctv}"
+              ]
+            },
+            {
+              "if": "module:vein_sense",
+              "cells": [
+                "{lang:kuvaweapon.warframe_module.vein_sense}",
+                "黃金",
+                "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:30|round:1|pctv}",
+                "無"
+              ]
+            },
+            {
+              "if": "module:deep_delver",
+              "cells": [
+                "{lang:kuvaweapon.warframe_module.deep_delver}",
+                "黃金",
+                "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:45|round:1|pctv}",
+                "護甲 −{cfg:kuva_lich.moduleAttributeMultiplier|mul:60|round:1|pctv}，挖掘速度 +{cfg:kuva_lich.moduleAttributeMultiplier|mul:30|round:1|pctv}"
+              ]
+            },
+            {
+              "if": "module:astral_drill_prime",
+              "cells": [
+                "{lang:kuvaweapon.warframe_module.astral_drill_prime}",
+                "Prime",
+                "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:45|round:1|pctv}",
+                "無"
+              ]
+            },
+            [
+              "裂罅模組",
+              "裂罅",
+              "隨機",
+              "隨機"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "<dim>青銅、白銀、黃金、Prime、裂罅都是模組的品質，見[[modules/module_rarity]]。</dim>"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "表裡的固定模組<b>互相衝突</b>，只能裝其中一張。想再高，可以另配一張帶這條詞條的[[modules/riven_module|裂罅模組]]：詞條隨機的特殊模組，也只能裝一張。"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "<dim>表中是滿級數值；沒升滿級的模組只發揮一部分，見[[modules/module_level]]。</dim>"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作的開放世界地圖裡也能挖礦：用採礦工具對準岩壁上發光的礦點，就能採出礦石和寶石。"
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            "絲綢之觸挖到的礦石方塊、掉出來仍是礦石方塊的東西都不放大，防止放回去反覆刷",
+            "TNT、苦力怕等爆炸炸出來的不算",
+            "{item:kuvalich:requiem_ore}和{item:kuvalich:experience_ore}的掉落是另外判定的，<b>不吃</b>挖礦倍率",
+            "單條詞條的數值範圍限制見[[modules/module_limits]]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loot",
+      "title": "其它戰利品來源",
+      "icon": "kuvalich:endo",
+      "summary": "擊殺掉內融核心、戰利品倍率、砍刀",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "挖礦以外，這幾種辦法也能多拿東西。本模組敵人{lang:entity.kuvalich.kuva_slave}和 Boss {lang:entity.kuvalich.kuva_master}的專屬掉落，見[[enemies/kuva_slave]]和[[enemies/kuva_master]]。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "{item:kuvalich:endo}"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "內融核心是給模組升級的材料，模組就是裝在武器或你身上的強化卡。挖[[world/experience_ore]]、在[[weapons/requiem_recast]]裡分解用不上的模組都能拿到。"
+        },
+        {
+          "type": "p",
+          "if": [
+            "cfg:kuva_lich.enableModuleLevelSystem",
+            "cfg:kuva_lich.endoDropChance>0"
+          ],
+          "text": "打怪也會掉：主手拿著<t>已開光</t>的武器擊殺<em>怪物</em>時，有 <t>{cfg:kuva_lich.endoDropChance|pctv}</t> 的機率掉 <t>{cfg:kuva_lich.endoDropMinAmount}~{cfg:kuva_lich.endoDropMaxAmount}</t> 個。"
+        },
+        {
+          "type": "list",
+          "if": [
+            "cfg:kuva_lich.enableModuleLevelSystem",
+            "cfg:kuva_lich.endoDropChance>0"
+          ],
+          "items": [
+            "開光就是讓武器能裝模組。[[weapons/kuva_weapons|赤毒武器]]生來就是開光的，普通武器要先開光，見[[weapons/requiem_evolve]]",
+            "只算怪物：殭屍、骷髏、苦力怕、赤毒奴僕等。動物（包括豬布獸）、史萊姆、地獄幽靈、夜魅、界伏蚌不算",
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+              "text": "這份掉落<b>不吃</b>下面的戰利品掉落倍率"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+          "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+          "text": "這是<hl>戰甲模組</hl>上的一條詞條，讓你打怪時掉更多東西。戰甲模組裝在{item:kuvalich:requiem_warframe_table}裡，對你自己一直生效。"
+        },
+        {
+          "type": "formula",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+          "text": "掉落數量 × (1 + 詞條合計 × {cfg:kuva_lich.itemDropEffectMultiplier|pctv})"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+          "items": [
+            "你親手擊殺<em>動物或怪物</em>時生效，弓箭、槍械擊殺也算",
+            "放大它們原本就會掉的東西，比如腐肉、骨頭、火藥",
+            "裝備、武器、工具以及一切帶耐久的東西<t>不參與</t>放大",
+            "沒有上限，超過一組會分成幾堆掉",
+            "<b>合計為負數會減少掉落</b>：降到 0 或以下時，除裝備外什麼都不掉",
+            "擊殺疊層版的這條詞條每殺一隻疊一層，最多 {cfg:kuva_lich.maxStacksItemDropMultiplier} 層，見[[combat/kill_stack]]",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOreDropMultiplier",
+                "cfg:kuva_lich.oreDropEffectMultiplier>0"
+              ],
+              "text": "和[[world/ore_drop_multiplier|挖礦倍率]]互不相干，各乘各的"
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+          "style": "wf",
+          "text": "原作裡想多刷掉落，玩家常帶戰甲 Nekros：他的技能 Desecrate（褻瀆）能讓周圍的屍體有機會再掉一次戰利品。"
+        },
+        {
+          "type": "h",
+          "text": "{item:kuvalich:machete}"
+        },
+        {
+          "type": "p",
+          "text": "{item:kuvalich:machete}是一把[[weapons/kuva_weapons|赤毒武器]]，特效是讓掉落變多。拿在主手擊殺動物或怪物時，每一堆掉落的數量各自隨機變成原來的 <g>1~3 倍</g>。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "盔甲和劍、鎬、斧、鍬、鋤這類掉落不參與",
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+              "text": "砍刀先算，戰利品掉落倍率再在它的結果上乘，兩者可以疊加"
+            },
+            "武器本身見[[weapons/weapon_list]]"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "進階細節"
+        },
+        {
+          "type": "list",
+          "items": [
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+              "text": "史萊姆、岩漿立方怪、地獄幽靈、夜魅、界伏蚌、魷魚、魚、村民和魔像都不算動物或怪物，打它們不吃戰利品掉落倍率"
+            },
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+              "text": "赤毒奴僕、赤毒玄骸額外給的赤毒、裂罅碎塊和模組，都<b>不吃</b>戰利品掉落倍率"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.itemDropEffectMultiplier>0",
+                "mod:customnpcs"
+              ],
+              "text": "CustomNPCs 的 NPC 也算在內，擊殺它們同樣吃戰利品掉落倍率"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.itemDropEffectMultiplier>0",
+                "mod:tacz"
+              ],
+              "text": "用 TACZ 槍械擊殺時，槍上的{lang:item.module.gun_loot_drop}也會加進合計，見[[tacz/tacz_gun_attributes]]"
+            },
+            "凋零怪這類不能穿過傳送門的 Boss 不受砍刀影響"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,72 +1,95 @@
 package pers.roinflam.kuvalich.event;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
-import vazkii.patchouli.api.PatchouliAPI;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.utils.LogUtil;
-import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.InventoryUtil;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
+import pers.roinflam.kuvalich.utils.Reference;
 
 /**
- * 教程书发放事件处理器
+ * 冒险指南发放事件处理器
  * <p>
- * 当玩家首次进入服务器时，若安装了帕秋莉(Patchouli)模组且配置启用，
- * 自动向玩家背包中添加一本赤毒玄骸教程书。
+ * 玩家首次进服时（配置 {@code enableGuidebook} 开启）往背包里放一本「赤毒玄骸 冒险指南」，
+ * 右键打开本模组自带的指南界面，不再依赖帕秋莉（Patchouli）。
+ * </p>
+ *
+ * <h3>为什么换了标记键</h3>
+ * <p>
+ * 旧版用 {@code kuvalich:guidebook_given} 记录发过帕秋莉书。换成自带指南后，
+ * 老玩家手里那本帕秋莉书在整合包删掉帕秋莉后会变成无效物品，所以改用新键
+ * {@link #GUIDEBOOK_GIVEN_TAG}，让每个人（包括老玩家）都补发一次新书。旧键不再读写。
+ * </p>
+ *
+ * <h3>为什么「真放进背包」才写标记</h3>
+ * <p>
+ * 换键后所有老玩家都要补发一次，而冒险服老玩家的背包大多是满的。以前塞不下就
+ * {@code drop} 在脚下再照常写标记：背包满着捡不回来，5 分钟后书消失，以后也不会再发，
+ * 聊天栏还一句提示都没有。现在塞不下就<b>不写标记</b>、提示玩家腾格子，下次登录 / 重生自动重试。
  * </p>
  * <p>
- * 使用 Patchouli API 获取教程书物品栈，确保兼容性。
- * 使用玩家的 PersistentData 记录是否已发放，避免重复发放。
+ * 死亡界面同理：玩家停在死亡界面时退出，下次登录拿到的是一具「已死」的旧实体，
+ * 背包在死亡那一刻已经清空（看着有空位）。书放进去后一点重生，{@code keepInventory}
+ * 关闭时原版 {@code ServerPlayer.restoreFrom} 不复制背包，而标记在 {@code PERSISTED_NBT_TAG}
+ * 里会被复制过去 —— 书没了、标记还在。所以死着的时候跳过，改在 {@link #onPlayerRespawn} 里发。
+ * </p>
+ * <p>
+ * 书丢了之后的补领：无序配方「书 + 赤毒」（{@code data/kuvalich/recipes/kuvalich_guide.json}）。
  * </p>
  *
  * @author RoinFlam
  */
 public class BookGiveHandler {
 
-    /** 持久化数据键：标记是否已发放教程书 / Persistent data key: whether guidebook has been given */
-    private static final String GUIDEBOOK_GIVEN_TAG = Reference.MOD_ID + ":guidebook_given";
-
-    /** 本模组的教程书 ResourceLocation / This mod's guidebook ResourceLocation */
-    private static final ResourceLocation BOOK_ID = new ResourceLocation(Reference.MOD_ID, "kuvalich_guide");
+    /** 持久化数据键：标记是否已发放自带指南（v2） */
+    private static final String GUIDEBOOK_GIVEN_TAG = Reference.MOD_ID + ":guidebook_v2_given";
 
     /**
      * 玩家登录事件处理
-     * <p>
-     * 仅在以下条件全部满足时发放教程书：
-     * <ul>
-     *     <li>配置项 enableGuidebook 为 true</li>
-     *     <li>Patchouli 模组已加载</li>
-     *     <li>该玩家尚未领取过教程书</li>
-     * </ul>
-     * </p>
      *
      * @param event 玩家登录事件
      */
     @SubscribeEvent
     public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        Player player = event.getEntity();
+        tryGive(event.getEntity());
+    }
 
-        // 仅服务端执行
+    /**
+     * 玩家重生事件处理：补上「死亡界面登录」和「上次背包满」这两种没发成的情况。
+     * <p>已经发过的玩家标记随 {@code PERSISTED_NBT_TAG} 复制到新实体，这里直接返回，不会重复发。</p>
+     *
+     * @param event 玩家重生事件
+     */
+    @SubscribeEvent
+    public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        tryGive(event.getEntity());
+    }
+
+    /**
+     * 没发过就发一本；放不进背包（或人还死着）就不写标记，留到下次登录 / 重生再试。
+     *
+     * @param player 玩家
+     */
+    private static void tryGive(Player player) {
         if (player.level().isClientSide()) {
             return;
         }
 
-        // 检查配置是否启用
         if (!ModConfig.KUVA_LICH.enableGuidebook.get()) {
             return;
         }
 
-        // 检查 Patchouli 是否已加载（双重保险，主类已经检查过一次）
-        if (!ModList.get().isLoaded("patchouli")) {
+        // 死亡界面：背包已清空、这具实体马上要被重生替换，放进来的书会跟着旧实体一起丢掉
+        if (player.isDeadOrDying()) {
             return;
         }
 
-        // 检查是否已发放过
         CompoundTag persistentData = player.getPersistentData();
         CompoundTag forgeData = persistentData.getCompound(Player.PERSISTED_NBT_TAG);
 
@@ -74,21 +97,19 @@ public class BookGiveHandler {
             return;
         }
 
-        // 通过 Patchouli API 获取教程书物品栈
-        ItemStack bookStack = PatchouliAPI.get().getBookStack(BOOK_ID);
-        if (bookStack.isEmpty()) {
-            LogUtil.error("无法通过 Patchouli API 创建教程书，书 ID: " + BOOK_ID);
+        ItemStack book = new ItemStack(KuvaLichItems.KUVALICH_GUIDE.get());
+        // 不能用 add 的返回值判断，创造模式下它会抹掉物品还返回 true；hasRoomFor 问的是「真有地方放」
+        if (!InventoryUtil.hasRoomFor(player, book)) {
+            PlayerFeedback.chat(player, KuvaPalette.WARN, "kuvalich.guide.inventory_full");
+            LogUtil.debug("玩家 " + player.getName().getString() + " 背包已满，冒险指南留到下次登录 / 重生再发");
             return;
         }
+        InventoryUtil.giveOrDrop(player, book);
 
-        // 发放到玩家背包
-        // 背包满时掉落在地上（不能用 add 的返回值判断，创造模式下它会抹掉物品还返回 true）
-        InventoryUtil.giveOrDrop(player, bookStack);
-
-        // 标记已发放
         forgeData.putBoolean(GUIDEBOOK_GIVEN_TAG, true);
         persistentData.put(Player.PERSISTED_NBT_TAG, forgeData);
 
-        LogUtil.debug("已向玩家 " + player.getName().getString() + " 发放赤毒玄骸教程书");
+        PlayerFeedback.chat(player, KuvaPalette.SUCCESS, "kuvalich.guide.given");
+        LogUtil.debug("已向玩家 " + player.getName().getString() + " 发放赤毒玄骸冒险指南");
     }
 }

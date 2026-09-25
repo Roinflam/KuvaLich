@@ -38,6 +38,9 @@ public class KuvaLichCreativeTabs {
                     .title(Component.translatable("itemGroup.kuvalich_tab"))
                     .icon(() -> new ItemStack(KuvaLichItems.KUVA.get()))
                     .displayItems((parameters, output) -> {
+                        // ========== 冒险指南 / Guidebook ==========
+                        output.accept(KuvaLichItems.KUVALICH_GUIDE.get());
+
                         // ========== 安魂卡 / Requiem Cards ==========
                         output.accept(KuvaLichItems.FASS_CARD.get());
                         output.accept(KuvaLichItems.JAHU_CARD.get());

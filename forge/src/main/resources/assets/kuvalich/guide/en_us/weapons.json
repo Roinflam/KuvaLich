@@ -1,0 +1,822 @@
+{
+  "id": "weapons",
+  "order": 40,
+  "title": "Kuva Weapons",
+  "subtitle": "13 Kuva weapons and their workbenches",
+  "icon": "kuvalich:kuva_shildeg",
+  "entries": [
+    {
+      "id": "kuva_weapons",
+      "title": "Kuva Weapons Overview",
+      "icon": "kuvalich:kuva_shildeg",
+      "summary": "Where they come from, what they have, how they grow",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>Kuva weapons</hl> are 13 special melee weapons, and the only way to get them is by hunting the {lang:entity.kuvalich.kuva_master} boss. Each has its own passive, plus a random <t>weapon level</t> and <t>innate element</t>."
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:kuva_shildeg", "kuvalich:paracesis", "kuvalich:arca_titron", "kuvalich:vitrica",
+            "kuvalich:gram_prime", "kuvalich:sancti_magistar", "kuvalich:prisma_veritux", "kuvalich:pennant",
+            "kuvalich:guandao_prime", "kuvalich:reaper_prime", "kuvalich:destreza_prime", "kuvalich:machete",
+            "kuvalich:caustacyst"
+          ],
+          "caption": "All 13 of them; each one is introduced in [[weapons/weapon_list]]"
+        },
+        { "type": "h", "text": "How to get one" },
+        {
+          "type": "steps",
+          "items": [
+            "Kill {lang:entity.kuvalich.kuva_slave}s to build decryption progress and unlock the answers to the three Requiem cards → [[requiem/decryption]]",
+            "Place the three cards in the right order in a {item:kuvalich:requiem_gate} → [[requiem/requiem_gate]]",
+            "Kill the {lang:entity.kuvalich.kuva_master}: if the decryption was right, one of the 13 drops at <em>equal odds</em>, along with a {item:kuvalich:lich_reliquary} and other rewards",
+            "Its level is rolled inside your current personal level range, and the range only goes up after the drop → [[weapons/weapon_level]]"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "<dim>Not sure what Thralls, decryption or Requiem cards are? Look them up in the [[start/glossary|Glossary]].</dim>"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the original game, every Kuva Lich carries a Kuva weapon, and it becomes yours once you defeat the Lich. These weapons all come with an extra elemental damage bonus."
+        },
+        { "type": "h", "text": "Every one has" },
+        {
+          "type": "kv",
+          "rows": [
+            ["Attack / Speed / Movement", "Different per weapon; changes with weapon level"],
+            ["Crit / Crit Damage / Status", "Fixed per weapon; does not change with level"],
+            ["{lang:kuvalich.attr.short.damage}", "Exactly 100% on 95% of weapons, otherwise random between 80% and 120%"],
+            ["Innate element", "One of 7 at random: {lang:kuvaweapon.type.fire}, {lang:kuvaweapon.type.poison}, {lang:kuvaweapon.type.ice}, {lang:kuvaweapon.type.electricity}, {lang:kuvaweapon.type.impact}, {lang:kuvaweapon.type.magnetic}, {lang:kuvaweapon.type.radiation}"],
+            ["Innate element damage", "Equal to the weapon level in %: level 40 means +40% → [[combat/elements]]"],
+            ["Durability", "23333; cannot be repaired with materials"],
+            ["Enchantability", "50"]
+          ]
+        },
+        { "type": "h", "text": "How they get stronger" },
+        {
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "<em>Raise the level</em>: higher level, stronger weapon. Keep duplicate Kuva weapons, because fusing two raises the level → [[weapons/weapon_level]]",
+            "<em>Install mods</em>: a <t>mod</t> is a card you slot into a weapon to add stats (not a Minecraft mod). Kuva weapons come <g>pre-consecrated</g>, which means they can take mods right away → [[weapons/weapon_table]]",
+            "<em>Swap the element</em>: fusion can replace the element with the other weapon's → [[weapons/requiem_evolve]]"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "Other weapons first need a {item:kuvalich:riven_sliver} to be consecrated, and can re-roll their base panel with {item:kuvalich:forma}. A Kuva weapon's base panel is fixed, so <b>neither does anything</b> to it."
+        },
+        { "type": "h", "text": "Build the three workbenches in order" },
+        {
+          "type": "steps",
+          "items": [
+            "{item:kuvalich:requiem_recast}: crafted from a {item:kuvalich:requiem_gate}. Trades three Requiem cards or three mods for a new one, and breaks down spare mods → [[weapons/requiem_recast]]",
+            "{item:kuvalich:requiem_evolve}: its recipe includes a Requiem Recast and a {item:kuvalich:lich_reliquary}. Fuses weapons, consecrates, re-rolls panels → [[weapons/requiem_evolve]]",
+            "{item:kuvalich:requiem_weapon_table}: its recipe includes a Requiem Forge, a Lich Reliquary and 4 {item:kuvalich:kuva}. Installs and removes mods → [[weapons/weapon_table]]"
+          ]
+        },
+        { "type": "h", "text": "Advanced details" },
+        {
+          "type": "p",
+          "text": "{lang:kuvalich.attr.short.damage} below 100% applies squared: 80% really means ×0.64 → [[combat/damage]]"
+        }
+      ]
+    },
+    {
+      "id": "weapon_list",
+      "title": "Weapon List",
+      "icon": "kuvalich:gram_prime",
+      "summary": "Passives and stats of all 13",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The 13 Kuva weapons come in two types: 7 <t>heavy</t> ones that hit hard, swing slowly and slow you down while held, and 6 <t>light</t> ones that hit softer, swing faster and speed you up."
+        },
+        {
+          "type": "table",
+          "header": ["Weapon", "Type", "Passive in one line"],
+          "widths": [3, 1, 5],
+          "rows": [
+            ["{item:kuvalich:kuva_shildeg}", "Heavy", "Bonus damage against targets with 0 armor"],
+            ["{item:kuvalich:paracesis}", "Heavy", "Chance of a heavy hit; most damage becomes a 5 s DoT"],
+            ["{item:kuvalich:arca_titron}", "Heavy", "Kills build charge that empowers jump crits"],
+            ["{item:kuvalich:vitrica}", "Heavy", "Hits stack a weakening debuff and deal more damage"],
+            ["{item:kuvalich:gram_prime}", "Heavy", "Attacks splash nearby creatures"],
+            ["{item:kuvalich:sancti_magistar}", "Heavy", "Group heal on hit; less environmental damage while held"],
+            ["{item:kuvalich:prisma_veritux}", "Heavy", "Bonus damage against 0-armor targets; longer reach"],
+            ["{item:kuvalich:pennant}", "Light", "Chance of a heavy hit; charged right-click dash that wrecks everything around"],
+            ["{item:kuvalich:guandao_prime}", "Light", "Hits raise attack speed and add a DoT"],
+            ["{item:kuvalich:reaper_prime}", "Light", "Lifesteal on hit; charged right-click dash"],
+            ["{item:kuvalich:destreza_prime}", "Light", "Every swing lands an extra hit first"],
+            ["{item:kuvalich:machete}", "Light", "Animal and monster drops ×1–3"],
+            ["{item:kuvalich:caustacyst}", "Light", "Full Viral with a Toxin element; other elements actually lose damage"]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "The {item:kuvalich:kuva_shildeg}, {item:kuvalich:arca_titron}, {item:kuvalich:sancti_magistar} and {item:kuvalich:prisma_veritux} can also <t>break shields</t>: hitting a raised shield knocks it out, like an axe does."
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "Picking one",
+          "text": "Crowds: {item:kuvalich:gram_prime}, the {item:kuvalich:pennant}'s charged skill. High-health targets: {item:kuvalich:guandao_prime}, {item:kuvalich:pennant}. Sustain: {item:kuvalich:sancti_magistar}, {item:kuvalich:reaper_prime}. Farming: {item:kuvalich:machete}."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the original game, gear with Prime in its name is mostly the Orokin-era version of an existing item, usually with better stats and gold trim."
+        },
+        { "type": "h", "text": "Attack, speed, movement" },
+        {
+          "type": "p",
+          "text": "The table shows each weapon at exactly the <t>benchmark level</t>, level {cfg:kuva_lich.benchmarkLevel}; higher levels are stronger → [[weapons/weapon_level]]. Movement is a percentage of the player's base speed."
+        },
+        {
+          "type": "table",
+          "header": ["Weapon", "Attack", "Speed", "Move"],
+          "widths": [3, 1, 1, 1],
+          "rows": [
+            ["{item:kuvalich:kuva_shildeg}", "{cfg:kuva_weapon.attackDamageKuvaShildeg}", "{cfg:kuva_weapon.attackSpeedKuvaShildeg}", "{cfg:kuva_weapon.movementSpeedKuvaShildeg|sign|pct}"],
+            ["{item:kuvalich:paracesis}", "{cfg:kuva_weapon.attackDamageParacesis}", "{cfg:kuva_weapon.attackSpeedParacesis}", "{cfg:kuva_weapon.movementSpeedParacesis|sign|pct}"],
+            ["{item:kuvalich:arca_titron}", "{cfg:kuva_weapon.attackDamageArcaTitron}", "{cfg:kuva_weapon.attackSpeedArcaTitron}", "{cfg:kuva_weapon.movementSpeedArcaTitron|sign|pct}"],
+            ["{item:kuvalich:vitrica}", "{cfg:kuva_weapon.attackDamageVitrica}", "{cfg:kuva_weapon.attackSpeedVitrica}", "{cfg:kuva_weapon.movementSpeedVitrica|sign|pct}"],
+            ["{item:kuvalich:gram_prime}", "{cfg:kuva_weapon.attackDamageGramPrime}", "{cfg:kuva_weapon.attackSpeedGramPrime}", "{cfg:kuva_weapon.movementSpeedGramPrime|sign|pct}"],
+            ["{item:kuvalich:sancti_magistar}", "{cfg:kuva_weapon.attackDamageSanctiMagistar}", "{cfg:kuva_weapon.attackSpeedSanctiMagistar}", "{cfg:kuva_weapon.movementSpeedSanctiMagistar|sign|pct}"],
+            ["{item:kuvalich:prisma_veritux}", "{cfg:kuva_weapon.attackDamagePrismaVeritux}", "{cfg:kuva_weapon.attackSpeedPrismaVeritux}", "{cfg:kuva_weapon.movementSpeedPrismaVeritux|sign|pct}"],
+            ["{item:kuvalich:pennant}", "{cfg:kuva_weapon.attackDamagePennant}", "{cfg:kuva_weapon.attackSpeedPennant}", "{cfg:kuva_weapon.movementSpeedPennant|sign|pct}"],
+            ["{item:kuvalich:guandao_prime}", "{cfg:kuva_weapon.attackDamageGuandaoPrime}", "{cfg:kuva_weapon.attackSpeedGuandaoPrime}", "{cfg:kuva_weapon.movementSpeedGuandaoPrime|sign|pct}"],
+            ["{item:kuvalich:reaper_prime}", "{cfg:kuva_weapon.attackDamageReaperPrime}", "{cfg:kuva_weapon.attackSpeedReaperPrime}", "{cfg:kuva_weapon.movementSpeedReaperPrime|sign|pct}"],
+            ["{item:kuvalich:destreza_prime}", "{cfg:kuva_weapon.attackDamageDestrezaPrime}", "{cfg:kuva_weapon.attackSpeedDestrezaPrime}", "{cfg:kuva_weapon.movementSpeedDestrezaPrime|sign|pct}"],
+            ["{item:kuvalich:machete}", "{cfg:kuva_weapon.attackDamageMachete}", "{cfg:kuva_weapon.attackSpeedMachete}", "{cfg:kuva_weapon.movementSpeedMachete|mul:10|sign|pct}"],
+            ["{item:kuvalich:caustacyst}", "{cfg:kuva_weapon.attackDamageCaustacyst}", "{cfg:kuva_weapon.attackSpeedCaustacyst}", "{cfg:kuva_weapon.movementSpeedCaustacyst|sign|pct}"]
+          ]
+        },
+        { "type": "h", "text": "Crit and status" },
+        {
+          "type": "p",
+          "text": "These three belong to the weapon itself and <em>do not change with level</em>; once you install [[start/glossary|mods]], they add percentages on top."
+        },
+        {
+          "type": "kv",
+          "rows": [
+            ["{lang:kuvalich.attr.short.criticalStrikeProbability}", "Chance to land a critical hit → [[combat/crit]]"],
+            ["{lang:kuvalich.attr.short.criticalStrikeMultiplier}", "How much a crit multiplies the physical damage"],
+            ["{lang:kuvalich.attr.short.triggerChance}", "Chance for a hit to trigger an elemental effect → [[combat/element_status]]"]
+          ]
+        },
+        {
+          "type": "table",
+          "header": ["Weapon", "{lang:kuvalich.attr.short.criticalStrikeProbability}", "{lang:kuvalich.attr.short.criticalStrikeMultiplier}", "{lang:kuvalich.attr.short.triggerChance}"],
+          "widths": [3, 1, 1, 1],
+          "rows": [
+            ["{item:kuvalich:kuva_shildeg}", "31%", "2.7×", "27%"],
+            ["{item:kuvalich:paracesis}", "31%", "2.6×", "22%"],
+            ["{item:kuvalich:arca_titron}", "24%", "2.0×", "38%"],
+            ["{item:kuvalich:vitrica}", "23%", "2.3×", "33%"],
+            ["{item:kuvalich:gram_prime}", "32%", "2.6×", "32%"],
+            ["{item:kuvalich:sancti_magistar}", "30%", "2.0×", "20%"],
+            ["{item:kuvalich:prisma_veritux}", "30%", "2.0×", "20%"],
+            ["{item:kuvalich:pennant}", "32%", "2.4×", "10%"],
+            ["{item:kuvalich:guandao_prime}", "32%", "2.4×", "20%"],
+            ["{item:kuvalich:reaper_prime}", "35%", "2.5×", "25%"],
+            ["{item:kuvalich:destreza_prime}", "32%", "3.0×", "20%"],
+            ["{item:kuvalich:machete}", "10%", "1.5×", "15%"],
+            ["{item:kuvalich:caustacyst}", "9%", "2.0×", "37%"]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Full passive numbers for every weapon: [[weapons/heavy_weapons]] and [[weapons/light_weapons]]."
+        }
+      ]
+    },
+    {
+      "id": "weapon_level",
+      "title": "Weapon Level & Caps",
+      "icon": "kuvalich:lich_reliquary",
+      "summary": "How level shapes power and how it rises",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Every Kuva weapon has a <hl>weapon level</hl>, and it drives almost all of the weapon's strength. It is the number at the end of the “{lang:kuvaweapon.type} element level” line right under the name in the tooltip."
+        },
+        { "type": "h", "text": "What a level is worth" },
+        {
+          "type": "p",
+          "text": "The <t>benchmark level</t> {cfg:kuva_lich.benchmarkLevel} is the dividing line: each level above it adds {cfg:kuva_weapon.attributeMultiplier|pctv} of the benchmark value to stats like attack damage, and each level below takes the same away."
+        },
+        {
+          "type": "formula",
+          "text": "Level factor L = (weapon level − {cfg:kuva_lich.benchmarkLevel}) ÷ 100 × {cfg:kuva_weapon.attributeMultiplier}"
+        },
+        {
+          "type": "table",
+          "header": ["Stat", "How it scales"],
+          "widths": [1, 3],
+          "rows": [
+            ["Attack damage", "×(1+L); the {item:kuvalich:guandao_prime} only gets half, ×(1+L/2)"],
+            ["Attack speed", "Mostly ×(1+L/2); the {item:kuvalich:caustacyst}, {item:kuvalich:destreza_prime}, {item:kuvalich:guandao_prime} and {item:kuvalich:prisma_veritux} use ×(1+L)"],
+            ["Movement", "Heavy weapons slow you less as level rises, but never speed you up; light weapons speed you up more, but never slow you down"],
+            ["Passive", "Most multipliers, radii and durations are multiplied by (1+L) or part of it → [[weapons/heavy_weapons]] / [[weapons/light_weapons]]"],
+            ["Innate element damage", "Equal to the weapon level in %, regardless of the benchmark → [[combat/elements]]"]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "Below level {cfg:kuva_lich.benchmarkLevel}, L is negative: attack, speed and passives are all discounted, and a passive that says “damage ×1.25” can even end up reducing damage. The lower the level, the worse it gets."
+        },
+        { "type": "h", "text": "Level colours" },
+        {
+          "type": "table",
+          "header": ["Colour", "Weapon level"],
+          "widths": [1, 1],
+          "rows": [
+            ["<c:8A93A3>Grey · weak</c>", "below {cfg:kuva_lich.benchmarkLevel|mul:0.77777|round:1}"],
+            ["<c:6FD8E8>Cyan · near benchmark</c>", "below {cfg:kuva_lich.benchmarkLevel}"],
+            ["<c:C896F0>Purple · on par</c>", "below {cfg:kuva_lich.benchmarkLevel|mul:1.22222|round:1}"],
+            ["<c:FFC861>Gold · strong</c>", "below {cfg:kuva_lich.benchmarkLevel|mul:1.33333|round:1}"],
+            ["<c:FF6A3D>Orange-red · top</c>", "anything higher"]
+          ]
+        },
+        { "type": "h", "text": "Your level range" },
+        {
+          "type": "p",
+          "text": "A dropped weapon's level is rolled between your personal <t>floor and ceiling</t>. The range belongs to your character and survives death; a new character starts at <t>{cfg:kuva_lich.baseMinimumLevel}–{cfg:kuva_lich.baseMaximumLevel}</t>."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Successful decryption and a {lang:entity.kuvalich.kuva_master} kill: the drop's level is rolled from your <em>current</em> range first",
+            "Then a number from {cfg:kuva_lich.minimumLevelCapIncrease}–{cfg:kuva_lich.maximumLevelCapIncrease} is rolled and added to floor <em>and</em> ceiling at once; chat tells you the new values",
+            "The floor stops at {cfg:kuva_lich.minimumLevel} and the ceiling at {cfg:kuva_lich.maximumLevel}; once capped they no longer rise"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "So your first hunt drops a weapon between level <t>{cfg:kuva_lich.baseMinimumLevel}</t> and <t>{cfg:kuva_lich.baseMaximumLevel}</t>. After that, floor and ceiling rise by the same number, so the whole range shifts upward; once one end is capped, only the other keeps rising."
+        },
+        {
+          "type": "p",
+          "text": "Going beyond level {cfg:kuva_lich.maximumLevel} is only possible through [[weapons/requiem_evolve|fusion]], up to level {cfg:kuva_lich.upgradeLimit}."
+        },
+        { "type": "h", "text": "Advanced details" },
+        {
+          "type": "p",
+          "text": "Kuva weapons in the Creative inventory roll their level from a new character's starting range, not from your current personal range."
+        }
+      ]
+    },
+    {
+      "id": "requiem_recast",
+      "title": "Requiem Recast",
+      "icon": "kuvalich:requiem_recast",
+      "summary": "3-in-1 trades; break mods into Endo",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The {item:kuvalich:requiem_recast} is the first of the three workbenches to build. It trades three Requiem cards or three [[start/glossary|mods]] for a new one, and breaks spare mods down into {item:kuvalich:endo}."
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "Endo is the material used to upgrade mods → [[modules/module_level]]"
+        },
+        {
+          "type": "p",
+          "text": "It has 3 input slots at the bottom and 1 output slot at the top. Fill all three, or put in a single mod, and the result appears on its own; there is no button."
+        },
+        { "type": "h", "text": "Card 3-in-1" },
+        {
+          "type": "p",
+          "text": "Any 3 Requiem cards (worn ones are fine) → 1 random Requiem card, each of the 8 equally likely, at full durability. How cards are used: [[requiem/requiem_cards]]."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "All three are consumed the instant the third one goes in, and the new card appears in the output."
+        },
+        { "type": "h", "text": "Mod 3-in-1" },
+        {
+          "type": "p",
+          "text": "3 mods → 1 <t>unrevealed mod</t>; three of one rarity give that rarity. Right-click it in your main hand to reveal it. These are also consumed as soon as all three are in, and weapon and Warframe mods cannot be mixed."
+        },
+        {
+          "type": "list",
+          "items": [
+            "3 weapon mods of the same tier: Bronze, Silver or Gold",
+            { "if": "cfg:kuva_lich.enableCrossTierRecast", "text": "Weapon mods of Bronze / Silver / Gold can be mixed, Prime and Riven cannot. The output tier is rolled by the ratio you put in: 2 Gold + 1 Bronze gives about 2/3 Gold, 1/3 Bronze" },
+            { "if": "cfg:kuva_lich.enablePrimeModuleRecast", "text": "3 weapon {item:kuvalich:item_prime_module}s" },
+            { "if": "cfg:kuva_lich.enableRivenModuleRecast", "text": "3 weapon {item:kuvalich:item_riven_module}s" },
+            { "if": "cfg:kuva_lich.enableWarframeModuleRecast", "text": "3 Warframe mods of the same tier: Bronze, Silver or Gold → [[warframe/warframe_module]]" },
+            { "if": ["cfg:kuva_lich.enableWarframeModuleRecast", "cfg:kuva_lich.enableWarframeCrossTierRecast"], "text": "Warframe mods of Bronze / Silver / Gold can be mixed, Prime and Riven cannot; the output tier is rolled by ratio the same way" },
+            { "if": ["cfg:kuva_lich.enableWarframeModuleRecast", "cfg:kuva_lich.enableWarframePrimeModuleRecast"], "text": "3 Warframe {item:kuvalich:warframe_prime_module}s" },
+            { "if": ["cfg:kuva_lich.enableWarframeModuleRecast", "cfg:kuva_lich.enableWarframeRivenModuleRecast"], "text": "3 Warframe {item:kuvalich:warframe_riven_module}s" }
+          ]
+        },
+        { "type": "h", "text": "Breaking mods into Endo" },
+        {
+          "type": "p",
+          "text": "Put in <em>a single</em> mod (weapon or Warframe) and the output slot previews how much {item:kuvalich:endo} it is worth. The mod is only consumed when you take the Endo out; if you change your mind, just take the mod back."
+        },
+        {
+          "type": "table",
+          "header": ["Source", "Endo"],
+          "widths": [1, 3],
+          "rows": [
+            ["Rarity base", "Bronze 1 · Silver 2 · Gold 4 · Prime / Riven 8"],
+            { "if": "cfg:kuva_lich.enableModuleLevelSystem", "cells": ["Mod level", "+1 per level gained → [[modules/module_level]]"] },
+            ["Riven cycles", "+1 per cycle done; unrevealed Rivens count as 0"],
+            ["Riven disposition", "Disposition 2 / 3 / 4 / 5 gives +2 / +4 / +8 / +16 → [[modules/riven_module]]"],
+            ["Total cap", "64"]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "Taking <em>any</em> amount of Endo out of the output slot counts as breaking the mod down."
+        },
+        { "type": "h", "text": "Crafting" },
+        { "type": "recipe", "item": "kuvalich:requiem_recast" },
+        {
+          "type": "p",
+          "text": "Crafting it takes a {item:kuvalich:requiem_gate}. Mining it back takes a diamond pickaxe."
+        }
+      ]
+    },
+    {
+      "id": "requiem_evolve",
+      "title": "Requiem Forge",
+      "icon": "kuvalich:requiem_evolve",
+      "summary": "Fuse weapons, consecrate, re-roll panels",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The {item:kuvalich:requiem_evolve} is the core weapon workbench: fusing two Kuva weapons into one, consecrating ordinary weapons so they can take mods, and re-rolling panels with Forma all happen here."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Right-click to open it: the <t>left slot</t> takes what you are working on, the <t>middle slot</t> the material",
+            "With the right combination, the result appears in the <t>right slot</t> on its own; there is no button",
+            "Take the result out of the right slot and you are done"
+          ]
+        },
+        {
+          "type": "table",
+          "header": ["Left + middle", "Effect", "Material spent"],
+          "widths": [3, 3, 2],
+          "rows": [
+            ["Kuva weapon + Kuva weapon", "Fusion: raise the level, swap the element", "When you take the result"],
+            ["Unconsecrated single item + {item:kuvalich:riven_sliver}", "Consecration: it can take mods from now on", "1 spent immediately"],
+            ["Consecrated non-Kuva weapon + {item:kuvalich:forma} / {item:kuvalich:shadow_forma}", "Re-rolls the base panel → [[weapons/forma]]", "1 spent immediately"],
+            ["Revealed Riven mod + {item:kuvalich:kuva}", "Re-rolls the Riven's stats → [[modules/riven_module]]", "<w>Every time a preview appears</w>"],
+            { "if": "cfg:kuva_lich.enableModuleLevelSystem", "cells": ["Revealed mod below max level + {item:kuvalich:endo}", "Mod upgrade → [[modules/module_level]]", "When you take the result"] },
+            { "if": ["mod:tacz", "cfg:kuva_lich.taczGunEnhanceEnable"], "cells": ["TACZ gun + {item:kuvalich:lich_reliquary}", "Permanently raises the gun's damage → [[tacz/tacz_enhance]]", "1 spent immediately"] }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "Riven re-rolls are paid per preview: each preview costs its Kuva and adds 1 to that Riven's cycle count; change the material slot after the preview and it previews again and charges again. Close the screen or pull the material out without taking the result and the Kuva already paid is not refunded."
+        },
+        { "type": "h", "text": "Weapon fusion" },
+        {
+          "type": "formula",
+          "text": "New level = round down[ higher of the two levels × {cfg:kuva_lich.upgradeMultiplier|add:1} ], max {cfg:kuva_lich.upgradeLimit}"
+        },
+        {
+          "type": "list",
+          "items": [
+            "The result is <em>the left weapon</em>: weapon type, base panel and installed mods all come from the left",
+            "<w>Its element is replaced by the middle weapon's</w>",
+            "The middle weapon disappears along with every mod on it, so remove good mods at the [[weapons/weapon_table]] first",
+            "The two can be different Kuva weapons",
+            "Close the screen without taking the result and both weapons come back"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "text": "Your main weapon always goes on the left. To change its element, put the weapon with the element you want in the middle. To raise the level, it doesn't matter where the higher-level one sits, since the new level uses the higher of the two."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the original game, two copies of the same Kuva weapon can go through Valence Fusion: the higher of the two elemental bonuses is kept and raised by 10%, up to 60%, and you pick which element stays."
+        },
+        { "type": "h", "text": "Consecration" },
+        {
+          "type": "p",
+          "text": "Put any <em>single</em> item (sword, axe, bow, crossbow…) on the left and a {item:kuvalich:riven_sliver} in the middle to instantly roll a random base panel; after that it can take mods."
+        },
+        {
+          "type": "p",
+          "text": "Consecrated items cannot be consecrated again; if you don't like the panel, re-roll it with Forma → [[weapons/forma]]"
+        },
+        { "type": "h", "text": "Crafting" },
+        { "type": "recipe", "item": "kuvalich:requiem_evolve" },
+        {
+          "type": "p",
+          "text": "Needs a {item:kuvalich:requiem_recast} and a {item:kuvalich:lich_reliquary}, so you need at least one successful hunt first. Mining it back takes a diamond pickaxe, and it is very hard."
+        },
+        { "type": "h", "text": "Advanced details" },
+        {
+          "type": "p",
+          "text": "Fusion drops fractions: at very low levels (level × {cfg:kuva_lich.upgradeMultiplier|pct} under 1) fusing adds no level at all, but still swaps the element."
+        }
+      ]
+    },
+    {
+      "id": "weapon_table",
+      "title": "Weapon Arsenal",
+      "icon": "kuvalich:requiem_weapon_table",
+      "summary": "Install and remove weapon mods",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The {item:kuvalich:requiem_weapon_table} installs and removes <hl>mods</hl>. A mod is a card you slot into a weapon to add stats, and every weapon has 8 slots."
+        },
+        {
+          "type": "p",
+          "text": "Mods are stored on the weapon itself: once installed they work wherever the weapon goes, and the workbench stores nothing."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Right-click to open it and put a <t>consecrated</t> weapon in the weapon slot at the bottom. Consecrating is what lets a weapon take mods: Kuva weapons come pre-consecrated, other weapons get consecrated at the [[weapons/requiem_evolve]] first",
+            "The 8 mod slots above become usable and show the mods already on the weapon",
+            "Drop a mod into an empty slot to install it, take it out to remove it; <g>nothing is consumed</g>",
+            "Take the weapon out or close the screen and it returns to your inventory with its mods; if your inventory is full it drops at your feet"
+          ]
+        },
+        {
+          "type": "kv",
+          "rows": [
+            ["Accepts", "Revealed weapon mods; Warframe mods go to [[warframe/warframe_table]]"],
+            ["Riven mods", "At most 1 per weapon → [[modules/riven_module]]"],
+            ["Duplicates / conflicts", "No two of the same mod, and conflicting mods cannot be installed together"],
+            ["SHIFT + click", "Mods jump to the first slot that accepts them; consecrated weapons jump to the weapon slot"],
+            ["TAB", "Opens the weapon mod codex → [[modules/module_codex]]"]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "Mods named “Unveiled …” have not been revealed yet: right-click them in your main hand first, then install them."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the original game, the Arsenal is the loadout screen on your ship, where you install and remove mods for your Warframe and weapons."
+        },
+        {
+          "type": "p",
+          "text": "Mod rarity and stacking rules: [[modules/module_overview]]; limits on mods: [[modules/module_limits]]."
+        },
+        { "type": "h", "text": "Crafting" },
+        { "type": "recipe", "item": "kuvalich:requiem_weapon_table" },
+        {
+          "type": "p",
+          "text": "Needs 4 {item:kuvalich:kuva}, 1 {item:kuvalich:lich_reliquary} and a {item:kuvalich:requiem_evolve}, so you need one successful hunt first. Mining it back takes a diamond pickaxe."
+        }
+      ]
+    },
+    {
+      "id": "weapon_panel",
+      "title": "Reading the Weapon Panel",
+      "icon": "kuvalich:riven_sliver",
+      "summary": "Tooltip groups and what each key shows",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Hover over any <t>consecrated</t> item, one that can take mods, to see its <hl>weapon panel</hl>: the weapon's current stats. Kuva weapons come pre-consecrated."
+        },
+        {
+          "type": "p",
+          "text": "A Kuva weapon's panel has an extra top line, “{lang:kuvaweapon.type} element level”: the element name is in its element colour and the level number uses the [[weapons/weapon_level|level colours]]."
+        },
+        { "type": "h", "text": "No mods installed" },
+        {
+          "type": "p",
+          "text": "Only four base values: {lang:kuvalich.attr.short.damage}, {lang:kuvalich.attr.short.criticalStrikeProbability}, {lang:kuvalich.attr.short.criticalStrikeMultiplier}, {lang:kuvalich.attr.short.triggerChance}. For Kuva weapons see [[weapons/weapon_list]]; other weapons roll them when consecrated, odds in [[weapons/forma]]."
+        },
+        { "type": "h", "text": "With mods" },
+        {
+          "type": "table",
+          "header": ["Group", "Contents"],
+          "widths": [1, 3],
+          "rows": [
+            ["{lang:kuvalich.panel.group.panel}", "Your final panel with mods applied; Crit Chance and Crit Damage are shown as “melee / ranged”"],
+            ["{lang:kuvalich.panel.group.stack}", "Stacks, current bonus and state of each kill stack → [[combat/kill_stack]]"],
+            ["{lang:kuvalich.panel.group.element}", "Status share of each element and total elemental damage → [[combat/elements]]"],
+            ["{lang:kuvalich.panel.group.damage} / {lang:kuvalich.panel.group.gun} / {lang:kuvalich.panel.group.rare}", "All other attributes; melee weapons hide firearm attributes by default → [[reference/weapon_attr_damage]]"],
+            { "if": ["cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule", "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"], "cells": ["{lang:kuvalich.panel.group.extra}", "Bonuses that mods on your other gear give your main-hand weapon; only shown for the main-hand weapon → [[modules/multi_slot]]"] },
+            ["{lang:kuvalich.panel.group.modules}", "The installed mods, with “installed/8” in the header"]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Value colours: <c:6FD8E8>cyan</c> = currently raised by kill stacks; <c:FF7B7B>red</c> = a negative value."
+        },
+        { "type": "h", "text": "Hold a key" },
+        {
+          "type": "table",
+          "header": ["Hold", "What you see"],
+          "widths": [1, 4],
+          "rows": [
+            ["Nothing", "Default view; values <em>include</em> your current kill stacks"],
+            ["SHIFT", "Same layout, but values <em>exclude</em> stacks. Compare it with the default view to see what the stacks are propping up"],
+            { "if": "cfg:modules.attributeTotalCaps", "cells": ["CTRL", "Attribute sources: what each mod adds, where gear bonuses come from, and which attributes were cut off by a cap → [[modules/module_limits]]"] },
+            { "if": "!cfg:modules.attributeTotalCaps", "cells": ["CTRL", "Attribute sources: what each mod adds and where gear bonuses come from"] },
+            ["ALT", "Live status: per-stack bonus of each kill stack, how elements combined, how status chance is worked out"]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "When several keys are held, SHIFT wins, then CTRL, then ALT."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"],
+          "text": "“{lang:item.kuvalich.forma_locked}” at the top of the panel means this weapon's base panel is locked → [[weapons/forma]]."
+        },
+        { "type": "h", "text": "Advanced details" },
+        {
+          "type": "list",
+          "items": [
+            "In the ALT view, status chance = base × (1 + mods) × (1 + stacks), capped at 500% per hit; above that it is marked “{lang:kuvalich.panel.trigger.capped}”",
+            "Panel position, width, density and which groups show can all be changed in your own client settings, and only affect you"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "forma",
+      "title": "Forma",
+      "icon": "kuvalich:forma",
+      "summary": "Re-roll the base panel of non-Kuva weapons",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "{item:kuvalich:forma} <hl>re-rolls the base panel</hl>: a weapon's base damage, crit chance, crit damage and status chance are rolled again. It only works on <t>consecrated non-Kuva weapons</t>; consecration is covered in [[weapons/requiem_evolve]]."
+        },
+        { "type": "items", "items": ["kuvalich:forma", "kuvalich:shadow_forma"] },
+        {
+          "type": "steps",
+          "items": [
+            "Open the {item:kuvalich:requiem_evolve}",
+            "Weapon in the left slot (one at a time), {item:kuvalich:forma} in the middle",
+            "One Forma is spent immediately and the re-rolled weapon appears on the right; installed mods stay put",
+            "Not happy? Put it back on the left and roll again"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the original game, Forma changes the polarity of a mod slot on a weapon, at the cost of resetting the weapon's rank to zero so it has to be levelled again."
+        },
+        { "type": "h", "text": "How the new panel is rolled" },
+        {
+          "type": "p",
+          "text": "Consecration rolls its panel the same way. Almost every roll is Normal; Jackpot and Dud are about 1 in 1000 each."
+        },
+        {
+          "type": "table",
+          "header": ["", "<c:FFC861>Jackpot</c> 0.1%", "<c:8A93A3>Dud</c> ~0.1%", "Normal · rest"],
+          "widths": [1, 1, 1, 1],
+          "rows": [
+            ["{lang:kuvalich.attr.short.damage}", "150%–200%", "50%–80%", "80%–120%"],
+            ["{lang:kuvalich.attr.short.criticalStrikeProbability}", "40%–60%", "5%–10%", "10%–25%"],
+            ["{lang:kuvalich.attr.short.criticalStrikeMultiplier}", "3.0–4.0×", "1.2–1.5×", "1.8–2.5×"],
+            ["{lang:kuvalich.attr.short.triggerChance}", "30%–40%", "5%–10%", "5%–20%"]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Within Normal, there is a 60% chance that base damage is exactly 100%, and a 30% chance that crit chance becomes 25%–40% instead. The result is then adjusted once more by how high the crit chance is; see Advanced details at the end."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "Base damage below 100% applies squared: an 80% panel really deals 64%, and a Dud's 50% only 25% → [[combat/damage]]"
+        },
+        { "type": "h", "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"], "text": "Panel lock" },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"],
+          "text": "Every re-roll with a normal Forma has a {cfg:kuva_lich.formaLockChance|pctv} chance to <b>permanently lock</b> the weapon. A locked weapon shows “{lang:item.kuvalich.forma_locked}” at the top of its panel, and normal Forma can no longer touch it."
+        },
+        { "type": "h", "text": "Shadow Forma" },
+        {
+          "type": "list",
+          "items": [
+            "Used exactly like Forma",
+            { "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"], "text": "<em>Ignores the lock</em> and removes it after re-rolling; it never rolls the lock chance itself" },
+            "No recipe and no drops; it only exists in the Creative inventory"
+          ]
+        },
+        { "type": "h", "text": "Crafting" },
+        { "type": "recipe", "item": "kuvalich:forma" },
+        { "type": "p", "text": "Crafts 3 at a time; stacks to 16." },
+        { "type": "h", "text": "Advanced details" },
+        {
+          "type": "table",
+          "header": ["Within Normal", "Extra adjustment"],
+          "widths": [1, 4],
+          "rows": [
+            ["Crit ≥30%", "Crit damage becomes 2.5–3.0× and base damage drops to 80%–90%; above 30% crit there is also a 60% chance that status falls to 1%–5%"],
+            ["Crit ≤15%", "60% chance of crit damage 2.5–3.0× with base damage 110%–120%; about a 4% chance of crit damage 3.0–3.5× with base damage 70%–80%"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heavy_weapons",
+      "title": "Heavy Weapons in Detail",
+      "icon": "kuvalich:arca_titron",
+      "summary": "Passives and numbers of the 7 heavy weapons",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "This page goes through the passives of the 7 heavy weapons one by one. First, what the notation means:"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            ["Full charge", "Swing only once the attack cooldown bar is full. Unless stated otherwise, passives need a fully charged attack"],
+            ["L", "Level factor: positive above the benchmark level, negative below → [[weapons/weapon_level]]"],
+            ["×(1+L)", "Scales fully with level"],
+            ["×(1+L/2)", "Gets only half the level scaling"]
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:kuva_shildeg}" },
+        {
+          "type": "list",
+          "items": [
+            "Against targets with <t>0 armor</t>: damage ×1.25×(1+L); a single point of armor cancels the bonus",
+            "Breaks shields"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:paracesis}" },
+        {
+          "type": "list",
+          "items": [
+            "31% chance for this hit to deal ×2.6",
+            "×2 more damage against players",
+            "Only <w>30%</w> of the damage lands immediately; the other 70% is multiplied by (1+L) and becomes a 5 s DoT"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:arca_titron}" },
+        {
+          "type": "list",
+          "items": [
+            "Each kill while holding it adds 1 charge, up to 10, lasting 20×(1+L) s; every kill refreshes the timer, and kills need no full charge",
+            "Charge only empowers vanilla <em>jump crits</em>: crit multiplier ×(1 + stacks×5%×(1+L)). At the benchmark level, 10 stacks turn 1.5 into 2.25",
+            "This is separate from the Crit Chance on your panel; ground attacks gain nothing from charge",
+            "Breaks shields"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:vitrica}" },
+        {
+          "type": "list",
+          "items": [
+            "Every hit stacks a debuff on the target, up to 8 stacks, lasting 10×(1+L) s and refreshed on every hit",
+            "Each stack gives the target <g>−7.5%</g> attack damage, attack speed, armor, armor toughness and movement speed: −60% at 8 stacks",
+            "This hit deals ×1.25×(1+L/2). The debuff is applied before damage is settled, so even the first hit benefits"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:gram_prime}" },
+        {
+          "type": "list",
+          "items": [
+            "Attacks at ≥75% charge splash other creatures within about 4×(1+L/6) blocks of the target",
+            "Each takes your attack damage ×66%×charge, counting Sharpness-type enchantment bonuses",
+            "The splash counts as your melee attack and goes through the weapon panel as usual: mods, crits and elements all apply",
+            "<b>The splash does not pick sides</b>: pets and villagers standing nearby get hit too, and so do other players when PvP is allowed"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:sancti_magistar}" },
+        {
+          "type": "list",
+          "items": [
+            "After a hit, heals <em>you and every other player within 15 blocks</em> over 2.5 s, each for a total of this hit's damage ×5%×(1+2L)",
+            "<w>On very low-level weapons, once L drops to −0.5 or lower</w>, 1+2L ≤ 0 and nobody is healed at all",
+            "While held, <t>damage with no source</t> is reduced by 50%×(1+L/2): falling, burning, lava, drowning, suffocation, Poison and Wither effects and so on",
+            "Breaks shields"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:prisma_veritux}" },
+        {
+          "type": "list",
+          "items": [
+            "Against targets with 0 armor: damage ×1.25×(1+L)",
+            "While held, block reach and attack reach each +1×(1+L/2) blocks",
+            "Attack speed and movement scale fully with level, while other heavy weapons only get half",
+            "Breaks shields"
+          ]
+        },
+        { "type": "h", "text": "Advanced details" },
+        {
+          "type": "list",
+          "items": [
+            "The {item:kuvalich:paracesis} DoT starts after 0.25 s and ticks every game tick, straight off the target's health",
+            "A jump crit for the {item:kuvalich:arca_titron} means swinging while falling, over 90% charged, and not sprinting",
+            "{item:kuvalich:vitrica}: this hit deals ×0.75 only when the target has none of the debuff"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "light_weapons",
+      "title": "Light Weapons in Detail",
+      "icon": "kuvalich:pennant",
+      "summary": "Passives and numbers of the 6 light weapons",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "This page goes through the passives of the 6 light weapons one by one. L, ×(1+L) and the rest are explained in [[weapons/heavy_weapons]]; unless stated otherwise, passives need a <em>fully charged attack</em>."
+        },
+        { "type": "h", "text": "{item:kuvalich:pennant}" },
+        {
+          "type": "list",
+          "items": [
+            "32% chance for this hit to deal ×2.4",
+            "<hl>Charged right-click</hl>: hold right-click for at least 1 s, then release to dash where you are looking; faster movement means a longer dash",
+            "On release, every creature within 12×(1+L/4) blocks of you instantly takes a hit of magic damage that ignores armor, based on <em>20% of its current health</em>",
+            "That hit counts as your attack: it goes through the weapon panel as usual and can also roll the 32% heavy hit above, so it usually ends up above 20%",
+            "Everything hit then keeps losing health for 5 s based on its <em>missing health</em>, growing heavier as it goes",
+            "10 s cooldown; <b>hits friend and foe alike</b>, only you are excluded. Other players only take damage when PvP is allowed"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:guandao_prime}" },
+        {
+          "type": "list",
+          "items": [
+            "On hit your attack speed +11%, becoming +16% if you hit again while it lasts; lasts 5×(1+L) s",
+            "It also applies a DoT: 20 ticks over 5 s straight off the target's health, totalling (this hit's damage + 2.5% of the target's max health)×(1+L)",
+            "Attack damage only gets half the level scaling (1+L/2); attack speed and movement get all of it (1+L)"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:reaper_prime}" },
+        {
+          "type": "list",
+          "items": [
+            "Lifesteal on hit: this hit's damage ×10%×(1+L)",
+            "The damage used here is the value <em>before</em> the weapon panel and mods are applied, so stacking damage mods does not raise the heal",
+            "<hl>Right-click dash</hl>: hold right-click for at least 0.25 s and release to dash where you look; holding a full 1 s gives maximum strength, 0.5 → 1.5×",
+            "Distance also scales with your movement speed and (1+L/3); cooldown 1.5–4.5 s, longer for stronger dashes; the dash itself deals no damage"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:destreza_prime}" },
+        {
+          "type": "list",
+          "items": [
+            "Every attack at ≥66% charge first lands an extra hit, every time, with no chance roll",
+            "The extra hit = your attack damage ×33.3%×charge, counting Sharpness-type enchantment bonuses; it also goes through the weapon panel as usual",
+            "Attack speed and movement scale fully with level"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:machete}" },
+        {
+          "type": "list",
+          "items": [
+            "Killing an <t>animal or monster</t> while holding it multiplies each drop stack by a random ×1, ×2 or ×3; no full charge needed",
+            "Armor, swords, pickaxes, axes, shovels and hoes are not multiplied",
+            "Special drops of the {lang:entity.kuvalich.kuva_slave} and the {lang:entity.kuvalich.kuva_master} (Kuva, Riven Slivers, mods…) are spawned separately and never multiplied"
+          ]
+        },
+        { "type": "h", "text": "{item:kuvalich:caustacyst}" },
+        {
+          "type": "list",
+          "items": [
+            "With a {lang:kuvaweapon.type.poison} innate element: hits apply a full 10 stacks of {lang:kuvaweapon.type.virus}, max health <g>−50%</g>, for 7.5×(1+L) s; damage is unchanged",
+            "Any other element: this hit deals <b>×0.75×(1+L)</b> and applies only 1 Viral stack",
+            "Attack speed and movement scale fully with level",
+            "Want Toxin? Put a Toxin Kuva weapon in the middle slot of a fusion → [[weapons/requiem_evolve]]; Viral effects: [[combat/element_status]]"
+          ]
+        },
+        { "type": "h", "text": "Advanced details" },
+        {
+          "type": "list",
+          "items": [
+            "The {item:kuvalich:pennant}'s follow-up damage ticks every 0.25 s, each tick about 0.46% → 2.1% of missing health ×(1+L)",
+            "After the {item:kuvalich:destreza_prime}'s extra hit, the target's hit-immunity window is shortened so your normal attack still connects",
+            "{item:kuvalich:machete}: Slimes, Magma Cubes, Ghasts, Phantoms, Shulkers, Squid, Villagers and Iron Golems count as neither animals nor monsters in game code, so they are <b>not multiplied</b>",
+            "{item:kuvalich:machete}: bosses that cannot change dimensions, such as the Wither and the Ender Dragon, are excluded too"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2312 @@
+{
+  "id": "start",
+  "order": 10,
+  "title": "入门指南",
+  "subtitle": "跟着教程，从零玩到后期",
+  "icon": "kuvalich:kuvalich_guide",
+  "entries": [
+    {
+      "id": "overview",
+      "title": "模组概览",
+      "icon": "kuvalich:kuva",
+      "summary": "这个模组玩什么，一页看懂",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>赤毒玄骸</hl>是一个仿《星际战甲》的战斗养成模组：挖矿、刷怪，解开一道只属于你的谜题，再打败 Boss {lang:entity.kuvalich.kuva_master}，换取强力武器和强化卡。"
+        },
+        {
+          "type": "p",
+          "text": "这些强化卡在本模组里叫<t>模组</t>，能装进<em>任何武器</em>：原版的剑和弓、其它模组的武器都行。"
+        },
+        {
+          "type": "entity",
+          "id": "kuvalich:kuva_master",
+          "height": 72
+        },
+        {
+          "type": "h",
+          "text": "一轮怎么玩"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "<em>挖矿</em>：用带{lang:enchantment.kuvalich.requiem_destroyed}附魔的镐挖{item:kuvalich:requiem_ore}，攒安魂卡和材料。",
+            "<em>刷怪</em>：击杀{lang:entity.kuvalich.kuva_slave}攒<t>解密进度</t>。进度分三段，每段揭示一张答案卡。",
+            "<em>摆卡</em>：在{item:kuvalich:requiem_gate}里按你猜的顺序放好三张安魂卡。",
+            "<em>讨伐</em>：亲手击杀{lang:entity.kuvalich.kuva_master}。顺序全对就是<g>解密成功</g>；猜错则<b>玄骸等级 +1</b>，换个顺序再来。",
+            "<em>强化</em>：用奖励的赤毒武器、模组和材料，在功能方块里开光、装模组、融合武器。",
+            "<em>下一轮</em>：成功后答案重新生成，之后掉的赤毒武器等级更高。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "教程路线"
+        },
+        {
+          "type": "p",
+          "text": "从下一篇起是一套完整教程。每篇末尾点「下一篇」一路读下去，就能按游戏进度学会全部玩法。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "篇目",
+            "学什么"
+          ],
+          "widths": [
+            4,
+            5
+          ],
+          "rows": [
+            [
+              "[[start/glossary]]",
+              "看不懂的词先查这里"
+            ],
+            [
+              "[[start/first_steps]]",
+              "附魔镐子，挖安魂矿石"
+            ],
+            [
+              "[[start/tut_2_thralls]]",
+              "刷奴仆，攒解密进度"
+            ],
+            [
+              "[[start/tut_3_lich]]",
+              "摆好答案，讨伐玄骸"
+            ],
+            [
+              "[[start/tut_4_rewards]]",
+              "领奖、认识赤毒武器、造功能方块"
+            ],
+            [
+              "[[start/tut_5_modules]]",
+              "装模组、升级模组"
+            ],
+            [
+              "[[start/tut_6_consecrate]]",
+              "让普通武器也能装模组"
+            ],
+            [
+              "[[start/tut_7_warframe]]",
+              "给你自己装模组"
+            ],
+            [
+              "[[start/tut_8_combat]]",
+              "暴击、元素、叠层、克制"
+            ],
+            {
+              "if": "mod:tacz",
+              "cells": [
+                "[[start/tut_guns]]",
+                "让 TACZ 的枪用上模组"
+              ]
+            },
+            [
+              "[[start/tut_9_endgame]]",
+              "一轮轮变强的长线目标"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "教程之后是三篇速查：[[start/materials]]、[[start/faq]]和「数值速查」。其余分类是各系统的完整说明，每章末尾都会指过去。"
+        }
+      ],
+      "_src": [
+        "enchantment/RequiemDestroyedEnchantment.java:131-170,232-235 — 挖安魂矿石出货：安魂卡、模组、裂罅碎块、赤毒",
+        "entity/KuvaSlaveEntity.java:163-174,195-254 — 玩家击杀奴仆给解密进度并掉落",
+        "capability/RequiemCard.java:236-269,333-347 — 三段进度，每满一段揭示一张答案卡",
+        "world/inventory/RequiemGateMenu.java:106-121,206-231 — 灭骸之扉三个卡槽，关界面时存入玩家能力",
+        "entity/KuvaMasterEntity.java:415-430 — 玩家击杀玄骸时按卡判定：成功 / 失败 / 只给进度",
+        "entity/KuvaMasterEntity.java:597 + capability/RequiemCard.java:329 — 失败：玄骸等级 +1，成功 reset 清零",
+        "entity/KuvaMasterEntity.java:556-579 + capability/RequiemCard.java:271-281,317-331 — 成功后提升武器等级区间；答案 reset 后下一轮重新生成",
+        "world/inventory/RequiemEvolveMenu.java:201-237 — 安魂之融：融合赤毒武器、开光、塑形块等",
+        "world/inventory/RequiemEvolveMenu.java:471-481 — 武器槽接受任意单个物品（未开光即可开光），所以任何武器都能装模组",
+        "教程路线表 = 本分类条目顺序（first_steps 为第 1 章，tut_guns 仅 mod:tacz 时出现）"
+      ]
+    },
+    {
+      "id": "glossary",
+      "title": "名词速查",
+      "icon": "minecraft:name_tag",
+      "summary": "看不懂的词，先查这一页",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "书里有不少来自《星际战甲》的名词。没玩过原作也没关系：下表用一句话说清它们在本模组里是什么，点「详情」看完整说明。"
+        },
+        {
+          "type": "h",
+          "text": "敌人与解密"
+        },
+        {
+          "type": "table",
+          "header": [
+            "名词",
+            "在本模组里是什么",
+            "详见"
+          ],
+          "widths": [
+            3,
+            7,
+            2
+          ],
+          "rows": [
+            [
+              "{lang:entity.kuvalich.kuva_master}",
+              "本模组的 Boss，简称<t>玄骸</t>。带着正确答案击杀它就能拿大奖",
+              "[[enemies/kuva_master|详情]]"
+            ],
+            [
+              "{lang:entity.kuvalich.kuva_slave}",
+              "野外的赤毒小怪，简称<t>奴仆</t>。击杀它攒解密进度",
+              "[[enemies/kuva_slave|详情]]"
+            ],
+            [
+              "赤毒敌人",
+              "奴仆和玄骸的统称",
+              "[[enemies|详情]]"
+            ],
+            [
+              "安魂卡",
+              "8 种卡片。其中 3 种按固定顺序排成一串，就是你要解开的答案",
+              "[[requiem/requiem_cards|详情]]"
+            ],
+            [
+              "解密进度",
+              "击杀赤毒敌人攒的点数，每攒满一段揭示一张答案卡",
+              "[[requiem/decryption|详情]]"
+            ],
+            [
+              "{item:kuvalich:requiem_gate}",
+              "摆放三张答案卡的方块",
+              "[[requiem/requiem_gate|详情]]"
+            ],
+            [
+              "解密成功 / 失败",
+              "带着三张卡击杀玄骸时核对答案：顺序全对为成功，否则为失败",
+              "[[requiem/requiem_gate|详情]]"
+            ],
+            [
+              "玄骸等级",
+              "记在你身上的失败次数，每失败一次 +1，成功后清零",
+              "[[enemies/kuva_escalation|详情]]"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "装备与模组"
+        },
+        {
+          "type": "table",
+          "header": [
+            "名词",
+            "在本模组里是什么",
+            "详见"
+          ],
+          "widths": [
+            3,
+            7,
+            2
+          ],
+          "rows": [
+            [
+              "赤毒武器",
+              "解密成功时掉的专属武器，共 13 种。自带一种元素，拿到就能装模组",
+              "[[weapons/kuva_weapons|详情]]"
+            ],
+            [
+              "武器等级",
+              "赤毒武器的强度，决定攻击、攻速和被动",
+              "[[weapons/weapon_level|详情]]"
+            ],
+            [
+              "模组",
+              "可插拔的强化卡，每张带几条加成。装上不消耗，随时能拆",
+              "[[modules/module_overview|详情]]"
+            ],
+            [
+              "词条",
+              "模组上的一条加成，例如「+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}」",
+              "[[reference|详情]]"
+            ],
+            [
+              "未揭示",
+              "刚掉出来的模组看不到词条，拿在主手右键才会变成具体的卡",
+              "[[modules/module_overview|详情]]"
+            ],
+            [
+              "品质",
+              "模组分五档：青铜、白银、黄金、Prime、裂罅",
+              "[[modules/module_rarity|详情]]"
+            ],
+            [
+              "Prime",
+              "第四档品质，相当于普通模组的加强版，只在解密成功时掉",
+              "[[modules/module_rarity|详情]]"
+            ],
+            [
+              "裂罅模组",
+              "第五档品质，词条完全随机，可以花赤毒重洗",
+              "[[modules/riven_module|详情]]"
+            ],
+            [
+              "开光",
+              "用{item:kuvalich:riven_sliver}给普通物品生成一套面板，之后它才能装模组",
+              "[[weapons/requiem_evolve|详情]]"
+            ],
+            [
+              "面板",
+              "开光物品的四项基础数值：伤害、暴击几率、暴击倍率、触发几率",
+              "[[weapons/weapon_panel|详情]]"
+            ],
+            [
+              "{item:kuvalich:forma}",
+              "重洗普通武器面板的道具",
+              "[[weapons/forma|详情]]"
+            ],
+            [
+              "融合",
+              "两把赤毒武器合成一把，抬高等级、换元素",
+              "[[weapons/requiem_evolve|详情]]"
+            ],
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "cells": [
+                "{item:kuvalich:endo}",
+                "给模组升级的材料",
+                "[[modules/module_level|详情]]"
+              ]
+            },
+            [
+              "军械库",
+              "装模组的工作台：武器军械库给武器装，战甲军械库给你自己装",
+              "[[weapons/weapon_table|详情]]"
+            ],
+            [
+              "战甲",
+              "就是你这个玩家。战甲模组装在你身上，一直生效",
+              "[[warframe/warframe_module|详情]]"
+            ],
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "护盾",
+                "战甲模组给的黄心，挨打先扣它，之后会自己回满",
+                "[[warframe/shield|详情]]"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "战斗"
+        },
+        {
+          "type": "table",
+          "header": [
+            "名词",
+            "在本模组里是什么",
+            "详见"
+          ],
+          "widths": [
+            3,
+            7,
+            2
+          ],
+          "rows": [
+            [
+              "元素",
+              "附加在攻击上的额外伤害，如{lang:kuvaweapon.type.fire}、{lang:kuvaweapon.type.ice}",
+              "[[combat/elements|详情]]"
+            ],
+            [
+              "触发",
+              "攻击时按几率给目标挂上元素的状态效果",
+              "[[combat/element_status|详情]]"
+            ],
+            [
+              "暴击",
+              "按几率打出成倍伤害；几率超过 100% 会升档",
+              "[[combat/crit|详情]]"
+            ],
+            [
+              "克制（歧视）",
+              "对某一类生物（如亡灵）的额外伤害",
+              "[[combat/bane|详情]]"
+            ],
+            [
+              "击杀叠层",
+              "每击杀一个生物叠一层的临时加成",
+              "[[combat/kill_stack|详情]]"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "材料与方块"
+        },
+        {
+          "type": "table",
+          "header": [
+            "名词",
+            "在本模组里是什么",
+            "详见"
+          ],
+          "widths": [
+            3,
+            7,
+            2
+          ],
+          "rows": [
+            [
+              "{item:kuvalich:kuva}",
+              "主要用来重洗裂罅模组，也用来造武器军械库",
+              "[[start/materials|详情]]"
+            ],
+            [
+              "{item:kuvalich:riven_sliver}",
+              "开光用的材料，也用来造战甲军械库",
+              "[[start/materials|详情]]"
+            ],
+            [
+              "{item:kuvalich:requiem_gem}",
+              "只有奴仆会掉，造功能方块的主要材料",
+              "[[requiem/requiem_items|详情]]"
+            ],
+            [
+              "{item:kuvalich:lich_reliquary}",
+              "每次解密成功掉 1 个，造高级方块必需",
+              "[[requiem/requiem_items|详情]]"
+            ],
+            [
+              "{item:kuvalich:requiem_recast}",
+              "三合一方块：3 张卡换 1 张，3 张模组换 1 张；也能分解模组",
+              "[[weapons/requiem_recast|详情]]"
+            ],
+            [
+              "{item:kuvalich:requiem_evolve}",
+              "养成核心方块：开光、融合、塑形、重洗裂罅都在这里",
+              "[[weapons/requiem_evolve|详情]]"
+            ],
+            {
+              "if": [
+                "mod:tacz",
+                "cfg:kuva_lich.taczGunEnhanceEnable"
+              ],
+              "cells": [
+                "女皇之力",
+                "用玄骸之遗永久提高 TACZ 枪的伤害",
+                "[[tacz/tacz_enhance|详情]]"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "英文 Lich 本义是「巫妖」：死后以不死之身归来的施法者。原作的玄骸也是死而复生的：你处决了一只赤毒幼体（Kuva Larvling），它便复活成只属于你的宿敌。"
+        }
+      ],
+      "_src": [
+        "entity/KuvaMasterEntity.java:415-430,440-494 — 带三张卡击杀玄骸时核对：全对成功（掉武器、玄骸之遗、高级模组等），否则失败",
+        "entity/KuvaSlaveEntity.java:163-174,195-199 — 击杀奴仆给解密进度；base/entity/AbstractKuva.java — 奴仆与玄骸共同基类（赤毒敌人）",
+        "init/KuvaLichItems.java:39 + capability/RequiemCard.java:271 — 8 种安魂卡，答案为 3 张互不相同的卡",
+        "capability/RequiemCard.java:236-269 — 三段阈值，每满一段揭示一张",
+        "entity/KuvaMasterEntity.java:588-600 + capability/RequiemCard.java:317-331 — 失败 kuvaLevel +1，成功 reset 清零",
+        "init/KuvaLichItems.java:86-175 — 13 把赤毒武器；utils/KuvaWeaponUtil.java:22-32 — 自带元素 7 选 1；base/item/AbstractKuvaWeapon.java:173-188 — 天生开光",
+        "utils/KuvaWeaponUtil.java:219-233 — 武器等级影响攻击、攻速、被动倍率",
+        "world/inventory/RequiemWeaponTableMenu.java:326-410 — 模组装卸无消耗；item/module/weapon/WeaponCommonModule.java:621-641 — 未揭示模组主手右键揭示",
+        "utils/KuvaPalette.java:96-102 — 五档品质；entity/KuvaMasterEntity.java:534-548 — Prime / 裂罅只在解密成功时掉；item/module/weapon/WeaponPrimeModule.java:98-99 — Prime 版与普通版同 type",
+        "item/module/weapon/WeaponRivenModule.java:285-315 + world/inventory/RequiemEvolveMenu.java:205-210 — 裂罅随机词条、赤毒循环",
+        "world/inventory/RequiemEvolveMenu.java:221-223,340-353 — 裂罅碎块开光；module/weapon/WeaponModuleHandler.java:213-257 — 面板四项 damage / 暴击几率 / 暴击倍率 / 触发几率",
+        "world/inventory/RequiemEvolveMenu.java:212-220,241-254 — 塑形块重洗非赤毒武器；两把赤毒武器融合（等级 + 元素）",
+        "world/inventory/RequiemEvolveMenu.java:228-236 — 内融核心升级模组（等级系统开启时）",
+        "world/inventory/RequiemWarframeTableMenu.java:138-139 + capability/WarframeModules.java:30-65 — 战甲模组挂在玩家身上，常驻生效",
+        "module/warframe/WarframeEffectHandler.java:620-665 — 护盾 = 吸收值（黄心），自动回复；上限乘 shieldCapMultiplier",
+        "module/weapon/WeaponElementSystem.java:407-445 — 元素与触发；module/weapon/WeaponCombatHandler.java:732-762 — 暴击升档；:766-775 — 克制按目标 MobType；module/KillStackManager.java:151-170 — 击杀叠层",
+        "data/kuvalich/recipes/*.json — 赤毒→武器军械库、裂罅碎块→战甲军械库、安魂宝石→功能方块、玄骸之遗→安魂之融与两个军械库",
+        "entity/KuvaSlaveEntity.java:248-253 — 安魂宝石只从奴仆掉；entity/KuvaMasterEntity.java:465 — 每次成功 1 个玄骸之遗",
+        "world/inventory/RequiemRecastMenu.java:183-238,397-421 — 安魂之铸三合一、单张分解",
+        "compat/tacz/TaczGunEnhanceUtil.java:68-75,144-159 — 女皇之力：玄骸之遗强化 TACZ 枪",
+        "wf 小知识（原作设定，非本模组代码）：Warframe 的 Kuva Lich 为玩家的宿敌，会升级；需从 8 种 Requiem 模组中找出正确的 3 种并按顺序使用才能彻底击败"
+      ]
+    },
+    {
+      "id": "first_steps",
+      "title": "第 1 章 · 挖安魂矿石",
+      "icon": "kuvalich:requiem_ore",
+      "summary": "附魔镐子，挖到第一批安魂矿石",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：准备一把带{lang:enchantment.kuvalich.requiem_destroyed}附魔的镐子，挖到第一批{item:kuvalich:requiem_ore}。整个模组就从这种矿开始。"
+        },
+        {
+          "type": "h",
+          "text": "怎么做"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "<em>弄到附魔</em>：{lang:enchantment.kuvalich.requiem_destroyed}是极稀有附魔，附魔台要接近满级才可能出。图书管理员村民也可能卖这本附魔书，买到后用铁砧附上。",
+            "<em>挑镐子</em>：钻石镐或下界合金镐挖得最快。<w>别带精准采集</w>，带了什么都不掉；时运有没有都无所谓。",
+            {
+              "if": "cfg:ore_gen.requiemOreVeinCount",
+              "text": "<em>找矿</em>：{item:kuvalich:requiem_ore}嵌在石头和深板岩里，高度 Y <t>{cfg:ore_gen.requiemOreMinHeight}</t> ~ <t>{cfg:ore_gen.requiemOreMaxHeight}</t>，越靠中间越多。下界和末地没有。"
+            },
+            "<em>开挖</em>：带附魔约 <t>0.5</t> 秒挖一块。每块有 <t>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</t> 概率出货，出货时下表的东西一起掉出来。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "你会得到"
+        },
+        {
+          "type": "table",
+          "header": [
+            "每次出货",
+            "数量",
+            "以后用来"
+          ],
+          "widths": [
+            4,
+            3,
+            5
+          ],
+          "rows": [
+            [
+              "安魂卡",
+              "1 张，8 种随机",
+              "当解密答案（第 3 章）"
+            ],
+            [
+              "{item:kuvalich:riven_sliver}",
+              "1 个",
+              "开光（第 6 章）"
+            ],
+            [
+              "{item:kuvalich:kuva}",
+              "2~4 个",
+              "造武器军械库、重洗裂罅"
+            ],
+            [
+              "模组",
+              "有概率附带 1 张",
+              "强化装备（第 5 章）"
+            ]
+          ]
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:khra",
+            "kuvalich:jahu",
+            "kuvalich:fass",
+            "kuvalich:lohk",
+            "kuvalich:netra",
+            "kuvalich:vome",
+            "kuvalich:xata",
+            "kuvalich:ris"
+          ],
+          "caption": "8 种安魂卡"
+        },
+        {
+          "type": "p",
+          "if": [
+            "cfg:ore_gen.experienceOreVeinCount",
+            "cfg:kuva_lich.enableModuleLevelSystem"
+          ],
+          "text": "顺路看到{item:kuvalich:experience_ore}也挖掉：石镐就能挖，掉经验，还有一半机会掉{item:kuvalich:endo}（第 5 章升级模组用）。"
+        },
+        {
+          "type": "p",
+          "if": [
+            "cfg:ore_gen.experienceOreVeinCount",
+            "!cfg:kuva_lich.enableModuleLevelSystem"
+          ],
+          "text": "顺路看到{item:kuvalich:experience_ore}也挖掉：石镐就能挖，掉经验。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "两个坑",
+          "text": "① 不带附魔也能挖，但慢得离谱（钻石镐约 <t>2.5</t> 分钟一块），出货率只有 <t>{cfg:kuva_lich.baseCardDropChance|pctv}</t>，时运还会让它<w>更低</w>。② 安魂矿石本身不掉矿石方块，卡和材料全看出货判定。经验不看判定：用钻石镐或更好的镐子挖碎就掉 <t>50~100</t> 点，带灭骸再乘 <g>{cfg:kuva_lich.expMultiplier|x}</g>。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[world/requiem_ore]] · [[world/enchantments]] · [[world/experience_ore]]"
+        }
+      ],
+      "_src": [
+        "enchantment/RequiemDestroyedEnchantment.java:84-87 — 灭骸：Rarity.VERY_RARE、EnchantmentCategory.DIGGER、1 级",
+        "enchantment/RequiemDestroyedEnchantment.java:50,259 + base/enchantment/AbstractEnchantment.java getMaxCost=min×2 — 最低附魔花费 35（附魔台要接近满级）；非宝藏附魔，附魔书可用",
+        "enchantment/RequiemDestroyedEnchantment.java + base/enchantment/AbstractEnchantment.java — 未重写 isTradeable / isTreasureOnly，图书管理员可能出售",
+        "enchantment/RequiemDestroyedEnchantment.java:90-116,130-173 — 出货不查工具等级；钻石级只影响挖掘速度，所以写「挖得最快」",
+        "enchantment/RequiemDestroyedEnchantment.java:152-154 + block/RequiemOreBlock.java:57-61 — 精准采集直接 return，getDrops 为空（不掉矿石方块）",
+        "enchantment/RequiemDestroyedEnchantment.java:175-184 — 带附魔 cardDropChanceWithEnchant，不看时运；无附魔 max(min, base − 时运 × reduction)",
+        "init/KuvaLichBlocks.java:39-44 + 原版 getDestroyProgress — 带附魔 300/100/30 → 约 0.5 秒；不带附魔钻石镐 1/100/30 → 3000 tick = 150 秒",
+        "worldgen/KuvaLichBiomeModifier.java:79-89,199-230 — 替换 stone/deepslate，triangle(min,max)；末地跳过、下界无可替换石头；veinCount 为 0 时不生成（步骤行加 if）",
+        "enchantment/RequiemDestroyedEnchantment.java:165-190,202-235 — 一份出货 = 1 张随机安魂卡（8 种等概率）+ 模组掷骰 + 1 裂罅碎块 + 2~4 赤毒（写死）",
+        "block/RequiemOreBlock.java:77-82 getExpDrop — 非精准采集 50~100（写死）；Forge BreakEvent 只在正确工具（钻石级镐）时取它，和出货判定无关；enchantment/RequiemDestroyedEnchantment.java:160-163 onBreak — 带灭骸 × expMultiplier（world/requiem_ore 同）",
+        "block/ExperienceOreBlock.java:48-58,101-147 — 经验矿石：石镐级即可（needs_stone_tool）、掉经验、50% 掉 1~2 内融核心",
+        "module/level/ModuleLevelHelper.java:42-44 — 等级系统开关（内融核心用途，故经验矿石段落按开关分两版）"
+      ]
+    },
+    {
+      "id": "tut_2_thralls",
+      "title": "第 2 章 · 刷奴仆解密",
+      "icon": "kuvalich:requiem_gem",
+      "summary": "击杀奴仆，揭示答案卡",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：击杀{lang:entity.kuvalich.kuva_slave}攒<t>解密进度</t>、揭示答案卡；顺便收集{item:kuvalich:requiem_gem}，造出{item:kuvalich:requiem_gate}。"
+        },
+        {
+          "type": "p",
+          "text": "每个玩家都有一道自己的谜题：答案是 3 张安魂卡按固定顺序排成的一串。解密进度攒得越多，揭示的答案卡越多。"
+        },
+        {
+          "type": "entity",
+          "id": "kuvalich:kuva_slave",
+          "height": 72
+        },
+        {
+          "type": "h",
+          "text": "怎么做"
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+              "text": "<em>找奴仆</em>：它像僵尸一样在主世界的暗处刷新（蘑菇岛除外）。个子很大，低矮的洞穴里很少见。"
+            },
+            "<em>亲手击杀</em>：每只加 <t>{cfg:kuva_lich.minDecryptionProgress}</t> ~ <t>{cfg:kuva_lich.maxDecryptionProgress}</t> 点解密进度。<w>最后一击必须是你打的</w>，近战、弓箭都行。",
+            "<em>看进度</em>：每次加进度，屏幕顶部会弹出进度条，显示「线索 N/3」和当前点数。",
+            "<em>造灭骸之扉</em>：{item:kuvalich:requiem_gem} ×5 + 黑曜石 ×4（配方见下）。右键打开，也能看进度和已揭示的卡。",
+            "<em>攒满三段</em>：依次攒满 <t>{cfg:kuva_lich.firstStage}</t> / <t>{cfg:kuva_lich.secondStage}</t> / <t>{cfg:kuva_lich.thirdStage}</t> 点，每段揭示一张答案卡。"
+          ]
+        },
+        {
+          "type": "recipe",
+          "item": "kuvalich:requiem_gate"
+        },
+        {
+          "type": "h",
+          "text": "你会得到"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<em>答案卡</em>：显示在灭骸之扉下排的线索格里。<w>格子位置是随机的，不代表顺序</w>。",
+            "<em>{item:kuvalich:requiem_gem}</em>：只有奴仆会掉，概率 <t>{cfg:kuva_lich.slaveRequiemGemBaseChance|pctv}</t>，主手武器每级<t>抢夺</t>再加 <t>{cfg:kuva_lich.slaveRequiemGemLootingBonus|pctv}</t>。后面造方块要用很多。",
+            "<em>其它掉落</em>：有机会掉{item:kuvalich:kuva}、{item:kuvalich:riven_sliver}和模组。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "第一张卡出现就能去挑战",
+          "text": "揭示第一张答案卡时，完整答案就已经定下了。之后随时可以去试（下一章），只是揭示得越多越好猜。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "两个坑",
+          "text": "① 被宠物、岩浆、燃烧，或毒素、毒气、电击、爆炸这类元素伤害收掉的奴仆，<b>不给进度也不掉东西</b>。② 安魂宝石只看主手的抢夺，时运没用；用弓射死时抢夺按 0 算。"
+        },
+        {
+          "type": "tip",
+          "if": [
+            "cfg:kuva_lich.confiscationChance>0",
+            "cfg:kuva_lich.maxConfiscatedItems>0"
+          ],
+          "style": "warn",
+          "title": "揭示第一张卡后，小心捡东西",
+          "text": "从这时起，每次捡起地上的一组物品，都有 <t>{cfg:kuva_lich.confiscationChance|pctv}</t> 概率被玄骸整组没收，成功解密后才还你。详见[[requiem/confiscation]]。"
+        },
+        {
+          "type": "tip",
+          "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+          "style": "info",
+          "text": "{lang:entity.kuvalich.kuva_slave}不会在野外出现。解密进度靠击杀{lang:entity.kuvalich.kuva_master}获得，每只给的进度是奴仆的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[requiem/decryption]] · [[enemies/kuva_slave]] · [[requiem/requiem_items]]"
+        }
+      ],
+      "_src": [
+        "capability/RequiemCard.java:261,271 — 答案 = 3 张互不相同的卡，第一段满时一次性生成，之后不变",
+        "worldgen/KuvaLichBiomeModifier.java:93-95,299-307 + init/KuvaLichSpawnPlacements.java:40-46 — 仅主世界、排除蘑菇岛，Monster::checkMonsterSpawnRules（同僵尸）；权重 0 不加（步骤行 if）",
+        "init/KuvaLichEntities.java:28-33 + 原版 NaturalSpawner noCollision — 1.5×2.9 需 3×3、3 格高空位，低矮洞穴少见",
+        "entity/KuvaSlaveEntity.java:163-174,195-199 — 仅 damageSource.getEntity() 为玩家时给进度 random(min,max)（弓箭的 getEntity 是射手）",
+        "client/gui/hud/DecryptionHudOverlay.java:81,124 — 顶部 HUD「线索 %s/3」",
+        "data/kuvalich/recipes/requiem_gate.json — 5 安魂宝石 + 4 黑曜石；world/inventory/RequiemGateMenu.java:106-121,133-150 — 界面显示进度与已揭示卡",
+        "capability/RequiemCard.java:236-269 — 三段阈值 firstStage/secondStage/thirdStage",
+        "capability/RequiemCard.java:333-347 + client/gui/screens/inventory/RequiemGateScreen.java:451-475 — 揭示的卡随机落位，不代表顺序",
+        "entity/KuvaSlaveEntity.java:229-254 — 赤毒 / 裂罅碎块 / 安魂宝石独立判定；宝石 = base + looting × bonus（抢夺取主手）",
+        "entity/KuvaSlaveEntity.java:262-286 — 奴仆掉模组",
+        "capability/RequiemCard.java:201-209 — isCorrectAnswer 只要求 unlockedCardStatus>0 → 第一张卡揭示后即可挑战",
+        "module/weapon/WeaponElementSystem.java:578,587-589,626,659,817,863 — 燃烧 inFire、毒素/毒气 magic()、电击 lightningBolt()、爆炸 explosion(null) 均无归属实体 → 不结算；宠物、岩浆同理",
+        "event/ConfiscationHandler.java:58-97 — 揭示任一线索后捡起物品按概率整组没收，成功后归还",
+        "worldgen/KuvaLichBiomeModifier.java:288-307 + entity/KuvaMasterEntity.java:608-612 — 奴仆权重 0 时不自然生成；玄骸进度 = 奴仆区间 × masterPotionMultiplier",
+        "wf 小知识（原作设定）：Warframe 中 Kuva Thrall 为 Lich 麾下士兵，击杀它们积累线索、揭示 Requiem 模组"
+      ]
+    },
+    {
+      "id": "tut_3_lich",
+      "title": "第 3 章 · 讨伐玄骸",
+      "icon": "kuvalich:requiem_gate",
+      "summary": "摆好答案，亲手击杀玄骸",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：把三张安魂卡按你猜的顺序放进{item:kuvalich:requiem_gate}，再亲手击杀一只{lang:entity.kuvalich.kuva_master}。顺序全对就是<g>解密成功</g>。"
+        },
+        {
+          "type": "entity",
+          "id": "kuvalich:kuva_master",
+          "height": 80
+        },
+        {
+          "type": "h",
+          "text": "怎么做"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "<em>凑齐三张卡</em>：答案里那三种卡你得真有。挖矿随机掉；也可以造{item:kuvalich:requiem_recast}，用任意 3 张卡换 1 张随机卡（造它会用掉一台灭骸之扉，记得再造一台）。",
+            "<em>摆卡</em>：打开灭骸之扉，把卡放进上排三格（从左到右是第 1、2、3 位），关上界面就保存了。",
+            {
+              "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.requiemUltimatumDropChance>0"],
+              "text": "<em>找玄骸</em>：它和奴仆一样在主世界暗处刷新，个子更高。以后拿到{item:kuvalich:requiem_ultimatum}，也能直接召唤。"
+            },
+            {
+              "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "!cfg:kuva_lich.requiemUltimatumDropChance>0"],
+              "text": "<em>找玄骸</em>：它和奴仆一样在主世界暗处刷新，个子更高。"
+            },
+            {
+              "if": ["!cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.requiemUltimatumDropChance>0"],
+              "text": "<em>召唤玄骸</em>：它不会在野外出现，要用{item:kuvalich:requiem_ultimatum}召唤。"
+            },
+            "<em>亲手击杀</em>：最后一击必须是你。击杀的那一刻自动核对答案。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "击杀时会发生什么"
+        },
+        {
+          "type": "table",
+          "header": [
+            "灭骸之扉里",
+            "结果"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "没放满 3 张",
+              "不算挑战，只拿解密进度"
+            ],
+            [
+              "放满，顺序全对",
+              "<g>解密成功</g>：掉奖励（下一章），这一轮清零"
+            ],
+            [
+              "放满，有错",
+              "<b>解密失败</b>：玄骸等级 +1；卡不扣耐久，照样拿进度"
+            ]
+          ]
+        },
+        {
+          "type": "kv",
+          "rows": [
+            {
+              "if": "cfg:kuva_lich.increaseDamage>0",
+              "cells": [
+                "每级玄骸等级：赤毒敌人打你",
+                "<b>+{cfg:kuva_lich.increaseDamage|pct}</b>，只算奴仆和玄骸，别的伤害不受影响"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.reducedDamage>0",
+              "cells": [
+                "每级玄骸等级：你打赤毒敌人",
+                "<b>-{cfg:kuva_lich.reducedDamage|pct}</b>，最多削减 99.9%；打别的目标不受影响"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "猜错了怎么试"
+        },
+        {
+          "type": "p",
+          "text": "失败时聊天栏会提示：第 1 位对了会说一句，第 1、2 位都对会再说一句。<w>没有提示 = 第 1 位错了</w>。"
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "text": "三张卡都揭示后：先随便排一次；提示第 1 位对，就把后两张对调；没提示，就换一张放第 1 位。这样<em>最多失败 3 次，第 4 次必中</em>。"
+        },
+        {
+          "type": "h",
+          "text": "打玄骸的建议"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<em>带两三种输出</em>：近战、弓弩、法术轮着用。同一类伤害连着打，玄骸会越来越抗。",
+            "<em>弓弩优先</em>：箭矢打赤毒敌人伤害 ×1.25。",
+            "<em>别带宠物</em>：玄骸每次出手都会波及周围 3 格内的其他生物，宠物、队友都会挨打。",
+            "<em>选安全场地</em>：奖励掉在玄骸倒下的地方，别在岩浆、虚空旁收尾。",
+            {
+              "if": "cfg:kuva_lich.battleBoost>0",
+              "text": "<em>速战速决</em>：交战时它的伤害每秒 +<t>{cfg:kuva_lich.battleBoost|pct}</t>，拖得越久越痛。"
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "两个坑",
+          "text": "① 一张答案卡都没揭示时就放满三张去打，<b>必定失败</b>。② 没把握就先取出一张卡：没放满时杀玄骸只加进度，不算失败。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[requiem/requiem_gate]] · [[requiem/decrypt_failure]] · [[enemies/kuva_master]] · [[enemies/lich_tactics]]"
+        }
+      ],
+      "_src": [
+        "entity/KuvaMasterEntity.java:485 — 通牒唯一产出（解密成功时按 requiemUltimatumDropChance 掉；RandomUtil.percentageChance ≤0 恒 false，data 里无配方 / 战利品表） → 教玩家用通牒召唤的句子都带 requiemUltimatumDropChance>0",
+        "capability/RequiemCard.java:197-199 + entity/KuvaMasterEntity.java:419 — 结算要求三个槽都放了卡（玩家得真的持有这三种卡）",
+        "world/inventory/RequiemRecastMenu.java:227-238 — 3 张任意卡 → 1 张随机卡；data/kuvalich/recipes/requiem_recast.json — 配方消耗 1 个灭骸之扉",
+        "world/inventory/RequiemGateMenu.java:76,194,206-231 — 上排三槽 = 第 1/2/3 位；关界面存入玩家能力",
+        "worldgen/KuvaLichBiomeModifier.java:289-297 + init/KuvaLichSpawnPlacements.java:50-56 — 玄骸自然生成规则同奴仆、3×3×4 空位；权重 0 不生成（步骤行 if）",
+        "item/RequiemUltimatum.java:59-111 — 通牒召唤玄骸；entity/KuvaMasterEntity.java:485-487 — 通牒只在成功时按概率掉",
+        "entity/KuvaMasterEntity.java:397-430 — 只有玩家击杀才结算；未放满只给进度；放满全对成功；放满有错失败 + 进度",
+        "capability/RequiemCard.java:291-304 + entity/KuvaMasterEntity.java:588-600 — 失败不动卡片，kuvaLevel +1",
+        "base/entity/AbstractKuva.java:107-135 onLivingHurt — 伤害归属者（getEntity）是赤毒实体（奴仆 / 玄骸都继承 AbstractKuva）且目标是玩家时，applyPlayerDefense（:169-174）×(1 + 等级×increaseDamage)；归属者是玩家且目标是赤毒实体时，applyPlayerDamageModifier（:154-161）×(1 − min(0.999, 等级×reducedDamage))；其它伤害都不动；各自按 >0 显示行",
+        "entity/KuvaMasterEntity.java:588-600 — 提示：first 正确才提示，second 仅在 first 也正确时提示",
+        "推导（requiem/decrypt_failure 同）：前缀式提示，已知三张卡时最坏 4 次（3 败）必中",
+        "base/entity/AbstractKuva.java:51-55,190-204,233-246 + entity/KuvaMasterEntity.java:81-98,211-263 — 伤害类型分类、箭矢 ×1.25、玄骸适应性抗性按类别叠层",
+        "entity/KuvaMasterEntity.java:76,339,357-370 — AOE inflate(3)，排除赤毒实体与主目标",
+        "entity/KuvaMasterEntity.java:448-456,646-653 — 奖励 spawnItem 在玄骸死亡位置",
+        "base/entity/AbstractKuva.java:143-146,372-378 — battleBoost：有目标时每秒增幅（行级 if >0）",
+        "capability/RequiemCard.java:201-209 — 零线索时 isCorrectAnswer 恒 false → 放满必败"
+      ]
+    },
+    {
+      "id": "tut_4_rewards",
+      "title": "第 4 章 · 领奖与造方块",
+      "icon": "kuvalich:lich_reliquary",
+      "summary": "领奖、认识赤毒武器、造功能方块",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：捡齐解密成功的奖励，认识你的第一把赤毒武器，再用{item:kuvalich:lich_reliquary}造出{item:kuvalich:requiem_evolve}。"
+        },
+        {
+          "type": "h",
+          "text": "你会得到"
+        },
+        {
+          "type": "table",
+          "header": [
+            "奖励",
+            "数量"
+          ],
+          "widths": [
+            3,
+            5
+          ],
+          "rows": [
+            [
+              "赤毒武器",
+              "1 把，13 种里随机"
+            ],
+            [
+              "{item:kuvalich:lich_reliquary}",
+              "1 个"
+            ],
+            [
+              "{item:kuvalich:kuva}",
+              "<t>{cfg:kuva_lich.masterKuvaMinAmount}~{cfg:kuva_lich.masterKuvaMaxAmount}</t> 个"
+            ],
+            [
+              "{item:kuvalich:riven_sliver}",
+              "<t>{cfg:kuva_lich.masterRivenSliverMinAmount}~{cfg:kuva_lich.masterRivenSliverMaxAmount}</t> 个"
+            ],
+            [
+              "高级模组",
+              "1 张：<t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> 是 Prime，否则是裂罅"
+            ],
+            {
+              "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
+              "cells": [
+                "{item:kuvalich:requiem_ultimatum}",
+                "<t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> 概率掉 1 个，右键能召唤玄骸"
+              ]
+            },
+            [
+              "没用坏的安魂卡",
+              "回到背包；每张卡能撑 3 次成功"
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance>0",
+                "cfg:kuva_lich.maxConfiscatedItems>0"
+              ],
+              "cells": [
+                "被没收的物品",
+                "一件不少地还给你"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "p",
+          "text": "除了回背包的安魂卡，奖励都<w>掉在玄骸倒下的位置</w>，赶紧捡。"
+        },
+        {
+          "type": "h",
+          "text": "揭示模组"
+        },
+        {
+          "type": "p",
+          "text": "掉的模组是<t>未揭示</t>的，看不到词条。拿在<em>主手</em>右键，它会变成一张具体的模组，掉在你脚下，捡起来就行。"
+        },
+        {
+          "type": "h",
+          "text": "认识赤毒武器"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "武器等级",
+              "物品名下方那行末尾的数字，决定攻击、攻速和被动的强弱"
+            ],
+            [
+              "自带元素",
+              "7 种随机一种；元素伤害 = 武器等级 %"
+            ],
+            [
+              "开光",
+              "生来就开过光，能直接装模组"
+            ],
+            [
+              "面板",
+              "鼠标悬停就能看；按住 SHIFT、CTRL、ALT 切换不同视图"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "等级越打越高，旧的别扔",
+          "text": "新角色的武器等级范围是 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 级，第一次掉的赤毒武器就在这里面随机。之后每次成功，范围都会上调，直到封顶；旧武器留着当融合材料（第 9 章）。"
+        },
+        {
+          "type": "h",
+          "text": "造功能方块"
+        },
+        {
+          "type": "p",
+          "text": "五个功能方块是一条合成链，每一级都要<w>吃掉上一级方块</w>。后三个还要{item:kuvalich:lich_reliquary}，所以现在才造得出来。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "方块",
+            "上一级方块之外还要",
+            "用来"
+          ],
+          "widths": [
+            4,
+            5,
+            4
+          ],
+          "rows": [
+            [
+              "{item:kuvalich:requiem_gate}",
+              "{item:kuvalich:requiem_gem} ×5、黑曜石 ×4",
+              "摆答案卡"
+            ],
+            [
+              "{item:kuvalich:requiem_recast}",
+              "{item:kuvalich:requiem_gem} ×5、黑曜石 ×3",
+              "三合一、分解模组"
+            ],
+            [
+              "{item:kuvalich:requiem_evolve}",
+              "{item:kuvalich:requiem_gem} ×4、{item:kuvalich:lich_reliquary}、黑曜石 ×3",
+              "开光、融合、塑形、重洗裂罅"
+            ],
+            [
+              "{item:kuvalich:requiem_weapon_table}",
+              "{item:kuvalich:kuva} ×4、{item:kuvalich:lich_reliquary}、黑曜石 ×3",
+              "给武器装模组"
+            ],
+            [
+              "{item:kuvalich:requiem_warframe_table}",
+              "{item:kuvalich:riven_sliver} ×4、{item:kuvalich:lich_reliquary}、黑曜石 ×3",
+              "给你自己装模组"
+            ]
+          ]
+        },
+        {
+          "type": "recipe",
+          "item": "kuvalich:requiem_evolve"
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "第一个玄骸之遗先造安魂之融",
+          "text": "全套五个方块要 <t>5</t> 个玄骸之遗，每次成功只掉 1 个。开光和大部分强化都在安魂之融里做，建议先造它。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "两个坑",
+          "text": "① 造下一级会吃掉上一级：造军械库会用掉安魂之融，想两台都留着就得再造一台。② 拆功能方块要用<em>钻石镐或更好的镐</em>，否则方块直接消失。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[weapons/kuva_weapons]] · [[weapons/weapon_level]] · [[weapons/weapon_panel]] · [[enemies/kuva_master]]"
+        }
+      ],
+      "_src": [
+        "entity/KuvaMasterEntity.java:440-494 — 成功：赤毒武器（KUVA_WEAPONS 13 把等概率）、玄骸之遗 1、赤毒 / 裂罅碎块 min~max、高级模组、通牒概率、归还没收",
+        "entity/KuvaMasterEntity.java:534-548 — masterPrimeModuleChance% Prime，否则裂罅",
+        "entity/KuvaMasterEntity.java:485-487 — requiemUltimatumDropChance（行级 if >0）；item/RequiemUltimatum.java:59-111 — 右键召唤",
+        "capability/RequiemCard.java:283-304 + base/item/AbstractRequiemCard.java:27-28 — 卡耐久 3，没坏的回背包",
+        "entity/KuvaMasterEntity.java:503-516 — 没收物品在成功时归还（行级 if 同没收开关）",
+        "entity/KuvaMasterEntity.java:448-456,646-653 — 除幸存卡外奖励都 spawnItem 在死亡位置",
+        "item/module/weapon/WeaponCommonModule.java:62-67,621-641 — 掉落的是未揭示模组，主手右键揭示，新模组掉在脚下",
+        "utils/KuvaWeaponUtil.java:137-148,189-233 — 等级显示在 tooltip「类型 元素 等级」行，影响攻击 / 攻速 / 被动",
+        "utils/KuvaWeaponUtil.java:22-32 + module/weapon/WeaponElementSystem.java:81-87 — 元素 7 选 1；自带元素伤害 = 等级 / 100",
+        "base/item/AbstractKuvaWeapon.java:173-188 — 天生开光；client/tooltip/TooltipView.java:56-67 — SHIFT / CTRL / ALT 视图",
+        "capability/RequiemCard.java:90-98 构造函数 — 武器等级区间初值 baseMinimumLevel ~ max(baseMinimumLevel, baseMaximumLevel)；entity/KuvaMasterEntity.java:458-462 — 第一把按这个区间 getInt(min,max)；entity/KuvaMasterEntity.java:556-579 upgradeWeaponLevelCap — 每次成功提高区间（晚于生成武器）",
+        "data/kuvalich/recipes/requiem_gate/recast/evolve/weapon_table/warframe_table.json — 合成链逐级消耗上一级方块；全套累计 5 个玄骸之遗",
+        "init/KuvaLichBlocks.java:77-154 + data/minecraft/tags/blocks/needs_diamond_tool.json — 五个功能方块 requiresCorrectToolForDrops + 钻石级",
+        "world/inventory/RequiemEvolveMenu.java:201-237 — 安魂之融承担开光、融合、塑形、裂罅循环等"
+      ]
+    },
+    {
+      "id": "tut_5_modules",
+      "title": "第 5 章 · 装模组",
+      "icon": "kuvalich:requiem_weapon_table",
+      "summary": "揭示、安装、升级模组",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：把模组装到赤毒武器上，并学会升级模组、处理多余的模组。"
+        },
+        {
+          "type": "p",
+          "text": "模组是可插拔的强化卡，每张带几条<t>词条</t>，比如「+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}」。装上不消耗，随时能拆下来换。"
+        },
+        {
+          "type": "h",
+          "text": "怎么装"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "未揭示的模组先拿在<em>主手</em>右键揭示。",
+            "打开{item:kuvalich:requiem_weapon_table}，把赤毒武器放进下方的武器格，上方 8 个模组格随即可用。",
+            "把模组放进空格就是装上，拿出来就是卸下，<g>不消耗任何东西</g>。在背包里 Shift + 左键会自动放进能放的格子。",
+            "取走武器，模组就写在武器上了，带到哪都生效。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "装不上？"
+        },
+        {
+          "type": "list",
+          "items": [
+            "同一种模组只能装一张：普通版和 Prime 版算同一种。",
+            "加同一种属性的不同模组也可能互斥。拿起模组时，冲突的格子会闪红光。",
+            "每件装备最多 1 张裂罅模组。",
+            "武器模组和战甲模组装不进对方的军械库。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "品质与来源"
+        },
+        {
+          "type": "table",
+          "header": [
+            "品质",
+            "从哪来"
+          ],
+          "widths": [
+            3,
+            5
+          ],
+          "rows": [
+            [
+              "<c:CD7F32>青铜</c> / <c:C0C0C0>白银</c> / <c:FFD700>黄金</c>",
+              "安魂矿石、赤毒奴仆随机掉"
+            ],
+            [
+              "<c:55FFFF>Prime</c> / <c:FF55FF>裂罅</c>",
+              "每次解密成功必掉 1 张"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.moduleWeaponRatio<100",
+          "text": "掉出的模组有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模组，其余是战甲模组（第 7 章）。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "升级模组"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "模组有等级：效果 = 满级数值 × 等级 ÷ <t>{cfg:kuva_lich.moduleMaxLevel}</t>。新揭示的卡通常是 1 级，只有满级的 1/{cfg:kuva_lich.moduleMaxLevel}。"
+        },
+        {
+          "type": "steps",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "items": [
+            "打开{item:kuvalich:requiem_evolve}，左格放一张模组，中格放{item:kuvalich:endo}。",
+            "右格出现升了 1 级的卡，<g>取走它才扣内融核心</g>。",
+            "一次只升 1 级，想继续就把新卡放回左格。"
+          ]
+        },
+        {
+          "type": "kv",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "rows": [
+            {
+              "if": "cfg:kuva_lich.endoDropChance>0",
+              "cells": [
+                "开光武器杀怪",
+                "<t>{cfg:kuva_lich.endoDropChance|pctv}</t> 概率掉 {cfg:kuva_lich.endoDropMinAmount}~{cfg:kuva_lich.endoDropMaxAmount} 个内融核心"
+              ]
+            },
+            {
+              "if": "cfg:ore_gen.experienceOreVeinCount",
+              "cells": [
+                "挖经验矿石",
+                "50% 概率掉 1~2 个"
+              ]
+            },
+            [
+              "分解模组",
+              "在{item:kuvalich:requiem_recast}里只放一张模组"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "模组没有等级，一拿到就是满效果。"
+        },
+        {
+          "type": "h",
+          "text": "多余的模组"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<em>三合一</em>：在{item:kuvalich:requiem_recast}里放 3 张同品质的青铜、白银或黄金武器模组，换 1 张同品质的未揭示模组。",
+            {
+              "if": "cfg:kuva_lich.enableWarframeModuleRecast",
+              "text": "战甲模组也能三合一，但不能和武器模组混放。"
+            },
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "<em>分解</em>：只放 1 张模组，换{item:kuvalich:endo}。品质越高、等级越高，换得越多。"
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "两个军械库里按 <t>Tab</t> 能打开模组图鉴，查所有模组的满级数值（裂罅除外）。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "主手拿着没开光的物品时，模组完全不起作用。赤毒武器天生开过光，其它武器见下一章。"
+        },
+        {
+          "type": "tip",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "style": "bad",
+          "title": "别塞满 1 级卡",
+          "text": "1 级卡只有满级的 1/{cfg:kuva_lich.moduleMaxLevel}。与其装满一堆 1 级卡，不如先用内融核心把两三张核心模组练高。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[modules/module_overview]] · [[modules/module_rarity]] · [[modules/module_level]] · [[weapons/requiem_recast]] · [[modules/module_codex]]"
+        }
+      ],
+      "_src": [
+        "base/item/AbstractModule.java + utils/ModuleRegistryHelper.java — 模组带若干词条；world/inventory/RequiemWeaponTableMenu.java:326-410 — 放入 / 取出即写回武器 NBT，无消耗",
+        "item/module/weapon/WeaponCommonModule.java:621-641 — 未揭示模组仅主手右键揭示",
+        "world/inventory/RequiemWeaponTableMenu.java:54-64,242-247,250-313 — 8 个模组槽 + 武器槽（只收已开光）",
+        "world/inventory/RequiemWeaponTableMenu.java:132-171 — Shift 点击自动放入第一个可放的槽",
+        "module/ModulePlacementValidator.java:83-104,134-152 + base/item/AbstractModule.java:172-195 — 同 type / 冲突标签不能共存、裂罅唯一、未揭示不收；武器槽只收武器模组、战甲槽只收战甲模组",
+        "item/module/weapon/WeaponPrimeModule.java:98-99,108 — Prime 版与普通版同 type",
+        "client/gui/ModuleConflictHighlighter.java:9-17,74 — 持有模组时冲突槽位红色闪烁",
+        "enchantment/RequiemDestroyedEnchantment.java:202-229 + entity/KuvaSlaveEntity.java:262-285 — 青铜 / 白银 / 黄金来源；entity/KuvaMasterEntity.java:534-548 — 成功必掉 Prime 或裂罅；moduleWeaponRatio% 为武器模组",
+        "module/level/ModuleLevelHelper.java:42-44,102-108,280-313 — 等级系统开关；效果 = 等级 / 满级；揭示时通常 1 级（精通可更高）；关闭时按满级",
+        "world/inventory/RequiemEvolveMenu.java:228-236,369-387,401-425 — 左格模组 + 内融核心 → +1 级，取走才扣",
+        "module/level/EndoDropHandler.java:35-60 — 开光武器击杀 Monster 掉内融核心（行级 if endoDropChance>0）；block/ExperienceOreBlock.java:51-58 — 经验矿石 50% 掉 1~2（行级 if experienceOreVeinCount，为 0 时不生成）；world/inventory/RequiemRecastMenu.java:397-421,463-524 — 单张分解（品质、等级越高越多）",
+        "world/inventory/RequiemRecastMenu.java:207-225,267-301 — 同品质青铜 / 白银 / 黄金武器模组三合一总是可以；战甲三合一受 enableWarframeModuleRecast 控制，不能与武器混放",
+        "client/gui/screens/inventory/RequiemWeaponTableScreen.java:70-75 + client/gui/codex/ModuleCodexData.java:85-86,230-258 — Tab 打开图鉴，满级显示，不收裂罅",
+        "module/weapon/WeaponCombatHandler.java:576-582 — 主手非开光武器时不走模组结算"
+      ]
+    },
+    {
+      "id": "tut_6_consecrate",
+      "title": "第 6 章 · 开光与塑形",
+      "icon": "kuvalich:forma",
+      "summary": "让任何武器都能装模组",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：给原版或其它模组的武器<t>开光</t>，让它也能装模组；面板不满意就用{item:kuvalich:forma}重洗。"
+        },
+        {
+          "type": "h",
+          "text": "开光"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "打开{item:kuvalich:requiem_evolve}。左格放一件<em>单个</em>物品（剑、斧、弓、弩……），中格放{item:kuvalich:riven_sliver}。",
+            "立刻扣 1 个碎块，右格出现开过光的物品，它多了一套随机的<t>面板</t>。",
+            "拿去{item:kuvalich:requiem_weapon_table}装模组，和赤毒武器一样。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "面板有四项：{lang:kuvalich.attr.short.damage}、{lang:kuvalich.attr.short.criticalStrikeProbability}、{lang:kuvalich.attr.short.criticalStrikeMultiplier}、{lang:kuvalich.attr.short.triggerChance}。{lang:kuvalich.attr.short.damage}低于 100% 时按平方算：80% 实际只有 64%。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "开光并装模组后放在",
+            "加成按多少借给主手武器"
+          ],
+          "widths": [
+            4,
+            4
+          ],
+          "rows": [
+            {
+              "if": "cfg:kuva_lich.enableOffhandModule",
+              "cells": [
+                "副手",
+                "{cfg:kuva_lich.offhandEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableHelmetModule",
+              "cells": [
+                "头盔",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableChestplateModule",
+              "cells": [
+                "胸甲",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableLeggingsModule",
+              "cells": [
+                "护腿",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableBootsModule",
+              "cells": [
+                "靴子",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv}"
+              ]
+            },
+            {
+              "if": [
+                "mod:curios",
+                "cfg:kuva_lich.enableCuriosModule"
+              ],
+              "cells": [
+                "饰品栏",
+                "{cfg:kuva_lich.curiosEffectMultiplier|pctv}"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "塑形块：重洗面板"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "合成{item:kuvalich:forma}，一次出 3 个（配方见下）。",
+            "安魂之融左格放已开光的<em>非赤毒</em>武器，中格放塑形块。",
+            "立刻扣 1 个，洗好的武器出现在右格，装好的模组原样保留。不满意就再洗。"
+          ]
+        },
+        {
+          "type": "recipe",
+          "item": "kuvalich:forma"
+        },
+        {
+          "type": "tip",
+          "if": [
+            "cfg:kuva_lich.formaLockEnabled",
+            "cfg:kuva_lich.formaLockChance>0"
+          ],
+          "style": "warn",
+          "title": "洗面板可能锁定",
+          "text": "每洗一次，有 <t>{cfg:kuva_lich.formaLockChance|pctv}</t> 概率把这把武器<b>永久锁定</b>，普通塑形块再也洗不动它，只有{item:kuvalich:shadow_forma}能解（只在创造模式物品栏里有）。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "两个坑",
+          "text": "① 赤毒武器的面板是固定的，塑形块和裂罅碎块对它都没用。② 已开光的物品不能再开光，想换面板只能用塑形块。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作里的 Forma（福马）用来改变装备模组槽的极性，代价是装备等级清零、得重新练。本模组借用了它的名字，改成重洗面板。"
+        },
+        {
+          "type": "tip",
+          "if": ["cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule", "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"],
+          "style": "info",
+          "title": "想深入",
+          "text": "[[weapons/requiem_evolve]] · [[weapons/forma]] · [[modules/multi_slot]]"
+        },
+        {
+          "type": "tip",
+          "if": ["!cfg:kuva_lich.enableOffhandModule", "!cfg:kuva_lich.enableHelmetModule", "!cfg:kuva_lich.enableChestplateModule", "!cfg:kuva_lich.enableLeggingsModule", "!cfg:kuva_lich.enableBootsModule", "!cfg:kuva_lich.enableCuriosModule||!mod:curios"],
+          "style": "info",
+          "title": "想深入",
+          "text": "[[weapons/requiem_evolve]] · [[weapons/forma]]"
+        }
+      ],
+      "_src": [
+        "modules/multi_slot 整条的 if 是两组 ||（任一额外位置开启；只开饰品位时还要装了 Curios），全关时整篇隐藏 → 指向它的链接 / 那一行照抄这对条件；取反写成 [!副手, !头盔, !胸甲, !护腿, !靴子, !饰品开关||!mod:curios]（¬(X∨饰品) ∧ ¬(X∨mod:curios) 化简而来）",
+        "world/inventory/RequiemEvolveMenu.java:221-223,340-353,471-494 — 左格任意单个未开光物品 + 裂罅碎块 → 开光，立即扣 1 个",
+        "module/weapon/WeaponModuleHandler.java:213-257 — 开光 / 塑形随机写入 damage、暴击几率、暴击倍率、触发几率",
+        "module/weapon/WeaponCombatHandler.java:716-725 — 面板基础伤害 0~1 之间按平方乘（0.8 → 0.64）",
+        "module/weapon/WeaponCombatHandler.java:346-381,403-418 — 副手 / 头盔 / 胸甲 / 护腿 / 靴子 / 饰品各有开关与比例（0~100，pctv）；物品必须开光（每行行级 if 各自开关）",
+        "data/kuvalich/recipes/forma.json — 一次 3 个",
+        "world/inventory/RequiemEvolveMenu.java:216-220,303-322 + module/weapon/WeaponModuleHandler.java:259-273 — 普通塑形块：已开光、非赤毒、未锁定；立即扣 1，只重写面板四项，模组保留",
+        "world/inventory/RequiemEvolveMenu.java:308-314 — formaLockEnabled 且 formaLockChance>0 时按概率锁定",
+        "world/inventory/RequiemEvolveMenu.java:211-215,325-338 + item/ShadowForma.java:9-18 + init/KuvaLichCreativeTabs.java:91 — 暗影塑形块无视并清除锁定，仅创造栏",
+        "world/inventory/RequiemEvolveMenu.java:212-223 — 塑形块分支要求 !hasType（赤毒不行）；开光要求 !hasBase（已开光不能再开光）",
+        "wf 小知识（原作设定）：Warframe 中 Forma 用于给模组槽加极性，代价是装备等级重置为 0"
+      ]
+    },
+    {
+      "id": "tut_7_warframe",
+      "title": "第 7 章 · 战甲模组",
+      "icon": "kuvalich:requiem_warframe_table",
+      "summary": "给你自己装模组，一直生效",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：造{item:kuvalich:requiem_warframe_table}，给<em>你自己</em>装上战甲模组。它们一直生效，不用拿任何东西，也不用穿盔甲。"
+        },
+        {
+          "type": "p",
+          "text": "这里的「战甲」指的就是你这个玩家。战甲模组和武器模组装不进对方的军械库。"
+        },
+        {
+          "type": "h",
+          "text": "怎么做"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "造战甲军械库：{item:kuvalich:requiem_evolve} + {item:kuvalich:riven_sliver} ×4 + {item:kuvalich:lich_reliquary} + 黑曜石 ×3。<w>会吃掉一台安魂之融</w>。",
+            "右键打开，上面两排共 8 格就是你的战甲模组槽。",
+            "模组放进去立刻生效，取出来立刻失效。"
+          ]
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.moduleWeaponRatio<100",
+          "text": "战甲模组的来源和武器模组相同：矿石、奴仆、玄骸掉的模组里，有 <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> 是战甲模组。"
+        },
+        {
+          "type": "h",
+          "text": "你会得到"
+        },
+        {
+          "type": "list",
+          "items": [
+            "生命、护甲、移速、抗性、挖掘速度等常驻加成。八张卡的同名词条大多直接相加。",
+            "模组记在你身上：换一台军械库打开还是你那套，死亡也不会掉。",
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "text": "<em>护盾</em>：堆{lang:kuvaweapon.warframe_attribute_type.shield}会得到黄心，挨打先扣它。受伤或打中别人后，没打空时约 10 秒开始自己回。"
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "两个坑",
+          "text": "① {lang:kuvaweapon.warframe_attribute_type.armor}是放大你<em>已有</em>的护甲，没穿盔甲时再高也是 0。② {lang:kuvaweapon.warframe_attribute_type.health}、{lang:kuvaweapon.warframe_attribute_type.armor}、{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}等几项按 10% 一档向下取整：+25% 实际只有 +20%。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作里，玩家操控的「战甲」是一套生物机械战斗装甲，战甲和武器各有自己的模组槽。本模组把「战甲」换成了玩家本人。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[warframe/warframe_table]] · [[warframe/warframe_module]] · [[warframe/shield]] · [[reference/warframe_attr_survival]]"
+        }
+      ],
+      "_src": [
+        "world/inventory/RequiemWarframeTableMenu.java:138-139 — 战甲模组挂在玩家身上，没穿甲也生效",
+        "module/ModulePlacementValidator.java:87,137 — 武器槽只收武器模组，战甲槽只收战甲模组",
+        "data/kuvalich/recipes/requiem_warframe_table.json — 裂罅碎块 ×4 + 玄骸之遗 + 安魂之融（消耗）+ 黑曜石 ×3",
+        "world/inventory/RequiemWarframeTableMenu.java:46-53,209-277 — 8 槽（两排各 4），放入取出立即写回玩家数据",
+        "enchantment/RequiemDestroyedEnchantment.java:202-225、entity/KuvaSlaveEntity.java:262-285、entity/KuvaMasterEntity.java:534-547 — 掉模组时 moduleWeaponRatio% 为武器，其余为战甲（ratio<100 时显示）",
+        "module/warframe/WarframeModuleHandler.java:217-262 — 同名词条相加；火焰 / 电击 / 同源 / 摔落抗性与护盾延迟连乘（故写「大多」）",
+        "capability/WarframeModules.java:30-65 + capability/CapabilityRegistryHandler.java:111-167 — 存在玩家 capability，死亡重生复制",
+        "module/warframe/WarframeEffectHandler.java:162-171,196-207,620-665 — 护盾 = 吸收值；受伤或攻击后冷却 10 秒 × 延迟倍率（打空 ×3）；shieldCapMultiplier 为 0 时不给黄心（行级 if）",
+        "dynamicattribute/DynamicAttributes.java:45-81 — ARMOR 为护甲与韧性 MULTIPLY_TOTAL，无护甲时为 0",
+        "module/warframe/WarframeEffectHandler.java:668-747 — health / armor / sprintSpeed / knockbackResistance / reachDistance 按 (int)(v/0.1) 取档",
+        "wf 小知识（原作设定）：Warframe 为玩家操控的生物机械战斗装甲，战甲与武器各有模组槽"
+      ]
+    },
+    {
+      "id": "tut_8_combat",
+      "title": "第 8 章 · 战斗进阶",
+      "icon": "kuvalich:kuva_shildeg",
+      "summary": "暴击、元素、叠层、克制",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：看懂模组上最常见的几类词条：暴击、元素、击杀叠层和克制，知道该往武器上堆什么。"
+        },
+        {
+          "type": "p",
+          "text": "武器模组的这些效果只在主手拿着<t>开光</t>武器时生效，没开光的武器按原版算。"
+        },
+        {
+          "type": "h",
+          "text": "暴击"
+        },
+        {
+          "type": "list",
+          "items": [
+            "暴击几率超过 100% 不浪费，会让暴击<em>升档</em>：<c:FFFF55>黄</c> ×M → <c:FFAA00>橙</c> ×2M → <c:FF5555>红</c> ×3M（M 是暴击倍率）。",
+            "超过 300% 之后再高也没有额外收益。",
+            "近战要<em>蓄满力</em>再出手：没蓄满时暴击几率按蓄力比例打折，伤害折得更狠，蓄一半力出手只剩满蓄力的约<w>五分之一</w>。",
+            "暴击只乘物理部分，元素伤害不吃暴击。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "元素"
+        },
+        {
+          "type": "list",
+          "items": [
+            "元素词条给每一下附加元素伤害；<t>触发</t>时还会给目标挂上对应的状态效果。",
+            "两种基础元素会合成复合元素，例如{lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.poison} = {lang:kuvaweapon.type.gas}。谁和谁合，看它们在模组槽里的先后。",
+            "赤毒武器自带一种元素；普通武器靠元素模组。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "击杀叠层"
+        },
+        {
+          "type": "p",
+          "text": "名字里带「击杀时获取」的词条，每击杀一个生物叠 1 层。没有新击杀时逐层掉落：武器每 <t>{cfg:kuva_lich.weaponStackDecayTicks|sec}</t>、战甲每 <t>{cfg:kuva_lich.warframeStackDecayTicks|sec}</t> 掉一层。战甲模组上的叠层不挑武器，没开光的也算。"
+        },
+        {
+          "type": "h",
+          "text": "克制"
+        },
+        {
+          "type": "p",
+          "text": "克制（玩家常叫「歧视」）词条让你对某一类生物多打伤害。奴仆和玄骸都是<t>亡灵</t>，打它们就堆{lang:item.module.bane_of_undead}。"
+        },
+        {
+          "type": "tip",
+          "if": "cfg:kuva_lich.enableDamageNumbers",
+          "style": "info",
+          "title": "伤害数字",
+          "text": "打中时飘出的数字是实际掉的血：白色是没暴击，<c:FFFF55>黄</c> / <c:FFAA00>橙</c> / <c:FF5555>红</c>是三档暴击。详见[[combat/damage_numbers]]。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "两个坑",
+          "text": "① 武器本身一个元素都没有时，触发几率再高也不会触发。② 元素持续伤害、电击、爆炸补死的怪不算击杀，不叠层。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[combat/damage]] · [[combat/crit]] · [[combat/elements]] · [[combat/element_status]] · [[combat/kill_stack]] · [[combat/bane]]"
+        }
+      ],
+      "_src": [
+        "module/weapon/WeaponCombatHandler.java:543-590 — 主手物品 hasBase（开光）才进 processDamage，否则按原版",
+        "module/weapon/WeaponCombatHandler.java:732-762 + utils/RandomUtil.java percentageChance — 暴击三档 ×M / ×2M / ×3M，>300 恒 ×3M",
+        "module/weapon/WeaponCombatHandler.java:551-556,609,648,755-760 — 近战蓄力比例乘暴击几率，并乘物理与元素伤害（ENABLE_ATTACK_STRENGTH_SCALING，09-25 代码；combat 分类同）",
+        "module/weapon/WeaponCombatHandler.java:779-782 — 暴击只乘物理部分（作者确认的有意设计）",
+        "module/weapon/WeaponCombatHandler.java:698-714 + module/weapon/WeaponElementSystem.java:133-149 — 元素附加伤害；触发时按权重抽一种状态",
+        "module/weapon/WeaponElementSystem.java:183-253,431-445 — 复合配方（火 + 毒 = 毒气等）；赤毒自带元素排第一，再按模组槽位顺序组合",
+        "module/weapon/WeaponElementSystem.java:81-87 — 赤毒武器自带元素",
+        "module/KillStackManager.java:105-134,151-170 — 击杀 +1 层；武器 weaponStackDecayTicks、战甲 warframeStackDecayTicks 逐层衰减（tick → sec）",
+        "module/warframe/WarframeEffectHandler.java:153,196-216 — 战甲叠层只看致死伤害的来源是不是玩家，不要求开光（v1 combat/kill_stack）；module/weapon/WeaponCombatHandler.java:543-590 — 暴击 / 元素 / 克制只在主手开光时结算",
+        "module/weapon/WeaponCombatHandler.java:766-775 + base/entity/AbstractKuva.java:271-273 — 克制按目标 MobType；赤毒实体为 UNDEAD",
+        "module/weapon/DamageDisplayTracker.java:201-215,330-347 + network/packet/DamageInfo.java:26-37 — 伤害数字为实际掉血；白 / 黄 / 橙 / 红（enableDamageNumbers 时显示）",
+        "module/weapon/WeaponCombatHandler.java:624,806-807 — 元素池只取武器自身模组（含赤毒自带），无元素则不触发",
+        "module/weapon/WeaponCombatHandler.java:847-849,893-926,1321-1384 — 元素 DoT、电击、爆炸、溅射不走击杀判定"
+      ]
+    },
+    {
+      "id": "tut_guns",
+      "title": "扩展章 · TACZ 枪械",
+      "icon": "kuvalich:riven_sliver",
+      "summary": "让 TACZ 的枪用上模组",
+      "if": "mod:tacz",
+      "blocks": [
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.taczGunEnhanceEnable",
+          "text": "<em>本章目标</em>：给 TACZ 的枪开光、装模组。手头有多余的{item:kuvalich:lich_reliquary}时，还能永久强化一把枪。"
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.taczGunEnhanceEnable",
+          "text": "<em>本章目标</em>：给 TACZ 的枪开光、装模组。"
+        },
+        {
+          "type": "h",
+          "text": "怎么做"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "{item:kuvalich:requiem_evolve}左格放一把枪（单独一把），中格放{item:kuvalich:riven_sliver}，得到开过光的枪。",
+            "放进{item:kuvalich:requiem_weapon_table}装模组，最多 8 张。",
+            "主手拿枪开火，模组效果即时生效。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "哪些词条对枪有用"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<g>有用</g>：远程伤害、远程暴击、元素、触发、克制、击杀叠层，以及一组枪械专属词条。",
+            "<b>开枪没用</b>：近战类词条，子弹命中不算近战。"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.taczGunEnhanceEnable",
+          "text": "女皇之力：永久强化"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.taczGunEnhanceEnable",
+          "items": [
+            "安魂之融左格放枪，中格放{item:kuvalich:lich_reliquary}：消耗 1 个，这把枪的原始伤害永久 +<t>{cfg:kuva_lich.taczGunEnhancePercent|round:4|pct}</t>。",
+            "不需要开光，任何 TACZ 枪都能强化；想再强化就把枪放回左格。",
+            {
+              "if": "cfg:kuva_lich.taczGunEnhanceMaxCount>0",
+              "text": "每把枪最多强化 <t>{cfg:kuva_lich.taczGunEnhanceMaxCount}</t> 次。"
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "没开光的枪不吃任何模组效果，副手、盔甲上的模组也加不到它身上。"
+        },
+        {
+          "type": "tip",
+          "if": "cfg:kuva_lich.taczGunEnhanceEnable",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[tacz/tacz_overview]] · [[tacz/tacz_gun_attributes]] · [[tacz/tacz_enhance]]"
+        },
+        {
+          "type": "tip",
+          "if": "!cfg:kuva_lich.taczGunEnhanceEnable",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[tacz/tacz_overview]] · [[tacz/tacz_gun_attributes]]"
+        }
+      ],
+      "_src": [
+        "tacz/tacz_enhance 整条以 cfg:kuva_lich.taczGunEnhanceEnable 为条件 → 本章目标里「永久强化一把枪」和「想深入」里的 tacz_enhance 链接都按这个开关分两份",
+        "KuvaLich.java:131-156 — 仅装了 TACZ 时注册兼容层（条目 if mod:tacz）",
+        "world/inventory/RequiemEvolveMenu.java:221-222,340-353,480-483 — 单把枪 + 裂罅碎块 → 开光",
+        "module/weapon/WeaponModuleHandler.java:187-199 — 模组槽固定 8",
+        "module/weapon/WeaponCombatHandler.java:576-583,636-665 — 开光才结算；子弹走远程分支（远程伤害、弹射物伤害、远程暴击），近战词条只在直接命中时生效",
+        "module/weapon/WeaponElementSystem.java:579-835 + module/weapon/WeaponCombatHandler.java:766-775,997-1022 — 元素、触发、克制、击杀叠层对子弹同样生效",
+        "compat/tacz/TaczGunEnhanceUtil.java:68-75,144-159 + world/inventory/RequiemEvolveMenu.java:224-227,355-367 — 玄骸之遗强化：次数 +1，伤害 × (1 + 次数 × taczGunEnhancePercent)，线性；maxCount>0 时有上限",
+        "mixin/tacz/MixinGunShootContext.java:56-62 — 女皇之力不依赖开光",
+        "compat/tacz/WarframeTaczBridge.java:303,321,349 — 未开光一律返回 0（含额外槽位）"
+      ]
+    },
+    {
+      "id": "tut_9_endgame",
+      "title": "第 9 章 · 循环与后期",
+      "icon": "kuvalich:item_riven_module",
+      "summary": "一轮轮变强：等级、融合、裂罅",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<em>本章目标</em>：知道一轮解密之后还能追求什么：更高等级的赤毒武器、武器融合、洗出好词条的裂罅模组。"
+        },
+        {
+          "type": "h",
+          "text": "每一轮会变"
+        },
+        {
+          "type": "list",
+          "items": [
+            "成功后解密进度、答案和玄骸等级全部清零，下一轮的答案重新随机。",
+            "你的武器等级范围上下限各提高同一个随机值（<t>{cfg:kuva_lich.minimumLevelCapIncrease}</t>~<t>{cfg:kuva_lich.maximumLevelCapIncrease}</t> 级），之后掉的赤毒武器更强。",
+            "范围有封顶：下限最高 <t>{cfg:kuva_lich.minimumLevel}</t>，上限最高 <t>{cfg:kuva_lich.maximumLevel}</t>。再往上只能靠融合。",
+            "安魂卡每张能撑 3 次成功。旧卡丢进{item:kuvalich:requiem_recast}，3 张换 1 张新卡。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "融合赤毒武器"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "{item:kuvalich:requiem_evolve}左格放主力，中格放另一把赤毒武器（种类可以不同）。",
+            "取走右格的结果，两把合成一把。"
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "新等级 = 向下取整[ 两把中较高的等级 × {cfg:kuva_lich.upgradeMultiplier|add:1} ]，最高 {cfg:kuva_lich.upgradeLimit}"
+        },
+        {
+          "type": "list",
+          "items": [
+            "结果保留<em>左格</em>那把的种类、面板和模组。",
+            "<w>元素换成中格那把的</w>。想给主力换元素，就把带着想要元素的武器放中格。",
+            "中格那把连同它身上的模组一起消失，好模组先拆下来。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "裂罅模组：重洗词条"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "已揭示的裂罅模组放安魂之融左格，中格放足量{item:kuvalich:kuva}。卡面会写着这次要几个。",
+            "右格立刻出现新词条的卡，<w>这一次的赤毒在这时付掉</w>。每出一次预览就付一次：之后再改中格的赤毒数量，会重新预览、再付一次。",
+            "要新词条就取走它；想留旧的就把原卡拿回来，付掉的赤毒不退。所以每洗一次都有成本。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "原作里，裂罅模组的词条完全随机，可以花赤毒反复「循环」重洗。倾向性的点越多，说明这把武器越冷门，裂罅数值也越高。"
+        },
+        {
+          "type": "h",
+          "text": "还能从哪变强"
+        },
+        {
+          "type": "list",
+          "items": [
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "把核心模组练到满级（第 5 章）。"
+            },
+            "专属附魔：{lang:enchantment.kuvalich.lethal}、{lang:enchantment.kuvalich.first_strike}（剑），{lang:enchantment.kuvalich.escort}、{lang:enchantment.kuvalich.death_resistance}（盔甲），{lang:enchantment.kuvalich.experience_collector}（工具）。",
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
+              "text": "战甲词条「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」让打怪多掉东西。"
+            },
+            {
+              "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier>0"],
+              "text": "战甲词条「{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}」让挖矿多掉东西。"
+            },
+            "{item:kuvalich:machete}：主手拿着击杀动物或怪物，每堆掉落随机变成 1~3 倍。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "想深入",
+          "text": "[[weapons/weapon_level]] · [[weapons/requiem_evolve]] · [[modules/riven_module]] · [[world/enchantments]] · [[world/loot]] · [[reference]]"
+        }
+      ],
+      "_src": [
+        "module/warframe/WarframeEffectHandler.java:306 掉落倍率 = 1 + raw × itemDropEffectMultiplier/100（为 0 时词条无效）；world/OreDropMultiplierModifier.java:60,115 enableOreDropMultiplier 为 false 直接返回、同样乘 oreDropEffectMultiplier/100 → 两条词条拆开各带条件，与 world/loot、world/ore_drop_multiplier 一致",
+        "capability/RequiemCard.java:317-331 — 成功 reset：阶段、进度、答案、kuvaLevel 清零；答案在下一轮第一段满时重新生成",
+        "entity/KuvaMasterEntity.java:556-579 — 上下限各加同一个 random(minimumLevelCapIncrease, maximumLevelCapIncrease)，分别封顶 minimumLevel / maximumLevel",
+        "world/inventory/RequiemEvolveMenu.java:246-248 — 融合等级上限 upgradeLimit（超过区间上限只能靠融合）",
+        "base/item/AbstractRequiemCard.java:27-28 + capability/RequiemCard.java:283-304 — 卡耐久 3；world/inventory/RequiemRecastMenu.java:208,227 — 3 张任意卡（不看耐久）→ 1 张满耐久随机卡",
+        "world/inventory/RequiemEvolveMenu.java:202-204,241-254,391-396 — 两把赤毒武器（可不同种）融合：复制左格（种类、面板、模组），等级 (int)(max×(1+upgradeMultiplier)) 封顶 upgradeLimit，元素取中格；取走时两格清空",
+        "world/inventory/RequiemEvolveMenu.java:205-210,256-278 — 裂罅 + 赤毒循环：预览时立即扣赤毒；base/item/AbstractWeaponModule.java:184-205 — 安魂之融内卡面显示循环费用",
+        "world/inventory/RequiemEvolveMenu.java:168-199 checkAndProcessCrafting — 材料格一变（inputChanged）就清掉预览并重新 processCrafting：每次预览都付一次（作者确认是设计：洗词条要付费）；:432-450 removed — 拿回原卡或关界面则结果作废、赤毒不退",
+        "module/level/ModuleLevelHelper.java — 等级系统（行级 if）",
+        "init/KuvaLichEnchantments.java:16-32 + enchantment/*.java — 斩杀 / 先攻（WEAPON=剑）、护卫 / 死亡抵抗（盔甲）、经验之运（DIGGER）",
+        "module/warframe/WarframeEffectHandler.java:290-310 — itemDropMultiplier；world/ore_drop_multiplier 同名词条管挖矿",
+        "item/weapon/Machete.java:42-63 — 砍刀击杀动物 / 怪物，每堆掉落 ×1~3（排除盔甲与工具，不含不能换维度的 Boss）",
+        "wf 小知识（原作设定）：Warframe 裂罅模组词条随机，用赤毒（Kuva）循环重洗；倾向性（disposition）点数越多代表武器越少被使用、裂罅数值越高"
+      ]
+    },
+    {
+      "id": "materials",
+      "title": "材料速查",
+      "icon": "kuvalich:requiem_gem",
+      "summary": "每种材料从哪来、拿去干什么",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "本模组的材料不多，但用途容易记混。下表按「从哪来 → 干什么」排好，点链接看细节。"
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:kuva",
+            "kuvalich:riven_sliver",
+            "kuvalich:requiem_gem",
+            "kuvalich:lich_reliquary",
+            "kuvalich:forma",
+            "kuvalich:shadow_forma",
+            "kuvalich:requiem_riddle",
+            "kuvalich:requiem_ultimatum",
+            "kuvalich:khra"
+          ],
+          "caption": "悬停可看物品本身的说明"
+        },
+        {
+          "type": "table",
+          "header": [
+            "材料",
+            "从哪来",
+            "干什么用"
+          ],
+          "widths": [
+            3,
+            5,
+            5
+          ],
+          "rows": [
+            [
+              "{item:kuvalich:kuva}",
+              "安魂矿石（每次 2~4 个）、奴仆、解密成功",
+              "重洗裂罅模组；造武器军械库；冒险指南丢了，书 + 赤毒能再合成一本。[[modules/riven_module|详情]]"
+            ],
+            [
+              "{item:kuvalich:riven_sliver}",
+              "安魂矿石（每次 1 个）、奴仆、解密成功",
+              "开光，每次 1 个；造战甲军械库。[[weapons/requiem_evolve|详情]]"
+            ],
+            [
+              "{item:kuvalich:requiem_gem}",
+              "<w>只有奴仆掉</w>，吃抢夺加成",
+              "造灭骸之扉、安魂之铸、安魂之融和塑形块"
+            ],
+            [
+              "{item:kuvalich:lich_reliquary}",
+              "每次解密成功 1 个",
+              "造安魂之融和两个军械库"
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.enableModuleLevelSystem",
+                "cfg:kuva_lich.endoDropChance>0"
+              ],
+              "cells": [
+                "{item:kuvalich:endo}",
+                "经验矿石、开光武器杀怪、分解模组",
+                "给模组升级。[[modules/module_level|详情]]"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableModuleLevelSystem",
+                "!cfg:kuva_lich.endoDropChance>0"
+              ],
+              "cells": [
+                "{item:kuvalich:endo}",
+                "经验矿石、分解模组",
+                "给模组升级。[[modules/module_level|详情]]"
+              ]
+            },
+            [
+              "{item:kuvalich:forma}",
+              "合成，一次 3 个（配方见下）",
+              "重洗已开光的非赤毒武器的面板。[[weapons/forma|详情]]"
+            ],
+            {
+              "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"],
+              "cells": [
+                "{item:kuvalich:shadow_forma}",
+                "没有配方，只在创造模式物品栏",
+                "无视锁定重洗面板，并解除锁定"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.formaLockEnabled||!cfg:kuva_lich.formaLockChance>0",
+              "cells": [
+                "{item:kuvalich:shadow_forma}",
+                "没有配方，只在创造模式物品栏",
+                "和塑形块一样重洗面板"
+              ]
+            },
+            [
+              "{item:kuvalich:requiem_riddle}",
+              "不会掉落，只在创造模式物品栏",
+              "解开第一段后，右键直接告诉你三张答案卡和顺序"
+            ],
+            {
+              "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
+              "cells": [
+                "{item:kuvalich:requiem_ultimatum}",
+                "解密成功时 <t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> 概率掉",
+                "右键召唤一只{lang:entity.kuvalich.kuva_master}"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.requiemUltimatumDropChance>0",
+              "cells": [
+                "{item:kuvalich:requiem_ultimatum}",
+                "不会掉落，只在创造模式物品栏",
+                "右键召唤一只{lang:entity.kuvalich.kuva_master}"
+              ]
+            },
+            [
+              "安魂卡（8 种）",
+              "安魂矿石；安魂之铸 3 张换 1 张",
+              "解密答案，每张撑 3 次成功。[[requiem/requiem_cards|详情]]"
+            ],
+            [
+              "模组",
+              "矿石、奴仆随机掉；解密成功必掉 1 张",
+              "揭示后装进军械库。[[modules/module_overview|详情]]"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "安魂宝石只能靠奴仆",
+          "text": "{item:kuvalich:requiem_gem}挖矿挖不到，只有{lang:entity.kuvalich.kuva_slave}会掉。加成看主手武器的<em>抢夺</em>，时运没用。功能方块一路要吃很多，多刷奴仆。"
+        },
+        {
+          "type": "recipe",
+          "item": "kuvalich:forma"
+        },
+        {
+          "type": "tip",
+          "if": [
+            "mod:tacz",
+            "cfg:kuva_lich.taczGunEnhanceEnable"
+          ],
+          "style": "info",
+          "title": "玄骸之遗还能强化枪",
+          "text": "把 TACZ 枪和{item:kuvalich:lich_reliquary}一起放进安魂之融，枪的原始伤害永久 +<t>{cfg:kuva_lich.taczGunEnhancePercent|pct}</t>。见[[tacz/tacz_enhance]]。"
+        },
+        {
+          "type": "p",
+          "text": "<dim>各材料的具体掉率见本分类最后一篇「数值速查」。</dim>"
+        }
+      ],
+      "_src": [
+        "data/kuvalich/recipes/kuvalich_guide.json — 书 + 赤毒 无序合成冒险指南（09-25 加，给丢了书的人补领）",
+        "暗影塑形块一行按 [formaLockEnabled, formaLockChance>0] 分两份（formaLockEnabled 默认 false，关着时没有锁定可解，与 weapons/forma 一致）；entity/KuvaMasterEntity.java:485 — 通牒唯一产出（解密成功时按 requiemUltimatumDropChance 掉；RandomUtil.percentageChance ≤0 恒 false，data 里无配方 / 战利品表） → 教玩家用通牒召唤的句子都带 requiemUltimatumDropChance>0",
+        "enchantment/RequiemDestroyedEnchantment.java:232-235 — 安魂矿石每份：1 裂罅碎块 + 2~4 赤毒（写死），无安魂宝石",
+        "entity/KuvaSlaveEntity.java:229-254 — 奴仆掉赤毒、裂罅碎块、安魂宝石（base + looting × bonus，抢夺取主手）",
+        "entity/KuvaMasterEntity.java:465-487 — 成功：玄骸之遗 1、裂罅碎块、赤毒、安魂通牒 requiemUltimatumDropChance(0~100)",
+        "world/inventory/RequiemEvolveMenu.java:205-210,256-301 — 赤毒用于裂罅循环；:221-223,340-353 — 裂罅碎块开光，每次消耗 1",
+        "data/kuvalich/recipes/*.json — 赤毒→武器军械库；裂罅碎块→战甲军械库；安魂宝石→gate/recast/evolve/forma；玄骸之遗→evolve/两个军械库；forma 一次 3 个",
+        "module/level/EndoDropHandler.java:29-58 — 等级系统开启 + 主手开光武器 + Monster → endoDropChance（为 0 时换一行不列该来源）；block/ExperienceOreBlock.java:50-60,131-138 — 经验矿石掉内融核心；world/inventory/RequiemRecastMenu.java:183-190,463-503 — 分解",
+        "world/inventory/RequiemEvolveMenu.java:212-220,303-338 — 塑形块只洗已开光、非赤毒、未锁定的武器；暗影塑形块无视并清除锁定",
+        "init/KuvaLichItems.java:262-264 + item/ShadowForma.java:9-18 — 暗影塑形块无配方，仅创造栏",
+        "item/RequiemRiddle.java:64-94 + 全仓 grep REQUIEM_RIDDLE 只有注册与创造栏 — 无自然来源；右键显示三个答案（含顺序）",
+        "item/RequiemUltimatum.java:59-110 — 右键召唤玄骸",
+        "enchantment/RequiemDestroyedEnchantment.java:186-190 + world/inventory/RequiemRecastMenu.java:227-238 — 安魂卡来源；base/item/AbstractRequiemCard.java:27-28 — 耐久 3",
+        "entity/KuvaSlaveEntity.java:262-286 + enchantment/RequiemDestroyedEnchantment.java:202-230 + entity/KuvaMasterEntity.java:534-548 — 模组来源；item/module/weapon/WeaponCommonModule.java:621-641 — 右键揭示",
+        "compat/tacz/TaczGunEnhanceUtil.java:68-75,144-159 — 玄骸之遗强化 TACZ 枪"
+      ]
+    },
+    {
+      "id": "faq",
+      "title": "常见误区",
+      "icon": "kuvalich:requiem_riddle",
+      "summary": "新手最容易踩的坑，一次说清",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "新手最容易踩的坑都在这里。每条先写<b>错误做法</b>，再说正确的理解。"
+        },
+        {
+          "type": "h",
+          "text": "挖矿与方块"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<b>× 不带附魔硬挖安魂矿石</b>：钻石镐约 <t>150</t> 秒才挖一块，出货率只有 <t>{cfg:kuva_lich.baseCardDropChance|pctv}</t>，时运反而让它更低。带附魔约 0.5 秒一块，出货率 <t>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</t>。",
+            "<b>× 用精准采集挖矿</b>：安魂矿石和经验矿石都什么也不掉，连方块本身都拿不到。",
+            "<b>× 用铁镐拆功能方块</b>：五个功能方块都要钻石镐或更好的镐，否则直接消失。其中灭骸之扉、安魂之铸、安魂之融不带灭骸附魔时还挖得极慢。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "解密与玄骸"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<b>× 以为卡放进灭骸之扉就被吃掉</b>：卡只是登记在你身上，随时能取回，换一座灭骸之扉也一样。只有解密成功时每张卡扣 1 点耐久（共 3 点），失败不扣。",
+            "<b>× 以为线索格的位置就是顺序</b>：揭示的答案卡是随机落位的，顺序要自己试。{item:kuvalich:requiem_riddle}能直接给出正确顺序。",
+            "<b>× 摆着没把握的卡去杀玄骸</b>：三格放满时，每杀一只玄骸都要结算一次，猜错玄骸等级 +1；第一段还没解开就放满，必定失败。没把握就先取出一张卡，这时杀玄骸只加进度。",
+            "<b>× 让宠物、召唤物帮忙清怪</b>：解密进度和奴仆、玄骸的掉落只认你亲手的击杀，你射出的箭也算。",
+            "<b>× 以为这一轮的答案下一轮还能用</b>：每次成功后进度、答案和玄骸等级全部清空，下一轮重新随机。",
+            "<b>× 对着玄骸猛打同一招</b>：同一类伤害每命中一次，它的抗性 +5%（最多 30%）；2 秒内出手越密，每下越低（最低四成）；单下超过它最大生命 15% 的部分会被大幅削弱。换着伤害类型打，详见[[enemies/lich_resistance]]。",
+            {
+              "if": "cfg:kuva_lich.increaseDamage>0",
+              "text": "<b>× 以为玄骸等级只是个数字</b>：每级让奴仆和玄骸打你的伤害 +<t>{cfg:kuva_lich.increaseDamage|pct}</t>，失败越多越难打（摔落、普通怪物等别的伤害不受影响）。成功解密后清零。"
+            },
+            {
+              "if": "cfg:kuva_lich.reducedDamage>0",
+              "text": "<b>× 以为玄骸等级不影响输出</b>：每级让你打奴仆和玄骸的伤害 -<t>{cfg:kuva_lich.reducedDamage|pct}</t>（最多削减 99.9%），打别的目标不受影响。成功解密后清零。"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance>0",
+                "cfg:kuva_lich.maxConfiscatedItems>0"
+              ],
+              "text": "<b>× 把贵重物品丢在地上</b>：揭示第一张答案卡后，捡起的每一组都有 <t>{cfg:kuva_lich.confiscationChance|pctv}</t> 概率被整组没收（最多 {cfg:kuva_lich.maxConfiscatedItems} 组），成功解密后才还。右键揭示的模组也是先掉地上再捡，同样可能被收走。"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "装备与模组"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<b>× 没开光就想装模组</b>：普通武器要先在{item:kuvalich:requiem_evolve}里用{item:kuvalich:riven_sliver}开光。赤毒武器天生开过光。",
+            "<b>× 拿塑形块洗赤毒武器</b>：{item:kuvalich:forma}只对<em>非赤毒</em>的已开光武器有效。赤毒武器靠融合变强。",
+            "<b>× 一件装备塞两张裂罅</b>：每件装备（包括你的战甲模组栏）只能装 1 张裂罅；同类型或互相冲突的模组也不能同时装。",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
+              "text": "<b>× 以为副手、盔甲上的模组满效果</b>：主手以外的位置按各自的比例生效，详见[[modules/multi_slot]]。"
+            },
+            "<b>× 拿时运镐刷奴仆</b>：怪物掉落看主手武器的<em>抢夺</em>，而且只有{item:kuvalich:requiem_gem}吃抢夺加成。",
+            "<b>× 扔掉早期的低等级赤毒武器</b>：它们能当融合材料。注意融合后<w>元素会换成材料那把的</w>，放进中格前先看看它的元素。",
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "<b>× 给一把武器塞满 1 级模组</b>：1 级只有满级的 1/{cfg:kuva_lich.moduleMaxLevel}。不如先用{item:kuvalich:endo}把两三张核心模组练高。"
+            }
+          ]
+        }
+      ],
+      "_src": [
+        "enchantment/RequiemDestroyedEnchantment.java:91-116 — 不带附魔速度 min(工具速度,1)：钻石镐 1/100/30 → 3000 tick = 150 秒；带附魔 300 → 约 0.5 秒",
+        "enchantment/RequiemDestroyedEnchantment.java:175-184 — 无附魔：max(minCardDropChance, baseCardDropChance − fortuneReductionPerLevel × 时运)；有附魔：cardDropChanceWithEnchant",
+        "enchantment/RequiemDestroyedEnchantment.java:152-154 + block/RequiemOreBlock.java:57-61 + block/ExperienceOreBlock.java:77-80,111-115 — 精准采集时两种矿都不掉",
+        "init/KuvaLichBlocks.java:77-154 + data/minecraft/tags/blocks/needs_diamond_tool.json — 五个功能方块需钻石级工具才掉落",
+        "enchantment/RequiemDestroyedEnchantment.java:250-255 — 灭骸加速只覆盖矿石 / 灭骸之扉 / 安魂之铸 / 安魂之融",
+        "world/inventory/RequiemGateMenu.java:106-121,206-231 — 卡片读写都在玩家能力上，与方块无关",
+        "capability/RequiemCard.java:291-304 + base/item/AbstractRequiemCard.java:27-28 — 仅成功时每张卡损耗 +1，耐久 3",
+        "capability/RequiemCard.java:333-347 — 揭示的卡随机落位；item/RequiemRiddle.java:69 — 谜语给出顺序",
+        "entity/KuvaMasterEntity.java:415-430,588-600 — 三槽全满才结算，失败 kuvaLevel +1；capability/RequiemCard.java:201-209 — 零线索时必败",
+        "entity/KuvaSlaveEntity.java:163-174 + entity/KuvaMasterEntity.java:396-407 — getEntity() 为玩家才给进度与掉落（弹射物 getEntity 是射手）",
+        "capability/RequiemCard.java:317-331 — 成功后 reset：答案、进度、玄骸等级清零",
+        "entity/KuvaMasterEntity.java:81-105,211-283 — 适应抗性每层 5%、6 层封顶；2 秒窗口每命中 -5%、最低 0.4；单次超过最大生命 15% 的部分对数衰减",
+        "base/entity/AbstractKuva.java:107-135 onLivingHurt — 受伤增幅只在伤害归属于赤毒实体时（applyPlayerDefense :169-174），输出削减只在目标是赤毒实体时（applyPlayerDamageModifier :154-161）；reducedDamage 封顶 0.999；两行各按 >0 显示",
+        "event/ConfiscationHandler.java:58-97 + entity/KuvaMasterEntity.java:503-516 — 捡起地上物品整组没收，上限 maxConfiscatedItems，成功后归还；item/module/weapon/WeaponCommonModule.java:621-641 — 揭示的模组生成为掉落物再被捡起",
+        "world/inventory/RequiemWeaponTableMenu.java:242-246 — 武器槽要求已开光；base/item/AbstractKuvaWeapon.java:173-185 — 赤毒武器天生开光",
+        "world/inventory/RequiemEvolveMenu.java:216-220 — 塑形块要求非赤毒",
+        "module/ModulePlacementValidator.java:84-102,134-151 — 武器侧与战甲侧都是裂罅唯一、同 type / 冲突标签不能共存",
+        "module/weapon/WeaponCombatHandler.java:346-382 — 副手 / 盔甲 / 饰品按各自比例生效",
+        "entity/KuvaSlaveEntity.java:248-253 — 抢夺取主手，只作用于安魂宝石",
+        "world/inventory/RequiemEvolveMenu.java:241-254 — 融合元素取材料格那把",
+        "module/level/ModuleLevelHelper.java:102-108 — 效果倍率 = 等级 / 最大等级"
+      ]
+    },
+    {
+      "id": "server_settings",
+      "title": "数值速查",
+      "icon": "minecraft:comparator",
+      "summary": "当前各项数值，一页看全",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "这一页按主题列出当前的各项数值，方便随时查。每一项怎么玩，见对应的教程章节或分类。"
+        },
+        {
+          "type": "h",
+          "text": "解密与玄骸"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "每只奴仆给的解密进度",
+              "{cfg:kuva_lich.minDecryptionProgress} ~ {cfg:kuva_lich.maxDecryptionProgress} 点"
+            ],
+            [
+              "每只玄骸给的解密进度",
+              "奴仆的 {cfg:kuva_lich.masterPotionMultiplier|x}"
+            ],
+            [
+              "三段所需进度",
+              "{cfg:kuva_lich.firstStage} / {cfg:kuva_lich.secondStage} / {cfg:kuva_lich.thirdStage} 点"
+            ],
+            {
+              "if": "cfg:kuva_lich.increaseDamage>0",
+              "cells": [
+                "玄骸等级每级：赤毒敌人打你",
+                "+{cfg:kuva_lich.increaseDamage|pct}，只算奴仆和玄骸"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.reducedDamage>0",
+              "cells": [
+                "玄骸等级每级：你打赤毒敌人",
+                "-{cfg:kuva_lich.reducedDamage|pct}，最多削减 99.9%"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.battleBoost>0",
+              "cells": [
+                "赤毒敌人交战时的伤害成长",
+                "每秒 +{cfg:kuva_lich.battleBoost|pct}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance>0",
+                "cfg:kuva_lich.maxConfiscatedItems>0"
+              ],
+              "cells": [
+                "捡东西被没收的概率",
+                "{cfg:kuva_lich.confiscationChance|pctv}，每轮最多 {cfg:kuva_lich.maxConfiscatedItems} 组"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "解密成功的奖励"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "{item:kuvalich:kuva}",
+              "{cfg:kuva_lich.masterKuvaMinAmount} ~ {cfg:kuva_lich.masterKuvaMaxAmount} 个"
+            ],
+            [
+              "{item:kuvalich:riven_sliver}",
+              "{cfg:kuva_lich.masterRivenSliverMinAmount} ~ {cfg:kuva_lich.masterRivenSliverMaxAmount} 个"
+            ],
+            [
+              "高级模组是 Prime 的概率",
+              "{cfg:kuva_lich.masterPrimeModuleChance|pctv}（否则是裂罅）"
+            ],
+            {
+              "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
+              "cells": [
+                "掉{item:kuvalich:requiem_ultimatum}的概率",
+                "{cfg:kuva_lich.requiemUltimatumDropChance|pctv}"
+              ]
+            },
+            [
+              "赤毒武器等级范围",
+              "起始 {cfg:kuva_lich.baseMinimumLevel} ~ {cfg:kuva_lich.baseMaximumLevel} 级；每次成功上下限同加 {cfg:kuva_lich.minimumLevelCapIncrease} ~ {cfg:kuva_lich.maximumLevelCapIncrease} 级；下限最高 {cfg:kuva_lich.minimumLevel}，上限最高 {cfg:kuva_lich.maximumLevel}"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "掉落"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "带灭骸挖安魂矿石的出货率",
+              "{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}"
+            ],
+            [
+              "不带附魔的出货率",
+              "{cfg:kuva_lich.baseCardDropChance|pctv}，每级时运 -{cfg:kuva_lich.fortuneReductionPerLevel|pctv}，最低 {cfg:kuva_lich.minCardDropChance|pctv}"
+            ],
+            [
+              "矿石 / 奴仆掉模组（青铜 / 白银 / 黄金）",
+              "{cfg:kuva_lich.commonModuleDropChance|pctv} / {cfg:kuva_lich.uncommonModuleDropChance|pctv} / {cfg:kuva_lich.rareModuleDropChance|pctv}"
+            ],
+            [
+              "掉的模组是武器模组的概率",
+              "{cfg:kuva_lich.moduleWeaponRatio|pctv}（其余是战甲模组）"
+            ],
+            [
+              "奴仆掉{item:kuvalich:requiem_gem}",
+              "{cfg:kuva_lich.slaveRequiemGemBaseChance|pctv} + 每级抢夺 {cfg:kuva_lich.slaveRequiemGemLootingBonus|pctv}"
+            ],
+            [
+              "奴仆掉{item:kuvalich:kuva}",
+              "{cfg:kuva_lich.slaveKuvaDropChance|pctv}，每次 {cfg:kuva_lich.slaveKuvaMinAmount} ~ {cfg:kuva_lich.slaveKuvaMaxAmount} 个"
+            ],
+            [
+              "奴仆掉{item:kuvalich:riven_sliver}",
+              "{cfg:kuva_lich.slaveRivenSliverDropChance|pctv}，每次 1 个"
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.enableModuleLevelSystem",
+                "cfg:kuva_lich.endoDropChance>0"
+              ],
+              "cells": [
+                "开光武器杀怪掉{item:kuvalich:endo}",
+                "{cfg:kuva_lich.endoDropChance|pctv}，每次 {cfg:kuva_lich.endoDropMinAmount} ~ {cfg:kuva_lich.endoDropMaxAmount} 个"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "模组与装备"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "模组词条倍率（通用 / 关键）",
+              "{cfg:kuva_lich.moduleAttributeMultiplier|x} / {cfg:kuva_lich.keyAttributeMultiplier|x}"
+            ],
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "cells": [
+                "模组满级",
+                "{cfg:kuva_lich.moduleMaxLevel} 级"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "cells": [
+                "升最后一级要的内融核心",
+                "{cfg:kuva_lich.endoLastLevelCost} 个（Prime / 裂罅全价，金 / 银 / 铜依次打折）"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+              "cells": [
+                "模组等级",
+                "无，拿到就是满效果"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableOffhandModule",
+              "cells": [
+                "副手上的模组",
+                "按 {cfg:kuva_lich.offhandEffectMultiplier|pctv} 借给主手"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableHelmetModule",
+              "cells": [
+                "头盔上的模组",
+                "按 {cfg:kuva_lich.armorEffectMultiplier|pctv} 借给主手"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableChestplateModule",
+              "cells": [
+                "胸甲上的模组",
+                "按 {cfg:kuva_lich.armorEffectMultiplier|pctv} 借给主手"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableLeggingsModule",
+              "cells": [
+                "护腿上的模组",
+                "按 {cfg:kuva_lich.armorEffectMultiplier|pctv} 借给主手"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.enableBootsModule",
+              "cells": [
+                "靴子上的模组",
+                "按 {cfg:kuva_lich.armorEffectMultiplier|pctv} 借给主手"
+              ]
+            },
+            {
+              "if": [
+                "mod:curios",
+                "cfg:kuva_lich.enableCuriosModule"
+              ],
+              "cells": [
+                "饰品栏里的模组",
+                "按 {cfg:kuva_lich.curiosEffectMultiplier|pctv} 借给主手"
+              ]
+            },
+            [
+              "赤毒武器融合",
+              "等级 +{cfg:kuva_lich.upgradeMultiplier|pct}（小数舍去），最高 {cfg:kuva_lich.upgradeLimit} 级"
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.formaLockEnabled",
+                "cfg:kuva_lich.formaLockChance>0"
+              ],
+              "cells": [
+                "塑形块锁定概率",
+                "每次洗面板 {cfg:kuva_lich.formaLockChance|pctv}"
+              ]
+            },
+            {
+              "if": "cfg:modules.disabledModuleTypes",
+              "cells": [
+                "揭示时排除的模组类型",
+                "{cfg:modules.disabledModuleTypes|count} 种，见[[modules/module_limits]]"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "其它"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "击杀叠层掉一层的间隔（武器 / 战甲）",
+              "{cfg:kuva_lich.weaponStackDecayTicks|sec} / {cfg:kuva_lich.warframeStackDecayTicks|sec}"
+            ],
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "护盾上限倍率",
+                "{cfg:kuva_lich.shieldCapMultiplier|x}"
+              ]
+            },
+            {
+              "if": "cfg:ore_gen.requiemOreVeinCount",
+              "cells": [
+                "{item:kuvalich:requiem_ore}",
+                "每区块 {cfg:ore_gen.requiemOreVeinCount} 处，每处最多 {cfg:ore_gen.requiemOreVeinSize} 块，Y {cfg:ore_gen.requiemOreMinHeight} ~ {cfg:ore_gen.requiemOreMaxHeight}"
+              ]
+            },
+            {
+              "if": "cfg:ore_gen.experienceOreVeinCount",
+              "cells": [
+                "{item:kuvalich:experience_ore}",
+                "每区块 {cfg:ore_gen.experienceOreVeinCount} 处，每处最多 {cfg:ore_gen.experienceOreVeinSize} 块，Y {cfg:ore_gen.experienceOreMinHeight} ~ {cfg:ore_gen.experienceOreMaxHeight}"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0",
+              "cells": [
+                "玄骸野外刷新权重",
+                "{cfg:kuva_lich.kuvaLichSpawnWeight}（僵尸是 95）"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+              "cells": [
+                "奴仆野外刷新权重",
+                "{cfg:kuva_lich.kuvaSlaveSpawnWeight}（僵尸是 95）"
+              ]
+            },
+            {
+              "if": [
+                "mod:tacz",
+                "cfg:kuva_lich.taczGunEnhanceEnable"
+              ],
+              "cells": [
+                "女皇之力每次强化",
+                "原始伤害 +{cfg:kuva_lich.taczGunEnhancePercent|pct}"
+              ]
+            }
+          ]
+        }
+      ],
+      "_src": [
+        "KuvaLich.java:82-85 + guide/GuideConfigSync.java:38,59 — 数值来自两份 COMMON 配置，登录与热重载时下发（正文不提）",
+        "entity/KuvaSlaveEntity.java:195-199；entity/KuvaMasterEntity.java:608-612 — 进度 random(min,max)，玄骸 × masterPotionMultiplier",
+        "capability/RequiemCard.java:236-243 — 三段阈值",
+        "base/entity/AbstractKuva.java:107-135 onLivingHurt + :154-161,169-174 — increaseDamage / reducedDamage 为小数（pct）；增幅只对归属于赤毒实体的伤害，削减只对打赤毒实体的伤害；reducedDamage 封顶 0.999；各按 >0 显示",
+        "base/entity/AbstractKuva.java:143-146,372-378 — 赤毒实体伤害 × (1 + 战斗 tick/20 × battleBoost)（pct，>0 显示）",
+        "event/ConfiscationHandler.java:58-77 + capability/RequiemCard.java:355-373 — confiscationChance(0~100)；maxConfiscatedItems 为组数，0 = 不没收（两者 >0 才显示）",
+        "entity/KuvaMasterEntity.java:465-487 — 成功掉赤毒 / 裂罅碎块 min~max；requiemUltimatumDropChance(0~100)",
+        "entity/KuvaMasterEntity.java:538 — masterPrimeModuleChance(0~100)",
+        "capability/RequiemCard.java:90-98 构造函数 — 等级区间起始 baseMinimumLevel ~ baseMaximumLevel；entity/KuvaMasterEntity.java:556-579 upgradeWeaponLevelCap — 等级区间每次 +random(minimumLevelCapIncrease, maximumLevelCapIncrease)，上下限加同一个数，分别封顶",
+        "enchantment/RequiemDestroyedEnchantment.java:175-184,202-230 — 出货率与模组三档（0~100）",
+        "entity/KuvaSlaveEntity.java:229-286 — 奴仆掉落：宝石 base + looting × bonus；赤毒 chance × min~max；裂罅碎块 chance × 1（写死 1）",
+        "module/level/EndoDropHandler.java:43-51 — endoDropChance(0~100)、min~max（等级系统开启且 >0 显示）",
+        "item/module/weapon/WeaponRivenModule.java:277 + utils/ModuleRegistryHelper.java:96-97 — 通用 / 关键词条倍率（×）",
+        "module/level/ModuleLevelHelper.java:42-44,52-59,92-94,121-186 — 等级系统开关（关闭时按满级）、最大等级、最后一级费用；品质折扣 1 / 0.75 / 0.5 / 0.25",
+        "module/weapon/WeaponCombatHandler.java:346-382 — 副手 / 盔甲 / 饰品开关与倍率（0~100 除以 100，pctv；每行各自开关）",
+        "world/inventory/RequiemEvolveMenu.java:241-254 — upgradeMultiplier 小数（pct），(int) 取整，upgradeLimit",
+        "world/inventory/RequiemEvolveMenu.java:303-314 — formaLockChance 与 nextDouble×100 比较（pctv），仅 formaLockEnabled 时",
+        "config/ModuleConfig + item/module/weapon/WeaponCommonModule.java:620-642 — modules.disabledModuleTypes 列表（显示数量），揭示时按禁用类型过滤",
+        "module/KillStackManager.java:105-134 — 叠层逐层衰减间隔为 tick（sec）",
+        "module/warframe/WarframeEffectHandler.java:651 — 护盾上限 = 最大生命 × 护盾 × shieldCapMultiplier（×）",
+        "worldgen/KuvaLichBiomeModifier.java:199-278 — CountPlacement(veinCount)、OreConfiguration(size)、高度区间；veinCount 为 0 时不生成",
+        "worldgen/KuvaLichBiomeModifier.java:288-307 + 原版 BiomeDefaultFeatures.monsters（僵尸 95） — 生成权重，0 时不自然生成",
+        "compat/tacz/TaczGunEnhanceUtil.java:68-75 — taczGunEnhancePercent 小数（pct）"
+      ]
+    }
+  ]
+}

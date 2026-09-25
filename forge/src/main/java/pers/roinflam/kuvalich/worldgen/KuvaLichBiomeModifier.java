@@ -16,11 +16,13 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
 import net.minecraft.world.level.levelgen.placement.*;
 import net.minecraft.world.level.levelgen.structure.templatesystem.TagMatchTest;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.world.BiomeModifier;
 import net.minecraftforge.common.world.MobSpawnSettingsBuilder;
 import net.minecraftforge.common.world.ModifiableBiomeInfo.BiomeInfo;
 
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.guide.GuideConfigSnapshot;
 import pers.roinflam.kuvalich.init.KuvaLichBiomeModifierSerializers;
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
@@ -93,6 +95,21 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
         if (isOverworld(biome) && !isMushroom(biome)) {
             addEntitySpawns(builder.getMobSpawnSettings());
         }
+    }
+
+    /**
+     * 读一项配置，并登记给冒险指南
+     *
+     * <p>这里的值只在服务端启动时读一次、烘焙进世界生成，热重载改 toml 要重启才生效。
+     * 登记后指南显示的是这次启动实际用上的值，而不是热重载后还没生效的新值。</p>
+     *
+     * @param spec 配置项
+     * @return 当前值
+     */
+    private static <T> T pinned(ForgeConfigSpec.ConfigValue<T> spec) {
+        T value = spec.get();
+        GuideConfigSnapshot.pinStartupValue(spec, value);
+        return value;
     }
 
     // ═══ 生物群系判定辅助方法 / Biome identification helpers ═══
@@ -198,7 +215,7 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
      * @param builder 生物群系信息构建器 / biome info builder
      */
     private void addRequiemOre(BiomeInfo.Builder builder) {
-        int veinCount = ModConfig.ORE_GEN.requiemOreVeinCount.get();
+        int veinCount = pinned(ModConfig.ORE_GEN.requiemOreVeinCount);
         if (veinCount <= 0) return;
 
         List<OreConfiguration.TargetBlockState> targets = List.of(
@@ -213,7 +230,7 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
         );
 
         ConfiguredFeature<?, ?> configuredFeature = new ConfiguredFeature<>(Feature.ORE,
-                new OreConfiguration(targets, ModConfig.ORE_GEN.requiemOreVeinSize.get(), 0.0f));
+                new OreConfiguration(targets, pinned(ModConfig.ORE_GEN.requiemOreVeinSize), 0.0f));
 
         PlacedFeature placedFeature = new PlacedFeature(
                 Holder.direct(configuredFeature),
@@ -221,8 +238,8 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
                         CountPlacement.of(veinCount),
                         InSquarePlacement.spread(),
                         HeightRangePlacement.triangle(
-                                VerticalAnchor.absolute(ModConfig.ORE_GEN.requiemOreMinHeight.get()),
-                                VerticalAnchor.absolute(ModConfig.ORE_GEN.requiemOreMaxHeight.get())
+                                VerticalAnchor.absolute(pinned(ModConfig.ORE_GEN.requiemOreMinHeight)),
+                                VerticalAnchor.absolute(pinned(ModConfig.ORE_GEN.requiemOreMaxHeight))
                         ),
                         BiomeFilter.biome()
                 )
@@ -241,7 +258,7 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
      * @param builder 生物群系信息构建器 / biome info builder
      */
     private void addExperienceOre(BiomeInfo.Builder builder) {
-        int veinCount = ModConfig.ORE_GEN.experienceOreVeinCount.get();
+        int veinCount = pinned(ModConfig.ORE_GEN.experienceOreVeinCount);
         if (veinCount <= 0) return;
 
         List<OreConfiguration.TargetBlockState> targets = List.of(
@@ -256,7 +273,7 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
         );
 
         ConfiguredFeature<?, ?> configuredFeature = new ConfiguredFeature<>(Feature.ORE,
-                new OreConfiguration(targets, ModConfig.ORE_GEN.experienceOreVeinSize.get(), 0.0f));
+                new OreConfiguration(targets, pinned(ModConfig.ORE_GEN.experienceOreVeinSize), 0.0f));
 
         PlacedFeature placedFeature = new PlacedFeature(
                 Holder.direct(configuredFeature),
@@ -264,8 +281,8 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
                         CountPlacement.of(veinCount),
                         InSquarePlacement.spread(),
                         HeightRangePlacement.uniform(
-                                VerticalAnchor.absolute(ModConfig.ORE_GEN.experienceOreMinHeight.get()),
-                                VerticalAnchor.absolute(ModConfig.ORE_GEN.experienceOreMaxHeight.get())
+                                VerticalAnchor.absolute(pinned(ModConfig.ORE_GEN.experienceOreMinHeight)),
+                                VerticalAnchor.absolute(pinned(ModConfig.ORE_GEN.experienceOreMaxHeight))
                         ),
                         BiomeFilter.biome()
                 )
@@ -286,23 +303,23 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
      * @param spawnBuilder 怪物生成设置构建器 / mob spawn settings builder
      */
     private void addEntitySpawns(MobSpawnSettingsBuilder spawnBuilder) {
-        int lichWeight = ModConfig.KUVA_LICH.kuvaLichSpawnWeight.get();
+        int lichWeight = pinned(ModConfig.KUVA_LICH.kuvaLichSpawnWeight);
         if (lichWeight > 0) {
             spawnBuilder.addSpawn(MobCategory.MONSTER, new MobSpawnSettings.SpawnerData(
                     KuvaLichEntities.KUVA_MASTER.get(),
                     lichWeight,
-                    ModConfig.KUVA_LICH.kuvaLichMinSpawnCount.get(),
-                    ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount.get()
+                    pinned(ModConfig.KUVA_LICH.kuvaLichMinSpawnCount),
+                    pinned(ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount)
             ));
         }
 
-        int slaveWeight = ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight.get();
+        int slaveWeight = pinned(ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight);
         if (slaveWeight > 0) {
             spawnBuilder.addSpawn(MobCategory.MONSTER, new MobSpawnSettings.SpawnerData(
                     KuvaLichEntities.KUVA_SLAVE.get(),
                     slaveWeight,
-                    ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount.get(),
-                    ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount.get()
+                    pinned(ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount),
+                    pinned(ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount)
             ));
         }
     }

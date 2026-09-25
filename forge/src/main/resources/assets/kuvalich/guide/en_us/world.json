@@ -1,0 +1,270 @@
+{
+  "id": "world",
+  "order": 90,
+  "title": "World & Enchantments",
+  "subtitle": "Ores, enchantments, drop multipliers",
+  "icon": "kuvalich:requiem_ore",
+  "entries": [
+    {
+      "id": "requiem_ore",
+      "title": "Requiem Ore",
+      "icon": "kuvalich:requiem_ore",
+      "summary": "The only source of Requiem Cards",
+      "blocks": [
+        { "type": "p", "text": "{item:kuvalich:requiem_ore} is the only source of <hl>Requiem Cards</hl>, and you'll want a pickaxe with {lang:enchantment.kuvalich.requiem_destroyed} to mine it. Requiem Cards are the keys for cracking the code of the boss, the {lang:entity.kuvalich.kuva_master}; see [[requiem/requiem_cards]]." },
+        { "type": "h", "if": "cfg:ore_gen.requiemOreVeinCount", "text": "Where to find it" },
+        { "type": "kv", "if": "cfg:ore_gen.requiemOreVeinCount", "rows": [
+          ["Height", "Y <t>{cfg:ore_gen.requiemOreMinHeight}</t> to <t>{cfg:ore_gen.requiemOreMaxHeight}</t>; most common in the middle, rarest at both ends"],
+          ["Amount", "<t>{cfg:ore_gen.requiemOreVeinCount}</t> veins per chunk, up to about <t>{cfg:ore_gen.requiemOreVeinSize}</t> blocks each"],
+          ["Dimension", "Inside stone and deepslate: the Overworld and other dimensions with stone underground; not the Nether or the End"]
+        ] },
+        { "type": "h", "text": "How to mine it" },
+        { "type": "steps", "items": [
+          "Get a pickaxe with {lang:enchantment.kuvalich.requiem_destroyed}; where it comes from: [[world/enchantments]]",
+          "Diamond or netherite is fastest; an iron pickaxe or other digging tool still gets the drops, just more slowly",
+          "Make sure it does <b>not</b> have Silk Touch; Fortune doesn't matter",
+          "Find the ore, break it and pick up whatever falls out"
+        ] },
+        { "type": "h", "text": "What it drops" },
+        { "type": "p", "text": "Each block rolls <em>once</em>: on success everything in the table drops <g>together</g>; on failure you get <b>nothing</b>. The ore block itself never drops." },
+        { "type": "table", "header": ["Drop", "Amount / chance"], "widths": [3, 4], "rows": [
+          ["Requiem Card (one of 8 at random)", "1"],
+          ["{item:kuvalich:riven_sliver}", "1"],
+          ["{item:kuvalich:kuva}", "2-4"],
+          { "if": "cfg:kuva_lich.commonModuleDropChance>0", "cells": ["Bronze mod", "{cfg:kuva_lich.commonModuleDropChance|pctv}"] },
+          { "if": "cfg:kuva_lich.uncommonModuleDropChance>0", "cells": ["Silver mod", "{cfg:kuva_lich.uncommonModuleDropChance|pctv}"] },
+          { "if": "cfg:kuva_lich.rareModuleDropChance>0", "cells": ["Gold mod", "{cfg:kuva_lich.rareModuleDropChance|pctv}"] }
+        ] },
+        { "type": "list", "items": [
+          "{item:kuvalich:kuva} and {item:kuvalich:riven_sliver} are upgrade materials; what they're for: [[start/materials]]",
+          "Mods are upgrade cards you install in a weapon or on yourself, split into weapon mods and Warframe mods; tiers are explained in [[modules/module_rarity]]",
+          "Mods drop <t>unrevealed</t>: right-click one in your main hand and it turns into a random mod of that tier, see [[modules/module_overview]]",
+          "When a mod drops, it's a weapon mod {cfg:kuva_lich.moduleWeaponRatio|pctv} of the time, otherwise a Warframe mod"
+        ] },
+        { "type": "p", "text": "<em>XP</em> is separate and ignores that roll: break it with a diamond pickaxe or better and each block drops <t>50-100</t> XP; with {lang:enchantment.kuvalich.requiem_destroyed} that is multiplied by <g>{cfg:kuva_lich.expMultiplier|x}</g>. Any other tool, or Silk Touch, gives no XP." },
+        { "type": "items", "items": ["kuvalich:fass", "kuvalich:jahu", "kuvalich:khra", "kuvalich:lohk", "kuvalich:netra", "kuvalich:ris", "kuvalich:vome", "kuvalich:xata"], "caption": "The eight Requiem Cards; one drops at random" },
+        { "type": "tip", "style": "wf", "text": "In Warframe these eight are <t>Requiem Mods</t>, and they come from opening Requiem Relics, not from mining." },
+        { "type": "h", "text": "Success chance" },
+        { "type": "table", "header": ["In your main hand", "Success chance"], "widths": [3, 5], "rows": [
+          ["A tool with {lang:enchantment.kuvalich.requiem_destroyed}", "<g>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</g>; Fortune has no effect"],
+          ["Anything else, no Requiem Destroyed", "{cfg:kuva_lich.baseCardDropChance|pctv} − Fortune level × {cfg:kuva_lich.fortuneReductionPerLevel|pctv}, minimum {cfg:kuva_lich.minCardDropChance|pctv}"],
+          ["A tool with Silk Touch", "<b>0</b>, even with Requiem Destroyed"],
+          ["Empty hand", "<b>0</b>"]
+        ] },
+        { "type": "h", "text": "How long one block takes" },
+        { "type": "table", "header": ["Tool", "Roughly"], "widths": [5, 2], "rows": [
+          ["Requiem Destroyed + diamond pickaxe or better", "<g>0.5 s</g>"],
+          ["Requiem Destroyed + iron pickaxe or other digging tool", "1.7 s"],
+          ["Diamond pickaxe or better, no Requiem Destroyed", "<b>2.5 min</b>"],
+          ["Lower pickaxe, other item or bare hand, no Requiem Destroyed", "<b>8 min</b>"]
+        ] },
+        { "type": "tip", "style": "warn", "title": "Efficiency and Haste don't help", "text": "As long as you're holding something, the mining speed here is fixed: Efficiency and Haste do nothing. On the bright side, being underwater or in the air doesn't slow you down either." },
+        { "type": "h", "text": "Advanced details" },
+        { "type": "list", "items": [
+          "At most one mod tier drops per block, checked Gold, then Silver, then Bronze; if the three add up to more than 100%, the later tiers fall short of their listed chance",
+          "The {item:kuvalich:requiem_gate}, {item:kuvalich:requiem_recast} and {item:kuvalich:requiem_evolve} are machines that follow the same mining-speed rules as \"How long one block takes\" above"
+        ] },
+        { "type": "tip", "style": "bad", "title": "Use a diamond pickaxe on machines", "text": "Picking up those three machines, or the {item:kuvalich:requiem_weapon_table} and {item:kuvalich:requiem_warframe_table}, needs a <em>diamond pickaxe or better</em>; otherwise the block simply vanishes and drops nothing." }
+      ]
+    },
+    {
+      "id": "experience_ore",
+      "title": "Experience Ore",
+      "icon": "kuvalich:experience_ore",
+      "summary": "Stone-pickaxe ore that gives XP and Endo",
+      "blocks": [
+        { "type": "p", "text": "{item:kuvalich:experience_ore} is an ore you can mine with just a <t>stone pickaxe</t>. It drops XP when broken, plus a 50/50 shot at {item:kuvalich:endo}." },
+        { "type": "p", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "Endo is the material for levelling up mods, and mods are upgrade cards you install in a weapon or on yourself. How levelling works: [[modules/module_level]]; other Endo sources: [[world/loot]]." },
+        { "type": "p", "if": "!cfg:kuva_lich.enableModuleLevelSystem", "text": "Mods (upgrade cards you install in a weapon or on yourself) work at full strength as soon as they're installed and never need levelling, so Endo has no use." },
+        { "type": "h", "if": "cfg:ore_gen.experienceOreVeinCount", "text": "Where to find it" },
+        { "type": "kv", "if": "cfg:ore_gen.experienceOreVeinCount", "rows": [
+          ["Height", "Y <t>{cfg:ore_gen.experienceOreMinHeight}</t> to <t>{cfg:ore_gen.experienceOreMaxHeight}</t>, evenly spread over the whole band"],
+          ["Amount", "<t>{cfg:ore_gen.experienceOreVeinCount}</t> veins per chunk, up to about <t>{cfg:ore_gen.experienceOreVeinSize}</t> blocks each"],
+          ["Dimension", "Inside stone and deepslate: the Overworld and other dimensions with stone underground; not the Nether or the End"]
+        ] },
+        { "type": "h", "text": "What it drops" },
+        { "type": "table", "header": ["Drop", "Amount", "Notes"], "widths": [2, 3, 3], "rows": [
+          ["XP", "5-20 + Fortune level", "Fortune adds just 1 per level"],
+          ["{item:kuvalich:endo}", "<g>50%</g> chance of 1-2", "Not affected by Fortune"]
+        ] },
+        { "type": "tip", "style": "bad", "title": "When it drops nothing", "text": "Breaking it with a <b>wooden or golden pickaxe, bare hands or anything that isn't a pickaxe</b>, or with a <b>Silk Touch</b> tool, drops nothing at all, not even the ore block." },
+        { "type": "tip", "style": "wf", "text": "In Warframe, Endo also drops straight from missions, and another big source is Ayatan Sculptures: fill them with Ayatan Stars and trade them to Maroo for a large pile of Endo." },
+        { "type": "h", "text": "Advanced details" },
+        { "type": "list", "items": [
+          "{lang:enchantment.kuvalich.experience_collector} has <b>no effect</b> on Experience Ore, see [[world/enchantments]]",
+          { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier>0"], "text": "The {lang:item.module.oreDropMultiplier} stat on Warframe mods doesn't increase its Endo, see [[world/ore_drop_multiplier]]" }
+        ] }
+      ]
+    },
+    {
+      "id": "enchantments",
+      "title": "Unique Enchantments",
+      "icon": "minecraft:enchanted_book",
+      "summary": "All six at a glance; Requiem Destroyed, Experience Collector",
+      "blocks": [
+        { "type": "p", "text": "This mod adds 6 enchantments. Like vanilla ones, they come from the enchanting table and enchanted books, with <em>no special recipe</em>. {lang:enchantment.kuvalich.requiem_destroyed}, which you need for Requiem Ore, is one of them." },
+        { "type": "table", "header": ["Enchantment", "Goes on", "Max", "What it does"], "widths": [2, 3, 1, 4], "rows": [
+          ["{lang:enchantment.kuvalich.requiem_destroyed}", "Pickaxe, axe, shovel, hoe", "1", "Essential for Requiem Ore"],
+          ["{lang:enchantment.kuvalich.experience_collector}", "Pickaxe, axe, shovel, hoe", "5", "Extra XP from blocks that drop XP"],
+          ["{lang:enchantment.kuvalich.lethal}", "Swords, [[weapons/kuva_weapons|Kuva weapons]]", "5", "More damage the lower the target's health"],
+          ["{lang:enchantment.kuvalich.first_strike}", "Swords, [[weapons/kuva_weapons|Kuva weapons]]", "3", "×2 to ×3 damage on full-health targets, plus XP"],
+          ["{lang:enchantment.kuvalich.escort}", "Armor", "3", "Less damage while you're at full health"],
+          ["{lang:enchantment.kuvalich.death_resistance}", "Armor", "3", "Spends XP to survive a lethal hit"]
+        ] },
+        { "type": "p", "text": "Details on the four combat enchantments: [[world/combat_enchantments]]." },
+        { "type": "h", "text": "How to get them" },
+        { "type": "list", "items": [
+          "Enchanting table: possible, but they're all rare and high levels hardly ever show up",
+          "Enchanted books: may turn up in loot chests or with librarian villagers; apply them to a tool, weapon or armor piece with an anvil",
+          "For high levels: trade with librarians, search loot chests, or combine two books of the same level on an anvil"
+        ] },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.requiem_destroyed}" },
+        { "type": "list", "items": [
+          "Mining {item:kuvalich:requiem_ore}, and this mod's three machines {item:kuvalich:requiem_gate}, {item:kuvalich:requiem_recast} and {item:kuvalich:requiem_evolve}, becomes <g>fixed and very fast</g>: about 0.5 s per block with a diamond pickaxe",
+          "Without it, all four blocks are painfully slow",
+          "The Requiem Ore success chance becomes <g>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</g>, and Fortune stops mattering",
+          "XP from Requiem Ore is multiplied by <g>{cfg:kuva_lich.expMultiplier|x}</g> (you only get XP with a diamond pickaxe or better)",
+          "<b>Never put it on the same tool as Silk Touch</b>: with Silk Touch, Requiem Ore drops nothing"
+        ] },
+        { "type": "p", "text": "Full drop table and timings: [[world/requiem_ore]]." },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.experience_collector}" },
+        { "type": "p", "text": "When you break a block that <em>already drops XP</em>, it drops some extra XP; think coal, diamond, lapis, redstone, emerald and nether quartz ores, and {item:kuvalich:requiem_ore} too. Can't be combined with Silk Touch." },
+        { "type": "p", "text": "Extra XP per block: level 1 <g>+2</g>, level 2 <g>+4</g>, level 3 <g>+5</g>, level 4 <g>+7</g>, level 5 <g>+8</g>." },
+        { "type": "tip", "style": "warn", "text": "<b>No effect</b> on {item:kuvalich:experience_ore}. If a block drops 0 XP this time, nothing is added either, for example coal that happened to drop none, or the wrong pickaxe. On a pickaxe that also has {lang:enchantment.kuvalich.requiem_destroyed}, the extra XP from Requiem Ore gets multiplied along with the rest." }
+      ]
+    },
+    {
+      "id": "combat_enchantments",
+      "title": "Combat Enchantments",
+      "icon": "minecraft:diamond_sword",
+      "summary": "Lethal, First Strike, Escort, Death Resistance",
+      "blocks": [
+        { "type": "p", "text": "Four combat enchantments: two go on swords for more damage, two go on armor to keep you alive. Where to get them: [[world/enchantments]]." },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.lethal}" },
+        { "type": "p", "text": "The lower the target's health, the bigger the bonus on this hit; there's no bonus against a full-health target." },
+        { "type": "formula", "text": "Bonus damage = hit damage × fraction of the target's health already lost × 15% × level" },
+        { "type": "p", "text": "At level 5 that's <g>+37.5%</g> against a half-health target and about <g>+75%</g> against a nearly dead one." },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.first_strike}" },
+        { "type": "p", "text": "Against a <em>full-health</em> target, this hit deals multiplied damage and gives you some XP too. Once the target has lost a sliver of health, it stops triggering." },
+        { "type": "table", "header": ["Level", "Hit damage", "XP granted on trigger"], "rows": [
+          ["1", "×2", "10% of the original damage"],
+          ["2", "×2.5", "22.5% of the original damage"],
+          ["3", "×3", "40% of the original damage"]
+        ] },
+        { "type": "p", "text": "XP is rounded down and capped at 33% of the target's max health and at 1000 points. So small mobs give almost nothing; it pays off on high-health targets." },
+        { "type": "tip", "style": "warn", "text": "Lethal and First Strike <b>can't go on the same weapon</b>. Both only count <em>direct melee hits</em>; arrows, gun bullets and other projectiles don't trigger them." },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.escort}" },
+        { "type": "p", "text": "While you're at <em>full health</em>, damage you take is reduced: level 1 <g>−25%</g>, level 2 <g>−50%</g>, level 3 <g>−75%</g>. It stops as soon as you're hurt: it blunts the first hit, not the whole fight." },
+        { "type": "list", "items": [
+          "If several armor pieces have it, only the highest counts; they don't stack",
+          "Yellow hearts take the hit first: this mod's [[warframe/shield|shield]] and absorption from things like golden apples both count. Escort only reduces what gets through to your health",
+          "While yellow hearts hold, your health stays full, so Escort keeps working"
+        ] },
+        { "type": "h", "text": "{lang:enchantment.kuvalich.death_resistance}" },
+        { "type": "p", "text": "When a single hit <b>would kill you</b>, it automatically spends XP to leave you at <g>1 health</g> (half a heart), with a totem sound." },
+        { "type": "formula", "text": "XP points spent = damage of that hit × 4 ÷ enchantment level (rounded up)" },
+        { "type": "list", "items": [
+          "Example: at level 3, a 30-damage hit costs 40 XP points; a full level-30 XP bar holds about 1395 points",
+          "If you don't have enough XP it <b>doesn't trigger</b>: you die as usual and keep your XP",
+          "When it triggers, a message above the hotbar shows how much XP it cost",
+          "If several armor pieces have it, the highest level counts"
+        ] },
+        { "type": "h", "text": "Advanced details" },
+        { "type": "list", "items": [
+          "Death Resistance uses the damage that actually reaches your health, after armor, Resistance and yellow hearts",
+          "Death Resistance doesn't protect against /kill or falling into the void",
+          "Death Resistance triggers before a Totem of Undying: with enough XP, the totem isn't used up"
+        ] }
+      ]
+    },
+    {
+      "id": "ore_drop_multiplier",
+      "title": "Ore Drop Multiplier",
+      "icon": "minecraft:raw_iron",
+      "summary": "Warframe stat: ore drops multiplied after Fortune",
+      "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier>0"],
+      "blocks": [
+        { "type": "p", "text": "{lang:item.module.oreDropMultiplier} is a stat on <hl>Warframe mods</hl>: with such a mod installed, ore you break yourself drops more materials." },
+        { "type": "p", "text": "Warframe mods are upgrade cards you install in the [[warframe/warframe_table]], and they're always active on you. A stat is one of the lines written on the card." },
+        { "type": "formula", "text": "Final amount = original drop amount × (1 + total stat × {cfg:kuva_lich.oreDropEffectMultiplier|pctv})" },
+        { "type": "list", "items": [
+          "It multiplies <em>again</em> after Fortune",
+          "Fractions round up by chance: 3 raw iron × 1.3 = 3.9 gives 4 nine times out of ten and 3 otherwise",
+          "No cap; anything over a full stack drops as several piles",
+          "A negative total does <g>not</g> reduce drops"
+        ] },
+        { "type": "h", "text": "What counts as ore" },
+        { "type": "p", "text": "All vanilla ores, plus blocks other mods register as ores. Only <em>materials</em> like raw ore, diamonds and redstone are multiplied." },
+        { "type": "kv", "rows": [
+          { "if": "cfg:kuva_lich.oreDropWhitelist", "cells": ["Also counted as ore", "{cfg:kuva_lich.oreDropWhitelist}"] },
+          { "if": "cfg:kuva_lich.oreDropBlacklist", "cells": ["Not counted as ore", "{cfg:kuva_lich.oreDropBlacklist}"] }
+        ] },
+        { "type": "h", "text": "Mods with this stat" },
+        { "type": "table", "header": ["Mod", "Tier", "Ore Drop", "Other stats"], "widths": [3, 2, 2, 4], "rows": [
+          { "if": "module:miner_instinct", "cells": ["{lang:kuvaweapon.warframe_module.miner_instinct}", "Bronze", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:15|round:1|pctv}", "Digging Speed −{cfg:kuva_lich.moduleAttributeMultiplier|mul:40|round:1|pctv}"] },
+          { "if": "module:vein_resonance", "cells": ["{lang:kuvaweapon.warframe_module.vein_resonance}", "Silver", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:22.5|round:1|pctv}", "Shield −{cfg:kuva_lich.moduleAttributeMultiplier|mul:60|round:1|pctv}"] },
+          { "if": "module:vein_sense", "cells": ["{lang:kuvaweapon.warframe_module.vein_sense}", "Gold", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:30|round:1|pctv}", "None"] },
+          { "if": "module:deep_delver", "cells": ["{lang:kuvaweapon.warframe_module.deep_delver}", "Gold", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:45|round:1|pctv}", "Armor −{cfg:kuva_lich.moduleAttributeMultiplier|mul:60|round:1|pctv}, Digging Speed +{cfg:kuva_lich.moduleAttributeMultiplier|mul:30|round:1|pctv}"] },
+          { "if": "module:astral_drill_prime", "cells": ["{lang:kuvaweapon.warframe_module.astral_drill_prime}", "Prime", "+{cfg:kuva_lich.moduleAttributeMultiplier|mul:45|round:1|pctv}", "None"] },
+          ["Riven mod", "Riven", "Random", "Random"]
+        ] },
+        { "type": "p", "text": "<dim>Bronze, Silver, Gold, Prime and Riven are mod tiers, see [[modules/module_rarity]].</dim>" },
+        { "type": "tip", "style": "warn", "text": "The fixed mods in the table <b>conflict with each other</b>, so you can only install one. To go higher, add a [[modules/riven_module|Riven mod]] with this stat: a special mod with random stats, also limited to one." },
+        { "type": "p", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "<dim>Values shown are at max level; a mod below max level only gives part of it, see [[modules/module_level]].</dim>" },
+        { "type": "tip", "style": "wf", "text": "Warframe's open-world maps have mining too: point a mining tool at a glowing deposit in the rock to extract ores and gems." },
+        { "type": "h", "text": "Advanced details" },
+        { "type": "list", "items": [
+          "Ore blocks from Silk Touch, and drops that are themselves ore blocks, are not multiplied, so you can't place and re-mine them endlessly",
+          "Blocks blown up by TNT, creepers and other explosions don't count",
+          "{item:kuvalich:requiem_ore} and {item:kuvalich:experience_ore} roll their drops separately and are <b>not</b> affected",
+          "Limits on individual stat values: [[modules/module_limits]]"
+        ] }
+      ]
+    },
+    {
+      "id": "loot",
+      "title": "Other Loot Sources",
+      "icon": "kuvalich:endo",
+      "summary": "Endo from kills, Loot Drop Multiplier, Machete",
+      "blocks": [
+        { "type": "p", "text": "Besides mining, here are other ways to get more loot. Drops specific to this mod's enemy, the {lang:entity.kuvalich.kuva_slave}, and its boss, the {lang:entity.kuvalich.kuva_master}, are in [[enemies/kuva_slave]] and [[enemies/kuva_master]]." },
+        { "type": "h", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "{item:kuvalich:endo}" },
+        { "type": "p", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "Endo is the material for levelling up mods, and mods are upgrade cards you install in a weapon or on yourself. You get it by mining [[world/experience_ore]] and by breaking down unwanted mods in the [[weapons/requiem_recast]]." },
+        { "type": "p", "if": ["cfg:kuva_lich.enableModuleLevelSystem", "cfg:kuva_lich.endoDropChance>0"], "text": "Monsters drop it too: killing a <em>monster</em> while holding a <t>consecrated</t> weapon in your main hand has a <t>{cfg:kuva_lich.endoDropChance|pctv}</t> chance to drop <t>{cfg:kuva_lich.endoDropMinAmount}-{cfg:kuva_lich.endoDropMaxAmount}</t>." },
+        { "type": "list", "if": ["cfg:kuva_lich.enableModuleLevelSystem", "cfg:kuva_lich.endoDropChance>0"], "items": [
+          "Consecrating a weapon lets it hold mods. [[weapons/kuva_weapons|Kuva weapons]] come consecrated; other weapons have to be consecrated first, see [[weapons/requiem_evolve]]",
+          "Only monsters count: zombies, skeletons, creepers, Kuva Thralls and so on. Animals (hoglins included), slimes, ghasts, phantoms and shulkers don't",
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "This drop is <b>not</b> affected by the Loot Drop Multiplier below" }
+        ] },
+        { "type": "h", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}" },
+        { "type": "p", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "This is a stat on <hl>Warframe mods</hl> that makes the mobs you kill drop more. Warframe mods are installed in the {item:kuvalich:requiem_warframe_table} and are always active on you." },
+        { "type": "formula", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "Drop amount × (1 + total stat × {cfg:kuva_lich.itemDropEffectMultiplier|pctv})" },
+        { "type": "list", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "items": [
+          "Applies when you personally kill an <em>animal or monster</em>; bow and gun kills count too",
+          "Multiplies what it would normally drop, like rotten flesh, bones and gunpowder",
+          "Armor, weapons, tools and anything with durability are <t>never</t> multiplied",
+          "No cap; anything over a full stack drops as several piles",
+          "<b>A negative total reduces drops</b>: at 0 or below, nothing but equipment drops",
+          "The kill-stack version of this stat gains one stack per kill, up to {cfg:kuva_lich.maxStacksItemDropMultiplier} stacks, see [[combat/kill_stack]]",
+          { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier>0"], "text": "Completely separate from the [[world/ore_drop_multiplier|Ore Drop Multiplier]]; each multiplies on its own" }
+        ] },
+        { "type": "tip", "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "style": "wf", "text": "In Warframe, players farming for drops often bring the Warframe Nekros: his Desecrate ability gives nearby corpses a chance to drop their loot a second time." },
+        { "type": "h", "text": "{item:kuvalich:machete}" },
+        { "type": "p", "text": "The {item:kuvalich:machete} is a [[weapons/kuva_weapons|Kuva weapon]] whose special effect is extra loot. Kill an animal or monster with it in your main hand and each drop pile is multiplied by its own random <g>1-3</g>." },
+        { "type": "list", "items": [
+          "Armor, swords, pickaxes, axes, shovels and hoes are never multiplied",
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "The Machete applies first, then the Loot Drop Multiplier multiplies its result, so the two stack" },
+          "The weapon itself: [[weapons/weapon_list]]"
+        ] },
+        { "type": "h", "text": "Advanced details" },
+        { "type": "list", "items": [
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "Slimes, magma cubes, ghasts, phantoms, shulkers, squid, fish, villagers and golems count as neither animal nor monster, so they get no Loot Drop Multiplier" },
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier>0", "text": "The extra Kuva, Riven Slivers and mods from Kuva Thralls and Kuva Liches are <b>not</b> affected by the Loot Drop Multiplier" },
+          { "if": ["cfg:kuva_lich.itemDropEffectMultiplier>0", "mod:customnpcs"], "text": "CustomNPCs NPCs count as well; killing them also gets the Loot Drop Multiplier" },
+          { "if": ["cfg:kuva_lich.itemDropEffectMultiplier>0", "mod:tacz"], "text": "When you kill with a TACZ gun, the gun's {lang:item.module.gun_loot_drop} is added to the total, see [[tacz/tacz_gun_attributes]]" },
+          "Bosses that can't travel through portals, like the Wither, aren't affected by the Machete"
+        ] }
+      ]
+    }
+  ]
+}
