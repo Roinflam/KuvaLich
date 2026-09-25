@@ -76,8 +76,22 @@ public class RequiemCard {
      */
     private Set<String> discoveredModules;
 
+    /**
+     * 存档标记：武器等级区间已按基础值初始化 / 迁移过
+     *
+     * <p>1.12.2 原版在构造函数里把区间设成 {@code baseMinimumLevel ~ baseMaximumLevel}，
+     * {@code ae337d2}（1.12.2 分支「重构优化，新增镀层卡」，构造函数改成只调 {@code reset()}）时这两行丢了，
+     * 之后（含整个 1.20.1 版本）的玩家区间都从 0 起算：
+     * 第一把赤毒武器必是 0 级，面板只有基准的约 1/3。2026-09-25 补回初始化；
+     * 没有这个标记的存档都是在缺初始化期间写的，读档时补上漏掉的基础值（见 {@link #deserializeNBT}）。</p>
+     */
+    private static final String LEVEL_RANGE_FIXED = "weaponLevelRangeFixed";
+
     public RequiemCard() {
         reset();
+        this.minimumLevelWeapon = configInt(() -> ModConfig.KUVA_LICH.baseMinimumLevel.get(), 0);
+        this.maximumLevelWeapon = Math.max(minimumLevelWeapon,
+                configInt(() -> ModConfig.KUVA_LICH.baseMaximumLevel.get(), 0));
         this.confiscatedItems = new ArrayList<>();
         this.moduleMastery = new HashMap<>();
         this.discoveredModules = new HashSet<>();
@@ -289,6 +303,17 @@ public class RequiemCard {
         return ItemStack.EMPTY;
     }
 
+    /**
+     * 读配置；配置尚未加载（极早期构造）时用兜底值，不让能力对象构造失败
+     */
+    private static int configInt(java.util.function.IntSupplier getter, int fallback) {
+        try {
+            return getter.getAsInt();
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
     public void reset() {
         this.oneCard = ItemStack.EMPTY;
         this.twoCard = ItemStack.EMPTY;
@@ -454,6 +479,7 @@ public class RequiemCard {
         nbt.putInt("kuvaLevel", kuvaLevel);
         nbt.putInt("minimumLevelWeapon", minimumLevelWeapon);
         nbt.putInt("maximumLevelWeapon", maximumLevelWeapon);
+        nbt.putBoolean(LEVEL_RANGE_FIXED, true);
 
         // 序列化没收物品列表
         ListTag confiscatedList = new ListTag();
@@ -501,6 +527,23 @@ public class RequiemCard {
         this.kuvaLevel = nbt.getInt("kuvaLevel");
         this.minimumLevelWeapon = nbt.getInt("minimumLevelWeapon");
         this.maximumLevelWeapon = nbt.getInt("maximumLevelWeapon");
+        if (!nbt.getBoolean(LEVEL_RANGE_FIXED)) {
+            // 缺初始化期间写的存档：区间 = 0 + 历次解密成功的累加。补上当初漏掉的基础值，
+            // 再按各自的绝对上限封顶 —— 结果正好等于「一开始就正确初始化」会得到的区间。
+            // 已经封顶的玩家不变；任何情况下只升不降
+            int baseMin = configInt(() -> ModConfig.KUVA_LICH.baseMinimumLevel.get(), 0);
+            int baseMax = configInt(() -> ModConfig.KUVA_LICH.baseMaximumLevel.get(), 0);
+            int capMin = configInt(() -> ModConfig.KUVA_LICH.minimumLevel.get(), Integer.MAX_VALUE);
+            int capMax = configInt(() -> ModConfig.KUVA_LICH.maximumLevel.get(), Integer.MAX_VALUE);
+            this.minimumLevelWeapon = Math.max(minimumLevelWeapon,
+                    (int) Math.min(capMin, (long) minimumLevelWeapon + baseMin));
+            this.maximumLevelWeapon = Math.max(maximumLevelWeapon,
+                    (int) Math.min(capMax, (long) maximumLevelWeapon + baseMax));
+        }
+        // 抽武器等级时是 random(min, max)，区间倒挂会出错
+        if (maximumLevelWeapon < minimumLevelWeapon) {
+            maximumLevelWeapon = minimumLevelWeapon;
+        }
 
         // 反序列化没收物品列表
         this.confiscatedItems = new ArrayList<>();

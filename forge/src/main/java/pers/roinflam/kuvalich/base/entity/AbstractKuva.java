@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.module.weapon.MagicDamageClassifier;
+import pers.roinflam.kuvalich.module.weapon.WeaponCombatHandler;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -116,18 +117,27 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
         LivingEntity target = event.getEntity();
 
-        // 赤毒实体造成伤害时的加成
+        // 赤毒实体造成伤害时的加成；打的是玩家时再吃玄骸等级的受伤增幅
+        // ⭐ 2026-09-25：玄骸等级的两项惩罚（受伤增幅、输出削减）原先对玩家受到 / 造成的<b>所有</b>伤害生效
+        //    （掉落、摔伤、打僵尸都算），和配置说明「玄骸对你」「你对玄骸」不符，现只在对手是赤毒实体时生效
         if (damageSource.getEntity() instanceof AbstractKuva kuvaBase) {
             applyKuvaBaseDamageBonus(event, kuvaBase);
-        } else if (damageSource.getEntity() instanceof Player player) {
-            applyPlayerDamageModifier(event, player);
+            if (target instanceof Player player) {
+                applyPlayerDefense(event, player);
+            }
+        } else if (damageSource.getEntity() instanceof Player player && target instanceof AbstractKuva) {
+            // 爆炸半径溅射以主目标最终伤害为基数：主目标也是赤毒实体时，这项削减在主目标那一下已经乘过，
+            // 溅射到另一个赤毒实体时再乘就成了 (1−r)²。主目标是普通怪时基数里没乘过，照常乘一次。
+            // （不能见溅射就跳过：那样打玄骸旁边的普通怪，溅射就能绕开玄骸等级削减满额打玄骸）
+            if (!(WeaponCombatHandler.isApplyingSplash()
+                    && WeaponCombatHandler.splashMainTarget() instanceof AbstractKuva)) {
+                applyPlayerDamageModifier(event, player);
+            }
         }
 
         // 赤毒实体受到伤害时的减伤（委托给实例方法）
         if (target instanceof AbstractKuva kuva) {
             event.setAmount(kuva.applyResistance(damageSource, event.getAmount()));
-        } else if (target instanceof Player player) {
-            applyPlayerDefense(event, player);
         }
     }
 
@@ -143,7 +153,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     }
 
     /**
-     * 玩家对赤毒实体的伤害修正：受玄骸等级影响
+     * 玩家对赤毒实体的伤害修正：受玄骸等级影响（只在目标是赤毒实体时调用）
      *
      * @param event 受伤事件
      * @param player 攻击方玩家
@@ -158,7 +168,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     }
 
     /**
-     * 玩家受到赤毒实体攻击时的伤害增幅
+     * 玩家受到赤毒实体攻击时的伤害增幅（只在伤害归属于赤毒实体时调用，含它的弹射物）
      *
      * @param event 受伤事件
      * @param player 受击方玩家

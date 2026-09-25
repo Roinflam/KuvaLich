@@ -4,6 +4,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -20,6 +21,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -127,10 +129,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * 修复：在 {@link #onAttackEntity} 中提前捕获真实蓄力比例（该事件由
  * {@code ForgeHooks.onPlayerAttackTarget} 在 {@code attack()} 开头触发，
  * 冷却尚未重置），经 {@link #MELEE_ATTACK_STRENGTH} 传递到 {@code processDamage}，
- * 取用后立即清除，陈旧值最多被消费一次。<br>
+ * 从挥击起到下一个服务端 tick 结束前，同一攻击者的这次挥击共用，tick 结束清空。<br>
  * <b>该项会改变数值平衡</b>（连点轻击的暴击率将按蓄力比例衰减）。
  * 如需维持修复前行为，把 {@link #ENABLE_ATTACK_STRENGTH_SCALING} 改为 {@code false} 即可，
  * 其余两项修复不受影响。</p>
+ *
+ * <p><b>四、基础面板倍率按蓄力折算（2026-09-25，作者要求）。</b><br>
+ * 近战时「基础伤害」这一乘区再乘本次挥击的蓄力比例：满蓄力才吃满面板，连点轻击只拿到相应比例。
+ * 原版已经用 {@code 0.2 + 0.8f²} 缩放过原始伤害，但模组面板（基础伤害、元素、暴击档）是在它之上整体相乘的，
+ * 连点流派照样能吃到大半面板 —— 作者要的是「必须满蓄力才能吃满」。
+ * 物理、元素、真伤快照一起乘，「未暴击时基础伤害」的加成也按同一比例折算；远程不受影响。
+ * 同样由 {@link #ENABLE_ATTACK_STRENGTH_SCALING} 控制。</p>
  *
  * <p>⭐ 此前改动：伤害数字的取值点改为 {@code MixinForgeHooksFinalDamage}
  * 捕获 {@code ForgeHooks.onLivingDamage} 的返回值（整个 {@code LivingDamageEvent} 事件链跑完后的结果），
@@ -166,30 +175,76 @@ public class WeaponCombatHandler {
      */
     private static final ThreadLocal<Boolean> SPLASH_REENTRY = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
+    /**
+     * 当前线程是否正在结算溅射派生伤害
+     *
+     * <p>溅射以主目标<b>最终</b>伤害为基数，攻击方身上的修正（如穿刺）在主目标那一下已经乘过，
+     * 供 {@code DynamicAttributes.ElementCombatHandler} 判断，避免同一修正对溅射再乘一次。</p>
+     */
+    public static boolean isApplyingSplash() {
+        return SPLASH_REENTRY.get();
+    }
+
+    /**
+     * 当前溅射的主目标（溅射中心），只在 {@link #SPLASH_REENTRY} 置位期间有值
+     *
+     * <p>有的修正只对特定目标生效（玄骸等级的「你对玄骸」削减只在目标是赤毒实体时乘），
+     * 溅射要不要跳过它，得看主目标那一下有没有乘过 —— 光知道「正在溅射」不够。</p>
+     */
+    private static final ThreadLocal<LivingEntity> SPLASH_MAIN = new ThreadLocal<>();
+
+    /**
+     * 正在结算的溅射是从哪个主目标溅出来的
+     *
+     * <p>供 {@code AbstractKuva} 判断：主目标也是赤毒实体时，「你对玄骸」的削减已经乘进了
+     * 溅射的基数（主目标最终伤害），溅射打到另一个赤毒实体时不能再乘一次。</p>
+     *
+     * @return 主目标；不在溅射结算中时为 null
+     */
+    @Nullable
+    public static LivingEntity splashMainTarget() {
+        return SPLASH_MAIN.get();
+    }
+
     /** 溅射伤害占主目标最终伤害的比例 */
     private static final float SPLASH_DAMAGE_RATIO = 0.5f;
 
     // ========== ⭐ 近战攻击强度传递 / Melee Attack Strength Relay ==========
 
     /**
-     * 是否启用近战蓄力强度对暴击率的缩放
+     * 是否启用近战蓄力比例对暴击率与基础面板倍率的缩放
      *
-     * <p>{@code true}：暴击率按 {@code getAttackStrengthScale} 缩放，连点轻击暴击率下降；<br>
-     * {@code false}：维持修复前行为（恒按满蓄力 1.0 计算）。</p>
+     * <p>{@code true}：暴击率、基础面板倍率（物理 / 元素 / 真伤 / 未暴击加成）都按
+     * {@code getAttackStrengthScale} 缩放，满蓄力才吃满；<br>
+     * {@code false}：恒按满蓄力 1.0 计算。</p>
      *
-     * <p>注意：原版 {@code Player.attack()} 已用 {@code 0.2 + f² × 0.8} 缩放过基础伤害，
-     * 本项是在此之上对暴击率的<b>额外</b>约束，开启后近战连点流派会被明显削弱。</p>
+     * <p>注意：原版 {@code Player.attack()} 已用 {@code 0.2 + f² × 0.8} 缩放过原始伤害，
+     * 本项是在此之上的<b>额外</b>约束，开启后近战连点流派会被明显削弱（蓄力一半时约只剩满蓄力的 1/5）。</p>
      */
     private static final boolean ENABLE_ATTACK_STRENGTH_SCALING = true;
 
     /**
-     * 本次近战攻击的蓄力比例（0.0 ~ 1.0）
+     * 本次近战攻击的蓄力比例（0.0 ~ 1.0），连同是谁挥的
      *
-     * <p>在 {@link #onAttackEntity} 中写入，在 {@link #onLivingHurt} 中取出后立即清除。
+     * <p>在 {@link #onAttackEntity} 中写入，在 {@link #onLivingHurt} 中读取，服务端 tick 结束时清空。
      * 原版会在 {@code target.hurt(...)} 之前重置攻击冷却，因此必须在
      * {@code AttackEntityEvent} 阶段捕获，不能等到伤害事件里现读。</p>
+     *
+     * <p><b>为什么不再「取用一次就清」</b>：格拉姆 Prime 的溅射、技巧之剑 Prime 的额外一击都在
+     * {@code AttackEntityEvent} 里先造成一次近战伤害，会把值先取走，
+     * 主击随后拿到默认的 1.0 —— 连点也能吃满面板。现在同一攻击者的这次挥击
+     * （主击、横扫、上述附加伤害）共用同一个比例；记下攻击者是为了别让这段时间里
+     * 另一个实体的近战伤害误用它。</p>
+     *
+     * <p><b>实际寿命</b>：攻击包由网络线程转进服务器任务队列，在两个 tick 之间处理，
+     * 所以记下的挥击会一直活到<b>下一个</b>服务端 tick 的 END 才清空，不只是「本 tick」。
+     * 这段时间里同一攻击者的其它近战伤害（直接实体是自己的）也按这次挥击的比例算，
+     * 比以前「取一次就清」更一致，是可以接受的。</p>
      */
-    private static final ThreadLocal<Float> MELEE_ATTACK_STRENGTH = new ThreadLocal<>();
+    private static final ThreadLocal<Swing> MELEE_ATTACK_STRENGTH = new ThreadLocal<>();
+
+    /** 一次挥击：攻击者 + 蓄力比例 */
+    private record Swing(LivingEntity attacker, float strength) {}
 
     // ========== 多槽位属性缓存 / Multi-Slot Attribute Cache ==========
 
@@ -495,8 +550,7 @@ public class WeaponCombatHandler {
      * 等到 {@code LivingHurtEvent} 再读已经被重置，只能拿到接近 0 的值。</p>
      *
      * <p>本方法只记录不修改任何数值，取消事件与否都不影响后续流程；
-     * 若攻击被其他模组取消，残留值会在下一次 {@link #onLivingHurt} 中被消费并清除，
-     * 最多影响一次判定，不会持续累积。</p>
+     * 若攻击被其他模组取消，残留值只对同一攻击者有效，到下一个服务端 tick 结束即清空。</p>
      *
      * @param evt 玩家攻击实体事件
      */
@@ -506,26 +560,39 @@ public class WeaponCombatHandler {
         if (player.level().isClientSide()) {
             return;
         }
-        MELEE_ATTACK_STRENGTH.set(player.getAttackStrengthScale(0.5F));
+        MELEE_ATTACK_STRENGTH.set(new Swing(player, player.getAttackStrengthScale(0.5F)));
     }
 
     /**
-     * ⭐ 取出并清除本次近战攻击的蓄力比例
+     * 服务端 tick 结束：清掉记下的挥击
      *
-     * <p>无论是否为近战都会执行清除，保证陈旧值最多被消费一次：
-     * 若某个模组绕过 {@code Player.attack()} 直接造成近战伤害，
-     * 也只会误用一次上一次挥击的比例，不会长期错算。</p>
+     * <p>攻击包在两个 tick 之间处理，所以一次挥击从记下到这里被清，跨过的是「下一个 tick」整个 tick。</p>
      *
-     * @param isMelee 本次伤害是否为近战（直接实体即攻击者）
+     * @param evt tick 事件
+     */
+    @SubscribeEvent
+    public static void onServerTickEnd(TickEvent.ServerTickEvent evt) {
+        if (evt.phase == TickEvent.Phase.END) {
+            MELEE_ATTACK_STRENGTH.remove();
+        }
+    }
+
+    /**
+     * ⭐ 读取本次近战攻击的蓄力比例
+     *
+     * <p>只认同一攻击者、还没被 tick END 清掉的那次挥击；别的实体、已清掉的一律按满蓄力 1.0，
+     * 绕过 {@code Player.attack()} 直接造成的近战伤害（其它模组、生物）因此不受影响。</p>
+     *
+     * @param attacker 攻击者
+     * @param isMelee  本次伤害是否为近战（直接实体即攻击者）
      * @return 蓄力比例；非近战、功能关闭或无记录时返回 1.0
      */
-    private static float consumeMeleeAttackStrength(boolean isMelee) {
-        Float captured = MELEE_ATTACK_STRENGTH.get();
-        MELEE_ATTACK_STRENGTH.set(null);
+    private static float meleeAttackStrength(LivingEntity attacker, boolean isMelee) {
         if (!isMelee || !ENABLE_ATTACK_STRENGTH_SCALING) {
             return 1.0f;
         }
-        return captured != null ? captured : 1.0f;
+        Swing swing = MELEE_ATTACK_STRENGTH.get();
+        return swing != null && swing.attacker() == attacker ? swing.strength() : 1.0f;
     }
 
     // ========== 伤害事件 / Damage Events ==========
@@ -562,6 +629,15 @@ public class WeaponCombatHandler {
         DamageSource damageSource = evt.getSource();
 
         if (!evt.getEntity().level().isClientSide()) {
+            // ⭐ 荆棘反伤按原版结算：它的直接实体和归属都是穿甲的玩家，下面的判据会把它当成「近战」，
+            //    只要主手拿着开光武器，1~4 点荆棘就会吃满近战面板、近战暴击、魔法伤害（荆棘在
+            //    witch_resistant_to 里），还会掷元素、秒杀、加击杀叠层 —— 和手里的武器毫无关系。
+            //    又因为不经过 Player.attack，蓄力按满 1.0 算。只登记普通白字。
+            if (damageSource.is(DamageTypes.THORNS)) {
+                DamageDisplayTracker.registerPlain(evt.getEntity(), damageSource, evt.getAmount());
+                return;
+            }
+
             LivingEntity attacker = null;
             boolean isMelee = false;
 
@@ -578,7 +654,7 @@ public class WeaponCombatHandler {
                 if (!weapon.isEmpty() && WeaponModuleHandler.hasBase(weapon)) {
                     // ⭐ 传入真实蓄力比例，替代原先恒为 1.0f 的死代码
                     processDamage(evt, attacker, weapon, damageSource,
-                            consumeMeleeAttackStrength(isMelee), isMelee);
+                            meleeAttackStrength(attacker, isMelee), isMelee);
                     return;
                 }
             }
@@ -724,6 +800,13 @@ public class WeaponCombatHandler {
             }
         }
 
+        // ========== 蓄力折算（近战） ==========
+        // 基础倍率再乘本次挥击的蓄力比例：满蓄力才吃满面板（见类注释第四点）。
+        // 放在真伤快照之前，真伤一起折算；远程 attackStrength 恒为 1
+        double charge = isMelee ? attackStrength : 1.0;
+        baseDamage *= charge;
+        elementDamage *= charge;
+
         // ⭐ 真实伤害：在暴击计算前捕获基伤快照
         double trueBulletBaseDamage = baseDamage;
 
@@ -758,7 +841,7 @@ public class WeaponCombatHandler {
                 } else {
                     colorCode = "§f";
                 }
-                baseDamage += attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0);
+                baseDamage += attributes.getOrDefault("baseDamageWhenNotCriticalStrike", 0.0) * charge;
             }
         }
 
@@ -912,6 +995,7 @@ public class WeaponCombatHandler {
         String prefix = getDamageDisplayPrefix(attacker);
 
         SPLASH_REENTRY.set(Boolean.TRUE);
+        SPLASH_MAIN.set(hurter);
         try {
             for (LivingEntity entity : entities) {
                 // 溅射不触发元素，故无元素后缀；颜色码沿用主目标的暴击结果。
@@ -922,6 +1006,7 @@ public class WeaponCombatHandler {
         } finally {
             // 异常时也必须复位，否则该线程后续所有攻击都会被跳过结算
             SPLASH_REENTRY.set(Boolean.FALSE);
+            SPLASH_MAIN.remove();
         }
     }
 

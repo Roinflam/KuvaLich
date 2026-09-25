@@ -237,7 +237,9 @@ public class DynamicAttributes {
             });
 
     /**
-     * 穿刺效果 - 减少近战伤害（0级40% → 3级80%）
+     * 穿刺效果 - 挂着它的生物<b>造成</b>的伤害降低（0级40% → 3级70%，每级 +10%）
+     * ⭐ 2026-09-25：原先是挂着它的生物<b>受到</b>的近战伤害降低 —— 玩家越打越打不动，方向反了；
+     *    照《星际战甲》原作改成削弱它的输出。注释原写「3级80%」，按常量实际是 70%
      * ⭐ 视觉：每 0.5 秒生成白色针状 + 金属闪烁 + 浅银尘埃 + 发光点
      * ⭐ v7：减伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
      */
@@ -319,7 +321,7 @@ public class DynamicAttributes {
         /** 辐射：每级额外增伤，可后续提为配置项 */
         private static final double RADIATION_PER_LEVEL = 0.5;
 
-        /** 穿刺：减伤上限等级（0→3），可后续提为配置项 */
+        /** 穿刺：攻击方输出削减的上限等级（0→3），可后续提为配置项 */
         private static final int PUNCTURE_MAX_LEVEL = 3;
         /** 穿刺：基础减伤，可后续提为配置项 */
         private static final double PUNCTURE_BASE_REDUCTION = 0.4;
@@ -338,13 +340,13 @@ public class DynamicAttributes {
                 return;
             }
 
-            // 受击方身上的动态属性只查一次 map，磁力和穿刺共用
+            // 受击方身上的动态属性（磁力看受击方；穿刺、辐射看攻击方，在各自方法里查）
             List<DynamicAttributeInstance> victimAttributes = DynamicAttributeManager.getInstances(victim);
             if (victimAttributes != null) {
                 applyMagnetic(event, victim, victimAttributes);
-                applyPuncture(event, victimAttributes);
             }
 
+            applyPuncture(event);
             applyRadiation(event, victim);
         }
 
@@ -370,18 +372,24 @@ public class DynamicAttributes {
         }
 
         /**
-         * 穿刺：受击方被"生物直接攻击"时减伤
-         * 等价于旧 {@code onPunctureHurt}：先判 directEntity 是不是生物，再取等级
+         * 穿刺：<b>攻击方</b>身上挂着穿刺时，它造成的伤害降低
          *
-         * @param event            生物受伤事件
-         * @param victimAttributes 受击方的动态属性列表
+         * <p>⭐ 2026-09-25 改方向：原先判的是受击方（挂穿刺的目标被生物近战打中时减伤），
+         * 玩家给怪挂上穿刺反而削弱自己的近战。现在看伤害归属者（{@code getEntity()}，
+         * 含它射出的箭、火球等），与原作「穿刺削弱敌人输出」一致；没有归属者的伤害（摔落、DoT）不受影响。</p>
+         *
+         * @param event 生物受伤事件
          */
-        private static void applyPuncture(LivingHurtEvent event,
-                                          List<DynamicAttributeInstance> victimAttributes) {
-            if (!(event.getSource().getDirectEntity() instanceof LivingEntity)) {
+        private static void applyPuncture(LivingHurtEvent event) {
+            if (!(event.getSource().getEntity() instanceof LivingEntity attacker)) {
                 return;
             }
-            int level = DynamicAttributeManager.getAmplifier(victimAttributes, PUNCTURE);
+            // 溅射以主目标最终伤害为基数：主目标那一下（本监听器 NORMAL 先于 WeaponCombatHandler 的 LOWEST）
+            // 已经按攻击方的穿刺削过，溅射再削一次就成了 (1-r)²
+            if (pers.roinflam.kuvalich.module.weapon.WeaponCombatHandler.isApplyingSplash()) {
+                return;
+            }
+            int level = DynamicAttributeManager.getAmplifier(attacker, PUNCTURE);
             if (level < 0) {
                 return;
             }

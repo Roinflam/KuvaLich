@@ -51,7 +51,7 @@ public final class ModConfig {
      * 赤毒玄骸系统配置
      * <p>
      * 包含调试、护盾、物品没收、解密进度、伤害、武器等级、
-     * 击杀叠层、实体生成、掉落概率、教程书、多槽位装备、三合一等所有子系统配置。
+     * 击杀叠层、实体生成、掉落概率、冒险指南、多槽位装备、三合一等所有子系统配置。
      * </p>
      */
     public static class KuvaLichConfig {
@@ -179,7 +179,7 @@ public final class ModConfig {
         // ===== 战利品效果倍率 / Item Drop Effect Multiplier =====
         public final ForgeConfigSpec.DoubleValue itemDropEffectMultiplier;
 
-        // ===== 教程书 / Guidebook =====
+        // ===== 冒险指南 / Field Guide =====
         public final ForgeConfigSpec.BooleanValue enableGuidebook;
 
         // ===== 挖矿倍率 / Ore Drop Multiplier =====
@@ -381,13 +381,13 @@ public final class ModConfig {
                     .defineInRange("battleBoost", 0.075, 0.0, Double.MAX_VALUE);
 
             reducedDamage = builder
-                    .comment("Damage reduction per failed decryption")
-                    .comment("每次解密失败的伤害削减")
+                    .comment("Your damage to Kuva enemies is reduced by this per failed decryption (Lich level)")
+                    .comment("每次解密失败（玄骸等级 +1）你对赤毒敌人造成的伤害削减")
                     .defineInRange("reducedDamage", 0.0, 0.0, Double.MAX_VALUE);
 
             increaseDamage = builder
-                    .comment("Enemy damage increase per failed decryption")
-                    .comment("每次解密失败敌人伤害提升")
+                    .comment("Damage you take from Kuva enemies is increased by this per failed decryption (Lich level)")
+                    .comment("每次解密失败（玄骸等级 +1）赤毒敌人对你造成的伤害提升")
                     .defineInRange("increaseDamage", 0.25, 0.0, Double.MAX_VALUE);
 
             builder.comment("")
@@ -731,7 +731,7 @@ public final class ModConfig {
 
             slaveRequiemGemLootingBonus = builder
                     .comment("Requiem Gem chance bonus per looting enchantment level (%)")
-                    .comment("每级时运附魔对安魂宝石掉落概率的加成(%)")
+                    .comment("每级抢夺附魔对安魂宝石掉落概率的加成(%)")
                     .defineInRange("slaveRequiemGemLootingBonus", 2.5, 0.0, 100.0);
 
             builder.comment("")
@@ -780,11 +780,11 @@ public final class ModConfig {
                     .defineInRange("itemDropEffectMultiplier", 100.0, 0.0, 1000.0);
 
             builder.comment("")
-                    .comment("═══ Guidebook / 教程书 ═══");
+                    .comment("═══ Field Guide / 冒险指南 ═══");
 
             enableGuidebook = builder
-                    .comment("Give guidebook on first join (requires Patchouli)")
-                    .comment("首次进服时发放教程书(需要安装帕秋莉)")
+                    .comment("Give the Field Guide on first join (right-click to open); existing players get one once after this update; waits until the inventory has room")
+                    .comment("首次进服时发放冒险指南(右键打开)；版本更新后老玩家也会补发一次；背包满时等腾出空位再发")
                     .define("enableGuidebook", true);
 
             builder.comment("")

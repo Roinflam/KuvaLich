@@ -7,7 +7,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
 import pers.roinflam.kuvalich.utils.LogUtil;
 
@@ -27,6 +30,16 @@ public class MixinGunShootOnce {
 
     @Shadow
     private ItemStack itemStack;
+
+    /**
+     * 本次扣扳机时 TACZ 的原始弹丸数（多重射击膨胀前）
+     *
+     * <p>多连发的后几发在之后的 tick 里执行（见 {@code MixinGunShootContext} 的说明），
+     * 那时 ThreadLocal 里的原始弹丸数可能已被同一 tick 里别的射手覆盖 —— 例如步枪的第二发读到霰弹枪的 8，
+     * {@code MixinBulletDamageSpread} 就会把伤害按 8 颗均分。所以记在这个实例上，每一发开火前恢复进 ThreadLocal。</p>
+     */
+    @Unique
+    private int kuvalich$originalAmount;
 
     /**
      * 修改 shootOnce 内部 bulletAmount 的初始值（Math.max(bulletData.getBulletAmount(), 1) 处）。
@@ -52,6 +65,7 @@ public class MixinGunShootOnce {
             require = 0
     )
     private int kuvalich$applyMultishot(int originalAmount) {
+        this.kuvalich$originalAmount = originalAmount;
         if (itemStack == null || itemStack.isEmpty()) {
             // 无多重射击时也要存原始值，保证 ThreadLocal 状态一致
             WarframeTaczBridge.setOriginalBulletAmount(originalAmount);
@@ -84,5 +98,26 @@ public class MixinGunShootOnce {
         int finalAmount = originalAmount + extraBullets;
 
         return finalAmount;
+    }
+
+    /**
+     * 每一发开火前恢复本次扣扳机的原始弹丸数（多连发的后几发也用自己这把枪的值）
+     *
+     * <p>method 写完整描述符的原因见 {@code MixinGunShootContext} 类注释：只写名字的话，TACZ 改版后
+     * lambda 编号错位会让整个 mixin 应用失败（连多重射击也没了），或者注入落到热量 lambda 上提前清值。</p>
+     */
+    @Inject(method = "lambda$shootOnce$2(ZLcom/tacz/guns/resource/pojo/data/gun/GunData;ILcom/tacz/guns/resource/pojo/data/gun/BulletData;Lcom/tacz/guns/api/entity/IGunOperator;FFIZ)Z", at = @At("HEAD"), require = 0)
+    private void kuvalich$restoreOriginalAmount(CallbackInfoReturnable<Boolean> cir) {
+        if (this.kuvalich$originalAmount > 0) {
+            WarframeTaczBridge.setOriginalBulletAmount(this.kuvalich$originalAmount);
+        }
+    }
+
+    /**
+     * 这一发打完清掉，不让它留给同一 tick 里的别的射手
+     */
+    @Inject(method = "lambda$shootOnce$2(ZLcom/tacz/guns/resource/pojo/data/gun/GunData;ILcom/tacz/guns/resource/pojo/data/gun/BulletData;Lcom/tacz/guns/api/entity/IGunOperator;FFIZ)Z", at = @At("RETURN"), require = 0)
+    private void kuvalich$clearOriginalAmount(CallbackInfoReturnable<Boolean> cir) {
+        WarframeTaczBridge.clearOriginalBulletAmount();
     }
 }

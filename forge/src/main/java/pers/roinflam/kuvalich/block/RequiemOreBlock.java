@@ -1,7 +1,6 @@
 package pers.roinflam.kuvalich.block;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -31,7 +30,7 @@ public class RequiemOreBlock extends Block {
     private static final int MIN_EXP = 50;
     private static final int MAX_EXP = 100;
 
-    /** 经验范围提供器，用于spawnAfterBreak调用 */
+    /** 经验范围（getExpDrop 按它抽） */
     private static final UniformInt EXP_RANGE = UniformInt.of(MIN_EXP, MAX_EXP);
 
     /**
@@ -63,36 +62,22 @@ public class RequiemOreBlock extends Block {
     }
 
     /**
-     * 方块被破坏后触发经验掉落（业务逻辑100%不变）
-     * Trigger experience drop after block is broken (business logic 100% unchanged)
+     * 挖掘经验：50-100，精准采集为 0
      *
-     * 注意：Block基类的spawnAfterBreak不会自动调用tryDropExperience，
-     * 只有DropExperienceBlock才会。因此必须手动重写此方法来触发经验掉落。
-     * Note: Block base class's spawnAfterBreak does not call tryDropExperience automatically,
-     * only DropExperienceBlock does. Must override this method to trigger exp drops.
+     * <p>⭐ 2026-09-25 修复：原先在 {@code spawnAfterBreak} 里判 {@code dropExperience} 再自己 popExperience。
+     * 但 Forge 1.20.1 玩家挖方块走的是 {@code playerDestroy → dropResources(..., false)}，这个参数恒为 false，
+     * 经验改由 {@code ServerPlayerGameMode.destroyBlock} 按 {@code BreakEvent} 里的数值掉 ——
+     * 而事件的初值来自本方法，没覆写就是 0。结果玩家挖安魂矿石一点经验都没有，
+     * 灭骸附魔的「经验 × expMultiplier」乘的也是 0（正式服 Tenet 同一条路径，已核对源码）。</p>
      *
-     * @param state 方块状态
-     * @param level 服务端世界
-     * @param pos 方块位置
-     * @param tool 使用的工具
-     * @param dropExperience 是否应该掉落经验（丝绸之触时为false）
+     * <p>改成覆写本方法后：玩家挖掘走 BreakEvent（灭骸附魔在那里乘倍率）；
+     * 其它需要掉经验的破坏走 Forge 基类的 {@code spawnAfterBreak → dropXpForBlock}，同样读这里。
+     * 所以旧的 {@code spawnAfterBreak} 覆写删掉了，留着会在后一种路径里掉两份。</p>
      */
     @Override
-    public void spawnAfterBreak(@NotNull BlockState state, @NotNull ServerLevel level,
-                                @NotNull BlockPos pos, @NotNull ItemStack tool, boolean dropExperience) {
-        super.spawnAfterBreak(state, level, pos, tool, dropExperience);
-        if (dropExperience) {
-            // 掉落50-100经验（业务逻辑不变）
-            // Drop 50-100 experience (business logic unchanged)
-            int exp = EXP_RANGE.sample(level.random);
-            if (exp > 0) {
-                this.popExperience(level, pos, exp);
-            }
-
-            LogUtil.debugEvent("安魂矿石经验掉落",
-                    "位置: " + pos,
-                    "经验: " + exp + " (范围: " + MIN_EXP + "-" + MAX_EXP + ")"
-            );
-        }
+    public int getExpDrop(@NotNull BlockState state, @NotNull net.minecraft.world.level.LevelReader level,
+                          @NotNull net.minecraft.util.RandomSource randomSource, @NotNull BlockPos pos,
+                          int fortuneLevel, int silkTouchLevel) {
+        return silkTouchLevel == 0 ? EXP_RANGE.sample(randomSource) : 0;
     }
 }
