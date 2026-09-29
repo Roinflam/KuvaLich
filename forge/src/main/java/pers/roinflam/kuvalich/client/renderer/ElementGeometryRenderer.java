@@ -28,7 +28,7 @@ import java.util.OptionalDouble;
  * Element Geometry Renderer (Client-side · v6 Minimal)
  *
  * <p><b>v6 变更：仅渲染磁力元素的双正交环</b>。v5 版本的冰/火/毒/辐射/腐蚀/
- * 病毒/穿刺/7 种元素几何图形全部移除。用户反馈其他元素线条"太抽象"，
+ * 病毒/穿刺/7 种元素几何图形全部移除。其他元素的线条太抽象，
  * 只保留磁力作为"磁场感"的视觉补充（磁力粒子已全部移除）。</p>
  *
  * <p>核心价值：零 PNG 依赖。所有图形通过 {@link VertexConsumer} 直接发送
