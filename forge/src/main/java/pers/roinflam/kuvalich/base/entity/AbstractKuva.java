@@ -28,6 +28,7 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.module.weapon.MagicDamageClassifier;
 import pers.roinflam.kuvalich.module.weapon.WeaponCombatHandler;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
+import pers.roinflam.kuvalich.worldgen.KuvaSpawnLimiter;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -313,6 +314,20 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 16, true, true,
                 entity -> !(entity instanceof Creeper) && !(entity instanceof AbstractKuva)));
+    }
+
+    // ==================== 在场名单（自然生成密度限制用） ====================
+
+    @Override
+    public void onAddedToWorld() {
+        super.onAddedToWorld();
+        KuvaSpawnLimiter.track(this);
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        super.onRemovedFromWorld();
+        KuvaSpawnLimiter.untrack(this);
     }
 
     // ==================== 状态管理 ====================

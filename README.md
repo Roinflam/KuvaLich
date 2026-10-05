@@ -199,6 +199,7 @@
 | **Kuva Lich Min/Max Spawn Count** | Spawn count range for Kuva Lich |
 | **Kuva Slave Spawn Weight** | Spawn weight for Kuva Slave |
 | **Kuva Slave Min/Max Spawn Count** | Spawn count range for Kuva Slave |
+| **Nearby Limit / Count Radius / Minimum Spacing** (Lich and Slave, each) | Natural spawns are refused when that many of the same kind are already within the radius of the spawn point, or when one is closer than the minimum spacing. Spawn weight only decides how often a kind is picked; these decide how many can exist around you. Set to 0 for no limit |
 
 </details>
 
@@ -487,6 +488,7 @@ Everything else (Forge, Architectury, GeckoLib, Curios, MixinExtras...) is resol
 | **赤毒玄骸最小/最大生成数量** | 赤毒玄骸的生成数量区间 |
 | **赤毒奴仆生成权重** | 赤毒奴仆的生成权重 |
 | **赤毒奴仆最小/最大生成数量** | 赤毒奴仆的生成数量区间 |
+| **附近数量上限 / 统计半径 / 最小间距**（玄骸、奴仆各一组） | 自然生成时，生成点半径内已有这么多只同类、或离同类不足最小间距，就不再刷。权重只决定抽到的频率，这几项才决定你身边同时能有多少只；设为 0 表示不限 |
 
 </details>
 

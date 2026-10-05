@@ -52,7 +52,21 @@
             [
               "刷新權重",
               "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>，越大越常見 <dim>（原版殭屍 95）</dim>"
-            ]
+            ],
+            {
+              "if": "cfg:kuva_lich.kuvaSlaveMaxNearby>0",
+              "cells": [
+                "數量上限",
+                "刷新點 <t>{cfg:kuva_lich.kuvaSlaveNearbyRadius}</t> 格內已有 <t>{cfg:kuva_lich.kuvaSlaveMaxNearby}</t> 只，就不再往那裡刷"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.kuvaSlaveMinSpacing>0",
+              "cells": [
+                "間距",
+                "新刷出的離同類至少 <t>{cfg:kuva_lich.kuvaSlaveMinSpacing}</t> 格，不會擠成一堆"
+              ]
+            }
           ]
         },
         {
@@ -286,6 +300,26 @@
               "cells": [
                 "每群數量",
                 "<t>{cfg:kuva_lich.kuvaLichMinSpawnCount}~{cfg:kuva_lich.kuvaLichMaxSpawnCount}</t> 只"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.kuvaLichSpawnWeight>0",
+                "cfg:kuva_lich.kuvaLichMaxNearby>0"
+              ],
+              "cells": [
+                "數量上限",
+                "刷新點 <t>{cfg:kuva_lich.kuvaLichNearbyRadius}</t> 格內已有 <t>{cfg:kuva_lich.kuvaLichMaxNearby}</t> 只，就不再往那裡刷（召出來的也算）"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.kuvaLichSpawnWeight>0",
+                "cfg:kuva_lich.kuvaLichMinSpacing>0"
+              ],
+              "cells": [
+                "間距",
+                "新刷出的離已有的玄骸至少 <t>{cfg:kuva_lich.kuvaLichMinSpacing}</t> 格"
               ]
             },
             {

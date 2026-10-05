@@ -148,6 +148,14 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue kuvaSlaveMinSpawnCount;
         public final ForgeConfigSpec.IntValue kuvaSlaveMaxSpawnCount;
 
+        // ===== 生成密度限制 / Spawn Crowding =====
+        public final ForgeConfigSpec.IntValue kuvaLichMaxNearby;
+        public final ForgeConfigSpec.IntValue kuvaLichNearbyRadius;
+        public final ForgeConfigSpec.IntValue kuvaLichMinSpacing;
+        public final ForgeConfigSpec.IntValue kuvaSlaveMaxNearby;
+        public final ForgeConfigSpec.IntValue kuvaSlaveNearbyRadius;
+        public final ForgeConfigSpec.IntValue kuvaSlaveMinSpacing;
+
         // ===== 矿石掉落概率 / Ore Drop Chances =====
         public final ForgeConfigSpec.IntValue cardDropChanceWithEnchant;
         public final ForgeConfigSpec.IntValue baseCardDropChance;
@@ -655,6 +663,43 @@ public final class ModConfig {
                     .comment("Kuva Slave maximum spawn count")
                     .comment("赤毒奴仆最大生成数量")
                     .defineInRange("kuvaSlaveMaxSpawnCount", 1, 1, Integer.MAX_VALUE);
+
+            builder.comment("")
+                    .comment("═══ Spawn Crowding / 生成密度限制 ═══")
+                    .comment("Natural spawns are refused when enough of the same kind are already nearby. Checked on every spawn attempt, so edits apply without a restart.")
+                    .comment("自然生成时，附近同类已经够多就不再刷。每次生成尝试时现查，改完不用重启。")
+                    .comment("Spawn weight above only decides how often a kind is picked; these limits decide how many can exist around you.")
+                    .comment("上面的权重只决定抽到的频率，这里的上限才决定你身边同时能有多少只。");
+
+            kuvaLichMaxNearby = builder
+                    .comment("Max Kuva Lich within the radius below of a spawn point (0 = no limit)")
+                    .comment("生成点半径内最多已有几只赤毒玄骸才允许再刷(0=不限)")
+                    .defineInRange("kuvaLichMaxNearby", 1, 0, 64);
+
+            kuvaLichNearbyRadius = builder
+                    .comment("Radius in blocks used for the Kuva Lich limit above")
+                    .comment("玄骸数量上限统计的半径(格)")
+                    .defineInRange("kuvaLichNearbyRadius", 96, 8, 512);
+
+            kuvaLichMinSpacing = builder
+                    .comment("Minimum distance in blocks to another Kuva Lich for a new one to spawn (0 = no limit)")
+                    .comment("新刷出的玄骸与已有玄骸的最小间距(格，0=不限)")
+                    .defineInRange("kuvaLichMinSpacing", 48, 0, 512);
+
+            kuvaSlaveMaxNearby = builder
+                    .comment("Max Kuva Slave within the radius below of a spawn point (0 = no limit)")
+                    .comment("生成点半径内最多已有几只赤毒奴仆才允许再刷(0=不限)")
+                    .defineInRange("kuvaSlaveMaxNearby", 4, 0, 64);
+
+            kuvaSlaveNearbyRadius = builder
+                    .comment("Radius in blocks used for the Kuva Slave limit above")
+                    .comment("奴仆数量上限统计的半径(格)")
+                    .defineInRange("kuvaSlaveNearbyRadius", 48, 8, 512);
+
+            kuvaSlaveMinSpacing = builder
+                    .comment("Minimum distance in blocks to another Kuva Slave for a new one to spawn (0 = no limit)")
+                    .comment("新刷出的奴仆与已有奴仆的最小间距(格，0=不限)")
+                    .defineInRange("kuvaSlaveMinSpacing", 12, 0, 512);
 
             builder.comment("")
                     .comment("═══ Requiem Destroyed Enchantment Drop Chances / 灭骸附魔掉落概率 ═══")

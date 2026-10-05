@@ -20,7 +20,9 @@
           ["Light", "Like zombies: only where it is dark enough, never on <t>Peaceful</t>"],
           ["Space", "It is big: it needs a clear <t>3×3</t> area <t>3</t> blocks high, so it is rare in low caves"],
           ["Group size", "<t>{cfg:kuva_lich.kuvaSlaveMinSpawnCount}-{cfg:kuva_lich.kuvaSlaveMaxSpawnCount}</t>"],
-          ["Spawn weight", "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>; higher means more common <dim>(vanilla zombie: 95)</dim>"]
+          ["Spawn weight", "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>; higher means more common <dim>(vanilla zombie: 95)</dim>"],
+          { "if": "cfg:kuva_lich.kuvaSlaveMaxNearby>0", "cells": ["Nearby limit", "Nothing new spawns at a spot that already has <t>{cfg:kuva_lich.kuvaSlaveMaxNearby}</t> within <t>{cfg:kuva_lich.kuvaSlaveNearbyRadius}</t> blocks"] },
+          { "if": "cfg:kuva_lich.kuvaSlaveMinSpacing>0", "cells": ["Spacing", "A new one spawns at least <t>{cfg:kuva_lich.kuvaSlaveMinSpacing}</t> blocks from another, so they do not pile up"] }
         ] },
         { "type": "h", "text": "How it fights" },
         { "type": "list", "items": [
@@ -93,6 +95,8 @@
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["In the wild", "Spawns in dark Overworld spots like Thralls, except in Mushroom Fields; it is taller and needs a clear <t>3×3</t> area <t>4</t> blocks high"] },
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["Spawn weight", "<t>{cfg:kuva_lich.kuvaLichSpawnWeight}</t> <dim>(Thrall {cfg:kuva_lich.kuvaSlaveSpawnWeight}, vanilla zombie 95)</dim>"] },
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["Group size", "<t>{cfg:kuva_lich.kuvaLichMinSpawnCount}-{cfg:kuva_lich.kuvaLichMaxSpawnCount}</t>"] },
+          { "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.kuvaLichMaxNearby>0"], "cells": ["Nearby limit", "Nothing new spawns at a spot that already has <t>{cfg:kuva_lich.kuvaLichMaxNearby}</t> within <t>{cfg:kuva_lich.kuvaLichNearbyRadius}</t> blocks (summoned ones count too)"] },
+          { "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.kuvaLichMinSpacing>0"], "cells": ["Spacing", "A new one spawns at least <t>{cfg:kuva_lich.kuvaLichMinSpacing}</t> blocks from an existing Lich"] },
           { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "cells": ["Summon", "Use a {item:kuvalich:requiem_ultimatum}: any time, any place, one per summon"] }
         ] },
         { "type": "p", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "Right-click the air with it and the Lich appears <t>3</t> blocks away in the horizontal direction you face, at your foot level; right-click a block and it appears on the clicked face. Creative mode does not use one up." },

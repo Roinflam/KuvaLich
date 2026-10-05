@@ -20,7 +20,9 @@
           ["亮度", "和僵尸一样，只在够暗的地方刷新；<t>和平</t>难度不刷"],
           ["空间", "体型大，要 <t>3×3</t>、<t>3</t> 格高的空位，低矮的洞穴里很少见"],
           ["每群数量", "<t>{cfg:kuva_lich.kuvaSlaveMinSpawnCount}~{cfg:kuva_lich.kuvaSlaveMaxSpawnCount}</t> 只"],
-          ["刷新权重", "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>，越大越常见 <dim>（原版僵尸 95）</dim>"]
+          ["刷新权重", "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>，越大越常见 <dim>（原版僵尸 95）</dim>"],
+          { "if": "cfg:kuva_lich.kuvaSlaveMaxNearby>0", "cells": ["数量上限", "刷新点 <t>{cfg:kuva_lich.kuvaSlaveNearbyRadius}</t> 格内已有 <t>{cfg:kuva_lich.kuvaSlaveMaxNearby}</t> 只，就不再往那里刷"] },
+          { "if": "cfg:kuva_lich.kuvaSlaveMinSpacing>0", "cells": ["间距", "新刷出的离同类至少 <t>{cfg:kuva_lich.kuvaSlaveMinSpacing}</t> 格，不会挤成一堆"] }
         ] },
         { "type": "h", "text": "它怎么打你" },
         { "type": "list", "items": [
@@ -75,7 +77,8 @@
         "entity/KuvaSlaveEntity.java:38 — 继承 AbstractKuva；AbstractKuva.java:271-273 生物类型 UNDEAD",
         "worldgen/KuvaLichBiomeModifier.java:93-95 — 仅主世界（is_overworld）且排除蘑菇岛才加刷怪",
         "worldgen/KuvaLichBiomeModifier.java:299-307 — MONSTER 类别，权重 kuvaSlaveSpawnWeight，数量 kuvaSlaveMin/MaxSpawnCount；权重 0 不加（所以「在哪遇到」整节用 kuvaSlaveSpawnWeight>0 控制）",
-        "init/KuvaLichSpawnPlacements.java:40-46 — ON_GROUND + MOTION_BLOCKING_NO_LEAVES + Monster::checkMonsterSpawnRules（同僵尸：非和平、够暗）",
+        "init/KuvaLichSpawnPlacements.java:46-60 — ON_GROUND + MOTION_BLOCKING_NO_LEAVES + Monster.checkMonsterSpawnRules（同僵尸：非和平、够暗），自然生成（MobSpawnType.NATURAL）再过 KuvaSpawnLimiter.hasRoom",
+        "worldgen/KuvaSpawnLimiter.java:hasRoom — 在场名单（AbstractKuva.onAddedToWorld / onRemovedFromWorld 维护）里同类型、纵向 ±48 格内：半径 kuvaSlaveNearbyRadius 内够 kuvaSlaveMaxNearby 只、或离某只不足 kuvaSlaveMinSpacing 格就拒绝；两项为 0 = 不限（所以两行用行级 if）。刷怪笼 / 命令 / 通牒不受限，但造出来的也计入",
         "init/KuvaLichEntities.java:28-33 + 原版 NaturalSpawner.isValidSpawnPostitionForType 末尾 level.noCollision(type.getAABB(x+0.5,y,z+0.5)) — 宽 1.5 的碰撞箱跨 x-0.25~x+1.25，占 3×3 格；高 2.9 占 3 格",
         "原版 BiomeDefaultFeatures.monsters — 僵尸权重 95（对比用）；权重越大同类别里被抽中的机会越大",
         "entity/KuvaSlaveEntity.java:78-86 — 生命 100 / 攻击 8 / 击退抗性 0.4 / 移速 0.35 / 追踪 32 / 护甲 4；原版 Zombie 移速 0.23",
@@ -121,6 +124,8 @@
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["野外", "和奴仆一样在主世界暗处刷新，蘑菇岛除外；它更高，要 <t>3×3</t>、<t>4</t> 格高的空位"] },
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["刷新权重", "<t>{cfg:kuva_lich.kuvaLichSpawnWeight}</t> <dim>（奴仆 {cfg:kuva_lich.kuvaSlaveSpawnWeight}，原版僵尸 95）</dim>"] },
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["每群数量", "<t>{cfg:kuva_lich.kuvaLichMinSpawnCount}~{cfg:kuva_lich.kuvaLichMaxSpawnCount}</t> 只"] },
+          { "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.kuvaLichMaxNearby>0"], "cells": ["数量上限", "刷新点 <t>{cfg:kuva_lich.kuvaLichNearbyRadius}</t> 格内已有 <t>{cfg:kuva_lich.kuvaLichMaxNearby}</t> 只，就不再往那里刷（召出来的也算）"] },
+          { "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.kuvaLichMinSpacing>0"], "cells": ["间距", "新刷出的离已有的玄骸至少 <t>{cfg:kuva_lich.kuvaLichMinSpacing}</t> 格"] },
           { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "cells": ["召唤", "用{item:kuvalich:requiem_ultimatum}，不限时间、地点，每次用掉 1 个"] }
         ] },
         { "type": "p", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "通牒对着空中右键，玄骸出现在你面朝的水平方向 <t>3</t> 格处，和你脚下同高；对着方块右键，出现在点中的那一面。创造模式不消耗。" },
@@ -189,7 +194,7 @@
         "entity/KuvaMasterEntity.java:485 — 通牒唯一产出（解密成功时按 requiemUltimatumDropChance 掉；RandomUtil.percentageChance ≤0 恒 false，data 里无配方 / 战利品表） → 教玩家用通牒召唤的句子都带 requiemUltimatumDropChance>0",
         "entity/KuvaMasterEntity.java:50 — 继承 AbstractKuva（UNDEAD、免摔落、战斗增幅、类型修正同奴仆）",
         "worldgen/KuvaLichBiomeModifier.java:289-297 — 权重 kuvaLichSpawnWeight（0 不加，所以野外三行用行级 if），数量 kuvaLichMin/MaxSpawnCount；93-95 仅主世界且排除蘑菇岛",
-        "init/KuvaLichSpawnPlacements.java:50-56 — 亮度规则同僵尸；init/KuvaLichEntities.java:44 尺寸 1.75×3.4 → 原版 NaturalSpawner noCollision(getAABB) 占 3×3 格、4 格高",
+        "init/KuvaLichSpawnPlacements.java:62-74 — 亮度规则同僵尸，自然生成再过 KuvaSpawnLimiter.hasRoom（kuvaLichMaxNearby / NearbyRadius / MinSpacing，0 = 不限，所以两行用行级 if，且和权重条件并列）；init/KuvaLichEntities.java:44 尺寸 1.75×3.4 → 原版 NaturalSpawner noCollision(getAABB) 占 3×3 格、4 格高",
         "item/RequiemUltimatum.java:59-76 — 右键空气：player.blockPosition().relative(player.getDirection(), 3)（水平四向、脚下同高）生成，非创造消耗 1",
         "item/RequiemUltimatum.java:83-111 — 右键方块：pos.relative(点击面) 生成；两处均无任何条件检查，也不调用 finalizeSpawn / setPersistenceRequired",
         "原版 Mob.checkDespawn — 和平且 Monster.shouldDespawnInPeaceful → discard；最近玩家 >128 格（MONSTER despawnDistance）立即 discard；>32 格（noDespawnDistance）且 noActionTime>600 时每 tick 1/800 概率 discard；全模组 grep 无 Persistence / removeWhenFarAway / checkDespawn 重写；checkDespawn 只对仍在实体运行范围内的区块生效（模拟距离很小时，人走远后区块先停转、实体随区块存盘，不一定被清），所以书里没写「立刻」",
