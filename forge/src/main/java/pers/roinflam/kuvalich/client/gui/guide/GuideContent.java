@@ -155,15 +155,22 @@ public final class GuideContent {
         public final String icon;
         public final String summary;
         public final List<String> cond;
+        /**
+         * 这一篇「负责介绍」的物品 id（条目的 {@code items} 字段，可省略）：物品提示上按住 Ctrl 查阅时优先来这里。
+         * 条目图标、正文里出现过的物品不一定是这一篇讲的 —— 教程章节、词条速查常拿某个物品当配图 ——
+         * 所以专篇由内容手标，猜测规则只给没标的物品兜底（{@code GuideView} 类注释）
+         */
+        public final List<String> items;
         public final List<Block> blocks;
 
         public Entry(String id, String title, @Nullable String icon, String summary,
-                     List<String> cond, List<Block> blocks) {
+                     List<String> cond, List<String> items, List<Block> blocks) {
             this.id = id;
             this.title = title;
             this.icon = icon;
             this.summary = summary;
             this.cond = List.copyOf(cond);
+            this.items = List.copyOf(items);
             this.blocks = List.copyOf(blocks);
         }
     }

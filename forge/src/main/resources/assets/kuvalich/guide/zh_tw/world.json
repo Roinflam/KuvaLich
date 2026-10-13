@@ -10,6 +10,9 @@
       "title": "安魂礦石",
       "icon": "kuvalich:requiem_ore",
       "summary": "安魂卡的唯一來源，最好用滅骸鎬挖",
+      "items": [
+        "kuvalich:requiem_ore"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -233,6 +236,9 @@
       "title": "經驗礦石",
       "icon": "kuvalich:experience_ore",
       "summary": "石鎬就能挖，出經驗和內融核心",
+      "items": [
+        "kuvalich:experience_ore"
+      ],
       "blocks": [
         {
           "type": "p",

@@ -158,6 +158,16 @@
       "title": "安魂卡",
       "icon": "kuvalich:khra",
       "summary": "8 種卡，3 次耐久，只有解密成功才消耗",
+      "items": [
+        "kuvalich:khra",
+        "kuvalich:jahu",
+        "kuvalich:fass",
+        "kuvalich:lohk",
+        "kuvalich:netra",
+        "kuvalich:vome",
+        "kuvalich:xata",
+        "kuvalich:ris"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -275,6 +285,9 @@
       "title": "滅骸之扉",
       "icon": "kuvalich:requiem_gate",
       "summary": "放卡、挑戰流程與成功獎勵",
+      "items": [
+        "kuvalich:requiem_gate"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -646,6 +659,12 @@
       "title": "安魂相關道具",
       "icon": "kuvalich:requiem_ultimatum",
       "summary": "寶石、謎語、通牒與玄骸之遺",
+      "items": [
+        "kuvalich:requiem_gem",
+        "kuvalich:requiem_riddle",
+        "kuvalich:requiem_ultimatum",
+        "kuvalich:lich_reliquary"
+      ],
       "blocks": [
         {
           "type": "p",

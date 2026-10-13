@@ -36,6 +36,8 @@ import java.util.List;
 final class GuideBlocks {
 
     private static final int LH = GuideTheme.LINE_H;
+    /** 一段文字最后一行下面不留的行距（块高 = 行数 × LH − TAIL） */
+    private static final int TAIL = GuideTheme.LINE_TAIL;
 
     private GuideBlocks() {}
 
@@ -193,13 +195,15 @@ final class GuideBlocks {
             }
 
             int tx = x + ICON + 8;
-            g.drawString(r.font, crumb, tx, y + 1, r.text(GuideTheme.withAlpha(GuideTheme.TECH, 0xD0)), false);
+            // 面包屑不透明：小字再叠半透明，在近黑底上发虚
+            g.drawString(r.font, crumb, tx, y + 1, r.text(GuideTheme.TECH), false);
             r.lines(title, tx, y + 12, LH, true);
             r.lines(summary, x, y + summaryY, LH, false);
 
+            // 静止的结构线：左端一截科技青，和小标题的竖条同一个作用（原先这里有一道往复的流光，读的地方不放常驻动画）
             int ly = y + height - 1;
             g.fill(x, ly, x + w, ly + 1, r.fill(GuideTheme.withAlpha(GuideTheme.EDGE, 0xE0)));
-            GuideTheme.sweep(g, x, ly, w, r.time, 0.2f, GuideTheme.TECH, 0.7f * r.alpha);
+            g.fill(x, ly, x + Math.min(w, ICON), ly + 1, r.fill(GuideTheme.withAlpha(GuideTheme.TECH, 0xB0)));
         }
     }
 
@@ -235,7 +239,7 @@ final class GuideBlocks {
 
         Paragraph(Line[] lines) {
             this.lines = lines;
-            this.height = lines.length * LH - (lines.length > 0 ? 2 : 0);
+            this.height = lines.length * LH - (lines.length > 0 ? TAIL : 0);
         }
 
         @Override
@@ -301,7 +305,7 @@ final class GuideBlocks {
             int y = 0;
             for (int i = 0; i < n; i++) {
                 items[i] = c.wrap(b.items.get(i), GuideTheme.BODY, false, c.width - indent);
-                int h = Math.max(1, items[i].length) * LH - 2;
+                int h = Math.max(1, items[i].length) * LH - TAIL;
                 if (kind == STEPS) {
                     h = Math.max(h, 11);
                 }
@@ -393,7 +397,7 @@ final class GuideBlocks {
                 labels[i] = c.text.wrap(lr[i], labelW);
                 values[i] = c.text.wrap(vr[i], valueW);
                 int lines = Math.max(1, Math.max(labels[i].length, values[i].length));
-                hs[i] = lines * LH - 2 + PAD_Y * 2;
+                hs[i] = lines * LH - TAIL + PAD_Y * 2;
                 ys[i] = y;
                 y += hs[i];
             }
@@ -475,7 +479,7 @@ final class GuideBlocks {
                 header[j] = c.text.wrap(hr[j], Math.max(8, colW[j] - PAD_X * 2));
                 headerLines = Math.max(headerLines, header[j].length);
             }
-            int headerH = headerLines * LH - 2 + PAD_Y * 2 + 1;
+            int headerH = headerLines * LH - TAIL + PAD_Y * 2 + 1;
             Line[][][] cells = new Line[rows][cols][];
             int[] rowY = new int[rows];
             int[] rowH = new int[rows];
@@ -487,7 +491,7 @@ final class GuideBlocks {
                     lines = Math.max(lines, cells[i][j].length);
                 }
                 rowY[i] = y;
-                rowH[i] = lines * LH - 2 + PAD_Y * 2;
+                rowH[i] = lines * LH - TAIL + PAD_Y * 2;
                 y += rowH[i];
             }
             return new TableLaid(colX, colW, header, headerH, cells, rowY, rowH, y + 1);
@@ -622,7 +626,7 @@ final class GuideBlocks {
     }
 
     /**
-     * 提示框：左侧色条 + 极淡的同色底
+     * 提示框：统一的底（{@link GuideTheme#TIP_BG}）+ 左侧色条 + 同色标题；颜色只在色条、标题和右上角切角上
      */
     private static final class TipLaid extends Laid {
         private static final int PAD_L = 9;
@@ -639,7 +643,7 @@ final class GuideBlocks {
             this.title = title;
             this.text = text;
             this.textY = PAD_Y + (title.length > 0 ? title.length * LH + 2 : 0);
-            this.height = textY + Math.max(1, text.length) * LH - 2 + PAD_Y;
+            this.height = textY + Math.max(1, text.length) * LH - TAIL + PAD_Y;
         }
 
         static TipLaid of(Block b, Ctx c) {
@@ -657,11 +661,11 @@ final class GuideBlocks {
         @Override
         void render(GuideRender r, int x, int y, int w) {
             GuiGraphics g = r.g;
-            g.fill(x, y, x + w, y + height, r.fill(GuideTheme.withAlpha(color, 0x18)));
+            g.fill(x, y, x + w, y + height, r.fill(GuideTheme.TIP_BG));
             g.fill(x, y, x + 2, y + height, r.fill(color));
-            // 右上角一枚同色小切角，呼应图鉴格子的品质角标
+            // 右上角一枚同色小切角，呼应图鉴格子的品质角标；不透明（半透明的彩色叠在底上会混出脏色）
             for (int i = 0; i < 5; i++) {
-                g.fill(x + w - 5 + i, y + i, x + w, y + i + 1, r.fill(GuideTheme.withAlpha(color, 0x70)));
+                g.fill(x + w - 5 + i, y + i, x + w, y + i + 1, r.fill(color));
             }
             r.lines(title, x + PAD_L, y + PAD_Y, LH, true);
             r.lines(text, x + PAD_L, y + textY, LH, false);
@@ -717,7 +721,7 @@ final class GuideBlocks {
             int textW = textW((c.width - GAP) / 2);
             this.prev = prev == null ? null : card(prev, here, false, textW, c);
             this.next = next == null ? null : card(next, here, true, textW, c);
-            this.height = PAD * 2 + LH * 2 - 2;
+            this.height = PAD * 2 + LH * 2 - TAIL;
         }
 
         /**
@@ -774,7 +778,10 @@ final class GuideBlocks {
                 r.nextHoverLink = cd.link;
             }
             boolean hot = cd.link != null && cd.link == r.hoverLink;
-            g.fill(x, y, x + w, y + height, r.fill(hot ? GuideTheme.withAlpha(GuideTheme.KUVA, 0x22) : GuideTheme.PLATE_DEEP));
+            // 按住时底色转暗（赤毒暗面）
+            boolean press = hot && r.mouseDown;
+            g.fill(x, y, x + w, y + height, r.fill(press ? GuideTheme.PRESS_BG
+                    : hot ? GuideTheme.withAlpha(GuideTheme.KUVA, 0x22) : GuideTheme.PLATE_DEEP));
             CodexTheme.border(g, x, y, w, height, r.fill(hot ? GuideTheme.KUVA : GuideTheme.withAlpha(GuideTheme.EDGE, 0xE0)));
             // 朝翻页方向的那条边用科技青加粗，像一个指向箭头的按钮
             int ex = forward ? x + w - 2 : x;
@@ -803,7 +810,7 @@ final class GuideBlocks {
 
         FormulaLaid(Line[] lines) {
             this.lines = lines;
-            this.height = Math.max(1, lines.length) * LH - 2 + 14;
+            this.height = Math.max(1, lines.length) * LH - TAIL + 14;
         }
 
         @Override
@@ -880,7 +887,7 @@ final class GuideBlocks {
             int gridH = y + SLOT;
             Line[] caption = b.caption == null ? new Line[0] : c.wrap(b.caption, GuideTheme.ASH, false, c.width);
             int captionY = gridH + 4;
-            int height = caption.length > 0 ? captionY + caption.length * LH - 2 : gridH;
+            int height = caption.length > 0 ? captionY + caption.length * LH - TAIL : gridH;
             return new ItemsLaid(stacks, names, xs, ys, ws, caption, captionY, height);
         }
 
@@ -909,7 +916,10 @@ final class GuideBlocks {
     }
 
     /**
-     * 工作台配方：3×3 + 箭头 + 产物；候选材料每秒轮换
+     * 工作台配方：3×3 + 箭头 + 产物
+     *
+     * <p>一格有几种候选材料时（比如「任意木板」），平时停在第一种，<b>鼠标压着这张配方时</b>才每秒轮换 ——
+     * 读的地方不放常驻动画。这种格子右上角有一枚 3px 的科技青小三角，告诉读者「这里不止一种」。</p>
      */
     private static final class RecipeLaid extends Laid {
         private static final int SLOT = 18;
@@ -937,7 +947,8 @@ final class GuideBlocks {
 
             int gx = fx + 8;
             int gy = y + 8;
-            long tick = r.now / 1000L;
+            boolean cycling = r.over(fx, y, FRAME_W, FRAME_H);
+            long tick = cycling ? r.now / 1000L : 0L;
             for (int i = 0; i < 9; i++) {
                 int sx = gx + (i % 3) * SLOT;
                 int sy = gy + (i / 3) * SLOT;
@@ -948,6 +959,16 @@ final class GuideBlocks {
                     ItemStack s = cand[(int) (tick % cand.length)];
                     if (r.solidReady()) {
                         g.renderItem(s, sx + 1, sy + 1);
+                    }
+                    if (cand.length > 1) {
+                        // 「不止一种」：右上角 3px 小三角，抬到物品图标之上
+                        g.pose().pushPose();
+                        g.pose().translate(0f, 0f, 200f);
+                        int tri = r.fill(GuideTheme.TECH);
+                        for (int k = 0; k < 3; k++) {
+                            g.fill(sx + SLOT - 4 + k, sy + 1 + k, sx + SLOT - 1, sy + 2 + k, tri);
+                        }
+                        g.pose().popPose();
                     }
                     if (r.over(sx, sy, SLOT, SLOT)) {
                         r.hoverStack = s;
@@ -984,7 +1005,7 @@ final class GuideBlocks {
     }
 
     /**
-     * 实体预览：模型随鼠标转头；建不出来时框里换成问号占位，框下照常写名字
+     * 实体预览：鼠标在阅读区时模型跟着鼠标转头，不在时静止侧身；建不出来时框里换成问号占位，框下照常写名字
      */
     private static final class EntityLaid extends Laid {
         final String id;
@@ -1021,7 +1042,7 @@ final class GuideBlocks {
             if (entity == null) {
                 if (inView) {
                     // 建不出来：框里只放一枚淡色问号占位，名字只在框下面写一次（原先框里框外各一遍，上下两行一模一样）
-                    g.drawString(r.font, "?", bx + (bw - qW) / 2, y + boxH / 2 - 4, r.text(GuideTheme.FAINT), false);
+                    g.drawString(r.font, "?", bx + (bw - qW) / 2, y + boxH / 2 - 4, r.text(GuideTheme.FAINT_TEXT), false);
                 }
             } else if (r.solidReady()) {
                 int cx = bx + bw / 2;
@@ -1035,9 +1056,8 @@ final class GuideBlocks {
                     lookX = cx - r.mouseX;
                     lookY = bottom - eye - r.mouseY;
                 } else {
-                    // 鼠标不在阅读区时缓缓左右环顾，不至于僵成一张贴图。
-                    // 周期 8 秒：能整除 GuideTheme.time() 的 720 秒回绕，回绕那一刻不会跳头
-                    lookX = (float) Math.sin(r.time * (Math.PI / 4.0)) * 30f;
+                    // 鼠标不在阅读区时停在微微侧身、略抬头的姿势（原先会自己左右环顾；读的地方不放常驻动画）
+                    lookX = 24f;
                     lookY = -10f;
                 }
                 PoseStack.Pose top = g.pose().last();

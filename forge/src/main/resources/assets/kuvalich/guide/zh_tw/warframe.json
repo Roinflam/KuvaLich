@@ -10,6 +10,9 @@
       "title": "戰甲軍械庫",
       "icon": "kuvalich:requiem_warframe_table",
       "summary": "裝戰甲模組的工作台：配方與用法",
+      "items": [
+        "kuvalich:requiem_warframe_table"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -110,6 +113,12 @@
       "title": "戰甲模組怎麼生效",
       "icon": "kuvalich:warframe_rare_module",
       "summary": "常駐生效、數值疊法、各詞條何時起作用",
+      "items": [
+        "kuvalich:warframe_common_module",
+        "kuvalich:warframe_uncommon_module",
+        "kuvalich:warframe_rare_module",
+        "kuvalich:warframe_prime_module"
+      ],
       "blocks": [
         {
           "type": "p",

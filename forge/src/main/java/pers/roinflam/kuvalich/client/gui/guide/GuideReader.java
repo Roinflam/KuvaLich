@@ -27,6 +27,15 @@ import java.util.Map;
  * <p>正文宽度最多 {@link GuideTheme#READ_MAX_W}，右栏更宽时居中、两侧留白。
  * 一行太长时眼睛换行容易找错下一行 —— 这和网页正文限宽是同一个道理。</p>
  *
+ * <h3>查阅定位</h3>
+ * <p>从物品提示上按住 Ctrl 查阅时，界面带着「条目 + 块序号」打开：{@link #scrollToBlock} 记下目标，
+ * 排版好之后把那一块滚到阅读栏上方，并让它亮一下（约 600ms 的猩红描边淡出）。
+ * 块序号是 {@link EntryView#blocks()} 里的下标，和查阅索引用的是同一份。</p>
+ *
+ * <h3>阅读位置锚定</h3>
+ * <p>换界面大小、改窗口大小后阅读栏变宽变窄、整篇重新排版，像素滚动量对不上原来的位置：
+ * 重排前 {@link #anchor()} 记下视口顶落在第几块、块内几成，排完 {@link #restoreAnchor} 换算回去。</p>
+ *
  * @author RoinFlam
  */
 @OnlyIn(Dist.CLIENT)
@@ -37,6 +46,8 @@ final class GuideReader {
     private static final int SCROLLBAR_ZONE = 8;
     /** 换篇时内容上浮淡入的时长 */
     private static final float SWAP_MS = 180f;
+    /** 查阅定位时的「亮一下」 */
+    private static final float FLASH_MS = 600f;
 
     /**
      * 一篇排好的版
@@ -45,13 +56,30 @@ final class GuideReader {
         final Laid[] blocks;
         final int[] ys;
         final int height;
+        /** 可见块（{@link EntryView#blocks()}）的序号 → 它在页里的 y 与高度；整块隐藏的块（查不到配方）落在下一块的位置、高度 0 */
+        final int[] blockY;
+        final int[] blockH;
+        /** 查阅滚到这一块时让它顶到的 y：紧挨在前面的是小标题就连小标题一起露出来 */
+        final int[] anchorY;
 
-        Page(Laid[] blocks, int[] ys, int height) {
+        Page(Laid[] blocks, int[] ys, int height, int[] blockY, int[] blockH, int[] anchorY) {
             this.blocks = blocks;
             this.ys = ys;
             this.height = height;
+            this.blockY = blockY;
+            this.blockH = blockH;
+            this.anchorY = anchorY;
         }
     }
+
+    /**
+     * 阅读位置的锚：视口顶落在第几块（排好的块，含篇首标题和篇末翻页卡）、块内几成
+     *
+     * @param entry 记锚时的那一篇（换篇了就不还原）
+     * @param index 块序号（{@link Page#blocks}）
+     * @param frac  视口顶在这一块里的比例（落在块前的空隙里时略小于 0）
+     */
+    record Anchor(EntryView entry, int index, float frac) {}
 
     private final GuideTextLayout text;
     private final GuideMedia media;
@@ -82,6 +110,12 @@ final class GuideReader {
     @Nullable
     private String pickHint;
     private int pickHintW;
+    /** 等排版好之后要滚到的块（-1 = 没有；-2 = 篇首也要亮一下） */
+    private int pendingBlock = -1;
+    /** 正在亮的块在页里的位置；flashAt = 0 表示没在亮 */
+    private int flashY;
+    private int flashH;
+    private long flashAt;
 
     GuideReader(GuideTextLayout text, GuideMedia media) {
         this.text = text;
@@ -118,9 +152,56 @@ final class GuideReader {
         this.scroll = scrollY;
         this.target = scrollY;
         this.dragging = false;
+        this.pendingBlock = -1;
         if (animate) {
             swappedAt = System.currentTimeMillis();
         }
+    }
+
+    /**
+     * 查阅定位：排版好之后把第 block 块（可见块序号，-1 = 篇首）滚到阅读栏上方并让它亮一下
+     */
+    void scrollToBlock(int block) {
+        pendingBlock = block < 0 ? -2 : block;
+    }
+
+    /**
+     * 记下当前阅读位置（重新排版之前调）；在篇首、还没排过版时返回 null（不用还原，滚动量 0 照旧是篇首）
+     */
+    @Nullable
+    Anchor anchor() {
+        Page p = lastPage;
+        if (entry == null || p == null || lastEntry != entry || p.blocks.length == 0 || target <= 0.5f) {
+            return null;
+        }
+        float vy = target - PAD_TOP;
+        int idx = p.blocks.length - 1;
+        for (int i = 0; i < p.blocks.length; i++) {
+            if (p.ys[i] + p.blocks[i].height > vy) {
+                idx = i;
+                break;
+            }
+        }
+        float bh = Math.max(1, p.blocks[idx].height);
+        return new Anchor(entry, idx, (vy - p.ys[idx]) / bh);
+    }
+
+    /**
+     * 按新的宽度排好版后，把滚动量换算回锚住的那一块（直接跳过去，不做平滑滚动）
+     */
+    void restoreAnchor(GuideView view, @Nullable Anchor a) {
+        if (a == null || a.entry() != entry) {
+            return;
+        }
+        Page p = page(view);
+        if (p == null || p.blocks.length == 0) {
+            return;
+        }
+        int idx = Math.min(a.index(), p.blocks.length - 1);
+        float vy = p.ys[idx] + a.frac() * p.blocks[idx].height;
+        float max = Math.max(0, p.height + PAD_TOP + PAD_BOTTOM - h);
+        pageHeight = p.height;
+        scroll = target = Math.max(0, Math.min(max, vy + PAD_TOP));
     }
 
     /**
@@ -147,7 +228,7 @@ final class GuideReader {
                 GuideLog.warnOnce("page:" + entry.key, entry.key + " 排版失败: " + e);
                 Laid msg = GuideBlocks.message(I18n.get("kuvalich.guide.entry_error"),
                         new GuideBlocks.Ctx(view, text, media, contentW));
-                p = new Page(new Laid[]{msg}, new int[]{0}, msg.height);
+                p = new Page(new Laid[]{msg}, new int[]{0}, msg.height, new int[0], new int[0], new int[0]);
             }
             cache.put(key, p);
         }
@@ -171,18 +252,13 @@ final class GuideReader {
         // 一块都没有（加载时缺 blocks 数组 / 块全坏）或者有块排版抛了异常：整篇空着时要说「出错」，
         // 不能和「条件把块全藏了」共用一句提示
         boolean broken = ev.entry.blocks.isEmpty();
-        List<Block> visible = new ArrayList<>();
-        for (Block b : ev.entry.blocks) {
-            if (view.values.test(b.cond)) {
-                Block vb = b.visible(view.values::test);
-                if (!vb.isHollow()) {
-                    visible.add(vb);
-                }
-            }
-        }
+        List<Block> visible = ev.blocks();
+        int[] blockY = new int[visible.size()];
+        int[] blockH = new int[visible.size()];
         int[] kvHint = kvRunHints(visible, ctx);
         for (int bi = 0; bi < visible.size(); bi++) {
             Block b = visible.get(bi);
+            blockY[bi] = -1;
             Laid l;
             try {
                 ctx.kvLabelHint = kvHint[bi];
@@ -199,9 +275,25 @@ final class GuideReader {
             cy += gapBefore(b.type, prev, content == 0);
             laid.add(l);
             ys.add(cy);
+            blockY[bi] = cy;
+            blockH[bi] = l.height;
             cy += l.height;
             prev = b.type;
             content++;
+        }
+        // 整块隐藏的块（查不到配方）：查阅落到它时停在下一块，后面都没有了就停在它前一块的末尾
+        int after = cy;
+        for (int bi = visible.size() - 1; bi >= 0; bi--) {
+            if (blockY[bi] < 0) {
+                blockY[bi] = after;
+            } else {
+                after = blockY[bi];
+            }
+        }
+        int[] anchorY = new int[visible.size()];
+        for (int bi = 0; bi < visible.size(); bi++) {
+            boolean headed = bi > 0 && visible.get(bi - 1).type == BlockType.H && blockH[bi - 1] > 0;
+            anchorY[bi] = headed ? blockY[bi - 1] : blockY[bi];
         }
         if (content > 0) {
             // 篇末翻页：按全书顺序接上一篇 / 下一篇（入门指南就是靠它串成一条教程线）
@@ -231,7 +323,7 @@ final class GuideReader {
         for (int i = 0; i < yArr.length; i++) {
             yArr[i] = ys.get(i);
         }
-        return new Page(laid.toArray(new Laid[0]), yArr, cy);
+        return new Page(laid.toArray(new Laid[0]), yArr, cy, blockY, blockH, anchorY);
     }
 
     /**
@@ -301,8 +393,8 @@ final class GuideReader {
         if (type == BlockType.DIVIDER || prev == BlockType.DIVIDER) {
             return 6;
         }
-        // 块与块之间多留两像素：中文正文本来就密，段落再挤在一起读起来像一整面墙
-        return 9;
+        // 块与块之间多留几像素：中文正文本来就密，段落再挤在一起读起来像一整面墙（行高 13 之后跟着加到 10）
+        return 10;
     }
 
     float maxScroll() {
@@ -333,12 +425,27 @@ final class GuideReader {
                 pickHint = I18n.get("kuvalich.guide.pick_entry");
                 pickHintW = r.font.width(pickHint);
             }
-            g.drawString(r.font, pickHint, x + (w - pickHintW) / 2, y + h / 2 - 4, GuideTheme.FAINT, false);
+            g.drawString(r.font, pickHint, x + (w - pickHintW) / 2, y + h / 2 - 4, GuideTheme.FAINT_TEXT, false);
             return;
         }
         Page page = page(view);
         pageHeight = page.height;
         float max = maxScroll();
+        if (pendingBlock != -1) {
+            // 查阅定位：目标块滚到阅读栏上方（留一行空），直接跳过去不做平滑滚动，然后亮一下
+            int block = pendingBlock;
+            pendingBlock = -1;
+            if (block >= 0 && block < page.blockY.length) {
+                flashY = page.blockY[block];
+                flashH = Math.max(page.blockH[block], 8);
+                scroll = target = Math.max(0, Math.min(max, page.anchorY[block] + PAD_TOP - 14));
+            } else {
+                flashY = 0;
+                flashH = page.blocks.length > 0 ? page.blocks[0].height : 0;
+                scroll = target = 0;
+            }
+            flashAt = System.currentTimeMillis();
+        }
         target = Math.max(0, Math.min(max, target));
         scroll = GuideTheme.approach(Math.min(scroll, max), target, delta, 18f);
 
@@ -352,6 +459,15 @@ final class GuideReader {
         int shift = Math.round((1f - swap) * 6f);
 
         int top = y + PAD_TOP - Math.round(scroll) + shift;
+        float flash = flashAt == 0L ? 0f : 1f - (System.currentTimeMillis() - flashAt) / FLASH_MS;
+        if (flash <= 0f) {
+            flashAt = 0L;
+        } else {
+            // 被查阅的那一块：底下一层极淡的猩红，块画完后再描一圈边（见下）
+            int fy = top + flashY - 4;
+            g.fill(contentX - 4, fy, contentX + contentW + 4, fy + flashH + 8,
+                    GuideTheme.withAlpha(GuideTheme.KUVA, (int) (0x22 * flash)));
+        }
         for (int i = 0; i < page.blocks.length; i++) {
             Laid b = page.blocks[i];
             int by = top + page.ys[i];
@@ -364,6 +480,17 @@ final class GuideReader {
             b.render(r, contentX, by, contentW);
         }
         r.alpha = 1f;
+        if (flash > 0f) {
+            int fy = top + flashY - 4;
+            // 描边抬到物品图标（z≈150）之上，但低于提示框（400）
+            g.pose().pushPose();
+            g.pose().translate(0f, 0f, 300f);
+            CodexTheme.brackets(g, contentX - 4, fy, contentW + 8, flashH + 8, 6,
+                    GuideTheme.withAlpha(GuideTheme.KUVA, (int) (0xF0 * flash)));
+            CodexTheme.border(g, contentX - 4, fy, contentW + 8, flashH + 8,
+                    GuideTheme.withAlpha(GuideTheme.KUVA, (int) (0x90 * flash)));
+            g.pose().popPose();
+        }
         r.clipTop = savedTop;
         r.clipBottom = savedBottom;
 

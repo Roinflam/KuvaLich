@@ -347,7 +347,7 @@ final class GuideSidebar {
         // 栏头：「目录 / 搜索结果」+ 计数
         g.drawString(r.font, headLabel, x + 6, y + 4, searchMode ? GuideTheme.TECH : GuideTheme.ASH, false);
         g.drawString(r.font, headCount, x + w - SCROLLBAR_ZONE - 2 - headCountW, y + 4,
-                searchMode && rows.isEmpty() ? GuideTheme.TAG_W : GuideTheme.FAINT, false);
+                searchMode && rows.isEmpty() ? GuideTheme.TAG_W : GuideTheme.FAINT_TEXT, false);
         g.fill(x + 4, y + HEAD_H, x + w - 4, y + HEAD_H + 1, GuideTheme.withAlpha(GuideTheme.EDGE, 0xA0));
 
         int top = listTop();
@@ -355,7 +355,7 @@ final class GuideSidebar {
         if (rows.isEmpty() && searchMode) {
             int ly = top + 10;
             for (String s : emptyLines) {
-                g.drawString(r.font, s, x + 8, ly, GuideTheme.FAINT, false);
+                g.drawString(r.font, s, x + 8, ly, GuideTheme.FAINT_TEXT, false);
                 ly += GuideTheme.LINE_H;
             }
             return;
@@ -401,7 +401,7 @@ final class GuideSidebar {
         icon(g, row.cat.icon(), x + 5, ry + 3);
         int color = active ? GuideTheme.BONE : hover ? GuideTheme.BONE : GuideTheme.ASH;
         g.drawString(r.font, row.label, x + 21, ry + 5, color, active);
-        g.drawString(r.font, row.count, x + rowW - 4 - row.countW, ry + 5, active ? GuideTheme.TECH : GuideTheme.FAINT, false);
+        g.drawString(r.font, row.count, x + rowW - 4 - row.countW, ry + 5, active ? GuideTheme.TECH : GuideTheme.FAINT_TEXT, false);
     }
 
     private void drawEntry(GuideRender r, Row row, int ry, int rowW, boolean hover, @Nullable EntryView current) {
@@ -415,9 +415,8 @@ final class GuideSidebar {
         int left = x + 16;
         if (selected) {
             g.fill(left, ry, x + rowW, ry + row.h, GuideTheme.withAlpha(GuideTheme.KUVA, 0x24));
-            // 选中行的竖条缓慢呼吸：一屏里唯一还在动的元素，视线离开再回来时能立刻找回当前位置
-            g.fill(left, ry, left + 2, ry + row.h,
-                    GuideTheme.fade(GuideTheme.KUVA, GuideTheme.breathe(r.time, 2.4f, 0.55f)));
+            // 选中行一道静止的猩红竖条（原先会缓慢呼吸；读的地方不放常驻动画，静止的猩红已经够找回当前位置）
+            g.fill(left, ry, left + 2, ry + row.h, GuideTheme.KUVA);
         } else if (hover) {
             GuideTheme.gradientRow(g, left, ry, x + rowW - left, row.h, GuideTheme.withAlpha(GuideTheme.TECH, 0x2A));
         }
@@ -441,7 +440,8 @@ final class GuideSidebar {
         }
         g.renderItem(row.entry.icon(), x + 4, ry + 3);
         g.drawString(r.font, row.label, x + 24, ry + 3, selected || hover ? GuideTheme.BONE : 0xFFB9C4CA, false);
-        g.drawString(r.font, row.sub, x + 24, ry + 13, GuideTheme.FAINT, false);
+        // 副标题平时用最淡的字；行一亮（悬停、键盘选中、当前篇）底色就跟着变亮，键盘选中那一档上 FAINT_TEXT 只剩约 3:1，换成标签色
+        g.drawString(r.font, row.sub, x + 24, ry + 13, selected || hover || focused ? GuideTheme.LABEL : GuideTheme.FAINT_TEXT, false);
         g.fill(x + 4, ry + row.h - 1, x + rowW - 4, ry + row.h, GuideTheme.withAlpha(GuideTheme.EDGE, 0x50));
     }
 

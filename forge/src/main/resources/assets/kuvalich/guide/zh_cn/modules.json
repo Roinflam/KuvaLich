@@ -10,6 +10,7 @@
       "title": "模组是什么、怎么装",
       "icon": "kuvalich:item_common_module",
       "summary": "两类模组、从哪来、揭示与安装",
+      "items": ["kuvalich:item_common_module", "kuvalich:item_uncommon_module", "kuvalich:item_rare_module", "kuvalich:item_prime_module"],
       "blocks": [
         {
           "type": "p",
@@ -649,6 +650,7 @@
       "title": "模组等级与内融核心",
       "icon": "kuvalich:endo",
       "summary": "等级折算、升级费用、内融核心来源",
+      "items": ["kuvalich:endo"],
       "blocks": [
         {
           "type": "p",
@@ -970,6 +972,7 @@
       "title": "裂罅模组",
       "icon": "kuvalich:item_riven_module",
       "summary": "随机词条、倾向性与循环洗词条",
+      "items": ["kuvalich:item_riven_module", "kuvalich:warframe_riven_module"],
       "blocks": [
         {
           "type": "p",

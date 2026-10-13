@@ -12,6 +12,9 @@ import net.minecraftforge.common.ForgeConfigSpec;
  * 所以联机时客户端读的其实一直是自己那份——观感项这样没问题，
  * 但数值项这么做会让面板和服务端实际生效值对不上。）</p>
  *
+ * <p>文件名叫 tooltip，但这份文件放的是<b>所有纯客户端的观感项</b>：冒险指南的界面大小在 {@code [guide]} 小节
+ * （{@link GuideDisplayConfig}），没有另开第二个 CLIENT 文件。</p>
+ *
  * @author RoinFlam
  */
 public final class TooltipConfig {
@@ -25,6 +28,7 @@ public final class TooltipConfig {
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         PANEL = new PanelConfig(builder);
+        GuideDisplayConfig.define(builder);
         CLIENT_CONFIG = builder.build();
     }
 

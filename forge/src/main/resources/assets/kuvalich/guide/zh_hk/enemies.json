@@ -10,6 +10,9 @@
       "title": "赤毒奴僕",
       "icon": "kuvalich:kuva_slave_spawn_egg",
       "summary": "最常打的小兵：攢解密進度、掉材料和模組",
+      "items": [
+        "kuvalich:kuva_slave_spawn_egg"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -246,6 +249,9 @@
       "title": "赤毒玄骸",
       "icon": "kuvalich:kuva_master_spawn_egg",
       "summary": "Boss：怎麼遇到、打贏後得到什麼",
+      "items": [
+        "kuvalich:kuva_master_spawn_egg"
+      ],
       "blocks": [
         {
           "type": "p",

@@ -280,6 +280,7 @@
       "title": "Requiem Recast",
       "icon": "kuvalich:requiem_recast",
       "summary": "3-in-1 trades; break mods into Endo",
+      "items": ["kuvalich:requiem_recast"],
       "blocks": [
         {
           "type": "p",
@@ -357,6 +358,7 @@
       "title": "Requiem Forge",
       "icon": "kuvalich:requiem_evolve",
       "summary": "Fuse weapons, consecrate, re-roll panels",
+      "items": ["kuvalich:requiem_evolve"],
       "blocks": [
         {
           "type": "p",
@@ -440,6 +442,7 @@
       "title": "Weapon Arsenal",
       "icon": "kuvalich:requiem_weapon_table",
       "summary": "Install and remove weapon mods",
+      "items": ["kuvalich:requiem_weapon_table"],
       "blocks": [
         {
           "type": "p",
@@ -565,6 +568,7 @@
       "title": "Forma",
       "icon": "kuvalich:forma",
       "summary": "Re-roll the base panel of non-Kuva weapons",
+      "items": ["kuvalich:forma", "kuvalich:shadow_forma"],
       "blocks": [
         {
           "type": "p",
@@ -617,7 +621,7 @@
           "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"],
           "text": "Every re-roll with a normal Forma has a {cfg:kuva_lich.formaLockChance|pctv} chance to <b>permanently lock</b> the weapon. A locked weapon shows “{lang:item.kuvalich.forma_locked}” at the top of its panel, and normal Forma can no longer touch it."
         },
-        { "type": "h", "text": "Shadow Forma" },
+        { "type": "h", "text": "{item:kuvalich:shadow_forma}" },
         {
           "type": "list",
           "items": [
@@ -646,6 +650,7 @@
       "title": "Heavy Weapons in Detail",
       "icon": "kuvalich:arca_titron",
       "summary": "Passives and numbers of the 7 heavy weapons",
+      "items": ["kuvalich:kuva_shildeg", "kuvalich:paracesis", "kuvalich:arca_titron", "kuvalich:vitrica", "kuvalich:gram_prime", "kuvalich:sancti_magistar", "kuvalich:prisma_veritux"],
       "blocks": [
         {
           "type": "p",
@@ -742,6 +747,7 @@
       "title": "Light Weapons in Detail",
       "icon": "kuvalich:pennant",
       "summary": "Passives and numbers of the 6 light weapons",
+      "items": ["kuvalich:pennant", "kuvalich:guandao_prime", "kuvalich:reaper_prime", "kuvalich:destreza_prime", "kuvalich:machete", "kuvalich:caustacyst"],
       "blocks": [
         {
           "type": "p",

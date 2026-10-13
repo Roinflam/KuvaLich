@@ -21,6 +21,25 @@ import pers.roinflam.kuvalich.client.gui.codex.CodexTheme;
  * 行内标签的颜色与武器 tooltip（{@code client.tooltip.PanelPalette}）逐一对齐 ——
  * 书里写「<g>增益</g>」「<b>减益</b>」时，颜色和玩家在面板上看到的一模一样。</p>
  *
+ * <h3>读的地方不动（2026-10-13 起）</h3>
+ * <p>阅读栏、左栏、首页格子区里<b>没有常驻动画</b>：条目头的流光、左栏选中竖条的呼吸、实体预览自己环顾、
+ * 首页上浮的数据微粒都改成了静止 —— 读久了，视野边上一直有东西在动会累眼睛。全屏只留顶栏分隔线上那一道
+ * 往复的扫描亮点（{@link CodexTheme#dataLine}，顶栏不是读字的地方）。悬停、按下、换页、开场收场是事件，
+ * 不算常驻。配方里的候选材料只在鼠标压着那张配方时轮换。</p>
+ *
+ * <h3>对比度（WCAG 相对亮度；半透明的底按合成后的不透明色算）</h3>
+ * <p>阅读栏底 {@link #PLATE} #0C1013。<b>正文</b> {@link #BODY} 对它 11.0:1 —— 落在 9~12:1 里
+ * （原先 12.2:1，近黑底上字边发晕）；顶栏 / 底栏 {@link #PLATE_HI} 上 10.3:1、提示框 {@link #TIP_BG} 上 10.1:1、
+ * 按下的底 {@link #PRESS_BG} 上 10.3:1。标题和悬停字 {@link #BONE} 15.1:1（只用在短字上）。
+ * <b>次要字</b> {@link #ASH} 6.2:1（最低 5.7:1，提示框上）；<b>最次要的字</b> {@link #FAINT_TEXT} 4.9:1
+ * （{@link #PLATE_HI} 上 4.5:1、左栏底 #090C0E 上 5.0:1；提示框底上只有 4.47:1，所以提示框里不用它）。
+ * 它只放在不变色的底上：首页格子、继续阅读条、左栏的行一悬停 / 选中底色就变亮（首页悬停底 4.4:1，左栏键盘选中的结果行约 3:1），
+ * 这些地方的 FAINT_TEXT 随悬停 / 选中换成 {@link #ASH} 或更亮的字。{@link #FAINT} 只有 2.8:1，只当线条、图标、禁用态用，不当字用。
+ * 键值表标签 {@link #LABEL} 8.7:1、链接 {@link #LINK} 9.6:1、物品链接 {@link #ITEM_LINK} 11.4:1、
+ * 科技青 {@link #TECH} 11.0:1；赤毒猩红 {@link #KUVA} 5.5:1，当字只用在悬停的链接上。
+ * 提示框上 {@link #KUVA} 5.0:1、{@link #TIP_BAD} 6.3:1、{@link #TIP_WF} 8.0:1。
+ * 改色时按同样的算法复核：正文 9~12:1，次要字不低于 4.5:1。</p>
+ *
  * @author RoinFlam
  */
 @OnlyIn(Dist.CLIENT)
@@ -42,12 +61,20 @@ public final class GuideTheme {
     public static final int EMBER = CodexTheme.EMBER;
     public static final int BONE = CodexTheme.BONE;
     public static final int ASH = CodexTheme.ASH;
+    /** 最淡的结构色：线条、图标、禁用态。<b>不当字用</b>（对 {@link #PLATE} 只有 2.8:1），当字用 {@link #FAINT_TEXT} */
     public static final int FAINT = CodexTheme.FAINT;
+    /**
+     * 最次要的字：底栏提示、搜索框占位、左栏计数与副标题、空状态、首页序号、继续阅读条的分类名。
+     * 对 {@link #PLATE} 4.9:1、顶栏 / 底栏 4.5:1；提示框底上 4.47:1、悬停的格子底上 4.4:1，这两处不用它（见类注释）
+     */
+    public static final int FAINT_TEXT = 0xFF72838D;
+    /** 按下时的底：赤毒暗面，只在按住的那一下出现（{@link #BONE} 14.1:1、正文 10.3:1、{@link #ASH} 5.8:1） */
+    public static final int PRESS_BG = 0xFF24121A;
 
     // ==================== 正文与行内标签 ====================
 
-    /** 正文：比 BONE 暗半档，长时间阅读不刺眼 */
-    public static final int BODY = 0xFFC6D0D6;
+    /** 正文：比 BONE 暗一档，对阅读栏底 11.0:1，长时间阅读不刺眼、字边不发晕 */
+    public static final int BODY = 0xFFBCC6CC;
     /** {@code <hl>}：关键术语，赤毒猩红（全书唯一强焦点色） */
     public static final int TAG_HL = KUVA;
     /** {@code <t>}：科技青，取 tooltip 的叠层值色 {@code PanelPalette.STACKED} */
@@ -70,6 +97,11 @@ public final class GuideTheme {
      * 淡蓝紫加一条虚线下划线，和元素色里饱和度更高的电击 / 磁力也拉得开。悬停时转猩红 + 实线。</p>
      */
     public static final int LINK = 0xFF9AB6FF;
+    /**
+     * 物品链接色（正文里的 {@code {item:…}}）：偏青的浅灰蓝，和条目链接的 {@link #LINK} 分开 ——
+     * 一个是「点了翻到别的篇」，一个是「指上去看物品提示」。同样带点线下划线，悬停转猩红。对阅读栏底 11.4:1
+     */
+    public static final int ITEM_LINK = 0xFF9FD0DC;
     /** 配置里缺这个键时显示的「?」 */
     public static final int MISSING = TAG_W;
 
@@ -91,6 +123,11 @@ public final class GuideTheme {
     public static final int TIP_BAD = 0xFFFF6B6B;
     /** 星际战甲小知识：淡紫，和功能性提示（青/橙/绿/红）一眼分开，表示「这是背景知识，可以跳过」 */
     public static final int TIP_WF = 0xFFB9A0FF;
+    /**
+     * 提示框的底：所有样式同一个底（比 {@link #PLATE} 亮半档的冷灰），颜色只留在左色条和标题上。
+     * 原先叠一层半透明的同色底，青、猩红叠在近黑上会混出发灰的脏色
+     */
+    public static final int TIP_BG = 0xFF141A1F;
 
     // ==================== 尺寸 ====================
 
@@ -102,8 +139,13 @@ public final class GuideTheme {
     public static final int PAD = 10;
     /** 主框体切角 */
     public static final int CHAMFER = 10;
-    /** 正文行高（字高 9 + 行距 2） */
-    public static final int LINE_H = 12;
+    /**
+     * 正文行高（字高 9 + 阴影 1 + 行距 3）。中文一行 9 像素的字排得密，多空一像素换行时不容易跳错行。
+     * 所有块的高度、链接热区、滚动步长都按它算；块高用 {@code 行数 × LINE_H − }{@link #LINE_TAIL}（最后一行不留行距）
+     */
+    public static final int LINE_H = 13;
+    /** 一段文字最后一行下面不留的那截行距：{@code LINE_H − 10}（字 9 像素 + 阴影 1 像素） */
+    public static final int LINE_TAIL = LINE_H - 10;
 
     // ==================== 像素点阵数字 ====================
 
@@ -221,21 +263,7 @@ public final class GuideTheme {
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
-    // ==================== 时间与曲线 ====================
-
-    /**
-     * 常驻动画共用的时间源（秒）。取模 12 分钟，免得游戏开久了浮点精度变差。
-     *
-     * <p>回绕那一刻时间从 720 跳回 0，只有周期能整除 720 秒的动画才看不出接缝：
-     * 现有的流光 {@link #sweep} 9 秒（80 圈）、选中行呼吸 2.4 秒（300 圈）、实体预览环顾 8 秒（90 圈）。
-     * <b>以后新加常驻动画，周期也必须能整除 720 秒</b>，否则每 12 分钟会瞬移一次
-     * （原先取模 10 分钟，9 秒的流光就是这样每 10 分钟跳一下）。</p>
-     *
-     * @return 秒
-     */
-    public static float time() {
-        return (System.currentTimeMillis() % 720_000L) / 1000f;
-    }
+    // ==================== 曲线 ====================
 
     /** 缓出：开头快、结尾慢。用于出现 —— 滑进来后稳稳停住。 */
     public static float easeOutCubic(float t) {
@@ -270,12 +298,6 @@ public final class GuideTheme {
         return Math.abs(target - next) < 0.02f ? target : next;
     }
 
-    /** 呼吸系数：在 min 与 1 之间以 period 秒为周期平滑往复。 */
-    public static float breathe(float time, float period, float min) {
-        float wave = (float) ((Math.sin(time / period * Math.PI * 2.0) + 1.0) * 0.5);
-        return min + (1f - min) * wave;
-    }
-
     // ==================== 绘制原语 ====================
 
     public static boolean hit(double mx, double my, int x, int y, int w, int h) {
@@ -305,42 +327,6 @@ public final class GuideTheme {
             g.fill(width - left - stepX, top, width, height - top, color);
             g.fill(left + stepX, 0, width - left - stepX, top + stepY, color);
             g.fill(left + stepX, height - top - stepY, width - left - stepX, height, color);
-        }
-    }
-
-    /**
-     * 水平线上一段缓慢往复的流光（三角波来回扫，不会在回到起点时瞬移）。固定分段画，宽屏上也只是几十次 fill。
-     *
-     * @param g        画布
-     * @param x        左
-     * @param y        线所在行
-     * @param width    宽
-     * @param time     {@link #time()}
-     * @param phase    相位偏移：不同的线错开，免得整屏高光同步扫动像跑马灯
-     * @param color    颜色
-     * @param strength 0~1
-     */
-    public static void sweep(GuiGraphics g, int x, int y, int width, float time, float phase, int color, float strength) {
-        if (width <= 0 || strength <= 0f) {
-            return;
-        }
-        final int segments = 24;
-        float t = ((time / 9f) + phase) % 1f;
-        float tri = t < 0.5f ? t * 2f : (1f - t) * 2f;
-        int center = x + (int) (tri * width);
-        int half = Math.max(16, width / 6);
-        int step = Math.max(1, half * 2 / segments);
-        for (int i = 0; i < segments; i++) {
-            int sx = center - half + i * step;
-            int ex = Math.min(sx + step, x + width);
-            if (ex <= x || sx >= x + width) {
-                continue;
-            }
-            float falloff = 1f - Math.min(1f, Math.abs((sx + ex) * 0.5f - center) / half);
-            int alpha = (int) (170 * falloff * falloff * strength);
-            if (alpha > 2) {
-                g.fill(Math.max(x, sx), y, ex, y + 1, withAlpha(color, alpha));
-            }
         }
     }
 
@@ -479,6 +465,48 @@ public final class GuideTheme {
         g.fill(x + 1, y + 4, x + 4, y + 5, color);
         g.fill(x + 4, y + 5, x + 5, y + 6, color);
         g.fill(x + 5, y + 6, x + 6, y + 7, color);
+    }
+
+    /**
+     * 像素「Aa」：顶栏调界面大小的按钮（大 A 7 行高、小 a 5 行高，底边对齐）。和放大镜、房子同一类，自己画不随字体包变
+     *
+     * @param cx 中心 x
+     * @param cy 中心 y
+     */
+    public static void scaleGlyph(GuiGraphics g, int cx, int cy, int color) {
+        int x = cx - 5;
+        int top = cy - 3;
+        // 大 A（5 宽）：尖顶、两条斜腿、第 5 行横梁
+        g.fill(x + 2, top, x + 3, top + 1, color);
+        g.fill(x + 1, top + 1, x + 2, top + 3, color);
+        g.fill(x + 3, top + 1, x + 4, top + 3, color);
+        g.fill(x, top + 3, x + 1, top + 7, color);
+        g.fill(x + 4, top + 3, x + 5, top + 7, color);
+        g.fill(x + 1, top + 4, x + 4, top + 5, color);
+        // 小 a（4 宽，后 5 行）：顶弧、右竖、中横、左下、底横
+        int ax = x + 6;
+        int at = top + 2;
+        g.fill(ax + 1, at, ax + 3, at + 1, color);
+        g.fill(ax + 3, at + 1, ax + 4, at + 5, color);
+        g.fill(ax + 1, at + 2, ax + 3, at + 3, color);
+        g.fill(ax, at + 3, ax + 1, at + 4, color);
+        g.fill(ax + 1, at + 4, ax + 3, at + 5, color);
+    }
+
+    /** 悬停「锁定括号」从块外收到四角上的时长 */
+    public static final float LOCK_MS = 120f;
+
+    /**
+     * 悬停的「锁定括号」：鼠标刚压上首页格子 / 顶栏按钮 / 继续阅读条时，四个角括号从块外 4px 收到块的四角上
+     * （easeOutBack，带一点卡入的回弹），到位后静止，移开就消失 —— 和开场的锁定框是同一个意象
+     *
+     * @param p     收拢进度 0~1，≥ 1 时静止在四角上
+     * @param color 颜色（赤毒猩红）
+     */
+    public static void lockBrackets(GuiGraphics g, int x, int y, int w, int h, float p, int color) {
+        int off = Math.max(0, Math.round((1f - easeOutBack(p)) * 4f));
+        int len = Mth.clamp(Math.min(w, h) / 4, 3, 6);
+        CodexTheme.brackets(g, x - off, y - off, w + off * 2, h + off * 2, len, color);
     }
 
     /**

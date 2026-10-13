@@ -10,6 +10,7 @@
       "title": "赤毒奴仆",
       "icon": "kuvalich:kuva_slave_spawn_egg",
       "summary": "最常打的小兵：攒解密进度、掉材料和模组",
+      "items": ["kuvalich:kuva_slave_spawn_egg"],
       "blocks": [
         { "type": "p", "text": "<hl>{lang:entity.kuvalich.kuva_slave}</hl>是本模组的小兵，也是最常见的赤毒敌人。每亲手杀一只，就离打败 Boss {lang:entity.kuvalich.kuva_master}近一步，还可能掉材料和模组。" },
         { "type": "entity", "id": "kuvalich:kuva_slave", "height": 88 },
@@ -108,6 +109,7 @@
       "title": "赤毒玄骸",
       "icon": "kuvalich:kuva_master_spawn_egg",
       "summary": "Boss：怎么遇到、打赢后得到什么",
+      "items": ["kuvalich:kuva_master_spawn_egg"],
       "blocks": [
         { "type": "p", "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是本模组的 Boss，也是安魂解密这条玩法的终点。你攒进度、猜卡片顺序，最后都要在它身上验证：猜对了，就能拿到赤毒武器等大奖。" },
         { "type": "entity", "id": "kuvalich:kuva_master", "height": 96 },

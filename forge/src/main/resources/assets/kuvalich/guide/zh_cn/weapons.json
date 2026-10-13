@@ -338,6 +338,7 @@
       "title": "安魂之铸",
       "icon": "kuvalich:requiem_recast",
       "summary": "三合一、分解模组换内融核心",
+      "items": ["kuvalich:requiem_recast"],
       "blocks": [
         {
           "type": "p",
@@ -436,6 +437,7 @@
       "title": "安魂之融",
       "icon": "kuvalich:requiem_evolve",
       "summary": "融合武器、开光、洗面板",
+      "items": ["kuvalich:requiem_evolve"],
       "blocks": [
         {
           "type": "p",
@@ -536,6 +538,7 @@
       "title": "武器军械库",
       "icon": "kuvalich:requiem_weapon_table",
       "summary": "给武器装卸模组",
+      "items": ["kuvalich:requiem_weapon_table"],
       "blocks": [
         {
           "type": "p",
@@ -693,6 +696,7 @@
       "title": "塑形块",
       "icon": "kuvalich:forma",
       "summary": "重洗非赤毒武器的基础面板",
+      "items": ["kuvalich:forma", "kuvalich:shadow_forma"],
       "blocks": [
         {
           "type": "p",
@@ -745,7 +749,7 @@
           "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"],
           "text": "每用普通塑形块洗一次，都有 {cfg:kuva_lich.formaLockChance|pctv} 概率把这把武器<b>永久锁定</b>。锁定后面板顶部多一行「{lang:item.kuvalich.forma_locked}」，普通塑形块再也洗不动它。"
         },
-        { "type": "h", "text": "暗影塑形块" },
+        { "type": "h", "text": "{item:kuvalich:shadow_forma}" },
         {
           "type": "list",
           "items": [
@@ -792,6 +796,7 @@
       "title": "重型武器详解",
       "icon": "kuvalich:arca_titron",
       "summary": "7 把重型武器的被动与具体数值",
+      "items": ["kuvalich:kuva_shildeg", "kuvalich:paracesis", "kuvalich:arca_titron", "kuvalich:vitrica", "kuvalich:gram_prime", "kuvalich:sancti_magistar", "kuvalich:prisma_veritux"],
       "blocks": [
         {
           "type": "p",
@@ -912,6 +917,7 @@
       "title": "轻型武器详解",
       "icon": "kuvalich:pennant",
       "summary": "6 把轻型武器的被动与具体数值",
+      "items": ["kuvalich:pennant", "kuvalich:guandao_prime", "kuvalich:reaper_prime", "kuvalich:destreza_prime", "kuvalich:machete", "kuvalich:caustacyst"],
       "blocks": [
         {
           "type": "p",

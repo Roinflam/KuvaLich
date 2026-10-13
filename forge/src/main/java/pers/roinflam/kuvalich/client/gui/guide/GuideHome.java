@@ -37,7 +37,12 @@ import java.util.List;
  * {@link GuideIntro#BEAM_MS}ms 匀速扫过面板）到达格子顶边的时刻，同一行里再从左到右各错开
  * {@value #INTRO_COL_MS}ms —— 光束扫到哪、哪里的格子就成形；回首页时不跟光束，
  * 按序号从 {@value #TILE_DELAY_MS}ms 起每格错开 {@value #TILE_STAGGER_MS}ms。</p>
- * <p>悬停时上浮 2px、描边转猩红并外溢一圈辉光、徽框描边一起转猩红。悬停过渡用指数趋近，与帧率无关。</p>
+ * <p>开场这一轮的时钟读开场时间轴（{@link #setIntroTime}，界面每帧给 {@code GuideIntro#openT}：逐帧累加、跳过开场时一并拨到头）；
+ * 回首页时按墙钟。</p>
+ * <p>悬停时上浮 2px、描边转猩红并外溢一圈辉光、徽框描边一起转猩红，四个角括号从格子外 4px 收到四角上
+ * （「锁定括号」，{@link GuideTheme#lockBrackets}，一秒至多收 3 次，见 {@link GuideLockBudget}）；
+ * 按住时沉回原位、底色转暗（{@link GuideTheme#PRESS_BG}）。悬停过渡用指数趋近，与帧率无关。
+ * 格子区里没有常驻动画（原先格子缝里有上浮的数据微粒，去掉了）。</p>
  *
  * @author RoinFlam
  */
@@ -125,9 +130,13 @@ final class GuideHome {
     private final GuideScrollDrag bar = new GuideScrollDrag();
     private float[] hover = new float[0];
     private float contHover;
+    /** 各格（最后一个是继续阅读条）开始悬停的时刻；0 = 没在悬停。锁定括号按它收拢 */
+    private long[] lockAt = new long[1];
     private long shownAt;
     /** 这一轮成形是不是开场：是就跟着开场光束走 */
     private boolean intro;
+    /** 开场这一轮的时钟：开场时间轴上的毫秒（{@link #setIntroTime}） */
+    private float introTime;
     /** 开场光束扫过的范围（就是整块面板） */
     private int beamTop;
     private int beamH = 1;
@@ -150,6 +159,7 @@ final class GuideHome {
         int n = cats.size();
         if (changed || hover.length != n) {
             hover = new float[n];
+            lockAt = new long[n + 1];
         }
 
         cols = 3;
@@ -246,13 +256,25 @@ final class GuideHome {
     }
 
     /**
-     * 开场：格子跟着开场扫描光束成形
-     *
-     * @param openedAt 界面打开的时刻（开场时间轴的零点）
+     * 开场：格子跟着开场扫描光束成形（时钟由 {@link #setIntroTime} 每帧给）
      */
-    void restartIntro(long openedAt) {
-        shownAt = openedAt;
+    void restartIntro() {
         intro = true;
+        introTime = 0f;
+        scroll = target = 0;
+    }
+
+    /**
+     * 开场这一轮成形的时钟（每帧由界面给）：开场时间轴上的毫秒
+     *
+     * @param openT {@code GuideIntro#openT}
+     */
+    void setIntroTime(float openT) {
+        introTime = openT;
+    }
+
+    /** 首页滚回顶部（换了界面大小：列数、格子高度变了，原来的滚动量对不上） */
+    void scrollToTop() {
         scroll = target = 0;
     }
 
@@ -264,6 +286,7 @@ final class GuideHome {
 
     /** 跳过开场：所有格子直接成形完毕 */
     void finishAppear() {
+        intro = false;
         shownAt = Long.MIN_VALUE / 4;
     }
 
@@ -299,7 +322,8 @@ final class GuideHome {
 
     /** 成形进度 0~1（线性） */
     private float form(int i, long now) {
-        float elapsed = (float) (now - shownAt) - formDelay(i);
+        float t = intro ? introTime : (float) (now - shownAt);
+        float elapsed = t - formDelay(i);
         return elapsed <= 0f ? 0f : Math.min(1f, elapsed / FORM_MS);
     }
 
@@ -397,7 +421,7 @@ final class GuideHome {
         scroll = GuideTheme.approach(scroll, target, delta, 18f);
 
         if (cats.isEmpty()) {
-            g.drawString(r.font, emptyText, x + (w - emptyW) / 2, y + h / 2 - 4, GuideTheme.FAINT, false);
+            g.drawString(r.font, emptyText, x + (w - emptyW) / 2, y + h / 2 - 4, GuideTheme.FAINT_TEXT, false);
             return;
         }
 
@@ -407,6 +431,16 @@ final class GuideHome {
         }
         boolean contOver = settled && r.mouseActive && overContinue(r.mouseX, r.mouseY, now);
         contHover = GuideTheme.approach(contHover, contOver ? 1f : 0f, delta, 16f);
+        for (int i = 0; i < lockAt.length; i++) {
+            boolean on = i < cats.size() ? i == hovered : contOver;
+            if (!on) {
+                lockAt[i] = 0L;
+            } else if (lockAt[i] == 0L) {
+                // 刚压上：收一次括号；一秒里已经收满 3 次就直接静止在四角上
+                boolean animate = r.lockBudget == null || r.lockBudget.tryUse(now);
+                lockAt[i] = animate ? now : now - (long) GuideTheme.LOCK_MS;
+            }
+        }
 
         // 裁剪框用屏幕坐标（offsetY 现在恒为 0：面板开合只裁剪不平移）；上下各多留几像素给悬停上浮和辉光
         g.enableScissor(x - 4, y - 3 + offsetY, x + w + 4, y + h + offsetY);
@@ -457,18 +491,20 @@ final class GuideHome {
         float a = Mth.clamp(appear, 0f, 1f);
         float hv = hover[i];
 
-        // 浮现时从 0.85 倍回弹到原大，悬停时上浮 2px；用 pose 做，格子里的所有东西一起动
+        // 浮现时从 0.85 倍回弹到原大，悬停时上浮 2px、按住时沉回原位；用 pose 做，格子里的所有东西一起动
+        boolean press = r.mouseDown && hv > 0.5f;
         float cx = tx + tileW / 2f;
         float cy = ty + tileH / 2f;
         float scale = 0.85f + 0.15f * appear;
         g.pose().pushPose();
-        g.pose().translate(cx, cy - 2f * hv, 0f);
+        g.pose().translate(cx, cy - (press ? 0f : 2f * hv), 0f);
         g.pose().scale(scale, scale, 1f);
         g.pose().translate(-cx, -cy, 0f);
 
         int cut = 6;
-        CodexTheme.chamferFill(g, tx, ty, tileW, tileH, cut, GuideTheme.fade(GuideTheme.lerpColor(TILE_BG, TILE_BG_HOVER, hv), a));
-        if (hv > 0.01f) {
+        int bg = press ? GuideTheme.PRESS_BG : GuideTheme.lerpColor(TILE_BG, TILE_BG_HOVER, hv);
+        CodexTheme.chamferFill(g, tx, ty, tileW, tileH, cut, GuideTheme.fade(bg, a));
+        if (hv > 0.01f && !press) {
             // 自上而下一道极淡的猩红，像被点亮
             for (int k = 0; k < 5; k++) {
                 g.fill(tx + cut, ty + 1 + k * 3, tx + tileW - cut, ty + 4 + k * 3,
@@ -483,10 +519,15 @@ final class GuideHome {
             int edge = GuideTheme.lerpColor(GuideTheme.withAlpha(GuideTheme.EDGE, 0xFF), GuideTheme.KUVA, hv);
             CodexTheme.chamferOutline(g, tx, ty, tileW, tileH, cut, GuideTheme.fade(edge, a));
         }
+        if (lockAt[i] != 0L) {
+            GuideTheme.lockBrackets(g, tx, ty, tileW, tileH, (r.now - lockAt[i]) / GuideTheme.LOCK_MS, GuideTheme.fade(GuideTheme.KUVA, a));
+        }
 
         int titleColor = GuideTheme.textAlpha(GuideTheme.lerpColor(GuideTheme.BONE, 0xFFFFFFFF, hv), a);
         int subColor = GuideTheme.textAlpha(GuideTheme.ASH, a);
-        int countColor = GuideTheme.textAlpha(GuideTheme.lerpColor(GuideTheme.FAINT, GuideTheme.TECH, hv), a);
+        int countColor = GuideTheme.textAlpha(GuideTheme.lerpColor(GuideTheme.FAINT_TEXT, GuideTheme.TECH, hv), a);
+        // 序号随悬停提亮到次要字：悬停底色更亮，FAINT_TEXT 在上面只剩 4.4:1，顶上还叠着一层淡猩红
+        int indexColor = GuideTheme.textAlpha(GuideTheme.lerpColor(GuideTheme.FAINT_TEXT, GuideTheme.ASH, hv), a);
         int emblemEdge = GuideTheme.fade(GuideTheme.lerpColor(GuideTheme.withAlpha(GuideTheme.TECH, 0xA0), GuideTheme.KUVA, hv), a);
         List<String> sub = subtitles.get(i);
         if (vertical) {
@@ -494,7 +535,7 @@ final class GuideHome {
             int ey = ty + 9;
             GuideTheme.emblem(g, ex, ey, emblem, GuideTheme.fade(GuideTheme.PLATE_DEEP, a), emblemEdge);
             icon(g, cat.icon(), ex + emblem / 2f, ey + emblem / 2f, a);
-            g.drawString(r.font, indices[i], tx + 6, ty + 5, GuideTheme.textAlpha(GuideTheme.FAINT, a), false);
+            g.drawString(r.font, indices[i], tx + 6, ty + 5, indexColor, false);
             g.drawString(r.font, counts[i], tx + tileW - 6 - countW[i], ty + 5, countColor, false);
             g.drawString(r.font, titles[i], (int) (cx - titleW[i] / 2f), ey + emblem + 7, titleColor, true);
             int ly = ey + emblem + 20;
@@ -552,11 +593,16 @@ final class GuideHome {
         int bx = gridX;
         // 不再上浮滑入：外框先在最终位置描出来，内容在框里淡入，滑动会让底色探出框外
         int by = cy;
+        boolean press = r.mouseDown && hv > 0.5f;
         CodexTheme.chamferFill(g, bx, by, gridW, CONT_H, 4,
-                GuideTheme.fade(GuideTheme.lerpColor(TILE_BG, TILE_BG_HOVER, hv), a));
+                GuideTheme.fade(press ? GuideTheme.PRESS_BG : GuideTheme.lerpColor(TILE_BG, TILE_BG_HOVER, hv), a));
         if (withOutline) {
             CodexTheme.chamferOutline(g, bx, by, gridW, CONT_H, 4,
                     GuideTheme.fade(GuideTheme.lerpColor(GuideTheme.withAlpha(GuideTheme.EDGE, 0xFF), GuideTheme.KUVA, hv), a));
+        }
+        long lock = lockAt[lockAt.length - 1];
+        if (lock != 0L) {
+            GuideTheme.lockBrackets(g, bx, by, gridW, CONT_H, (r.now - lock) / GuideTheme.LOCK_MS, GuideTheme.fade(GuideTheme.KUVA, a));
         }
         int ty = by + (CONT_H - 8) / 2;
         GuideTheme.chevron(g, bx + 10 + Math.round(hv * 2f), by + CONT_H / 2, false,
@@ -566,7 +612,9 @@ final class GuideHome {
         tx += contLabelW + 8;
         g.drawString(r.font, contTitle, tx, ty, GuideTheme.textAlpha(GuideTheme.lerpColor(GuideTheme.BONE, 0xFFFFFFFF, hv), a), true);
         if (!contCat.isEmpty()) {
-            g.drawString(r.font, contCat, bx + gridW - 8 - contCatW, ty, GuideTheme.textAlpha(GuideTheme.FAINT, a), false);
+            // 同首页序号：悬停底色上 FAINT_TEXT 不够 4.5:1，随悬停提亮到次要字
+            g.drawString(r.font, contCat, bx + gridW - 8 - contCatW, ty,
+                    GuideTheme.textAlpha(GuideTheme.lerpColor(GuideTheme.FAINT_TEXT, GuideTheme.ASH, hv), a), false);
         }
     }
 

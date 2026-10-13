@@ -604,6 +604,9 @@
       "title": "安魂之鑄",
       "icon": "kuvalich:requiem_recast",
       "summary": "三合一、分解模組換內融核心",
+      "items": [
+        "kuvalich:requiem_recast"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -750,6 +753,9 @@
       "title": "安魂之融",
       "icon": "kuvalich:requiem_evolve",
       "summary": "融合武器、開光、洗面板",
+      "items": [
+        "kuvalich:requiem_evolve"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -889,6 +895,9 @@
       "title": "武器軍械庫",
       "icon": "kuvalich:requiem_weapon_table",
       "summary": "給武器裝卸模組",
+      "items": [
+        "kuvalich:requiem_weapon_table"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -1107,6 +1116,10 @@
       "title": "塑形塊",
       "icon": "kuvalich:forma",
       "summary": "重洗非赤毒武器的基礎面板",
+      "items": [
+        "kuvalich:forma",
+        "kuvalich:shadow_forma"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -1210,7 +1223,7 @@
         },
         {
           "type": "h",
-          "text": "暗影塑形塊"
+          "text": "{item:kuvalich:shadow_forma}"
         },
         {
           "type": "list",
@@ -1270,6 +1283,15 @@
       "title": "重型武器詳解",
       "icon": "kuvalich:arca_titron",
       "summary": "7 把重型武器的被動與具體數值",
+      "items": [
+        "kuvalich:kuva_shildeg",
+        "kuvalich:paracesis",
+        "kuvalich:arca_titron",
+        "kuvalich:vitrica",
+        "kuvalich:gram_prime",
+        "kuvalich:sancti_magistar",
+        "kuvalich:prisma_veritux"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -1402,6 +1424,14 @@
       "title": "輕型武器詳解",
       "icon": "kuvalich:pennant",
       "summary": "6 把輕型武器的被動與具體數值",
+      "items": [
+        "kuvalich:pennant",
+        "kuvalich:guandao_prime",
+        "kuvalich:reaper_prime",
+        "kuvalich:destreza_prime",
+        "kuvalich:machete",
+        "kuvalich:caustacyst"
+      ],
       "blocks": [
         {
           "type": "p",

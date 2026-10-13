@@ -131,6 +131,7 @@
       "title": "Requiem Cards",
       "icon": "kuvalich:khra",
       "summary": "8 cards, 3 uses, spent only on success",
+      "items": ["kuvalich:khra", "kuvalich:jahu", "kuvalich:fass", "kuvalich:lohk", "kuvalich:netra", "kuvalich:vome", "kuvalich:xata", "kuvalich:ris"],
       "blocks": [
         {
           "type": "p",
@@ -206,6 +207,7 @@
       "title": "Requiem Gate",
       "icon": "kuvalich:requiem_gate",
       "summary": "Setting cards, the challenge and rewards",
+      "items": ["kuvalich:requiem_gate"],
       "blocks": [
         {
           "type": "p",
@@ -469,6 +471,7 @@
       "title": "Requiem Items",
       "icon": "kuvalich:requiem_ultimatum",
       "summary": "Gem, Riddle, Ultimatum and Reliquary",
+      "items": ["kuvalich:requiem_gem", "kuvalich:requiem_riddle", "kuvalich:requiem_ultimatum", "kuvalich:lich_reliquary"],
       "blocks": [
         {
           "type": "p",

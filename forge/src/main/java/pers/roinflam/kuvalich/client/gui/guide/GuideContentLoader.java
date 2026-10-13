@@ -302,8 +302,15 @@ public final class GuideContentLoader {
         }
         String title = str(o, "title");
         String summary = str(o, "summary");
+        List<String> items = new ArrayList<>();
+        for (String raw : strList(o.get("items"))) {
+            String s = raw.trim();
+            if (!s.isEmpty()) {
+                items.add(s);
+            }
+        }
         return new Entry(id, title != null ? title : id, str(o, "icon"), summary != null ? summary : "",
-                cond(o.get("if"), where), blocks);
+                cond(o.get("if"), where), items, blocks);
     }
 
     @Nullable
@@ -329,7 +336,12 @@ public final class GuideContentLoader {
                     return missing(where, "text");
                 }
                 b.title = str(o, "title");
-                b.style = TipStyle.of(str(o, "style"));
+                String style = str(o, "style");
+                if (style != null && !style.equals("info") && !style.equals("warn") && !style.equals("good")
+                        && !style.equals("bad") && !style.equals("wf")) {
+                    GuideLog.warnOnce("tipstyle:" + where, where + "：提示框样式「" + style + "」不认识（info / warn / good / bad / wf），按 info 画");
+                }
+                b.style = TipStyle.of(style);
             }
             case LIST, STEPS -> {
                 condItems(o.get("items"), b, where);

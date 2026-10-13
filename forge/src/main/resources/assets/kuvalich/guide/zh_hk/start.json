@@ -1547,6 +1547,10 @@
       "title": "材料速查",
       "icon": "kuvalich:requiem_gem",
       "summary": "每種材料從哪來、拿去幹什麼",
+      "items": [
+        "kuvalich:kuva",
+        "kuvalich:riven_sliver"
+      ],
       "blocks": [
         {
           "type": "p",

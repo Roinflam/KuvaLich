@@ -1,13 +1,19 @@
 package pers.roinflam.kuvalich.client.gui.guide;
 
 import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
@@ -35,25 +41,35 @@ import java.util.List;
  *
  * <h3>动效：军械库终端开机（分镜与时间轴见 {@link GuideIntro}）</h3>
  * <ul>
- *   <li>开场（约 640ms）：屏幕正中一条科技青扫描线向两侧展开 → 面板以它为轴上下展开、斜切外框描线、
- *       四角括号卡入 → 扫描光束自上而下扫出内容（带全息闪烁与色偏干扰条）→ 顶栏书名乱码解密 →
- *       首页格子跟着光束逐个全息成形（描边先到、内容后到）。开场期间点一下 / 按任意键（Esc 除外）
- *       直接跳到终态，<b>这次输入照常处理</b>，不会被吞掉；</li>
- *   <li>收场（220ms）：内容被板材盖住 → 面板收成一条线 → 线向中心缩成一点消失，
- *       {@link #onClose()} 推迟到动画走完；</li>
+ *   <li>开场（三幕约 1600ms，1280ms 就可以操作）：中心亮点通电、四个瞄准括号逐个咬合锁定、自检条走到 100% →
+ *       亮点拉成扫描线、面板以它为轴上下展开、外框描线，括号骑着展开带被带到面板四角落位 →
+ *       扫描光束自上而下扫出内容（固定三次全息闪烁与色偏干扰条）→ 顶栏书名乱码解密 → 首页格子跟着光束逐个全息成形。
+ *       每次打开都放完整开场；开场期间点一下 / 按任意键 / 滚轮（Esc 除外）直接跳到终态，<b>这次输入照常处理</b>；
+ *       面板展开过半之前的点击和滚轮只跳过、不处理；F1~F12、单按修饰键不跳；</li>
+ *   <li>从物品提示上按住 Ctrl 查阅打开的走<b>短开场</b>（从扫描线展开开始，约 280ms），直接翻到那一块并让它亮一下；</li>
+ *   <li>收场（约 1000ms，和开场倒着呼应）：擦除光束自下而上盖住内容、书名重新加密 → 面板收拢、外框收线 →
+ *       扫描线收回亮点、括号重新锁定后依次飞出、亮点断电。{@link #onClose()} 推迟到动画走完，然后回到打开前的界面
+ *       （从物品栏查阅的回到物品栏）；收场期间按任意键 / 点一下直接关完（按的键交给游戏，Esc 除外；单按修饰键、F1~F12 不算）；</li>
  *   <li>首页 ↔ 阅读页：正文区 140ms 横向擦除；</li>
  *   <li>面板全程<b>不平移</b>，只裁剪、叠光效 —— 任何时刻命中区都和画出来的位置一致；</li>
- *   <li>常驻：首页面板里缓缓上浮的数据微粒、暗角、顶栏分隔线上一道往复的扫描亮点、四角一层淡青括号 —— 克制。</li>
+ *   <li>常驻：暗角、顶栏分隔线上一道往复的扫描亮点、四角一层淡青括号。阅读栏、左栏、首页格子区里<b>没有常驻动画</b>
+ *       （见 {@link GuideTheme} 类注释）；悬停时四个角括号收到格子 / 按钮的四角上（锁定括号），按住时底色转暗。</li>
  * </ul>
+ *
+ * <h3>界面大小（{@link GuideScale}）</h3>
+ * <p>指南用自己的界面倍数：游戏选「自动」时取虚拟屏幕至少 560×320 的最大倍数（1080p 4 → 3、1440p 6 → 4），手动倍数跟游戏。
+ * 顶栏第四个按钮「Aa」左键字小一档、右键字大一档；Ctrl + 滚轮、Ctrl − / = / 0 同样能调，写回 {@code kuvalich-tooltip.toml}
+ * 的 {@code [guide] gui_scale}。换倍数、改窗口大小后阅读位置按块锚定（{@link GuideReader#anchor()}）。</p>
  *
  * <h3>数值来源</h3>
  * <p>正文里的 {@code {cfg:…}} 取自 {@link GuideClientConfig#snapshot()}：打开时取一次，
  * 服务端重发配置（{@link GuideClientConfig#revision()} 变了）、F3+T 重载资源、切换语言时整份重建并重新排版，
  * 保持当前条目与滚动位置不变。数值来源不在界面上显示：同步是后台的事，单人游戏里也无所谓「服务器」。</p>
  *
- * <h3>记忆</h3>
+ * <h3>记忆与后退</h3>
  * <p>上次停在哪一页、哪一篇、滚到哪、前进后退历史，都记在静态字段里 —— 关掉再开回到原处，
- * 跨存档也保留（找不到那一篇了就回首页）。</p>
+ * 跨存档也保留（找不到那一篇了就回首页）。后退：顶栏按钮、Backspace、鼠标右键、鼠标侧键、Alt+←。
+ * 查阅打开时原先的位置压进后退历史，读完按后退回得去。</p>
  *
  * <p>不是暂停界面：单人游戏时世界照常运行（和附魔百科一致），边看书边等熔炉不耽误事。</p>
  *
@@ -79,6 +95,16 @@ public class GuideScreen extends Screen {
 
     // ==================== 部件 ====================
 
+    /** 关掉指南后回到的界面（从物品栏查阅时就是物品栏）；null = 回到游戏 */
+    @Nullable
+    private final Screen parent;
+    /** 查阅：打开时直接翻到的条目与块（块序号 -1 = 篇首）；null = 回到上次的位置 */
+    @Nullable
+    private final String targetKey;
+    private final int targetBlock;
+    /** 从生存物品栏查阅时 2×2 合成结果格的快照（见 {@link CraftResult}）；不是从那里打开的为 null，放回去之后也清成 null */
+    @Nullable
+    private CraftResult craftResult;
     private GuideView view;
     private GuideSearch search;
     private GuideTextLayout text;
@@ -89,6 +115,8 @@ public class GuideScreen extends Screen {
     private final GuideRender rc = new GuideRender();
     /** 开场 / 收场 / 翻页动效 */
     private final GuideIntro fx = new GuideIntro();
+    /** 悬停锁定括号的限速（首页格子、继续阅读条、顶栏按钮共用） */
+    private final GuideLockBudget lockBudget = new GuideLockBudget();
     private EditBox searchBox;
 
     // ==================== 状态 ====================
@@ -100,13 +128,22 @@ public class GuideScreen extends Screen {
     /** 键盘选中的搜索结果 */
     private int cursor = -1;
     private boolean restored;
+    /**
+     * 查阅打开时手上还按着的 Ctrl（查阅就是按住 Ctrl 或 Ctrl + Shift 打开的，打开那一刻多半还没松）：松开之前不算调大小的 Ctrl ——
+     * 不然顺手滚一下滚轮读正文，界面就大一档 / 小一档，还写进了配置。看到松开一次就清掉（{@link #releaseCtrlLatch()}，每帧、每 tick 查）
+     */
+    private boolean ctrlLatched;
     /** 见 {@link #repositionElements()}：重建控件前输入框是否聚焦着 */
     private boolean keepSearchFocus;
 
-    private long openedAt;
+    /**
+     * 开场时钟（毫秒）：每帧加上本帧间隔、单帧最多记 {@value GuideIntro#MAX_FRAME_MS}ms（短开场是真实时间，{@link GuideIntro#update} 换算到开场时间轴）。
+     * 打开指南的头几帧常常一帧一两百毫秒，按墙钟算会吃掉上电和锁定那一段；逐帧累加时低帧率下开场按比例变慢，最小化时暂停
+     */
+    private float introT;
     private long closingAt;
     private long lastFrame;
-    /** 开场时间轴已经对齐到第一帧（或已被跳过），之后不再重设 openedAt */
+    /** 开场时钟已经从第一帧开始走了（或已被跳过） */
     private boolean introAnchored;
     /** 上一帧画的是哪一页：和当前页不同就说明换页了，播一次横向擦除 */
     @Nullable
@@ -115,7 +152,10 @@ public class GuideScreen extends Screen {
     @Nullable
     private Page wipeFrom;
     private long wipeAt;
-    private final float[] navHover = new float[3];
+    /** 顶栏按钮的悬停量：0~2 导航、3 是「Aa」 */
+    private final float[] navHover = new float[4];
+    /** 顶栏按钮开始悬停的时刻（锁定括号按它收拢）；0 = 没在悬停 */
+    private final long[] navLockAt = new long[4];
 
     // ==================== 几何 ====================
 
@@ -132,6 +172,9 @@ public class GuideScreen extends Screen {
     private int navY;
     private static final int NAV_W = 16;
     private static final int NAV_H = 14;
+    /** 「Aa」按钮（调界面大小）：在三个导航按钮右边，中间空 {@value #SCALE_GAP}px、画一道 1px 结构线 */
+    private int scaleX;
+    private static final int SCALE_GAP = 5;
     /** 顶栏左侧文字区的右边界（在它之后是导航按钮） */
     private int headerTextRight;
     private String titleText = "";
@@ -153,23 +196,44 @@ public class GuideScreen extends Screen {
     private int clearY;
     private boolean clearVisible;
 
+    /** 回到上次看的位置、完整开场、关掉后回到游戏（物品右键；测试工具按无参构造打开也走这里） */
     public GuideScreen() {
+        this(null, null, -1, false);
+    }
+
+    /**
+     * @param parent      关掉后回到的界面，可为 null
+     * @param targetKey   直接翻到的条目（查阅），null = 回到上次的位置
+     * @param targetBlock 那一篇里的第几块（{@link GuideView.EntryView#blocks()} 的下标），-1 = 篇首
+     * @param quick       走短开场（查阅打开）
+     */
+    GuideScreen(@Nullable Screen parent, @Nullable String targetKey, int targetBlock, boolean quick) {
         super(Component.translatable("kuvalich.guide.title"));
+        this.parent = parent;
+        this.targetKey = targetKey;
+        this.targetBlock = targetBlock;
+        this.fx.quick = quick;
+        this.ctrlLatched = quick && hasControlDown();
+        // 在 setScreen 换掉物品栏之前拍下来：换的时候物品栏的 removed() 会把结果格清掉
+        this.craftResult = CraftResult.capture(parent);
     }
 
     // ==================== 生命周期 ====================
 
     @Override
     protected void init() {
-        if (openedAt == 0L) {
-            openedAt = Util.getMillis();
+        // 第一行：换成指南自己的界面倍数，width / height 改成设完后的虚拟尺寸（首次打开、改窗口大小、切全屏、F3+T、调大小都走这里）
+        if (minecraft != null) {
+            GuideScale.apply(this, minecraft);
         }
+        // 重新 init 时阅读栏宽度会变、整篇重排：先按块记下阅读位置，排完换算回去
+        GuideReader.Anchor anchor = searchBox != null && reader != null && page == Page.READ ? reader.anchor() : null;
         if (text == null) {
             text = new GuideTextLayout(this.font);
             reader = new GuideReader(text, media);
         }
         if (view == null) {
-            view = GuideView.build();
+            view = GuideView.current();
             search = new GuideSearch(view, media);
         }
         computeGeometry();
@@ -206,6 +270,20 @@ public class GuideScreen extends Screen {
             // 目录模式不用管：showTree 本来就保留滚动，还会把当前篇 reveal 进新的可视区
             sidebar.restoreScroll(sideScroll);
         }
+        reader.restoreAnchor(view, anchor);
+    }
+
+    /**
+     * 换了界面大小（「Aa」按钮、Ctrl + 滚轮、Ctrl − = 0）：走原版的 resize 流程重建控件
+     * （{@link #repositionElements()} 处理搜索框焦点，{@link #init()} 设新倍数、按块锚定阅读位置），首页滚回顶部，按钮声
+     */
+    private void rescale() {
+        if (minecraft == null) {
+            return;
+        }
+        home.scrollToTop();
+        this.resize(minecraft, minecraft.getWindow().getGuiScaledWidth(), minecraft.getWindow().getGuiScaledHeight());
+        click();
     }
 
     /**
@@ -241,7 +319,9 @@ public class GuideScreen extends Screen {
         searchX = panelX + panelW - GuideTheme.PAD - searchW;
         searchY = panelY + 9;
         navY = panelY + 10;
-        int nx = searchX - 10 - (NAV_W * 3 + 3 * 2);
+        // 后退 / 前进 / 首页，再空 SCALE_GAP 是「Aa」（调界面大小）
+        scaleX = searchX - 10 - NAV_W;
+        int nx = scaleX - SCALE_GAP - (NAV_W * 3 + 3 * 2);
         for (int i = 0; i < 3; i++) {
             navX[i] = nx + i * (NAV_W + 3);
         }
@@ -284,6 +364,22 @@ public class GuideScreen extends Screen {
      * 恢复上次关闭时的位置
      */
     private void restore() {
+        EntryView target = targetKey != null ? view.entries.get(targetKey) : null;
+        if (target != null) {
+            // 查阅：直接翻到那一篇的那一块。原先的位置压进后退历史，读完按后退回得去
+            Loc before = lastPage == Page.READ && lastEntryKey != null ? new Loc(lastEntryKey, lastScroll) : new Loc(null, 0f);
+            if (!java.util.Objects.equals(before.entryKey(), target.key)) {
+                push(BACK, before);
+                FORWARD.clear();
+            }
+            current = target;
+            page = Page.READ;
+            reader.show(target, 0f, false);
+            reader.scrollToBlock(targetBlock);
+            home.restartIntro();
+            saveState();
+            return;
+        }
         EntryView ev = lastEntryKey != null ? view.entries.get(lastEntryKey) : null;
         current = ev;
         if (lastPage == Page.READ && ev != null) {
@@ -293,7 +389,7 @@ public class GuideScreen extends Screen {
             page = Page.HOME;
             reader.show(ev, ev != null ? lastScroll : 0f, false);
         }
-        home.restartIntro(openedAt);
+        home.restartIntro();
     }
 
     private void saveState() {
@@ -304,6 +400,7 @@ public class GuideScreen extends Screen {
 
     @Override
     public void tick() {
+        releaseCtrlLatch();
         refreshIfStale();
         if (searchBox != null) {
             // 光标闪烁靠输入框自己的 tick 计数，界面不转发它就一直常亮
@@ -311,7 +408,7 @@ public class GuideScreen extends Screen {
         }
         // 兜底：窗口最小化时不渲染，收场动画走不完，这里保证界面最终会关掉
         if (closingAt != 0L && Util.getMillis() - closingAt > GuideIntro.CLOSE_MS + 250f && minecraft != null && minecraft.screen == this) {
-            super.onClose();
+            finishClose();
         }
     }
 
@@ -319,7 +416,11 @@ public class GuideScreen extends Screen {
      * 服务端重发了配置 / 资源重载 / 切换了语言：重建视图，保持当前条目与滚动位置
      */
     private void refreshIfStale() {
-        if (view == null || !view.isStale()) {
+        if (view == null) {
+            return;
+        }
+        GuideView fresh = GuideView.current();
+        if (fresh == view) {
             return;
         }
         String key = current != null ? current.key : null;
@@ -327,11 +428,11 @@ public class GuideScreen extends Screen {
         if (view.generation != GuideContentLoader.generation()) {
             // 内容换了，字体也可能跟着资源包换了：字宽缓存一并作废
             text = new GuideTextLayout(this.font);
-            GuideReader fresh = new GuideReader(text, media);
-            fresh.show(reader.entry, scroll, false);
-            reader = fresh;
+            GuideReader freshReader = new GuideReader(text, media);
+            freshReader.show(reader.entry, scroll, false);
+            reader = freshReader;
         }
-        view = GuideView.build();
+        view = fresh;
         search = new GuideSearch(view, media);
         reader.invalidate();
         EntryView ev = key != null ? view.entries.get(key) : null;
@@ -365,6 +466,28 @@ public class GuideScreen extends Screen {
         sidebar.release();
         home.release();
         super.removed();
+        // 换界面都经过 setScreen → removed()：窗口倍数设回游戏的，下一个界面（物品栏、死亡界面、断线界面……）init 时读到的就是还原后的尺寸
+        if (minecraft != null) {
+            GuideScale.restore(minecraft);
+        }
+        // 不管接下来是回物品栏还是被别的界面顶掉，物品栏的合成结果格都放回去（客户端这份本来就该和服务端一样）
+        if (craftResult != null) {
+            craftResult.restore();
+            craftResult = null;
+        }
+    }
+
+    /** 看到 Ctrl 松开过，查阅时带进来的那次 Ctrl 就作废（见 {@link #ctrlLatched}） */
+    private void releaseCtrlLatch() {
+        if (ctrlLatched && !hasControlDown()) {
+            ctrlLatched = false;
+        }
+    }
+
+    /** 调界面大小的 Ctrl 组合（Ctrl + 滚轮、Ctrl − = 0）此刻算不算按着 Ctrl：查阅时带进来、还没松开过的不算 */
+    private boolean scaleCtrlDown() {
+        releaseCtrlLatch();
+        return !ctrlLatched && hasControlDown();
     }
 
     @Override
@@ -376,8 +499,8 @@ public class GuideScreen extends Screen {
 
     /**
      * 开场期间（以及回首页后格子成形、翻页擦除期间）的点击 / 滚轮 / 按键：动画直接跳到终态
-     * （开场时间轴拨到头、首页格子全部成形、擦除收尾），
-     * 这次输入<b>接着照常处理</b>。面板全程不平移，终态下的命中区就是玩家看着的位置。
+     * （开场时钟拨到头、首页格子全部成形、擦除收尾），
+     * 这次输入<b>接着照常处理</b>（面板展开过半之前的点击 / 滚轮例外，见 {@link #introEarly()}）。面板全程不平移，终态下的命中区就是玩家看着的位置。
      * Esc 不走这里：开场中按 Esc 应该从当时的样子直接收场，而不是先闪到终态再收。
      */
     private void skipIntro() {
@@ -385,15 +508,32 @@ public class GuideScreen extends Screen {
             return;
         }
         introAnchored = true;
-        long now = Util.getMillis();
-        if (now - openedAt < GuideIntro.OPEN_MS) {
-            openedAt = now - (long) GuideIntro.OPEN_MS;
-        }
+        introT = Math.max(introT, fx.introEnd());
         // 不只开场：回首页后格子也要重新成形（十个分类时最后一格 300 多毫秒后才可点），这期间点到一个
         // 已经画出外框、内容还没浮现过半的格子，tileAt 会当它不存在 —— 看得见却点不动。
         // 有输入就一并成形完毕；接下来这次输入若是换页，新一轮成形照常从头播
         home.finishAppear();
         wipeAt = 0L;
+    }
+
+    /**
+     * 面板展开过半之前（{@value GuideIntro#HALF_UNFOLD}ms 前）：屏幕上还只有遮罩、亮点和锁定框，玩家看不见自己点在什么上，
+     * 终态那个位置可能正好是一个分类格子 —— 这时的点击和滚轮只跳过开场、不当成点到了什么。按键照常处理（直接打字就是搜索，和位置无关）
+     */
+    private boolean introEarly() {
+        return closingAt == 0L && introT < fx.introEnd() && fx.early();
+    }
+
+    /**
+     * 开场期间不跳过、收场期间不打断的键：F1~F12（F2 截图、F11 切全屏不该把开场打断）和单按的修饰键
+     * （Ctrl 是 Ctrl+F 的前半，后面那个 F 照样会跳；物品上按住 Ctrl 查阅后常常一直按着，按住不放的键会不停发重复事件）
+     */
+    private static boolean passiveKey(int key) {
+        return (key >= GLFW.GLFW_KEY_F1 && key <= GLFW.GLFW_KEY_F12)
+                || key == GLFW.GLFW_KEY_LEFT_SHIFT || key == GLFW.GLFW_KEY_RIGHT_SHIFT
+                || key == GLFW.GLFW_KEY_LEFT_CONTROL || key == GLFW.GLFW_KEY_RIGHT_CONTROL
+                || key == GLFW.GLFW_KEY_LEFT_ALT || key == GLFW.GLFW_KEY_RIGHT_ALT
+                || key == GLFW.GLFW_KEY_LEFT_SUPER || key == GLFW.GLFW_KEY_RIGHT_SUPER;
     }
 
     @Override
@@ -404,7 +544,19 @@ public class GuideScreen extends Screen {
             saveState();
             return;
         }
-        super.onClose();
+        finishClose();
+    }
+
+    /** 收场走完：回到打开前的界面（从物品栏查阅的回到物品栏），没有就回到游戏 */
+    private void finishClose() {
+        if (minecraft == null) {
+            return;
+        }
+        if (parent != null) {
+            minecraft.setScreen(parent);
+        } else {
+            super.onClose();
+        }
     }
 
     // ==================== 导航 ====================
@@ -615,29 +767,38 @@ public class GuideScreen extends Screen {
 
     @Override
     public void render(@Nonnull GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // HUD 那一段换回了游戏倍数、Post 却没来（Pre 被别的模组取消）：先设回指南的倍数和投影
+        GuideScale.ensure(g);
+        releaseCtrlLatch();
         long now = Util.getMillis();
-        float delta = lastFrame == 0L ? 0f : Math.min(0.1f, (now - lastFrame) / 1000f);
+        long frameMs = lastFrame == 0L ? 0L : now - lastFrame;
+        float delta = Math.min(0.1f, frameMs / 1000f);
         lastFrame = now;
         if (!introAnchored) {
-            // 开场从第一帧算起：init 里建视图、排版可能要几十毫秒，按 init 的时刻算会把开场的头一段（亮点、中线）吃掉
+            // 开场从第一帧算起：init 里建视图、排版可能要几十毫秒，算进去会把开场的头一段（亮点、锁定）吃掉
             introAnchored = true;
             if (closingAt == 0L) {
-                openedAt = now;
-                home.restartIntro(now);
+                introT = 0f;
+                home.restartIntro();
             }
+        } else if (closingAt == 0L && introT < fx.introEnd()) {
+            // 逐帧累加：单帧最多记 MAX_FRAME_MS，卡顿的那几帧不会把开场跳掉；收场时停住（开场冻结在按下关闭的那一刻）
+            introT = Math.min(fx.introEnd(), introT + Math.min(GuideIntro.MAX_FRAME_MS, (float) frameMs));
         }
         refreshIfStale();
 
-        fx.update(now, openedAt, closingAt);
+        fx.update(introT, closingAt, now);
+        // 首页格子的开场成形读开场时间轴：完整开场、查阅短开场共用一条映射
+        home.setIntroTime(fx.openT);
         if (fx.closed()) {
             // 只在自己仍是当前界面时关：收场期间被别的界面压上来时本界面只是背景层，这时关会改动图层列表
             if (minecraft != null && minecraft.screen == this) {
-                super.onClose();
+                finishClose();
             }
             return;
         }
-        boolean settled = fx.settled();
-        float time = GuideTheme.time();
+        // 就绪（1280ms）起悬停、提示框、按下态生效 —— 最后那一段只剩外框通电回落、书名收尾和最后几格成形，不该挡着玩家操作
+        boolean settled = fx.ready();
 
         // 换页（不管是点格子、搜索、后退还是配置重载踢回首页）都在这里统一发现，播一次横向擦除
         if (shownPage != null && shownPage != page && closingAt == 0L) {
@@ -656,8 +817,11 @@ public class GuideScreen extends Screen {
         rc.mouseX = mouseX;
         rc.mouseY = mouseY;
         rc.mouseActive = settled;
+        // 按下态：直接问 GLFW 左键现在是不是按着（点击在 mouseClicked 里就生效了，这只决定按住时画成什么样）
+        rc.mouseDown = settled && minecraft != null
+                && GLFW.glfwGetMouseButton(minecraft.getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+        rc.lockBudget = lockBudget;
         rc.now = now;
-        rc.time = time;
         rc.clipTop = 0;
         rc.clipBottom = this.height;
         rc.alpha = 1f;
@@ -682,9 +846,9 @@ public class GuideScreen extends Screen {
      * <ol>
      *   <li>展开带：以面板中线为轴的一条横带，高度随展开 / 收拢变化；板材只画在带里；</li>
      *   <li>光束之上：顶栏、正文、底栏、输入框只画在扫描光束已经扫过的部分；</li>
-     *   <li>带里再叠全息闪烁、光束与干扰条、收场时盖住内容的板材；</li>
-     *   <li>外框：描线没走完时画描线（不受展开带裁剪，跑在展开前面）；描完后画常态外框，
-     *       收场时跟着展开带一起收（上下多留 3px 给辉光）。</li>
+     *   <li>带里再叠全息闪烁、光束与干扰条、收场时自下而上盖住内容的擦除板材；</li>
+     *   <li>外框：描线没走完时画描线（不受展开带裁剪，跑在展开前面）；描完后画常态外框（裁在展开带上下多留 3px 给辉光）；
+     *       收场收线时又画回倒着走的描线。</li>
      * </ol>
      * 终态下两层裁剪都不开，和没有动画时的绘制完全一样。
      */
@@ -714,7 +878,7 @@ public class GuideScreen extends Screen {
             super.render(g, mouseX, mouseY, partialTick);
             if (searchBox.getValue().isEmpty() && !searchBox.isFocused()) {
                 // 占位提示自己画：EditBox 自带的 hint 颜色不可调，在这套暗色面板上太亮
-                g.drawString(this.font, searchHint, searchBox.getX(), searchBox.getY(), GuideTheme.FAINT, false);
+                g.drawString(this.font, searchHint, searchBox.getX(), searchBox.getY(), GuideTheme.FAINT_TEXT, false);
             }
             if (clipBeam) {
                 g.disableScissor();
@@ -722,7 +886,7 @@ public class GuideScreen extends Screen {
         }
         fx.drawFlicker(g, GuideTheme.CHAMFER);
         fx.drawBeam(g, GuideTheme.CHAMFER);
-        fx.drawCloseFade(g, GuideTheme.CHAMFER);
+        fx.drawErase(g, GuideTheme.CHAMFER);
         if (clipBand) {
             g.disableScissor();
         }
@@ -775,7 +939,7 @@ public class GuideScreen extends Screen {
 
     private void renderPage(GuiGraphics g, Page p, float delta, boolean settled, long now) {
         if (p == Page.HOME) {
-            CodexTheme.motes(g, panelX + 2, bodyY, panelW - 4, bodyH, now, 1f);
+            // 原先格子缝里还有十几粒数据微粒在往上飘：首页是找格子、读标题的地方，去掉了
             home.render(rc, delta, 0, settled);
         } else {
             sidebar.render(rc, current, cursor, delta, 0);
@@ -794,6 +958,14 @@ public class GuideScreen extends Screen {
                 g.renderTooltip(this.font, Component.translatable(key), mouseX, mouseY);
                 return;
             }
+        }
+        if (minecraft != null && GuideTheme.hit(mouseX, mouseY, scaleX, navY, NAV_W, NAV_H)) {
+            // 第一行：界面大小：自动（×3）/ ×2（已指定）/ 跟游戏一样（×4）；第二行次要色写怎么调。
+            // 只有一档可选时（游戏本身是 1 倍或 2 倍）按钮是灰的，第二行改说为什么调不了，不教一个不起作用的操作
+            String hint = GuideScale.adjustable(minecraft) ? "kuvalich.guide.scale.hint" : "kuvalich.guide.scale.locked";
+            g.renderComponentTooltip(this.font, List.of(GuideScale.label(minecraft),
+                    Component.translatable(hint).withStyle(st -> st.withColor(GuideTheme.ASH & 0xFFFFFF))),
+                    mouseX, mouseY);
         }
     }
 
@@ -819,23 +991,39 @@ public class GuideScreen extends Screen {
 
         // 不显示「数值来自服务端 / 本地」之类的标签：同步是后台的事，单人游戏里本来也没有「服务器」可言
 
-        // 导航按钮：后退 / 前进 / 首页
-        for (int i = 0; i < 3; i++) {
-            boolean on = navEnabled(i);
-            boolean over = settled && on && GuideTheme.hit(mx, my, navX[i], navY, NAV_W, NAV_H);
+        // 顶栏按钮：后退 / 前进 / 首页，隔一道结构线是「Aa」（调界面大小，静止，只有悬停 / 按下态）
+        g.fill(scaleX - 3, navY + 2, scaleX - 2, navY + NAV_H - 2, GuideTheme.withAlpha(GuideTheme.EDGE, 0xE0));
+        for (int i = 0; i < 4; i++) {
+            boolean scale = i == 3;
+            int bx = scale ? scaleX : navX[i];
+            boolean on = scale ? minecraft != null && GuideScale.adjustable(minecraft) : navEnabled(i);
+            boolean over = settled && on && GuideTheme.hit(mx, my, bx, navY, NAV_W, NAV_H);
             navHover[i] = GuideTheme.approach(navHover[i], over ? 1f : 0f, delta, 16f);
+            if (!over) {
+                navLockAt[i] = 0L;
+            } else if (navLockAt[i] == 0L) {
+                // 刚压上：四个角括号收到按钮四角上；一秒里已经收满 3 次就直接静止
+                navLockAt[i] = lockBudget.tryUse(rc.now) ? rc.now : rc.now - (long) GuideTheme.LOCK_MS;
+            }
             float hv = navHover[i];
-            int bx = navX[i];
+            // 三态：常态深底 + 结构线描边；悬停偏亮 + 猩红描边；按住时赤毒暗面
+            boolean press = over && rc.mouseDown;
             CodexTheme.chamferFill(g, bx, navY, NAV_W, NAV_H, 3,
-                    GuideTheme.lerpColor(GuideTheme.PLATE_DEEP, 0xFF1A2530, hv));
+                    press ? GuideTheme.PRESS_BG : GuideTheme.lerpColor(GuideTheme.PLATE_DEEP, 0xFF1A2530, hv));
             CodexTheme.chamferOutline(g, bx, navY, NAV_W, NAV_H, 3, on
                     ? GuideTheme.lerpColor(GuideTheme.withAlpha(GuideTheme.EDGE, 0xFF), GuideTheme.KUVA, hv)
                     : GuideTheme.withAlpha(GuideTheme.EDGE, 0x70));
+            if (navLockAt[i] != 0L) {
+                GuideTheme.lockBrackets(g, bx - 2, navY - 2, NAV_W + 4, NAV_H + 4,
+                        (rc.now - navLockAt[i]) / GuideTheme.LOCK_MS, GuideTheme.KUVA);
+            }
             int glyph = !on ? GuideTheme.withAlpha(GuideTheme.FAINT, 0x90)
                     : GuideTheme.lerpColor(GuideTheme.ASH, GuideTheme.BONE, hv);
             int cx = bx + NAV_W / 2;
             int cy = navY + NAV_H / 2;
-            if (i == 2) {
+            if (scale) {
+                GuideTheme.scaleGlyph(g, cx, cy, glyph);
+            } else if (i == 2) {
                 GuideTheme.house(g, cx, cy - 1, glyph);
             } else {
                 GuideTheme.chevron(g, cx, cy, i == 0, glyph);
@@ -896,7 +1084,7 @@ public class GuideScreen extends Screen {
         }
         int ty = fy + (GuideTheme.FOOTER_H - 8) / 2;
         g.drawString(this.font, footerStatus, panelX + panelW - GuideTheme.PAD - footerStatusW, ty, GuideTheme.ASH, false);
-        g.drawString(this.font, footerHint, panelX + GuideTheme.PAD, ty, GuideTheme.FAINT, false);
+        g.drawString(this.font, footerHint, panelX + GuideTheme.PAD, ty, GuideTheme.FAINT_TEXT, false);
     }
 
     // ==================== 输入 ====================
@@ -904,7 +1092,14 @@ public class GuideScreen extends Screen {
     @Override
     public boolean keyPressed(int key, int scan, int modifiers) {
         if (closingAt != 0L) {
-            return true;
+            // 单按的修饰键、F1~F12 不算：物品上按住 Ctrl 查阅后常常一直按着，按住不放的键会不停发重复事件，一收场就会被立刻打断
+            if (passiveKey(key)) {
+                return false;
+            }
+            // 收场期间按任意键：直接关完，这个键交给游戏（关完回到游戏时 W 照样走、E 照样开物品栏）；
+            // Esc 例外 —— 交出去会打开暂停菜单
+            finishClose();
+            return key == GLFW.GLFW_KEY_ESCAPE;
         }
         boolean focused = searchBox.isFocused();
         if (key == GLFW.GLFW_KEY_ESCAPE) {
@@ -920,8 +1115,32 @@ public class GuideScreen extends Screen {
             onClose();
             return true;
         }
-        // 开场中按别的键：动画跳到终态，这个键照常处理
-        skipIntro();
+        // 开场中按别的键：动画跳到终态，这个键照常处理（F1~F12、单按修饰键不跳）
+        if (!passiveKey(key)) {
+            skipIntro();
+        }
+        // Ctrl − / 小键盘 −：字小一档；Ctrl = / 小键盘 +：字大一档；Ctrl 0：回到自动。搜索框聚焦时同样生效（Ctrl 组合不会上屏字）。
+        // 查阅时带进来、还没松开过的 Ctrl 不算（scaleCtrlDown）
+        if (scaleCtrlDown() && !hasAltDown() && minecraft != null) {
+            if (key == GLFW.GLFW_KEY_MINUS || key == GLFW.GLFW_KEY_KP_SUBTRACT) {
+                if (GuideScale.step(minecraft, -1)) {
+                    rescale();
+                }
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_EQUAL || key == GLFW.GLFW_KEY_KP_ADD) {
+                if (GuideScale.step(minecraft, 1)) {
+                    rescale();
+                }
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_0 || key == GLFW.GLFW_KEY_KP_0) {
+                if (GuideScale.reset(minecraft)) {
+                    rescale();
+                }
+                return true;
+            }
+        }
         if (hasAltDown() && (key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_RIGHT)) {
             if (key == GLFW.GLFW_KEY_LEFT) {
                 back();
@@ -991,6 +1210,8 @@ public class GuideScreen extends Screen {
     @Override
     public boolean charTyped(char c, int modifiers) {
         if (closingAt != 0L) {
+            // 输入法直接上屏（不经过 keyPressed）也算按键：直接关完
+            finishClose();
             return true;
         }
         // 输入法直接上屏的字不经过 keyPressed：这里也要跳过开场
@@ -1008,13 +1229,39 @@ public class GuideScreen extends Screen {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (closingAt != 0L) {
+            // 收场期间点一下：直接关完（这一下不交给游戏，免得关书的同时打了一下）
+            finishClose();
             return true;
         }
         // 开场中点一下：动画跳到终态，这一下照常处理（不吞掉）。面板全程不平移，
-        // 终态下的命中区就是玩家看着的位置；还没扫出来的格子此刻也一并成形完毕
+        // 终态下的命中区就是玩家看着的位置；还没扫出来的格子此刻也一并成形完毕。
+        // 面板展开过半之前例外：只跳过，不当成点到了什么
+        boolean early = introEarly();
         skipIntro();
+        if (early) {
+            return true;
+        }
         long now = Util.getMillis();
         if (button == GLFW.GLFW_MOUSE_BUTTON_4) {
+            back();
+            return true;
+        }
+        // 「Aa」：左键字小一档、右键字大一档（到头了就不动）；右键在这里不是后退
+        if ((button == 0 || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) && minecraft != null
+                && GuideTheme.hit(mx, my, scaleX, navY, NAV_W, NAV_H)) {
+            if (searchBox.isFocused()) {
+                unfocusSearch();
+            }
+            if (GuideScale.step(minecraft, button == 0 ? -1 : 1)) {
+                rescale();
+            }
+            return true;
+        }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && !GuideTheme.hit(mx, my, searchX, searchY, searchW, 18)) {
+            // 右键也是后退（和退格、鼠标侧键、Alt+← 一样）；搜索框上的右键留给输入框
+            if (searchBox.isFocused()) {
+                unfocusSearch();
+            }
             back();
             return true;
         }
@@ -1091,7 +1338,8 @@ public class GuideScreen extends Screen {
                 return true;
             }
             Link link = rc.nextHoverLink;
-            if (link != null && link.isLive() && reader.contains(mx, my)) {
+            // 只有条目链接能点；物品链接只出提示
+            if (link != null && link.entryKey != null && reader.contains(mx, my)) {
                 open(view.entries.get(link.entryKey), 0f);
                 return true;
             }
@@ -1123,9 +1371,22 @@ public class GuideScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mx, double my, double delta) {
         if (closingAt != 0L) {
+            finishClose();
             return true;
         }
+        boolean early = introEarly();
         skipIntro();
+        if (early) {
+            return true;
+        }
+        // Ctrl + 滚轮：向上字大一档、向下字小一档，这时不滚动正文。
+        // 查阅打开时还按着的 Ctrl 不算（scaleCtrlDown）：松开之前滚轮照常滚正文
+        if (scaleCtrlDown() && minecraft != null) {
+            if (delta != 0 && GuideScale.step(minecraft, delta > 0 ? 1 : -1)) {
+                rescale();
+            }
+            return true;
+        }
         if (page == Page.HOME) {
             return home.mouseScrolled(delta) || super.mouseScrolled(mx, my, delta);
         }
@@ -1133,5 +1394,53 @@ public class GuideScreen extends Screen {
             return true;
         }
         return super.mouseScrolled(mx, my, delta);
+    }
+
+    /**
+     * 从生存物品栏查阅时，物品栏 2×2 合成结果格的快照。
+     *
+     * <p>setScreen(指南) 会调物品栏的 removed()，原版 {@code InventoryMenu#removed} 在客户端也会清空结果格
+     * （把合成格的东西退回背包那一步才只在服务端做）。服务端那份结果没动、也不会重发，于是回到物品栏时结果格显示是空的 ——
+     * 点它照样能取出来，但看上去像是配方没了。指南关掉时放回去。</p>
+     *
+     * <p>只在玩家还是同一个（没有重生、换维度）、结果格还空着、合成格和拍快照时一样时才放：
+     * 指南开着的时候服务端改过合成格的话，新的格子和结果会同步过来，这时不该拿旧的盖掉。</p>
+     */
+    private record CraftResult(LocalPlayer player, ItemStack result, ItemStack[] grid) {
+
+        @Nullable
+        static CraftResult capture(@Nullable Screen parent) {
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (!(parent instanceof InventoryScreen) || player == null) {
+                return null;
+            }
+            InventoryMenu menu = player.inventoryMenu;
+            ItemStack result = menu.getSlot(InventoryMenu.RESULT_SLOT).getItem();
+            if (result.isEmpty()) {
+                return null;
+            }
+            ItemStack[] grid = new ItemStack[InventoryMenu.CRAFT_SLOT_END - InventoryMenu.CRAFT_SLOT_START];
+            for (int i = 0; i < grid.length; i++) {
+                grid[i] = menu.getSlot(InventoryMenu.CRAFT_SLOT_START + i).getItem().copy();
+            }
+            return new CraftResult(player, result.copy(), grid);
+        }
+
+        void restore() {
+            if (Minecraft.getInstance().player != player) {
+                return;
+            }
+            InventoryMenu menu = player.inventoryMenu;
+            Slot slot = menu.getSlot(InventoryMenu.RESULT_SLOT);
+            if (!slot.getItem().isEmpty()) {
+                return;
+            }
+            for (int i = 0; i < grid.length; i++) {
+                if (!ItemStack.matches(grid[i], menu.getSlot(InventoryMenu.CRAFT_SLOT_START + i).getItem())) {
+                    return;
+                }
+            }
+            slot.set(result.copy());
+        }
     }
 }

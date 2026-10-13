@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.client.gui.guide;
 
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -14,7 +15,8 @@ import java.util.regex.Pattern;
  * 行内标记解析：把一段原文变成带样式的片段序列
  *
  * <p>支持的写法见内容格式规范 §1.3：颜色 / 强调标签（可嵌套）、{@code {cfg:…}} 等占位符、
- * {@code [[分类/条目|文字]]} 链接、反斜杠转义。</p>
+ * {@code [[分类/条目|文字]]} 链接、反斜杠转义。{@code {item:…}} 展开成<b>物品链接</b>：物品名加点线下划线，
+ * 悬停出物品提示（和物品格一样）；不跳转。</p>
  *
  * <h3>坏标记怎么办</h3>
  * <p>这是给人写的格式，写错是常态。原则是「尽量照字面显示，绝不抛异常」：
@@ -22,6 +24,13 @@ import java.util.regex.Pattern;
  * 不会一路吞到那个占位符的右括号）；链接目标格式不对或已被藏掉时按正文显示、不可点；
  * 闭合标签对不上栈顶时往下找同名的一层一起弹掉，找不到就忽略；到结尾还没闭合的自动闭合。
  * 校验脚本会把这些报成错误，界面这边只负责不崩、不吞字。</p>
+ *
+ * <h3>汉字和字母、数字之间自动补空格</h3>
+ * <p>中文排版的习惯是汉字与字母、数字之间空一个半角空格，可占位符展开出来的是什么字，写的时候看不到
+ * （物品名「Gram Prime」、配置值「10」），没法手动空。所以解析完之后统一补：占位符或链接展开出的文字<b>首尾</b>是字母 / 数字，
+ * 又紧挨着汉字时，在两者之间补一个空格。判断看的是两边相邻的<b>可见字符</b>（颜色标签不产生字符，自然就跨过去了）；
+ * 原文里已经写了空格的，相邻字符是空格，不会重复补。普通文字之间的中英混排不管，照写法要求自己写
+ * （「赤毒玄骸 冒险指南」这类手写的空格不受影响）。</p>
  *
  * <h3>为什么解析和排版分开</h3>
  * <p>解析的结果只和「原文 + 配置快照」有关，排版还和宽度有关。窗口缩放时只需要重排，
@@ -48,36 +57,51 @@ public final class GuideMarkup {
         /** 属于哪个链接；不是链接为 null */
         @Nullable
         public final Link link;
+        /** 哪一个占位符 / 链接展开出来的（每处一个对象，补空格时按它分界）；普通文字为 null */
+        @Nullable
+        final Object token;
 
-        Span(String text, int color, boolean bold, @Nullable Link link) {
+        Span(String text, int color, boolean bold, @Nullable Link link, @Nullable Object token) {
             this.text = text;
             this.color = color;
             this.bold = bold;
             this.link = link;
+            this.token = token;
         }
     }
 
     /**
-     * 一个链接。一个链接折行后会拆成多个片段，它们共享同一个 Link 对象 ——
-     * 悬停其中一段时整条链接一起变色，靠的就是对象同一性。
+     * 一个链接：条目链接（{@code [[分类/条目]]}）或物品链接（{@code {item:…}}）。一个链接折行后会拆成多个片段，
+     * 它们共享同一个 Link 对象 —— 悬停其中一段时整条链接一起变色，靠的就是对象同一性。
      *
-     * <p><b>流出解析器的 Link 一律可跳转</b>（{@link #entryKey} 非 null）：目标不存在、格式不对、
+     * <p><b>流出解析器的条目链接一律可跳转</b>（{@link #entryKey} 非 null）：目标不存在、格式不对、
      * 被条件藏掉的「死链」不生成 Link，由 {@code parseInto} 按外层正文原样输出。
-     * 界面各处的 {@link #isLive()} 判断因此恒为真，留着只作防御。</p>
+     * 物品链接一律带物品（{@link #stack}），只出提示、不跳转 —— 点击时界面只认 {@link #entryKey}。</p>
      */
     public static final class Link {
         public final String target;
-        /** 目标条目的键（分类/条目）。解析器只为可跳转的目标生成 Link，所以实际不会是 null */
+        /** 条目链接的目标键（分类/条目）；物品链接为 null */
         @Nullable
         public final String entryKey;
+        /** 物品链接的物品；条目链接为 EMPTY */
+        public final ItemStack stack;
 
         Link(String target, @Nullable String entryKey) {
+            this(target, entryKey, ItemStack.EMPTY);
+        }
+
+        Link(String target, @Nullable String entryKey, ItemStack stack) {
             this.target = target;
             this.entryKey = entryKey;
+            this.stack = stack;
         }
 
         public boolean isLive() {
-            return entryKey != null;
+            return entryKey != null || !stack.isEmpty();
+        }
+
+        public boolean isItem() {
+            return !stack.isEmpty();
         }
     }
 
@@ -152,7 +176,7 @@ public final class GuideMarkup {
         if (text == null || text.isEmpty()) {
             return Rich.EMPTY;
         }
-        return new Rich(List.of(new Span(text, color, false, null)));
+        return new Rich(List.of(new Span(text, color, false, null, null)));
     }
 
     /**
@@ -170,13 +194,17 @@ public final class GuideMarkup {
             return Rich.EMPTY;
         }
         Builder out = new Builder();
-        parseInto(raw, resolver, baseColor, baseBold, null, out);
+        parseInto(raw, resolver, baseColor, baseBold, null, null, out);
         out.flush();
-        return new Rich(out.spans);
+        return new Rich(autoSpace(out.spans));
     }
 
+    /**
+     * @param link  外层链接（正在解析某条链接的显示文字时），顶层为 null
+     * @param token 外层占位符 / 链接的标识（补空格时整条链接当一个整体），顶层为 null
+     */
     private static void parseInto(String raw, Resolver resolver, int baseColor, boolean baseBold,
-                                  @Nullable Link link, Builder out) {
+                                  @Nullable Link link, @Nullable Object token, Builder out) {
         // 样式栈：tags[i] 是第 i 层的标签名，colors / bolds 是进入该层后的样式
         List<String> tags = new ArrayList<>();
         List<Integer> colors = new ArrayList<>();
@@ -190,10 +218,10 @@ public final class GuideMarkup {
             char ch = raw.charAt(i);
             if (ch == '\\') {
                 if (i + 1 < n) {
-                    out.append(raw.charAt(i + 1), color, bold, link);
+                    out.append(raw.charAt(i + 1), color, bold, link, token);
                     i += 2;
                 } else {
-                    out.append(ch, color, bold, link);
+                    out.append(ch, color, bold, link, token);
                     i++;
                 }
                 continue;
@@ -203,7 +231,7 @@ public final class GuideMarkup {
                 continue;
             }
             if (ch == '\t') {
-                out.append(' ', color, bold, link);
+                out.append(' ', color, bold, link, token);
                 i++;
                 continue;
             }
@@ -239,31 +267,39 @@ public final class GuideMarkup {
                         continue;
                     }
                 }
-                out.append(ch, color, bold, link);
+                out.append(ch, color, bold, link, token);
                 i++;
                 continue;
             }
             if (ch == '{') {
                 int j = raw.indexOf('}', i + 1);
                 if (j < 0) {
-                    out.append(ch, color, bold, link);
+                    out.append(ch, color, bold, link, token);
                     i++;
                     continue;
                 }
-                String token = raw.substring(i + 1, j);
-                int inner = token.indexOf('{');
-                if (inner >= 0) {
+                String inner = raw.substring(i + 1, j);
+                int nested = inner.indexOf('{');
+                if (nested >= 0) {
                     // 落单的 {：找到的 } 其实属于后面另一个占位符。整段当 token 会把中间的字连同
                     // 那个本来好好的占位符一起吞成一个「?」—— 这个 { 按字面输出，后面的照常解析
                     GuideLog.warnOnce("brace:" + raw, "落单的 {（缺右花括号，要显示花括号请写 \\{）: "
-                            + raw.substring(i, Math.min(n, i + 1 + inner + 24)));
-                    out.append(ch, color, bold, link);
+                            + raw.substring(i, Math.min(n, i + 1 + nested + 24)));
+                    out.append(ch, color, bold, link, token);
                     i++;
                     continue;
                 }
-                GuideValues.Resolved r = resolver.placeholder(token);
-                int c = r.missing && link == null ? GuideTheme.MISSING : color;
-                out.append(r.text, c, bold, link);
+                GuideValues.Resolved r = resolver.placeholder(inner);
+                // 每处占位符一个标识：补空格按「这一处展开出的文字」的首尾判断。在链接里时整条链接算一处
+                Object tok = token != null ? token : new Object();
+                if (!r.stack.isEmpty() && link == null && !r.missing) {
+                    // 物品名做成物品链接：物品链接色 + 点线下划线，悬停出物品提示
+                    Link l = new Link(inner, null, r.stack);
+                    out.append(r.text, GuideTheme.ITEM_LINK, bold, l, tok);
+                } else {
+                    int c = r.missing && link == null ? GuideTheme.MISSING : color;
+                    out.append(r.text, c, bold, link, tok);
+                }
                 i = j + 1;
                 continue;
             }
@@ -283,14 +319,15 @@ public final class GuideMarkup {
                         GuideLog.warnOnce("linkfmt:" + target, "链接目标格式不对（只能是小写的 分类 或 分类/条目）: [[" + target + "]]");
                         resolved = new LinkTarget(null, target);
                     }
+                    Object tok = new Object();
                     if (resolved.entryKey() == null) {
                         // 目标不存在或被条件藏掉了（对应玩法没开）：按外层正文显示，不可点、不提示，
                         // 玩家看不出这里原本是个链接 —— 书里不该让人察觉「有东西没开」。
                         // 这里不生成 Link，所以流出解析器的 Link 一律可跳转
                         if (display == null) {
-                            out.append(resolved.title(), color, bold, link);
+                            out.append(resolved.title(), color, bold, null, tok);
                         } else {
-                            parseInto(display, resolver, color, bold, link, out);
+                            parseInto(display, resolver, color, bold, null, tok, out);
                         }
                         i = j + 2;
                         continue;
@@ -298,15 +335,15 @@ public final class GuideMarkup {
                     Link l = new Link(target, resolved.entryKey());
                     int linkColor = GuideTheme.LINK;
                     if (display == null) {
-                        out.append(resolved.title(), linkColor, bold, l);
+                        out.append(resolved.title(), linkColor, bold, l, tok);
                     } else {
-                        parseInto(display, resolver, linkColor, bold, l, out);
+                        parseInto(display, resolver, linkColor, bold, l, tok, out);
                     }
                     i = j + 2;
                     continue;
                 }
             }
-            out.append(ch, color, bold, link);
+            out.append(ch, color, bold, link, token);
             i++;
         }
     }
@@ -335,8 +372,60 @@ public final class GuideMarkup {
         };
     }
 
+    // ==================== 自动补空格 ====================
+
     /**
-     * 边解析边合并：连续同样式的字符攒成一个片段
+     * 在「占位符 / 链接展开的文字」与相邻汉字之间补半角空格（规则见类注释）。没有要补的地方时原样返回。
+     */
+    static List<Span> autoSpace(List<Span> spans) {
+        List<Span> out = null;
+        for (int i = 0; i < spans.size(); i++) {
+            Span cur = spans.get(i);
+            if (i > 0) {
+                Span prev = spans.get(i - 1);
+                if (prev.token != cur.token && needsSpace(prev, cur)) {
+                    if (out == null) {
+                        out = new ArrayList<>(spans.subList(0, i));
+                    }
+                    // 空格跟着「普通文字」那一侧的样式走，且不属于任何链接（链接下划线不会多出一截）
+                    Span plainSide = prev.token == null ? prev : cur.token == null ? cur : prev;
+                    out.add(new Span(" ", plainSide.color, plainSide.bold, null, null));
+                }
+            }
+            if (out != null) {
+                out.add(cur);
+            }
+        }
+        return out == null ? spans : out;
+    }
+
+    private static boolean needsSpace(Span prev, Span cur) {
+        if (prev.text.isEmpty() || cur.text.isEmpty()) {
+            return false;
+        }
+        int a = prev.text.codePointBefore(prev.text.length());
+        int b = cur.text.codePointAt(0);
+        // 左边是占位符、以字母 / 数字结尾，右边紧跟汉字；或者左边汉字、右边是以字母 / 数字开头的占位符
+        return prev.token != null && isLatin(a) && isHan(b)
+                || cur.token != null && isHan(a) && isLatin(b);
+    }
+
+    /** 汉字、假名、谚文（不含全角标点：字母和全角标点之间不空格） */
+    private static boolean isHan(int cp) {
+        if (cp < 0x2E80) {
+            return false;
+        }
+        Character.UnicodeScript script = Character.UnicodeScript.of(cp);
+        return script == Character.UnicodeScript.HAN || script == Character.UnicodeScript.HIRAGANA
+                || script == Character.UnicodeScript.KATAKANA || script == Character.UnicodeScript.HANGUL;
+    }
+
+    private static boolean isLatin(int cp) {
+        return cp < 0x2E80 && Character.isLetterOrDigit(cp);
+    }
+
+    /**
+     * 边解析边合并：连续同样式、同一处来源的字符攒成一个片段
      */
     private static final class Builder {
         final List<Span> spans = new ArrayList<>();
@@ -344,32 +433,34 @@ public final class GuideMarkup {
         int color;
         boolean bold;
         Link link;
+        Object token;
 
-        void append(char ch, int c, boolean b, @Nullable Link l) {
-            switchTo(c, b, l);
+        void append(char ch, int c, boolean b, @Nullable Link l, @Nullable Object t) {
+            switchTo(c, b, l, t);
             text.append(ch);
         }
 
-        void append(String s, int c, boolean b, @Nullable Link l) {
+        void append(String s, int c, boolean b, @Nullable Link l, @Nullable Object t) {
             if (s.isEmpty()) {
                 return;
             }
-            switchTo(c, b, l);
+            switchTo(c, b, l, t);
             text.append(s);
         }
 
-        private void switchTo(int c, boolean b, @Nullable Link l) {
-            if (text.length() > 0 && (c != color || b != bold || l != link)) {
+        private void switchTo(int c, boolean b, @Nullable Link l, @Nullable Object t) {
+            if (text.length() > 0 && (c != color || b != bold || l != link || t != token)) {
                 flush();
             }
             color = c;
             bold = b;
             link = l;
+            token = t;
         }
 
         void flush() {
             if (text.length() > 0) {
-                spans.add(new Span(text.toString(), color, bold, link));
+                spans.add(new Span(text.toString(), color, bold, link, token));
                 text.setLength(0);
             }
         }

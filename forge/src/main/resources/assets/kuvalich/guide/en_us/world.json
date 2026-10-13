@@ -10,6 +10,7 @@
       "title": "Requiem Ore",
       "icon": "kuvalich:requiem_ore",
       "summary": "The only source of Requiem Cards",
+      "items": ["kuvalich:requiem_ore"],
       "blocks": [
         { "type": "p", "text": "{item:kuvalich:requiem_ore} is the only source of <hl>Requiem Cards</hl>, and you'll want a pickaxe with {lang:enchantment.kuvalich.requiem_destroyed} to mine it. Requiem Cards are the keys for cracking the code of the boss, the {lang:entity.kuvalich.kuva_master}; see [[requiem/requiem_cards]]." },
         { "type": "h", "if": "cfg:ore_gen.requiemOreVeinCount", "text": "Where to find it" },
@@ -72,6 +73,7 @@
       "title": "Experience Ore",
       "icon": "kuvalich:experience_ore",
       "summary": "Stone-pickaxe ore that gives XP and Endo",
+      "items": ["kuvalich:experience_ore"],
       "blocks": [
         { "type": "p", "text": "{item:kuvalich:experience_ore} is an ore you can mine with just a <t>stone pickaxe</t>. It drops XP when broken, plus a 50/50 shot at {item:kuvalich:endo}." },
         { "type": "p", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "Endo is the material for levelling up mods, and mods are upgrade cards you install in a weapon or on yourself. How levelling works: [[modules/module_level]]; other Endo sources: [[world/loot]]." },

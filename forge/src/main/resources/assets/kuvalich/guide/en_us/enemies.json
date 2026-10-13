@@ -10,6 +10,7 @@
       "title": "Kuva Thrall",
       "icon": "kuvalich:kuva_slave_spawn_egg",
       "summary": "Your everyday foe: progress, materials, mods",
+      "items": ["kuvalich:kuva_slave_spawn_egg"],
       "blocks": [
         { "type": "p", "text": "The <hl>{lang:entity.kuvalich.kuva_slave}</hl> is this mod's basic enemy and the most common Kuva enemy. Every one you kill yourself brings you a step closer to beating the boss, the {lang:entity.kuvalich.kuva_master}, and may drop materials and mods." },
         { "type": "entity", "id": "kuvalich:kuva_slave", "height": 88 },
@@ -79,6 +80,7 @@
       "title": "Kuva Lich",
       "icon": "kuvalich:kuva_master_spawn_egg",
       "summary": "The boss: how to meet it and what winning gives you",
+      "items": ["kuvalich:kuva_master_spawn_egg"],
       "blocks": [
         { "type": "p", "text": "The <hl>{lang:entity.kuvalich.kuva_master}</hl> is this mod's boss and the end of the Requiem decryption loop. All your progress and card guessing gets tested on it: guess right and you win a Kuva weapon and other big rewards." },
         { "type": "entity", "id": "kuvalich:kuva_master", "height": 96 },

@@ -34,13 +34,19 @@ final class GuideRender {
     int mouseY;
     /** 鼠标是否在可交互区域内（被裁掉的部分、动画进行中都不算） */
     boolean mouseActive;
+    /**
+     * 左键现在按着（直接问 GLFW；点击在 mouseClicked 里就生效了，这只决定按住时画成什么样）：
+     * 格子、顶栏按钮、翻页卡、继续阅读条按住时沉回原位、底色转暗
+     */
+    boolean mouseDown;
     /** 可见区域的上下边界（面板坐标），用来跳过看不见的行 */
     int clipTop;
     int clipBottom;
     /** 文字与填充的整体透明度（换页淡入用） */
     float alpha = 1f;
     long now;
-    float time;
+    /** 悬停锁定括号的限速（整个界面共用一个） */
+    GuideLockBudget lockBudget;
 
     /** 上一帧鼠标下的链接：决定本帧哪条链接画成悬停样式 */
     @Nullable
@@ -100,6 +106,10 @@ final class GuideRender {
             boolean live = link != null && link.isLive();
             if (link != null && over(px, y - 1, Math.max(1, p.w), GuideTheme.LINE_H)) {
                 nextHoverLink = link;
+                if (link.isItem()) {
+                    // 物品链接：悬停出物品提示（和物品格一样）
+                    hoverStack = link.stack;
+                }
             }
             boolean hovered = live && link == hoverLink;
             g.drawString(font, hovered && p.hoverSeq != null ? p.hoverSeq : p.seq, px, y, text(0xFFFFFFFF), shadow);
@@ -107,7 +117,8 @@ final class GuideRender {
                 if (hovered) {
                     g.fill(px, y + 9, px + p.w, y + 10, fill(GuideTheme.KUVA));
                 } else {
-                    GuideTheme.dotted(g, px, y + 9, p.w, fill(GuideTheme.withAlpha(GuideTheme.LINK, 0x90)));
+                    int under = link.isItem() ? GuideTheme.ITEM_LINK : GuideTheme.LINK;
+                    GuideTheme.dotted(g, px, y + 9, p.w, fill(GuideTheme.withAlpha(under, 0x90)));
                 }
             }
         }

@@ -10,6 +10,7 @@
       "title": "What mods are and how to install them",
       "icon": "kuvalich:item_common_module",
       "summary": "Mod types, sources, revealing and installing",
+      "items": ["kuvalich:item_common_module", "kuvalich:item_uncommon_module", "kuvalich:item_rare_module", "kuvalich:item_prime_module"],
       "blocks": [
         {
           "type": "p",
@@ -583,6 +584,7 @@
       "title": "Mod levels and Endo",
       "icon": "kuvalich:endo",
       "summary": "Level scaling, upgrade costs, Endo sources",
+      "items": ["kuvalich:endo"],
       "blocks": [
         {
           "type": "p",
@@ -863,6 +865,7 @@
       "title": "Riven mods",
       "icon": "kuvalich:item_riven_module",
       "summary": "Random stats, disposition and cycling",
+      "items": ["kuvalich:item_riven_module", "kuvalich:warframe_riven_module"],
       "blocks": [
         {
           "type": "p",

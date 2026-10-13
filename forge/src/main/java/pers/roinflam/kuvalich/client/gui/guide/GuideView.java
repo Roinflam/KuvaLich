@@ -7,11 +7,14 @@ import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.registries.ForgeRegistries;
+import pers.roinflam.kuvalich.client.gui.guide.GuideContent.Block;
+import pers.roinflam.kuvalich.client.gui.guide.GuideContent.BlockType;
 import pers.roinflam.kuvalich.client.gui.guide.GuideContent.Book;
 import pers.roinflam.kuvalich.client.gui.guide.GuideContent.Category;
 import pers.roinflam.kuvalich.client.gui.guide.GuideContent.Entry;
 import pers.roinflam.kuvalich.client.gui.guide.GuideMarkup.LinkTarget;
 import pers.roinflam.kuvalich.client.gui.guide.GuideMarkup.Rich;
+import pers.roinflam.kuvalich.utils.Reference;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,10 +35,49 @@ import java.util.Map;
  * 服务端重发了配置（{@link GuideClientConfig#revision()}）、玩家切了语言。重建很便宜 ——
  * 几十个条目的条件求值加标题解析，远不到一毫秒；正文要等真正翻到那一篇才排版。</p>
  *
+ * <h3>全局只有一份（{@link #current()}）</h3>
+ * <p>指南界面和物品提示上的「按住 Ctrl 查阅」（{@link GuideLookup}）共用同一个实例 —— 指南关着的时候也要能查
+ * 「这个物品在哪一篇」。上面三样任何一样变了，下次来取时整个重建。</p>
+ *
+ * <h3>物品 → (条目, 块) 索引（{@link #find}）</h3>
+ * <p>查阅用。按下面的优先级取，同一优先级按全书顺序取先出现的：</p>
+ * <ol>
+ *   <li>条目的 {@code items} 字段里手标的（这一篇是它的专篇；任何命名空间都行）；</li>
+ *   <li>配方块的产物（{@code recipe} 块的 {@code item}）；</li>
+ *   <li>物品块（{@code items} 块）里列出的；</li>
+ *   <li>条目图标；</li>
+ *   <li>正文里用 {@code {item:…}} 提到的（标题、摘要、各块的文字、列表项、表格格子、提示框标题都算）。</li>
+ * </ol>
+ * <p>第 1 条以外都是猜，只给手标漏掉的物品兜底，而且只收本模组的物品：原版物品在书里多半是举例或配图
+ * （「×3 黑曜石」、拿钻石剑当话题图标），挂上查阅行反倒误导，要做查阅就写进 {@code items}。
+ * 图标排在配方、物品块后面：入门教程的章节、词条速查常拿本模组物品当配图，按「图标 = 专篇」猜会把一大批物品引到教程章去。</p>
+ * <p>落到哪一块（{@link #firstBlockShowing}）：篇里第一个写着它名字的小标题（一篇讲好几样东西时，每样一节）→
+ * 这一篇的图标就是它（整篇都在讲它）→ 篇首；否则第一块展示它的配方 / 物品块 / 提到它的块，都没有就篇首。</p>
+ * <p><b>只收可见的内容</b>：被 {@code if} 藏掉的分类 / 条目 / 块，以及被行级 {@code if} 藏掉的列表项 / 表格行里的物品都不算 ——
+ * 物品只出现在被藏掉的内容里时，提示框上不显示查阅那一行；手标的专篇被藏掉时，退回按上面的规则在可见内容里找。
+ * 块序号是 {@link EntryView#blocks()} 的下标，和阅读页排版用的是同一份，所以对得上。</p>
+ *
  * @author RoinFlam
  */
 @OnlyIn(Dist.CLIENT)
 final class GuideView implements GuideMarkup.Resolver {
+
+    @Nullable
+    private static GuideView current;
+
+    /** 正文里的物品占位符 */
+    private static final java.util.regex.Pattern ITEM_REF = java.util.regex.Pattern.compile("\\{item:\\s*([^}\\s]+)\\s*}");
+
+    /**
+     * 查阅的目标
+     *
+     * @param entryKey 条目键（分类/条目）
+     * @param block    块序号（{@link EntryView#blocks()} 里的下标）；-1 表示篇首
+     */
+    record Target(String entryKey, int block) {}
+
+    @Nullable
+    private Map<Item, Target> index;
 
     final Book book;
     final GuideValues values;
@@ -92,11 +134,26 @@ final class GuideView implements GuideMarkup.Resolver {
     }
 
     /**
+     * 当前的视图（全局共用一份；内容、配置、语言任何一样变了就重建）
+     *
+     * @return 视图
+     */
+    @Nonnull
+    static GuideView current() {
+        GuideView view = current;
+        if (view == null || view.isStale()) {
+            view = build();
+            current = view;
+        }
+        return view;
+    }
+
+    /**
      * 按当前内容、配置快照、语言建一个视图
      *
      * @return 视图
      */
-    static GuideView build() {
+    private static GuideView build() {
         Book book = GuideContentLoader.get();
         int generation = GuideContentLoader.generation();
         int revision = GuideClientConfig.revision();
@@ -207,6 +264,189 @@ final class GuideView implements GuideMarkup.Resolver {
         return new LinkTarget(null, target);
     }
 
+    // ==================== 查阅索引 ====================
+
+    /**
+     * 书里讲这个物品的条目和块（优先级见类注释）
+     *
+     * @param item 物品
+     * @return 目标；书里没有（或只在被藏掉的内容里）时为 null
+     */
+    @Nullable
+    Target find(Item item) {
+        if (index == null) {
+            index = buildIndex();
+        }
+        return index.get(item);
+    }
+
+    private Map<Item, Target> buildIndex() {
+        Map<Item, Target> map = new HashMap<>();
+        // 1. 条目手标的专篇（任何命名空间）
+        for (EntryView ev : entryList) {
+            for (String raw : ev.entry.items) {
+                ResourceLocation id = ResourceLocation.tryParse(raw);
+                Item item = id == null ? null : item(id);
+                if (item != null && !map.containsKey(item)) {
+                    map.put(item, new Target(ev.key, firstBlockShowing(ev, item)));
+                }
+            }
+        }
+        // 2 ~ 5 是兜底的猜测，只收本模组的物品
+        // 2. 配方块的产物
+        for (EntryView ev : entryList) {
+            List<Block> blocks = ev.blocks();
+            for (int i = 0; i < blocks.size(); i++) {
+                Block b = blocks.get(i);
+                if (b.type == BlockType.RECIPE && b.item != null) {
+                    guess(map, b.item, ev, i);
+                }
+            }
+        }
+        // 3. 物品块
+        for (EntryView ev : entryList) {
+            List<Block> blocks = ev.blocks();
+            for (int i = 0; i < blocks.size(); i++) {
+                Block b = blocks.get(i);
+                if (b.type == BlockType.ITEMS) {
+                    for (String raw : b.items) {
+                        guess(map, raw, ev, i);
+                    }
+                }
+            }
+        }
+        // 4. 条目图标
+        for (EntryView ev : entryList) {
+            Item item = ev.entry.icon == null ? null : ownItem(ev.entry.icon);
+            if (item != null && !map.containsKey(item)) {
+                map.put(item, new Target(ev.key, firstBlockShowing(ev, item)));
+            }
+        }
+        // 5. 正文里提到的：标题 / 摘要算篇首，块里的算那一块
+        for (EntryView ev : entryList) {
+            for (String raw : mentions(ev.entry.title, ev.entry.summary)) {
+                guess(map, raw, ev, -1);
+            }
+            List<Block> blocks = ev.blocks();
+            for (int i = 0; i < blocks.size(); i++) {
+                for (String raw : mentions(blocks.get(i))) {
+                    guess(map, raw, ev, i);
+                }
+            }
+        }
+        return map;
+    }
+
+    /** 兜底猜测：本模组的物品、还没有落点时才收 */
+    private static void guess(Map<Item, Target> map, String raw, EntryView ev, int block) {
+        Item item = ownItem(raw);
+        if (item != null) {
+            map.putIfAbsent(item, new Target(ev.key, block));
+        }
+    }
+
+    /** 本模组命名空间下注册过的物品；别的命名空间、不存在的都是 null */
+    @Nullable
+    private static Item ownItem(String raw) {
+        ResourceLocation id = ResourceLocation.tryParse(raw.trim());
+        return id == null || !Reference.MOD_ID.equals(id.getNamespace()) ? null : item(id);
+    }
+
+    /**
+     * 这个物品在这一篇里落到哪一块（规则见类注释）：写着它名字的小标题 → 图标就是它则篇首 →
+     * 配方产物 → 物品块 → 正文提到 → 篇首（-1）
+     */
+    private static int firstBlockShowing(EntryView ev, Item item) {
+        List<Block> blocks = ev.blocks();
+        for (int i = 0; i < blocks.size(); i++) {
+            Block b = blocks.get(i);
+            if (b.type == BlockType.H) {
+                for (String raw : mentions(b)) {
+                    if (is(raw, item)) {
+                        return i;
+                    }
+                }
+            }
+        }
+        if (ev.entry.icon != null && is(ev.entry.icon, item)) {
+            return -1;
+        }
+        for (int i = 0; i < blocks.size(); i++) {
+            Block b = blocks.get(i);
+            if (b.type == BlockType.RECIPE && b.item != null && is(b.item, item)) {
+                return i;
+            }
+        }
+        for (int i = 0; i < blocks.size(); i++) {
+            Block b = blocks.get(i);
+            if (b.type == BlockType.ITEMS) {
+                for (String raw : b.items) {
+                    if (is(raw, item)) {
+                        return i;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < blocks.size(); i++) {
+            for (String raw : mentions(blocks.get(i))) {
+                if (is(raw, item)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private static boolean is(String raw, Item item) {
+        ResourceLocation id = ResourceLocation.tryParse(raw.trim());
+        return id != null && item(id) == item;
+    }
+
+    /** 一块里所有带文字的字段中 {@code {item:…}} 提到的物品 id（物品块的 items 是 id 本身，不在这里） */
+    private static List<String> mentions(Block b) {
+        List<String> out = new ArrayList<>(2);
+        collect(b.text, out);
+        collect(b.title, out);
+        collect(b.caption, out);
+        if (b.type != BlockType.ITEMS) {
+            for (String s : b.items) {
+                collect(s, out);
+            }
+        }
+        for (String s : b.header) {
+            collect(s, out);
+        }
+        for (List<String> row : b.rows) {
+            for (String s : row) {
+                collect(s, out);
+            }
+        }
+        return out;
+    }
+
+    private static List<String> mentions(@Nullable String a, @Nullable String b) {
+        List<String> out = new ArrayList<>(1);
+        collect(a, out);
+        collect(b, out);
+        return out;
+    }
+
+    private static void collect(@Nullable String raw, List<String> out) {
+        if (raw == null || raw.indexOf("{item:") < 0) {
+            return;
+        }
+        java.util.regex.Matcher m = ITEM_REF.matcher(raw);
+        while (m.find()) {
+            out.add(m.group(1));
+        }
+    }
+
+    @Nullable
+    private static Item item(ResourceLocation id) {
+        Item item = ForgeRegistries.ITEMS.containsKey(id) ? ForgeRegistries.ITEMS.getValue(id) : null;
+        return item == null || item == Items.AIR ? null : item;
+    }
+
     // ==================== 图标 ====================
 
     /**
@@ -313,6 +553,8 @@ final class GuideView implements GuideMarkup.Resolver {
         private String title;
         private String summary;
         private ItemStack icon;
+        @Nullable
+        private List<Block> blocks;
 
         EntryView(GuideView view, CatView cat, Entry entry, int index, int globalIndex) {
             this.view = view;
@@ -346,6 +588,26 @@ final class GuideView implements GuideMarkup.Resolver {
                 icon = view.icon(entry.icon, cat.icon());
             }
             return icon;
+        }
+
+        /**
+         * 当前配置下显示的块：块级 {@code if} 成立、去掉行级 {@code if} 不成立的列表项 / 表格行之后不是空的。
+         * 阅读页排版、搜索、查阅索引都用这一份，块序号因此处处对得上
+         */
+        List<Block> blocks() {
+            if (blocks == null) {
+                List<Block> out = new ArrayList<>(entry.blocks.size());
+                for (Block b : entry.blocks) {
+                    if (view.values.test(b.cond)) {
+                        Block vb = b.visible(view.values::test);
+                        if (!vb.isHollow()) {
+                            out.add(vb);
+                        }
+                    }
+                }
+                blocks = Collections.unmodifiableList(out);
+            }
+            return blocks;
         }
     }
 }

@@ -54,10 +54,17 @@ public final class GuideValues {
         public final String text;
         /** 缺键 / 缺物品等：界面用警告色显示 */
         public final boolean missing;
+        /** {@code {item:…}} 解析出的物品（正文里做成物品链接，悬停出物品提示）；其它占位符为 EMPTY */
+        public final ItemStack stack;
 
         Resolved(String text, boolean missing) {
+            this(text, missing, ItemStack.EMPTY);
+        }
+
+        Resolved(String text, boolean missing, ItemStack stack) {
             this.text = text;
             this.missing = missing;
+            this.stack = stack;
         }
     }
 
@@ -297,7 +304,8 @@ public final class GuideValues {
             }
             Item item = ForgeRegistries.ITEMS.getValue(rl);
             try {
-                return new Resolved(new ItemStack(item).getHoverName().getString(), false);
+                ItemStack stack = new ItemStack(item);
+                return new Resolved(stack.getHoverName().getString(), false, stack);
             } catch (RuntimeException e) {
                 // 别的模组的物品取名字可能依赖世界 / NBT，抛出来会让整篇排版失败：只把这一处换成「?」
                 GuideLog.warnOnce("itemname:" + key, "{item:" + key + "}：取物品名失败 —— " + e);

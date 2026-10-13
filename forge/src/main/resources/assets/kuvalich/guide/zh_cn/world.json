@@ -10,6 +10,7 @@
       "title": "安魂矿石",
       "icon": "kuvalich:requiem_ore",
       "summary": "安魂卡的唯一来源，最好用灭骸镐挖",
+      "items": ["kuvalich:requiem_ore"],
       "blocks": [
         { "type": "p", "text": "{item:kuvalich:requiem_ore}是<hl>安魂卡</hl>的唯一来源，挖它最好用一把带{lang:enchantment.kuvalich.requiem_destroyed}附魔的镐子。安魂卡是破解 Boss {lang:entity.kuvalich.kuva_master}用的钥匙卡，见[[requiem/requiem_cards]]。" },
         { "type": "h", "if": "cfg:ore_gen.requiemOreVeinCount", "text": "在哪找" },
@@ -97,6 +98,7 @@
       "title": "经验矿石",
       "icon": "kuvalich:experience_ore",
       "summary": "石镐就能挖，出经验和内融核心",
+      "items": ["kuvalich:experience_ore"],
       "blocks": [
         { "type": "p", "text": "{item:kuvalich:experience_ore}是一种<t>石镐</t>就能挖的矿。挖碎时掉经验，还有一半机会掉{item:kuvalich:endo}。" },
         { "type": "p", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "内融核心是给模组升级的材料，模组就是装在武器或你身上的强化卡。升级方法见[[modules/module_level]]，内融核心的其它来源见[[world/loot]]。" },

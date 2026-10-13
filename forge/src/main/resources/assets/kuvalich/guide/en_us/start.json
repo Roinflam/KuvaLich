@@ -1525,6 +1525,7 @@
       "title": "Material Index",
       "icon": "kuvalich:requiem_gem",
       "summary": "Where each material comes from, what it's for",
+      "items": ["kuvalich:kuva", "kuvalich:riven_sliver"],
       "blocks": [
         {
           "type": "p",

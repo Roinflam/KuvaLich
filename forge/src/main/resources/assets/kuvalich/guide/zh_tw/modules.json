@@ -10,6 +10,12 @@
       "title": "模組是什麼、怎麼裝",
       "icon": "kuvalich:item_common_module",
       "summary": "兩類模組、從哪來、揭示與安裝",
+      "items": [
+        "kuvalich:item_common_module",
+        "kuvalich:item_uncommon_module",
+        "kuvalich:item_rare_module",
+        "kuvalich:item_prime_module"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -593,6 +599,9 @@
       "title": "模組等級與內融核心",
       "icon": "kuvalich:endo",
       "summary": "等級折算、升級費用、內融核心來源",
+      "items": [
+        "kuvalich:endo"
+      ],
       "blocks": [
         {
           "type": "p",
@@ -873,6 +882,10 @@
       "title": "裂罅模組",
       "icon": "kuvalich:item_riven_module",
       "summary": "隨機詞條、傾向性與循環洗詞條",
+      "items": [
+        "kuvalich:item_riven_module",
+        "kuvalich:warframe_riven_module"
+      ],
       "blocks": [
         {
           "type": "p",

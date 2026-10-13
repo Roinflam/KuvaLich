@@ -442,9 +442,11 @@ public final class CodexTheme {
         for (int i = 0; i < MOTES; i++) {
             int hash = (int) (((long) i * 2654435761L) & 0x7FFFFFFF) % 100003;
             int px = x + 2 + (hash % Math.max(1, w - 4));
-            float speed = 0.006f + (hash % 5) * 0.002f;
-            float raw = (millis * speed + hash % 991) % (h + 20);
-            int py = y + h - (int) raw;
+            // 整数运算：millis 是开机以来的毫秒（Windows 快速启动时关机也不清零），转成 float 再乘速度，
+            // 开机十几天后精度只剩上百毫秒，微粒一跳一跳地走。速度 0.006~0.014 像素/毫秒 = 6~14 像素/秒
+            long travel = millis * (6 + 2 * (hash % 5)) / 1000L + hash % 991;
+            int raw = (int) (travel % (h + 20));
+            int py = y + h - raw;
             if (py < y || py >= y + h) continue;
             float lifeFade = (float) (py - y) / h;
             int a = (int) (0x90 * lifeFade * alpha * (0.4f + 0.6f * (hash % 5) / 4f));

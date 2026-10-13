@@ -10,6 +10,7 @@
       "title": "Warframe Arsenal",
       "icon": "kuvalich:requiem_warframe_table",
       "summary": "Where Warframe mods go: recipe and use",
+      "items": ["kuvalich:requiem_warframe_table"],
       "blocks": [
         {
           "type": "p",
@@ -110,6 +111,7 @@
       "title": "How Warframe Mods Work",
       "icon": "kuvalich:warframe_rare_module",
       "summary": "Always on, how values stack, when each stat applies",
+      "items": ["kuvalich:warframe_common_module", "kuvalich:warframe_uncommon_module", "kuvalich:warframe_rare_module", "kuvalich:warframe_prime_module"],
       "blocks": [
         {
           "type": "p",
