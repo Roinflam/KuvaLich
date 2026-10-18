@@ -18,6 +18,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  *   <li>{@code 1~10}：指定倍数，不会比游戏的界面缩放更大（超过时按游戏倍数画、配置不改）。</li>
  * </ul>
  * <p>指南顶栏的「Aa」按钮、Ctrl + 滚轮、Ctrl − / = / 0 改的也是这一项（{@link #set}），会写回文件。</p>
+ * <p>同一小节里还有 {@code intro_animation}：开场、收场动画开不开（默认开），顶栏「Aa」左边那颗按钮切换（{@link #setIntroAnimation}），也写回文件。</p>
  *
  * <p>只有 ForgeConfigSpec，不引用客户端类：专用服上 CLIENT 配置永远不加载，值一直是默认值。
  * 读值在 {@code ModConfigEvent.Loading / Reloading} 里缓存进 volatile 字段 —— 打开指南时配置万一还没加载，
@@ -36,7 +37,9 @@ public final class GuideDisplayConfig {
     public static final int MAX_FIXED = 10;
 
     private static ForgeConfigSpec.IntValue guiScale;
+    private static ForgeConfigSpec.BooleanValue introAnimation;
     private static volatile int cachedGuiScale = AUTO;
+    private static volatile boolean cachedIntroAnimation = true;
 
     private GuideDisplayConfig() {
     }
@@ -51,7 +54,26 @@ public final class GuideDisplayConfig {
                         "冒险指南的界面大小。0 = 自动；-1 = 总跟游戏的界面缩放一样；1~10 = 指定倍数（不会比游戏的界面缩放更大）。"
                                 + "指南顶栏的「Aa」按钮、Ctrl + 滚轮也能调，会写回这里")
                 .defineInRange("gui_scale", AUTO, FOLLOW_GAME, MAX_FIXED);
+        introAnimation = builder.comment(
+                        "Play the opening and closing animation of the adventure guide. Off: it opens and closes at once.",
+                        "冒险指南开不开场、收场动画。关掉以后指南直接打开、直接合上。指南顶栏「Aa」左边的按钮也能切换，会写回这里")
+                .define("intro_animation", true);
         builder.pop();
+    }
+
+    /** 开场、收场动画开着没有 */
+    public static boolean introAnimation() {
+        return cachedIntroAnimation;
+    }
+
+    /** 切换开场动画并写回文件（同 {@link #set}） */
+    public static void setIntroAnimation(boolean value) {
+        cachedIntroAnimation = value;
+        if (introAnimation == null || !TooltipConfig.CLIENT_CONFIG.isLoaded()) {
+            return;
+        }
+        introAnimation.set(value);
+        introAnimation.save();
     }
 
     /** 配置值（0 自动 / -1 跟游戏 / 1~10 指定） */
@@ -75,6 +97,7 @@ public final class GuideDisplayConfig {
     private static void refresh(ModConfigEvent event) {
         if (guiScale != null && event.getConfig().getSpec() == TooltipConfig.CLIENT_CONFIG) {
             cachedGuiScale = guiScale.get();
+            cachedIntroAnimation = introAnimation == null || introAnimation.get();
         }
     }
 

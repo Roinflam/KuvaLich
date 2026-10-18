@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
+import pers.roinflam.kuvalich.config.GuideDisplayConfig;
 import pers.roinflam.kuvalich.client.gui.codex.CodexTheme;
 import pers.roinflam.kuvalich.client.gui.guide.GuideMarkup.Link;
 import pers.roinflam.kuvalich.client.gui.guide.GuideView.CatView;
@@ -152,10 +153,10 @@ public class GuideScreen extends Screen {
     @Nullable
     private Page wipeFrom;
     private long wipeAt;
-    /** 顶栏按钮的悬停量：0~2 导航、3 是「Aa」 */
-    private final float[] navHover = new float[4];
+    /** 顶栏按钮的悬停量：0~2 导航、3 是「Aa」、4 是开场动画开关 */
+    private final float[] navHover = new float[5];
     /** 顶栏按钮开始悬停的时刻（锁定括号按它收拢）；0 = 没在悬停 */
-    private final long[] navLockAt = new long[4];
+    private final long[] navLockAt = new long[5];
 
     // ==================== 几何 ====================
 
@@ -174,6 +175,8 @@ public class GuideScreen extends Screen {
     private static final int NAV_H = 14;
     /** 「Aa」按钮（调界面大小）：在三个导航按钮右边，中间空 {@value #SCALE_GAP}px、画一道 1px 结构线 */
     private int scaleX;
+    /** 开场动画开关：紧挨在「Aa」左边，中间空 3px */
+    private int animX;
     private static final int SCALE_GAP = 5;
     /** 顶栏左侧文字区的右边界（在它之后是导航按钮） */
     private int headerTextRight;
@@ -319,9 +322,10 @@ public class GuideScreen extends Screen {
         searchX = panelX + panelW - GuideTheme.PAD - searchW;
         searchY = panelY + 9;
         navY = panelY + 10;
-        // 后退 / 前进 / 首页，再空 SCALE_GAP 是「Aa」（调界面大小）
+        // 后退 / 前进 / 首页，再空 SCALE_GAP 是开场动画开关和「Aa」（调界面大小）
         scaleX = searchX - 10 - NAV_W;
-        int nx = scaleX - SCALE_GAP - (NAV_W * 3 + 3 * 2);
+        animX = scaleX - 3 - NAV_W;
+        int nx = animX - SCALE_GAP - (NAV_W * 3 + 3 * 2);
         for (int i = 0; i < 3; i++) {
             navX[i] = nx + i * (NAV_W + 3);
         }
@@ -540,7 +544,9 @@ public class GuideScreen extends Screen {
     public void onClose() {
         if (closingAt == 0L) {
             // 开场还没走完就关：开场时间轴冻结在这一刻（见 GuideIntro#update），收场从当时的样子接着走
-            closingAt = Util.getMillis();
+            // 动画关着：把起点拨到收场时长以前，下一帧（或下一 tick）就是走完的状态，其余流程不变
+            long now = Util.getMillis();
+            closingAt = GuideDisplayConfig.introAnimation() ? now : now - (long) GuideIntro.CLOSE_MS - 300L;
             saveState();
             return;
         }
@@ -780,6 +786,10 @@ public class GuideScreen extends Screen {
             if (closingAt == 0L) {
                 introT = 0f;
                 home.restartIntro();
+                if (!GuideDisplayConfig.introAnimation()) {
+                    // 开场动画关着：第一帧就是终态，和开场中点一下跳过的效果一样
+                    skipIntro();
+                }
             }
         } else if (closingAt == 0L && introT < fx.introEnd()) {
             // 逐帧累加：单帧最多记 MAX_FRAME_MS，卡顿的那几帧不会把开场跳掉；收场时停住（开场冻结在按下关闭的那一刻）
@@ -959,6 +969,13 @@ public class GuideScreen extends Screen {
                 return;
             }
         }
+        if (GuideTheme.hit(mouseX, mouseY, animX, navY, NAV_W, NAV_H)) {
+            g.renderComponentTooltip(this.font, List.of(
+                    Component.translatable(GuideDisplayConfig.introAnimation() ? "kuvalich.guide.anim.on" : "kuvalich.guide.anim.off"),
+                    Component.translatable("kuvalich.guide.anim.hint").withStyle(st -> st.withColor(GuideTheme.ASH & 0xFFFFFF))),
+                    mouseX, mouseY);
+            return;
+        }
         if (minecraft != null && GuideTheme.hit(mouseX, mouseY, scaleX, navY, NAV_W, NAV_H)) {
             // 第一行：界面大小：自动（×3）/ ×2（已指定）/ 跟游戏一样（×4）；第二行次要色写怎么调。
             // 只有一档可选时（游戏本身是 1 倍或 2 倍）按钮是灰的，第二行改说为什么调不了，不教一个不起作用的操作
@@ -991,12 +1008,14 @@ public class GuideScreen extends Screen {
 
         // 不显示「数值来自服务端 / 本地」之类的标签：同步是后台的事，单人游戏里本来也没有「服务器」可言
 
-        // 顶栏按钮：后退 / 前进 / 首页，隔一道结构线是「Aa」（调界面大小，静止，只有悬停 / 按下态）
-        g.fill(scaleX - 3, navY + 2, scaleX - 2, navY + NAV_H - 2, GuideTheme.withAlpha(GuideTheme.EDGE, 0xE0));
-        for (int i = 0; i < 4; i++) {
+        // 顶栏按钮：后退 / 前进 / 首页，隔一道结构线是开场动画开关和「Aa」（调界面大小，静止，只有悬停 / 按下态）
+        g.fill(animX - 3, navY + 2, animX - 2, navY + NAV_H - 2, GuideTheme.withAlpha(GuideTheme.EDGE, 0xE0));
+        boolean animOn = GuideDisplayConfig.introAnimation();
+        for (int i = 0; i < 5; i++) {
             boolean scale = i == 3;
-            int bx = scale ? scaleX : navX[i];
-            boolean on = scale ? minecraft != null && GuideScale.adjustable(minecraft) : navEnabled(i);
+            boolean anim = i == 4;
+            int bx = scale ? scaleX : anim ? animX : navX[i];
+            boolean on = scale ? minecraft != null && GuideScale.adjustable(minecraft) : anim || navEnabled(i);
             boolean over = settled && on && GuideTheme.hit(mx, my, bx, navY, NAV_W, NAV_H);
             navHover[i] = GuideTheme.approach(navHover[i], over ? 1f : 0f, delta, 16f);
             if (!over) {
@@ -1023,6 +1042,9 @@ public class GuideScreen extends Screen {
             int cy = navY + NAV_H / 2;
             if (scale) {
                 GuideTheme.scaleGlyph(g, cx, cy, glyph);
+            } else if (anim) {
+                // 关着的时候星是暗的、斜杠用赤毒色提示「已关」
+                GuideTheme.animGlyph(g, cx, cy, animOn ? glyph : GuideTheme.withAlpha(glyph, 0x90), GuideTheme.KUVA, animOn);
             } else if (i == 2) {
                 GuideTheme.house(g, cx, cy - 1, glyph);
             } else {
@@ -1244,6 +1266,14 @@ public class GuideScreen extends Screen {
         long now = Util.getMillis();
         if (button == GLFW.GLFW_MOUSE_BUTTON_4) {
             back();
+            return true;
+        }
+        // 开场动画开关：左键右键都是切换
+        if ((button == 0 || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) && GuideTheme.hit(mx, my, animX, navY, NAV_W, NAV_H)) {
+            if (searchBox.isFocused()) {
+                unfocusSearch();
+            }
+            GuideDisplayConfig.setIntroAnimation(!GuideDisplayConfig.introAnimation());
             return true;
         }
         // 「Aa」：左键字小一档、右键字大一档（到头了就不动）；右键在这里不是后退

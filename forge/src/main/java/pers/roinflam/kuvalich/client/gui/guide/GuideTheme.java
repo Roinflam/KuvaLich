@@ -493,6 +493,30 @@ public final class GuideTheme {
         g.fill(ax + 1, at + 4, ax + 3, at + 5, color);
     }
 
+    /**
+     * 像素四芒星（9×9）：顶栏「开场动画」开关。开着是实心的星，关着改画暗色的星并加一道斜杠
+     *
+     * @param cx    中心 x
+     * @param cy    中心 y
+     * @param slash 关着时斜杠的颜色
+     */
+    public static void animGlyph(GuiGraphics g, int cx, int cy, int color, int slash, boolean on) {
+        // 竖、横两条主轴（长 9、粗 1），中间一格四周补成菱形的饱满感
+        g.fill(cx, cy - 4, cx + 1, cy + 5, color);
+        g.fill(cx - 4, cy, cx + 5, cy + 1, color);
+        g.fill(cx - 1, cy - 1, cx + 2, cy + 2, color);
+        g.fill(cx - 2, cy - 2, cx - 1, cy - 1, color);
+        g.fill(cx + 2, cy - 2, cx + 3, cy - 1, color);
+        g.fill(cx - 2, cy + 2, cx - 1, cy + 3, color);
+        g.fill(cx + 2, cy + 2, cx + 3, cy + 3, color);
+        if (!on) {
+            // 斜杠：左下到右上
+            for (int i = -4; i <= 4; i++) {
+                g.fill(cx + i, cy - i, cx + i + 1, cy - i + 1, slash);
+            }
+        }
+    }
+
     /** 悬停「锁定括号」从块外收到四角上的时长 */
     public static final float LOCK_MS = 120f;
 
