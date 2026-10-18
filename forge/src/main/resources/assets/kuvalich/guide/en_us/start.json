@@ -843,7 +843,7 @@
         },
         {
           "type": "p",
-          "text": "The five utility blocks form a crafting chain: each one <w>consumes the block before it</w>. The last three also need a {item:kuvalich:lich_reliquary}, which is why you can only build them now."
+          "text": "The five utility blocks are built one from another: {item:kuvalich:requiem_gate}, then {item:kuvalich:requiem_recast}, then {item:kuvalich:requiem_evolve}, and both armories are built from a Requiem Evolve. Except for the first, each one <w>consumes the block it is built from</w>. The last three also need a {item:kuvalich:lich_reliquary}, which is why you can only build them now."
         },
         {
           "type": "table",

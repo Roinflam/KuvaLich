@@ -116,7 +116,7 @@
         { "type": "p", "text": "Details on the four combat enchantments: [[world/combat_enchantments]]." },
         { "type": "h", "text": "How to get them" },
         { "type": "list", "items": [
-          "Enchanting table: possible, but they're all rare and high levels hardly ever show up",
+          "Enchanting table: possible, but they're all rare and stay low: {lang:enchantment.kuvalich.escort} and {lang:enchantment.kuvalich.death_resistance} only come out at level I, and {lang:enchantment.kuvalich.lethal} and {lang:enchantment.kuvalich.experience_collector} never reach their top level there",
           "Enchanted books: may turn up in loot chests or with librarian villagers; apply them to a tool, weapon or armor piece with an anvil",
           "For high levels: trade with librarians, search loot chests, or combine two books of the same level on an anvil"
         ] },

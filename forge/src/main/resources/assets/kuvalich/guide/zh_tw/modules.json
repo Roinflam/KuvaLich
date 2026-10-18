@@ -19,16 +19,16 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>模組</hl>是插在武器或戰甲上的強化卡。每張卡帶幾條<t>詞條</t>，比如「+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}」。裝卡不消耗卡，隨時能拆下來換到別處。"
+          "text": "<hl>模組</hl>是插在武器或戰甲上的強化卡，每張卡帶著幾條<t>詞條</t>，比如「+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}」。裝上去的卡不會被消耗，隨時能拆下來換到別處。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "在《星際戰甲》裡，Mod（模組）就是插在戰甲和武器上的強化卡。每件裝備能裝的數量有限，怎麼搭配是養成的核心。"
+          "text": "《星際戰甲》裡的 Mod 就是這裡的模組，一張張插在戰甲和武器上的強化卡，每件裝備只容得下有限的幾張，取捨與搭配便是養成的精髓。"
         },
         {
           "type": "p",
-          "text": "<dim>書裡的星際戰甲名詞（赤毒、安魂、裂罅……）看不懂時，可以查[[start/glossary]]。</dim>"
+          "text": "<dim>書裡的赤毒、安魂、裂罅等星際戰甲名詞看不懂時，可以查閱[[start/glossary]]。</dim>"
         },
         {
           "type": "table",
@@ -40,7 +40,7 @@
           "rows": [
             [
               "<t>武器模組</t>",
-              "開過光的武器上，每件 <t>8</t> 槽；卡跟著這件武器走",
+              "開過光的武器上，每件 <t>8</t> 槽，卡跟著這件武器走",
               "主手拿著它攻擊時"
             ],
             [
@@ -59,7 +59,7 @@
           "type": "tip",
           "style": "info",
           "title": "什麼叫「開光」",
-          "text": "<hl>開光</hl>就是給物品加上武器面板，開過光才能裝武器模組。[[weapons/kuva_weapons|赤毒武器]]天生開過光；劍、弓、盾、盔甲等要先在{item:kuvalich:requiem_evolve}裡配一個{item:kuvalich:riven_sliver}開光，見[[weapons/requiem_evolve]]。"
+          "text": "<hl>開光</hl>就是給物品加上武器面板，開過光的物品才能裝武器模組。[[weapons/kuva_weapons|赤毒武器]]天生開過光，劍、弓、盾、盔甲等則要先在{item:kuvalich:requiem_evolve}裡配上一個{item:kuvalich:riven_sliver}開光，做法見[[weapons/requiem_evolve]]。"
         },
         {
           "type": "h",
@@ -97,7 +97,7 @@
         },
         {
           "type": "p",
-          "text": "掉出來的模組有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模組，其餘是戰甲模組。"
+          "text": "掉出的模組中有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模組，其餘為戰甲模組。"
         },
         {
           "type": "h",
@@ -106,9 +106,9 @@
         {
           "type": "steps",
           "items": [
-            "剛掉的卡是<t>未揭示</t>的：名字寫著「未揭示的……模組」，詞條顯示成 <dim>+??% ???</dim>，還裝不上。",
-            "把它拿在<w>主手</w>右鍵。副手右鍵沒反應。",
-            "卡消失，腳下掉出一張揭示好的模組，撿起來。"
+            "剛掉落的卡處於<t>未揭示</t>狀態，名字寫著「未揭示的……模組」，詞條顯示成 <dim>+??% ???</dim>，這時還裝不上。",
+            "把它拿在<w>主手</w>右鍵使用，放在副手右鍵不會有反應。",
+            "卡會消失，腳下隨之掉出一張揭示好的模組，把它撿起來即可。"
           ]
         },
         {
@@ -119,26 +119,26 @@
           "type": "steps",
           "items": [
             "把開過光的武器放進{item:kuvalich:requiem_weapon_table}的武器格。",
-            "把模組拖進 8 個模組槽。在背包裡 <t>Shift + 左鍵</t> 會自動放進能放的槽。",
-            "取出武器，模組已經寫在武器上了。想換卡就放回來拆下，拆卡沒有任何消耗。"
+            "把模組拖進 8 個模組槽，也可以在背包裡 <t>Shift + 左鍵</t> 點它，自動放進能放的槽。",
+            "取出武器時，模組已經寫進武器裡了，想換卡就把武器放回來拆下，拆卡沒有任何消耗。"
           ]
         },
         {
           "type": "p",
-          "text": "戰甲模組更簡單：開啟{item:kuvalich:requiem_warframe_table}直接放進槽裡，詳見[[warframe/warframe_module]]。"
+          "text": "戰甲模組裝起來更簡單，開啟{item:kuvalich:requiem_warframe_table}直接放進槽裡即可，詳見[[warframe/warframe_module]]。"
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "裝之前先看等級",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "新揭示的卡通常是 <t>1</t> 級，只有滿級效果的 1/{cfg:kuva_lich.moduleMaxLevel}，剛裝上會覺得沒什麼變化。升級見[[modules/module_level]]。"
+          "text": "新揭示的卡通常是 <t>1</t> 級，只有滿級效果的 1/{cfg:kuva_lich.moduleMaxLevel}，剛裝上會覺得沒什麼變化，升級方法見[[modules/module_level]]。"
         },
         {
           "type": "tip",
           "style": "info",
           "title": "裝不上？",
-          "text": "常見原因：同一種模組裝了兩張、裂罅模組超過 1 張、卡還沒揭示。在軍械庫裡拿起模組時，衝突的槽會<b>紅色脈動</b>。完整規則見[[modules/module_limits]]。"
+          "text": "常見的原因有同一種模組裝了兩張、裂罅模組超過 1 張，或者卡還沒揭示。在軍械庫裡拿起模組時，衝突的槽會<b>紅色脈動</b>，完整規則見[[modules/module_limits]]。"
         }
       ]
     },
@@ -150,23 +150,23 @@
       "blocks": [
         {
           "type": "p",
-          "text": "每件武器 / 戰甲能裝哪些模組，有下面這幾條規則。軍械庫不讓你放的時候，逐條對照就能找到原因。"
+          "text": "每件武器或戰甲能裝哪些模組，由下面這幾條規則決定，軍械庫不讓你放的時候，逐條對照就能找到原因。"
         },
         {
           "type": "list",
           "items": [
-            "每件武器 / 戰甲固定 <t>8</t> 個槽，不隨等級變化。",
-            "<b>同一種模組只能裝一張</b>：普通版、Prime 版、[[modules/module_rarity|鍍層版]]算同一種，比如「狂暴」「狂暴 Prime」「鍍層 狂暴」三選一。",
-            "<b>加同一種屬性的模組也可能衝突</b>：比如「斬鐵」和「致命連擊」都加近戰暴擊機率，只能裝一張。",
-            "每件最多 <t>1</t> 張[[modules/riven_module|裂罅模組]]。",
-            "未揭示的卡裝不上，先拿在主手右鍵揭示。"
+            "每件武器或戰甲固定有 <t>8</t> 個槽，不隨等級變化。",
+            "<b>同一種模組只能裝一張</b>，普通版、Prime 版和[[modules/module_rarity|鍍層版]]算作同一種，比如「狂暴」「狂暴 Prime」「鍍層 狂暴」只能三選一。",
+            "<b>加同一種屬性的模組也可能衝突</b>，比如「斬鐵」和「致命連擊」都加近戰暴擊機率，兩張只能裝一張。",
+            "每件最多裝 <t>1</t> 張[[modules/riven_module|裂罅模組]]。",
+            "卡要先拿在主手右鍵揭示才能裝上。"
           ]
         },
         {
           "type": "tip",
           "style": "info",
           "title": "看紅色",
-          "text": "在軍械庫裡拿起一張模組時，和它衝突的槽會<b>紅色脈動</b>；Shift + 點選裝不上時，衝突的槽會閃幾下。看到紅色就換一張。"
+          "text": "在軍械庫裡拿起一張模組時，和它衝突的槽會<b>紅色脈動</b>，用 Shift + 點選裝不上時，衝突的槽也會閃幾下，看到紅色換一張就好。"
         },
         {
           "type": "h",
@@ -176,28 +176,28 @@
         {
           "type": "p",
           "if": "cfg:modules.disabledModuleTypes",
-          "text": "下面這些類型不會從未揭示的卡裡揭示出來：<b>{cfg:modules.disabledModuleTypes|list}</b><dim>（寫的是模組的內部類型名）</dim>"
+          "text": "下面這些類型的模組不會從未揭示的卡裡揭示出來，名單用的是模組的內部類型名：<b>{cfg:modules.disabledModuleTypes|list}</b>"
         },
         {
           "type": "list",
           "if": "cfg:modules.disabledModuleTypes",
           "items": [
-            "同一類型的所有版本都算在內：普通版、Prime 版、鍍層 / 執刑官版。",
+            "同一類型的所有版本都算在內，包括普通版、Prime 版和鍍層或執刑官版。",
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
-              "text": "<g>已經拿到手的不受影響</g>：照樣能裝、能生效、能升級。"
+              "text": "<g>已經拿到手的不受影響</g>，照樣能裝、能生效、能升級。"
             },
             {
               "if": "!cfg:kuva_lich.enableModuleLevelSystem",
-              "text": "<g>已經拿到手的不受影響</g>：照樣能裝、能生效。"
+              "text": "<g>已經拿到手的不受影響</g>，照樣能裝上並生效。"
             },
             {
               "if": "!module:riven_weapon_module",
-              "text": "武器裂罅也在其中：未揭示的武器裂罅揭示不了，已有的拿去循環會<b>白扣赤毒</b>。"
+              "text": "武器裂罅也在其中，未揭示的武器裂罅無法揭示，已有的拿去循環只會<b>白白扣掉赤毒</b>。"
             },
             {
               "if": "!module:riven_warframe_module",
-              "text": "戰甲裂罅也在其中：未揭示的戰甲裂罅揭示不了，已有的拿去循環會<b>白扣赤毒</b>。"
+              "text": "戰甲裂罅也在其中，未揭示的戰甲裂罅無法揭示，已有的拿去循環只會<b>白白扣掉赤毒</b>。"
             }
           ]
         },
@@ -209,7 +209,7 @@
         {
           "type": "p",
           "if": "cfg:modules.attributeValueRanges",
-          "text": "有些詞條在單張卡上有上下限，寫法是「詞條名:最小值:最大值」：<t>{cfg:modules.attributeValueRanges|list}</t>"
+          "text": "以下詞條在單張卡上有上下限，按「詞條名:最小值:最大值」的格式列出：<t>{cfg:modules.attributeValueRanges|list}</t>"
         },
         {
           "type": "list",
@@ -218,13 +218,13 @@
             "超出範圍的按邊界值算，沒列出的詞條不受限。",
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
-              "text": "先按<em>滿級</em>數值卡範圍，再按等級折算：比如上限是 3（300%），滿級 +400% 的卡按 +300% 算，練到一半時按 +150% 算。"
+              "text": "先按<em>滿級</em>數值卡範圍，再按等級折算，比如上限是 3 即 300% 時，滿級 +400% 的卡按 +300% 算，練到一半時按 +150% 算。"
             },
             {
               "if": "!cfg:kuva_lich.enableModuleLevelSystem",
-              "text": "比如上限是 3（300%），+400% 的卡按 +300% 算。"
+              "text": "比如上限是 3 即 300% 時，+400% 的卡按 +300% 算。"
             },
-            "卡面上仍顯示原數值。在武器面板上按住 <t>Ctrl</t> 看來源檢視，那裡每張卡的數值是卡過範圍之後的。"
+            "卡面上仍然顯示原數值，在武器面板上按住 <t>Ctrl</t> 開啟來源檢視，那裡列出的就是每張卡卡過範圍之後的數值。"
           ]
         },
         {
@@ -235,13 +235,13 @@
         {
           "type": "p",
           "if": "cfg:modules.attributeTotalCaps",
-          "text": "幾張卡加同一種詞條時，加起來的總和有上限，寫法是「詞條名:上限」：<t>{cfg:modules.attributeTotalCaps|list}</t>"
+          "text": "幾張卡加同一種詞條時，總和不能超過上限，按「詞條名:上限」的格式列出：<t>{cfg:modules.attributeTotalCaps|list}</t>"
         },
         {
           "type": "list",
           "if": "cfg:modules.attributeTotalCaps",
           "items": [
-            "只管正向總和，負值總和不受影響；沒列出的詞條不受限。",
+            "上限只管正向的總和，負值總和不受影響，沒列出的詞條也不受限。",
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
               "text": "上限卡的是按等級折算之後的數值。"
@@ -252,7 +252,7 @@
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "按件算：主手武器的 8 張卡一起算一次，戰甲的 8 張卡一起算一次；副手等額外位置上的物品各算各的，再按比例加上去，見[[modules/multi_slot]]。"
+              "text": "上限按件計算，主手武器的 8 張卡合在一起算一次，戰甲的 8 張卡合在一起算一次，副手等額外位置上的物品各算各的，再按比例加上去，詳見[[modules/multi_slot]]。"
             },
             {
               "if": [
@@ -263,9 +263,9 @@
                 "!cfg:kuva_lich.enableBootsModule",
                 "!cfg:kuva_lich.enableCuriosModule||!mod:curios"
               ],
-              "text": "按件算：主手武器的 8 張卡一起算一次，戰甲的 8 張卡一起算一次。"
+              "text": "上限按件計算，主手武器的 8 張卡合在一起算一次，戰甲的 8 張卡合在一起算一次。"
             },
-            "戰甲的火焰 / 電擊 / 同源 / 摔落抗性和護盾恢復延遲是連乘的，不受這個上限約束。",
+            "戰甲的火焰、電擊、同源、摔落抗性和護盾恢復延遲是連乘的，不受這個上限約束。",
             "有詞條被截斷時，武器面板按住 Ctrl 會多出一欄，列出截斷前後的數值。"
           ]
         },
@@ -285,7 +285,7 @@
         {
           "type": "p",
           "if": "cfg:modules.attributeValueRanges",
-          "text": "規則裡的數值是小數：<t>1</t> 即 100%，<t>-0.5</t> 即 −50%；固定生命 / 護盾 / 護甲這類固定值詞條寫的是點數。常用詞條名見下表，其餘見[[reference]]。"
+          "text": "規則裡的數值寫成小數，<t>1</t> 即 100%，<t>-0.5</t> 即 −50%，固定生命、護盾、護甲這類固定值詞條寫的則是點數。常用的詞條名見下表，其餘的見[[reference]]。"
         },
         {
           "type": "p",
@@ -293,7 +293,7 @@
             "!cfg:modules.attributeValueRanges",
             "cfg:modules.attributeTotalCaps"
           ],
-          "text": "規則裡的數值是小數：<t>1</t> 即 100%，<t>-0.5</t> 即 −50%；固定生命 / 護盾 / 護甲這類固定值詞條寫的是點數。常用詞條名見下表，其餘見[[reference]]。"
+          "text": "規則裡的數值寫成小數，<t>1</t> 即 100%，<t>-0.5</t> 即 −50%，固定生命、護盾、護甲這類固定值詞條寫的則是點數。常用的詞條名見下表，其餘的見[[reference]]。"
         },
         {
           "type": "table",
@@ -470,9 +470,9 @@
           "type": "list",
           "if": "cfg:kuva_lich.moduleAttributeMultiplier!=1",
           "items": [
-            "倍率在卡<em>生成</em>時（揭示、裂罅循環）就乘進卡裡了，卡面上顯示的已經是乘過的數。",
-            "<em>關鍵詞條</em>：暴擊機率、暴擊傷害、觸發機率、觸發時間（含衝刺攻擊時的暴擊機率 / 觸發機率）、護盾恢復速率 / 延遲。",
-            "近戰暴擊傷害、觸發機率、護盾恢復的擊殺疊層版本也算關鍵詞條；其餘都是<em>通用詞條</em>。",
+            "倍率在揭示、裂罅循環這些卡<em>生成</em>的時刻就乘進卡裡了，卡面上顯示的已經是乘過的數。",
+            "<em>關鍵詞條</em>包括暴擊機率、暴擊傷害、觸發機率、觸發時間、護盾恢復速率和護盾恢復延遲，衝刺攻擊時的暴擊機率和觸發機率也算在內。",
+            "近戰暴擊傷害、觸發機率、護盾恢復的擊殺疊層版本也算關鍵詞條，其餘的都是<em>通用詞條</em>。",
             "裂罅模組的所有詞條只乘通用倍率。"
           ]
         },
@@ -483,9 +483,9 @@
             "cfg:kuva_lich.keyAttributeMultiplier!=1"
           ],
           "items": [
-            "倍率在卡<em>生成</em>時（揭示、裂罅循環）就乘進卡裡了，卡面上顯示的已經是乘過的數。",
-            "<em>關鍵詞條</em>：暴擊機率、暴擊傷害、觸發機率、觸發時間（含衝刺攻擊時的暴擊機率 / 觸發機率）、護盾恢復速率 / 延遲。",
-            "近戰暴擊傷害、觸發機率、護盾恢復的擊殺疊層版本也算關鍵詞條；其餘都是<em>通用詞條</em>。",
+            "倍率在揭示、裂罅循環這些卡<em>生成</em>的時刻就乘進卡裡了，卡面上顯示的已經是乘過的數。",
+            "<em>關鍵詞條</em>包括暴擊機率、暴擊傷害、觸發機率、觸發時間、護盾恢復速率和護盾恢復延遲，衝刺攻擊時的暴擊機率和觸發機率也算在內。",
+            "近戰暴擊傷害、觸發機率、護盾恢復的擊殺疊層版本也算關鍵詞條，其餘的都是<em>通用詞條</em>。",
             "裂罅模組的所有詞條只乘通用倍率。"
           ]
         }
@@ -499,7 +499,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "模組分五檔品質。卡面上<em>詞條那幾行的顏色</em>就是品質色，一眼就能認出來。武器模組和戰甲模組都分這五檔。"
+          "text": "模組分為五檔品質，卡面上<em>詞條那幾行的顏色</em>就是品質色，一眼就能認出來，武器模組和戰甲模組都分這五檔。"
         },
         {
           "type": "items",
@@ -510,7 +510,7 @@
             "kuvalich:item_prime_module",
             "kuvalich:item_riven_module"
           ],
-          "caption": "武器模組的五檔（戰甲模組外觀不同，檔位一樣）"
+          "caption": "武器模組的五檔，戰甲模組外觀不同，檔位相同"
         },
         {
           "type": "table",
@@ -547,7 +547,7 @@
         },
         {
           "type": "p",
-          "text": "<c:FF55FF>裂罅模組</c>的詞條完全隨機，單獨見[[modules/riven_module]]。用不上的卡可以在[[weapons/requiem_recast|安魂之鑄]]裡三張合一張。"
+          "text": "<c:FF55FF>裂罅模組</c>的詞條完全隨機，另見[[modules/riven_module]]。用不上的卡可以在[[weapons/requiem_recast|安魂之鑄]]裡三張合成一張。"
         },
         {
           "type": "h",
@@ -568,7 +568,7 @@
             ],
             [
               "<t>鍍層</t>（武器）",
-              "帶<hl>擊殺疊層</hl>詞條：越殺越強",
+              "帶<hl>擊殺疊層</hl>詞條，越殺越強",
               "鍍層 分裂膛室、鍍層 斬鐵"
             ],
             [
@@ -585,12 +585,12 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作的 Mod 也分青銅、白銀、黃金幾檔。Primed（Prime）Mod 是普通 Mod 的加強版，鍍層（Galvanized）Mod 則靠擊殺疊加效果。"
+          "text": "原作的 Mod 同樣分青銅、白銀、黃金幾檔，Primed Mod 是普通 Mod 的加強版，本模組裡寫作 Prime，鍍層 Mod 原名 Galvanized，效果隨擊殺層層疊加。"
         },
         {
           "type": "tip",
           "style": "info",
-          "text": "同一種模組可能在好幾檔都有，比如白銀「狂暴」和 Prime「狂暴 Prime」。它們<w>算同一種</w>，不能疊著裝。"
+          "text": "同一種模組可能在好幾檔都有，比如白銀的「狂暴」和 Prime 的「狂暴 Prime」，它們<w>算同一種</w>，只能裝其中一張。"
         }
       ]
     },
@@ -606,12 +606,12 @@
         {
           "type": "p",
           "if": "!cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "模組沒有等級：每張卡一拿到手就是滿效果，不需要升級。"
+          "text": "模組沒有等級，每張卡一拿到手就是滿效果，不需要升級。"
         },
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "模組有等級，滿級是 <t>{cfg:kuva_lich.moduleMaxLevel}</t> 級。新揭示的卡通常只有 1 級，要用<hl>{item:kuvalich:endo}</hl>（給模組升級的材料）一級一級升上去。"
+          "text": "模組有等級，滿級為 <t>{cfg:kuva_lich.moduleMaxLevel}</t> 級。新揭示的卡通常只有 1 級，要靠專門給模組升級的材料<hl>{item:kuvalich:endo}</hl>一級一級升上去。"
         },
         {
           "type": "formula",
@@ -621,19 +621,19 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "<b>1 級卡只有滿級的 1/{cfg:kuva_lich.moduleMaxLevel}</b>，這就是「裝了卡沒感覺」的原因。"
+          "text": "<b>1 級卡只有滿級的 1/{cfg:kuva_lich.moduleMaxLevel}</b>，裝了卡卻沒什麼感覺，原因就在這裡。"
         },
         {
           "type": "tip",
           "style": "info",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "卡面上的數字已經按當前等級折算好了。進度條後面寫著 <t>Lv.當前/滿級</t>，滿級後進度條不再顯示。"
+          "text": "卡面上的數字已經按當前等級折算好了，進度條後面寫著 <t>Lv.當前/滿級</t>，升到滿級後進度條就不再顯示。"
         },
         {
           "type": "tip",
           "style": "wf",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "原作裡內融核心（Endo）就是給 Mod 升級用的材料，把用不上的 Mod 分解掉也能換回一些。"
+          "text": "原作裡的內融核心叫 Endo，專供 Mod 升級，閒置的 Mod 分解後也能換回一些。"
         },
         {
           "type": "h",
@@ -644,9 +644,9 @@
           "type": "steps",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
           "items": [
-            "開啟{item:kuvalich:requiem_evolve}，左格放一張揭示好、沒滿級的模組，一次一張。",
-            "材料格放{item:kuvalich:endo}。這時卡面會顯示<t>升級所需: N 內融核心</t>。",
-            "數量夠時，右格出現升了 <t>1</t> 級的卡。<g>取走它才扣內融核心</g>。",
+            "開啟{item:kuvalich:requiem_evolve}，在左格放入一張揭示好、還沒滿級的模組，一次只放一張。",
+            "材料格放入{item:kuvalich:endo}，卡面上會顯示<t>升級所需: N 內融核心</t>。",
+            "數量足夠時，右格會出現升了 <t>1</t> 級的卡，<g>取走它時才會扣除內融核心</g>。",
             "一次只升 1 級，想繼續就把新卡再放回左格。"
           ]
         },
@@ -658,7 +658,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "等級越高越貴，品質越低越便宜。Prime 的最後一級要 <t>{cfg:kuva_lich.endoLastLevelCost}</t> 個。"
+          "text": "升級費用隨等級遞增，低品質的卡更便宜，Prime 的最後一級要花 <t>{cfg:kuva_lich.endoLastLevelCost}</t> 個。"
         },
         {
           "type": "table",
@@ -749,7 +749,7 @@
             "cfg:kuva_lich.enableModuleLevelSystem",
             "cfg:kuva_lich.enableMasteryOnReveal"
           ],
-          "text": "你在安魂之融裡把某種模組練到過幾級，以後<t>揭示</t>同種、同品質的模組時，直接就是那個等級。"
+          "text": "你在安魂之融裡把某種模組練到過幾級，以後<t>揭示</t>同種、同品質的模組時，它直接就是那個等級。"
         },
         {
           "type": "tip",
@@ -758,7 +758,7 @@
             "cfg:kuva_lich.enableModuleLevelSystem",
             "cfg:kuva_lich.enableMasteryOnReveal"
           ],
-          "text": "精通只在<em>右鍵揭示</em>的那一刻生效，只算在安魂之融裡升出來的等級；已經揭示好的卡不會自己變高。"
+          "text": "精通只在<em>右鍵揭示</em>的那一刻生效，也只算在安魂之融裡升出來的等級，已經揭示好的卡不會自己升級。"
         },
         {
           "type": "h",
@@ -773,7 +773,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "品質係數：<c:CD7F32>青銅</c> 25%、<c:C0C0C0>白銀</c> 50%、<c:FFD700>黃金</c> 75%、<c:55FFFF>Prime</c> 與 <c:FF55FF>裂罅</c> 100%。前半截先四捨五入，乘品質係數後再向上取整，最少 1 個。"
+          "text": "品質係數分別是<c:CD7F32>青銅</c> 25%、<c:C0C0C0>白銀</c> 50%、<c:FFD700>黃金</c> 75%、<c:55FFFF>Prime</c> 與 <c:FF55FF>裂罅</c> 100%。計算時前半截先四捨五入，乘上品質係數後再向上取整，最少 1 個。"
         },
         {
           "type": "list",
@@ -781,14 +781,14 @@
           "items": [
             {
               "if": "cfg:kuva_lich.endoDropChance>0",
-              "text": "擊殺掉內融核心只認敵對怪物：史萊姆、地獄幽靈、夜魅這類不算。"
+              "text": "擊殺掉落內融核心只認敵對怪物，史萊姆、地獄幽靈、夜魅這類不算在內。"
             },
-            "經驗礦石用絲綢之觸挖，不掉內融核心。",
-            "分解一張模組：青銅 1、白銀 2、黃金 4、Prime / 裂罅 8，每高 1 級再 +1，最多 64 個。分解會吃掉這張卡。",
-            "裂罅分解時另加：循環過幾次就 +幾；傾向 2~5 點再分別 +2 / +4 / +8 / +16。",
+            "用絲綢之觸挖經驗礦石不會掉內融核心。",
+            "分解一張模組可得青銅 1、白銀 2、黃金 4、Prime 或裂罅 8 個，每高 1 級再 +1，最多 64 個，這張卡會在分解中消耗掉。",
+            "分解裂罅時還有額外加成，循環過幾次就 +幾，傾向為 2~5 點時再分別 +2、+4、+8、+16。",
             {
               "if": "cfg:kuva_lich.enableMasteryOnReveal",
-              "text": "精通按「同種 + 同品質」記：同一檔裡同種的卡共用一條（例如「狂暴 Prime」和「鍍層 狂暴」）；武器裂罅按近戰 / 遠程 / 通用分開記，戰甲裂罅共用一條。"
+              "text": "精通按同種加同品質記錄，同一檔裡同種的卡共用一條記錄，例如「狂暴 Prime」和「鍍層 狂暴」，武器裂罅按近戰、遠程、通用分開記，戰甲裂罅共用一條。"
             },
             "裂罅循環洗詞條時<g>等級原樣保留</g>，可以先練級再洗，見[[modules/riven_module]]。"
           ]
@@ -803,14 +803,14 @@
       "blocks": [
         {
           "type": "p",
-          "text": "模組有幾百種，不用背。兩個軍械庫都自帶圖鑑：「{lang:kuvalich.codex.title.weapon}」和「{lang:kuvalich.codex.title.warframe}」，能翻看各種模組的完整卡面。"
+          "text": "模組有幾百種，不必死記，兩個軍械庫都自帶圖鑑，分別是「{lang:kuvalich.codex.title.weapon}」和「{lang:kuvalich.codex.title.warframe}」，能翻看各種模組的完整卡面。"
         },
         {
           "type": "steps",
           "items": [
-            "開啟{item:kuvalich:requiem_weapon_table}（或{item:kuvalich:requiem_warframe_table}）。",
+            "開啟{item:kuvalich:requiem_weapon_table}或{item:kuvalich:requiem_warframe_table}。",
             "按 <t>Tab</t> 開啟對應的圖鑑。",
-            "再按 Tab 回到軍械庫；按 Esc 先清空搜尋框，再按一次返回。"
+            "再按 Tab 回到軍械庫，按 Esc 則先清空搜尋框，第二次按下才返回。"
           ]
         },
         {
@@ -820,21 +820,21 @@
         {
           "type": "list",
           "items": [
-            "按品質分組（青銅 / 白銀 / 黃金 / Prime），組頭寫著這一檔的已發現 / 總數。",
+            "模組按青銅、白銀、黃金、Prime 分組，組頭寫著這一檔的已發現數和總數。",
             "右上角是整本圖鑑的<t>已發現 / 總數</t>。",
-            "滑鼠懸停看完整卡面。",
+            "滑鼠懸停可以檢視完整卡面。",
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
               "text": "圖鑑裡的數值都按<em>滿級</em>顯示。"
             },
-            "頂部搜尋框：卡名或卡面上的任何文字（詞條名、數字）都能搜，不分大小寫，整段輸入當成一個關鍵詞。",
-            "滾輪或拖右側捲軸翻頁。"
+            "頂部的搜尋框能搜卡名以及卡面上的任何文字，包括詞條名和數字，不分大小寫，整段輸入會被當成一個關鍵詞。",
+            "用滾輪或拖動右側捲軸翻頁。"
           ]
         },
         {
           "type": "tip",
           "style": "info",
-          "text": "圖鑑不收錄<c:FF55FF>裂罅模組</c>：它們的詞條是隨機的，規律見[[modules/riven_module]]。"
+          "text": "<c:FF55FF>裂罅模組</c>的詞條是隨機的，所以圖鑑不收錄，它的規律見[[modules/riven_module]]。"
         },
         {
           "type": "h",
@@ -844,10 +844,10 @@
           "type": "list",
           "items": [
             "撿起一張揭示好的模組，或者背包裡放著一張，就記為已發現。",
-            "背包在你進入遊戲時掃一次，之後每 5 秒掃一次。",
-            "裝在武器 / 戰甲上的卡不會被掃到。",
+            "進入遊戲時會掃描一次背包，之後每 5 秒掃描一次。",
+            "裝在武器或戰甲上的卡不會被掃描到。",
             "同一種卡的不同品質分開記。",
-            "沒發現的格子不畫圖示，只有幾道加密紋，但懸停照樣能看詞條。"
+            "未發現的格子不顯示圖示，只有幾道加密紋，懸停時照樣能看到詞條。"
           ]
         },
         {
@@ -859,11 +859,11 @@
           "rows": [
             [
               "左鍵",
-              "拿一張到背包；背包滿時拒絕，格子紅閃"
+              "拿一張放進背包，背包滿時會拒絕並讓格子閃紅"
             ],
             [
               "Shift + 左鍵",
-              "直接裝進當前武器（或你的戰甲）第一個能裝的空槽"
+              "直接裝進當前武器或你的戰甲上第一個能裝的空槽"
             ],
             [
               "裝不進時",
@@ -871,7 +871,7 @@
             ],
             [
               "生存模式",
-              "只能看，點選沒有反應"
+              "只能檢視，點選沒有反應"
             ]
           ]
         }
@@ -889,11 +889,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<c:FF55FF>裂罅模組</c>的詞條完全隨機：2~3 條正面詞條，可能再帶 1 條負面詞條。它主要在解密成功、擊殺[[enemies/kuva_master|赤毒玄骸]]時掉落。"
+          "text": "<c:FF55FF>裂罅模組</c>的詞條全憑運氣，有 2~3 條正面詞條，還可能再帶 1 條負面詞條，主要在解密成功、擊殺[[enemies/kuva_master|赤毒玄骸]]時掉落。"
         },
         {
           "type": "p",
-          "text": "分武器裂罅和戰甲裂罅兩種，都要先拿在主手右鍵揭示。每件武器 / 戰甲只能裝 <t>1</t> 張。"
+          "text": "裂罅分武器裂罅和戰甲裂罅兩種，都要先拿在主手右鍵揭示，每件武器或戰甲只能裝 <t>1</t> 張。"
         },
         {
           "type": "table",
@@ -926,7 +926,7 @@
         },
         {
           "type": "p",
-          "text": "模式在揭示時定下，之後永遠不變。戰甲裂罅沒有模式，卡名以 Warframe 開頭。"
+          "text": "模式在揭示時定下，此後不再改變，戰甲裂罅沒有模式，卡名以 Warframe 開頭。"
         },
         {
           "type": "h",
@@ -934,7 +934,7 @@
         },
         {
           "type": "p",
-          "text": "傾向性是卡面上 1~5 個實心點，揭示時決定，<w>循環也不會變</w>。點越多，詞條越強，循環也越貴。"
+          "text": "傾向性是卡面上的 1~5 個實心點，在揭示時決定，<w>循環也不會改變</w>，點越多詞條越強，循環也越貴。"
         },
         {
           "type": "table",
@@ -1011,16 +1011,16 @@
         },
         {
           "type": "p",
-          "text": "隨機浮動：正面詞條 0.9~1.1，負面詞條 0.8~1.2。"
+          "text": "隨機浮動的範圍是正面詞條 0.9~1.1，負面詞條 0.8~1.2。"
         },
         {
           "type": "p",
-          "text": "例：傾向 3 點、2 正 1 負的{lang:kuvaweapon.item_attribute_type.meleeDamage}（基準 165%）≈ 165% × 1.2 × 1.0 × 0.9~1.1 = <t>178%~218%</t>（滿級時）。"
+          "text": "舉個例子，傾向 3 點、2 正 1 負的{lang:kuvaweapon.item_attribute_type.meleeDamage}基準為 165%，滿級時約為 165% × 1.2 × 1.0 × 0.9~1.1 = <t>178%~218%</t>。"
         },
         {
           "type": "p",
           "if": "cfg:kuva_lich.moduleAttributeMultiplier!=1",
-          "text": "以上結果都還要再乘通用詞條倍率 <t>{cfg:kuva_lich.moduleAttributeMultiplier|x}</t>，見[[modules/module_limits]]。"
+          "text": "以上結果還要再乘以通用詞條倍率 <t>{cfg:kuva_lich.moduleAttributeMultiplier|x}</t>，詳見[[modules/module_limits]]。"
         },
         {
           "type": "h",
@@ -1029,17 +1029,17 @@
         {
           "type": "steps",
           "items": [
-            "把揭示好的裂罅放進{item:kuvalich:requiem_evolve}左格，材料格放足量{item:kuvalich:kuva}。赤毒從哪來見[[start/materials]]。",
-            "右格立刻出現一張新詞條的卡。<w>這一次的赤毒在這時付掉</w>，原卡的循環次數 +1。",
-            "想要新詞條：取走右格的卡，原卡隨之消失。",
-            "想留舊詞條：把左格的原卡拿回來，或直接關掉介面。新卡作廢，付掉的赤毒不退。"
+            "把揭示好的裂罅放進{item:kuvalich:requiem_evolve}的左格，材料格放足量的{item:kuvalich:kuva}，赤毒的來源見[[start/materials]]。",
+            "右格會立刻出現一張新詞條的卡，<w>這一次的赤毒在此刻就已付掉</w>，原卡的循環次數 +1。",
+            "想要新詞條，就取走右格的卡，原卡隨之消失。",
+            "想留舊詞條，就把左格的原卡拿回來或直接關掉介面，新卡隨之作廢，付掉的赤毒不會退還。"
           ]
         },
         {
           "type": "tip",
           "style": "info",
           "title": "每次預覽都要付費",
-          "text": "每出一次預覽就付一次赤毒。預覽出來後再改材料格的赤毒數量（加進去或拿出來一些），只要剩下的夠付，就會按新材料重新預覽、再付一次。所以洗詞條是有成本的，洗幾次就付幾次。"
+          "text": "每出一次預覽就付一次赤毒。預覽出來後再往材料格裡加赤毒或拿出一些，只要剩下的夠付，就會按新材料重新預覽並再付一次，洗幾次就要付幾次。"
         },
         {
           "type": "h",
@@ -1086,31 +1086,31 @@
         },
         {
           "type": "p",
-          "text": "表裡是「第一次 ~ 封頂」：每多循環一次多花 1 個，循環滿 8 次後不再上漲。"
+          "text": "表裡寫的是第一次到封頂時的花費，每多循環一次多花 1 個，循環滿 8 次後不再上漲。"
         },
         {
           "type": "tip",
           "style": "info",
-          "text": "已循環次數寫在卡面「{lang:kuvaweapon.item_type_riven_cycle.tooltip}」一行，0 次時不顯示。開啟安魂之融時，卡面直接寫著<t>循環所需: N 赤毒</t>。"
+          "text": "已循環次數寫在卡面「{lang:kuvaweapon.item_type_riven_cycle.tooltip}」那一行，0 次時不顯示，開啟安魂之融時，卡面上會直接寫著<t>循環所需: N 赤毒</t>。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作的裂罅 Mod 也要先完成一個挑戰才能揭示，循環洗詞條同樣消耗赤毒。傾向性在原作裡因武器而異，傾向越高，裂罅的數值越強。"
+          "text": "原作的裂罅 Mod 同樣要先完成一道挑戰才肯顯露真容，循環洗詞條也要消耗赤毒。傾向性在原作裡因武器而異，傾向越高，裂罅的數值就越強。"
         },
         {
           "type": "tip",
           "style": "bad",
           "if": "!module:riven_weapon_module",
           "title": "武器裂罅揭示不了",
-          "text": "赤毒玄骸仍可能掉未揭示的武器裂罅，但右鍵揭示不出來。已有的武器裂罅<b>別拿去循環</b>：赤毒照扣，卻出不來新卡。用不上的可以去[[weapons/requiem_recast|安魂之鑄]]分解。"
+          "text": "赤毒玄骸仍可能掉落未揭示的武器裂罅，但右鍵無法揭示。已有的武器裂罅用不上時可以去[[weapons/requiem_recast|安魂之鑄]]分解，<b>拿去循環</b>只會照扣赤毒，卻出不來新卡。"
         },
         {
           "type": "tip",
           "style": "bad",
           "if": "!module:riven_warframe_module",
           "title": "戰甲裂罅揭示不了",
-          "text": "赤毒玄骸仍可能掉未揭示的戰甲裂罅，但右鍵揭示不出來。已有的戰甲裂罅<b>別拿去循環</b>：赤毒照扣，卻出不來新卡。用不上的可以去[[weapons/requiem_recast|安魂之鑄]]分解。"
+          "text": "赤毒玄骸仍可能掉落未揭示的戰甲裂罅，但右鍵無法揭示。已有的戰甲裂罅用不上時可以去[[weapons/requiem_recast|安魂之鑄]]分解，<b>拿去循環</b>只會照扣赤毒，卻出不來新卡。"
         },
         {
           "type": "h",
@@ -1119,15 +1119,15 @@
         {
           "type": "list",
           "items": [
-            "揭示時傾向的機率：5 點 2.5%，4 點約 4.9%，1~3 點各約 30.9%。",
-            "武器裂罅<b>永遠不出[[combat/elements|複合元素]]</b>（毒氣、輻射、磁力、腐蝕、爆炸、病毒）；複合元素詞條主要在黃金 / Prime 模組上。",
+            "揭示時各傾向的機率為 5 點 2.5%、4 點約 4.9%、1~3 點各約 30.9%。",
+            "武器裂罅<b>永遠不會出現</b>毒氣、輻射、磁力、腐蝕、爆炸、病毒這些[[combat/elements|複合元素]]，複合元素詞條主要出現在黃金和 Prime 模組上。",
             "負面詞條不會是擊殺疊層詞條。",
             "武器裂罅的負面詞條也不會是四種基礎元素，以及{lang:kuvaweapon.item_attribute_type.true_bullet}、{lang:kuvaweapon.item_attribute_type.gun_loot_drop}、{lang:kuvaweapon.item_attribute_type.execute_threshold}、{lang:kuvaweapon.item_attribute_type.purge_buff}、{lang:kuvaweapon.item_attribute_type.execute_chance}。",
             {
               "if": "mod:tacz",
-              "text": "槍械專屬詞條（含多重射擊、射速、爆炸半徑）也可能出現在遠程和通用武器裂罅上。"
+              "text": "多重射擊、射速、爆炸半徑等槍械專屬詞條也可能出現在遠程和通用武器裂罅上。"
             },
-            "戰甲裂罅不會出固定值詞條（固定生命 / 護盾 / 護甲）。",
+            "戰甲裂罅不會出現固定生命、護盾、護甲這類固定值詞條。",
             "循環出來的新卡沿用原卡的模式和傾向，名字重新隨機。",
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
@@ -1145,7 +1145,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "主手武器上的模組永遠全額生效。下表這些位置上的物品，只要<hl>開過光、裝了模組</hl>，也能把加成按比例疊到你的攻擊上。"
+          "text": "主手武器上的模組始終全額生效，下表這些位置上的物品只要<hl>開過光、裝了模組</hl>，也能把加成按比例疊到你的攻擊上。"
         },
         {
           "type": "table",
@@ -1248,7 +1248,7 @@
             "cfg:kuva_lich.enableOffhandModule",
             "cfg:kuva_lich.offhandEffectMultiplier>0"
           ],
-          "text": "例：副手盾牌裝了一張滿級 +100% {lang:kuvaweapon.item_attribute_type.meleeDamage}，盾牌面板傷害倍率 1.2，副手比例 {cfg:kuva_lich.offhandEffectMultiplier|pctv}，實際多出 <t>+{cfg:kuva_lich.offhandEffectMultiplier|mul:1.2|pctv}</t>。"
+          "text": "比如副手盾牌裝了一張滿級 +100% {lang:kuvaweapon.item_attribute_type.meleeDamage}，盾牌的面板傷害倍率為 1.2，副手比例為 {cfg:kuva_lich.offhandEffectMultiplier|pctv}，實際就能多出 <t>+{cfg:kuva_lich.offhandEffectMultiplier|mul:1.2|pctv}</t>。"
         },
         {
           "type": "h",
@@ -1260,24 +1260,24 @@
             "在{item:kuvalich:requiem_evolve}裡用{item:kuvalich:riven_sliver}給要放上去的物品開光。",
             "把它放進{item:kuvalich:requiem_weapon_table}，像武器一樣裝<em>武器模組</em>。",
             "把它放到上表列出的位置上。",
-            "主手拿開光武器去打，加成在這時算進去。"
+            "主手拿著開光武器去打，加成會在這時算進去。"
           ]
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "兩個必要條件",
-          "text": "① 這些位置上的物品<b>必須開過光</b>，否則上面的模組不算。② <b>主手也必須是開光武器</b>：主手拿普通物品時，整套模組系統都不參與傷害結算，額外加成也一樣不算。"
+          "text": "① 這些位置上的物品<b>要開過光</b>，上面的模組才會算數。② <b>主手也要是開光武器</b>，主手拿普通物品時，整套模組系統都不參與傷害結算，額外加成同樣不算。"
         },
         {
           "type": "tip",
           "style": "info",
-          "text": "這些加成會併進主手武器的面板一起顯示（見[[weapons/weapon_panel]]），而且不佔主手的 8 個槽。"
+          "text": "這些加成會併進主手[[weapons/weapon_panel|武器面板]]一起顯示，並且不佔用主手的 8 個槽。"
         },
         {
           "type": "p",
           "if": "cfg:modules.attributeTotalCaps",
-          "text": "<dim>疊加上限在這裡按件算：每件物品各算各的，不和主手那份合併，見[[modules/module_limits]]。</dim>"
+          "text": "<dim>疊加上限在這裡按件計算，每件物品各算各的，不和主手那份合併，詳見[[modules/module_limits]]。</dim>"
         }
       ],
       "if": [

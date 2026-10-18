@@ -16,16 +16,16 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:requiem_warframe_table}是給你自己裝<hl>戰甲模組</hl>的工作台。裝進去的模組<g>一直生效</g>，不用拿在手上，也不用穿盔甲。"
+          "text": "{item:kuvalich:requiem_warframe_table}是給你自己裝<hl>戰甲模組</hl>的工作台，裝進去的模組<g>一直生效</g>，不用拿在手上，也不用穿盔甲。"
         },
         {
           "type": "p",
-          "text": "這裡的「戰甲」就是你這個玩家本人；「模組」是一張張加屬性的卡片，分武器模組和戰甲模組兩種。其它看不懂的名詞可以查[[start/glossary|名詞速查]]。"
+          "text": "這裡的「戰甲」指的就是你本人，「模組」則是一張張加屬性的卡片，分為武器模組和戰甲模組兩種，其它看不懂的名詞可以查閱[[start/glossary|名詞速查]]。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作裡的「戰甲」（Warframe）是玩家操控的生物機械戰鬥裝甲，各有各的外形和技能；「軍械庫」（Arsenal）是飛船上挑選戰甲、武器、安裝模組的地方。"
+          "text": "原作裡的戰甲原名 Warframe，是玩家操控的生物機械戰鬥裝甲，形貌與技能各不相同。軍械庫原名 Arsenal，是飛船上挑選戰甲、武器並安裝模組的地方。"
         },
         {
           "type": "h",
@@ -48,7 +48,7 @@
             ],
             [
               "{item:kuvalich:requiem_evolve}",
-              "<t>×1</t> <w>整台被消耗</w>，還要用就[[weapons/requiem_evolve|再做一台]]"
+              "<t>×1</t>，<w>整台會被消耗</w>，還要用就[[weapons/requiem_evolve|再做一台]]"
             ],
             [
               "{item:minecraft:obsidian}",
@@ -60,11 +60,11 @@
           "type": "tip",
           "style": "warn",
           "title": "不是開局就能做的",
-          "text": "{item:kuvalich:lich_reliquary}只在你擊殺 Boss [[enemies/kuva_master|赤毒玄骸]]、並且這次[[requiem/decryption|解密]]成功（三張安魂卡和它們的順序都猜對了）時才掉，每次 <t>1</t> 個。\n{item:kuvalich:requiem_evolve}（養武器用的工作台）自己的配方也要 <t>1</t> 個，所以至少要贏玄骸兩次。"
+          "text": "{item:kuvalich:lich_reliquary}只在你擊殺 Boss [[enemies/kuva_master|赤毒玄骸]]、並且這次[[requiem/decryption|解密]]成功、三張安魂卡和它們的順序全部猜對時才會掉落，每次 <t>1</t> 個。\n養武器用的工作台{item:kuvalich:requiem_evolve}自己的配方也要 <t>1</t> 個，所以至少要贏玄骸兩次。"
         },
         {
           "type": "p",
-          "text": "<dim>每種材料從哪來，見[[start/materials]]。</dim>"
+          "text": "<dim>每種材料的來源見[[start/materials]]。</dim>"
         },
         {
           "type": "h",
@@ -74,7 +74,7 @@
           "type": "steps",
           "items": [
             "放下後右鍵開啟，上面兩排共 <t>8</t> 格就是你的戰甲模組槽。",
-            "把模組拖進空格；或者在背包裡 <t>Shift + 左鍵</t> 點它，會自動放進第一個能放的格子。這裡只收戰甲模組。",
+            "把模組拖進空格，或者在背包裡 <t>Shift + 左鍵</t> 點它，自動放進第一個能放的格子，這裡只收戰甲模組。",
             "放進去<g>立刻生效</g>，取出來立刻失效，不用關介面。",
             "按 <t>Tab</t> 開啟戰甲模組的[[modules/module_codex|模組圖鑑]]。"
           ]
@@ -86,11 +86,11 @@
         {
           "type": "list",
           "items": [
-            "<w>還沒揭示</w>：詞條顯示 ??? 的模組要先拿在主手右鍵揭示，揭示出的模組會掉在你腳下。",
-            "<w>同一系列只能裝一張</w>：比如「生命力」「生命力 Prime」「執刑官 生命力」是同一系列的幾個版本，只能挑一張裝。",
+            "<w>還沒揭示</w>的模組詞條顯示為 ???，要先拿在主手右鍵揭示，揭示出的模組會掉在你腳下。",
+            "<w>同一系列只能裝一張</w>，比如「生命力」「生命力 Prime」「執刑官 生命力」是同一系列的幾個版本，只能挑其中一張。",
             "名字不像的也可能是同一系列，比如「雅典娜」和「蓄能重劃」。",
-            "[[modules/riven_module|裂罅模組]]（詞條全部隨機的模組）最多裝 <t>1</t> 張。",
-            "加<t>戰利品掉落倍率</t>的幾張互相排斥，加<t>挖礦倍率</t>的幾張也互相排斥；裂罅模組不受這條限制。",
+            "詞條全部隨機的[[modules/riven_module|裂罅模組]]最多裝 <t>1</t> 張。",
+            "加<t>戰利品掉落倍率</t>的幾張互相排斥，加<t>挖礦倍率</t>的幾張也互相排斥，裂罅模組不受這條限制。",
             "手裡拿著模組時，和它衝突的已裝模組會<b>閃紅光</b>。"
           ]
         },
@@ -98,13 +98,13 @@
           "type": "tip",
           "style": "good",
           "title": "模組記在你身上，不在方塊裡",
-          "text": "八格裡的模組跟著<em>你</em>走：哪台軍械庫開啟都是你自己那套，別人開啟看到的是他自己的。\n死亡、換維度、從終界回來都<g>原樣保留、不會掉落</g>；拆掉軍械庫也不影響。"
+          "text": "八格裡的模組跟著<em>你</em>走，無論開啟哪台軍械庫，看到的都是你自己那套，別人開啟看到的則是他自己的。\n死亡、換維度、從終界回來時模組都會<g>原樣保留、不會掉落</g>，拆掉軍械庫也不影響。"
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "挖回來要鑽石鎬",
-          "text": "要用<em>鑽石鎬或更好的鎬</em>才能把軍械庫挖回來，工具不對會直接挖沒。它的硬度是黑曜石的兩倍，挖得很慢。"
+          "text": "用<em>鑽石鎬或更好的鎬</em>才能把軍械庫挖回來，用別的工具會直接挖沒，它的硬度是黑曜石的兩倍，挖起來很慢。"
         }
       ]
     },
@@ -122,11 +122,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "裝在[[warframe/warframe_table|戰甲軍械庫]]裡的模組<g>全天候生效</g>：打架、挖礦、趕路、空手都算，也不用穿盔甲。"
+          "text": "裝在[[warframe/warframe_table|戰甲軍械庫]]裡的模組<g>全天候生效</g>，打架、挖礦、趕路時都在起作用，空著手也一樣，不用穿盔甲。"
         },
         {
           "type": "p",
-          "text": "怎麼認：tooltip 最後一行寫著「{lang:kuvaweapon.warframe_type.tooltip}」的是戰甲模組；寫「{lang:kuvaweapon.item_type.tooltip}」的是武器模組。兩種互相裝不進對方的槽。"
+          "text": "tooltip 最後一行寫著「{lang:kuvaweapon.warframe_type.tooltip}」的是戰甲模組，寫著「{lang:kuvaweapon.item_type.tooltip}」的是武器模組，兩種模組裝不進對方的槽。"
         },
         {
           "type": "items",
@@ -137,7 +137,7 @@
             "kuvalich:warframe_prime_module",
             "kuvalich:warframe_riven_module"
           ],
-          "caption": "戰甲模組的五種品質（稀有度），見[[modules/module_rarity]]"
+          "caption": "戰甲模組的五種品質，也叫稀有度，見[[modules/module_rarity]]"
         },
         {
           "type": "h",
@@ -156,7 +156,7 @@
             },
             {
               "if": "cfg:kuva_lich.enableWarframeModuleRecast",
-              "text": "多餘的戰甲模組，三張一起放進[[weapons/requiem_recast|安魂之鑄]]能合成一張。"
+              "text": "多餘的戰甲模組可以三張一起放進[[weapons/requiem_recast|安魂之鑄]]，合成一張。"
             },
             "單獨一張戰甲模組放進[[weapons/requiem_recast|安魂之鑄]]，會分解成{item:kuvalich:endo}。"
           ]
@@ -164,7 +164,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作裡的模組分門別類：戰甲模組只能裝在戰甲上，步槍、霰彈槍、近戰等武器模組也只能裝在對應的武器上。"
+          "text": "原作裡的模組分門別類，戰甲模組只能裝在戰甲上，步槍、霰彈槍、近戰等武器模組也只認對應的武器。"
         },
         {
           "type": "h",
@@ -175,14 +175,14 @@
           "items": [
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
-              "text": "每張卡的實際數值 = 滿級數值 × 當前等級 ÷ <t>{cfg:kuva_lich.moduleMaxLevel}</t>。tooltip 上顯示的已經是折算後的數；升級要用{item:kuvalich:endo}，見[[modules/module_level]]。"
+              "text": "每張卡的實際數值 = 滿級數值 × 當前等級 ÷ <t>{cfg:kuva_lich.moduleMaxLevel}</t>，tooltip 上顯示的已經是折算後的數，升級要用{item:kuvalich:endo}，詳見[[modules/module_level]]。"
             },
             {
               "if": "!cfg:kuva_lich.enableModuleLevelSystem",
               "text": "模組沒有等級，每張卡都按滿值生效。"
             },
-            "八張卡裡同一個詞條<em>直接相加</em>；負數會抵掉同名的正數。",
-            "例外：{lang:kuvaweapon.warframe_attribute_type.fireProtection}、{lang:kuvaweapon.warframe_attribute_type.electricProtection}、{lang:kuvaweapon.warframe_attribute_type.homologousProtection}、{lang:kuvaweapon.warframe_attribute_type.fallProtection}和{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}是<em>相乘</em>的，擊殺疊層給的抗性也再乘一次。"
+            "八張卡裡同一個詞條<em>直接相加</em>，負數會抵掉同名的正數。",
+            "{lang:kuvaweapon.warframe_attribute_type.fireProtection}、{lang:kuvaweapon.warframe_attribute_type.electricProtection}、{lang:kuvaweapon.warframe_attribute_type.homologousProtection}、{lang:kuvaweapon.warframe_attribute_type.fallProtection}和{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}例外，它們是<em>相乘</em>的，擊殺疊層給的抗性也會再乘一次。"
           ]
         },
         {
@@ -201,12 +201,12 @@
           "type": "tip",
           "style": "warn",
           "title": "零頭不算",
-          "text": "這五項每滿 <t>10%</t> 才算一檔，<w>向下取整</w>：+25% 實際只有 +20%，不到 +10% 等於沒有。負數也按檔扣，{lang:kuvaweapon.warframe_attribute_type.health}最多扣到 -90%。"
+          "text": "這五項每滿 <t>10%</t> 才算一檔，<w>向下取整</w>，+25% 實際只有 +20%，不到 +10% 就等於沒有。負數也按檔扣除，{lang:kuvaweapon.warframe_attribute_type.health}最多扣到 -90%。"
         },
         {
           "type": "list",
           "items": [
-            "{lang:kuvaweapon.warframe_attribute_type.armor}是按比例放大你<em>現有的</em>護甲值和護甲韌性；沒穿盔甲、也沒有別的護甲來源時，再高也是 0。",
+            "{lang:kuvaweapon.warframe_attribute_type.armor}按比例放大你<em>現有的</em>護甲值和護甲韌性，沒穿盔甲、也沒有別的護甲來源時，數值再高也是 0。",
             "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}加的其實是移動速度，走路也會變快。",
             "{lang:kuvaweapon.warframe_attribute_type.reachDistance}只加夠方塊的距離，不加攻擊距離。"
           ]
@@ -217,7 +217,7 @@
         },
         {
           "type": "p",
-          "text": "{lang:kuvaweapon.warframe_attribute_type.fireProtection}、{lang:kuvaweapon.warframe_attribute_type.electricProtection}、{lang:kuvaweapon.warframe_attribute_type.homologousProtection}、{lang:kuvaweapon.warframe_attribute_type.fallProtection}：受傷時，按比例減少這一下扣到<em>血</em>上的傷害。「同源」指其他玩家對你造成的傷害。"
+          "text": "{lang:kuvaweapon.warframe_attribute_type.fireProtection}、{lang:kuvaweapon.warframe_attribute_type.electricProtection}、{lang:kuvaweapon.warframe_attribute_type.homologousProtection}、{lang:kuvaweapon.warframe_attribute_type.fallProtection}會在你受傷時按比例減少這一下扣到<em>血</em>上的傷害，其中「同源」指的是其他玩家對你造成的傷害。"
         },
         {
           "type": "table",
@@ -236,11 +236,11 @@
             ],
             [
               "{lang:kuvaweapon.warframe_attribute_type.responseRate}",
-              "所有回血量 × (1 + 數值)；合計 ≤ -100% 時<b>完全不回血</b>"
+              "所有回血量 × (1 + 數值)，合計 ≤ -100% 時<b>完全不回血</b>"
             ],
             [
               "{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}",
-              "挖掘速度 × (1 + 數值)；合計 ≤ -100% 時<b>什麼方塊都挖不動</b>"
+              "挖掘速度 × (1 + 數值)，合計 ≤ -100% 時<b>什麼方塊都挖不動</b>"
             ],
             [
               "{lang:kuvaweapon.warframe_attribute_type.jumpBoost}",
@@ -250,7 +250,7 @@
               "if": "cfg:kuva_lich.itemDropEffectMultiplier",
               "cells": [
                 "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}",
-                "你擊殺的動物、怪物多掉東西，生效比例 <t>{cfg:kuva_lich.itemDropEffectMultiplier|pctv}</t>"
+                "你擊殺的動物和怪物會多掉東西，生效比例為 <t>{cfg:kuva_lich.itemDropEffectMultiplier|pctv}</t>"
               ]
             },
             {
@@ -271,14 +271,14 @@
         },
         {
           "type": "p",
-          "text": "詞條名裡帶「擊殺時獲取」的是<hl>擊殺疊層</hl>詞條：殺得越多加成越高，一段時間不殺就慢慢退回去。詳見[[combat/kill_stack]]。"
+          "text": "詞條名裡帶「擊殺時獲取」的屬於<hl>擊殺疊層</hl>詞條，殺得越多加成越高，一段時間不殺就會慢慢退回去，詳見[[combat/kill_stack]]。"
         },
         {
           "type": "list",
           "items": [
-            "你每打出一次致命一擊（近戰、遠程都算），身上每種疊層詞條各 <t>+1</t> 層，疊到各自的上限為止，上限見[[reference/warframe_attr_killstack]]。",
+            "你每打出一次致命一擊，無論近戰還是遠程，身上每種疊層詞條都各 <t>+1</t> 層，直到疊滿各自的上限，上限見[[reference/warframe_attr_killstack]]。",
             "實際加成 = 每層數值 × 當前層數。",
-            "最後一次擊殺後，每過 <t>{cfg:kuva_lich.warframeStackDecayTicks|sec}</t> 掉 <t>1</t> 層；下線清空。"
+            "最後一次擊殺之後，每過 <t>{cfg:kuva_lich.warframeStackDecayTicks|sec}</t> 掉 <t>1</t> 層，下線時清空。"
           ]
         },
         {
@@ -291,17 +291,17 @@
             "最後一下是[[combat/elements|元素]]觸發的傷害時，不給戰甲疊層，比如燃燒、毒素、切割的持續傷害，以及電擊、爆炸元素的額外傷害。",
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier",
-              "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}：帶耐久的裝備、工具不會多掉；史萊姆、地獄幽靈、夜魅這類不算怪物，不吃加成。"
+              "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}不會讓帶耐久的裝備和工具多掉，史萊姆、地獄幽靈、夜魅這類不算怪物，也吃不到加成。"
             },
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "副手、盔甲槽、飾品欄裡開過光（能裝模組）的物品，借給主手的是<em>武器模組</em>，和戰甲模組是兩套，見[[modules/multi_slot]]。"
+              "text": "副手、盔甲槽、飾品欄裡開過光、能裝模組的物品，借給主手的是<em>武器模組</em>，和戰甲模組是兩套系統，詳見[[modules/multi_slot]]。"
             },
             "詞條數值的限制對戰甲模組同樣有效，見[[modules/module_limits]]。",
-            "每個詞條的詳細說明：[[reference/warframe_attr_survival]]、[[reference/warframe_attr_resist]]、[[reference/warframe_attr_mobility]]、[[reference/warframe_attr_killstack]]。"
+            "各詞條的詳細說明見[[reference/warframe_attr_survival]]、[[reference/warframe_attr_resist]]、[[reference/warframe_attr_mobility]]、[[reference/warframe_attr_killstack]]。"
           ]
         }
       ]
@@ -314,7 +314,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "你的<hl>護盾</hl>就是原版的<t>黃心</t>（傷害吸收）。挨打時先過盔甲減免，再扣黃心，剩下的才扣血。"
+          "text": "你的<hl>護盾</hl>就是原版代表傷害吸收的<t>黃心</t>，挨打時先過盔甲減免，再扣黃心，剩下的才扣到血上。"
         },
         {
           "type": "p",
@@ -326,7 +326,7 @@
           "style": "bad",
           "if": "!cfg:kuva_lich.shieldCapMultiplier",
           "title": "護盾容量反而有害",
-          "text": "{lang:kuvaweapon.warframe_attribute_type.shield}不會給你任何黃心。裝著它時，金蘋果之類別處給的黃心也會被清零，只有挨打或打中別人後的一段時間裡能保住。"
+          "text": "{lang:kuvaweapon.warframe_attribute_type.shield}不會給你任何黃心，裝著它時，金蘋果之類別處給的黃心也會被清零，只有在挨打或打中別人之後的一段時間裡才能保住。"
         },
         {
           "type": "h",
@@ -356,7 +356,7 @@
           "type": "tip",
           "style": "good",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "最大生命值是乘數之一：堆{lang:kuvaweapon.warframe_attribute_type.health}會順帶抬高護盾上限。"
+          "text": "最大生命值是乘數之一，堆{lang:kuvaweapon.warframe_attribute_type.health}會順帶抬高護盾上限。"
         },
         {
           "type": "h",
@@ -366,7 +366,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "護盾不是一直在回：你<em>挨打</em>或<em>打中別人</em>之後，要先等一段時間才開始回。"
+          "text": "你<em>挨打</em>或<em>打中別人</em>之後，護盾要先等一段時間才開始回復。"
         },
         {
           "type": "table",
@@ -382,11 +382,11 @@
           "rows": [
             [
               "挨打或打中別人後，黃心還有剩",
-              "等 <t>10 秒</t> × 延遲倍率，然後開始回"
+              "等待 <t>10 秒</t> × 延遲倍率後開始回復"
             ],
             [
               "這一下之後黃心<b>空了</b>",
-              "等待再 <b>×3</b>（基礎 <t>30 秒</t>）"
+              "等待時間再 <b>×3</b>，基礎為 <t>30 秒</t>"
             ],
             [
               "等待結束後",
@@ -398,9 +398,9 @@
           "type": "list",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
           "items": [
-            "不加{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}時，從空到滿要 <t>100 秒</t>；+100% 時 <t>50 秒</t>。",
+            "不加{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}時，從空到滿要 <t>100 秒</t>，+100% 時只要 <t>50 秒</t>。",
             "延遲倍率 = 每張卡的 (1 + {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}) 連乘，負數讓等待變短。",
-            "擊殺疊層也能加護盾（見[[combat/kill_stack]]）：{lang:kuvaweapon.warframe_attribute_type.shield}最多疊 <t>{cfg:kuva_lich.maxStacksShield}</t> 層，{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}最多 <t>{cfg:kuva_lich.maxStacksShieldRecoveryRate}</t> 層，{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}最多 <t>{cfg:kuva_lich.maxStacksShieldRecoveryDelay}</t> 層。"
+            "[[combat/kill_stack|擊殺疊層]]也能加護盾，{lang:kuvaweapon.warframe_attribute_type.shield}最多疊 <t>{cfg:kuva_lich.maxStacksShield}</t> 層，{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}最多 <t>{cfg:kuva_lich.maxStacksShieldRecoveryRate}</t> 層，{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}最多 <t>{cfg:kuva_lich.maxStacksShieldRecoveryDelay}</t> 層。"
           ]
         },
         {
@@ -408,13 +408,13 @@
           "style": "warn",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
           "title": "打中別人也會打斷回盾",
-          "text": "一直在打的時候護盾基本不回，停手後才開始回。\n黃心打空以後，每挨一下、每打中一次，都重新按三倍等待（基礎 <t>30 秒</t>）起算。"
+          "text": "護盾要等你停手後才開始回復，一直在打的時候基本不回。\n黃心打空以後，每挨一下、每打中一次，都會重新按三倍等待起算，基礎為 <t>30 秒</t>。"
         },
         {
           "type": "tip",
           "style": "wf",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "原作裡戰甲的護盾也是先替生命值擋傷害，一段時間沒挨打就自動回充；護盾被徹底打空時，要等得更久才開始回。"
+          "text": "原作裡戰甲的護盾同樣擋在生命值前面，一段時間沒挨打便會自行充能，若是被徹底打空，就要多等一陣才開始回充。"
         },
         {
           "type": "h",
@@ -423,25 +423,25 @@
         {
           "type": "list",
           "items": [
-            "護盾先擋、抗性後算：{lang:kuvaweapon.warframe_attribute_type.fireProtection}這類抗性只減穿過護盾、打到血上的那部分。",
+            "護盾先擋，抗性後算，{lang:kuvaweapon.warframe_attribute_type.fireProtection}這類抗性只減免穿過護盾、打到血上的那部分。",
             {
               "if": "cfg:kuva_lich.shieldCapMultiplier",
-              "text": "等待秒數向下取整、按整秒走。卡面數值帶一點零頭（tooltip 上的 -30% 實際是 -30.01%），所以 -30% 算出來是 <t>6</t> 秒而不是 7 秒。"
+              "text": "等待秒數向下取整，按整秒計算。卡面數值帶一點零頭，tooltip 上的 -30% 實際是 -30.01%，所以 -30% 算出來是 <t>6</t> 秒而不是 7 秒。"
             },
             {
               "if": "cfg:kuva_lich.shieldCapMultiplier",
-              "text": "裝著{lang:kuvaweapon.warframe_attribute_type.shield}時，超出上限的黃心（比如附魔金蘋果給的）會在等待期以外被削到上限。"
+              "text": "裝著{lang:kuvaweapon.warframe_attribute_type.shield}時，附魔金蘋果等給出的超出上限的黃心，會在等待期以外被削到上限。"
             },
             {
               "if": "cfg:kuva_lich.shieldCapMultiplier",
-              "text": "死亡重生後黃心從 0 開始。致死那一下一般已經觸發了三倍等待，重生後要先等完才開始回，躺在死亡介面的時間不算。"
+              "text": "死亡重生後黃心從 0 開始，致死那一下通常已經觸發了三倍等待，重生後要先等完才開始回復，停留在死亡介面的時間不計入。"
             },
-            "{lang:kuvaweapon.warframe_attribute_type.fixedShield}：內建的模組都沒有這一條，只會出現在額外新增的自訂模組上。有它時護盾上限直接等於這個點數，不按{lang:kuvaweapon.warframe_attribute_type.shield}算。"
+            "{lang:kuvaweapon.warframe_attribute_type.fixedShield}只會出現在額外新增的自訂模組上，內建的模組都沒有這一條，有它時護盾上限直接等於這個點數，不再按{lang:kuvaweapon.warframe_attribute_type.shield}計算。"
           ]
         },
         {
           "type": "p",
-          "text": "打你的人手裡如果是開光武器（能裝模組的武器），比如其他玩家，幾種元素遇到黃心會有特殊效果，詳見[[combat/element_status]]："
+          "text": "如果打你的人手裡拿著能裝模組的開光武器，比如其他玩家，幾種元素遇到黃心時會有特殊效果，詳見[[combat/element_status]]。"
         },
         {
           "type": "table",
@@ -491,7 +491,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "戴在飾品欄（Curios）裡的<em>開光物品</em>（能裝模組的物品），可以把它身上的<hl>武器模組</hl>按比例借給主手武器。"
+          "text": "戴在 Curios 飾品欄裡、能裝模組的<em>開光物品</em>，可以把身上的<hl>武器模組</hl>按比例借給主手武器。"
         },
         {
           "type": "tip",
@@ -506,10 +506,10 @@
         {
           "type": "steps",
           "items": [
-            "準備一件能戴進飾品欄的物品。本模組不自帶飾品，用別的模組的戒指、項鍊之類。",
-            "把它（只放 1 個）和{item:kuvalich:riven_sliver}放進{item:kuvalich:requiem_evolve}，給它<hl>開光</hl>。",
+            "準備一件能戴進飾品欄的物品，本模組不自帶飾品，可以用別的模組的戒指、項鍊之類。",
+            "把它和{item:kuvalich:riven_sliver}一起放進{item:kuvalich:requiem_evolve}給它<hl>開光</hl>，飾品只放 1 個。",
             "在{item:kuvalich:requiem_weapon_table}裡給它裝上武器模組。",
-            "戴進飾品欄。之後只要主手拿著<em>開光武器</em>，這些詞條就按下式併入主手武器。"
+            "把它戴進飾品欄，之後只要主手拿著<em>開光武器</em>，這些詞條就會按下式併入主手武器。"
           ]
         },
         {
@@ -522,10 +522,10 @@
             "戴幾件開光物品就疊幾件，每件各按上式算。",
             {
               "if": "cfg:kuva_lich.curiosModuleMaxSlots<999",
-              "text": "只有前 <t>{cfg:kuva_lich.curiosModuleMaxSlots}</t> 個飾品槽裡的算數，排在後面的不算。"
+              "text": "只有前 <t>{cfg:kuva_lich.curiosModuleMaxSlots}</t> 個飾品槽裡的物品算數，排在後面的不算。"
             },
-            "飾品開光時擲出的{lang:kuvalich.attr.short.damage}也乘進去：150% 按 1.5 倍算，60% 只剩六成。不滿意可以用[[weapons/forma|塑形塊]]重新隨機。",
-            "<w>主手不是開光武器時，飾品什麼都不提供。</w>",
+            "飾品開光時擲出的{lang:kuvalich.attr.short.damage}也要乘進去，150% 按 1.5 倍算，60% 就只剩六成，不滿意可以用[[weapons/forma|塑形塊]]重新隨機。",
+            "<w>飾品只在主手拿著開光武器時才提供加成。</w>",
             "主手武器面板上的數字會把飾品的加成一起算進去。<dim>面板可能和實際對不上，以實際傷害為準。</dim>"
           ]
         },

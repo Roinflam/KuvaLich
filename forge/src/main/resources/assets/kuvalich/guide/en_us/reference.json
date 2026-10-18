@@ -407,7 +407,7 @@
         { "type": "h", "text": "Advanced details" },
         { "type": "list", "items": [
           "Jump math: jump velocity × √(1 + value).",
-          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "Slimes, magma cubes, ghasts, phantoms, shulkers, the Ender Dragon, and water mobs such as fish and squid are neither animals nor monsters in vanilla, so their drops are not multiplied. NPCs from the Custom NPCs mod are an exception and do count." },
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "Slimes, magma cubes, ghasts, phantoms, shulkers, the Ender Dragon, water creatures such as fish, squid and dolphins, and villagers, iron golems and snow golems are neither animals nor monsters in vanilla, so their drops are not multiplied. NPCs from the Custom NPCs mod are an exception and do count." },
           { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "The drop multiplier has no cap; anything over a stack drops as several piles." },
           { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "Other mods' drop bonuses in the pack are applied first and this one multiplies last, so they compound." }
         ] }

@@ -13,7 +13,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>赤毒武器</hl>是 13 把专属近战武器，只能靠讨伐 Boss {lang:entity.kuvalich.kuva_master}拿到。每把都有独特的被动，还带着随机的<t>武器等级</t>和<t>自带元素</t>。"
+          "text": "<hl>赤毒武器</hl>是 13 把专属近战武器，只有讨伐 Boss {lang:entity.kuvalich.kuva_master}才能夺得。每把都有独特的被动，并带着随机的<t>武器等级</t>和<t>自带元素</t>。"
         },
         {
           "type": "items",
@@ -29,20 +29,20 @@
         {
           "type": "steps",
           "items": [
-            "击杀{lang:entity.kuvalich.kuva_slave}攒解密进度，解锁三张安魂卡的答案 → [[requiem/decryption]]",
-            "在{item:kuvalich:requiem_gate}里按正确顺序放好三张卡 → [[requiem/requiem_gate]]",
-            "击杀{lang:entity.kuvalich.kuva_master}：解密成功的话，从 13 把里<em>等概率</em>随机掉 1 把，另有{item:kuvalich:lich_reliquary}等奖励",
-            "武器等级在你当前的个人等级范围内随机，掉完之后范围才上涨 → [[weapons/weapon_level]]"
+            "击杀{lang:entity.kuvalich.kuva_slave}积攒解密进度，解锁三张安魂卡的答案，见[[requiem/decryption]]",
+            "在{item:kuvalich:requiem_gate}里按正确顺序放好三张卡，见[[requiem/requiem_gate]]",
+            "击杀{lang:entity.kuvalich.kuva_master}，解密成功时会从 13 把里<em>等概率</em>随机掉落 1 把，另有{item:kuvalich:lich_reliquary}等奖励",
+            "武器等级在你当前的个人等级范围内随机，掉落之后这个范围才会上涨，见[[weapons/weapon_level]]"
           ]
         },
         {
           "type": "p",
-          "text": "<dim>奴仆、解密、安魂卡这些名词不熟的话，查[[start/glossary|名词速查]]。</dim>"
+          "text": "<dim>对奴仆、解密、安魂卡这些名词不熟悉，可以查阅[[start/glossary|名词速查]]。</dim>"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作里，每个赤毒玄骸都带着一把赤毒武器，击败它后武器就归你。这些武器都自带一项额外的元素伤害加成。"
+          "text": "原作里的赤毒玄骸各自佩着一把赤毒武器，将它击败，这把武器便归你所有。这些武器都自带一项额外的元素伤害加成。"
         },
         { "type": "h", "text": "每把都有" },
         {
@@ -51,8 +51,8 @@
             ["攻击 / 攻速 / 移速", "每把不同，随武器等级变化"],
             ["暴击 / 暴击倍率 / 触发", "每把固定，不随等级变化"],
             ["{lang:kuvalich.attr.short.damage}", "95% 的武器正好 100%，其余在 80%~120% 之间随机"],
-            ["自带元素", "7 种随机一种：{lang:kuvaweapon.type.fire}、{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.ice}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.impact}、{lang:kuvaweapon.type.magnetic}、{lang:kuvaweapon.type.radiation}"],
-            ["自带元素伤害", "等于武器等级 %：40 级就是 +40% → [[combat/elements]]"],
+            ["自带元素", "在{lang:kuvaweapon.type.fire}、{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.ice}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.impact}、{lang:kuvaweapon.type.magnetic}、{lang:kuvaweapon.type.radiation}这 7 种里随机一种"],
+            ["自带元素伤害", "与武器等级相同的百分比，40 级就是 +40%，见[[combat/elements]]"],
             ["耐久", "23333，不能用材料修复"],
             ["附魔能力", "50"]
           ]
@@ -62,29 +62,29 @@
           "type": "list",
           "ordered": true,
           "items": [
-            "<em>抬等级</em>：等级越高越强。重复的赤毒武器别扔，两把融合能抬等级 → [[weapons/weapon_level]]",
-            "<em>装模组</em>：<t>模组</t>是插在武器上加属性的卡片，不是指 MC 模组。赤毒武器<g>天生开光</g>，也就是拿到就能装 → [[weapons/weapon_table]]",
-            "<em>换元素</em>：融合时可以把元素换成另一把的 → [[weapons/requiem_evolve]]"
+            "<em>抬等级</em>：等级越高越强，重复的赤毒武器先别扔，两把融合就能抬等级，见[[weapons/weapon_level]]",
+            "<em>装模组</em>：这里的<t>模组</t>指插在武器上加属性的卡片，并非 MC 的模组。赤毒武器<g>天生开光</g>，拿到手就能直接装，见[[weapons/weapon_table]]",
+            "<em>换元素</em>：融合时可以把元素换成另一把武器的元素，见[[weapons/requiem_evolve]]"
           ]
         },
         {
           "type": "tip",
           "style": "warn",
-          "text": "别的武器要先用{item:kuvalich:riven_sliver}开光，还能用{item:kuvalich:forma}重洗基础面板。赤毒武器的基础面板是固定的，这两样对它<b>都没用</b>。"
+          "text": "别的武器要先用{item:kuvalich:riven_sliver}开光，之后还能用{item:kuvalich:forma}重洗基础面板。赤毒武器的基础面板却是固定的，这两样对它<b>都没用</b>。"
         },
         { "type": "h", "text": "按顺序造三台工作台" },
         {
           "type": "steps",
           "items": [
-            "{item:kuvalich:requiem_recast}：用{item:kuvalich:requiem_gate}合成。三张安魂卡或三张模组换一张新的，还能分解多余的模组 → [[weapons/requiem_recast]]",
-            "{item:kuvalich:requiem_evolve}：材料里有安魂之铸和{item:kuvalich:lich_reliquary}。融合武器、开光、洗面板 → [[weapons/requiem_evolve]]",
-            "{item:kuvalich:requiem_weapon_table}：材料里有安魂之融、玄骸之遗和 4 个{item:kuvalich:kuva}。装卸模组 → [[weapons/weapon_table]]"
+            "{item:kuvalich:requiem_recast}：用{item:kuvalich:requiem_gate}合成，能把三张安魂卡或三张模组换成一张新的，也能分解多余的模组，见[[weapons/requiem_recast]]",
+            "{item:kuvalich:requiem_evolve}：材料里有安魂之铸和{item:kuvalich:lich_reliquary}，用来融合武器、开光和洗面板，见[[weapons/requiem_evolve]]",
+            "{item:kuvalich:requiem_weapon_table}：材料里有安魂之融、玄骸之遗和 4 个{item:kuvalich:kuva}，用来装卸模组，见[[weapons/weapon_table]]"
           ]
         },
         { "type": "h", "text": "进阶细节" },
         {
           "type": "p",
-          "text": "{lang:kuvalich.attr.short.damage}低于 100% 时按平方生效：80% 实际只有 ×0.64 → [[combat/damage]]"
+          "text": "{lang:kuvalich.attr.short.damage}低于 100% 时按平方生效，80% 实际只有 ×0.64，见[[combat/damage]]。"
         }
       ],
       "_src": [
@@ -113,7 +113,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "13 把赤毒武器分两类：<t>重型</t> 7 把，攻击高、攻速慢，手持时减速；<t>轻型</t> 6 把，攻击低、攻速快，手持时加速。"
+          "text": "13 把赤毒武器分为两类。<t>重型</t>共 7 把，攻击高而攻速慢，手持时会减速，<t>轻型</t>的 6 把则攻击低、攻速快，手持时还能加速。"
         },
         {
           "type": "table",
@@ -121,15 +121,15 @@
           "widths": [3, 1, 5],
           "rows": [
             ["{item:kuvalich:kuva_shildeg}", "重型", "打护甲值为 0 的目标增伤"],
-            ["{item:kuvalich:paracesis}", "重型", "概率重击；大部分伤害转成 5 秒持续伤害"],
+            ["{item:kuvalich:paracesis}", "重型", "概率重击，大部分伤害转成 5 秒持续伤害"],
             ["{item:kuvalich:arca_titron}", "重型", "击杀叠充能，强化跳劈暴击"],
             ["{item:kuvalich:vitrica}", "重型", "命中叠减益削弱目标，本次伤害提高"],
             ["{item:kuvalich:gram_prime}", "重型", "攻击溅射周围生物"],
-            ["{item:kuvalich:sancti_magistar}", "重型", "命中后群体回血；手持时减免环境伤害"],
-            ["{item:kuvalich:prisma_veritux}", "重型", "打护甲值为 0 的目标增伤；手更长"],
-            ["{item:kuvalich:pennant}", "轻型", "概率重击；右键蓄力冲刺并重创周围"],
+            ["{item:kuvalich:sancti_magistar}", "重型", "命中后群体回血，手持时减免环境伤害"],
+            ["{item:kuvalich:prisma_veritux}", "重型", "打护甲值为 0 的目标增伤，手更长"],
+            ["{item:kuvalich:pennant}", "轻型", "概率重击，右键蓄力冲刺并重创周围"],
             ["{item:kuvalich:guandao_prime}", "轻型", "命中提升攻速，并追加持续伤害"],
-            ["{item:kuvalich:reaper_prime}", "轻型", "命中吸血；右键蓄力冲刺"],
+            ["{item:kuvalich:reaper_prime}", "轻型", "命中吸血，右键蓄力冲刺"],
             ["{item:kuvalich:destreza_prime}", "轻型", "每次攻击先追加一击"],
             ["{item:kuvalich:machete}", "轻型", "击杀动物、怪物时掉落数量 ×1~3"],
             ["{item:kuvalich:caustacyst}", "轻型", "毒素元素时上满病毒，其它元素反而减伤"]
@@ -137,23 +137,23 @@
         },
         {
           "type": "p",
-          "text": "{item:kuvalich:kuva_shildeg}、{item:kuvalich:arca_titron}、{item:kuvalich:sancti_magistar}、{item:kuvalich:prisma_veritux}还能<t>破盾</t>：打中举盾的目标时，像斧头一样把盾打掉。"
+          "text": "{item:kuvalich:kuva_shildeg}、{item:kuvalich:arca_titron}、{item:kuvalich:sancti_magistar}、{item:kuvalich:prisma_veritux}还能<t>破盾</t>，打中举盾的目标时，会像斧头一样把盾打掉。"
         },
         {
           "type": "tip",
           "style": "good",
           "title": "怎么挑",
-          "text": "清一群：{item:kuvalich:gram_prime}、{item:kuvalich:pennant}的蓄力技；打高血量目标：{item:kuvalich:guandao_prime}、{item:kuvalich:pennant}；续航：{item:kuvalich:sancti_magistar}、{item:kuvalich:reaper_prime}；刷材料：{item:kuvalich:machete}。"
+          "text": "清一群敌人靠{item:kuvalich:gram_prime}或{item:kuvalich:pennant}的蓄力技，高血量目标交给{item:kuvalich:guandao_prime}和{item:kuvalich:pennant}。看重续航选{item:kuvalich:sancti_magistar}或{item:kuvalich:reaper_prime}，刷材料就带上{item:kuvalich:machete}。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作里，名字带 Prime 的装备大多是同名装备在奥罗金时代的版本，属性通常更好，外观带金色装饰。"
+          "text": "原作里，名字带 Prime 的装备大多是同名装备在奥罗金时代的版本，属性通常更好，外观也缀着金色的纹饰。"
         },
         { "type": "h", "text": "攻击、攻速、移速" },
         {
           "type": "p",
-          "text": "下表是武器等级正好等于<t>基准等级</t> {cfg:kuva_lich.benchmarkLevel} 级时的数值，等级越高越强 → [[weapons/weapon_level]]。移速是相对玩家基础移速的百分比。"
+          "text": "下表是武器等级正好等于<t>基准等级</t> {cfg:kuva_lich.benchmarkLevel} 级时的数值，等级越高越强，见[[weapons/weapon_level]]。移速一栏是相对玩家基础移速的百分比。"
         },
         {
           "type": "table",
@@ -178,14 +178,14 @@
         { "type": "h", "text": "暴击与触发" },
         {
           "type": "p",
-          "text": "这三项是武器自带的，<em>不随等级变化</em>；装上[[start/glossary|模组]]后，在它们的基础上按百分比加成。"
+          "text": "这三项是武器自带的，<em>不随等级变化</em>，装上[[start/glossary|模组]]后会在它们的基础上按百分比加成。"
         },
         {
           "type": "kv",
           "rows": [
-            ["{lang:kuvalich.attr.short.criticalStrikeProbability}", "打出暴击的概率 → [[combat/crit]]"],
+            ["{lang:kuvalich.attr.short.criticalStrikeProbability}", "打出暴击的概率，见[[combat/crit]]"],
             ["{lang:kuvalich.attr.short.criticalStrikeMultiplier}", "暴击时物理伤害乘几倍"],
-            ["{lang:kuvalich.attr.short.triggerChance}", "命中时触发元素效果的概率 → [[combat/element_status]]"]
+            ["{lang:kuvalich.attr.short.triggerChance}", "命中时触发元素效果的概率，见[[combat/element_status]]"]
           ]
         },
         {
@@ -245,12 +245,12 @@
       "blocks": [
         {
           "type": "p",
-          "text": "每把赤毒武器都有一个<hl>武器等级</hl>，它决定这把武器几乎所有的强度。等级就是物品提示里名字下方那行「{lang:kuvaweapon.type} 元素 等级」末尾的数字。"
+          "text": "每把赤毒武器都有一个<hl>武器等级</hl>，这把武器的强弱几乎全由它决定。等级就写在物品提示里名字下方那行「{lang:kuvaweapon.type} 元素 等级」的末尾。"
         },
         { "type": "h", "text": "等级高低差在哪" },
         {
           "type": "p",
-          "text": "以<t>基准等级</t> {cfg:kuva_lich.benchmarkLevel} 级为界：武器等级每高 1 级，攻击力这类数值就在基准值上多 {cfg:kuva_weapon.attributeMultiplier|pctv}；每低 1 级就少这么多。"
+          "text": "以<t>基准等级</t> {cfg:kuva_lich.benchmarkLevel} 级为界，武器等级每高出 1 级，攻击力这类数值就在基准值上多 {cfg:kuva_weapon.attributeMultiplier|pctv}，每低 1 级则少同样多。"
         },
         {
           "type": "formula",
@@ -261,17 +261,17 @@
           "header": ["项目", "随等级怎么变"],
           "widths": [1, 3],
           "rows": [
-            ["攻击力", "×(1+L)；{item:kuvalich:guandao_prime}只吃一半，×(1+L/2)"],
-            ["攻击速度", "多数 ×(1+L/2)；{item:kuvalich:caustacyst}、{item:kuvalich:destreza_prime}、{item:kuvalich:guandao_prime}、{item:kuvalich:prisma_veritux}是 ×(1+L)"],
-            ["移速", "重型的减速随等级减轻，但不会变成加速；轻型的加速随等级增加，但不会变成减速"],
-            ["被动", "多数倍率、范围、持续时间乘 (1+L) 或它的一部分 → [[weapons/heavy_weapons]] / [[weapons/light_weapons]]"],
-            ["自带元素伤害", "等于武器等级 %，和基准无关 → [[combat/elements]]"]
+            ["攻击力", "×(1+L)，{item:kuvalich:guandao_prime}只吃一半，为 ×(1+L/2)"],
+            ["攻击速度", "多数为 ×(1+L/2)，{item:kuvalich:caustacyst}、{item:kuvalich:destreza_prime}、{item:kuvalich:guandao_prime}、{item:kuvalich:prisma_veritux}是 ×(1+L)"],
+            ["移速", "重型的减速随等级升高而减轻，但不会转为加速，轻型的加速随等级升高而增加，也始终不会转为减速"],
+            ["被动", "多数倍率、范围和持续时间乘 (1+L) 或它的一部分，见[[weapons/heavy_weapons]]和[[weapons/light_weapons]]"],
+            ["自带元素伤害", "与武器等级相同的百分比，和基准等级无关，见[[combat/elements]]"]
           ]
         },
         {
           "type": "tip",
           "style": "warn",
-          "text": "等级低于 {cfg:kuva_lich.benchmarkLevel} 时 L 是负数：攻击、攻速、被动全部打折，写着「伤害 ×1.25」的被动甚至会变成减伤。等级越低越明显。"
+          "text": "等级低于 {cfg:kuva_lich.benchmarkLevel} 时 L 是负数，攻击、攻速和被动都会打折，写着「伤害 ×1.25」的被动甚至会变成减伤，等级越低越明显。"
         },
         { "type": "h", "text": "等级颜色" },
         {
@@ -289,12 +289,12 @@
         { "type": "h", "text": "你的等级范围" },
         {
           "type": "p",
-          "text": "掉落武器的等级在你个人的<t>下限 ~ 上限</t>之间随机。范围记在角色身上，死亡不会丢；新角色从 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 起步。"
+          "text": "掉落武器的等级在你个人的<t>下限 ~ 上限</t>之间随机，这个范围记在角色身上，死亡也不会丢失，新角色从 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 起步。"
         },
         {
           "type": "steps",
           "items": [
-            "解密成功并击杀{lang:entity.kuvalich.kuva_master}：先按<em>当前</em>范围掷出掉落武器的等级",
+            "解密成功并击杀{lang:entity.kuvalich.kuva_master}后，先按<em>当前</em>范围掷出掉落武器的等级",
             "再掷一个 {cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease} 的数，下限和上限<em>同时</em>加上它，聊天栏会提示新的数值",
             "下限最多涨到 {cfg:kuva_lich.minimumLevel}，上限最多涨到 {cfg:kuva_lich.maximumLevel}，到顶后不再上涨"
           ]
@@ -302,11 +302,11 @@
         {
           "type": "tip",
           "style": "info",
-          "text": "所以第一次讨伐掉的武器在 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 级之间。之后上下限每次加同一个数，整个范围往上平移；某一头到顶后，只剩另一头继续涨。"
+          "text": "所以第一次讨伐掉的武器在 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 级之间。此后上下限每次加上同一个数，整个范围随之往上平移，某一头到顶后，就只剩另一头继续上涨。"
         },
         {
           "type": "p",
-          "text": "想超过 {cfg:kuva_lich.maximumLevel} 级只能靠[[weapons/requiem_evolve|融合]]，融合最高到 {cfg:kuva_lich.upgradeLimit} 级。"
+          "text": "想超过 {cfg:kuva_lich.maximumLevel} 级只能靠[[weapons/requiem_evolve|融合]]，融合最高可到 {cfg:kuva_lich.upgradeLimit} 级。"
         },
         { "type": "h", "text": "进阶细节" },
         {
@@ -342,41 +342,41 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:requiem_recast}是三台工作台里最先造的一台。它能把三张安魂卡或三张[[start/glossary|模组]]换成一张新的，也能把多余的模组分解成{item:kuvalich:endo}。"
+          "text": "{item:kuvalich:requiem_recast}是三台工作台里最先造的一台，能把三张安魂卡或三张[[start/glossary|模组]]换成一张新的，也能把多余的模组分解成{item:kuvalich:endo}。"
         },
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "内融核心是给模组升级用的材料 → [[modules/module_level]]"
+          "text": "内融核心是给模组升级用的材料，见[[modules/module_level]]。"
         },
         {
           "type": "p",
-          "text": "下方 3 个输入格、上方 1 个输出格。放齐三格，或只放一张模组，就自动出结果，不用按按钮。"
+          "text": "工作台下方有 3 个输入格，上方有 1 个输出格，放齐三格或只放一张模组就会自动出结果，不用按按钮。"
         },
         { "type": "h", "text": "安魂卡三合一" },
         {
           "type": "p",
-          "text": "任意 3 张安魂卡（用旧的也行）→ 1 张随机安魂卡，8 种等概率，耐久是满的。安魂卡的用法见[[requiem/requiem_cards]]。"
+          "text": "任意 3 张安魂卡都能换出 1 张随机的新卡，用过的旧卡也可以，8 种等概率，新卡的耐久是满的。安魂卡的用法见[[requiem/requiem_cards]]。"
         },
         {
           "type": "tip",
           "style": "warn",
-          "text": "第三张放进去的瞬间，三张就被消耗了，新卡出现在输出格。"
+          "text": "第三张放进去的瞬间，三张卡就会被消耗，新卡随即出现在输出格。"
         },
         { "type": "h", "text": "模组三合一" },
         {
           "type": "p",
-          "text": "3 张模组 → 1 张<t>未揭示模组</t>，三张同品质就出这个品质，拿在主手右键揭示。同样是放齐就消耗；武器模组和战甲模组不能混放。"
+          "text": "3 张模组能换出 1 张<t>未揭示模组</t>，三张品质相同就出这个品质，拿在主手右键即可揭示。这里同样是放齐就消耗，武器模组和战甲模组不能混放。"
         },
         {
           "type": "list",
           "items": [
-            "3 张同品质的武器模组：青铜、白银或黄金",
-            { "if": "cfg:kuva_lich.enableCrossTierRecast", "text": "武器模组的青铜 / 白银 / 黄金可以混放，Prime、裂罅不行。产出品质按投入比例随机：2 张黄金 + 1 张青铜 → 约 2/3 出黄金、1/3 出青铜" },
+            "3 张同品质的武器模组，青铜、白银或黄金均可",
+            { "if": "cfg:kuva_lich.enableCrossTierRecast", "text": "武器模组的青铜、白银和黄金可以混放，Prime 和裂罅不行，产出品质按投入比例随机，比如 2 张黄金加 1 张青铜，约 2/3 出黄金、1/3 出青铜" },
             { "if": "cfg:kuva_lich.enablePrimeModuleRecast", "text": "3 张武器{item:kuvalich:item_prime_module}" },
             { "if": "cfg:kuva_lich.enableRivenModuleRecast", "text": "3 张武器{item:kuvalich:item_riven_module}" },
-            { "if": "cfg:kuva_lich.enableWarframeModuleRecast", "text": "3 张同品质的战甲模组：青铜、白银或黄金 → [[warframe/warframe_module]]" },
-            { "if": ["cfg:kuva_lich.enableWarframeModuleRecast", "cfg:kuva_lich.enableWarframeCrossTierRecast"], "text": "战甲模组的青铜 / 白银 / 黄金可以混放，Prime、裂罅不行；产出品质同样按比例随机" },
+            { "if": "cfg:kuva_lich.enableWarframeModuleRecast", "text": "3 张同品质的战甲模组，青铜、白银或黄金均可，见[[warframe/warframe_module]]" },
+            { "if": ["cfg:kuva_lich.enableWarframeModuleRecast", "cfg:kuva_lich.enableWarframeCrossTierRecast"], "text": "战甲模组的青铜、白银和黄金可以混放，Prime 和裂罅不行，产出品质同样按比例随机" },
             { "if": ["cfg:kuva_lich.enableWarframeModuleRecast", "cfg:kuva_lich.enableWarframePrimeModuleRecast"], "text": "3 张战甲{item:kuvalich:warframe_prime_module}" },
             { "if": ["cfg:kuva_lich.enableWarframeModuleRecast", "cfg:kuva_lich.enableWarframeRivenModuleRecast"], "text": "3 张战甲{item:kuvalich:warframe_riven_module}" }
           ]
@@ -384,7 +384,7 @@
         { "type": "h", "text": "分解成内融核心" },
         {
           "type": "p",
-          "text": "只放<em>一张</em>模组（武器、战甲都行），输出格会预览能换多少{item:kuvalich:endo}。拿走内融核心时这张模组才被消耗；不想分解，把模组拿回来即可。"
+          "text": "只放<em>一张</em>武器或战甲模组时，输出格会预览它能换多少{item:kuvalich:endo}，拿走内融核心时这张模组才会被消耗，不想分解就把模组拿回来。"
         },
         {
           "type": "table",
@@ -392,9 +392,9 @@
           "widths": [1, 3],
           "rows": [
             ["品质基础", "青铜 1 · 白银 2 · 黄金 4 · Prime / 裂罅 8"],
-            { "if": "cfg:kuva_lich.enableModuleLevelSystem", "cells": ["模组等级", "每升过一级 +1 → [[modules/module_level]]"] },
+            { "if": "cfg:kuva_lich.enableModuleLevelSystem", "cells": ["模组等级", "每升过一级 +1，见[[modules/module_level]]"] },
             ["裂罅循环", "循环过几次就 +几，未揭示的不算"],
-            ["裂罅倾向性", "倾向性 2 / 3 / 4 / 5 分别 +2 / +4 / +8 / +16 → [[modules/riven_module]]"],
+            ["裂罅倾向性", "倾向性 2 / 3 / 4 / 5 分别 +2 / +4 / +8 / +16，见[[modules/riven_module]]"],
             ["合计上限", "64"]
           ]
         },
@@ -407,7 +407,7 @@
         { "type": "recipe", "item": "kuvalich:requiem_recast" },
         {
           "type": "p",
-          "text": "合成要一个{item:kuvalich:requiem_gate}。挖下来要钻石镐。"
+          "text": "合成需要一个{item:kuvalich:requiem_gate}，挖下来要用钻石镐。"
         }
       ],
       "_src": [
@@ -441,13 +441,13 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:requiem_evolve}是养武器的核心工作台：把两把赤毒武器融合成一把、给普通武器开光让它能装模组、用塑形块洗面板，都在这里。"
+          "text": "{item:kuvalich:requiem_evolve}是养成武器的核心工作台，融合两把赤毒武器、给普通武器开光以便装模组、用塑形块洗面板，都要在这里完成。"
         },
         {
           "type": "steps",
           "items": [
-            "右键打开：<t>左格</t>放要处理的东西，<t>中格</t>放材料",
-            "组合放对了，<t>右格</t>自动出现结果，不用按按钮",
+            "右键打开后，<t>左格</t>放要处理的物品，<t>中格</t>放材料",
+            "组合放对后，<t>右格</t>会自动出现结果，不用按按钮",
             "拿走右格的结果就完成了"
           ]
         },
@@ -456,18 +456,18 @@
           "header": ["左格 + 中格", "效果", "什么时候扣材料"],
           "widths": [3, 3, 2],
           "rows": [
-            ["赤毒武器 + 赤毒武器", "融合：抬等级、换元素", "拿走结果时"],
-            ["未开光的单个物品 + {item:kuvalich:riven_sliver}", "开光：从此能装模组", "立刻扣 1 个"],
-            ["已开光的非赤毒武器 + {item:kuvalich:forma} / {item:kuvalich:shadow_forma}", "重洗基础面板 → [[weapons/forma]]", "立刻扣 1 个"],
-            ["已揭示的裂罅模组 + {item:kuvalich:kuva}", "重随裂罅的词条 → [[modules/riven_module]]", "<w>每出一次预览扣一次</w>"],
-            { "if": "cfg:kuva_lich.enableModuleLevelSystem", "cells": ["已揭示、未满级的模组 + {item:kuvalich:endo}", "模组升级 → [[modules/module_level]]", "拿走结果时"] },
-            { "if": ["mod:tacz", "cfg:kuva_lich.taczGunEnhanceEnable"], "cells": ["TACZ 枪械 + {item:kuvalich:lich_reliquary}", "永久提升枪械伤害 → [[tacz/tacz_enhance]]", "立刻扣 1 个"] }
+            ["赤毒武器 + 赤毒武器", "融合，可抬等级、换元素", "拿走结果时"],
+            ["未开光的单个物品 + {item:kuvalich:riven_sliver}", "开光，此后就能装模组", "立刻扣 1 个"],
+            ["已开光的非赤毒武器 + {item:kuvalich:forma} / {item:kuvalich:shadow_forma}", "重洗基础面板，见[[weapons/forma]]", "立刻扣 1 个"],
+            ["已揭示的裂罅模组 + {item:kuvalich:kuva}", "重随裂罅的词条，见[[modules/riven_module]]", "<w>每出一次预览扣一次</w>"],
+            { "if": "cfg:kuva_lich.enableModuleLevelSystem", "cells": ["已揭示、未满级的模组 + {item:kuvalich:endo}", "模组升级，见[[modules/module_level]]", "拿走结果时"] },
+            { "if": ["mod:tacz", "cfg:kuva_lich.taczGunEnhanceEnable"], "cells": ["TACZ 枪械 + {item:kuvalich:lich_reliquary}", "永久提升枪械伤害，见[[tacz/tacz_enhance]]", "立刻扣 1 个"] }
           ]
         },
         {
           "type": "tip",
           "style": "info",
-          "text": "重随裂罅按次付费：每出一次预览就付一次赤毒，那张裂罅的循环次数也 +1；预览出来后再改材料格，会重新预览、再付一次。不拿结果直接关界面或拿走材料，付掉的赤毒不退。"
+          "text": "重随裂罅按次付费，每出一次预览就付一次赤毒，那张裂罅的循环次数也会 +1。预览出来后再改动材料格，会重新预览并再付一次。不拿结果直接关界面或拿走材料，已付的赤毒也不会退还。"
         },
         { "type": "h", "text": "武器融合" },
         {
@@ -477,7 +477,7 @@
         {
           "type": "list",
           "items": [
-            "结果是<em>左格那把</em>：武器种类、基础面板、已装的模组都照左边的来",
+            "结果是<em>左格那把</em>，武器种类、基础面板和已装的模组都沿用左边的",
             "<w>元素换成中格那把的</w>",
             "中格那把连同它身上的模组一起消失，有好模组先去[[weapons/weapon_table]]拆下来",
             "两把可以是不同的赤毒武器",
@@ -487,32 +487,32 @@
         {
           "type": "tip",
           "style": "good",
-          "text": "主力武器永远放左格。想换元素：中格放带着想要元素的那把。想抬等级：新等级按两把里较高的算，所以高等级的那把放哪格都行。"
+          "text": "主力武器始终放在左格。想换元素，就在中格放带着目标元素的那把。想抬等级的话，新等级按两把里较高的算，所以高等级那把放在哪格都行。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作里两把同名赤毒武器可以「化合」：保留两把中较高的元素加成再提高 10%，最高 60%，元素二选一。"
+          "text": "原作里，两把同名赤毒武器可以「化合」为一，保留两者中较高的元素加成再提高 10%，最高可达 60%，元素则从两把里二选一。"
         },
         { "type": "h", "text": "开光" },
         {
           "type": "p",
-          "text": "把任意一件<em>单个</em>物品（剑、斧、弓、弩……）放左格、{item:kuvalich:riven_sliver}放中格，立刻得到一套随机的基础面板，之后就能装模组。"
+          "text": "把剑、斧、弓、弩等任意一件<em>单个</em>物品放在左格，{item:kuvalich:riven_sliver}放在中格，立刻就能得到一套随机的基础面板，此后便能装模组。"
         },
         {
           "type": "p",
-          "text": "已开光的物品不能再开光；面板不满意，用塑形块重洗 → [[weapons/forma]]"
+          "text": "每件物品只能开光一次，面板不满意就用塑形块重洗，见[[weapons/forma]]。"
         },
         { "type": "h", "text": "合成" },
         { "type": "recipe", "item": "kuvalich:requiem_evolve" },
         {
           "type": "p",
-          "text": "要{item:kuvalich:requiem_recast}和{item:kuvalich:lich_reliquary}，所以至少讨伐成功一次才造得出来。挖下来要钻石镐，而且非常硬。"
+          "text": "合成需要{item:kuvalich:requiem_recast}和{item:kuvalich:lich_reliquary}，所以至少要讨伐成功一次才造得出来。它非常坚硬，挖下来要用钻石镐。"
         },
         { "type": "h", "text": "进阶细节" },
         {
           "type": "p",
-          "text": "融合时小数直接舍去：等级太低时（等级 × {cfg:kuva_lich.upgradeMultiplier|pct} 不到 1），融合一级也不涨，但仍然会换元素。"
+          "text": "融合时小数直接舍去，等级太低、等级 × {cfg:kuva_lich.upgradeMultiplier|pct} 不到 1 时，融合一级也不会涨，但元素照样会换。"
         }
       ],
       "_src": [
@@ -542,29 +542,29 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:requiem_weapon_table}用来给武器装卸<hl>模组</hl>。模组是插在武器上加属性的卡片，每把武器都有 8 个格子。"
+          "text": "{item:kuvalich:requiem_weapon_table}用来给武器装卸<hl>模组</hl>。模组是插在武器上加属性的卡片，每把武器都留有 8 个格子。"
         },
         {
           "type": "p",
-          "text": "模组存在武器身上：装好后武器带到哪都生效，工作台本身不存任何东西。"
+          "text": "模组存放在武器身上，装好后武器带到哪里都生效，工作台本身不保存任何东西。"
         },
         {
           "type": "steps",
           "items": [
-            "右键打开，把一把<t>已开光</t>的武器放进下方的武器格。开光就是让武器能装模组：赤毒武器天生开光，别的武器先去[[weapons/requiem_evolve]]开光",
+            "右键打开，把一把<t>已开光</t>的武器放进下方的武器格。开光后武器才能装模组，赤毒武器天生开光，别的武器要先去[[weapons/requiem_evolve]]开光",
             "上方 8 个模组格随即可用，武器上已有的模组会显示在里面",
             "把模组放进空格就是装上，拿出来就是卸下，<g>不消耗任何东西</g>",
-            "取走武器或关闭界面，武器带着模组回到背包；背包满了就掉在脚下"
+            "取走武器或关闭界面后，武器会带着模组回到背包，背包满了就掉在脚下"
           ]
         },
         {
           "type": "kv",
           "rows": [
-            ["能装的", "已揭示的武器模组；战甲模组去[[warframe/warframe_table]]"],
-            ["裂罅模组", "每把最多 1 张 → [[modules/riven_module]]"],
-            ["重复 / 冲突", "同一种模组不能装两张，互相冲突的模组不能同时装"],
-            ["SHIFT + 点击", "模组自动进第一个能放的空格；已开光的武器自动进武器格"],
-            ["TAB", "打开武器模组图鉴 → [[modules/module_codex]]"]
+            ["能装的", "已揭示的武器模组，战甲模组要去[[warframe/warframe_table]]装"],
+            ["裂罅模组", "每把最多 1 张，见[[modules/riven_module]]"],
+            ["重复 / 冲突", "同一种模组只能装一张，互相冲突的模组也不能同时装"],
+            ["SHIFT + 点击", "模组会自动进入第一个能放的空格，已开光的武器自动进入武器格"],
+            ["TAB", "打开武器模组图鉴，见[[modules/module_codex]]"]
           ]
         },
         {
@@ -575,7 +575,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作里的「军械库」（Arsenal）是玩家飞船上的装配界面，战甲和武器的模组都在那里装卸。"
+          "text": "原作里的「军械库」英文名为 Arsenal，是玩家在飞船上整备装配的界面，战甲和武器的模组都在那里装卸。"
         },
         {
           "type": "p",
@@ -585,7 +585,7 @@
         { "type": "recipe", "item": "kuvalich:requiem_weapon_table" },
         {
           "type": "p",
-          "text": "要 4 个{item:kuvalich:kuva}、1 个{item:kuvalich:lich_reliquary}和一台{item:kuvalich:requiem_evolve}，所以得先讨伐成功一次。挖下来要钻石镐。"
+          "text": "合成需要 4 个{item:kuvalich:kuva}、1 个{item:kuvalich:lich_reliquary}和一台{item:kuvalich:requiem_evolve}，所以得先讨伐成功一次，挖下来要用钻石镐。"
         }
       ],
       "_src": [
@@ -613,16 +613,16 @@
       "blocks": [
         {
           "type": "p",
-          "text": "把鼠标停在<t>开过光</t>、能装模组的物品上，就会出现<hl>武器面板</hl>：这把武器此刻的各项属性。赤毒武器天生开光。"
+          "text": "把鼠标停在<t>开过光</t>、能装模组的物品上，就会出现<hl>武器面板</hl>，列出这把武器此刻的各项属性。赤毒武器天生开光。"
         },
         {
           "type": "p",
-          "text": "赤毒武器的面板最上面多一行「{lang:kuvaweapon.type} 元素 等级」：元素名用元素的颜色，等级数字用[[weapons/weapon_level|等级颜色]]。"
+          "text": "赤毒武器的面板最上面会多一行「{lang:kuvaweapon.type} 元素 等级」，元素名显示为元素的颜色，等级数字显示为[[weapons/weapon_level|等级颜色]]。"
         },
         { "type": "h", "text": "还没装模组" },
         {
           "type": "p",
-          "text": "只有四条基础数值：{lang:kuvalich.attr.short.damage}、{lang:kuvalich.attr.short.criticalStrikeProbability}、{lang:kuvalich.attr.short.criticalStrikeMultiplier}、{lang:kuvalich.attr.short.triggerChance}。赤毒武器的见[[weapons/weapon_list]]；其它武器在开光时随机得到，概率见[[weapons/forma]]。"
+          "text": "这时只有{lang:kuvalich.attr.short.damage}、{lang:kuvalich.attr.short.criticalStrikeProbability}、{lang:kuvalich.attr.short.criticalStrikeMultiplier}、{lang:kuvalich.attr.short.triggerChance}四条基础数值，赤毒武器的数值见[[weapons/weapon_list]]，其它武器的在开光时随机得到，概率见[[weapons/forma]]。"
         },
         { "type": "h", "text": "装了模组" },
         {
@@ -630,17 +630,17 @@
           "header": ["分组", "内容"],
           "widths": [1, 3],
           "rows": [
-            ["{lang:kuvalich.panel.group.panel}", "算上模组后的最终面板；暴击几率和暴击倍率写成「近战 / 远程」两个数"],
-            ["{lang:kuvalich.panel.group.stack}", "每种击杀叠层的层数、当前加成和状态 → [[combat/kill_stack]]"],
-            ["{lang:kuvalich.panel.group.element}", "各元素的触发占比和元素总伤害 → [[combat/elements]]"],
-            ["{lang:kuvalich.panel.group.damage} / {lang:kuvalich.panel.group.gun} / {lang:kuvalich.panel.group.rare}", "其余词条；近战武器默认不显示枪械词条 → [[reference/weapon_attr_damage]]"],
-            { "if": ["cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule", "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"], "cells": ["{lang:kuvalich.panel.group.extra}", "其它装备上的模组给主手武器的加成，只在看主手那把时出现 → [[modules/multi_slot]]"] },
+            ["{lang:kuvalich.panel.group.panel}", "算上模组后的最终面板，暴击几率和暴击倍率写成「近战 / 远程」两个数"],
+            ["{lang:kuvalich.panel.group.stack}", "每种击杀叠层的层数、当前加成和状态，见[[combat/kill_stack]]"],
+            ["{lang:kuvalich.panel.group.element}", "各元素的触发占比和元素总伤害，见[[combat/elements]]"],
+            ["{lang:kuvalich.panel.group.damage} / {lang:kuvalich.panel.group.gun} / {lang:kuvalich.panel.group.rare}", "其余词条，近战武器默认不显示枪械词条，见[[reference/weapon_attr_damage]]"],
+            { "if": ["cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule", "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"], "cells": ["{lang:kuvalich.panel.group.extra}", "其它装备上的模组给主手武器的加成，只在看主手那把时出现，见[[modules/multi_slot]]"] },
             ["{lang:kuvalich.panel.group.modules}", "已装模组的名单，标题后写着「已装数/8」"]
           ]
         },
         {
           "type": "p",
-          "text": "数值颜色：<c:6FD8E8>青色</c> = 此刻被击杀叠层抬高了；<c:FF7B7B>红色</c> = 负面数值。"
+          "text": "数值显示为<c:6FD8E8>青色</c>，说明它此刻被击杀叠层抬高了，显示为<c:FF7B7B>红色</c>则是负面数值。"
         },
         { "type": "h", "text": "按住功能键" },
         {
@@ -649,28 +649,28 @@
           "widths": [1, 4],
           "rows": [
             ["不按", "默认视图，数值<em>包含</em>当前击杀叠层"],
-            ["SHIFT", "同样的排版，但数值<em>不含</em>叠层。和默认视图一对比，就知道哪些是叠层撑起来的"],
-            { "if": "cfg:modules.attributeTotalCaps", "cells": ["CTRL", "词条来源：每张模组各加了多少、装备加成来自哪里、哪些词条被上限截断 → [[modules/module_limits]]"] },
-            { "if": "!cfg:modules.attributeTotalCaps", "cells": ["CTRL", "词条来源：每张模组各加了多少、装备加成来自哪里"] },
-            ["ALT", "实时状态：叠层每层加多少、元素怎么合成的、触发几率怎么算的"]
+            ["SHIFT", "排版相同，但数值<em>不含</em>叠层，和默认视图一对比，就知道哪些是叠层撑起来的"],
+            { "if": "cfg:modules.attributeTotalCaps", "cells": ["CTRL", "词条来源，包括每张模组各加了多少、装备加成来自哪里、哪些词条被上限截断，见[[modules/module_limits]]"] },
+            { "if": "!cfg:modules.attributeTotalCaps", "cells": ["CTRL", "词条来源，包括每张模组各加了多少、装备加成来自哪里"] },
+            ["ALT", "实时状态，包括叠层每层加多少、元素如何合成、触发几率怎么算"]
           ]
         },
         {
           "type": "p",
-          "text": "同时按住几个键时，SHIFT 优先，其次 CTRL，最后 ALT。"
+          "text": "同时按住几个键时，SHIFT 优先于 CTRL，CTRL 又优先于 ALT。"
         },
         {
           "type": "tip",
           "style": "warn",
           "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"],
-          "text": "面板顶部出现「{lang:item.kuvalich.forma_locked}」，说明这把武器的基础面板已被锁定 → [[weapons/forma]]。"
+          "text": "面板顶部出现「{lang:item.kuvalich.forma_locked}」时，说明这把武器的基础面板已被锁定，见[[weapons/forma]]。"
         },
         { "type": "h", "text": "进阶细节" },
         {
           "type": "list",
           "items": [
-            "ALT 视图里的触发几率 = 基础 ×（1 + 模组）×（1 + 叠层），单次命中最高 500%，超出时标「{lang:kuvalich.panel.trigger.capped}」",
-            "面板的位置、宽度、密度和显示哪些分组，都能在你自己的客户端设置里调，只影响你自己"
+            "ALT 视图里的触发几率 = 基础 ×（1 + 模组）×（1 + 叠层），单次命中最高 500%，超出时会标出「{lang:kuvalich.panel.trigger.capped}」",
+            "面板的位置、宽度、密度以及显示哪些分组，都能在你自己的客户端设置里调整，只影响你自己"
           ]
         }
       ],
@@ -700,27 +700,27 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:forma}用来<hl>重洗基础面板</hl>：把武器的基础伤害、暴击几率、暴击倍率、触发几率重新随机一遍。只对<t>已开光的非赤毒武器</t>有效，开光见[[weapons/requiem_evolve]]。"
+          "text": "{item:kuvalich:forma}用来<hl>重洗基础面板</hl>，把武器的基础伤害、暴击几率、暴击倍率和触发几率重新随机一遍，它只对<t>已开光的非赤毒武器</t>有效，开光见[[weapons/requiem_evolve]]。"
         },
         { "type": "items", "items": ["kuvalich:forma", "kuvalich:shadow_forma"] },
         {
           "type": "steps",
           "items": [
             "打开{item:kuvalich:requiem_evolve}",
-            "左格放武器（一次一把），中格放{item:kuvalich:forma}",
-            "立刻扣 1 个塑形块，洗好的武器出现在右格；已装的模组原样保留",
+            "左格放武器，一次只放一把，中格放{item:kuvalich:forma}",
+            "立刻扣掉 1 个塑形块，洗好的武器出现在右格，已装的模组原样保留",
             "不满意就再放回左格接着洗"
           ]
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作里的塑形块（Forma）用来改变武器模组槽的极性，代价是武器等级清零、要重新练满。"
+          "text": "原作里的塑形块英文名为 Forma，能改变武器模组槽的极性，代价是武器等级清零，得从头再练满一遍。"
         },
         { "type": "h", "text": "新面板怎么随机" },
         {
           "type": "p",
-          "text": "开光时的面板也按这套随机。绝大多数是普通档，极品和劣品各约千分之一。"
+          "text": "开光时的面板也按这套规则随机，绝大多数落在普通档，极品和劣品各约千分之一。"
         },
         {
           "type": "table",
@@ -735,27 +735,27 @@
         },
         {
           "type": "p",
-          "text": "普通档里，基础伤害有 60% 概率正好是 100%；暴击几率有 30% 概率改为 25%~40%。之后还会按暴击几率的高低再修正一次，见篇末「进阶细节」。"
+          "text": "普通档里，基础伤害有 60% 概率正好是 100%，暴击几率有 30% 概率改为 25%~40%，之后还会按暴击几率的高低再修正一次，见篇末「进阶细节」。"
         },
         {
           "type": "tip",
           "style": "warn",
-          "text": "基础伤害低于 100% 时按平方生效：面板 80% 实际只有 64%，劣品的 50% 只剩 25% → [[combat/damage]]"
+          "text": "基础伤害低于 100% 时按平方生效，面板上的 80% 实际只有 64%，劣品的 50% 只剩 25%，见[[combat/damage]]。"
         },
         { "type": "h", "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"], "text": "面板锁定" },
         {
           "type": "tip",
           "style": "warn",
           "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"],
-          "text": "每用普通塑形块洗一次，都有 {cfg:kuva_lich.formaLockChance|pctv} 概率把这把武器<b>永久锁定</b>。锁定后面板顶部多一行「{lang:item.kuvalich.forma_locked}」，普通塑形块再也洗不动它。"
+          "text": "每用普通塑形块洗一次，都有 {cfg:kuva_lich.formaLockChance|pctv} 概率把这把武器<b>永久锁定</b>，锁定后面板顶部会多出一行「{lang:item.kuvalich.forma_locked}」，普通塑形块再也洗不动它。"
         },
         { "type": "h", "text": "{item:kuvalich:shadow_forma}" },
         {
           "type": "list",
           "items": [
             "用法和塑形块一样",
-            { "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"], "text": "<em>无视锁定</em>，洗完顺带解除锁定；这一次不会再掷锁定概率" },
-            "没有合成配方、不会掉落，只在创造模式物品栏里有"
+            { "if": ["cfg:kuva_lich.formaLockEnabled", "cfg:kuva_lich.formaLockChance>0"], "text": "<em>无视锁定</em>，洗完顺带解除锁定，这一次也不会再掷锁定概率" },
+            "没有合成配方，也不会掉落，只能在创造模式物品栏里取得"
           ]
         },
         { "type": "h", "text": "合成" },
@@ -767,8 +767,8 @@
           "header": ["普通档里", "还会这样修正"],
           "widths": [1, 4],
           "rows": [
-            ["暴击 ≥30%", "倍率改为 2.5~3.0×，基础伤害降到 80%~90%；暴击超过 30% 时还有 60% 概率触发只剩 1%~5%"],
-            ["暴击 ≤15%", "60% 概率倍率 2.5~3.0×、基础伤害 110%~120%；另有约 4% 概率倍率 3.0~3.5×、基础伤害 70%~80%"]
+            ["暴击 ≥30%", "倍率改为 2.5~3.0×，基础伤害降到 80%~90%，暴击超过 30% 时还有 60% 概率让触发只剩 1%~5%"],
+            ["暴击 ≤15%", "60% 概率倍率为 2.5~3.0×、基础伤害 110%~120%，另有约 4% 概率倍率为 3.0~3.5×、基础伤害 70%~80%"]
           ]
         }
       ],
@@ -800,13 +800,13 @@
       "blocks": [
         {
           "type": "p",
-          "text": "这里逐把列出 7 把重型武器的被动。先看懂下面几种写法："
+          "text": "这里逐把列出 7 把重型武器的被动，阅读前先认识下面几种写法。"
         },
         {
           "type": "kv",
           "rows": [
-            ["满蓄力", "攻击冷却条走满再出手。除非特别说明，被动都要满蓄力才触发"],
-            ["L", "等级系数：高于基准等级为正，低于为负 → [[weapons/weapon_level]]"],
+            ["满蓄力", "攻击冷却条走满再出手，除非特别说明，被动都要满蓄力才会触发"],
+            ["L", "等级系数，高于基准等级时为正，低于时为负，见[[weapons/weapon_level]]"],
             ["×(1+L)", "随等级完全缩放"],
             ["×(1+L/2)", "只吃一半等级加成"]
           ]
@@ -815,7 +815,7 @@
         {
           "type": "list",
           "items": [
-            "对<t>护甲值为 0</t>的目标：伤害 ×1.25×(1+L)；目标只要有 1 点护甲就不加成",
+            "对<t>护甲值为 0</t>的目标伤害 ×1.25×(1+L)，目标只要有 1 点护甲就没有这份加成",
             "能破盾"
           ]
         },
@@ -825,16 +825,16 @@
           "items": [
             "31% 概率本次伤害 ×2.6",
             "打玩家时伤害再 ×2",
-            "伤害只有 <w>30%</w> 当场生效；其余 70% 再 ×(1+L)，变成 5 秒的持续伤害"
+            "伤害只有 <w>30%</w> 当场生效，其余 70% 再 ×(1+L)，变成 5 秒的持续伤害"
           ]
         },
         { "type": "h", "text": "{item:kuvalich:arca_titron}" },
         {
           "type": "list",
           "items": [
-            "手持时每击杀一个生物 +1 层充能，最多 10 层，持续 20×(1+L) 秒；再击杀会刷新时间，击杀不要求满蓄力",
-            "充能只强化原版的<em>跳劈暴击</em>：暴击倍率 ×(1 + 层数×5%×(1+L))。基准等级 10 层时 1.5 → 2.25",
-            "它和面板上的暴击几率是两套东西，平地攻击吃不到充能",
+            "手持时每击杀一个生物 +1 层充能，最多 10 层，持续 20×(1+L) 秒，再次击杀会刷新时间，击杀本身不要求满蓄力",
+            "充能只强化原版的<em>跳劈暴击</em>，暴击倍率 ×(1 + 层数×5%×(1+L))，基准等级下叠满 10 层时由 1.5 提高到 2.25",
+            "它和面板上的暴击几率是两套机制，平地攻击吃不到充能",
             "能破盾"
           ]
         },
@@ -844,7 +844,7 @@
           "items": [
             "每次命中给目标叠一层减益，最多 8 层，持续 10×(1+L) 秒，每次命中刷新",
             "每层让目标的攻击力、攻击速度、护甲、护甲韧性、移动速度各 <g>−7.5%</g>，8 层合计 −60%",
-            "本次伤害 ×1.25×(1+L/2)。命中时先挂减益再结算，所以第一下就吃得到"
+            "本次伤害 ×1.25×(1+L/2)，命中时先挂减益再结算，所以第一下就能吃到"
           ]
         },
         { "type": "h", "text": "{item:kuvalich:gram_prime}" },
@@ -852,9 +852,9 @@
           "type": "list",
           "items": [
             "蓄力 ≥75% 的攻击会溅射目标周围约 4×(1+L/6) 格内的其他生物",
-            "每只受到：你的攻击力 ×66%×蓄力进度，攻击力算上锋利等附魔加成",
-            "溅射算作你的近战攻击，照常经过武器面板结算：模组、暴击、元素都算",
-            "<b>溅射不分敌我</b>：宠物、村民站在旁边也会挨打；允许 PvP 时其他玩家也会挨打"
+            "每只受到的伤害为你的攻击力 ×66%×蓄力进度，攻击力算上锋利等附魔加成",
+            "溅射算作你的近战攻击，照常经过武器面板结算，模组、暴击和元素都会生效",
+            "<b>溅射不分敌我</b>，宠物和村民站在旁边也会挨打，允许 PvP 时其他玩家同样会被波及"
           ]
         },
         { "type": "h", "text": "{item:kuvalich:sancti_magistar}" },
@@ -862,8 +862,8 @@
           "type": "list",
           "items": [
             "命中后 2.5 秒内持续给<em>你自己和 15 格内的其他玩家</em>回血，每人总量 = 本次伤害 ×5%×(1+2L)",
-            "<w>等级很低、L 降到 −0.5 及以下时</w>，1+2L ≤ 0，一点都不回",
-            "手持时，<t>没有来源的伤害</t>减少 50%×(1+L/2)：摔落、着火、岩浆、溺水、窒息、中毒和凋零效果等",
+            "<w>等级很低、L 降到 −0.5 及以下时</w>，1+2L ≤ 0，一点血也不回",
+            "手持时，摔落、着火、岩浆、溺水、窒息、中毒和凋零效果等<t>没有来源的伤害</t>减少 50%×(1+L/2)",
             "能破盾"
           ]
         },
@@ -882,8 +882,8 @@
           "type": "list",
           "items": [
             "{item:kuvalich:paracesis}的持续伤害 0.25 秒后开始，每 tick 扣一次，直接扣生命值",
-            "{item:kuvalich:arca_titron}说的跳劈暴击，要下落途中出手、蓄力超过 90%、没在疾跑",
-            "{item:kuvalich:vitrica}：只有目标身上没有这个减益时，本次伤害才会是 ×0.75"
+            "{item:kuvalich:arca_titron}所说的跳劈暴击，要在下落途中、蓄力超过 90% 且没有疾跑时出手",
+            "{item:kuvalich:vitrica}只有在目标身上没有这个减益时，本次伤害才会是 ×0.75"
           ]
         }
       ],
@@ -921,7 +921,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "这里逐把列出 6 把轻型武器的被动。L、×(1+L) 这些写法的意思见[[weapons/heavy_weapons]]；除非特别说明，被动都要<em>满蓄力攻击</em>才会触发。"
+          "text": "这里逐把列出 6 把轻型武器的被动，L、×(1+L) 这些写法的含义见[[weapons/heavy_weapons]]。除非特别说明，被动都要<em>满蓄力攻击</em>才会触发。"
         },
         { "type": "h", "text": "{item:kuvalich:pennant}" },
         {
@@ -930,9 +930,9 @@
             "32% 概率本次伤害 ×2.4",
             "<hl>右键蓄力技</hl>：按住右键至少 1 秒再松开，朝视线方向冲刺，移速越快冲得越远",
             "松手的同时，以你为中心 12×(1+L/4) 格内的所有生物立刻受到一次魔法伤害，无视护甲，基数是其<em>当前生命的 20%</em>",
-            "这一下算你的攻击：照常经过武器面板结算，也能触发上面的 32% 重击，所以实际通常不止 20%",
+            "这一下算作你的攻击，照常经过武器面板结算，也能触发上面的 32% 重击，所以实际伤害通常不止 20%",
             "被打中的目标随后 5 秒内按<em>已损失生命</em>持续掉血，越往后越重",
-            "冷却 10 秒；<b>不分敌我</b>，只排除你自己。其他玩家只在允许 PvP 时受伤"
+            "冷却 10 秒，<b>不分敌我</b>，只排除你自己，其他玩家只在允许 PvP 时受伤"
           ]
         },
         { "type": "h", "text": "{item:kuvalich:guandao_prime}" },
@@ -940,7 +940,7 @@
           "type": "list",
           "items": [
             "命中后你的攻击速度 +11%，持续期间再命中变为 +16%，持续 5×(1+L) 秒",
-            "同时给目标挂持续伤害：5 秒内分 20 跳直接扣血，总量 =（本次伤害 + 目标最大生命 2.5%）×(1+L)",
+            "同时给目标挂上持续伤害，5 秒内分 20 跳直接扣血，总量 =（本次伤害 + 目标最大生命 2.5%）×(1+L)",
             "攻击力只吃一半等级加成 (1+L/2)，攻速和移速吃满 (1+L)"
           ]
         },
@@ -948,10 +948,10 @@
         {
           "type": "list",
           "items": [
-            "命中回血：本次伤害 ×10%×(1+L)",
+            "命中时回血，回复量为本次伤害 ×10%×(1+L)",
             "这里的伤害是武器面板和模组加成<em>之前</em>的数值，模组堆得再高，回血也不会跟着涨",
-            "<hl>右键冲刺</hl>：按住右键至少 0.25 秒再松开，朝视线方向冲刺；按满 1 秒力度最大，0.5 → 1.5 倍",
-            "冲刺距离还随你的移速和 (1+L/3) 变化；冷却 1.5~4.5 秒，力度越大越久；冲刺本身不造成伤害"
+            "<hl>右键冲刺</hl>：按住右键至少 0.25 秒再松开，朝视线方向冲刺，按得越久力度越大，从 0.5 倍增加到按满 1 秒时的 1.5 倍",
+            "冲刺距离还随你的移速和 (1+L/3) 变化，冷却 1.5~4.5 秒，力度越大冷却越久，冲刺本身不造成伤害"
           ]
         },
         { "type": "h", "text": "{item:kuvalich:destreza_prime}" },
@@ -959,7 +959,7 @@
           "type": "list",
           "items": [
             "蓄力 ≥66% 的每次攻击都会先追加一击，不看概率",
-            "追加的一击 = 你的攻击力 ×33.3%×蓄力进度，攻击力算上锋利等附魔加成；同样照常经过武器面板结算",
+            "追加的一击 = 你的攻击力 ×33.3%×蓄力进度，攻击力算上锋利等附魔加成，同样照常经过武器面板结算",
             "攻速和移速随等级完全缩放"
           ]
         },
@@ -967,29 +967,29 @@
         {
           "type": "list",
           "items": [
-            "手持时击杀<t>动物或怪物</t>：每一组掉落物的数量随机 ×1、×2 或 ×3，不要求蓄力",
+            "手持时击杀<t>动物或怪物</t>，每一组掉落物的数量随机 ×1、×2 或 ×3，不要求蓄力",
             "盔甲，以及剑、镐、斧、锹、锄不翻倍",
-            "{lang:entity.kuvalich.kuva_slave}和{lang:entity.kuvalich.kuva_master}的专属掉落（赤毒、裂罅碎块、模组等）是另外生成的，不会翻倍"
+            "{lang:entity.kuvalich.kuva_slave}和{lang:entity.kuvalich.kuva_master}的赤毒、裂罅碎块、模组等专属掉落是另外生成的，不会翻倍"
           ]
         },
         { "type": "h", "text": "{item:kuvalich:caustacyst}" },
         {
           "type": "list",
           "items": [
-            "自带元素是{lang:kuvaweapon.type.poison}时：命中直接给目标挂满 10 层{lang:kuvaweapon.type.virus}，最大生命 <g>−50%</g>，持续 7.5×(1+L) 秒，伤害不变",
-            "其它元素：本次伤害 <b>×0.75×(1+L)</b>，只给 1 层病毒",
+            "自带元素是{lang:kuvaweapon.type.poison}时，命中会直接给目标挂满 10 层{lang:kuvaweapon.type.virus}，使其最大生命 <g>−50%</g>，持续 7.5×(1+L) 秒，伤害不变",
+            "自带其它元素时，本次伤害 <b>×0.75×(1+L)</b>，只给 1 层病毒",
             "攻速和移速随等级完全缩放",
-            "想换成毒素：把一把毒素元素的赤毒武器放在融合的中格 → [[weapons/requiem_evolve]]；病毒的效果见[[combat/element_status]]"
+            "想换成毒素，就把一把毒素元素的赤毒武器放在融合的中格，见[[weapons/requiem_evolve]]，病毒的效果见[[combat/element_status]]"
           ]
         },
         { "type": "h", "text": "进阶细节" },
         {
           "type": "list",
           "items": [
-            "{item:kuvalich:pennant}的后续掉血每 0.25 秒一跳，每跳约为已损失生命的 0.46% → 2.1% ×(1+L)",
+            "{item:kuvalich:pennant}的后续掉血每 0.25 秒一跳，每跳约为已损失生命的 0.46%，逐跳增加到 2.1%，再乘 (1+L)",
             "{item:kuvalich:destreza_prime}追加一击后，会缩短目标的受击无敌时间，这次正常攻击照样打得进去",
-            "{item:kuvalich:machete}：史莱姆、岩浆怪、恶魂、幻翼、潜影贝、鱿鱼、村民、铁傀儡在游戏里既不算动物也不算怪物，<b>不翻倍</b>",
-            "{item:kuvalich:machete}：凋灵、末影龙这类不能穿越维度的 Boss 也不生效"
+            "{item:kuvalich:machete}对史莱姆、岩浆怪、恶魂、幻翼、潜影贝、鱿鱼、村民、铁傀儡<b>不翻倍</b>，它们在游戏里既不算动物也不算怪物",
+            "{item:kuvalich:machete}对凋灵、末影龙这类不能穿越维度的 Boss 同样不生效"
           ]
         }
       ],

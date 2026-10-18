@@ -14,7 +14,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "装了 TACZ（永恒枪械工坊：零）以后，它的枪也能装上<hl>武器模组</hl>，获得各种加成。这一篇带你把第一把枪改装好。"
+          "text": "装上 TACZ「永恒枪械工坊：零」之后，它的枪也能装配<hl>武器模组</hl>，获得各种加成。这一篇就带你把第一把枪改装妥当。"
         },
         {
           "type": "h",
@@ -25,27 +25,27 @@
           "rows": [
             [
               "武器模组",
-              "装在武器上的强化卡，装上不消耗、随时能拆。卡上的每条属性叫一个<t>词条</t>。"
+              "装在武器上的强化卡，装上不会消耗，随时可以拆下，卡上的每条属性叫作一个<t>词条</t>。"
             ],
             [
               "开光",
-              "给物品随机写上一套<t>基础面板</t>。开过光的物品才能装武器模组。"
+              "给物品随机写上一套<t>基础面板</t>，开过光的物品才能装武器模组。"
             ],
             [
               "{item:kuvalich:requiem_evolve}",
-              "工作台：左格放东西、中格放材料，右格自动出结果。开光在这里做，见[[weapons/requiem_evolve]]。"
+              "一台工作台，左格放要处理的物品，中格放材料，右格会自动给出结果，开光就在这里完成，见[[weapons/requiem_evolve]]。"
             ],
             [
               "{item:kuvalich:requiem_weapon_table}",
-              "工作台：给开过光的武器装卸模组。"
+              "给开过光的武器装卸模组的工作台。"
             ],
             [
               "解密",
-              "主线玩法：猜出三张安魂卡的正确顺序，再击败 Boss 赤毒玄骸，见[[requiem/decryption]]。"
+              "主线玩法，要先猜出三张安魂卡的正确顺序，再击败 Boss 赤毒玄骸，见[[requiem/decryption]]。"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
-              "稀有材料：解密成功时才掉。上面两台工作台都要用它合成。"
+              "只在解密成功时掉落的稀有材料，上面两台工作台都要用它合成。"
             ]
           ]
         },
@@ -60,13 +60,13 @@
         },
         {
           "type": "p",
-          "text": "<dim>其它看不懂的名词，查[[start/glossary]]。</dim>"
+          "text": "<dim>其它不熟悉的名词可以查阅[[start/glossary]]。</dim>"
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "第一次解密成功之后才能开始",
-          "text": "两台工作台都要用{item:kuvalich:lich_reliquary}合成，所以第一次解密成功之前，枪没法开光，也没法装模组。先照[[start/first_steps]]推进主线。"
+          "text": "两台工作台都要用{item:kuvalich:lich_reliquary}合成，所以在第一次解密成功之前，枪还无法开光，也装不了模组，眼下先照着[[start/first_steps]]推进主线。"
         },
         {
           "type": "h",
@@ -75,10 +75,10 @@
         {
           "type": "steps",
           "items": [
-            "准备一把 TACZ 枪（必须<em>单独一把</em>）和 1 个{item:kuvalich:riven_sliver}，碎块的来源见[[start/materials]]。",
-            "打开{item:kuvalich:requiem_evolve}，枪放左格、碎块放中格。碎块<w>立刻被扣掉 1 个</w>，右格出现开光后的枪，取走。",
-            "开光随机给枪一套基础面板：<t>伤害</t>、<t>暴击几率</t>、<t>暴击伤害</t>、<t>触发几率</t>。不满意可以用塑形块重洗，见[[weapons/forma]]。",
-            "把枪放进{item:kuvalich:requiem_weapon_table}装上模组，最多 <t>8</t> 张，见[[weapons/weapon_table]]。",
+            "准备一把 TACZ 枪和 1 个{item:kuvalich:riven_sliver}，枪必须是<em>单独一把</em>，碎块的来源见[[start/materials]]。",
+            "打开{item:kuvalich:requiem_evolve}，枪放左格，碎块放中格，碎块会<w>立刻扣掉 1 个</w>，右格随即出现开光后的枪，把它取走即可。",
+            "开光会随机给枪一套基础面板，包括<t>伤害</t>、<t>暴击几率</t>、<t>暴击伤害</t>和<t>触发几率</t>，不满意可以用塑形块重洗，见[[weapons/forma]]。",
+            "把枪放进{item:kuvalich:requiem_weapon_table}装上模组，最多可装 <t>8</t> 张，见[[weapons/weapon_table]]。",
             "主手拿枪开火，模组效果立刻生效。"
           ]
         },
@@ -91,7 +91,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作里的主武器、副武器同样有 8 个常规 Mod 槽。玩家常把 Mod 叫「卡」，挑哪 8 张装上就叫「配卡」。"
+          "text": "原作里的主武器和副武器同样有 8 个常规 Mod 槽。玩家习惯把 Mod 叫作「卡」，斟酌着挑出 8 张装上，就叫「配卡」。"
         },
         {
           "type": "h",
@@ -99,7 +99,7 @@
         },
         {
           "type": "p",
-          "text": "除了[[tacz/tacz_gun_attributes|枪械专属词条]]，武器模组上的其它词条大多也对枪有效："
+          "text": "除了[[tacz/tacz_gun_attributes|枪械专属词条]]，武器模组上的其它词条大多也对枪有效，详见下表。"
         },
         {
           "type": "table",
@@ -147,7 +147,7 @@
             [
               "{lang:item.module.meleeDamage}、{lang:item.module.attackSpeed}、{lang:item.module.attackRange}等近战词条",
               "<b>开枪无效</b>",
-              "按 TACZ 近战键用枪托 / 刺刀打中才算"
+              "按 TACZ 近战键用枪托或刺刀打中才算"
             ]
           ]
         },
@@ -156,7 +156,7 @@
           "if": "cfg:kuva_lich.taczGunEnhanceEnable",
           "style": "good",
           "title": "不开光也能变强",
-          "text": "还有一条路不需要开光：用{item:kuvalich:lich_reliquary}给枪加<hl>女皇之力</hl>，永久提高伤害，见[[tacz/tacz_enhance]]。"
+          "text": "另有一条不必开光的路，用{item:kuvalich:lich_reliquary}给枪加上<hl>女皇之力</hl>，就能永久提高它的伤害，见[[tacz/tacz_enhance]]。"
         }
       ],
       "_src": [
@@ -188,11 +188,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>女皇之力</hl>能永久提高一把 TACZ 枪的伤害。它<em>不需要开光</em>，任何 TACZ 枪都能强化。"
+          "text": "<hl>女皇之力</hl>能永久提高一把 TACZ 枪的伤害，而且<em>不需要开光</em>，任何 TACZ 枪都能强化。"
         },
         {
           "type": "p",
-          "text": "材料是{item:kuvalich:lich_reliquary}：[[requiem/decryption|解密]]成功、击败 Boss 赤毒玄骸时掉落的稀有材料。"
+          "text": "强化用的材料是{item:kuvalich:lich_reliquary}，它是[[requiem/decryption|解密]]成功并击败 Boss 赤毒玄骸后才会掉落的稀有材料。"
         },
         {
           "type": "items",
@@ -208,9 +208,9 @@
         {
           "type": "steps",
           "items": [
-            "打开{item:kuvalich:requiem_evolve}，枪放左格（单独一把），{item:kuvalich:lich_reliquary}放中格。",
-            "放好的瞬间<w>扣掉 1 个玄骸之遗</w>，强化后的枪出现在右格，取走。",
-            "想再强化：把枪放回左格。每放一次强化一级。"
+            "打开{item:kuvalich:requiem_evolve}，左格放单独一把枪，中格放{item:kuvalich:lich_reliquary}。",
+            "放好的瞬间会<w>扣掉 1 个玄骸之遗</w>，强化后的枪出现在右格，取走即可。",
+            "想继续强化就把枪放回左格，每放一次强化一级。"
           ]
         },
         {
@@ -222,7 +222,7 @@
             ],
             [
               "叠加方式",
-              "线性相加，<em>不是</em>复利"
+              "线性相加，<em>不按</em>复利计算"
             ],
             [
               "强化 3 次后",
@@ -232,7 +232,7 @@
               "if": "cfg:kuva_lich.taczGunEnhanceMaxCount>0",
               "cells": [
                 "强化上限",
-                "每把枪 <t>{cfg:kuva_lich.taczGunEnhanceMaxCount}</t> 次，到顶后放进去没有反应"
+                "每把枪 <t>{cfg:kuva_lich.taczGunEnhanceMaxCount}</t> 次，达到上限后再放进去不会有反应"
               ]
             },
             {
@@ -250,17 +250,17 @@
         },
         {
           "type": "p",
-          "text": "鼠标移到枪上，提示里多一行「<c:AA0000>女皇之力 </c><c:FF5555>× N</c><c:AA0000> (</c><c:FF5555>伤害+X%</c><c:AA0000>)</c>」。TACZ 自带提示里的伤害数字也已经乘上了女皇之力。"
+          "text": "把鼠标移到枪上，提示里会多出一行「<c:AA0000>女皇之力 </c><c:FF5555>× N</c><c:AA0000> (</c><c:FF5555>伤害+X%</c><c:AA0000>)</c>」，TACZ 自带提示里的伤害数字也已经乘上了女皇之力。"
         },
         {
           "type": "p",
-          "text": "女皇之力是<hl>独立乘区</hl>：单独乘在伤害上，和其它所有加成相乘。强化次数记在枪上，枪给别人也跟着走。"
+          "text": "女皇之力是一个<hl>独立乘区</hl>，单独乘在伤害上，与其它所有加成相乘。强化次数记在枪上，枪交给别人后强化依然跟着它走。"
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "玄骸之遗很稀缺",
-          "text": "每次解密成功只掉 <t>1</t> 个，见[[enemies/kuva_master]]。合成{item:kuvalich:requiem_evolve}、{item:kuvalich:requiem_weapon_table}和{item:kuvalich:requiem_warframe_table}也要用它，建议集中强化一把最常用的枪。"
+          "text": "每次解密成功只掉 <t>1</t> 个，见[[enemies/kuva_master]]。合成{item:kuvalich:requiem_evolve}、{item:kuvalich:requiem_weapon_table}和{item:kuvalich:requiem_warframe_table}也都要用它，最好集中强化一把最常用的枪。"
         },
         {
           "type": "h",
@@ -269,7 +269,7 @@
         {
           "type": "list",
           "items": [
-            "枪上只记强化次数，不记伤害数字：加成总是按上面「每次强化」的数值现算。",
+            "枪上只记录强化次数，不记伤害数字，加成总是按上面「每次强化」的数值现算。",
             "物品提示里的数字如果和上面「每次强化」对不上，以本书为准。"
           ]
         }
@@ -298,11 +298,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "有一组词条<em>只对 TACZ 枪有效</em>，装在别的武器上不起作用。它们管的是枪自己的伤害和手感：装填、弹匣、后坐、瞄准等。"
+          "text": "有一组词条<em>只对 TACZ 枪有效</em>，装在别的武器上不起作用，它们管的是枪自身的伤害，以及装填、弹匣、后坐、瞄准等手感。"
         },
         {
           "type": "p",
-          "text": "怎么读下表：同一个词条出现在几张模组上时，数值先相加得到合计 <t>x</t>（+30% 记作 0.3），再按表里的公式生效。"
+          "text": "同一个词条出现在几张模组上时，数值先相加得到合计 <t>x</t>，再按下表的公式生效，+30% 在公式里记作 0.3。"
         },
         {
           "type": "table",
@@ -338,7 +338,7 @@
             [
               "{lang:item.module.reload_speed}",
               "装填、拉栓用时 ÷(1+x)，动画跟着变快",
-              "<b>变慢</b>；≤ -100% 永远装不完"
+              "<b>变慢</b>，≤ -100% 时永远装不完"
             ],
             [
               "{lang:item.module.magazine_size}",
@@ -348,21 +348,21 @@
             [
               "{lang:item.module.projectile_speed}",
               "子弹飞行速度 ×(1+x)，射程随之变远",
-              "<b>变慢</b>；≤ -100% 飞不出去"
+              "<b>变慢</b>，≤ -100% 时飞不出去"
             ],
             [
               "{lang:item.module.recoil_reduction}",
-              "后坐力 ×(1−x)；≥ 100% 没有后坐",
+              "后坐力 ×(1−x)，≥ 100% 时没有后坐",
               "<b>后坐变大</b>"
             ],
             [
               "{lang:item.module.aim_time}",
               "开镜用时 ÷(1+x)",
-              "<b>变慢</b>；≤ -100% 开不了镜"
+              "<b>变慢</b>，≤ -100% 时开不了镜"
             ],
             [
               "{lang:item.module.accuracy}",
-              "子弹散布 ×(1−x)；≥ 100% 没有散布",
+              "子弹散布 ×(1−x)，≥ 100% 时没有散布",
               "<b>散布变大</b>"
             ],
             [
@@ -388,11 +388,11 @@
           "type": "list",
           "items": [
             "带这些词条的模组只有装了 TACZ 才会出现。",
-            "词条随机的[[modules/riven_module|裂罅模组]]也能洗出它们，限远程和通用两种。",
+            "词条随机的[[modules/riven_module|裂罅模组]]也能洗出它们，但仅限远程和通用两种裂罅。",
             "在[[weapons/weapon_panel|武器面板]]里，它们集中在「{lang:kuvalich.panel.group.gun}」一组。",
             {
               "if": "module:chambered",
-              "text": "{lang:item.module.first_bullet_damage}例外：裂罅洗不出来，面板上列在「{lang:kuvalich.panel.group.damage}」组。"
+              "text": "{lang:item.module.first_bullet_damage}是个例外，裂罅洗不出它，面板上也把它列在「{lang:kuvalich.panel.group.damage}」组。"
             }
           ]
         },
@@ -403,29 +403,29 @@
         {
           "type": "list",
           "items": [
-            "例：枪自带 2 倍爆头，装 +60% {lang:item.module.headshot_damage} → 3.2 倍。",
-            "装填动画最多加速到 <t>4 倍</t>。{lang:item.module.reload_speed}再高时，逻辑上已经装好、动画还在播，属于正常现象。",
-            "裂罅洗出负的{lang:item.module.gun_damage}基本无害：合计为负时按 0 算，只会抵消其它模组的正值。",
+            "例如枪自带 2 倍爆头，装上 +60% {lang:item.module.headshot_damage}后变为 3.2 倍。",
+            "装填动画最多加速到 <t>4 倍</t>，{lang:item.module.reload_speed}再高时，实际已经装填完毕而动画仍在播放，这是正常现象。",
+            "裂罅洗出负的{lang:item.module.gun_damage}基本无害，合计为负时按 0 算，它只会抵消其它模组的正值。",
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "[[modules/multi_slot|其它位置]]（如副手）上的模组也会按比例算进 x。"
+              "text": "副手等[[modules/multi_slot|其它位置]]上的模组也会按比例算进 x。"
             },
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "{lang:item.module.aim_time}、{lang:item.module.accuracy}、{lang:item.module.headshot_damage}是拿起枪时算好的：换了其它位置上的模组后，把枪切出来一次（或等几秒）才会更新。"
+              "text": "{lang:item.module.aim_time}、{lang:item.module.accuracy}、{lang:item.module.headshot_damage}在拿起枪时就已算好，换了其它位置上的模组后，要把枪重新切出来一次或等上几秒才会更新。"
             },
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "{lang:item.module.magazine_size}请装在<em>枪本体</em>上。其它位置上的弹匣加成<w>不保证生效</w>，面板上的数字可能比实际弹匣大。"
+              "text": "{lang:item.module.magazine_size}请装在<em>枪本体</em>上，其它位置上的弹匣加成<w>不保证生效</w>，面板上的数字可能比实际弹匣更大。"
             }
           ]
         }
@@ -463,7 +463,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{lang:item.module.multishot}、{lang:item.module.firing_rate}、{lang:item.module.bursting_radius}弓弩也能用，但装在 TACZ 枪上时算法不一样。这一篇逐条说明。"
+          "text": "{lang:item.module.multishot}、{lang:item.module.firing_rate}、{lang:item.module.bursting_radius}这三条弓弩也能用，装在 TACZ 枪上时算法却不一样，下面逐条说明。"
         },
         {
           "type": "h",
@@ -471,11 +471,11 @@
         },
         {
           "type": "p",
-          "text": "每开一枪，额外多打出一些弹丸："
+          "text": "每开一枪都会额外多打出一些弹丸，数量按下式计算。"
         },
         {
           "type": "formula",
-          "text": "每枪额外弹丸 = 原弹丸数 × {lang:item.module.multishot}（小数部分按概率再多 1 颗）"
+          "text": "每枪额外弹丸 = 原弹丸数 × {lang:item.module.multishot}，小数部分按概率再多 1 颗"
         },
         {
           "type": "table",
@@ -493,7 +493,7 @@
             [
               "单发步枪（1 颗）",
               "+250%",
-              "3 颗，50% 概率第 4 颗"
+              "3 颗，另有 50% 概率打出第 4 颗"
             ],
             [
               "散弹枪（8 颗）",
@@ -511,12 +511,12 @@
           "type": "tip",
           "style": "good",
           "title": "多出来的弹丸是白赚的",
-          "text": "伤害仍按<em>原弹丸数</em>分给每颗弹丸，多打的弹丸不会稀释伤害：+100% 多重射击 ≈ 每枪总伤害翻倍。每颗弹丸各自掷暴击和元素触发，触发次数也跟着涨。"
+          "text": "伤害仍按<em>原弹丸数</em>分给每颗弹丸，多打出的弹丸不会稀释伤害，所以 +100% 多重射击大约能让每枪总伤害翻倍。每颗弹丸各自掷暴击和元素触发，触发次数也会随之增加。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "《星际战甲》里的多重射击也是这样：超出整数的部分按概率多打一发，多打出的弹丸伤害照样是满的。"
+          "text": "《星际战甲》里的多重射击也是这个道理，超出整数的那部分按概率多打一发，多出的弹丸同样带着十足的伤害。"
         },
         {
           "type": "h",
@@ -524,7 +524,7 @@
         },
         {
           "type": "p",
-          "text": "射击间隔 ÷ (1+x)，最快每 <t>50 毫秒</t>一发，也就是每秒 20 发。枪上的射速<em>不会</em>像弓那样翻倍。"
+          "text": "射击间隔 ÷ (1+x)，最快每 <t>50 毫秒</t>一发，即每秒 20 发，枪上的射速<em>不会</em>像弓那样翻倍。"
         },
         {
           "type": "h",
@@ -532,7 +532,7 @@
         },
         {
           "type": "p",
-          "text": "<hl>击杀叠层</hl>是连续击杀时叠起来的临时加成，规则见[[combat/kill_stack]]。下面两种对枪同样有效，层数一变立刻生效："
+          "text": "<hl>击杀叠层</hl>是连续击杀时叠起来的临时加成，规则见[[combat/kill_stack]]。下面两种对枪同样有效，层数一变就立刻生效。"
         },
         {
           "type": "kv",
@@ -554,8 +554,8 @@
         {
           "type": "list",
           "items": [
-            "普通子弹：命中后，目标周围 <t>1 + 2x</t> 格内的其它生物受到这一击最终伤害的 <t>50%</t>，这叫<t>溅射</t>。溅射只算伤害，不触发元素。",
-            "自带爆炸的枪（榴弹、火箭等）：没有溅射，改为把枪自己的爆炸半径 ×(1+x)。"
+            "普通子弹命中后，目标周围 <t>1 + 2x</t> 格内的其它生物会受到这一击最终伤害的 <t>50%</t>，这叫作<t>溅射</t>，溅射只结算伤害，不触发元素。",
+            "榴弹、火箭等自带爆炸的枪没有溅射，改为把枪自身的爆炸半径 ×(1+x)。"
           ]
         },
         {
@@ -565,8 +565,8 @@
         {
           "type": "list",
           "items": [
-            "负的{lang:item.module.multishot}不会少打弹丸，而是每次开枪有 |x| ÷ (1+|x|) 的概率<b>整枪哑火</b>（不出子弹）：-30% 约 23%，-50% 约 33%；≤ -100% 时完全打不响。",
-            "负的{lang:item.module.firing_rate}让射速变慢，≤ -100% 完全无法开火。",
+            "负的{lang:item.module.multishot}不会减少弹丸，它让每次开枪有 |x| ÷ (1+|x|) 的概率<b>整枪哑火</b>，一颗子弹也打不出。-30% 时约 23%，-50% 时约 33%，≤ -100% 时完全打不响。",
+            "负的{lang:item.module.firing_rate}会让射速变慢，≤ -100% 时完全无法开火。",
             "自带爆炸的枪只认正的{lang:item.module.bursting_radius}，也<w>不吃</w>击杀叠层里的爆炸半径。"
           ]
         }
@@ -604,16 +604,16 @@
         },
         {
           "type": "p",
-          "text": "每颗子弹命中后，额外造成一次<hl>真实伤害</hl>：<g>无视护甲、护盾和伤害减免</g>，直接扣血；足以致死时直接击杀。"
+          "text": "每颗子弹命中后会额外造成一次<hl>真实伤害</hl>，它<g>无视护甲、护盾和伤害减免</g>，直接扣除生命值，足以致死时直接击杀目标。"
         },
         {
           "type": "formula",
-          "text": "真实伤害 = 这颗子弹不算暴击、不算元素的伤害 × x（已含[[combat/bane|克制]]倍率）"
+          "text": "真实伤害 = 这颗子弹不计暴击和元素的伤害 × x，其中已含[[combat/bane|克制]]倍率"
         },
         {
           "type": "list",
           "items": [
-            "命中后下一刻才扣血。",
+            "命中后要到下一刻才扣血。",
             {
               "if": "cfg:kuva_lich.enableDamageNumbers",
               "text": "这一下的伤害数字是<c:AA00AA>紫色</c>的。"
@@ -629,7 +629,7 @@
         {
           "type": "p",
           "if": "module:chambered",
-          "text": "只在弹匣<t>装满</t>（当前弹药 ≥ 弹匣上限）时开的那一枪生效，散弹枪那一枪的每颗弹丸都吃加成。适合打一枪就换弹的狙击玩法。"
+          "text": "只在弹匣<t>装满</t>、当前弹药不少于弹匣上限时开的那一枪生效，散弹枪这一枪的每颗弹丸都吃加成，很适合打一枪就换弹的狙击玩法。"
         },
         {
           "type": "kv",
@@ -649,7 +649,7 @@
           "type": "tip",
           "if": "module:chambered",
           "style": "wf",
-          "text": "原作里的「膛室 Prime」（Primed Chamber）是虚空商人 Baro Ki'Teer 出售的狙击枪 Mod，效果同样是弹匣第一发伤害大增。"
+          "text": "原作里的「膛室 Prime」英文名为 Primed Chamber，是虚空商人 Baro Ki'Teer 货架上的一张狙击枪 Mod，效果同样是让弹匣里的第一发伤害大增。"
         },
         {
           "type": "h",
@@ -659,7 +659,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-          "text": "用 TACZ 子弹打出<em>最后一击</em>、击杀动物、怪物或 CustomNPCs 的 NPC 时，掉落更多。x 会和[[warframe/warframe_module|战甲模组]]（装在你自己身上的模组）的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」相加一起算："
+          "text": "用 TACZ 子弹打出<em>最后一击</em>，击杀动物、怪物或 CustomNPCs 的 NPC 时会掉落更多战利品。x 会和装在你自己身上的[[warframe/warframe_module|战甲模组]]里的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」相加，再按下式计算。"
         },
         {
           "type": "formula",
@@ -684,7 +684,7 @@
           "items": [
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-              "text": "最后一击若是{lang:item.module.true_bullet}补的那一下、溅射或[[reference/weapon_attr_special|处决]]，不算子弹击杀：{lang:item.module.gun_loot_drop}不加，战甲那条照算。"
+              "text": "最后一击如果是{lang:item.module.true_bullet}补上的那一下、溅射或[[reference/weapon_attr_special|处决]]，就不算子弹击杀，{lang:item.module.gun_loot_drop}不加成，战甲那条照常计算。"
             },
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
@@ -722,7 +722,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "想弄清一发子弹到底打多少，看这一篇。伤害分两个阶段：开枪时由 TACZ 算出子弹伤害，命中后再走[[combat/damage|通用伤害结算]]。"
+          "text": "一发子弹到底能打多少，这一篇从头算起。伤害分两个阶段，开枪时由 TACZ 算出子弹伤害，命中后再走一遍[[combat/damage|通用伤害结算]]。"
         },
         {
           "type": "h",
@@ -739,12 +739,12 @@
               "if": "module:chambered",
               "cells": [
                 "{lang:item.module.first_bullet_damage}",
-                "× (1 + x)，只有弹匣满时那一枪；合计为负按 0 算"
+                "× (1 + x)，只作用于弹匣满时那一枪，合计为负时按 0 算"
               ]
             },
             [
               "{lang:item.module.gun_damage}",
-              "× (1 + x)，合计为负按 0 算"
+              "× (1 + x)，合计为负时按 0 算"
             ],
             {
               "if": "cfg:kuva_lich.taczGunEnhanceEnable",
@@ -758,12 +758,12 @@
         {
           "type": "list",
           "items": [
-            "枪的基础伤害就是 TACZ 自己的枪械伤害，含配件。",
+            "枪的基础伤害就是 TACZ 自己的枪械伤害，配件的加成也算在内。",
             {
               "if": "cfg:kuva_lich.taczGunEnhanceEnable",
               "text": "TACZ 提示里显示的伤害<w>已经乘上了</w>女皇之力。"
             },
-            "之后 TACZ 再按自己的规则算爆头等，得到打在目标身上的伤害。爆头倍率已含{lang:item.module.headshot_damage}。"
+            "之后 TACZ 再按自己的规则计算爆头等加成，得出打在目标身上的伤害，其中的爆头倍率已含{lang:item.module.headshot_damage}。"
           ]
         },
         {
@@ -772,14 +772,14 @@
         },
         {
           "type": "p",
-          "text": "TACZ 会把一发子弹拆成「普通」和「穿甲」两段伤害。只要枪的穿甲比例不是 0% 也不是 100%，两段就各自走一遍下面的流程。"
+          "text": "TACZ 会把一发子弹拆成「普通」和「穿甲」两段伤害，只要枪的穿甲比例不是 0% 或 100%，两段就会各自走一遍下面的流程。"
         },
         {
           "type": "steps",
           "items": [
             "物理部分 × (1 + {lang:item.module.remoteDamage} + {lang:item.module.projectileDamage}) × 面板伤害，面板见[[weapons/weapon_panel]]。",
-            "掷暴击：几率 = 面板暴击几率 × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability})，规则见[[combat/crit]]。",
-            "乘[[combat/bane|克制]]倍率，加上元素伤害（元素不吃暴击），完整顺序见[[combat/damage]]。",
+            "掷暴击，几率 = 面板暴击几率 × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability})，规则见[[combat/crit]]。",
+            "乘上[[combat/bane|克制]]倍率，再加上不吃暴击的元素伤害，完整顺序见[[combat/damage]]。",
             "掷元素触发，再结算溅射、[[tacz/tacz_special_attrs|真实子弹]]、处决等附加效果。"
           ]
         },
@@ -787,12 +787,12 @@
           "type": "tip",
           "style": "info",
           "title": "堆伤害的思路",
-          "text": "<hl>乘区</hl>：同组加成先相加，不同组之间相乘。{lang:item.module.gun_damage}、{lang:item.module.multishot}、远程伤害、暴击各属一个乘区，每个都照顾到比只堆一条更划算。"
+          "text": "同组加成先相加，不同组之间相乘，这就是<hl>乘区</hl>。{lang:item.module.gun_damage}、{lang:item.module.multishot}、远程伤害和暴击各属一个乘区，每个都照顾到，比只堆其中一条更划算。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作玩家配卡也讲究乘区：基础伤害卡、多重射击卡、暴击卡各算各的、最后相乘，所以常见的配卡里这几类都会有。"
+          "text": "原作玩家配卡同样讲究乘区，基础伤害卡、多重射击卡和暴击卡各算各的，最后才相乘，所以常见的配卡里这几类总会各占一席。"
         },
         {
           "type": "h",
@@ -801,7 +801,7 @@
         {
           "type": "list",
           "items": [
-            "两段各掷一次暴击、各掷一次元素触发：平均伤害不变，挂上[[combat/element_status|异常状态]]的机会更高，但每次触发的元素伤害只按那一段的伤害算。",
+            "两段各掷一次暴击和元素触发，平均伤害不变，挂上[[combat/element_status|异常状态]]的机会更高，只是每次触发的元素伤害仅按那一段的伤害计算。",
             {
               "if": [
                 "cfg:kuva_lich.enableDamageNumbers",
@@ -810,7 +810,7 @@
               ],
               "text": "两段的伤害数字一般合并成一个，颜色取两段中较高的暴击档，见[[combat/damage_numbers]]。"
             },
-            "自带爆炸的枪（榴弹、火箭等）：爆炸那一下的伤害由 TACZ 按枪的爆炸数值单独算，<w>不乘</w>阶段一这几项，但照样走阶段二。"
+            "榴弹、火箭等自带爆炸的枪，爆炸那一下的伤害由 TACZ 按枪的爆炸数值单独计算，<w>不乘</w>阶段一这几项，但照样走阶段二。"
           ]
         }
       ],
