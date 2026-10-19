@@ -9,14 +9,14 @@
       "id": "requiem_ore",
       "title": "安魂礦石",
       "icon": "kuvalich:requiem_ore",
-      "summary": "安魂卡的唯一來源，最好用帶滅骸的鎬子挖",
+      "summary": "安魂卡的唯一來源，用帶滅骸的鎬子挖",
       "items": [
         "kuvalich:requiem_ore"
       ],
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:requiem_ore}是<hl>安魂卡</hl>的唯一來源，挖它最好用一把帶{lang:enchantment.kuvalich.requiem_destroyed}附魔的鎬子。安魂卡則是破解 Boss {lang:entity.kuvalich.kuva_master}的鑰匙，詳見[[requiem/requiem_cards]]。"
+          "text": "獵殺玄骸，要從地下挖起，天諾。{item:kuvalich:requiem_ore}是<hl>安魂卡</hl>的唯一來源，用一把帶{lang:enchantment.kuvalich.requiem_destroyed}附魔的鎬子去挖。安魂卡就是破解 Boss {lang:entity.kuvalich.kuva_master}的鑰匙，見[[requiem/requiem_cards]]。"
         },
         {
           "type": "h",
@@ -50,8 +50,8 @@
           "items": [
             "準備一把帶{lang:enchantment.kuvalich.requiem_destroyed}附魔的鎬子，獲取方法見[[world/enchantments]]",
             "鑽石鎬或獄髓鎬挖得最快，鐵鎬等其它挖掘工具也能挖出東西，只是慢一些",
-            "選一把<b>不帶絲綢之觸</b>的鎬子，幸運有無都可以",
-            "找到礦後將它挖碎，撿起掉出來的東西"
+            "鎬子<b>別帶絲綢之觸</b>，有沒有幸運都行",
+            "找到礦就挖碎，撿起掉出來的東西"
           ]
         },
         {
@@ -60,7 +60,7 @@
         },
         {
           "type": "p",
-          "text": "每挖碎一塊只判定<em>一次</em>，成功就會把下表的東西<g>一起</g>掉出來，失敗則<b>什麼都沒有</b>，礦石方塊本身無論如何都不會掉落。"
+          "text": "每挖碎一塊只判定<em>一次</em>，成功就把下表的東西<g>一起</g>掉出來，失敗就<b>什麼都沒有</b>，礦石方塊本身無論如何都不會掉。"
         },
         {
           "type": "table",
@@ -112,14 +112,14 @@
           "type": "list",
           "items": [
             "{item:kuvalich:kuva}和{item:kuvalich:riven_sliver}是養成材料，用途見[[start/materials]]",
-            "模組是裝在武器或你身上的強化卡，分為武器模組和戰甲模組兩種，品質說明見[[modules/module_rarity]]",
-            "掉出來的模組處於<t>未揭示</t>狀態，拿在主手右鍵後會變成這個品質裡隨機的一張，見[[modules/module_overview]]",
-            "掉出的模組中有 {cfg:kuva_lich.moduleWeaponRatio|pctv} 是武器模組，其餘是戰甲模組"
+            "模組是裝在武器或你身上的強化卡，分武器模組和戰甲模組兩種，品質說明見[[modules/module_rarity]]",
+            "掉出來的模組是<t>未揭示</t>的，拿在主手右鍵，它會變成這個品質裡隨機的一張，見[[modules/module_overview]]",
+            "掉出的模組裡有 {cfg:kuva_lich.moduleWeaponRatio|pctv} 是武器模組，其餘是戰甲模組"
           ]
         },
         {
           "type": "p",
-          "text": "<em>經驗</em>另外計算，與上面的判定無關。用鑽石鎬或更好的鎬子挖碎，每塊掉落 <t>50~100</t> 點經驗，帶{lang:enchantment.kuvalich.requiem_destroyed}時再乘 <g>{cfg:kuva_lich.expMultiplier|x}</g>，用其它工具或帶絲綢之觸時沒有經驗。"
+          "text": "<em>經驗</em>另算，和上面的判定無關。用鑽石鎬或更好的鎬子挖碎，每塊掉 <t>50~100</t> 點經驗，帶著{lang:enchantment.kuvalich.requiem_destroyed}再乘 <g>{cfg:kuva_lich.expMultiplier|x}</g>，用其它工具或帶絲綢之觸就沒有經驗。"
         },
         {
           "type": "items",
@@ -138,7 +138,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "在原作裡，這八張卡名為<t>安魂模組</t>，要從開啟的安魂遺物（Requiem Relic）中取得，並非掘地而來。"
+          "text": "照檔案的記載，這八張卡在起源星系叫<t>安魂 Mod</t>，要開啟安魂遺物（Requiem Relic）才拿得到，並不是從礦裡挖出來的。"
         },
         {
           "type": "h",
@@ -210,7 +210,7 @@
           "type": "tip",
           "style": "warn",
           "title": "效率和挖掘加速不起作用",
-          "text": "只要手裡拿著東西，挖它的速度就是固定的，效率附魔和挖掘加速都無法加快，在水下或懸空時同樣不會變慢。"
+          "text": "只要手裡拿著東西，挖它的速度就是固定的，效率附魔和挖掘加速都加不快，在水下或懸空時也不會變慢。"
         },
         {
           "type": "h",
@@ -220,14 +220,14 @@
           "type": "list",
           "items": [
             "三檔模組每次最多出一張，按黃金、白銀、青銅的順序判定，三項機率加起來超過 100% 時，排在後面的檔位達不到寫明的機率",
-            "{item:kuvalich:requiem_gate}、{item:kuvalich:requiem_recast}、{item:kuvalich:requiem_evolve}這三台機器的挖掘速度同樣按上面「挖一塊要多久」的規則計算"
+            "{item:kuvalich:requiem_gate}、{item:kuvalich:requiem_recast}、{item:kuvalich:requiem_evolve}這三台機器的挖掘速度，同樣按上面「挖一塊要多久」的規則算"
           ]
         },
         {
           "type": "tip",
           "style": "bad",
           "title": "拆機器要用鑽石鎬",
-          "text": "拆除上面這三台機器以及{item:kuvalich:requiem_weapon_table}和{item:kuvalich:requiem_warframe_table}時，要用<em>鑽石鎬或更好</em>的鎬子才能拿回方塊，用別的工具挖，方塊會直接消失，什麼都不掉。"
+          "text": "拆上面這三台機器，以及{item:kuvalich:requiem_weapon_table}和{item:kuvalich:requiem_warframe_table}，要用<em>鑽石鎬或更好</em>的鎬子才拿得回方塊，用別的工具挖，方塊會直接消失，什麼都不掉。"
         }
       ]
     },
@@ -235,14 +235,14 @@
       "id": "experience_ore",
       "title": "經驗礦石",
       "icon": "kuvalich:experience_ore",
-      "summary": "石鎬即可開採，產出經驗和內融核心",
+      "summary": "石鎬挖得動，掉經驗和內融核心",
       "items": [
         "kuvalich:experience_ore"
       ],
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:experience_ore}是一種用<t>石鎬</t>就能挖的礦石，挖碎後會掉落經驗，還有一半的機會掉出{item:kuvalich:endo}。"
+          "text": "{item:kuvalich:experience_ore}是一種用<t>石鎬</t>就挖得動的礦石，挖碎後掉經驗，還有一半的機會掉出{item:kuvalich:endo}。"
         },
         {
           "type": "p",
@@ -252,7 +252,7 @@
         {
           "type": "p",
           "if": "!cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "模組是裝在武器或你身上的強化卡，一裝上就是滿效果，不需要升級，所以內融核心沒有用處。"
+          "text": "模組是裝在武器或你身上的強化卡，一裝上就是滿效果，不用升級，所以內融核心派不上用場。"
         },
         {
           "type": "h",
@@ -310,12 +310,12 @@
           "type": "tip",
           "style": "bad",
           "title": "什麼都不掉的情況",
-          "text": "用<b>木鎬、金鎬、空手或不是鎬的東西</b>去挖，或者工具帶有<b>絲綢之觸</b>時，什麼都不會掉，礦石方塊本身也拿不到。"
+          "text": "用<b>木鎬、金鎬、空手或不是鎬的東西</b>去挖，或者工具帶著<b>絲綢之觸</b>，什麼都不會掉，連礦石方塊本身也拿不到。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作裡的內融核心（Endo）在任務中就能直接撿到，另一個大頭來自阿耶檀雕塑（Ayatan Sculpture），把星辰嵌滿後交給商人 Maroo，便能換回一大筆。"
+          "text": "指揮官，那邊的內融核心（Endo）出任務時直接撿得到，另一個大頭是阿耶檀雕塑（Ayatan Sculpture），把星辰嵌滿，交給商人 Maroo，能換回一大筆。"
         },
         {
           "type": "h",
@@ -344,7 +344,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "本模組加入了 6 個附魔，和原版附魔一樣來自附魔台和附魔書，<em>沒有專門的配方</em>，挖安魂礦石必備的{lang:enchantment.kuvalich.requiem_destroyed}也在其中。"
+          "text": "專屬附魔共 6 個，和原版附魔一樣來自附魔台和附魔書，<em>沒有專門的配方</em>，挖安魂礦石必備的{lang:enchantment.kuvalich.requiem_destroyed}也在其中。滅骸很難附出來，碰上帶它的附魔書就留著。"
         },
         {
           "type": "table",
@@ -410,9 +410,9 @@
         {
           "type": "list",
           "items": [
-            "附魔台附得出這些附魔，但都很稀有，等級也上不去：{lang:enchantment.kuvalich.escort}和{lang:enchantment.kuvalich.death_resistance}只出得了 I 級，{lang:enchantment.kuvalich.lethal}和{lang:enchantment.kuvalich.experience_collector}到不了滿級",
+            "附魔台附得出這些附魔，只是都很稀有，等級也上不去，{lang:enchantment.kuvalich.escort}和{lang:enchantment.kuvalich.death_resistance}只出得了 I 級，{lang:enchantment.kuvalich.lethal}和{lang:enchantment.kuvalich.experience_collector}到不了滿級",
             "附魔書可能出現在戰利品箱裡或圖書管理員村民的交易中，用鐵砧附到工具、武器或盔甲上",
-            "想要高等級的附魔，可以找圖書管理員交易、翻找戰利品箱，或在鐵砧上把兩本同級的書合成"
+            "要高等級的附魔，就找圖書管理員交易、翻戰利品箱，或者在鐵砧上把兩本同級的書合成"
           ]
         },
         {
@@ -422,7 +422,7 @@
         {
           "type": "list",
           "items": [
-            "挖{item:kuvalich:requiem_ore}以及本模組的三台機器{item:kuvalich:requiem_gate}、{item:kuvalich:requiem_recast}、{item:kuvalich:requiem_evolve}時，速度<g>固定為極快</g>，配合鑽石鎬約 0.5 秒挖碎一塊",
+            "挖{item:kuvalich:requiem_ore}，以及{item:kuvalich:requiem_gate}、{item:kuvalich:requiem_recast}、{item:kuvalich:requiem_evolve}這三台機器時，速度<g>固定為極快</g>，配合鑽石鎬約 0.5 秒挖碎一塊",
             "不帶這個附魔時，這四種方塊都挖得極慢",
             "安魂礦石的判定成功率變為 <g>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</g>，不再受幸運影響",
             "用鑽石鎬或更好的鎬子挖安魂礦石才有經驗，帶上它後經驗再乘 <g>{cfg:kuva_lich.expMultiplier|x}</g>",
@@ -439,7 +439,7 @@
         },
         {
           "type": "p",
-          "text": "挖碎煤、鑽石、青金石、紅石、綠寶石、地獄石英礦以及{item:kuvalich:requiem_ore}等<em>本來就會掉經驗</em>的方塊時，會額外多掉一些經驗，這個附魔不能和絲綢之觸共存。"
+          "text": "挖碎煤、鑽石、青金石、紅石、綠寶石、地獄石英礦以及{item:kuvalich:requiem_ore}等<em>本來就會掉經驗</em>的方塊時，會多掉一些經驗，這個附魔不能和絲綢之觸同時附在一件工具上。"
         },
         {
           "type": "p",
@@ -448,7 +448,7 @@
         {
           "type": "tip",
           "style": "warn",
-          "text": "這個附魔對{item:kuvalich:experience_ore}<b>無效</b>，某一塊本來就掉 0 經驗時也不會增加，比如煤礦偶爾不掉經驗，或者用錯了鎬子。和{lang:enchantment.kuvalich.requiem_destroyed}附在同一把鎬上挖安魂礦石時，多給的這份經驗也會一起乘上滅骸的倍率。"
+          "text": "這個附魔對{item:kuvalich:experience_ore}<b>無效</b>，某一塊本來就掉 0 經驗時也不會增加，比如煤礦偶爾不掉經驗，或者用錯了鎬子。和{lang:enchantment.kuvalich.requiem_destroyed}附在同一把鎬上挖安魂礦石時，多給的這份經驗也一起乘滅骸的倍率。"
         }
       ]
     },
@@ -460,7 +460,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "四個戰鬥附魔裡，兩個附在劍上增加傷害，兩個附在盔甲上保命，獲取方法見[[world/enchantments]]。"
+          "text": "四個戰鬥附魔裡，兩個附在劍上加傷害，兩個附在盔甲上保命，獲取方法見[[world/enchantments]]。死亡抵抗拿經驗換命，經驗不夠，它就不管用。"
         },
         {
           "type": "h",
@@ -468,7 +468,7 @@
         },
         {
           "type": "p",
-          "text": "目標剩下的生命越少，這一擊加得越多，目標滿血時則沒有加成。"
+          "text": "目標剩下的生命越少，這一擊加得越多，目標滿血時沒有加成。"
         },
         {
           "type": "formula",
@@ -513,7 +513,7 @@
         },
         {
           "type": "p",
-          "text": "經驗向下取整，最多為目標最大生命的 33%，且不超過 1000 點，所以打小怪幾乎拿不到經驗，打高血量的目標才划算。"
+          "text": "經驗向下取整，最多為目標最大生命的 33%，且不超過 1000 點，所以打小怪幾乎拿不到經驗，打高血量的目標才拿得多。"
         },
         {
           "type": "tip",
@@ -532,7 +532,7 @@
           "type": "list",
           "items": [
             "幾件盔甲都帶有這個附魔時，只取等級最高的一件，不會疊加",
-            "傷害會先由黃心承受，本模組的[[warframe/shield|護盾]]和金蘋果給的傷害吸收都算黃心，護衛只削減穿過黃心、落到生命上的那部分",
+            "傷害先由黃心承受，戰甲模組給的[[warframe/shield|護盾]]和金蘋果給的傷害吸收都算黃心，護衛只削減穿過黃心、落到生命上的那部分",
             "黃心還在時生命一直是滿的，所以護衛也會一直有效"
           ]
         },
@@ -708,7 +708,7 @@
         {
           "type": "tip",
           "style": "warn",
-          "text": "表裡的固定模組<b>互相衝突</b>，只能裝其中一張。想要更高的倍率，可以再配一張帶這條詞條的[[modules/riven_module|裂罅模組]]，它是詞條隨機的特殊模組，同樣只能裝一張。"
+          "text": "表裡的固定模組<b>互相衝突</b>，只能裝其中一張。要更高的倍率，就再配一張帶這條詞條的[[modules/riven_module|裂罅模組]]，它是詞條隨機的特殊模組，同樣只能裝一張。"
         },
         {
           "type": "p",
@@ -718,7 +718,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作的開放世界裡同樣可以採礦，把採礦工具對準岩壁上發光的礦點，便能從中鑿出礦石與寶石。"
+          "text": "飛船的記錄裡寫著，那邊的開放世界同樣能採礦，把採礦工具對準岩壁上發光的礦點，從中鑿出礦石和寶石。恕 Ordis 多嘴，鑿下的灰土請別帶上甲板。"
         },
         {
           "type": "h",
@@ -727,7 +727,7 @@
         {
           "type": "list",
           "items": [
-            "絲綢之觸挖到的礦石方塊，以及掉出來仍是礦石方塊的東西都不會放大，以免放回去反覆刷取",
+            "絲綢之觸挖到的礦石方塊，以及掉出來仍是礦石方塊的東西都不會放大，免得放回去反覆刷",
             "TNT、苦力怕等爆炸炸出來的掉落不算在內",
             "{item:kuvalich:requiem_ore}和{item:kuvalich:experience_ore}的掉落是另外判定的，<b>不吃</b>挖礦倍率",
             "單條詞條的數值範圍限制見[[modules/module_limits]]"
@@ -743,7 +743,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "除了挖礦，下面這幾種辦法也能讓你多拿東西，本模組的敵人{lang:entity.kuvalich.kuva_slave}和 Boss {lang:entity.kuvalich.kuva_master}的專屬掉落則分別見[[enemies/kuva_slave]]和[[enemies/kuva_master]]。"
+          "text": "除了挖礦，下面幾種辦法也能多拿東西，{lang:entity.kuvalich.kuva_slave}和 Boss {lang:entity.kuvalich.kuva_master}的專屬掉落分別見[[enemies/kuva_slave]]和[[enemies/kuva_master]]。"
         },
         {
           "type": "h",
@@ -753,7 +753,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "內融核心是給模組升級的材料，模組就是裝在武器或你身上的強化卡。挖[[world/experience_ore]]或在[[weapons/requiem_recast]]裡分解用不上的模組，都能得到內融核心。"
+          "text": "內融核心是給模組升級的材料，模組就是裝在武器或你身上的強化卡。挖[[world/experience_ore]]，或者在[[weapons/requiem_recast]]裡分解用不上的模組，都能得到內融核心。"
         },
         {
           "type": "p",
@@ -770,7 +770,7 @@
             "cfg:kuva_lich.endoDropChance>0"
           ],
           "items": [
-            "開光就是讓武器可以裝模組，[[weapons/kuva_weapons|赤毒武器]]生來就已開光，普通武器要先開光，見[[weapons/requiem_evolve]]",
+            "開光就是讓武器能裝模組，[[weapons/kuva_weapons|赤毒武器]]生來就已開光，普通武器要先開光，見[[weapons/requiem_evolve]]",
             "只有殭屍、骷髏、苦力怕、赤毒奴僕等怪物才算，動物、史萊姆、地獄幽靈、夜魅和界伏蚌都不算，豬布獸也屬於動物",
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
@@ -786,7 +786,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-          "text": "這是<hl>戰甲模組</hl>上的一條詞條，能讓你打怪時掉落更多東西，戰甲模組裝在{item:kuvalich:requiem_warframe_table}裡，對你自己持續生效。"
+          "text": "這是<hl>戰甲模組</hl>上的一條詞條，讓你打怪時掉更多東西，戰甲模組裝在{item:kuvalich:requiem_warframe_table}裡，對你自己持續生效。"
         },
         {
           "type": "formula",
@@ -816,7 +816,7 @@
           "type": "tip",
           "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
           "style": "wf",
-          "text": "在原作裡，想多刷些掉落的玩家常會帶上戰甲 Nekros，他的技能 Desecrate（褻瀆）會搜刮周圍的屍體，讓它們有機會再掉一次戰利品。"
+          "text": "在起源星系，想多攢些戰利品的天諾們常帶上戰甲 Nekros，他的技能 Desecrate（褻瀆）會搜刮周圍的屍體，讓它們有機會再掉一次戰利品。死了還得再交一份，Ordis 只嫌不夠，恨不得把它們倒過來抖，抖到……抖到……抱歉，語音模組過熱了。"
         },
         {
           "type": "h",
@@ -824,7 +824,7 @@
         },
         {
           "type": "p",
-          "text": "{item:kuvalich:machete}是一把[[weapons/kuva_weapons|赤毒武器]]，特效是增加掉落，拿在主手擊殺動物或怪物時，每一堆掉落的數量會各自隨機變為原來的 <g>1~3 倍</g>。"
+          "text": "{item:kuvalich:machete}是一把[[weapons/kuva_weapons|赤毒武器]]，特效是增加掉落，拿在主手擊殺動物或怪物時，每一堆掉落的數量各自隨機變為原來的 <g>1~3 倍</g>。"
         },
         {
           "type": "list",
@@ -832,7 +832,7 @@
             "盔甲以及劍、鎬、斧、鍬、鋤等掉落不參與",
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-              "text": "先算砍刀，戰利品掉落倍率再乘在它的結果上，兩者可以疊加"
+              "text": "先算砍刀，戰利品掉落倍率再乘在它的結果上，兩者能疊加"
             },
             "武器本身的介紹見[[weapons/weapon_list]]"
           ]

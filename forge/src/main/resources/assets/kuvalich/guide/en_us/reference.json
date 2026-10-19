@@ -1,8 +1,8 @@
 {
   "id": "reference",
   "order": 100,
-  "title": "Stat Reference",
-  "subtitle": "How every mod stat works and stacks",
+  "title": "Attribute Reference",
+  "subtitle": "How every attribute works and stacks",
   "icon": "kuvalich:item_riven_module",
   "entries": [
     {
@@ -11,20 +11,20 @@
       "icon": "kuvalich:item_riven_module",
       "summary": "Read first: terms and stacking rules",
       "blocks": [
-        { "type": "p", "text": "<hl>Mods</hl> are upgrade cards: weapon mods go on a weapon, Warframe mods go on you. Each bonus line on a card is a <hl>stat</hl>. This category lists every stat by purpose, ready to look up." },
+        { "type": "p", "text": "<hl>Mods</hl> are upgrade cards. Weapon mods go on a weapon and Warframe mods go on you, and each bonus line on a card is an <hl>attribute</hl>. This chapter lists every attribute by purpose for quick lookup." },
         { "type": "kv", "rows": [
-          ["Value", "The percentage printed on the card: +30% is written <t>0.3</t> in formulas"],
-          ["Same stat", "The same stat from every mod on one weapon (or one Warframe loadout) is <g>simply added</g>, then applied once"],
-          ["Negative stats", "[[start/glossary|Riven mods]] (mods with random stats) can carry negative values that subtract from the total; a negative total works in reverse"],
-          ["Multiplied per card", "The exception: the four Warframe resistances and {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay} multiply card by card - see their entries"]
+          ["Value", "The percentage printed on the card; +30% is written <t>0.3</t> in formulas"],
+          ["Same attribute", "The same attribute from every mod on one weapon or one Warframe loadout is <g>added together directly</g>, then applied once"],
+          ["Negative attributes", "[[start/glossary|Riven mods]], whose attributes are random, can carry negative values that subtract from the total; a negative total works in reverse"],
+          ["Multiplied per card", "The four Warframe resistances and {lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay} are the exception and multiply card by card; see their entries"]
         ] },
-        { "type": "tip", "style": "info", "title": "Mod rank", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "A mod below max rank applies <t>current rank ÷ {cfg:kuva_lich.moduleMaxLevel}</t> of its stats. The numbers on the card are already scaled, so what you see is what you get. Ranking up: [[modules/module_level]]." },
+        { "type": "tip", "style": "info", "title": "Mod rank", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "A mod below max rank applies <t>current rank ÷ {cfg:kuva_lich.moduleMaxLevel}</t> of its attributes. The numbers on the card are already scaled, so what you see is what you get. For ranking up, see [[modules/module_level]]." },
         { "type": "tip", "style": "info", "title": "Card values", "if": "!cfg:kuva_lich.enableModuleLevelSystem", "text": "Every mod applies the full values printed on its card." },
-        { "type": "h", "text": "Stats that only count whole 10% steps" },
-        { "type": "p", "text": "These stats <w>only count whole 10% steps</w> and drop the remainder: 25% counts as 20%, 9% does nothing. Round your builds up to full steps." },
+        { "type": "h", "text": "Attributes that only count whole 10% steps" },
+        { "type": "p", "text": "These attributes <w>only count whole 10% steps</w> and drop the remainder, so 25% counts as 20% and 9% does nothing. Round your builds up to full steps." },
         { "type": "list", "items": [
           "{lang:item.module.attackSpeed}",
-          "{lang:item.module.attackRange} (each step adds only 5% reach)",
+          "{lang:item.module.attackRange}, each step adding only 5% reach",
           "{lang:kuvaweapon.warframe_attribute_type.health}",
           "{lang:kuvaweapon.warframe_attribute_type.armor}",
           "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}",
@@ -33,9 +33,9 @@
         ] },
         { "type": "h", "text": "Advanced details" },
         { "type": "list", "items": [
-          "The number on a card counts that card alone; the weapon panel is what shows all of the weapon's stats combined - how to read it: [[weapons/weapon_panel]].",
-          { "if": "cfg:modules.attributeValueRanges", "text": "Some stats have a min / max per card; values outside it are clamped to the limit, and the number on the card does not show this - see [[modules/module_limits]]." },
-          { "if": "cfg:modules.attributeTotalCaps", "text": "Some stats have a cap on their combined total; anything above it is lost - see [[modules/module_limits]]." }
+          "The number on a card counts that card alone, and the weapon panel shows all of the weapon's attributes combined (see [[weapons/weapon_panel]] for how to read it).",
+          { "if": "cfg:modules.attributeValueRanges", "text": "Some attributes have a per-card minimum and maximum. Values outside them are clamped to the limit, and the number on the card does not show this (see [[modules/module_limits]])." },
+          { "if": "cfg:modules.attributeTotalCaps", "text": "Some attributes have a cap on their combined total, and anything above it is lost (see [[modules/module_limits]])." }
         ] },
         { "type": "table", "header": ["[[modules/multi_slot|Modded items in these slots]]", "Share added to your main-hand weapon"], "widths": [2, 3], "rows": [
           { "if": ["cfg:kuva_lich.enableOffhandModule", "cfg:kuva_lich.offhandEffectMultiplier"], "cells": ["Off-hand", "{cfg:kuva_lich.offhandEffectMultiplier|pctv} × its panel {lang:item.module.damage}"] },
@@ -51,11 +51,11 @@
       "id": "weapon_attr_damage",
       "title": "Weapon · Damage",
       "icon": "kuvalich:kuva_shildeg",
-      "summary": "Melee, ranged, magic and faction damage",
+      "summary": "Melee, ranged, magic and bane damage",
       "blocks": [
-        { "type": "p", "text": "These stats add damage directly: by how you attack (melee, ranged, magic), or against one kind of creature (faction damage)." },
-        { "type": "p", "text": "The first few all go into one <hl>damage pool</hl>: they are added up, then boost the hit together. A hit counts as either melee or ranged, never both." },
-        { "type": "table", "header": ["Stat", "When it applies", "How it works"], "widths": [3, 5, 4], "rows": [
+        { "type": "p", "text": "These attributes add damage directly, either by how you attack (melee, ranged, magic) or against one kind of creature, which is called bane." },
+        { "type": "p", "text": "The first few all go into one <hl>damage pool</hl>, where they are added up and then boost the hit together. A hit counts as either melee or ranged, never both." },
+        { "type": "table", "header": ["Attribute", "When it applies", "How it works"], "widths": [3, 5, 4], "rows": [
           ["{lang:item.module.meleeDamage}", "Melee: you hit the target yourself (swings, sweeps)", "Added to the pool"],
           ["{lang:item.module.remoteDamage}", "Ranged: something you fired hits it (arrows, projectiles, bullets)", "Added to the pool"],
           ["{lang:item.module.arrowDamage}", "Ranged, and the hit is a normal or tipped arrow", "Added to the pool along with Ranged Damage"],
@@ -64,29 +64,29 @@
           ["{lang:item.module.baseDamageWhenNotCriticalStrike}", "The hit did not crit", "Added as is, <w>not</w> multiplied by panel Base Damage; scaled by charge on melee"]
         ] },
         { "type": "tip", "style": "warn", "text": "Once crit chance goes above 100% every hit crits, so {lang:item.module.baseDamageWhenNotCriticalStrike} never applies again." },
-        { "type": "h", "text": "Faction stats" },
-        { "type": "p", "text": "A faction stat adds damage against one kind of target only. It is its own multiplier, <t>× (1 + value)</t>, applied to both the physical and elemental parts." },
-        { "type": "table", "header": ["Stat", "Targets"], "widths": [2, 3], "rows": [
-          ["{lang:item.module.bane_of_undefined}", "\"Unknown\": the vanilla default type - most mobs"],
-          ["{lang:item.module.bane_of_undead}", "Undead: zombies, skeletons, withers..."],
-          ["{lang:item.module.bane_of_arthropod}", "Arthropods: spiders, silverfish, bees..."],
+        { "type": "h", "text": "Bane attributes" },
+        { "type": "p", "text": "A bane attribute adds damage against one kind of target only, and is also called “discrimination”. It is its own multiplier, <t>× (1 + value)</t>, applied to both the physical and elemental parts." },
+        { "type": "table", "header": ["Attribute", "Targets"], "widths": [2, 3], "rows": [
+          ["{lang:item.module.bane_of_undefined}", "“Unknown”, the vanilla default type, which covers most mobs"],
+          ["{lang:item.module.bane_of_undead}", "Undead, such as zombies, skeletons and withers"],
+          ["{lang:item.module.bane_of_arthropod}", "Arthropods, such as spiders, silverfish and bees"],
           ["{lang:item.module.bane_of_illager}", "Illagers; <dim>water mobs also fall into this group</dim>"]
         ] },
-        { "type": "tip", "style": "wf", "text": "Warframe has the same kind of \"+X% damage to one faction\" mod, such as Bane of Grineer. The original factions are the Grineer, the Corpus and others; here they become vanilla mob types." },
+        { "type": "tip", "style": "wf", "text": "Operator, the Origin System has the same kind of “+X% damage to one faction” mod, such as Bane of Grineer. Over there the factions are the Grineer, the Corpus and others; here they become the kinds of creatures this world already has." },
         { "type": "h", "text": "The math" },
-        { "type": "formula", "text": "Physical = raw damage × (1 + pool) × panel Base Damage × charge × crit × faction" },
-        { "type": "formula", "text": "Elemental = raw damage × element total × panel Base Damage × charge × faction (no crit)" },
-        { "type": "p", "text": "<t>Charge</t>: melee hits are scaled by how far the swing was charged - only a full charge counts as 1, so swinging early costs a lot. Ranged is always 1." },
+        { "type": "formula", "text": "Physical = raw damage × (1 + pool) × panel Base Damage × charge × crit × bane" },
+        { "type": "formula", "text": "Elemental = raw damage × element total × panel Base Damage × charge × bane (no crit)" },
+        { "type": "p", "text": "In these formulas, <t>charge</t> scales melee hits by how far the swing was charged. Only a full charge counts as 1, so swinging early costs a lot; ranged is always 1." },
         { "type": "tip", "style": "warn", "title": "Panel Base Damage below 100%", "text": "The weapon panel's {lang:item.module.damage} below 100% is <w>squared</w>: 80% really means 64%, 50% means 25%." },
         { "type": "h", "text": "Advanced details" },
         { "type": "list", "items": [
-          "Stats resolved on hit (damage, crit, elements, execution...) need a weapon that can hold mods in your <em>main hand</em>; otherwise none of them apply.",
-          "Ranged hits use whatever is in your main hand <w>when the hit lands</w>: swap weapons while an arrow is in flight and the new weapon's stats are used.",
-          "Negative damage stats on [[start/glossary|Riven mods]] subtract from the pool; at worst the hit deals 0 damage, never negative."
+          "Attributes resolved on hit, such as damage, crit, elements and execution, need a weapon that can hold mods in your <em>main hand</em>; otherwise none of them apply.",
+          "Ranged hits use whatever is in your main hand <w>when the hit lands</w>, so if you swap weapons while an arrow is in flight, the new weapon's attributes are used.",
+          "Negative damage attributes on [[start/glossary|Riven mods]] subtract from the pool; at worst the hit deals 0 damage, never negative."
         ] },
-        { "type": "p", "text": "Full calculation order and how magic damage is detected: [[combat/damage]]. Faction damage: [[combat/bane]]." },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "module:chambered"], "text": "{lang:item.module.first_bullet_damage}, {lang:item.module.gun_damage} and {lang:item.module.headshot_damage} only work on guns - see [[tacz/tacz_gun_attributes]]." },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "!module:chambered"], "text": "{lang:item.module.gun_damage} and {lang:item.module.headshot_damage} only work on guns - see [[tacz/tacz_gun_attributes]]." }
+        { "type": "p", "text": "For the full calculation order and how magic damage is detected, see [[combat/damage]]; for bane, see [[combat/bane]]." },
+        { "type": "tip", "style": "info", "if": ["mod:tacz", "module:chambered"], "text": "{lang:item.module.first_bullet_damage}, {lang:item.module.gun_damage} and {lang:item.module.headshot_damage} only work on guns (see [[tacz/tacz_gun_attributes]])." },
+        { "type": "tip", "style": "info", "if": ["mod:tacz", "!module:chambered"], "text": "{lang:item.module.gun_damage} and {lang:item.module.headshot_damage} only work on guns (see [[tacz/tacz_gun_attributes]])." }
       ]
     },
     {
@@ -95,41 +95,41 @@
       "icon": "kuvalich:gram_prime",
       "summary": "Crit chance, crit multiplier, tiers",
       "blocks": [
-        { "type": "p", "text": "A crit is a chance to deal multiplied damage. These stats raise your crit chance and crit multiplier." },
-        { "type": "p", "text": "The panel's {lang:item.module.criticalStrikeProbability} and {lang:item.module.criticalStrikeMultiplier} are both \"the weapon's own base value × (1 + stat)\". Melee and ranged use separate stats." },
-        { "type": "table", "header": ["Stat", "Effect", "How it works"], "widths": [4, 3, 4], "rows": [
+        { "type": "p", "text": "A crit is a chance to deal multiplied damage. These attributes raise your crit chance and crit multiplier." },
+        { "type": "p", "text": "The panel's {lang:item.module.criticalStrikeProbability} and {lang:item.module.criticalStrikeMultiplier} both equal the weapon's own base value × (1 + attribute). Melee and ranged use separate attributes." },
+        { "type": "table", "header": ["Attribute", "Effect", "How it works"], "widths": [4, 3, 4], "rows": [
           ["{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}", "Melee crits more often", "Base crit chance × (1 + value)"],
           ["{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier}", "Melee crits hit harder", "Base crit multiplier × (1 + value)"],
           ["{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}", "Ranged crits more often", "Base crit chance × (1 + value)"],
           ["{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier}", "Ranged crits hit harder", "Base crit multiplier × (1 + value)"],
           ["{lang:item.module.dashMeleeCriticalStrikeProbability}", "Melee crits more often while sprinting", "While sprinting, <g>added</g> to melee crit chance before multiplying"],
-          ["{lang:item.module.killStackMeleeCriticalMultiplier} ([[reference/weapon_attr_killstack|kill stack]])", "Melee crits hit harder with every kill", "<w>Separate multiplier</w>: × (1 + value × stacks)"]
+          ["{lang:item.module.killStackMeleeCriticalMultiplier} ([[reference/weapon_attr_killstack|kill stack]])", "Melee crits hit harder with every kill", "<w>Separate multiplier</w>, × (1 + value × stacks)"]
         ] },
         { "type": "h", "text": "Crit tiers" },
-        { "type": "p", "text": "Crit chance can go above 100%: past that every hit crits, and the extra is the chance to reach a higher tier." },
+        { "type": "p", "text": "Crit chance can go above 100%. Past that every hit crits, and the extra is the chance to reach a higher tier." },
         { "type": "table", "if": "!cfg:kuva_lich.enableDamageNumbers", "header": ["Final crit chance", "Result"], "widths": [2, 5], "rows": [
-          ["100% or less", "Rolls to crit: × crit multiplier"],
-          ["100% - 200%", "Always crits; the part above 100% is the chance for tier 2, which is × crit multiplier × 2"],
-          ["200% - 300%", "At least tier 2; the part above 200% is the chance for tier 3, which is × crit multiplier × 3"],
+          ["100% or less", "Rolls to crit, × crit multiplier"],
+          ["100% ~ 200%", "Always crits; the part above 100% is the chance for tier 2, which is × crit multiplier × 2"],
+          ["200% ~ 300%", "At least tier 2; the part above 200% is the chance for tier 3, which is × crit multiplier × 3"],
           ["Above 300%", "Always tier 3; <w>anything higher gives nothing extra</w>"]
         ] },
         { "type": "table", "if": "cfg:kuva_lich.enableDamageNumbers", "header": ["Final crit chance", "Result", "Number color"], "widths": [2, 5, 2], "rows": [
-          ["100% or less", "Rolls to crit: × crit multiplier", "<c:FFFF55>Yellow</c>"],
-          ["100% - 200%", "Always crits; the part above 100% is the chance for tier 2, which is × crit multiplier × 2", "<c:FFFF55>Yellow</c> / <c:FFAA00>Orange</c>"],
-          ["200% - 300%", "At least tier 2; the part above 200% is the chance for tier 3, which is × crit multiplier × 3", "<c:FFAA00>Orange</c> / <c:FF5555>Red</c>"],
+          ["100% or less", "Rolls to crit, × crit multiplier", "<c:FFFF55>Yellow</c>"],
+          ["100% ~ 200%", "Always crits; the part above 100% is the chance for tier 2, which is × crit multiplier × 2", "<c:FFFF55>Yellow</c> / <c:FFAA00>Orange</c>"],
+          ["200% ~ 300%", "At least tier 2; the part above 200% is the chance for tier 3, which is × crit multiplier × 3", "<c:FFAA00>Orange</c> / <c:FF5555>Red</c>"],
           ["Above 300%", "Always tier 3; <w>anything higher gives nothing extra</w>", "<c:FF5555>Red</c>"]
         ] },
         { "type": "p", "if": "cfg:kuva_lich.enableDamageNumbers", "text": "Each tier has its own number color (see the table). Non-crits show white numbers, or <c:55FFFF>aqua</c> if the target has a shield." },
-        { "type": "tip", "style": "wf", "text": "In Warframe, crit chance can also go past 100% for higher-tier crits. Players name them yellow, orange and red crits after the color of the damage numbers." },
+        { "type": "tip", "style": "wf", "text": "Crit chance climbing past 100% into higher-tier crits works the same over there, and Tenno name the tiers yellow, orange and red crits after the color of the damage numbers. Blunt names, but easy to remember." },
         { "type": "h", "text": "Watch out" },
         { "type": "list", "items": [
-          "Swinging before your melee attack is fully charged scales crit chance down by the charge: half charged, half the chance. Damage drops even harder: a half-charged swing deals only <w>about a fifth</w> of a full-charge hit - see [[reference/weapon_attr_damage]].",
-          "Crits only multiply the <hl>physical part</hl>; elemental damage ignores the crit multiplier (by design).",
+          "Swinging before your melee attack is fully charged scales crit chance down by the charge, so half charged means half the chance. Damage drops even harder, and a half-charged swing deals only <w>about a fifth</w> of a full-charge hit (see [[reference/weapon_attr_damage]]).",
+          "Crits only multiply the <hl>physical part</hl>; elemental damage ignores the crit multiplier, which is intended.",
           "Once crit chance exceeds 100%, {lang:item.module.baseDamageWhenNotCriticalStrike} can never trigger."
         ] },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "cfg:kuva_lich.enableDamageNumbers"], "text": "TACZ guns: when one bullet's damage is dealt in two parts, crit is rolled once for each part (by design), and status procs and executions are rolled for each part too. How the damage numbers are shown: [[combat/damage_numbers]]." },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "!cfg:kuva_lich.enableDamageNumbers"], "text": "TACZ guns: when one bullet's damage is dealt in two parts, crit is rolled once for each part (by design), and status procs and executions are rolled for each part too." },
-        { "type": "p", "text": "Examples and more details: [[combat/crit]]." }
+        { "type": "tip", "style": "info", "if": ["mod:tacz", "cfg:kuva_lich.enableDamageNumbers"], "text": "When a TACZ gun bullet deals its damage in two parts, crit is rolled once for each part, which is intended, and status procs and executions are rolled for each part too. For how the damage numbers are shown, see [[combat/damage_numbers]]." },
+        { "type": "tip", "style": "info", "if": ["mod:tacz", "!cfg:kuva_lich.enableDamageNumbers"], "text": "When a TACZ gun bullet deals its damage in two parts, crit is rolled once for each part, which is intended, and status procs and executions are rolled for each part too." },
+        { "type": "p", "text": "For examples and more details, see [[combat/crit]]." }
       ]
     },
     {
@@ -138,12 +138,12 @@
       "icon": "kuvalich:item_uncommon_module",
       "summary": "Speed, range, fire rate, multishot, status",
       "blocks": [
-        { "type": "p", "text": "These stats do not add damage directly. They make you attack faster, reach further, fire more arrows at once, hit nearby creatures, or proc statuses more often." },
-        { "type": "p", "text": "<hl>Proc</hl>: a hit has a chance to put an elemental status such as burning or freezing on the target. All statuses: [[combat/element_status]]." },
-        { "type": "table", "header": ["Stat", "Effect", "How it works"], "widths": [3, 4, 5], "rows": [
+        { "type": "p", "text": "These attributes do not add damage directly. They make you attack faster, reach farther, fire more arrows at once, hit nearby creatures, or proc statuses more often." },
+        { "type": "p", "text": "A <hl>proc</hl> is a hit's chance to put an elemental status such as burning or freezing on the target. For all statuses, see [[combat/element_status]]." },
+        { "type": "table", "header": ["Attribute", "Effect", "How it works"], "widths": [3, 4, 5], "rows": [
           ["{lang:item.module.attackSpeed}", "Swing faster", "Each full 10% → attack speed +10%"],
-          ["{lang:item.module.attackRange}", "Melee reaches further, and sweeps get wider", "Each full 10% → reach +5%"],
-          ["{lang:item.module.dashAttackRange}", "Melee reaches further while sprinting", "Added to Attack Range while sprinting"],
+          ["{lang:item.module.attackRange}", "Melee reaches farther, and sweeps get wider", "Each full 10% → reach +5%"],
+          ["{lang:item.module.dashAttackRange}", "Melee reaches farther while sprinting", "Added to Attack Range while sprinting"],
           ["{lang:item.module.firing_rate}", "Draw bows and charge up faster", "<w>Doubled on bows and crossbows</w>; the math is at the end"],
           ["{lang:item.module.multishot}", "Bows fire extra arrows", "The integer part always fires extra; the fraction is a chance for one more"],
           ["{lang:item.module.triggerChance}", "Proc statuses more often", "Base status chance × (1 + value)"],
@@ -159,17 +159,17 @@
         { "type": "tip", "style": "warn", "title": "Splash does not pick sides", "text": "Every creature in the radius except you and the main target gets hit, pets and villagers included." },
         { "type": "h", "text": "Advanced details" },
         { "type": "list", "items": [
-          "Fire Rate math: each tick the charge advances extra times equal to the integer part, and the fraction is a chance for one more; doubled on bows and crossbows.",
+          "Fire Rate works like this: each tick the charge advances extra times equal to the integer part, the fraction is a chance for one more, and bows and crossbows double it.",
           "Negative Fire Rate slows charging; at -100% or less you cannot draw at all. Bows and crossbows double it, so -50% is enough.",
           "Using an item that cannot hold mods in your off-hand (eating, drinking, blocking) also follows your main-hand weapon's Fire Rate.",
           "Negative Multishot may cancel the shot.",
           "Sprint Attack Range is checked once per second, so it catches up about 1 s after you start or stop sprinting.",
           "Sprint Status Chance works on ranged attacks too, as long as you are sprinting when you attack.",
           "The panel shows Status Duration as a percent of the base duration.",
-          "Splash only deals damage: no status procs, no weapon kill stacks (Warframe kill stacks still count), no execution; the number color copies the main target's crit color. Explosion-type damage never splashes.",
+          "Splash only deals damage, with no status procs, no execution and no weapon kill stacks, though Warframe kill stacks still count. The number color copies the main target's crit color, and explosion-type damage never splashes again.",
           "At most <t>100</t> status procs happen per tick, counting all players together."
         ] },
-        { "type": "tip", "style": "info", "if": "mod:tacz", "text": "On guns: {lang:item.module.firing_rate} changes the shot interval, {lang:item.module.multishot} adds pellets per shot, and {lang:item.module.bursting_radius} enlarges the gun's own explosion if it has one. Details: [[tacz/tacz_multishot]]." }
+        { "type": "tip", "style": "info", "if": "mod:tacz", "text": "On guns, {lang:item.module.firing_rate} changes the shot interval, {lang:item.module.multishot} adds pellets per shot, and {lang:item.module.bursting_radius} enlarges the gun's own explosion if it has one (see [[tacz/tacz_multishot]])." }
       ]
     },
     {
@@ -178,22 +178,22 @@
       "icon": "minecraft:blaze_powder",
       "summary": "Thirteen elements and combinations",
       "blocks": [
-        { "type": "p", "text": "Element stats add elemental damage to every hit, and decide which status the target gets when you proc (burning, freezing, poisoned...)." },
+        { "type": "p", "text": "Element attributes add elemental damage to every hit and decide which status, such as burning, freezing or poison, the target gets when you proc." },
         { "type": "list", "items": [
-          "<g>Adds damage</g>: every hit adds elemental damage based on the total of all element stats; crits do not affect it.",
-          "<g>Picks the status</g>: on a proc, one status is picked at random, weighted by each element's share - the bigger the value, the likelier."
+          "<g>Adds damage</g>: every hit adds elemental damage based on the total of all element attributes; crits do not affect it.",
+          "<g>Picks the status</g>: on a proc, one status is picked at random, weighted by each element's share, so a bigger value is likelier to be picked."
         ] },
-        { "type": "formula", "text": "Elemental = raw damage × element total × panel Base Damage × charge × faction (no crit)" },
+        { "type": "formula", "text": "Elemental = raw damage × element total × panel Base Damage × charge × bane (no crit)" },
         { "type": "h", "text": "Base elements" },
-        { "type": "table", "header": ["Stat", "On proc", "Notes"], "widths": [2, 5, 3], "rows": [
+        { "type": "table", "header": ["Attribute", "On proc", "Notes"], "widths": [2, 5, 3], "rows": [
           ["<c:FF7A4A>{lang:kuvaweapon.item_attribute_type.fire}</c>", "Sets the target on fire with damage over time and gradually strips armor (down to -50%)", "×1.5 vs arthropods, ×0.5 vs undead"],
           ["<c:6FD8F0>{lang:kuvaweapon.item_attribute_type.ice}</c>", "Slows movement and attack speed, up to 9 stacks (-50% → -90%)", "Status only, no extra damage"],
           ["<c:6BD96B>{lang:kuvaweapon.item_attribute_type.poison}</c>", "Damage over time; <w>bypasses shields</w> and hits health directly if the target has one", "×1.5 vs illagers, ×0.5 vs arthropods"],
-          { "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0", "cells": ["<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>", "One shock (the lightning is visual only) that paralyzes the target for 0.5 s (nearly frozen)", "×1.5 vs undead; ×0.5 if the target has a shield"] },
+          { "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0", "cells": ["<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>", "One shock that paralyzes the target for 0.5 s, nearly freezing it in place; the lightning is visual only", "×1.5 vs undead; ×0.5 if the target has a shield"] },
           { "if": "cfg:kuva_lich.elementElectricityDamageMultiplier==0", "cells": ["<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>", "A proc does nothing: no damage and no paralysis", "—"] }
         ] },
         { "type": "h", "text": "Physical elements" },
-        { "type": "table", "header": ["Stat", "On proc", "Notes"], "widths": [2, 5, 3], "rows": [
+        { "type": "table", "header": ["Attribute", "On proc", "Notes"], "widths": [2, 5, 3], "rows": [
           ["<c:D8DCE2>{lang:kuvaweapon.item_attribute_type.slash}</c>", "Bleed: damage over time that hits health directly, ignoring armor and shields", "Hurts more if the target has Viral"],
           ["<c:9AA2AE>{lang:kuvaweapon.item_attribute_type.puncture}</c>", "The target <g>deals</g> -40% damage, -10% more per stack, up to 4 stacks (-70%)", "Counts for its melee and anything it shoots; your hits on it are unaffected"],
           ["<c:F0F0F0>{lang:kuvaweapon.item_attribute_type.impact}</c>", "Knocks the target back and up", "Stronger with more Impact"]
@@ -202,13 +202,13 @@
         { "type": "p", "text": "Two base elements combine into one combined element, as shown below." },
         { "type": "table", "header": ["Combination", "Result"], "widths": [3, 2], "rows": [
           ["<c:FF7A4A>Heat</c> + <c:6BD96B>Toxin</c>", "<c:A8E86B>Gas</c>"],
-          ["<c:FF7A4A>Heat</c> + <c:8296FF>Electric</c>", "<c:F0E060>Radiation</c>"],
-          ["<c:6FD8F0>Cold</c> + <c:8296FF>Electric</c>", "<c:7A8CFF>Magnetic</c>"],
-          ["<c:6BD96B>Toxin</c> + <c:8296FF>Electric</c>", "<c:C4DB4A>Corrosive</c>"],
+          ["<c:FF7A4A>Heat</c> + <c:8296FF>Electricity</c>", "<c:F0E060>Radiation</c>"],
+          ["<c:6FD8F0>Cold</c> + <c:8296FF>Electricity</c>", "<c:7A8CFF>Magnetic</c>"],
+          ["<c:6BD96B>Toxin</c> + <c:8296FF>Electricity</c>", "<c:C4DB4A>Corrosive</c>"],
           ["<c:FF7A4A>Heat</c> + <c:6FD8F0>Cold</c>", "<c:FF9B4A>Blast</c>"],
           ["<c:6FD8F0>Cold</c> + <c:6BD96B>Toxin</c>", "<c:FF7AB0>Viral</c>"]
         ] },
-        { "type": "table", "header": ["Stat", "On proc", "Notes"], "widths": [2, 5, 3], "rows": [
+        { "type": "table", "header": ["Attribute", "On proc", "Notes"], "widths": [2, 5, 3], "rows": [
           ["<c:A8E86B>{lang:kuvaweapon.item_attribute_type.gas}</c>", "Leaves a 3-block toxic cloud at the hit point that damages every creature inside <w>except you</w>", "Multipliers follow the hit target: ×1.5 vs arthropods, ×0.5 if it has a shield"],
           ["<c:F0E060>{lang:kuvaweapon.item_attribute_type.radiation}</c>", "The target is confused and turns on nearby creatures of its own kind, dealing them +100% damage, up to 10 stacks (max +550%)", "Picks the nearest of its kind within 24 blocks, or the nearest creature if none; base duration 12 s"],
           ["<c:7A8CFF>{lang:kuvaweapon.item_attribute_type.magnetic}</c>", "The target takes +100% damage while it has a shield, up to 10 stacks (max +325%)", "No effect on unshielded targets"],
@@ -224,12 +224,12 @@
           "The three physical elements (Slash, Puncture, Impact) never combine."
         ] },
         { "type": "p", "text": "So the same three elements can combine differently in a different slot order." },
-        { "type": "tip", "style": "wf", "text": "Warframe works the same way: Heat, Cold, Electricity and Toxin pair up into these same six combined elements, and the result also depends on the order of mods on the weapon." },
+        { "type": "tip", "style": "wf", "text": "The archives show the same thing over there. Heat, Cold, Electricity and Toxin pair up into these same six combined elements, and the result also depends on the order of mods on the weapon." },
         { "type": "h", "text": "Rules for all statuses" },
         { "type": "list", "items": [
           "Unless noted, statuses last 6 s, and DoTs tick once per second for 6 ticks. Both are extended by {lang:item.module.triggerTime}.",
-          "The same DoT does not stack on one target: a new proc keeps the higher per-tick damage and refills the tick count.",
-          "Proc damage is based on <t>the hit's physical damage</t> (including crit and faction)."
+          "The same DoT does not stack on one target; a new proc keeps the higher per-tick damage and refills the tick count.",
+          "Proc damage is based on <t>the hit's physical damage</t>, crit and bane included."
         ] },
         { "type": "h", "text": "Status damage multipliers" },
         { "type": "kv", "rows": [
@@ -237,7 +237,7 @@
           ["<c:6BD96B>Toxin</c>", "{cfg:kuva_lich.elementPoisonDamageMultiplier|x}"],
           ["<c:D8DCE2>Slash</c>", "{cfg:kuva_lich.elementSlashDamageMultiplier|x}"],
           ["<c:A8E86B>Gas</c>", "{cfg:kuva_lich.elementGasDamageMultiplier|x}"],
-          ["<c:8296FF>Electric</c>", "{cfg:kuva_lich.elementElectricityDamageMultiplier|x}"],
+          ["<c:8296FF>Electricity</c>", "{cfg:kuva_lich.elementElectricityDamageMultiplier|x}"],
           ["<c:FF9B4A>Blast</c>", "{cfg:kuva_lich.elementExplosionDamageMultiplier|x}"]
         ] },
         { "type": "p", "text": "These multipliers only affect damage dealt by procs (DoT / burst), not the elemental damage added to every hit." },
@@ -245,14 +245,14 @@
         { "type": "list", "items": [
           "The status pick only looks at the mods on your main-hand weapon itself.",
           { "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "The pick uses max-rank values, even if a mod is not fully ranked." },
-          "Gas and Blast proc damage only counts the two base element stats they are made of: Gas = Heat + Toxin, Blast = Heat + Cold, including the Kuva weapon's own element if it is one of them.",
-          "A Gas or Blast stat on a card does <w>not count</w> toward proc damage: with only those, the proc deals no damage; the elemental damage added to every hit is unaffected.",
-          "The Electric and Blast hit on the main target gets eaten by vanilla hit invulnerability: only the part above the hit's raw damage gets through, so the number is often small or missing. Creatures caught in the blast around it are unaffected.",
+          "Gas and Blast proc damage only counts the two base element attributes they are made of, Gas = Heat + Toxin and Blast = Heat + Cold, including the Kuva weapon's own element if it is one of them.",
+          "A Gas or Blast attribute on a card does <w>not count</w> toward proc damage, so with only those the proc deals no damage. The elemental damage added to every hit is unaffected.",
+          "The Electricity and Blast hit on the main target gets eaten by vanilla hit invulnerability, and only the part above the hit's raw damage gets through, so the number is often small or missing. Creatures caught in the blast around it are unaffected.",
           "The Gas cloud fades about 1 s after the hit target dies.",
-          "Faction damage applies <w>squared</w> to status proc damage (by design).",
-          "[[start/glossary|Riven mods]] never roll combined elements; only mods with fixed stats have them."
+          "Bane applies <w>squared</w> to status proc damage, which is intended.",
+          "[[start/glossary|Riven mods]] never roll combined elements; only mods with fixed attributes have them."
         ] },
-        { "type": "p", "text": "Full numbers for every status: [[combat/element_status]]." }
+        { "type": "p", "text": "For the full numbers of every status, see [[combat/element_status]]." }
       ]
     },
     {
@@ -261,24 +261,24 @@
       "icon": "kuvalich:reaper_prime",
       "summary": "Execution, instant kill, buff removal",
       "blocks": [
-        { "type": "p", "text": "These stats can kill a target outright when its health is low enough or its luck runs out, or strip away its buffs." },
-        { "type": "table", "header": ["Stat", "Effect", "How it works"], "widths": [3, 4, 4], "rows": [
-          ["{lang:item.module.execute_threshold}", "Low enough health: the target is executed", "Health <w>before</w> the hit ≤ max health × value"],
+        { "type": "p", "text": "These attributes can kill a target outright when its health is low enough or its luck runs out, or strip away its buffs." },
+        { "type": "table", "header": ["Attribute", "Effect", "How it works"], "widths": [3, 4, 4], "rows": [
+          ["{lang:item.module.execute_threshold}", "Executes the target when its health is low enough", "Health <w>before</w> the hit ≤ max health × value"],
           ["{lang:item.module.execute_chance}", "Each hit has a chance to execute the target, whatever its health", "Chance = value, rolled only if the threshold did not trigger; very small values, shown with three decimals"],
           ["{lang:item.module.purge_buff}", "Removes random beneficial potion effects from the target on hit (debuffs untouched)", "Integer part = guaranteed removals; fraction = chance to remove one more"]
         ] },
         { "type": "formula", "text": "Example: {lang:item.module.purge_buff} 150% → removes 1 for sure, plus a 50% chance to remove another" },
         { "type": "list", "items": [
-          "Executions happen <t>1</t> tick after the hit: threshold executions release soul particles, chance kills release crit sparks.",
-          "Only checked on <em>direct hits</em> from a weapon that can hold mods: each Multishot arrow rolls separately, while splash and status DoTs never roll.",
+          "Executions happen <t>1</t> tick after the hit. Threshold executions release soul particles and chance kills release crit sparks.",
+          "Only checked on <em>direct hits</em> from a weapon that can hold mods. Each Multishot arrow rolls separately, while splash and status DoTs never roll.",
           "An execution counts as a kill: +1 weapon [[reference/weapon_attr_killstack|kill stack]] (but no Warframe kill stack)."
         ] },
         { "type": "h", "text": "Advanced details" },
         { "type": "list", "items": [
-          "This mod gives bosses no exemption, so the [[start/glossary|Kuva Lich]] (this mod's boss) can be executed; other mods' bosses with health locks or revives may not be.",
-          "[[start/glossary|Riven mods]] never roll these three as negative stats."
+          "Bosses get no exemption, so the boss [[start/glossary|Kuva Lich]] can be executed too; bosses from other mods with health locks or revives may not be.",
+          "[[start/glossary|Riven mods]] never roll these three as negative attributes."
         ] },
-        { "type": "tip", "style": "info", "if": "mod:tacz", "text": "{lang:item.module.true_bullet} and {lang:item.module.gun_loot_drop} only work with gun bullets - see [[tacz/tacz_gun_attributes]]." }
+        { "type": "tip", "style": "info", "if": "mod:tacz", "text": "{lang:item.module.true_bullet} and {lang:item.module.gun_loot_drop} only work with gun bullets (see [[tacz/tacz_gun_attributes]])." }
       ]
     },
     {
@@ -287,15 +287,15 @@
       "icon": "kuvalich:item_prime_module",
       "summary": "Kill stacks: stronger with every kill",
       "blocks": [
-        { "type": "p", "text": "Stats whose card says \"gained on kill\" stack up: every target you kill with a weapon that can hold mods adds +1 stack, and more stacks mean a bigger bonus." },
+        { "type": "p", "text": "Attributes whose card says “gained on kill” stack up. Every target you kill with a weapon that can hold mods adds +1 stack, and more stacks mean a bigger bonus." },
         { "type": "kv", "rows": [
           ["Effect", "Value per stack × stacks, up to the cap"],
           ["Stack timer", "{cfg:kuva_lich.weaponStackDecayTicks|sec}; another kill restarts the timer"],
           ["Decay", "When the timer runs out without a kill you lose <t>1</t> stack, then the timer restarts"],
           ["Reset", "Cleared when you log out; <g>not cleared on death</g>"]
         ] },
-        { "type": "p", "text": "In the table, \"+value\" means each stack adds that value to the stat of the same name." },
-        { "type": "table", "header": ["Stat", "Per stack", "Max stacks"], "widths": [3, 6, 2], "rows": [
+        { "type": "p", "text": "In the table, “+value” means each stack adds that value to the attribute of the same name." },
+        { "type": "table", "header": ["Attribute", "Per stack", "Max stacks"], "widths": [3, 6, 2], "rows": [
           ["{lang:item.module.killStackBaseDamage}", "Damage +value × number of <w>harmful potion effects</w> on the target; added to the damage pool, melee and ranged", "{cfg:kuva_lich.maxStacksBaseDamage}"],
           ["{lang:item.module.killStackMultishot}", "{lang:item.module.multishot} +value", "{cfg:kuva_lich.maxStacksMultishot}"],
           ["{lang:item.module.killStackMeleeCriticalMultiplier}", "Melee crit multiplier × (1 + value × stacks), a <w>separate multiplier</w>", "{cfg:kuva_lich.maxStacksMeleeCritMult}"],
@@ -306,13 +306,13 @@
           ["{lang:item.module.killStackFiringRate}", "{lang:item.module.firing_rate} +value, also doubled on bows and crossbows", "{cfg:kuva_lich.maxStacksFiringRate}"]
         ] },
         { "type": "list", "items": [
-          "Stacks are stored on you per stat type, not on the weapon: swapping weapons keeps them, but they only apply while your current weapon's panel has that stat.",
-          "{lang:item.module.killStackBaseDamage} only counts <w>potion-type</w> debuffs (Slowness, Poison, Weakness...); this mod's element statuses are not potion effects and do not count.",
+          "Stacks are stored on you per attribute type, not on the weapon. Swapping weapons keeps them, but they only apply while your current weapon's panel has that attribute.",
+          "{lang:item.module.killStackBaseDamage} only counts <w>potion-type</w> debuffs such as Slowness, Poison and Weakness. Statuses from element procs are not potion effects and do not count.",
           "Only a kill by the weapon hit itself counts; kills by status DoTs or splash do not. Executions count as a kill."
         ] },
-        { "type": "tip", "style": "wf", "text": "Warframe's Galvanized mods work like this: a kill grants a bonus for a while, and the bonus can stack several times." },
+        { "type": "tip", "style": "wf", "text": "Galvanized mods work exactly this way: a kill grants a bonus for a while, and the bonus can stack several times." },
         { "type": "tip", "style": "info", "title": "Advanced details", "text": "Whether a hit killed is judged on the damage before armor, so now and then a hit that fails to kill still adds a stack." },
-        { "type": "p", "text": "Full kill stack mechanics: [[combat/kill_stack]]. Reading your current stacks on the panel: [[weapons/weapon_panel]]." }
+        { "type": "p", "text": "For the full kill stack mechanics, see [[combat/kill_stack]]; to read your current stacks on the panel, see [[weapons/weapon_panel]]." }
       ]
     },
     {
@@ -321,17 +321,17 @@
       "icon": "kuvalich:warframe_rare_module",
       "summary": "Health, armor and shields",
       "blocks": [
-        { "type": "p", "text": "[[start/glossary|Warframe mods]] are mods for yourself, installed in the [[warframe/warframe_table]] (<t>8</t> slots). These stats cover your health, armor and shields." },
-        { "type": "table", "header": ["Stat", "Effect", "How it works"], "widths": [3, 4, 5], "rows": [
+        { "type": "p", "text": "[[start/glossary|Warframe mods]] are mods for yourself, installed in the [[warframe/warframe_table]], which has <t>8</t> slots. These attributes cover your health, armor and shields." },
+        { "type": "table", "header": ["Attribute", "Effect", "How it works"], "widths": [3, 4, 5], "rows": [
           ["{lang:kuvaweapon.warframe_attribute_type.health}", "Higher max health", "Each full 10% → +10%; negative values bottom out at -90%"],
           ["{lang:kuvaweapon.warframe_attribute_type.armor}", "Higher armor and armor toughness", "Each full 10% → both +10%; negative values lower them in the same steps"],
           { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shield}", "Gives you a shield that takes hits first", "Shield cap = max health × value × {cfg:kuva_lich.shieldCapMultiplier}"] },
           { "if": "!cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shield}", "<b>Gives no yellow hearts</b>, and while equipped it wipes those from golden apples and the like", "They only survive during the wait after you take a hit or land one"] },
           { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}", "Shields recharge faster", "Recharges shield cap × 1% × (1 + value) per second; additive across mods"] },
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}", "How long before shields start recharging", "<w>Multiplies per mod</w>: about 10 s × (1 + value) × (1 + value)...; negative values shorten it"] }
+          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}", "How long before shields start recharging", "<w>Multiplies per mod</w>, about 10 s × (1 + the first mod's value) × (1 + the second mod's value) and so on; negative values shorten it"] }
         ] },
         { "type": "h", "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "How shields recharge" },
-        { "type": "p", "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "<hl>Shields</hl> are vanilla absorption (yellow hearts), used up before your health. Recharging goes in three steps:" },
+        { "type": "p", "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "<hl>Shields</hl> are vanilla absorption, the yellow hearts, and are used up before your health. Recharging goes in three steps." },
         { "type": "steps", "if": "cfg:kuva_lich.shieldCapMultiplier", "items": [
           "When you <w>take a hit or land one</w>, shield recharge goes on hold: about 10 s × the delay multiplier (rounded down to whole seconds).",
           "If your shield is empty after that hit, the wait is <b>×3</b>.",
@@ -339,16 +339,16 @@
         ] },
         { "type": "h", "text": "Advanced details" },
         { "type": "list", "items": [
-          "Warframe stats refresh about every 0.25 s.",
+          "Warframe attributes refresh about every 0.25 s.",
           { "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "Yellow hearts from golden apples and the like are trimmed down to your shield cap." }
         ] },
-        { "type": "p", "text": "<dim>The three \"Fixed\" stats below never appear on built-in mods or [[start/glossary|Riven mods]]; they only come from custom mods added to the modpack.</dim>" },
-        { "type": "table", "header": ["Fixed stat", "Effect"], "widths": [3, 5], "rows": [
-          ["{lang:kuvaweapon.warframe_attribute_type.fixedHealth}", "Max health is <w>set</w> to this number; additive across mods; percent Health stops working"],
-          ["{lang:kuvaweapon.warframe_attribute_type.fixedArmor}", "Armor is set to this number; additive across mods; armor from worn gear and percent Armor stop mattering"],
-          ["{lang:kuvaweapon.warframe_attribute_type.fixedShield}", "Shield cap is set to this number; additive across mods; percent Shield stops working"]
+        { "type": "p", "text": "<dim>The three “Fixed” attributes below never appear on built-in mods or [[start/glossary|Riven mods]]; they only come from custom mods added to the modpack.</dim>" },
+        { "type": "table", "header": ["Fixed attribute", "Effect"], "widths": [3, 5], "rows": [
+          ["{lang:kuvaweapon.warframe_attribute_type.fixedHealth}", "Max health is <w>set</w> to this number, adding up across mods, and percent Health stops working"],
+          ["{lang:kuvaweapon.warframe_attribute_type.fixedArmor}", "Armor is set to this number, adding up across mods, and armor from worn gear and percent Armor stop mattering"],
+          ["{lang:kuvaweapon.warframe_attribute_type.fixedShield}", "Shield cap is set to this number, adding up across mods, and percent Shield stops working"]
         ] },
-        { "type": "p", "text": "Shield details: [[warframe/shield]]. Why health and armor only count whole 10% steps: [[reference/attr_rules]]." }
+        { "type": "p", "text": "For shield details, see [[warframe/shield]]; for why health and armor only count whole 10% steps, see [[reference/attr_rules]]." }
       ]
     },
     {
@@ -357,14 +357,14 @@
       "icon": "kuvalich:warframe_uncommon_module",
       "summary": "Resistances, knockback, healing",
       "blocks": [
-        { "type": "p", "text": "These [[start/glossary|Warframe]] stats make you take less of one kind of damage, get knocked back less, or heal more." },
-        { "type": "table", "header": ["Stat", "Effect", "How it works"], "widths": [3, 5, 4], "rows": [
-          ["{lang:kuvaweapon.warframe_attribute_type.fireProtection}", "Less fire damage (burning, lava, fireballs...)", "<w>Multiplies per mod</w>: damage taken × (1 − value)"],
-          ["{lang:kuvaweapon.warframe_attribute_type.electricProtection}", "Less lightning damage (lightning strikes, the Electric element)", "Same as above"],
+        { "type": "p", "text": "These [[start/glossary|Warframe]] attributes make you take less of one kind of damage, get knocked back less, or heal more." },
+        { "type": "table", "header": ["Attribute", "Effect", "How it works"], "widths": [3, 5, 4], "rows": [
+          ["{lang:kuvaweapon.warframe_attribute_type.fireProtection}", "Less fire damage, such as burning, lava and fireballs", "<w>Multiplies per mod</w>: damage taken × (1 − value)"],
+          ["{lang:kuvaweapon.warframe_attribute_type.electricProtection}", "Less lightning damage, such as lightning strikes and the Electricity element", "Same as above"],
           ["{lang:kuvaweapon.warframe_attribute_type.homologousProtection}", "Less damage from other players (PvP)", "Same as above"],
           ["{lang:kuvaweapon.warframe_attribute_type.fallProtection}", "Less fall damage", "Same as above"],
           ["{lang:kuvaweapon.warframe_attribute_type.knockbackResistance}", "Harder to knock back", "Each full 10% → knockback resistance +0.1; additive across mods"],
-          ["{lang:kuvaweapon.warframe_attribute_type.responseRate}", "More healing (natural regen, Regeneration, Instant Health...)", "Healing × (1 + value); additive across mods"]
+          ["{lang:kuvaweapon.warframe_attribute_type.responseRate}", "More healing, such as natural regen, Regeneration and Instant Health", "Healing × (1 + value); additive across mods"]
         ] },
         { "type": "formula", "text": "Example: two 60% Fire Resistance mods → damage × 0.4 × 0.4 = 0.16, an 84% reduction (not 120%)" },
         { "type": "list", "items": [
@@ -373,8 +373,8 @@
           "Negative resistance makes you take more damage; at a healing total of -100% or less you cannot heal at all."
         ] },
         { "type": "tip", "style": "info", "text": "Resistances only reduce the damage that <w>gets through your shield</w> to your health; whatever the shield absorbs is not reduced." },
-        { "type": "tip", "style": "info", "title": "Advanced details", "text": "Other mods' \"electric\" damage does not necessarily count as lightning." },
-        { "type": "p", "text": "Kill stack versions of the resistances: [[reference/warframe_attr_killstack]]." }
+        { "type": "tip", "style": "info", "title": "Advanced details", "text": "Other mods' “electric” damage does not necessarily count as lightning." },
+        { "type": "p", "text": "For the kill stack versions of the resistances, see [[reference/warframe_attr_killstack]]." }
       ]
     },
     {
@@ -383,27 +383,27 @@
       "icon": "kuvalich:warframe_common_module",
       "summary": "Speed, jumping, mining and loot",
       "blocks": [
-        { "type": "p", "text": "These [[start/glossary|Warframe]] stats cover everyday abilities: how fast you run, how high you jump, how far you reach and how fast you mine." },
-        { "type": "table", "header": ["Stat", "Effect", "How it works"], "widths": [3, 4, 5], "rows": [
+        { "type": "p", "text": "These [[start/glossary|Warframe]] attributes cover everyday abilities: how fast you run, how high you jump, how far you reach and how fast you mine." },
+        { "type": "table", "header": ["Attribute", "Effect", "How it works"], "widths": [3, 4, 5], "rows": [
           ["{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}", "Move faster; called sprint, but <w>walking gets it too</w>", "Each full 10% → movement speed +10%"],
           ["{lang:kuvaweapon.warframe_attribute_type.jumpBoost}", "Jump higher", "Height is about (1 + value) times normal"],
-          ["{lang:kuvaweapon.warframe_attribute_type.reachDistance}", "Reach blocks further (mining, placing, interacting)", "Each full 10% → +10%"],
+          ["{lang:kuvaweapon.warframe_attribute_type.reachDistance}", "Reach blocks farther (mining, placing, interacting)", "Each full 10% → +10%"],
           ["{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}", "Mine faster", "Mining speed × (1 + value)"],
           { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}", "More drops from kills", "Drops × (1 + value × {cfg:kuva_lich.itemDropEffectMultiplier|pctv})"] },
           { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier"], "cells": ["{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}", "More drops from ores", "After Fortune, × (1 + value × {cfg:kuva_lich.oreDropEffectMultiplier|pctv}) again"] }
         ] },
         { "type": "list", "items": [
-          "{lang:kuvaweapon.warframe_attribute_type.reachDistance} does not affect hitting mobs - that is the weapon's {lang:item.module.attackRange}.",
-          { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier"], "text": "{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier} only works on ores you mine yourself, and Silk Touch never benefits. Details: [[world/ore_drop_multiplier]]." }
+          "{lang:kuvaweapon.warframe_attribute_type.reachDistance} does not affect how far you can hit mobs; that depends on the weapon's {lang:item.module.attackRange}.",
+          { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier"], "text": "{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier} only works on ores you mine yourself, and Silk Touch never benefits (see [[world/ore_drop_multiplier]])." }
         ] },
         { "type": "h", "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}" },
         { "type": "list", "if": "cfg:kuva_lich.itemDropEffectMultiplier", "items": [
           "Only kills credited to you count: melee, arrows and guns all work, pet kills do not.",
-          "Only animals and \"monster\"-class mobs are affected.",
+          "Only animals and “monster”-class mobs are affected.",
           "Gear, weapons and tools (anything with durability) are never multiplied.",
           "Fractions of an item round up by chance; at a total multiplier of 0 or less, all non-gear drops disappear."
         ] },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "cfg:kuva_lich.itemDropEffectMultiplier"], "text": "On gun kills, your gun's {lang:item.module.gun_loot_drop} is added to this stat - see [[tacz/tacz_gun_attributes]]." },
+        { "type": "tip", "style": "info", "if": ["mod:tacz", "cfg:kuva_lich.itemDropEffectMultiplier"], "text": "On gun kills, your gun's {lang:item.module.gun_loot_drop} is added to this attribute (see [[tacz/tacz_gun_attributes]])." },
         { "type": "h", "text": "Advanced details" },
         { "type": "list", "items": [
           "Jump math: jump velocity × √(1 + value).",
@@ -419,15 +419,15 @@
       "icon": "kuvalich:warframe_prime_module",
       "summary": "Kill stacks: tougher with every kill",
       "blocks": [
-        { "type": "p", "text": "[[start/glossary|Warframe]] stats whose card says \"gained on kill\" stack up: every target you kill adds +1 stack, making you tougher the longer you fight." },
+        { "type": "p", "text": "[[start/glossary|Warframe]] attributes whose card says “gained on kill” stack up. Every target you kill adds +1 stack, making you tougher the longer you fight." },
         { "type": "kv", "rows": [
           ["What counts as a kill", "Damage credited to you finishes off the target: melee, arrows and guns all count"],
           ["Stack timer", "{cfg:kuva_lich.warframeStackDecayTicks|sec}; another kill restarts the timer"],
           ["Decay", "When the timer runs out without a kill you lose <t>1</t> stack, then the timer restarts"],
           ["Reset", "Cleared when you log out; <g>not cleared on death</g>"]
         ] },
-        { "type": "p", "text": "In the table, \"+value\" means each stack adds that value to the normal stat of the same name." },
-        { "type": "table", "header": ["Stat (kill stack version)", "Per stack", "Max stacks"], "widths": [3, 6, 2], "rows": [
+        { "type": "p", "text": "In the table, “+value” means each stack adds that value to the normal attribute of the same name." },
+        { "type": "table", "header": ["Attribute (kill stack version)", "Per stack", "Max stacks"], "widths": [3, 6, 2], "rows": [
           ["{lang:kuvaweapon.warframe_attribute_type.health}", "+value (still in 10% steps)", "{cfg:kuva_lich.maxStacksHealth}"],
           { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shield}", "+value", "{cfg:kuva_lich.maxStacksShield}"] },
           ["{lang:kuvaweapon.warframe_attribute_type.armor}", "+value (still in 10% steps)", "{cfg:kuva_lich.maxStacksArmor}"],
@@ -443,10 +443,10 @@
         ] },
         { "type": "list", "items": [
           "Kills by pets, status DoTs or executions / instant kills do not count; kills by weapon splash do.",
-          "Stacks are stored on you: they stop applying when you remove the mod, and whatever stacks remain count again when you put it back.",
-          "The kill stack version shares its name with the normal stat; the one whose card says \"gained on kill\" is the stacking version."
+          "Stacks are stored on you. They stop applying when you remove the mod, and whatever stacks remain count again when you put it back.",
+          "The kill stack version shares its name with the normal attribute; the one whose card says “gained on kill” is the stacking version."
         ] },
-        { "type": "p", "text": "Kill stack mechanics: [[combat/kill_stack]]. Normal versions: [[reference/warframe_attr_survival]], [[reference/warframe_attr_resist]]." }
+        { "type": "p", "text": "For kill stack mechanics, see [[combat/kill_stack]]; for the normal versions, see [[reference/warframe_attr_survival]] and [[reference/warframe_attr_resist]]." }
       ]
     }
   ]

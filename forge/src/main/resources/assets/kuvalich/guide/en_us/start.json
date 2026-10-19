@@ -13,11 +13,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>Kuva Lich</hl> is a Warframe-inspired combat and progression mod: mine, hunt, crack a puzzle that belongs to you alone, then defeat the boss {lang:entity.kuvalich.kuva_master} for powerful weapons and upgrade cards."
+          "text": "Your quarry is the boss {lang:entity.kuvalich.kuva_master}, Tenno, and a successful hunt starts with a puzzle that belongs to you alone. <hl>Kuva Lich</hl> is a combat and progression mod modeled on Warframe. You mine and hunt your way toward the answer, then defeat the boss for powerful weapons and upgrade cards."
         },
         {
           "type": "p",
-          "text": "These upgrade cards are called <t>mods</t>, and they fit into <em>any weapon</em>: vanilla swords and bows, or weapons from other mods."
+          "text": "These upgrade cards are called <t>mods</t>, and they fit <em>any weapon</em>, from vanilla swords and bows to weapons from other mods."
         },
         {
           "type": "entity",
@@ -32,7 +32,7 @@
           "type": "steps",
           "items": [
             "<em>Mine</em>: break {item:kuvalich:requiem_ore} with a {lang:enchantment.kuvalich.requiem_destroyed} pickaxe to collect Requiem cards and materials.",
-            "<em>Hunt</em>: kill {lang:entity.kuvalich.kuva_slave}s for <t>decryption progress</t>. Progress comes in three stages; each one reveals an answer card.",
+            "<em>Hunt</em>: kill {lang:entity.kuvalich.kuva_slave}s for <t>decryption progress</t>, which comes in three stages; each full stage reveals an answer card.",
             "<em>Set the cards</em>: place three Requiem cards in the {item:kuvalich:requiem_gate} in the order you think is right.",
             "<em>Confront</em>: kill a {lang:entity.kuvalich.kuva_master} yourself. The right order means <g>decryption succeeds</g>; a wrong one raises your <b>Lich level by 1</b>, and you try another order.",
             "<em>Upgrade</em>: use the Kuva weapons, mods and materials you earn to consecrate gear, install mods and fuse weapons at the utility blocks.",
@@ -45,7 +45,7 @@
         },
         {
           "type": "p",
-          "text": "From the next page on, this section is a full tutorial. Keep pressing “Next” at the end of each page and you will learn every feature in the order you meet it in play."
+          "text": "From the next page on, this section is a full tutorial. Press “Next” at the end of each page and it covers every feature in the order you meet it in play."
         },
         {
           "type": "table",
@@ -109,7 +109,7 @@
         },
         {
           "type": "p",
-          "text": "After the tutorial come three quick-reference pages: [[start/materials]], [[start/faq]] and “Numbers at a Glance”. The other sections cover each system in full, and every chapter points to them at the end."
+          "text": "After the tutorial come three quick-reference pages, [[start/materials]], [[start/faq]] and “Numbers at a Glance”. The other sections cover each system in full, and every chapter links to them at the end."
         }
       ]
     },
@@ -121,7 +121,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "This book uses quite a few terms from Warframe. Never played it? No problem: the tables below explain in one line what each term means in this mod. Click “More” for the full page."
+          "text": "Many terms in this book come from Warframe, and you do not need to have played it. The tables below explain in one line what each term means here; click “More” for the full page."
         },
         {
           "type": "h",
@@ -131,7 +131,7 @@
           "type": "table",
           "header": [
             "Term",
-            "What it is in this mod",
+            "What it means here",
             "See"
           ],
           "widths": [
@@ -142,12 +142,12 @@
           "rows": [
             [
               "{lang:entity.kuvalich.kuva_master}",
-              "The mod's boss, the <t>Lich</t> for short. Kill it with the right answer set for a big reward",
+              "The boss, called the <t>Lich</t> for short; kill it with the right answer set for a big reward",
               "[[enemies/kuva_master|More]]"
             ],
             [
               "{lang:entity.kuvalich.kuva_slave}",
-              "A common Kuva mob, the <t>Thrall</t> for short. Kill it for decryption progress",
+              "A common Kuva mob, called the <t>Thrall</t> for short; kill it for decryption progress",
               "[[enemies/kuva_slave|More]]"
             ],
             [
@@ -157,7 +157,7 @@
             ],
             [
               "Requiem cards",
-              "8 kinds of cards. Three of them in a fixed order are the answer you need to find",
+              "8 kinds of cards; three of them in a fixed order make the answer you need to find",
               "[[requiem/requiem_cards|More]]"
             ],
             [
@@ -172,7 +172,7 @@
             ],
             [
               "Decryption success / failure",
-              "When you kill a Lich with three cards set, the answer is checked: all in the right order is a success, anything else a failure",
+              "When you kill a Lich with three cards set, the answer is checked; all three in the right order is a success, anything else a failure",
               "[[requiem/requiem_gate|More]]"
             ],
             [
@@ -190,7 +190,7 @@
           "type": "table",
           "header": [
             "Term",
-            "What it is in this mod",
+            "What it means here",
             "See"
           ],
           "widths": [
@@ -216,7 +216,7 @@
             ],
             [
               "Stats",
-              "One bonus on a mod, e.g. “+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}”",
+              "One bonus on a mod, such as “+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}”",
               "[[reference|More]]"
             ],
             [
@@ -263,7 +263,7 @@
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
               "cells": [
                 "{item:kuvalich:endo}",
-                "The material for levelling up mods",
+                "The material for leveling up mods",
                 "[[modules/module_level|More]]"
               ]
             },
@@ -274,7 +274,7 @@
             ],
             [
               "Warframe",
-              "That's you, the player. Warframe mods are installed on you and always active",
+              "You yourself; Warframe mods are installed on you and always active",
               "[[warframe/warframe_module|More]]"
             ],
             {
@@ -295,7 +295,7 @@
           "type": "table",
           "header": [
             "Term",
-            "What it is in this mod",
+            "What it means here",
             "See"
           ],
           "widths": [
@@ -339,7 +339,7 @@
           "type": "table",
           "header": [
             "Term",
-            "What it is in this mod",
+            "What it means here",
             "See"
           ],
           "widths": [
@@ -394,7 +394,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "“Lich” originally means an undead sorcerer who returns from death. The Kuva Lich comes back from death too: you execute a Kuva Larvling, and it rises again as a nemesis all your own."
+          "text": "The word “Lich” first meant an undead sorcerer who returns from death. Kuva Liches in the Origin System return the same way: execute a Kuva Larvling, Operator, and it rises again as a nemesis that belongs to you alone. Ordis has never cared for things that refuse to stay executed."
         }
       ]
     },
@@ -406,7 +406,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: get a pickaxe with {lang:enchantment.kuvalich.requiem_destroyed} and mine your first {item:kuvalich:requiem_ore}. Everything in this mod starts with this ore."
+          "text": "<em>Goal</em>: get a pickaxe with {lang:enchantment.kuvalich.requiem_destroyed} and mine your first {item:kuvalich:requiem_ore}. Everything this hunt needs starts with that ore, Tenno."
         },
         {
           "type": "h",
@@ -415,13 +415,13 @@
         {
           "type": "steps",
           "items": [
-            "<em>Get the enchantment</em>: {lang:enchantment.kuvalich.requiem_destroyed} is Very Rare and only shows up near the top of the enchanting table. Librarian villagers may also sell the book; apply it at an anvil.",
-            "<em>Pick a pickaxe</em>: diamond or netherite mines fastest. <w>No Silk Touch</w> - with it you get nothing. Fortune does not matter.",
+            "<em>Get the enchantment</em>: {lang:enchantment.kuvalich.requiem_destroyed} is Very Rare and only shows up near the top of the enchanting table. Librarian villagers may sell the book as well; apply it to your pickaxe at an anvil.",
+            "<em>Pick a pickaxe</em>: diamond or netherite mines fastest, and Fortune makes no difference. <w>Don't use Silk Touch</w>; with it the ore drops nothing.",
             {
               "if": "cfg:ore_gen.requiemOreVeinCount",
-              "text": "<em>Find the ore</em>: {item:kuvalich:requiem_ore} sits in stone and deepslate between Y <t>{cfg:ore_gen.requiemOreMinHeight}</t> and <t>{cfg:ore_gen.requiemOreMaxHeight}</t>, most common in the middle. None in the Nether or the End."
+              "text": "<em>Find the ore</em>: search between Y <t>{cfg:ore_gen.requiemOreMinHeight}</t> and <t>{cfg:ore_gen.requiemOreMaxHeight}</t>. {item:kuvalich:requiem_ore} sits in stone and deepslate, thickest in the middle of that band, and never in the Nether or the End."
             },
-            "<em>Dig</em>: with the enchantment each block takes about <t>0.5</t> s. Each one has a <t>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</t> chance to pay out, dropping everything in the table below at once."
+            "<em>Dig</em>: with the enchantment, a block breaks in about <t>0.5</t> s. Each block has a <t>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</t> chance to pay out, and a payout drops everything in the table below at once."
           ]
         },
         {
@@ -483,7 +483,7 @@
             "cfg:ore_gen.experienceOreVeinCount",
             "cfg:kuva_lich.enableModuleLevelSystem"
           ],
-          "text": "Mine any {item:kuvalich:experience_ore} you pass too: a stone pickaxe is enough. It drops experience and has a 50% chance of {item:kuvalich:endo} (used to level mods in Ch. 5)."
+          "text": "Mine any {item:kuvalich:experience_ore} you pass as well; a stone pickaxe is enough. It drops experience and has a 50% chance of {item:kuvalich:endo}, which levels up mods in Ch. 5."
         },
         {
           "type": "p",
@@ -491,13 +491,13 @@
             "cfg:ore_gen.experienceOreVeinCount",
             "!cfg:kuva_lich.enableModuleLevelSystem"
           ],
-          "text": "Mine any {item:kuvalich:experience_ore} you pass too: a stone pickaxe is enough, and it drops experience."
+          "text": "Mine any {item:kuvalich:experience_ore} you pass as well; a stone pickaxe is enough, and it drops experience."
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "Two pitfalls",
-          "text": "① You can mine without the enchantment, but it is painfully slow (about <t>2.5</t> minutes per block with diamond), the payout chance is only <t>{cfg:kuva_lich.baseCardDropChance|pctv}</t>, and Fortune makes it <w>lower</w>. ② The ore itself drops no block; cards and materials all come from the payout roll. XP ignores the roll: break it with a diamond pickaxe or better for <t>50-100</t> XP, multiplied by <g>{cfg:kuva_lich.expMultiplier|x}</g> with Requiem Destroyed."
+          "text": "① Without the enchantment the ore still breaks, but slowly: about <t>2.5</t> minutes per block with diamond, a payout chance of only <t>{cfg:kuva_lich.baseCardDropChance|pctv}</t>, and Fortune pushes it <w>lower</w>. ② The ore never drops itself as a block. Cards and materials come only from the payout roll; XP is separate, <t>50-100</t> for breaking it with a diamond pickaxe or better, times <g>{cfg:kuva_lich.expMultiplier|x}</g> with Requiem Destroyed."
         },
         {
           "type": "tip",
@@ -515,11 +515,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: kill {lang:entity.kuvalich.kuva_slave}s for <t>decryption progress</t> and reveal answer cards. Along the way, collect {item:kuvalich:requiem_gem}s and build a {item:kuvalich:requiem_gate}."
+          "text": "<em>Goal</em>: kill {lang:entity.kuvalich.kuva_slave}s for <t>decryption progress</t> and reveal answer cards, collecting {item:kuvalich:requiem_gem}s on the way to build a {item:kuvalich:requiem_gate}. Start with the Thralls, and the clues to your answer will surface one card at a time."
         },
         {
           "type": "p",
-          "text": "Every player has a puzzle of their own: the answer is 3 Requiem cards in a fixed order. The more progress you build, the more answer cards you see."
+          "text": "Everyone has a puzzle of their own, and its answer is 3 Requiem cards in a fixed order. The more progress you build, the more answer cards you see."
         },
         {
           "type": "entity",
@@ -535,12 +535,12 @@
           "items": [
             {
               "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
-              "text": "<em>Find Thralls</em>: they spawn in the dark in the Overworld like zombies (not on mushroom islands). They are big, so low caves rarely have them."
+              "text": "<em>Find Thralls</em>: they spawn in dark places in the Overworld like zombies, except on mushroom islands. They are big, so low caves rarely have them."
             },
-            "<em>Kill them yourself</em>: each one gives <t>{cfg:kuva_lich.minDecryptionProgress}</t>-<t>{cfg:kuva_lich.maxDecryptionProgress}</t> decryption progress. <w>You must land the final blow</w> - melee or arrows both work.",
-            "<em>Watch progress</em>: every time you gain progress, a bar pops up at the top of the screen with “Clue N/3” and your current points.",
-            "<em>Build a Requiem Gate</em>: {item:kuvalich:requiem_gem} ×5 + Obsidian ×4 (recipe below). Right-click it to see your progress and revealed cards too.",
-            "<em>Fill three stages</em>: reach <t>{cfg:kuva_lich.firstStage}</t> / <t>{cfg:kuva_lich.secondStage}</t> / <t>{cfg:kuva_lich.thirdStage}</t> points in turn; each stage reveals one answer card."
+            "<em>Kill them yourself</em>: each one gives <t>{cfg:kuva_lich.minDecryptionProgress}</t>-<t>{cfg:kuva_lich.maxDecryptionProgress}</t> decryption progress. <w>The final blow must be yours</w>; melee and arrows both count.",
+            "<em>Watch progress</em>: each time you gain progress, a bar pops up at the top of the screen showing “Clue N/3” and your current points.",
+            "<em>Build a Requiem Gate</em>: craft it from {item:kuvalich:requiem_gem} ×5 and Obsidian ×4, recipe below. Right-click it to check your progress and revealed cards as well.",
+            "<em>Fill three stages</em>: reach <t>{cfg:kuva_lich.firstStage}</t>, <t>{cfg:kuva_lich.secondStage}</t> and <t>{cfg:kuva_lich.thirdStage}</t> points in turn; each stage reveals one answer card."
           ]
         },
         {
@@ -554,22 +554,22 @@
         {
           "type": "list",
           "items": [
-            "<em>Answer cards</em>: shown in the clue slots on the Gate's bottom row. <w>Their positions are random and do not show the order</w>.",
-            "<em>{item:kuvalich:requiem_gem}</em>: only Thralls drop it, at <t>{cfg:kuva_lich.slaveRequiemGemBaseChance|pctv}</t> plus <t>{cfg:kuva_lich.slaveRequiemGemLootingBonus|pctv}</t> per level of <t>Looting</t> on your main-hand weapon. You will need a lot for blocks later.",
+            "<em>Answer cards</em>: they appear in the clue slots on the Gate's bottom row. <w>Which slot a card lands in is random and says nothing about the order</w>.",
+            "<em>{item:kuvalich:requiem_gem}</em>: only Thralls drop it, at <t>{cfg:kuva_lich.slaveRequiemGemBaseChance|pctv}</t> plus <t>{cfg:kuva_lich.slaveRequiemGemLootingBonus|pctv}</t> per level of <t>Looting</t> on your main-hand weapon. The blocks later on take a lot of them.",
             "<em>Other drops</em>: a chance of {item:kuvalich:kuva}, {item:kuvalich:riven_sliver} and mods."
           ]
         },
         {
           "type": "tip",
           "style": "good",
-          "title": "You can try once the first card shows",
-          "text": "The full answer is fixed the moment the first answer card is revealed. From then on you can try at any time (next chapter); more revealed cards just make it easier to guess."
+          "title": "One revealed card is enough to try",
+          "text": "The full answer is fixed the moment the first answer card is revealed. From then on you can try at any time, as the next chapter shows; more revealed cards only make the guess easier."
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "Two pitfalls",
-          "text": "① A Thrall finished off by a pet, lava, burning, or elemental damage such as Toxin, Gas, Electricity or Blast gives <b>no progress and no drops</b>. ② Requiem Gems only use Looting on your main hand - Fortune does nothing, and a bow kill counts as Looting 0."
+          "text": "① A Thrall finished off by a pet, lava, burning, or elemental damage such as Toxin, Gas, Electricity or Blast gives <b>no progress and no drops</b>. ② Requiem Gems only use Looting on your main hand; Fortune does nothing, and a bow kill counts as Looting 0."
         },
         {
           "type": "tip",
@@ -578,14 +578,14 @@
             "cfg:kuva_lich.maxConfiscatedItems>0"
           ],
           "style": "warn",
-          "title": "After the first card, careful what you pick up",
-          "text": "From then on, every stack you pick up off the ground has a <t>{cfg:kuva_lich.confiscationChance|pctv}</t> chance to be confiscated whole by the Lich, returned only after a successful decryption. See [[requiem/confiscation]]."
+          "title": "After the first card, watch what you pick up",
+          "text": "From then on, every stack you pick up off the ground has a <t>{cfg:kuva_lich.confiscationChance|pctv}</t> chance to be <b>confiscated whole</b> by the Lich, and you only get it back after a successful decryption. See [[requiem/confiscation]]."
         },
         {
           "type": "tip",
           "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
           "style": "info",
-          "text": "{lang:entity.kuvalich.kuva_slave}s do not appear in the wild. Decryption progress comes from killing a {lang:entity.kuvalich.kuva_master} instead, each giving <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's progress."
+          "text": "{lang:entity.kuvalich.kuva_slave}s do not appear in the wild, so decryption progress comes from killing a {lang:entity.kuvalich.kuva_master} instead, each worth <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's progress."
         },
         {
           "type": "tip",
@@ -603,7 +603,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: put three Requiem cards into the {item:kuvalich:requiem_gate} in the order you guess, then kill a {lang:entity.kuvalich.kuva_master} yourself. The right order means <g>decryption succeeds</g>."
+          "text": "<em>Goal</em>: put three Requiem cards into the {item:kuvalich:requiem_gate} in the order you guess, then kill a {lang:entity.kuvalich.kuva_master} yourself. The right order means <g>decryption succeeds</g>. This time you face the Lich itself, Tenno."
         },
         {
           "type": "entity",
@@ -617,21 +617,21 @@
         {
           "type": "steps",
           "items": [
-            "<em>Get the three cards</em>: you must actually own the three kinds in the answer. They drop at random from mining, or build a {item:kuvalich:requiem_recast} and turn any 3 cards into 1 random card (building it uses up a Requiem Gate, so make another).",
-            "<em>Set the cards</em>: open the Gate and put the cards in the top three slots (left to right = positions 1, 2, 3). Closing the screen saves them.",
+            "<em>Get the three cards</em>: you must actually own the three kinds in the answer. They drop at random from mining, or you can build a {item:kuvalich:requiem_recast} and turn any 3 cards into 1 random card. Building it uses up a Requiem Gate, so make another afterwards.",
+            "<em>Set the cards</em>: open the Gate and put the cards in the top three slots, which are positions 1, 2 and 3 from left to right. Closing the screen saves them.",
             {
               "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.requiemUltimatumDropChance>0"],
-              "text": "<em>Find a Lich</em>: it spawns in the dark in the Overworld like Thralls, but taller. Later, a {item:kuvalich:requiem_ultimatum} lets you summon one directly."
+              "text": "<em>Find a Lich</em>: it spawns in dark places in the Overworld like Thralls, but taller. Later, a {item:kuvalich:requiem_ultimatum} lets you summon one directly."
             },
             {
               "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "!cfg:kuva_lich.requiemUltimatumDropChance>0"],
-              "text": "<em>Find a Lich</em>: it spawns in the dark in the Overworld like Thralls, but taller."
+              "text": "<em>Find a Lich</em>: it spawns in dark places in the Overworld like Thralls, but taller."
             },
             {
               "if": ["!cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.requiemUltimatumDropChance>0"],
               "text": "<em>Summon a Lich</em>: it does not appear in the wild; summon one with a {item:kuvalich:requiem_ultimatum}."
             },
-            "<em>Kill it yourself</em>: you must land the final blow. The answer is checked the moment it dies."
+            "<em>Kill it yourself</em>: the final blow must be yours. The answer is checked the moment it dies."
           ]
         },
         {
@@ -651,15 +651,15 @@
           "rows": [
             [
               "Fewer than 3 cards",
-              "Not an attempt - you just get decryption progress"
+              "Not an attempt; you only get decryption progress"
             ],
             [
               "3 cards, right order",
-              "<g>Decryption succeeds</g>: rewards drop (next chapter) and the round resets"
+              "<g>Decryption succeeds</g>; the rewards described in the next chapter drop, and the round resets"
             ],
             [
               "3 cards, any mistake",
-              "<b>Decryption fails</b>: Lich level +1; cards lose no durability, and you still get progress"
+              "<b>Decryption fails</b>; Lich level +1, cards lose no durability, and you still get progress"
             ]
           ]
         },
@@ -688,12 +688,12 @@
         },
         {
           "type": "p",
-          "text": "On a failure the chat tells you if position 1 was right, and adds a second line if positions 1 and 2 were both right. <w>No message = position 1 is wrong</w>."
+          "text": "On a failure, the chat says so if position 1 was right, and adds a second line if positions 1 and 2 were both right. <w>No message means position 1 is wrong</w>."
         },
         {
           "type": "tip",
           "style": "good",
-          "text": "Once all three cards are revealed: try any order first. If position 1 is right, swap the last two; if not, move another card into position 1. This way you <em>fail at most 3 times, and the 4th try always wins</em>."
+          "text": "Once all three cards are revealed, try any order first. If position 1 is right, swap the last two; if not, move another card into position 1. This way you <em>fail at most 3 times, and the 4th try always wins</em>."
         },
         {
           "type": "h",
@@ -704,11 +704,11 @@
           "items": [
             "<em>Bring two or three kinds of damage</em>: rotate melee, bow and spells. Keep hitting with one kind and the Lich resists it more and more.",
             "<em>Bows first</em>: arrows deal ×1.25 damage to Kuva enemies.",
-            "<em>Leave pets behind</em>: every attack the Lich makes also hits other creatures within 3 blocks - pets and teammates included.",
-            "<em>Pick a safe arena</em>: rewards drop where the Lich dies, so don't finish it next to lava or the void.",
+            "<em>Leave pets behind</em>: every attack the Lich makes also hits other creatures within 3 blocks, pets and teammates included.",
+            "<em>Pick a safe arena</em>: <b>don't finish it near lava or the void</b>; rewards drop where the Lich dies.",
             {
               "if": "cfg:kuva_lich.battleBoost>0",
-              "text": "<em>Finish fast</em>: in combat its damage grows by <t>{cfg:kuva_lich.battleBoost|pct}</t> every second - the longer the fight, the harder it hits."
+              "text": "<em>Finish fast</em>: in combat its damage grows by <t>{cfg:kuva_lich.battleBoost|pct}</t> every second, so the longer the fight, the harder it hits. If you can't hold out, break off the fight."
             }
           ]
         },
@@ -716,7 +716,7 @@
           "type": "tip",
           "style": "warn",
           "title": "Two pitfalls",
-          "text": "① Filling all three slots before a single answer card is revealed <b>always fails</b>. ② Unsure? Take one card out first: with an empty slot, a Lich kill only adds progress and never counts as a failure."
+          "text": "① Filling all three slots before a single answer card is revealed <b>always fails</b>. ② If you're unsure, take one card out first; with an empty slot, a Lich kill only adds progress and never counts as a failure."
         },
         {
           "type": "tip",
@@ -734,7 +734,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: collect your decryption rewards, get to know your first Kuva weapon, then use the {item:kuvalich:lich_reliquary} to build a {item:kuvalich:requiem_evolve}."
+          "text": "<em>Goal</em>: collect your decryption rewards, get to know your first Kuva weapon, then use the {item:kuvalich:lich_reliquary} to build a {item:kuvalich:requiem_evolve}. A round yields only one Lich Reliquary, Tenno, so think before you spend it."
         },
         {
           "type": "h",
@@ -769,7 +769,7 @@
             ],
             [
               "High-tier mod",
-              "1: <t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> Prime, otherwise Riven"
+              "1; <t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> chance of Prime, otherwise Riven"
             ],
             {
               "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
@@ -796,7 +796,7 @@
         },
         {
           "type": "p",
-          "text": "Apart from the cards that return to your inventory, rewards <w>drop where the Lich died</w> - pick them up quickly."
+          "text": "Apart from the cards that return to your inventory, rewards <w>drop where the Lich died</w>, so pick them up quickly."
         },
         {
           "type": "h",
@@ -804,7 +804,7 @@
         },
         {
           "type": "p",
-          "text": "Dropped mods are <t>unrevealed</t> and show no stats. Right-click one in your <em>main hand</em>: it turns into a specific mod that drops at your feet. Just pick it up."
+          "text": "Dropped mods are <t>unrevealed</t> and show no stats. Right-click one in your <em>main hand</em> and it turns into a specific mod at your feet; pick it up."
         },
         {
           "type": "h",
@@ -834,8 +834,8 @@
         {
           "type": "tip",
           "style": "info",
-          "title": "Levels keep rising - keep old ones",
-          "text": "A new character's weapon level range is <t>{cfg:kuva_lich.baseMinimumLevel}-{cfg:kuva_lich.baseMaximumLevel}</t>, so your first Kuva weapon rolls somewhere in there. Each later success raises the range until it hits its cap; keep old weapons as fusion material (Ch. 9)."
+          "title": "Levels keep rising, so keep old ones",
+          "text": "A new character's weapon level range is <t>{cfg:kuva_lich.baseMinimumLevel}-{cfg:kuva_lich.baseMaximumLevel}</t>, and your first Kuva weapon rolls somewhere in there. Each later success raises the range until it hits its cap. Keep old weapons as fusion material (Ch. 9)."
         },
         {
           "type": "h",
@@ -843,7 +843,7 @@
         },
         {
           "type": "p",
-          "text": "The five utility blocks are built one from another: {item:kuvalich:requiem_gate}, then {item:kuvalich:requiem_recast}, then {item:kuvalich:requiem_evolve}, and both armories are built from a Requiem Evolve. Except for the first, each one <w>consumes the block it is built from</w>. The last three also need a {item:kuvalich:lich_reliquary}, which is why you can only build them now."
+          "text": "The five utility blocks are built one from another. {item:kuvalich:requiem_gate} leads to {item:kuvalich:requiem_recast}, then to {item:kuvalich:requiem_evolve}, and both Arsenals are built from a Requiem Forge. Except for the first, each one <w>consumes the block it is built from</w>. The last three also need a {item:kuvalich:lich_reliquary}, which is why you can only build them now."
         },
         {
           "type": "table",
@@ -893,13 +893,13 @@
           "type": "tip",
           "style": "good",
           "title": "Spend your first Reliquary on the Forge",
-          "text": "The full set of five blocks needs <t>5</t> Lich Reliquaries, and each success drops only 1. Consecrating and most upgrades happen in the Requiem Forge, so build it first."
+          "text": "The full set of five blocks needs <t>5</t> Lich Reliquaries, and each success drops only 1. Build the Requiem Forge first; consecrating and most upgrades happen there."
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "Two pitfalls",
-          "text": "① Each tier eats the one before it: building an Arsenal uses up your Requiem Forge, so to keep both you need to build another Forge. ② Break utility blocks with a <em>diamond pickaxe or better</em>, or they simply vanish."
+          "text": "① Each tier eats the one before it. Building an Arsenal uses up your Requiem Forge, so to keep both, build another Forge. ② Break utility blocks with a <em>diamond pickaxe or better</em>, or they vanish outright."
         },
         {
           "type": "tip",
@@ -917,11 +917,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: install mods on your Kuva weapon, and learn to level them up and deal with spares."
+          "text": "<em>Goal</em>: install mods on your Kuva weapon, and learn to level them up and deal with spares. Eight mod slots, and what goes in them is your call."
         },
         {
           "type": "p",
-          "text": "Mods are swappable upgrade cards, each with a few <t>stats</t>, such as “+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}”. Installing costs nothing, and you can take them out and swap them any time."
+          "text": "Mods are swappable upgrade cards, each with a few <t>stats</t> such as “+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}”. Installing costs nothing, and you can take them out and swap them any time."
         },
         {
           "type": "h",
@@ -930,10 +930,10 @@
         {
           "type": "steps",
           "items": [
-            "Reveal unrevealed mods first by right-clicking them in your <em>main hand</em>.",
+            "Right-click unrevealed mods in your <em>main hand</em> to reveal them first.",
             "Open the {item:kuvalich:requiem_weapon_table} and put your Kuva weapon in the weapon slot at the bottom; the 8 mod slots above become usable.",
-            "Put a mod in an empty slot to install it, take it out to remove it - <g>nothing is consumed</g>. Shift + left-click in your inventory places it automatically.",
-            "Take the weapon out: the mods are now stored on it and work wherever you take it."
+            "Put a mod in an empty slot to install it and take it out to remove it; <g>nothing is consumed</g>. Shift + left-click in your inventory places it automatically.",
+            "Take the weapon out and the mods stay stored on it, working wherever you take it."
           ]
         },
         {
@@ -943,7 +943,7 @@
         {
           "type": "list",
           "items": [
-            "Only one of each mod: the normal and Prime versions count as the same mod.",
+            "Only one of each mod; the normal and Prime versions count as the same mod.",
             "Different mods that boost the same stat may also conflict. When you pick up a mod, conflicting slots flash red.",
             "At most 1 Riven mod per item.",
             "Weapon mods and Warframe mods don't fit in each other's Arsenal."
@@ -982,12 +982,12 @@
         {
           "type": "h",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "Levelling Up Mods"
+          "text": "Leveling Up Mods"
         },
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "Mods have levels: effect = max-level value × level ÷ <t>{cfg:kuva_lich.moduleMaxLevel}</t>. A freshly revealed mod is usually level 1, only 1/{cfg:kuva_lich.moduleMaxLevel} of its full value."
+          "text": "Mods have levels, and effect = max-level value × level ÷ <t>{cfg:kuva_lich.moduleMaxLevel}</t>. A freshly revealed mod is usually level 1, only 1/{cfg:kuva_lich.moduleMaxLevel} of its full value."
         },
         {
           "type": "steps",
@@ -995,7 +995,7 @@
           "items": [
             "Open the {item:kuvalich:requiem_evolve}, put a mod in the left slot and {item:kuvalich:endo} in the middle slot.",
             "The mod appears one level higher in the right slot; <g>the Endo is only spent when you take it</g>.",
-            "One level at a time - put the new mod back in the left slot to keep going."
+            "One level at a time; put the new mod back in the left slot to keep going."
           ]
         },
         {
@@ -1025,7 +1025,7 @@
         {
           "type": "p",
           "if": "!cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "Mods have no levels: every mod works at full strength as soon as you get it."
+          "text": "Mods have no levels; every mod works at full strength as soon as you get it."
         },
         {
           "type": "h",
@@ -1048,19 +1048,19 @@
         {
           "type": "tip",
           "style": "info",
-          "text": "Press <t>Tab</t> in either Arsenal to open the mod Codex, which lists every mod at max level (Rivens excluded)."
+          "text": "Press <t>Tab</t> in either Arsenal to open the mod Codex, which lists every mod except Rivens at max level."
         },
         {
           "type": "tip",
           "style": "warn",
-          "text": "With an unconsecrated item in your main hand, mods do nothing at all. Kuva weapons come consecrated; for other weapons, see the next chapter."
+          "text": "Mods only work while a consecrated item is in your main hand. Kuva weapons come consecrated; for other weapons, see the next chapter."
         },
         {
           "type": "tip",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
           "style": "bad",
           "title": "Don't fill up on level 1 mods",
-          "text": "A level 1 mod gives only 1/{cfg:kuva_lich.moduleMaxLevel} of its full value. Rather than a pile of level 1 mods, spend Endo raising two or three key mods first."
+          "text": "A level 1 mod gives only 1/{cfg:kuva_lich.moduleMaxLevel} of its full value. Skip the pile of level 1 mods and spend Endo raising two or three key mods first."
         },
         {
           "type": "tip",
@@ -1078,7 +1078,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: <t>consecrate</t> a vanilla or modded weapon so it can take mods too, and reroll its panel with {item:kuvalich:forma} if you don't like it."
+          "text": "<em>Goal</em>: <t>consecrate</t> a vanilla or modded weapon so it can take mods too, and reroll its panel with {item:kuvalich:forma} if you don't like it. Keep the weapon you trust."
         },
         {
           "type": "h",
@@ -1087,14 +1087,14 @@
         {
           "type": "steps",
           "items": [
-            "Open the {item:kuvalich:requiem_evolve}. Put a <em>single</em> item in the left slot (sword, axe, bow, crossbow…) and a {item:kuvalich:riven_sliver} in the middle slot.",
+            "Open the {item:kuvalich:requiem_evolve}. Put a <em>single</em> sword, axe, bow, crossbow or similar item in the left slot and a {item:kuvalich:riven_sliver} in the middle slot.",
             "1 Sliver is spent at once and the consecrated item appears in the right slot, now with a random stat <t>panel</t>.",
-            "Take it to the {item:kuvalich:requiem_weapon_table} and install mods, just like a Kuva weapon."
+            "Take it to the {item:kuvalich:requiem_weapon_table} and install mods the same way as on a Kuva weapon."
           ]
         },
         {
           "type": "p",
-          "text": "The panel has four stats: {lang:kuvalich.attr.short.damage}, {lang:kuvalich.attr.short.criticalStrikeProbability}, {lang:kuvalich.attr.short.criticalStrikeMultiplier} and {lang:kuvalich.attr.short.triggerChance}. {lang:kuvalich.attr.short.damage} below 100% counts squared: 80% is really 64%."
+          "text": "The panel has four stats, {lang:kuvalich.attr.short.damage}, {lang:kuvalich.attr.short.criticalStrikeProbability}, {lang:kuvalich.attr.short.criticalStrikeMultiplier} and {lang:kuvalich.attr.short.triggerChance}. {lang:kuvalich.attr.short.damage} below 100% counts squared, so 80% is really 64%."
         },
         {
           "type": "table",
@@ -1161,9 +1161,9 @@
         {
           "type": "steps",
           "items": [
-            "Craft {item:kuvalich:forma}, 3 at a time (recipe below).",
+            "Craft {item:kuvalich:forma}, 3 at a time; recipe below.",
             "In the Requiem Forge, put a consecrated <em>non-Kuva</em> weapon in the left slot and a Forma in the middle slot.",
-            "1 is spent at once and the rerolled weapon appears in the right slot, with its installed mods untouched. Not happy? Reroll again."
+            "1 Forma is spent at once and the rerolled weapon appears in the right slot, its installed mods untouched. Reroll again if you don't like it."
           ]
         },
         {
@@ -1178,18 +1178,18 @@
           ],
           "style": "warn",
           "title": "Rerolling can lock the weapon",
-          "text": "Each reroll has a <t>{cfg:kuva_lich.formaLockChance|pctv}</t> chance to <b>lock the weapon for good</b>: normal Forma can no longer reroll it, and only {item:kuvalich:shadow_forma} (Creative inventory only) can undo that."
+          "text": "Each reroll has a <t>{cfg:kuva_lich.formaLockChance|pctv}</t> chance to <b>lock the weapon for good</b>. Normal Forma can no longer reroll it, and only {item:kuvalich:shadow_forma} from the Creative inventory can undo that."
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "Two pitfalls",
-          "text": "① A Kuva weapon's panel is fixed - Forma and Riven Slivers do nothing to it. ② An item can't be consecrated twice; to change its panel, use Forma."
+          "text": "① A Kuva weapon's panel is fixed; Forma and Riven Slivers do nothing to it. ② An item can't be consecrated twice, so to change its panel, use Forma."
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "In the original game, Forma changes the polarity of an equipment mod slot, at the cost of resetting that equipment's rank to 0. This mod borrows the name for a panel reroll."
+          "text": "Operator, according to the records, Forma changes the polarity of a mod slot on a piece of equipment, at the cost of resetting that equipment's rank to 0 and starting it over. Here the name was borrowed for a panel reroll."
         },
         {
           "type": "tip",
@@ -1215,11 +1215,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: build a {item:kuvalich:requiem_warframe_table} and install Warframe mods on <em>yourself</em>. They are always active - no need to hold anything or wear armour."
+          "text": "<em>Goal</em>: build a {item:kuvalich:requiem_warframe_table} and install Warframe mods on <em>yourself</em>. They are always active; you don't need to hold anything or wear armor. These mods live on you, and death can't take them."
         },
         {
           "type": "p",
-          "text": "Here, the “Warframe” simply means you, the player. Warframe mods and weapon mods don't fit in each other's Arsenal."
+          "text": "Here the “Warframe” is you yourself. Warframe mods and weapon mods don't fit in each other's Arsenal."
         },
         {
           "type": "h",
@@ -1228,15 +1228,15 @@
         {
           "type": "steps",
           "items": [
-            "Build the Warframe Arsenal: {item:kuvalich:requiem_evolve} + {item:kuvalich:riven_sliver} ×4 + {item:kuvalich:lich_reliquary} + Obsidian ×3. <w>It uses up a Requiem Forge</w>.",
-            "Right-click it: the 8 slots in the top two rows are your Warframe mod slots.",
+            "Build the Warframe Arsenal from {item:kuvalich:requiem_evolve}, {item:kuvalich:riven_sliver} ×4, {item:kuvalich:lich_reliquary} and Obsidian ×3. <w>It uses up a Requiem Forge</w>.",
+            "Right-click it; the 8 slots in the top two rows are your Warframe mod slots.",
             "A mod works the moment you put it in and stops the moment you take it out."
           ]
         },
         {
           "type": "p",
           "if": "cfg:kuva_lich.moduleWeaponRatio<100",
-          "text": "Warframe mods come from the same places as weapon mods: of the mods dropped by ore, Thralls and Liches, <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> are Warframe mods."
+          "text": "Warframe mods come from the same places as weapon mods; of the mods dropped by ore, Thralls and Liches, <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> are Warframe mods."
         },
         {
           "type": "h",
@@ -1245,11 +1245,11 @@
         {
           "type": "list",
           "items": [
-            "Permanent bonuses such as health, armour, movement speed, resistances and mining speed. Identical stats across the eight mods mostly just add up.",
+            "Permanent bonuses such as health, armor, movement speed, resistances and mining speed. Identical stats across the eight mods mostly add up directly.",
             "The mods are stored on you: any Warframe Arsenal shows your own set, and you don't lose them on death.",
             {
               "if": "cfg:kuva_lich.shieldCapMultiplier",
-              "text": "<em>Shields</em>: stacking {lang:kuvaweapon.warframe_attribute_type.shield} gives you yellow hearts that take hits first. After you take or deal damage, if they aren't empty, they start refilling in about 10 seconds."
+              "text": "<em>Shields</em>: stacking {lang:kuvaweapon.warframe_attribute_type.shield} gives you yellow hearts that take hits first. After you take or deal damage, they start refilling in about 10 seconds, as long as they aren't empty."
             }
           ]
         },
@@ -1257,12 +1257,12 @@
           "type": "tip",
           "style": "warn",
           "title": "Two pitfalls",
-          "text": "① {lang:kuvaweapon.warframe_attribute_type.armor} multiplies the armour you <em>already have</em> - with no armour on, any percentage is still 0. ② {lang:kuvaweapon.warframe_attribute_type.health}, {lang:kuvaweapon.warframe_attribute_type.armor}, {lang:kuvaweapon.warframe_attribute_type.sprintSpeed} and a few others round down in 10% steps: +25% really gives +20%."
+          "text": "① {lang:kuvaweapon.warframe_attribute_type.armor} multiplies the armor you <em>already have</em>, so with no armor on, any percentage still gives 0. ② {lang:kuvaweapon.warframe_attribute_type.health}, {lang:kuvaweapon.warframe_attribute_type.armor}, {lang:kuvaweapon.warframe_attribute_type.sprintSpeed} and a few others round down in 10% steps, so +25% really gives +20%."
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "In the original game, a Warframe is a biomechanical combat suit the player controls, and Warframes and weapons each have their own mod slots. This mod makes the “Warframe” you, the player."
+          "text": "The Lotus keeps it brief, so Ordis will fill in. In the Origin System, a Warframe is a biomechanical combat suit controlled by a Tenno, and Warframes and weapons each have their own mod slots. Here, the “Warframe” is you yourself, Operator."
         },
         {
           "type": "tip",
@@ -1280,7 +1280,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: understand the most common kinds of mod stats - crits, elements, kill stacks and bane - so you know what to stack on your weapon."
+          "text": "<em>Goal</em>: understand the most common kinds of mod stats, which are crits, elements, kill stacks and bane, so you know what to stack on your weapon. Learn how a stat counts before you pile it on."
         },
         {
           "type": "p",
@@ -1293,9 +1293,9 @@
         {
           "type": "list",
           "items": [
-            "Crit chance above 100% isn't wasted: it <em>upgrades</em> the crit tier, <c:FFFF55>yellow</c> ×M → <c:FFAA00>orange</c> ×2M → <c:FF5555>red</c> ×3M (M is the crit multiplier).",
+            "Crit chance above 100% isn't wasted. It <em>upgrades</em> the crit tier from <c:FFFF55>yellow</c> ×M to <c:FFAA00>orange</c> ×2M to <c:FF5555>red</c> ×3M, where M is the crit multiplier.",
             "Beyond 300%, more chance gives no extra benefit.",
-            "Fully <em>charge</em> your melee swings: an uncharged swing scales crit chance down with the charge, and damage drops even harder - a half-charged swing deals only <w>about a fifth</w> of a full-charge hit.",
+            "Fully <em>charge</em> your melee swings. An uncharged swing scales crit chance down with the charge, and damage drops even harder; a half-charged swing deals only <w>about a fifth</w> of a full-charge hit.",
             "Crits only multiply the physical part; elemental damage never crits."
           ]
         },
@@ -1307,7 +1307,7 @@
           "type": "list",
           "items": [
             "Element stats add elemental damage to every hit; when they <t>trigger</t>, they also apply that element's status effect to the target.",
-            "Two basic elements combine into a compound one, e.g. {lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.poison} = {lang:kuvaweapon.type.gas}. Which ones pair up depends on their order in the mod slots.",
+            "Two basic elements combine into a compound one, such as {lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.poison} = {lang:kuvaweapon.type.gas}. Which ones pair up depends on their order in the mod slots.",
             "Kuva weapons have a built-in element; ordinary weapons rely on element mods."
           ]
         },
@@ -1317,7 +1317,7 @@
         },
         {
           "type": "p",
-          "text": "Stats marked “Gained on kill” add 1 stack per kill. Without new kills they drop one stack at a time: every <t>{cfg:kuva_lich.weaponStackDecayTicks|sec}</t> for weapons and every <t>{cfg:kuva_lich.warframeStackDecayTicks|sec}</t> for Warframe mods. Stacks from Warframe mods work with any weapon, consecrated or not."
+          "text": "Stats marked “Gained on kill” add 1 stack per kill. Without new kills they lose one stack at a time, every <t>{cfg:kuva_lich.weaponStackDecayTicks|sec}</t> for weapons and every <t>{cfg:kuva_lich.warframeStackDecayTicks|sec}</t> for Warframe mods. Stacks from Warframe mods work with any weapon, consecrated or not."
         },
         {
           "type": "h",
@@ -1325,14 +1325,14 @@
         },
         {
           "type": "p",
-          "text": "Bane stats (players often call them “discrimination”) make you hit one type of mob harder. Thralls and Liches are both <t>undead</t>, so stack {lang:item.module.bane_of_undead} against them."
+          "text": "Bane stats make you hit one type of mob harder, and are often called “discrimination”. Thralls and Liches are both <t>undead</t>, so stack {lang:item.module.bane_of_undead} against them."
         },
         {
           "type": "tip",
           "if": "cfg:kuva_lich.enableDamageNumbers",
           "style": "info",
           "title": "Damage numbers",
-          "text": "The numbers that pop up on a hit show the health actually lost: white is no crit, and <c:FFFF55>yellow</c> / <c:FFAA00>orange</c> / <c:FF5555>red</c> are the three crit tiers. See [[combat/damage_numbers]]."
+          "text": "The numbers that pop up on a hit show the health actually lost. White means no crit, and <c:FFFF55>yellow</c>, <c:FFAA00>orange</c> and <c:FF5555>red</c> are the three crit tiers. See [[combat/damage_numbers]]."
         },
         {
           "type": "tip",
@@ -1358,12 +1358,12 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.taczGunEnhanceEnable",
-          "text": "<em>Goal</em>: consecrate TACZ guns and install mods on them. With a spare {item:kuvalich:lich_reliquary}, you can also permanently upgrade a gun."
+          "text": "<em>Goal</em>: consecrate TACZ guns and install mods on them. With a spare {item:kuvalich:lich_reliquary}, you can also upgrade a gun permanently. Guns don't follow quite the same rules as blades."
         },
         {
           "type": "p",
           "if": "!cfg:kuva_lich.taczGunEnhanceEnable",
-          "text": "<em>Goal</em>: consecrate TACZ guns and install mods on them."
+          "text": "<em>Goal</em>: consecrate TACZ guns and install mods on them. Guns don't follow quite the same rules as blades."
         },
         {
           "type": "h",
@@ -1372,9 +1372,9 @@
         {
           "type": "steps",
           "items": [
-            "In the {item:kuvalich:requiem_evolve}, put a gun in the left slot (just one) and a {item:kuvalich:riven_sliver} in the middle slot to get a consecrated gun.",
+            "In the {item:kuvalich:requiem_evolve}, put a single gun in the left slot and a {item:kuvalich:riven_sliver} in the middle slot to get a consecrated gun.",
             "Put it in the {item:kuvalich:requiem_weapon_table} and install up to 8 mods.",
-            "Fire with the gun in your main hand - the mods apply straight away."
+            "Fire with the gun in your main hand; the mods apply straight away."
           ]
         },
         {
@@ -1385,7 +1385,7 @@
           "type": "list",
           "items": [
             "<g>Work</g>: ranged damage, ranged crits, elements, status, bane, kill stacks, plus a set of gun-only stats.",
-            "<b>Don't work when shooting</b>: melee stats - a bullet hit is not melee."
+            "<b>Don't work when shooting</b>: melee stats, since a bullet hit is not melee."
           ]
         },
         {
@@ -1397,8 +1397,8 @@
           "type": "list",
           "if": "cfg:kuva_lich.taczGunEnhanceEnable",
           "items": [
-            "Gun in the Forge's left slot, {item:kuvalich:lich_reliquary} in the middle: 1 is spent and the gun's base damage rises by <t>{cfg:kuva_lich.taczGunEnhancePercent|round:4|pct}</t> for good.",
-            "No consecration needed - any TACZ gun can be upgraded. Put the gun back in the left slot to upgrade again.",
+            "Put the gun in the Forge's left slot and a {item:kuvalich:lich_reliquary} in the middle; 1 is spent, and the gun's base damage rises by <t>{cfg:kuva_lich.taczGunEnhancePercent|round:4|pct}</t> for good.",
+            "No consecration needed; any TACZ gun can be upgraded. Put the gun back in the left slot to upgrade again.",
             {
               "if": "cfg:kuva_lich.taczGunEnhanceMaxCount>0",
               "text": "Each gun can be upgraded at most <t>{cfg:kuva_lich.taczGunEnhanceMaxCount}</t> times."
@@ -1408,7 +1408,7 @@
         {
           "type": "tip",
           "style": "warn",
-          "text": "An unconsecrated gun gets no mod effects at all, and mods on your offhand or armour can't reach it either."
+          "text": "An unconsecrated gun gets no mod effects at all, not even from mods on your offhand or armor."
         },
         {
           "type": "tip",
@@ -1434,7 +1434,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<em>Goal</em>: see what to chase after each round: higher-level Kuva weapons, weapon fusion, and Riven mods with good stats."
+          "text": "<em>Goal</em>: see what to chase after each round, such as higher-level Kuva weapons, weapon fusion and Riven mods with good stats. Win a round and the next puzzle is already set, Tenno."
         },
         {
           "type": "h",
@@ -1444,9 +1444,9 @@
           "type": "list",
           "items": [
             "A success resets your decryption progress, the answer and your Lich level; the next round's answer is rolled again.",
-            "Both ends of your weapon level range rise by the same random amount (<t>{cfg:kuva_lich.minimumLevelCapIncrease}</t>-<t>{cfg:kuva_lich.maximumLevelCapIncrease}</t> levels), so later Kuva weapons are stronger.",
-            "The range has caps: the minimum tops out at <t>{cfg:kuva_lich.minimumLevel}</t>, the maximum at <t>{cfg:kuva_lich.maximumLevel}</t>. Beyond that, only fusion helps.",
-            "Each Requiem card lasts 3 successes. Put old cards in the {item:kuvalich:requiem_recast}: 3 of them make 1 new card."
+            "Both ends of your weapon level range rise by the same random amount, <t>{cfg:kuva_lich.minimumLevelCapIncrease}</t>-<t>{cfg:kuva_lich.maximumLevelCapIncrease}</t> levels, so later Kuva weapons are stronger.",
+            "The range has caps, with the minimum topping out at <t>{cfg:kuva_lich.minimumLevel}</t> and the maximum at <t>{cfg:kuva_lich.maximumLevel}</t>; beyond that, only fusion helps.",
+            "Each Requiem card lasts 3 successes. Old cards go into the {item:kuvalich:requiem_recast}, 3 for 1 new card."
           ]
         },
         {
@@ -1456,8 +1456,8 @@
         {
           "type": "steps",
           "items": [
-            "In the {item:kuvalich:requiem_evolve}, put your main weapon in the left slot and another Kuva weapon in the middle (it can be a different kind).",
-            "Take the result from the right slot: the two become one."
+            "In the {item:kuvalich:requiem_evolve}, put your main weapon in the left slot and another Kuva weapon in the middle; the two can be different kinds.",
+            "Take the result from the right slot, and the two become one."
           ]
         },
         {
@@ -1469,7 +1469,7 @@
           "items": [
             "The result keeps the <em>left</em> weapon's type, panel and mods.",
             "<w>Its element becomes the middle weapon's</w>. To give your main weapon a new element, put a weapon with that element in the middle.",
-            "The middle weapon disappears along with its mods - take good mods off first."
+            "The middle weapon disappears along with its mods, so take good mods off first."
           ]
         },
         {
@@ -1480,14 +1480,14 @@
           "type": "steps",
           "items": [
             "Put a revealed Riven mod in the Forge's left slot and enough {item:kuvalich:kuva} in the middle. The card shows how many this cycle costs.",
-            "A card with new stats appears in the right slot at once - <w>this is when you pay for this cycle</w>. Every preview costs Kuva: change the amount in the middle slot afterwards and it previews again and charges again.",
-            "Want the new stats? Take it. Want the old ones? Take the original back - Kuva already paid is not refunded. So every reroll has a price."
+            "A card with new stats appears in the right slot at once, and <w>this is when you pay for this cycle</w>. Every preview costs Kuva, so changing the amount in the middle slot afterwards previews again and charges again.",
+            "Take it if you want the new stats, or take the original back to keep the old ones. Kuva already paid is not refunded, so every reroll has a price."
           ]
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "In the original game, Riven mods have fully random stats that you can reroll (“cycle”) again and again with Kuva. More disposition dots mean a less popular weapon and stronger Riven stats."
+          "text": "The ship's archives say Riven mods carry fully random stats, which can be rerolled, or “cycled”, with Kuva again and again. The more disposition dots a weapon has, the less popular it is, and the stronger its Riven stats."
         },
         {
           "type": "h",
@@ -1500,7 +1500,7 @@
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
               "text": "Level your key mods to the max (Ch. 5)."
             },
-            "Unique enchantments: {lang:enchantment.kuvalich.lethal} and {lang:enchantment.kuvalich.first_strike} (swords), {lang:enchantment.kuvalich.escort} and {lang:enchantment.kuvalich.death_resistance} (armour), {lang:enchantment.kuvalich.experience_collector} (tools).",
+            "Unique enchantments, {lang:enchantment.kuvalich.lethal} and {lang:enchantment.kuvalich.first_strike} for swords, {lang:enchantment.kuvalich.escort} and {lang:enchantment.kuvalich.death_resistance} for armor, {lang:enchantment.kuvalich.experience_collector} for tools.",
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
               "text": "The Warframe stat “{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}” gives more drops from mobs."
@@ -1509,7 +1509,7 @@
               "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier>0"],
               "text": "The Warframe stat “{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}” gives more drops from ores."
             },
-            "{item:kuvalich:machete}: kill an animal or monster with it in your main hand and each drop stack becomes 1-3 times as large."
+            "Kill an animal or monster with {item:kuvalich:machete} in your main hand and each drop stack becomes 1-3 times as large."
           ]
         },
         {
@@ -1529,7 +1529,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "The mod has only a handful of materials, but their uses are easy to mix up. The table lists each one as “where from → what for”; follow the links for details."
+          "text": "There are only a handful of materials, but their uses are easy to mix up. The table lists where each one comes from and what it is for; follow the links for details."
         },
         {
           "type": "items",
@@ -1562,7 +1562,7 @@
             [
               "{item:kuvalich:kuva}",
               "Requiem Ore (2-4 each time), Thralls, successful decryptions",
-              "Rerolling Riven mods; crafting the Weapon Arsenal; lost your Field Guide? A book + Kuva crafts a new one. [[modules/riven_module|More]]"
+              "Rerolling Riven mods and crafting the Weapon Arsenal. If you lose your Field Guide, a book + Kuva crafts a new one. [[modules/riven_module|More]]"
             ],
             [
               "{item:kuvalich:riven_sliver}",
@@ -1587,7 +1587,7 @@
               "cells": [
                 "{item:kuvalich:endo}",
                 "Experience Ore, kills with a consecrated weapon, dismantling mods",
-                "Levelling up mods. [[modules/module_level|More]]"
+                "Leveling up mods. [[modules/module_level|More]]"
               ]
             },
             {
@@ -1598,7 +1598,7 @@
               "cells": [
                 "{item:kuvalich:endo}",
                 "Experience Ore, dismantling mods",
-                "Levelling up mods. [[modules/module_level|More]]"
+                "Leveling up mods. [[modules/module_level|More]]"
               ]
             },
             [
@@ -1619,7 +1619,7 @@
               "cells": [
                 "{item:kuvalich:shadow_forma}",
                 "No recipe; Creative inventory only",
-                "Rerolls the panel, just like Forma"
+                "Rerolls the panel the same way Forma does"
               ]
             },
             [
@@ -1659,7 +1659,7 @@
           "type": "tip",
           "style": "warn",
           "title": "Requiem Gems only come from Thralls",
-          "text": "You can't mine a {item:kuvalich:requiem_gem} - only {lang:entity.kuvalich.kuva_slave}s drop them. The bonus uses <em>Looting</em> on your main-hand weapon, not Fortune. The block chain eats a lot of gems, so hunt plenty of Thralls."
+          "text": "You can't mine a {item:kuvalich:requiem_gem}; only {lang:entity.kuvalich.kuva_slave}s drop it, and the block chain eats a lot of them, so hunt plenty of Thralls. The drop bonus uses <em>Looting</em> on your main-hand weapon, not Fortune."
         },
         {
           "type": "recipe",
@@ -1689,7 +1689,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "The traps new players fall into most often. Each entry names the <b>mistake</b> first, then what is actually true."
+          "text": "These are the traps new players fall into most often. Each entry names the <b>mistake</b> first, then what is actually true."
         },
         {
           "type": "h",
@@ -1698,8 +1698,8 @@
         {
           "type": "list",
           "items": [
-            "<b>× Mining Requiem Ore without the enchantment</b>: about <t>150</t> s per block with a diamond pickaxe, a payout chance of only <t>{cfg:kuva_lich.baseCardDropChance|pctv}</t>, and Fortune makes it lower. With the enchantment it's about 0.5 s per block at <t>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</t>.",
-            "<b>× Mining ores with Silk Touch</b>: neither Requiem Ore nor Experience Ore drops anything - not even the block itself.",
+            "<b>× Mining Requiem Ore without the enchantment</b>: about <t>150</t> s per block with a diamond pickaxe, a payout chance of only <t>{cfg:kuva_lich.baseCardDropChance|pctv}</t>, and Fortune makes it lower still. With the enchantment, it's about 0.5 s per block at <t>{cfg:kuva_lich.cardDropChanceWithEnchant|pctv}</t>.",
+            "<b>× Mining ores with Silk Touch</b>: neither Requiem Ore nor Experience Ore drops anything, not even the block itself.",
             "<b>× Breaking utility blocks with an iron pickaxe</b>: all five need a diamond pickaxe or better, or they vanish. The Requiem Gate, Recast and Forge are also very slow to mine without Requiem Destroyed."
           ]
         },
@@ -1712,24 +1712,24 @@
           "items": [
             "<b>× Thinking the Gate eats your cards</b>: cards are only registered to you and can be taken back any time, from any Requiem Gate. Only a successful decryption costs each card 1 durability (3 in total); failures cost nothing.",
             "<b>× Taking the clue slots as the order</b>: revealed answer cards land in random positions, so you have to test the order. A {item:kuvalich:requiem_riddle} tells you the right order directly.",
-            "<b>× Fighting Liches with cards you're unsure of</b>: while all three slots are full, every Lich kill is checked, and a wrong guess adds 1 Lich level; filling them before the first stage clears always fails. If in doubt, take one card out - then a Lich kill only adds progress.",
+            "<b>× Fighting Liches with cards you're unsure of</b>: while all three slots are full, every Lich kill is checked, and a wrong guess adds 1 Lich level; filling them before the first stage clears always fails. If in doubt, take one card out, and a Lich kill only adds progress.",
             "<b>× Letting pets or summons clear mobs</b>: decryption progress and Thrall / Lich drops only count kills you make yourself; arrows you shoot count.",
             "<b>× Expecting this round's answer to carry over</b>: every success wipes progress, the answer and your Lich level, and the next round is rolled fresh.",
-            "<b>× Spamming one attack on the Lich</b>: each hit of the same damage type gives it +5% resistance (up to 30%); the more hits within 2 seconds, the less each does (down to 40%); any part of one hit above 15% of its max health is heavily reduced. Mix damage types - see [[enemies/lich_resistance]].",
+            "<b>× Spamming one attack on the Lich</b>: each hit of the same damage type gives it +5% resistance, up to 30%. The more hits within 2 seconds, the less each does, down to 40%, and any part of a single hit above 15% of its max health is heavily reduced. Mix damage types; see [[enemies/lich_resistance]].",
             {
               "if": "cfg:kuva_lich.increaseDamage>0",
-              "text": "<b>× Thinking the Lich level is just a number</b>: each level makes damage from Thralls and Liches +<t>{cfg:kuva_lich.increaseDamage|pct}</t>, so every failure makes them harder (falls, ordinary mobs and other damage are unaffected). It resets on a successful decryption."
+              "text": "<b>× Thinking the Lich level is just a number</b>: each level makes damage from Thralls and Liches +<t>{cfg:kuva_lich.increaseDamage|pct}</t>, so every failure makes them harder. Falls, ordinary mobs and other damage are unaffected, and it resets on a successful decryption."
             },
             {
               "if": "cfg:kuva_lich.reducedDamage>0",
-              "text": "<b>× Thinking the Lich level doesn't touch your damage</b>: each level makes your damage to Thralls and Liches -<t>{cfg:kuva_lich.reducedDamage|pct}</t> (capped at 99.9%); other targets are unaffected. It resets on a successful decryption."
+              "text": "<b>× Thinking the Lich level doesn't touch your damage</b>: each level makes your damage to Thralls and Liches -<t>{cfg:kuva_lich.reducedDamage|pct}</t>, capped at 99.9%, and other targets are unaffected. It resets on a successful decryption."
             },
             {
               "if": [
                 "cfg:kuva_lich.confiscationChance>0",
                 "cfg:kuva_lich.maxConfiscatedItems>0"
               ],
-              "text": "<b>× Leaving valuables on the ground</b>: once the first answer card is revealed, every stack you pick up has a <t>{cfg:kuva_lich.confiscationChance|pctv}</t> chance to be confiscated whole (up to {cfg:kuva_lich.maxConfiscatedItems} stacks), returned only on success. Mods you reveal drop at your feet first, so they can be taken too."
+              "text": "<b>× Leaving valuables on the ground</b>: once the first answer card is revealed, every stack you pick up has a <t>{cfg:kuva_lich.confiscationChance|pctv}</t> chance to be confiscated whole, up to {cfg:kuva_lich.maxConfiscatedItems} stacks, and it comes back only on success. Mods you reveal drop at your feet first, so they can be taken too."
             }
           ]
         },
@@ -1742,16 +1742,16 @@
           "items": [
             "<b>× Installing mods before consecrating</b>: an ordinary weapon must first be consecrated with a {item:kuvalich:riven_sliver} in the {item:kuvalich:requiem_evolve}. Kuva weapons come consecrated.",
             "<b>× Using Forma on a Kuva weapon</b>: {item:kuvalich:forma} only works on consecrated <em>non-Kuva</em> weapons. Kuva weapons get stronger through fusion.",
-            "<b>× Two Rivens on one item</b>: each item (and your Warframe mod loadout) takes only 1 Riven; mods of the same type or that conflict can't be installed together either.",
+            "<b>× Two Rivens on one item</b>: each item takes only 1 Riven, and so does your Warframe mod loadout; mods of the same type, or ones that conflict, can't be installed together either.",
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "<b>× Expecting full value from offhand or armour mods</b>: slots other than the main hand apply at their own percentage - see [[modules/multi_slot]]."
+              "text": "<b>× Expecting full value from offhand or armor mods</b>: slots other than the main hand apply at their own percentage; see [[modules/multi_slot]]."
             },
             "<b>× Farming Thralls with Fortune</b>: mob drops use <em>Looting</em> on your main-hand weapon, and only the {item:kuvalich:requiem_gem} gets a Looting bonus.",
-            "<b>× Throwing away early low-level Kuva weapons</b>: they make good fusion material. Note that fusion <w>takes the element of the material weapon</w>, so check its element before putting it in the middle slot.",
+            "<b>× Throwing away early low-level Kuva weapons</b>: they make good fusion material, but fusion <w>takes the element of the material weapon</w>, so check its element before putting it in the middle slot.",
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
               "text": "<b>× Filling a weapon with level 1 mods</b>: level 1 is only 1/{cfg:kuva_lich.moduleMaxLevel} of the full value. Spend {item:kuvalich:endo} raising two or three key mods first."
@@ -1768,7 +1768,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "This page lists the current values by topic for quick lookup. For how each one plays, see the matching tutorial chapter or section."
+          "text": "This page lists the current values by topic. For how each one plays, see the matching tutorial chapter or section."
         },
         {
           "type": "h",
@@ -1779,7 +1779,7 @@
           "rows": [
             [
               "Decryption progress per Thrall",
-              "{cfg:kuva_lich.minDecryptionProgress} - {cfg:kuva_lich.maxDecryptionProgress} points"
+              "{cfg:kuva_lich.minDecryptionProgress}-{cfg:kuva_lich.maxDecryptionProgress} points"
             ],
             [
               "Decryption progress per Lich",
@@ -1831,11 +1831,11 @@
           "rows": [
             [
               "{item:kuvalich:kuva}",
-              "{cfg:kuva_lich.masterKuvaMinAmount} - {cfg:kuva_lich.masterKuvaMaxAmount}"
+              "{cfg:kuva_lich.masterKuvaMinAmount}-{cfg:kuva_lich.masterKuvaMaxAmount}"
             ],
             [
               "{item:kuvalich:riven_sliver}",
-              "{cfg:kuva_lich.masterRivenSliverMinAmount} - {cfg:kuva_lich.masterRivenSliverMaxAmount}"
+              "{cfg:kuva_lich.masterRivenSliverMinAmount}-{cfg:kuva_lich.masterRivenSliverMaxAmount}"
             ],
             [
               "Chance the high-tier mod is Prime",
@@ -1850,7 +1850,7 @@
             },
             [
               "Kuva weapon level range",
-              "Starts at {cfg:kuva_lich.baseMinimumLevel} - {cfg:kuva_lich.baseMaximumLevel}; each success adds the same {cfg:kuva_lich.minimumLevelCapIncrease} - {cfg:kuva_lich.maximumLevelCapIncrease} levels to both ends; the minimum caps at {cfg:kuva_lich.minimumLevel}, the maximum at {cfg:kuva_lich.maximumLevel}"
+              "Starts at {cfg:kuva_lich.baseMinimumLevel}-{cfg:kuva_lich.baseMaximumLevel}; each success adds the same {cfg:kuva_lich.minimumLevelCapIncrease}-{cfg:kuva_lich.maximumLevelCapIncrease} levels to both ends; the minimum caps at {cfg:kuva_lich.minimumLevel}, the maximum at {cfg:kuva_lich.maximumLevel}"
             ]
           ]
         },
@@ -1883,7 +1883,7 @@
             ],
             [
               "{item:kuvalich:kuva} from Thralls",
-              "{cfg:kuva_lich.slaveKuvaDropChance|pctv}, {cfg:kuva_lich.slaveKuvaMinAmount} - {cfg:kuva_lich.slaveKuvaMaxAmount} each time"
+              "{cfg:kuva_lich.slaveKuvaDropChance|pctv}, {cfg:kuva_lich.slaveKuvaMinAmount}-{cfg:kuva_lich.slaveKuvaMaxAmount} each time"
             ],
             [
               "{item:kuvalich:riven_sliver} from Thralls",
@@ -1896,7 +1896,7 @@
               ],
               "cells": [
                 "{item:kuvalich:endo} from kills with a consecrated weapon",
-                "{cfg:kuva_lich.endoDropChance|pctv}, {cfg:kuva_lich.endoDropMinAmount} - {cfg:kuva_lich.endoDropMaxAmount} each time"
+                "{cfg:kuva_lich.endoDropChance|pctv}, {cfg:kuva_lich.endoDropMinAmount}-{cfg:kuva_lich.endoDropMaxAmount} each time"
               ]
             }
           ]
@@ -1930,7 +1930,7 @@
               "if": "!cfg:kuva_lich.enableModuleLevelSystem",
               "cells": [
                 "Mod levels",
-                "None - every mod is at full strength"
+                "None; every mod is at full strength"
               ]
             },
             {

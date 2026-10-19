@@ -14,7 +14,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "With TACZ (Timeless and Classics Zero) installed, its guns can take <hl>weapon mods</hl> for all kinds of bonuses. This page walks you through modding your first gun."
+          "text": "Consecrate a gun first and mod it second; the order never changes. With TACZ (Timeless and Classics Zero) installed, its guns can take <hl>weapon mods</hl> for all kinds of bonuses."
         },
         {
           "type": "h",
@@ -25,7 +25,7 @@
           "rows": [
             [
               "Weapon mod",
-              "A bonus card you slot into a weapon. Installing it costs nothing and you can take it out any time. Each line on a card is a <t>stat</t>."
+              "A bonus card you slot into a weapon. Installing it costs nothing, you can take it out any time, and each line on a card is a <t>stat</t>."
             ],
             [
               "Consecrate",
@@ -33,19 +33,19 @@
             ],
             [
               "{item:kuvalich:requiem_evolve}",
-              "Workstation: item on the left, material in the middle, the result appears on the right by itself. Consecration happens here, see [[weapons/requiem_evolve]]."
+              "A workbench. Put the item on the left and the material in the middle, and the result appears on the right by itself. Consecration happens here; see [[weapons/requiem_evolve]]."
             ],
             [
               "{item:kuvalich:requiem_weapon_table}",
-              "Workstation for installing and removing mods on consecrated weapons."
+              "The workbench for installing and removing mods on consecrated weapons."
             ],
             [
               "Decryption",
-              "The main loop: work out the right order of three Requiem cards, then defeat the Kuva Lich boss, see [[requiem/decryption]]."
+              "The main loop. Work out the right order of three Requiem cards, then defeat the Kuva Lich boss; see [[requiem/decryption]]."
             ],
             [
               "{item:kuvalich:lich_reliquary}",
-              "Rare material that only drops on a successful decryption. Both workstations above need it to craft."
+              "A rare material that only drops on a successful decryption. Both workbenches above need it in their recipes."
             ]
           ]
         },
@@ -60,13 +60,13 @@
         },
         {
           "type": "p",
-          "text": "<dim>For other unfamiliar terms, see [[start/glossary]].</dim>"
+          "text": "<dim>Look up other unfamiliar terms in [[start/glossary]].</dim>"
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "Starts after your first decryption",
-          "text": "Both workstations are crafted with a {item:kuvalich:lich_reliquary}, so until your first successful decryption you can't consecrate a gun or mod it. Follow [[start/first_steps]] to get there."
+          "text": "Both workbenches are crafted with a {item:kuvalich:lich_reliquary}, so until your first successful decryption you can't consecrate a gun or mod it. Follow [[start/first_steps]] to get there."
         },
         {
           "type": "h",
@@ -75,10 +75,10 @@
         {
           "type": "steps",
           "items": [
-            "Get a TACZ gun (a <em>single</em> one) and 1 {item:kuvalich:riven_sliver}; where slivers come from: [[start/materials]].",
-            "Open the {item:kuvalich:requiem_evolve}: gun in the left slot, sliver in the middle. <w>1 sliver is used up immediately</w> and the consecrated gun appears on the right. Take it.",
-            "Consecration rolls a random base panel for the gun: <t>Damage</t>, <t>Critical Chance</t>, <t>Critical Damage</t>, <t>Status Chance</t>. Don't like it? Reroll it with Forma, see [[weapons/forma]].",
-            "Put the gun into the {item:kuvalich:requiem_weapon_table} and install mods, up to <t>8</t>, see [[weapons/weapon_table]].",
+            "Get a <em>single</em> TACZ gun and 1 {item:kuvalich:riven_sliver}. For where slivers come from, see [[start/materials]].",
+            "Open the {item:kuvalich:requiem_evolve} and put the gun in the left slot and the sliver in the middle. <w>1 sliver is used up immediately</w> and the consecrated gun appears on the right; take it.",
+            "Consecration rolls a random base panel for the gun, with <t>Damage</t>, <t>Critical Chance</t>, <t>Critical Damage</t> and <t>Status Chance</t>. If you don't like it, reroll it with Forma; see [[weapons/forma]].",
+            "Put the gun into the {item:kuvalich:requiem_weapon_table} and install mods, up to <t>8</t>; see [[weapons/weapon_table]].",
             "Hold the gun in your main hand and fire; the mods apply right away."
           ]
         },
@@ -91,7 +91,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "In Warframe, primary and secondary weapons also have 8 regular mod slots. Choosing which mods go into them is what players call a build."
+          "text": "In the Origin System, primary and secondary weapons also carry 8 regular mod slots each. Weighing up which mods go into them is what the Tenno call a build."
         },
         {
           "type": "h",
@@ -99,7 +99,7 @@
         },
         {
           "type": "p",
-          "text": "Besides the [[tacz/tacz_gun_attributes|gun-exclusive stats]], most other stats on weapon mods work on guns too:"
+          "text": "Besides the [[tacz/tacz_gun_attributes|gun-exclusive stats]], most other stats on weapon mods work on guns too, as the table shows."
         },
         {
           "type": "table",
@@ -122,7 +122,7 @@
             [
               "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}, {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier}",
               "<g>Yes</g>",
-              "Rules: [[combat/crit]]"
+              "Rules in [[combat/crit]]"
             ],
             [
               "[[combat/elements|Elements]], {lang:item.module.triggerChance}, [[combat/bane|Bane]]",
@@ -132,7 +132,7 @@
             [
               "{lang:item.module.multishot}, {lang:item.module.firing_rate}, {lang:item.module.bursting_radius}",
               "<g>Yes</g>",
-              "Work differently than on bows, see [[tacz/tacz_multishot]]"
+              "Calculated differently from bows; see [[tacz/tacz_multishot]]"
             ],
             [
               "[[combat/kill_stack|Kill stacks]], {lang:item.module.execute_threshold} and other special effects",
@@ -147,7 +147,7 @@
             [
               "{lang:item.module.meleeDamage}, {lang:item.module.attackSpeed}, {lang:item.module.attackRange} and other melee stats",
               "<b>Not when shooting</b>",
-              "Only for stock / bayonet hits with TACZ's melee key"
+              "Only stock or bayonet hits with TACZ's melee key count"
             ]
           ]
         },
@@ -156,7 +156,7 @@
           "if": "cfg:kuva_lich.taczGunEnhanceEnable",
           "style": "good",
           "title": "Stronger without consecration",
-          "text": "Another route needs no consecration at all: give the gun <hl>Lich Enhancement</hl> with a {item:kuvalich:lich_reliquary} to raise its damage permanently, see [[tacz/tacz_enhance]]."
+          "text": "Another route needs no consecration at all. Give the gun <hl>Lich Enhancement</hl> with a {item:kuvalich:lich_reliquary} to raise its damage permanently; see [[tacz/tacz_enhance]]."
         }
       ]
     },
@@ -169,7 +169,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>Lich Enhancement</hl> permanently raises a TACZ gun's damage. It <em>needs no consecration</em>: any TACZ gun can be enhanced."
+          "text": "Each enhancement spends a Lich Reliquary, and the workbenches need them too, Tenno, so decide where each one goes. <hl>Lich Enhancement</hl> permanently raises a TACZ gun's damage. It <em>needs no consecration</em>, so any TACZ gun can be enhanced."
         },
         {
           "type": "p",
@@ -189,9 +189,9 @@
         {
           "type": "steps",
           "items": [
-            "Open the {item:kuvalich:requiem_evolve}, put the gun in the left slot (a single one) and a {item:kuvalich:lich_reliquary} in the middle.",
-            "The moment both are in, <w>1 Reliquary is used up</w> and the enhanced gun appears on the right. Take it.",
-            "To enhance again, put the gun back in the left slot. Each placement adds one level."
+            "Open the {item:kuvalich:requiem_evolve} and put a single gun in the left slot and a {item:kuvalich:lich_reliquary} in the middle.",
+            "The moment both are in, <w>1 Reliquary is used up</w> and the enhanced gun appears on the right; take it.",
+            "To enhance again, put the gun back in the left slot; each placement adds one level."
           ]
         },
         {
@@ -235,13 +235,13 @@
         },
         {
           "type": "p",
-          "text": "Lich Enhancement is a <hl>separate multiplier</hl>: it is applied to damage on its own and multiplies with every other bonus. The level is stored on the gun, so it stays with the gun if you hand it to someone."
+          "text": "Lich Enhancement is a <hl>separate multiplier</hl>, applied to damage on its own and multiplying with every other bonus. The level is stored on the gun, so it stays with the gun if you hand it to someone."
         },
         {
           "type": "tip",
           "style": "warn",
-          "title": "Reliquaries are scarce",
-          "text": "You only get <t>1</t> per successful decryption, see [[enemies/kuva_master]]. Crafting the {item:kuvalich:requiem_evolve}, {item:kuvalich:requiem_weapon_table} and {item:kuvalich:requiem_warframe_table} needs them too, so pour them into the one gun you use most."
+          "title": "Ration your Reliquaries",
+          "text": "You get only <t>1</t> per successful decryption; see [[enemies/kuva_master]]. Crafting the {item:kuvalich:requiem_evolve}, {item:kuvalich:requiem_weapon_table} and {item:kuvalich:requiem_warframe_table} takes them too, so pour them into the one gun you use most."
         },
         {
           "type": "h",
@@ -250,8 +250,8 @@
         {
           "type": "list",
           "items": [
-            "The gun stores only its enhancement count, not a damage number: the bonus is always worked out from the \"Per enhancement\" value above.",
-            "If the numbers in item tooltips don't match the \"Per enhancement\" value above, trust this book."
+            "The gun stores only its enhancement count, not a damage number, and the bonus is always worked out from the “Per enhancement” value above.",
+            "If the numbers in item tooltips don't match the “Per enhancement” value above, trust this guide."
           ]
         }
       ]
@@ -264,11 +264,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Some stats <em>only work on TACZ guns</em>; on any other weapon they do nothing. They cover the gun's own damage and handling: reload, magazine, recoil, aiming and so on."
+          "text": "Some stats <em>only work on TACZ guns</em> and do nothing on any other weapon. They cover the gun's own damage and its handling, such as reload, magazine, recoil and aiming. Most of them make the gun worse once they turn negative, so check the sign before you install one."
         },
         {
           "type": "p",
-          "text": "Reading the table: when the same stat is on several mods, the values add up to a total <t>x</t> (+30% means 0.3), which then goes into the formula."
+          "text": "When the same stat is on several mods, the values add up to a total <t>x</t>, which then goes into the formulas below; +30% counts as 0.3."
         },
         {
           "type": "table",
@@ -358,7 +358,7 @@
             "On the [[weapons/weapon_panel|weapon panel]] they're grouped under <t>{lang:kuvalich.panel.group.gun}</t>.",
             {
               "if": "module:chambered",
-              "text": "{lang:item.module.first_bullet_damage} is the exception: Rivens can't roll it, and the panel lists it under <t>{lang:kuvalich.panel.group.damage}</t>."
+              "text": "{lang:item.module.first_bullet_damage} is the exception. Rivens can't roll it, and the panel lists it under <t>{lang:kuvalich.panel.group.damage}</t>."
             }
           ]
         },
@@ -369,22 +369,22 @@
         {
           "type": "list",
           "items": [
-            "Example: a gun with a 2× headshot multiplier plus +60% {lang:item.module.headshot_damage} → 3.2×.",
+            "For example, a gun with a 2× headshot multiplier and +60% {lang:item.module.headshot_damage} ends up at 3.2×.",
             "The reload animation caps at <t>4×</t> speed. With even more {lang:item.module.reload_speed}, the reload is done before the animation ends; that's expected.",
-            "A negative {lang:item.module.gun_damage} on a Riven is mostly harmless: a negative total counts as 0 and only eats into other mods' positive values.",
+            "A negative {lang:item.module.gun_damage} on a Riven is mostly harmless. A negative total counts as 0, so it only eats into other mods' positive values.",
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "Mods in [[modules/multi_slot|other slots]] (such as your off-hand) also count toward x at a reduced rate."
+              "text": "Mods in [[modules/multi_slot|other slots]], such as your offhand, also count toward x at a reduced rate."
             },
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "{lang:item.module.aim_time}, {lang:item.module.accuracy} and {lang:item.module.headshot_damage} are computed when you draw the gun: after changing mods in other slots, switch to the gun once (or wait a few seconds) to update them."
+              "text": "{lang:item.module.aim_time}, {lang:item.module.accuracy} and {lang:item.module.headshot_damage} are worked out when you draw the gun. After changing mods in other slots, switch to the gun once or wait a few seconds to update them."
             },
             {
               "if": [
@@ -405,7 +405,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{lang:item.module.multishot}, {lang:item.module.firing_rate} and {lang:item.module.bursting_radius} work on bows too, but on TACZ guns they are calculated differently. This page covers each one."
+          "text": "{lang:item.module.multishot}, {lang:item.module.firing_rate} and {lang:item.module.bursting_radius} work on bows too, but on TACZ guns they are calculated differently."
         },
         {
           "type": "h",
@@ -413,11 +413,11 @@
         },
         {
           "type": "p",
-          "text": "Every shot fires some extra pellets:"
+          "text": "Every shot fires extra pellets according to this formula."
         },
         {
           "type": "formula",
-          "text": "Extra pellets per shot = base pellet count × {lang:item.module.multishot} (the fraction is a chance for one more)"
+          "text": "Extra pellets per shot = base pellet count × {lang:item.module.multishot}, with the fraction as a chance for one more"
         },
         {
           "type": "table",
@@ -453,12 +453,12 @@
           "type": "tip",
           "style": "good",
           "title": "Extra pellets are free damage",
-          "text": "The gun's damage is still split by the <em>base</em> pellet count, so extra pellets don't dilute anything: +100% multishot ≈ double total damage per shot. Every pellet rolls its own crit and status procs, so you get more procs too."
+          "text": "The gun's damage is still split by the <em>base</em> pellet count, so extra pellets dilute nothing, and +100% multishot roughly doubles the total damage per shot. Every pellet rolls its own crit and status procs, so you get more procs too."
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "Multishot works the same way in Warframe: the fraction above a whole number is a chance for one more projectile, and the extra projectiles deal full damage."
+          "text": "The records show multishot working the same way. The fraction above a whole number is a chance for one more projectile, and the extra projectiles deal full damage. Ordis finds such tidy arithmetic rather pleasing."
         },
         {
           "type": "h",
@@ -466,7 +466,7 @@
         },
         {
           "type": "p",
-          "text": "Time between shots ÷ (1+x), no faster than one shot every <t>50 ms</t>, i.e. 20 shots per second. Unlike bows, guns do <em>not</em> get double fire rate."
+          "text": "Time between shots ÷ (1+x), down to one shot every <t>50 ms</t>, which is 20 shots per second. Unlike bows, guns do <em>not</em> get double fire rate."
         },
         {
           "type": "h",
@@ -474,7 +474,7 @@
         },
         {
           "type": "p",
-          "text": "<hl>Kill stacks</hl> are temporary bonuses that build up as you keep killing; rules in [[combat/kill_stack]]. These two work on guns as well and apply the moment the stack count changes:"
+          "text": "<hl>Kill stacks</hl> are temporary bonuses that build up as you keep killing; the rules are in [[combat/kill_stack]]. These two work on guns as well and apply the moment the stack count changes."
         },
         {
           "type": "kv",
@@ -496,8 +496,8 @@
         {
           "type": "list",
           "items": [
-            "Regular bullets: other creatures within <t>1 + 2x</t> blocks of the target take <t>50%</t> of the hit's final damage. This is called <t>splash</t>; it deals damage only and never procs elements.",
-            "Guns with built-in explosions (grenades, rockets, etc.): no splash; instead the gun's own blast radius is multiplied by (1+x)."
+            "With regular bullets, other creatures within <t>1 + 2x</t> blocks of the target take <t>50%</t> of the hit's final damage. This is <t>splash</t>; it deals damage only and never procs elements.",
+            "Guns with built-in explosions, such as grenades and rockets, get no splash; instead the gun's own blast radius is multiplied by (1+x)."
           ]
         },
         {
@@ -507,7 +507,7 @@
         {
           "type": "list",
           "items": [
-            "Negative {lang:item.module.multishot} doesn't remove pellets. Instead each trigger pull has a |x| ÷ (1+|x|) chance to <b>misfire entirely</b> (no bullets): -30% ≈ 23%, -50% ≈ 33%; at ≤ -100% the gun never fires.",
+            "Negative {lang:item.module.multishot} doesn't remove pellets. Instead each trigger pull has a |x| ÷ (1+|x|) chance to <b>misfire entirely</b> and fire no bullets, about 23% at -30% and 33% at -50%; at ≤ -100% the gun never fires.",
             "Negative {lang:item.module.firing_rate} slows the gun down; at ≤ -100% it cannot fire.",
             "Guns with built-in explosions only use positive {lang:item.module.bursting_radius}, and <w>ignore</w> the kill-stack blast radius."
           ]
@@ -522,7 +522,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "A few gun-exclusive stats work in unusual ways; this page explains each one."
+          "text": "A few gun-exclusive stats work in unusual ways."
         },
         {
           "type": "h",
@@ -530,11 +530,11 @@
         },
         {
           "type": "p",
-          "text": "After each bullet hits, it deals an extra hit of <hl>true damage</hl>: it <g>ignores armor, shields and damage reduction</g> and removes health directly; if that's enough to kill, the target dies outright."
+          "text": "After each bullet hits, it deals an extra hit of <hl>true damage</hl> that <g>ignores armor, shields and damage reduction</g> and removes health directly; if that is enough to kill, the target dies outright."
         },
         {
           "type": "formula",
-          "text": "True damage = the bullet's damage without crits or elements × x ([[combat/bane|Bane]] included)"
+          "text": "True damage = the bullet's damage without crits or elements × x, with [[combat/bane|Bane]] already included"
         },
         {
           "type": "list",
@@ -555,7 +555,7 @@
         {
           "type": "p",
           "if": "module:chambered",
-          "text": "Only the shot fired from a <t>full</t> magazine (current ammo ≥ magazine size) gets it, and every pellet of that shot benefits. Great for fire-once-then-reload sniping."
+          "text": "Only the shot fired from a <t>full</t> magazine, with current ammo at or above magazine size, gets it, and every pellet of that shot benefits. It suits fire-once-then-reload sniping."
         },
         {
           "type": "kv",
@@ -563,7 +563,7 @@
           "rows": [
             [
               "Where to get it",
-              "Only the [[modules/module_rarity|gold]] mod <t>Chambered Prime</t> has it; [[modules/riven_module|Riven mods]] can't roll it"
+              "Only the [[modules/module_rarity|gold]] mod <t>Chambered Prime</t> has it, and [[modules/riven_module|Riven mods]] can't roll it"
             ],
             [
               "At max rank",
@@ -575,7 +575,7 @@
           "type": "tip",
           "if": "module:chambered",
           "style": "wf",
-          "text": "In Warframe, Primed Chamber is a sniper rifle mod sold by the Void Trader Baro Ki'Teer, and it too greatly boosts the first shot of each magazine."
+          "text": "Chambered Prime goes by Primed Chamber over there, where it is a sniper rifle mod sold by the Void Trader Baro Ki'Teer, and its effect is much the same: the first shot of each magazine hits far harder."
         },
         {
           "type": "h",
@@ -585,7 +585,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-          "text": "When a TACZ bullet lands the <em>killing blow</em> on an animal, monster or CustomNPCs NPC, you get more drops. x is added to the <t>{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}</t> from your [[warframe/warframe_module|Warframe mods]] (the mods installed on yourself):"
+          "text": "When a TACZ bullet lands the <em>killing blow</em> on an animal, monster or CustomNPCs NPC, you get more drops. x is added to the <t>{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}</t> from the [[warframe/warframe_module|Warframe mods]] installed on yourself, then goes into this formula."
         },
         {
           "type": "formula",
@@ -598,7 +598,7 @@
           "items": [
             "Only mods on the <em>gun itself</em> count.",
             "Equipment, weapons and tools are never multiplied.",
-            "For the Warframe stat see [[reference/warframe_attr_mobility]]."
+            "The Warframe stat is covered in [[reference/warframe_attr_mobility]]."
           ]
         },
         {
@@ -610,7 +610,7 @@
           "items": [
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-              "text": "If the killing blow is the follow-up hit from {lang:item.module.true_bullet}, splash or an [[reference/weapon_attr_special|execution]], it isn't a bullet kill: {lang:item.module.gun_loot_drop} is not added, but the Warframe stat still is."
+              "text": "If the killing blow is the follow-up hit from {lang:item.module.true_bullet}, splash or an [[reference/weapon_attr_special|execution]], it isn't a bullet kill, so {lang:item.module.gun_loot_drop} is not added; the Warframe stat still is."
             },
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
@@ -632,7 +632,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Want to know exactly how hard a bullet hits? Read on. Damage is worked out in two stages: TACZ computes the bullet's damage when you fire, then on hit it goes through the [[combat/damage|general damage pipeline]]."
+          "text": "A bullet's damage is worked out in two stages. TACZ computes the bullet's damage when you fire, and on hit it goes through the [[combat/damage|general damage pipeline]]."
         },
         {
           "type": "h",
@@ -660,7 +660,7 @@
               "if": "cfg:kuva_lich.taczGunEnhanceEnable",
               "cells": [
                 "Lich Enhancement",
-                "× its multiplier, see [[tacz/tacz_enhance]]"
+                "× its multiplier; see [[tacz/tacz_enhance]]"
               ]
             }
           ]
@@ -687,9 +687,9 @@
         {
           "type": "steps",
           "items": [
-            "Physical part × (1 + {lang:item.module.remoteDamage} + {lang:item.module.projectileDamage}) × panel damage, see [[weapons/weapon_panel]].",
-            "Crit roll: chance = panel crit chance × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}), rules in [[combat/crit]].",
-            "Multiply by [[combat/bane|Bane]], then add elemental damage (elements don't crit); full order in [[combat/damage]].",
+            "Physical part × (1 + {lang:item.module.remoteDamage} + {lang:item.module.projectileDamage}) × panel damage; see [[weapons/weapon_panel]].",
+            "Roll for crit, with chance = panel crit chance × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}); rules in [[combat/crit]].",
+            "Multiply by [[combat/bane|Bane]], then add elemental damage, which doesn't crit; the full order is in [[combat/damage]].",
             "Roll status procs, then resolve splash, [[tacz/tacz_special_attrs|True Bullet]], execution and other extras."
           ]
         },
@@ -697,12 +697,12 @@
           "type": "tip",
           "style": "info",
           "title": "Building damage",
-          "text": "A <hl>multiplier group</hl> is a set of bonuses that add together; different groups multiply each other. {lang:item.module.gun_damage}, {lang:item.module.multishot}, ranged damage and crits each form their own group, so covering all of them beats stacking one."
+          "text": "A <hl>multiplier group</hl> is a set of bonuses that add together, and different groups multiply each other. {lang:item.module.gun_damage}, {lang:item.module.multishot}, ranged damage and crits each form their own group, so put something into each of them rather than stacking one."
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "Warframe players think the same way: damage mods, multishot mods and crit mods each count separately and then multiply, which is why a typical build includes some of each."
+          "text": "Operator, the Tenno build their loadouts the same way. Damage mods, multishot mods and crit mods each count separately and only multiply at the end, which is why a typical build includes some of each."
         },
         {
           "type": "h",
@@ -711,16 +711,16 @@
         {
           "type": "list",
           "items": [
-            "Each part rolls its own crit and its own status procs: average damage stays the same and you get more chances to apply [[combat/element_status|status effects]], but each proc's elemental damage only scales with that part's damage.",
+            "Each part rolls its own crit and its own status procs. Average damage stays the same and you get more chances to apply [[combat/element_status|status effects]], but each proc's elemental damage only scales with that part's damage.",
             {
               "if": [
                 "cfg:kuva_lich.enableDamageNumbers",
                 "cfg:kuva_lich.mergeDamageNumbers",
                 "cfg:kuva_lich.mergeDamageWindowMs>0"
               ],
-              "text": "The two parts' damage numbers are usually merged into one, colored by the higher crit tier, see [[combat/damage_numbers]]."
+              "text": "The two parts' damage numbers are usually merged into one, colored by the higher crit tier; see [[combat/damage_numbers]]."
             },
-            "Guns with built-in explosions (grenades, rockets, etc.): the blast's damage is computed separately by TACZ from the gun's explosion stats and is <w>not</w> multiplied by the Stage 1 factors, but it still goes through Stage 2."
+            "For guns with built-in explosions, such as grenades and rockets, TACZ computes the blast's damage separately from the gun's explosion stats. It is <w>not</w> multiplied by the Stage 1 factors, but it still goes through Stage 2."
           ]
         }
       ]

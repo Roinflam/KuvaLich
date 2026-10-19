@@ -14,16 +14,16 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:requiem_warframe_table}是给你自己装<hl>战甲模组</hl>的工作台，装进去的模组<g>一直生效</g>，不用拿在手上，也不用穿盔甲。"
+          "text": "<hl>战甲模组</hl>装在你自己身上，天诺，造这台军械库至少要讨伐成功两次。{item:kuvalich:requiem_warframe_table}就是装它们的工作台，装进去的模组<g>一直生效</g>，不用拿在手上，也不用穿盔甲。"
         },
         {
           "type": "p",
-          "text": "这里的「战甲」指的就是你本人，「模组」则是一张张加属性的卡片，分为武器模组和战甲模组两种，其它看不懂的名词可以查阅[[start/glossary|名词速查]]。"
+          "text": "这里的「战甲」就是你本人，「模组」是一张张加属性的卡片，分武器模组和战甲模组两种，其它不认识的名词，去[[start/glossary|名词速查]]查。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作里的战甲原名 Warframe，是玩家操控的生物机械战斗装甲，形貌与技能各不相同。军械库原名 Arsenal，是飞船上挑选战甲、武器并安装模组的地方。"
+          "text": "军械库这个名字，Ordis 熟得很。飞船上那座叫 Arsenal，挑选战甲和武器、安装 Mod，都在那里。战甲本名 Warframe，是天诺们操控的生物机械战斗装甲，每一具的形貌和技能都各不相同。"
         },
         {
           "type": "h",
@@ -57,8 +57,8 @@
         {
           "type": "tip",
           "style": "warn",
-          "title": "不是开局就能做的",
-          "text": "{item:kuvalich:lich_reliquary}只在你击杀 Boss [[enemies/kuva_master|赤毒玄骸]]、并且这次[[requiem/decryption|解密]]成功、三张安魂卡和它们的顺序全部猜对时才会掉落，每次 <t>1</t> 个。\n养武器用的工作台{item:kuvalich:requiem_evolve}自己的配方也要 <t>1</t> 个，所以至少要赢玄骸两次。"
+          "title": "开局造不出来",
+          "text": "{item:kuvalich:lich_reliquary}只在你击杀 Boss [[enemies/kuva_master|赤毒玄骸]]并且[[requiem/decryption|解密]]成功时掉落，三张安魂卡和它们的顺序都要猜对，每次 <t>1</t> 个。\\n养武器用的工作台{item:kuvalich:requiem_evolve}自己的配方也要 <t>1</t> 个，所以至少要赢玄骸两次。"
         },
         {
           "type": "p",
@@ -72,7 +72,7 @@
           "type": "steps",
           "items": [
             "放下后右键打开，上面两排共 <t>8</t> 格就是你的战甲模组槽。",
-            "把模组拖进空格，或者在背包里 <t>Shift + 左键</t> 点它，自动放进第一个能放的格子，这里只收战甲模组。",
+            "把模组拖进空格，或者在背包里 <t>Shift + 左键</t> 点它，它会自动放进第一个能放的格子，这里只收战甲模组。",
             "放进去<g>立刻生效</g>，取出来立刻失效，不用关界面。",
             "按 <t>Tab</t> 打开战甲模组的[[modules/module_codex|模组图鉴]]。"
           ]
@@ -96,13 +96,13 @@
           "type": "tip",
           "style": "good",
           "title": "模组记在你身上，不在方块里",
-          "text": "八格里的模组跟着<em>你</em>走，无论打开哪台军械库，看到的都是你自己那套，别人打开看到的则是他自己的。\n死亡、换维度、从末地回来时模组都会<g>原样保留、不会掉落</g>，拆掉军械库也不影响。"
+          "text": "八格里的模组跟着<em>你</em>走，打开哪台军械库，看到的都是你自己那套，别人打开看到的是他自己的。\\n死亡、换维度、从末地回来，模组都<g>原样保留，不会掉落</g>，拆掉军械库也不影响。"
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "挖回来要钻石镐",
-          "text": "用<em>钻石镐或更好的镐</em>才能把军械库挖回来，用别的工具会直接挖没，它的硬度是黑曜石的两倍，挖起来很慢。"
+          "text": "用<em>钻石镐或更好的镐</em>挖，军械库才拿得回来，用别的工具会直接挖没。它的硬度是黑曜石的两倍，挖起来很慢。"
         }
       ],
       "_src": [
@@ -177,7 +177,7 @@
             },
             {
               "if": "cfg:kuva_lich.enableWarframeModuleRecast",
-              "text": "多余的战甲模组可以三张一起放进[[weapons/requiem_recast|安魂之铸]]，合成一张。"
+              "text": "多余的战甲模组，三张一起放进[[weapons/requiem_recast|安魂之铸]]，合成一张。"
             },
             "单独一张战甲模组放进[[weapons/requiem_recast|安魂之铸]]，会分解成{item:kuvalich:endo}。"
           ]
@@ -185,7 +185,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作里的模组分门别类，战甲模组只能装在战甲上，步枪、霰弹枪、近战等武器模组也只认对应的武器。"
+          "text": "Mod 在起源星系分得很细，Ordis 一向欣赏这种规矩。战甲 Mod 只能装在战甲上，步枪、霰弹枪、近战这些武器 Mod，也只认对应的那类武器。"
         },
         {
           "type": "h",
@@ -196,7 +196,7 @@
           "items": [
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
-              "text": "每张卡的实际数值 = 满级数值 × 当前等级 ÷ <t>{cfg:kuva_lich.moduleMaxLevel}</t>，tooltip 上显示的已经是折算后的数，升级要用{item:kuvalich:endo}，详见[[modules/module_level]]。"
+              "text": "每张卡的实际数值 = 满级数值 × 当前等级 ÷ <t>{cfg:kuva_lich.moduleMaxLevel}</t>，tooltip 上显示的已经是折算后的数，升级用{item:kuvalich:endo}，见[[modules/module_level]]。"
             },
             {
               "if": "!cfg:kuva_lich.enableModuleLevelSystem",
@@ -238,7 +238,7 @@
         },
         {
           "type": "p",
-          "text": "{lang:kuvaweapon.warframe_attribute_type.fireProtection}、{lang:kuvaweapon.warframe_attribute_type.electricProtection}、{lang:kuvaweapon.warframe_attribute_type.homologousProtection}、{lang:kuvaweapon.warframe_attribute_type.fallProtection}会在你受伤时按比例减少这一下扣到<em>血</em>上的伤害，其中「同源」指的是其他玩家对你造成的伤害。"
+          "text": "{lang:kuvaweapon.warframe_attribute_type.fireProtection}、{lang:kuvaweapon.warframe_attribute_type.electricProtection}、{lang:kuvaweapon.warframe_attribute_type.homologousProtection}、{lang:kuvaweapon.warframe_attribute_type.fallProtection}会在你受伤时按比例减少这一下扣到<em>血</em>上的伤害，其中「同源」指别的玩家对你造成的伤害。"
         },
         {
           "type": "table",
@@ -292,7 +292,7 @@
         },
         {
           "type": "p",
-          "text": "词条名里带「击杀时获取」的属于<hl>击杀叠层</hl>词条，杀得越多加成越高，一段时间不杀就会慢慢退回去，详见[[combat/kill_stack]]。"
+          "text": "词条名里带「击杀时获取」的属于<hl>击杀叠层</hl>词条，杀得越多加成越高，一段时间不杀就慢慢退回去，见[[combat/kill_stack]]。"
         },
         {
           "type": "list",
@@ -319,7 +319,7 @@
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "副手、盔甲槽、饰品栏里开过光、能装模组的物品，借给主手的是<em>武器模组</em>，和战甲模组是两套系统，详见[[modules/multi_slot]]。"
+              "text": "副手、盔甲槽、饰品栏里开过光、能装模组的物品，借给主手的是<em>武器模组</em>，和战甲模组是两套系统，见[[modules/multi_slot]]。"
             },
             "词条数值的限制对战甲模组同样有效，见[[modules/module_limits]]。",
             "各词条的详细说明见[[reference/warframe_attr_survival]]、[[reference/warframe_attr_resist]]、[[reference/warframe_attr_mobility]]、[[reference/warframe_attr_killstack]]。"
@@ -376,14 +376,14 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "只要[[warframe/warframe_module|战甲模组]]给你的{lang:kuvaweapon.warframe_attribute_type.shield}总和大于 0，黄心就会自己慢慢回到上限。"
+          "text": "只要[[warframe/warframe_module|战甲模组]]给你的{lang:kuvaweapon.warframe_attribute_type.shield}总和大于 0，黄心就会自己慢慢回到上限。别让它见底，打空之后要等三倍的时间才开始回。"
         },
         {
           "type": "tip",
           "style": "bad",
           "if": "!cfg:kuva_lich.shieldCapMultiplier",
           "title": "护盾容量反而有害",
-          "text": "{lang:kuvaweapon.warframe_attribute_type.shield}不会给你任何黄心，装着它时，金苹果之类别处给的黄心也会被清零，只有在挨打或打中别人之后的一段时间里才能保住。"
+          "text": "{lang:kuvaweapon.warframe_attribute_type.shield}不会给你任何黄心，装着它时，金苹果之类别处给的黄心也会被清零，只在挨打或打中别人之后的一段时间里保得住。"
         },
         {
           "type": "h",
@@ -465,13 +465,13 @@
           "style": "warn",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
           "title": "打中别人也会打断回盾",
-          "text": "护盾要等你停手后才开始回复，一直在打的时候基本不回。\n黄心打空以后，每挨一下、每打中一次，都会重新按三倍等待起算，基础为 <t>30 秒</t>。"
+          "text": "护盾要等你停手才开始回复，一直在打时基本不回。\\n黄心打空以后，每挨一下、每打中一次，都会重新按三倍等待起算，基础为 <t>30 秒</t>。黄心见底时，先拉开距离，等它回起来再打。"
         },
         {
           "type": "tip",
           "style": "wf",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "原作里战甲的护盾同样挡在生命值前面，一段时间没挨打便会自行充能，若是被彻底打空，就要多等一阵才开始回充。"
+          "text": "档案显示，战甲的护盾在那边同样挡在生命值前面，一段时间没挨打就会自行充能，要是被彻底打空，就得多等一阵才开始回充。"
         },
         {
           "type": "h",
@@ -498,7 +498,7 @@
         },
         {
           "type": "p",
-          "text": "如果打你的人手里拿着能装模组的开光武器，比如其他玩家，几种元素遇到黄心时会有特殊效果，详见[[combat/element_status]]。"
+          "text": "如果打你的人拿着能装模组的开光武器，比如别的玩家，几种元素遇到黄心时会有特殊效果，详见[[combat/element_status]]。"
         },
         {
           "type": "table",
@@ -571,7 +571,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "戴在 Curios 饰品栏里、能装模组的<em>开光物品</em>，可以把身上的<hl>武器模组</hl>按比例借给主手武器。"
+          "text": "戴在 Curios 饰品栏里、能装模组的<em>开光物品</em>，会把自己身上的<hl>武器模组</hl>按比例借给主手武器。"
         },
         {
           "type": "tip",
@@ -586,10 +586,10 @@
         {
           "type": "steps",
           "items": [
-            "准备一件能戴进饰品栏的物品，本模组不自带饰品，可以用别的模组的戒指、项链之类。",
+            "准备一件能戴进饰品栏的物品，赤毒玄骸这个模组不自带饰品，用别的模组的戒指、项链之类。",
             "把它和{item:kuvalich:riven_sliver}一起放进{item:kuvalich:requiem_evolve}给它<hl>开光</hl>，饰品只放 1 个。",
             "在{item:kuvalich:requiem_weapon_table}里给它装上武器模组。",
-            "把它戴进饰品栏，之后只要主手拿着<em>开光武器</em>，这些词条就会按下式并入主手武器。"
+            "把它戴进饰品栏，之后只要主手拿着<em>开光武器</em>，这些词条就按下式并入主手武器。"
           ]
         },
         {
@@ -604,7 +604,7 @@
               "if": "cfg:kuva_lich.curiosModuleMaxSlots<999",
               "text": "只有前 <t>{cfg:kuva_lich.curiosModuleMaxSlots}</t> 个饰品槽里的物品算数，排在后面的不算。"
             },
-            "饰品开光时掷出的{lang:kuvalich.attr.short.damage}也要乘进去，150% 按 1.5 倍算，60% 就只剩六成，不满意可以用[[weapons/forma|塑形块]]重新随机。",
+            "饰品开光时掷出的{lang:kuvalich.attr.short.damage}也要乘进去，150% 按 1.5 倍算，60% 就只剩六成，不满意就用[[weapons/forma|塑形块]]重新随机。",
             "<w>饰品只在主手拿着开光武器时才提供加成。</w>",
             "主手武器面板上的数字会把饰品的加成一起算进去。<dim>面板可能和实际对不上，以实际伤害为准。</dim>"
           ]

@@ -16,7 +16,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>{lang:entity.kuvalich.kuva_slave}</hl>是本模組的小兵，也是最常碰面的赤毒敵人。每親手斬殺一隻，就離打敗 Boss {lang:entity.kuvalich.kuva_master}更近一步，它倒下時還可能留下材料和模組。"
+          "text": "打敗玄骸的答案，要從它的奴僕身上一點點挖出來。<hl>{lang:entity.kuvalich.kuva_slave}</hl>是赤毒敵人裡的小兵，也是最常碰面的一種，每親手斬殺一隻，就離打敗 Boss {lang:entity.kuvalich.kuva_master}更近一步，它倒下時還可能留下材料和模組。"
         },
         {
           "type": "entity",
@@ -25,7 +25,7 @@
         },
         {
           "type": "p",
-          "text": "<dim>赤毒、玄骸、模組這些叫法都來自《星際戰甲》，不熟悉的話可以翻翻[[start/glossary|名詞速查]]。</dim>"
+          "text": "<dim>赤毒、玄骸、模組這些叫法都來自《星際戰甲》，不熟悉就翻一翻[[start/glossary|名詞速查]]。</dim>"
         },
         {
           "type": "h",
@@ -42,7 +42,7 @@
             ],
             [
               "亮度",
-              "和殭屍一樣只在足夠暗的地方刷新，<t>和平</t>難度下不會刷新"
+              "和殭屍一樣只在夠暗的地方刷新，<t>和平</t>難度下不刷新"
             ],
             [
               "空間",
@@ -80,10 +80,10 @@
           "type": "list",
           "items": [
             "下手很重，每一下在簡單難度是 <t>6.8</t>，普通 <t>13.6</t>，困難 <t>20.4</t>",
-            "命中後會把你<w>大幅擊飛</w>，自己順勢撲上來，同時回復 <t>0.8</t> 點生命",
+            "命中後把你<w>大幅擊飛</w>，自己順勢撲上來，同時回復 <t>0.8</t> 點生命",
             "跑得比殭屍快一半，<t>32</t> 格內看見你就會追過來",
             "會慢慢回血，每秒 <t>1</t> 點，沒有攻擊目標時每秒 <t>0.5</t> 點",
-            "見怪就打，附近的其他怪物都會被它主動攻擊，終界使者這類中立怪也不例外，只有苦力怕和赤毒敵人能倖免",
+            "見怪就打，附近的其他怪物都會挨它的打，終界使者這類中立怪也不例外，只放過苦力怕和赤毒敵人",
             {
               "if": "cfg:kuva_lich.battleBoost>0",
               "text": "戰鬥拖得越久，它打得越痛，見[[enemies/battle_boost]]"
@@ -137,7 +137,7 @@
         },
         {
           "type": "p",
-          "text": "它屬於亡靈，不死剋星附魔和模組上的「{lang:item.module.bane_of_undead}」詞條對它有效，治療藥水和傷害藥水的效果也會反過來。"
+          "text": "它屬於亡靈，不死剋星附魔和模組上的「{lang:item.module.bane_of_undead}」詞條對它有效，治療藥水和傷害藥水的效果也反過來。"
         },
         {
           "type": "h",
@@ -211,9 +211,9 @@
         {
           "type": "list",
           "items": [
-            "<t>解密進度</t>攢夠後會逐條揭示打敗玄骸所需的安魂卡，詳見[[requiem/decryption]]，三條線索全部揭示後，再殺就不再增加",
-            "<t>模組</t>是裝在武器或你自己身上的強化卡，詳見[[modules/module_overview]]，掉出的模組有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模組，其餘是裝在你身上的戰甲模組",
-            "三種品質的模組共用一次抽取，一隻最多掉一張，品質說明見[[modules/module_rarity]]",
+            "<t>解密進度</t>攢夠了，會一條條揭示打敗玄骸要用的安魂卡，見[[requiem/decryption]]，三條線索都揭示後，再殺就不再增加",
+            "<t>模組</t>是裝在武器或你自己身上的強化卡，見[[modules/module_overview]]，掉出的模組有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模組，其餘是裝在你身上的戰甲模組",
+            "三種品質的模組共用一次抽取，一隻最多掉一張，品質見[[modules/module_rarity]]",
             "赤毒、裂罅碎塊、安魂寶石各自獨立判定，用途見[[start/materials]]"
           ]
         },
@@ -221,12 +221,12 @@
           "type": "tip",
           "style": "bad",
           "title": "最後一擊必須是你",
-          "text": "用武器、弓箭、投擲物打死的都算在你名下。被寵物、別的怪或岩漿收掉的不算，被火燒死的也不算，哪怕火是你用火焰附加或火矢點燃的，這些情況下<b>沒有進度，也不掉東西</b>。"
+          "text": "用武器、弓箭、投擲物打死的都算在你名下。被寵物、別的怪或岩漿收掉的不算，被火燒死的也不算，哪怕火是你用火焰附加或火矢點的，這些情況<b>沒有進度，也不掉東西</b>。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "《星際戰甲》裡的奴僕原名 Thrall，是替玄骸賣命的手下，出沒在玄骸的地盤上。處決它們能一點點揭開打敗玄骸所需的安魂模組，本模組的「解密進度」便脫胎於此。"
+          "text": "奴僕原名 Thrall，是替玄骸賣命的手下，出沒在玄骸的地盤上。處決它們，打敗玄骸要用的安魂 Mod 便會一點點顯露，到了這裡，這個過程就成了「解密進度」。"
         },
         {
           "type": "h",
@@ -235,10 +235,10 @@
         {
           "type": "list",
           "items": [
-            "傷害公式為 8 × 難度係數 × 0.85，難度係數簡單為 1、普通為 2、困難為 3，打在玩家身上時，原版還會按難度再調整一次，之後才計算護甲",
+            "傷害公式是 8 × 難度係數 × 0.85，難度係數簡單為 1、普通為 2、困難為 3，打在你身上時，原版還會按難度再調一次，然後才算護甲",
             "擊飛力度為你的水平速度 ×3、垂直速度 ×2",
-            "被元素傷害收尾的同樣不算你的，{lang:kuvaweapon.type.fire}灼燒以及{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素打出的最後一擊都不結算，元素說明見[[combat/elements]]",
-            "安魂寶石只看<em>擊殺那一刻主手物品</em>上的<t>掠奪</t>附魔，幸運不起作用，用弓射死時主手是弓，掠奪按 0 級計算",
+            "被元素傷害收尾的也不算你的，{lang:kuvaweapon.type.fire}灼燒，以及{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素打出的最後一擊都不結算，元素見[[combat/elements]]",
+            "安魂寶石只看<em>擊殺那一刻主手物品</em>上的<t>掠奪</t>附魔，幸運沒用，用弓射死時主手是弓，掠奪按 0 級算",
             "這些掉落直接生成在它倒下的位置，戰甲模組上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」詞條對它們無效"
           ]
         }
@@ -255,7 +255,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是本模組的 Boss，也是安魂解密這條玩法的終點。你攢下的進度和推敲出的卡片順序，最終都要在它身上見分曉，猜對了就能拿到赤毒武器等大獎。"
+          "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是 Boss，安魂解密這條路走到頭，等著你的就是它。你攢下的進度和推敲出的卡序，最後都要在它身上見分曉，天諾。猜對了，赤毒武器等大獎就歸你。"
         },
         {
           "type": "entity",
@@ -269,16 +269,16 @@
         {
           "type": "steps",
           "items": [
-            "擊殺奴僕積攢[[requiem/decryption|解密進度]]，逐條揭示答案，每條<t>線索</t>對應答案裡的一張<t>安魂卡</t>，三張卡按正確順序排好，就是打敗它的密碼",
+            "擊殺奴僕積攢[[requiem/decryption|解密進度]]，一條條揭示答案，每條<t>線索</t>對應答案裡的一張<t>安魂卡</t>，三張卡按正確順序排好，就是打敗它的密碼",
             "按你猜的順序，把三張卡放進專門擺卡的方塊[[requiem/requiem_gate|滅骸之扉]]",
             "找到或召喚一隻玄骸，<em>親手</em>打出最後一擊",
-            "擊殺那一刻會自動驗證，猜對就拿到獎勵，猜錯則[[enemies/kuva_escalation|玄骸等級]] +1"
+            "擊殺那一刻自動核對，猜對拿獎勵，猜錯[[enemies/kuva_escalation|玄骸等級]] +1"
           ]
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "《星際戰甲》裡的玄骸原名 Kuva Lich，是每位玩家專屬的宿敵，只有把三張安魂模組裝上處決刀、以正確的順序處決它，才能將它徹底了結，並拿走它的赤毒武器。"
+          "text": "眼前這東西，在檔案裡叫 Kuva Lich，是每位天諾專屬的宿敵，只有把三個安魂 Mod 裝上處決刀，按正確的順序處決它，才能將它徹底了結，拿走它的赤毒武器。"
         },
         {
           "type": "h",
@@ -315,7 +315,7 @@
               ],
               "cells": [
                 "數量上限",
-                "刷新點 <t>{cfg:kuva_lich.kuvaLichNearbyRadius}</t> 格內已有 <t>{cfg:kuva_lich.kuvaLichMaxNearby}</t> 只時就不再往那裡刷新，召喚出來的也計算在內"
+                "刷新點 <t>{cfg:kuva_lich.kuvaLichNearbyRadius}</t> 格內已有 <t>{cfg:kuva_lich.kuvaLichMaxNearby}</t> 只時就不再往那裡刷新，召喚出來的也算在內"
               ]
             },
             {
@@ -340,14 +340,14 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
-          "text": "對著空中右鍵使用通牒時，玄骸會出現在你面朝的水平方向 <t>3</t> 格處，與你腳下同高，對著方塊右鍵時則出現在點中的那一面，創造模式下不消耗通牒。"
+          "text": "對著空中右鍵使用通牒，玄骸會出現在你面朝的水平方向 <t>3</t> 格處，和你腳下同高，對著方塊右鍵，它出現在點中的那一面，創造模式下不消耗通牒。"
         },
         {
           "type": "tip",
           "style": "warn",
           "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
           "title": "召出來的也會消失",
-          "text": "召喚出的玄骸和野生的一樣會被刷掉，所有玩家都離它 <t>128</t> 格以上時會被清除，離最近的玩家超過 <t>32</t> 格且 <t>30</t> 秒以上沒挨打時也可能隨時消失，在<t>和平</t>難度下更是召出來就沒了。這些情況下通牒都不會退還。"
+          "text": "召出來的玄骸和野生的一樣會被刷掉。所有人都離它 <t>128</t> 格以上時，它會被清除，離最近的人超過 <t>32</t> 格、又有 <t>30</t> 秒以上沒挨打時，它隨時可能消失，<t>和平</t>難度下更是召出來就沒了，這些情況通牒都不退還。"
         },
         {
           "type": "h",
@@ -398,7 +398,7 @@
           "type": "list",
           "items": [
             "下手更重，每一下在簡單難度是 <t>11.05</t>，普通 <t>22.1</t>，困難 <t>33.15</t>",
-            "它的攻擊是<w>範圍攻擊</w>，每次出手，身體周圍 <t>3</t> 格內的其他生物都會捱上一份同樣的傷害，寵物和隊友都會被波及，只有赤毒敵人不受影響",
+            "它打的是<w>範圍攻擊</w>，每次出手，身體周圍 <t>3</t> 格內的其他生物都挨一份同樣的傷害，寵物和隊友都會被波及，只有赤毒敵人不受影響",
             "命中後把你<w>遠遠擊飛</w>，並回復 <t>2.6</t> 點生命",
             "每秒回血，有目標時回 <t>2</t> 點或已損失生命的 <t>2%</t>，取較大者，沒有目標時則是 <t>1</t> 點或 <t>1%</t>",
             {
@@ -463,11 +463,11 @@
           "rows": [
             [
               "[[weapons/kuva_weapons|赤毒武器]]",
-              "隨機 1 把本模組的專屬武器，等級在你當前的武器等級範圍內隨機"
+              "1 把，種類隨機，等級在你當前的武器等級範圍內隨機"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
-              "1 個，合成三種工作台都要用到，詳見[[requiem/requiem_items]]"
+              "1 個，三種工作台都要用它合成，見[[requiem/requiem_items]]"
             ],
             [
               "{item:kuvalich:kuva}",
@@ -512,20 +512,20 @@
           "type": "list",
           "items": [
             "<c:55FFFF>Prime</c> 和 <c:FF55FF>裂罅</c>是模組的兩檔高階品質，區別見[[modules/module_rarity]]",
-            "武器等級範圍的下限和上限各提高同一個隨機值 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，下限最多提到 <t>{cfg:kuva_lich.minimumLevel}</t>，上限最多提到 <t>{cfg:kuva_lich.maximumLevel}</t>，詳見[[weapons/weapon_level]]",
+            "武器等級範圍的下限和上限各提高同一個隨機值 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，下限最多提到 <t>{cfg:kuva_lich.minimumLevel}</t>，上限最多提到 <t>{cfg:kuva_lich.maximumLevel}</t>，見[[weapons/weapon_level]]",
             "這次掉的赤毒武器按<em>提升前</em>的範圍生成，新範圍從下一次解密起才生效"
           ]
         },
         {
           "type": "tip",
           "style": "warn",
-          "text": "除了回到背包的安魂卡，所有獎勵都<w>掉在玄骸倒下的位置</w>，背包放不下的卡也會掉在這裡，所以收尾時最好遠離岩漿和虛空。"
+          "text": "<w>別在岩漿和虛空旁邊收尾</w>，除了回到背包的安魂卡，所有獎勵都掉在玄骸倒下的地方，背包放不下的卡也一樣。"
         },
         {
           "type": "tip",
           "style": "bad",
           "title": "最後一擊必須是你",
-          "text": "只有玩家親手打死的玄骸才會結算，弓箭和投擲物都算親手。被寵物、別的怪或環境傷害收掉的玄骸<b>沒有進度、沒有獎勵，也不算一次解密</b>。"
+          "text": "只有親手打死的玄骸才結算，弓箭和投擲物都算親手。被寵物、別的怪或環境傷害收掉的玄骸<b>沒有進度、沒有獎勵，也不算一次解密</b>。"
         },
         {
           "type": "h",
@@ -534,7 +534,7 @@
         {
           "type": "list",
           "items": [
-            "傷害公式為 13 × 難度係數 × 0.85，和奴僕是同一套演算法",
+            "傷害公式是 13 × 難度係數 × 0.85，和奴僕同一套演算法",
             "擊飛力度為水平 ×3.15、垂直 ×2.15",
             "被{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素傷害收尾的也不結算",
             "{lang:kuvaweapon.type.slash}元素的持續傷害、「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」詞條、赤毒武器特效打出的最後一擊，都算你的",
@@ -551,7 +551,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>玄骸等級</hl>記錄著你猜錯的次數，每次帶著猜錯的三張卡擊殺{lang:entity.kuvalich.kuva_master}，它就 +1，聊天欄會報出當前等級。"
+          "text": "<hl>玄骸等級</hl>記著你猜錯了幾次，每帶著猜錯的三張卡擊殺一次{lang:entity.kuvalich.kuva_master}，它就 +1，聊天欄報出當前等級。"
         },
         {
           "type": "list",
@@ -568,7 +568,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.increaseDamage>0",
-          "text": "每一級都會讓奴僕和玄骸這些赤毒敵人打你的傷害 +<t>{cfg:kuva_lich.increaseDamage|pct}</t>，別的怪物、摔落和岩漿造成的傷害都不受影響。"
+          "text": "每升一級，奴僕和玄骸這些赤毒敵人打你的傷害 +<t>{cfg:kuva_lich.increaseDamage|pct}</t>，別的怪物、摔落和岩漿的傷害都不受影響。"
         },
         {
           "type": "table",
@@ -599,7 +599,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.reducedDamage>0",
-          "text": "每一級還會讓你打赤毒敵人的傷害 -<t>{cfg:kuva_lich.reducedDamage|pct}</t>，最多削減 99.9%，打別的目標不受影響。"
+          "text": "每升一級，你打赤毒敵人的傷害還會 -<t>{cfg:kuva_lich.reducedDamage|pct}</t>，最多削減 99.9%，打別的目標不受影響。"
         },
         {
           "type": "tip",
@@ -608,22 +608,22 @@
             "!cfg:kuva_lich.reducedDamage>0"
           ],
           "style": "good",
-          "text": "玄骸等級只記錄你猜錯的次數，不會削弱你，猜錯只意味著少了一次成功。"
+          "text": "玄骸等級只記著你猜錯的次數，不會削弱你，猜錯只是少了一次成功。"
         },
         {
           "type": "tip",
           "style": "warn",
-          "title": "猜錯後記得換卡",
-          "text": "猜錯後三張卡<em>不會被收走</em>，仍然放在擺卡的[[requiem/requiem_gate|滅骸之扉]]裡，記得換好卡再去殺下一隻玄骸，原樣不動的話，同樣的錯誤組合會讓你再失敗一次，等級再 +1。"
+          "title": "猜錯了先換卡",
+          "text": "猜錯後三張卡<em>不會被收走</em>，還放在擺卡的[[requiem/requiem_gate|滅骸之扉]]裡，原樣不動的話，同樣的錯誤組合會讓你再失敗一次，等級再 +1。換好卡再去找下一隻玄骸，別讓同一個錯多算你一級。"
         },
         {
           "type": "p",
-          "text": "用最少的次數試出正確順序的方法，見[[requiem/decrypt_failure]]。"
+          "text": "怎樣用最少的次數試出正確順序，見[[requiem/decrypt_failure]]。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "《星際戰甲》裡，按錯誤的順序用安魂模組處決玄骸只會落空，它會從刀下活過來，升一級，變得更強。本模組把這個等級改為記在你自己身上。"
+          "text": "指揮官，檔案裡寫著，按錯誤的順序用安魂 Mod 處決玄骸只會落空，它會從刀下活過來，升一級，變得更強。到了這裡，這個等級改記在您自己身上。刀下溜走還長一級的東西，真想塞進引擎裡慢慢碾……碾成……Ordis 這就把這半句從檔案裡刪掉。"
         }
       ]
     },
@@ -636,7 +636,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "赤毒敵人越打越兇，<hl>戰鬥拖得越久，它們造成的傷害越高</hl>，而且沒有上限，對付它們最好速戰速決。"
+          "text": "赤毒敵人越打越兇，<hl>戰鬥拖得越久，它們的傷害越高</hl>，而且沒有上限，對付它們要速戰速決。"
         },
         {
           "type": "formula",
@@ -675,8 +675,8 @@
           "type": "list",
           "items": [
             "奴僕和玄骸<em>各自</em>計時",
-            "計時從它<w>鎖定目標那一刻</w>就開始了，並不等到交手，奴僕在 <t>32</t> 格、玄骸在 <t>64</t> 格內看見你就會鎖定",
-            "只要它有攻擊目標，倍率就會一直上漲，目標可以是你、你的寵物或它正在打的其他怪",
+            "計時從它<w>鎖定目標那一刻</w>就開始，不等到交手，奴僕在 <t>32</t> 格、玄骸在 <t>64</t> 格內看見你就會鎖定",
+            "只要它有攻擊目標，倍率就一直上漲，目標可以是你、你的寵物，或它正在打的其他怪",
             "失去目標後按同樣的速度往回退，打了 60 秒就要脫戰 60 秒才能完全歸零",
             "計時跟著實體一起存檔，區塊卸載再載入不會清零"
           ]
@@ -691,7 +691,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "打玄骸時傷害越打越低並非錯覺，你打在赤毒敵人身上的每一下都要先闖過幾道減傷關卡，奴僕只設了前兩道，玄骸則四道俱全。"
+          "text": "打玄骸時傷害越打越低，不是錯覺。你打在赤毒敵人身上的每一下都要先過幾道減傷關卡，奴僕只有前兩道，玄骸四道都有。"
         },
         {
           "type": "table",
@@ -737,7 +737,7 @@
           "type": "tip",
           "style": "info",
           "title": "只打折原始傷害",
-          "text": "這幾關打折的只是武器攻擊力、附魔、跳劈暴擊構成的<t>原始傷害</t>，模組詞條、模組暴擊、元素傷害的倍率在過關<em>之後</em>才乘，<g>軟上限壓不到它們</g>，詳見[[combat/damage]]。"
+          "text": "這幾關打折的只是武器攻擊力、附魔、跳劈暴擊構成的<t>原始傷害</t>，模組詞條、模組暴擊、元素傷害的倍率在過關<em>之後</em>才乘，<g>軟上限壓不到它們</g>，見[[combat/damage]]。"
         },
         {
           "type": "h",
@@ -768,7 +768,7 @@
             ],
             [
               "魔法",
-              "藥水、尖刺等魔法傷害，以及被認作魔法的模組法術",
+              "藥水、尖刺等魔法傷害，以及被認作魔法的其它模組法術",
               "<b>×0.75</b>"
             ],
             [
@@ -785,7 +785,7 @@
         },
         {
           "type": "p",
-          "text": "判定時從上往下逐行對照，先符合哪類就算哪類，這 5 類也是第②關分開記層的依據。"
+          "text": "判定時從上往下逐行對照，先符合哪一類就算哪一類，第②關也按這 5 類分開記層。"
         },
         {
           "type": "h",
@@ -793,27 +793,27 @@
         },
         {
           "type": "p",
-          "text": "玄骸會逐漸適應你的打法，同一類傷害用得越多，這一類被削減得越狠。"
+          "text": "玄骸會適應你的打法，同一類傷害用得越多，這一類就被削得越狠。"
         },
         {
           "type": "list",
           "items": [
             "5 類傷害<em>各自</em>記層",
-            "每次挨打時，先按這一類當前的層數減傷，每層 <t>5%</t>，然後這一類再 +1 層，所以第一下不會減傷",
-            "最多疊到 <t>6</t> 層，這時這一類傷害 <b>-30%</b>",
-            "某一類 <t>4~5</t> 秒沒有再打中時，這一類會掉 1 層，之後每 <t>5</t> 秒再掉 1 層",
-            "超過 <t>10</t> 秒沒受到任何傷害時，所有類別一併清零"
+            "每挨一下，先按這一類現有的層數減傷，每層 <t>5%</t>，再給這一類 +1 層，所以第一下不減傷",
+            "最多疊 <t>6</t> 層，疊滿時這一類傷害 <b>-30%</b>",
+            "某一類 <t>4~5</t> 秒沒再打中，就掉 1 層，之後每 <t>5</t> 秒再掉 1 層",
+            "它超過 <t>10</t> 秒沒受任何傷害，所有類別一起清零"
           ]
         },
         {
           "type": "tip",
           "style": "good",
-          "text": "<g>輪換傷害類型</g>最划算，近戰打一陣就換弓，再換法術，讓閒下來的類別慢慢掉層。<w>換武器並不等於換類別</w>，兩把劍都屬於近戰，共用同一個計數。"
+          "text": "<g>輪換傷害類型</g>，近戰打一陣就換弓，再換法術，讓歇下來的那幾類慢慢掉層。<w>換武器不等於換類別</w>，兩把劍都算近戰，共用一個計數。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "《星際戰甲》裡有一張戰甲模組名叫 Adaptation，意為適應，受到哪種傷害，就對哪種傷害疊起抗性。玄骸的適應性抗性出自同一個思路，只是這一回，長進的是敵人。"
+          "text": "Ordis 的檔案裡有一張戰甲 Mod，名叫 Adaptation，意思是適應，受到哪種傷害，就對哪種傷害疊起抗性。玄骸的適應性抗性出自同一個思路，只是這一回，長進的是敵人。"
         },
         {
           "type": "h",
@@ -860,7 +860,7 @@
           "type": "tip",
           "style": "warn",
           "title": "哪些算一次「被打中」",
-          "text": "<w>每一下真正結算的傷害都算</w>，也都會疊層，包括{lang:kuvaweapon.type.poison}和{lang:kuvaweapon.type.gas}持續傷害的每一跳、{lang:kuvaweapon.type.electricity}和{lang:kuvaweapon.type.explosion}的附加傷害、尖刺、寵物攻擊，沒蓄滿力的揮砍也算在內。持續傷害越多，主力輸出就被壓得越低。"
+          "text": "<w>每一下真正結算的傷害都算</w>，也都會疊層，{lang:kuvaweapon.type.poison}和{lang:kuvaweapon.type.gas}持續傷害的每一跳、{lang:kuvaweapon.type.electricity}和{lang:kuvaweapon.type.explosion}的附加傷害、尖刺、寵物的攻擊都在內，沒蓄滿力的揮砍也算。持續傷害掛得越多，你的主力輸出被壓得越低。"
         },
         {
           "type": "h",
@@ -868,7 +868,7 @@
         },
         {
           "type": "p",
-          "text": "一下打得太狠時，超出的部分會被大幅壓縮，武器本身攻擊力越高，被壓得越狠。"
+          "text": "一下打得太狠，超出的部分會被大幅壓縮，武器本身攻擊力越高，被壓得越狠。"
         },
         {
           "type": "formula",
@@ -917,7 +917,7 @@
                 "cfg:kuva_lich.enableThirdPartyMagicRecognition",
                 "cfg:kuva_lich.magicDamageNamespaces"
               ],
-              "text": "這些模組造成的傷害整體算作魔法：<t>{cfg:kuva_lich.magicDamageNamespaces|list}</t>"
+              "text": "這些模組造成的傷害一律算作魔法：<t>{cfg:kuva_lich.magicDamageNamespaces|list}</t>"
             },
             "能完全繞過這幾關的手段見[[enemies/lich_tactics]]"
           ]
@@ -932,7 +932,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "這一篇把前面的機制串成一套打法，講清開打前要準備什麼、輸出時怎樣避開減傷、最後如何親手收尾，照著做能少踩很多坑。"
+          "text": "前面那幾道減傷和增幅，討伐時要一起應付：開打前備什麼，輸出時怎樣避開減傷，最後怎樣親手收尾。"
         },
         {
           "type": "h",
@@ -941,8 +941,8 @@
         {
           "type": "steps",
           "items": [
-            "檢查[[requiem/requiem_gate|滅骸之扉]]裡的三張卡是不是這次想試的順序，沒放滿時只是刷進度，一條線索都沒揭示時放滿必敗",
-            "至少帶上兩三種傷害類型，比如近戰武器、弓或弩加上法術，最好再有一把模組倍率高的[[weapons/kuva_weapons|赤毒武器]]",
+            "檢查[[requiem/requiem_gate|滅骸之扉]]裡的三張卡是不是這次想試的順序，沒放滿只是刷進度，一條線索都沒揭示就放滿，必敗",
+            "至少帶上兩三種傷害類型，比如近戰武器、弓或弩，再加上法術，最好再有一把模組倍率高的[[weapons/kuva_weapons|赤毒武器]]",
             "選一塊開闊平坦、遠離寵物和村民的場地，它的範圍攻擊會波及周圍 3 格，擊飛還可能把你甩下懸崖",
             {
               "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
@@ -959,11 +959,11 @@
           "items": [
             "<g>優先用弓弩</g>，箭矢是唯一吃 ×1.25 的類別，而且和近戰分開記層",
             "按類別輪換，每類打幾下就換，把各類的層數都壓在 6 層以下",
-            "節奏比手速更重要，2 秒內從第 13 下起只剩 40%，一記蓄滿力的攻擊比兩下半蓄力更划算",
-            "按預設生命計算，單下原始傷害控制在 30 左右就夠了，超出的部分幾乎全被軟上限吃掉，資源更應該花在模組倍率上",
+            "節奏比手速要緊，2 秒內從第 13 下起只剩 40%，一記蓄滿力的攻擊比兩下半蓄力更划算",
+            "按預設生命算，單下原始傷害控制在 30 左右就夠，超出的部分幾乎全被軟上限吃掉，資源花在模組倍率上",
             {
               "if": "cfg:kuva_lich.battleBoost>0",
-              "text": "<w>速戰速決</w>，它的傷害按戰鬥秒數一路上漲，每秒 +<t>{cfg:kuva_lich.battleBoost|pct}</t>，詳見[[enemies/battle_boost]]"
+              "text": "<w>速戰速決</w>，它的傷害按戰鬥秒數一路上漲，每秒 +<t>{cfg:kuva_lich.battleBoost|pct}</t>，見[[enemies/battle_boost]]"
             }
           ]
         },
@@ -974,7 +974,7 @@
         {
           "type": "list",
           "items": [
-            "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」詞條觸發時直接擊殺，對玄骸同樣有效，詳見[[reference/weapon_attr_special]]",
+            "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」詞條觸發時直接擊殺，對玄骸同樣有效，見[[reference/weapon_attr_special]]",
             "{lang:kuvaweapon.type.slash}元素的持續傷害和部分[[weapons/weapon_list|赤毒武器]]特效的持續傷害會直接扣血，不過任何一關，也不疊層、不佔連擊計數"
           ]
         },
@@ -983,7 +983,7 @@
           "if": "mod:tacz",
           "style": "info",
           "title": "用槍打",
-          "text": "TACZ 的子彈按「其他」類結算，修正為 ×1。每發子彈都算兩次被打中，哪怕其中一段是 0 傷害，所以連擊遞減和適應性抗性漲得快一倍。「{lang:item.module.true_bullet}」詞條附加的傷害則直接扣血，繞過抗性。"
+          "text": "TACZ 的子彈按「其他」類結算，修正 ×1。每發子彈都算兩次被打中，哪怕其中一段是 0 傷害，所以連擊遞減和適應性抗性漲得快一倍。「{lang:item.module.true_bullet}」詞條附加的傷害則直接扣血，繞過抗性。"
         },
         {
           "type": "h",

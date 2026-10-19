@@ -14,7 +14,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "裝上 TACZ「永恆槍械工坊：零」之後，它的槍也能裝配<hl>武器模組</hl>，獲得各種加成。這一篇就帶你把第一把槍改裝妥當。"
+          "text": "槍要先開光，再裝模組，這個順序反不了。裝了 TACZ「永恆槍械工坊：零」，它的槍也能裝上<hl>武器模組</hl>，拿到各種加成。"
         },
         {
           "type": "h",
@@ -25,7 +25,7 @@
           "rows": [
             [
               "武器模組",
-              "裝在武器上的強化卡，裝上不會消耗，隨時可以拆下，卡上的每條屬性叫作一個<t>詞條</t>。"
+              "裝在武器上的強化卡，裝上不消耗，隨時能拆下，卡上的每條屬性叫一個<t>詞條</t>。"
             ],
             [
               "開光",
@@ -33,7 +33,7 @@
             ],
             [
               "{item:kuvalich:requiem_evolve}",
-              "一台工作台，左格放要處理的物品，中格放材料，右格會自動給出結果，開光就在這裡完成，見[[weapons/requiem_evolve]]。"
+              "一台工作台，左格放要處理的物品，中格放材料，結果自動出現在右格，開光就在這裡做，見[[weapons/requiem_evolve]]。"
             ],
             [
               "{item:kuvalich:requiem_weapon_table}",
@@ -41,7 +41,7 @@
             ],
             [
               "解密",
-              "主線玩法，要先猜出三張安魂卡的正確順序，再擊敗 Boss 赤毒玄骸，見[[requiem/decryption]]。"
+              "主線玩法，先猜出三張安魂卡的正確順序，再擊敗 Boss 赤毒玄骸，見[[requiem/decryption]]。"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -60,13 +60,13 @@
         },
         {
           "type": "p",
-          "text": "<dim>其它不熟悉的名詞可以查閱[[start/glossary]]。</dim>"
+          "text": "<dim>其它不熟的名詞，去[[start/glossary]]查。</dim>"
         },
         {
           "type": "tip",
           "style": "warn",
-          "title": "第一次解密成功之後才能開始",
-          "text": "兩台工作台都要用{item:kuvalich:lich_reliquary}合成，所以在第一次解密成功之前，槍還無法開光，也裝不了模組，眼下先照著[[start/first_steps]]推進主線。"
+          "title": "第一次解密成功後才能動手",
+          "text": "兩台工作台都要用{item:kuvalich:lich_reliquary}合成，所以第一次解密成功之前，槍開不了光，也裝不了模組，眼下先照[[start/first_steps]]推進主線。"
         },
         {
           "type": "h",
@@ -75,10 +75,10 @@
         {
           "type": "steps",
           "items": [
-            "準備一把 TACZ 槍和 1 個{item:kuvalich:riven_sliver}，槍必須是<em>單獨一把</em>，碎塊的來源見[[start/materials]]。",
-            "開啟{item:kuvalich:requiem_evolve}，槍放左格，碎塊放中格，碎塊會<w>立刻扣掉 1 個</w>，右格隨即出現開光後的槍，把它取走即可。",
-            "開光會隨機給槍一套基礎面板，包括<t>傷害</t>、<t>暴擊機率</t>、<t>暴擊傷害</t>和<t>觸發機率</t>，不滿意可以用塑形塊重洗，見[[weapons/forma]]。",
-            "把槍放進{item:kuvalich:requiem_weapon_table}裝上模組，最多可裝 <t>8</t> 張，見[[weapons/weapon_table]]。",
+            "備好一把 TACZ 槍和 1 個{item:kuvalich:riven_sliver}，槍必須是<em>單獨一把</em>，碎塊從哪來見[[start/materials]]。",
+            "開啟{item:kuvalich:requiem_evolve}，槍放左格，碎塊放中格，碎塊<w>立刻扣掉 1 個</w>，右格隨即出現開過光的槍，把它取走。",
+            "開光隨機給槍一套基礎面板，包括<t>傷害</t>、<t>暴擊機率</t>、<t>暴擊傷害</t>和<t>觸發機率</t>，不滿意就用塑形塊重洗，見[[weapons/forma]]。",
+            "把槍放進{item:kuvalich:requiem_weapon_table}裝模組，最多裝 <t>8</t> 張，見[[weapons/weapon_table]]。",
             "主手拿槍開火，模組效果立刻生效。"
           ]
         },
@@ -91,7 +91,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作裡的主武器和副武器同樣有 8 個常規 Mod 槽。玩家習慣把 Mod 叫作「卡」，斟酌著挑出 8 張裝上，就叫「配卡」。"
+          "text": "在起源星系，主武器和副武器也各有 8 個常規 Mod 槽。天諾們習慣管 Mod 叫「卡」，掂量著挑出 8 張裝上去，這件事就叫「配卡」。"
         },
         {
           "type": "h",
@@ -99,7 +99,7 @@
         },
         {
           "type": "p",
-          "text": "除了[[tacz/tacz_gun_attributes|槍械專屬詞條]]，武器模組上的其它詞條大多也對槍有效，詳見下表。"
+          "text": "除了[[tacz/tacz_gun_attributes|槍械專屬詞條]]，武器模組上的其它詞條大多也對槍有效，見下表。"
         },
         {
           "type": "table",
@@ -156,7 +156,7 @@
           "if": "cfg:kuva_lich.taczGunEnhanceEnable",
           "style": "good",
           "title": "不開光也能變強",
-          "text": "另有一條不必開光的路，用{item:kuvalich:lich_reliquary}給槍加上<hl>女皇之力</hl>，就能永久提高它的傷害，見[[tacz/tacz_enhance]]。"
+          "text": "還有一條不用開光的路，用{item:kuvalich:lich_reliquary}給槍加上<hl>女皇之力</hl>，永久提高它的傷害，見[[tacz/tacz_enhance]]。"
         }
       ]
     },
@@ -169,11 +169,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>女皇之力</hl>能永久提高一把 TACZ 槍的傷害，而且<em>不需要開光</em>，任何 TACZ 槍都能強化。"
+          "text": "強化一次就要用掉一個玄骸之遺，造工作台也要它，天諾，先分好用途。<hl>女皇之力</hl>能永久提高一把 TACZ 槍的傷害，而且<em>不用開光</em>，任何 TACZ 槍都能強化。"
         },
         {
           "type": "p",
-          "text": "強化用的材料是{item:kuvalich:lich_reliquary}，它是[[requiem/decryption|解密]]成功並擊敗 Boss 赤毒玄骸後才會掉落的稀有材料。"
+          "text": "強化的材料是{item:kuvalich:lich_reliquary}，一種稀有材料，要[[requiem/decryption|解密]]成功並擊敗 Boss 赤毒玄骸才會掉落。"
         },
         {
           "type": "items",
@@ -190,8 +190,8 @@
           "type": "steps",
           "items": [
             "開啟{item:kuvalich:requiem_evolve}，左格放單獨一把槍，中格放{item:kuvalich:lich_reliquary}。",
-            "放好的瞬間會<w>扣掉 1 個玄骸之遺</w>，強化後的槍出現在右格，取走即可。",
-            "想繼續強化就把槍放回左格，每放一次強化一級。"
+            "放好的那一刻<w>扣掉 1 個玄骸之遺</w>，強化後的槍出現在右格，把它取走。",
+            "要接著強化，就把槍放回左格，每放一次強化一級。"
           ]
         },
         {
@@ -213,7 +213,7 @@
               "if": "cfg:kuva_lich.taczGunEnhanceMaxCount>0",
               "cells": [
                 "強化上限",
-                "每把槍 <t>{cfg:kuva_lich.taczGunEnhanceMaxCount}</t> 次，達到上限後再放進去不會有反應"
+                "每把槍 <t>{cfg:kuva_lich.taczGunEnhanceMaxCount}</t> 次，到了上限再放進去沒有反應"
               ]
             },
             {
@@ -231,17 +231,17 @@
         },
         {
           "type": "p",
-          "text": "把滑鼠移到槍上，提示裡會多出一行「<c:AA0000>女皇之力 </c><c:FF5555>× N</c><c:AA0000> (</c><c:FF5555>傷害+X%</c><c:AA0000>)</c>」，TACZ 自帶提示裡的傷害數字也已經乘上了女皇之力。"
+          "text": "滑鼠移到槍上，提示裡會多一行「<c:AA0000>女皇之力 </c><c:FF5555>× N</c><c:AA0000> (</c><c:FF5555>傷害+X%</c><c:AA0000>)</c>」，TACZ 自帶提示裡的傷害數字也已經乘上了女皇之力。"
         },
         {
           "type": "p",
-          "text": "女皇之力是一個<hl>獨立乘區</hl>，單獨乘在傷害上，與其它所有加成相乘。強化次數記在槍上，槍交給別人後強化依然跟著它走。"
+          "text": "女皇之力是一個<hl>獨立乘區</hl>，單獨乘在傷害上，和其它所有加成相乘。強化次數記在槍上，槍交給別人，強化也跟著它走。"
         },
         {
           "type": "tip",
           "style": "warn",
-          "title": "玄骸之遺很稀缺",
-          "text": "每次解密成功只掉 <t>1</t> 個，見[[enemies/kuva_master]]。合成{item:kuvalich:requiem_evolve}、{item:kuvalich:requiem_weapon_table}和{item:kuvalich:requiem_warframe_table}也都要用它，最好集中強化一把最常用的槍。"
+          "title": "玄骸之遺省著用",
+          "text": "每次解密成功只掉 <t>1</t> 個，見[[enemies/kuva_master]]，合成{item:kuvalich:requiem_evolve}、{item:kuvalich:requiem_weapon_table}和{item:kuvalich:requiem_warframe_table}也都要它，集中強化一把最常用的槍。"
         },
         {
           "type": "h",
@@ -250,8 +250,8 @@
         {
           "type": "list",
           "items": [
-            "槍上只記錄強化次數，不記傷害數字，加成總是按上面「每次強化」的數值現算。",
-            "物品提示裡的數字如果和上面「每次強化」對不上，以本書為準。"
+            "槍上只記強化次數，不記傷害數字，加成總按上面「每次強化」的數值現算。",
+            "物品提示裡的數字和上面「每次強化」對不上時，以這本指南為準。"
           ]
         }
       ]
@@ -264,7 +264,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "有一組詞條<em>只對 TACZ 槍有效</em>，裝在別的武器上不起作用，它們管的是槍自身的傷害，以及裝填、彈匣、後坐、瞄準等手感。"
+          "text": "有一組詞條<em>只對 TACZ 槍有效</em>，裝在別的武器上不起作用，管的是槍自身的傷害，以及裝填、彈匣、後坐、瞄準等手感。這些詞條變成負數時，大多會讓槍更難用，裝之前看清正負。"
         },
         {
           "type": "p",
@@ -354,7 +354,7 @@
           "type": "list",
           "items": [
             "帶這些詞條的模組只有裝了 TACZ 才會出現。",
-            "詞條隨機的[[modules/riven_module|裂罅模組]]也能洗出它們，但僅限遠程和通用兩種裂罅。",
+            "詞條隨機的[[modules/riven_module|裂罅模組]]也能洗出它們，只限遠程和通用兩種裂罅。",
             "在[[weapons/weapon_panel|武器面板]]裡，它們集中在「{lang:kuvalich.panel.group.gun}」一組。",
             {
               "if": "module:chambered",
@@ -369,9 +369,9 @@
         {
           "type": "list",
           "items": [
-            "例如槍自帶 2 倍爆頭，裝上 +60% {lang:item.module.headshot_damage}後變為 3.2 倍。",
-            "裝填動畫最多加速到 <t>4 倍</t>，{lang:item.module.reload_speed}再高時，實際已經裝填完畢而動畫仍在播放，這是正常現象。",
-            "裂罅洗出負的{lang:item.module.gun_damage}基本無害，合計為負時按 0 算，它只會抵消其它模組的正值。",
+            "比如槍自帶 2 倍爆頭，裝上 +60% {lang:item.module.headshot_damage}後變成 3.2 倍。",
+            "裝填動畫最多加速到 <t>4 倍</t>，{lang:item.module.reload_speed}再高，裝填其實已經完成，動畫還在播，這是正常的。",
+            "裂罅洗出負的{lang:item.module.gun_damage}基本無害，合計為負時按 0 算，它只會抵掉其它模組的正值。",
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
@@ -384,14 +384,14 @@
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "{lang:item.module.aim_time}、{lang:item.module.accuracy}、{lang:item.module.headshot_damage}在拿起槍時就已算好，換了其它位置上的模組後，要把槍重新切出來一次或等上幾秒才會更新。"
+              "text": "{lang:item.module.aim_time}、{lang:item.module.accuracy}、{lang:item.module.headshot_damage}在拿起槍時就算好了，換了其它位置上的模組，要把槍重新切出來一次，或者等幾秒，它們才會更新。"
             },
             {
               "if": [
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
                 "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
               ],
-              "text": "{lang:item.module.magazine_size}請裝在<em>槍本體</em>上，其它位置上的彈匣加成<w>不保證生效</w>，面板上的數字可能比實際彈匣更大。"
+              "text": "{lang:item.module.magazine_size}裝在<em>槍本體</em>上，其它位置上的彈匣加成<w>不保證生效</w>，面板上的數字可能比實際彈匣大。"
             }
           ]
         }
@@ -405,7 +405,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{lang:item.module.multishot}、{lang:item.module.firing_rate}、{lang:item.module.bursting_radius}這三條弓弩也能用，裝在 TACZ 槍上時演算法卻不一樣，下面逐條說明。"
+          "text": "{lang:item.module.multishot}、{lang:item.module.firing_rate}、{lang:item.module.bursting_radius}這三條弓弩也能用，裝在 TACZ 槍上時演算法不一樣。"
         },
         {
           "type": "h",
@@ -413,7 +413,7 @@
         },
         {
           "type": "p",
-          "text": "每開一槍都會額外多打出一些彈丸，數量按下式計算。"
+          "text": "每開一槍都會多打出一些彈丸，數量按下式算。"
         },
         {
           "type": "formula",
@@ -453,12 +453,12 @@
           "type": "tip",
           "style": "good",
           "title": "多出來的彈丸是白賺的",
-          "text": "傷害仍按<em>原彈丸數</em>分給每顆彈丸，多打出的彈丸不會稀釋傷害，所以 +100% 多重射擊大約能讓每槍總傷害翻倍。每顆彈丸各自擲暴擊和元素觸發，觸發次數也會隨之增加。"
+          "text": "傷害仍按<em>原彈丸數</em>分給每顆彈丸，多出的彈丸不會攤薄傷害，所以 +100% 多重射擊大約讓每槍總傷害翻倍。每顆彈丸各自擲暴擊和元素觸發，觸發次數也跟著增加。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "《星際戰甲》裡的多重射擊也是這個道理，超出整數的那部分按機率多打一發，多出的彈丸同樣帶著十足的傷害。"
+          "text": "Ordis 查過記錄，那邊的多重射擊也是同一個道理，超出整數的那部分按機率多打一發，多出來的彈丸同樣帶著十足的傷害。這樣的賬，算起來格外舒心。"
         },
         {
           "type": "h",
@@ -466,7 +466,7 @@
         },
         {
           "type": "p",
-          "text": "射擊間隔 ÷ (1+x)，最快每 <t>50 毫秒</t>一發，即每秒 20 發，槍上的射速<em>不會</em>像弓那樣翻倍。"
+          "text": "射擊間隔 ÷ (1+x)，最快每 <t>50 毫秒</t>一發，相當於每秒 20 發，槍上的射速<em>不會</em>像弓那樣翻倍。"
         },
         {
           "type": "h",
@@ -474,7 +474,7 @@
         },
         {
           "type": "p",
-          "text": "<hl>擊殺疊層</hl>是連續擊殺時疊起來的臨時加成，規則見[[combat/kill_stack]]。下面兩種對槍同樣有效，層數一變就立刻生效。"
+          "text": "<hl>擊殺疊層</hl>是連續擊殺時疊起來的臨時加成，規則見[[combat/kill_stack]]，下面兩種對槍同樣有效，層數一變就立刻生效。"
         },
         {
           "type": "kv",
@@ -496,8 +496,8 @@
         {
           "type": "list",
           "items": [
-            "普通子彈命中後，目標周圍 <t>1 + 2x</t> 格內的其它生物會受到這一擊最終傷害的 <t>50%</t>，這叫作<t>濺射</t>，濺射只結算傷害，不觸發元素。",
-            "榴彈、火箭等自帶爆炸的槍沒有濺射，改為把槍自身的爆炸半徑 ×(1+x)。"
+            "普通子彈命中後，目標周圍 <t>1 + 2x</t> 格內的其它生物受到這一擊最終傷害的 <t>50%</t>，這叫<t>濺射</t>，濺射只算傷害，不觸發元素。",
+            "榴彈、火箭等自帶爆炸的槍沒有濺射，改成把槍自身的爆炸半徑 ×(1+x)。"
           ]
         },
         {
@@ -522,7 +522,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "槍械專屬詞條裡有幾條效果比較特別，這一篇逐條細說。"
+          "text": "槍械專屬詞條裡有幾條效果比較特別。"
         },
         {
           "type": "h",
@@ -530,7 +530,7 @@
         },
         {
           "type": "p",
-          "text": "每顆子彈命中後會額外造成一次<hl>真實傷害</hl>，它<g>無視護甲、護盾和傷害減免</g>，直接扣除生命值，足以致死時直接擊殺目標。"
+          "text": "每顆子彈命中後額外造成一次<hl>真實傷害</hl>，<g>無視護甲、護盾和傷害減免</g>，直接扣生命值，夠致死就直接擊殺目標。"
         },
         {
           "type": "formula",
@@ -555,7 +555,7 @@
         {
           "type": "p",
           "if": "module:chambered",
-          "text": "只在彈匣<t>裝滿</t>、當前彈藥不少於彈匣上限時開的那一槍生效，散彈槍這一槍的每顆彈丸都吃加成，很適合打一槍就換彈的狙擊玩法。"
+          "text": "只在彈匣<t>裝滿</t>、當前彈藥不少於彈匣上限時開的那一槍生效，散彈槍這一槍的每顆彈丸都吃加成，適合打一槍就換彈的狙擊打法。"
         },
         {
           "type": "kv",
@@ -575,7 +575,7 @@
           "type": "tip",
           "if": "module:chambered",
           "style": "wf",
-          "text": "原作裡的「膛室 Prime」英文名為 Primed Chamber，是虛空商人 Baro Ki'Teer 貨架上的一張狙擊槍 Mod，效果同樣是讓彈匣裡的第一發傷害大增。"
+          "text": "「膛室 Prime」在那邊叫 Primed Chamber，是虛空商人 Baro Ki'Teer 貨架上的一張狙擊槍 Mod，效果倒也一樣，讓彈匣裡的第一發傷害大增。"
         },
         {
           "type": "h",
@@ -585,7 +585,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-          "text": "用 TACZ 子彈打出<em>最後一擊</em>，擊殺動物、怪物或 CustomNPCs 的 NPC 時會掉落更多戰利品。x 會和裝在你自己身上的[[warframe/warframe_module|戰甲模組]]裡的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」相加，再按下式計算。"
+          "text": "用 TACZ 子彈打出<em>最後一擊</em>，擊殺動物、怪物或 CustomNPCs 的 NPC，會掉更多戰利品。x 和你身上[[warframe/warframe_module|戰甲模組]]裡的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」相加，再按下式算。"
         },
         {
           "type": "formula",
@@ -610,7 +610,7 @@
           "items": [
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-              "text": "最後一擊如果是{lang:item.module.true_bullet}補上的那一下、濺射或[[reference/weapon_attr_special|處決]]，就不算子彈擊殺，{lang:item.module.gun_loot_drop}不加成，戰甲那條照常計算。"
+              "text": "最後一擊如果是{lang:item.module.true_bullet}補上的那一下、濺射或[[reference/weapon_attr_special|處決]]，就不算子彈擊殺，{lang:item.module.gun_loot_drop}不加成，戰甲那條照常算。"
             },
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
@@ -632,7 +632,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "一發子彈到底能打多少，這一篇從頭算起。傷害分兩個階段，開槍時由 TACZ 算出子彈傷害，命中後再走一遍[[combat/damage|通用傷害結算]]。"
+          "text": "一發子彈的傷害分兩個階段算，開槍時由 TACZ 算出子彈傷害，命中後再走一遍[[combat/damage|通用傷害結算]]。"
         },
         {
           "type": "h",
@@ -673,7 +673,7 @@
               "if": "cfg:kuva_lich.taczGunEnhanceEnable",
               "text": "TACZ 提示裡顯示的傷害<w>已經乘上了</w>女皇之力。"
             },
-            "之後 TACZ 再按自己的規則計算爆頭等加成，得出打在目標身上的傷害，其中的爆頭倍率已含{lang:item.module.headshot_damage}。"
+            "之後 TACZ 再按自己的規則算爆頭等加成，得出打在目標身上的傷害，這裡的爆頭倍率已經含{lang:item.module.headshot_damage}。"
           ]
         },
         {
@@ -697,12 +697,12 @@
           "type": "tip",
           "style": "info",
           "title": "堆傷害的思路",
-          "text": "同組加成先相加，不同組之間相乘，這就是<hl>乘區</hl>。{lang:item.module.gun_damage}、{lang:item.module.multishot}、遠程傷害和暴擊各屬一個乘區，每個都照顧到，比只堆其中一條更划算。"
+          "text": "同組加成先相加，不同組之間相乘，這就是<hl>乘區</hl>。{lang:item.module.gun_damage}、{lang:item.module.multishot}、遠程傷害和暴擊各佔一個乘區，每個都堆上一些，別隻堆其中一條。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "原作玩家配卡同樣講究乘區，基礎傷害卡、多重射擊卡和暴擊卡各算各的，最後才相乘，所以常見的配卡裡這幾類總會各佔一席。"
+          "text": "指揮官，天諾們配卡時倒也講究乘區，基礎傷害卡、多重射擊卡和暴擊卡各算各的，最後才相乘，所以常見的配卡裡，這幾類總會各佔一席。"
         },
         {
           "type": "h",
@@ -711,7 +711,7 @@
         {
           "type": "list",
           "items": [
-            "兩段各擲一次暴擊和元素觸發，平均傷害不變，掛上[[combat/element_status|異常狀態]]的機會更高，只是每次觸發的元素傷害僅按那一段的傷害計算。",
+            "兩段各擲一次暴擊和元素觸發，平均傷害不變，掛上[[combat/element_status|異常狀態]]的機會更高，不過每次觸發的元素傷害只按那一段的傷害算。",
             {
               "if": [
                 "cfg:kuva_lich.enableDamageNumbers",

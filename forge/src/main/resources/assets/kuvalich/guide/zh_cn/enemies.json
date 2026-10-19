@@ -12,13 +12,13 @@
       "summary": "最常打的小兵，攒解密进度、掉材料和模组",
       "items": ["kuvalich:kuva_slave_spawn_egg"],
       "blocks": [
-        { "type": "p", "text": "<hl>{lang:entity.kuvalich.kuva_slave}</hl>是本模组的小兵，也是最常碰面的赤毒敌人。每亲手斩杀一只，就离打败 Boss {lang:entity.kuvalich.kuva_master}更近一步，它倒下时还可能留下材料和模组。" },
+        { "type": "p", "text": "打败玄骸的答案，要从它的奴仆身上一点点挖出来。<hl>{lang:entity.kuvalich.kuva_slave}</hl>是赤毒敌人里的小兵，也是最常碰面的一种，每亲手斩杀一只，就离打败 Boss {lang:entity.kuvalich.kuva_master}更近一步，它倒下时还可能留下材料和模组。" },
         { "type": "entity", "id": "kuvalich:kuva_slave", "height": 88 },
-        { "type": "p", "text": "<dim>赤毒、玄骸、模组这些叫法都来自《星际战甲》，不熟悉的话可以翻翻[[start/glossary|名词速查]]。</dim>" },
+        { "type": "p", "text": "<dim>赤毒、玄骸、模组这些叫法都来自《星际战甲》，不熟悉就翻一翻[[start/glossary|名词速查]]。</dim>" },
         { "type": "h", "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0", "text": "在哪遇到" },
         { "type": "kv", "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0", "rows": [
           ["地点", "主世界任意生物群系，<b>蘑菇岛除外</b>"],
-          ["亮度", "和僵尸一样只在足够暗的地方刷新，<t>和平</t>难度下不会刷新"],
+          ["亮度", "和僵尸一样只在够暗的地方刷新，<t>和平</t>难度下不刷新"],
           ["空间", "体型庞大，需要 <t>3×3</t>、<t>3</t> 格高的空位，所以在低矮的洞穴里很少见"],
           ["每群数量", "<t>{cfg:kuva_lich.kuvaSlaveMinSpawnCount}~{cfg:kuva_lich.kuvaSlaveMaxSpawnCount}</t> 只"],
           ["刷新权重", "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>，越大越常见 <dim>（原版僵尸 95）</dim>"],
@@ -28,10 +28,10 @@
         { "type": "h", "text": "它怎么打你" },
         { "type": "list", "items": [
           "下手很重，每一下在简单难度是 <t>6.8</t>，普通 <t>13.6</t>，困难 <t>20.4</t>",
-          "命中后会把你<w>大幅击飞</w>，自己顺势扑上来，同时回复 <t>0.8</t> 点生命",
+          "命中后把你<w>大幅击飞</w>，自己顺势扑上来，同时回复 <t>0.8</t> 点生命",
           "跑得比僵尸快一半，<t>32</t> 格内看见你就会追过来",
           "会慢慢回血，每秒 <t>1</t> 点，没有攻击目标时每秒 <t>0.5</t> 点",
-          "见怪就打，附近的其他怪物都会被它主动攻击，末影人这类中立怪也不例外，只有苦力怕和赤毒敌人能幸免",
+          "见怪就打，附近的其他怪物都会挨它的打，末影人这类中立怪也不例外，只放过苦力怕和赤毒敌人",
           { "if": "cfg:kuva_lich.battleBoost>0", "text": "战斗拖得越久，它打得越痛，见[[enemies/battle_boost]]" }
         ] },
         { "type": "h", "text": "基础属性" },
@@ -46,7 +46,7 @@
           ["免疫", "摔落伤害"],
           ["自带减伤", "受到的伤害一律 <b>×0.75</b>，见[[enemies/lich_resistance]]"]
         ] },
-        { "type": "p", "text": "它属于亡灵，亡灵杀手附魔和模组上的「{lang:item.module.bane_of_undead}」词条对它有效，治疗药水和伤害药水的效果也会反过来。" },
+        { "type": "p", "text": "它属于亡灵，亡灵杀手附魔和模组上的「{lang:item.module.bane_of_undead}」词条对它有效，治疗药水和伤害药水的效果也反过来。" },
         { "type": "h", "text": "击杀掉落" },
         { "type": "table", "header": ["内容", "概率", "数量"], "widths": [3, 4, 2], "rows": [
           ["解密进度", "必得", "<t>{cfg:kuva_lich.minDecryptionProgress}~{cfg:kuva_lich.maxDecryptionProgress}</t> 点"],
@@ -58,19 +58,19 @@
           { "if": "cfg:kuva_lich.rareModuleDropChance>0", "cells": ["<c:FFD700>黄金</c>模组", "<t>{cfg:kuva_lich.rareModuleDropChance|pctv}</t>", "1"] }
         ] },
         { "type": "list", "items": [
-          "<t>解密进度</t>攒够后会逐条揭示打败玄骸所需的安魂卡，详见[[requiem/decryption]]，三条线索全部揭示后，再杀就不再增加",
-          "<t>模组</t>是装在武器或你自己身上的强化卡，详见[[modules/module_overview]]，掉出的模组有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模组，其余是装在你身上的战甲模组",
-          "三种品质的模组共用一次抽取，一只最多掉一张，品质说明见[[modules/module_rarity]]",
+          "<t>解密进度</t>攒够了，会一条条揭示打败玄骸要用的安魂卡，见[[requiem/decryption]]，三条线索都揭示后，再杀就不再增加",
+          "<t>模组</t>是装在武器或你自己身上的强化卡，见[[modules/module_overview]]，掉出的模组有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模组，其余是装在你身上的战甲模组",
+          "三种品质的模组共用一次抽取，一只最多掉一张，品质见[[modules/module_rarity]]",
           "赤毒、裂罅碎块、安魂宝石各自独立判定，用途见[[start/materials]]"
         ] },
-        { "type": "tip", "style": "bad", "title": "最后一击必须是你", "text": "用武器、弓箭、投掷物打死的都算在你名下。被宠物、别的怪或岩浆收掉的不算，被火烧死的也不算，哪怕火是你用火焰附加或火矢点燃的，这些情况下<b>没有进度，也不掉东西</b>。" },
-        { "type": "tip", "style": "wf", "text": "《星际战甲》里的奴仆原名 Thrall，是替玄骸卖命的手下，出没在玄骸的地盘上。处决它们能一点点揭开打败玄骸所需的安魂模组，本模组的「解密进度」便脱胎于此。" },
+        { "type": "tip", "style": "bad", "title": "最后一击必须是你", "text": "用武器、弓箭、投掷物打死的都算在你名下。被宠物、别的怪或岩浆收掉的不算，被火烧死的也不算，哪怕火是你用火焰附加或火矢点的，这些情况<b>没有进度，也不掉东西</b>。" },
+        { "type": "tip", "style": "wf", "text": "奴仆原名 Thrall，是替玄骸卖命的手下，出没在玄骸的地盘上。处决它们，打败玄骸要用的安魂 Mod 便会一点点显露，到了这里，这个过程就成了「解密进度」。" },
         { "type": "h", "text": "进阶细节" },
         { "type": "list", "items": [
-          "伤害公式为 8 × 难度系数 × 0.85，难度系数简单为 1、普通为 2、困难为 3，打在玩家身上时，原版还会按难度再调整一次，之后才计算护甲",
+          "伤害公式是 8 × 难度系数 × 0.85，难度系数简单为 1、普通为 2、困难为 3，打在你身上时，原版还会按难度再调一次，然后才算护甲",
           "击飞力度为你的水平速度 ×3、垂直速度 ×2",
-          "被元素伤害收尾的同样不算你的，{lang:kuvaweapon.type.fire}灼烧以及{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素打出的最后一击都不结算，元素说明见[[combat/elements]]",
-          "安魂宝石只看<em>击杀那一刻主手物品</em>上的<t>抢夺</t>附魔，时运不起作用，用弓射死时主手是弓，抢夺按 0 级计算",
+          "被元素伤害收尾的也不算你的，{lang:kuvaweapon.type.fire}灼烧，以及{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素打出的最后一击都不结算，元素见[[combat/elements]]",
+          "安魂宝石只看<em>击杀那一刻主手物品</em>上的<t>抢夺</t>附魔，时运没用，用弓射死时主手是弓，抢夺按 0 级算",
           "这些掉落直接生成在它倒下的位置，战甲模组上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」词条对它们无效"
         ] }
       ],
@@ -111,27 +111,27 @@
       "summary": "Boss：怎么遇到、打赢后得到什么",
       "items": ["kuvalich:kuva_master_spawn_egg"],
       "blocks": [
-        { "type": "p", "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是本模组的 Boss，也是安魂解密这条玩法的终点。你攒下的进度和推敲出的卡片顺序，最终都要在它身上见分晓，猜对了就能拿到赤毒武器等大奖。" },
+        { "type": "p", "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是 Boss，安魂解密这条路走到头，等着你的就是它。你攒下的进度和推敲出的卡序，最后都要在它身上见分晓，天诺。猜对了，赤毒武器等大奖就归你。" },
         { "type": "entity", "id": "kuvalich:kuva_master", "height": 96 },
         { "type": "h", "text": "讨伐流程" },
         { "type": "steps", "items": [
-          "击杀奴仆积攒[[requiem/decryption|解密进度]]，逐条揭示答案，每条<t>线索</t>对应答案里的一张<t>安魂卡</t>，三张卡按正确顺序排好，就是打败它的密码",
+          "击杀奴仆积攒[[requiem/decryption|解密进度]]，一条条揭示答案，每条<t>线索</t>对应答案里的一张<t>安魂卡</t>，三张卡按正确顺序排好，就是打败它的密码",
           "按你猜的顺序，把三张卡放进专门摆卡的方块[[requiem/requiem_gate|灭骸之扉]]",
           "找到或召唤一只玄骸，<em>亲手</em>打出最后一击",
-          "击杀那一刻会自动验证，猜对就拿到奖励，猜错则[[enemies/kuva_escalation|玄骸等级]] +1"
+          "击杀那一刻自动核对，猜对拿奖励，猜错[[enemies/kuva_escalation|玄骸等级]] +1"
         ] },
-        { "type": "tip", "style": "wf", "text": "《星际战甲》里的玄骸原名 Kuva Lich，是每位玩家专属的宿敌，只有把三张安魂模组装上处决刀、以正确的顺序处决它，才能将它彻底了结，并拿走它的赤毒武器。" },
+        { "type": "tip", "style": "wf", "text": "眼前这东西，在档案里叫 Kuva Lich，是每位天诺专属的宿敌，只有把三个安魂 Mod 装上处决刀，按正确的顺序处决它，才能将它彻底了结，拿走它的赤毒武器。" },
         { "type": "h", "text": "怎么遇到" },
         { "type": "kv", "rows": [
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["野外", "和奴仆一样在主世界暗处刷新，蘑菇岛除外，它的个子更高，需要 <t>3×3</t>、<t>4</t> 格高的空位"] },
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["刷新权重", "<t>{cfg:kuva_lich.kuvaLichSpawnWeight}</t> <dim>（奴仆 {cfg:kuva_lich.kuvaSlaveSpawnWeight}，原版僵尸 95）</dim>"] },
           { "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0", "cells": ["每群数量", "<t>{cfg:kuva_lich.kuvaLichMinSpawnCount}~{cfg:kuva_lich.kuvaLichMaxSpawnCount}</t> 只"] },
-          { "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.kuvaLichMaxNearby>0"], "cells": ["数量上限", "刷新点 <t>{cfg:kuva_lich.kuvaLichNearbyRadius}</t> 格内已有 <t>{cfg:kuva_lich.kuvaLichMaxNearby}</t> 只时就不再往那里刷新，召唤出来的也计算在内"] },
+          { "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.kuvaLichMaxNearby>0"], "cells": ["数量上限", "刷新点 <t>{cfg:kuva_lich.kuvaLichNearbyRadius}</t> 格内已有 <t>{cfg:kuva_lich.kuvaLichMaxNearby}</t> 只时就不再往那里刷新，召唤出来的也算在内"] },
           { "if": ["cfg:kuva_lich.kuvaLichSpawnWeight>0", "cfg:kuva_lich.kuvaLichMinSpacing>0"], "cells": ["间距", "新刷出的离已有的玄骸至少 <t>{cfg:kuva_lich.kuvaLichMinSpacing}</t> 格"] },
           { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "cells": ["召唤", "使用{item:kuvalich:requiem_ultimatum}，不限时间和地点，每次消耗 1 个"] }
         ] },
-        { "type": "p", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "对着空中右键使用通牒时，玄骸会出现在你面朝的水平方向 <t>3</t> 格处，与你脚下同高，对着方块右键时则出现在点中的那一面，创造模式下不消耗通牒。" },
-        { "type": "tip", "style": "warn", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "title": "召出来的也会消失", "text": "召唤出的玄骸和野生的一样会被刷掉，所有玩家都离它 <t>128</t> 格以上时会被清除，离最近的玩家超过 <t>32</t> 格且 <t>30</t> 秒以上没挨打时也可能随时消失，在<t>和平</t>难度下更是召出来就没了。这些情况下通牒都不会退还。" },
+        { "type": "p", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "对着空中右键使用通牒，玄骸会出现在你面朝的水平方向 <t>3</t> 格处，和你脚下同高，对着方块右键，它出现在点中的那一面，创造模式下不消耗通牒。" },
+        { "type": "tip", "style": "warn", "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "title": "召出来的也会消失", "text": "召出来的玄骸和野生的一样会被刷掉。所有人都离它 <t>128</t> 格以上时，它会被清除，离最近的人超过 <t>32</t> 格、又有 <t>30</t> 秒以上没挨打时，它随时可能消失，<t>和平</t>难度下更是召出来就没了，这些情况通牒都不退还。" },
         { "type": "h", "text": "基础属性" },
         { "type": "kv", "rows": [
           ["生命", "<t>200</t>"],
@@ -146,7 +146,7 @@
         { "type": "h", "text": "它怎么打你" },
         { "type": "list", "items": [
           "下手更重，每一下在简单难度是 <t>11.05</t>，普通 <t>22.1</t>，困难 <t>33.15</t>",
-          "它的攻击是<w>范围攻击</w>，每次出手，身体周围 <t>3</t> 格内的其他生物都会挨上一份同样的伤害，宠物和队友都会被波及，只有赤毒敌人不受影响",
+          "它打的是<w>范围攻击</w>，每次出手，身体周围 <t>3</t> 格内的其他生物都挨一份同样的伤害，宠物和队友都会被波及，只有赤毒敌人不受影响",
           "命中后把你<w>远远击飞</w>，并回复 <t>2.6</t> 点生命",
           "每秒回血，有目标时回 <t>2</t> 点或已损失生命的 <t>2%</t>，取较大者，没有目标时则是 <t>1</t> 点或 <t>1%</t>",
           { "if": "cfg:kuva_lich.battleBoost>0", "text": "战斗拖得越久，它打得越痛，见[[enemies/battle_boost]]" },
@@ -166,8 +166,8 @@
         ] },
         { "type": "h", "text": "解密成功的奖励" },
         { "type": "table", "header": ["奖励", "数量 / 说明"], "widths": [2, 5], "rows": [
-          ["[[weapons/kuva_weapons|赤毒武器]]", "随机 1 把本模组的专属武器，等级在你当前的武器等级范围内随机"],
-          ["{item:kuvalich:lich_reliquary}", "1 个，合成三种工作台都要用到，详见[[requiem/requiem_items]]"],
+          ["[[weapons/kuva_weapons|赤毒武器]]", "1 把，种类随机，等级在你当前的武器等级范围内随机"],
+          ["{item:kuvalich:lich_reliquary}", "1 个，三种工作台都要用它合成，见[[requiem/requiem_items]]"],
           ["{item:kuvalich:kuva}", "<t>{cfg:kuva_lich.masterKuvaMinAmount}~{cfg:kuva_lich.masterKuvaMaxAmount}</t>"],
           ["{item:kuvalich:riven_sliver}", "<t>{cfg:kuva_lich.masterRivenSliverMinAmount}~{cfg:kuva_lich.masterRivenSliverMaxAmount}</t>"],
           ["高级模组", "必出 1 张，<t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> 是 <c:55FFFF>Prime</c>，其余是 <c:FF55FF>裂罅</c>，其中 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模组"],
@@ -178,14 +178,14 @@
         ] },
         { "type": "list", "items": [
           "<c:55FFFF>Prime</c> 和 <c:FF55FF>裂罅</c>是模组的两档高级品质，区别见[[modules/module_rarity]]",
-          "武器等级范围的下限和上限各提高同一个随机值 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，下限最多提到 <t>{cfg:kuva_lich.minimumLevel}</t>，上限最多提到 <t>{cfg:kuva_lich.maximumLevel}</t>，详见[[weapons/weapon_level]]",
+          "武器等级范围的下限和上限各提高同一个随机值 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，下限最多提到 <t>{cfg:kuva_lich.minimumLevel}</t>，上限最多提到 <t>{cfg:kuva_lich.maximumLevel}</t>，见[[weapons/weapon_level]]",
           "这次掉的赤毒武器按<em>提升前</em>的范围生成，新范围从下一次解密起才生效"
         ] },
-        { "type": "tip", "style": "warn", "text": "除了回到背包的安魂卡，所有奖励都<w>掉在玄骸倒下的位置</w>，背包放不下的卡也会掉在这里，所以收尾时最好远离岩浆和虚空。" },
-        { "type": "tip", "style": "bad", "title": "最后一击必须是你", "text": "只有玩家亲手打死的玄骸才会结算，弓箭和投掷物都算亲手。被宠物、别的怪或环境伤害收掉的玄骸<b>没有进度、没有奖励，也不算一次解密</b>。" },
+        { "type": "tip", "style": "warn", "text": "<w>别在岩浆和虚空旁边收尾</w>，除了回到背包的安魂卡，所有奖励都掉在玄骸倒下的地方，背包放不下的卡也一样。" },
+        { "type": "tip", "style": "bad", "title": "最后一击必须是你", "text": "只有亲手打死的玄骸才结算，弓箭和投掷物都算亲手。被宠物、别的怪或环境伤害收掉的玄骸<b>没有进度、没有奖励，也不算一次解密</b>。" },
         { "type": "h", "text": "进阶细节" },
         { "type": "list", "items": [
-          "伤害公式为 13 × 难度系数 × 0.85，和奴仆是同一套算法",
+          "伤害公式是 13 × 难度系数 × 0.85，和奴仆同一套算法",
           "击飞力度为水平 ×3.15、垂直 ×2.15",
           "被{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素伤害收尾的也不结算",
           "{lang:kuvaweapon.type.slash}元素的持续伤害、「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」词条、赤毒武器特效打出的最后一击，都算你的",
@@ -232,25 +232,25 @@
       "icon": "kuvalich:requiem_gate",
       "summary": "猜错一次升一级，只有解密成功才清零",
       "blocks": [
-        { "type": "p", "text": "<hl>玄骸等级</hl>记录着你猜错的次数，每次带着猜错的三张卡击杀{lang:entity.kuvalich.kuva_master}，它就 +1，聊天栏会报出当前等级。" },
+        { "type": "p", "text": "<hl>玄骸等级</hl>记着你猜错了几次，每带着猜错的三张卡击杀一次{lang:entity.kuvalich.kuva_master}，它就 +1，聊天栏报出当前等级。" },
         { "type": "list", "items": [
           "等级记在<em>你自己</em>身上，不属于哪一只玄骸",
           "<b>死亡不会清零</b>，只有解密成功才归零",
           "还没揭示出任何一张答案卡时就放满三张去打，也算猜错"
         ] },
         { "type": "h", "text": "对你的影响" },
-        { "type": "p", "if": "cfg:kuva_lich.increaseDamage>0", "text": "每一级都会让奴仆和玄骸这些赤毒敌人打你的伤害 +<t>{cfg:kuva_lich.increaseDamage|pct}</t>，别的怪物、摔落和岩浆造成的伤害都不受影响。" },
+        { "type": "p", "if": "cfg:kuva_lich.increaseDamage>0", "text": "每升一级，奴仆和玄骸这些赤毒敌人打你的伤害 +<t>{cfg:kuva_lich.increaseDamage|pct}</t>，别的怪物、摔落和岩浆的伤害都不受影响。" },
         { "type": "table", "if": "cfg:kuva_lich.increaseDamage>0", "header": ["玄骸等级", "赤毒敌人打你的伤害"], "rows": [
           ["1", "<t>{cfg:kuva_lich.increaseDamage|add:1|round:2|x}</t>"],
           ["2", "<t>{cfg:kuva_lich.increaseDamage|mul:2|add:1|round:2|x}</t>"],
           ["3", "<w>{cfg:kuva_lich.increaseDamage|mul:3|add:1|round:2|x}</w>"],
           ["5", "<b>{cfg:kuva_lich.increaseDamage|mul:5|add:1|round:2|x}</b>"]
         ] },
-        { "type": "p", "if": "cfg:kuva_lich.reducedDamage>0", "text": "每一级还会让你打赤毒敌人的伤害 -<t>{cfg:kuva_lich.reducedDamage|pct}</t>，最多削减 99.9%，打别的目标不受影响。" },
-        { "type": "tip", "if": ["!cfg:kuva_lich.increaseDamage>0", "!cfg:kuva_lich.reducedDamage>0"], "style": "good", "text": "玄骸等级只记录你猜错的次数，不会削弱你，猜错只意味着少了一次成功。" },
-        { "type": "tip", "style": "warn", "title": "猜错后记得换卡", "text": "猜错后三张卡<em>不会被收走</em>，仍然放在摆卡的[[requiem/requiem_gate|灭骸之扉]]里，记得换好卡再去杀下一只玄骸，原样不动的话，同样的错误组合会让你再失败一次，等级再 +1。" },
-        { "type": "p", "text": "用最少的次数试出正确顺序的方法，见[[requiem/decrypt_failure]]。" },
-        { "type": "tip", "style": "wf", "text": "《星际战甲》里，按错误的顺序用安魂模组处决玄骸只会落空，它会从刀下活过来，升一级，变得更强。本模组把这个等级改为记在你自己身上。" }
+        { "type": "p", "if": "cfg:kuva_lich.reducedDamage>0", "text": "每升一级，你打赤毒敌人的伤害还会 -<t>{cfg:kuva_lich.reducedDamage|pct}</t>，最多削减 99.9%，打别的目标不受影响。" },
+        { "type": "tip", "if": ["!cfg:kuva_lich.increaseDamage>0", "!cfg:kuva_lich.reducedDamage>0"], "style": "good", "text": "玄骸等级只记着你猜错的次数，不会削弱你，猜错只是少了一次成功。" },
+        { "type": "tip", "style": "warn", "title": "猜错了先换卡", "text": "猜错后三张卡<em>不会被收走</em>，还放在摆卡的[[requiem/requiem_gate|灭骸之扉]]里，原样不动的话，同样的错误组合会让你再失败一次，等级再 +1。换好卡再去找下一只玄骸，别让同一个错多算你一级。" },
+        { "type": "p", "text": "怎样用最少的次数试出正确顺序，见[[requiem/decrypt_failure]]。" },
+        { "type": "tip", "style": "wf", "text": "指挥官，档案里写着，按错误的顺序用安魂 Mod 处决玄骸只会落空，它会从刀下活过来，升一级，变得更强。到了这里，这个等级改记在您自己身上。刀下溜走还长一级的东西，真想塞进引擎里慢慢碾……碾成……Ordis 这就把这半句从档案里删掉。" }
       ],
       "_src": [
         "capability/RequiemCard.java:201-209 + KuvaMasterEntity.java:419-428 — unlockedCardStatus = 0 时 isCorrectAnswer 恒 false，放满即走失败分支 +1 级",
@@ -271,7 +271,7 @@
       "summary": "赤毒敌人打得越久，下手越重",
       "if": "cfg:kuva_lich.battleBoost>0",
       "blocks": [
-        { "type": "p", "text": "赤毒敌人越打越凶，<hl>战斗拖得越久，它们造成的伤害越高</hl>，而且没有上限，对付它们最好速战速决。" },
+        { "type": "p", "text": "赤毒敌人越打越凶，<hl>战斗拖得越久，它们的伤害越高</hl>，而且没有上限，对付它们要速战速决。" },
         { "type": "formula", "text": "赤毒敌人造成的伤害 × (1 + 战斗秒数 × {cfg:kuva_lich.battleBoost|pct})" },
         { "type": "table", "header": ["战斗时长", "伤害倍率"], "rows": [
           ["10 秒", "<t>{cfg:kuva_lich.battleBoost|mul:10|add:1|round:2|x}</t>"],
@@ -282,8 +282,8 @@
         { "type": "h", "text": "怎么计时" },
         { "type": "list", "items": [
           "奴仆和玄骸<em>各自</em>计时",
-          "计时从它<w>锁定目标那一刻</w>就开始了，并不等到交手，奴仆在 <t>32</t> 格、玄骸在 <t>64</t> 格内看见你就会锁定",
-          "只要它有攻击目标，倍率就会一直上涨，目标可以是你、你的宠物或它正在打的其他怪",
+          "计时从它<w>锁定目标那一刻</w>就开始，不等到交手，奴仆在 <t>32</t> 格、玄骸在 <t>64</t> 格内看见你就会锁定",
+          "只要它有攻击目标，倍率就一直上涨，目标可以是你、你的宠物，或它正在打的其他怪",
           "失去目标后按同样的速度往回退，打了 60 秒就要脱战 60 秒才能完全归零",
           "计时跟着实体一起存盘，区块卸载再加载不会清零"
         ] }
@@ -301,7 +301,7 @@
       "icon": "minecraft:shield",
       "summary": "伤害为什么越打越低，四道减伤逐一拆解",
       "blocks": [
-        { "type": "p", "text": "打玄骸时伤害越打越低并非错觉，你打在赤毒敌人身上的每一下都要先闯过几道减伤关卡，奴仆只设了前两道，玄骸则四道俱全。" },
+        { "type": "p", "text": "打玄骸时伤害越打越低，不是错觉。你打在赤毒敌人身上的每一下都要先过几道减伤关卡，奴仆只有前两道，玄骸四道都有。" },
         { "type": "table", "header": ["关卡", "效果", "谁有"], "widths": [3, 6, 2], "rows": [
           ["① 伤害类型修正", "箭矢 <g>×1.25</g>，其他弹射物和魔法 <b>×0.75</b>", "都有"],
           ["② 固定减伤", "一律 <b>×0.75</b>", "奴仆"],
@@ -309,27 +309,27 @@
           ["③ 连击递减", "2 秒内挨打越多越低，最低 <b>40%</b>", "玄骸"],
           ["④ 单次伤害软上限", "超过最大生命 <t>15%</t> 的部分被大幅压缩", "玄骸"]
         ] },
-        { "type": "tip", "style": "info", "title": "只打折原始伤害", "text": "这几关打折的只是武器攻击力、附魔、跳劈暴击构成的<t>原始伤害</t>，模组词条、模组暴击、元素伤害的倍率在过关<em>之后</em>才乘，<g>软上限压不到它们</g>，详见[[combat/damage]]。" },
+        { "type": "tip", "style": "info", "title": "只打折原始伤害", "text": "这几关打折的只是武器攻击力、附魔、跳劈暴击构成的<t>原始伤害</t>，模组词条、模组暴击、元素伤害的倍率在过关<em>之后</em>才乘，<g>软上限压不到它们</g>，见[[combat/damage]]。" },
         { "type": "h", "text": "① 伤害类型修正" },
         { "type": "table", "header": ["类别", "包括", "修正"], "widths": [2, 6, 2], "rows": [
           ["箭矢", "直接打中它的是箭，包括弓箭、弩箭和投掷的三叉戟", "<g>×1.25</g>"],
           ["弹射物", "其余算作弹射物的伤害，比如雪球、其他模组的飞行物等", "<b>×0.75</b>"],
-          ["魔法", "药水、荆棘等魔法伤害，以及被认作魔法的模组法术", "<b>×0.75</b>"],
+          ["魔法", "药水、荆棘等魔法伤害，以及被认作魔法的其它模组法术", "<b>×0.75</b>"],
           ["近战", "直接打到它的是生物，包括你自己挥砍以及宠物和召唤物的攻击", "×1"],
           ["其他", "以上都不是的伤害，比如爆炸、闪电、燃烧等", "×1"]
         ] },
-        { "type": "p", "text": "判定时从上往下逐行对照，先符合哪类就算哪类，这 5 类也是第②关分开记层的依据。" },
+        { "type": "p", "text": "判定时从上往下逐行对照，先符合哪一类就算哪一类，第②关也按这 5 类分开记层。" },
         { "type": "h", "text": "② 适应性抗性（玄骸）" },
-        { "type": "p", "text": "玄骸会逐渐适应你的打法，同一类伤害用得越多，这一类被削减得越狠。" },
+        { "type": "p", "text": "玄骸会适应你的打法，同一类伤害用得越多，这一类就被削得越狠。" },
         { "type": "list", "items": [
           "5 类伤害<em>各自</em>记层",
-          "每次挨打时，先按这一类当前的层数减伤，每层 <t>5%</t>，然后这一类再 +1 层，所以第一下不会减伤",
-          "最多叠到 <t>6</t> 层，这时这一类伤害 <b>-30%</b>",
-          "某一类 <t>4~5</t> 秒没有再打中时，这一类会掉 1 层，之后每 <t>5</t> 秒再掉 1 层",
-          "超过 <t>10</t> 秒没受到任何伤害时，所有类别一并清零"
+          "每挨一下，先按这一类现有的层数减伤，每层 <t>5%</t>，再给这一类 +1 层，所以第一下不减伤",
+          "最多叠 <t>6</t> 层，叠满时这一类伤害 <b>-30%</b>",
+          "某一类 <t>4~5</t> 秒没再打中，就掉 1 层，之后每 <t>5</t> 秒再掉 1 层",
+          "它超过 <t>10</t> 秒没受任何伤害，所有类别一起清零"
         ] },
-        { "type": "tip", "style": "good", "text": "<g>轮换伤害类型</g>最划算，近战打一阵就换弓，再换法术，让闲下来的类别慢慢掉层。<w>换武器并不等于换类别</w>，两把剑都属于近战，共用同一个计数。" },
-        { "type": "tip", "style": "wf", "text": "《星际战甲》里有一张战甲模组名叫 Adaptation，意为适应，受到哪种伤害，就对哪种伤害叠起抗性。玄骸的适应性抗性出自同一个思路，只是这一回，长进的是敌人。" },
+        { "type": "tip", "style": "good", "text": "<g>轮换伤害类型</g>，近战打一阵就换弓，再换法术，让歇下来的那几类慢慢掉层。<w>换武器不等于换类别</w>，两把剑都算近战，共用一个计数。" },
+        { "type": "tip", "style": "wf", "text": "Ordis 的档案里有一张战甲 Mod，名叫 Adaptation，意思是适应，受到哪种伤害，就对哪种伤害叠起抗性。玄骸的适应性抗性出自同一个思路，只是这一回，长进的是敌人。" },
         { "type": "h", "text": "③ 连击递减（玄骸）" },
         { "type": "p", "text": "短时间内挨打越多，每一下越不疼。" },
         { "type": "formula", "text": "本次伤害倍率 = max(40%, 1 − 过去 2 秒内已被打中的次数 × 5%)" },
@@ -340,9 +340,9 @@
           ["第 9 下", "60%"],
           ["第 13 下起", "<b>40%</b>"]
         ] },
-        { "type": "tip", "style": "warn", "title": "哪些算一次「被打中」", "text": "<w>每一下真正结算的伤害都算</w>，也都会叠层，包括{lang:kuvaweapon.type.poison}和{lang:kuvaweapon.type.gas}持续伤害的每一跳、{lang:kuvaweapon.type.electricity}和{lang:kuvaweapon.type.explosion}的附加伤害、荆棘、宠物攻击，没蓄满力的挥砍也算在内。持续伤害越多，主力输出就被压得越低。" },
+        { "type": "tip", "style": "warn", "title": "哪些算一次「被打中」", "text": "<w>每一下真正结算的伤害都算</w>，也都会叠层，{lang:kuvaweapon.type.poison}和{lang:kuvaweapon.type.gas}持续伤害的每一跳、{lang:kuvaweapon.type.electricity}和{lang:kuvaweapon.type.explosion}的附加伤害、荆棘、宠物的攻击都在内，没蓄满力的挥砍也算。持续伤害挂得越多，你的主力输出被压得越低。" },
         { "type": "h", "text": "④ 单次伤害软上限（玄骸）" },
-        { "type": "p", "text": "一下打得太狠时，超出的部分会被大幅压缩，武器本身攻击力越高，被压得越狠。" },
+        { "type": "p", "text": "一下打得太狠，超出的部分会被大幅压缩，武器本身攻击力越高，被压得越狠。" },
         { "type": "formula", "text": "阈值 = 最大生命 × 15%（默认 200 × 15% = 30）；超出时：实际伤害 = 阈值 + ln(1 + 超出部分 × 0.5) ÷ 0.5" },
         { "type": "table", "header": ["经过前三关后的这一下", "实际生效（默认 200 生命）"], "rows": [
           ["30 以内", "原样"],
@@ -355,7 +355,7 @@
         { "type": "list", "items": [
           "被受击无敌时间整个挡掉的攻击，不算一次被打中",
           "{lang:kuvaweapon.type.slash}元素的持续伤害直接扣血，不过任何一关，也不叠层、不占连击计数",
-          { "if": ["cfg:kuva_lich.enableThirdPartyMagicRecognition", "cfg:kuva_lich.magicDamageNamespaces"], "text": "这些模组造成的伤害整体算作魔法：<t>{cfg:kuva_lich.magicDamageNamespaces|list}</t>" },
+          { "if": ["cfg:kuva_lich.enableThirdPartyMagicRecognition", "cfg:kuva_lich.magicDamageNamespaces"], "text": "这些模组造成的伤害一律算作魔法：<t>{cfg:kuva_lich.magicDamageNamespaces|list}</t>" },
           "能完全绕过这几关的手段见[[enemies/lich_tactics]]"
         ] }
       ],
@@ -385,11 +385,11 @@
       "icon": "kuvalich:lich_reliquary",
       "summary": "把机制串起来：准备、输出、收尾",
       "blocks": [
-        { "type": "p", "text": "这一篇把前面的机制串成一套打法，讲清开打前要准备什么、输出时怎样避开减伤、最后如何亲手收尾，照着做能少踩很多坑。" },
+        { "type": "p", "text": "前面那几道减伤和增幅，讨伐时要一起应付：开打前备什么，输出时怎样避开减伤，最后怎样亲手收尾。" },
         { "type": "h", "text": "开打前" },
         { "type": "steps", "items": [
-          "检查[[requiem/requiem_gate|灭骸之扉]]里的三张卡是不是这次想试的顺序，没放满时只是刷进度，一条线索都没揭示时放满必败",
-          "至少带上两三种伤害类型，比如近战武器、弓或弩加上法术，最好再有一把模组倍率高的[[weapons/kuva_weapons|赤毒武器]]",
+          "检查[[requiem/requiem_gate|灭骸之扉]]里的三张卡是不是这次想试的顺序，没放满只是刷进度，一条线索都没揭示就放满，必败",
+          "至少带上两三种伤害类型，比如近战武器、弓或弩，再加上法术，最好再有一把模组倍率高的[[weapons/kuva_weapons|赤毒武器]]",
           "选一块开阔平坦、远离宠物和村民的场地，它的范围攻击会波及周围 3 格，击飞还可能把你甩下悬崖",
           { "if": "cfg:kuva_lich.requiemUltimatumDropChance>0", "text": "想挑场地，就在准备好的地方用{item:kuvalich:requiem_ultimatum}召唤" }
         ] },
@@ -397,16 +397,16 @@
         { "type": "list", "items": [
           "<g>优先用弓弩</g>，箭矢是唯一吃 ×1.25 的类别，而且和近战分开记层",
           "按类别轮换，每类打几下就换，把各类的层数都压在 6 层以下",
-          "节奏比手速更重要，2 秒内从第 13 下起只剩 40%，一记蓄满力的攻击比两下半蓄力更划算",
-          "按默认生命计算，单下原始伤害控制在 30 左右就够了，超出的部分几乎全被软上限吃掉，资源更应该花在模组倍率上",
-          { "if": "cfg:kuva_lich.battleBoost>0", "text": "<w>速战速决</w>，它的伤害按战斗秒数一路上涨，每秒 +<t>{cfg:kuva_lich.battleBoost|pct}</t>，详见[[enemies/battle_boost]]" }
+          "节奏比手速要紧，2 秒内从第 13 下起只剩 40%，一记蓄满力的攻击比两下半蓄力更划算",
+          "按默认生命算，单下原始伤害控制在 30 左右就够，超出的部分几乎全被软上限吃掉，资源花在模组倍率上",
+          { "if": "cfg:kuva_lich.battleBoost>0", "text": "<w>速战速决</w>，它的伤害按战斗秒数一路上涨，每秒 +<t>{cfg:kuva_lich.battleBoost|pct}</t>，见[[enemies/battle_boost]]" }
         ] },
         { "type": "h", "text": "绕过抗性的手段" },
         { "type": "list", "items": [
-          "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」词条触发时直接击杀，对玄骸同样有效，详见[[reference/weapon_attr_special]]",
+          "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」词条触发时直接击杀，对玄骸同样有效，见[[reference/weapon_attr_special]]",
           "{lang:kuvaweapon.type.slash}元素的持续伤害和部分[[weapons/weapon_list|赤毒武器]]特效的持续伤害会直接扣血，不过任何一关，也不叠层、不占连击计数"
         ] },
-        { "type": "tip", "if": "mod:tacz", "style": "info", "title": "用枪打", "text": "TACZ 的子弹按「其他」类结算，修正为 ×1。每发子弹都算两次被打中，哪怕其中一段是 0 伤害，所以连击递减和适应性抗性涨得快一倍。「{lang:item.module.true_bullet}」词条附加的伤害则直接扣血，绕过抗性。" },
+        { "type": "tip", "if": "mod:tacz", "style": "info", "title": "用枪打", "text": "TACZ 的子弹按「其他」类结算，修正 ×1。每发子弹都算两次被打中，哪怕其中一段是 0 伤害，所以连击递减和适应性抗性涨得快一倍。「{lang:item.module.true_bullet}」词条附加的伤害则直接扣血，绕过抗性。" },
         { "type": "h", "text": "收尾" },
         { "type": "list", "items": [
           "残血时换成直接攻击补刀，被{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素伤害磨死的玄骸不会结算",

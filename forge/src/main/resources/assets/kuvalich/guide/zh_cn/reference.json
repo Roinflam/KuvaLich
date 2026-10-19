@@ -11,17 +11,17 @@
       "icon": "kuvalich:item_riven_module",
       "summary": "先读这篇：表里的说法和叠加规则",
       "blocks": [
-        { "type": "p", "text": "<hl>模组</hl>是一张张强化卡，武器模组装在武器上，战甲模组装在你自己身上，卡上的每一行加成叫作一条<hl>词条</hl>。这一分类把所有词条按用途列成表，随用随查。" },
+        { "type": "p", "text": "<hl>模组</hl>是一张张强化卡，武器模组装在武器上，战甲模组装在你自己身上，卡上的每一行加成叫一条<hl>词条</hl>。这一章按用途把所有词条列成表，用到时来查。" },
         { "type": "kv", "rows": [
           ["值", "卡面上的百分比，+30% 在公式里记作 <t>0.3</t>"],
           ["同名词条", "一把武器或一套战甲上所有模组的同名词条<g>直接相加</g>，再统一结算"],
-          ["负面词条", "词条随机的[[start/glossary|裂罅模组]]可能带负值，会从总和里扣掉，总和为负时就是反效果"],
+          ["负面词条", "词条随机的[[start/glossary|裂罅模组]]可能带负值，从总和里扣掉，总和为负就是反效果"],
           ["逐张相乘", "战甲的四种抗性和{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}是例外，每张卡单独相乘，见各自条目"]
         ] },
-        { "type": "tip", "style": "info", "title": "模组等级", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "没升满级的模组按 <t>当前等级 ÷ {cfg:kuva_lich.moduleMaxLevel}</t> 折算生效，卡面上的数字已经折算好，所见即所得。升级见[[modules/module_level]]。" },
+        { "type": "tip", "style": "info", "title": "模组等级", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "没升满级的模组按 <t>当前等级 ÷ {cfg:kuva_lich.moduleMaxLevel}</t> 折算生效，卡面上的数字已经折算好，看到多少就是多少。升级见[[modules/module_level]]。" },
         { "type": "tip", "style": "info", "title": "卡面数值", "if": "!cfg:kuva_lich.enableModuleLevelSystem", "text": "每张模组都按卡面上的数值满额生效。" },
         { "type": "h", "text": "只认整 10% 的词条" },
-        { "type": "p", "text": "下面这些词条<w>只认整 10%</w>，零头直接舍去，25% 按 20% 算，9% 就等于没有，凑数值时尽量凑到整十。" },
+        { "type": "p", "text": "下面这些词条<w>只认整 10%</w>，零头直接舍去，25% 按 20% 算，9% 等于没有，凑数值时凑到整十。" },
         { "type": "list", "items": [
           "{lang:item.module.attackSpeed}",
           "{lang:item.module.attackRange}，每一档只加 5% 触及距离",
@@ -34,7 +34,7 @@
         { "type": "h", "text": "进阶细节" },
         { "type": "list", "items": [
           "卡面上的数字只算这一张卡，武器面板上显示的才是这把武器所有词条合并后的结果，读法见[[weapons/weapon_panel]]。",
-          { "if": "cfg:modules.attributeValueRanges", "text": "部分词条的单张数值有上下限，超出的按边界计算，卡面上的数字不会反映这一点，见[[modules/module_limits]]。" },
+          { "if": "cfg:modules.attributeValueRanges", "text": "部分词条的单张数值有上下限，超出的按边界算，卡面上的数字不会体现这一点，见[[modules/module_limits]]。" },
           { "if": "cfg:modules.attributeTotalCaps", "text": "部分词条的同名总和有封顶，超出的部分不算，见[[modules/module_limits]]。" }
         ] },
         { "type": "table", "header": ["[[modules/multi_slot|这些位置装了模组的物品]]", "词条计入主手武器的比例"], "widths": [2, 3], "rows": [
@@ -68,7 +68,7 @@
       "icon": "kuvalich:kuva_shildeg",
       "summary": "近战、远程、魔法与克制增伤",
       "blocks": [
-        { "type": "p", "text": "这组词条直接增加伤害，有的按近战、远程、魔法等出手方式加成，有的专门针对某一类生物，叫作克制。" },
+        { "type": "p", "text": "这组词条直接加伤害，有的按近战、远程、魔法等出手方式加成，有的专门针对某一类生物，叫作克制。" },
         { "type": "p", "text": "前几条都加进同一个<hl>伤害池</hl>，先相加，再一起放大这一击，同一击只算近战或远程其中一边。" },
         { "type": "table", "header": ["词条", "什么时候生效", "怎么算"], "widths": [3, 5, 4], "rows": [
           ["{lang:item.module.meleeDamage}", "近战，你亲手挥砍或横扫打中时", "加进伤害池"],
@@ -80,18 +80,18 @@
         ] },
         { "type": "tip", "style": "warn", "text": "暴击几率超过 100% 后必定暴击，{lang:item.module.baseDamageWhenNotCriticalStrike}就再也用不上了。" },
         { "type": "h", "text": "克制词条" },
-        { "type": "p", "text": "克制词条只对一类目标加伤害，玩家也叫它「歧视」。它单独乘一次 <t>× (1 + 值)</t>，物理和元素部分一起乘。" },
+        { "type": "p", "text": "克制词条只对一类目标加伤害，也叫「歧视」。它单独乘一次 <t>× (1 + 值)</t>，物理和元素部分一起乘。" },
         { "type": "table", "header": ["词条", "对哪些目标"], "widths": [2, 3], "rows": [
           ["{lang:item.module.bane_of_undefined}", "奇特生物，原版的默认类型，绝大多数生物都属于这一类"],
           ["{lang:item.module.bane_of_undead}", "僵尸、骷髅、凋灵等亡灵"],
           ["{lang:item.module.bane_of_arthropod}", "蜘蛛、蠹虫、蜜蜂等节肢动物"],
           ["{lang:item.module.bane_of_illager}", "灾厄村民，<dim>水生生物也归这一类</dim>"]
         ] },
-        { "type": "tip", "style": "wf", "text": "《星际战甲》里也有「对某一派系伤害 +X%」的模组，中文玩家管它叫「歧视卡」。原作针对的是 Grineer、Corpus 等势力，搬到这里便换成了原版的生物种类。" },
+        { "type": "tip", "style": "wf", "text": "指挥官，起源星系也有「对某一派系伤害 +X%」的 Mod，比如 Bane of Grineer，说中文的天诺们管它叫「歧视卡」。那边针对的是 Grineer、Corpus 这些势力，到了这里，换成了这个世界原有的生物种类。" },
         { "type": "h", "text": "怎么算" },
         { "type": "formula", "text": "物理伤害 = 原始伤害 × (1 + 伤害池) × 面板基础伤害 × 蓄力 × 暴击 × 克制" },
         { "type": "formula", "text": "元素伤害 = 原始伤害 × 元素总值 × 面板基础伤害 × 蓄力 × 克制，不吃暴击" },
-        { "type": "p", "text": "式中的<t>蓄力</t>，近战按这一下挥击的蓄力比例折算，蓄满才是 1，没蓄满就出手很吃亏，远程则恒为 1。" },
+        { "type": "p", "text": "式中的<t>蓄力</t>，近战按这一下挥击的蓄力比例折算，蓄满才是 1，没蓄满就出手很吃亏，远程始终是 1。" },
         { "type": "tip", "style": "warn", "title": "面板基础伤害低于 100%", "text": "武器面板上的{lang:item.module.damage}低于 100% 时按<w>平方</w>计算，80% 实际只有 64%，50% 只有 25%。" },
         { "type": "h", "text": "进阶细节" },
         { "type": "list", "items": [
@@ -127,7 +127,7 @@
       "icon": "kuvalich:gram_prime",
       "summary": "暴击率、暴击倍率与分档",
       "blocks": [
-        { "type": "p", "text": "暴击是指有几率打出成倍的伤害，这组词条用来提高暴击的几率和倍率。" },
+        { "type": "p", "text": "暴击是按几率打出成倍的伤害，这组词条提高暴击的几率和倍率。" },
         { "type": "p", "text": "面板上的{lang:item.module.criticalStrikeProbability}和{lang:item.module.criticalStrikeMultiplier}都等于武器自带的基础值 × (1 + 词条)，近战和远程各用各的词条。" },
         { "type": "table", "header": ["词条", "作用", "怎么算"], "widths": [4, 3, 4], "rows": [
           ["{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}", "近战更容易暴击", "基础暴击几率 × (1 + 值)"],
@@ -152,15 +152,15 @@
           ["300% 以上", "必定三档，<w>再高也没有额外收益</w>", "<c:FF5555>红</c>"]
         ] },
         { "type": "p", "if": "cfg:kuva_lich.enableDamageNumbers", "text": "各档伤害数字的颜色见上表，没暴击时数字是白色，目标带护盾时是<c:55FFFF>浅蓝</c>。" },
-        { "type": "tip", "style": "wf", "text": "《星际战甲》里的暴击几率同样能突破 100%，打出更高一档的暴击，玩家便按伤害数字的颜色，把它们唤作黄暴、橙暴、红暴。" },
+        { "type": "tip", "style": "wf", "text": "暴击几率能突破 100%、打出更高一档的暴击，这一点两边都一样，天诺们就按伤害数字的颜色，把它们叫作黄暴、橙暴、红暴。叫法直白，倒也好记。" },
         { "type": "h", "text": "要注意的" },
         { "type": "list", "items": [
-          "近战没蓄满力就出手，暴击几率会按蓄力比例打折，蓄一半就只剩一半。伤害折得更狠，蓄一半只剩满蓄力时的约<w>五分之一</w>，见[[reference/weapon_attr_damage]]。",
+          "近战没蓄满力就出手，暴击几率按蓄力比例打折，蓄一半就只剩一半，伤害折得更狠，蓄一半只剩满蓄力时的约<w>五分之一</w>，见[[reference/weapon_attr_damage]]。",
           "暴击只乘<hl>物理部分</hl>，元素伤害不吃暴击倍率，这是有意的设计。",
           "暴击几率一旦超过 100%，{lang:item.module.baseDamageWhenNotCriticalStrike}就永远不会生效。"
         ] },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "cfg:kuva_lich.enableDamageNumbers"], "text": "TACZ 枪械的一发子弹分成两段结算时，暴击会各掷一次，元素触发和处决也各判定一次，其中暴击掷两次是有意的设计。伤害数字的显示方式见[[combat/damage_numbers]]。" },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "!cfg:kuva_lich.enableDamageNumbers"], "text": "TACZ 枪械的一发子弹分成两段结算时，暴击会各掷一次，元素触发和处决也各判定一次，其中暴击掷两次是有意的设计。" },
+        { "type": "tip", "style": "info", "if": ["mod:tacz", "cfg:kuva_lich.enableDamageNumbers"], "text": "TACZ 枪械的一发子弹分成两段结算时，暴击各掷一次，元素触发和处决也各判定一次，其中暴击掷两次是有意的设计。伤害数字的显示方式见[[combat/damage_numbers]]。" },
+        { "type": "tip", "style": "info", "if": ["mod:tacz", "!cfg:kuva_lich.enableDamageNumbers"], "text": "TACZ 枪械的一发子弹分成两段结算时，暴击各掷一次，元素触发和处决也各判定一次，其中暴击掷两次是有意的设计。" },
         { "type": "p", "text": "例子与更多细节见[[combat/crit]]。" }
       ],
       "_src": [
@@ -186,8 +186,8 @@
       "icon": "kuvalich:item_uncommon_module",
       "summary": "攻速、范围、射速、多重、触发",
       "blocks": [
-        { "type": "p", "text": "这组词条管的是出手速度、攻击范围、多射的箭和波及周围的溅射，也能让元素状态更容易触发，本身不直接加伤害。" },
-        { "type": "p", "text": "<hl>触发</hl>是指命中时有几率给目标挂上着火、冰冻之类的元素状态，各种状态见[[combat/element_status]]。" },
+        { "type": "p", "text": "出手速度、攻击范围、多射的箭和波及周围的溅射都归这组词条管，它们还能让元素状态更容易触发，本身不直接加伤害。" },
+        { "type": "p", "text": "<hl>触发</hl>是命中时按几率给目标挂上着火、冰冻之类的元素状态，各种状态见[[combat/element_status]]。" },
         { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 4, 5], "rows": [
           ["{lang:item.module.attackSpeed}", "挥得更快", "每满 10%，攻速 +10%"],
           ["{lang:item.module.attackRange}", "近战够得更远，横扫范围也变大", "每满 10%，触及距离 +5%"],
@@ -202,14 +202,14 @@
         { "type": "list", "items": [
           "攻击速度和攻击范围只认整 10%，零头舍去，攻击速度为负时同样按档减速。",
           "多重射击只对弓有效，弩不吃这条，多射的箭不消耗箭矢，也捡不回来。",
-          "触发几率超过 100% 时，整数部分必定触发，余数是再触发一次的几率，单次命中最多触发 <t>5</t> 次，即按 500% 封顶。"
+          "触发几率超过 100% 时，整数部分必定触发，余数是再触发一次的几率，单次命中最多触发 <t>5</t> 次，相当于按 500% 封顶。"
         ] },
         { "type": "tip", "style": "warn", "title": "溅射不分敌我", "text": "除了你和主目标，半径内的所有生物都会被波及，宠物和村民也不例外。" },
         { "type": "h", "text": "进阶细节" },
         { "type": "list", "items": [
           "射速的算法是每 tick 额外推进整数部分那么多次蓄力，小数部分按几率再推一次，弓和弩翻倍。",
           "射速为负时会拖慢蓄力，总值 ≤ -100% 时根本拉不开，弓弩又是翻倍计算，所以词条到 -50% 就拉不开了。",
-          "副手吃喝、举盾等使用不能装模组的东西时，也按主手武器的射速计算。",
+          "副手吃喝、举盾这类使用不能装模组的东西时，也按主手武器的射速算。",
           "多重射击为负时，按几率射不出箭。",
           "冲刺攻击范围每秒检查一次，开始或停止冲刺后约 1 秒才会跟上。",
           "冲刺触发几率对远程也有效，只要出手时你在冲刺。",
@@ -217,7 +217,7 @@
           "溅射只结算伤害，不触发元素，不判定处决，也不叠武器击杀层，战甲击杀层则照算，数字颜色沿用主目标的暴击色。爆炸类伤害不会再次溅射。",
           "所有玩家合计，每 tick 最多触发 <t>100</t> 次元素。"
         ] },
-        { "type": "tip", "style": "info", "if": "mod:tacz", "text": "装在枪上时，{lang:item.module.firing_rate}改的是射击间隔，{lang:item.module.multishot}增加每发的弹丸数，{lang:item.module.bursting_radius}对自带爆炸的枪则改为放大爆炸半径，详见[[tacz/tacz_multishot]]。" }
+        { "type": "tip", "style": "info", "if": "mod:tacz", "text": "装在枪上时，{lang:item.module.firing_rate}改的是射击间隔，{lang:item.module.multishot}增加每发的弹丸数，{lang:item.module.bursting_radius}对自带爆炸的枪则改为放大爆炸半径，见[[tacz/tacz_multishot]]。" }
       ],
       "_src": [
         "module/weapon/WeaponCombatHandler.java:1508-1539 — 每 20 tick 检查一次；攻速 level = (int)(值/0.1)-1，ATTACK_SPEED 每档 +10% MULTIPLY_TOTAL（DynamicAttributes.java:65-69），负值走 NEGATIVE_ATTACK_SPEED",
@@ -291,7 +291,7 @@
           "切割、穿刺、冲击这三种物理元素从不参与合成。"
         ] },
         { "type": "p", "text": "所以同样的三种元素，换个槽位顺序，合出来的结果就可能不同。" },
-        { "type": "tip", "style": "wf", "text": "《星际战甲》里同样由火、冰、电、毒四种基础元素两两相合，化出这六种复合元素，合成的结果也取决于模组在武器上的排列次序。" },
+        { "type": "tip", "style": "wf", "text": "档案里记着，那边同样由火、冰、电、毒四种基础元素两两相合，化出这六种复合元素，合成的结果也取决于 Mod 在武器上的排列次序。" },
         { "type": "h", "text": "状态的通用规则" },
         { "type": "list", "items": [
           "除特别注明外，状态持续 6 秒，持续伤害每秒一跳，共 6 跳，两者都按{lang:item.module.triggerTime}延长。",
@@ -362,7 +362,7 @@
       "icon": "kuvalich:reaper_prime",
       "summary": "处决、秒杀与抹除增益",
       "blocks": [
-        { "type": "p", "text": "这组词条能直接处死血量够低或运气不佳的目标，也能剥去它身上的增益效果。" },
+        { "type": "p", "text": "血量够低或运气不好的目标，这组词条能直接处死，也能剥掉它身上的增益效果。" },
         { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 4, 4], "rows": [
           ["{lang:item.module.execute_threshold}", "目标血量够低时，直接处死", "命中<w>之前</w>的血量 ≤ 最大生命 × 值"],
           ["{lang:item.module.execute_chance}", "每次命中有几率直接处死，不看血量", "几率 = 值，处决阈值没触发时才掷，数值很小，卡面保留三位小数"],
@@ -376,7 +376,7 @@
         ] },
         { "type": "h", "text": "进阶细节" },
         { "type": "list", "items": [
-          "本模组不给 Boss 豁免，本模组的 Boss [[start/glossary|赤毒玄骸]]也能被处决，其他模组的 Boss 如果有锁血或复活机制，就不一定了。",
+          "处决对 Boss 没有豁免，Boss [[start/glossary|赤毒玄骸]]也能被处决，其他模组的 Boss 有锁血或复活机制的，就不一定了。",
           "[[start/glossary|裂罅模组]]不会把这三条洗成负面词条。"
         ] },
         { "type": "tip", "style": "info", "if": "mod:tacz", "text": "{lang:item.module.true_bullet}和{lang:item.module.gun_loot_drop}只对枪械子弹生效，见[[tacz/tacz_gun_attributes]]。" }
@@ -421,10 +421,10 @@
         ] },
         { "type": "list", "items": [
           "层数按词条种类记在你身上，不跟着武器走，换武器不会清层，但只有当前武器的面板上有这条词条时才生效。",
-          "{lang:item.module.killStackBaseDamage}只计算缓慢、中毒、虚弱等<w>药水类</w>负面效果，本模组的元素状态不属于药水效果，不计入。",
+          "{lang:item.module.killStackBaseDamage}只计算缓慢、中毒、虚弱等<w>药水类</w>负面效果，元素触发挂上的状态不属于药水效果，不计入。",
           "要由武器这一击打死目标才算数，元素持续伤害和溅射打死的不算，处决也算一次击杀。"
         ] },
-        { "type": "tip", "style": "wf", "text": "《星际战甲》里的镀层系列模组英文名为 Galvanized，走的正是这条路子，击杀后获得一段时间的加成，最多能叠上好几层。" },
+        { "type": "tip", "style": "wf", "text": "镀层系列 Mod 原名 Galvanized，走的正是这条路子，击杀后得到一段时间的加成，最多能叠上好几层。" },
         { "type": "tip", "style": "info", "title": "进阶细节", "text": "是否打死目标，按扣护甲之前的伤害判断，所以偶尔没打死也会 +1 层。" },
         { "type": "p", "text": "叠层机制的完整说明见[[combat/kill_stack]]，在面板上查看当前层数的方法见[[weapons/weapon_panel]]。" }
       ],
@@ -453,19 +453,19 @@
       "icon": "kuvalich:warframe_rare_module",
       "summary": "生命、护甲与护盾",
       "blocks": [
-        { "type": "p", "text": "[[start/glossary|战甲模组]]是装在你自己身上的模组，放在[[warframe/warframe_table]]里，共 <t>8</t> 个槽。这组词条管的是你的生命、护甲和护盾。" },
+        { "type": "p", "text": "[[start/glossary|战甲模组]]是装在你自己身上的模组，放在[[warframe/warframe_table]]里，共 <t>8</t> 个槽，这组词条管你的生命、护甲和护盾。" },
         { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 4, 5], "rows": [
           ["{lang:kuvaweapon.warframe_attribute_type.health}", "最大生命更高", "每满 10% 加 10%，负值最多 -90%"],
           ["{lang:kuvaweapon.warframe_attribute_type.armor}", "护甲和盔甲韧性更高", "每满 10%，两者各 +10%，负值同样按档降低"],
           { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shield}", "获得护盾，先替你挡伤害", "护盾上限 = 最大生命 × 值 × {cfg:kuva_lich.shieldCapMultiplier}"] },
           { "if": "!cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shield}", "<b>不给黄心</b>，装着它时金苹果等别处给的黄心也会被清掉", "只有挨打或打中别人后的等待期间能保住"] },
           { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}", "护盾回得更快", "每秒回复护盾上限 × 1% × (1 + 值)，多张相加"] },
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}", "护盾隔多久才开始回", "<w>逐张相乘</w>，约 10 秒 × (1 + 值) × (1 + 值)……，负值缩短"] }
+          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}", "护盾隔多久才开始回", "<w>逐张相乘</w>，约 10 秒 × 第一张的 (1 + 值) × 第二张的 (1 + 值)，依此类推，负值缩短"] }
         ] },
         { "type": "h", "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "护盾怎么回" },
-        { "type": "p", "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "<hl>护盾</hl>就是原版的黄心，即伤害吸收，挨打时先扣它。它的回复分下面三步。" },
+        { "type": "p", "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "<hl>护盾</hl>就是原版的黄心，也就是伤害吸收，挨打时先扣它，回复分下面三步。" },
         { "type": "steps", "if": "cfg:kuva_lich.shieldCapMultiplier", "items": [
-          "你<w>挨打或打中别人</w>时，护盾回复进入等待，时长约为 10 秒 × 延迟倍率，取整到秒。",
+          "你<w>挨打或打中别人</w>时，护盾回复进入等待，时长约为 10 秒 × 延迟倍率，向下取整到整秒。",
           "如果这一下之后护盾已经归零，等待时间 <b>×3</b>。",
           "等待结束后每秒回复一次，直到回满上限。"
         ] },
@@ -506,7 +506,7 @@
       "icon": "kuvalich:warframe_uncommon_module",
       "summary": "四种抗性、击退与回血",
       "blocks": [
-        { "type": "p", "text": "这组[[start/glossary|战甲]]词条让你少受某一类伤害、少被击退，或者回血更多。" },
+        { "type": "p", "text": "想少受某一类伤害、少被击退，或者多回点血，看这组[[start/glossary|战甲]]词条。" },
         { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 5, 4], "rows": [
           ["{lang:kuvaweapon.warframe_attribute_type.fireProtection}", "少受着火、岩浆、火球等火焰类伤害", "<w>逐张相乘</w>，受伤 × (1 − 值)"],
           ["{lang:kuvaweapon.warframe_attribute_type.electricProtection}", "少受雷击和电击元素这类闪电伤害", "同上"],
@@ -515,7 +515,7 @@
           ["{lang:kuvaweapon.warframe_attribute_type.knockbackResistance}", "更不容易被击退", "每满 10%，击退抗性 +0.1，多张相加"],
           ["{lang:kuvaweapon.warframe_attribute_type.responseRate}", "自然回复、生命恢复、治疗药水等回血更多", "回血量 × (1 + 值)，多张相加"]
         ] },
-        { "type": "formula", "text": "例如两张 60% 火焰抗性，受伤 × 0.4 × 0.4 = 0.16，减伤 84% 而非 120%" },
+        { "type": "formula", "text": "例如两张 60% 火焰抗性，受伤 × 0.4 × 0.4 = 0.16，减伤 84%，不是 120%" },
         { "type": "list", "items": [
           "相乘意味着越堆越难涨，想完全免疫，得有一张单卡达到 100%，或者叠层版叠到 值 × 层数 = 100%。",
           "击退抗性叠到 100% 就完全不被击退。",
@@ -542,7 +542,7 @@
       "icon": "kuvalich:warframe_common_module",
       "summary": "移速、跳跃、挖掘与掉落",
       "blocks": [
-        { "type": "p", "text": "这组[[start/glossary|战甲]]词条管的是移动、跳跃、触及距离和挖掘这些日常能力。" },
+        { "type": "p", "text": "移动、跳跃、触及距离和挖掘这些日常能力，归这组[[start/glossary|战甲]]词条管。" },
         { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 4, 5], "rows": [
           ["{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}", "移动更快，名字虽叫冲刺，<w>走路也加</w>", "每满 10%，移速 +10%"],
           ["{lang:kuvaweapon.warframe_attribute_type.jumpBoost}", "跳得更高", "高度约为原来的 (1 + 值) 倍"],
@@ -566,7 +566,7 @@
         { "type": "h", "text": "进阶细节" },
         { "type": "list", "items": [
           "跳跃的算法是起跳速度 × √(1 + 值)。",
-          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "史莱姆、岩浆怪、恶魂、幻翼、潜影贝、末影龙，鱼、鱿鱼、海豚这类水生动物，以及村民、铁傀儡、雪傀儡，在原版里都不算动物或怪物，所以不吃掉落倍率，自定义 NPC 模组的 NPC 则是例外，同样吃这条。" },
+          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "史莱姆、岩浆怪、恶魂、幻翼、潜影贝、末影龙，鱼、鱿鱼、海豚这类水生动物，以及村民、铁傀儡、雪傀儡，在原版里都不算动物或怪物，所以不吃掉落倍率。自定义 NPC 模组的 NPC 是例外，同样吃这条。" },
           { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "掉落倍率不封顶，超过一组时会分成几堆掉落。" },
           { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "整合包里其他模组的掉落加成先算，这条最后再乘上去，两者会连乘。" }
         ] }
