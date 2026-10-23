@@ -5,6 +5,7 @@
   "refmap": "kuvalich.refmap.json",
   "mixins": [
     "MixinForgeHooksFinalDamage",
+    "MixinPlayerAttackStrength",
     "MixinPlayerSweep"
   ],
   "client": [

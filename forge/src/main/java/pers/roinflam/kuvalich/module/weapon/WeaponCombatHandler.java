@@ -129,7 +129,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 修复：在 {@link #onAttackEntity} 中提前捕获真实蓄力比例（该事件由
  * {@code ForgeHooks.onPlayerAttackTarget} 在 {@code attack()} 开头触发，
  * 冷却尚未重置），经 {@link #MELEE_ATTACK_STRENGTH} 传递到 {@code processDamage}，
- * 从挥击起到下一个服务端 tick 结束前，同一攻击者的这次挥击共用，tick 结束清空。<br>
+ * 只在原版 {@code Player.attack} 执行期间有效，同一攻击者的这次挥击共用，返回时清空；不走 {@code Player.attack} 的近战按满蓄力算。<br>
  * <b>该项会改变数值平衡</b>（连点轻击的暴击率将按蓄力比例衰减）。
  * 如需维持修复前行为，把 {@link #ENABLE_ATTACK_STRENGTH_SCALING} 改为 {@code false} 即可，
  * 其余两项修复不受影响。</p>
@@ -236,10 +236,9 @@ public class WeaponCombatHandler {
      * （主击、横扫、上述附加伤害）共用同一个比例；记下攻击者是为了别让这段时间里
      * 另一个实体的近战伤害误用它。</p>
      *
-     * <p><b>实际寿命</b>：攻击包由网络线程转进服务器任务队列，在两个 tick 之间处理，
-     * 所以记下的挥击会一直活到<b>下一个</b>服务端 tick 的 END 才清空，不只是「本 tick」。
-     * 这段时间里同一攻击者的其它近战伤害（直接实体是自己的）也按这次挥击的比例算，
-     * 比以前「取一次就清」更一致，是可以接受的。</p>
+     * <p><b>寿命</b>：只在原版 {@code Player.attack} 执行期间有效，返回时清掉（{@link #endVanillaAttack}），
+     * tick END 再兜底清一次。不走 {@code Player.attack} 的近战（拔刀剑连段等）不记、按满蓄力 1.0 算——
+     * 它们同样会发 {@code AttackEntityEvent}，但原版冷却不归它们管，照读会读到接近 0 的值。</p>
      */
     private static final ThreadLocal<Swing> MELEE_ATTACK_STRENGTH = new ThreadLocal<>();
 
@@ -550,7 +549,7 @@ public class WeaponCombatHandler {
      * 等到 {@code LivingHurtEvent} 再读已经被重置，只能拿到接近 0 的值。</p>
      *
      * <p>本方法只记录不修改任何数值，取消事件与否都不影响后续流程；
-     * 若攻击被其他模组取消，残留值只对同一攻击者有效，到下一个服务端 tick 结束即清空。</p>
+     * 若攻击被其他模组取消，残留值只对同一攻击者有效，{@code attack} 返回时即清空。</p>
      *
      * @param evt 玩家攻击实体事件
      */
@@ -560,13 +559,43 @@ public class WeaponCombatHandler {
         if (player.level().isClientSide()) {
             return;
         }
+        // 只记原版挥击。拔刀剑等自带连段的武器也发这个事件，但不走 Player.attack、不受原版冷却约束，
+        // 读到的是刚重置的冷却（0.0 几），乘进面板后开光反而几乎没伤害（见 MixinPlayerAttackStrength）
+        if (VANILLA_ATTACK_DEPTH.get()[0] <= 0) {
+            return;
+        }
         MELEE_ATTACK_STRENGTH.set(new Swing(player, player.getAttackStrengthScale(0.5F)));
     }
 
     /**
-     * 服务端 tick 结束：清掉记下的挥击
+     * 正在执行的 {@code Player.attack} 层数，由 {@code MixinPlayerAttackStrength} 维护
      *
-     * <p>攻击包在两个 tick 之间处理，所以一次挥击从记下到这里被清，跨过的是「下一个 tick」整个 tick。</p>
+     * <p>用计数而不是布尔：其它模组在攻击事件里再调一次 {@code attack} 时，内层返回不能把外层的挥击提前清掉。</p>
+     */
+    private static final ThreadLocal<int[]> VANILLA_ATTACK_DEPTH = ThreadLocal.withInitial(() -> new int[1]);
+
+    /** {@code Player.attack} 开头调用 */
+    public static void beginVanillaAttack() {
+        VANILLA_ATTACK_DEPTH.get()[0]++;
+    }
+
+    /**
+     * {@code Player.attack} 返回时调用：最外层返回后清掉记下的挥击
+     *
+     * <p>主击、横扫、格拉姆 / 技巧之剑在攻击事件里打出的附加伤害都在 {@code attack} 之内，
+     * 出了 {@code attack} 再来的近战伤害（拔刀剑连段等）一律按满蓄力算。</p>
+     */
+    public static void endVanillaAttack() {
+        int[] depth = VANILLA_ATTACK_DEPTH.get();
+        if (depth[0] > 0 && --depth[0] == 0) {
+            MELEE_ATTACK_STRENGTH.remove();
+        }
+    }
+
+    /**
+     * 服务端 tick 结束：兜底清掉记下的挥击和层数
+     *
+     * <p>正常情况下 {@link #endVanillaAttack} 已经清过；{@code attack} 中途抛异常跳过了 RETURN 时靠这里复位。</p>
      *
      * @param evt tick 事件
      */
@@ -574,6 +603,7 @@ public class WeaponCombatHandler {
     public static void onServerTickEnd(TickEvent.ServerTickEvent evt) {
         if (evt.phase == TickEvent.Phase.END) {
             MELEE_ATTACK_STRENGTH.remove();
+            VANILLA_ATTACK_DEPTH.get()[0] = 0;
         }
     }
 

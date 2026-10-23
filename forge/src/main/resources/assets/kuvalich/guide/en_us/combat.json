@@ -171,7 +171,7 @@
         },
         {
           "type": "p",
-          "text": "Vanilla already lowers raw damage for an uncharged swing, and charge scales it down <em>again</em> on top of that. It only follows swings you make yourself, sweep hits included, and pets and other attackers always count as fully charged."
+          "text": "Vanilla already lowers raw damage for an uncharged swing, and charge scales it down <em>again</em> on top of that. It only follows swings you make yourself, sweep hits included, while pets, other attackers and weapons with their own combo system (such as SlashBlade) always count as fully charged."
         },
         {
           "type": "p",
