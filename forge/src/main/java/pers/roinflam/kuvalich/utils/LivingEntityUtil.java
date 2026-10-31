@@ -5,6 +5,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.ReflectionCache;
@@ -147,6 +148,10 @@ public class LivingEntityUtil {
     @SuppressWarnings("unchecked")
     public static void damageHealthDirectly(LivingEntity entity, float damage) {
         if (entity.isDeadOrDying()) {
+            return;
+        }
+        // 倒地 / 处决中的玄骸和奴仆这时不受伤，血量停在 1；致死的那一下再调 die 也会被它自己拦下
+        if (entity instanceof AbstractKuva kuva && kuva.isDamageProtected()) {
             return;
         }
 

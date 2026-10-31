@@ -12,8 +12,13 @@
       "summary": "How one hit goes from swing to health loss",
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "A hit's feel can lie, Tenno. The arithmetic cannot."
+        },
+        {
           "type": "p",
-          "text": "Every hit you land passes through bonuses, charge, crit and bane before it reaches the target, Tenno; fall short at any step and it takes less health off. The takeaways below are enough for everyday fighting, and the full formula is at the end. Look up unfamiliar terms in [[start/glossary]]."
+          "text": "Every hit you land passes through bonuses, charge, crit and bane before it reaches the target; fall short at any step and it takes less health off. Learn the points below first; they cover everyday fighting. The full formula is at the end, and unfamiliar terms are in [[start/glossary]]."
         },
         {
           "type": "kv",
@@ -34,7 +39,7 @@
         },
         {
           "type": "h",
-          "text": "Key Takeaways"
+          "text": "Field essentials"
         },
         {
           "type": "list",
@@ -87,12 +92,12 @@
         {
           "type": "tip",
           "style": "warn",
-          "title": "Easy mistakes",
+          "title": "Common mistakes",
           "text": "What counts is the item in your main hand <em>at the moment of impact</em>. Swap weapons while an arrow is in flight and the new weapon is used, and a bow fired from the off-hand still uses the main-hand item's panel."
         },
         {
           "type": "h",
-          "text": "Advanced Details"
+          "text": "Deep intel"
         },
         {
           "type": "table",
@@ -171,11 +176,11 @@
         },
         {
           "type": "p",
-          "text": "Vanilla already lowers raw damage for an uncharged swing, and charge scales it down <em>again</em> on top of that. It only follows swings you make yourself, sweep hits included, while pets, other attackers and weapons with their own combo system (such as SlashBlade) always count as fully charged."
+          "text": "Vanilla already lowers raw damage for an uncharged swing, and charge scales it down <em>again</em> on top of that. This second cut only answers to swings you make yourself: sweep hits follow that swing, while pets, other attackers and weapons with their own combo system (such as SlashBlade) always count as fully charged."
         },
         {
           "type": "p",
-          "text": "Debuffs on the target such as Magnetic and the [[enemies/lich_resistance|resistances]] of Kuva enemies are already applied to the raw damage. Status procs use this hit's physical part as their base."
+          "text": "Debuffs on the target such as Magnetic and the [[enemies/lich_resistance|resistances]] of Kuva enemies are already applied to the raw damage. Status procs use this hit's physical part as their base. A Lich's resistances show on its body. The more cells the hexagon plate on the struck side fills, and the more solid it looks, the more it has adapted to that kind of damage, so switch to another kind. A bright flat flash across the point of impact, with a few sparks thrown back toward the attacker, means that hit was too heavy or the hits came too fast, and part of it was cut away."
         },
         {
           "type": "tip",
@@ -193,11 +198,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "A <hl>crit</hl> is a chance for a hit's physical damage to be multiplied by the <t>Critical Multiplier</t>, written M below. Both the chance and the multiplier are on the weapon's stat panel."
+          "text": "A <hl>crit</hl> is a chance for a hit's physical damage to be multiplied by the <t>Critical Multiplier</t>, written M below. Both the chance and the multiplier are on the weapon's stat panel; read them before you build, Tenno."
         },
         {
           "type": "p",
-          "text": "{lang:item.module.criticalStrikeProbability} can go above 100%, and the excess <em>upgrades</em> your crits from <c:FFFF55>yellow</c> to <c:FFAA00>orange</c> to <c:FF5555>red</c>, each tier hitting harder."
+          "text": "{lang:item.module.criticalStrikeProbability} can go above 100%, and the excess <em>upgrades</em> your crits from <c:F8FA2E>yellow</c> to <c:E8833A>orange</c> to <c:E6131E>red</c>, each tier hitting harder. A red crit also strikes a brief spark of white light at the point of impact."
         },
         {
           "type": "table",
@@ -212,15 +217,15 @@
           "rows": [
             [
               "0 ~ 100%",
-              "roll for a <c:FFFF55>yellow crit ×M</c>, otherwise no crit"
+              "roll for a <c:F8FA2E>yellow crit ×M</c>, otherwise no crit"
             ],
             [
               "100% ~ 200%",
-              "at least yellow; the part above 100% is the chance of an <c:FFAA00>orange crit ×2M</c>"
+              "at least yellow; the part above 100% is the chance of an <c:E8833A>orange crit ×2M</c>"
             ],
             [
               "200% ~ 300%",
-              "at least orange; the part above 200% is the chance of a <c:FF5555>red crit ×3M</c>"
+              "at least orange; the part above 200% is the chance of a <c:E6131E>red crit ×3M</c>"
             ],
             [
               "Above 300%",
@@ -231,13 +236,13 @@
         {
           "type": "tip",
           "style": "info",
-          "title": "Example",
+          "title": "Field example",
           "text": "With M = 2.5 and 150% crit chance, half your hits deal ×2.5 and the other half ×5. At exactly 100%, 200% and 300% you are <em>guaranteed</em> a yellow, orange and red crit respectively."
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "Ordis has checked the records. In the Origin System, crit chance can also exceed 100%, and as the tier rises the numbers burn from yellow to orange to red. When Tenno speak of “red crits”, they mean tier 3 and above."
+          "text": "Ordis has checked the records. In the Origin System, crit chance can also exceed 100%, and as the tier rises the numbers burn from yellow to orange to red. When Tenno speak of “red crits”, they mean tier 3 and above. When that red lands on a Lich, one always hopes for <x>more red-- more-- MORE--</x> nothing but a fondness for the palette."
         },
         {
           "type": "h",
@@ -255,7 +260,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced Details"
+          "text": "Deep intel"
         },
         {
           "type": "kv",
@@ -308,7 +313,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>Bane</hl> attributes, often called “discrimination”, make you hit <em>one type</em> of mob harder. Each hit only looks at the target's own type and uses only that type's bane attribute."
+          "text": "<hl>Bane</hl> attributes, often called “discrimination”, make you hit <em>one type</em> of mob harder. Each hit only looks at the target's own type and uses only that type's bane attribute, so know what you are fighting before you decide which one to stack."
         },
         {
           "type": "table",
@@ -359,7 +364,7 @@
           "type": "tip",
           "style": "good",
           "title": "Against Kuva enemies",
-          "text": "Both Kuva enemies, the {lang:entity.kuvalich.kuva_slave} and the boss {lang:entity.kuvalich.kuva_master}, are <t>undead</t>, so stack {lang:item.module.bane_of_undead}. Element tips are at the end."
+          "text": "Both Kuva enemies, the {lang:entity.kuvalich.kuva_slave} and the {lang:entity.kuvalich.kuva_master}, are <t>undead</t>. Against them, Tenno, stack {lang:item.module.bane_of_undead}. Element tips are at the end."
         },
         {
           "type": "tip",
@@ -368,7 +373,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced Details"
+          "text": "Deep intel"
         },
         {
           "type": "formula",
@@ -397,7 +402,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>Elements</hl> are damage types added to your attacks, such as Heat, Cold and Electricity. Elemental attributes add <t>elemental damage</t> to every hit and decide which status a <t>status proc</t> applies."
+          "text": "Choosing an element is choosing more than damage. <hl>Elements</hl> are damage types added to your attacks, such as Heat, Cold and Electricity. Elemental attributes add <t>elemental damage</t> to every hit and decide which status a <t>status proc</t> applies."
         },
         {
           "type": "p",
@@ -494,7 +499,7 @@
         {
           "type": "tip",
           "style": "info",
-          "title": "Example",
+          "title": "Field example",
           "text": "With {lang:kuvaweapon.type.fire} in slot 1, {lang:kuvaweapon.type.ice} in slot 2 and {lang:kuvaweapon.type.electricity} in slot 3, the first two become {lang:kuvaweapon.type.explosion} and {lang:kuvaweapon.type.electricity} is left alone, giving {lang:kuvaweapon.type.explosion} plus {lang:kuvaweapon.type.electricity}. For {lang:kuvaweapon.type.radiation}, move {lang:kuvaweapon.type.electricity} ahead of {lang:kuvaweapon.type.ice}."
         },
         {
@@ -512,12 +517,12 @@
         {
           "type": "tip",
           "style": "warn",
-          "title": "Easy mistakes",
+          "title": "Common mistakes",
           "text": "Put whatever element you want to proc on the weapon itself, and the innate Kuva element counts. A weapon with no element of its own never procs, however high its status chance."
         },
         {
           "type": "h",
-          "text": "Advanced Details"
+          "text": "Deep intel"
         },
         {
           "type": "formula",
@@ -701,7 +706,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced Details"
+          "text": "Deep intel"
         },
         {
           "type": "kv",
@@ -826,7 +831,7 @@
             "{lang:kuvaweapon.type.poison}: without a shield it is magic damage; with a shield it goes straight to health, also ignoring armor and i-frames.",
             {
               "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
-              "text": "{lang:kuvaweapon.type.electricity}: only hits the struck target; the lightning is visual only and ignites nothing."
+              "text": "{lang:kuvaweapon.type.electricity}: only hits the struck target. When several paralyzed targets stand close together, arcs may link them, but that is visual only: it ignites nothing and carries no damage across."
             },
             "{lang:kuvaweapon.type.slash}: its damage does not depend on the size of your Slash attributes.",
             "{lang:kuvaweapon.type.gas}: the cloud stays where it was placed and does not follow the target; it is tied to the struck mob and fades at most one pulse after it dies. A new proc moves the cloud to the latest hit point.",
@@ -849,7 +854,7 @@
           "type": "tip",
           "style": "warn",
           "title": "Gas / Blast attribute trap",
-          "text": "The <em>proc</em> damage of Gas only counts {lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.poison} attributes, and that of Blast only {lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.ice}, plus the innate Kuva element. Attributes that literally read Gas Damage or Blast Damage only add hit damage and raise the pick chance, so with nothing but those on the weapon, a Gas or Blast proc deals no proc damage."
+          "text": "Don't go by the attribute names. The <em>proc</em> damage of Gas only counts {lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.poison} attributes, and that of Blast only {lang:kuvaweapon.type.fire} + {lang:kuvaweapon.type.ice}, plus the innate Kuva element. Attributes that literally read Gas Damage or Blast Damage only add hit damage and raise the pick chance, so with nothing but those on the weapon, a Gas or Blast proc deals no proc damage."
         }
       ]
     },
@@ -861,11 +866,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Go too long without a kill and your stacks slowly fall off, so keep the kills coming. Attributes marked “Gained on kill” are <hl>kill stacks</hl>: each kill adds 1 stack, and more stacks mean a stronger effect."
+          "text": "Go too long without a kill, Tenno, and your stacks slowly fall off, so keep the kills coming. Attributes marked “Gained on kill” are <hl>kill stacks</hl>: each kill adds 1 stack, and more stacks mean a stronger effect."
         },
         {
           "type": "p",
-          "text": "Stacks are stored on <em>you</em>, not on the weapon, so if you switch to another weapon with the same stack attribute, your current stacks still apply."
+          "text": "Stacks are stored on <em>you</em>, not on the weapon, so switching weapons mid-fight loses nothing: move to another weapon with the same stack attribute and your current stacks still apply."
         },
         {
           "type": "steps",
@@ -934,7 +939,7 @@
           "type": "tip",
           "style": "warn",
           "title": "Base damage stack trap",
-          "text": "Its bonus is multiplied by the <em>number of debuffs on the target</em>. Only potion-style debuffs such as Slowness, Weakness, Poison and Wither count, other mods' ones included, while statuses from element procs do <w>not</w>. With none on the target, even max stacks give +0."
+          "text": "Its bonus is multiplied by the <em>number of debuffs on the target</em>. Only potion-style debuffs such as Slowness, Weakness, Poison and Wither count, other mods' ones included, while statuses from element procs do <w>not</w>. With none on the target, even max stacks give +0. Get such effects on it first, then count on this stack."
         },
         {
           "type": "list",
@@ -954,7 +959,7 @@
         },
         {
           "type": "p",
-          "text": "<t>Warframe mods</t> are mods installed in the {item:kuvalich:requiem_warframe_table} that boost you yourself. They have 12 kinds of kill-stack attributes too, such as health, shield, armor and resistances, with the same rules, but they build more easily."
+          "text": "<t>Warframe mods</t> are mods installed in the {item:kuvalich:requiem_warframe_table} that boost you yourself. They have 12 kinds of kill-stack attributes too, such as health, shield, armor and resistances. The rules are the same, but these build more easily."
         },
         {
           "type": "list",
@@ -967,7 +972,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced Details"
+          "text": "Deep intel"
         },
         {
           "type": "list",
@@ -994,7 +999,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "When you deal damage with a <t>consecrated</t> weapon, one with a panel that can hold mods, a number floats up from the target and stays for about 2 seconds. Its color tells you whether the hit crit."
+          "text": "The numbers tell you exactly how a hit landed. When you deal damage with a <t>consecrated</t> weapon, one with a panel that can hold mods, numbers appear on the target and drift slowly upward for about 1 second. Their color and size tell you whether the hit crit, and at which tier."
         },
         {
           "type": "table",
@@ -1008,23 +1013,23 @@
           ],
           "rows": [
             [
-              "<c:FFFFFF>White</c>",
-              "no crit; elemental damage is white too, followed by element icons"
+              "<c:FCFBFC>White</c>",
+              "no crit; elemental damage is white too, one size smaller, followed by element icons"
             ],
             [
               "<c:55FFFF>Aqua</c>",
               "no crit, but the target has a shield (yellow hearts)"
             ],
             [
-              "<c:FFFF55>Yellow</c>",
+              "<c:F8FA2E>Yellow</c>",
               "crit ×M (M = Critical Multiplier)"
             ],
             [
-              "<c:FFAA00>Orange</c>",
+              "<c:E8833A>Orange</c>",
               "tier-2 crit ×2M"
             ],
             [
-              "<c:FF5555>Red</c>",
+              "<c:E6131E>Red</c>",
               "tier-3 crit ×3M"
             ]
           ]
@@ -1032,8 +1037,8 @@
         {
           "type": "list",
           "items": [
-            "The number is the <em>health actually lost</em>, with armor, resistances, other mods' reductions and hit invulnerability already taken off, and damage absorbed by a shield included.",
-            "Higher crit tiers use bigger text: white is smallest, then yellow / blue, then orange, and red is biggest.",
+            "The number is the <em>health actually lost</em>, with armor, resistances, other mods' reductions and hit invulnerability already taken off, and damage absorbed by a shield included. If your numbers on a {lang:entity.kuvalich.kuva_master} run low, look at its body: a hexagon plate rising on it, or a flat flash across the point of impact, means its [[enemies/lich_resistance|resistances]] are cutting into your damage.",
+            "Higher crit tiers use bigger text: white is smallest, then yellow / blue, then orange, and red is biggest. Yellow, orange and red also carry a dark outline, and each pops slightly larger the moment it appears before settling back.",
             {
               "if": "cfg:kuva_lich.damageDisplay",
               "text": "Damage from unconsecrated weapons shows white numbers too."
@@ -1067,7 +1072,7 @@
             "Damaging elements (Heat, Toxin, Electricity, Slash, Gas, Blast) add no icon to the hit number; each floats its own white number with the matching element icon instead.",
             {
               "if": "mod:tacz",
-              "text": "A dagger icon marks direct health loss from {lang:item.module.true_bullet}, which shows in <c:AA00AA>purple</c> on its own."
+              "text": "A dagger icon marks direct health loss from {lang:item.module.true_bullet}, which shows in <c:FF55FF>purple</c> on its own."
             },
             "A ribbon icon in front of the number marks damage dealt with consecrated weapons by creatures you tamed, such as maids. These numbers are shown to you too, but their elemental damage numbers are not."
           ]
@@ -1097,7 +1102,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced Details"
+          "text": "Deep intel"
         },
         {
           "type": "list",

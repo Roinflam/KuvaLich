@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich.module.weapon;
 
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
@@ -20,7 +19,6 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -38,6 +36,9 @@ import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributes;
+import pers.roinflam.kuvalich.fx.CritFxGate;
+import pers.roinflam.kuvalich.fx.FxId;
+import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.module.KillStackManager;
 import pers.roinflam.kuvalich.module.KillStackManager.StackType;
 import pers.roinflam.kuvalich.network.packet.DamagePacket;
@@ -875,6 +876,15 @@ public class WeaponCombatHandler {
             }
         }
 
+        // 暴击的音画：只登记档位，攻击者节流和「同 tick 只演最高档」在 CritFxGate 里做
+        switch (colorCode) {
+            case "§e" -> CritFxGate.tryEmit(attacker, hurter, 1);
+            case "§6" -> CritFxGate.tryEmit(attacker, hurter, 2);
+            case "§c" -> CritFxGate.tryEmit(attacker, hurter, 3);
+            default -> {
+            }
+        }
+
         // ========== 克制倍率 ==========
         double baneMultiplier = 1.0;
         if (hurter.getMobType().equals(MobType.UNDEFINED)) {
@@ -954,7 +964,7 @@ public class WeaponCombatHandler {
         applyTrueBulletDamage(attacker, hurter, damageSource, attributes, originalDamage, trueBulletBaseDamage, baneMultiplier);
 
         // ⭐ 净化驱散：攻击命中时按概率移除目标增益效果
-        applyPurgeBuff(hurter, attributes);
+        applyPurgeBuff(attacker, hurter, attributes);
 
         // ========== 武器击杀叠层累加（击杀检测）==========
         if (isPlayer && hurter.getHealth() - totalDamage <= 0) {
@@ -1014,6 +1024,9 @@ public class WeaponCombatHandler {
         if (splashDamage <= 0 || Float.isNaN(splashDamage) || Float.isInfinite(splashDamage)) {
             return;
         }
+
+        // 溅射范围的地面细环：半径跟着溅射半径走，旁边没有别的怪也画，玩家能看出溅射有多大
+        KuvaFx.tracking(hurter, FxId.SPLASH, (int) Math.round(Math.min(range, 300.0) * 10.0), attacker.getId() + 1);
 
         List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, range,
                 e -> !e.equals(hurter) && !e.equals(attacker));
@@ -1217,10 +1230,11 @@ public class WeaponCombatHandler {
     /**
      * 净化驱散（purge_buff）结算。
      *
+     * @param attacker   攻击者（效果包里带上，客户端据此判断是不是自己打的）
      * @param hurter     受击者
      * @param attributes 武器运行时属性
      */
-    private static void applyPurgeBuff(LivingEntity hurter, HashMap<String, Double> attributes) {
+    private static void applyPurgeBuff(LivingEntity attacker, LivingEntity hurter, HashMap<String, Double> attributes) {
         double purgeValue = attributes.getOrDefault("purge_buff", 0.0);
         if (purgeValue <= 0) { return; }
 
@@ -1243,6 +1257,8 @@ public class WeaponCombatHandler {
         for (int i = 0; i < actual; i++) {
             hurter.removeEffect(beneficial.get(i));
         }
+        // 真驱散掉了东西才给画面：几个白色光点从身上散开
+        KuvaFx.tracking(hurter, FxId.PURGE, 0, attacker == null ? 0 : attacker.getId() + 1);
     }
 
     /**
@@ -1279,12 +1295,12 @@ public class WeaponCombatHandler {
         }
         if (!shouldExecute) { return; }
 
+        // 普通伤害已经够致命的，叠层在上面的击杀检测里给过了，这里不重复给
         boolean killedByNormalHit = (hurter.getHealth() - totalDamage) <= 0;
-        if (!killedByNormalHit && isPlayer && attacker instanceof Player) {
-            addWeaponKillStacks((Player) attacker, attributes);
-        }
+        final Player stackOwner = !killedByNormalHit && isPlayer && attacker instanceof Player player ? player : null;
 
-        spawnExecuteParticles(hurter, byThreshold, byChance);
+        // 竖直一刀的画面和处决声由客户端放（a：0 收割 / 1 斩杀）
+        KuvaFx.tracking(hurter, FxId.EXECUTE, byChance ? 1 : 0, attacker.getId() + 1);
 
         final DamageSource exSource = getAttackDamageSource(attacker);
 
@@ -1294,33 +1310,12 @@ public class WeaponCombatHandler {
                 this.cancel();
                 if (hurter.isDeadOrDying()) { return; }
                 LivingEntityUtil.kill(hurter, exSource);
+                // 真死了才算一次击杀：倒地的玄骸 / 奴仆、锁血的 Boss、死亡被别的模组取消的，都不加叠层
+                if (stackOwner != null && hurter.isDeadOrDying() && !stackOwner.isRemoved()) {
+                    addWeaponKillStacks(stackOwner, attributes);
+                }
             }
         }.start();
-    }
-
-    /**
-     * 播放处决/秒杀特效（服务端粒子，单次少量）
-     *
-     * @param target      被处决目标
-     * @param byThreshold 是否由处决阈值（收割）触发
-     * @param byChance    是否由秒杀概率（斩杀）触发
-     */
-    private static void spawnExecuteParticles(LivingEntity target, boolean byThreshold, boolean byChance) {
-        if (!(target.level() instanceof ServerLevel server)) { return; }
-
-        double x = target.getX();
-        double y = target.getY() + target.getBbHeight() * 0.5;
-        double z = target.getZ();
-        double rx = target.getBbWidth() * 0.5 + 0.1;
-        double ry = target.getBbHeight() * 0.4;
-
-        if (byChance) {
-            server.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 14, rx, ry, rx, 0.1);
-            server.sendParticles(ParticleTypes.CRIT, x, y, z, 10, rx, ry, rx, 0.25);
-        } else if (byThreshold) {
-            server.sendParticles(ParticleTypes.SOUL, x, y, z, 10, rx, ry, rx, 0.02);
-            server.sendParticles(ParticleTypes.DAMAGE_INDICATOR, x, y, z, 8, rx, ry, rx, 0.1);
-        }
     }
 
     // ========== ⭐ 元素 DOT 去重注册表 / Element DOT Deduplication Registry ==========

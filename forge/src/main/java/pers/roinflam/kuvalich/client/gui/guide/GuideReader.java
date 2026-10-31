@@ -240,6 +240,7 @@ final class GuideReader {
 
     private Page build(GuideView view, EntryView ev) {
         GuideBlocks.Ctx ctx = new GuideBlocks.Ctx(view, text, media, contentW);
+        ctx.entryKey = ev.key;
         List<Laid> laid = new ArrayList<>();
         List<Integer> ys = new ArrayList<>();
         int cy = 0;
@@ -372,7 +373,8 @@ final class GuideReader {
      */
     private static boolean breaksKvRun(BlockType t) {
         return switch (t) {
-            case H, P, TIP, DIVIDER, FORMULA, KV -> false;
+            // 通讯框只是插在正文里的一句话，不该把前后的键值表分成两段
+            case H, P, TIP, DIVIDER, FORMULA, KV, COMM -> false;
             case LIST, STEPS, TABLE, ITEMS, RECIPE, ENTITY -> true;
         };
     }

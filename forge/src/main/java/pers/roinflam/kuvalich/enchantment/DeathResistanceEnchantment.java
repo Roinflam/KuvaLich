@@ -1,7 +1,5 @@
 package pers.roinflam.kuvalich.enchantment;
 
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -14,6 +12,8 @@ import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import pers.roinflam.kuvalich.fx.FxId;
+import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.init.KuvaLichEnchantments;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
@@ -94,8 +94,8 @@ public class DeathResistanceEnchantment extends AbstractEnchantment {
         player.giveExperiencePoints(-cost);
         float newDamage = Math.max(0.0F, player.getHealth() - HEALTH_LEFT_AFTER_RESIST);
         evt.setAmount(newDamage);
-        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 0.6F, 1.4F);
+        // 金色护壳、地面环和死亡抵抗的声音由客户端放（以前借的是不死图腾的声音）
+        KuvaFx.tracking(player, FxId.LAST_STAND, 0, 0);
         PlayerFeedback.actionBar(player, KuvaPalette.ACCENT, "message.kuvalich.deathResistance", cost);
         LogUtil.debugEvent("死亡抵抗", player.getName().getString(),
                 "等级=" + level + " 致命伤害=" + damage + " 消耗经验=" + cost);

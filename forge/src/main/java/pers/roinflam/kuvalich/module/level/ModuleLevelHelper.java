@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.module.level;
 
+import pers.roinflam.kuvalich.fx.ModuleRevealFx;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -278,6 +279,8 @@ public final class ModuleLevelHelper {
      * @param player 揭示者
      */
     public static void applyRevealLevel(ItemStack module, Player player) {
+        // 揭示的画面和声音放在最前面：等级系统关着也要有
+        ModuleRevealFx.send(player, module);
         if (!isLevelSystemEnabled()) { return; }
         if (module == null || module.isEmpty() || player == null) { return; }
 

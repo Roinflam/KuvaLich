@@ -30,6 +30,11 @@ import java.util.Locale;
  * <p>正文是按当前配置快照解析的，所以搜「25%」能搜到把没收概率写成 {@code {cfg:…|pctv}} 的那一篇。
  * 被条件藏掉的块不进索引：搜不到本服不存在的机制。</p>
  *
+ * <h3>命中通讯</h3>
+ * <p>通讯框的台词照常收录（{@code <x>} 故障标签在解析时就去掉了，字和 {@code --} 留着）；名牌不收，「Lotus」「Ordis」不是会搜的词。
+ * 只在正文里命中、且最早的命中落在一条通讯里时，结果记下这条通讯：从结果点进去就滚到它，并把它记为看过 ——
+ * 直接显示全文，不播开框和擦出、不响（玩家是来找这句话的，不是来看它演一遍的）。</p>
+ *
  * @author RoinFlam
  */
 @OnlyIn(Dist.CLIENT)
@@ -43,15 +48,28 @@ final class GuideSearch {
         final String body;
         /** 正文原样（未转小写），截取上下文用 */
         final String bodyRaw;
+        /** 这一篇里的通讯在正文索引里的位置 */
+        final List<CommSpan> comms;
 
-        Doc(EntryView entry, String title, String summary, String bodyRaw) {
+        Doc(EntryView entry, String title, String summary, String bodyRaw, List<CommSpan> comms) {
             this.entry = entry;
             this.title = title.toLowerCase(Locale.ROOT);
             this.summary = summary.toLowerCase(Locale.ROOT);
             this.bodyRaw = bodyRaw;
             this.body = bodyRaw.toLowerCase(Locale.ROOT);
+            this.comms = List.copyOf(comms);
         }
     }
+
+    /**
+     * 一条通讯在正文索引里占的范围
+     *
+     * @param from  起（含）
+     * @param to    止（不含）
+     * @param block 可见块序号（{@link EntryView#blocks()} 的下标）
+     * @param key   看过记录的键
+     */
+    private record CommSpan(int from, int to, int block, String key) {}
 
     /**
      * 一条结果
@@ -62,13 +80,20 @@ final class GuideSearch {
         final int rank;
         /** 正文命中时的上下文片段；标题 / 摘要命中时为空串 */
         final String snippet;
+        /** 最早的命中落在一条通讯里：那条通讯的可见块序号（{@link EntryView#blocks()} 的下标）；否则 -1 */
+        final int commBlock;
+        /** 那条通讯「看过」记录的键；没有为 null */
+        @Nullable
+        final String commKey;
         private final Doc doc;
 
-        Hit(Doc doc, int rank, String snippet) {
+        Hit(Doc doc, int rank, String snippet, int commBlock, @Nullable String commKey) {
             this.doc = doc;
             this.entry = doc.entry;
             this.rank = rank;
             this.snippet = snippet;
+            this.commBlock = commBlock;
+            this.commKey = commKey;
         }
     }
 
@@ -155,7 +180,31 @@ final class GuideSearch {
             allHead &= inTitle || inSummary;
         }
         int rank = allTitle ? 0 : allHead ? 1 : 2;
-        return new Hit(d, rank, rank == 2 ? snippet(d, terms) : "");
+        if (rank != 2) {
+            return new Hit(d, rank, "", -1, null);
+        }
+        int at = firstAt(d, terms);
+        if (d.body.length() == d.bodyRaw.length()) {
+            // 转小写改变了长度（极少数字符）时下标对不上，不定位
+            for (CommSpan c : d.comms) {
+                if (at >= c.from() && at < c.to()) {
+                    return new Hit(d, rank, snippet(d, terms), c.block(), c.key());
+                }
+            }
+        }
+        return new Hit(d, rank, snippet(d, terms), -1, null);
+    }
+
+    /** 正文里最早的命中位置；没有为 -1 */
+    private static int firstAt(Doc d, String[] terms) {
+        int at = -1;
+        for (String t : terms) {
+            int i = d.body.indexOf(t);
+            if (i >= 0 && (at < 0 || i < at)) {
+                at = i;
+            }
+        }
+        return at;
     }
 
     /**
@@ -185,15 +234,21 @@ final class GuideSearch {
         if (docs == null) {
             List<Doc> out = new ArrayList<>(view.entryList.size());
             for (EntryView ev : view.entryList) {
-                out.add(new Doc(ev, ev.title(), ev.summary(), bodyText(ev)));
+                List<CommSpan> comms = new ArrayList<>();
+                out.add(new Doc(ev, ev.title(), ev.summary(), bodyText(ev, comms), comms));
             }
             docs = out;
         }
         return docs;
     }
 
-    private String bodyText(EntryView ev) {
+    /**
+     * @param comms 收集这一篇里每条通讯在正文索引里的位置
+     */
+    private String bodyText(EntryView ev, List<CommSpan> comms) {
         StringBuilder sb = new StringBuilder();
+        // 可见块序号：和 EntryView.blocks() 同一套过滤，查阅 / 跳转定位用的就是它
+        int visible = 0;
         for (Block raw : ev.entry.blocks) {
             if (!view.values.test(raw.cond)) {
                 continue;
@@ -202,6 +257,13 @@ final class GuideSearch {
             Block b = raw.visible(view.values::test);
             if (b.isHollow()) {
                 // 行全被藏掉的表 / 列表整块不显示（GuideReader.build 同一条规则），表头也就不能进索引
+                continue;
+            }
+            int index = visible++;
+            if (b.type == GuideContent.BlockType.COMM) {
+                int from = sb.length();
+                append(sb, b.text);
+                comms.add(new CommSpan(from, sb.length(), index, ev.key + "#" + b.commIndex));
                 continue;
             }
             append(sb, b.text);

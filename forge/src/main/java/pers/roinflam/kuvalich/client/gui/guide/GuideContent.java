@@ -30,7 +30,9 @@ public final class GuideContent {
 
     /** 块类型，对应内容格式规范 §1.2 */
     public enum BlockType {
-        H, P, LIST, STEPS, KV, TABLE, TIP, FORMULA, ITEMS, RECIPE, ENTITY, DIVIDER;
+        H, P, LIST, STEPS, KV, TABLE, TIP, FORMULA, ITEMS, RECIPE, ENTITY, DIVIDER,
+        /** 通讯框：Lotus / Ordis / 玄骸的一句台词（发言人徽记 + 名牌 + 逐字打出） */
+        COMM;
 
         /**
          * 按 JSON 里的 type 字段找类型
@@ -56,6 +58,7 @@ public final class GuideContent {
                 case "recipe" -> RECIPE;
                 case "entity" -> ENTITY;
                 case "divider" -> DIVIDER;
+                case "comm" -> COMM;
                 default -> null;
             };
         }
@@ -91,6 +94,28 @@ public final class GuideContent {
                 case GOOD -> GuideTheme.TIP_GOOD;
                 case BAD -> GuideTheme.TIP_BAD;
                 case WF -> GuideTheme.TIP_WF;
+            };
+        }
+    }
+
+    /** 通讯框的发言人 */
+    public enum CommWho {
+        LOTUS, ORDIS, LICH;
+
+        /**
+         * @param name who 字段
+         * @return 发言人；不认识时为 null
+         */
+        @Nullable
+        public static CommWho of(@Nullable String name) {
+            if (name == null) {
+                return null;
+            }
+            return switch (name) {
+                case "lotus" -> LOTUS;
+                case "ordis" -> ORDIS;
+                case "lich" -> LICH;
+                default -> null;
             };
         }
     }
@@ -184,7 +209,7 @@ public final class GuideContent {
     public static final class Block {
         public final BlockType type;
         public final List<String> cond;
-        /** h / p / formula / tip 的正文 */
+        /** h / p / formula / tip / comm 的正文 */
         public final String text;
         /** tip 的标题（可空） */
         @Nullable
@@ -218,6 +243,13 @@ public final class GuideContent {
         public final String entity;
         /** entity：预览高度 */
         public final int height;
+        /** comm：发言人 */
+        public final CommWho who;
+        /**
+         * comm：这是这一篇里的第几条通讯（从 0 数，按内容文件里的块顺序）。
+         * 「看过没有」按「分类/条目#n」记，用内容顺序而不是可见块序号：条件显隐、换语言都不会把它算成另一条
+         */
+        public final int commIndex;
 
         private Block(Builder b) {
             this.type = b.type;
@@ -237,6 +269,8 @@ public final class GuideContent {
             this.recipe = b.recipe;
             this.entity = b.entity;
             this.height = b.height;
+            this.who = b.who;
+            this.commIndex = b.commIndex;
         }
 
         private static List<List<String>> pad(List<List<String>> conds, int size) {
@@ -318,6 +352,8 @@ public final class GuideContent {
             b.recipe = recipe;
             b.entity = entity;
             b.height = height;
+            b.who = who;
+            b.commIndex = commIndex;
             return b;
         }
 
@@ -340,6 +376,8 @@ public final class GuideContent {
             public String recipe;
             public String entity;
             public int height = 64;
+            public CommWho who = CommWho.LOTUS;
+            public int commIndex = -1;
 
             public Builder(BlockType type) {
                 this.type = type;

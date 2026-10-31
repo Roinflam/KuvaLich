@@ -12,8 +12,13 @@
       "summary": "一下攻击从出手到扣血的全过程",
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "手感会骗人，Tenno。算出来的东西不会。"
+        },
+        {
           "type": "p",
-          "text": "你打出的每一下，都要经过加成、蓄力、暴击和克制才落到对方身上，天诺，哪一步折了，掉的血就少一截。平时记住下面几条就够用，完整公式在篇末，不认识的名词去[[start/glossary]]查。"
+          "text": "你打出的每一下，都要经过加成、蓄力、暴击和克制才落到对方身上，哪一步折了，掉的血就少一截。先把下面几条记牢，日常交战够用；完整公式在篇末，不认识的名词去[[start/glossary]]查。"
         },
         {
           "type": "kv",
@@ -34,7 +39,7 @@
         },
         {
           "type": "h",
-          "text": "先记住这几条"
+          "text": "交战要点"
         },
         {
           "type": "list",
@@ -87,12 +92,12 @@
         {
           "type": "tip",
           "style": "warn",
-          "title": "容易踩的坑",
+          "title": "常见失误",
           "text": "结算看的是<em>命中那一刻</em>主手上的物品，箭飞出去后换了武器，就按新武器算，副手拿弓射箭，吃的也是主手那件的面板。"
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "table",
@@ -171,11 +176,11 @@
         },
         {
           "type": "p",
-          "text": "原版已经按蓄力降低了原始伤害，蓄力比例是在这之上<em>额外</em>再打的一次折。它只看你亲手挥出的那一下，横扫波及的伤害也按这一下算，宠物等其它攻击者、自带连段的武器（比如拔刀剑）一律按满蓄力算。"
+          "text": "原版已经按蓄力压低了原始伤害，蓄力比例是在这之上<em>额外</em>再打的一次折。这道折扣只认你亲手挥出的那一下：横扫波及的伤害也按这一下算，宠物等其它攻击者、自带连段的武器（比如拔刀剑）一律按满蓄力算。"
         },
         {
           "type": "p",
-          "text": "目标身上的磁力等元素减益和赤毒敌人的[[enemies/lich_resistance|抗性]]，都已经事先乘进原始伤害，元素触发则以这一下的物理部分为基数。"
+          "text": "目标身上的磁力等元素减益和赤毒敌人的[[enemies/lich_resistance|抗性]]，都已经事先乘进原始伤害，元素触发则以这一下的物理部分为基数。玄骸的抗性会在它身上显形：挨打那一面浮起的六边形护壁格子越多、越实，它就越适应你这一类伤害，换一类再打；命中处横着闪过一道亮光、几点火星朝出手的方向弹回，是这一下打得太重或连击太快，被它削掉了一截。"
         },
         {
           "type": "tip",
@@ -211,7 +216,9 @@
         "module/weapon/WeaponCombatHandler.java:605 — 命中时取 attacker.getMainHandItem()，不是射出时的物品",
         "module/weapon/DamageDisplayTracker.java:330-347 — 伤害数字取 ForgeHooks.onLivingDamage 返回值（护甲、减伤之后）+ 护盾吃掉的部分；DamageDisplayTracker.java:201-215 enableDamageNumbers 关闭时不显示 → 「先记住这几条」里提伤害数字的那一项分 enableDamageNumbers 开 / 关两种写法",
         "module/weapon/WeaponCombatHandler.java:696-712 + 364-413 — 溅射半径来自合并后的 attributes（武器 + 额外槽位 + 叠层），所以写「带有爆炸半径」而不是「武器有」",
-        "base/entity/AbstractKuva.java:106-134 — 赤毒实体受伤时的 applyResistance 在 NORMAL 优先级执行（先于 processDamage）"
+        "base/entity/AbstractKuva.java:106-134 — 赤毒实体受伤时的 applyResistance 在 NORMAL 优先级执行（先于 processDamage）",
+        "entity/KuvaMasterEntity.java:532,541 + mercy/KuvaStateServer.java:89-134 + client/mercy/KuvaStateFx.java:274-323,365-393 — 只有玄骸发：适应性抗性每次挨打发 ADAPT，命中点、朝攻击者那一面画六边形护壁，亮 1 + 层数格、边线 α 随层数升高（「格子越多、越实」）；连击递减（按玄骸身上 2 秒内所有人的命中算）+ 软上限合起来削掉 ≥10% 时发 GUARD，命中处画一道亮白横向偏转光（KUVA_PALE，α 0.55，宽 0.7 / 1.1 格），外加 4 / 7 粒火星朝攻击者那面弹回（特效强度「最少」时不画火星）",
+        "client/mercy/KuvaStateFx.java:228-236,395-414 + base/entity/AbstractKuva.java:330-344 — 另一种横向闪：箭以外的弹射物、魔法打在玄骸或奴仆身上（classifyDamage 为 PROJECTILE / MAGIC）时，只给打它的人看一道灰色小闪（ASH，α 0.35，宽 0.4 格，70 ms，没有火星），所以正文写偏转光时带上「亮光、火星」和它区分"
       ]
     },
     {
@@ -222,11 +229,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>暴击</hl>按一定几率让这一下的物理伤害乘上<t>暴击倍率</t>，下文把这个倍率记作 M，几率和倍率都写在武器面板上。"
+          "text": "<hl>暴击</hl>按一定几率让这一下的物理伤害乘上<t>暴击倍率</t>，下文把这个倍率记作 M。几率和倍率都写在武器面板上，配卡之前先看清这两项，Tenno。"
         },
         {
           "type": "p",
-          "text": "{lang:item.module.criticalStrikeProbability}可以超过 100%，超出的部分把暴击<em>升档</em>，从<c:FFFF55>黄暴</c>升到<c:FFAA00>橙暴</c>，再升到<c:FF5555>红暴</c>，一档比一档痛。"
+          "text": "{lang:item.module.criticalStrikeProbability}可以超过 100%，超出的部分把暴击<em>升档</em>，从<c:F8FA2E>黄暴</c>升到<c:E8833A>橙暴</c>，再升到<c:E6131E>红暴</c>，一档比一档痛。出红暴的那一下，命中处还会迸出一点白光。"
         },
         {
           "type": "table",
@@ -241,15 +248,15 @@
           "rows": [
             [
               "0 ~ 100%",
-              "按几率出<c:FFFF55>黄暴 ×M</c>，否则不暴击"
+              "按几率出<c:F8FA2E>黄暴 ×M</c>，否则不暴击"
             ],
             [
               "100% ~ 200%",
-              "至少黄暴，超出 100% 的部分是出<c:FFAA00>橙暴 ×2M</c> 的几率"
+              "至少黄暴，超出 100% 的部分是出<c:E8833A>橙暴 ×2M</c> 的几率"
             ],
             [
               "200% ~ 300%",
-              "至少橙暴，超出 200% 的部分是出<c:FF5555>红暴 ×3M</c> 的几率"
+              "至少橙暴，超出 200% 的部分是出<c:E6131E>红暴 ×3M</c> 的几率"
             ],
             [
               "超过 300%",
@@ -260,13 +267,13 @@
         {
           "type": "tip",
           "style": "info",
-          "title": "例子",
+          "title": "战例",
           "text": "M = 2.5、暴击几率 150% 时，一半的攻击 ×2.5，另一半 ×5。暴击几率正好是 100%、200%、300% 时，分别<em>必定</em>出黄暴、橙暴、红暴。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "Ordis 查过记录，起源星系的暴击几率同样能突破 100%，档位越高，跳出的数字就从黄色一路烧成橙色、红色，天诺们口中的「红暴」，指的是第三档及以上的暴击。"
+          "text": "Ordis 查过记录，始源星系的暴击几率同样能突破 100%，档位越高，跳出的数字就从黄色一路烧成橙色、红色，Tenno 口中的「红暴」，指的是第三档及以上的暴击。红字落在玄骸身上的时候，总盼着<x>再红些--再红些--红透它--</x>别无他意，只是喜欢这配色。"
         },
         {
           "type": "h",
@@ -284,7 +291,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "kv",
@@ -342,8 +349,10 @@
         "module/weapon/WeaponCombatHandler.java:814-817 — 暴击只进 physicalDamage，elementalDamage 不含暴击（作者确认的有意设计）",
         "module/weapon/WeaponCombatHandler.java:817,860 — coreDamage=physicalDamage（含暴击）作为元素触发基数",
         "module/weapon/WeaponCombatHandler.java:578-586 — TACZ 一发子弹拆两次 hurt（普通段/破甲段），0 伤害段直接跳过",
-        "network/packet/DamageInfo.java:142-156,193-209 — 合并时颜色取档位最高；合并那一行随 enableDamageNumbers + mergeDamageNumbers + 窗口>0 才出现（ModConfig.java:339-365）",
-        "星际战甲小知识：原作暴击率可超过 100%，按档位显示黄（1 档）/ 橙（2 档）/ 红（3 档及以上）暴击数字；原作档位不封顶，所以「红暴」写成「第三档及以上」而不是「最高一档」（原作知识，非本项目代码）"
+        "network/packet/DamageInfo.java:154-157 + client/renderer/damage/DamageRenderer.java:141-166 — 合并时颜色取档位最高；合并那一行随 enableDamageNumbers + mergeDamageNumbers + 窗口>0 才出现（ModConfig.java:339-365）",
+        "星际战甲小知识：原作暴击率可超过 100%，按档位显示黄（1 档）/ 橙（2 档）/ 红（3 档及以上）暴击数字；原作档位不封顶，所以「红暴」写成「第三档及以上」而不是「最高一档」（原作知识，非本项目代码）",
+        "client/fx/FxPalette.java:94-98 — 黄 / 橙 / 红三档的颜色 F8FA2E / E8833A / E6131E（伤害数字按档位直接取这三个 RGB，不再用 § 色）",
+        "client/fx/script/CombatFx.java:24-31 + fx/CritFxGate.java:53-77 — 世界里只有三档（红暴）在打击点有一个小命中闪（白芯 2 tick + 四道短星芒 3 tick），一档、二档不画；不看 enableDamageNumbers"
       ]
     },
     {
@@ -354,7 +363,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>克制</hl>词条让你对<em>某一类</em>生物多打伤害，常被叫作「歧视」。每一下只看目标自己属于哪一类，也只用那一类的克制词条。"
+          "text": "<hl>克制</hl>词条让你对<em>某一类</em>生物多打伤害，常被叫作「歧视」。每一下只看目标自己属于哪一类，也只认那一类的克制词条，所以先认清要打的是什么，再决定堆哪一条。"
         },
         {
           "type": "table",
@@ -405,16 +414,16 @@
           "type": "tip",
           "style": "good",
           "title": "打赤毒敌人",
-          "text": "{lang:entity.kuvalich.kuva_slave}和 Boss {lang:entity.kuvalich.kuva_master}这两种赤毒敌人都是<t>亡灵生物</t>，堆{lang:item.module.bane_of_undead}，元素怎么搭配见篇末。"
+          "text": "{lang:entity.kuvalich.kuva_slave}和{lang:entity.kuvalich.kuva_master}这两种赤毒敌人都是<t>亡灵生物</t>。对付它们，Tenno，就堆{lang:item.module.bane_of_undead}。元素怎么搭配见篇末。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "那边的派系 Mod 只对某一个敌对派系增伤，比如 Bane of Grineer，专挑一类敌人下手，Ordis 向来赞成。说中文的天诺们给这类 Mod 起了个直白的名字，叫「歧视卡」。到了这里，派系换成了这个世界的生物类别。"
+          "text": "那边的派系 MOD 只对某一个敌对派系增伤，比如 Bane of Grineer，专挑一类敌人下手，Ordis 向来赞成。说中文的 Tenno 给这类 MOD 起了个直白的名字，叫「歧视卡」。到了这里，派系换成了这个世界的生物类别。"
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "formula",
@@ -457,7 +466,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>元素</hl>是附加在攻击上的伤害类型，比如火焰、冰冻、电击。元素词条给每一下附加<t>元素伤害</t>，也决定<t>元素触发</t>时挂上什么状态。"
+          "text": "挑元素，挑的不只是伤害。<hl>元素</hl>是附加在攻击上的伤害类型，比如火焰、冰冻、电击。元素词条给每一下附加<t>元素伤害</t>，也决定<t>元素触发</t>时挂上什么状态。"
         },
         {
           "type": "p",
@@ -535,7 +544,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "这套规则，Ordis 并不陌生。起源星系的元素同样由火焰、冰冻、电击、毒素两两合成，结果取决于 Mod 摆放的先后，天诺们配卡时反复斟酌的，往往就是这个顺序。"
+          "text": "这套规则，Ordis 并不陌生。始源星系的元素同样由火焰、冰冻、电击、毒素两两合成，结果取决于 MOD 摆放的先后，那里的 Tenno 配卡时反复斟酌的，往往就是这个顺序。"
         },
         {
           "type": "h",
@@ -554,7 +563,7 @@
         {
           "type": "tip",
           "style": "info",
-          "title": "例子",
+          "title": "战例",
           "text": "槽 1、槽 2、槽 3 依次放着{lang:kuvaweapon.type.fire}、{lang:kuvaweapon.type.ice}、{lang:kuvaweapon.type.electricity}时，前两个先合成{lang:kuvaweapon.type.explosion}，{lang:kuvaweapon.type.electricity}落单，结果是{lang:kuvaweapon.type.explosion}加{lang:kuvaweapon.type.electricity}。想要{lang:kuvaweapon.type.radiation}，就把{lang:kuvaweapon.type.electricity}挪到{lang:kuvaweapon.type.ice}前面。"
         },
         {
@@ -572,12 +581,12 @@
         {
           "type": "tip",
           "style": "warn",
-          "title": "容易踩的坑",
+          "title": "常见失误",
           "text": "想触发什么元素，就把它装在武器本身上，赤毒武器自带的元素也算，武器本身一个元素都没有，触发几率再高也不会触发。"
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "formula",
@@ -625,7 +634,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "毒云和爆炸只放过你本人，天诺，宠物和村民离目标近时，先把它们带开。元素触发时，目标会挂上抽中的那种元素的状态，有的让它持续掉血，有的削弱它，精确的伤害算法在篇末。"
+          "text": "毒云和爆炸只放过你本人，Tenno，宠物和村民离目标近时，先把它们带开。元素触发时，目标会挂上抽中的那种元素的状态，有的让它持续掉血，有的削弱它，精确的伤害算法在篇末。"
         },
         {
           "type": "kv",
@@ -779,7 +788,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "kv",
@@ -904,7 +913,7 @@
             "{lang:kuvaweapon.type.poison}在目标没有护盾时按魔法伤害结算，有护盾时直接扣血，同时无视护甲和无敌帧。",
             {
               "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
-              "text": "{lang:kuvaweapon.type.electricity}只打被命中的那一只，闪电只是特效，不会引雷。"
+              "text": "{lang:kuvaweapon.type.electricity}只打被命中的那一只。几只被麻痹的目标挨得近时，电弧会在它们之间连起来，那只是画面，不会引雷，伤害也不会顺着传过去。"
             },
             "{lang:kuvaweapon.type.slash}的伤害和切割词条的大小无关。",
             "{lang:kuvaweapon.type.gas}的毒云停在命中点，不跟着目标移动，但它和被命中的那一只绑在一起，那只死后，毒云最多再跳一次就散。再次触发时，云挪到最新的命中点。",
@@ -927,7 +936,7 @@
           "type": "tip",
           "style": "warn",
           "title": "毒气 / 爆炸词条的坑",
-          "text": "毒气和爆炸<em>触发时</em>的伤害，分别只按{lang:kuvaweapon.type.fire}加{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.fire}加{lang:kuvaweapon.type.ice}的词条和赤毒武器自带的元素计算。直接写着「毒气伤害」「爆炸伤害」的词条只增加命中伤害、提高抽中的概率，武器上只有这种词条时，抽中毒气或爆炸也不造成触发伤害。"
+          "text": "别被词条的名字带偏。毒气和爆炸<em>触发时</em>的伤害，分别只按{lang:kuvaweapon.type.fire}加{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.fire}加{lang:kuvaweapon.type.ice}的词条和赤毒武器自带的元素计算。直接写着「毒气伤害」「爆炸伤害」的词条只增加命中伤害、提高抽中的概率，武器上只有这种词条时，抽中毒气或爆炸也不造成触发伤害。"
         }
       ],
       "_src": [
@@ -935,7 +944,7 @@
         "module/weapon/WeaponElementSystem.java:457-523 — 元素值：普通元素取该词条；复合元素取两种基础元素词条之和（不含复合词条本身）+ 匹配的赤毒自带元素；attributes 已 merge 额外槽位（WeaponCombatHandler.java:653-656,408-413）",
         "module/weapon/WeaponElementSystem.java:559-594 + dynamicattribute/DynamicAttributes.java:96-124 — 火焰：0.5×…×火焰倍率，节肢1.5/亡灵0.5，inFire 伤害源；setSecondsOnFire(6)；削甲 15/30/40/50%，tickInterval 10 升一级；时长 120×t tick；⌈6t⌉ 跳",
         "module/weapon/WeaponElementSystem.java:595-631 — 毒素：0.5×…，灾厄1.5/节肢0.5；有吸收护盾 damageHealthDirectly，否则 magic() 伤害",
-        "module/weapon/WeaponElementSystem.java:648-663 + DynamicAttributes.java:166-168 — 电击：只打 hurter，亡灵1.5，有护盾×0.5，LightningBolt 仅视觉；麻痹 -99% 移速，10×t tick",
+        "module/weapon/WeaponElementSystem.java:641-660 + DynamicAttributes.java:166-168 — 电击：只打 hurter，伤害源 lightningBolt，亡灵1.5，有护盾×0.5；不再生成闪电实体，只发 ELEMENT_PROC 效果包；麻痹 -99% 移速，10×t tick",
         "module/weapon/WeaponElementSystem.java:664-699 — 切割：0.35×core×克制×切割倍率（不乘 elementValue），病毒时 ×(2+0.25×等级)，直接扣血",
         "module/weapon/WeaponElementSystem.java:831-869 — 毒气：半径 3 的云，中心 gasCenter 取触发时目标坐标、之后不动；0.5×…，节肢1.5，有护盾×0.5；打范围内除攻击者外所有 LivingEntity；stopOnDeath=false",
         "module/weapon/WeaponCombatHandler.java:1397-1404,1528-1535 — 毒气虽 stopOnDeath=false，但任务仍在 target.isRemoved() 时结束，EntityLeaveLevelEvent 也会 clear；原版死亡 20 tick 后移除实体 → 锚点死后最多再跳一轮（轮间隔 20 tick）",
@@ -957,7 +966,8 @@
         "config/ModConfig.java:400-428 — 六个元素伤害倍率（默认 1.0，范围 0~100），直接相乘（x 格式）；只在 ≠1 时列出「再乘」那一行",
         "config/ModConfig.java:838-841,875-880 + WeaponCombatHandler.java:426-428 — enableOffhandModule（默认 true）且 offhandEffectMultiplier>0 才显示额外槽位那一行（比例为 0 时副手不贡献任何属性）",
         "全仓库无 addEffect；元素状态是 DynamicAttribute 而非 MobEffect，killStackBaseDamage 只数 MobEffectCategory.HARMFUL（WeaponCombatHandler.java:978-981）",
-        "星际战甲小知识：原作切割触发为「出血」，真实伤害无视护甲与护盾；磁力克护盾、腐蚀削护甲（原作知识，非本项目代码）"
+        "星际战甲小知识：原作切割触发为「出血」，真实伤害无视护甲与护盾；磁力克护盾、腐蚀削护甲（原作知识，非本项目代码）",
+        "client/fx/script/ElementStatusFx.java:42,387-440 — 麻痹期间身上的电弧每 3 道有 1 道跳到 4 格内另一只被麻痹的实体身上，纯客户端画面，不经服务端、不造成伤害"
       ]
     },
     {
@@ -968,11 +978,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "一段时间没有击杀，层数就会慢慢往下掉，要叠就趁势连着杀。名字里带「击杀时获取」的词条属于<hl>击杀叠层</hl>，每杀一个生物叠 1 层，层数越多效果越强。"
+          "text": "一段时间没有击杀，Tenno，层数就会慢慢往下掉，要叠就趁势连着杀。名字里带「击杀时获取」的词条属于<hl>击杀叠层</hl>，每杀一个生物叠 1 层，层数越多效果越强。"
         },
         {
           "type": "p",
-          "text": "层数跟着<em>你本人</em>走，不存在武器上，换一把同样带这种叠层词条的武器，已有的层数照样生效。"
+          "text": "层数记在<em>你本人</em>身上，不在武器上，中途换武器不会丢：换一把同样带这种叠层词条的武器，已有的层数照样生效。"
         },
         {
           "type": "steps",
@@ -1041,7 +1051,7 @@
           "type": "tip",
           "style": "warn",
           "title": "基础伤害叠层的坑",
-          "text": "它的加成要乘以<em>目标身上负面效果的个数</em>，算的是缓慢、虚弱、中毒、凋零等药水类负面效果，其它模组的也算，元素触发挂上的状态<w>不计入</w>。目标身上一个都没有时，层数再满也是 +0。"
+          "text": "它的加成要乘以<em>目标身上负面效果的个数</em>，算的是缓慢、虚弱、中毒、凋零等药水类负面效果，其它模组的也算，元素触发挂上的状态<w>不计入</w>。目标身上一个都没有时，层数再满也是 +0。先给它挂上这类效果，再指望这一条。"
         },
         {
           "type": "list",
@@ -1053,7 +1063,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "据档案记载，那边同样有越杀越勇的 Mod，比如 Galvanized 系列，击杀之后的一段时间里，会叠起多重射击或伤害加成。"
+          "text": "据档案记载，那边同样有越杀越勇的 MOD，比如 Galvanized 系列，击杀之后的一段时间里，会叠起多重射击或伤害加成。"
         },
         {
           "type": "h",
@@ -1061,7 +1071,7 @@
         },
         {
           "type": "p",
-          "text": "<t>战甲模组</t>是装在{item:kuvalich:requiem_warframe_table}里、给你本人加属性的模组，它们也有生命、护盾、护甲、抗性等 12 种叠层词条，规则一样，只是更容易叠起来。"
+          "text": "<t>战甲模组</t>是装在{item:kuvalich:requiem_warframe_table}里、给你本人加属性的模组，它们也有生命、护盾、护甲、抗性等 12 种叠层词条。规则一样，叠起来却更容易。"
         },
         {
           "type": "list",
@@ -1074,7 +1084,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -1126,7 +1136,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "用有面板、能装模组的<t>开光</t>武器打出伤害，目标身上会飘出数字，停留约 2 秒，看颜色就知道这一下有没有暴击。"
+          "text": "这一下打得怎么样，数字上写得清清楚楚。用有面板、能装模组的<t>开光</t>武器打出伤害，目标身上会冒出数字，慢慢往上飘，停留约 1 秒。看颜色和字号，就知道这一下有没有暴击、暴到了第几档。"
         },
         {
           "type": "table",
@@ -1140,23 +1150,23 @@
           ],
           "rows": [
             [
-              "<c:FFFFFF>白</c>",
-              "没暴击，元素伤害也是白字，后面带元素图标"
+              "<c:FCFBFC>白</c>",
+              "没暴击，元素伤害也是白字，字小一号，后面带元素图标"
             ],
             [
               "<c:55FFFF>浅蓝</c>",
               "没暴击，但目标身上有黄心护盾"
             ],
             [
-              "<c:FFFF55>黄</c>",
+              "<c:F8FA2E>黄</c>",
               "暴击 ×M，M 是暴击倍率"
             ],
             [
-              "<c:FFAA00>橙</c>",
+              "<c:E8833A>橙</c>",
               "二档暴击 ×2M"
             ],
             [
-              "<c:FF5555>红</c>",
+              "<c:E6131E>红</c>",
               "三档暴击 ×3M"
             ]
           ]
@@ -1164,8 +1174,8 @@
         {
           "type": "list",
           "items": [
-            "数字是<em>实际掉的血</em>，护甲、抗性、其它模组的减伤和受击无敌都已扣除，打在护盾上的部分也算在内。",
-            "暴击档越高字越大，从小到大依次是白字、黄字或蓝字、橙字、红字。",
+            "数字是<em>实际掉的血</em>，护甲、抗性、其它模组的减伤和受击无敌都已扣除，打在护盾上的部分也算在内。打{lang:entity.kuvalich.kuva_master}时数字偏小，看它身上有没有浮起六边形护壁、命中处有没有横着闪过一道光，那是它的[[enemies/lich_resistance|抗性]]在削你的伤害。",
+            "暴击档越高字越大，从小到大依次是白字、黄字或蓝字、橙字、红字。黄、橙、红三档还描着一圈暗边，刚冒出来时先放大一下、再缩回原样。",
             {
               "if": "cfg:kuva_lich.damageDisplay",
               "text": "没开光的武器打出的伤害也会显示白字。"
@@ -1199,7 +1209,7 @@
             "火焰、毒素、电击、切割、毒气、爆炸这些会造成伤害的元素各自单独飘出白字，后面带着对应元素的图标，不会往命中数字上加图标。",
             {
               "if": "mod:tacz",
-              "text": "匕首图标代表{lang:item.module.true_bullet}的直接扣血，单独显示时是<c:AA00AA>紫字</c>。"
+              "text": "匕首图标代表{lang:item.module.true_bullet}的直接扣血，单独显示时是<c:FF55FF>紫字</c>。"
             },
             "数字前面带蝴蝶结图标的，是女仆等你驯服的生物拿开光武器打出的伤害，同样显示给你，但它们的元素伤害数字不显示。"
           ]
@@ -1229,7 +1239,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -1243,20 +1253,23 @@
         "module/weapon/DamageDisplayTracker.java:201-215 — enableDamageNumbers 关闭时不登记、不发包 → 整个条目加 if，关闭时不出现",
         "module/weapon/DamageDisplayTracker.java:330-347 — 显示值 = ForgeHooks.onLivingDamage 返回值 + 护盾吃掉的部分，打到护盾追加护盾图标",
         "mixin/MixinForgeHooksFinalDamage.java — 在 ForgeHooks.onLivingDamage 返回处回调",
-        "module/weapon/WeaponCombatHandler.java:766-798 — 颜色码与倍率同分支赋值：§e 黄 ×M、§6 橙 ×2M、§c 红 ×3M、§f 白、目标有吸收护盾 §b 蓝",
-        "network/packet/DamageInfo.java:26-37 — 颜色：白/蓝/紫/黄/橙/红（原版 § 色 FFFFFF/55FFFF/AA00AA/FFFF55/FFAA00/FF5555）",
+        "module/weapon/WeaponCombatHandler.java:766-798 — 颜色码与倍率同分支赋值：§e 黄 ×M、§6 橙 ×2M、§c 红 ×3M、§f 白、目标有吸收护盾 §b 蓝；颜色码只用来判档位",
+        "network/packet/DamageInfo.java:34-55 + client/renderer/damage/DamageRenderer.java:96-97,386-397 + client/fx/FxPalette.java:94-100 — 六档白 / 蓝 / 紫 / 黄 / 橙 / 红，RGB FCFBFC / 55FFFF / FF55FF / F8FA2E / E8833A / E6131E（表里和真实子弹那一项的颜色按这个写）",
         "module/weapon/WeaponCombatHandler.java:1088-1112,1133-1135 — 真实子弹仅 TACZ 子弹，§5 紫 + 匕首图标",
-        "client/renderer/damage/DamageRenderer.java:72-75,312-323 — 字号：白最小、黄/蓝、橙、红依次变大",
+        "client/renderer/damage/DamageRenderer.java:81-87,347-355 — 字号：白 0.045（紫同白）、蓝 / 黄 0.057、橙 0.072、红 0.09；元素伤害数字（合并组非空的白字，DamageInfo.java:130,181）再 ×0.85、不弹",
         "module/weapon/WeaponElementSystem.java:318,347-365,929-946 — 元素数字白字 + 元素图标，合并分组=元素名",
         "module/weapon/WeaponElementSystem.java:593,630,662,698,829,868 vs 646,714,733,746,762,778,794 — 火焰/毒素/电击/切割/爆炸/毒气分支 return null（不进命中数字后缀），冰冻/穿刺/冲击/磁力/辐射/病毒/腐蚀返回元素名 → WeaponCombatHandler.java:859-861,893 拼成命中数字的图标后缀",
         "module/weapon/WeaponElementSystem.java:329-332 — 元素数字接收者只认攻击者本人是 ServerPlayer（宠物、女仆的元素伤害不显示）",
         "module/weapon/WeaponCombatHandler.java:1095-1112 + network/packet/DamagePacket.java:80-81 + DamageInfo.java:142-156,193-209 — 真伤下一 tick 用 sendDirect 发（合并分组=普通组），落在合并窗口内就并进命中数字；紫(档位2)高于白/蓝、低于黄/橙/红",
         "module/weapon/WeaponCombatHandler.java:465-486 — 驯服生物（TamableAnimal）攻击时数字发给主人，前缀 🎀",
         "module/weapon/DamageDisplayTracker.java:302-314,350-361 — damageDisplay 开启时非开光武器的伤害显示白字",
-        "network/packet/DamagePacket.java:63-75 — 每玩家每 500ms 主/附加通道各 200 条限流；显示 2000ms",
+        "network/packet/DamagePacket.java:63-75 — 每玩家每 500ms 主/附加通道各 200 条限流；客户端另有 500 条上限（DamageRenderer.java:71,188）",
         "client/renderer/damage/DamageRenderer.java:104-137 + network/packet/DamageInfo.java:142-156,193-209 — 合并：同实体同分组、窗口内；数值累加、颜色取最高、图标并集",
         "config/ModConfig.java:339-365 — damageDisplay(false)、enableDamageNumbers(true)、mergeDamageNumbers(true)、mergeDamageWindowMs(200，0=不合并)",
-        "client/renderer/damage/DamageRenderer.java:117-120 — 合并开关与窗口在客户端读取本机 ModConfig（COMMON 配置不随服务端同步）；v1 那条「由你自己客户端决定」的提示按第二轮要求删了（正文不谈配置），整合包里两边一致"
+        "client/renderer/damage/DamageRenderer.java:117-120 — 合并开关与窗口在客户端读取本机 ModConfig（COMMON 配置不随服务端同步）；v1 那条「由你自己客户端决定」的提示按第二轮要求删了（正文不谈配置），整合包里两边一致",
+        "client/renderer/damage/DamageRenderer.java:90-93,100-102,258-264,295-300,357-370 + config/EffectsDisplayConfig.java:125-128 — 黄 / 橙 / 红描暗边；新建的暴击数字第一帧放大 0.30 / 0.35 / 0.40，100 ms 缩回（客户端选项 damage_number_pop，默认开；合并进来的不弹）",
+        "network/packet/DamageInfo.java:51-55,233-235 + client/renderer/damage/DamageRenderer.java:66 — 寿命由客户端定：暴击三档 1050 ms（末 280 ms 淡出）、白 / 蓝 / 紫 1200 ms（末 300 ms），包里带的 2000 ms 不再用 → 正文「停留约 1 秒」；每秒上升 0.15 格",
+        "entity/KuvaMasterEntity.java:532,541 + mercy/KuvaStateServer.java:89-134 — 数字偏小那一句：护壁（ADAPT）、横向偏转光（GUARD）只在玄骸身上出现，见 combat/damage 的同类出处"
       ]
     }
   ]

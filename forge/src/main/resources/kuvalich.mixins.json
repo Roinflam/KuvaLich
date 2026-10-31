@@ -9,6 +9,11 @@
     "MixinPlayerSweep"
   ],
   "client": [
+    "client.MixinSoundEngineMixer",
+    "client.MixinHumanoidModelMercy",
+    "client.MixinItemInHandLayerMercy",
+    "client.MixinCameraMercy",
+    "client.MixinMouseHandlerMercy"
   ],
   "server": [
   ],

@@ -1,13 +1,18 @@
 package pers.roinflam.kuvalich.client.model;
 
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
+import pers.roinflam.kuvalich.mercy.MercyAnimNames;
 import pers.roinflam.kuvalich.utils.Reference;
+import software.bernie.geckolib.core.animation.Animation;
 import software.bernie.geckolib.model.GeoModel;
 
 /**
  * 赤毒奴仆模型（GeckoLib 4.x版本）
  * Kuva Slave Model (GeckoLib 4.x version)
+ *
+ * <p>倒地 / 处决的片段和玄骸的放在同一个 {@code kuva_mercy.animation.json} 里，名字以 {@code mercy.} 开头的从那里取。</p>
  */
 public class KuvaSlaveModel extends GeoModel<KuvaSlaveEntity> {
 
@@ -24,5 +29,14 @@ public class KuvaSlaveModel extends GeoModel<KuvaSlaveEntity> {
     @Override
     public ResourceLocation getAnimationResource(KuvaSlaveEntity entity) {
         return new ResourceLocation(Reference.MOD_ID, "animations/kuva.animation.json");
+    }
+
+    @Override
+    @Nullable
+    public Animation getAnimation(KuvaSlaveEntity animatable, String name) {
+        if (name.startsWith(MercyAnimNames.PREFIX)) {
+            return KuvaMasterModel.mercyAnimation(name);
+        }
+        return super.getAnimation(animatable, name);
     }
 }

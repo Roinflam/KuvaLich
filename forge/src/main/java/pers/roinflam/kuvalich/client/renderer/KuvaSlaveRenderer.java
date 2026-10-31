@@ -1,39 +1,31 @@
 package pers.roinflam.kuvalich.client.renderer;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.resources.ResourceLocation;
+import pers.roinflam.kuvalich.client.mercy.KuvaFuryLayer;
 import pers.roinflam.kuvalich.client.model.KuvaSlaveModel;
+import pers.roinflam.kuvalich.client.renderer.layer.KuvaGlowLayer;
+import pers.roinflam.kuvalich.client.renderer.layer.KuvaThrallRimLayer;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import pers.roinflam.kuvalich.utils.Reference;
 
 /**
- * 赤毒奴仆渲染器（GeckoLib 4.x版本）
- * Kuva Slave Renderer (GeckoLib 4.x version)
+ * 赤毒奴仆渲染器
+ *
+ * <p>层：胸口一道赤毒裂纹的发光（{@link KuvaGlowLayer}）、常驻的冷色描边（{@link KuvaThrallRimLayer}）、
+ * 交战越久越明显的怒意。淡入淡出、死亡不翻倒、元素染色、名牌这些和玄骸共用，见 {@link AbstractKuvaRenderer}。</p>
  */
-public class KuvaSlaveRenderer extends GeoEntityRenderer<KuvaSlaveEntity> {
+public class KuvaSlaveRenderer extends AbstractKuvaRenderer<KuvaSlaveEntity> {
 
-    /**
-     * GeckoLib 4.x构造函数
-     * GeckoLib 4.x constructor
-     *
-     * 注意：不再接收RenderManager，改为EntityRendererProvider.Context
-     * Note: No longer accepts RenderManager, uses EntityRendererProvider.Context instead
-     */
+    /** 发光遮罩：只点胸口（tools/fx/make_glowmask.py 生成） */
+    public static final ResourceLocation GLOW_MASK = new ResourceLocation(Reference.MOD_ID,
+            "textures/entity/kuva_slave_glowmask.png");
+    private static final String[] GLOW_BONES = {"chestArmor"};
+
     public KuvaSlaveRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new KuvaSlaveModel());
-    }
-
-    /**
-     * 可选：自定义渲染（如果需要特殊效果）
-     * Optional: Custom rendering (if special effects needed)
-     */
-    @Override
-    public void render(KuvaSlaveEntity entity, float entityYaw, float partialTick,
-                       PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        // 可以在这里添加自定义渲染逻辑
-        // Custom rendering logic can be added here
-
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        addRenderLayer(new KuvaGlowLayer<>(this, GLOW_MASK, GLOW_BONES));
+        addRenderLayer(new KuvaThrallRimLayer(this));
+        addRenderLayer(new KuvaFuryLayer<>(this));
     }
 }

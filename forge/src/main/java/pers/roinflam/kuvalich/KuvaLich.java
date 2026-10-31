@@ -53,6 +53,10 @@ public class KuvaLich {
         KuvaLichBlocks.BLOCKS.register(modEventBus);
         KuvaLichLootModifiers.LOOT_MODIFIERS.register(modEventBus);
 
+        // 注册声音事件、粒子类型 / Register sound events and particle types
+        KuvaLichSounds.SOUNDS.register(modEventBus);
+        KuvaLichParticles.PARTICLES.register(modEventBus);
+
         // 注册物品 / Register items
         KuvaLichItems.ITEMS.register(modEventBus);
 

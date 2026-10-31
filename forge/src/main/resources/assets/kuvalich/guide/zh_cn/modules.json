@@ -10,16 +10,26 @@
       "title": "模组是什么、怎么装",
       "icon": "kuvalich:item_common_module",
       "summary": "两类模组、从哪来、揭示与安装",
-      "items": ["kuvalich:item_common_module", "kuvalich:item_uncommon_module", "kuvalich:item_rare_module", "kuvalich:item_prime_module"],
+      "items": [
+        "kuvalich:item_common_module",
+        "kuvalich:item_uncommon_module",
+        "kuvalich:item_rare_module",
+        "kuvalich:item_prime_module"
+      ],
       "blocks": [
         {
+          "type": "comm",
+          "who": "ordis",
+          "text": "飞船中枢 Ordis，奉命打理军械库。每一处都收拾得妥妥当当，指挥官尽管取用。"
+        },
+        {
           "type": "p",
-          "text": "武器和你身上各有八个模组槽，天诺，伤害和生存都要靠插进去的卡。<hl>模组</hl>是插在武器或战甲上的强化卡，每张带着几条<t>词条</t>，比如「+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}」，装上不消耗，随时能拆下来换到别处。"
+          "text": "伤害和生存，都靠你插进去的卡，Tenno。武器和你身上各有八个模组槽。<hl>模组</hl>是插在武器或战甲上的强化卡，每张带着几条<t>词条</t>，比如「+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}」，装上不消耗，随时能拆下来换到别处。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "Mod 是起源星系那边插在战甲和武器上的强化卡，到了这里就叫模组。每件装备只容得下有限的几张，留哪几张、怎么搭配，是养成里最要紧的事。"
+          "text": "MOD 是始源星系那边插在战甲和武器上的强化卡，到了这里就叫模组。每件装备只容得下有限的几张，留哪几张、怎么搭配，是养成里最要紧的事。"
         },
         {
           "type": "p",
@@ -54,7 +64,7 @@
           "type": "tip",
           "style": "info",
           "title": "什么叫「开光」",
-          "text": "<hl>开光</hl>就是给物品加上武器面板，开过光的物品才能装武器模组。[[weapons/kuva_weapons|赤毒武器]]天生开过光，剑、弓、盾、盔甲这些要先放进{item:kuvalich:requiem_evolve}，配一个{item:kuvalich:riven_sliver}开光，做法见[[weapons/requiem_evolve]]。"
+          "text": "<hl>开光</hl>就是给物品加上武器面板，没开过光的物品装不了武器模组。[[weapons/kuva_weapons|赤毒武器]]天生开过光；剑、弓、盾、盔甲这些，先放进{item:kuvalich:requiem_evolve}，配一个{item:kuvalich:riven_sliver}开光，做法见[[weapons/requiem_evolve]]。"
         },
         {
           "type": "h",
@@ -74,12 +84,12 @@
               "黄金 {cfg:kuva_lich.rareModuleDropChance|pctv}，白银 {cfg:kuva_lich.uncommonModuleDropChance|pctv}，青铜 {cfg:kuva_lich.commonModuleDropChance|pctv}"
             ],
             [
-              "亲手击杀[[enemies/kuva_slave|赤毒奴仆]]",
+              "亲手了结[[enemies/kuva_slave|赤毒奴仆]]",
               "同上",
               "同上"
             ],
             [
-              "解密成功时击杀[[enemies/kuva_master|赤毒玄骸]]",
+              "解密成功、终结[[enemies/kuva_master|赤毒玄骸]]时",
               "必掉一张未揭示的 Prime 或裂罅模组",
               "Prime {cfg:kuva_lich.masterPrimeModuleChance|pctv}，否则是裂罅"
             ],
@@ -101,7 +111,7 @@
         {
           "type": "steps",
           "items": [
-            "刚掉的卡是<t>未揭示</t>的，名字以「未揭示的」开头，词条显示成 <dim>+??% ???</dim>，这时还装不上。",
+            "认准<t>未揭示</t>的卡：名字以「未揭示的」开头，词条显示成 <dim>+??% ???</dim>，这时还装不上。",
             "拿在<w>主手</w>右键使用，放在副手右键没有反应。",
             "卡随即消失，脚下掉出一张揭示好的模组，捡起来。"
           ]
@@ -120,20 +130,20 @@
         },
         {
           "type": "p",
-          "text": "战甲模组装起来更简单，打开{item:kuvalich:requiem_warframe_table}直接放进槽里，见[[warframe/warframe_module]]。"
+          "text": "战甲模组更省事：打开{item:kuvalich:requiem_warframe_table}，直接放进槽里，见[[warframe/warframe_module]]。"
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "装之前先看等级",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "新揭示的卡通常只有 <t>1</t> 级，效果是满级的 1/{cfg:kuva_lich.moduleMaxLevel}，刚装上几乎看不出变化，升级方法见[[modules/module_level]]。"
+          "text": "新揭示的卡通常只有 <t>1</t> 级，效果是满级的 1/{cfg:kuva_lich.moduleMaxLevel}，刚装上几乎看不出变化。先把它练起来，升级方法见[[modules/module_level]]。"
         },
         {
           "type": "tip",
           "style": "info",
           "title": "装不上时",
-          "text": "常见的原因是同一种模组装了两张、裂罅模组超过 1 张，或者卡还没揭示。在军械库里拿起模组，冲突的槽会<b>红色脉动</b>，完整规则见[[modules/module_limits]]。"
+          "text": "常见的原因有三种：同一种模组装了两张、裂罅模组超过 1 张，或者卡还没揭示。在军械库里拿起模组，看哪几格<b>红色脉动</b>，那就是冲突的槽，完整规则见[[modules/module_limits]]。"
         }
       ],
       "_src": [
@@ -151,8 +161,8 @@
         "item/module/weapon/WeaponCommonModule.java:620-642 — 揭示：仅主手右键；ItemEntity 生成在玩家位置；按禁用类型过滤",
         "base/item/AbstractWeaponModule.java:82-89 — 未揭示卡显示三行 +??% ???",
         "enchantment/RequiemDestroyedEnchantment.java:165-171,202-229 — 安魂矿石掉卡时掷一次 0~99：先金、再银、再铜的区间（互斥），武器/战甲比例 moduleWeaponRatio（百分数）",
-        "entity/KuvaSlaveEntity.java:164-185,229-232,262-285 — 奴仆被玩家击杀掉模组，同一组概率",
-        "entity/KuvaMasterEntity.java:415-429,438,483,534-548 — 仅破解成功（isCorrectAnswer）时掉高级模组；masterPrimeModuleChance 决定 Prime 还是裂罅",
+        "entity/KuvaSlaveEntity.java:194-209 onKilled — 奴仆走怜悯之击（mercyEnabled 且 mercyThralls，mercy/MercyRules.java:31-37）时只有处决完成的那次死亡给；不走时被玩家打死就给（箭这类投射物算射手）。:277-280 dropLoot → :310-334 dropModule，和安魂矿石同一组概率。表里写「亲手了结」，两种情况都成立",
+        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 三刀全对（mercy/MercyServer.java:747-759 settleSuccess）和怜悯之击关着时死时卡序全对（KuvaMasterEntity.java:816-848 resolveForOwner → :895 directSuccess）都走这里；:1043 必掉一张 rollAdvancedModule，:1119-1130 masterPrimeModuleChance 决定 Prime 还是裂罅；:772-785 无主玄骸什么都不给",
         "world/inventory/RequiemRecastMenu.java:207-222 — 安魂之铸三合一",
         "module/level/ModuleLevelHelper.java:52-59,102-108 — 无等级 NBT 按 1 级，效果 = 等级/满级",
         "结构：v1 的「装不上？看这几条」清单与冲突脉动提示整段移到 module_limits（本分类第 2 篇），这里只留一句摘要 + 链接"
@@ -166,7 +176,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "每件武器或战甲能装哪些模组，由下面几条规则决定，军械库不让放时，逐条对一遍就能找到原因。"
+          "text": "每件武器或战甲能装哪些模组，由下面几条规则决定。军械库不让放时，逐条对一遍，Tenno，原因就在其中。"
         },
         {
           "type": "list",
@@ -182,7 +192,7 @@
           "type": "tip",
           "style": "info",
           "title": "看红色",
-          "text": "在军械库里拿起一张模组，和它冲突的槽会<b>红色脉动</b>，Shift + 点击装不上时，冲突的槽也会闪几下，看到红色就换一张。"
+          "text": "在军械库里拿起一张模组，和它冲突的槽会<b>红色脉动</b>；Shift + 点击装不上时，冲突的槽也会闪几下。看到红色，就换一张。"
         },
         {
           "type": "h",
@@ -264,11 +274,21 @@
             },
             "[[combat/kill_stack|击杀叠层]]的加成在上限之后才加，所以能超出上限。",
             {
-              "if": ["cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule", "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"],
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
               "text": "上限按件计算，主手武器的 8 张卡合在一起算一次，战甲的 8 张卡合在一起算一次，副手等额外位置上的物品各算各的，再按比例加上去，见[[modules/multi_slot]]。"
             },
             {
-              "if": ["!cfg:kuva_lich.enableOffhandModule", "!cfg:kuva_lich.enableHelmetModule", "!cfg:kuva_lich.enableChestplateModule", "!cfg:kuva_lich.enableLeggingsModule", "!cfg:kuva_lich.enableBootsModule", "!cfg:kuva_lich.enableCuriosModule||!mod:curios"],
+              "if": [
+                "!cfg:kuva_lich.enableOffhandModule",
+                "!cfg:kuva_lich.enableHelmetModule",
+                "!cfg:kuva_lich.enableChestplateModule",
+                "!cfg:kuva_lich.enableLeggingsModule",
+                "!cfg:kuva_lich.enableBootsModule",
+                "!cfg:kuva_lich.enableCuriosModule||!mod:curios"
+              ],
               "text": "上限按件计算，主手武器的 8 张卡合在一起算一次，战甲的 8 张卡合在一起算一次。"
             },
             "战甲的火焰、电击、同源、摔落抗性和护盾恢复延迟是连乘的，不受这个上限约束。",
@@ -536,7 +556,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "模组分五档品质，武器模组和战甲模组都一样，卡面上<em>词条那几行的颜色</em>就是品质色，一眼认得出。"
+          "text": "认品质，看颜色。模组分五档品质，武器模组和战甲模组都一样，卡面上<em>词条那几行的颜色</em>就是品质色。"
         },
         {
           "type": "items",
@@ -570,7 +590,7 @@
             ],
             [
               "<c:55FFFF>Prime</c>",
-              "解密成功时击杀[[enemies/kuva_master|赤毒玄骸]]"
+              "解密成功、终结[[enemies/kuva_master|赤毒玄骸]]时"
             ],
             [
               "<c:FF55FF>裂罅</c>",
@@ -584,7 +604,7 @@
         },
         {
           "type": "p",
-          "text": "<c:FF55FF>裂罅模组</c>的词条完全随机，见[[modules/riven_module]]。用不上的卡，拿到[[weapons/requiem_recast|安魂之铸]]里三张合成一张。"
+          "text": "<c:FF55FF>裂罅模组</c>的词条完全随机，见[[modules/riven_module]]。用不上的卡，拿到[[weapons/requiem_recast|安魂之铸]]里三张合成一张，别让它们闲着。"
         },
         {
           "type": "h",
@@ -622,20 +642,20 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "青铜、白银、黄金这几档，那边的 Mod 同样有。Primed Mod 是普通 Mod 的加强版，到了这里简写作 Prime。镀层 Mod 在那边叫 Galvanized，效果随击杀层层叠加。"
+          "text": "青铜、白银、黄金这几档，那边的 MOD 同样有。档次分明，Ordis 记账也省心。Primed MOD 是普通 MOD 的加强版，到了这里简写作 Prime。镀层 MOD 在那边叫 Galvanized，效果随击杀层层叠加。"
         },
         {
           "type": "tip",
           "style": "info",
-          "text": "同一种模组可能在好几档都有，比如白银的「狂暴」和 Prime 的「狂暴 Prime」，它们<w>算同一种</w>，只能装其中一张。"
+          "text": "同一种模组可能在好几档都有，比如白银的「狂暴」和 Prime 的「狂暴 Prime」。别被名字骗了，它们<w>算同一种</w>，只能装其中一张。"
         }
       ],
       "_src": [
         "base/item/AbstractWeaponModule.java:145-155,219-227 — 词条行颜色只跟品质走",
         "base/item/AbstractWarframeModule.java:128-130,200-208 — 战甲模组同样按品质上色",
         "utils/KuvaPalette.java:96-102 — 青铜 CD7F32 / 白银 C0C0C0 / 黄金 FFD700 / Prime 55FFFF / 裂罅 FF55FF",
-        "enchantment/RequiemDestroyedEnchantment.java:202-229 与 entity/KuvaSlaveEntity.java:262-285 — 青铜/白银/黄金来源",
-        "entity/KuvaMasterEntity.java:438,483,534-548 — Prime / 裂罅只在破解成功击杀玄骸时掉",
+        "enchantment/RequiemDestroyedEnchantment.java:202-229 与 entity/KuvaSlaveEntity.java:310-334 — 青铜/白银/黄金来源（奴仆什么时候给东西见 KuvaSlaveEntity.java:194-209 onKilled）",
+        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess、:1043、:1119-1130 rollAdvancedModule — Prime / 裂罅只在解密成功、终结玄骸时掉（三刀全对，或怜悯之击关着时死时卡序全对）",
         "world/inventory/RequiemRecastMenu.java:207-222,267-300 — 三合一",
         "item/module/weapon/WeaponPrimeModule.java:98-99 — 压迫点 Prime 与压迫点同 type pressure_point",
         "item/module/weapon/WeaponPrimeModule.java:205-212 — 镀层 分裂膛室 / 镀层 斩铁 带 killStack 词条",
@@ -650,17 +670,19 @@
       "title": "模组等级与内融核心",
       "icon": "kuvalich:endo",
       "summary": "等级折算、升级费用、内融核心来源",
-      "items": ["kuvalich:endo"],
+      "items": [
+        "kuvalich:endo"
+      ],
       "blocks": [
         {
           "type": "p",
           "if": "!cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "模组没有等级，每张卡一到手就是满效果，不用升级。"
+          "text": "模组没有等级，每张卡一到手就是满效果，不必花心思升级，Tenno。"
         },
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "模组有等级，满级是 <t>{cfg:kuva_lich.moduleMaxLevel}</t> 级。新揭示的卡通常只有 1 级，要用专门给模组升级的材料<hl>{item:kuvalich:endo}</hl>一级一级往上升。"
+          "text": "一张卡有多少分量，要看你把它练到几级。模组有等级，满级是 <t>{cfg:kuva_lich.moduleMaxLevel}</t> 级。新揭示的卡通常只有 1 级，要用专门给模组升级的材料<hl>{item:kuvalich:endo}</hl>一级一级往上升。"
         },
         {
           "type": "formula",
@@ -682,7 +704,7 @@
           "type": "tip",
           "style": "wf",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "档案里记着，Mod 升级靠的是 Endo，这里叫作内融核心，闲置的 Mod 分解掉，也能换回一些。"
+          "text": "物尽其用，正合 Ordis 的脾性。档案里记着，MOD 升级靠的是 Endo，这里叫作内融核心，闲置的 MOD 分解掉，也能换回一些。"
         },
         {
           "type": "h",
@@ -707,7 +729,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "升级费用随等级上涨，品质越低越便宜，Prime 光是最后一级就要 <t>{cfg:kuva_lich.endoLastLevelCost}</t> 个。"
+          "text": "升级费用随等级上涨，品质越低越便宜，Prime 光是最后一级就要 <t>{cfg:kuva_lich.endoLastLevelCost}</t> 个。内融核心先花在真正要用的卡上。"
         },
         {
           "type": "table",
@@ -798,7 +820,7 @@
             "cfg:kuva_lich.enableModuleLevelSystem",
             "cfg:kuva_lich.enableMasteryOnReveal"
           ],
-          "text": "你在安魂之融里把某种模组练到过几级，以后<t>揭示</t>同种、同品质的模组，它一出来就是那个等级。"
+          "text": "练级的功夫，会一直跟着你。你在安魂之融里把某种模组练到过几级，以后<t>揭示</t>同种、同品质的模组，它一出来就是那个等级。"
         },
         {
           "type": "tip",
@@ -812,7 +834,7 @@
         {
           "type": "h",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "formula",
@@ -876,7 +898,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "模组有几百种，不用死记，两个军械库都自带图鉴，分别是「{lang:kuvalich.codex.title.weapon}」和「{lang:kuvalich.codex.title.warframe}」，里面能翻看各种模组的完整卡面。"
+          "text": "指挥官，模组有几百种，您不必死记。两个军械库都自带图鉴，分别是「{lang:kuvalich.codex.title.weapon}」和「{lang:kuvalich.codex.title.warframe}」，各种模组的完整卡面都能在里面翻看。这两本，Ordis 归置得一丝不乱！"
         },
         {
           "type": "steps",
@@ -907,7 +929,7 @@
         {
           "type": "tip",
           "style": "info",
-          "text": "<c:FF55FF>裂罅模组</c>的词条是随机的，所以图鉴不收录，它的规律见[[modules/riven_module]]。"
+          "text": "<c:FF55FF>裂罅模组</c>的词条是随机的，所以图鉴不收录。没有定数的东西，Ordis 素来不喜欢。它的规律见[[modules/riven_module]]。"
         },
         {
           "type": "h",
@@ -959,7 +981,7 @@
         "client/gui/codex/ModuleCodexScreen.java:452-454,684-760 — 未发现不画图标只画噪线；悬停对所有格子显示 tooltip",
         "client/gui/codex/ModuleCodexData.java:230-258 — 只收青铜/白银/黄金/Prime（及自定义）列表，不含裂罅",
         "event/ModuleDiscoveryHandler.java:38,56-96,111-133 — 发现：拾取后、登录扫描、每 100 tick 扫背包；只扫背包",
-        "module/level/ModuleLevelHelper.java:281,315-321 — 揭示时记发现，但等级系统关闭时 applyRevealLevel 在 281 行提前返回、不记；揭示出的卡掉在脚下，捡起时由 ModuleDiscoveryHandler.onItemPickup 记，所以正文只写「捡起」",
+        "module/level/ModuleLevelHelper.java:284,318-323 — 揭示时记发现，但等级系统关闭时 applyRevealLevel 在 284 行提前返回、不记；揭示出的卡掉在脚下，捡起时由 ModuleDiscoveryHandler.onItemPickup 记，所以正文只写「捡起」",
         "event/ModuleDiscoveryHandler.java:170-205 — 发现键 type:品质",
         "client/gui/codex/ModuleCodexScreen.java:312-333 — 创造：左键给予、Shift+左键一键装",
         "network/packet/CodexGiveItemPacket.java:67,93-103 — 必须创造模式；背包满拒绝",
@@ -972,11 +994,14 @@
       "title": "裂罅模组",
       "icon": "kuvalich:item_riven_module",
       "summary": "随机词条、倾向性与循环洗词条",
-      "items": ["kuvalich:item_riven_module", "kuvalich:warframe_riven_module"],
+      "items": [
+        "kuvalich:item_riven_module",
+        "kuvalich:warframe_riven_module"
+      ],
       "blocks": [
         {
           "type": "p",
-          "text": "<c:FF55FF>裂罅模组</c>的词条全凭运气，有 2~3 条正面词条，还可能再带 1 条负面词条，主要在解密成功、击杀[[enemies/kuva_master|赤毒玄骸]]时掉落。洗一次词条付一次赤毒，付了不退，动手前先数好手里的赤毒。"
+          "text": "<c:FF55FF>裂罅模组</c>的词条全凭运气，有 2~3 条正面词条，还可能再带 1 条负面词条，主要在解密成功、终结[[enemies/kuva_master|赤毒玄骸]]时掉落。洗一次词条付一次赤毒，付了不退。动手前先数好手里的赤毒，Tenno，运气不会替你付账。"
         },
         {
           "type": "p",
@@ -1013,7 +1038,7 @@
         },
         {
           "type": "p",
-          "text": "模式在揭示时定下，之后不再改变。战甲裂罅没有模式，卡名以 Warframe 开头。"
+          "text": "模式在揭示那一刻就定死，之后不再改变。战甲裂罅没有模式，卡名以 Warframe 开头。"
         },
         {
           "type": "h",
@@ -1126,7 +1151,7 @@
           "type": "tip",
           "style": "info",
           "title": "每次预览都要付费",
-          "text": "每出一次预览就付一次赤毒。预览出来后再往材料格里添赤毒或取出一些，只要剩下的够付，就会按新数量重新预览，再付一次，洗几次付几次。"
+          "text": "每出一次预览就付一次赤毒。预览出来后再往材料格里添赤毒或取出一些，只要剩下的够付，就会按新数量重新预览，再付一次，洗几次付几次。预览一出来，材料格就别碰了，除非你打算再洗一次。"
         },
         {
           "type": "h",
@@ -1183,7 +1208,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "指挥官，起源星系的裂罅 Mod 同样要先完成一道挑战，才肯露出真面目，循环洗词条也要花赤毒。那边的倾向性因武器而异，倾向越高，裂罅的数值越强。"
+          "text": "指挥官，始源星系的裂罅 MOD 同样要先完成一道挑战，才肯露出真面目，循环洗词条也要花<x>赤毒--赤毒--赤--</x>嗯。校准完毕：也要花赤毒。那边的倾向性因武器而异，倾向越高，裂罅的数值越强。"
         },
         {
           "type": "tip",
@@ -1201,7 +1226,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -1224,7 +1249,7 @@
         }
       ],
       "_src": [
-        "entity/KuvaMasterEntity.java:415-429,534-548 — 只有解密成功（isCorrectAnswer）的那次击杀才掉裂罅；world/inventory/RequiemRecastMenu.java:274-277 — 三张裂罅也能三合一（enableRivenModuleRecast），所以写「主要来自」",
+        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess、:1043、:1119-1130 rollAdvancedModule — 只有解密成功、终结玄骸（三刀全对，或怜悯之击关着时死时卡序全对）才掉裂罅；world/inventory/RequiemRecastMenu.java:274-277 — 三张裂罅也能三合一（enableRivenModuleRecast），所以写「主要来自」",
         "item/module/weapon/WeaponRivenModule.java:56-60,155-164 — 三种模式，getInt(0,3)：0/1 通用、2 近战、3 远程",
         "item/module/weapon/WeaponRivenModule.java:247-256,271 — 卡名前缀 MeleeRiven / RemoteRiven / OmniRiven",
         "item/module/warframe/WarframeRivenModule.java:115 — 战甲裂罅卡名 Warframe 开头",
@@ -1243,7 +1268,7 @@
         "world/inventory/RequiemEvolveMenu.java:262-274,286-297 — 预览时立即扣赤毒并给原卡循环次数 +1",
         "world/inventory/RequiemEvolveMenu.java:163-190,397-400,432-450 — 取走结果时原卡清空；拿走原卡或关界面则结果作废，材料不退",
         "world/inventory/RequiemEvolveMenu.java:168-199 checkAndProcessCrafting — 预览中材料格数量一变：inputChanged → 清掉预览 → 立即 processCrafting 重新循环、再付一次（原卡循环次数再 +1）；材料拿空则只清预览。作者确认这是设计（每次洗词条都付费），按规则写，不写成警告",
-        "entity/KuvaMasterEntity.java:543-545 与 item/module/weapon/WeaponRivenModule.java:116-132 — 玄骸掉的未揭示裂罅不检查禁用；world/inventory/RequiemRecastMenu.java:397-420,463-505 — 分解不检查禁用",
+        "entity/KuvaMasterEntity.java:1127-1129 与 item/module/weapon/WeaponRivenModule.java:116-132 — 玄骸掉的未揭示裂罅不检查禁用；world/inventory/RequiemRecastMenu.java:397-420,463-505 — 分解不检查禁用",
         "item/module/weapon/WeaponUncommonModule.java:328 — 白银档也有一张带腐蚀的卡，所以写「复合元素主要在黄金 / Prime」",
         "item/module/warframe/WarframeRivenModule.java:186-207 — 战甲裂罅负面只排除 killStack（战甲没有元素词条）",
         "module/level/ModuleLevelTooltipHelper.java:144-148,173-177 — 费用公式；表格按公式计算（v1 是 5 列表，改成「第一次 ~ 封顶」3 列，数值不变）",
@@ -1260,7 +1285,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "主手武器上的模组始终全额生效，下表这些位置上的物品只要<hl>开过光、装了模组</hl>，也能把加成按比例叠到你的攻击上。"
+          "text": "主手武器上的模组始终全额生效。下表这些位置上的物品只要<hl>开过光、装了模组</hl>，也能把加成按比例叠到你的攻击上。主手之外的这几处，同样算你的战力，Tenno。"
         },
         {
           "type": "table",

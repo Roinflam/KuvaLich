@@ -13,6 +13,11 @@
       "summary": "开光后的 TACZ 枪能装 8 张武器模组",
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "隔着再远，它也只是你的猎物。"
+        },
+        {
           "type": "p",
           "text": "枪要先开光，再装模组，这个顺序反不了。装了 TACZ「永恒枪械工坊：零」，它的枪也能装上<hl>武器模组</hl>，拿到各种加成。"
         },
@@ -41,7 +46,7 @@
             ],
             [
               "解密",
-              "主线玩法，先猜出三张安魂卡的正确顺序，再击败 Boss 赤毒玄骸，见[[requiem/decryption]]。"
+              "主线玩法，先猜出三张安魂卡的正确顺序，再按这个顺序讨伐你专属的 Boss 赤毒玄骸，见[[requiem/decryption]]。"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -91,7 +96,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "在起源星系，主武器和副武器也各有 8 个常规 Mod 槽。天诺们习惯管 Mod 叫「卡」，掂量着挑出 8 张装上去，这件事就叫「配卡」。"
+          "text": "在始源星系，主武器和副武器也各有 8 个常规 MOD 槽。那边的 Tenno 习惯管 MOD 叫「卡」，掂量着挑出 8 张装上去，这件事就叫「配卡」。Ordis 对此向来<x>乐--乐此--乐此不--</x>乐此不疲，这个词总算说完整了。"
         },
         {
           "type": "h",
@@ -172,11 +177,12 @@
         "compat/tacz/WarframeTaczBridge.java:303,321,349 等 — 所有枪械属性读取先判 hasBase，未开光一律返回 0（含额外槽位）",
         "mixin/tacz/MixinGunShootContext.java:56-62 — 女皇之力倍率不依赖开光；提示块只在 taczGunEnhanceEnable 时显示（强化入口 TaczGunEnhanceUtil.java:144-159 要求开关开启）",
         "data/kuvalich/recipes/requiem_evolve.json、requiem_weapon_table.json — 配方各含 1 个 kuvalich:lich_reliquary",
-        "entity/KuvaMasterEntity.java:415-429,440-465 — 只有安魂卡顺序正确（isCorrectAnswer）时走 handleSuccessfulDecryption，玄骸之遗只在这里掉 1 个；全代码无其它来源（仅创造栏 init/KuvaLichCreativeTabs.java:59）",
+        "entity/KuvaMasterEntity.java:772-784 onKilled + 816-846 resolveForOwner — 只有有主玄骸按主人的卡判定（怜悯之击关：死时直接核对，主人须在 64 格内）；mercy/MercyServer.java:759 — 怜悯之击开：三刀全对；两路都走 computeAndApplySuccess（:979-1025），玄骸之遗只在这里掉 1 个（:1025）；全代码无其它来源（仅创造栏）",
         "tacz jar ModernKineticGunItem.doPerLivingHurt（javap）— TACZ 近战键（枪托/刺刀）用 damageSources.playerAttack/mobAttack，directEntity==攻击者，进 WeaponCombatHandler.java:636 近战分支",
         "module/weapon/WeaponCombatHandler.java:656-665 — 子弹走远程分支：+remoteDamage、弹射物(Projectile)+projectileDamage、远程暴击率/暴击伤害；arrowDamage 仅 Arrow",
         "module/weapon/WeaponCombatHandler.java:636-655 — 近战词条只在 directEntity==攻击者时生效，子弹命中不满足",
-        "module/weapon/WeaponCombatHandler.java:544-583 — 每颗弹丸命中各自触发一次 LivingHurt 结算（元素、触发、克制各算一次）"
+        "module/weapon/WeaponCombatHandler.java:544-583 — 每颗弹丸命中各自触发一次 LivingHurt 结算（元素、触发、克制各算一次）",
+        "entity/KuvaMasterEntity.java:772-784 + base/entity/AbstractKuva.java:889-916 — 玄骸每人专属一只，讨伐（怜悯之击开时打倒后处决，关时直接击杀）都按卡序判定，所以「解密」一行写「按这个顺序讨伐你专属的玄骸」，两种开关下都成立"
       ]
     },
     {
@@ -188,11 +194,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "强化一次就要用掉一个玄骸之遗，造工作台也要它，天诺，先分好用途。<hl>女皇之力</hl>能永久提高一把 TACZ 枪的伤害，而且<em>不用开光</em>，任何 TACZ 枪都能强化。"
+          "text": "女皇的力量，如今归你调用。强化一次就要用掉一个玄骸之遗，造工作台也要它，Tenno，先分好用途。<hl>女皇之力</hl>能永久提高一把 TACZ 枪的伤害，而且<em>不用开光</em>，任何 TACZ 枪都能强化。"
         },
         {
           "type": "p",
-          "text": "强化的材料是{item:kuvalich:lich_reliquary}，一种稀有材料，要[[requiem/decryption|解密]]成功并击败 Boss 赤毒玄骸才会掉落。"
+          "text": "强化的材料是{item:kuvalich:lich_reliquary}，一种稀有材料，只在讨伐你的 Boss 赤毒玄骸、[[requiem/decryption|解密]]成功时掉落。"
         },
         {
           "type": "items",
@@ -264,7 +270,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -286,7 +292,7 @@
         "compat/tacz/TaczGunEnhanceUtil.java:24,54-56 — 次数存在枪的 NBT 上；:68-75 倍率每次现读 taczGunEnhancePercent",
         "compat/tacz/TaczGunEnhanceUtil.java:228,238 + mixin/tacz/MixinDamageDisplay.java:33 — 提示行与 TACZ 提示伤害都在客户端读 ModConfig.KUVA_LICH（COMMON，不随服务端下发），可能与书里的数值不一致",
         "mixin/tacz/MixinGunShootContext.java kuvalich$setupEachShot/clearEachShot + MixinGunShootOnce.java kuvalich$restoreOriginalAmount — 注入 TACZ 每一发的 lambda$shootOnce$2，多连发排在后面 tick 的几发也重新设置枪械伤害、女皇之力和原始弹丸数（2026-09-25 修，已用 mixin.debug.export 导出字节码核对注入点）",
-        "entity/KuvaMasterEntity.java:415-429,440-465 — 安魂卡顺序正确（破解成功）击杀赤毒玄骸掉 1 个玄骸之遗",
+        "entity/KuvaMasterEntity.java:816-846 resolveForOwner + mercy/MercyServer.java:759 → computeAndApplySuccess:979-1025 — 讨伐有主玄骸、卡序全对（怜悯之击开时三刀全对，关时死时直接核对）才算解密成功，每次成功掉 1 个玄骸之遗（:1025）",
         "data/kuvalich/recipes/requiem_evolve.json、requiem_weapon_table.json、requiem_warframe_table.json — 配方各需 1 个 lich_reliquary"
       ]
     },
@@ -298,7 +304,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "有一组词条<em>只对 TACZ 枪有效</em>，装在别的武器上不起作用，管的是枪自身的伤害，以及装填、弹匣、后坐、瞄准等手感。这些词条变成负数时，大多会让枪更难用，装之前看清正负。"
+          "text": "有一组词条<em>只对 TACZ 枪有效</em>，装在别的武器上不起作用，管的是枪自身的伤害，以及装填、弹匣、后坐、瞄准等手感。这些词条变成负数时，大多会让枪更难用，装之前看清正负，Tenno。"
         },
         {
           "type": "p",
@@ -398,7 +404,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -560,7 +566,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -604,7 +610,7 @@
         },
         {
           "type": "p",
-          "text": "每颗子弹命中后额外造成一次<hl>真实伤害</hl>，<g>无视护甲、护盾和伤害减免</g>，直接扣生命值，够致死就直接击杀目标。"
+          "text": "每颗子弹命中后额外造成一次<hl>真实伤害</hl>，<g>无视护甲、护盾和伤害减免</g>，直接扣生命值，够致死时，结果和挨了别的致命伤一样。"
         },
         {
           "type": "formula",
@@ -616,7 +622,7 @@
             "命中后要到下一刻才扣血。",
             {
               "if": "cfg:kuva_lich.enableDamageNumbers",
-              "text": "这一下的伤害数字是<c:AA00AA>紫色</c>的。"
+              "text": "这一下的伤害数字带匕首图标，单独显示时是<c:FF55FF>紫色</c>的。"
             },
             "只有 TACZ 子弹命中才会触发。"
           ]
@@ -649,7 +655,7 @@
           "type": "tip",
           "if": "module:chambered",
           "style": "wf",
-          "text": "「膛室 Prime」在那边叫 Primed Chamber，是虚空商人 Baro Ki'Teer 货架上的一张狙击枪 Mod，效果倒也一样，让弹匣里的第一发伤害大增。"
+          "text": "「膛室 Prime」在那边叫 Primed Chamber，是虚空商人 Baro Ki'Teer 货架上的一张狙击枪 MOD，效果倒也一样，让弹匣里的第一发伤害大增。"
         },
         {
           "type": "h",
@@ -677,14 +683,14 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
           "items": [
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-              "text": "最后一击如果是{lang:item.module.true_bullet}补上的那一下、溅射或[[reference/weapon_attr_special|处决]]，就不算子弹击杀，{lang:item.module.gun_loot_drop}不加成，战甲那条照常算。"
+              "text": "最后一击如果是{lang:item.module.true_bullet}补上的那一下、溅射或[[reference/weapon_attr_special|处决类词条]]触发的处决，就不算子弹击杀，{lang:item.module.gun_loot_drop}不加成，战甲那条照常算。"
             },
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
@@ -705,13 +711,14 @@
         "utils/ModuleRegistryHelper.java:37-60,96-112 — first_bullet_damage 非关键词条，数值 × moduleAttributeMultiplier",
         "base/item/AbstractWeaponModule.java:44-63 — 裂罅池不含 first_bullet_damage",
         "lang/zh_cn.json:877 — kuvaweapon.item_module.chambered_prime = 膛室 Prime（§e）",
-        "module/weapon/WeaponCombatHandler.java:727-728,778-779,841,1042-1080 — 真伤 = 原始伤害 × 暴击前基伤 × 克制倍率 × x，1 tick 后直接扣血/致死直接击杀，§5 紫色数字",
-        "module/weapon/WeaponCombatHandler.java:1088-1091 — 仅 TACZ 子弹(EntityKineticBullet)",
+        "module/weapon/WeaponCombatHandler.java:1170-1208 applyTrueBulletDamage — 真伤 = 原始伤害 × 暴击前基伤 × 克制倍率 × x，1 tick 后直接扣血；够致死调 LivingEntityUtil.kill（utils/LivingEntityUtil.java:127-131，写血量后调 die()），会倒地的目标（有主玄骸、开了奴仆倒地的奴仆）在 base/entity/AbstractKuva.java:889-916 interceptLethal 拦成倒地，所以写「结果和挨了别的致命伤一样」",
+        "module/weapon/WeaponCombatHandler.java:1178-1179,1216-1219 — 仅 TACZ 子弹(EntityKineticBullet)",
         "module/weapon/WeaponCombatHandler.java:1030-1032 — 真伤不经过护盾",
         "module/warframe/WarframeEffectHandler.java:290-318 — 玩家击杀 Animal/Monster/CustomNPC：倍率 = 1 + (itemDropMultiplier + gun_loot_drop) × itemDropEffectMultiplier/100；≤0 清非装备掉落；装备不参与缩放；itemDropEffectMultiplier 为 0 时本词条无效，掉落各块随之隐藏",
         "module/warframe/WarframeEffectHandler.java:481-491 — 直接实体须为 TACZ 子弹，只读主手枪本体 getWeaponAttributes（不含额外槽位）",
-        "module/weapon/WeaponCombatHandler.java:1058,1071 + utils/LivingEntityUtil.java:127-131 — 真伤致死用 getAttackDamageSource(攻击者) 调 die()，直接实体是玩家不是子弹；溅射（:911）、处决（:1174,1181）同样用 getAttackDamageSource → getGunLootDropValue 返回 0",
-        "item/module/weapon/WeaponRivenModule.java:86-89,384-386 — true_bullet / gun_loot_drop 不作为负面词条"
+        "module/weapon/WeaponCombatHandler.java:1186,1199 + utils/LivingEntityUtil.java:127-131 — 真伤致死用 getAttackDamageSource(攻击者) 调 die()，直接实体是玩家不是子弹；溅射（:1037）、处决类词条（:1273-1315，处决阈值 / 秒杀，:1306）同样用 getAttackDamageSource → getGunLootDropValue 返回 0；「处决」另指怜悯之击，所以正文写「处决类词条触发的处决」",
+        "item/module/weapon/WeaponRivenModule.java:86-89,384-386 — true_bullet / gun_loot_drop 不作为负面词条",
+        "module/weapon/WeaponCombatHandler.java:1203-1205,1226-1228 — 真伤数字 §5 + 匕首图标；network/packet/DamageInfo.java:36,41,233-250 §5 → TIER_PURPLE，client/renderer/damage/DamageRenderer.java:96,392 PURPLE = FF55FF；DamageDisplayTracker.java:184,262 sendDirect 走普通合并组，合并窗口内并进这一枪的命中数字、档位取最高（DamageInfo.java:154-157），所以写「单独显示时是紫色」"
       ]
     },
     {
@@ -780,23 +787,23 @@
             "物理部分 × (1 + {lang:item.module.remoteDamage} + {lang:item.module.projectileDamage}) × 面板伤害，面板见[[weapons/weapon_panel]]。",
             "掷暴击，几率 = 面板暴击几率 × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability})，规则见[[combat/crit]]。",
             "乘上[[combat/bane|克制]]倍率，再加上不吃暴击的元素伤害，完整顺序见[[combat/damage]]。",
-            "掷元素触发，再结算溅射、[[tacz/tacz_special_attrs|真实子弹]]、处决等附加效果。"
+            "掷元素触发，再结算溅射、[[tacz/tacz_special_attrs|真实子弹]]、处决类词条等附加效果。"
           ]
         },
         {
           "type": "tip",
           "style": "info",
           "title": "堆伤害的思路",
-          "text": "同组加成先相加，不同组之间相乘，这就是<hl>乘区</hl>。{lang:item.module.gun_damage}、{lang:item.module.multishot}、远程伤害和暴击各占一个乘区，每个都堆上一些，别只堆其中一条。"
+          "text": "同组加成先相加，不同组之间相乘，这就是<hl>乘区</hl>。{lang:item.module.gun_damage}、{lang:item.module.multishot}、远程伤害和暴击各占一个乘区。每个都堆上一些，别只堆其中一条，Tenno。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "指挥官，天诺们配卡时倒也讲究乘区，基础伤害卡、多重射击卡和暴击卡各算各的，最后才相乘，所以常见的配卡里，这几类总会各占一席。"
+          "text": "指挥官，始源星系的 Tenno 配卡时倒也讲究乘区，基础伤害卡、多重射击卡和暴击卡各算各的，最后才相乘，所以常见的配卡里，这几类总会各占一席。"
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -826,7 +833,7 @@
         "tacz jar EntityKineticBullet.tacAttackEntity（javap）— 一发子弹两次 hurt()：damage×(1−armorIgnore) 与 damage×armorIgnore，中间清无敌帧",
         "module/weapon/WeaponCombatHandler.java:551-560 — 0 伤害段直接跳过；非 0 的每段各跑一次 processDamage（暴击 732-763、元素触发 805-829 各掷一次）",
         "module/weapon/WeaponElementSystem.java:579,606,652,798,835 — 元素触发伤害 = 系数 × coreDamage（该段物理伤害），两段各按各的算",
-        "client/renderer/damage/DamageRenderer.java:118-119 — 客户端按 mergeDamageNumbers / mergeDamageWindowMs 合并数字（SPEC §3：颜色取最高档）",
+        "client/renderer/damage/DamageRenderer.java:141-167 addDamage、network/packet/DamageInfo.java:154-164 merge — 客户端按 mergeDamageNumbers / mergeDamageWindowMs 合并数字，档位取两者里高的",
         "module/weapon/WeaponCombatHandler.java:656-665 — baseDamage = 1 + remoteDamage (+ projectileDamage)，同组相加",
         "module/weapon/WeaponCombatHandler.java:716-725 — × 面板 damage（<1 时平方）",
         "module/weapon/WeaponCombatHandler.java:612,658-659 — 暴击率 = 面板暴击率 × (1+remoteCriticalStrikeProbability)，暴伤 × (1+remoteCriticalStrikeMultiplier)",

@@ -123,3 +123,6 @@ runs/
 # 但第三方 jar 不入库。新克隆的仓库需要手动下载放入，否则会报
 # "package com.tacz does not exist" —— 具体步骤见 README 「从源码构建」一节。
 forge/dependencies/
+
+# GameTest 专用服的运行目录
+run-gametest/

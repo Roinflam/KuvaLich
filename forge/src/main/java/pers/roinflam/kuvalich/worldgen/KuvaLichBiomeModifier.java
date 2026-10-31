@@ -303,16 +303,8 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
      * @param spawnBuilder 怪物生成设置构建器 / mob spawn settings builder
      */
     private void addEntitySpawns(MobSpawnSettingsBuilder spawnBuilder) {
-        int lichWeight = pinned(ModConfig.KUVA_LICH.kuvaLichSpawnWeight);
-        if (lichWeight > 0) {
-            spawnBuilder.addSpawn(MobCategory.MONSTER, new MobSpawnSettings.SpawnerData(
-                    KuvaLichEntities.KUVA_MASTER.get(),
-                    lichWeight,
-                    pinned(ModConfig.KUVA_LICH.kuvaLichMinSpawnCount),
-                    pinned(ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount)
-            ));
-        }
-
+        // 玄骸不再进刷怪表：每个玩家的专属玄骸只会在他解开第一条密语后由玄骸导演找上门。
+        // kuvaLichSpawnWeight 等几项旧配置先留着不删（老配置文件不报错），这里已经不读了
         int slaveWeight = pinned(ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight);
         if (slaveWeight > 0) {
             spawnBuilder.addSpawn(MobCategory.MONSTER, new MobSpawnSettings.SpawnerData(

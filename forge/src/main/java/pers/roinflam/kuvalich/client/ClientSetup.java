@@ -3,9 +3,11 @@ package pers.roinflam.kuvalich.client;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import pers.roinflam.kuvalich.client.fx.KuvaParticleProviders;
 import pers.roinflam.kuvalich.client.gui.screens.inventory.*;
 import pers.roinflam.kuvalich.client.renderer.KuvaMasterRenderer;
 import pers.roinflam.kuvalich.client.renderer.KuvaSlaveRenderer;
@@ -41,6 +43,14 @@ public class ClientSetup {
 
             LogUtil.info("客户端内容注册完成");
         });
+    }
+
+    /**
+     * 注册自制粒子的提供者（只用于 {@code /particle} 调试；演出里的粒子由脚本直接生成）
+     */
+    @SubscribeEvent
+    public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
+        KuvaParticleProviders.register(event);
     }
 
     /**

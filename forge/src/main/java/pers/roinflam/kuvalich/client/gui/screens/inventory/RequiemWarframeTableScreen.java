@@ -11,6 +11,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
+import pers.roinflam.kuvalich.client.fx.gui.ForgeOpClassifier;
+import pers.roinflam.kuvalich.client.fx.gui.GuiFx;
 import pers.roinflam.kuvalich.client.gui.codex.ModuleCodexScreen;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
@@ -21,6 +23,9 @@ import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
  *
  * ⭐ TAB键打开战甲模组图鉴（showWeapon=false）
  * ⭐ 底部提示使用清晰的浅色文字 + 半透明底衬
+ *
+ * <p>装入、取出模组的演出靠每 tick 比模组格快照认出来（{@link ForgeOpClassifier.TableWatch}）。
+ * 战甲军械库没有武器格，装入只有格框亮起、没有流向武器的那道线。</p>
  */
 @OnlyIn(Dist.CLIENT)
 public class RequiemWarframeTableScreen extends AbstractContainerScreen<RequiemWarframeTableMenu> {
@@ -29,6 +34,16 @@ public class RequiemWarframeTableScreen extends AbstractContainerScreen<RequiemW
             Reference.MOD_ID, "textures/gui/container/requiem_warframe_table.png"
     );
 
+    /** 菜单里 0~7 是模组格 */
+    private static final int MODULE_SLOTS = 8;
+
+    private final GuiFx fx = new GuiFx();
+    private final ForgeOpClassifier.TableWatch watch = new ForgeOpClassifier.TableWatch(MODULE_SLOTS, -1, null);
+    private boolean opened;
+
+    private String hint = "";
+    private int hintWidth;
+
     public RequiemWarframeTableScreen(RequiemWarframeTableMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
@@ -36,17 +51,34 @@ public class RequiemWarframeTableScreen extends AbstractContainerScreen<RequiemW
     }
 
     @Override
+    protected void init() {
+        super.init();
+        this.hint = "[TAB] " + Component.translatable("kuvalich.codex.open_hint").getString();
+        this.hintWidth = this.font.width(hint);
+        if (!opened) {
+            opened = true;
+            GuiFx.playOpen();
+        }
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        watch.tick(menu, fx);
+    }
+
+    @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+        fx.render(guiGraphics, this.leftPos, this.topPos, !this.menu.getCarried().isEmpty());
 
-        // ⭐ TAB提示（带底衬，清晰可读）/ TAB hint with bg pill
-        String hint = "[TAB] " + Component.translatable("kuvalich.codex.open_hint").getString();
-        int hw = this.font.width(hint);
-        int hx = (this.width - hw) / 2;
+        // ⭐ TAB提示（清晰可读）；先画提示再画物品说明，说明框盖得住它
+        int hx = (this.width - hintWidth) / 2;
         int hy = (this.height + this.imageHeight) / 2 + 4;
         guiGraphics.drawString(this.font, hint, hx, hy, 0xFFBBBBBB, false);
+
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override

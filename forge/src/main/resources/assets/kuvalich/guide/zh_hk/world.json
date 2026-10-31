@@ -15,8 +15,13 @@
       ],
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "這裏沒有捷徑。你要的東西，得一寸一寸從巖層裏取。"
+        },
+        {
           "type": "p",
-          "text": "獵殺玄骸，要從地下挖起，天諾。{item:kuvalich:requiem_ore}是<hl>安魂卡</hl>的唯一來源，用一把帶{lang:enchantment.kuvalich.requiem_destroyed}附魔的鎬子去挖。安魂卡就是破解 Boss {lang:entity.kuvalich.kuva_master}的鑰匙，見[[requiem/requiem_cards]]。"
+          "text": "<hl>安魂卡</hl>是破解 Boss {lang:entity.kuvalich.kuva_master}的鑰匙，見[[requiem/requiem_cards]]，而安魂卡只有一個來源：{item:kuvalich:requiem_ore}。挖它要用一把帶{lang:enchantment.kuvalich.requiem_destroyed}附魔的鎬子，Tenno，動身前先備好。"
         },
         {
           "type": "h",
@@ -60,7 +65,7 @@
         },
         {
           "type": "p",
-          "text": "每挖碎一塊只判定<em>一次</em>，成功就把下表的東西<g>一起</g>掉出來，失敗就<b>什麼都沒有</b>，礦石方塊本身無論如何都不會掉。"
+          "text": "每一塊都是全有或全無。挖碎時只判定<em>一次</em>，成功就把下表的東西<g>一起</g>掉出來，失敗就<b>什麼都沒有</b>；礦石方塊本身無論如何都不會掉。"
         },
         {
           "type": "table",
@@ -138,7 +143,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "照檔案的記載，這八張卡在起源星系叫<t>安魂 Mod</t>，要開啓安魂遺物（Requiem Relic）才拿得到，並不是從礦裏挖出來的。"
+          "text": "照檔案的記載，這八張卡在始源星系叫<t>安魂 MOD</t>，要開啓安魂遺物（Requiem Relic）才拿得到，並不是從礦裏挖出來的。"
         },
         {
           "type": "h",
@@ -214,7 +219,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -242,7 +247,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{item:kuvalich:experience_ore}是一種用<t>石鎬</t>就挖得動的礦石，挖碎後掉經驗，還有一半的機會掉出{item:kuvalich:endo}。"
+          "text": "{item:kuvalich:experience_ore}門檻很低，<t>石鎬</t>就挖得動。挖碎後掉經驗，還有一半的機會掉出{item:kuvalich:endo}。遇上就挖。"
         },
         {
           "type": "p",
@@ -319,7 +324,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -344,7 +349,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "專屬附魔共 6 個，和原版附魔一樣來自附魔台和附魔書，<em>沒有專門的配方</em>，挖安魂礦石必備的{lang:enchantment.kuvalich.requiem_destroyed}也在其中。滅骸很難附出來，碰上帶它的附魔書就留着。"
+          "text": "專屬附魔共 6 個，和原版附魔一樣來自附魔台和附魔書，<em>沒有專門的配方</em>，挖安魂礦石必備的{lang:enchantment.kuvalich.requiem_destroyed}也在其中。滅骸很難附出來，Tenno，碰上帶它的附魔書就留着。"
         },
         {
           "type": "table",
@@ -460,7 +465,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "四個戰鬥附魔裏，兩個附在劍上加傷害，兩個附在盔甲上保命，獲取方法見[[world/enchantments]]。死亡抵抗拿經驗換命，經驗不夠，它就不管用。"
+          "text": "四個戰鬥附魔裏，兩個附在劍上加傷害，兩個附在盔甲上保命，獲取方法見[[world/enchantments]]。死亡抵抗拿經驗換命，經驗不夠，它就不管用。要指望它，Tenno，就別把經驗花光。"
         },
         {
           "type": "h",
@@ -468,7 +473,7 @@
         },
         {
           "type": "p",
-          "text": "目標剩下的生命越少，這一擊加得越多，目標滿血時沒有加成。"
+          "text": "收尾交給斬殺。目標剩下的生命越少，這一擊加得越多，目標滿血時沒有加成。"
         },
         {
           "type": "formula",
@@ -484,7 +489,7 @@
         },
         {
           "type": "p",
-          "text": "攻擊<em>滿血</em>目標時，這一擊的傷害成倍增加，還會順帶給你經驗，對方只要掉了一絲血就不再觸發。"
+          "text": "先攻是開場用的。攻擊<em>滿血</em>目標時，這一擊的傷害成倍增加，還會順帶給你經驗，對方只要掉了一絲血就不再觸發。"
         },
         {
           "type": "table",
@@ -542,7 +547,7 @@
         },
         {
           "type": "p",
-          "text": "受到一下<b>足以致死</b>的傷害時，它會自動扣除經驗，把你保在半顆心的 <g>1 點生命</g>，同時響起圖騰的聲音。"
+          "text": "受到一下<b>足以致死</b>的傷害時，它會自動扣除經驗，把你保在半顆心的 <g>1 點生命</g>，身上同時閃起一層金色的六邊形護殼。"
         },
         {
           "type": "formula",
@@ -559,7 +564,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -583,7 +588,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "{lang:item.module.oreDropMultiplier}是<hl>戰甲模組</hl>上的一條詞條，裝上帶它的模組後，你親手挖碎礦石時會掉出更多礦物。"
+          "text": "{lang:item.module.oreDropMultiplier}是<hl>戰甲模組</hl>上的一條詞條，裝上帶它的模組後，你親手挖碎礦石時會掉出更多礦物。要長期採礦，就給自己配上一張。"
         },
         {
           "type": "p",
@@ -722,7 +727,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -743,7 +748,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "除了挖礦，下面幾種辦法也能多拿東西，{lang:entity.kuvalich.kuva_slave}和 Boss {lang:entity.kuvalich.kuva_master}的專屬掉落分別見[[enemies/kuva_slave]]和[[enemies/kuva_master]]。"
+          "text": "資源不只埋在地下，Tenno，下面幾種辦法也能多拿東西。{lang:entity.kuvalich.kuva_slave}和 Boss {lang:entity.kuvalich.kuva_master}的專屬掉落分別見[[enemies/kuva_slave]]和[[enemies/kuva_master]]。"
         },
         {
           "type": "h",
@@ -753,7 +758,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "內融核心是給模組升級的材料，模組就是裝在武器或你身上的強化卡。挖[[world/experience_ore]]，或者在[[weapons/requiem_recast]]裏分解用不上的模組，都能得到內融核心。"
+          "text": "內融核心是給模組升級的材料，模組就是裝在武器或你身上的強化卡。挖[[world/experience_ore]]能得到它；用不上的模組也別扔，放進[[weapons/requiem_recast]]分解，同樣換得回內融核心。"
         },
         {
           "type": "p",
@@ -816,7 +821,7 @@
           "type": "tip",
           "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
           "style": "wf",
-          "text": "在起源星系，想多攢些戰利品的天諾們常帶上戰甲 Nekros，他的技能 Desecrate（褻瀆）會搜刮周圍的屍體，讓它們有機會再掉一次戰利品。死了還得再交一份，Ordis 只嫌不夠，恨不得把它們倒過來抖，抖到……抖到……抱歉，語音模塊過熱了。"
+          "text": "在始源星系，想多攢些戰利品的 Tenno 常帶上戰甲 Nekros，他的技能 Desecrate（褻瀆）會搜刮周圍的屍體，讓它們有機會再掉一次戰利品。死了還得再交一份，Ordis 只嫌不夠，恨不得把它們倒過來<x>抖--抖--使勁抖--</x>嗯。抱歉，語音模塊過熱了。"
         },
         {
           "type": "h",
@@ -839,7 +844,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",

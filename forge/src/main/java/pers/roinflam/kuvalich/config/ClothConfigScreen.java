@@ -132,7 +132,7 @@ public class ClothConfigScreen {
         decryptionCategory.addEntry(entryBuilder.startIntField(
                         Component.translatable("config.kuvalich.minDecryptionProgress"),
                         ModConfig.KUVA_LICH.minDecryptionProgress.get())
-                .setDefaultValue(5)
+                .setDefaultValue(6)
                 .setMin(0)
                 .setTooltip(Component.translatable("config.kuvalich.minDecryptionProgress.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.minDecryptionProgress::set)
@@ -141,7 +141,7 @@ public class ClothConfigScreen {
         decryptionCategory.addEntry(entryBuilder.startIntField(
                         Component.translatable("config.kuvalich.maxDecryptionProgress"),
                         ModConfig.KUVA_LICH.maxDecryptionProgress.get())
-                .setDefaultValue(15)
+                .setDefaultValue(19)
                 .setMin(0)
                 .setTooltip(Component.translatable("config.kuvalich.maxDecryptionProgress.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.maxDecryptionProgress::set)
@@ -182,6 +182,65 @@ public class ClothConfigScreen {
                 .setTooltip(Component.translatable("config.kuvalich.masterPotionMultiplier.tooltip"))
                 .setSaveConsumer(ModConfig.KUVA_LICH.masterPotionMultiplier::set)
                 .build());
+
+        // ═══════════════════════════════════════════════════════════════
+        // 怜悯之击
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory mercyCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.mercy"));
+        ModConfig.KuvaLichConfig k = ModConfig.KUVA_LICH;
+
+        mercyCategory.addEntry(bool(entryBuilder, "mercyEnabled", k.mercyEnabled, true));
+        mercyCategory.addEntry(bool(entryBuilder, "mercyThralls", k.mercyThralls, true));
+        mercyCategory.addEntry(intIn(entryBuilder, "mercyDownedSeconds", k.mercyDownedSeconds, 60, 10, 600));
+        mercyCategory.addEntry(dblIn(entryBuilder, "mercyReach", k.mercyReach, 3.0, 1.5, 6.0));
+        mercyCategory.addEntry(intIn(entryBuilder, "mercyResumeFloorSeconds", k.mercyResumeFloorSeconds, 5, 0, 60));
+
+        // ═══════════════════════════════════════════════════════════════
+        // 专属玄骸：怒气 → 登场 → 狩猎 → 离场，再加几项杂项
+        // ═══════════════════════════════════════════════════════════════
+        ConfigCategory lichCategory = builder.getOrCreateCategory(
+                Component.translatable("config.kuvalich.category.lich"));
+
+        lichCategory.addEntry(dblIn(entryBuilder, "lichRageOnlineMinutes", k.lichRageOnlineMinutes, 20.0, 0.0, 600.0));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichRagePerThrallExecution", k.lichRagePerThrallExecution, 0.08, 0.0, 1.0));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichRagePerProgressPoint", k.lichRagePerProgressPoint, 0.002, 0.0, 1.0));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichRagePerClueRevealed", k.lichRagePerClueRevealed, 0.25, 0.0, 1.0));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichBirthRage", k.lichBirthRage, 0.0, 0.0, 1.0));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichMigrationRage", k.lichMigrationRage, 0.35, 0.0, 1.0));
+        lichCategory.addEntry(intIn(entryBuilder, "lichArrivalDelayMinSeconds", k.lichArrivalDelayMinSeconds, 30, 0, 3600));
+        lichCategory.addEntry(intIn(entryBuilder, "lichArrivalDelayMaxSeconds", k.lichArrivalDelayMaxSeconds, 90, 0, 3600));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichCooldownMinutes", k.lichCooldownMinutes, 8.0, 0.0, 600.0));
+        lichCategory.addEntry(intIn(entryBuilder, "lichCommLeadTicks", k.lichCommLeadTicks, 40, 0, 200));
+        lichCategory.addEntry(intIn(entryBuilder, "lichSpawnMinDistance", k.lichSpawnMinDistance, 24, 8, 96));
+        lichCategory.addEntry(intIn(entryBuilder, "lichSpawnMaxDistance", k.lichSpawnMaxDistance, 40, 8, 96));
+        lichCategory.addEntry(intIn(entryBuilder, "lichLeashDistance", k.lichLeashDistance, 128, 32, 512));
+        lichCategory.addEntry(intIn(entryBuilder, "lichIdleDepartSeconds", k.lichIdleDepartSeconds, 300, 0, 3600));
+        lichCategory.addEntry(intIn(entryBuilder, "lichRepositionSeconds", k.lichRepositionSeconds, 30, 0, 600));
+        lichCategory.addEntry(intIn(entryBuilder, "lichRepositionMax", k.lichRepositionMax, 3, 0, 20));
+        lichCategory.addEntry(intIn(entryBuilder, "lichLoginGraceSeconds", k.lichLoginGraceSeconds, 60, 0, 600));
+        lichCategory.addEntry(entryBuilder.startStrList(
+                        Component.translatable("config.kuvalich.lichHuntDimensions"),
+                        new java.util.ArrayList<>(k.lichHuntDimensions.get()))
+                .setDefaultValue(java.util.List.of("minecraft:overworld"))
+                .setTooltip(Component.translatable("config.kuvalich.lichHuntDimensions.tooltip"))
+                .setSaveConsumer(k.lichHuntDimensions::set)
+                .build());
+        lichCategory.addEntry(bool(entryBuilder, "lichHuntCreative", k.lichHuntCreative, false));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichRandomTauntMinutes", k.lichRandomTauntMinutes, 8.0, 0.0, 600.0));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichRandomTauntChance", k.lichRandomTauntChance, 0.25, 0.0, 1.0));
+        lichCategory.addEntry(entryBuilder.startEnumSelector(
+                        Component.translatable("config.kuvalich.lichCommChatEcho"),
+                        ModConfig.KuvaLichConfig.LichCommEcho.class, k.lichCommChatEcho.get())
+                .setDefaultValue(ModConfig.KuvaLichConfig.LichCommEcho.IMPORTANT)
+                .setEnumNameProvider(e -> Component.translatable("config.kuvalich.lichCommChatEcho."
+                        + e.name().toLowerCase(java.util.Locale.ROOT)))
+                .setTooltip(Component.translatable("config.kuvalich.lichCommChatEcho.tooltip"))
+                .setSaveConsumer(k.lichCommChatEcho::set)
+                .build());
+        lichCategory.addEntry(bool(entryBuilder, "lichSeededAffinities", k.lichSeededAffinities, false));
+        lichCategory.addEntry(bool(entryBuilder, "lichWildAllowed", k.lichWildAllowed, true));
+        lichCategory.addEntry(bool(entryBuilder, "lichPurgeLegacy", k.lichPurgeLegacy, true));
 
         // ═══════════════════════════════════════════════════════════════
         // 伤害系统
@@ -324,16 +383,11 @@ public class ClothConfigScreen {
         // ═══════════════════════════════════════════════════════════════
         ConfigCategory spawnCategory = builder.getOrCreateCategory(
                 Component.translatable("config.kuvalich.category.spawn"));
+        // 玄骸不再自然生成：配置里那几项玄骸生成设置只为老配置文件读得进来才留着，这里不再列出
 
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichSpawnWeight"), ModConfig.KUVA_LICH.kuvaLichSpawnWeight.get()).setDefaultValue(15).setMin(0).setTooltip(Component.translatable("config.kuvalich.kuvaLichSpawnWeight.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichSpawnWeight::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichMinSpawnCount"), ModConfig.KUVA_LICH.kuvaLichMinSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaLichMinSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichMinSpawnCount::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichMaxSpawnCount"), ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaLichMaxSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichMaxSpawnCount::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight"), ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight.get()).setDefaultValue(35).setMin(0).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMinSpawnCount"), ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMinSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMaxSpawnCount"), ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMaxSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichMaxNearby"), ModConfig.KUVA_LICH.kuvaLichMaxNearby.get()).setDefaultValue(1).setMin(0).setMax(64).setTooltip(Component.translatable("config.kuvalich.kuvaLichMaxNearby.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichMaxNearby::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichNearbyRadius"), ModConfig.KUVA_LICH.kuvaLichNearbyRadius.get()).setDefaultValue(96).setMin(8).setMax(512).setTooltip(Component.translatable("config.kuvalich.kuvaLichNearbyRadius.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichNearbyRadius::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaLichMinSpacing"), ModConfig.KUVA_LICH.kuvaLichMinSpacing.get()).setDefaultValue(48).setMin(0).setMax(512).setTooltip(Component.translatable("config.kuvalich.kuvaLichMinSpacing.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaLichMinSpacing::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMaxNearby"), ModConfig.KUVA_LICH.kuvaSlaveMaxNearby.get()).setDefaultValue(4).setMin(0).setMax(64).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMaxNearby.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMaxNearby::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveNearbyRadius"), ModConfig.KUVA_LICH.kuvaSlaveNearbyRadius.get()).setDefaultValue(48).setMin(8).setMax(512).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveNearbyRadius.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveNearbyRadius::set).build());
         spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMinSpacing"), ModConfig.KUVA_LICH.kuvaSlaveMinSpacing.get()).setDefaultValue(12).setMin(0).setMax(512).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMinSpacing.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMinSpacing::set).build());
@@ -707,6 +761,43 @@ public class ClothConfigScreen {
         panel.addEntry(toggle(entryBuilder, "showExtraSlots", cfg.showExtraSlots, true));
         panel.addEntry(toggle(entryBuilder, "showModuleList", cfg.showModuleList, true));
         panel.addEntry(toggle(entryBuilder, "showClampWarning", cfg.showClampWarning, true));
+    }
+
+    /** 服务端配置的布尔开关：名字和提示取 {@code config.kuvalich.<name>} / {@code .tooltip} */
+    private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<Boolean> bool(
+            ConfigEntryBuilder entryBuilder, String name,
+            net.minecraftforge.common.ForgeConfigSpec.BooleanValue value, boolean defaultValue) {
+        return entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich." + name), value.get())
+                .setDefaultValue(defaultValue)
+                .setTooltip(Component.translatable("config.kuvalich." + name + ".tooltip"))
+                .setSaveConsumer(value::set)
+                .build();
+    }
+
+    /** 服务端配置的整数项，范围和配置文件里的一致 */
+    private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<Integer> intIn(
+            ConfigEntryBuilder entryBuilder, String name,
+            net.minecraftforge.common.ForgeConfigSpec.IntValue value, int defaultValue, int min, int max) {
+        return entryBuilder.startIntField(Component.translatable("config.kuvalich." + name), value.get())
+                .setDefaultValue(defaultValue)
+                .setMin(min)
+                .setMax(max)
+                .setTooltip(Component.translatable("config.kuvalich." + name + ".tooltip"))
+                .setSaveConsumer(value::set)
+                .build();
+    }
+
+    /** 服务端配置的小数项，范围和配置文件里的一致 */
+    private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<Double> dblIn(
+            ConfigEntryBuilder entryBuilder, String name,
+            net.minecraftforge.common.ForgeConfigSpec.DoubleValue value, double defaultValue, double min, double max) {
+        return entryBuilder.startDoubleField(Component.translatable("config.kuvalich." + name), value.get())
+                .setDefaultValue(defaultValue)
+                .setMin(min)
+                .setMax(max)
+                .setTooltip(Component.translatable("config.kuvalich." + name + ".tooltip"))
+                .setSaveConsumer(value::set)
+                .build();
     }
 
     /** 布尔开关的样板收敛：一条配置项从 6 行降到 1 行 */

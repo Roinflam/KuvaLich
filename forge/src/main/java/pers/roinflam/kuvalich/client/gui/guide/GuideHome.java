@@ -415,6 +415,9 @@ final class GuideHome {
 
     // ==================== 绘制 ====================
 
+    /** 上一帧悬停的格子（-1 = 没有）：换到另一个格子时响一声 */
+    private int lastHovered = -1;
+
     void render(GuideRender r, float delta, int offsetY, boolean settled) {
         GuiGraphics g = r.g;
         long now = r.now;
@@ -426,6 +429,11 @@ final class GuideHome {
         }
 
         int hovered = settled && r.mouseActive ? tileAt(r.mouseX, r.mouseY, now) : -1;
+        if (hovered >= 0 && hovered != lastHovered) {
+            // 鼠标移到另一个格子上：几乎听不见的一声「嘀」
+            GuideSfx.hover();
+        }
+        lastHovered = hovered;
         for (int i = 0; i < cats.size(); i++) {
             hover[i] = GuideTheme.approach(hover[i], i == hovered ? 1f : 0f, delta, 16f);
         }
@@ -572,7 +580,7 @@ final class GuideHome {
         g.pose().pushPose();
         g.pose().translate(cx, cy, 0f);
         g.pose().scale(s, s, 1f);
-        g.renderItem(stack, -8, -8);
+        GuideItemIcon.render(g, stack, -8, -8);
         g.pose().popPose();
     }
 

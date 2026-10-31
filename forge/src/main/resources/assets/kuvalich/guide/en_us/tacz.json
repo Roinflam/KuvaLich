@@ -13,6 +13,11 @@
       "summary": "Consecrated TACZ guns take 8 weapon mods",
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "At any distance, it is still your quarry."
+        },
+        {
           "type": "p",
           "text": "Consecrate a gun first and mod it second; the order never changes. With TACZ (Timeless and Classics Zero) installed, its guns can take <hl>weapon mods</hl> for all kinds of bonuses."
         },
@@ -41,7 +46,7 @@
             ],
             [
               "Decryption",
-              "The main loop. Work out the right order of three Requiem cards, then defeat the Kuva Lich boss; see [[requiem/decryption]]."
+              "The main loop. Work out the right order of three Requiem cards, then use that order to hunt down your own Kuva Lich boss; see [[requiem/decryption]]."
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -91,7 +96,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "In the Origin System, primary and secondary weapons also carry 8 regular mod slots each. Weighing up which mods go into them is what the Tenno call a build."
+          "text": "In the Origin System, primary and secondary weapons also carry 8 regular mod slots each. Weighing up which mods go into them is what the Tenno call a build. Ordis never <x>tires-- never tires-- NEVER--</x> never tires of it. There, the whole phrase at last."
         },
         {
           "type": "h",
@@ -169,11 +174,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Each enhancement spends a Lich Reliquary, and the workbenches need them too, Tenno, so decide where each one goes. <hl>Lich Enhancement</hl> permanently raises a TACZ gun's damage. It <em>needs no consecration</em>, so any TACZ gun can be enhanced."
+          "text": "Power taken from the Liches, now yours to use. Each enhancement spends a Lich Reliquary, and the workbenches need them too, Tenno, so decide where each one goes. <hl>Lich Enhancement</hl> permanently raises a TACZ gun's damage. It <em>needs no consecration</em>, so any TACZ gun can be enhanced."
         },
         {
           "type": "p",
-          "text": "It costs a {item:kuvalich:lich_reliquary}, a rare material that drops when you [[requiem/decryption|decrypt]] successfully and defeat the Kuva Lich boss."
+          "text": "It costs a {item:kuvalich:lich_reliquary}, a rare material that drops only when you hunt down your own Kuva Lich boss and the [[requiem/decryption|decryption]] succeeds."
         },
         {
           "type": "items",
@@ -245,7 +250,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "list",
@@ -264,7 +269,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Some stats <em>only work on TACZ guns</em> and do nothing on any other weapon. They cover the gun's own damage and its handling, such as reload, magazine, recoil and aiming. Most of them make the gun worse once they turn negative, so check the sign before you install one."
+          "text": "Some stats <em>only work on TACZ guns</em> and do nothing on any other weapon. They cover the gun's own damage and its handling, such as reload, magazine, recoil and aiming. Most of them make the gun worse once they turn negative, so check the sign before you install one, Tenno."
         },
         {
           "type": "p",
@@ -364,7 +369,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "list",
@@ -502,7 +507,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "list",
@@ -530,7 +535,7 @@
         },
         {
           "type": "p",
-          "text": "After each bullet hits, it deals an extra hit of <hl>true damage</hl> that <g>ignores armor, shields and damage reduction</g> and removes health directly; if that is enough to kill, the target dies outright."
+          "text": "After each bullet hits, it deals an extra hit of <hl>true damage</hl> that <g>ignores armor, shields and damage reduction</g> and removes health directly. If that is enough to kill, the outcome is the same as any other lethal blow."
         },
         {
           "type": "formula",
@@ -542,7 +547,7 @@
             "It lands a moment after the hit.",
             {
               "if": "cfg:kuva_lich.enableDamageNumbers",
-              "text": "Its damage numbers are <c:AA00AA>purple</c>."
+              "text": "Its damage number carries a dagger icon and is <c:FF55FF>purple</c> when shown on its own."
             },
             "Only TACZ bullet hits trigger it."
           ]
@@ -603,14 +608,14 @@
         },
         {
           "type": "h",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "list",
           "items": [
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-              "text": "If the killing blow is the follow-up hit from {lang:item.module.true_bullet}, splash or an [[reference/weapon_attr_special|execution]], it isn't a bullet kill, so {lang:item.module.gun_loot_drop} is not added; the Warframe stat still is."
+              "text": "If the killing blow is the follow-up hit from {lang:item.module.true_bullet}, splash or an execution from an [[reference/weapon_attr_special|execution attribute]], it isn't a bullet kill, so {lang:item.module.gun_loot_drop} is not added; the Warframe stat still is."
             },
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
@@ -690,14 +695,14 @@
             "Physical part × (1 + {lang:item.module.remoteDamage} + {lang:item.module.projectileDamage}) × panel damage; see [[weapons/weapon_panel]].",
             "Roll for crit, with chance = panel crit chance × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}); rules in [[combat/crit]].",
             "Multiply by [[combat/bane|Bane]], then add elemental damage, which doesn't crit; the full order is in [[combat/damage]].",
-            "Roll status procs, then resolve splash, [[tacz/tacz_special_attrs|True Bullet]], execution and other extras."
+            "Roll status procs, then resolve splash, [[tacz/tacz_special_attrs|True Bullet]], execution attributes and other extras."
           ]
         },
         {
           "type": "tip",
           "style": "info",
           "title": "Building damage",
-          "text": "A <hl>multiplier group</hl> is a set of bonuses that add together, and different groups multiply each other. {lang:item.module.gun_damage}, {lang:item.module.multishot}, ranged damage and crits each form their own group, so put something into each of them rather than stacking one."
+          "text": "A <hl>multiplier group</hl> is a set of bonuses that add together, and different groups multiply each other. {lang:item.module.gun_damage}, {lang:item.module.multishot}, ranged damage and crits each form their own group. Put something into each of them, Tenno, rather than stacking just one."
         },
         {
           "type": "tip",
@@ -706,7 +711,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "list",

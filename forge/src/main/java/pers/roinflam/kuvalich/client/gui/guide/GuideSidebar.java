@@ -438,7 +438,7 @@ final class GuideSidebar {
         if (focused) {
             CodexTheme.brackets(g, x + 1, ry, rowW - 2, row.h, 3, GuideTheme.TECH);
         }
-        g.renderItem(row.entry.icon(), x + 4, ry + 3);
+        GuideItemIcon.render(g, row.entry.icon(), x + 4, ry + 3);
         g.drawString(r.font, row.label, x + 24, ry + 3, selected || hover ? GuideTheme.BONE : 0xFFB9C4CA, false);
         // 副标题平时用最淡的字；行一亮（悬停、键盘选中、当前篇）底色就跟着变亮，键盘选中那一档上 FAINT_TEXT 只剩约 3:1，换成标签色
         g.drawString(r.font, row.sub, x + 24, ry + 13, selected || hover || focused ? GuideTheme.LABEL : GuideTheme.FAINT_TEXT, false);
@@ -452,7 +452,7 @@ final class GuideSidebar {
         g.pose().pushPose();
         g.pose().translate(ix, iy, 0f);
         g.pose().scale(0.75f, 0.75f, 1f);
-        g.renderItem(stack, 0, 0);
+        GuideItemIcon.render(g, stack, 0, 0);
         g.pose().popPose();
     }
 }

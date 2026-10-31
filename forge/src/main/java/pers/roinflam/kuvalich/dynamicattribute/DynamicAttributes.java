@@ -1,6 +1,5 @@
 package pers.roinflam.kuvalich.dynamicattribute;
 
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -10,8 +9,6 @@ import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import pers.roinflam.kuvalich.module.weapon.element.ElementParticleEffects;
-import pers.roinflam.kuvalich.module.weapon.element.ParticleEmissionGuard;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Comparator;
@@ -29,14 +26,13 @@ import java.util.List;
  *         现在改为本类内 {@link ElementCombatHandler} 的<b>一个</b>静态监听器，
  *         判定条件从「UUID 相等」换成等价的「{@code getAmplifier(...) >= 0}」，
  *         数值公式与触发条件逐条照搬，行为不变。</li>
- *     <li><b>DOT 粒子走 {@link ParticleEmissionGuard} 限流。</b>onTick 每 10 tick 每实体要发
- *         十几个粒子包，AoE 上 debuff 会让所有实体的 tick 相位对齐，
- *         出现单 tick 上千次 {@code sendParticles} 的尖峰（该类的 javadoc 记载过同类型的 Watchdog 卡死）。
- *         限流只挡粒子，debuff 的数值效果、火焰升级、辐射改仇恨一律照常执行。</li>
+ *     <li><b>持续状态不再从服务端发粒子。</b>onTick 以前每 10 tick 每实体要发十几个粒子包，
+ *         AoE 上 debuff 会让所有实体的 tick 相位对齐，出现单 tick 上千次 {@code sendParticles} 的尖峰；
+ *         现在身上的火苗、冰晶、泡泡这些由客户端按元素状态同步包自己贴身画，这里只剩数值逻辑。</li>
  * </ul></p>
  *
  * <p>v6 变更保留：{@code MAGNETIC} 没有 {@code onTick}，
- * 磁力视觉由 {@code ElementGeometryRenderer} 的几何双环线条承担，不依赖粒子系统。</p>
+ * 磁力身上的横向光带由客户端的 {@code ElementGeometryRenderer} 画。</p>
  */
 public class DynamicAttributes {
 
@@ -90,18 +86,13 @@ public class DynamicAttributes {
 
     /**
      * 火焰效果 - 护甲削减升级（0->1->2->3）
-     * ⭐ 视觉：每 0.5 秒生成火焰 + 灵魂火焰 + 熔岩 + 小火焰 + 烟雾 + 灰烬
-     * ⭐ v8：粒子密度按 amplifier 分层（50% → 100%）
      */
     public static final DynamicAttribute FIRE = new DynamicAttribute("fire")
             .setTickInterval(10)
             .onTick(ctx -> {
                 LivingEntity entity = ctx.getEntity();
 
-                // ⭐ 粒子走限流门控；被挡掉也绝不能影响下面的等级递增逻辑
-                if (entity.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, entity)) {
-                    ElementParticleEffects.spawnFireEffect(entity, sl, ctx.getAmplifier());
-                }
+                // 持续状态的画面由客户端按元素状态同步包贴身画，这里不再发粒子
 
                 int currentLevel = ctx.getAmplifier();
                 if (currentLevel < 3) {
@@ -125,16 +116,12 @@ public class DynamicAttributes {
 
     /**
      * 冰冻效果 - 叠加式减速（0级50% → 8级90%）
-     * ⭐ 视觉：每 0.5 秒生成雪花 + 冰晶 + 烟花闪光 + 悬浮冰雾；身上覆盖蓝冰装饰
      */
     public static final DynamicAttribute ICE = new DynamicAttribute("ice")
             .setTickInterval(10)
             .onTick(ctx -> {
                 LivingEntity entity = ctx.getEntity();
-                // ⭐ 粒子走限流门控
-                if (entity.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, entity)) {
-                    ElementParticleEffects.spawnIceEffect(entity, sl, ctx.getAmplifier());
-                }
+                // 持续状态的画面由客户端按元素状态同步包贴身画，这里不再发粒子
             })
             .addModifier(Attributes.MOVEMENT_SPEED, AttributeModifier.Operation.MULTIPLY_TOTAL, (level) -> {
                 return -(0.5 + Math.min(level, 8) * 0.05);
@@ -154,10 +141,7 @@ public class DynamicAttributes {
             .setTickInterval(10)
             .onTick(ctx -> {
                 LivingEntity entity = ctx.getEntity();
-                // ⭐ 粒子走限流门控
-                if (entity.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, entity)) {
-                    ElementParticleEffects.spawnPoisonEffect(entity, sl);
-                }
+                // 持续状态的画面由客户端按元素状态同步包贴身画，这里不再发粒子
             });
 
     /**
@@ -169,14 +153,13 @@ public class DynamicAttributes {
 
     /**
      * 磁力效果 - 有护盾时受到伤害增加（0级100% → 9级325%）
-     * ⭐ v6：粒子完全移除，视觉改由 ElementGeometryRenderer 的几何双环承担。
+     * 持续期间身上的横向光带由客户端的 ElementGeometryRenderer 画。
      * ⭐ v7：护盾增伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
      */
     public static final DynamicAttribute MAGNETIC = new DynamicAttribute("magnetic");
 
     /**
      * 辐射效果 - 混乱攻击同类并增伤（0级100% → 9级550%）
-     * ⭐ 视觉：每 0.5 秒生成黄→绿渐变 + 灵魂 + 金光 + 电火花 + 发光点
      * ⭐ v7：同类增伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
      */
     public static final DynamicAttribute RADIATION = new DynamicAttribute("radiation")
@@ -184,10 +167,7 @@ public class DynamicAttributes {
             .onTick(ctx -> {
                 LivingEntity entity = ctx.getEntity();
 
-                // ⭐ 粒子走限流门控；被挡掉也绝不能影响下面的改仇恨逻辑
-                if (entity.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, entity)) {
-                    ElementParticleEffects.spawnRadiationEffect(entity, sl, ctx.getAmplifier());
-                }
+                // 持续状态的画面由客户端按元素状态同步包贴身画，这里不再发粒子
 
                 if (!(entity instanceof Mob mob)) {
                     return;
@@ -218,16 +198,12 @@ public class DynamicAttributes {
 
     /**
      * 腐蚀效果 - 降低护甲（0级26% → 9级80%）
-     * ⭐ 视觉：每 0.5 秒生成深绿酸液 + 粘液 + 黑曜石泪滴 + 酸液落地
      */
     public static final DynamicAttribute CORROSION = new DynamicAttribute("corrosion")
             .setTickInterval(10)
             .onTick(ctx -> {
                 LivingEntity entity = ctx.getEntity();
-                // ⭐ 粒子走限流门控
-                if (entity.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, entity)) {
-                    ElementParticleEffects.spawnCorrosionEffect(entity, sl, ctx.getAmplifier());
-                }
+                // 持续状态的画面由客户端按元素状态同步包贴身画，这里不再发粒子
             })
             .addModifier(Attributes.ARMOR, AttributeModifier.Operation.MULTIPLY_TOTAL, (level) -> {
                 return -(0.26 + Math.min(level, 9) * 0.06);
@@ -240,17 +216,13 @@ public class DynamicAttributes {
      * 穿刺效果 - 挂着它的生物<b>造成</b>的伤害降低（0级40% → 3级70%，每级 +10%）
      * ⭐ 2026-09-25：原先是挂着它的生物<b>受到</b>的近战伤害降低 —— 玩家越打越打不动，方向反了；
      *    照《星际战甲》原作改成削弱它的输出。注释原写「3级80%」，按常量实际是 70%
-     * ⭐ 视觉：每 0.5 秒生成白色针状 + 金属闪烁 + 浅银尘埃 + 发光点
      * ⭐ v7：减伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
      */
     public static final DynamicAttribute PUNCTURE = new DynamicAttribute("puncture")
             .setTickInterval(10)
             .onTick(ctx -> {
                 LivingEntity entity = ctx.getEntity();
-                // ⭐ 粒子走限流门控
-                if (entity.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, entity)) {
-                    ElementParticleEffects.spawnPunctureEffect(entity, sl, ctx.getAmplifier());
-                }
+                // 持续状态的画面由客户端按元素状态同步包贴身画，这里不再发粒子
             });
 
     public static final DynamicAttribute VITRICA = new DynamicAttribute("vitrica")
@@ -267,16 +239,12 @@ public class DynamicAttributes {
 
     /**
      * 病毒效果 - 满层降低50%生命上限（切割增伤在切割代码中处理）
-     * ⭐ 视觉：每 0.5 秒生成病毒尘埃 + 孢子 + 监守者爆裂（v6 粉色主调）
      */
     public static final DynamicAttribute VIRUS = new DynamicAttribute("virus")
             .setTickInterval(10)
             .onTick(ctx -> {
                 LivingEntity entity = ctx.getEntity();
-                // ⭐ 粒子走限流门控
-                if (entity.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, entity)) {
-                    ElementParticleEffects.spawnVirusEffect(entity, sl, ctx.getAmplifier());
-                }
+                // 持续状态的画面由客户端按元素状态同步包贴身画，这里不再发粒子
             })
             .addModifier(Attributes.MAX_HEALTH, AttributeModifier.Operation.MULTIPLY_TOTAL, (level) -> {
                 return level >= 9 ? -0.5 : 0.0;

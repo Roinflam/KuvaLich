@@ -2,6 +2,7 @@ package pers.roinflam.kuvalich.item;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -16,6 +17,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.fx.FxId;
+import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
@@ -84,6 +87,11 @@ public class RequiemRiddle extends Item {
                             getCardName(requiemCard.getOneAnswer()),
                             getCardName(requiemCard.getTwoAnswer()),
                             getCardName(requiemCard.getThreeAnswer()));
+
+                    // 三条答案一起亮出来：解密 HUD 滑入，三格同时走一遍揭示（只给本人）
+                    if (player instanceof ServerPlayer serverPlayer) {
+                        KuvaFx.player(serverPlayer, FxId.RIDDLE_SOLVED, serverPlayer.position(), -1, 0, 0);
+                    }
 
                     itemstack.shrink(1);
                 }

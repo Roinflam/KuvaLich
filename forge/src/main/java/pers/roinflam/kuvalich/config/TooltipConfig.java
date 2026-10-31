@@ -29,6 +29,7 @@ public final class TooltipConfig {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         PANEL = new PanelConfig(builder);
         GuideDisplayConfig.define(builder);
+        EffectsDisplayConfig.define(builder);
         CLIENT_CONFIG = builder.build();
     }
 

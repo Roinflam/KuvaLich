@@ -10,11 +10,21 @@
       "title": "What mods are and how to install them",
       "icon": "kuvalich:item_common_module",
       "summary": "Mod types, sources, revealing and installing",
-      "items": ["kuvalich:item_common_module", "kuvalich:item_uncommon_module", "kuvalich:item_rare_module", "kuvalich:item_prime_module"],
+      "items": [
+        "kuvalich:item_common_module",
+        "kuvalich:item_uncommon_module",
+        "kuvalich:item_rare_module",
+        "kuvalich:item_prime_module"
+      ],
       "blocks": [
         {
+          "type": "comm",
+          "who": "ordis",
+          "text": "Cephalon Ordis, appointed keeper of the Arsenal. Every corner is in perfect order. Help yourself, Operator."
+        },
+        {
           "type": "p",
-          "text": "Your weapon and your own body each have eight mod slots, Tenno, and your damage and your survival both ride on the cards in them. <hl>Mods</hl> are upgrade cards you slot into weapons or Warframes, each carrying a few <t>stats</t> such as '+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}'. Installing one doesn't use it up, and you can pull it out and move it elsewhere at any time."
+          "text": "Your damage and your survival both ride on your cards, Tenno. Your weapon and your own body each have eight mod slots. <hl>Mods</hl> are upgrade cards you slot into weapons or Warframes, each carrying a few <t>stats</t> such as '+120% {lang:kuvaweapon.item_attribute_type.meleeDamage}'. Installing one doesn't use it up, and you can pull it out and move it elsewhere at any time."
         },
         {
           "type": "tip",
@@ -54,7 +64,7 @@
           "type": "tip",
           "style": "info",
           "title": "What 'consecrated' means",
-          "text": "<hl>Consecrating</hl> gives an item a weapon stat panel, and only consecrated items can take weapon mods. [[weapons/kuva_weapons|Kuva weapons]] come consecrated; swords, bows, shields, armor and the like must first be consecrated in the {item:kuvalich:requiem_evolve} with a {item:kuvalich:riven_sliver}, see [[weapons/requiem_evolve]]."
+          "text": "<hl>Consecrating</hl> gives an item a weapon stat panel; an item without one takes no weapon mods. [[weapons/kuva_weapons|Kuva weapons]] come consecrated. For swords, bows, shields, armor and the like, put them in the {item:kuvalich:requiem_evolve} first and consecrate them with a {item:kuvalich:riven_sliver}; see [[weapons/requiem_evolve]]."
         },
         {
           "type": "h",
@@ -74,12 +84,12 @@
               "Gold {cfg:kuva_lich.rareModuleDropChance|pctv}, Silver {cfg:kuva_lich.uncommonModuleDropChance|pctv}, Bronze {cfg:kuva_lich.commonModuleDropChance|pctv}"
             ],
             [
-              "Killing a [[enemies/kuva_slave|Kuva Thrall]] yourself",
+              "Finishing off a [[enemies/kuva_slave|Kuva Thrall]] yourself",
               "Same as above",
               "Same as above"
             ],
             [
-              "Killing a [[enemies/kuva_master|Kuva Lich]] on a successful decryption",
+              "Finishing a [[enemies/kuva_master|Kuva Lich]] on a successful decryption",
               "Always one unrevealed Prime or Riven mod",
               "Prime {cfg:kuva_lich.masterPrimeModuleChance|pctv}, otherwise Riven"
             ],
@@ -101,7 +111,7 @@
         {
           "type": "steps",
           "items": [
-            "A fresh drop is <t>unrevealed</t>. Its name says so, its stats read <dim>+??% ???</dim>, and it can't be installed yet.",
+            "Spot an <t>unrevealed</t> card: its name says so, its stats read <dim>+??% ???</dim>, and it can't be installed yet.",
             "Hold it in your <w>main hand</w> and right-click. The off-hand does nothing.",
             "The card vanishes and a revealed mod drops at your feet. Pick it up."
           ]
@@ -120,20 +130,20 @@
         },
         {
           "type": "p",
-          "text": "Warframe mods are simpler. Open the {item:kuvalich:requiem_warframe_table} and drop them straight into its slots; see [[warframe/warframe_module]]."
+          "text": "Warframe mods are simpler: open the {item:kuvalich:requiem_warframe_table} and drop them straight into its slots; see [[warframe/warframe_module]]."
         },
         {
           "type": "tip",
           "style": "warn",
           "title": "Check the level first",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "A newly revealed mod is usually level <t>1</t> and gives only 1/{cfg:kuva_lich.moduleMaxLevel} of its full effect, so at first it seems to do little. To level it up, see [[modules/module_level]]."
+          "text": "A newly revealed mod is usually level <t>1</t> and gives only 1/{cfg:kuva_lich.moduleMaxLevel} of its full effect, so at first it seems to do little. Level it up first; see [[modules/module_level]]."
         },
         {
           "type": "tip",
           "style": "info",
           "title": "When it won't fit",
-          "text": "Usually it's two copies of the same mod, more than 1 Riven mod, or a card that isn't revealed yet. When you pick up a mod in an arsenal, conflicting slots <b>pulse red</b>; the full rules are in [[modules/module_limits]]."
+          "text": "Usually it's one of three things: two copies of the same mod, more than 1 Riven mod, or a card that isn't revealed yet. Pick up a mod in an arsenal and watch for slots that <b>pulse red</b>; those are the conflicts. The full rules are in [[modules/module_limits]]."
         }
       ]
     },
@@ -145,7 +155,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "These rules decide which mods a weapon or Warframe can take. When an arsenal won't let you place a mod, go down the list to find out why."
+          "text": "These rules decide which mods a weapon or Warframe can take. When an arsenal won't let you place a mod, go down the list, Tenno; the reason is in there."
         },
         {
           "type": "list",
@@ -161,7 +171,7 @@
           "type": "tip",
           "style": "info",
           "title": "Watch for red",
-          "text": "When you pick up a mod in an arsenal, the slots that conflict with it <b>pulse red</b>, and when a Shift + click fails, the conflicting slots flash a few times. When you see red, pick another mod."
+          "text": "When you pick up a mod in an arsenal, the slots that conflict with it <b>pulse red</b>, and when a Shift + click fails, the conflicting slots flash a few times. If you see red, pick another mod."
         },
         {
           "type": "h",
@@ -243,11 +253,21 @@
             },
             "[[combat/kill_stack|Kill stack]] bonuses are added after the cap, so they can go past it.",
             {
-              "if": ["cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule", "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"],
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.enableOffhandModule||cfg:kuva_lich.enableHelmetModule||cfg:kuva_lich.enableChestplateModule||cfg:kuva_lich.enableLeggingsModule||cfg:kuva_lich.enableBootsModule||mod:curios"
+              ],
               "text": "Caps are counted per item. The 8 mods on your main-hand weapon are capped together, and so are your 8 Warframe mods; items in extra slots such as the off-hand are capped on their own and then added at their rate, see [[modules/multi_slot]]."
             },
             {
-              "if": ["!cfg:kuva_lich.enableOffhandModule", "!cfg:kuva_lich.enableHelmetModule", "!cfg:kuva_lich.enableChestplateModule", "!cfg:kuva_lich.enableLeggingsModule", "!cfg:kuva_lich.enableBootsModule", "!cfg:kuva_lich.enableCuriosModule||!mod:curios"],
+              "if": [
+                "!cfg:kuva_lich.enableOffhandModule",
+                "!cfg:kuva_lich.enableHelmetModule",
+                "!cfg:kuva_lich.enableChestplateModule",
+                "!cfg:kuva_lich.enableLeggingsModule",
+                "!cfg:kuva_lich.enableBootsModule",
+                "!cfg:kuva_lich.enableCuriosModule||!mod:curios"
+              ],
               "text": "Caps are counted per item. The 8 mods on your main-hand weapon are capped together, and so are your 8 Warframe mods."
             },
             "Warframe fire, electric, homologous and fall resistances, along with shield recharge delay, multiply rather than add, so this cap doesn't apply to them.",
@@ -484,7 +504,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Mods come in five rarities, and weapon and Warframe mods share the same five tiers. The <em>color of the stat lines</em> on a card is its rarity color, so you can tell at a glance."
+          "text": "Read the rarity by its color. Mods come in five rarities, and weapon and Warframe mods share the same five tiers; the <em>color of the stat lines</em> on a card is its rarity color."
         },
         {
           "type": "items",
@@ -518,7 +538,7 @@
             ],
             [
               "<c:55FFFF>Prime</c>",
-              "Killing a [[enemies/kuva_master|Kuva Lich]] on a successful decryption"
+              "Finishing a [[enemies/kuva_master|Kuva Lich]] on a successful decryption"
             ],
             [
               "<c:FF55FF>Riven</c>",
@@ -532,7 +552,7 @@
         },
         {
           "type": "p",
-          "text": "<c:FF55FF>Riven mods</c> have fully random stats; see [[modules/riven_module]]. Merge spare cards three into one at the [[weapons/requiem_recast|Requiem Recast]]."
+          "text": "<c:FF55FF>Riven mods</c> have fully random stats; see [[modules/riven_module]]. Don't let spare cards sit idle; merge them three into one at the [[weapons/requiem_recast|Requiem Recast]]."
         },
         {
           "type": "h",
@@ -570,12 +590,12 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "Bronze, Silver and Gold tiers exist over there as well. A Primed Mod is a stronger version of a normal one, shortened here to Prime, and Galvanized Mods build up their bonus with every kill."
+          "text": "Bronze, Silver and Gold tiers exist over there as well. Clear tiers make for tidy books, Ordis finds. A Primed Mod is a stronger version of a normal one, shortened here to Prime, and Galvanized Mods build up their bonus with every kill."
         },
         {
           "type": "tip",
           "style": "info",
-          "text": "The same mod can exist in several tiers, such as Silver 'Fury' and Prime 'Fury Prime'. They <w>count as the same mod</w> and can't be installed together."
+          "text": "The same mod can exist in several tiers, such as Silver 'Fury' and Prime 'Fury Prime'. Don't let the names fool you: they <w>count as the same mod</w> and can't be installed together."
         }
       ]
     },
@@ -584,17 +604,19 @@
       "title": "Mod levels and Endo",
       "icon": "kuvalich:endo",
       "summary": "Level scaling, upgrade costs, Endo sources",
-      "items": ["kuvalich:endo"],
+      "items": [
+        "kuvalich:endo"
+      ],
       "blocks": [
         {
           "type": "p",
           "if": "!cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "Mods have no levels. Every card works at full strength as soon as you get it, with no upgrading needed."
+          "text": "Mods have no levels. Every card works at full strength as soon as you get it, Tenno, with no upgrading needed."
         },
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "Mods have levels, up to <t>{cfg:kuva_lich.moduleMaxLevel}</t>. A newly revealed mod is usually level 1, and you raise it one level at a time with <hl>{item:kuvalich:endo}</hl>, the material made for upgrading mods."
+          "text": "How much a card is worth depends on how far you level it. Mods have levels, up to <t>{cfg:kuva_lich.moduleMaxLevel}</t>. A newly revealed mod is usually level 1, and you raise it one level at a time with <hl>{item:kuvalich:endo}</hl>, the material made for upgrading mods."
         },
         {
           "type": "formula",
@@ -616,7 +638,7 @@
           "type": "tip",
           "style": "wf",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "The archives say Mods are ranked up with Endo, and that dissolving Mods a Tenno no longer needs returns some of it."
+          "text": "Waste not: a rule after Ordis's own heart. The archives say Mods are ranked up with Endo, and that dissolving Mods a Tenno no longer needs returns some of it."
         },
         {
           "type": "h",
@@ -641,7 +663,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "Higher levels cost more and lower rarities cost less. The last Prime level alone takes <t>{cfg:kuva_lich.endoLastLevelCost}</t>."
+          "text": "Higher levels cost more and lower rarities cost less. The last Prime level alone takes <t>{cfg:kuva_lich.endoLastLevelCost}</t>. Spend your Endo on the cards you will actually use."
         },
         {
           "type": "table",
@@ -732,7 +754,7 @@
             "cfg:kuva_lich.enableModuleLevelSystem",
             "cfg:kuva_lich.enableMasteryOnReveal"
           ],
-          "text": "Once you've leveled a mod to some level at the Requiem Forge, every mod of the same type and rarity you <t>reveal</t> later comes out at that level."
+          "text": "Leveling work stays with you. Once you've leveled a mod to some level at the Requiem Forge, every mod of the same type and rarity you <t>reveal</t> later comes out at that level."
         },
         {
           "type": "tip",
@@ -746,7 +768,7 @@
         {
           "type": "h",
           "if": "cfg:kuva_lich.enableModuleLevelSystem",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "formula",
@@ -786,7 +808,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "There are hundreds of mods, so don't try to memorize them. Each arsenal has a built-in codex, the '{lang:kuvalich.codex.title.weapon}' and the '{lang:kuvalich.codex.title.warframe}', where you can browse mods and see their full cards."
+          "text": "Operator, there are hundreds of mods, and there is no need to memorize them. Each arsenal has a built-in codex, the '{lang:kuvalich.codex.title.weapon}' and the '{lang:kuvalich.codex.title.warframe}', where you can browse mods and see their full cards. Ordis keeps both in immaculate order!"
         },
         {
           "type": "steps",
@@ -817,7 +839,7 @@
         {
           "type": "tip",
           "style": "info",
-          "text": "The codex doesn't list <c:FF55FF>Riven mods</c> because their stats are random; see [[modules/riven_module]] for how they roll."
+          "text": "The codex doesn't list <c:FF55FF>Riven mods</c> because their stats are random. Ordis has little patience for the unpredictable. See [[modules/riven_module]] for how they roll."
         },
         {
           "type": "h",
@@ -865,11 +887,14 @@
       "title": "Riven mods",
       "icon": "kuvalich:item_riven_module",
       "summary": "Random stats, disposition and cycling",
-      "items": ["kuvalich:item_riven_module", "kuvalich:warframe_riven_module"],
+      "items": [
+        "kuvalich:item_riven_module",
+        "kuvalich:warframe_riven_module"
+      ],
       "blocks": [
         {
           "type": "p",
-          "text": "<c:FF55FF>Riven mods</c> have fully random stats, 2-3 positive ones and possibly 1 negative one, and they mainly drop when you kill a [[enemies/kuva_master|Kuva Lich]] on a successful decryption. Every reroll costs Kuva that you never get back, so count yours before you start."
+          "text": "<c:FF55FF>Riven mods</c> have fully random stats, 2-3 positive ones and possibly 1 negative one, and they mainly drop when you finish a [[enemies/kuva_master|Kuva Lich]] on a successful decryption. Every reroll costs Kuva that you never get back. Count yours before you start, Tenno; luck will not pay the bill."
         },
         {
           "type": "p",
@@ -906,7 +931,7 @@
         },
         {
           "type": "p",
-          "text": "The mode is fixed on reveal and never changes. Warframe Rivens have no mode; their names start with Warframe."
+          "text": "The mode is locked in the moment you reveal the card and never changes. Warframe Rivens have no mode; their names start with Warframe."
         },
         {
           "type": "h",
@@ -1019,7 +1044,7 @@
           "type": "tip",
           "style": "info",
           "title": "Every preview costs Kuva",
-          "text": "Each preview is paid for once. If you add Kuva to the material slot or take some out after a preview, and what's left can still pay, it previews again with the new amount and charges again. You pay once per reroll."
+          "text": "Each preview is paid for once. If you add Kuva to the material slot or take some out after a preview, and what's left can still pay, it previews again with the new amount and charges again. You pay once per reroll. Once a preview is up, leave the material slot alone unless you mean to roll again."
         },
         {
           "type": "h",
@@ -1076,7 +1101,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "Operator, Riven Mods in the Origin System must also be unveiled by completing a challenge, and cycling them costs Kuva there as well. Disposition varies from weapon to weapon; the higher it is, the stronger the Riven's stats."
+          "text": "Operator, Riven Mods in the Origin System must also be unveiled by completing a challenge, and cycling them costs <x>Kuva-- Kuva-- KU--</x> hm. Recalibrated: cycling costs Kuva there as well. Disposition varies from weapon to weapon; the higher it is, the stronger the Riven's stats."
         },
         {
           "type": "tip",
@@ -1094,7 +1119,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "list",
@@ -1125,7 +1150,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Mods on your main-hand weapon always work at full strength. Items in the slots listed below can also add their mod bonuses to your attacks at a reduced rate, as long as they are <hl>consecrated and modded</hl>."
+          "text": "Mods on your main-hand weapon always work at full strength. Items in the slots listed below can also add their mod bonuses to your attacks at a reduced rate, as long as they are <hl>consecrated and modded</hl>. Beyond your main hand, these slots count toward your strength too, Tenno."
         },
         {
           "type": "table",

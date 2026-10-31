@@ -16,6 +16,11 @@
 					"pivot": [0, 0, 0]
 				},
 				{
+					"name": "waist",
+					"parent": "root",
+					"pivot": [0, 22.1, 0]
+				},
+				{
 					"name": "RLeg",
 					"parent": "root",
 					"pivot": [-3.042, 22.1, 0],
@@ -767,7 +772,7 @@
 				},
 				{
 					"name": "Body",
-					"parent": "root",
+					"parent": "waist",
 					"pivot": [-12.168, 0, 0],
 					"cubes": [
 						{

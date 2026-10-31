@@ -1,0 +1,920 @@
+{
+  "entity.lich.alert": {
+    "subtitle": "subtitles.kuvalich.entity.lich.alert",
+    "sounds": [
+      {
+        "name": "kuvalich:entity/lich/alert/1",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:entity/lich/alert/2",
+        "preload": true
+      }
+    ]
+  },
+  "entity.thrall.alert": {
+    "subtitle": "subtitles.kuvalich.entity.thrall.alert",
+    "sounds": [
+      "kuvalich:entity/thrall/alert/1",
+      "kuvalich:entity/thrall/alert/2"
+    ]
+  },
+  "entity.lich.summon": {
+    "subtitle": "subtitles.kuvalich.entity.lich.summon",
+    "sounds": [
+      {
+        "name": "kuvalich:entity/lich/summon/1",
+        "attenuation_distance": 32,
+        "preload": true
+      }
+    ]
+  },
+  "entity.lich.ambient": {
+    "subtitle": "subtitles.kuvalich.entity.lich.ambient",
+    "sounds": [
+      "kuvalich:entity/lich/ambient/1",
+      "kuvalich:entity/lich/ambient/2",
+      "kuvalich:entity/lich/ambient/3",
+      "kuvalich:entity/lich/ambient/4"
+    ]
+  },
+  "entity.thrall.ambient": {
+    "subtitle": "subtitles.kuvalich.entity.thrall.ambient",
+    "sounds": [
+      "kuvalich:entity/thrall/ambient/1",
+      "kuvalich:entity/thrall/ambient/2",
+      "kuvalich:entity/thrall/ambient/3",
+      "kuvalich:entity/thrall/ambient/4"
+    ]
+  },
+  "entity.lich.hurt": {
+    "subtitle": "subtitles.kuvalich.entity.lich.hurt",
+    "sounds": [
+      "kuvalich:entity/lich/hurt/1",
+      "kuvalich:entity/lich/hurt/2",
+      "kuvalich:entity/lich/hurt/3",
+      "kuvalich:entity/lich/hurt/4"
+    ]
+  },
+  "entity.thrall.hurt": {
+    "subtitle": "subtitles.kuvalich.entity.thrall.hurt",
+    "sounds": [
+      "kuvalich:entity/thrall/hurt/1",
+      "kuvalich:entity/thrall/hurt/2",
+      "kuvalich:entity/thrall/hurt/3",
+      "kuvalich:entity/thrall/hurt/4"
+    ]
+  },
+  "entity.lich.death": {
+    "subtitle": "subtitles.kuvalich.entity.lich.death",
+    "sounds": [
+      {
+        "name": "kuvalich:entity/lich/death/1",
+        "attenuation_distance": 32,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:entity/lich/death/2",
+        "attenuation_distance": 32,
+        "preload": true
+      }
+    ]
+  },
+  "entity.thrall.death": {
+    "subtitle": "subtitles.kuvalich.entity.thrall.death",
+    "sounds": [
+      {
+        "name": "kuvalich:entity/thrall/death/1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:entity/thrall/death/2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:entity/thrall/death/3",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "entity.kuva.swing": {
+    "subtitle": "subtitles.kuvalich.entity.kuva.swing",
+    "sounds": [
+      "kuvalich:entity/kuva/swing/1",
+      "kuvalich:entity/kuva/swing/2",
+      "kuvalich:entity/kuva/swing/3"
+    ]
+  },
+  "entity.lich.strike": {
+    "subtitle": "subtitles.kuvalich.entity.lich.strike",
+    "sounds": [
+      "kuvalich:entity/lich/strike/1",
+      "kuvalich:entity/lich/strike/2",
+      "kuvalich:entity/lich/strike/3"
+    ]
+  },
+  "entity.thrall.strike": {
+    "subtitle": "subtitles.kuvalich.entity.thrall.strike",
+    "sounds": [
+      "kuvalich:entity/thrall/strike/1",
+      "kuvalich:entity/thrall/strike/2",
+      "kuvalich:entity/thrall/strike/3"
+    ]
+  },
+  "entity.kuva.step": {
+    "subtitle": "subtitles.kuvalich.entity.kuva.step",
+    "sounds": [
+      "kuvalich:entity/kuva/step/1",
+      "kuvalich:entity/kuva/step/2",
+      "kuvalich:entity/kuva/step/3",
+      "kuvalich:entity/kuva/step/4"
+    ]
+  },
+  "entity.lich.resist": {
+    "subtitle": "subtitles.kuvalich.entity.lich.resist",
+    "sounds": [
+      "kuvalich:entity/lich/resist/1"
+    ]
+  },
+  "entity.lich.confiscate": {
+    "subtitle": "subtitles.kuvalich.entity.lich.confiscate",
+    "sounds": [
+      "kuvalich:entity/lich/confiscate/1",
+      "kuvalich:entity/lich/confiscate/2"
+    ]
+  },
+  "requiem.glyph.lock.1": {
+    "subtitle": "subtitles.kuvalich.requiem.glyph.lock",
+    "sounds": [
+      {
+        "name": "kuvalich:requiem/glyph/lock/1/1",
+        "preload": true
+      }
+    ]
+  },
+  "requiem.glyph.lock.2": {
+    "subtitle": "subtitles.kuvalich.requiem.glyph.lock",
+    "sounds": [
+      {
+        "name": "kuvalich:requiem/glyph/lock/2/1",
+        "preload": true
+      }
+    ]
+  },
+  "requiem.glyph.lock.3": {
+    "subtitle": "subtitles.kuvalich.requiem.glyph.lock",
+    "sounds": [
+      {
+        "name": "kuvalich:requiem/glyph/lock/3/1",
+        "preload": true
+      }
+    ]
+  },
+  "requiem.glyph.reject": {
+    "subtitle": "subtitles.kuvalich.requiem.glyph.reject",
+    "sounds": [
+      {
+        "name": "kuvalich:requiem/glyph/reject/1",
+        "preload": true
+      }
+    ]
+  },
+  "requiem.shatter": {
+    "subtitle": "subtitles.kuvalich.requiem.shatter",
+    "sounds": [
+      {
+        "name": "kuvalich:requiem/shatter/1",
+        "attenuation_distance": 48,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:requiem/shatter/2",
+        "attenuation_distance": 48,
+        "preload": true
+      }
+    ]
+  },
+  "requiem.taunt": {
+    "subtitle": "subtitles.kuvalich.requiem.taunt",
+    "sounds": [
+      {
+        "name": "kuvalich:requiem/taunt/1",
+        "attenuation_distance": 48,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:requiem/taunt/2",
+        "attenuation_distance": 48,
+        "preload": true
+      }
+    ]
+  },
+  "requiem.return": {
+    "subtitle": "subtitles.kuvalich.requiem.return",
+    "sounds": [
+      {
+        "name": "kuvalich:requiem/return/1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "requiem.card.wear": {
+    "sounds": [
+      "kuvalich:requiem/card/wear/1"
+    ]
+  },
+  "ui.decrypt.progress": {
+    "sounds": [
+      "kuvalich:ui/decrypt/progress/1"
+    ]
+  },
+  "ui.decrypt.reveal1": {
+    "subtitle": "subtitles.kuvalich.ui.decrypt.reveal",
+    "sounds": [
+      {
+        "name": "kuvalich:ui/decrypt/reveal1/1",
+        "preload": true
+      }
+    ]
+  },
+  "ui.decrypt.reveal2": {
+    "subtitle": "subtitles.kuvalich.ui.decrypt.reveal",
+    "sounds": [
+      {
+        "name": "kuvalich:ui/decrypt/reveal2/1",
+        "preload": true
+      }
+    ]
+  },
+  "ui.decrypt.reveal3": {
+    "subtitle": "subtitles.kuvalich.ui.decrypt.reveal",
+    "sounds": [
+      {
+        "name": "kuvalich:ui/decrypt/reveal3/1",
+        "preload": true
+      }
+    ]
+  },
+  "ui.decrypt.complete": {
+    "subtitle": "subtitles.kuvalich.ui.decrypt.complete",
+    "sounds": [
+      {
+        "name": "kuvalich:ui/decrypt/complete/1",
+        "preload": true
+      }
+    ]
+  },
+  "mercy.downed": {
+    "subtitle": "subtitles.kuvalich.mercy.downed",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/downed/1",
+        "attenuation_distance": 32,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.downed.loop": {
+    "sounds": [
+      "kuvalich:mercy/downed/loop/1"
+    ]
+  },
+  "mercy.draw": {
+    "subtitle": "subtitles.kuvalich.mercy.draw",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/draw/1",
+        "attenuation_distance": 24,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.stab": {
+    "subtitle": "subtitles.kuvalich.mercy.stab",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/stab/1/1",
+        "attenuation_distance": 24,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/stab/1/2",
+        "attenuation_distance": 24,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.expire": {
+    "subtitle": "subtitles.kuvalich.mercy.expire",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/expire/1",
+        "attenuation_distance": 32,
+        "preload": true
+      }
+    ]
+  },
+  "combat.crit.yellow": {
+    "sounds": [
+      "kuvalich:combat/crit/yellow/1",
+      "kuvalich:combat/crit/yellow/2",
+      "kuvalich:combat/crit/yellow/3",
+      "kuvalich:combat/crit/yellow/4"
+    ]
+  },
+  "combat.crit.orange": {
+    "sounds": [
+      "kuvalich:combat/crit/orange/1",
+      "kuvalich:combat/crit/orange/2",
+      "kuvalich:combat/crit/orange/3"
+    ]
+  },
+  "combat.crit.red": {
+    "subtitle": "subtitles.kuvalich.combat.crit.red",
+    "sounds": [
+      {
+        "name": "kuvalich:combat/crit/red/1",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:combat/crit/red/2",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:combat/crit/red/3",
+        "preload": true
+      }
+    ]
+  },
+  "combat.crit.red.lite": {
+    "sounds": [
+      "kuvalich:combat/crit/red/1",
+      "kuvalich:combat/crit/red/2",
+      "kuvalich:combat/crit/red/3"
+    ]
+  },
+  "combat.execute": {
+    "subtitle": "subtitles.kuvalich.combat.execute",
+    "sounds": [
+      "kuvalich:combat/execute/1",
+      "kuvalich:combat/execute/2"
+    ]
+  },
+  "element.fire.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/fire/proc/1",
+      "kuvalich:element/fire/proc/2"
+    ]
+  },
+  "element.ice.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/ice/proc/1",
+      "kuvalich:element/ice/proc/2"
+    ]
+  },
+  "element.poison.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/poison/proc/1",
+      "kuvalich:element/poison/proc/2"
+    ]
+  },
+  "element.electricity.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/electricity/proc/1",
+      "kuvalich:element/electricity/proc/2"
+    ]
+  },
+  "element.slash.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/slash/proc/1",
+      "kuvalich:element/slash/proc/2"
+    ]
+  },
+  "element.puncture.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/puncture/proc/1",
+      "kuvalich:element/puncture/proc/2"
+    ]
+  },
+  "element.impact.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/impact/proc/1",
+      "kuvalich:element/impact/proc/2"
+    ]
+  },
+  "element.gas.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/gas/proc/1",
+      "kuvalich:element/gas/proc/2"
+    ]
+  },
+  "element.radiation.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/radiation/proc/1",
+      "kuvalich:element/radiation/proc/2"
+    ]
+  },
+  "element.magnetic.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/magnetic/proc/1",
+      "kuvalich:element/magnetic/proc/2"
+    ]
+  },
+  "element.corrosion.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/corrosion/proc/1",
+      "kuvalich:element/corrosion/proc/2"
+    ]
+  },
+  "element.explosion.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      {
+        "name": "kuvalich:element/explosion/proc/1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:element/explosion/proc/2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "element.virus.proc": {
+    "subtitle": "subtitles.kuvalich.element.proc",
+    "sounds": [
+      "kuvalich:element/virus/proc/1",
+      "kuvalich:element/virus/proc/2"
+    ]
+  },
+  "element.explosion.tail": {
+    "sounds": [
+      "kuvalich:element/explosion/tail/1",
+      "kuvalich:element/explosion/tail/2"
+    ]
+  },
+  "weapon.charge.ready": {
+    "sounds": [
+      "kuvalich:weapon/charge/ready/1"
+    ]
+  },
+  "weapon.dash": {
+    "subtitle": "subtitles.kuvalich.weapon.dash",
+    "sounds": [
+      "kuvalich:weapon/dash/1",
+      "kuvalich:weapon/dash/2"
+    ]
+  },
+  "weapon.dash.hit": {
+    "sounds": [
+      "kuvalich:weapon/dash/hit/1",
+      "kuvalich:weapon/dash/hit/2"
+    ]
+  },
+  "warframe.shield.break": {
+    "subtitle": "subtitles.kuvalich.warframe.shield.break",
+    "sounds": [
+      "kuvalich:warframe/shield/break/1",
+      "kuvalich:warframe/shield/break/2"
+    ]
+  },
+  "warframe.shield.recharge": {
+    "sounds": [
+      "kuvalich:warframe/shield/recharge/1"
+    ]
+  },
+  "warframe.last_stand": {
+    "subtitle": "subtitles.kuvalich.warframe.last_stand",
+    "sounds": [
+      {
+        "name": "kuvalich:warframe/last_stand/1",
+        "attenuation_distance": 24,
+        "preload": true
+      }
+    ]
+  },
+  "warframe.stack.max": {
+    "sounds": [
+      "kuvalich:warframe/stack/max/1"
+    ]
+  },
+  "forge.module.install": {
+    "sounds": [
+      "kuvalich:forge/module/install/1",
+      "kuvalich:forge/module/install/2",
+      "kuvalich:forge/module/install/3"
+    ]
+  },
+  "forge.module.remove": {
+    "sounds": [
+      "kuvalich:forge/module/remove/1",
+      "kuvalich:forge/module/remove/2",
+      "kuvalich:forge/module/remove/3"
+    ]
+  },
+  "forge.weapon.mount": {
+    "sounds": [
+      "kuvalich:forge/weapon/mount/1",
+      "kuvalich:forge/weapon/mount/2"
+    ]
+  },
+  "forge.module.rankup.1": {
+    "sounds": [
+      "kuvalich:forge/module/rankup/1/1"
+    ]
+  },
+  "forge.module.rankup.2": {
+    "sounds": [
+      "kuvalich:forge/module/rankup/2/1"
+    ]
+  },
+  "forge.module.rankup.3": {
+    "sounds": [
+      "kuvalich:forge/module/rankup/3/1"
+    ]
+  },
+  "forge.module.rankup.4": {
+    "sounds": [
+      "kuvalich:forge/module/rankup/4/1"
+    ]
+  },
+  "forge.module.maxrank": {
+    "sounds": [
+      "kuvalich:forge/module/maxrank/1"
+    ]
+  },
+  "forge.forma": {
+    "sounds": [
+      "kuvalich:forge/forma/1",
+      "kuvalich:forge/forma/2"
+    ]
+  },
+  "forge.forma.shadow": {
+    "sounds": [
+      "kuvalich:forge/forma/shadow/1"
+    ]
+  },
+  "forge.forma.lock": {
+    "sounds": [
+      "kuvalich:forge/forma/lock/1"
+    ]
+  },
+  "forge.fusion": {
+    "sounds": [
+      "kuvalich:forge/fusion/1"
+    ]
+  },
+  "forge.riven.cycle": {
+    "sounds": [
+      "kuvalich:forge/riven/cycle/1"
+    ]
+  },
+  "forge.imbue": {
+    "sounds": [
+      "kuvalich:forge/imbue/1"
+    ]
+  },
+  "forge.recast.merge": {
+    "sounds": [
+      "kuvalich:forge/recast/merge/1"
+    ]
+  },
+  "forge.recast.decompose": {
+    "sounds": [
+      "kuvalich:forge/recast/decompose/1",
+      "kuvalich:forge/recast/decompose/2",
+      "kuvalich:forge/recast/decompose/3"
+    ]
+  },
+  "item.module.reveal": {
+    "subtitle": "subtitles.kuvalich.item.module.reveal",
+    "sounds": [
+      "kuvalich:item/module/reveal/1",
+      "kuvalich:item/module/reveal/2"
+    ]
+  },
+  "item.module.reveal.epic": {
+    "subtitle": "subtitles.kuvalich.item.module.reveal.epic",
+    "sounds": [
+      "kuvalich:item/module/reveal/epic/1"
+    ]
+  },
+  "block.requiem_gate.open": {
+    "sounds": [
+      {
+        "name": "kuvalich:block/requiem_gate/open/1",
+        "volume": 0.57
+      }
+    ]
+  },
+  "block.forge.open": {
+    "sounds": [
+      "kuvalich:block/forge/open/1",
+      "kuvalich:block/forge/open/2"
+    ]
+  },
+  "block.kuva_machine.place": {
+    "subtitle": "subtitles.kuvalich.block.kuva_machine.place",
+    "sounds": [
+      "kuvalich:block/kuva_machine/place/1",
+      "kuvalich:block/kuva_machine/place/2",
+      "kuvalich:block/kuva_machine/place/3"
+    ]
+  },
+  "block.kuva_machine.break": {
+    "subtitle": "subtitles.kuvalich.block.kuva_machine.break",
+    "sounds": [
+      "kuvalich:block/kuva_machine/break/1",
+      "kuvalich:block/kuva_machine/break/2",
+      "kuvalich:block/kuva_machine/break/3"
+    ]
+  },
+  "block.kuva_machine.step": {
+    "sounds": [
+      "kuvalich:block/kuva_machine/step/1",
+      "kuvalich:block/kuva_machine/step/2",
+      "kuvalich:block/kuva_machine/step/3",
+      "kuvalich:block/kuva_machine/step/4"
+    ]
+  },
+  "ui.guide.open.power": {
+    "sounds": [
+      "kuvalich:ui/guide/open/power/1"
+    ]
+  },
+  "ui.guide.open.resolve": {
+    "sounds": [
+      "kuvalich:ui/guide/open/resolve/1"
+    ]
+  },
+  "ui.guide.open.quick": {
+    "sounds": [
+      "kuvalich:ui/guide/open/quick/1"
+    ]
+  },
+  "ui.guide.skip": {
+    "sounds": [
+      "kuvalich:ui/guide/skip/1"
+    ]
+  },
+  "ui.guide.close.off": {
+    "sounds": [
+      "kuvalich:ui/guide/close/off/1"
+    ]
+  },
+  "ui.guide.page": {
+    "sounds": [
+      "kuvalich:ui/guide/page/1",
+      "kuvalich:ui/guide/page/2",
+      "kuvalich:ui/guide/page/3"
+    ]
+  },
+  "ui.guide.home": {
+    "sounds": [
+      "kuvalich:ui/guide/home/1"
+    ]
+  },
+  "ui.guide.hover": {
+    "sounds": [
+      "kuvalich:ui/guide/hover/1",
+      "kuvalich:ui/guide/hover/2",
+      "kuvalich:ui/guide/hover/3"
+    ]
+  },
+  "ui.guide.click": {
+    "sounds": [
+      "kuvalich:ui/guide/click/1",
+      "kuvalich:ui/guide/click/2"
+    ]
+  },
+  "ui.guide.lookup": {
+    "sounds": [
+      "kuvalich:ui/guide/lookup/1"
+    ]
+  },
+  "ui.comm.lotus": {
+    "subtitle": "subtitles.kuvalich.ui.comm.lotus",
+    "sounds": [
+      "kuvalich:ui/comm/lotus/1",
+      "kuvalich:ui/comm/lotus/2"
+    ]
+  },
+  "ui.comm.ordis": {
+    "subtitle": "subtitles.kuvalich.ui.comm.ordis",
+    "sounds": [
+      "kuvalich:ui/comm/ordis/1",
+      "kuvalich:ui/comm/ordis/2"
+    ]
+  },
+  "ui.comm.lich": {
+    "subtitle": "subtitles.kuvalich.ui.comm.lich",
+    "sounds": [
+      "kuvalich:ui/comm/lich/1",
+      "kuvalich:ui/comm/lich/2"
+    ]
+  },
+  "mercy.stab.1": {
+    "subtitle": "subtitles.kuvalich.mercy.stab",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/stab/1/1",
+        "attenuation_distance": 24,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/stab/1/2",
+        "attenuation_distance": 24,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.stab.2": {
+    "subtitle": "subtitles.kuvalich.mercy.stab",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/stab/2/1",
+        "attenuation_distance": 24,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/stab/2/2",
+        "attenuation_distance": 24,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.stab.final": {
+    "subtitle": "subtitles.kuvalich.mercy.stab.final",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/stab/final/1",
+        "attenuation_distance": 32,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/stab/final/2",
+        "attenuation_distance": 32,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.thrall": {
+    "subtitle": "subtitles.kuvalich.mercy.thrall",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/thrall/1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:mercy/thrall/2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:mercy/thrall/3",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mercy.escape": {
+    "subtitle": "subtitles.kuvalich.mercy.escape",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/escape/1",
+        "attenuation_distance": 48,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/escape/2",
+        "attenuation_distance": 48,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.verdict": {
+    "subtitle": "subtitles.kuvalich.mercy.verdict",
+    "sounds": [
+      "kuvalich:mercy/verdict/1"
+    ]
+  },
+  "ui.banner.rankup": {
+    "sounds": [
+      "kuvalich:ui/banner/rankup/1"
+    ]
+  },
+  "ui.comm.lich.mutter": {
+    "subtitle": "subtitles.kuvalich.ui.comm.lich.mutter",
+    "sounds": [
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/1",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/2",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/3",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/4",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/5",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/6",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/7",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/8",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/9",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/10",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/11",
+        "preload": true
+      },
+      {
+        "name": "kuvalich:ui/comm/lich/mutter/12",
+        "preload": true
+      }
+    ]
+  },
+  "block.requiem_gate.ambience": {
+    "sounds": [
+      "kuvalich:block/requiem_gate/ambience/1"
+    ]
+  },
+  "element.electricity.loop": {
+    "sounds": [
+      {
+        "name": "kuvalich:element/electricity/loop/1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "ui.comm.static": {
+    "sounds": [
+      "kuvalich:ui/comm/static/1"
+    ]
+  },
+  "requiem.glyph.lock.mercy": {
+    "subtitle": "subtitles.kuvalich.requiem.glyph.lock",
+    "sounds": [
+      "kuvalich:requiem/glyph/lock/mercy/1"
+    ]
+  },
+  "requiem.dissolve": {
+    "subtitle": "subtitles.kuvalich.requiem.dissolve",
+    "sounds": [
+      {
+        "name": "kuvalich:requiem/dissolve/1",
+        "attenuation_distance": 48,
+        "preload": true
+      }
+    ]
+  },
+  "requiem.glyph.reject.mercy": {
+    "subtitle": "subtitles.kuvalich.requiem.glyph.reject",
+    "sounds": [
+      "kuvalich:requiem/glyph/reject/mercy/1"
+    ]
+  },
+  "entity.lich.adapt.full": {
+    "subtitle": "subtitles.kuvalich.entity.lich.adapt.full",
+    "sounds": [
+      {
+        "name": "kuvalich:entity/lich/adapt/full/1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:entity/lich/adapt/full/2",
+        "attenuation_distance": 24
+      }
+    ]
+  }
+}

@@ -1,7 +1,9 @@
 package pers.roinflam.kuvalich.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -16,11 +18,18 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.fx.FxId;
+import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.init.KuvaLichSounds;
+import pers.roinflam.kuvalich.mercy.KuvaStateServer;
+import pers.roinflam.kuvalich.mercy.MercyRules;
+import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
@@ -65,6 +74,17 @@ public class KuvaSlaveEntity extends AbstractKuva {
 
     /** 固定伤害减免倍率（25%减伤，即乘以0.75） */
     private static final float FLAT_DAMAGE_REDUCTION = 0.75f;
+
+    // ==================== 怜悯之击 ====================
+
+    /** 倒地后碰撞箱高度的倍率（2.9 → 1.885 格） */
+    private static final float DOWNED_HEIGHT_SCALE = 0.65F;
+    /** 死亡效果包的范围（格） */
+    private static final double DEATH_FX_RANGE = 32.0D;
+    /** 死亡包 b：这次给了密语进度 */
+    private static final int DEATH_GAVE_PROGRESS = 1;
+    /** 死亡包 b：处决走完的那次死亡 */
+    private static final int DEATH_AFTER_MERCY = 1 << 1;
 
     public KuvaSlaveEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
@@ -122,14 +142,16 @@ public class KuvaSlaveEntity extends AbstractKuva {
      */
     @Override
     public boolean doHurtTarget(@NotNull Entity target) {
-        this.playSound(SoundEvents.IRON_GOLEM_ATTACK, 1.0F, 1.0F);
-
+        // 挥砍声、命中声都由客户端按挥臂和实体事件 103 放，服务端不再直接放
         float attackDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
         float finalDamage = attackDamage * this.level().getDifficulty().getId() * ATTACK_DAMAGE_MULTIPLIER;
 
         if (target.hurt(this.damageSources().mobAttack(this), finalDamage)) {
             applyKnockback(target);
+            float before = this.getHealth();
             this.heal(attackDamage * HEAL_PER_ATTACK);
+            this.level().broadcastEntityEvent(this, EV_HIT);
+            KuvaStateServer.onStrike(this, target, this.getHealth() - before);
             return true;
         }
 
@@ -160,16 +182,44 @@ public class KuvaSlaveEntity extends AbstractKuva {
 
     // ==================== 死亡与掉落 ====================
 
+    /**
+     * 确实死了（服务端，原版死亡流程已经走完、没被别的模组取消）。
+     *
+     * <p>怜悯之击开着时只有处决走完的那次死亡给东西；{@code /kill}、虚空、摔死、被别的怪打死这类绕过倒地的死亡什么都不给。
+     * 关着时照旧：被玩家打死就给。演示用的奴仆一律不给。</p>
+     *
+     * <p>先发死亡包、再给进度和掉落：客户端的密语光点和解密 HUD 的进度音靠这个先后对齐。</p>
+     */
     @Override
-    public void die(@NotNull DamageSource damageSource) {
-        // ⭐ 先走原版死亡流程，再发奖励：Forge 的 LivingDeathEvent 在 super.die() 里触发，
-        //    如果被别的模组取消（图腾类 / 复活类效果），实体其实没死，this.dead 保持 false，
-        //    这时不能发放击杀奖励，否则玩家可以反复"击杀"同一只怪刷掉落和解密进度
-        super.die(damageSource);
-        if (!level().isClientSide && this.dead) {
-            if (damageSource.getEntity() instanceof Player player) {
-                handlePlayerKill(player);
-            }
+    protected void onKilled(DamageSource source) {
+        boolean reward = (isMercyFinishing() || !MercyRules.enabledFor(this)) && !isDemo();
+        Player player = source.getEntity() instanceof Player p ? p : null;
+        boolean gaveProgress = reward && player != null
+                && player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).isPresent();
+        int b = (gaveProgress ? DEATH_GAVE_PROGRESS : 0) | (isMercyFinishing() ? DEATH_AFTER_MERCY : 0);
+        sendThrallDeath(player, b);
+        markDeathFxSent();
+        if (!reward || player == null) {
+            return;
+        }
+        // 先记处决的怒气、再给进度：这一下要是揭开了第一条密语，玄骸是在这之后才诞生的，
+        // 不该把这只奴仆的处决算到刚出生的玄骸头上（出生时的怒气照配置的初值）
+        if (player instanceof ServerPlayer serverPlayer) {
+            LichDirector.onThrallExecuted(serverPlayer, this);
+        }
+        handlePlayerKill(player);
+    }
+
+    /** 没有别的路发过死亡包时的默认那个（什么都没给） */
+    @Override
+    protected void sendDeathFx(DamageSource source) {
+        sendThrallDeath(source.getEntity() instanceof Player p ? p : null, 0);
+    }
+
+    private void sendThrallDeath(@Nullable Player killer, int b) {
+        if (level() instanceof ServerLevel serverLevel) {
+            KuvaFx.near(serverLevel, chest(), DEATH_FX_RANGE, FxId.THRALL_DEATH, this,
+                    killer == null ? 0 : killer.getId() + 1, b);
         }
     }
 
@@ -204,6 +254,10 @@ public class KuvaSlaveEntity extends AbstractKuva {
         if (requiemCard.addPotion(addPotion)) {
             // 同步顶部解密HUD（带过渡动画；阶段推进时触发揭示提示）
             DecryptionHudPacket.sendProgress(player, requiemCard, addPotion, levelBefore);
+            // 和玄骸那份一样紧跟着通知导演：没有玄骸时揭开第一条密语就在这里诞生，有玄骸时进度和揭示加怒气
+            if (player instanceof ServerPlayer serverPlayer) {
+                LichDirector.onDecryptionProgress(serverPlayer, requiemCard, addPotion, levelBefore);
+            }
 
             boolean max = requiemCard.getPointsRequired() == -1;
             // 走动作栏而不是聊天框：刷奴仆时这条每杀一只发一次，
@@ -217,6 +271,9 @@ public class KuvaSlaveEntity extends AbstractKuva {
             // 已满级（线索全部揭示）：进度未变化，但仍补发一个 added=0 的进度包，
             // 使顶部HUD在满级后继续击杀时也能弹出（显示满进度条与提示，不触发闪光）
             DecryptionHudPacket.sendProgress(player, requiemCard, 0, levelBefore);
+            if (player instanceof ServerPlayer serverPlayer) {
+                LichDirector.onDecryptionProgress(serverPlayer, requiemCard, 0, levelBefore);
+            }
             PlayerFeedback.actionBar(player, KuvaPalette.ACCENT, "message.kuvalich.maxLevel");
         }
     }
@@ -298,6 +355,30 @@ public class KuvaSlaveEntity extends AbstractKuva {
 
         ItemEntity entityItem = new ItemEntity(level(), pos.getX(), pos.getY(), pos.getZ(), itemStack);
         level().addFreshEntity(entityItem);
+    }
+
+    // ==================== 怜悯之击：碰撞箱、自然消失、声音 ====================
+
+    @Override
+    protected float downedHeightScale() {
+        return DOWNED_HEIGHT_SCALE;
+    }
+
+    /** 原版自然消失被截下来时：原地慢慢散掉（和倒地超时一样），什么都不给 */
+    @Override
+    protected boolean startNaturalLeave() {
+        beginExpire();
+        return true;
+    }
+
+    @Override
+    protected SoundEvent getAmbientSound() {
+        return KuvaLichSounds.ENTITY_THRALL_AMBIENT.get();
+    }
+
+    @Override
+    protected SoundEvent getHurtSound(@NotNull DamageSource damageSource) {
+        return KuvaLichSounds.ENTITY_THRALL_HURT.get();
     }
 
     @Override

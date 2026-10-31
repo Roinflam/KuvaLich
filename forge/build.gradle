@@ -26,6 +26,19 @@ loom {
         mixinConfig "${rootProject.mod_id}.mixins.json"
         mixinConfig "${rootProject.mod_id}.tacz.mixins.json"
     }
+    runs {
+        // 自动化测试用的专用服：跑完所有 GameTest 自己退出。单独用 run-gametest 目录，
+        // 避开 run/mods 里的客户端测试辅助 jar（它在场时专用服起不来）
+        gameTestServer {
+            server()
+            name "GameTest Server"
+            forgeTemplate "gameTestServer"
+            runDir "run-gametest"
+            property "forge.enableGameTest", "true"
+            property "forge.enabledGameTestNamespaces", "kuvalich"
+            property "forge.gameTestServer", "true"
+        }
+    }
 }
 
 architectury {

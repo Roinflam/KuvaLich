@@ -11,40 +11,162 @@
       "icon": "kuvalich:item_riven_module",
       "summary": "先读这篇：表里的说法和叠加规则",
       "blocks": [
-        { "type": "p", "text": "<hl>模组</hl>是一张张强化卡，武器模组装在武器上，战甲模组装在你自己身上，卡上的每一行加成叫一条<hl>词条</hl>。这一章按用途把所有词条列成表，用到时来查。" },
-        { "type": "kv", "rows": [
-          ["值", "卡面上的百分比，+30% 在公式里记作 <t>0.3</t>"],
-          ["同名词条", "一把武器或一套战甲上所有模组的同名词条<g>直接相加</g>，再统一结算"],
-          ["负面词条", "词条随机的[[start/glossary|裂罅模组]]可能带负值，从总和里扣掉，总和为负就是反效果"],
-          ["逐张相乘", "战甲的四种抗性和{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}是例外，每张卡单独相乘，见各自条目"]
-        ] },
-        { "type": "tip", "style": "info", "title": "模组等级", "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "没升满级的模组按 <t>当前等级 ÷ {cfg:kuva_lich.moduleMaxLevel}</t> 折算生效，卡面上的数字已经折算好，看到多少就是多少。升级见[[modules/module_level]]。" },
-        { "type": "tip", "style": "info", "title": "卡面数值", "if": "!cfg:kuva_lich.enableModuleLevelSystem", "text": "每张模组都按卡面上的数值满额生效。" },
-        { "type": "h", "text": "只认整 10% 的词条" },
-        { "type": "p", "text": "下面这些词条<w>只认整 10%</w>，零头直接舍去，25% 按 20% 算，9% 等于没有，凑数值时凑到整十。" },
-        { "type": "list", "items": [
-          "{lang:item.module.attackSpeed}",
-          "{lang:item.module.attackRange}，每一档只加 5% 触及距离",
-          "{lang:kuvaweapon.warframe_attribute_type.health}",
-          "{lang:kuvaweapon.warframe_attribute_type.armor}",
-          "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}",
-          "{lang:kuvaweapon.warframe_attribute_type.knockbackResistance}",
-          "{lang:kuvaweapon.warframe_attribute_type.reachDistance}"
-        ] },
-        { "type": "h", "text": "进阶细节" },
-        { "type": "list", "items": [
-          "卡面上的数字只算这一张卡，武器面板上显示的才是这把武器所有词条合并后的结果，读法见[[weapons/weapon_panel]]。",
-          { "if": "cfg:modules.attributeValueRanges", "text": "部分词条的单张数值有上下限，超出的按边界算，卡面上的数字不会体现这一点，见[[modules/module_limits]]。" },
-          { "if": "cfg:modules.attributeTotalCaps", "text": "部分词条的同名总和有封顶，超出的部分不算，见[[modules/module_limits]]。" }
-        ] },
-        { "type": "table", "header": ["[[modules/multi_slot|这些位置装了模组的物品]]", "词条计入主手武器的比例"], "widths": [2, 3], "rows": [
-          { "if": ["cfg:kuva_lich.enableOffhandModule", "cfg:kuva_lich.offhandEffectMultiplier"], "cells": ["副手", "{cfg:kuva_lich.offhandEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"] },
-          { "if": ["cfg:kuva_lich.enableHelmetModule", "cfg:kuva_lich.armorEffectMultiplier"], "cells": ["头盔", "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"] },
-          { "if": ["cfg:kuva_lich.enableChestplateModule", "cfg:kuva_lich.armorEffectMultiplier"], "cells": ["胸甲", "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"] },
-          { "if": ["cfg:kuva_lich.enableLeggingsModule", "cfg:kuva_lich.armorEffectMultiplier"], "cells": ["护腿", "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"] },
-          { "if": ["cfg:kuva_lich.enableBootsModule", "cfg:kuva_lich.armorEffectMultiplier"], "cells": ["靴子", "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"] },
-          { "if": ["mod:curios", "cfg:kuva_lich.enableCuriosModule", "cfg:kuva_lich.curiosEffectMultiplier"], "cells": ["饰品栏", "{cfg:kuva_lich.curiosEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"] }
-        ] }
+        {
+          "type": "comm",
+          "who": "ordis",
+          "text": "指挥官眼前的，是轨道飞行器的档案总目。每一栏都出自 Ordis 之手，整齐得叫人舍不得合上。"
+        },
+        {
+          "type": "p",
+          "text": "<hl>模组</hl>是一张张强化卡，武器模组装在武器上，战甲模组装在您自己身上，卡上的每一行加成叫一条<hl>词条</hl>。这一章按用途把所有词条列成表，用到时来查。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "值",
+              "卡面上的百分比，+30% 在公式里记作 <t>0.3</t>"
+            ],
+            [
+              "同名词条",
+              "一把武器或一套战甲上所有模组的同名词条<g>直接相加</g>，再统一结算"
+            ],
+            [
+              "负面词条",
+              "词条随机的[[start/glossary|裂罅模组]]可能带负值，从总和里扣掉，总和为负就是反效果"
+            ],
+            [
+              "逐张相乘",
+              "战甲的四种抗性和{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}是例外，每张卡单独相乘，见各自条目"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "模组等级",
+          "if": "cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "没升满级的模组按 <t>当前等级 ÷ {cfg:kuva_lich.moduleMaxLevel}</t> 折算生效，卡面上的数字已经折算好，看到多少就是多少。升级见[[modules/module_level]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "卡面数值",
+          "if": "!cfg:kuva_lich.enableModuleLevelSystem",
+          "text": "每张模组都按卡面上的数值满额生效。"
+        },
+        {
+          "type": "h",
+          "text": "只认整 10% 的词条"
+        },
+        {
+          "type": "p",
+          "text": "下面这些词条<w>只认整 10%</w>，零头直接舍去，25% 按 20% 算，9% 等于没有，凑数值时凑到整十。Ordis 素来偏爱整数，这几条看着格外顺眼。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "{lang:item.module.attackSpeed}",
+            "{lang:item.module.attackRange}，每一档只加 5% 触及距离",
+            "{lang:kuvaweapon.warframe_attribute_type.health}",
+            "{lang:kuvaweapon.warframe_attribute_type.armor}",
+            "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}",
+            "{lang:kuvaweapon.warframe_attribute_type.knockbackResistance}",
+            "{lang:kuvaweapon.warframe_attribute_type.reachDistance}"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "深层情报"
+        },
+        {
+          "type": "list",
+          "items": [
+            "卡面上的数字只算这一张卡，武器面板上显示的才是这把武器所有词条合并后的结果，读法见[[weapons/weapon_panel]]。",
+            {
+              "if": "cfg:modules.attributeValueRanges",
+              "text": "部分词条的单张数值有上下限，超出的按边界算，卡面上的数字不会体现这一点，见[[modules/module_limits]]。"
+            },
+            {
+              "if": "cfg:modules.attributeTotalCaps",
+              "text": "部分词条的同名总和有封顶，超出的部分不算，见[[modules/module_limits]]。"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "[[modules/multi_slot|这些位置装了模组的物品]]",
+            "词条计入主手武器的比例"
+          ],
+          "widths": [
+            2,
+            3
+          ],
+          "rows": [
+            {
+              "if": [
+                "cfg:kuva_lich.enableOffhandModule",
+                "cfg:kuva_lich.offhandEffectMultiplier"
+              ],
+              "cells": [
+                "副手",
+                "{cfg:kuva_lich.offhandEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableHelmetModule",
+                "cfg:kuva_lich.armorEffectMultiplier"
+              ],
+              "cells": [
+                "头盔",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableChestplateModule",
+                "cfg:kuva_lich.armorEffectMultiplier"
+              ],
+              "cells": [
+                "胸甲",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableLeggingsModule",
+                "cfg:kuva_lich.armorEffectMultiplier"
+              ],
+              "cells": [
+                "护腿",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableBootsModule",
+                "cfg:kuva_lich.armorEffectMultiplier"
+              ],
+              "cells": [
+                "靴子",
+                "{cfg:kuva_lich.armorEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            },
+            {
+              "if": [
+                "mod:curios",
+                "cfg:kuva_lich.enableCuriosModule",
+                "cfg:kuva_lich.curiosEffectMultiplier"
+              ],
+              "cells": [
+                "饰品栏",
+                "{cfg:kuva_lich.curiosEffectMultiplier|pctv} × 它的面板{lang:item.module.damage}"
+              ]
+            }
+          ]
+        }
       ],
       "_src": [
         "module/weapon/WeaponModuleHandler.java:162-183 — 武器各模组同名词条先 clamp 单值、乘等级倍率，再相加，最后 clamp 总和",
@@ -68,40 +190,162 @@
       "icon": "kuvalich:kuva_shildeg",
       "summary": "近战、远程、魔法与克制增伤",
       "blocks": [
-        { "type": "p", "text": "这组词条直接加伤害，有的按近战、远程、魔法等出手方式加成，有的专门针对某一类生物，叫作克制。" },
-        { "type": "p", "text": "前几条都加进同一个<hl>伤害池</hl>，先相加，再一起放大这一击，同一击只算近战或远程其中一边。" },
-        { "type": "table", "header": ["词条", "什么时候生效", "怎么算"], "widths": [3, 5, 4], "rows": [
-          ["{lang:item.module.meleeDamage}", "近战，你亲手挥砍或横扫打中时", "加进伤害池"],
-          ["{lang:item.module.remoteDamage}", "远程，你射出的箭、弹射物、子弹打中时", "加进伤害池"],
-          ["{lang:item.module.arrowDamage}", "远程，且打中的是普通箭或药箭", "和远程伤害一起加进池"],
-          ["{lang:item.module.projectileDamage}", "远程，且打中的是雪球、光灵箭、三叉戟、枪械子弹等其他弹射物", "和远程伤害一起加进池"],
-          ["{lang:item.module.magicDamage}", "这一击算魔法伤害", "在近战 / 远程之外<g>再加</g>进伤害池"],
-          ["{lang:item.module.baseDamageWhenNotCriticalStrike}", "这一击没有暴击", "直接加上，<w>不乘</w>面板基础伤害，近战时按蓄力折算"]
-        ] },
-        { "type": "tip", "style": "warn", "text": "暴击几率超过 100% 后必定暴击，{lang:item.module.baseDamageWhenNotCriticalStrike}就再也用不上了。" },
-        { "type": "h", "text": "克制词条" },
-        { "type": "p", "text": "克制词条只对一类目标加伤害，也叫「歧视」。它单独乘一次 <t>× (1 + 值)</t>，物理和元素部分一起乘。" },
-        { "type": "table", "header": ["词条", "对哪些目标"], "widths": [2, 3], "rows": [
-          ["{lang:item.module.bane_of_undefined}", "奇特生物，原版的默认类型，绝大多数生物都属于这一类"],
-          ["{lang:item.module.bane_of_undead}", "僵尸、骷髅、凋灵等亡灵"],
-          ["{lang:item.module.bane_of_arthropod}", "蜘蛛、蠹虫、蜜蜂等节肢动物"],
-          ["{lang:item.module.bane_of_illager}", "灾厄村民，<dim>水生生物也归这一类</dim>"]
-        ] },
-        { "type": "tip", "style": "wf", "text": "指挥官，起源星系也有「对某一派系伤害 +X%」的 Mod，比如 Bane of Grineer，说中文的天诺们管它叫「歧视卡」。那边针对的是 Grineer、Corpus 这些势力，到了这里，换成了这个世界原有的生物种类。" },
-        { "type": "h", "text": "怎么算" },
-        { "type": "formula", "text": "物理伤害 = 原始伤害 × (1 + 伤害池) × 面板基础伤害 × 蓄力 × 暴击 × 克制" },
-        { "type": "formula", "text": "元素伤害 = 原始伤害 × 元素总值 × 面板基础伤害 × 蓄力 × 克制，不吃暴击" },
-        { "type": "p", "text": "式中的<t>蓄力</t>，近战按这一下挥击的蓄力比例折算，蓄满才是 1，没蓄满就出手很吃亏，远程始终是 1。" },
-        { "type": "tip", "style": "warn", "title": "面板基础伤害低于 100%", "text": "武器面板上的{lang:item.module.damage}低于 100% 时按<w>平方</w>计算，80% 实际只有 64%，50% 只有 25%。" },
-        { "type": "h", "text": "进阶细节" },
-        { "type": "list", "items": [
-          "伤害、暴击、元素、处决等命中时结算的词条，只在<em>主手</em>拿着能装模组的武器时生效。",
-          "远程按<w>命中那一刻</w>主手上的武器计算，箭还在半空时换了武器，就按新武器的词条结算。",
-          "[[start/glossary|裂罅模组]]的负面伤害词条会从伤害池里扣除，扣到底时这一击就是 0 伤害，不会变成负数。"
-        ] },
-        { "type": "p", "text": "完整的结算顺序和魔法伤害的判定见[[combat/damage]]，克制见[[combat/bane]]。" },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "module:chambered"], "text": "{lang:item.module.first_bullet_damage}、{lang:item.module.gun_damage}、{lang:item.module.headshot_damage}只对枪械生效，见[[tacz/tacz_gun_attributes]]。" },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "!module:chambered"], "text": "{lang:item.module.gun_damage}、{lang:item.module.headshot_damage}只对枪械生效，见[[tacz/tacz_gun_attributes]]。" }
+        {
+          "type": "p",
+          "text": "在 Ordis 经手的账目里，这一类最干净。这组词条直接加伤害，有的按近战、远程、魔法等出手方式加成，有的专门针对某一类生物，叫作克制。"
+        },
+        {
+          "type": "p",
+          "text": "前几条都加进同一个<hl>伤害池</hl>，先相加，再一起放大这一击，同一击只算近战或远程其中一边。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "什么时候生效",
+            "怎么算"
+          ],
+          "widths": [
+            3,
+            5,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:item.module.meleeDamage}",
+              "近战，你亲手挥砍或横扫打中时",
+              "加进伤害池"
+            ],
+            [
+              "{lang:item.module.remoteDamage}",
+              "远程，你射出的箭、弹射物、子弹打中时",
+              "加进伤害池"
+            ],
+            [
+              "{lang:item.module.arrowDamage}",
+              "远程，且打中的是普通箭或药箭",
+              "和远程伤害一起加进池"
+            ],
+            [
+              "{lang:item.module.projectileDamage}",
+              "远程，且打中的是雪球、光灵箭、三叉戟、枪械子弹等其他弹射物",
+              "和远程伤害一起加进池"
+            ],
+            [
+              "{lang:item.module.magicDamage}",
+              "这一击算魔法伤害",
+              "在近战 / 远程之外<g>再加</g>进伤害池"
+            ],
+            [
+              "{lang:item.module.baseDamageWhenNotCriticalStrike}",
+              "这一击没有暴击",
+              "直接加上，<w>不乘</w>面板基础伤害，近战时按蓄力折算"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "text": "暴击几率超过 100% 后必定暴击，{lang:item.module.baseDamageWhenNotCriticalStrike}就再也用不上了。"
+        },
+        {
+          "type": "h",
+          "text": "克制词条"
+        },
+        {
+          "type": "p",
+          "text": "克制词条只对一类目标加伤害，也叫「歧视」。它单独乘一次 <t>× (1 + 值)</t>，物理和元素部分一起乘。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "对哪些目标"
+          ],
+          "widths": [
+            2,
+            3
+          ],
+          "rows": [
+            [
+              "{lang:item.module.bane_of_undefined}",
+              "奇特生物，原版的默认类型，绝大多数生物都属于这一类"
+            ],
+            [
+              "{lang:item.module.bane_of_undead}",
+              "僵尸、骷髅、凋灵等亡灵"
+            ],
+            [
+              "{lang:item.module.bane_of_arthropod}",
+              "蜘蛛、蠹虫、蜜蜂等节肢动物"
+            ],
+            [
+              "{lang:item.module.bane_of_illager}",
+              "灾厄村民，<dim>水生生物也归这一类</dim>"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "指挥官，始源星系也有「对某一派系伤害 +X%」的 MOD，比如 Bane of Grineer，说中文的 Tenno 都管它叫「歧视卡」。那边针对的是 Grineer、Corpus 这些势力，到了这里，换成了这个世界原有的生物种类。"
+        },
+        {
+          "type": "h",
+          "text": "怎么算"
+        },
+        {
+          "type": "formula",
+          "text": "物理伤害 = 原始伤害 × (1 + 伤害池) × 面板基础伤害 × 蓄力 × 暴击 × 克制"
+        },
+        {
+          "type": "formula",
+          "text": "元素伤害 = 原始伤害 × 元素总值 × 面板基础伤害 × 蓄力 × 克制，不吃暴击"
+        },
+        {
+          "type": "p",
+          "text": "式中的<t>蓄力</t>，近战按这一下挥击的蓄力比例折算，蓄满才是 1，没蓄满就出手很吃亏，远程始终是 1。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "面板基础伤害低于 100%",
+          "text": "武器面板上的{lang:item.module.damage}低于 100% 时按<w>平方</w>计算，80% 实际只有 64%，50% 只有 25%。"
+        },
+        {
+          "type": "h",
+          "text": "深层情报"
+        },
+        {
+          "type": "list",
+          "items": [
+            "伤害、暴击、元素、处决等命中时结算的词条，只在<em>主手</em>拿着能装模组的武器时生效。",
+            "远程按<w>命中那一刻</w>主手上的武器计算，箭还在半空时换了武器，就按新武器的词条结算。",
+            "[[start/glossary|裂罅模组]]的负面伤害词条会从伤害池里扣除，扣到底时这一击就是 0 伤害，不会变成负数。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "完整的结算顺序和魔法伤害的判定见[[combat/damage]]，克制见[[combat/bane]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "module:chambered"
+          ],
+          "text": "{lang:item.module.first_bullet_damage}、{lang:item.module.gun_damage}、{lang:item.module.headshot_damage}只对枪械生效，见[[tacz/tacz_gun_attributes]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "!module:chambered"
+          ],
+          "text": "{lang:item.module.gun_damage}、{lang:item.module.headshot_damage}只对枪械生效，见[[tacz/tacz_gun_attributes]]。"
+        }
       ],
       "_src": [
         "TACZ 提示拆成 module:chambered 开 / 关两份：first_bullet_damage 只出自 chambered 类型（item/module/WeaponRareModule.java:656-658，裂罅池不含），被禁用时 tacz_gun_attributes 里那一行也藏了",
@@ -127,41 +371,177 @@
       "icon": "kuvalich:gram_prime",
       "summary": "暴击率、暴击倍率与分档",
       "blocks": [
-        { "type": "p", "text": "暴击是按几率打出成倍的伤害，这组词条提高暴击的几率和倍率。" },
-        { "type": "p", "text": "面板上的{lang:item.module.criticalStrikeProbability}和{lang:item.module.criticalStrikeMultiplier}都等于武器自带的基础值 × (1 + 词条)，近战和远程各用各的词条。" },
-        { "type": "table", "header": ["词条", "作用", "怎么算"], "widths": [4, 3, 4], "rows": [
-          ["{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}", "近战更容易暴击", "基础暴击几率 × (1 + 值)"],
-          ["{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier}", "近战暴击更痛", "基础暴击倍率 × (1 + 值)"],
-          ["{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}", "远程更容易暴击", "基础暴击几率 × (1 + 值)"],
-          ["{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier}", "远程暴击更痛", "基础暴击倍率 × (1 + 值)"],
-          ["{lang:item.module.dashMeleeCriticalStrikeProbability}", "冲刺中近战更容易暴击", "冲刺时先和近战暴击几率<g>相加</g>，再乘"],
-          ["{lang:item.module.killStackMeleeCriticalMultiplier}（[[reference/weapon_attr_killstack|击杀叠层]]）", "越杀近战暴击越痛", "<w>单独乘区</w>，× (1 + 值 × 层数)"]
-        ] },
-        { "type": "h", "text": "暴击分档" },
-        { "type": "p", "text": "暴击几率可以超过 100%，超过后必定暴击，多出来的部分就是升到更高一档的几率。" },
-        { "type": "table", "if": "!cfg:kuva_lich.enableDamageNumbers", "header": ["最终暴击几率", "结果"], "widths": [2, 5], "rows": [
-          ["100% 及以下", "按几率暴击，× 暴击倍率"],
-          ["100% ~ 200%", "必定暴击，超出 100% 的部分是升二档的几率，二档 × 暴击倍率 × 2"],
-          ["200% ~ 300%", "至少二档，超出 200% 的部分是升三档的几率，三档 × 暴击倍率 × 3"],
-          ["300% 以上", "必定三档，<w>再高也没有额外收益</w>"]
-        ] },
-        { "type": "table", "if": "cfg:kuva_lich.enableDamageNumbers", "header": ["最终暴击几率", "结果", "数字颜色"], "widths": [2, 5, 2], "rows": [
-          ["100% 及以下", "按几率暴击，× 暴击倍率", "<c:FFFF55>黄</c>"],
-          ["100% ~ 200%", "必定暴击，超出 100% 的部分是升二档的几率，二档 × 暴击倍率 × 2", "<c:FFFF55>黄</c> / <c:FFAA00>橙</c>"],
-          ["200% ~ 300%", "至少二档，超出 200% 的部分是升三档的几率，三档 × 暴击倍率 × 3", "<c:FFAA00>橙</c> / <c:FF5555>红</c>"],
-          ["300% 以上", "必定三档，<w>再高也没有额外收益</w>", "<c:FF5555>红</c>"]
-        ] },
-        { "type": "p", "if": "cfg:kuva_lich.enableDamageNumbers", "text": "各档伤害数字的颜色见上表，没暴击时数字是白色，目标带护盾时是<c:55FFFF>浅蓝</c>。" },
-        { "type": "tip", "style": "wf", "text": "暴击几率能突破 100%、打出更高一档的暴击，这一点两边都一样，天诺们就按伤害数字的颜色，把它们叫作黄暴、橙暴、红暴。叫法直白，倒也好记。" },
-        { "type": "h", "text": "要注意的" },
-        { "type": "list", "items": [
-          "近战没蓄满力就出手，暴击几率按蓄力比例打折，蓄一半就只剩一半，伤害折得更狠，蓄一半只剩满蓄力时的约<w>五分之一</w>，见[[reference/weapon_attr_damage]]。",
-          "暴击只乘<hl>物理部分</hl>，元素伤害不吃暴击倍率，这是有意的设计。",
-          "暴击几率一旦超过 100%，{lang:item.module.baseDamageWhenNotCriticalStrike}就永远不会生效。"
-        ] },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "cfg:kuva_lich.enableDamageNumbers"], "text": "TACZ 枪械的一发子弹分成两段结算时，暴击各掷一次，元素触发和处决也各判定一次，其中暴击掷两次是有意的设计。伤害数字的显示方式见[[combat/damage_numbers]]。" },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "!cfg:kuva_lich.enableDamageNumbers"], "text": "TACZ 枪械的一发子弹分成两段结算时，暴击各掷一次，元素触发和处决也各判定一次，其中暴击掷两次是有意的设计。" },
-        { "type": "p", "text": "例子与更多细节见[[combat/crit]]。" }
+        {
+          "type": "p",
+          "text": "指挥官，暴击是按几率打出成倍的伤害，这组词条提高暴击的几率和倍率。"
+        },
+        {
+          "type": "p",
+          "text": "面板上的{lang:item.module.criticalStrikeProbability}和{lang:item.module.criticalStrikeMultiplier}都等于武器自带的基础值 × (1 + 词条)，近战和远程各用各的词条。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "作用",
+            "怎么算"
+          ],
+          "widths": [
+            4,
+            3,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeProbability}",
+              "近战更容易暴击",
+              "基础暴击几率 × (1 + 值)"
+            ],
+            [
+              "{lang:kuvaweapon.item_attribute_type.meleeCriticalStrikeMultiplier}",
+              "近战暴击更痛",
+              "基础暴击倍率 × (1 + 值)"
+            ],
+            [
+              "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability}",
+              "远程更容易暴击",
+              "基础暴击几率 × (1 + 值)"
+            ],
+            [
+              "{lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeMultiplier}",
+              "远程暴击更痛",
+              "基础暴击倍率 × (1 + 值)"
+            ],
+            [
+              "{lang:item.module.dashMeleeCriticalStrikeProbability}",
+              "冲刺中近战更容易暴击",
+              "冲刺时先和近战暴击几率<g>相加</g>，再乘"
+            ],
+            [
+              "{lang:item.module.killStackMeleeCriticalMultiplier}（[[reference/weapon_attr_killstack|击杀叠层]]）",
+              "越杀近战暴击越痛",
+              "<w>单独乘区</w>，× (1 + 值 × 层数)"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "暴击分档"
+        },
+        {
+          "type": "p",
+          "text": "暴击几率可以超过 100%，超过后必定暴击，多出来的部分就是升到更高一档的几率。"
+        },
+        {
+          "type": "table",
+          "if": "!cfg:kuva_lich.enableDamageNumbers",
+          "header": [
+            "最终暴击几率",
+            "结果"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "100% 及以下",
+              "按几率暴击，× 暴击倍率"
+            ],
+            [
+              "100% ~ 200%",
+              "必定暴击，超出 100% 的部分是升二档的几率，二档 × 暴击倍率 × 2"
+            ],
+            [
+              "200% ~ 300%",
+              "至少二档，超出 200% 的部分是升三档的几率，三档 × 暴击倍率 × 3"
+            ],
+            [
+              "300% 以上",
+              "必定三档，<w>再高也没有额外收益</w>"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "if": "cfg:kuva_lich.enableDamageNumbers",
+          "header": [
+            "最终暴击几率",
+            "结果",
+            "数字颜色"
+          ],
+          "widths": [
+            2,
+            5,
+            2
+          ],
+          "rows": [
+            [
+              "100% 及以下",
+              "按几率暴击，× 暴击倍率",
+              "<c:F8FA2E>黄</c>"
+            ],
+            [
+              "100% ~ 200%",
+              "必定暴击，超出 100% 的部分是升二档的几率，二档 × 暴击倍率 × 2",
+              "<c:F8FA2E>黄</c> / <c:E8833A>橙</c>"
+            ],
+            [
+              "200% ~ 300%",
+              "至少二档，超出 200% 的部分是升三档的几率，三档 × 暴击倍率 × 3",
+              "<c:E8833A>橙</c> / <c:E6131E>红</c>"
+            ],
+            [
+              "300% 以上",
+              "必定三档，<w>再高也没有额外收益</w>",
+              "<c:E6131E>红</c>"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.enableDamageNumbers",
+          "text": "各档伤害数字的颜色见上表，没暴击时数字是白色，目标带护盾时是<c:55FFFF>浅蓝</c>。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "暴击几率能突破 100%、打出更高一档的暴击，这一点两边都一样，那边的 Tenno 便按伤害数字的颜色，把它们叫作黄暴、橙暴、红暴。叫法直白，倒也好记。"
+        },
+        {
+          "type": "h",
+          "text": "要注意的"
+        },
+        {
+          "type": "list",
+          "items": [
+            "近战没蓄满力就出手，暴击几率按蓄力比例打折，蓄一半就只剩一半，伤害折得更狠，蓄一半只剩满蓄力时的约<w>五分之一</w>，见[[reference/weapon_attr_damage]]。",
+            "暴击只乘<hl>物理部分</hl>，元素伤害不吃暴击倍率，这是有意的设计。",
+            "暴击几率一旦超过 100%，{lang:item.module.baseDamageWhenNotCriticalStrike}就永远不会生效。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "cfg:kuva_lich.enableDamageNumbers"
+          ],
+          "text": "TACZ 枪械的一发子弹分成两段结算时，暴击各掷一次，元素触发和处决也各判定一次，其中暴击掷两次是有意的设计。伤害数字的显示方式见[[combat/damage_numbers]]。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "!cfg:kuva_lich.enableDamageNumbers"
+          ],
+          "text": "TACZ 枪械的一发子弹分成两段结算时，暴击各掷一次，元素触发和处决也各判定一次，其中暴击掷两次是有意的设计。"
+        },
+        {
+          "type": "p",
+          "text": "例子与更多细节见[[combat/crit]]。"
+        }
       ],
       "_src": [
         "module/weapon/DamageDisplayTracker.java:201-215 — enableDamageNumbers 关闭时不显示伤害数字 → 分档表的「数字颜色」列、颜色说明、TACZ 提示里指向 combat/damage_numbers 的那句都按 enableDamageNumbers 分开 / 关两份（combat/damage_numbers 整条以它为条件）",
@@ -174,9 +554,9 @@
         "module/weapon/WeaponCombatHandler.java:648-655 — 近战暴伤 × (1 + killStackMeleeCriticalMultiplier × 层数) × (1 + meleeCriticalStrikeMultiplier)",
         "module/weapon/WeaponCombatHandler.java:658-659 — 远程暴击率/暴伤 × (1 + remote*)",
         "module/weapon/WeaponCombatHandler.java:732-763 — 分档：>300 必定 ×3；200~300 按 (p-200)% 升 ×3 否则 ×2；100~200 按 (p-100)% 升 ×2 否则 ×1；≤100 按 p% ×1；只乘 baseDamage",
-        "module/weapon/WeaponCombatHandler.java:734-759 — 颜色码 §c/§6/§e，未暴击 §f，目标有吸收 §b（原版色 FF5555/FFAA00/FFFF55/FFFFFF/55FFFF）",
+        "module/weapon/WeaponCombatHandler.java:734-759 — 颜色码 §c/§6/§e，未暴击 §f，目标有吸收 §b，只用来判档；client/renderer/damage/DamageRenderer.java:389-398 + client/fx/FxPalette.java:94-100 按档取色：红 E6131E、橙 E8833A、黄 F8FA2E、白 FCFBFC，护盾蓝 55FFFF（DamageRenderer.java:97）",
         "module/weapon/WeaponCombatHandler.java:761 — 未暴击伤害只在 ≤100 分支加",
-        "module/weapon/WeaponCombatHandler.java:550-560 — TACZ 一发子弹拆成两次 hurt()（普通段 + 破甲段），非 0 的每段都完整走一遍 processDamage（暴击、元素触发、处决各掷一次）；0 伤害段提前返回；SPEC §3 列为有意设计",
+        "module/weapon/WeaponCombatHandler.java:648-658 — TACZ 一发子弹拆成两次 hurt()（普通段 + 破甲段），非 0 的每段都完整走一遍 processDamage（暴击、元素触发、处决各掷一次）；0 伤害段提前返回；两段分开结算是有意保留的",
         "wf 小知识：原作事实（暴击率 >100% 出高档暴击，按颜色俗称黄暴/橙暴/红暴），不涉及本模组代码"
       ]
     },
@@ -186,38 +566,112 @@
       "icon": "kuvalich:item_uncommon_module",
       "summary": "攻速、范围、射速、多重、触发",
       "blocks": [
-        { "type": "p", "text": "出手速度、攻击范围、多射的箭和波及周围的溅射都归这组词条管，它们还能让元素状态更容易触发，本身不直接加伤害。" },
-        { "type": "p", "text": "<hl>触发</hl>是命中时按几率给目标挂上着火、冰冻之类的元素状态，各种状态见[[combat/element_status]]。" },
-        { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 4, 5], "rows": [
-          ["{lang:item.module.attackSpeed}", "挥得更快", "每满 10%，攻速 +10%"],
-          ["{lang:item.module.attackRange}", "近战够得更远，横扫范围也变大", "每满 10%，触及距离 +5%"],
-          ["{lang:item.module.dashAttackRange}", "冲刺时近战够得更远", "冲刺时和攻击范围相加"],
-          ["{lang:item.module.firing_rate}", "拉弓、蓄力更快", "<w>弓和弩效果翻倍</w>，算法见篇末"],
-          ["{lang:item.module.multishot}", "弓每次多射几支箭", "整数部分必定多射，小数部分是再多一支的几率"],
-          ["{lang:item.module.triggerChance}", "更容易触发元素状态", "基础触发几率 × (1 + 值)"],
-          ["{lang:item.module.dashTriggerChance}", "冲刺时更容易触发", "冲刺时和触发几率相加"],
-          ["{lang:item.module.triggerTime}", "元素状态持续更久", "持续时间和持续伤害的跳数 × (1 + 值)"],
-          ["{lang:item.module.bursting_radius}", "远程命中时溅射，波及周围", "半径 = 1 + 值 × 2 格，每个被波及者受到主目标最终伤害的 50%"]
-        ] },
-        { "type": "list", "items": [
-          "攻击速度和攻击范围只认整 10%，零头舍去，攻击速度为负时同样按档减速。",
-          "多重射击只对弓有效，弩不吃这条，多射的箭不消耗箭矢，也捡不回来。",
-          "触发几率超过 100% 时，整数部分必定触发，余数是再触发一次的几率，单次命中最多触发 <t>5</t> 次，相当于按 500% 封顶。"
-        ] },
-        { "type": "tip", "style": "warn", "title": "溅射不分敌我", "text": "除了你和主目标，半径内的所有生物都会被波及，宠物和村民也不例外。" },
-        { "type": "h", "text": "进阶细节" },
-        { "type": "list", "items": [
-          "射速的算法是每 tick 额外推进整数部分那么多次蓄力，小数部分按几率再推一次，弓和弩翻倍。",
-          "射速为负时会拖慢蓄力，总值 ≤ -100% 时根本拉不开，弓弩又是翻倍计算，所以词条到 -50% 就拉不开了。",
-          "副手吃喝、举盾这类使用不能装模组的东西时，也按主手武器的射速算。",
-          "多重射击为负时，按几率射不出箭。",
-          "冲刺攻击范围每秒检查一次，开始或停止冲刺后约 1 秒才会跟上。",
-          "冲刺触发几率对远程也有效，只要出手时你在冲刺。",
-          "触发时间在面板上显示为相对原时长的百分比。",
-          "溅射只结算伤害，不触发元素，不判定处决，也不叠武器击杀层，战甲击杀层则照算，数字颜色沿用主目标的暴击色。爆炸类伤害不会再次溅射。",
-          "所有玩家合计，每 tick 最多触发 <t>100</t> 次元素。"
-        ] },
-        { "type": "tip", "style": "info", "if": "mod:tacz", "text": "装在枪上时，{lang:item.module.firing_rate}改的是射击间隔，{lang:item.module.multishot}增加每发的弹丸数，{lang:item.module.bursting_radius}对自带爆炸的枪则改为放大爆炸半径，见[[tacz/tacz_multishot]]。" }
+        {
+          "type": "p",
+          "text": "这组词条本身不直接加伤害，Ordis 便把它们单列一类。出手速度、攻击范围、多射的箭和波及周围的溅射都归它们管，它们还能让元素状态更容易触发。"
+        },
+        {
+          "type": "p",
+          "text": "<hl>触发</hl>是命中时按几率给目标挂上着火、冰冻之类的元素状态，各种状态见[[combat/element_status]]。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "效果",
+            "怎么算"
+          ],
+          "widths": [
+            3,
+            4,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:item.module.attackSpeed}",
+              "挥得更快",
+              "每满 10%，攻速 +10%"
+            ],
+            [
+              "{lang:item.module.attackRange}",
+              "近战够得更远，横扫范围也变大",
+              "每满 10%，触及距离 +5%"
+            ],
+            [
+              "{lang:item.module.dashAttackRange}",
+              "冲刺时近战够得更远",
+              "冲刺时和攻击范围相加"
+            ],
+            [
+              "{lang:item.module.firing_rate}",
+              "拉弓、蓄力更快",
+              "<w>弓和弩效果翻倍</w>，算法见篇末"
+            ],
+            [
+              "{lang:item.module.multishot}",
+              "弓每次多射几支箭",
+              "整数部分必定多射，小数部分是再多一支的几率"
+            ],
+            [
+              "{lang:item.module.triggerChance}",
+              "更容易触发元素状态",
+              "基础触发几率 × (1 + 值)"
+            ],
+            [
+              "{lang:item.module.dashTriggerChance}",
+              "冲刺时更容易触发",
+              "冲刺时和触发几率相加"
+            ],
+            [
+              "{lang:item.module.triggerTime}",
+              "元素状态持续更久",
+              "持续时间和持续伤害的跳数 × (1 + 值)"
+            ],
+            [
+              "{lang:item.module.bursting_radius}",
+              "远程命中时溅射，波及周围",
+              "半径 = 1 + 值 × 2 格，每个被波及者受到主目标最终伤害的 50%"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "攻击速度和攻击范围只认整 10%，零头舍去，攻击速度为负时同样按档减速。",
+            "多重射击只对弓有效，弩不吃这条，多射的箭不消耗箭矢，也捡不回来。",
+            "触发几率超过 100% 时，整数部分必定触发，余数是再触发一次的几率，单次命中最多触发 <t>5</t> 次，相当于按 500% 封顶。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "溅射不分敌我",
+          "text": "除了您和主目标，半径内的所有生物都会被波及，宠物和村民也不例外。"
+        },
+        {
+          "type": "h",
+          "text": "深层情报"
+        },
+        {
+          "type": "list",
+          "items": [
+            "射速的算法是每 tick 额外推进整数部分那么多次蓄力，小数部分按几率再推一次，弓和弩翻倍。",
+            "射速为负时会拖慢蓄力，总值 ≤ -100% 时根本拉不开，弓弩又是翻倍计算，所以词条到 -50% 就拉不开了。",
+            "副手吃喝、举盾这类使用不能装模组的东西时，也按主手武器的射速算。",
+            "多重射击为负时，按几率射不出箭。",
+            "冲刺攻击范围每秒检查一次，开始或停止冲刺后约 1 秒才会跟上。",
+            "冲刺触发几率对远程也有效，只要出手时你在冲刺。",
+            "触发时间在面板上显示为相对原时长的百分比。",
+            "溅射只结算伤害，不触发元素，不判定处决，也不叠武器击杀层，战甲击杀层则照算，数字颜色沿用主目标的暴击色。爆炸类伤害不会再次溅射。",
+            "所有玩家合计，每 tick 最多触发 <t>100</t> 次元素。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "mod:tacz",
+          "text": "装在枪上时，{lang:item.module.firing_rate}改的是射击间隔，{lang:item.module.multishot}增加每发的弹丸数，{lang:item.module.bursting_radius}对自带爆炸的枪则改为放大爆炸半径，见[[tacz/tacz_multishot]]。"
+        }
       ],
       "_src": [
         "module/weapon/WeaponCombatHandler.java:1508-1539 — 每 20 tick 检查一次；攻速 level = (int)(值/0.1)-1，ATTACK_SPEED 每档 +10% MULTIPLY_TOTAL（DynamicAttributes.java:65-69），负值走 NEGATIVE_ATTACK_SPEED",
@@ -245,84 +699,293 @@
       "icon": "minecraft:blaze_powder",
       "summary": "十三种元素与复合规则",
       "blocks": [
-        { "type": "p", "text": "元素词条让每一击多带一份元素伤害，也决定触发时给目标挂上着火、冰冻、中毒等哪一种状态。" },
-        { "type": "list", "items": [
-          "<g>加伤害</g>：每一击按所有元素词条的总值追加一份元素伤害，不吃暴击。",
-          "<g>定状态</g>：触发时按各元素数值的占比随机抽一种状态，数值越高越容易抽到。"
-        ] },
-        { "type": "formula", "text": "元素伤害 = 原始伤害 × 元素总值 × 面板基础伤害 × 蓄力 × 克制，不吃暴击" },
-        { "type": "h", "text": "基础元素" },
-        { "type": "table", "header": ["词条", "触发时的效果", "备注"], "widths": [2, 5, 3], "rows": [
-          ["<c:FF7A4A>{lang:kuvaweapon.item_attribute_type.fire}</c>", "点燃并造成持续伤害，同时逐步削减护甲，最多 -50%", "对节肢 ×1.5、亡灵 ×0.5"],
-          ["<c:6FD8F0>{lang:kuvaweapon.item_attribute_type.ice}</c>", "降低移速和攻速，可叠 9 级，从 -50% 逐级加深到 -90%", "只挂状态，不额外造成伤害"],
-          ["<c:6BD96B>{lang:kuvaweapon.item_attribute_type.poison}</c>", "持续伤害，目标有护盾时<w>绕过护盾</w>直接扣血", "对灾厄 ×1.5、节肢 ×0.5"],
-          { "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0", "cells": ["<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>", "电一下目标并麻痹 0.5 秒，几乎等于定身，闪电只是特效", "对亡灵 ×1.5，目标有护盾时 ×0.5"] },
-          { "if": "cfg:kuva_lich.elementElectricityDamageMultiplier==0", "cells": ["<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>", "触发时没有任何效果，不造成伤害，也不会麻痹", "—"] }
-        ] },
-        { "type": "h", "text": "物理元素" },
-        { "type": "table", "header": ["词条", "触发时的效果", "备注"], "widths": [2, 5, 3], "rows": [
-          ["<c:D8DCE2>{lang:kuvaweapon.item_attribute_type.slash}</c>", "流血，无视护甲和护盾、直接扣血的持续伤害", "目标带病毒状态时更痛"],
-          ["<c:9AA2AE>{lang:kuvaweapon.item_attribute_type.puncture}</c>", "目标<g>造成的伤害</g> -40%，每级再 -10%，最多 4 级，即 -70%", "近战和它射出的东西都算，你打它不受影响"],
-          ["<c:F0F0F0>{lang:kuvaweapon.item_attribute_type.impact}</c>", "把目标击退并掀起", "力度随冲击数值增加"]
-        ] },
-        { "type": "h", "text": "复合元素" },
-        { "type": "p", "text": "两种基础元素会合成一种复合元素，合成表如下。" },
-        { "type": "table", "header": ["组合", "结果"], "widths": [3, 2], "rows": [
-          ["<c:FF7A4A>火焰</c> + <c:6BD96B>毒素</c>", "<c:A8E86B>毒气</c>"],
-          ["<c:FF7A4A>火焰</c> + <c:8296FF>电击</c>", "<c:F0E060>辐射</c>"],
-          ["<c:6FD8F0>冰冻</c> + <c:8296FF>电击</c>", "<c:7A8CFF>磁力</c>"],
-          ["<c:6BD96B>毒素</c> + <c:8296FF>电击</c>", "<c:C4DB4A>腐蚀</c>"],
-          ["<c:FF7A4A>火焰</c> + <c:6FD8F0>冰冻</c>", "<c:FF9B4A>爆炸</c>"],
-          ["<c:6FD8F0>冰冻</c> + <c:6BD96B>毒素</c>", "<c:FF7AB0>病毒</c>"]
-        ] },
-        { "type": "table", "header": ["词条", "触发时的效果", "备注"], "widths": [2, 5, 3], "rows": [
-          ["<c:A8E86B>{lang:kuvaweapon.item_attribute_type.gas}</c>", "在命中点留下半径 3 格的毒云，持续伤害云里<w>除你以外</w>的所有生物", "倍率看被命中的目标，节肢 ×1.5，有护盾 ×0.5"],
-          ["<c:F0E060>{lang:kuvaweapon.item_attribute_type.radiation}</c>", "目标陷入混乱，转去攻击附近的同类，打同类时伤害 +100%，可叠 10 级，最高 +550%", "找 24 格内最近的同类，没有就打最近的生物，基础持续 12 秒"],
-          ["<c:7A8CFF>{lang:kuvaweapon.item_attribute_type.magnetic}</c>", "目标有护盾时受到的伤害 +100%，可叠 10 级，最高 +325%", "对没护盾的目标无效"],
-          ["<c:C4DB4A>{lang:kuvaweapon.item_attribute_type.corrosion}</c>", "削减护甲 -26%，可叠 10 级，最高 -80%", "基础持续 8 秒"],
-          ["<c:FF9B4A>{lang:kuvaweapon.item_attribute_type.explosion}</c>", "对目标和周围 3 格内<w>除你以外</w>的所有生物造成爆炸伤害", "不破坏方块，目标有护盾时 ×1.5，否则 ×0.5"],
-          ["<c:FF7AB0>{lang:kuvaweapon.item_attribute_type.virus}</c>", "叠满 10 级时生命上限 -50%，还会让切割的流血更痛", "—"]
-        ] },
-        { "type": "h", "text": "合成顺序" },
-        { "type": "steps", "items": [
-          "同名元素先合并成一份。",
-          "按出现顺序排队，[[start/glossary|赤毒武器]]自带的元素排在最前，其余按模组槽位顺序。",
-          "每个基础元素都会和排在它前面、尚未合成、能配对的第一个基础元素合成。",
-          "切割、穿刺、冲击这三种物理元素从不参与合成。"
-        ] },
-        { "type": "p", "text": "所以同样的三种元素，换个槽位顺序，合出来的结果就可能不同。" },
-        { "type": "tip", "style": "wf", "text": "档案里记着，那边同样由火、冰、电、毒四种基础元素两两相合，化出这六种复合元素，合成的结果也取决于 Mod 在武器上的排列次序。" },
-        { "type": "h", "text": "状态的通用规则" },
-        { "type": "list", "items": [
-          "除特别注明外，状态持续 6 秒，持续伤害每秒一跳，共 6 跳，两者都按{lang:item.module.triggerTime}延长。",
-          "同一目标身上的同种持续伤害不叠加，再次触发时取较高的每跳伤害，并重新计满跳数。",
-          "触发伤害以<t>这一击的物理伤害</t>为基数，暴击与克制都已算在内。"
-        ] },
-        { "type": "h", "text": "元素触发伤害倍率" },
-        { "type": "kv", "rows": [
-          ["<c:FF7A4A>火焰</c>", "{cfg:kuva_lich.elementFireDamageMultiplier|x}"],
-          ["<c:6BD96B>毒素</c>", "{cfg:kuva_lich.elementPoisonDamageMultiplier|x}"],
-          ["<c:D8DCE2>切割</c>", "{cfg:kuva_lich.elementSlashDamageMultiplier|x}"],
-          ["<c:A8E86B>毒气</c>", "{cfg:kuva_lich.elementGasDamageMultiplier|x}"],
-          ["<c:8296FF>电击</c>", "{cfg:kuva_lich.elementElectricityDamageMultiplier|x}"],
-          ["<c:FF9B4A>爆炸</c>", "{cfg:kuva_lich.elementExplosionDamageMultiplier|x}"]
-        ] },
-        { "type": "p", "text": "这些倍率只影响触发后的持续伤害和瞬发伤害，每一击追加的元素伤害不受影响。" },
-        { "type": "h", "text": "进阶细节" },
-        { "type": "list", "items": [
-          "抽状态只看主手武器自己装的模组。",
-          { "if": "cfg:kuva_lich.enableModuleLevelSystem", "text": "抽状态按满级数值算占比，模组没升满也一样。" },
-          "毒气和爆炸的触发伤害只按组成它们的两种基础元素词条计算，毒气 = 火焰 + 毒素，爆炸 = 火焰 + 冰冻，赤毒武器自带的那一种也算在内。",
-          "卡上的毒气或爆炸词条本身<w>不算进</w>触发伤害，只靠它们时触发不会造成伤害，但每一击追加的元素伤害不受影响。",
-          "电击和爆炸打在主目标身上的那一下会被原版的受击无敌吃掉，只有超出这一击原始伤害的部分打得进去，所以数字常常偏小或干脆不显示，爆炸波及的周围生物则不受影响。",
-          "被毒气命中的目标死后约 1 秒，毒云消散。",
-          "克制倍率在元素触发伤害上按<w>平方</w>生效，这是有意的设计。",
-          "[[start/glossary|裂罅模组]]洗不出复合元素词条，想要只能靠词条固定的模组。"
-        ] },
-        { "type": "p", "text": "每种状态的完整数值见[[combat/element_status]]。" }
+        {
+          "type": "p",
+          "text": "元素词条让每一击多带一份元素伤害。这一类 Ordis 归档时最费工夫，也最得意！触发时给目标挂上着火、冰冻、中毒等哪一种状态，也由它们决定。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<g>加伤害</g>：每一击按所有元素词条的总值追加一份元素伤害，不吃暴击。",
+            "<g>定状态</g>：触发时按各元素数值的占比随机抽一种状态，数值越高越容易抽到。"
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "元素伤害 = 原始伤害 × 元素总值 × 面板基础伤害 × 蓄力 × 克制，不吃暴击"
+        },
+        {
+          "type": "h",
+          "text": "基础元素"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "触发时的效果",
+            "备注"
+          ],
+          "widths": [
+            2,
+            5,
+            3
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>{lang:kuvaweapon.item_attribute_type.fire}</c>",
+              "点燃并造成持续伤害，同时逐步削减护甲，最多 -50%",
+              "对节肢 ×1.5、亡灵 ×0.5"
+            ],
+            [
+              "<c:6FD8F0>{lang:kuvaweapon.item_attribute_type.ice}</c>",
+              "降低移速和攻速，可叠 9 级，从 -50% 逐级加深到 -90%",
+              "只挂状态，不额外造成伤害"
+            ],
+            [
+              "<c:6BD96B>{lang:kuvaweapon.item_attribute_type.poison}</c>",
+              "持续伤害，目标有护盾时<w>绕过护盾</w>直接扣血",
+              "对灾厄 ×1.5、节肢 ×0.5"
+            ],
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier!=0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>",
+                "电一下目标并麻痹 0.5 秒，几乎等于定身，身上的电弧只是特效",
+                "对亡灵 ×1.5，目标有护盾时 ×0.5"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.elementElectricityDamageMultiplier==0",
+              "cells": [
+                "<c:8296FF>{lang:kuvaweapon.item_attribute_type.electricity}</c>",
+                "触发时没有任何效果，不造成伤害，也不会麻痹",
+                "—"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "物理元素"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "触发时的效果",
+            "备注"
+          ],
+          "widths": [
+            2,
+            5,
+            3
+          ],
+          "rows": [
+            [
+              "<c:D8DCE2>{lang:kuvaweapon.item_attribute_type.slash}</c>",
+              "流血，无视护甲和护盾、直接扣血的持续伤害",
+              "目标带病毒状态时更痛"
+            ],
+            [
+              "<c:9AA2AE>{lang:kuvaweapon.item_attribute_type.puncture}</c>",
+              "目标<g>造成的伤害</g> -40%，每级再 -10%，最多 4 级，即 -70%",
+              "近战和它射出的东西都算，你打它不受影响"
+            ],
+            [
+              "<c:F0F0F0>{lang:kuvaweapon.item_attribute_type.impact}</c>",
+              "把目标击退并掀起",
+              "力度随冲击数值增加"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "复合元素"
+        },
+        {
+          "type": "p",
+          "text": "两种基础元素会合成一种复合元素，合成表如下。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "组合",
+            "结果"
+          ],
+          "widths": [
+            3,
+            2
+          ],
+          "rows": [
+            [
+              "<c:FF7A4A>火焰</c> + <c:6BD96B>毒素</c>",
+              "<c:A8E86B>毒气</c>"
+            ],
+            [
+              "<c:FF7A4A>火焰</c> + <c:8296FF>电击</c>",
+              "<c:F0E060>辐射</c>"
+            ],
+            [
+              "<c:6FD8F0>冰冻</c> + <c:8296FF>电击</c>",
+              "<c:7A8CFF>磁力</c>"
+            ],
+            [
+              "<c:6BD96B>毒素</c> + <c:8296FF>电击</c>",
+              "<c:C4DB4A>腐蚀</c>"
+            ],
+            [
+              "<c:FF7A4A>火焰</c> + <c:6FD8F0>冰冻</c>",
+              "<c:FF9B4A>爆炸</c>"
+            ],
+            [
+              "<c:6FD8F0>冰冻</c> + <c:6BD96B>毒素</c>",
+              "<c:FF7AB0>病毒</c>"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "触发时的效果",
+            "备注"
+          ],
+          "widths": [
+            2,
+            5,
+            3
+          ],
+          "rows": [
+            [
+              "<c:A8E86B>{lang:kuvaweapon.item_attribute_type.gas}</c>",
+              "在命中点留下半径 3 格的毒云，持续伤害云里<w>除你以外</w>的所有生物",
+              "倍率看被命中的目标，节肢 ×1.5，有护盾 ×0.5"
+            ],
+            [
+              "<c:F0E060>{lang:kuvaweapon.item_attribute_type.radiation}</c>",
+              "目标陷入混乱，转去攻击附近的同类，打同类时伤害 +100%，可叠 10 级，最高 +550%",
+              "找 24 格内最近的同类，没有就打最近的生物，基础持续 12 秒"
+            ],
+            [
+              "<c:7A8CFF>{lang:kuvaweapon.item_attribute_type.magnetic}</c>",
+              "目标有护盾时受到的伤害 +100%，可叠 10 级，最高 +325%",
+              "对没护盾的目标无效"
+            ],
+            [
+              "<c:C4DB4A>{lang:kuvaweapon.item_attribute_type.corrosion}</c>",
+              "削减护甲 -26%，可叠 10 级，最高 -80%",
+              "基础持续 8 秒"
+            ],
+            [
+              "<c:FF9B4A>{lang:kuvaweapon.item_attribute_type.explosion}</c>",
+              "对目标和周围 3 格内<w>除你以外</w>的所有生物造成爆炸伤害",
+              "不破坏方块，目标有护盾时 ×1.5，否则 ×0.5"
+            ],
+            [
+              "<c:FF7AB0>{lang:kuvaweapon.item_attribute_type.virus}</c>",
+              "叠满 10 级时生命上限 -50%，还会让切割的流血更痛",
+              "—"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "合成顺序"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "同名元素先合并成一份。",
+            "按出现顺序排队，[[start/glossary|赤毒武器]]自带的元素排在最前，其余按模组槽位顺序。",
+            "每个基础元素都会和排在它前面、尚未合成、能配对的第一个基础元素合成。",
+            "切割、穿刺、冲击这三种物理元素从不参与合成。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "所以同样的三种元素，换个槽位顺序，合出来的结果就可能不同。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "档案里记着，那边同样由火、冰、电、毒四种基础元素两两相合，化出这六种复合元素，合成的结果也取决于 MOD 在武器上的排列次序。"
+        },
+        {
+          "type": "h",
+          "text": "状态的通用规则"
+        },
+        {
+          "type": "list",
+          "items": [
+            "除特别注明外，状态持续 6 秒，持续伤害每秒一跳，共 6 跳，两者都按{lang:item.module.triggerTime}延长。",
+            "同一目标身上的同种持续伤害不叠加，再次触发时取较高的每跳伤害，并重新计满跳数。",
+            "触发伤害以<t>这一击的物理伤害</t>为基数，暴击与克制都已算在内。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "元素触发伤害倍率"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "<c:FF7A4A>火焰</c>",
+              "{cfg:kuva_lich.elementFireDamageMultiplier|x}"
+            ],
+            [
+              "<c:6BD96B>毒素</c>",
+              "{cfg:kuva_lich.elementPoisonDamageMultiplier|x}"
+            ],
+            [
+              "<c:D8DCE2>切割</c>",
+              "{cfg:kuva_lich.elementSlashDamageMultiplier|x}"
+            ],
+            [
+              "<c:A8E86B>毒气</c>",
+              "{cfg:kuva_lich.elementGasDamageMultiplier|x}"
+            ],
+            [
+              "<c:8296FF>电击</c>",
+              "{cfg:kuva_lich.elementElectricityDamageMultiplier|x}"
+            ],
+            [
+              "<c:FF9B4A>爆炸</c>",
+              "{cfg:kuva_lich.elementExplosionDamageMultiplier|x}"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "这些倍率只影响触发后的持续伤害和瞬发伤害，每一击追加的元素伤害不受影响。"
+        },
+        {
+          "type": "h",
+          "text": "深层情报"
+        },
+        {
+          "type": "list",
+          "items": [
+            "抽状态只看主手武器自己装的模组。",
+            {
+              "if": "cfg:kuva_lich.enableModuleLevelSystem",
+              "text": "抽状态按满级数值算占比，模组没升满也一样。"
+            },
+            "毒气和爆炸的触发伤害只按组成它们的两种基础元素词条计算，毒气 = 火焰 + 毒素，爆炸 = 火焰 + 冰冻，赤毒武器自带的那一种也算在内。",
+            "卡上的毒气或爆炸词条本身<w>不算进</w>触发伤害，只靠它们时触发不会造成伤害，但每一击追加的元素伤害不受影响。",
+            "电击和爆炸打在主目标身上的那一下会被原版的受击无敌吃掉，只有超出这一击原始伤害的部分打得进去，所以数字常常偏小或干脆不显示，爆炸波及的周围生物则不受影响。",
+            "被毒气命中的目标死后约 1 秒，毒云消散。",
+            "克制倍率在元素触发伤害上按<w>平方</w>生效，这是有意的设计。",
+            "[[start/glossary|裂罅模组]]洗不出复合元素词条，想要只能靠词条固定的模组。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "每种状态的完整数值见[[combat/element_status]]。"
+        }
       ],
       "_src": [
-        "module/weapon/WeaponElementSystem.java:648-661 — 电击 lightningDamage 乘 elementElectricityDamageMultiplier，>0 才打伤害并挂麻痹（闪电 setVisualOnly，只是特效）→ 电击行按 !=0 / ==0 分两行，与 combat/element_status 一致",
+        "module/weapon/WeaponElementSystem.java:641-655 — 电击 lightningDamage 乘 elementElectricityDamageMultiplier，>0 才打伤害并挂麻痹；不再召原版闪电，画面是客户端按效果包画的电弧（client/fx/script/ElementStatusFx.java:42,387-440，纯画面、不造成伤害）→ 电击行按 !=0 / ==0 分两行，与 combat/element_status 一致",
         "module/weapon/WeaponCombatHandler.java:698-714,720-723,780 — 元素伤害 = 原始 × (赤毒武器自带元素 + 13 种元素词条之和) × 面板基础伤害 × 克制；不经过暴击",
         "module/weapon/WeaponCombatHandler.java:755-760 — （2026-09-25 代码改动）近战时 elementDamage 也 × 本次挥击蓄力比例，远程为 1（公式里的「蓄力」）",
         "module/weapon/WeaponElementSystem.java:183-253 — 元素池：同名先合并（LinkedHashMap 按首次出现顺序，赤毒武器元素最先），复合元素直接累加，基础元素与已有的第一个可配对基础元素合成；物理不合成；pick() 按权重随机",
@@ -362,31 +1025,76 @@
       "icon": "kuvalich:reaper_prime",
       "summary": "处决、秒杀与抹除增益",
       "blocks": [
-        { "type": "p", "text": "血量够低或运气不好的目标，这组词条能直接处死，也能剥掉它身上的增益效果。" },
-        { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 4, 4], "rows": [
-          ["{lang:item.module.execute_threshold}", "目标血量够低时，直接处死", "命中<w>之前</w>的血量 ≤ 最大生命 × 值"],
-          ["{lang:item.module.execute_chance}", "每次命中有几率直接处死，不看血量", "几率 = 值，处决阈值没触发时才掷，数值很小，卡面保留三位小数"],
-          ["{lang:item.module.purge_buff}", "命中时随机移除目标的增益药水效果，减益保留不动", "整数部分是必定移除的个数，小数部分是再多移除 1 个的几率"]
-        ] },
-        { "type": "formula", "text": "例如 {lang:item.module.purge_buff} 150%，必定移除 1 个，另有 50% 再移除 1 个" },
-        { "type": "list", "items": [
-          "处决在命中后 <t>1</t> tick 执行，阈值处决会冒出灵魂粒子，秒杀则冒出暴击星。",
-          "只在能装模组的武器<em>直接命中</em>时判定，多重射击的每支箭各判定一次，溅射和元素持续伤害不参与判定。",
-          "处决打死的目标算一次击杀，武器[[reference/weapon_attr_killstack|击杀叠层]] +1，战甲击杀叠层不加。"
-        ] },
-        { "type": "h", "text": "进阶细节" },
-        { "type": "list", "items": [
-          "处决对 Boss 没有豁免，Boss [[start/glossary|赤毒玄骸]]也能被处决，其他模组的 Boss 有锁血或复活机制的，就不一定了。",
-          "[[start/glossary|裂罅模组]]不会把这三条洗成负面词条。"
-        ] },
-        { "type": "tip", "style": "info", "if": "mod:tacz", "text": "{lang:item.module.true_bullet}和{lang:item.module.gun_loot_drop}只对枪械子弹生效，见[[tacz/tacz_gun_attributes]]。" }
+        {
+          "type": "p",
+          "text": "血量够低或运气不好的目标，这组词条能直接处死，也能剥掉它身上的增益效果。用在玄骸身上的时候，Ordis 只盼它们<x>剥干净--一层不剩--剥到它跪地求--</x>请删掉刚才那句，指挥官。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "效果",
+            "怎么算"
+          ],
+          "widths": [
+            3,
+            4,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:item.module.execute_threshold}",
+              "目标血量够低时，直接处死",
+              "命中<w>之前</w>的血量 ≤ 最大生命 × 值"
+            ],
+            [
+              "{lang:item.module.execute_chance}",
+              "每次命中有几率直接处死，不看血量",
+              "几率 = 值，处决阈值没触发时才掷，数值很小，卡面保留三位小数"
+            ],
+            [
+              "{lang:item.module.purge_buff}",
+              "命中时随机移除目标的增益药水效果，减益保留不动",
+              "整数部分是必定移除的个数，小数部分是再多移除 1 个的几率"
+            ]
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "例如 {lang:item.module.purge_buff} 150%，必定移除 1 个，另有 50% 再移除 1 个"
+        },
+        {
+          "type": "list",
+          "items": [
+            "处决在命中后 <t>1</t> tick 执行，目标身上会自上而下划过一道细光，伴着一声处决音，阈值处决和秒杀是同一种画面。",
+            "只在能装模组的武器<em>直接命中</em>时判定，多重射击的每支箭各判定一次，溅射和元素持续伤害不参与判定。",
+            "处决打死的目标算一次击杀，武器[[reference/weapon_attr_killstack|击杀叠层]] +1，战甲击杀叠层不加。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "深层情报"
+        },
+        {
+          "type": "list",
+          "items": [
+            "这组词条的处决对 Boss 没有豁免，Boss [[start/glossary|赤毒玄骸]]吃这一下也算挨了一记致命伤，接下来和其他致命伤的结果相同，见[[enemies/kuva_master]]。其他模组的 Boss 有锁血或复活机制的，就不一定了。",
+            "[[start/glossary|裂罅模组]]不会把这三条洗成负面词条。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "mod:tacz",
+          "text": "{lang:item.module.true_bullet}和{lang:item.module.gun_loot_drop}只对枪械子弹生效，见[[tacz/tacz_gun_attributes]]。"
+        }
       ],
       "_src": [
         "module/weapon/WeaponCombatHandler.java:1142-1184 — 处决：阈值 hurter.getHealth() <= maxHealth × 值（在 LivingHurtEvent 内，扣血之前）；未触发才按 值×100% 掷秒杀；SynchronizationTask(1,1) 下一 tick LivingEntityUtil.kill",
-        "entity/KuvaMasterEntity.java:396-407 / base/entity — 无针对处决的豁免（grep execute 无结果）；die() 先 super.die 再按 damageSource.getEntity() 是玩家发解密结算，处决用 playerAttack 伤害源所以照常结算",
+        "base/entity/AbstractKuva.java:889-925 — 无针对处决的豁免；处决走 LivingEntityUtil.kill → die()，die() 开头的 interceptLethal 和 actuallyHurt 里拦致命伤的是同一套（处决的伤害源是玩家攻击，不绕过无敌），所以处决就是一记致命伤：能倒地的照样倒地，否则照常死亡结算",
         "utils/LivingEntityUtil.java:127-132 — kill = damageHealthDirectly(当前血量) + die(source)；其他模组 Boss 若取消 LivingDeathEvent / 自定义血量，结果取决于对方实现（未核实）",
         "module/warframe/WarframeEffectHandler.java:196-216 — 战甲击杀叠层只在 LivingDamageEvent 里检测；kill() 不触发该事件，所以处决击杀不给战甲叠层",
-        "module/weapon/WeaponCombatHandler.java:1193-1209 — 秒杀 ENCHANTED_HIT + CRIT 粒子；阈值 SOUL + DAMAGE_INDICATOR 粒子",
+        "module/weapon/WeaponCombatHandler.java:1303-1304 + client/fx/script/WarframeFx.java:209-236 — 处决发 FxId.EXECUTE 效果包（a 区分阈值 / 秒杀，画面不分）：客户端 60 ms 内自上而下描出一道 2.5 格细光 + 火花，放处决音 COMBAT_EXECUTE",
         "module/weapon/WeaponCombatHandler.java:1167-1170 — 处决击杀补武器叠层",
         "module/weapon/WeaponCombatHandler.java:1108-1131 — 抹除增益：次数 = (int)值 + 小数部分概率 +1；随机移除 BENEFICIAL MobEffect",
         "module/weapon/panel/ValueFormat.java:87-100 + WeaponPanelCatalog.java:117 — execute_chance 用 MICRO_PERCENT 三位小数显示",
@@ -401,32 +1109,113 @@
       "icon": "kuvalich:item_prime_module",
       "summary": "击杀叠层，越杀越强",
       "blocks": [
-        { "type": "p", "text": "卡面带「击杀时获取」字样的词条会叠层，用能装模组的武器每打死一个目标 +1 层，层数越多加成越高。" },
-        { "type": "kv", "rows": [
-          ["生效", "每层数值 × 层数，最多叠到上限"],
-          ["每层计时", "{cfg:kuva_lich.weaponStackDecayTicks|sec}，期间再击杀就重新计时"],
-          ["掉层", "超时没有击杀就掉 <t>1</t> 层，然后重新计时"],
-          ["清空", "下线时清空，<g>死亡不清空</g>"]
-        ] },
-        { "type": "p", "text": "表里的「+值」表示每层把这个值加到同名词条上。" },
-        { "type": "table", "header": ["词条", "每层效果", "上限"], "widths": [3, 6, 2], "rows": [
-          ["{lang:item.module.killStackBaseDamage}", "伤害 +值 × 目标身上<w>负面药水效果</w>的种类数，加进伤害池，近战远程都吃", "{cfg:kuva_lich.maxStacksBaseDamage} 层"],
-          ["{lang:item.module.killStackMultishot}", "{lang:item.module.multishot} +值", "{cfg:kuva_lich.maxStacksMultishot} 层"],
-          ["{lang:item.module.killStackMeleeCriticalMultiplier}", "近战暴击倍率 × (1 + 值 × 层数)，<w>单独乘区</w>", "{cfg:kuva_lich.maxStacksMeleeCritMult} 层"],
-          ["{lang:item.module.killStackTriggerChance}", "{lang:item.module.triggerChance} × (1 + 值 × 层数)，<w>单独乘区</w>", "{cfg:kuva_lich.maxStacksTriggerChance} 层"],
-          ["{lang:item.module.killStackAttackRange}", "{lang:item.module.attackRange} +值", "{cfg:kuva_lich.maxStacksAttackRange} 层"],
-          ["{lang:item.module.killStackAttackSpeed}", "{lang:item.module.attackSpeed} +值", "{cfg:kuva_lich.maxStacksAttackSpeed} 层"],
-          ["{lang:item.module.killStackBurstingRadius}", "溅射半径 +值 × 2 格", "{cfg:kuva_lich.maxStacksBurstingRadius} 层"],
-          ["{lang:item.module.killStackFiringRate}", "{lang:item.module.firing_rate} +值，弓弩同样翻倍", "{cfg:kuva_lich.maxStacksFiringRate} 层"]
-        ] },
-        { "type": "list", "items": [
-          "层数按词条种类记在你身上，不跟着武器走，换武器不会清层，但只有当前武器的面板上有这条词条时才生效。",
-          "{lang:item.module.killStackBaseDamage}只计算缓慢、中毒、虚弱等<w>药水类</w>负面效果，元素触发挂上的状态不属于药水效果，不计入。",
-          "要由武器这一击打死目标才算数，元素持续伤害和溅射打死的不算，处决也算一次击杀。"
-        ] },
-        { "type": "tip", "style": "wf", "text": "镀层系列 Mod 原名 Galvanized，走的正是这条路子，击杀后得到一段时间的加成，最多能叠上好几层。" },
-        { "type": "tip", "style": "info", "title": "进阶细节", "text": "是否打死目标，按扣护甲之前的伤害判断，所以偶尔没打死也会 +1 层。" },
-        { "type": "p", "text": "叠层机制的完整说明见[[combat/kill_stack]]，在面板上查看当前层数的方法见[[weapons/weapon_panel]]。" }
+        {
+          "type": "p",
+          "text": "指挥官，请留意卡面上的「击杀时获取」字样。带这几个字的词条会叠层，用能装模组的武器每打死一个目标 +1 层，层数越多加成越高。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "生效",
+              "每层数值 × 层数，最多叠到上限"
+            ],
+            [
+              "每层计时",
+              "{cfg:kuva_lich.weaponStackDecayTicks|sec}，期间再击杀就重新计时"
+            ],
+            [
+              "掉层",
+              "超时没有击杀就掉 <t>1</t> 层，然后重新计时"
+            ],
+            [
+              "清空",
+              "下线时清空，<g>死亡不清空</g>"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "表里的「+值」表示每层把这个值加到同名词条上。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "每层效果",
+            "上限"
+          ],
+          "widths": [
+            3,
+            6,
+            2
+          ],
+          "rows": [
+            [
+              "{lang:item.module.killStackBaseDamage}",
+              "伤害 +值 × 目标身上<w>负面药水效果</w>的种类数，加进伤害池，近战远程都吃",
+              "{cfg:kuva_lich.maxStacksBaseDamage} 层"
+            ],
+            [
+              "{lang:item.module.killStackMultishot}",
+              "{lang:item.module.multishot} +值",
+              "{cfg:kuva_lich.maxStacksMultishot} 层"
+            ],
+            [
+              "{lang:item.module.killStackMeleeCriticalMultiplier}",
+              "近战暴击倍率 × (1 + 值 × 层数)，<w>单独乘区</w>",
+              "{cfg:kuva_lich.maxStacksMeleeCritMult} 层"
+            ],
+            [
+              "{lang:item.module.killStackTriggerChance}",
+              "{lang:item.module.triggerChance} × (1 + 值 × 层数)，<w>单独乘区</w>",
+              "{cfg:kuva_lich.maxStacksTriggerChance} 层"
+            ],
+            [
+              "{lang:item.module.killStackAttackRange}",
+              "{lang:item.module.attackRange} +值",
+              "{cfg:kuva_lich.maxStacksAttackRange} 层"
+            ],
+            [
+              "{lang:item.module.killStackAttackSpeed}",
+              "{lang:item.module.attackSpeed} +值",
+              "{cfg:kuva_lich.maxStacksAttackSpeed} 层"
+            ],
+            [
+              "{lang:item.module.killStackBurstingRadius}",
+              "溅射半径 +值 × 2 格",
+              "{cfg:kuva_lich.maxStacksBurstingRadius} 层"
+            ],
+            [
+              "{lang:item.module.killStackFiringRate}",
+              "{lang:item.module.firing_rate} +值，弓弩同样翻倍",
+              "{cfg:kuva_lich.maxStacksFiringRate} 层"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "层数按词条种类记在你身上，不跟着武器走，换武器不会清层，但只有当前武器的面板上有这条词条时才生效。",
+            "{lang:item.module.killStackBaseDamage}只计算缓慢、中毒、虚弱等<w>药水类</w>负面效果，元素触发挂上的状态不属于药水效果，不计入。",
+            "要由武器这一击打死目标才算数，元素持续伤害和溅射打死的不算，处决也算一次击杀。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "以战养战，这门算法颇合 Ordis 的胃口。镀层系列 MOD 原名 Galvanized，走的正是这条路子，击杀后得到一段时间的加成，最多能叠上好几层。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "深层情报",
+          "text": "是否打死目标，按扣护甲之前的伤害判断，所以偶尔没打死也会 +1 层。"
+        },
+        {
+          "type": "p",
+          "text": "叠层机制的完整说明见[[combat/kill_stack]]，在面板上查看当前层数的方法见[[weapons/weapon_panel]]。"
+        }
       ],
       "_src": [
         "module/KillStackManager.java:151-156 — 击杀 +1 层（不超过上限）并重置计时",
@@ -453,34 +1242,133 @@
       "icon": "kuvalich:warframe_rare_module",
       "summary": "生命、护甲与护盾",
       "blocks": [
-        { "type": "p", "text": "[[start/glossary|战甲模组]]是装在你自己身上的模组，放在[[warframe/warframe_table]]里，共 <t>8</t> 个槽，这组词条管你的生命、护甲和护盾。" },
-        { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 4, 5], "rows": [
-          ["{lang:kuvaweapon.warframe_attribute_type.health}", "最大生命更高", "每满 10% 加 10%，负值最多 -90%"],
-          ["{lang:kuvaweapon.warframe_attribute_type.armor}", "护甲和盔甲韧性更高", "每满 10%，两者各 +10%，负值同样按档降低"],
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shield}", "获得护盾，先替你挡伤害", "护盾上限 = 最大生命 × 值 × {cfg:kuva_lich.shieldCapMultiplier}"] },
-          { "if": "!cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shield}", "<b>不给黄心</b>，装着它时金苹果等别处给的黄心也会被清掉", "只有挨打或打中别人后的等待期间能保住"] },
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}", "护盾回得更快", "每秒回复护盾上限 × 1% × (1 + 值)，多张相加"] },
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}", "护盾隔多久才开始回", "<w>逐张相乘</w>，约 10 秒 × 第一张的 (1 + 值) × 第二张的 (1 + 值)，依此类推，负值缩短"] }
-        ] },
-        { "type": "h", "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "护盾怎么回" },
-        { "type": "p", "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "<hl>护盾</hl>就是原版的黄心，也就是伤害吸收，挨打时先扣它，回复分下面三步。" },
-        { "type": "steps", "if": "cfg:kuva_lich.shieldCapMultiplier", "items": [
-          "你<w>挨打或打中别人</w>时，护盾回复进入等待，时长约为 10 秒 × 延迟倍率，向下取整到整秒。",
-          "如果这一下之后护盾已经归零，等待时间 <b>×3</b>。",
-          "等待结束后每秒回复一次，直到回满上限。"
-        ] },
-        { "type": "h", "text": "进阶细节" },
-        { "type": "list", "items": [
-          "战甲词条大约每 0.25 秒刷新一次。",
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "text": "金苹果等给的黄心，超出护盾上限的部分会被削掉。" }
-        ] },
-        { "type": "p", "text": "<dim>下面三条「固定」词条只会来自整合包另外添加的自定义模组，内置模组和[[start/glossary|裂罅模组]]上都不会出现。</dim>" },
-        { "type": "table", "header": ["固定数值词条", "效果"], "widths": [3, 5], "rows": [
-          ["{lang:kuvaweapon.warframe_attribute_type.fixedHealth}", "最大生命<w>固定</w>为该数值，多张相加，百分比生命不再生效"],
-          ["{lang:kuvaweapon.warframe_attribute_type.fixedArmor}", "护甲固定为该数值，多张相加，身上盔甲的护甲和百分比护甲都不再起作用"],
-          ["{lang:kuvaweapon.warframe_attribute_type.fixedShield}", "护盾上限固定为该数值，多张相加，百分比护盾不再生效"]
-        ] },
-        { "type": "p", "text": "护盾的细节见[[warframe/shield]]，生命和护甲为什么只认整 10% 见[[reference/attr_rules]]。" }
+        {
+          "type": "p",
+          "text": "[[start/glossary|战甲模组]]装在指挥官自己身上。它们放在[[warframe/warframe_table]]里，共 <t>8</t> 个槽，这组词条管的是生命、护甲和护盾。这几栏关乎性命，Ordis 核对得格外仔细。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "效果",
+            "怎么算"
+          ],
+          "widths": [
+            3,
+            4,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.health}",
+              "最大生命更高",
+              "每满 10% 加 10%，负值最多 -90%"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.armor}",
+              "护甲和盔甲韧性更高",
+              "每满 10%，两者各 +10%，负值同样按档降低"
+            ],
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shield}",
+                "获得护盾，先替你挡伤害",
+                "护盾上限 = 最大生命 × 值 × {cfg:kuva_lich.shieldCapMultiplier}"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shield}",
+                "<b>不给黄心</b>，装着它时金苹果等别处给的黄心也会被清掉",
+                "只有挨打或打中别人后的等待期间能保住"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}",
+                "护盾回得更快",
+                "每秒回复护盾上限 × 1% × (1 + 值)，多张相加"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}",
+                "护盾隔多久才开始回",
+                "<w>逐张相乘</w>，约 10 秒 × 第一张的 (1 + 值) × 第二张的 (1 + 值)，依此类推，负值缩短"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "护盾怎么回"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "text": "<hl>护盾</hl>就是原版的黄心，也就是伤害吸收，挨打时先扣它，回复分下面三步。"
+        },
+        {
+          "type": "steps",
+          "if": "cfg:kuva_lich.shieldCapMultiplier",
+          "items": [
+            "你<w>挨打或打中别人</w>时，护盾回复进入等待，时长约为 10 秒 × 延迟倍率，向下取整到整秒。",
+            "如果这一下之后护盾已经归零，等待时间 <b>×3</b>。",
+            "等待结束后每秒回复一次，直到回满上限。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "深层情报"
+        },
+        {
+          "type": "list",
+          "items": [
+            "战甲词条大约每 0.25 秒刷新一次。",
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "text": "金苹果等给的黄心，超出护盾上限的部分会被削掉。"
+            }
+          ]
+        },
+        {
+          "type": "p",
+          "text": "<dim>下面三条「固定」词条只会来自整合包另外添加的自定义模组，内置模组和[[start/glossary|裂罅模组]]上都不会出现。</dim>"
+        },
+        {
+          "type": "table",
+          "header": [
+            "固定数值词条",
+            "效果"
+          ],
+          "widths": [
+            3,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fixedHealth}",
+              "最大生命<w>固定</w>为该数值，多张相加，百分比生命不再生效"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fixedArmor}",
+              "护甲固定为该数值，多张相加，身上盔甲的护甲和百分比护甲都不再起作用"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fixedShield}",
+              "护盾上限固定为该数值，多张相加，百分比护盾不再生效"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "护盾的细节见[[warframe/shield]]，生命和护甲为什么只认整 10% 见[[reference/attr_rules]]。"
+        }
       ],
       "_src": [
         "module/warframe/WarframeModuleHandler.java:186-199 — 战甲模组来自 WARFRAME_MODULES capability 的 8 个槽",
@@ -506,24 +1394,82 @@
       "icon": "kuvalich:warframe_uncommon_module",
       "summary": "四种抗性、击退与回血",
       "blocks": [
-        { "type": "p", "text": "想少受某一类伤害、少被击退，或者多回点血，看这组[[start/glossary|战甲]]词条。" },
-        { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 5, 4], "rows": [
-          ["{lang:kuvaweapon.warframe_attribute_type.fireProtection}", "少受着火、岩浆、火球等火焰类伤害", "<w>逐张相乘</w>，受伤 × (1 − 值)"],
-          ["{lang:kuvaweapon.warframe_attribute_type.electricProtection}", "少受雷击和电击元素这类闪电伤害", "同上"],
-          ["{lang:kuvaweapon.warframe_attribute_type.homologousProtection}", "PvP 时少受其他玩家的伤害", "同上"],
-          ["{lang:kuvaweapon.warframe_attribute_type.fallProtection}", "少受摔落伤害", "同上"],
-          ["{lang:kuvaweapon.warframe_attribute_type.knockbackResistance}", "更不容易被击退", "每满 10%，击退抗性 +0.1，多张相加"],
-          ["{lang:kuvaweapon.warframe_attribute_type.responseRate}", "自然回复、生命恢复、治疗药水等回血更多", "回血量 × (1 + 值)，多张相加"]
-        ] },
-        { "type": "formula", "text": "例如两张 60% 火焰抗性，受伤 × 0.4 × 0.4 = 0.16，减伤 84%，不是 120%" },
-        { "type": "list", "items": [
-          "相乘意味着越堆越难涨，想完全免疫，得有一张单卡达到 100%，或者叠层版叠到 值 × 层数 = 100%。",
-          "击退抗性叠到 100% 就完全不被击退。",
-          "负值抗性会让你受到更多伤害，回血倍率总和 ≤ -100% 时则完全无法回血。"
-        ] },
-        { "type": "tip", "style": "info", "text": "抗性只减免<w>穿过护盾之后</w>真正扣血的那部分，护盾吸收掉的部分不吃抗性。" },
-        { "type": "tip", "style": "info", "title": "进阶细节", "text": "其他模组的「电系」伤害不一定算闪电类。" },
-        { "type": "p", "text": "抗性的击杀叠层版本见[[reference/warframe_attr_killstack]]。" }
+        {
+          "type": "p",
+          "text": "想少受某一类伤害、少被击退，或者多回点血，看这组[[start/glossary|战甲]]词条。挨打这种事，Ordis 只盼指挥官<x>少--再少些--少到没有--</x>啰嗦了，见谅。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "效果",
+            "怎么算"
+          ],
+          "widths": [
+            3,
+            5,
+            4
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fireProtection}",
+              "少受着火、岩浆、火球等火焰类伤害",
+              "<w>逐张相乘</w>，受伤 × (1 − 值)"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.electricProtection}",
+              "少受雷击和电击元素这类闪电伤害",
+              "同上"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.homologousProtection}",
+              "PvP 时少受其他玩家的伤害",
+              "同上"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fallProtection}",
+              "少受摔落伤害",
+              "同上"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.knockbackResistance}",
+              "更不容易被击退",
+              "每满 10%，击退抗性 +0.1，多张相加"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.responseRate}",
+              "自然回复、生命恢复、治疗药水等回血更多",
+              "回血量 × (1 + 值)，多张相加"
+            ]
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "例如两张 60% 火焰抗性，受伤 × 0.4 × 0.4 = 0.16，减伤 84%，不是 120%"
+        },
+        {
+          "type": "list",
+          "items": [
+            "相乘意味着越堆越难涨，想完全免疫，得有一张单卡达到 100%，或者叠层版叠到 值 × 层数 = 100%。",
+            "击退抗性叠到 100% 就完全不被击退。",
+            "负值抗性会让你受到更多伤害，回血倍率总和 ≤ -100% 时则完全无法回血。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "抗性只减免<w>穿过护盾之后</w>真正扣血的那部分，护盾吸收掉的部分不吃抗性。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "深层情报",
+          "text": "其他模组的「电系」伤害不一定算闪电类。"
+        },
+        {
+          "type": "p",
+          "text": "抗性的击杀叠层版本见[[reference/warframe_attr_killstack]]。"
+        }
       ],
       "_src": [
         "module/warframe/WarframeEffectHandler.java:153-193 — LivingDamageEvent（LOWEST）里：IS_FIRE × fireProtection，IS_LIGHTNING × electricProtection，来源实体是 Player × homologousProtection，IS_FALL × fallProtection（电系只认带 IS_LIGHTNING 标签的伤害类型）",
@@ -542,34 +1488,123 @@
       "icon": "kuvalich:warframe_common_module",
       "summary": "移速、跳跃、挖掘与掉落",
       "blocks": [
-        { "type": "p", "text": "移动、跳跃、触及距离和挖掘这些日常能力，归这组[[start/glossary|战甲]]词条管。" },
-        { "type": "table", "header": ["词条", "效果", "怎么算"], "widths": [3, 4, 5], "rows": [
-          ["{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}", "移动更快，名字虽叫冲刺，<w>走路也加</w>", "每满 10%，移速 +10%"],
-          ["{lang:kuvaweapon.warframe_attribute_type.jumpBoost}", "跳得更高", "高度约为原来的 (1 + 值) 倍"],
-          ["{lang:kuvaweapon.warframe_attribute_type.reachDistance}", "挖掘、放置和交互时够得更远", "每满 10% 加 10%"],
-          ["{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}", "挖得更快", "挖掘速度 × (1 + 值)"],
-          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}", "打怪掉得更多", "掉落 × (1 + 值 × {cfg:kuva_lich.itemDropEffectMultiplier|pctv})"] },
-          { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier"], "cells": ["{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}", "挖矿掉得更多", "时运结算后再 × (1 + 值 × {cfg:kuva_lich.oreDropEffectMultiplier|pctv})"] }
-        ] },
-        { "type": "list", "items": [
-          "{lang:kuvaweapon.warframe_attribute_type.reachDistance}不影响打怪的距离，打怪够多远要看武器的{lang:item.module.attackRange}。",
-          { "if": ["cfg:kuva_lich.enableOreDropMultiplier", "cfg:kuva_lich.oreDropEffectMultiplier"], "text": "{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}只对亲手挖的矿生效，精准采集不吃这条，详见[[world/ore_drop_multiplier]]。" }
-        ] },
-        { "type": "h", "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}" },
-        { "type": "list", "if": "cfg:kuva_lich.itemDropEffectMultiplier", "items": [
-          "只算伤害记在你名下的击杀，近战、箭、枪都行，宠物打死的不算。",
-          "只对动物和「怪物」类生物生效。",
-          "装备、武器、工具这类有耐久的东西不参与放大。",
-          "数量的小数部分按几率进位，总倍率 ≤ 0 时，非装备掉落会全部消失。"
-        ] },
-        { "type": "tip", "style": "info", "if": ["mod:tacz", "cfg:kuva_lich.itemDropEffectMultiplier"], "text": "用枪击杀时，枪上的{lang:item.module.gun_loot_drop}会加进这条一起算，见[[tacz/tacz_gun_attributes]]。" },
-        { "type": "h", "text": "进阶细节" },
-        { "type": "list", "items": [
-          "跳跃的算法是起跳速度 × √(1 + 值)。",
-          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "史莱姆、岩浆怪、恶魂、幻翼、潜影贝、末影龙，鱼、鱿鱼、海豚这类水生动物，以及村民、铁傀儡、雪傀儡，在原版里都不算动物或怪物，所以不吃掉落倍率。自定义 NPC 模组的 NPC 是例外，同样吃这条。" },
-          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "掉落倍率不封顶，超过一组时会分成几堆掉落。" },
-          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "text": "整合包里其他模组的掉落加成先算，这条最后再乘上去，两者会连乘。" }
-        ] }
+        {
+          "type": "p",
+          "text": "零碎的小账，这里同样一笔不落。移动、跳跃、触及距离和挖掘这些日常能力，归这组[[start/glossary|战甲]]词条管。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条",
+            "效果",
+            "怎么算"
+          ],
+          "widths": [
+            3,
+            4,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}",
+              "移动更快，名字虽叫冲刺，<w>走路也加</w>",
+              "每满 10%，移速 +10%"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.jumpBoost}",
+              "跳得更高",
+              "高度约为原来的 (1 + 值) 倍"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.reachDistance}",
+              "挖掘、放置和交互时够得更远",
+              "每满 10% 加 10%"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}",
+              "挖得更快",
+              "挖掘速度 × (1 + 值)"
+            ],
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}",
+                "打怪掉得更多",
+                "掉落 × (1 + 值 × {cfg:kuva_lich.itemDropEffectMultiplier|pctv})"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.enableOreDropMultiplier",
+                "cfg:kuva_lich.oreDropEffectMultiplier"
+              ],
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}",
+                "挖矿掉得更多",
+                "时运结算后再 × (1 + 值 × {cfg:kuva_lich.oreDropEffectMultiplier|pctv})"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "{lang:kuvaweapon.warframe_attribute_type.reachDistance}不影响打怪的距离，打怪够多远要看武器的{lang:item.module.attackRange}。",
+            {
+              "if": [
+                "cfg:kuva_lich.enableOreDropMultiplier",
+                "cfg:kuva_lich.oreDropEffectMultiplier"
+              ],
+              "text": "{lang:kuvaweapon.warframe_attribute_type.oreDropMultiplier}只对亲手挖的矿生效，精准采集不吃这条，详见[[world/ore_drop_multiplier]]。"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+          "text": "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+          "items": [
+            "只算伤害记在你名下的击杀，近战、箭、枪都行，宠物打死的不算。",
+            "只对动物和「怪物」类生物生效。",
+            "装备、武器、工具这类有耐久的东西不参与放大。",
+            "数量的小数部分按几率进位，总倍率 ≤ 0 时，非装备掉落会全部消失。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "mod:tacz",
+            "cfg:kuva_lich.itemDropEffectMultiplier"
+          ],
+          "text": "用枪击杀时，枪上的{lang:item.module.gun_loot_drop}会加进这条一起算，见[[tacz/tacz_gun_attributes]]。"
+        },
+        {
+          "type": "h",
+          "text": "深层情报"
+        },
+        {
+          "type": "list",
+          "items": [
+            "跳跃的算法是起跳速度 × √(1 + 值)。",
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "text": "史莱姆、岩浆怪、恶魂、幻翼、潜影贝、末影龙，鱼、鱿鱼、海豚这类水生动物，以及村民、铁傀儡、雪傀儡，在原版里都不算动物或怪物，所以不吃掉落倍率。自定义 NPC 模组的 NPC 是例外，同样吃这条。"
+            },
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "text": "掉落倍率不封顶，超过一组时会分成几堆掉落。"
+            },
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "text": "整合包里其他模组的掉落加成先算，这条最后再乘上去，两者会连乘。"
+            }
+          ]
+        }
       ],
       "_src": [
         "module/warframe/WarframeEffectHandler.java:722-729 + DynamicAttributes.java:59-63 — sprintSpeed 每档 +10% MOVEMENT_SPEED（常驻，不判断是否冲刺）",
@@ -592,34 +1627,139 @@
       "icon": "kuvalich:warframe_prime_module",
       "summary": "击杀叠层，战甲越打越硬",
       "blocks": [
-        { "type": "p", "text": "卡面带「击杀时获取」字样的[[start/glossary|战甲]]词条会叠层，每打死一个目标 +1 层，让你越打越硬。" },
-        { "type": "kv", "rows": [
-          ["怎样算击杀", "伤害记在你名下，且这一下打死了目标，近战、箭、枪都算"],
-          ["每层计时", "{cfg:kuva_lich.warframeStackDecayTicks|sec}，期间再击杀就重新计时"],
-          ["掉层", "超时没有击杀就掉 <t>1</t> 层，然后重新计时"],
-          ["清空", "下线时清空，<g>死亡不清空</g>"]
-        ] },
-        { "type": "p", "text": "表里的「+值」表示每层把这个值加到普通版的同名词条上。" },
-        { "type": "table", "header": ["词条（叠层版）", "每层效果", "上限"], "widths": [3, 6, 2], "rows": [
-          ["{lang:kuvaweapon.warframe_attribute_type.health}", "+值，仍按 10% 一档", "{cfg:kuva_lich.maxStacksHealth} 层"],
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shield}", "+值", "{cfg:kuva_lich.maxStacksShield} 层"] },
-          ["{lang:kuvaweapon.warframe_attribute_type.armor}", "+值，仍按 10% 一档", "{cfg:kuva_lich.maxStacksArmor} 层"],
-          ["{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}", "+值，仍按 10% 一档", "{cfg:kuva_lich.maxStacksSprintSpeed} 层"],
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}", "+值", "{cfg:kuva_lich.maxStacksShieldRecoveryRate} 层"] },
-          { "if": "cfg:kuva_lich.shieldCapMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}", "护盾回复前的等待 × (1 + 值 × 层数)，单独一个乘区", "{cfg:kuva_lich.maxStacksShieldRecoveryDelay} 层"] },
-          ["{lang:kuvaweapon.warframe_attribute_type.fireProtection}", "火焰受伤 × (1 − 值 × 层数)，单独一个乘区", "{cfg:kuva_lich.maxStacksFireProtection} 层"],
-          ["{lang:kuvaweapon.warframe_attribute_type.electricProtection}", "闪电受伤 × (1 − 值 × 层数)，单独一个乘区", "{cfg:kuva_lich.maxStacksElectricProtection} 层"],
-          ["{lang:kuvaweapon.warframe_attribute_type.homologousProtection}", "玩家伤害 × (1 − 值 × 层数)，单独一个乘区", "{cfg:kuva_lich.maxStacksHomologousProtection} 层"],
-          ["{lang:kuvaweapon.warframe_attribute_type.responseRate}", "+值", "{cfg:kuva_lich.maxStacksResponseRate} 层"],
-          { "if": "cfg:kuva_lich.itemDropEffectMultiplier", "cells": ["{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}", "+值", "{cfg:kuva_lich.maxStacksItemDropMultiplier} 层"] },
-          ["{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}", "+值", "{cfg:kuva_lich.maxStacksDiggingSpeed} 层"]
-        ] },
-        { "type": "list", "items": [
-          "宠物、元素持续伤害以及处决或秒杀打死的不算击杀，武器溅射打死的则算。",
-          "层数记在你身上，卸下对应模组后不再生效，重新装上时剩下的层数照旧计算。",
-          "叠层版和普通版同名，卡面带「击杀时获取」字样的才是叠层版。"
-        ] },
-        { "type": "p", "text": "叠层机制见[[combat/kill_stack]]，普通版词条见[[reference/warframe_attr_survival]]和[[reference/warframe_attr_resist]]。" }
+        {
+          "type": "p",
+          "text": "卡面带「击杀时获取」字样的[[start/glossary|战甲]]词条会叠层，每打死一个目标 +1 层，越打越硬。叠满了，硬得堪比飞船外壳。不，Ordis 收回这个比喻，太抬举外壳了。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "怎样算击杀",
+              "伤害记在你名下，且这一下打死了目标，近战、箭、枪都算"
+            ],
+            [
+              "每层计时",
+              "{cfg:kuva_lich.warframeStackDecayTicks|sec}，期间再击杀就重新计时"
+            ],
+            [
+              "掉层",
+              "超时没有击杀就掉 <t>1</t> 层，然后重新计时"
+            ],
+            [
+              "清空",
+              "下线时清空，<g>死亡不清空</g>"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "表里的「+值」表示每层把这个值加到普通版的同名词条上。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "词条（叠层版）",
+            "每层效果",
+            "上限"
+          ],
+          "widths": [
+            3,
+            6,
+            2
+          ],
+          "rows": [
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.health}",
+              "+值，仍按 10% 一档",
+              "{cfg:kuva_lich.maxStacksHealth} 层"
+            ],
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shield}",
+                "+值",
+                "{cfg:kuva_lich.maxStacksShield} 层"
+              ]
+            },
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.armor}",
+              "+值，仍按 10% 一档",
+              "{cfg:kuva_lich.maxStacksArmor} 层"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.sprintSpeed}",
+              "+值，仍按 10% 一档",
+              "{cfg:kuva_lich.maxStacksSprintSpeed} 层"
+            ],
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryRate}",
+                "+值",
+                "{cfg:kuva_lich.maxStacksShieldRecoveryRate} 层"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.shieldCapMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.shieldRecoveryDelay}",
+                "护盾回复前的等待 × (1 + 值 × 层数)，单独一个乘区",
+                "{cfg:kuva_lich.maxStacksShieldRecoveryDelay} 层"
+              ]
+            },
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.fireProtection}",
+              "火焰受伤 × (1 − 值 × 层数)，单独一个乘区",
+              "{cfg:kuva_lich.maxStacksFireProtection} 层"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.electricProtection}",
+              "闪电受伤 × (1 − 值 × 层数)，单独一个乘区",
+              "{cfg:kuva_lich.maxStacksElectricProtection} 层"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.homologousProtection}",
+              "玩家伤害 × (1 − 值 × 层数)，单独一个乘区",
+              "{cfg:kuva_lich.maxStacksHomologousProtection} 层"
+            ],
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.responseRate}",
+              "+值",
+              "{cfg:kuva_lich.maxStacksResponseRate} 层"
+            ],
+            {
+              "if": "cfg:kuva_lich.itemDropEffectMultiplier",
+              "cells": [
+                "{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}",
+                "+值",
+                "{cfg:kuva_lich.maxStacksItemDropMultiplier} 层"
+              ]
+            },
+            [
+              "{lang:kuvaweapon.warframe_attribute_type.diggingSpeed}",
+              "+值",
+              "{cfg:kuva_lich.maxStacksDiggingSpeed} 层"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "宠物、元素持续伤害以及处决或秒杀打死的不算击杀，武器溅射打死的则算。",
+            "层数记在你身上，卸下对应模组后不再生效，重新装上时剩下的层数照旧计算。",
+            "叠层版和普通版同名，卡面带「击杀时获取」字样的才是叠层版。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "叠层机制见[[combat/kill_stack]]，普通版词条见[[reference/warframe_attr_survival]]和[[reference/warframe_attr_resist]]。"
+        },
+        {
+          "type": "comm",
+          "who": "ordis",
+          "text": "档案到这里就合上了，指挥官。往后的路有 Lotus 看着，账目有 Ordis 记着。"
+        }
       ],
       "_src": [
         "module/warframe/WarframeEffectHandler.java:195-216 — LivingDamageEvent：伤害来源实体是 Player 且 目标血量 - 伤害 <= 0 → addWarframeKillStacks 并同步",

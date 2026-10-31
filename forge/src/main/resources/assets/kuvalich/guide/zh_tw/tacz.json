@@ -13,6 +13,11 @@
       "summary": "開光後的 TACZ 槍能裝 8 張武器模組",
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "隔著再遠，它也只是你的獵物。"
+        },
+        {
           "type": "p",
           "text": "槍要先開光，再裝模組，這個順序反不了。裝了 TACZ「永恆槍械工坊：零」，它的槍也能裝上<hl>武器模組</hl>，拿到各種加成。"
         },
@@ -41,7 +46,7 @@
             ],
             [
               "解密",
-              "主線玩法，先猜出三張安魂卡的正確順序，再擊敗 Boss 赤毒玄骸，見[[requiem/decryption]]。"
+              "主線玩法，先猜出三張安魂卡的正確順序，再按這個順序討伐你專屬的 Boss 赤毒玄骸，見[[requiem/decryption]]。"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -91,7 +96,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "在起源星系，主武器和副武器也各有 8 個常規 Mod 槽。天諾們習慣管 Mod 叫「卡」，掂量著挑出 8 張裝上去，這件事就叫「配卡」。"
+          "text": "在始源星系，主武器和副武器也各有 8 個常規 MOD 槽。那邊的 Tenno 習慣管 MOD 叫「卡」，掂量著挑出 8 張裝上去，這件事就叫「配卡」。Ordis 對此向來<x>樂--樂此--樂此不--</x>樂此不疲，這個詞總算說完整了。"
         },
         {
           "type": "h",
@@ -169,11 +174,11 @@
       "blocks": [
         {
           "type": "p",
-          "text": "強化一次就要用掉一個玄骸之遺，造工作台也要它，天諾，先分好用途。<hl>女皇之力</hl>能永久提高一把 TACZ 槍的傷害，而且<em>不用開光</em>，任何 TACZ 槍都能強化。"
+          "text": "女皇的力量，如今歸你呼叫。強化一次就要用掉一個玄骸之遺，造工作台也要它，Tenno，先分好用途。<hl>女皇之力</hl>能永久提高一把 TACZ 槍的傷害，而且<em>不用開光</em>，任何 TACZ 槍都能強化。"
         },
         {
           "type": "p",
-          "text": "強化的材料是{item:kuvalich:lich_reliquary}，一種稀有材料，要[[requiem/decryption|解密]]成功並擊敗 Boss 赤毒玄骸才會掉落。"
+          "text": "強化的材料是{item:kuvalich:lich_reliquary}，一種稀有材料，只在討伐你的 Boss 赤毒玄骸、[[requiem/decryption|解密]]成功時掉落。"
         },
         {
           "type": "items",
@@ -245,7 +250,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -264,7 +269,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "有一組詞條<em>只對 TACZ 槍有效</em>，裝在別的武器上不起作用，管的是槍自身的傷害，以及裝填、彈匣、後坐、瞄準等手感。這些詞條變成負數時，大多會讓槍更難用，裝之前看清正負。"
+          "text": "有一組詞條<em>只對 TACZ 槍有效</em>，裝在別的武器上不起作用，管的是槍自身的傷害，以及裝填、彈匣、後坐、瞄準等手感。這些詞條變成負數時，大多會讓槍更難用，裝之前看清正負，Tenno。"
         },
         {
           "type": "p",
@@ -364,7 +369,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -502,7 +507,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -530,7 +535,7 @@
         },
         {
           "type": "p",
-          "text": "每顆子彈命中後額外造成一次<hl>真實傷害</hl>，<g>無視護甲、護盾和傷害減免</g>，直接扣生命值，夠致死就直接擊殺目標。"
+          "text": "每顆子彈命中後額外造成一次<hl>真實傷害</hl>，<g>無視護甲、護盾和傷害減免</g>，直接扣生命值，夠致死時，結果和捱了別的致命傷一樣。"
         },
         {
           "type": "formula",
@@ -542,7 +547,7 @@
             "命中後要到下一刻才扣血。",
             {
               "if": "cfg:kuva_lich.enableDamageNumbers",
-              "text": "這一下的傷害數字是<c:AA00AA>紫色</c>的。"
+              "text": "這一下的傷害數字帶匕首圖示，單獨顯示時是<c:FF55FF>紫色</c>的。"
             },
             "只有 TACZ 子彈命中才會觸發。"
           ]
@@ -575,7 +580,7 @@
           "type": "tip",
           "if": "module:chambered",
           "style": "wf",
-          "text": "「膛室 Prime」在那邊叫 Primed Chamber，是虛空商人 Baro Ki'Teer 貨架上的一張狙擊槍 Mod，效果倒也一樣，讓彈匣裡的第一發傷害大增。"
+          "text": "「膛室 Prime」在那邊叫 Primed Chamber，是虛空商人 Baro Ki'Teer 貨架上的一張狙擊槍 MOD，效果倒也一樣，讓彈匣裡的第一發傷害大增。"
         },
         {
           "type": "h",
@@ -603,14 +608,14 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
           "items": [
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
-              "text": "最後一擊如果是{lang:item.module.true_bullet}補上的那一下、濺射或[[reference/weapon_attr_special|處決]]，就不算子彈擊殺，{lang:item.module.gun_loot_drop}不加成，戰甲那條照常算。"
+              "text": "最後一擊如果是{lang:item.module.true_bullet}補上的那一下、濺射或[[reference/weapon_attr_special|處決類詞條]]觸發的處決，就不算子彈擊殺，{lang:item.module.gun_loot_drop}不加成，戰甲那條照常算。"
             },
             {
               "if": "cfg:kuva_lich.itemDropEffectMultiplier>0",
@@ -690,23 +695,23 @@
             "物理部分 × (1 + {lang:item.module.remoteDamage} + {lang:item.module.projectileDamage}) × 面板傷害，面板見[[weapons/weapon_panel]]。",
             "擲暴擊，機率 = 面板暴擊機率 × (1 + {lang:kuvaweapon.item_attribute_type.remoteCriticalStrikeProbability})，規則見[[combat/crit]]。",
             "乘上[[combat/bane|剋制]]倍率，再加上不吃暴擊的元素傷害，完整順序見[[combat/damage]]。",
-            "擲元素觸發，再結算濺射、[[tacz/tacz_special_attrs|真實子彈]]、處決等附加效果。"
+            "擲元素觸發，再結算濺射、[[tacz/tacz_special_attrs|真實子彈]]、處決類詞條等附加效果。"
           ]
         },
         {
           "type": "tip",
           "style": "info",
           "title": "堆傷害的思路",
-          "text": "同組加成先相加，不同組之間相乘，這就是<hl>乘區</hl>。{lang:item.module.gun_damage}、{lang:item.module.multishot}、遠程傷害和暴擊各佔一個乘區，每個都堆上一些，別隻堆其中一條。"
+          "text": "同組加成先相加，不同組之間相乘，這就是<hl>乘區</hl>。{lang:item.module.gun_damage}、{lang:item.module.multishot}、遠程傷害和暴擊各佔一個乘區。每個都堆上一些，別隻堆其中一條，Tenno。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "指揮官，天諾們配卡時倒也講究乘區，基礎傷害卡、多重射擊卡和暴擊卡各算各的，最後才相乘，所以常見的配卡裡，這幾類總會各佔一席。"
+          "text": "指揮官，始源星系的 Tenno 配卡時倒也講究乘區，基礎傷害卡、多重射擊卡和暴擊卡各算各的，最後才相乘，所以常見的配卡裡，這幾類總會各佔一席。"
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",

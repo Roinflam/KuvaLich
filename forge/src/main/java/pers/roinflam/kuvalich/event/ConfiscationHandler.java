@@ -1,113 +1,80 @@
 package pers.roinflam.kuvalich.event;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
-import pers.roinflam.kuvalich.utils.RandomUtil;
+import pers.roinflam.kuvalich.fx.FxId;
+import pers.roinflam.kuvalich.fx.KuvaFx;
+import pers.roinflam.kuvalich.fx.ServerFxQueue;
+import pers.roinflam.kuvalich.nemesis.LichComms;
+import pers.roinflam.kuvalich.nemesis.LichLine;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
+import pers.roinflam.kuvalich.utils.RandomUtil;
 
 /**
- * 赤毒玄骸没收物品事件处理器（1.20.1版本）
- * Confiscation Handler (1.20.1 version)
+ * 玄骸没收物品：有自己的玄骸时，捡起东西有概率被它拿走
  *
- * 当玩家解密了任意谜语后，捡起物品时有概率被没收
- * When player unlocked any riddle, items may be confiscated when picked up
+ * <p>只有这个玩家已经有玄骸（揭开过第一条密语）才没收，被拿走的东西记在他的卡上，终结那只玄骸时全部还回来。
+ * 数量上限由 {@code maxConfiscatedItems} 管，到了上限就不再没收。</p>
  *
- * 没收上限由配置项 maxConfiscatedItems 控制，达到上限后不再没收
- * Confiscation limit controlled by maxConfiscatedItems config, stops when limit reached
+ * <p>没收成功的那一刻：掉落物原地消失，附近 16 格的人看到被拿走的演出（按物品稀有度分档）；
+ * 本人的动作栏写「谁拿走了你的什么」（每次都写）；0.25 秒后它在通讯窗里嘲讽一句
+ * （通讯有限流：没收类 30 秒一句，刚说过别的话也会让开，其余的只有动作栏）。</p>
  */
 @Mod.EventBusSubscriber
 public class ConfiscationHandler {
 
-    // 没收时的嘲讽语录key（业务逻辑100%不变）
-    // Confiscation message keys (business logic 100% unchanged)
-    private static final String[] CONFISCATION_MESSAGES = {
-            "message.kuvalich.confiscation.wallet",
-            "message.kuvalich.confiscation.tax",
-            "message.kuvalich.confiscation.something",
-            "message.kuvalich.confiscation.closer",
-            "message.kuvalich.confiscation.yoink",
-            "message.kuvalich.confiscation.sector",
-            "message.kuvalich.confiscation.tithe",
-            "message.kuvalich.confiscation.coin",
-            "message.kuvalich.confiscation.accepted"
-    };
+    /** 演出广播半径 */
+    private static final double FX_RADIUS = 16.0D;
+    /** 嘲讽排在没收演出开始后多久（tick），和演出里那一下对上 */
+    private static final int COMM_DELAY_TICKS = 5;
 
-    /**
-     * 监听玩家捡起物品事件（1.20.1事件API）
-     * Listen to item pickup event (1.20.1 event API)
-     */
     @SubscribeEvent
     public static void onItemPickup(EntityItemPickupEvent event) {
-        Player player = event.getEntity();
-        ItemEntity entityItem = event.getItem();
-
-        // 仅在服务端处理 / Server-side only
-        if (player.level().isClientSide) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
+        ItemEntity entityItem = event.getItem();
 
-        // 获取没收概率配置
-        // Get confiscation chance config
         double confiscationChance = ModConfig.KUVA_LICH.confiscationChance.get();
         if (confiscationChance <= 0) {
             return;
         }
+        RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).orElse(null);
+        if (requiemCard == null || !requiemCard.hasLich() || !requiemCard.canConfiscateMore()) {
+            return;
+        }
+        if (!RandomUtil.percentageChance(confiscationChance)) {
+            return;
+        }
+        ItemStack itemStack = entityItem.getItem();
+        if (itemStack.isEmpty()) {
+            return;
+        }
+        // addConfiscatedItem 里也查上限：到了上限返回 false，这次照常捡起
+        ItemStack taken = itemStack.copy();
+        if (!requiemCard.addConfiscatedItem(itemStack)) {
+            return;
+        }
 
-        // 获取玩家的RequiemCard能力 / Get player's RequiemCard capability
-        player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
-            // 检查是否有任意谜语被解开 / Check if any riddle unlocked
-            if (!requiemCard.hasAnyRiddleUnlocked()) {
-                return;
-            }
+        event.setCanceled(true);
+        Vec3 where = entityItem.position().add(0.0D, entityItem.getBbHeight() * 0.5D, 0.0D);
+        entityItem.discard();
 
-            // ✅ 新增：检查是否已达到没收上限
-            // Check if confiscation limit has been reached
-            if (!requiemCard.canConfiscateMore()) {
-                return;
-            }
-
-            // 概率判定 / Chance check
-            if (!RandomUtil.percentageChance(confiscationChance)) {
-                return;
-            }
-
-            // 获取要没收的物品 / Get item to confiscate
-            ItemStack itemStack = entityItem.getItem();
-            if (itemStack.isEmpty()) {
-                return;
-            }
-
-            // 没收物品（addConfiscatedItem内部也会做上限检查，双重保险）
-            // Confiscate item (addConfiscatedItem also checks limit internally, double safety)
-            if (!requiemCard.addConfiscatedItem(itemStack)) {
-                // 没收失败（已达上限），不取消拾取
-                // Confiscation failed (limit reached), don't cancel pickup
-                return;
-            }
-
-            // 取消拾取事件，移除掉落物实体
-            // Cancel pickup, remove item entity
-            event.setCanceled(true);
-            entityItem.discard();
-
-            // 发送嘲讽消息 / Send confiscation message
-            sendConfiscationMessage(player);
-        });
-    }
-
-    /**
-     * 发送没收时的嘲讽消息（业务逻辑100%不变）
-     * Send confiscation message (business logic 100% unchanged)
-     */
-    private static void sendConfiscationMessage(Player player) {
-        String messageKey = CONFISCATION_MESSAGES[RandomUtil.getInt(0, CONFISCATION_MESSAGES.length - 1)];
-        PlayerFeedback.chat(player, KuvaPalette.LICH, messageKey);
+        if (player.level() instanceof ServerLevel level) {
+            KuvaFx.near(level, where, FX_RADIUS, FxId.CONFISCATE, -1, player.getId() + 1, taken.getRarity().ordinal());
+        }
+        PlayerFeedback.actionBar(player, KuvaPalette.LICH, "message.kuvalich.confiscation.stolen",
+                requiemCard.getLichName(), taken.getHoverName());
+        ServerFxQueue.schedule(COMM_DELAY_TICKS, player, () -> LichComms.say(player, LichLine.CONFISCATE));
     }
 }

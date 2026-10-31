@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 元素粒子特效发射限流门控（仅服务端主线程使用）
+ * 元素音画效果包的发射限流门控（仅服务端主线程使用）
  * Element Particle Effect Emission Throttle Guard (server main thread only)
  *
  * <p>背景：SlashBlade 群体斩击 / 多元素武器 / 多重射击 在一帧内可能触发数百次
- * {@code ElementParticleEffects.spawn*Burst}，每次最终落到 {@code ServerLevel.sendParticles}
- * 上做包广播，曾经造成主线程在该方法链上 RUNNABLE 卡死并触发 Watchdog。</p>
+ * 元素触发，以前每次都落到 {@code ServerLevel.sendParticles} 上做包广播，曾经造成主线程在该方法链上
+ * RUNNABLE 卡死并触发 Watchdog。现在每次触发只发一个效果包（{@link ElementParticleEffects}），照样要限流。</p>
  *
  * <p>本类提供两种节流粒度：
  * <ol>
@@ -49,8 +49,20 @@ public final class ParticleEmissionGuard {
     private static final Map<Integer, Integer> ENTITY_EMISSION_COUNT = new HashMap<>();
 
     /**
+     * 电击、爆炸专用的全局额度（每 tick）：这两种元素带范围 / 额外伤害，以前不受粒子守卫限制；
+     * 改成发效果包以后如果和其它元素抢同一个额度，守卫满额时它们会没声没光
+     */
+    private static final int HEAVY_PER_TICK_BUDGET = 6;
+
+    /** 当前 tick 电击、爆炸已发的数量 */
+    private static int heavyEmissionCount = 0;
+
+    /** 电击、爆炸的实体计数（和一般元素分开记，同一实体同一 tick 两边各能发一次） */
+    private static final Map<Integer, Integer> HEAVY_ENTITY_COUNT = new HashMap<>();
+
+    /**
      * 检查并占用一次"实体级"粒子发射名额。
-     * <p>必须在调用 {@code ElementParticleEffects.spawn*} 之前调用，仅在返回 true 时才发射。
+     * <p>由 {@link ElementParticleEffects} 在发效果包之前调用，仅在返回 true 时才发。
      * 即使返回 false，元素 debuff 应用和伤害逻辑仍应继续执行——只跳过视觉粒子。</p>
      *
      * @param level  服务端世界（用于获取 gameTime 做跨 tick 判断）
@@ -102,6 +114,32 @@ public final class ParticleEmissionGuard {
     }
 
     /**
+     * 电击、爆炸专用：每 tick 全局 {@link #HEAVY_PER_TICK_BUDGET} 次，同一实体每 tick 一次。
+     * 和 {@link #tryAcquire} 一样只决定发不发效果包，伤害照常结算
+     *
+     * @param level  服务端世界
+     * @param entity 受击者
+     * @return 是否允许发
+     */
+    public static boolean tryAcquireHeavy(Level level, LivingEntity entity) {
+        if (level == null || entity == null) {
+            return false;
+        }
+        rollOverIfNewTick(level.getGameTime());
+        if (heavyEmissionCount >= HEAVY_PER_TICK_BUDGET) {
+            return false;
+        }
+        int entityId = entity.getId();
+        int entityCount = HEAVY_ENTITY_COUNT.getOrDefault(entityId, 0);
+        if (entityCount >= PER_ENTITY_PER_TICK) {
+            return false;
+        }
+        heavyEmissionCount++;
+        HEAVY_ENTITY_COUNT.put(entityId, entityCount + 1);
+        return true;
+    }
+
+    /**
      * 跨 tick 重置：检测到 currentTick 与 lastTick 不一致时清空所有计数。
      * 单线程调用，无需同步。
      *
@@ -112,6 +150,8 @@ public final class ParticleEmissionGuard {
             lastTick = currentTick;
             globalEmissionCount = 0;
             ENTITY_EMISSION_COUNT.clear();
+            heavyEmissionCount = 0;
+            HEAVY_ENTITY_COUNT.clear();
         }
     }
 

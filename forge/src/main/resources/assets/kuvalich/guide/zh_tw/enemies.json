@@ -15,8 +15,13 @@
       ],
       "blocks": [
         {
+          "type": "comm",
+          "who": "lich",
+          "text": "奴僕而已。替我去死，是它們唯一的用處。"
+        },
+        {
           "type": "p",
-          "text": "打敗玄骸的答案，要從它的奴僕身上一點點挖出來。<hl>{lang:entity.kuvalich.kuva_slave}</hl>是赤毒敵人裡的小兵，也是最常碰面的一種，每親手斬殺一隻，就離打敗 Boss {lang:entity.kuvalich.kuva_master}更近一步，它倒下時還可能留下材料和模組。"
+          "text": "終結玄骸的答案，要從它的奴僕身上一隻一隻挖出來，Tenno。<hl>{lang:entity.kuvalich.kuva_slave}</hl>是赤毒敵人裡的小兵，也是最常碰面的一種，每收拾掉一隻，就離討伐你的{lang:entity.kuvalich.kuva_master}更近一步，它還可能留下材料和模組。"
         },
         {
           "type": "entity",
@@ -132,6 +137,10 @@
             [
               "自帶減傷",
               "受到的傷害一律 <b>×0.75</b>，見[[enemies/lich_resistance]]"
+            ],
+            [
+              "頭頂名牌",
+              "<t>16</t> 格內顯示：你有玄骸時寫你那隻玄骸的名字，後面跟著「奴僕」，還沒有就寫「{lang:entity.kuvalich.kuva_slave}」，下面一條細血條"
             ]
           ]
         },
@@ -141,7 +150,38 @@
         },
         {
           "type": "h",
-          "text": "擊殺掉落"
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.mercyThralls"
+          ],
+          "text": "倒地與處決"
+        },
+        {
+          "type": "list",
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.mercyThralls"
+          ],
+          "items": [
+            {
+              "if": "cfg:kuva_lich.battleBoost>0",
+              "text": "受到致命傷時它不會死，而是<w>倒地</w>：不動、不打人、不回血，戰鬥增幅也停住"
+            },
+            {
+              "if": "!cfg:kuva_lich.battleBoost>0",
+              "text": "受到致命傷時它不會死，而是<w>倒地</w>：不動、不打人、不回血"
+            },
+            "只有打倒它的人能處決它：你自己打倒的歸你，寵物或召喚物打倒的歸它們的主人，被你點著、推進岩漿這類延後傷害收掉的也歸你",
+            "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格內、看著它，出現「{lang:kuvalich.mercy.prompt.thrall}」時按{lang:key.kuvalich.mercy}鍵（預設 <t>X</t>，和原版創造模式的「載入快捷欄」同鍵，可在控制設定裡改），一次處決約 <t>2.2</t> 秒",
+            "處決時你不會受傷，也不能做別的事，處決完可以接著處決下一隻",
+            "別人打倒的奴僕你處決不了，走近只會看到「某某的獵物」",
+            "<t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒內沒人處決，它就消散，什麼也不留；被別的怪打倒、沒人有資格處決的也是這樣",
+            "<em>只有被處決的奴僕才給解密進度和掉落</em>"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "掉落"
         },
         {
           "type": "table",
@@ -220,25 +260,29 @@
         {
           "type": "tip",
           "style": "bad",
+          "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
           "title": "最後一擊必須是你",
           "text": "用武器、弓箭、投擲物打死的都算在你名下。被寵物、別的怪或岩漿收掉的不算，被火燒死的也不算，哪怕火是你用火焰附加或火矢點的，這些情況<b>沒有進度，也不掉東西</b>。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "奴僕原名 Thrall，是替玄骸賣命的手下，出沒在玄骸的地盤上。處決它們，打敗玄骸要用的安魂 Mod 便會一點點顯露，到了這裡，這個過程就成了「解密進度」。"
+          "text": "奴僕原名 Thrall，是玄骸麾下計程車兵，出沒在它的地盤上。處決它們，打敗玄骸要用的安魂 MOD 便會一點點顯露，到了這裡，這個過程就成了「解密進度」。"
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
           "items": [
             "傷害公式是 8 × 難度係數 × 0.85，難度係數簡單為 1、普通為 2、困難為 3，打在你身上時，原版還會按難度再調一次，然後才算護甲",
             "擊飛力度為你的水平速度 ×3、垂直速度 ×2",
-            "被元素傷害收尾的也不算你的，{lang:kuvaweapon.type.fire}灼燒，以及{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素打出的最後一擊都不結算，元素見[[combat/elements]]",
-            "安魂寶石只看<em>擊殺那一刻主手物品</em>上的<t>掠奪</t>附魔，幸運沒用，用弓射死時主手是弓，掠奪按 0 級算",
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
+              "text": "被元素傷害收尾的也不算你的，{lang:kuvaweapon.type.fire}灼燒，以及{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素打出的最後一擊都不結算，元素見[[combat/elements]]"
+            },
+            "安魂寶石只看<em>結算那一刻主手物品</em>上的<t>掠奪</t>附魔，幸運沒用，主手拿著弓時掠奪按 0 級算",
             "這些掉落直接生成在它倒下的位置，戰甲模組上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」詞條對它們無效"
           ]
         }
@@ -255,7 +299,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是 Boss，安魂解密這條路走到頭，等著你的就是它。你攢下的進度和推敲出的卡序，最後都要在它身上見分曉，天諾。猜對了，赤毒武器等大獎就歸你。"
+          "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是 Boss，安魂解密這條路走到頭，等著你的就是它。每人只有一隻，你揭示第 1 條線索時它誕生，此後它只衝你一個人來。你攢下的進度和推敲出的卡序，最後都要在這隻女皇的爪牙身上見分曉，Tenno，別在這一步失手。猜對了，它手裡那把赤毒武器就歸你。"
         },
         {
           "type": "entity",
@@ -269,85 +313,146 @@
         {
           "type": "steps",
           "items": [
-            "擊殺奴僕積攢[[requiem/decryption|解密進度]]，一條條揭示答案，每條<t>線索</t>對應答案裡的一張<t>安魂卡</t>，三張卡按正確順序排好，就是打敗它的密碼",
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.mercyThralls"
+              ],
+              "text": "處決奴僕積攢[[requiem/decryption|解密進度]]，一條條揭示答案，每條<t>線索</t>對應答案裡的一張<t>安魂卡</t>，三張卡按正確順序排好，就是打敗它的密碼"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
+              "text": "擊殺奴僕積攢[[requiem/decryption|解密進度]]，一條條揭示答案，每條<t>線索</t>對應答案裡的一張<t>安魂卡</t>，三張卡按正確順序排好，就是打敗它的密碼"
+            },
             "按你猜的順序，把三張卡放進專門擺卡的方塊[[requiem/requiem_gate|滅骸之扉]]",
-            "找到或召喚一隻玄骸，<em>親手</em>打出最後一擊",
-            "擊殺那一刻自動核對，猜對拿獎勵，猜錯[[enemies/kuva_escalation|玄骸等級]] +1"
+            {
+              "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
+              "text": "等它怒氣攢滿找上門，或者用{item:kuvalich:requiem_ultimatum}把它叫來"
+            },
+            {
+              "if": "!cfg:kuva_lich.requiemUltimatumDropChance>0",
+              "text": "等它怒氣攢滿找上門"
+            },
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "把它打到倒地，用{lang:key.kuvalich.mercy}處決，三刀逐張核對：全對就終結它，錯一張它就掙脫逃走，[[enemies/kuva_escalation|玄骸等級]] +1"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "擊殺它，倒下那一刻自動核對：猜對拿獎勵，猜錯它逃走，[[enemies/kuva_escalation|玄骸等級]] +1"
+            }
           ]
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "眼前這東西，在檔案裡叫 Kuva Lich，是每位天諾專屬的宿敵，只有把三個安魂 Mod 裝上處決刀，按正確的順序處決它，才能將它徹底了結，拿走它的赤毒武器。"
+          "text": "眼前這東西，在檔案裡叫 Kuva Lich，是每一位 Tenno 各自的宿敵。只有把三個安魂 MOD 裝上滅骸之刃（Parazon），按正確的順序處決它，才能將它徹底了結，拿走它的赤毒武器。"
         },
         {
           "type": "h",
-          "text": "怎麼遇到"
+          "text": "它怎麼找上門"
         },
         {
-          "type": "kv",
-          "rows": [
+          "type": "p",
+          "text": "你不用去找它，Tenno，它會來找你。它的怒氣攢滿後，過 <t>{cfg:kuva_lich.lichArrivalDelayMinSeconds}~{cfg:kuva_lich.lichArrivalDelayMaxSeconds}</t> 秒它就動身，怒氣怎麼漲見[[requiem/lich_archive]]。"
+        },
+        {
+          "type": "list",
+          "items": [
             {
-              "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0",
-              "cells": [
-                "野外",
-                "和奴僕一樣在主世界暗處刷新，蘑菇地除外，它的個子更高，需要 <t>3×3</t>、<t>4</t> 格高的空位"
-              ]
+              "if": "cfg:kuva_lich.lichCommLeadTicks>0",
+              "text": "它先在通訊裡開口，約 <t>{cfg:kuva_lich.lichCommLeadTicks|sec}</t>後才現身"
             },
             {
-              "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0",
-              "cells": [
-                "刷新權重",
-                "<t>{cfg:kuva_lich.kuvaLichSpawnWeight}</t> <dim>（奴僕 {cfg:kuva_lich.kuvaSlaveSpawnWeight}，原版殭屍 95）</dim>"
-              ]
+              "if": "!cfg:kuva_lich.lichCommLeadTicks>0",
+              "text": "它先在通訊裡開口，緊接著現身"
             },
             {
-              "if": "cfg:kuva_lich.kuvaLichSpawnWeight>0",
-              "cells": [
-                "每群數量",
-                "<t>{cfg:kuva_lich.kuvaLichMinSpawnCount}~{cfg:kuva_lich.kuvaLichMaxSpawnCount}</t> 只"
-              ]
+              "if": "cfg:kuva_lich.battleBoost>0",
+              "text": "現身在離你 <t>{cfg:kuva_lich.lichSpawnMinDistance}~{cfg:kuva_lich.lichSpawnMaxDistance}</t> 格、你看不見的地方，螢幕上方同時出現它的 Boss 條：名字、等級徽章、血條，三段細條按你揭示的線索數亮起，下面一排標出它的適應層數和[[enemies/battle_boost|戰鬥增幅]]"
             },
             {
-              "if": [
-                "cfg:kuva_lich.kuvaLichSpawnWeight>0",
-                "cfg:kuva_lich.kuvaLichMaxNearby>0"
-              ],
-              "cells": [
-                "數量上限",
-                "刷新點 <t>{cfg:kuva_lich.kuvaLichNearbyRadius}</t> 格內已有 <t>{cfg:kuva_lich.kuvaLichMaxNearby}</t> 只時就不再往那裡刷新，召喚出來的也算在內"
-              ]
+              "if": "!cfg:kuva_lich.battleBoost>0",
+              "text": "現身在離你 <t>{cfg:kuva_lich.lichSpawnMinDistance}~{cfg:kuva_lich.lichSpawnMaxDistance}</t> 格、你看不見的地方，螢幕上方同時出現它的 Boss 條：名字、等級徽章、血條，三段細條按你揭示的線索數亮起，下面一排標出它的適應層數"
             },
-            {
-              "if": [
-                "cfg:kuva_lich.kuvaLichSpawnWeight>0",
-                "cfg:kuva_lich.kuvaLichMinSpacing>0"
-              ],
-              "cells": [
-                "間距",
-                "新刷出的離已有的玄骸至少 <t>{cfg:kuva_lich.kuvaLichMinSpacing}</t> 格"
-              ]
-            },
+            "它只盯著你，<t>96</t> 格內都追得到；別人打它，它會回頭還手，過一陣還是轉回來找你",
+            "同一時間只有一隻來找你，它不走傳送門，也不會像普通怪物那樣被刷掉",
+            "頭頂名牌 <t>32</t> 格內可見，別人看到的還會寫明它是誰的玄骸",
             {
               "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
-              "cells": [
-                "召喚",
-                "使用{item:kuvalich:requiem_ultimatum}，不限時間和地點，每次消耗 1 個"
-              ]
+              "text": "用{item:kuvalich:requiem_ultimatum}可以把它直接叫到面前，見[[requiem/requiem_items]]"
             }
           ]
         },
         {
-          "type": "p",
-          "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
-          "text": "對著空中右鍵使用通牒，玄骸會出現在你面朝的水平方向 <t>3</t> 格處，和你腳下同高，對著方塊右鍵，它出現在點中的那一面，創造模式下不消耗通牒。"
+          "type": "h",
+          "text": "它不來的時候"
         },
         {
-          "type": "tip",
-          "style": "warn",
-          "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
-          "title": "召出來的也會消失",
-          "text": "召出來的玄骸和野生的一樣會被刷掉。所有人都離它 <t>128</t> 格以上時，它會被清除，離最近的人超過 <t>32</t> 格、又有 <t>30</t> 秒以上沒挨打時，它隨時可能消失，<t>和平</t>難度下更是召出來就沒了，這些情況通牒都不退還。"
+          "type": "p",
+          "text": "怒氣滿了它也未必馬上到。下面這些情況它會等，條件一滿足就動身，[[requiem/lich_archive]]的狀態行會寫明它在等什麼。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "你所在的維度不在它的狩獵範圍（<t>{cfg:kuva_lich.lichHuntDimensions|list}</t>）",
+            "和平難度",
+            {
+              "if": "!cfg:kuva_lich.lichHuntCreative",
+              "text": "你在創造或旁觀模式"
+            },
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "你在睡覺、騎乘、處決，或者已經死了"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "你在睡覺、騎乘，或者已經死了"
+            },
+            {
+              "if": "cfg:kuva_lich.lichLoginGraceSeconds>0",
+              "text": "你登入還不到 <t>{cfg:kuva_lich.lichLoginGraceSeconds}</t> 秒"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "它什麼時候走"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.lichCooldownMinutes>0",
+          "text": "每次遭遇結束，它的怒氣清零，至少過 <t>{cfg:kuva_lich.lichCooldownMinutes}</t> 分鐘才會再來。下面這些情況都會讓它離開："
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.lichCooldownMinutes>0",
+          "text": "每次遭遇結束，它的怒氣清零。下面這些情況都會讓它離開："
+        },
+        {
+          "type": "list",
+          "items": [
+            "你跑到離它 <t>{cfg:kuva_lich.lichLeashDistance}</t> 格以外，或者換了維度、下線",
+            "你死了",
+            {
+              "if": "cfg:kuva_lich.lichIdleDepartSeconds>0",
+              "text": "<t>{cfg:kuva_lich.lichIdleDepartSeconds}</t> 秒裡你們沒有任何交手，也沒人打它"
+            },
+            "難度切到和平",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "處決刺錯，它掙脫逃走"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "擊殺時卡序不對，它掙脫逃走"
+            },
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "它倒地後 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒你沒處決，它起身化作赤毒霧逃走，什麼都不給"
+            },
+            "走了的還是同一只，過些時候還會再來；只有終結它，這一輪才算結束"
+          ]
         },
         {
           "type": "h",
@@ -374,7 +479,7 @@
             ],
             [
               "索敵範圍",
-              "<t>64</t> 格"
+              "<t>64</t> 格，衝你來時 <t>96</t> 格"
             ],
             [
               "體型",
@@ -398,7 +503,6 @@
           "type": "list",
           "items": [
             "下手更重，每一下在簡單難度是 <t>11.05</t>，普通 <t>22.1</t>，困難 <t>33.15</t>",
-            "它打的是<w>範圍攻擊</w>，每次出手，身體周圍 <t>3</t> 格內的其他生物都挨一份同樣的傷害，寵物和隊友都會被波及，只有赤毒敵人不受影響",
             "命中後把你<w>遠遠擊飛</w>，並回復 <t>2.6</t> 點生命",
             "每秒回血，有目標時回 <t>2</t> 點或已損失生命的 <t>2%</t>，取較大者，沒有目標時則是 <t>1</t> 點或 <t>1%</t>",
             {
@@ -409,8 +513,64 @@
           ]
         },
         {
+          "type": "tip",
+          "style": "warn",
+          "title": "它不認敵友",
+          "text": "它打的是<w>範圍攻擊</w>，每次出手，身體周圍 <t>3</t> 格內的其他生物都挨一份同樣的傷害，只有赤毒敵人不受影響。它出手不認敵友，你帶來的每一條命都在它夠得著的地方。"
+        },
+        {
           "type": "h",
-          "text": "擊殺之後"
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "倒地與處決"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "items": [
+            "受到致命傷時它不會死，而是<w>倒地</w>：不動、不打人、不回血，也不再受傷，Boss 條變灰",
+            "誰打出這一擊都一樣，幫你打的人也能把它打倒，但<em>只有你能處決它</em>，別人走近只會看到「某某的獵物」",
+            "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格內、看著它，出現「{lang:kuvalich.mercy.prompt.lich}」時按{lang:key.kuvalich.mercy}鍵（預設 <t>X</t>，和原版創造模式的「載入快捷欄」同鍵，可在控制設定裡改）",
+            "處決時你不會受傷，也不能做別的事；三刀從第 1 位起逐張核對，刺錯一張就停",
+            "倒地 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒內你沒動手，它就起身逃走，什麼都不給",
+            "被 <t>/kill</t> 或掉進虛空這類傷害直接打死時不倒地，這次遭遇作廢，什麼都不給"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.mercyResumeFloorSeconds>0"
+          ],
+          "title": "第一刀之前",
+          "text": "處決在第一刀落下之前被打斷，這次處決作廢，它照舊倒在原地，倒地時間至少還剩 <t>{cfg:kuva_lich.mercyResumeFloorSeconds}</t> 秒；第一刀落下之後再被打斷，結果當場就算。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "!cfg:kuva_lich.mercyResumeFloorSeconds>0"
+          ],
+          "title": "第一刀之前",
+          "text": "處決在第一刀落下之前被打斷，這次處決作廢，它照舊倒在原地，倒地計時接著走；第一刀落下之後再被打斷，結果當場就算。"
+        },
+        {
+          "type": "h",
+          "if": "!cfg:kuva_lich.mercyEnabled",
+          "text": "擊殺時判定"
+        },
+        {
+          "type": "list",
+          "if": "!cfg:kuva_lich.mercyEnabled",
+          "items": [
+            "它倒下時按<em>你的</em>卡判定，誰打出最後一擊都一樣，幫你打的人不會替你用掉三張卡",
+            "判定時你要線上、和它在同一個世界、離它 <t>64</t> 格以內，否則這次不判定，你什麼也拿不到，它過些時候再來"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "結算"
         },
         {
           "type": "table",
@@ -425,25 +585,23 @@
           "rows": [
             [
               "滅骸之扉裡沒放滿 3 張卡",
-              "只拿到解密進度，數量是奴僕的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"
+              "不判定，它消散離開，你拿到解密進度，數量是奴僕的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"
             ],
             [
               "放滿 3 張，<g>順序全對</g>",
-              "<g>解密成功</g>，拿到下面的獎勵並開始新一輪"
+              "<g>解密成功</g>，它被終結，你拿到下面的獎勵並開始新一輪"
             ],
             [
               "放滿 3 張，<b>有錯</b>",
-              "<b>解密失敗</b>，[[enemies/kuva_escalation|玄骸等級]] +1，照常拿到進度"
+              "<b>解密失敗</b>，它掙脫逃走，[[enemies/kuva_escalation|玄骸等級]] +1，照常拿到進度"
             ]
           ]
         },
         {
           "type": "list",
           "items": [
-            "成功後，解密進度、線索、玄骸等級全部清零，下一輪的答案重新隨機",
-            "失敗時聊天欄會提示第 1 張是否猜對，第 1 張對了再提示第 2 張，試順序的方法見[[requiem/decrypt_failure]]",
-            "<w>一條線索都還沒揭示時，答案還沒生成，放滿 3 張必定失敗</w>",
-            "多人一起打時，只結算補最後一刀的那個人，用的是他的卡，進度也記給他"
+            "成功後，解密進度和線索全部清空，下一輪的答案重新隨機；下一隻玄骸在你再次揭示第 1 條線索時誕生，玄骸等級從 1 級重新算",
+            "失敗時聊天欄會告訴你從哪一位開始錯，試順序的方法見[[requiem/decrypt_failure]]"
           ]
         },
         {
@@ -463,7 +621,7 @@
           "rows": [
             [
               "[[weapons/kuva_weapons|赤毒武器]]",
-              "1 把，種類隨機，等級在你當前的武器等級範圍內隨機"
+              "1 把，就是它手裡那一把，元素隨機，等級在你當前的武器等級範圍內隨機"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -519,25 +677,50 @@
         {
           "type": "tip",
           "style": "warn",
-          "text": "<w>別在岩漿和虛空旁邊收尾</w>，除了回到背包的安魂卡，所有獎勵都掉在玄骸倒下的地方，背包放不下的卡也一樣。"
+          "text": "<w>別在岩漿和虛空旁邊收尾</w>，除了回到背包的安魂卡，所有獎勵都掉在它倒下的地方，背包放不下的卡也一樣。"
         },
         {
           "type": "tip",
           "style": "bad",
-          "title": "最後一擊必須是你",
-          "text": "只有親手打死的玄骸才結算，弓箭和投擲物都算親手。被寵物、別的怪或環境傷害收掉的玄骸<b>沒有進度、沒有獎勵，也不算一次解密</b>。"
+          "if": [
+            "cfg:kuva_lich.lichWildAllowed",
+            "cfg:kuva_lich.mercyEnabled"
+          ],
+          "title": "無主的玄骸什麼都不給",
+          "text": "用生怪蛋或指令放出來的玄骸沒有主人：沒有名牌和 Boss 條，不會倒地，打死了不判定、不給進度，也不掉任何東西。"
+        },
+        {
+          "type": "tip",
+          "style": "bad",
+          "if": [
+            "cfg:kuva_lich.lichWildAllowed",
+            "!cfg:kuva_lich.mercyEnabled"
+          ],
+          "title": "無主的玄骸什麼都不給",
+          "text": "用生怪蛋或指令放出來的玄骸沒有主人：沒有名牌和 Boss 條，打死了不判定、不給進度，也不掉任何東西。"
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
           "items": [
             "傷害公式是 13 × 難度係數 × 0.85，和奴僕同一套演算法",
             "擊飛力度為水平 ×3.15、垂直 ×2.15",
-            "被{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素傷害收尾的也不結算",
-            "{lang:kuvaweapon.type.slash}元素的持續傷害、「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」詞條、赤毒武器特效打出的最後一擊，都算你的",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」詞條觸發時也只是把它打倒，終結還得靠你處決"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.lichRepositionSeconds>0",
+                "cfg:kuva_lich.lichRepositionMax>0"
+              ],
+              "text": "它追不到你超過 <t>{cfg:kuva_lich.lichRepositionSeconds}</t> 秒，會借赤毒霧挪到你附近看不見的地方，每次遭遇最多 <t>{cfg:kuva_lich.lichRepositionMax}</t> 次"
+            },
+            "它不進存檔：區塊卸載或關服時它直接離開，這次遭遇照常結束",
+            "玄骸不會自然生成，刷怪籠也刷不出來",
             "獎勵直接生成在地上，戰甲模組上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」詞條對它們無效"
           ]
         }
@@ -547,19 +730,31 @@
       "id": "kuva_escalation",
       "title": "玄骸等級",
       "icon": "kuvalich:requiem_gate",
-      "summary": "猜錯一次升一級，只有解密成功才清零",
+      "summary": "猜錯一次升一級，只有解密成功才重置",
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>玄骸等級</hl>記著你猜錯了幾次，每帶著猜錯的三張卡擊殺一次{lang:entity.kuvalich.kuva_master}，它就 +1，聊天欄報出當前等級。"
+          "text": "猜錯的每一次，都記在你身上，直到你猜對為止。<hl>玄骸等級</hl>記的就是這個：你的玄骸誕生時是 1 級，每判錯一次就 +1，聊天欄報出新等級，[[requiem/lich_archive]]和 Boss 條上的等級徽章也跟著變。"
         },
         {
           "type": "list",
           "items": [
-            "等級記在<em>你自己</em>身上，不屬於哪一隻玄骸",
-            "<b>死亡不會清零</b>，只有解密成功才歸零",
-            "還沒揭示出任何一張答案卡時就放滿三張去打，也算猜錯"
+            "等級記在<em>你自己</em>身上，算的是這一輪你那隻玄骸",
+            "<b>死亡不會重置</b>，只有解密成功才清掉，下一隻從 1 級重新算",
+            "卡沒放滿就對它下手不算猜錯，只拿解密進度"
           ]
+        },
+        {
+          "type": "comm",
+          "who": "lich",
+          "text": "刀落偏了，Tenno，那我就失陪了。呵，你的刀，比你的腦子快。",
+          "if": "cfg:kuva_lich.mercyEnabled"
+        },
+        {
+          "type": "comm",
+          "who": "lich",
+          "text": "真是有意思的一手，朋友。",
+          "if": "!cfg:kuva_lich.mercyEnabled"
         },
         {
           "type": "h",
@@ -568,7 +763,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.increaseDamage>0",
-          "text": "每升一級，奴僕和玄骸這些赤毒敵人打你的傷害 +<t>{cfg:kuva_lich.increaseDamage|pct}</t>，別的怪物、摔落和岩漿的傷害都不受影響。"
+          "text": "從 2 級起，每升一級，奴僕和玄骸這些赤毒敵人打你的傷害 +<t>{cfg:kuva_lich.increaseDamage|pct}</t>，別的怪物、摔落和岩漿的傷害都不受影響。"
         },
         {
           "type": "table",
@@ -579,19 +774,19 @@
           ],
           "rows": [
             [
-              "1",
+              "2",
               "<t>{cfg:kuva_lich.increaseDamage|add:1|round:2|x}</t>"
             ],
             [
-              "2",
+              "3",
               "<t>{cfg:kuva_lich.increaseDamage|mul:2|add:1|round:2|x}</t>"
             ],
             [
-              "3",
+              "4",
               "<w>{cfg:kuva_lich.increaseDamage|mul:3|add:1|round:2|x}</w>"
             ],
             [
-              "5",
+              "6",
               "<b>{cfg:kuva_lich.increaseDamage|mul:5|add:1|round:2|x}</b>"
             ]
           ]
@@ -599,7 +794,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.reducedDamage>0",
-          "text": "每升一級，你打赤毒敵人的傷害還會 -<t>{cfg:kuva_lich.reducedDamage|pct}</t>，最多削減 99.9%，打別的目標不受影響。"
+          "text": "從 2 級起，每升一級，你打赤毒敵人的傷害還會 -<t>{cfg:kuva_lich.reducedDamage|pct}</t>，最多削減 99.9%，打別的目標不受影響。"
         },
         {
           "type": "tip",
@@ -614,16 +809,16 @@
           "type": "tip",
           "style": "warn",
           "title": "猜錯了先換卡",
-          "text": "猜錯後三張卡<em>不會被收走</em>，還放在擺卡的[[requiem/requiem_gate|滅骸之扉]]裡，原樣不動的話，同樣的錯誤組合會讓你再失敗一次，等級再 +1。換好卡再去找下一隻玄骸，別讓同一個錯多算你一級。"
+          "text": "猜錯後三張卡<em>不會被收走</em>，還放在擺卡的[[requiem/requiem_gate|滅骸之扉]]裡，原樣不動的話，同樣的錯誤組合會讓你再失敗一次，等級再 +1。它下次上門之前把卡換好，別讓同一個錯多算你一級。"
         },
         {
           "type": "p",
-          "text": "怎樣用最少的次數試出正確順序，見[[requiem/decrypt_failure]]。"
+          "text": "怎樣用最少的次數試出正確順序，見[[requiem/decrypt_failure]]；最近幾次哪一位對、哪一位錯，[[requiem/lich_archive]]的處決記錄裡都留著。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "指揮官，檔案裡寫著，按錯誤的順序用安魂 Mod 處決玄骸只會落空，它會從刀下活過來，升一級，變得更強。到了這裡，這個等級改記在您自己身上。刀下溜走還長一級的東西，真想塞進引擎裡慢慢碾……碾成……Ordis 這就把這半句從檔案裡刪掉。"
+          "text": "指揮官，檔案裡寫著，按錯誤的順序用安魂 MOD 處決玄骸只會落空，它會從刀下活過來，升一級，變得更強。到了這裡，這個等級改記在您自己身上。刀下溜走還長一級的東西，Ordis 真想把它<x>塞進引擎--慢慢碾--碾成灰--</x>失禮，這半句不必歸檔。"
         }
       ]
     },
@@ -634,6 +829,11 @@
       "summary": "赤毒敵人打得越久，下手越重",
       "if": "cfg:kuva_lich.battleBoost>0",
       "blocks": [
+        {
+          "type": "comm",
+          "who": "lich",
+          "text": "別急著動手，我的小對手。在我的星區，我等得起……你未必。"
+        },
         {
           "type": "p",
           "text": "赤毒敵人越打越兇，<hl>戰鬥拖得越久，它們的傷害越高</hl>，而且沒有上限，對付它們要速戰速決。"
@@ -675,11 +875,21 @@
           "type": "list",
           "items": [
             "奴僕和玄骸<em>各自</em>計時",
-            "計時從它<w>鎖定目標那一刻</w>就開始，不等到交手，奴僕在 <t>32</t> 格、玄骸在 <t>64</t> 格內看見你就會鎖定",
+            "計時從它<w>鎖定目標那一刻</w>就開始，不等到交手：奴僕在 <t>32</t> 格內看見你就會鎖定，你的玄骸一現身就盯上你，無主的玄骸在 <t>64</t> 格內看見你才鎖定",
             "只要它有攻擊目標，倍率就一直上漲，目標可以是你、你的寵物，或它正在打的其他怪",
             "失去目標後按同樣的速度往回退，打了 60 秒就要脫戰 60 秒才能完全歸零",
-            "計時跟著實體一起存檔，區塊卸載再載入不會清零"
+            "奴僕的計時跟著實體一起存檔，區塊卸載再載入不會清零",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "倒地期間計時停住，不漲也不退"
+            }
           ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "看得見的增幅",
+          "text": "交戰越久，玄骸身上的赤毒紋路越亮，你的玄骸的 Boss 條下面還會標出當前的增幅；奴僕打久了，背上的囊會冒出紅色光點。紋路越亮，它下手越重。"
         }
       ]
     },
@@ -691,7 +901,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "打玄骸時傷害越打越低，不是錯覺。你打在赤毒敵人身上的每一下都要先過幾道減傷關卡，奴僕只有前兩道，玄骸四道都有。"
+          "text": "打玄骸時傷害越打越低，不是錯覺，Tenno，它的防禦是一道一道設好的。你打在赤毒敵人身上的每一下都要先過幾道減傷關卡，奴僕只有前兩道，玄骸四道都有。"
         },
         {
           "type": "table",
@@ -706,11 +916,22 @@
             2
           ],
           "rows": [
-            [
-              "① 傷害類型修正",
-              "箭矢 <g>×1.25</g>，其他彈射物和魔法 <b>×0.75</b>",
-              "都有"
-            ],
+            {
+              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "cells": [
+                "① 傷害類型修正",
+                "箭矢 <g>×1.25</g>，其他彈射物和魔法 <b>×0.75</b>",
+                "都有"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichSeededAffinities",
+              "cells": [
+                "① 傷害類型修正",
+                "奴僕和無主玄骸：箭矢 <g>×1.25</g>，其他彈射物和魔法 <b>×0.75</b>；有主的玄骸：一類弱點 <g>×1.25</g>、兩類抗性 <b>×0.75</b>，每隻不同",
+                "都有"
+              ]
+            },
             [
               "② 固定減傷",
               "一律 <b>×0.75</b>",
@@ -788,6 +1009,13 @@
           "text": "判定時從上往下逐行對照，先符合哪一類就算哪一類，第②關也按這 5 類分開記層。"
         },
         {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.lichSeededAffinities",
+          "title": "每隻玄骸不一樣",
+          "text": "你的玄骸誕生時，會從近戰、箭矢、其他彈射物、魔法四類裡抽一類當弱點（×1.25）、兩類當抗性（×0.75），剩下一類不變，每隻都不同，[[requiem/lich_archive]]裡寫著它的弱點和抗性。奴僕和無主的玄骸照上表。"
+        },
+        {
           "type": "h",
           "text": "② 適應性抗性（玄骸）"
         },
@@ -808,12 +1036,12 @@
         {
           "type": "tip",
           "style": "good",
-          "text": "<g>輪換傷害類型</g>，近戰打一陣就換弓，再換法術，讓歇下來的那幾類慢慢掉層。<w>換武器不等於換類別</w>，兩把劍都算近戰，共用一個計數。"
+          "text": "別讓它摸清你的路數。<g>輪換傷害類型</g>，近戰打一陣就換弓，再換法術，讓歇下來的那幾類慢慢掉層。<w>換武器不等於換類別</w>，兩把劍都算近戰，共用一個計數。"
         },
         {
           "type": "tip",
           "style": "wf",
-          "text": "Ordis 的檔案裡有一張戰甲 Mod，名叫 Adaptation，意思是適應，受到哪種傷害，就對哪種傷害疊起抗性。玄骸的適應性抗性出自同一個思路，只是這一回，長進的是敵人。"
+          "text": "Ordis 的檔案裡有一張戰甲 MOD，名叫 Adaptation，意思是適應，受到哪種傷害，就對哪種傷害疊起抗性。玄骸的適應性抗性出自同一個思路，只是這一回，長進的是敵人。"
         },
         {
           "type": "h",
@@ -904,8 +1132,22 @@
           ]
         },
         {
+          "type": "tip",
+          "style": "info",
+          "if": "!cfg:kuva_lich.lichSeededAffinities",
+          "title": "它的防禦看得見",
+          "text": "這幾道關卡都會顯形：箭矢射中時它身上會綻開一道裂紋，適應性抗性在挨打的那一面浮起一片六邊形護壁，層數越多越實；連擊遞減和軟上限削掉一大截時，命中處閃過一道橫向的偏轉光。哪一類傷害疊了幾層，看你的玄骸 Boss 條下面那排小圖示。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.lichSeededAffinities",
+          "title": "它的防禦看得見",
+          "text": "這幾道關卡都會顯形：打中它的弱點時，它身上會綻開一道裂紋（奴僕和無主的玄骸，弱點就是箭矢），適應性抗性在挨打的那一面浮起一片六邊形護壁，層數越多越實；連擊遞減和軟上限削掉一大截時，命中處閃過一道橫向的偏轉光。哪一類傷害疊了幾層，看你的玄骸 Boss 條下面那排小圖示。"
+        },
+        {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -931,8 +1173,20 @@
       "summary": "把機制串起來：準備、輸出、收尾",
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "它跪下，不等於認輸，Tenno。別讓它等太久。",
+          "if": "cfg:kuva_lich.mercyEnabled"
+        },
+        {
+          "type": "comm",
+          "who": "lotus",
+          "text": "它徹底倒下之前，別把視線移開，Tenno。",
+          "if": "!cfg:kuva_lich.mercyEnabled"
+        },
+        {
           "type": "p",
-          "text": "前面那幾道減傷和增幅，討伐時要一起應付：開打前備什麼，輸出時怎樣避開減傷，最後怎樣親手收尾。"
+          "text": "減傷和增幅，討伐時會同時壓在你身上。我要的是一場乾淨的終結：備齊手段再開打，輸出時繞開它的減傷，最後穩穩收尾。"
         },
         {
           "type": "h",
@@ -941,12 +1195,16 @@
         {
           "type": "steps",
           "items": [
-            "檢查[[requiem/requiem_gate|滅骸之扉]]裡的三張卡是不是這次想試的順序，沒放滿只是刷進度，一條線索都沒揭示就放滿，必敗",
+            "檢查[[requiem/requiem_gate|滅骸之扉]]裡的三張卡是不是這次想試的順序，沒放滿只是刷進度",
             "至少帶上兩三種傷害類型，比如近戰武器、弓或弩，再加上法術，最好再有一把模組倍率高的[[weapons/kuva_weapons|赤毒武器]]",
-            "選一塊開闊平坦、遠離寵物和村民的場地，它的範圍攻擊會波及周圍 3 格，擊飛還可能把你甩下懸崖",
+            {
+              "if": "cfg:kuva_lich.lichSeededAffinities",
+              "text": "先在[[requiem/lich_archive]]裡看清它的弱點和抗性，照著挑武器"
+            },
+            "怒氣快滿時，待在開闊平坦、遠離寵物和村民的地方，它的範圍攻擊會波及周圍 3 格，擊飛還可能把你甩下懸崖",
             {
               "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
-              "text": "想挑場地，就在準備好的地方用{item:kuvalich:requiem_ultimatum}召喚"
+              "text": "想挑場地，就在準備好的地方用{item:kuvalich:requiem_ultimatum}把它叫來"
             }
           ]
         },
@@ -957,7 +1215,14 @@
         {
           "type": "list",
           "items": [
-            "<g>優先用弓弩</g>，箭矢是唯一吃 ×1.25 的類別，而且和近戰分開記層",
+            {
+              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "text": "<g>優先用弓弩</g>，箭矢是唯一吃 ×1.25 的類別，而且和近戰分開記層"
+            },
+            {
+              "if": "cfg:kuva_lich.lichSeededAffinities",
+              "text": "<g>優先用它的弱點</g>，那一類吃 ×1.25，而且各類分開記層"
+            },
             "按類別輪換，每類打幾下就換，把各類的層數都壓在 6 層以下",
             "節奏比手速要緊，2 秒內從第 13 下起只剩 40%，一記蓄滿力的攻擊比兩下半蓄力更划算",
             "按預設生命算，單下原始傷害控制在 30 左右就夠，超出的部分幾乎全被軟上限吃掉，資源花在模組倍率上",
@@ -974,7 +1239,14 @@
         {
           "type": "list",
           "items": [
-            "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」詞條觸發時直接擊殺，對玄骸同樣有效，見[[reference/weapon_attr_special]]",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」詞條觸發時會直接把它打倒，見[[reference/weapon_attr_special]]"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "「{lang:item.module.execute_threshold}」「{lang:item.module.execute_chance}」詞條觸發時直接擊殺，對玄骸同樣有效，見[[reference/weapon_attr_special]]"
+            },
             "{lang:kuvaweapon.type.slash}元素的持續傷害和部分[[weapons/weapon_list|赤毒武器]]特效的持續傷害會直接扣血，不過任何一關，也不疊層、不佔連擊計數"
           ]
         },
@@ -991,10 +1263,19 @@
         },
         {
           "type": "list",
+          "if": "cfg:kuva_lich.mercyEnabled",
           "items": [
-            "殘血時換成直接攻擊補刀，被{lang:kuvaweapon.type.poison}、{lang:kuvaweapon.type.gas}、{lang:kuvaweapon.type.electricity}、{lang:kuvaweapon.type.explosion}元素傷害磨死的玄骸不會結算",
-            "{lang:kuvaweapon.type.slash}持續傷害、處決或秒殺、赤毒武器特效收的尾，都算你的",
-            "多人討伐時只結算補最後一刀的那個人，用的是他的卡和進度"
+            "它一倒地就過去，<t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒內用{lang:key.kuvalich.mercy}處決，處決時你不會受傷",
+            "誰把它打倒都一樣，隊友、寵物、元素的持續傷害都行，但只有你能處決",
+            "它倒地時你也別跑遠，離它 <t>{cfg:kuva_lich.lichLeashDistance}</t> 格以外、換維度或下線，它照樣離開"
+          ]
+        },
+        {
+          "type": "list",
+          "if": "!cfg:kuva_lich.mercyEnabled",
+          "items": [
+            "收尾時待在它 <t>64</t> 格以內，按你的卡判定，誰打出最後一擊都一樣，元素持續傷害磨死的也算",
+            "離得太遠或下線時它倒下，這次不判定、什麼都不給"
           ]
         }
       ]

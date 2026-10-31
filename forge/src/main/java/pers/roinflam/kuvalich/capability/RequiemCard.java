@@ -14,9 +14,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.nemesis.RageTier;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,6 +78,50 @@ public class RequiemCard {
      */
     private Set<String> discoveredModules;
 
+    // ==================== 专属玄骸的数据 ====================
+    // 和上面的谜语数据存在同一个 NBT 里，玩家死亡不丢。reset() 只管谜语那一套，不碰这些
+
+    /** 当前写盘的玄骸数据版本；读到比它小的老存档，玄骸字段一律取默认值 */
+    public static final int LICH_DATA_VERSION = 1;
+    /** 一轮玄骸的结局：被终结 */
+    public static final byte FATE_VANQUISHED = 1;
+    /** 一轮玄骸的结局：被管理命令解除 */
+    public static final byte FATE_ADMIN = 2;
+    /** 处决记录最多留几条 */
+    public static final int MAX_ATTEMPTS = 5;
+    /** 前几只的结局最多留几条 */
+    public static final int MAX_HISTORY = 5;
+
+    /** 前一只玄骸的结局 */
+    public record HistoryEntry(String name, int generation, int rank, byte fate) {
+    }
+
+    private int lichDataVersion = LICH_DATA_VERSION;
+    /** 这一轮玄骸的名字，首字母大写；空串表示没有玄骸 */
+    private String lichName = "";
+    /** 诞生时随机，外观、嗓音、武器都从它派生 */
+    private long lichSeed;
+    /** 这个玩家一共诞生过几只 */
+    private int lichGeneration;
+    /** 怒气 0~1 */
+    private float lichRage;
+    /** 冷却到哪一刻，主世界 gameTime（各维度的 gameTime 不一致，统一取主世界的） */
+    private long lichCooldownUntil;
+    /** 玄骸在场时为真；读档时还是真，说明上次关服或掉线时它在场 */
+    private boolean lichEncounterOpen;
+    /** 这一轮交手次数（每次现身加一） */
+    private int lichEncounters;
+    /** 它手里的赤毒武器在武器列表里的下标，-1 = 没有 */
+    private int lichWeapon = -1;
+    private String lichBirthBiome = "";
+    private String lichBirthDim = "";
+    /** 处决记录，最新在前，最多 {@link #MAX_ATTEMPTS} 个，编码见 {@link #packAttempt} */
+    private int[] lichAttempts = new int[0];
+    /** 前几只的结局，最新在前，最多 {@link #MAX_HISTORY} 条 */
+    private List<HistoryEntry> lichHistory = new ArrayList<>();
+    /** 被管理命令暂停：怒气不涨、不来找人、不随机嘲讽 */
+    private boolean lichPaused;
+
     /**
      * 存档标记：武器等级区间已按基础值初始化 / 迁移过
      *
@@ -134,6 +180,22 @@ public class RequiemCard {
 
         // ⭐ 克隆发现记录 / Clone discovery records
         this.discoveredModules = new HashSet<>(requiemCard.discoveredModules);
+
+        // 克隆玄骸数据
+        this.lichDataVersion = requiemCard.lichDataVersion;
+        this.lichName = requiemCard.lichName;
+        this.lichSeed = requiemCard.lichSeed;
+        this.lichGeneration = requiemCard.lichGeneration;
+        this.lichRage = requiemCard.lichRage;
+        this.lichCooldownUntil = requiemCard.lichCooldownUntil;
+        this.lichEncounterOpen = requiemCard.lichEncounterOpen;
+        this.lichEncounters = requiemCard.lichEncounters;
+        this.lichWeapon = requiemCard.lichWeapon;
+        this.lichBirthBiome = requiemCard.lichBirthBiome;
+        this.lichBirthDim = requiemCard.lichBirthDim;
+        this.lichAttempts = requiemCard.lichAttempts.clone();
+        this.lichHistory = new ArrayList<>(requiemCard.lichHistory);
+        this.lichPaused = requiemCard.lichPaused;
     }
 
     // ==================== Getters and Setters ====================
@@ -346,6 +408,242 @@ public class RequiemCard {
         }
     }
 
+    /**
+     * 密语的前缀长度：从第 1 位起逐位比较放着的卡和答案，遇到第一个不对的就停。
+     * 3 表示全对；小于 3 时在第 {@code 前缀长度 + 1} 位判错。三张卡没放齐、还没揭示任何阶段时恒为 0。
+     * 注意 {@link #isTwoCorrectAnswer()} 只看第 2 位本身，不是前缀
+     */
+    public int correctPrefixLength() {
+        if (unlockedCardStatus <= 0 || !isReadyCard()) {
+            return 0;
+        }
+        ItemStack[] placed = {oneCard, twoCard, threeCard};
+        int[] answers = {oneAnswer, twoAnswer, threeAnswer};
+        int length = 0;
+        for (int i = 0; i < 3; i++) {
+            if (!(placed[i].getItem() instanceof AbstractRequiemCard card) || card.getID() != answers[i]) {
+                break;
+            }
+            length++;
+        }
+        return length;
+    }
+
+    // ==================== 专属玄骸 ====================
+
+    /** 有没有玄骸 */
+    public boolean hasLich() {
+        return !lichName.isEmpty();
+    }
+
+    public int getLichDataVersion() {
+        return lichDataVersion;
+    }
+
+    /** 玄骸的名字，首字母大写；没有为空串 */
+    public String getLichName() {
+        return lichName;
+    }
+
+    /**
+     * 给已有的玄骸改名（管理命令用）。没有玄骸时不做任何事，免得凭空「诞生」一只；
+     * 名字合不合规由调用方先查
+     */
+    public void setLichName(String name) {
+        if (hasLich() && name != null && !name.isBlank()) {
+            this.lichName = name;
+        }
+    }
+
+    public long getLichSeed() {
+        return lichSeed;
+    }
+
+    public int getLichGeneration() {
+        return lichGeneration;
+    }
+
+    /** 所有给玩家看的「玄骸等级」一律用它（档案、Boss 条、横幅、失败提示），比内部的 kuvaLevel 大 1 */
+    public int getLichRank() {
+        return kuvaLevel + 1;
+    }
+
+    public float getLichRage() {
+        return lichRage;
+    }
+
+    /** 怒气夹到 0~1 */
+    public void setLichRage(float rage) {
+        this.lichRage = Math.max(0.0F, Math.min(1.0F, rage));
+    }
+
+    /** 怒气档位的序号（{@link RageTier#ordinal()}） */
+    public int getRageTier() {
+        return RageTier.of(lichRage).ordinal();
+    }
+
+    public long getLichCooldownUntil() {
+        return lichCooldownUntil;
+    }
+
+    public void setLichCooldownUntil(long gameTime) {
+        this.lichCooldownUntil = gameTime;
+    }
+
+    public boolean isLichEncounterOpen() {
+        return lichEncounterOpen;
+    }
+
+    public void setLichEncounterOpen(boolean open) {
+        this.lichEncounterOpen = open;
+    }
+
+    public int getLichEncounters() {
+        return lichEncounters;
+    }
+
+    public void incLichEncounters() {
+        this.lichEncounters++;
+    }
+
+    /** 武器下标，-1 = 没有 */
+    public int getLichWeapon() {
+        return lichWeapon;
+    }
+
+    public String getLichBirthBiome() {
+        return lichBirthBiome;
+    }
+
+    public String getLichBirthDim() {
+        return lichBirthDim;
+    }
+
+    public boolean isLichPaused() {
+        return lichPaused;
+    }
+
+    public void setLichPaused(boolean paused) {
+        this.lichPaused = paused;
+    }
+
+    /** 记一行处决尝试，插到最前面，超过 {@link #MAX_ATTEMPTS} 个丢掉最旧的 */
+    public void recordAttempt(int packed) {
+        int size = Math.min(MAX_ATTEMPTS, lichAttempts.length + 1);
+        int[] next = new int[size];
+        next[0] = packed;
+        System.arraycopy(lichAttempts, 0, next, 1, size - 1);
+        this.lichAttempts = next;
+    }
+
+    /** 处决记录的副本，最新在前 */
+    public int[] getAttempts() {
+        return lichAttempts.clone();
+    }
+
+    /**
+     * 诞生一只新玄骸：写名字、种子、武器、出生地，代数加一，怒气、冷却、交手次数、处决记录清零
+     */
+    public void beginLich(String name, long seed, int weaponIndex, String biome, String dim) {
+        this.lichName = name == null ? "" : name;
+        this.lichSeed = seed;
+        this.lichWeapon = weaponIndex;
+        this.lichBirthBiome = biome == null ? "" : biome;
+        this.lichBirthDim = dim == null ? "" : dim;
+        this.lichGeneration++;
+        this.lichRage = 0.0F;
+        this.lichCooldownUntil = 0L;
+        this.lichEncounterOpen = false;
+        this.lichEncounters = 0;
+        this.lichAttempts = new int[0];
+    }
+
+    /**
+     * 结束这一轮玄骸：把它的名字、代数、等级和结局记进前几只的历史（最多留 {@link #MAX_HISTORY} 条），
+     * 再清空名字、种子、武器、出生地、怒气、冷却、处决记录、交手次数和「遭遇进行中」记号
+     * （没有玄骸就不可能还有一场没结束的遭遇，留着它下次登录会被当成掉线补算一次）。
+     * 成功终结时的顺序是先调它、再 {@link #reset()}：等级要在 reset 清掉 kuvaLevel 之前取
+     *
+     * @param fate {@link #FATE_VANQUISHED} 或 {@link #FATE_ADMIN}
+     */
+    public void endLichRound(byte fate) {
+        if (hasLich()) {
+            lichHistory.add(0, new HistoryEntry(lichName, lichGeneration, getLichRank(), fate));
+            while (lichHistory.size() > MAX_HISTORY) {
+                lichHistory.remove(lichHistory.size() - 1);
+            }
+        }
+        this.lichName = "";
+        this.lichSeed = 0L;
+        this.lichWeapon = -1;
+        this.lichBirthBiome = "";
+        this.lichBirthDim = "";
+        this.lichRage = 0.0F;
+        this.lichCooldownUntil = 0L;
+        this.lichAttempts = new int[0];
+        this.lichEncounters = 0;
+        this.lichEncounterOpen = false;
+    }
+
+    /** 上一只玄骸的结局；还没有结束过任何一只返回 {@code null} */
+    @Nullable
+    public HistoryEntry getLastHistory() {
+        return lichHistory.isEmpty() ? null : lichHistory.get(0);
+    }
+
+    /** 前几只的结局副本，最新在前 */
+    public List<HistoryEntry> getHistory() {
+        return new ArrayList<>(lichHistory);
+    }
+
+    // ==================== 处决记录的编码 ====================
+
+    /** 记录里表示「这一位没放卡」的卡 id */
+    public static final int ATTEMPT_NO_CARD = 15;
+    /** 结果：没判到（前面已经判错了） */
+    public static final int ATTEMPT_UNJUDGED = 0;
+    /** 结果：这一位对 */
+    public static final int ATTEMPT_RIGHT = 1;
+    /** 结果：这一位错 */
+    public static final int ATTEMPT_WRONG = 2;
+
+    /**
+     * 把一次判定压成一个 int。每一位占 6 比特：低 4 位是卡 id（0~7，15 = 没放），再 2 位是结果
+     * （0 没判到 / 1 对 / 2 错）；第 18 位为 1 表示是怜悯之击，0 表示击杀时直接判定。
+     * 判定按位置顺序、遇错即停，错的那一位之后记「没判到」。
+     *
+     * @param cardIds 三位用的卡 id，不足三位或为负的按「没放」处理
+     * @param results 三位的结果，不足三位的按「没判到」处理
+     * @param mercy   是否来自怜悯之击
+     */
+    public static int packAttempt(int[] cardIds, byte[] results, boolean mercy) {
+        int packed = 0;
+        for (int i = 0; i < 3; i++) {
+            int id = i < cardIds.length && cardIds[i] >= 0 && cardIds[i] <= 7 ? cardIds[i] : ATTEMPT_NO_CARD;
+            int result = i < results.length ? results[i] & 3 : ATTEMPT_UNJUDGED;
+            packed |= (id | (result << 4)) << (6 * i);
+        }
+        if (mercy) {
+            packed |= 1 << 18;
+        }
+        return packed;
+    }
+
+    /** 记录里第 {@code pos} 位（0~2）用的卡 id，15 = 没放 */
+    public static int attemptCardId(int packed, int pos) {
+        return (packed >> (6 * pos)) & 0xF;
+    }
+
+    /** 记录里第 {@code pos} 位（0~2）的结果：0 没判到 / 1 对 / 2 错 */
+    public static int attemptResult(int packed, int pos) {
+        return (packed >> (6 * pos + 4)) & 3;
+    }
+
+    /** 这条记录是不是来自怜悯之击 */
+    public static boolean attemptIsMercy(int packed) {
+        return (packed & (1 << 18)) != 0;
+    }
+
     // ==================== 没收物品相关方法 / Confiscated Items Methods ====================
 
     public List<ItemStack> getConfiscatedItems() {
@@ -504,6 +802,31 @@ public class RequiemCard {
         }
         nbt.put("discoveredModules", discoveryList);
 
+        // 玄骸数据
+        nbt.putInt("lichDataVersion", LICH_DATA_VERSION);
+        nbt.putString("lichName", lichName);
+        nbt.putLong("lichSeed", lichSeed);
+        nbt.putInt("lichGeneration", lichGeneration);
+        nbt.putFloat("lichRage", lichRage);
+        nbt.putLong("lichCooldownUntil", lichCooldownUntil);
+        nbt.putBoolean("lichEncounterOpen", lichEncounterOpen);
+        nbt.putInt("lichEncounters", lichEncounters);
+        nbt.putInt("lichWeapon", lichWeapon);
+        nbt.putString("lichBirthBiome", lichBirthBiome);
+        nbt.putString("lichBirthDim", lichBirthDim);
+        nbt.putIntArray("lichAttempts", lichAttempts);
+        ListTag historyList = new ListTag();
+        for (HistoryEntry entry : lichHistory) {
+            CompoundTag entryTag = new CompoundTag();
+            entryTag.putString("name", entry.name());
+            entryTag.putInt("gen", entry.generation());
+            entryTag.putInt("rank", entry.rank());
+            entryTag.putByte("fate", entry.fate());
+            historyList.add(entryTag);
+        }
+        nbt.put("lichHistory", historyList);
+        nbt.putBoolean("lichPaused", lichPaused);
+
         return nbt;
     }
 
@@ -577,6 +900,55 @@ public class RequiemCard {
                 }
             }
         }
+
+        readLichData(nbt);
+    }
+
+    /**
+     * 读玄骸数据。没有版本号或版本比当前小的是玄骸出现之前的老存档：所有玄骸字段取默认值、版本记为当前，
+     * 这里拿不到玩家和世界，不在这里生成玄骸，登录时再按解密进度补生
+     */
+    private void readLichData(CompoundTag nbt) {
+        resetLichData();
+        if (nbt.getInt("lichDataVersion") < LICH_DATA_VERSION) {
+            return;
+        }
+        this.lichName = nbt.getString("lichName");
+        this.lichSeed = nbt.getLong("lichSeed");
+        this.lichGeneration = nbt.getInt("lichGeneration");
+        setLichRage(nbt.getFloat("lichRage"));
+        this.lichCooldownUntil = nbt.getLong("lichCooldownUntil");
+        this.lichEncounterOpen = nbt.getBoolean("lichEncounterOpen");
+        this.lichEncounters = nbt.getInt("lichEncounters");
+        this.lichWeapon = nbt.contains("lichWeapon") ? nbt.getInt("lichWeapon") : -1;
+        this.lichBirthBiome = nbt.getString("lichBirthBiome");
+        this.lichBirthDim = nbt.getString("lichBirthDim");
+        int[] attempts = nbt.getIntArray("lichAttempts");
+        this.lichAttempts = attempts.length > MAX_ATTEMPTS ? Arrays.copyOf(attempts, MAX_ATTEMPTS) : attempts;
+        ListTag historyList = nbt.getList("lichHistory", Tag.TAG_COMPOUND);
+        for (int i = 0; i < historyList.size() && lichHistory.size() < MAX_HISTORY; i++) {
+            CompoundTag entryTag = historyList.getCompound(i);
+            lichHistory.add(new HistoryEntry(entryTag.getString("name"), entryTag.getInt("gen"),
+                    entryTag.getInt("rank"), entryTag.getByte("fate")));
+        }
+        this.lichPaused = nbt.getBoolean("lichPaused");
+    }
+
+    private void resetLichData() {
+        this.lichDataVersion = LICH_DATA_VERSION;
+        this.lichName = "";
+        this.lichSeed = 0L;
+        this.lichGeneration = 0;
+        this.lichRage = 0.0F;
+        this.lichCooldownUntil = 0L;
+        this.lichEncounterOpen = false;
+        this.lichEncounters = 0;
+        this.lichWeapon = -1;
+        this.lichBirthBiome = "";
+        this.lichBirthDim = "";
+        this.lichAttempts = new int[0];
+        this.lichHistory = new ArrayList<>();
+        this.lichPaused = false;
     }
 
     // ==================== Provider内部类 / Provider Inner Class ====================

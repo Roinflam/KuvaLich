@@ -38,8 +38,14 @@ public final class GuideDisplayConfig {
 
     private static ForgeConfigSpec.IntValue guiScale;
     private static ForgeConfigSpec.BooleanValue introAnimation;
+    private static ForgeConfigSpec.BooleanValue commTypewriter;
+    private static ForgeConfigSpec.BooleanValue commSound;
+    private static ForgeConfigSpec.BooleanValue guideSounds;
     private static volatile int cachedGuiScale = AUTO;
     private static volatile boolean cachedIntroAnimation = true;
+    private static volatile boolean cachedCommTypewriter = true;
+    private static volatile boolean cachedCommSound = true;
+    private static volatile boolean cachedGuideSounds = true;
 
     private GuideDisplayConfig() {
     }
@@ -58,6 +64,18 @@ public final class GuideDisplayConfig {
                         "Play the opening and closing animation of the adventure guide. Off: it opens and closes at once.",
                         "冒险指南开不开场、收场动画。关掉以后指南直接打开、直接合上。指南顶栏「Aa」左边的按钮也能切换，会写回这里")
                 .define("intro_animation", true);
+        commTypewriter = builder.comment(
+                        "Play the opening frame and the line wipe-in the first time a transmission appears (off: shown at once, and silent)",
+                        "通讯第一次出现时播开框和字幕擦出（关掉直接显示，也不响）")
+                .define("comm_typewriter", true);
+        commSound = builder.comment(
+                        "Sound when a transmission connects (guide and in-game)",
+                        "通讯接通声（指南和游戏内都管）")
+                .define("comm_sound", true);
+        guideSounds = builder.comment(
+                        "Opening, closing and page-turn sounds of the guide",
+                        "指南开合与翻页音效")
+                .define("guide_sounds", true);
         builder.pop();
     }
 
@@ -74,6 +92,21 @@ public final class GuideDisplayConfig {
         }
         introAnimation.set(value);
         introAnimation.save();
+    }
+
+    /** 通讯第一次出现时播开框和字幕擦出 */
+    public static boolean commTypewriter() {
+        return cachedCommTypewriter;
+    }
+
+    /** 通讯接通声（指南和游戏内都管） */
+    public static boolean commSound() {
+        return cachedCommSound;
+    }
+
+    /** 指南开合与翻页音效 */
+    public static boolean guideSounds() {
+        return cachedGuideSounds;
     }
 
     /** 配置值（0 自动 / -1 跟游戏 / 1~10 指定） */
@@ -98,6 +131,9 @@ public final class GuideDisplayConfig {
         if (guiScale != null && event.getConfig().getSpec() == TooltipConfig.CLIENT_CONFIG) {
             cachedGuiScale = guiScale.get();
             cachedIntroAnimation = introAnimation == null || introAnimation.get();
+            cachedCommTypewriter = commTypewriter == null || commTypewriter.get();
+            cachedCommSound = commSound == null || commSound.get();
+            cachedGuideSounds = guideSounds == null || guideSounds.get();
         }
     }
 

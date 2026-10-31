@@ -15,8 +15,13 @@
       ],
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "這份力量是你掙來的，Tenno，不是誰賜給你的。"
+        },
+        {
           "type": "p",
-          "text": "<hl>戰甲模組</hl>裝在你自己身上，天諾，造這台軍械庫至少要討伐成功兩次。{item:kuvalich:requiem_warframe_table}就是裝它們的工作台，裝進去的模組<g>一直生效</g>，不用拿在手上，也不用穿盔甲。"
+          "text": "<hl>戰甲模組</hl>裝在你自己身上，Tenno，造這台軍械庫至少要討伐成功兩次。{item:kuvalich:requiem_warframe_table}就是裝它們的工作台，裝進去的模組<g>一直生效</g>，不用拿在手上，也不用穿盔甲。"
         },
         {
           "type": "p",
@@ -25,7 +30,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "軍械庫這個名字，Ordis 熟得很。飛船上那座叫 Arsenal，挑選戰甲和武器、安裝 Mod，都在那裡。戰甲本名 Warframe，是天諾們操控的生物機械戰鬥裝甲，每一具的形貌和技能都各不相同。"
+          "text": "軍械庫這個名字，Ordis 熟得很。飛船上那座叫 Arsenal，挑選戰甲和武器、安裝 MOD，都在那裡。戰甲本名 Warframe，是 Tenno 操控的生物機械戰鬥裝甲，每一具的形貌和技能都各不相同。"
         },
         {
           "type": "h",
@@ -60,7 +65,7 @@
           "type": "tip",
           "style": "warn",
           "title": "開局造不出來",
-          "text": "{item:kuvalich:lich_reliquary}只在你擊殺 Boss [[enemies/kuva_master|赤毒玄骸]]並且[[requiem/decryption|解密]]成功時掉落，三張安魂卡和它們的順序都要猜對，每次 <t>1</t> 個。\\n養武器用的工作台{item:kuvalich:requiem_evolve}自己的配方也要 <t>1</t> 個，所以至少要贏玄骸兩次。"
+          "text": "{item:kuvalich:lich_reliquary}只在你討伐自己的[[enemies/kuva_master|赤毒玄骸]]並且[[requiem/decryption|解密]]成功時掉落，三張安魂卡和它們的順序都要猜對，每次 <t>1</t> 個。\\n養武器用的工作台{item:kuvalich:requiem_evolve}自己的配方也要 <t>1</t> 個，所以至少要贏玄骸兩次。"
         },
         {
           "type": "p",
@@ -81,7 +86,7 @@
         },
         {
           "type": "h",
-          "text": "放不進去？"
+          "text": "裝不進去的幾種情況"
         },
         {
           "type": "list",
@@ -122,7 +127,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "裝在[[warframe/warframe_table|戰甲軍械庫]]裡的模組<g>全天候生效</g>，打架、挖礦、趕路時都在起作用，空著手也一樣，不用穿盔甲。"
+          "text": "這八格從不停工，Tenno。裝在[[warframe/warframe_table|戰甲軍械庫]]裡的模組<g>全天候生效</g>，打架、挖礦、趕路時都在起作用，空著手也一樣，不用穿盔甲。"
         },
         {
           "type": "p",
@@ -148,11 +153,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.moduleWeaponRatio<100",
-              "text": "挖[[world/requiem_ore|安魂礦石]]、打[[enemies/kuva_slave|赤毒奴僕]]和 Boss [[enemies/kuva_master|赤毒玄骸]]都有機會掉模組，其中 <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> 是戰甲模組，其餘是武器模組。"
+              "text": "[[world/requiem_ore|安魂礦石]]、[[enemies/kuva_slave|赤毒奴僕]]和 Boss [[enemies/kuva_master|赤毒玄骸]]的掉落裡都可能有模組，其中 <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> 是戰甲模組，其餘是武器模組。"
             },
             {
               "if": "!cfg:kuva_lich.moduleWeaponRatio<100",
-              "text": "挖[[world/requiem_ore|安魂礦石]]、打[[enemies/kuva_slave|赤毒奴僕]]和 Boss [[enemies/kuva_master|赤毒玄骸]]掉的模組全是武器模組，不會掉戰甲模組。"
+              "text": "[[world/requiem_ore|安魂礦石]]、[[enemies/kuva_slave|赤毒奴僕]]和 Boss [[enemies/kuva_master|赤毒玄骸]]掉的模組全是武器模組，不會掉戰甲模組。"
             },
             {
               "if": "cfg:kuva_lich.enableWarframeModuleRecast",
@@ -164,7 +169,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "Mod 在起源星系分得很細，Ordis 一向欣賞這種規矩。戰甲 Mod 只能裝在戰甲上，步槍、霰彈槍、近戰這些武器 Mod，也只認對應的那類武器。"
+          "text": "MOD 在始源星系分得很細，Ordis 一向欣賞這種規矩。戰甲 MOD 只能裝在戰甲上，步槍、霰彈槍、近戰這些武器 MOD，也只認對應的那類武器。"
         },
         {
           "type": "h",
@@ -271,7 +276,7 @@
         },
         {
           "type": "p",
-          "text": "詞條名裡帶「擊殺時獲取」的屬於<hl>擊殺疊層</hl>詞條，殺得越多加成越高，一段時間不殺就慢慢退回去，見[[combat/kill_stack]]。"
+          "text": "詞條名裡帶「擊殺時獲取」的屬於<hl>擊殺疊層</hl>詞條，殺得越多加成越高，一段時間不殺就慢慢退回去，見[[combat/kill_stack]]。要留住它們，就別停手。"
         },
         {
           "type": "list",
@@ -283,7 +288,7 @@
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -319,7 +324,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "只要[[warframe/warframe_module|戰甲模組]]給你的{lang:kuvaweapon.warframe_attribute_type.shield}總和大於 0，黃心就會自己慢慢回到上限。別讓它見底，打空之後要等三倍的時間才開始回。"
+          "text": "只要[[warframe/warframe_module|戰甲模組]]給你的{lang:kuvaweapon.warframe_attribute_type.shield}總和大於 0，黃心就會自己慢慢回到上限。別讓它見底，Tenno，打空之後要等三倍的時間才開始回。"
         },
         {
           "type": "tip",
@@ -414,11 +419,11 @@
           "type": "tip",
           "style": "wf",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "檔案顯示，戰甲的護盾在那邊同樣擋在生命值前面，一段時間沒挨打就會自行充能，要是被徹底打空，就得多等一陣才開始回充。"
+          "text": "檔案顯示，戰甲的護盾在那邊同樣擋在生命值前面，一段時間沒挨打就會自行充能，要是被徹底打空，就得多等一陣才開始回充。敢把指揮官的護盾打空的東西，Ordis 真想<x>拆了它--一塊一塊地拆--</x>失態了，請見諒。"
         },
         {
           "type": "h",
-          "text": "進階細節"
+          "text": "深層情報"
         },
         {
           "type": "list",
@@ -501,7 +506,7 @@
         },
         {
           "type": "h",
-          "text": "怎麼做"
+          "text": "行動"
         },
         {
           "type": "steps",

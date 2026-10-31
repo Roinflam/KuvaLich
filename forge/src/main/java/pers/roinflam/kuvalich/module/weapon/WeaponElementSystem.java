@@ -3,7 +3,6 @@ package pers.roinflam.kuvalich.module.weapon;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobType;
@@ -63,8 +62,8 @@ import java.util.*;
  * {@link ElementPool#toPercentMap()} 提供，行为与原来完全一致。</p>
  *
  * <p>v7 修复保留：所有 {@code syncVisualDebuff} 调用走 {@link ElementSyncGuard#trySend} 节流。</p>
- * <p>v6.1 修复保留：所有 {@code spawn*Burst / spawn*Effect} 调用前经过
- * {@link ParticleEmissionGuard} 门控。</p>
+ * <p>元素触发的画面和声音：每次只经 {@link ElementParticleEffects#proc} 发一个效果包，
+ * 由它过 {@link ParticleEmissionGuard} 限流（只跳过效果包，伤害和元素状态照常结算）。</p>
  *
  * @author RoinFlam
  */
@@ -571,9 +570,7 @@ public class WeaponElementSystem {
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.FIRE.createInstance(duration, fireLevel));
                 }
                 syncVisualDebuff(hurter, "fire", duration, fireLevel);
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnFireBurst(hurter, sl);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.FIRE, fireLevel, 0);
 
                 hurter.setSecondsOnFire(6);
                 final float dotDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
@@ -596,9 +593,7 @@ public class WeaponElementSystem {
                 int duration = (int) (120 * triggerTime);
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.POISON.createInstance(duration, 0));
                 syncVisualDebuff(hurter, "poison", duration, 0);
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnPoisonBurst(hurter, sl);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.POISON, 0, 0);
 
                 double typeDamageMultiplier = 1.0;
                 if (hurter.getMobType().equals(MobType.ILLAGER)) typeDamageMultiplier = 1.5;
@@ -640,9 +635,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.ICE.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "ice", duration, newLevel);
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnIceBurst(hurter, sl);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.ICE, newLevel, 0);
                 return "ice";
             }
             case "electricity": {
@@ -652,20 +645,17 @@ public class WeaponElementSystem {
                 float lightningDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * typeDamageMultiplier
                         * ModConfig.KUVA_LICH.elementElectricityDamageMultiplier.get());
                 if (lightningDamage > 0) {
-                    net.minecraft.world.entity.LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
-                    if (lightning != null) { lightning.moveTo(hurter.getX(), hurter.getY(), hurter.getZ()); lightning.setVisualOnly(true); level.addFreshEntity(lightning); }
+                    // 以前这里召一道只有画面的原版闪电（连带雷声和满屏闪白），现在电弧和声音由客户端按效果包画
+                    int paralysisTicks = (int) (10 * triggerTime);
+                    ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.ELECTRICITY, 0, paralysisTicks);
                     // ⭐ 按实际扣除量显示。注意这一下嵌套在主目标自己的受击事件里，
                     //    原版此时已给主目标上了受击无敌，电击伤害常被部分或全部吃掉，数字会如实变小或不显示
                     hurtWithElementDisplay(hurter, level.damageSources().lightningBolt(), lightningDamage, attacker, "electricity");
-                    DynamicAttributeManager.apply(hurter, DynamicAttributes.ELECTRICITY_PARALYSIS.createInstance((int) (10 * triggerTime), 0));
+                    DynamicAttributeManager.apply(hurter, DynamicAttributes.ELECTRICITY_PARALYSIS.createInstance(paralysisTicks, 0));
                 }
                 return null;
             }
             case "slash": {
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnSlashBurst(hurter, sl);
-                }
-
                 float dotDamage = (float) (0.35 * coreDamage * baneMultiplier
                         * ModConfig.KUVA_LICH.elementSlashDamageMultiplier.get());
                 if (DynamicAttributeManager.has(hurter, DynamicAttributes.VIRUS)) {
@@ -673,6 +663,9 @@ public class WeaponElementSystem {
                     double virusMultiplier = 1.0 + (1.0 + Math.min(virusLevel, 9) * 0.25);
                     dotDamage *= (float) virusMultiplier;
                 }
+                int bleedRounds = dotDamage > 0 ? (int) Math.ceil(6 * triggerTime) : 0;
+                // 流血轮数跟着效果包下去，客户端按它滴血；每轮不再单独发东西
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.SLASH, 0, bleedRounds);
                 if (dotDamage > 0) {
                     float finalDotDamage = dotDamage;
                     final LivingEntity dotAttacker = attacker;
@@ -680,11 +673,7 @@ public class WeaponElementSystem {
                     // ⭐ 走去重注册表：切割走 damageHealthDirectly 绕过无敌帧，
                     //    不去重的话一次命中触发六次就是六份同时扣血，直接秒杀。
                     WeaponCombatHandler.ElementDotRegistry.apply(hurter, "slash", finalDotDamage,
-                            (int) Math.ceil(6 * triggerTime), (t, d) -> {
-                                if (t.level() instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, t)) {
-                                    ElementParticleEffects.spawnSlashEffect(t, sl);
-                                }
-
+                            bleedRounds, (t, d) -> {
                                 // ⭐ 切割直接扣血：先扣、再显示「扣之前 − 扣之后」的实际掉血
                                 float healthBefore = t.getHealth();
                                 boolean lethal = !(healthBefore - d > 0.01f);
@@ -708,9 +697,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.PUNCTURE.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "puncture", duration, newLevel);
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnPunctureBurst(hurter, sl);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.PUNCTURE, newLevel, 0);
                 return "puncture";
             }
             case "impact": {
@@ -727,9 +714,7 @@ public class WeaponElementSystem {
                         hurter.setDeltaMovement(hurter.getDeltaMovement().add(0, 0.2 * knockbackStrength, 0));
                     }
                 }
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnImpactShockwave(sl, hurter);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.IMPACT, 0, 0);
                 return "impact";
             }
             case "magnetic": {
@@ -743,6 +728,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.MAGNETIC.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "magnetic", duration, newLevel);
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.MAGNETIC, newLevel, 0);
                 return "magnetic";
             }
             case "radiation": {
@@ -756,9 +742,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.RADIATION.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "radiation", duration, newLevel);
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnRadiationBurst(hurter, sl);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.RADIATION, newLevel, 0);
                 return "radiation";
             }
             case "virus": {
@@ -772,9 +756,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.VIRUS.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "virus", duration, newLevel);
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnVirusBurst(hurter, sl);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.VIRUS, newLevel, 0);
                 return "virus";
             }
             case "corrosion": {
@@ -788,9 +770,7 @@ public class WeaponElementSystem {
                 }
                 DynamicAttributeManager.apply(hurter, DynamicAttributes.CORROSION.createInstance(duration, newLevel));
                 syncVisualDebuff(hurter, "corrosion", duration, newLevel);
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnCorrosionBurst(hurter, sl);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.CORROSION, newLevel, 0);
                 return "corrosion";
             }
             case "explosion": {
@@ -806,14 +786,9 @@ public class WeaponElementSystem {
                     // ⭐ 以前这里是 level.explode(null, ..., NONE)：虽然不炸方块，但原版爆炸本身会对范围内
                     //    所有实体（包括近战时站在旁边的攻击者自己）造成威力 3（苦力怕级）的伤害和击退，
                     //    目标还会被"原版爆炸 + 下面的自定义伤害"打两次，且原版那份不受伤害倍率配置控制。
-                    //    现改为只播放爆炸特效和音效，伤害全部走下面排除了攻击者的自定义计算。
-                    if (level instanceof ServerLevel blastLevel) {
-                        blastLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER,
-                                hurter.getX(), hurter.getY() + hurter.getBbHeight() * 0.5, hurter.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
-                        blastLevel.playSound(null, hurter.getX(), hurter.getY(), hurter.getZ(),
-                                net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.HOSTILE,
-                                4.0F, (1.0F + (blastLevel.random.nextFloat() - blastLevel.random.nextFloat()) * 0.2F) * 0.7F);
-                    }
+                    //    后来只剩原版的爆炸粒子和爆炸声；现在连这两样也换成效果包，画面和声音由客户端放，
+                    //    伤害全部走下面排除了攻击者的自定义计算。
+                    ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.EXPLOSION, 0, 0);
                     hurter.hurt(level.damageSources().explosion((Explosion) null), explosionDamage);
                     List<LivingEntity> entities = EntityUtil.getNearbyEntities(LivingEntity.class, hurter, 3, e -> !e.equals(hurter) && !e.equals(attacker));
                     for (LivingEntity entity : entities) {
@@ -837,22 +812,21 @@ public class WeaponElementSystem {
                 final Vec3 gasCenter = new Vec3(hurter.getX(), hurter.getY(), hurter.getZ());
                 final double gasRadius = 3.0;
 
-                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquire(sl, hurter)) {
-                    ElementParticleEffects.spawnGasBurst(sl, gasCenter, gasRadius);
-                }
+                ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.GAS, 0, 0);
 
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
+                    final int gasRounds = (int) Math.ceil(6 * triggerTime);
+                    // 毒云在客户端按持续 tick 自己续雾，每轮不再单独发东西
+                    if (level instanceof ServerLevel sl) {
+                        ElementParticleEffects.gasCloud(sl, gasCenter, gasRounds * 20, attacker);
+                    }
                     // ⭐ 走去重注册表：毒气每轮都要做一次 AABB 实体扫描，
                     //    是刷怪场里唯一能拉出可测 tick 时间的一条路径，去重收益最大。
                     //    ⭐ stopOnDeath = false：毒气是以命中位置为中心的 AoE 云，
                     //       锚点怪死了云还要继续（改造前这条任务的判定也只有 isRemoved()）。
                     WeaponCombatHandler.ElementDotRegistry.apply(hurter, "gas", dotDamage,
-                            (int) Math.ceil(6 * triggerTime), (t, d) -> {
-                                if (level instanceof ServerLevel sl && ParticleEmissionGuard.tryAcquireGlobal(sl)) {
-                                    ElementParticleEffects.spawnGasCloudEffect(sl, gasCenter, gasRadius);
-                                }
-
+                            gasRounds, (t, d) -> {
                                 List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class,
                                         new AABB(gasCenter.x - gasRadius, gasCenter.y - gasRadius, gasCenter.z - gasRadius,
                                                 gasCenter.x + gasRadius, gasCenter.y + gasRadius, gasCenter.z + gasRadius),

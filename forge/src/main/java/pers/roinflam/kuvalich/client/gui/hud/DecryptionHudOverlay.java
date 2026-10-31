@@ -1,15 +1,20 @@
 package pers.roinflam.kuvalich.client.gui.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.Util;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.locale.Language;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -17,590 +22,866 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
+import pers.roinflam.kuvalich.client.ClientPacketHandlers;
+import pers.roinflam.kuvalich.client.fx.FxPalette;
+import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
+import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.client.gui.requiem.MurmurTriangle;
+import pers.roinflam.kuvalich.client.gui.requiem.RequiemSigils;
+import pers.roinflam.kuvalich.client.lich.BossBarTracker;
+import pers.roinflam.kuvalich.client.lich.ClientLichState;
+import pers.roinflam.kuvalich.client.lich.LichArchiveScreen;
+import pers.roinflam.kuvalich.client.mercy.MercyClient;
+import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
+import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.lang.ref.WeakReference;
+import java.util.Locale;
 
 /**
- * 安魂解密进度顶部HUD浮层（客户端专用）
- * Decryption progress top-HUD overlay (Client-only)
+ * 解密进度 HUD「赤毒菱晶」（客户端）
  *
- * <p>无需打开灭骸之扉界面，打怪获得解密进度时屏幕顶部弹出进度条：
- * <ul>
- *   <li>滑入 + 填充补间（指数平滑，帧率无关）+ 数秒后淡出。</li>
- *   <li>填充贴图复用灭骸之扉的 requiem_gate.png（UV 与 RequiemGateScreen 完全一致）。</li>
- *   <li>无论一次加很多、加一点还是连续多次加，都用同一套平滑补间，从旧值平滑过渡到新值。</li>
- *   <li>揭示新线索时金色脉冲闪光 + 音效；最终解密成功时更强的庆祝闪光 + 音效，并将条归零。</li>
- * </ul></p>
+ * <p>打奴仆攒解密进度时，屏幕上方正中弹出一枚竖长的赤毒菱晶：外圈从上顶点顺时针点亮、里面的赤毒液面同步升高，
+ * 两样都是这一阶段的密语进度。下面一行「安魂密语」，右边三颗小菱表示已经揭示了几条，有玄骸时再下面一行是它的名字。
+ * 整块只垫一团墨烟，没有方框、没有横条和数字。淡入 500 ms、停 3.15 s、淡出 350 ms，不滑动、不缩放、不闪、不出声。</p>
  *
- * <p>所有文案均来自语言文件（翻译键见下方 KEY_* 常量），§颜色码在渲染时生效；
- * 淡入淡出的 alpha 由代码统一控制（字体渲染器对带 §颜色 的文本同样套用传入 alpha）。
- * 解密成功标题在语言文件中使用 §4 深红。</p>
+ * <p>揭示一条密语时：菱晶先走满，菱内的东西淡掉、只留一圈淡外框慢慢放大，这张卡自己的符号在原位 750 ms 淡入，
+ * 下面换成卡名；揭示第三条时换成三枚并排；破解（成功终结玄骸）时三枚并排、菱框灌满赤毒，名字行写刚终结的那只。
+ * 这三种都有自己的声音，进度增长本身不出声。</p>
  *
- * <p>数据来源全部由服务端 {@link DecryptionHudPacket} 下发；阈值随包传来，
- * 因此进度比例始终与服务端真实进度一致。</p>
+ * <p>位置：中心固定在屏幕高 0.143 处，屏幕上方有 Boss 条（原版的、别的模组的都算）时往下让到最下面那条之下 14 个单位，
+ * 显示中 Boss 条出现、消失时 250 ms 缓过去。界面隐藏（F1）、怜悯之击运镜中、开着玄骸档案时不画。</p>
  *
- * @author RoinFlam
+ * <p>数据全部来自服务端的 {@link DecryptionHudPacket}（阈值随包下发，比例始终和服务端一致）。
+ * 尺寸都按屏幕高算：以 480×270 的 GUI 为准定的数，别的分辨率等比缩放；线宽按物理像素（1080p 是 2 px），任何 GUI 缩放下粗细一样。
+ * 时间走演出时钟 {@link KuvaFxDirector#clockMs()}，暂停时停住。画的时候不分配对象。</p>
  */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class DecryptionHudOverlay {
 
-    // ==================== 贴图（复用灭骸之扉进度条） ====================
+    // ==================== 贴图与文字 ====================
 
-    /** 进度条贴图（与 RequiemGateScreen 同一张） */
-    private static final ResourceLocation TEXTURE =
-            new ResourceLocation(Reference.MOD_ID, "textures/gui/container/requiem_gate.png");
+    private static final ResourceLocation SMOKE = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/murmur_smoke.png");
+    private static final ResourceLocation GLOW = new ResourceLocation(Reference.MOD_ID, "textures/particle/glow.png");
 
-    /** 进度条宽 / Bar width */
-    private static final int BAR_W = 152;
-    /** 进度条高 / Bar height */
-    private static final int BAR_H = 18;
-    /** 轨道贴图 U 偏移 / Track texture U（与 RequiemGateScreen 一致：18） */
-    private static final int TRACK_U = 18;
-    /** 轨道贴图 V 偏移 / Track texture V（灭骸之扉 imageHeight = 166） */
-    private static final int TRACK_V = 166;
-    /** 填充贴图 U 偏移 / Fill texture U */
-    private static final int FILL_U = 18;
-    /** 填充贴图 V 偏移 / Fill texture V（166 + 18） */
-    private static final int FILL_V = 166 + 18;
+    private static final String KEY_LABEL = "kuvalich.hud.murmur.label";
+    private static final String KEY_ALL = "kuvalich.hud.murmur.all";
+    private static final String KEY_BROKEN = "kuvalich.hud.murmur.broken";
 
-    // ==================== 布局 ====================
+    /** 卡名（拉丁专名，各语言一样），按卡 id */
+    private static final String[] CARD_NAMES = {"Khra", "Jahu", "Fass", "Lohk", "Netra", "Vome", "Xata", "Ris"};
 
-    /** 整个组件距屏幕顶部的边距（像素） */
-    private static final int TOP_MARGIN = 6;
-    /** 标题行与进度条之间的间距（像素） */
-    private static final int TITLE_GAP = 11;
-    /** 滑入时的起始上移距离（像素） */
-    private static final int SLIDE_DISTANCE = 14;
+    // ==================== 版面（按屏幕高 H、宽 W 的比例） ====================
 
-    // ==================== 时间参数（毫秒） ====================
+    /** 菱晶中心的高度 */
+    private static final float CY = 0.143F;
+    /** 菱晶半高 */
+    private static final float HALF_H = 0.030F;
+    /** Boss 条下面留的空 */
+    private static final int BOSS_GAP = 14;
+    /** 墨烟：中心下移、宽、高；揭示时放大到的宽、高、下移 */
+    private static final float SMOKE_DY = 0.025F, SMOKE_W = 0.20F, SMOKE_H = 0.12F;
+    private static final float SMOKE_W_REVEAL = 0.23F, SMOKE_H_REVEAL = 0.17F, SMOKE_DY_REVEAL = 0.045F;
+    /** 背后柔光的边长（× W）和透明度 */
+    private static final float GLOW_SIZE = 0.03F, GLOW_ALPHA = 0.35F;
+    /** 标签顶、标签和名字行的间隔 */
+    private static final float LABEL_DY = 0.044F, NAME_GAP = 0.006F;
+    /** 字号：大写字母高 0.016H（字体的大写字母高 7） */
+    private static final float TEXT_CAP = 0.016F;
+    /** 揭示：符号高、卡名顶、下面那行小字的顶、卡名相对标签字号的倍数 */
+    private static final float SIGIL_H = 0.075F, CARD_NAME_DY = 0.050F, CARD_SUB_DY = 0.077F, CARD_NAME_SCALE = 1.2F;
+    /** 三枚并排：菱框半高（× a）、间距（× W）；符号高和菱框高之比跟单枚揭示时一样（0.075H : 2.8a） */
+    private static final float ROW_HALF = 0.7F, ROW_STEP = 0.05F;
+    private static final float ROW_SIGIL = SIGIL_H / (2.8F * HALF_H) * 2.0F * ROW_HALF;
 
-    /** 最后一次更新后保持显示的时长 */
-    private static final long HOLD_MS = 4000L;
-    /** 淡出时长 */
-    private static final long FADE_MS = 600L;
-    /** 滑入时长 */
-    private static final long APPEAR_MS = 350L;
-    /** 填充动画固定时长（毫秒）：无论增量多少都用此固定时长平滑过渡，模拟原版进度条的缓慢手感 */
-    private static final long FILL_ANIM_DURATION_MS = 3000L;
-    /** 揭示闪光时长 */
-    private static final long REVEAL_FLASH_MS = 900L;
-    /** 解密成功闪光时长 */
-    private static final long COMPLETE_FLASH_MS = 1600L;
+    // ==================== 节奏（毫秒） ====================
 
-    // ==================== 闪光颜色与强度 ====================
+    private static final long FADE_IN_MS = 500L;
+    private static final long PROGRESS_MS = 600L;
+    private static final long HOLD_MS = 3150L;
+    private static final long FADE_OUT_MS = 350L;
+    private static final long ALL_HOLD_MS = 2000L;
+    /** 揭示：走满、菱内淡掉、符号淡入的分界；停留 */
+    private static final long REVEAL_FILL_END = 600L, REVEAL_BODY_END = 900L, REVEAL_SIGIL_MS = 750L, REVEAL_HOLD_MS = 3000L;
+    /** 破解：一起淡入、停留 */
+    private static final long BROKEN_IN_MS = 750L, BROKEN_HOLD_MS = 3000L;
+    /** 被新内容顶掉的那一版淡出 */
+    private static final long RETIRE_MS = 250L;
+    /** Boss 条变化时位置缓过去 */
+    private static final long MOVE_MS = 250L;
+    /** 揭示声对准符号淡入完成（声音的爆发点在 750 ms），所以在符号开始淡入时放 */
+    private static final int REVEAL_SOUND_DELAY_TICKS = (int) (REVEAL_BODY_END / 50L);
 
-    /** 揭示闪光颜色RGB（浅金） */
-    private static final int REVEAL_RGB = 0xFFE8A0;
-    /** 揭示色洗峰值透明度（柔和发光，非实心色块） */
-    private static final int REVEAL_WASH_ALPHA_MAX = 90;
-    /** 扩散光环最大外扩像素 */
-    private static final int RING_MAX_OFFSET = 6;
-    /** 扩散光环峰值透明度 */
-    private static final int RING_ALPHA_MAX = 160;
-    /** 揭示时整体缩放弹跳幅度 */
-    private static final float REVEAL_POP_MAX = 0.045f;
-    /** 标题底衬透明度（占整体alpha的比例） */
-    private static final float TITLE_BG_ALPHA = 0.55f;
-    /** 标题底衬水平内边距（像素） */
-    private static final int TITLE_BG_PAD_X = 4;
-    /** 标题状态切换时的交叉淡入淡出时长（毫秒） */
-    private static final long TITLE_FADE_MS = 260L;
+    // ==================== 面板 ====================
 
-    // ==================== 进度条填充染色（奥罗金金色，可调；设为 1,1,1 即原色） ====================
+    private static final int MODE_PROGRESS = 0;
+    private static final int MODE_REVEAL = 1;
+    private static final int MODE_REVEAL_ALL = 2;
+    private static final int MODE_ALL = 3;
+    private static final int MODE_BROKEN = 4;
 
-    /** 填充染色 R 分量 */
-    private static final float FILL_TINT_R = 1.00f;
-    /** 填充染色 G 分量 */
-    private static final float FILL_TINT_G = 0.82f;
-    /** 填充染色 B 分量 */
-    private static final float FILL_TINT_B = 0.40f;
+    /** 一次弹出的全部状态。两份轮着用：新内容顶掉旧的时，旧的那份照原样画着淡出 */
+    private static final class Panel {
+        boolean live;
+        int mode;
+        /** 收到包的时刻 */
+        long start;
+        /** 淡入：起点、起始透明度、时长、是否用正弦曲线（破解用） */
+        long fadeInAt;
+        float fadeInFrom;
+        long fadeInMs;
+        boolean sineIn;
+        /** 停留到几时，之后 350 ms 淡出 */
+        long holdUntil;
+        /** 被顶掉的时刻和当时的透明度，没有为 −1 */
+        long retireAt = -1L;
+        float retireFrom;
+        /** 进度补间 */
+        float progFrom;
+        float progTo;
+        long progAt;
+        /** 阶段（已揭示几条） */
+        int stage;
+        int revealedCard = -1;
+        final int[] riddles = {-1, -1, -1};
+        /** 破解时的名字（已转大写） */
+        String brokenName = "";
 
-    // ==================== 文本翻译键（文案与颜色均在语言文件维护） ====================
+        void copyFrom(Panel o) {
+            live = o.live;
+            mode = o.mode;
+            start = o.start;
+            fadeInAt = o.fadeInAt;
+            fadeInFrom = o.fadeInFrom;
+            fadeInMs = o.fadeInMs;
+            sineIn = o.sineIn;
+            holdUntil = o.holdUntil;
+            retireAt = o.retireAt;
+            retireFrom = o.retireFrom;
+            progFrom = o.progFrom;
+            progTo = o.progTo;
+            progAt = o.progAt;
+            stage = o.stage;
+            revealedCard = o.revealedCard;
+            System.arraycopy(o.riddles, 0, riddles, 0, 3);
+            brokenName = o.brokenName;
+        }
 
-    /** 普通标题（带阶段占位符 %s）：语言文件值形如 "§6安魂密语解密 · 线索 %s/3"（奥罗金金色） */
-    private static final String KEY_TITLE_NORMAL = "kuvalich.hud.decryption.title";
-    /** 线索全部解锁、待挑战时的标题：建议 §e 亮金 */
-    private static final String KEY_TITLE_READY = "kuvalich.hud.decryption.ready";
-    /** 揭示新线索时的标题：建议 §e 亮金 */
-    private static final String KEY_TITLE_REVEAL = "kuvalich.hud.decryption.reveal";
-    /** 最终解密成功时的标题：使用 §4 深红（Kuva 红色终幕，亦可改 §6/§e 走纯金风格） */
-    private static final String KEY_TITLE_COMPLETE = "kuvalich.hud.decryption.complete";
-    /** 进度数字（两个占位符 %s / %s）：建议 §e 亮金 */
-    private static final String KEY_NUMBERS_PROGRESS = "kuvalich.hud.decryption.progress";
-    /** 线索全部揭示时进度条中央文案：建议 §e 亮金 */
-    private static final String KEY_NUMBERS_ALL_REVEALED = "kuvalich.hud.decryption.all_revealed";
+        float progress(long now) {
+            float t = Mth.clamp((now - progAt) / (float) PROGRESS_MS, 0.0F, 1.0F);
+            return progFrom + (progTo - progFrom) * outCubic(t);
+        }
 
-    // ==================== 运行时状态（仅客户端主线程访问，无需加锁） ====================
+        /** 整体透明度（淡入 × 淡出 × 被顶掉）；完全淡完返回 0 */
+        float alpha(long now) {
+            if (!live) {
+                return 0.0F;
+            }
+            float tin = Mth.clamp((now - fadeInAt) / (float) fadeInMs, 0.0F, 1.0F);
+            float in = fadeInFrom + (1.0F - fadeInFrom) * (sineIn ? MurmurTriangle.easeInOutSine(tin) : inOutCubic(tin));
+            float out = 1.0F;
+            if (now > holdUntil) {
+                out = 1.0F - (now - holdUntil) / (float) FADE_OUT_MS;
+            }
+            float a = in * out;
+            if (retireAt >= 0L) {
+                a = Math.min(a, retireFrom * (1.0F - (now - retireAt) / (float) RETIRE_MS));
+            }
+            return Mth.clamp(a, 0.0F, 1.0F);
+        }
 
-    private static int targetLevel;
-    private static int targetProgress;
-    private static int targetThreshold;
-    private static float displayedFraction = 0.0f;
-    private static long visibleUntilMs = 0L;
-    private static long appearStartMs = 0L;
-    private static long revealFlashStartMs = -1L;
-    private static long completeFlashStartMs = -1L;
-    private static boolean hasData = false;
+        boolean finished(long now) {
+            return !live || now > holdUntil + FADE_OUT_MS || (retireAt >= 0L && now > retireAt + RETIRE_MS);
+        }
+    }
 
-    /** 填充动画起始比例 */
-    private static float fillAnimStart = 0.0f;
-    /** 填充动画目标比例 */
-    private static float fillAnimTarget = 0.0f;
-    /** 填充动画起始时间戳（毫秒，-1 表示未开始） */
-    private static long fillAnimStartMs = -1L;
+    private static final Panel CUR = new Panel();
+    private static final Panel OLD = new Panel();
 
-    /** 上一帧标题状态码（0普通/1就绪/2揭示/3成功，-1未初始化），用于检测状态切换触发交叉淡入 */
-    private static int lastTitleState = -1;
-    /** 上一帧绘制的标题组件，状态切换时作为淡出的旧标题 */
-    private static Component lastTitleComponent = null;
-    /** 交叉淡入中正在淡出的旧标题（null 表示当前无切换过渡） */
-    private static Component titleFadeFrom = null;
-    /** 标题交叉淡入起始时间戳（毫秒，-1 表示无过渡） */
-    private static long titleFadeStartMs = -1L;
+    /** 揭示、破解期间又来的进度包：先记着，那一版放完再弹 */
+    private static boolean pending;
+    private static int pendingLevel;
+    private static float pendingProgress;
+    private static final int[] PENDING_RIDDLES = {-1, -1, -1};
 
-    /** 上次渲染所处世界（弱引用，避免阻止旧世界GC），用于检测切换世界后重置 */
+    /** 中心高度的缓动 */
+    private static float cyFrom = -1.0F;
+    private static float cyTo = -1.0F;
+    private static long cyAt;
+
     private static WeakReference<Level> lastLevelRef = null;
+
+    // ==================== 调试（只给开发环境的命令用） ====================
+
+    /** 假装屏幕上有 Boss 条，底在这里；−1 = 不假装 */
+    private static int debugBossBottom = -1;
+    /** 把当前这一版定在收到包后的第几毫秒；−1 = 不定 */
+    private static long debugFreezeMs = -1L;
+    /** 不淡出，一直停着 */
+    private static boolean debugHold;
+
+    // ==================== 排版缓存 ====================
+
+    /** 一行带字距的字：拆成单字、算好每个字的横坐标（字体单位）。只在文字变了时重算 */
+    private static final class Spaced {
+        String src;
+        float spacing;
+        boolean cjkRule;
+        String[] glyphs = new String[0];
+        float[] xs = new float[0];
+        float width;
+    }
+
+    private static final Spaced[] LAYOUTS = new Spaced[12];
+    private static int layoutNext;
+    private static String lichTitleSeen;
+    private static String lichUpper = "";
 
     private DecryptionHudOverlay() {
     }
 
-    // ==================== 数据更新（由 DecryptionHudPacket 客户端处理调用） ====================
+    // ==================== 收包 ====================
 
     /**
-     * 接收服务端下发的解密进度更新。
+     * 服务端下发的解密进度到了。协议 10 追加的揭示卡号、三枚密语、玄骸名字在这一次调用期间从
+     * {@link ClientPacketHandlers#currentDecryption()} 读出来、当场拷下（它只在这一刻有值）
      *
-     * @param eventType 事件类型（见 DecryptionHudPacket 常量）
-     * @param level     当前解密阶段
-     * @param progress  当前阶段进度
-     * @param threshold 当前阶段阈值（满级 -1）
-     * @param added     本次增加量
+     * @param eventType 事件（{@link DecryptionHudPacket} 的 EVENT_*）
+     * @param level     当前阶段（已揭示几条）
+     * @param progress  当前阶段的进度
+     * @param threshold 当前阶段的阈值（满了为 −1）
+     * @param added     这次加了多少
      */
     public static void onPacket(int eventType, int level, int progress, int threshold, int added) {
-        long now = Util.getMillis();
-        boolean wasHidden = !hasData || now > visibleUntilMs + FADE_MS;
+        DecryptionHudPacket full = ClientPacketHandlers.currentDecryption();
+        int revealed = -1;
+        int[] riddles = null;
+        String name = "";
+        if (full != null) {
+            revealed = full.revealedCard();
+            riddles = full.riddles();
+            name = full.lichName();
+        }
+        show(eventType, level, progress, threshold, added, revealed, riddles, name);
+    }
 
-        targetLevel = level;
-        targetProgress = progress;
-        targetThreshold = threshold;
-        hasData = true;
-        visibleUntilMs = now + HOLD_MS;
+    /**
+     * 按收到一个解密进度包的样子弹一次（{@link #onPacket} 和调试命令共用）
+     *
+     * @param revealedCard 这次新揭示的卡 id，没有为 −1
+     * @param riddles      三枚密语（卡 id，−1 为未揭示），可以为 {@code null}
+     * @param lichName     破解时刚终结的玄骸名字
+     */
+    public static void show(int eventType, int level, int progress, int threshold, int added,
+                            int revealedCard, int[] riddles, String lichName) {
+        long now = clock();
+        float p = threshold > 0 ? Mth.clamp(progress / (float) threshold, 0.0F, 1.0F) : (level >= 3 ? 1.0F : 0.0F);
+        int stage = Mth.clamp(level, 0, 3);
 
-        // 之前已隐藏 → 重新触发滑入
-        if (wasHidden) {
-            appearStartMs = now;
+        if (eventType == DecryptionHudPacket.EVENT_COMPLETE) {
+            Panel n = begin(now, MODE_BROKEN, 3);
+            copyRiddles(riddles, n.riddles);
+            n.brokenName = lichName == null ? "" : lichName.toUpperCase(Locale.ROOT);
+            n.fadeInAt = now;
+            n.fadeInFrom = 0.0F;
+            n.fadeInMs = BROKEN_IN_MS;
+            n.sineIn = true;
+            n.holdUntil = now + BROKEN_IN_MS + BROKEN_HOLD_MS;
+            pending = false;
+            playUi(KuvaLichSounds.UI_DECRYPT_COMPLETE.get(), 0);
+            return;
         }
 
         if (eventType == DecryptionHudPacket.EVENT_REVEAL) {
-            revealFlashStartMs = now;
-            playUiSound(SoundEvents.AMETHYST_BLOCK_CHIME, 1.2F);
-        } else if (eventType == DecryptionHudPacket.EVENT_COMPLETE) {
-            completeFlashStartMs = now;
-            playUiSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0F);
+            boolean visible = CUR.live && !CUR.finished(now);
+            float fromAlpha = visible ? CUR.alpha(now) : 0.0F;
+            // 揭示前那一阶段已经显示到哪了：同一版接着走，否则从空的开始
+            float fromProgress = visible && CUR.mode == MODE_PROGRESS ? CUR.progress(now) : 0.0F;
+            boolean continueSame = visible && CUR.mode == MODE_PROGRESS;
+            int mode = stage >= 3 ? MODE_REVEAL_ALL : MODE_REVEAL;
+            Panel n = continueSame ? reuse(now, mode, stage) : begin(now, mode, stage);
+            n.revealedCard = revealedCard;
+            copyRiddles(riddles, n.riddles);
+            n.progFrom = fromProgress;
+            n.progTo = 1.0F;
+            n.progAt = now;
+            n.fadeInAt = now;
+            n.fadeInFrom = continueSame ? fromAlpha : 0.0F;
+            n.fadeInMs = FADE_IN_MS;
+            n.sineIn = false;
+            n.holdUntil = now + REVEAL_BODY_END + REVEAL_SIGIL_MS + REVEAL_HOLD_MS;
+            pending = false;
+            playUi(revealSound(stage), REVEAL_SOUND_DELAY_TICKS);
+            return;
         }
+
+        // 普通进度
+        if (stage >= 3) {
+            // 三条都揭示了还在杀：三枚并排停 2 秒
+            if (CUR.live && !CUR.finished(now) && isShowcase(CUR.mode)) {
+                return;
+            }
+            boolean visible = CUR.live && !CUR.finished(now) && CUR.mode == MODE_ALL;
+            Panel n = visible ? reuse(now, MODE_ALL, 3) : begin(now, MODE_ALL, 3);
+            copyRiddles(riddles, n.riddles);
+            if (!visible) {
+                n.fadeInAt = now;
+                n.fadeInFrom = 0.0F;
+                n.fadeInMs = FADE_IN_MS;
+                n.sineIn = false;
+            }
+            n.holdUntil = Math.max(now, n.fadeInAt + FADE_IN_MS) + ALL_HOLD_MS;
+            return;
+        }
+
+        if (CUR.live && !CUR.finished(now) && isShowcase(CUR.mode)) {
+            // 揭示 / 破解还在放：记下来，放完再弹新阶段的菱晶
+            pending = true;
+            pendingLevel = stage;
+            pendingProgress = p;
+            copyRiddles(riddles, PENDING_RIDDLES);
+            return;
+        }
+        boolean visible = CUR.live && !CUR.finished(now) && CUR.mode == MODE_PROGRESS && CUR.stage == stage;
+        if (visible) {
+            CUR.progFrom = CUR.progress(now);
+            CUR.progTo = p;
+            CUR.progAt = now;
+            if (now > CUR.holdUntil) {
+                // 正在淡出：从当前透明度重新淡入
+                CUR.fadeInFrom = CUR.alpha(now);
+                CUR.fadeInAt = now;
+            }
+            CUR.holdUntil = Math.max(now, CUR.fadeInAt + CUR.fadeInMs) + HOLD_MS;
+            copyRiddles(riddles, CUR.riddles);
+            return;
+        }
+        startProgress(now, stage, p, riddles);
+    }
+
+    private static void startProgress(long now, int stage, float p, int[] riddles) {
+        Panel n = begin(now, MODE_PROGRESS, stage);
+        copyRiddles(riddles, n.riddles);
+        n.progFrom = 0.0F;
+        n.progTo = p;
+        n.progAt = now;
+        n.fadeInAt = now;
+        n.fadeInFrom = 0.0F;
+        n.fadeInMs = FADE_IN_MS;
+        n.sineIn = false;
+        n.holdUntil = now + FADE_IN_MS + HOLD_MS;
+    }
+
+    /** 开一版新的；当前那一版还看得见就让它淡出 */
+    private static Panel begin(long now, int mode, int stage) {
+        if (CUR.live && !CUR.finished(now)) {
+            float a = CUR.alpha(now);
+            OLD.copyFrom(CUR);
+            OLD.retireAt = now;
+            OLD.retireFrom = a;
+        } else {
+            OLD.live = false;
+        }
+        if (!CUR.live || CUR.finished(now)) {
+            // 隐藏中弹出：位置直接到位，不从上一次的地方滑过来
+            cyFrom = -1.0F;
+        }
+        reset(CUR, now, mode, stage);
+        return CUR;
+    }
+
+    /** 接着当前这一版画（揭示接在进度后面、全部揭示续停），不淡出重来 */
+    private static Panel reuse(long now, int mode, int stage) {
+        CUR.mode = mode;
+        CUR.stage = stage;
+        CUR.start = now;
+        CUR.retireAt = -1L;
+        return CUR;
+    }
+
+    private static void reset(Panel n, long now, int mode, int stage) {
+        n.live = true;
+        n.mode = mode;
+        n.stage = stage;
+        n.start = now;
+        n.retireAt = -1L;
+        n.revealedCard = -1;
+        n.brokenName = "";
+        n.progFrom = 0.0F;
+        n.progTo = 0.0F;
+        n.progAt = now;
+        n.riddles[0] = n.riddles[1] = n.riddles[2] = -1;
+    }
+
+    private static boolean isShowcase(int mode) {
+        return mode == MODE_REVEAL || mode == MODE_REVEAL_ALL || mode == MODE_BROKEN;
+    }
+
+    private static void copyRiddles(int[] src, int[] dst) {
+        for (int i = 0; i < 3; i++) {
+            dst[i] = src != null && i < src.length ? src[i] : -1;
+        }
+    }
+
+    private static SoundEvent revealSound(int stage) {
+        if (stage >= 3) {
+            return KuvaLichSounds.UI_DECRYPT_REVEAL3.get();
+        }
+        return stage == 2 ? KuvaLichSounds.UI_DECRYPT_REVEAL2.get() : KuvaLichSounds.UI_DECRYPT_REVEAL1.get();
+    }
+
+    private static void playUi(SoundEvent ev, int delayTicks) {
+        if (Minecraft.getInstance().player == null) {
+            return;
+        }
+        KuvaSoundPlayer.play(KuvaSoundPlayer.ui(ev, 1.0F, 1.0F), delayTicks);
     }
 
     // ==================== 注册 ====================
 
-    /**
-     * 注册为「最顶层」HUD 浮层
-     *
-     * @param event Forge HUD 浮层注册事件
-     */
     @SubscribeEvent
     public static void onRegisterOverlays(RegisterGuiOverlaysEvent event) {
         event.registerAboveAll("requiem_decryption_hud", DecryptionHudOverlay::render);
     }
 
-    // ==================== 渲染 ====================
+    // ==================== 画 ====================
 
     /**
-     * HUD 浮层渲染入口（每帧调用）
+     * 每帧
      *
-     * @param gui         ForgeGui 实例
-     * @param guiGraphics 图形上下文
-     * @param partialTick 渲染插值
-     * @param width       屏幕缩放宽
-     * @param height      屏幕缩放高
+     * @param width  GUI 宽
+     * @param height GUI 高
      */
-    public static void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int width, int height) {
+    public static void render(ForgeGui gui, GuiGraphics g, float partialTick, int width, int height) {
         Minecraft mc = Minecraft.getInstance();
-
-        // 切换世界检测：进入新世界时重置，避免显示上一个世界的残留进度
-        Level currentLevel = mc.level;
-        if (lastLevelRef == null || lastLevelRef.get() != currentLevel) {
-            lastLevelRef = new WeakReference<>(currentLevel);
-            resetState();
+        Level level = mc.level;
+        if (lastLevelRef == null || lastLevelRef.get() != level) {
+            lastLevelRef = new WeakReference<>(level);
+            clearAll();
         }
-
-        if (currentLevel == null || mc.player == null || mc.options.hideGui) {
+        if (level == null || mc.player == null) {
             return;
         }
-        if (!hasData) {
+        long now = clock();
+        if (CUR.live && CUR.finished(now)) {
+            CUR.live = false;
+            if (pending) {
+                pending = false;
+                startProgress(now, pendingLevel, pendingProgress, PENDING_RIDDLES);
+            }
+        }
+        if (OLD.live && OLD.finished(now)) {
+            OLD.live = false;
+        }
+        if (!CUR.live && !OLD.live) {
             return;
         }
-
-        long now = Util.getMillis();
-        // 完全隐藏后不渲染
-        if (now > visibleUntilMs + FADE_MS) {
+        if (mc.options.hideGui || MercyClient.hidesHud() || archiveOpen(mc.screen)) {
             return;
         }
-
-        // 过期闪光及时清理，保证后续 pop / 闪光 / 标题状态一致
-        if (revealFlashStartMs >= 0L && now - revealFlashStartMs >= REVEAL_FLASH_MS) {
-            revealFlashStartMs = -1L;
-        }
-        if (completeFlashStartMs >= 0L && now - completeFlashStartMs >= COMPLETE_FLASH_MS) {
-            completeFlashStartMs = -1L;
+        if (debugHold && CUR.live) {
+            CUR.holdUntil = Math.max(CUR.holdUntil, now + FADE_OUT_MS + 1000L);
         }
 
-        // 填充补间（固定时长动画）：目标变化时以当前显示值为起点，用固定 3 秒缓入缓出过渡到新目标，模拟原版进度条的缓慢手感
-        double targetFraction = computeTargetFraction();
-        if (fillAnimStartMs < 0L || Math.abs(targetFraction - fillAnimTarget) > 1.0e-4) {
-            fillAnimStart = displayedFraction;
-            fillAnimTarget = (float) targetFraction;
-            fillAnimStartMs = now;
+        float a = Math.max(3.0F, Math.round(HALF_H * height));
+        float cx = width * 0.5F;
+        float cy = centerY(now, height, a);
+        float lw = GuiShapes.pixels(g, GuiShapes.lineWidthPx());
+
+        if (OLD.live) {
+            drawPanel(g, mc.font, OLD, now, cx, cy, a, width, height, lw);
         }
-        double animT = clamp01((now - fillAnimStartMs) / (double) FILL_ANIM_DURATION_MS);
-        double animEased = animT * animT * (3.0 - 2.0 * animT);
-        displayedFraction = (float) (fillAnimStart + (fillAnimTarget - fillAnimStart) * animEased);
-        if (displayedFraction < 0.0f) {
-            displayedFraction = 0.0f;
-        } else if (displayedFraction > 1.0f) {
-            displayedFraction = 1.0f;
+        if (CUR.live) {
+            drawPanel(g, mc.font, CUR, now, cx, cy, a, width, height, lw);
         }
-
-        // 滑入 + 淡出 → 整体 alpha 与 Y 偏移
-        double appearT = clamp01((now - appearStartMs) / (double) APPEAR_MS);
-        double appearEased = appearT * appearT * (3.0 - 2.0 * appearT);
-        float alpha = (float) appearEased;
-        int yOffset = (int) Math.round(-(1.0 - appearEased) * SLIDE_DISTANCE);
-        if (now > visibleUntilMs) {
-            double fadeT = clamp01((now - visibleUntilMs) / (double) FADE_MS);
-            alpha *= (float) (1.0 - fadeT);
-        }
-        if (alpha <= 0.02f) {
-            return;
-        }
-
-        int x = (width - BAR_W) / 2;
-        int widgetTop = TOP_MARGIN + yOffset;
-        int barY = widgetTop + TITLE_GAP;
-
-        // 揭示/成功时整体轻微缩放弹跳（绕组件中心）
-        float pop = computeFlashPop(now);
-        guiGraphics.pose().pushPose();
-        if (pop != 1.0f) {
-            float cx = x + BAR_W / 2.0f;
-            float cy = barY + BAR_H / 2.0f;
-            guiGraphics.pose().translate(cx, cy, 0.0f);
-            guiGraphics.pose().scale(pop, pop, 1.0f);
-            guiGraphics.pose().translate(-cx, -cy, 0.0f);
-        }
-
-        renderBar(guiGraphics, x, barY, alpha);
-        renderFlashes(guiGraphics, x, barY, alpha, now);
-        renderText(mc.font, guiGraphics, x, widgetTop, barY, alpha, now);
-
-        guiGraphics.pose().popPose();
-
-        // 复原渲染状态，避免本浮层启用的 blend 泄漏到后续渲染
+        g.flush();
         RenderSystem.disableBlend();
-    }
-
-    /**
-     * 计算当前帧整体缩放弹跳系数（揭示闪光前段快速弹起后回落到 1）。
-     *
-     * @param now 当前时间戳
-     * @return 缩放系数（1.0 表示无缩放）
-     */
-    private static float computeFlashPop(long now) {
-        // 仅揭示新线索做整体缩放弹跳；解密成功不做（此时进度增量为0，不应"爆"）
-        return flashPop(revealFlashStartMs, REVEAL_FLASH_MS, REVEAL_POP_MAX, now);
-    }
-
-    /**
-     * 单个闪光的缩放弹跳贡献：在前 1/3 时长内完成一次 0→峰值→0 的弹跳。
-     *
-     * @param start  闪光起始时间（&lt;0 表示未激活）
-     * @param dur    闪光总时长
-     * @param popMax 弹跳幅度峰值
-     * @param now    当前时间戳
-     * @return 缩放系数（1.0 表示该闪光无贡献）
-     */
-    private static float flashPop(long start, long dur, float popMax, long now) {
-        if (start < 0L) {
-            return 1.0f;
-        }
-        long elapsed = now - start;
-        if (elapsed >= dur) {
-            return 1.0f;
-        }
-        double t = (double) elapsed / dur;
-        double bounce = Math.sin(Math.PI * Math.min(t * 3.0, 1.0));
-        return (float) (1.0 + popMax * bounce * (1.0 - t));
-    }
-
-    /**
-     * 绘制轨道 + 填充（通过 shader color 应用整体 alpha）
-     */
-    private static void renderBar(GuiGraphics guiGraphics, int x, int barY, float alpha) {
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
-        // 轨道（原色）
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
-        guiGraphics.blit(TEXTURE, x, barY, TRACK_U, TRACK_V, BAR_W, BAR_H);
-
-        // 填充（奥罗金金色染色）
-        int fillWidth = Math.round(displayedFraction * BAR_W);
-        if (fillWidth > BAR_W) {
-            fillWidth = BAR_W;
-        }
-        if (fillWidth > 0) {
-            RenderSystem.setShaderColor(FILL_TINT_R, FILL_TINT_G, FILL_TINT_B, alpha);
-            guiGraphics.blit(TEXTURE, x, barY, FILL_U, FILL_V, fillWidth, BAR_H);
-        }
-
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    /**
-     * 绘制揭示新线索闪光（fill 自带 alpha，独立于 shader color）。
-     * <p>柔和色洗 + 由进度条边缘向外扩散的光环，配合整体缩放弹跳，避免实心色块的廉价感。
-     */
-    private static void renderFlashes(GuiGraphics guiGraphics, int x, int barY, float overallAlpha, long now) {
-        // 仅揭示新线索时做闪光；最终解密成功（COMPLETE）不再做进度条闪光（此时进度增量为0，不应"爆"）
-        renderOneFlash(guiGraphics, x, barY, overallAlpha, now,
-                revealFlashStartMs, REVEAL_FLASH_MS, REVEAL_RGB, REVEAL_WASH_ALPHA_MAX);
+    /** 中心高度：固定在 0.143H，有 Boss 条时让到它下面；显示中目标变了 250 ms 缓过去 */
+    private static float centerY(long now, int height, float a) {
+        int bottom = Math.max(BossBarTracker.bottomY(), debugBossBottom);
+        float target = Math.max(Math.round(CY * height), bottom > 0 ? bottom + BOSS_GAP + a : 0.0F);
+        if (cyFrom < 0.0F || cyTo < 0.0F) {
+            cyFrom = cyTo = target;
+            cyAt = now;
+        } else if (Math.abs(target - cyTo) > 0.01F) {
+            cyFrom = currentCy(now);
+            cyTo = target;
+            cyAt = now;
+        }
+        return currentCy(now);
     }
 
-    /**
-     * 绘制单个闪光：柔和色洗（呼吸脉冲）+ 由进度条边缘向外扩散并淡出的光环。
-     *
-     * @param start        闪光起始时间（&lt;0 表示未激活）
-     * @param dur          闪光总时长
-     * @param rgb          颜色RGB（不含alpha）
-     * @param washAlphaMax 色洗峰值透明度
-     */
-    private static void renderOneFlash(GuiGraphics guiGraphics, int x, int barY, float overallAlpha, long now,
-                                       long start, long dur, int rgb, int washAlphaMax) {
-        if (start < 0L) {
-            return;
-        }
-        long elapsed = now - start;
-        if (elapsed >= dur) {
-            return;
-        }
-        double t = (double) elapsed / dur;
-        double env = 1.0 - t;
-
-        // 柔和色洗（盖在进度条上，低透明度发光感）
-        double pulse = (Math.sin(t * Math.PI * 2.0 * 2.0) + 1.0) / 2.0;
-        int washA = (int) (washAlphaMax * env * pulse * overallAlpha);
-        if (washA > 1) {
-            guiGraphics.fill(x, barY, x + BAR_W, barY + BAR_H, (washA << 24) | rgb);
-        }
-
-        // 扩散光环（向外扩张，env² 更快淡出）
-        int off = (int) Math.round(t * RING_MAX_OFFSET) + 1;
-        int ringA = (int) (RING_ALPHA_MAX * env * env * overallAlpha);
-        if (ringA > 1) {
-            int color = (ringA << 24) | rgb;
-            int left = x - off;
-            int right = x + BAR_W + off;
-            int top = barY - off;
-            int bottom = barY + BAR_H + off;
-            guiGraphics.fill(left, top, right, top + 1, color);
-            guiGraphics.fill(left, bottom - 1, right, bottom, color);
-            guiGraphics.fill(left, top, left + 1, bottom, color);
-            guiGraphics.fill(right - 1, top, right, bottom, color);
-        }
+    private static float currentCy(long now) {
+        float t = Mth.clamp((now - cyAt) / (float) MOVE_MS, 0.0F, 1.0F);
+        return cyFrom + (cyTo - cyFrom) * outCubic(t);
     }
 
-    /**
-     * 绘制标题与进度数字。
-     * <p>
-     * 文案与颜色来自语言文件（§颜色码渲染时生效）；alpha 由 alphaColor 的高位字节控制，
-     * 字体渲染器对带 §颜色 的文本同样套用该 alpha，从而保证淡入淡出一致。
-     */
-    private static void renderText(Font font, GuiGraphics guiGraphics, int x, int titleY, int barY, float alpha, long now) {
-        // 计算当前标题状态码与对应翻译组件（3成功 / 2揭示 / 1就绪(满级) / 0普通）
-        boolean completeActive = completeFlashStartMs >= 0L && (now - completeFlashStartMs) < COMPLETE_FLASH_MS;
-        boolean revealActive = revealFlashStartMs >= 0L && (now - revealFlashStartMs) < REVEAL_FLASH_MS;
-        int titleState;
-        Component currentTitle;
-        if (completeActive) {
-            titleState = 3;
-            currentTitle = Component.translatable(KEY_TITLE_COMPLETE);
-        } else if (revealActive) {
-            titleState = 2;
-            currentTitle = Component.translatable(KEY_TITLE_REVEAL);
-        } else if (targetLevel >= 3) {
-            titleState = 1;
-            currentTitle = Component.translatable(KEY_TITLE_READY);
-        } else {
-            titleState = 0;
-            currentTitle = Component.translatable(KEY_TITLE_NORMAL, targetLevel);
-        }
-
-        // alpha 过低时跳过绘制（字体渲染器对极低 alpha 会强制不透明）；
-        // 同步标题跟踪并清空过渡，避免 HUD 重新出现时误触发交叉淡入。
-        if (alpha <= 0.15f) {
-            lastTitleState = titleState;
-            lastTitleComponent = currentTitle;
-            titleFadeFrom = null;
-            titleFadeStartMs = -1L;
+    private static void drawPanel(GuiGraphics g, Font font, Panel pn, long now, float cx, float cy, float a,
+                                  int width, int height, float lw) {
+        float alpha = pn.alpha(now);
+        if (alpha <= 0.004F) {
             return;
         }
+        long t = now - pn.start;
+        float ts = TEXT_CAP * height / 7.0F;
 
-        // 检测标题状态切换 → 启动交叉淡入（旧标题淡出、新标题淡入），让文字切换不再生硬
-        if (titleState != lastTitleState) {
-            if (lastTitleState != -1 && lastTitleComponent != null) {
-                titleFadeFrom = lastTitleComponent;
-                titleFadeStartMs = now;
+        // 下面有两行字、或者标签比较长时墨烟放大一点，好把字都垫住（亮天、雪地上露在烟外的字看不清）：
+        // 揭示时跟着符号淡入慢慢放大；三枚并排、有名字行的直接用大的
+        float grow = 0.0F;
+        if (pn.mode == MODE_REVEAL || pn.mode == MODE_REVEAL_ALL) {
+            grow = MurmurTriangle.easeInOutSine((t - REVEAL_BODY_END) / (float) REVEAL_SIGIL_MS);
+        } else if (pn.mode == MODE_ALL || (pn.mode == MODE_BROKEN ? !pn.brokenName.isEmpty() : ClientLichState.hasLich())) {
+            grow = 1.0F;
+        }
+        float sw = width * Mth.lerp(grow, SMOKE_W, SMOKE_W_REVEAL);
+        float sh = height * Mth.lerp(grow, SMOKE_H, SMOKE_H_REVEAL);
+        float sy = cy + height * Mth.lerp(grow, SMOKE_DY, SMOKE_DY_REVEAL);
+        texQuad(g, SMOKE, cx - sw * 0.5F, sy - sh * 0.5F, cx + sw * 0.5F, sy + sh * 0.5F, 0xFFFFFF, alpha);
+        float gs = width * GLOW_SIZE * 0.5F;
+        texQuad(g, GLOW, cx - gs, cy - gs, cx + gs, cy + gs, FxPalette.KUVA_DEEP, GLOW_ALPHA * alpha);
+
+        switch (pn.mode) {
+            case MODE_PROGRESS -> {
+                MurmurTriangle.drawCrystal(g, cx, cy, a, pn.progress(now), alpha, 0.0F, lw, now);
+                drawTicks(g, cx, cy, a, lw, alpha);
+                float labelTop = cy + LABEL_DY * height;
+                float right = drawText(g, font, label(KEY_LABEL), cx, labelTop, ts, FxPalette.TEXT_MID, alpha, true, 0.0F);
+                drawMinis(g, right + 4.0F * unitScale(height), labelTop + 4.0F * ts, height, pn.stage, alpha, lw);
+                drawLichName(g, font, cx, labelTop, ts, height, alpha);
             }
-            lastTitleState = titleState;
-        }
-        lastTitleComponent = currentTitle;
-
-        // 标题底衬（按当前标题宽度，套用整体 alpha）
-        drawTitleBg(font, guiGraphics, x, titleY, currentTitle, alpha);
-
-        // 标题文字：过渡期内交叉淡入淡出，否则正常绘制
-        if (titleFadeStartMs >= 0L && titleFadeFrom != null && (now - titleFadeStartMs) < TITLE_FADE_MS) {
-            double tp = (double) (now - titleFadeStartMs) / TITLE_FADE_MS;
-            drawTitleText(font, guiGraphics, x, titleY, titleFadeFrom, (float) (alpha * (1.0 - tp)));
-            drawTitleText(font, guiGraphics, x, titleY, currentTitle, (float) (alpha * tp));
-        } else {
-            titleFadeStartMs = -1L;
-            titleFadeFrom = null;
-            drawTitleText(font, guiGraphics, x, titleY, currentTitle, alpha);
-        }
-
-        // 进度数字（进度条中央）：未满级时数字跟随进度条平滑计数上涨，避免数值瞬跳
-        Component numbers;
-        if (targetLevel >= 3) {
-            numbers = Component.translatable(KEY_NUMBERS_ALL_REVEALED);
-        } else {
-            int shownProgress = (int) Math.round(displayedFraction * targetThreshold);
-            if (shownProgress < 0) {
-                shownProgress = 0;
-            } else if (targetThreshold > 0 && shownProgress > targetThreshold) {
-                shownProgress = targetThreshold;
+            case MODE_REVEAL, MODE_REVEAL_ALL -> drawReveal(g, font, pn, t, now, cx, cy, a, width, height, ts, lw, alpha);
+            case MODE_ALL -> {
+                drawRow(g, pn.riddles, false, cx, cy, a, width, lw, alpha);
+                float labelTop = cy + LABEL_DY * height;
+                drawText(g, font, label(KEY_ALL), cx, labelTop, ts, FxPalette.TEXT_MID, alpha, true, 0.0F);
+                drawLichName(g, font, cx, labelTop, ts, height, alpha);
             }
-            numbers = Component.translatable(KEY_NUMBERS_PROGRESS, shownProgress, targetThreshold);
+            case MODE_BROKEN -> {
+                drawRow(g, pn.riddles, true, cx, cy, a, width, lw, alpha);
+                float labelTop = cy + LABEL_DY * height;
+                drawText(g, font, label(KEY_BROKEN), cx, labelTop, ts, FxPalette.TEXT_MID, alpha, true, 0.0F);
+                if (!pn.brokenName.isEmpty()) {
+                    drawText(g, font, pn.brokenName, cx, labelTop + 9.0F * ts + NAME_GAP * height, ts,
+                            FxPalette.ASH, 0.85F * alpha, false, 1.0F);
+                }
+            }
+            default -> {
+            }
         }
-        int alphaColor = (((int) (alpha * 255.0F) & 0xFF) << 24) | 0xFFFFFF;
-        int numbersX = x + (BAR_W - font.width(numbers)) / 2;
-        int numbersY = barY + (BAR_H - font.lineHeight) / 2 + 1;
-        guiGraphics.drawString(font, numbers, numbersX, numbersY, alphaColor, true);
+    }
+
+    /** 揭示一枚 / 揭示第三枚的时间轴（相对收到包） */
+    private static void drawReveal(GuiGraphics g, Font font, Panel pn, long t, long now, float cx, float cy, float a,
+                                   int width, int height, float ts, float lw, float alpha) {
+        // 0~600：走满；600~900：菱内淡掉、外框留到 0.3；900 起：外框放大到 1.4a，符号和新文字 750 ms 淡入
+        float body = 1.0F;
+        if (t > REVEAL_FILL_END) {
+            float k = Mth.clamp((t - REVEAL_FILL_END) / (float) (REVEAL_BODY_END - REVEAL_FILL_END), 0.0F, 1.0F);
+            body = 1.0F - k * k * k;
+        }
+        float in = MurmurTriangle.easeInOutSine((t - REVEAL_BODY_END) / (float) REVEAL_SIGIL_MS);
+        float frame = 0.3F * (1.0F - body);
+        float hh = a * (1.0F + 0.4F * in);
+        if (pn.mode == MODE_REVEAL_ALL) {
+            // 第三枚：900 起单枚的外框让位给三枚并排
+            frame *= 1.0F - Mth.clamp((t - REVEAL_BODY_END) / 300.0F, 0.0F, 1.0F);
+        }
+        MurmurTriangle.drawCrystal(g, cx, cy, hh, pn.progress(now), body * alpha, frame * alpha, lw, now);
+        drawTicks(g, cx, cy, a, lw, body * alpha);
+
+        float labelTop = cy + LABEL_DY * height;
+        if (body > 0.004F) {
+            float right = drawText(g, font, label(KEY_LABEL), cx, labelTop, ts, FxPalette.TEXT_MID, body * alpha, true, 0.0F);
+            drawMinis(g, right + 4.0F * unitScale(height), labelTop + 4.0F * ts, height, pn.stage - 1, body * alpha, lw);
+            drawLichName(g, font, cx, labelTop, ts, height, body * alpha);
+        }
+        if (in <= 0.0F) {
+            return;
+        }
+        if (pn.mode == MODE_REVEAL_ALL) {
+            drawRow(g, pn.riddles, false, cx, cy, a, width, lw, in * alpha);
+            drawText(g, font, label(KEY_ALL), cx, labelTop, ts, FxPalette.TEXT_MID, in * alpha, true, 0.0F);
+            drawLichName(g, font, cx, labelTop, ts, height, in * alpha);
+            return;
+        }
+        drawCardSigil(g, pn.revealedCard, cx, cy, SIGIL_H * height, in * alpha);
+        int id = pn.revealedCard;
+        if (id >= 0 && id < CARD_NAMES.length) {
+            drawText(g, font, CARD_NAMES[id], cx, cy + CARD_NAME_DY * height, ts * CARD_NAME_SCALE,
+                    FxPalette.BONE, 0.95F * in * alpha, false, -0.6F);
+        }
+        drawText(g, font, label(KEY_LABEL), cx, cy + CARD_SUB_DY * height, ts, FxPalette.TEXT_MID, in * alpha, true, 0.0F);
+    }
+
+    /** 三枚并排：破解时菱框灌满赤毒、符号只描浅粉白线；全部揭示时菱框是空的、符号是卡面的样子 */
+    private static void drawRow(GuiGraphics g, int[] riddles, boolean broken, float cx, float cy, float a, int width,
+                                float lw, float alpha) {
+        float hh = ROW_HALF * a;
+        float hw = hh * GuiShapes.DIAMOND_ASPECT;
+        float step = ROW_STEP * width;
+        float sigil = ROW_SIGIL * a;
+        GuiShapes.begin(g);
+        for (int i = 0; i < 3; i++) {
+            float x = cx + (i - 1) * step;
+            if (broken) {
+                GuiShapes.diamondFill(g, x, cy, hw, hh, GuiShapes.argb(FxPalette.KUVA_DEEP, 0.95F * alpha));
+                GuiShapes.diamondOutline(g, x, cy, hw, hh, lw, GuiShapes.argb(FxPalette.KUVA_PALE, 0.95F * alpha));
+            } else {
+                GuiShapes.diamondFill(g, x, cy, hw, hh, GuiShapes.argb(FxPalette.KUVA_MIST, 0.45F * alpha));
+                GuiShapes.diamondOutline(g, x, cy, hw, hh, lw, GuiShapes.argb(FxPalette.KUVA_PALE, 0.3F * alpha));
+            }
+        }
+        for (int i = 0; i < 3; i++) {
+            float x = cx + (i - 1) * step;
+            if (broken) {
+                RequiemSigils.draw(g, riddles[i], x, cy, sigil, GuiShapes.argb(FxPalette.KUVA_PALE, alpha), 0);
+            } else {
+                drawCardSigil(g, riddles[i], x, cy, sigil, alpha);
+            }
+        }
+        GuiShapes.end();
+    }
+
+    /** 揭示的符号：深红填充 + 粉白描边 + 沿线一圈红光 */
+    private static void drawCardSigil(GuiGraphics g, int cardId, float x, float y, float size, float alpha) {
+        if (alpha <= 0.002F) {
+            return;
+        }
+        RequiemSigils.drawLayers(g, cardId, x, y, size, GuiShapes.argb(FxPalette.KUVA_DEEP, 0.95F * alpha), 0,
+                GuiShapes.argb(FxPalette.KUVA, 0.35F * alpha), GuiShapes.argb(FxPalette.KUVA_PALE, alpha));
+    }
+
+    /** 两侧刻痕：左右各三道 2 个单位长的横线，越往外越淡 */
+    private static void drawTicks(GuiGraphics g, float cx, float cy, float a, float lw, float alpha) {
+        if (alpha <= 0.004F) {
+            return;
+        }
+        float k = a / 8.0F;
+        float b = a * GuiShapes.DIAMOND_ASPECT;
+        GuiShapes.begin(g);
+        for (int i = 0; i < 3; i++) {
+            float off = b + (4.0F + 3.0F * i) * k;
+            int c = GuiShapes.argb(FxPalette.KUVA_PALE, TICK_ALPHA[i] * alpha);
+            GuiShapes.hairline(g, cx + off, cy, cx + off + 2.0F * k, cy, lw, c);
+            GuiShapes.hairline(g, cx - off - 2.0F * k, cy, cx - off, cy, lw, c);
+        }
+        GuiShapes.end();
+    }
+
+    private static final float[] TICK_ALPHA = {0.55F, 0.35F, 0.18F};
+
+    /** 标签右边三颗小菱：已揭示的实心，没揭示的只描边 */
+    private static void drawMinis(GuiGraphics g, float x0, float midY, int height, int lit, float alpha, float lw) {
+        if (alpha <= 0.004F) {
+            return;
+        }
+        float u = unitScale(height);
+        float hh = Math.max(3.0F, 0.011F * height) * 0.5F;
+        float hw = hh * GuiShapes.DIAMOND_ASPECT;
+        float step = 5.0F * u;
+        GuiShapes.begin(g);
+        for (int i = 0; i < 3; i++) {
+            float x = x0 + hw + i * step;
+            if (i < lit) {
+                GuiShapes.diamondFill(g, x, midY, hw, hh, GuiShapes.argb(FxPalette.KUVA_PALE, 0.95F * alpha));
+            } else {
+                GuiShapes.diamondOutline(g, x, midY, hw, hh, lw, GuiShapes.argb(FxPalette.KUVA_PALE, 0.25F * alpha));
+            }
+        }
+        GuiShapes.end();
+    }
+
+    /** 有玄骸时标签下面一行它的名字（全大写） */
+    private static void drawLichName(GuiGraphics g, Font font, float cx, float labelTop, float ts, int height, float alpha) {
+        if (alpha <= 0.004F || !ClientLichState.hasLich()) {
+            return;
+        }
+        String title = ClientLichState.nameTitle();
+        if (title != lichTitleSeen) {
+            lichTitleSeen = title;
+            lichUpper = title.toUpperCase(Locale.ROOT);
+        }
+        if (lichUpper.isEmpty()) {
+            return;
+        }
+        drawText(g, font, lichUpper, cx, labelTop + 9.0F * ts + NAME_GAP * height, ts,
+                FxPalette.ASH, 0.85F * alpha, false, 1.0F);
+    }
+
+    /** 参照 480×270 的一个单位在这块屏幕上有多长 */
+    private static float unitScale(int height) {
+        return height / 270.0F;
+    }
+
+    // ==================== 文字 ====================
+
+    private static String label(String key) {
+        return Language.getInstance().getOrDefault(key);
     }
 
     /**
-     * 绘制标题底衬（半透明深色条，提升浮于世界上方文字的可读性，1px 圆角修饰）。
+     * 居中画一行带字距的字
      *
-     * @param title 用于计算宽度与居中的标题组件
-     * @param alpha 整体淡入淡出 alpha
+     * @param top     字顶
+     * @param scale   字号（相对原版字体）
+     * @param cjkRule true：汉字之间加 0.35 个字宽、其余字符加 1；false：一律加 {@code spacing}
+     * @param spacing cjkRule 为 false 时的字距：正数是字体单位，负数是「多少个字宽」（−0.6 = 0.6 个字宽）
+     * @return 这行字右端的 x
      */
-    private static void drawTitleBg(Font font, GuiGraphics guiGraphics, int x, int titleY, Component title, float alpha) {
-        int titleW = font.width(title);
-        int titleX = x + (BAR_W - titleW) / 2;
-        int bgAlpha = (int) (TITLE_BG_ALPHA * alpha * 255.0F) & 0xFF;
-        if (bgAlpha <= 1) {
-            return;
+    private static float drawText(GuiGraphics g, Font font, String text, float cx, float top, float scale,
+                                  int rgb, float alpha, boolean cjkRule, float spacing) {
+        if (text == null || text.isEmpty()) {
+            return cx;
         }
-        int bgColor = bgAlpha << 24;
-        int bx0 = titleX - TITLE_BG_PAD_X;
-        int bx1 = titleX + titleW + TITLE_BG_PAD_X;
-        int by0 = titleY - 2;
-        int by1 = titleY + font.lineHeight + 1;
-        guiGraphics.fill(bx0 + 1, by0, bx1 - 1, by1, bgColor);
-        guiGraphics.fill(bx0, by0 + 1, bx1, by1 - 1, bgColor);
-    }
-
-    /**
-     * 居中绘制标题文字（§颜色码渲染时生效；传入 alpha 控制淡入淡出强度）。
-     *
-     * @param title     标题组件
-     * @param textAlpha 文字 alpha（0~1）
-     */
-    private static void drawTitleText(Font font, GuiGraphics guiGraphics, int x, int titleY, Component title, float textAlpha) {
-        if (textAlpha <= 0.0f) {
-            return;
-        }
-        int a = (int) (textAlpha * 255.0F) & 0xFF;
-        // alpha 过低时字体渲染器会强制不透明，跳过以避免突兀
+        Spaced s = layout(font, text, cjkRule, spacing);
+        float w = s.width * scale;
+        float x0 = cx - w * 0.5F;
+        int a = Math.round(Mth.clamp(alpha, 0.0F, 1.0F) * 255.0F);
         if (a < 4) {
+            return x0 + w;
+        }
+        int color = (a << 24) | (rgb & 0xFFFFFF);
+        g.pose().pushPose();
+        g.pose().translate(x0, top, 0.0F);
+        g.pose().scale(scale, scale, 1.0F);
+        for (int i = 0; i < s.glyphs.length; i++) {
+            g.drawString(font, s.glyphs[i], s.xs[i], 0.0F, color, false);
+        }
+        g.pose().popPose();
+        return x0 + w;
+    }
+
+    private static Spaced layout(Font font, String text, boolean cjkRule, float spacing) {
+        for (Spaced s : LAYOUTS) {
+            if (s != null && s.src == text && s.cjkRule == cjkRule && s.spacing == spacing) {
+                return s;
+            }
+        }
+        Spaced s = LAYOUTS[layoutNext];
+        if (s == null) {
+            s = new Spaced();
+            LAYOUTS[layoutNext] = s;
+        }
+        layoutNext = (layoutNext + 1) % LAYOUTS.length;
+        s.src = text;
+        s.cjkRule = cjkRule;
+        s.spacing = spacing;
+        int n = text.codePointCount(0, text.length());
+        s.glyphs = new String[n];
+        s.xs = new float[n];
+        float x = 0.0F;
+        int i = 0;
+        for (int off = 0; off < text.length(); ) {
+            int cp = text.codePointAt(off);
+            String glyph = new String(Character.toChars(cp));
+            float gw = font.width(glyph);
+            s.glyphs[i] = glyph;
+            s.xs[i] = x;
+            float gap;
+            if (cjkRule) {
+                gap = isCjk(cp) ? 0.35F * gw : 1.0F;
+            } else {
+                gap = spacing < 0.0F ? -spacing * gw : spacing;
+            }
+            x += gw + gap;
+            i++;
+            off += Character.charCount(cp);
+        }
+        // 最后一个字后面的字距不算进宽度，居中才准
+        float last = n > 0 ? font.width(s.glyphs[n - 1]) : 0.0F;
+        s.width = n > 0 ? s.xs[n - 1] + last : 0.0F;
+        return s;
+    }
+
+    private static boolean isCjk(int cp) {
+        Character.UnicodeScript sc = Character.UnicodeScript.of(cp);
+        return sc == Character.UnicodeScript.HAN || sc == Character.UnicodeScript.HIRAGANA
+                || sc == Character.UnicodeScript.KATAKANA || sc == Character.UnicodeScript.HANGUL;
+    }
+
+    // ==================== 贴图 ====================
+
+    /** 一张整贴图染色画到矩形里（墨烟、柔光），普通透明混合 */
+    private static void texQuad(GuiGraphics g, ResourceLocation tex, float x0, float y0, float x1, float y1,
+                                int rgb, float alpha) {
+        int a = Math.round(Mth.clamp(alpha, 0.0F, 1.0F) * 255.0F);
+        if (a <= 0) {
             return;
         }
-        int color = (a << 24) | 0xFFFFFF;
-        int titleX = x + (BAR_W - font.width(title)) / 2;
-        guiGraphics.drawString(font, title, titleX, titleY, color, true);
+        GuiShapes.flush(g);
+        Matrix4f m = g.pose().last().pose();
+        int r = (rgb >> 16) & 255, gr = (rgb >> 8) & 255, b = rgb & 255;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
+        RenderSystem.setShaderTexture(0, tex);
+        BufferBuilder buf = Tesselator.getInstance().getBuilder();
+        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
+        buf.vertex(m, x0, y0, 0.0F).color(r, gr, b, a).uv(0.0F, 0.0F).endVertex();
+        buf.vertex(m, x0, y1, 0.0F).color(r, gr, b, a).uv(0.0F, 1.0F).endVertex();
+        buf.vertex(m, x1, y1, 0.0F).color(r, gr, b, a).uv(1.0F, 1.0F).endVertex();
+        buf.vertex(m, x1, y0, 0.0F).color(r, gr, b, a).uv(1.0F, 0.0F).endVertex();
+        BufferUploader.drawWithShader(buf.end());
+        RenderSystem.disableBlend();
     }
 
-    // ==================== 工具 ====================
+    // ==================== 其他 ====================
 
-    /**
-     * 计算目标填充比例
-     *
-     * @return 0~1 的目标填充比例；满级（level&gt;=3）返回 1
-     */
-    private static double computeTargetFraction() {
-        if (targetLevel >= 3) {
-            return 1.0;
-        }
-        if (targetThreshold > 0) {
-            double f = (double) targetProgress / targetThreshold;
-            if (f < 0.0) {
-                return 0.0;
-            }
-            if (f > 1.0) {
-                return 1.0;
-            }
-            return f;
-        }
-        return 0.0;
+    /** 档案开着时 HUD 不画（档案自己会显示三枚密语） */
+    private static boolean archiveOpen(Screen screen) {
+        return screen instanceof LichArchiveScreen;
     }
 
-    private static double clamp01(double v) {
-        if (v < 0.0) {
-            return 0.0;
+    private static long clock() {
+        long now = KuvaFxDirector.clockMs();
+        if (debugFreezeMs >= 0L && CUR.live) {
+            return CUR.start + debugFreezeMs;
         }
-        return Math.min(v, 1.0);
+        return now;
     }
 
-    /**
-     * 重置全部运行时状态（切换世界时调用）
-     */
-    private static void resetState() {
-        hasData = false;
-        displayedFraction = 0.0f;
-        visibleUntilMs = 0L;
-        appearStartMs = 0L;
-        revealFlashStartMs = -1L;
-        completeFlashStartMs = -1L;
-        fillAnimStart = 0.0f;
-        fillAnimTarget = 0.0f;
-        fillAnimStartMs = -1L;
-        lastTitleState = -1;
-        lastTitleComponent = null;
-        titleFadeFrom = null;
-        titleFadeStartMs = -1L;
+    private static void clearAll() {
+        CUR.live = false;
+        OLD.live = false;
+        pending = false;
+        cyFrom = cyTo = -1.0F;
     }
 
-    /**
-     * 播放 UI 音效
-     *
-     * @param sound 音效事件
-     * @param pitch 音高
-     */
-    private static void playUiSound(SoundEvent sound, float pitch) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            mc.getSoundManager().play(SimpleSoundInstance.forUI(sound, pitch));
-        }
+    private static float outCubic(float t) {
+        float u = 1.0F - t;
+        return 1.0F - u * u * u;
+    }
+
+    private static float inOutCubic(float t) {
+        return t < 0.5F ? 4.0F * t * t * t : 1.0F - (float) Math.pow(-2.0F * t + 2.0F, 3) * 0.5F;
+    }
+
+    // ==================== 调试入口 ====================
+
+    /** 假装屏幕上方有 Boss 条、底在 {@code bottom}（GUI 坐标）；−1 取消 */
+    public static void debugBossBottom(int bottom) {
+        debugBossBottom = bottom;
+    }
+
+    /** 把画面定在这一版收到包后的第 {@code ms} 毫秒（截图逐帧对照用）；−1 取消 */
+    public static void debugFreeze(long ms) {
+        debugFreezeMs = ms;
+    }
+
+    /** 一直停着不淡出 */
+    public static void debugHold(boolean hold) {
+        debugHold = hold;
+    }
+
+    /** 立刻收掉 */
+    public static void debugClear() {
+        clearAll();
     }
 }

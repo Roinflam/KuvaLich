@@ -75,6 +75,13 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue thirdStage;
         public final ForgeConfigSpec.DoubleValue masterPotionMultiplier;
 
+        // ===== 怜悯之击 / Mercy =====
+        public final ForgeConfigSpec.BooleanValue mercyEnabled;
+        public final ForgeConfigSpec.BooleanValue mercyThralls;
+        public final ForgeConfigSpec.IntValue mercyDownedSeconds;
+        public final ForgeConfigSpec.DoubleValue mercyReach;
+        public final ForgeConfigSpec.IntValue mercyResumeFloorSeconds;
+
         // ===== 伤害系统 / Damage System =====
         public final ForgeConfigSpec.BooleanValue damageDisplay;
         public final ForgeConfigSpec.BooleanValue enableDamageNumbers;
@@ -258,6 +265,43 @@ public final class ModConfig {
         public static final List<String> DEFAULT_MAGIC_DAMAGE_TYPE_BLACKLIST = Arrays.asList(
                 "goety:summon", "goety:sword", "goety:loot_explode", "goety:loot_explode_owned", "goety:dismissed");
 
+        // ===== 专属玄骸 / Personal Kuva Lich =====
+        public final ForgeConfigSpec.DoubleValue lichRageOnlineMinutes;
+        public final ForgeConfigSpec.DoubleValue lichRagePerThrallExecution;
+        public final ForgeConfigSpec.DoubleValue lichRagePerProgressPoint;
+        public final ForgeConfigSpec.DoubleValue lichRagePerClueRevealed;
+        public final ForgeConfigSpec.DoubleValue lichBirthRage;
+        public final ForgeConfigSpec.DoubleValue lichMigrationRage;
+        public final ForgeConfigSpec.IntValue lichArrivalDelayMinSeconds;
+        public final ForgeConfigSpec.IntValue lichArrivalDelayMaxSeconds;
+        public final ForgeConfigSpec.DoubleValue lichCooldownMinutes;
+        public final ForgeConfigSpec.IntValue lichCommLeadTicks;
+        public final ForgeConfigSpec.IntValue lichSpawnMinDistance;
+        public final ForgeConfigSpec.IntValue lichSpawnMaxDistance;
+        public final ForgeConfigSpec.IntValue lichLeashDistance;
+        public final ForgeConfigSpec.IntValue lichIdleDepartSeconds;
+        public final ForgeConfigSpec.IntValue lichRepositionSeconds;
+        public final ForgeConfigSpec.IntValue lichRepositionMax;
+        public final ForgeConfigSpec.IntValue lichLoginGraceSeconds;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> lichHuntDimensions;
+        public final ForgeConfigSpec.BooleanValue lichHuntCreative;
+        public final ForgeConfigSpec.DoubleValue lichRandomTauntMinutes;
+        public final ForgeConfigSpec.DoubleValue lichRandomTauntChance;
+        public final ForgeConfigSpec.EnumValue<LichCommEcho> lichCommChatEcho;
+        public final ForgeConfigSpec.BooleanValue lichSeededAffinities;
+        public final ForgeConfigSpec.BooleanValue lichWildAllowed;
+        public final ForgeConfigSpec.BooleanValue lichPurgeLegacy;
+
+        /** 玄骸的通讯台词要不要同时进聊天栏 */
+        public enum LichCommEcho {
+            /** 都不进 */
+            NONE,
+            /** 只有重要的几类进（诞生、判错、遗言、被它打死等） */
+            IMPORTANT,
+            /** 全部进 */
+            ALL
+        }
+
         /**
          * 构造赤毒玄骸系统配置
          *
@@ -312,14 +356,18 @@ public final class ModConfig {
                     .comment("═══ Decryption Progress / 解密进度 ═══");
 
             minDecryptionProgress = builder
-                    .comment("Minimum decryption progress per kill")
-                    .comment("每次击杀获得的最小解密进度")
-                    .defineInRange("minDecryptionProgress", 5, 0, Integer.MAX_VALUE);
+                    .comment("Minimum decryption progress for executing a Kuva Thrall (or killing it when Thralls don't go down); a Lich gives this times masterPotionMultiplier")
+                    .comment("每处决一只奴仆获得的最小解密进度（奴仆不用处决时就是击杀一只）；玄骸给的是这个乘以 masterPotionMultiplier")
+                    .comment("Defaults are 25% higher than before; existing config files are not changed")
+                    .comment("默认值比旧版多 25%；已经生成的配置文件不会自动改")
+                    .defineInRange("minDecryptionProgress", 6, 0, Integer.MAX_VALUE);
 
             maxDecryptionProgress = builder
-                    .comment("Maximum decryption progress per kill")
-                    .comment("每次击杀获得的最大解密进度")
-                    .defineInRange("maxDecryptionProgress", 15, 0, Integer.MAX_VALUE);
+                    .comment("Maximum decryption progress for executing a Kuva Thrall (or killing it when Thralls don't go down); a Lich gives this times masterPotionMultiplier")
+                    .comment("每处决一只奴仆获得的最大解密进度（奴仆不用处决时就是击杀一只）；玄骸给的是这个乘以 masterPotionMultiplier")
+                    .comment("Defaults are 25% higher than before; existing config files are not changed")
+                    .comment("默认值比旧版多 25%；已经生成的配置文件不会自动改")
+                    .defineInRange("maxDecryptionProgress", 19, 0, Integer.MAX_VALUE);
 
             firstStage = builder
                     .comment("First stage decryption requirement")
@@ -337,9 +385,37 @@ public final class ModConfig {
                     .defineInRange("thirdStage", 120, 1, Integer.MAX_VALUE);
 
             masterPotionMultiplier = builder
-                    .comment("Master kill point multiplier")
-                    .comment("击杀赤毒玄骸的额外点数倍率")
+                    .comment("Executing a Kuva Lich without all three cards in place, or failing the judgement, gives the Thrall progress range times this")
+                    .comment("卡没放齐就处决玄骸、或者判错时，玄骸给的解密进度是奴仆的上下限各乘以这个倍率")
                     .defineInRange("masterPotionMultiplier", 3.0, 1.0, Double.MAX_VALUE);
+
+            builder.comment("")
+                    .comment("═══ Mercy / 怜悯之击 ═══");
+
+            mercyEnabled = builder
+                    .comment("Kuva Liches and Thralls go down instead of dying and must be finished with Mercy. When off, they die at once and the Requiem is judged on the spot")
+                    .comment("玄骸和奴仆受到致命伤时倒地，要用怜悯之击终结；关掉后直接死亡、当场判定安魂")
+                    .define("mercyEnabled", true);
+
+            mercyThralls = builder
+                    .comment("Thralls also go down; only an executed Thrall gives decryption progress and loot")
+                    .comment("奴仆也会倒地；只有被处决的奴仆才给解密进度和掉落")
+                    .define("mercyThralls", true);
+
+            mercyDownedSeconds = builder
+                    .comment("Seconds a downed Lich or Thrall waits. When time runs out the Lich escapes and the Thrall fades away, giving nothing")
+                    .comment("倒地后等多少秒；超时玄骸逃走、奴仆消散，什么都不给")
+                    .defineInRange("mercyDownedSeconds", 60, 10, 600);
+
+            mercyReach = builder
+                    .comment("How close you must be to use Mercy (blocks)")
+                    .comment("离多近才能按键处决（格）")
+                    .defineInRange("mercyReach", 3.0, 1.5, 6.0);
+
+            mercyResumeFloorSeconds = builder
+                    .comment("If a Mercy is interrupted before the first stab lands, the target stays down at least this many more seconds")
+                    .comment("处决在第一刀落下前被打断时，目标至少还会再倒地这么多秒")
+                    .defineInRange("mercyResumeFloorSeconds", 5, 0, 60);
 
             builder.comment("")
                     .comment("═══ Damage System / 伤害系统 ═══");
@@ -389,12 +465,12 @@ public final class ModConfig {
                     .defineInRange("battleBoost", 0.075, 0.0, Double.MAX_VALUE);
 
             reducedDamage = builder
-                    .comment("Your damage to Kuva enemies is reduced by this per failed decryption (Lich level)")
+                    .comment("Your damage to Kuva enemies is reduced by this per failed decryption (Lich rank)")
                     .comment("每次解密失败（玄骸等级 +1）你对赤毒敌人造成的伤害削减")
                     .defineInRange("reducedDamage", 0.0, 0.0, Double.MAX_VALUE);
 
             increaseDamage = builder
-                    .comment("Damage you take from Kuva enemies is increased by this per failed decryption (Lich level)")
+                    .comment("Damage you take from Kuva enemies is increased by this per failed decryption (Lich rank)")
                     .comment("每次解密失败（玄骸等级 +1）赤毒敌人对你造成的伤害提升")
                     .defineInRange("increaseDamage", 0.25, 0.0, Double.MAX_VALUE);
 
@@ -632,26 +708,32 @@ public final class ModConfig {
             builder.comment("")
                     .comment("═══ Entity Spawning / 实体生成 ═══")
                     .comment("Note: These values are read during world generation setup")
-                    .comment("注意：这些值在世界生成初始化时读取，修改后重启游戏生效");
+                    .comment("注意：这些值在世界生成初始化时读取，修改后重启游戏生效")
+                    .comment("The Kuva Lich entries here are no longer read; they stay only so old config files still load")
+                    .comment("这里几项玄骸的设置已经不读了，留着只是为了老配置文件读起来不报错");
 
             kuvaLichSpawnWeight = builder
-                    .comment("Kuva Lich spawn weight (set to 0 to disable)")
-                    .comment("赤毒玄骸生成权重(设为0可禁用生成)")
-                    .defineInRange("kuvaLichSpawnWeight", 15, 0, Integer.MAX_VALUE);
+                    .comment("Unused: Kuva Liches no longer spawn naturally, they only hunt players who have uncovered a Murmur")
+                    .comment("已停用：玄骸不再自然生成，只会找上解开密语的玩家，这一项不起作用")
+                    .defineInRange("kuvaLichSpawnWeight", 0, 0, Integer.MAX_VALUE);
 
             kuvaLichMinSpawnCount = builder
                     .comment("Kuva Lich minimum spawn count")
                     .comment("赤毒玄骸最小生成数量")
+                    .comment("Unused: Kuva Liches no longer spawn naturally")
+                    .comment("已停用：玄骸不再自然生成，这一项不起作用")
                     .defineInRange("kuvaLichMinSpawnCount", 1, 1, Integer.MAX_VALUE);
 
             kuvaLichMaxSpawnCount = builder
                     .comment("Kuva Lich maximum spawn count")
                     .comment("赤毒玄骸最大生成数量")
+                    .comment("Unused: Kuva Liches no longer spawn naturally")
+                    .comment("已停用：玄骸不再自然生成，这一项不起作用")
                     .defineInRange("kuvaLichMaxSpawnCount", 1, 1, Integer.MAX_VALUE);
 
             kuvaSlaveSpawnWeight = builder
-                    .comment("Kuva Slave spawn weight (set to 0 to disable)")
-                    .comment("赤毒奴仆生成权重(设为0可禁用生成)")
+                    .comment("Kuva Thrall spawn weight. At 0 no Thralls spawn in the wild, and new players can only get their first clue from spawn eggs or commands")
+                    .comment("赤毒奴仆生成权重。设成 0 时野外没有奴仆，新玩家只能靠刷怪蛋 / 指令拿到第一条线索")
                     .defineInRange("kuvaSlaveSpawnWeight", 35, 0, Integer.MAX_VALUE);
 
             kuvaSlaveMinSpawnCount = builder
@@ -674,16 +756,22 @@ public final class ModConfig {
             kuvaLichMaxNearby = builder
                     .comment("Max Kuva Lich within the radius below of a spawn point (0 = no limit)")
                     .comment("生成点半径内最多已有几只赤毒玄骸才允许再刷(0=不限)")
+                    .comment("Unused: Kuva Liches no longer spawn naturally")
+                    .comment("已停用：玄骸不再自然生成，这一项不起作用")
                     .defineInRange("kuvaLichMaxNearby", 1, 0, 64);
 
             kuvaLichNearbyRadius = builder
                     .comment("Radius in blocks used for the Kuva Lich limit above")
                     .comment("玄骸数量上限统计的半径(格)")
+                    .comment("Unused: Kuva Liches no longer spawn naturally")
+                    .comment("已停用：玄骸不再自然生成，这一项不起作用")
                     .defineInRange("kuvaLichNearbyRadius", 96, 8, 512);
 
             kuvaLichMinSpacing = builder
                     .comment("Minimum distance in blocks to another Kuva Lich for a new one to spawn (0 = no limit)")
                     .comment("新刷出的玄骸与已有玄骸的最小间距(格，0=不限)")
+                    .comment("Unused: Kuva Liches no longer spawn naturally")
+                    .comment("已停用：玄骸不再自然生成，这一项不起作用")
                     .defineInRange("kuvaLichMinSpacing", 48, 0, 512);
 
             kuvaSlaveMaxNearby = builder
@@ -1108,6 +1196,136 @@ public final class ModConfig {
                     .comment("Exact damage-type ids never treated as magic (highest priority, overrides every other rule)")
                     .comment("精确不算魔法的伤害类型 id（优先级最高，压过其他所有规则）")
                     .defineList("magicDamageTypeBlacklist", DEFAULT_MAGIC_DAMAGE_TYPE_BLACKLIST, o -> o instanceof String);
+
+            builder.comment("")
+                    .comment("═══ Personal Kuva Lich / 专属玄骸 ═══")
+                    .comment("Every player has one Kuva Lich of their own, born when they uncover the first Requiem Murmur. Its rage rises over time and with what the player does; when it is full the Lich comes hunting.")
+                    .comment("每位玩家有一只自己的玄骸，揭示第一条安魂密语时诞生；它的怒气随时间和玩家的行为上涨，满了就来找主人。");
+
+            lichRageOnlineMinutes = builder
+                    .comment("Minutes of play for rage to fill on its own; 0 = time does not raise rage")
+                    .comment("只靠在线时间，怒气从空到满要几分钟；0 = 不随时间涨")
+                    .defineInRange("lichRageOnlineMinutes", 20.0, 0.0, 600.0);
+
+            lichRagePerThrallExecution = builder
+                    .comment("Rage gained per Thrall executed")
+                    .comment("每处决一只奴仆加多少怒气")
+                    .defineInRange("lichRagePerThrallExecution", 0.08, 0.0, 1.0);
+
+            lichRagePerProgressPoint = builder
+                    .comment("Rage gained per point of Murmur progress")
+                    .comment("每 1 点密语进度加多少怒气")
+                    .defineInRange("lichRagePerProgressPoint", 0.002, 0.0, 1.0);
+
+            lichRagePerClueRevealed = builder
+                    .comment("Rage gained per new Murmur revealed (not the first)")
+                    .comment("每揭示一条新密语加多少怒气（第一条除外）")
+                    .defineInRange("lichRagePerClueRevealed", 0.25, 0.0, 1.0);
+
+            lichBirthRage = builder
+                    .comment("Rage when a Lich is born")
+                    .comment("刚诞生时的怒气")
+                    .defineInRange("lichBirthRage", 0.0, 0.0, 1.0);
+
+            lichMigrationRage = builder
+                    .comment("Rage given to a Lich created for an existing save")
+                    .comment("老存档补生时的怒气")
+                    .defineInRange("lichMigrationRage", 0.35, 0.0, 1.0);
+
+            lichArrivalDelayMinSeconds = builder
+                    .comment("Earliest arrival after rage fills (seconds)")
+                    .comment("怒气满后最早几秒来")
+                    .defineInRange("lichArrivalDelayMinSeconds", 30, 0, 3600);
+
+            lichArrivalDelayMaxSeconds = builder
+                    .comment("Latest arrival after rage fills (seconds)")
+                    .comment("怒气满后最晚几秒来")
+                    .defineInRange("lichArrivalDelayMaxSeconds", 90, 0, 3600);
+
+            lichCooldownMinutes = builder
+                    .comment("Minimum minutes between encounters")
+                    .comment("每次遭遇结束后至少隔几分钟才会再来")
+                    .defineInRange("lichCooldownMinutes", 8.0, 0.0, 600.0);
+
+            lichCommLeadTicks = builder
+                    .comment("Ticks between the taunt and the Lich appearing")
+                    .comment("通讯先到，过多少 tick 再现身")
+                    .defineInRange("lichCommLeadTicks", 40, 0, 200);
+
+            lichSpawnMinDistance = builder
+                    .comment("Minimum appearance distance (blocks)")
+                    .comment("现身点离你最近几格")
+                    .defineInRange("lichSpawnMinDistance", 24, 8, 96);
+
+            lichSpawnMaxDistance = builder
+                    .comment("Maximum appearance distance (blocks)")
+                    .comment("现身点离你最远几格")
+                    .defineInRange("lichSpawnMaxDistance", 40, 8, 96);
+
+            lichLeashDistance = builder
+                    .comment("The Lich leaves when you are farther than this (blocks)")
+                    .comment("你跑出这么远，它就离开")
+                    .defineInRange("lichLeashDistance", 128, 32, 512);
+
+            lichIdleDepartSeconds = builder
+                    .comment("Seconds without fighting before it leaves; 0 = never")
+                    .comment("这么久没和你交手，它就离开；0 = 不会")
+                    .defineInRange("lichIdleDepartSeconds", 300, 0, 3600);
+
+            lichRepositionSeconds = builder
+                    .comment("Seconds stuck before it relocates near you; 0 = never")
+                    .comment("追不到你这么久，就借赤毒雾挪到你附近；0 = 不挪")
+                    .defineInRange("lichRepositionSeconds", 30, 0, 600);
+
+            lichRepositionMax = builder
+                    .comment("Relocations per encounter")
+                    .comment("每次遭遇最多挪几次")
+                    .defineInRange("lichRepositionMax", 3, 0, 20);
+
+            lichLoginGraceSeconds = builder
+                    .comment("Seconds after login before it may arrive")
+                    .comment("登录后这么久内不会来找你")
+                    .defineInRange("lichLoginGraceSeconds", 60, 0, 600);
+
+            lichHuntDimensions = builder
+                    .comment("Dimensions where it hunts you")
+                    .comment("它会去哪些维度找你")
+                    .defineList("lichHuntDimensions", List.of("minecraft:overworld"), o -> o instanceof String);
+
+            lichHuntCreative = builder
+                    .comment("Also hunts players in Creative or Spectator")
+                    .comment("创造 / 旁观模式下也来找你")
+                    .define("lichHuntCreative", false);
+
+            lichRandomTauntMinutes = builder
+                    .comment("Minimum minutes between random taunts; 0 = none")
+                    .comment("狩猎中随机嘲讽至少间隔几分钟；0 = 不随机嘲讽")
+                    .defineInRange("lichRandomTauntMinutes", 8.0, 0.0, 600.0);
+
+            lichRandomTauntChance = builder
+                    .comment("Base chance of a random taunt (rolled every 2 minutes, scaled by rage)")
+                    .comment("随机嘲讽的基础概率（每 2 分钟掷一次，按怒气档位放大）")
+                    .defineInRange("lichRandomTauntChance", 0.25, 0.0, 1.0);
+
+            lichCommChatEcho = builder
+                    .comment("Echo transmissions to chat: NONE / IMPORTANT / ALL")
+                    .comment("通讯台词要不要同时进聊天栏：NONE 不进 / IMPORTANT 只进重要的 / ALL 全进")
+                    .defineEnum("lichCommChatEcho", LichCommEcho.IMPORTANT);
+
+            lichSeededAffinities = builder
+                    .comment("Each Lich rolls its own weakness and resistances (half of them will resist melee)")
+                    .comment("每只玄骸的弱点和抗性各不相同（会有一半的玄骸抗近战）")
+                    .define("lichSeededAffinities", false);
+
+            lichWildAllowed = builder
+                    .comment("Spawn eggs and commands may still create wild Liches (no rewards); off = refuse them")
+                    .comment("刷怪蛋、命令还能造出无主玄骸（不给任何奖励）；关掉则直接不生成")
+                    .define("lichWildAllowed", true);
+
+            lichPurgeLegacy = builder
+                    .comment("Remove naturally spawned Liches saved in old worlds")
+                    .comment("读档时清掉以前自然生成、存在世界里的玄骸")
+                    .define("lichPurgeLegacy", true);
 
             builder.pop();
         }

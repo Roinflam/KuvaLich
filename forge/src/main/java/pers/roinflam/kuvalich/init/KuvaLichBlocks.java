@@ -59,7 +59,7 @@ public class KuvaLichBlocks {
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(3.0F, 3.0F)  // ✅ 硬度3, 抗性3
-                    .sound(SoundType.STONE)));
+                    .sound(SoundType.STONE).sound(KuvaLichSounds.MACHINE)));
 
     // ========== 功能方块 / Functional Blocks ==========
 
@@ -79,7 +79,7 @@ public class KuvaLichBlocks {
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
-                    .sound(SoundType.STONE)
+                    .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));  // 非完整方块
 
     /**
@@ -97,7 +97,7 @@ public class KuvaLichBlocks {
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
-                    .sound(SoundType.STONE)
+                    .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));
 
     /**
@@ -115,7 +115,7 @@ public class KuvaLichBlocks {
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
-                    .sound(SoundType.STONE)
+                    .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));
 
     /**
@@ -133,7 +133,7 @@ public class KuvaLichBlocks {
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
-                    .sound(SoundType.STONE)
+                    .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));
 
     /**
@@ -151,7 +151,7 @@ public class KuvaLichBlocks {
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
-                    .sound(SoundType.STONE)
+                    .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));
 
     // ========== 方块物品注册 / Block Items Registration ==========

@@ -7,7 +7,8 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -15,72 +16,103 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import pers.roinflam.kuvalich.client.fx.FxPalette;
+import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
+import pers.roinflam.kuvalich.client.mercy.MercyClient;
+import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.network.packet.DamageInfo;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import pers.roinflam.kuvalich.network.packet.DamageInfo;
 
 /**
- * 伤害数字/文本渲染器(1.20.1)
- * Damage number/text renderer (1.20.1)
+ * 伤害数字渲染器
  *
- * 性能优化：使用 ArrayDeque 替代 ArrayList，移除首元素从 O(n) → O(1)
- * Performance: ArrayDeque replaces ArrayList, remove-first from O(n) → O(1)
+ * <p>暴击分档全在数字上，世界里不再另加特效：颜色直接写 RGB（白 {@code #FCFBFC}、护盾蓝 {@code #55FFFF}、
+ * 一档黄 {@code #F8FA2E}、二档橙 {@code #E8833A}、三档红 {@code #E6131E}、紫 {@code #FF55FF}），
+ * 黄 / 橙 / 红三档外面先描一圈暗边再画正文（白天亮背景上一档黄字也能一眼分出来），
+ * 新建的暴击数字第一帧放大、100 ms 内缩回常驻字号，不回弹、首帧就是满不透明。</p>
  *
- * <p>数字的坐标原点为「相机位置」。本渲染阶段的 PoseStack 以相机为原点，
- * 服务端给出的位置为目标身体上半截，站立第一人称下的观感与早期版本基本一致。</p>
+ * <p>字号：白 0.045、蓝和黄 0.057、橙 0.072、红 0.09，档与档之间约 1.26 / 1.58 倍；持续伤害（白色的元素伤害）再小一号、不弹。</p>
  *
- * <p>⭐ 本次改动：新增<b>伤害数字合并</b>（{@code mergeDamageNumbers}，默认开启）。
- * 同一只怪身上、合并窗口内（默认 0.2 秒）的多条数字会并成一条：数值累加、颜色取最高一档、图标取并集。
- * 本模组自己的元素伤害单独分组（同元素才互相合并），保证元素图标准确。
- * 关闭开关后每个包各自成一条，与改动前完全一致。合并发生在客户端，
- * 服务端照旧逐条发包，因此不会给数字显示带来任何延迟。</p>
+ * <p>数字的坐标原点是相机位置：这个渲染阶段的矩阵栈以相机为原点。新建时在相机平面里随机偏一点、之后不变，
+ * 每秒只上升 0.15 格，几条同时冒出来的数字不会排成一条竖线。</p>
+ *
+ * <p><b>合并</b>（{@code mergeDamageNumbers}，默认开）：同一只怪身上、合并窗口内的多条数字并成一条，
+ * 数值累加、档位取最高、图标取并集；本模组的元素伤害单独分组（同元素才互相合并）。合并进来的不再弹。</p>
+ *
+ * <p>描边开销：每个彩色数字 9 次绘制；只给最新的 60 个彩色数字描边，再多的不描（满屏刷怪时看不出来）。
+ * 渲染循环里不分配：字形序列和字宽都缓存在每条数字上。</p>
  */
 @OnlyIn(Dist.CLIENT)
 public class DamageRenderer {
 
-    /** 伤害信息队列（ArrayDeque 支持高效的头部/尾部操作） / Damage info deque */
     private final ArrayDeque<DamageInfo> damageInfos = new ArrayDeque<>();
+    /** 调试用的停表时刻，小于 0 = 不停 */
+    private static long devFreezeMs = -1L;
 
-    /**
-     * 合并槽位：key = 受击实体 + 分组，value = 该分组当前还能接收合并的那条数字
-     *
-     * <p>只有最近创建、且仍在合并窗口内的条目会留在这里；过期条目在
-     * {@link #cleanupExpired} 里定期清掉，或在下一条同 key 数字到来时被顶替。</p>
-     */
+    /** 合并槽位：受击实体 + 分组 → 该分组当前还能接收合并的那条数字 */
     private final Map<DamageInfo.MergeKey, DamageInfo> mergeSlots = new HashMap<>();
 
-    /** 单例实例 / Singleton instance */
     private static volatile DamageRenderer instance;
 
-    /** 上升速度 / Rise speed */
-    private static final double RISE_SPEED = 1.0 / 4000.0;
+    /** 上升速度：0.15 格/秒 */
+    private static final double RISE_PER_MS = 0.15D / 1000.0D;
 
-    /** 最大伤害信息数量 / Max damage info count */
+    /** 新建时在相机平面里的随机偏移（格） */
+    private static final double SPREAD = 0.25D;
+
     private static final int MAX_DAMAGE_INFOS = 500;
 
-    /** 清理间隔（tick） / Cleanup interval (ticks) */
+    /** 只给最新的这么多个彩色数字描边 */
+    private static final int MAX_OUTLINED = 60;
+
     private static final int CLEANUP_INTERVAL = 20;
 
-    /** 清理计时器 / Cleanup timer */
     private int cleanupTimer = 0;
 
-    // 字体缩放(白色基准值×1.5)
-    private static final float SCALE_WHITE = 0.03F * 1.5F;
-    private static final float SCALE_YELLOW_BLUE = 0.038F * 1.5F;
-    private static final float SCALE_ORANGE = 0.048F * 1.5F;
-    private static final float SCALE_RED = 0.06F * 1.5F;
+    // 字号（白色是基准）
+    private static final float SCALE_WHITE = 0.045F;
+    private static final float SCALE_BLUE = 0.057F;
+    private static final float SCALE_YELLOW = 0.057F;
+    private static final float SCALE_ORANGE = 0.072F;
+    private static final float SCALE_RED = 0.09F;
+    /** 持续伤害数字再小一号 */
+    private static final float DOT_SCALE = 0.85F;
+
+    /** 第一帧放大的量（黄 / 橙 / 红），100 ms 缩回 */
+    private static final float POP_YELLOW = 0.30F;
+    private static final float POP_ORANGE = 0.35F;
+    private static final float POP_RED = 0.40F;
+    private static final float POP_MS = 100.0F;
+
+    /** 紫字（真实伤害），和原来的颜色码不同：原来的暗紫在夜里看不清 */
+    private static final int PURPLE = 0xFF55FF;
+    private static final int BLUE = 0x55FFFF;
+
+    /** 描边色：比原作粗、暗，白天亮背景上更显眼 */
+    private static final int OUTLINE_YELLOW = 0x3E3F0B;
+    private static final int OUTLINE_ORANGE = 0x3A2110;
+    private static final int OUTLINE_RED = 0x3A0610;
+    private static final float OUTLINE_ALPHA = 0.85F;
+
+    /** 描边的 8 个方向（字体像素） */
+    private static final float[] OUT_DX = {-1, 0, 1, -1, 1, -1, 0, 1};
+    private static final float[] OUT_DY = {-1, -1, -1, 0, 0, 1, 1, 1};
+
+    private static final int FULL_BRIGHT = 15728880;
+
+    private final RandomSource random = RandomSource.create();
 
     private DamageRenderer() {
     }
 
-    /**
-     * 获取单例实例
-     */
     public static DamageRenderer getInstance() {
         if (instance == null) {
             synchronized (DamageRenderer.class) {
@@ -94,24 +126,22 @@ public class DamageRenderer {
     }
 
     /**
-     * ⭐ 收到一条伤害数字：能合并就并入已有的那条，不能就新起一条
-     *
-     * <p>仅在客户端主线程调用（网络包 handler 已用 {@code enqueueWork} 切回主线程）。</p>
+     * 收到一条伤害数字：能合并就并入已有的那条，不能就新起一条（客户端主线程调用）
      *
      * @param entityId        受击实体 ID；小于 0 表示未知，此时不参与合并
      * @param mergeGroup      合并分组；普通伤害为空串，元素伤害为元素名
      * @param amount          伤害数值
-     * @param colorCode       颜色码（如 {@code "§c"}）
+     * @param colorCode       颜色码（只用来判档位）
      * @param prefix          数字前缀，可为空串
      * @param suffix          数字后缀（图标串），可为空串
      * @param hitShield       是否打到护盾
      * @param position        显示位置
-     * @param displayDuration 显示时长（毫秒）
+     * @param displayDuration 包里带的显示时长（不再使用，寿命由档位定）
      */
     public void addDamage(int entityId, @Nonnull String mergeGroup, float amount, @Nonnull String colorCode,
                           @Nonnull String prefix, @Nonnull String suffix, boolean hitShield,
                           @Nonnull Vec3 position, long displayDuration) {
-        long now = System.currentTimeMillis();
+        long now = now();
 
         DamageInfo.MergeKey key = null;
         long windowMs = 0L;
@@ -121,99 +151,87 @@ public class DamageRenderer {
                 key = new DamageInfo.MergeKey(entityId, mergeGroup);
                 DamageInfo slot = mergeSlots.get(key);
                 if (slot != null && slot.canMergeAt(now)) {
-                    slot.merge(amount, colorCode, prefix, suffix, hitShield, now, displayDuration);
+                    slot.merge(amount, colorCode, prefix, suffix, hitShield, now);
                     return;
                 }
             }
         }
 
         DamageInfo info = new DamageInfo(amount, colorCode, prefix, suffix, hitShield,
-                position, now, displayDuration, key, windowMs);
+                position, now, key, mergeGroup, windowMs, EffectsDisplayConfig.damageNumberPop());
+        scatter(info);
         addDamageInfo(info);
         if (key != null) {
-            // 直接覆盖：旧槽位要么已过合并窗口，要么已过期，都不需要再保留
             mergeSlots.put(key, info);
         }
     }
 
-    /**
-     * 添加伤害信息
-     *
-     * 性能优化：pollFirst() 是 O(1)（原 ArrayList.remove(0) 是 O(n)）
-     * Performance: pollFirst() is O(1) (was ArrayList.remove(0) which is O(n))
-     */
+    /** 新建时在相机平面内随机偏 ±0.25 格 */
+    private void scatter(DamageInfo info) {
+        Camera cam = KuvaFxDirector.camera();
+        if (cam == null) {
+            return;
+        }
+        Vector3f left = cam.getLeftVector();
+        Vector3f up = cam.getUpVector();
+        double a = (random.nextDouble() * 2.0D - 1.0D) * SPREAD;
+        double b = (random.nextDouble() * 2.0D - 1.0D) * SPREAD;
+        info.offX = left.x() * a + up.x() * b;
+        info.offY = left.y() * a + up.y() * b;
+        info.offZ = left.z() * a + up.z() * b;
+    }
+
     public void addDamageInfo(DamageInfo info) {
         if (info == null) {
             return;
         }
-
         if (damageInfos.size() >= MAX_DAMAGE_INFOS) {
-            DamageInfo evicted = damageInfos.pollFirst();  // O(1)，原 remove(0) 是 O(n)
-            // 被挤掉的条目如果还占着合并槽位，一并释放，避免后续数字并进一条已经不显示的记录里
+            DamageInfo evicted = damageInfos.pollFirst();
+            // 被挤掉的条目如果还占着合并槽位，一并释放，后续数字不会并进一条已经不显示的记录
             if (evicted != null && evicted.getMergeKey() != null) {
                 mergeSlots.remove(evicted.getMergeKey(), evicted);
             }
         }
-
         damageInfos.addLast(info);
     }
 
-    /**
-     * 客户端Tick事件处理
-     */
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent evt) {
         if (evt.phase != TickEvent.Phase.END) {
             return;
         }
-
         Minecraft mc = Minecraft.getInstance();
-
         if (mc.level == null) {
             clear();
             return;
         }
-
         if (++cleanupTimer >= CLEANUP_INTERVAL) {
             cleanupTimer = 0;
             cleanupExpired();
         }
     }
 
-    /**
-     * 清理过期的伤害信息与失效的合并槽位
-     *
-     * 使用 Iterator 遍历 ArrayDeque 安全移除过期元素
-     * Use Iterator to safely remove expired elements from ArrayDeque
-     */
     private void cleanupExpired() {
-        long currentTime = System.currentTimeMillis();
-
+        long now = now();
         if (!mergeSlots.isEmpty()) {
-            mergeSlots.values().removeIf(info -> !info.canMergeAt(currentTime));
+            mergeSlots.values().removeIf(info -> !info.canMergeAt(now));
         }
-
         if (damageInfos.isEmpty()) {
             return;
         }
-
         Iterator<DamageInfo> iterator = damageInfos.iterator();
         while (iterator.hasNext()) {
-            if (iterator.next().isExpired(currentTime)) {
+            if (iterator.next().isExpired(now)) {
                 iterator.remove();
             }
         }
     }
 
-    /**
-     * 渲染关卡阶段事件处理
-     */
     @SubscribeEvent
     public void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             return;
         }
-
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null && mc.level.isClientSide) {
             renderDamageInfos(event.getPoseStack());
@@ -221,119 +239,178 @@ public class DamageRenderer {
     }
 
     /**
-     * 渲染所有伤害信息
-     *
-     * <p>以相机位置为原点换算相对坐标。相机位置已由原版按 partialTick 插值，
-     * 第三人称时也已处理好镜头后移，这里不需要再手动插值。</p>
-     *
-     * @param poseStack 渲染阶段提供的矩阵栈（已含相机旋转，原点为相机）
+     * 画全部伤害数字。相机位置已由原版按 partialTick 插值，第三人称的镜头后移也处理好了
      */
     private void renderDamageInfos(PoseStack poseStack) {
-        if (damageInfos.isEmpty()) {
+        if (damageInfos.isEmpty() || MercyClient.hidesHud()) {
             return;
         }
-
-        // 与 renderDamageText 里做朝向用的是同一个相机对象，位置与朝向保持一致
-        Camera camera = Minecraft.getInstance().getEntityRenderDispatcher().camera;
+        Minecraft mc = Minecraft.getInstance();
+        Camera camera = mc.getEntityRenderDispatcher().camera;
         if (camera == null) {
             return;
         }
-
-        long currentTime = System.currentTimeMillis();
-
+        long now = now();
         Vec3 cameraPos = camera.getPosition();
+        Font font = mc.font;
+        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+        float yaw = -camera.getYRot();
+        float pitch = camera.getXRot();
 
-        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+        // 先数一遍彩色数字，只有最新的 MAX_OUTLINED 个描边
+        int colored = 0;
+        for (DamageInfo info : damageInfos) {
+            if (info.tier() >= DamageInfo.TIER_YELLOW) {
+                colored++;
+            }
+        }
+        int outlineFrom = colored - MAX_OUTLINED;
 
         RenderSystem.disableDepthTest();
-
-        for (DamageInfo info : damageInfos) {
-            if (info.isExpired(currentTime)) {
-                continue;
-            }
-
-            double riseOffset = info.getRiseOffset(currentTime, RISE_SPEED);
-
-            double x = info.position.x - cameraPos.x;
-            double y = info.position.y - cameraPos.y + riseOffset;
-            double z = info.position.z - cameraPos.z;
-
-            renderDamageText(poseStack, bufferSource, info.text, x, y, z);
+        // 分两遍画：先全部的描边 / 阴影，冲掉批次再画正文。文字的渲染类型上传时按远近重排四边形，
+        // 同一批里描边、阴影和正文谁先谁后说不准，正文会被压成零星几个点
+        for (int pass = 0; pass < 2; pass++) {
+            renderPass(poseStack, bufferSource, font, now, cameraPos, yaw, pitch, outlineFrom, pass == 0);
+            bufferSource.endBatch();
         }
-
-        bufferSource.endBatch();
         RenderSystem.enableDepthTest();
     }
 
-    /**
-     * 渲染单个伤害文本（支持§颜色代码）
-     */
-    private void renderDamageText(PoseStack poseStack, MultiBufferSource bufferSource,
-                                  String text, double x, double y, double z) {
-        EntityRenderDispatcher renderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
-        Font font = Minecraft.getInstance().font;
+    private void renderPass(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Font font, long now,
+                            Vec3 cameraPos, float yaw, float pitch, int outlineFrom, boolean back) {
+        int coloredIndex = 0;
+        for (DamageInfo info : damageInfos) {
+            int tier = info.tier();
+            boolean isColored = tier >= DamageInfo.TIER_YELLOW;
+            boolean outline = isColored && coloredIndex++ >= outlineFrom;
+            float alpha = info.alphaAt(now);
+            if (alpha < DamageInfo.MIN_ALPHA) {
+                continue;
+            }
+            long age = info.ageMs(now);
+            double rise = age * RISE_PER_MS;
+            double x = info.position.x + info.offX - cameraPos.x;
+            double y = info.position.y + info.offY - cameraPos.y + rise;
+            double z = info.position.z + info.offZ - cameraPos.z;
 
-        // 根据文本开头的颜色代码判断缩放
-        float scale = getScaleByText(text);
+            float scale = scaleOf(tier);
+            if (info.isDot()) {
+                scale *= DOT_SCALE;
+            } else if (info.pop) {
+                scale *= popScaleAt(tier, age);
+            }
 
+            if (info.width < 0) {
+                info.width = font.width(info.body());
+            }
+            renderOne(poseStack, bufferSource, font, info, x, y, z, yaw, pitch, scale, alpha, outline, back);
+        }
+    }
+
+    private void renderOne(PoseStack poseStack, MultiBufferSource bufferSource, Font font, DamageInfo info,
+                           double x, double y, double z, float yaw, float pitch, float scale, float alpha,
+                           boolean outline, boolean back) {
+        int tier = info.tier();
+        int rgb = colorOf(tier);
+        int a = Mth.clamp((int) (alpha * 255.0F), 0, 255);
         poseStack.pushPose();
         try {
             poseStack.translate(x, y, z);
-
-            poseStack.mulPose(Axis.YP.rotationDegrees(-renderDispatcher.camera.getYRot()));
-            poseStack.mulPose(Axis.XP.rotationDegrees(renderDispatcher.camera.getXRot()));
-
+            poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
+            poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
             poseStack.scale(-scale, -scale, scale);
-
-            int stringWidth = font.width(text);
-
-            // Minecraft会自动处理§颜色代码
-            font.drawInBatch(
-                    text,
-                    -stringWidth / 2.0f,
-                    0,
-                    0xFFFFFF,  // 白色底色（颜色由§代码控制）
-                    false,
-                    poseStack.last().pose(),
-                    bufferSource,
-                    Font.DisplayMode.SEE_THROUGH,
-                    0,
-                    15728880,
-                    font.isBidirectional()
-            );
+            Matrix4f mat = poseStack.last().pose();
+            float x0 = -info.width / 2.0F;
+            if (back) {
+                if (outline) {
+                    int oa = Mth.clamp((int) (alpha * OUTLINE_ALPHA * 255.0F), 0, 255);
+                    int oc = (oa << 24) | outlineOf(tier);
+                    for (int i = 0; i < OUT_DX.length; i++) {
+                        font.drawInBatch(info.outline(), x0 + OUT_DX[i], OUT_DY[i], oc, false, mat, bufferSource,
+                                Font.DisplayMode.SEE_THROUGH, 0, FULL_BRIGHT);
+                    }
+                } else {
+                    // 没描边的（白、蓝、紫）垫一层原版同款阴影（颜色 × 0.25，右下各偏一像素）压住背景
+                    int sc = (a << 24) | ((rgb & 0xFCFCFC) >> 2);
+                    font.drawInBatch(info.outline(), x0 + 1.0F, 1.0F, sc, false, mat, bufferSource,
+                            Font.DisplayMode.SEE_THROUGH, 0, FULL_BRIGHT);
+                }
+            } else {
+                font.drawInBatch(info.body(), x0, 0.0F, (a << 24) | rgb, false, mat, bufferSource,
+                        Font.DisplayMode.SEE_THROUGH, 0, FULL_BRIGHT);
+            }
         } finally {
             poseStack.popPose();
         }
     }
 
-    /**
-     * 根据文本开头的颜色代码获取缩放大小
-     */
-    private float getScaleByText(String text) {
-        if (text.startsWith("§f")) {
-            return SCALE_WHITE;
-        } else if (text.startsWith("§e") || text.startsWith("§b")) {
-            return SCALE_YELLOW_BLUE;
-        } else if (text.startsWith("§6")) {
-            return SCALE_ORANGE;
-        } else if (text.startsWith("§c")) {
-            return SCALE_RED;
-        }
-        return SCALE_WHITE;
+    private static float scaleOf(int tier) {
+        return switch (tier) {
+            case DamageInfo.TIER_BLUE -> SCALE_BLUE;
+            case DamageInfo.TIER_YELLOW -> SCALE_YELLOW;
+            case DamageInfo.TIER_ORANGE -> SCALE_ORANGE;
+            case DamageInfo.TIER_RED -> SCALE_RED;
+            default -> SCALE_WHITE;
+        };
     }
 
     /**
-     * 清空所有伤害信息
+     * 弹出阶段的放大倍数：刚出现时是 1 + k，按 easeOutCubic 单调回落，满 100 ms 正好回到 1，中间不回弹
      */
+    public static float popScaleAt(int tier, long ageMs) {
+        if (ageMs >= POP_MS) {
+            return 1.0F;
+        }
+        float t = Math.max(0.0F, ageMs / POP_MS);
+        float inv = 1.0F - t;
+        float easeOutCubic = 1.0F - inv * inv * inv;
+        return 1.0F + popOf(tier) * (1.0F - easeOutCubic);
+    }
+
+    /** 调试命令用：让数字的时钟停在 {@code ms} 这一刻（小于 0 恢复走动），弹出过程能逐帧截图 */
+    public static void devFreeze(long ms) {
+        devFreezeMs = ms;
+    }
+
+    /** 数字用的时钟：平时就是演出时钟 */
+    public static long now() {
+        return devFreezeMs >= 0L ? devFreezeMs : KuvaFxDirector.clockMs();
+    }
+
+    private static float popOf(int tier) {
+        return switch (tier) {
+            case DamageInfo.TIER_YELLOW -> POP_YELLOW;
+            case DamageInfo.TIER_ORANGE -> POP_ORANGE;
+            case DamageInfo.TIER_RED -> POP_RED;
+            default -> 0.0F;
+        };
+    }
+
+    private static int colorOf(int tier) {
+        return switch (tier) {
+            case DamageInfo.TIER_BLUE -> BLUE;
+            case DamageInfo.TIER_PURPLE -> PURPLE;
+            case DamageInfo.TIER_YELLOW -> FxPalette.CRIT_Y;
+            case DamageInfo.TIER_ORANGE -> FxPalette.CRIT_O;
+            case DamageInfo.TIER_RED -> FxPalette.CRIT_R;
+            default -> FxPalette.DMG_WHITE;
+        };
+    }
+
+    private static int outlineOf(int tier) {
+        return switch (tier) {
+            case DamageInfo.TIER_ORANGE -> OUTLINE_ORANGE;
+            case DamageInfo.TIER_RED -> OUTLINE_RED;
+            default -> OUTLINE_YELLOW;
+        };
+    }
+
     public void clear() {
         damageInfos.clear();
         mergeSlots.clear();
         cleanupTimer = 0;
     }
 
-    /**
-     * 获取当前伤害信息数量
-     */
     public int size() {
         return damageInfos.size();
     }

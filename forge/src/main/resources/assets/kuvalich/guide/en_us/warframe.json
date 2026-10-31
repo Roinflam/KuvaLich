@@ -10,8 +10,15 @@
       "title": "Warframe Arsenal",
       "icon": "kuvalich:requiem_warframe_table",
       "summary": "Where Warframe mods go: recipe and use",
-      "items": ["kuvalich:requiem_warframe_table"],
+      "items": [
+        "kuvalich:requiem_warframe_table"
+      ],
       "blocks": [
+        {
+          "type": "comm",
+          "who": "lotus",
+          "text": "You earned this power, Tenno. No one granted it to you."
+        },
         {
           "type": "p",
           "text": "<hl>Warframe mods</hl> go on you yourself, Tenno, and building this Arsenal takes at least two successful hunts. The {item:kuvalich:requiem_warframe_table} is where you install them. Installed mods are <g>always active</g>; you don't need to hold anything or wear armor."
@@ -58,7 +65,7 @@
           "type": "tip",
           "style": "warn",
           "title": "Not an early-game build",
-          "text": "A {item:kuvalich:lich_reliquary} drops only when you kill the [[enemies/kuva_master|Kuva Lich]] boss with a successful [[requiem/decryption|decryption]], which means all three Requiem cards and their order are right. <t>1</t> per kill.\\nThe {item:kuvalich:requiem_evolve}, the workbench for upgrading weapons, also takes <t>1</t> in its own recipe, so you need at least two Lich victories."
+          "text": "A {item:kuvalich:lich_reliquary} drops only when you hunt down your own [[enemies/kuva_master|Kuva Lich]] with a successful [[requiem/decryption|decryption]], which means all three Requiem cards and their order are right. <t>1</t> per success.\\nThe {item:kuvalich:requiem_evolve}, the workbench for upgrading weapons, also takes <t>1</t> in its own recipe, so you need at least two Lich victories."
         },
         {
           "type": "p",
@@ -79,7 +86,7 @@
         },
         {
           "type": "h",
-          "text": "Mod won't go in?"
+          "text": "When a mod won't go in"
         },
         {
           "type": "list",
@@ -111,11 +118,16 @@
       "title": "How Warframe Mods Work",
       "icon": "kuvalich:warframe_rare_module",
       "summary": "Always on, how values stack, when each stat applies",
-      "items": ["kuvalich:warframe_common_module", "kuvalich:warframe_uncommon_module", "kuvalich:warframe_rare_module", "kuvalich:warframe_prime_module"],
+      "items": [
+        "kuvalich:warframe_common_module",
+        "kuvalich:warframe_uncommon_module",
+        "kuvalich:warframe_rare_module",
+        "kuvalich:warframe_prime_module"
+      ],
       "blocks": [
         {
           "type": "p",
-          "text": "Mods installed in the [[warframe/warframe_table|Warframe Arsenal]] are <g>active at all times</g>, whether you are fighting, mining or traveling, even empty-handed, and no armor is required."
+          "text": "These eight slots never go idle, Tenno. Mods installed in the [[warframe/warframe_table|Warframe Arsenal]] are <g>active at all times</g>, whether you are fighting, mining or traveling, even empty-handed, and no armor is required."
         },
         {
           "type": "p",
@@ -141,11 +153,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.moduleWeaponRatio<100",
-              "text": "Mining [[world/requiem_ore|Requiem Ore]] and fighting [[enemies/kuva_slave|Kuva Thralls]] and the [[enemies/kuva_master|Kuva Lich]] boss can all drop mods; <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> of them are Warframe mods, the rest are weapon mods."
+              "text": "Drops from [[world/requiem_ore|Requiem Ore]], [[enemies/kuva_slave|Kuva Thralls]] and the [[enemies/kuva_master|Kuva Lich]] boss can all include mods; <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> of them are Warframe mods, the rest are weapon mods."
             },
             {
               "if": "!cfg:kuva_lich.moduleWeaponRatio<100",
-              "text": "Mods from mining [[world/requiem_ore|Requiem Ore]] and from [[enemies/kuva_slave|Kuva Thralls]] and the [[enemies/kuva_master|Kuva Lich]] boss are all weapon mods; Warframe mods never drop from them."
+              "text": "Mods dropped by [[world/requiem_ore|Requiem Ore]], [[enemies/kuva_slave|Kuva Thralls]] and the [[enemies/kuva_master|Kuva Lich]] boss are all weapon mods; Warframe mods never drop from them."
             },
             {
               "if": "cfg:kuva_lich.enableWarframeModuleRecast",
@@ -264,7 +276,7 @@
         },
         {
           "type": "p",
-          "text": "Stats whose name says “Gained on kill” are <hl>kill stacks</hl>. The more you kill, the bigger the bonus, and it fades once you stop killing; see [[combat/kill_stack]]."
+          "text": "Stats whose name says “Gained on kill” are <hl>kill stacks</hl>. The more you kill, the bigger the bonus, and it fades once you stop killing; see [[combat/kill_stack]]. To keep them, keep killing."
         },
         {
           "type": "list",
@@ -276,7 +288,7 @@
         },
         {
           "type": "h",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "list",
@@ -312,7 +324,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "As long as your [[warframe/warframe_module|Warframe mods]] give a total {lang:kuvaweapon.warframe_attribute_type.shield} above 0, your yellow hearts slowly refill to the cap on their own. Don't let them run dry; once empty, they wait three times as long before recharging."
+          "text": "As long as your [[warframe/warframe_module|Warframe mods]] give a total {lang:kuvaweapon.warframe_attribute_type.shield} above 0, your yellow hearts slowly refill to the cap on their own. Don't let them run dry, Tenno; once empty, they wait three times as long before recharging."
         },
         {
           "type": "tip",
@@ -407,11 +419,11 @@
           "type": "tip",
           "style": "wf",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "The records show that Warframe shields over there also take damage before health and recharge on their own after a short time without being hit; if they are fully depleted, the wait before recharging is longer."
+          "text": "The records show that Warframe shields over there also take damage before health and recharge on their own after a short time without being hit; if they are fully depleted, the wait before recharging is longer. Anything that dares drain the Operator's shields, Ordis would <x>take apart-- bolt by BOLT--</x> forgive the outburst."
         },
         {
           "type": "h",
-          "text": "Advanced details"
+          "text": "Deep intel"
         },
         {
           "type": "list",
@@ -494,7 +506,7 @@
         },
         {
           "type": "h",
-          "text": "How to set it up"
+          "text": "Orders"
         },
         {
           "type": "steps",

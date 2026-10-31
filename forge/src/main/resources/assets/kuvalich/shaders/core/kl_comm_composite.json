@@ -1,0 +1,29 @@
+{
+    "vertex": "kuvalich:kl_comm_composite",
+    "fragment": "kuvalich:kl_comm_composite",
+    "attributes": [
+        "Position",
+        "UV0",
+        "Color"
+    ],
+    "samplers": [
+        { "name": "Sampler0" },
+        { "name": "Sampler1" }
+    ],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "Feather", "type": "float", "count": 2, "values": [ 0.09, 0.14 ] },
+        { "name": "Alpha", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "Flash", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "GhostA", "type": "float", "count": 4, "values": [ 1.0, 0.23, 0.32, 0.0 ] },
+        { "name": "GhostB", "type": "float", "count": 4, "values": [ 0.31, 0.91, 1.0, 0.0 ] },
+        { "name": "GhostAlpha", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "Drag", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "Band", "type": "float", "count": 4, "values": [ 0.5, 0.0, 0.0, 0.0 ] },
+        { "name": "Dissolve", "type": "float", "count": 3, "values": [ 0.0, 0.06, 0.0 ] },
+        { "name": "EdgeColor", "type": "float", "count": 3, "values": [ 1.0, 0.478, 0.353 ] },
+        { "name": "Glitch", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "NoiseScale", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] }
+    ]
+}

@@ -30,6 +30,7 @@ import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * 物品提示上按住 Ctrl 查阅：任何界面里物品提示框出来时（物品栏、箱子、创造模式物品栏、JEI 之类），指着的物品在指南里出现过、
@@ -140,9 +141,10 @@ public final class GuideLookup {
         armed = false;
         holdStart = 0L;
         String key = target.entryKey();
-        int block = target.block();
+        int block = skipComm(key, target.block());
         minecraft.tell(() -> {
             if (minecraft.screen == screen) {
+                GuideSfx.lookup();
                 GuideScreenOpener.openAt(screen, key, block);
             }
         });
@@ -159,6 +161,29 @@ public final class GuideLookup {
             armed = true;
             holdStart = 0L;
         }
+    }
+
+    /**
+     * 查阅的落点不停在通讯框上：通讯只是氛围，查阅是来找讲这件东西的那一块的。落到通讯时往后挪到第一个不是通讯的块
+     *
+     * @param key   条目
+     * @param block 可见块序号；-1 = 篇首
+     * @return 挪过之后的块序号
+     */
+    private static int skipComm(String key, int block) {
+        if (block < 0) {
+            return block;
+        }
+        GuideView.EntryView ev = GuideView.current().entries.get(key);
+        if (ev == null) {
+            return block;
+        }
+        List<GuideContent.Block> blocks = ev.blocks();
+        int b = block;
+        while (b < blocks.size() && blocks.get(b).type == GuideContent.BlockType.COMM) {
+            b++;
+        }
+        return b < blocks.size() ? b : block;
     }
 
     /** 身上（背包、快捷栏、副手）有没有冒险指南 */

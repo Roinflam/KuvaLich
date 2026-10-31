@@ -10,11 +10,18 @@
       "title": "战甲军械库",
       "icon": "kuvalich:requiem_warframe_table",
       "summary": "装战甲模组的工作台：配方与用法",
-      "items": ["kuvalich:requiem_warframe_table"],
+      "items": [
+        "kuvalich:requiem_warframe_table"
+      ],
       "blocks": [
         {
+          "type": "comm",
+          "who": "lotus",
+          "text": "这份力量是你挣来的，Tenno，不是谁赐给你的。"
+        },
+        {
           "type": "p",
-          "text": "<hl>战甲模组</hl>装在你自己身上，天诺，造这台军械库至少要讨伐成功两次。{item:kuvalich:requiem_warframe_table}就是装它们的工作台，装进去的模组<g>一直生效</g>，不用拿在手上，也不用穿盔甲。"
+          "text": "<hl>战甲模组</hl>装在你自己身上，Tenno，造这台军械库至少要讨伐成功两次。{item:kuvalich:requiem_warframe_table}就是装它们的工作台，装进去的模组<g>一直生效</g>，不用拿在手上，也不用穿盔甲。"
         },
         {
           "type": "p",
@@ -23,7 +30,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "军械库这个名字，Ordis 熟得很。飞船上那座叫 Arsenal，挑选战甲和武器、安装 Mod，都在那里。战甲本名 Warframe，是天诺们操控的生物机械战斗装甲，每一具的形貌和技能都各不相同。"
+          "text": "军械库这个名字，Ordis 熟得很。飞船上那座叫 Arsenal，挑选战甲和武器、安装 MOD，都在那里。战甲本名 Warframe，是 Tenno 操控的生物机械战斗装甲，每一具的形貌和技能都各不相同。"
         },
         {
           "type": "h",
@@ -58,7 +65,7 @@
           "type": "tip",
           "style": "warn",
           "title": "开局造不出来",
-          "text": "{item:kuvalich:lich_reliquary}只在你击杀 Boss [[enemies/kuva_master|赤毒玄骸]]并且[[requiem/decryption|解密]]成功时掉落，三张安魂卡和它们的顺序都要猜对，每次 <t>1</t> 个。\\n养武器用的工作台{item:kuvalich:requiem_evolve}自己的配方也要 <t>1</t> 个，所以至少要赢玄骸两次。"
+          "text": "{item:kuvalich:lich_reliquary}只在你讨伐自己的[[enemies/kuva_master|赤毒玄骸]]并且[[requiem/decryption|解密]]成功时掉落，三张安魂卡和它们的顺序都要猜对，每次 <t>1</t> 个。\\n养武器用的工作台{item:kuvalich:requiem_evolve}自己的配方也要 <t>1</t> 个，所以至少要赢玄骸两次。"
         },
         {
           "type": "p",
@@ -79,7 +86,7 @@
         },
         {
           "type": "h",
-          "text": "放不进去？"
+          "text": "装不进去的几种情况"
         },
         {
           "type": "list",
@@ -111,7 +118,7 @@
         "module/ModulePlacementValidator.java:87 / :137 — 武器槽只收 AbstractWeaponModule，战甲槽只收 AbstractWarframeModule（模组分武器 / 战甲两种）",
         "resources data/kuvalich/recipes/requiem_warframe_table.json — ADA/ACA/BBB：A=裂罅碎块×4，D=玄骸之遗×1，C=安魂之融×1，B=黑曜石×3",
         "resources data/kuvalich/recipes/requiem_evolve.json — 安魂之融配方中间也要 1 个玄骸之遗（D）",
-        "entity/KuvaMasterEntity.java:440-465 — handleSuccessfulDecryption 里掉 1 个 LICH_RELIQUARY（击杀玄骸且本次解密成功）；全项目仅此一处掉落（另有创造栏 init/KuvaLichCreativeTabs.java:59）",
+        "entity/KuvaMasterEntity.java:979-1052 — computeAndApplySuccess 里掉 1 个 LICH_RELIQUARY（:1025）；直接判定（怜悯之击关，死的那一刻主人的卡放满且全对，:829-835 → directSuccess :895-908）和三刀全对（怜悯之击开）都走这里；:772-784 onKilled 无主的玄骸直接返回，不判定、不掉东西；全项目仅此一处掉落（另有创造栏 init/KuvaLichCreativeTabs.java:59）。正文写成「讨伐自己的赤毒玄骸并且解密成功」，两种开关下都成立",
         "解密 = 猜对三张安魂卡的顺序：见 requiem 分类 decryption / kuva_master 条目的 _src；安魂之融是养武器的工作台：见 weapons/requiem_evolve 的 _src",
         "world/inventory/RequiemWarframeTableMenu.java:46-53 — 8 个模组槽，两排各 4",
         "world/inventory/RequiemWarframeTableMenu.java:94-119 — Shift 点击：只接受 AbstractWarframeModule，依次试 0~7 号格",
@@ -139,11 +146,16 @@
       "title": "战甲模组怎么生效",
       "icon": "kuvalich:warframe_rare_module",
       "summary": "常驻生效、数值叠法、各词条何时起作用",
-      "items": ["kuvalich:warframe_common_module", "kuvalich:warframe_uncommon_module", "kuvalich:warframe_rare_module", "kuvalich:warframe_prime_module"],
+      "items": [
+        "kuvalich:warframe_common_module",
+        "kuvalich:warframe_uncommon_module",
+        "kuvalich:warframe_rare_module",
+        "kuvalich:warframe_prime_module"
+      ],
       "blocks": [
         {
           "type": "p",
-          "text": "装在[[warframe/warframe_table|战甲军械库]]里的模组<g>全天候生效</g>，打架、挖矿、赶路时都在起作用，空着手也一样，不用穿盔甲。"
+          "text": "这八格从不停工，Tenno。装在[[warframe/warframe_table|战甲军械库]]里的模组<g>全天候生效</g>，打架、挖矿、赶路时都在起作用，空着手也一样，不用穿盔甲。"
         },
         {
           "type": "p",
@@ -169,11 +181,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.moduleWeaponRatio<100",
-              "text": "挖[[world/requiem_ore|安魂矿石]]、打[[enemies/kuva_slave|赤毒奴仆]]和 Boss [[enemies/kuva_master|赤毒玄骸]]都有机会掉模组，其中 <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> 是战甲模组，其余是武器模组。"
+              "text": "[[world/requiem_ore|安魂矿石]]、[[enemies/kuva_slave|赤毒奴仆]]和 Boss [[enemies/kuva_master|赤毒玄骸]]的掉落里都可能有模组，其中 <t>{cfg:kuva_lich.moduleWeaponRatio|mul:-1|add:100|pctv}</t> 是战甲模组，其余是武器模组。"
             },
             {
               "if": "!cfg:kuva_lich.moduleWeaponRatio<100",
-              "text": "挖[[world/requiem_ore|安魂矿石]]、打[[enemies/kuva_slave|赤毒奴仆]]和 Boss [[enemies/kuva_master|赤毒玄骸]]掉的模组全是武器模组，不会掉战甲模组。"
+              "text": "[[world/requiem_ore|安魂矿石]]、[[enemies/kuva_slave|赤毒奴仆]]和 Boss [[enemies/kuva_master|赤毒玄骸]]掉的模组全是武器模组，不会掉战甲模组。"
             },
             {
               "if": "cfg:kuva_lich.enableWarframeModuleRecast",
@@ -185,7 +197,7 @@
         {
           "type": "tip",
           "style": "wf",
-          "text": "Mod 在起源星系分得很细，Ordis 一向欣赏这种规矩。战甲 Mod 只能装在战甲上，步枪、霰弹枪、近战这些武器 Mod，也只认对应的那类武器。"
+          "text": "MOD 在始源星系分得很细，Ordis 一向欣赏这种规矩。战甲 MOD 只能装在战甲上，步枪、霰弹枪、近战这些武器 MOD，也只认对应的那类武器。"
         },
         {
           "type": "h",
@@ -292,7 +304,7 @@
         },
         {
           "type": "p",
-          "text": "词条名里带「击杀时获取」的属于<hl>击杀叠层</hl>词条，杀得越多加成越高，一段时间不杀就慢慢退回去，见[[combat/kill_stack]]。"
+          "text": "词条名里带「击杀时获取」的属于<hl>击杀叠层</hl>词条，杀得越多加成越高，一段时间不杀就慢慢退回去，见[[combat/kill_stack]]。要留住它们，就别停手。"
         },
         {
           "type": "list",
@@ -304,7 +316,7 @@
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -330,7 +342,7 @@
         "base/item/AbstractWarframeModule.java:143-144 — 战甲模组 tooltip 末行 kuvaweapon.warframe_type.tooltip",
         "module/ModulePlacementValidator.java:87 / :137 — 武器槽只收 AbstractWeaponModule，战甲槽只收 AbstractWarframeModule（两者是 AbstractModule 的不同子类）",
         "world/inventory/RequiemWarframeTableMenu.java:138-139 — 战甲模组挂在玩家身上而非护甲物品上，没穿甲也生效",
-        "enchantment/RequiemDestroyedEnchantment.java:202-225、entity/KuvaSlaveEntity.java:262-285、entity/KuvaMasterEntity.java:534-547 — 掉模组时 percentageChance(moduleWeaponRatio) 为武器模组，否则战甲模组；moduleWeaponRatio=100 时全是武器模组",
+        "enchantment/RequiemDestroyedEnchantment.java:202-225、entity/KuvaSlaveEntity.java:310-334、entity/KuvaMasterEntity.java:1119-1130 — 掉模组时 percentageChance(moduleWeaponRatio) 为武器模组，否则战甲模组；moduleWeaponRatio=100 时全是武器模组",
         "world/inventory/RequiemRecastMenu.java:219-223 — enableWarframeModuleRecast 为真时三张战甲模组走 processWarframeModuleCrafting",
         "world/inventory/RequiemRecastMenu.java:183-190,397-421,431-445 — 输入槽恰好一张模组（武器或战甲、数量 1）时预览分解为内融核心，取走才消耗；不受 enableWarframeModuleRecast 控制；:595-603 槽位接受所有战甲模组",
         "module/level/ModuleLevelHelper.java:102-108 — 等级倍率 = level / moduleMaxLevel；关闭等级系统时为 1（满值）",
@@ -360,7 +372,8 @@
         "module/KillStackManager.java:359-362 — 下线清空叠层",
         "module/weapon/WeaponCombatHandler.java:346-382 — 副手/盔甲/饰品槽只合并武器模组属性（WeaponModuleHandler），与战甲模组无关；开光 = 物品带 kuvalich_weaponModules（能装模组），见 modules/module_overview 的 _src",
         "module/warframe/WarframeModuleHandler.java:234,255-257 — 战甲模组同样走 ModuleConfig.clampAttributeValue / clampAttributeTotal",
-        "wf 小知识：原作设定（模组是插在战甲和武器上的卡片、升级消耗内融核心），不是本模组机制"
+        "wf 小知识：原作设定（模组是插在战甲和武器上的卡片、升级消耗内融核心），不是本模组机制",
+        "entity/KuvaSlaveEntity.java:194-210 + mercy/MercyRules.java:31-36 — 奴仆的专属掉落只在处决走完（怜悯之击和奴仆倒地都开着）或被玩家打死（任一关着）时给；entity/KuvaMasterEntity.java:1043 — 玄骸只在讨伐成功时掉 1 张高品质模组。所以正文只写「它们的掉落里可能有模组」，不写怎么打"
       ]
     },
     {
@@ -376,7 +389,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "只要[[warframe/warframe_module|战甲模组]]给你的{lang:kuvaweapon.warframe_attribute_type.shield}总和大于 0，黄心就会自己慢慢回到上限。别让它见底，打空之后要等三倍的时间才开始回。"
+          "text": "只要[[warframe/warframe_module|战甲模组]]给你的{lang:kuvaweapon.warframe_attribute_type.shield}总和大于 0，黄心就会自己慢慢回到上限。别让它见底，Tenno，打空之后要等三倍的时间才开始回。"
         },
         {
           "type": "tip",
@@ -471,11 +484,11 @@
           "type": "tip",
           "style": "wf",
           "if": "cfg:kuva_lich.shieldCapMultiplier",
-          "text": "档案显示，战甲的护盾在那边同样挡在生命值前面，一段时间没挨打就会自行充能，要是被彻底打空，就得多等一阵才开始回充。"
+          "text": "档案显示，战甲的护盾在那边同样挡在生命值前面，一段时间没挨打就会自行充能，要是被彻底打空，就得多等一阵才开始回充。敢把指挥官的护盾打空的东西，Ordis 真想<x>拆了它--一块一块地拆--</x>失态了，请见谅。"
         },
         {
           "type": "h",
-          "text": "进阶细节"
+          "text": "深层情报"
         },
         {
           "type": "list",
@@ -581,7 +594,7 @@
         },
         {
           "type": "h",
-          "text": "怎么做"
+          "text": "行动"
         },
         {
           "type": "steps",

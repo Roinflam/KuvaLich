@@ -18,6 +18,11 @@ import java.util.regex.Pattern;
  * {@code [[分类/条目|文字]]} 链接、反斜杠转义。{@code {item:…}} 展开成<b>物品链接</b>：物品名加点线下划线，
  * 悬停出物品提示（和物品格一样）；不跳转。</p>
  *
+ * <h3>故障段 {@code <x>…</x>}</h3>
+ * <p>Ordis 说话卡带的那一段（从第一个卡住的字起，到最后一个 {@code --} 止）。它不改颜色，只给片段打上
+ * {@link Span#glitch} 标记，由排版拆成逐字的小片段、绘制时画成撕裂错色（{@link GuideRender#line}）。
+ * 字照常显示，{@code --} 也显示；纯文本（搜索、复制）里只去掉标签。</p>
+ *
  * <h3>坏标记怎么办</h3>
  * <p>这是给人写的格式，写错是常态。原则是「尽量照字面显示，绝不抛异常」：
  * 不认识的 {@code <…>} 原样显示尖括号；缺右花括号的 {@code {} 原样显示（后文还有别的占位符时也一样，
@@ -60,13 +65,20 @@ public final class GuideMarkup {
         /** 哪一个占位符 / 链接展开出来的（每处一个对象，补空格时按它分界）；普通文字为 null */
         @Nullable
         final Object token;
+        /** 在 {@code <x>…</x>} 故障段里 */
+        public final boolean glitch;
 
         Span(String text, int color, boolean bold, @Nullable Link link, @Nullable Object token) {
+            this(text, color, bold, link, token, false);
+        }
+
+        Span(String text, int color, boolean bold, @Nullable Link link, @Nullable Object token, boolean glitch) {
             this.text = text;
             this.color = color;
             this.bold = bold;
             this.link = link;
             this.token = token;
+            this.glitch = glitch;
         }
     }
 
@@ -241,6 +253,16 @@ public final class GuideMarkup {
                     boolean closing = !tagMatcher.group(1).isEmpty();
                     String tag = tagMatcher.group(2);
                     String hex = tagMatcher.group(3);
+                    if ("x".equals(tag) && hex == null) {
+                        // 故障段不进样式栈：它不改颜色，套在别的标签里外都行；多出来的 </x> 忽略
+                        if (!closing) {
+                            out.glitchDepth++;
+                        } else if (out.glitchDepth > 0) {
+                            out.glitchDepth--;
+                        }
+                        i = tagMatcher.end();
+                        continue;
+                    }
                     int tagColor = tagColor(tag, hex);
                     if (tagColor != 0) {
                         if (!closing) {
@@ -434,6 +456,10 @@ public final class GuideMarkup {
         boolean bold;
         Link link;
         Object token;
+        /** 当前在几层 {@code <x>} 里（链接显示文字的递归解析共用同一个 Builder，所以放这里） */
+        int glitchDepth;
+        /** 攒着的这段文字是不是故障段 */
+        boolean glitch;
 
         void append(char ch, int c, boolean b, @Nullable Link l, @Nullable Object t) {
             switchTo(c, b, l, t);
@@ -449,18 +475,20 @@ public final class GuideMarkup {
         }
 
         private void switchTo(int c, boolean b, @Nullable Link l, @Nullable Object t) {
-            if (text.length() > 0 && (c != color || b != bold || l != link || t != token)) {
+            boolean g = glitchDepth > 0;
+            if (text.length() > 0 && (c != color || b != bold || l != link || t != token || g != glitch)) {
                 flush();
             }
             color = c;
             bold = b;
             link = l;
             token = t;
+            glitch = g;
         }
 
         void flush() {
             if (text.length() > 0) {
-                spans.add(new Span(text.toString(), color, bold, link, token));
+                spans.add(new Span(text.toString(), color, bold, link, token, glitch));
                 text.setLength(0);
             }
         }

@@ -31,6 +31,11 @@ import java.util.List;
  * </ul>
  * <p>样式跨行自然延续：折行只是在片段序列上切刀，每一段仍带着自己的颜色 / 加粗 / 链接。</p>
  *
+ * <h3>故障段</h3>
+ * <p>{@code <x>…</x>} 里的字每个码点单独成一个片段，各自记好 x、本体的水平错位和残影用的无色字形序列，
+ * 绘制时只查表（{@link GuideRender#line}）。宽度照样逐字累加，折行结果和不加标签时一样；
+ * 唯一多出的规矩是 {@code --} 不放行首：「荣」留在上一行、「--烦躁」掉到下一行开头，读起来像排错了版。</p>
+ *
  * <h3>宽度按浮点累加</h3>
  * <p>Unifont 的中文字形前进量是半像素的倍数，逐字取整再累加，一行三十个字能差出十几像素，
  * 行尾会参差不齐甚至溢出。这里按字形的真实浮点宽度累加（按码点缓存，只在排版时算），
@@ -53,6 +58,9 @@ final class GuideTextLayout {
      * 一行里同样式的一段
      */
     static final class Piece {
+        /** 故障段本体逐字的水平错位，按码点序号循环取 */
+        private static final int[] GLITCH_JITTER = {0, 1, -1};
+
         /** 纯文本（截断、省略号用） */
         final String text;
         final FormattedCharSequence seq;
@@ -63,14 +71,35 @@ final class GuideTextLayout {
         final int w;
         @Nullable
         final Link link;
+        /** 这一段的样式（通讯框擦出时逐字建字形序列用） */
+        final Style style;
+        /** 故障段里的一个字 */
+        final boolean glitch;
+        /** 故障段本体的水平错位（像素） */
+        final int jx;
+        /** 故障段残影用的字形序列：不带颜色，颜色由绘制时传入；非故障段为 null */
+        @Nullable
+        final FormattedCharSequence ghost;
 
         Piece(String text, FormattedCharSequence seq, @Nullable FormattedCharSequence hoverSeq, int x, int w, @Nullable Link link) {
+            this(text, seq, hoverSeq, x, w, link, Style.EMPTY, -1);
+        }
+
+        /**
+         * @param glitchIndex 在故障段里是第几个码点；不在故障段里为 -1
+         */
+        Piece(String text, FormattedCharSequence seq, @Nullable FormattedCharSequence hoverSeq, int x, int w, @Nullable Link link,
+              Style style, int glitchIndex) {
             this.text = text;
             this.seq = seq;
             this.hoverSeq = hoverSeq;
             this.x = x;
             this.w = w;
             this.link = link;
+            this.style = style;
+            this.glitch = glitchIndex >= 0;
+            this.jx = glitchIndex >= 0 ? GLITCH_JITTER[glitchIndex % GLITCH_JITTER.length] : 0;
+            this.ghost = glitchIndex >= 0 ? FormattedCharSequence.forward(text, Style.EMPTY.withBold(style.isBold())) : null;
         }
     }
 
@@ -81,10 +110,17 @@ final class GuideTextLayout {
         static final Piece[] NONE = new Piece[0];
         final Piece[] pieces;
         final int width;
+        /** 这一行有没有故障段（有才走残影那一遍） */
+        final boolean glitch;
 
         Line(Piece[] pieces, int width) {
             this.pieces = pieces;
             this.width = width;
+            boolean g = false;
+            for (Piece p : pieces) {
+                g |= p.glitch;
+            }
+            this.glitch = g;
         }
     }
 
@@ -291,6 +327,10 @@ final class GuideTextLayout {
         if (b == ' ' || a == ' ') {
             return true;
         }
+        // 故障记号 -- 当闭合标点：不放行首，两个连字符之间也不断开
+        if (b == '-' && (a == '-' || i + 1 < cps.length && cps[i + 1] == '-')) {
+            return false;
+        }
         if (NO_LINE_START.indexOf(b) >= 0) {
             return false;
         }
@@ -324,6 +364,8 @@ final class GuideTextLayout {
         int[] cps;
         int[] span;
         float[] w;
+        /** 在故障段里是第几个码点（连续的故障片段算一段，跨行接着数）；不在故障段里为 -1 */
+        int[] glitch;
         int n;
         Style[] styles;
         Style[] hoverStyles;
@@ -341,9 +383,11 @@ final class GuideTextLayout {
         f.cps = new int[total];
         f.span = new int[total];
         f.w = new float[total];
+        f.glitch = new int[total];
         f.styles = new Style[spans.size()];
         f.hoverStyles = new Style[spans.size()];
         int k = 0;
+        int run = 0;
         for (int si = 0; si < spans.size(); si++) {
             Span s = spans.get(si);
             Style style = Style.EMPTY.withColor(TextColor.fromRgb(s.color & 0xFFFFFF)).withBold(s.bold);
@@ -358,6 +402,10 @@ final class GuideTextLayout {
                 f.cps[k] = cp;
                 f.span[k] = si;
                 f.w[k] = cp == '\n' ? 0f : charWidth(cp, s.bold, style);
+                f.glitch[k] = s.glitch ? run++ : -1;
+                if (!s.glitch) {
+                    run = 0;
+                }
                 k++;
             }
         }
@@ -388,6 +436,18 @@ final class GuideTextLayout {
         int a = start;
         while (a < end) {
             int si = f.span[a];
+            if (f.glitch[a] >= 0) {
+                // 故障段逐字成片：各自的 x 照累加宽度取整，和整段画时的位置一致
+                String text = new String(f.cps, a, 1);
+                float w = f.w[a];
+                int px = Math.round(x);
+                int pw = Math.round(x + w) - px;
+                pieces.add(new Piece(text, FormattedCharSequence.forward(text, f.styles[si]), null, px, pw,
+                        f.rich.spans.get(si).link, f.styles[si], f.glitch[a]));
+                x += w;
+                a++;
+                continue;
+            }
             int b = a;
             float w = 0f;
             while (b < end && f.span[b] == si) {
@@ -401,7 +461,7 @@ final class GuideTextLayout {
                     ? FormattedCharSequence.forward(text, f.hoverStyles[si]) : null;
             int px = Math.round(x);
             int pw = Math.round(x + w) - px;
-            pieces.add(new Piece(text, seq, hover, px, pw, span.link));
+            pieces.add(new Piece(text, seq, hover, px, pw, span.link, f.styles[si], -1));
             x += w;
             a = b;
         }

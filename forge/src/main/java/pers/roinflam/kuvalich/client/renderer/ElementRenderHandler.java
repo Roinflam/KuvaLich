@@ -4,9 +4,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -15,87 +17,32 @@ import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Vector3f;
+import pers.roinflam.kuvalich.client.fx.ElementTint;
+import pers.roinflam.kuvalich.client.fx.KuvaRenderTypes;
+import pers.roinflam.kuvalich.client.fx.script.ElementFx;
+import pers.roinflam.kuvalich.client.fx.script.ElementStatusFx;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
- * 元素实体渲染处理器（客户端 · v8）
- * Element Entity Render Handler (Client-side · v8)
+ * 原版生物的元素整只染色、冰块装饰和病毒触发时的描边闪
  *
- * <p>职责：
  * <ol>
- *     <li>在 {@link RenderLivingEvent.Pre} 根据实体身上的元素 debuff 调用
- *         {@link RenderSystem#setShaderColor} 整体染色实体。</li>
- *     <li>在 {@link RenderLivingEvent.Post} 无条件重置染色避免污染后续渲染，
- *         同时渲染冰块等装饰物。</li>
- * </ol></p>
+ *     <li>{@link RenderLivingEvent.Pre}：按 {@link ElementTint#tintRgb} 的颜色调 {@link RenderSystem#setShaderColor}
+ *         整只染色（玄骸和奴仆走 GeckoLib，不发这个事件，它们的渲染器自己调同一个方法取色）。</li>
+ *     <li>{@link RenderLivingEvent.Post}：无条件复位颜色，画冰块装饰；病毒刚触发的 120 ms 里用外壳描边闪一下病毒色。</li>
+ * </ol>
  *
- * <p>⭐ v8 性能优化：染色计算改为<b>零分配</b>。
- * 原 {@code getEntityTint} 通过 {@code getAllActiveElements} 拿一个 List，
- * 内部还要先做一次快照 List，而它在 Pre / Post 各被调用一次，
- * 即每实体每帧 2~4 次 List 分配。现改为
- * {@link ElementDebuffTracker#forEachActiveElement} 配合静态累加器，
- * 全程只在最终返回时分配一个 {@link Vector3f}。</p>
- *
- * <p><b>关于 {@code endBatch()} 强制 flush 的保留说明：</b>
- * Minecraft 的 {@code MultiBufferSource.BufferSource} 是 deferred 渲染——
- * 实体模型顶点进 buffer 后不会立即 draw，而是等统一 {@code endBatch()} 时才 draw，
- * 此时 shader 读到的 {@code ColorModulator} uniform 是<b>最后一次</b>
- * {@code setShaderColor} 的值。若不在 Pre/Post 手动 flush，
- * Post 里的颜色重置会让本实体的染色在最终 draw 时丢失（表现为"冰块出但不变色"）。
- * 这个 flush 会打断批渲染、增加 draw call，但它是当前架构下保证染色正确的必要代价；
- * 已通过 64 格距离裁剪把影响范围限制在近处实体。</p>
- *
- * <p>v6 色调保留：{@code TINT_VIRUS} 为粉色 (1.00, 0.50, 0.80)。</p>
- *
- * @author RoinFlam
+ * <p><b>为什么要在 Pre / Post 各 flush 一次</b>：{@code MultiBufferSource.BufferSource} 是延后绘制的，
+ * 实体顶点进缓冲后要等统一 {@code endBatch()} 才真正画，那时着色器读到的颜色是最后一次 {@code setShaderColor} 的值。
+ * 不在前后手动 flush，Post 里的复位会让这只的染色在真正绘制时丢掉（表现为「冰块出了但不变色」）。
+ * flush 会打断批渲染，所以只给 64 格内、真的有元素状态的实体做。</p>
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class ElementRenderHandler {
 
-    // ==================== 元素染色色板 ====================
-
-    /** 冰冻蓝 / Ice blue */
-    private static final Vector3f TINT_ICE = new Vector3f(0.55f, 0.75f, 1.00f);
-
-    /** 毒素强绿 / Poison strong green */
-    private static final Vector3f TINT_POISON = new Vector3f(0.25f, 1.00f, 0.25f);
-
-    /** 火焰橙红 / Fire orange-red */
-    private static final Vector3f TINT_FIRE = new Vector3f(1.00f, 0.70f, 0.50f);
-
-    /** 辐射黄绿 / Radiation yellow-green */
-    private static final Vector3f TINT_RADIATION = new Vector3f(0.85f, 1.00f, 0.45f);
-
-    /** 腐蚀深绿 / Corrosion dark green */
-    private static final Vector3f TINT_CORROSION = new Vector3f(0.60f, 0.90f, 0.40f);
-
-    /** 病毒粉色 / Virus pink */
-    private static final Vector3f TINT_VIRUS = new Vector3f(1.00f, 0.50f, 0.80f);
-
-    /** 磁力紫 / Magnetic purple */
-    private static final Vector3f TINT_MAGNETIC = new Vector3f(0.85f, 0.55f, 1.00f);
-
-    /** 穿刺浅银 / Puncture pale silver */
-    private static final Vector3f TINT_PUNCTURE = new Vector3f(0.75f, 0.80f, 0.90f);
-
-    // ==================== 元素名常量 ====================
-
     private static final String ELEM_ICE = "ice";
-    private static final String ELEM_FIRE = "fire";
-    private static final String ELEM_POISON = "poison";
-    private static final String ELEM_RADIATION = "radiation";
-    private static final String ELEM_CORROSION = "corrosion";
-    private static final String ELEM_VIRUS = "virus";
-    private static final String ELEM_MAGNETIC = "magnetic";
-    private static final String ELEM_PUNCTURE = "puncture";
 
-    // ==================== 冰块装饰配置 ====================
-
-    /**
-     * 冰晶在实体身上的相对位置（x, y, z 倍率）
-     * x/z 以实体 bbWidth 为单位，y 以 bbHeight 为单位
-     */
+    /** 冰晶在实体身上的相对位置（x / z 以宽为单位，y 以高为单位） */
     private static final float[][] ICE_CRYSTAL_POSITIONS = {
             {0.00f, 0.20f, 0.00f},   // 腹部
             {0.35f, 0.55f, 0.00f},   // 右肩
@@ -104,25 +51,8 @@ public final class ElementRenderHandler {
             {0.00f, 0.40f, 0.30f},   // 后背
     };
 
-    // ==================== 距离裁剪 ====================
-
-    /** 最大渲染距离平方（64 格） */
     private static final double MAX_RENDER_DIST_SQR = 64.0 * 64.0;
 
-    // ==================== 零分配染色累加器 ====================
-
-    /**
-     * ⭐ 染色累加器：[r, g, b, count]
-     * <p>渲染只在客户端主线程执行，静态复用安全，避免每帧分配临时容器。</p>
-     */
-    private static final float[] TINT_ACCUMULATOR = new float[4];
-
-    /**
-     * 判断实体是否超出 64 格渲染距离
-     *
-     * @param entity 目标实体
-     * @return true 表示超出距离（应跳过所有渲染）
-     */
     private static boolean beyondRenderDistance(LivingEntity entity) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.gameRenderer == null) return false;
@@ -133,192 +63,74 @@ public final class ElementRenderHandler {
         return dx * dx + dy * dy + dz * dz > MAX_RENDER_DIST_SQR;
     }
 
-    // ==================== 渲染事件监听 ====================
-
-    /**
-     * 实体渲染前：应用元素染色
-     *
-     * @param event 渲染前事件
-     */
+    /** 实体渲染前：元素染色 */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderPre(RenderLivingEvent.Pre<?, ?> event) {
         if (event.isCanceled()) return;
-
-        LivingEntity entity = event.getEntity();
-        // ⭐ 64 格距离裁剪
-        if (beyondRenderDistance(entity)) return;
-
-        Vector3f tint = getEntityTint(entity);
-        if (tint != null) {
-            // ⭐ flush 之前累积的顶点，避免当前 tint 污染前面实体的渲染
+        int rgb = ElementTint.tintRgb(event.getEntity());
+        if (rgb >= 0) {
+            // flush 之前累积的顶点，免得这只的颜色染到前面画的东西上
             flushBuffers(event.getMultiBufferSource());
-            RenderSystem.setShaderColor(tint.x(), tint.y(), tint.z(), 1.0f);
+            RenderSystem.setShaderColor(((rgb >> 16) & 0xFF) / 255.0F, ((rgb >> 8) & 0xFF) / 255.0F,
+                    (rgb & 0xFF) / 255.0F, 1.0F);
         }
     }
 
-    /**
-     * 实体渲染后：无条件重置染色 + 渲染冰块装饰
-     *
-     * @param event 渲染后事件
-     */
+    /** 实体渲染后：复位染色 + 冰块装饰 + 病毒描边闪 */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderPost(RenderLivingEvent.Post<?, ?> event) {
         LivingEntity entity = event.getEntity();
-        boolean visible = !beyondRenderDistance(entity);
-
-        // ⭐ 若 Pre 染过色，必须在重置颜色前 flush，确保当前实体的顶点用 tint 颜色 draw
-        //    这里重新判定（而非缓存 Pre 的结果）是为了兼容嵌套渲染（骑乘实体递归渲染 passenger）
-        //    的场景；在零分配改造后，重新判定的成本仅为一次 map 查询 + 少量浮点运算。
-        if (visible && getEntityTint(entity) != null) {
+        // 若 Pre 染过色，复位前必须 flush，这只的顶点才会按染色画出来。
+        // 这里重新判定而不是记住 Pre 的结果，是为了兼容嵌套渲染（骑乘时递归画乘客）
+        if (ElementTint.tintRgb(entity) >= 0) {
             flushBuffers(event.getMultiBufferSource());
         }
-
-        // 无条件重置颜色
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        // 冰块装饰同样遵守 64 格距离
-        if (visible && ElementDebuffTracker.has(entity, ELEM_ICE)) {
-            renderIceCrystalsOnEntity(entity, event.getPoseStack(),
-                    event.getMultiBufferSource(), event.getPackedLight());
+        if (beyondRenderDistance(entity)) {
+            return;
+        }
+        if (ElementDebuffTracker.has(entity, ELEM_ICE)) {
+            renderIceCrystalsOnEntity(entity, event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight());
+        }
+        float rim = ElementStatusFx.virusRimAlpha(entity.getId());
+        if (rim > 0.0F) {
+            renderVirusRim(event, entity, rim);
         }
     }
 
-    /**
-     * 强制 flush BufferSource 的所有累积顶点，立即 draw 到 GPU。
-     *
-     * @param source MultiBufferSource（正常应为 BufferSource 实例）
-     */
     private static void flushBuffers(MultiBufferSource source) {
         if (source instanceof MultiBufferSource.BufferSource bs) {
             bs.endBatch();
         }
     }
 
-    // ==================== 染色判断（零分配） ====================
-
     /**
-     * 根据实体身上所有 active 元素 debuff 计算混合染色色值
-     *
-     * <p>每个 debuff 先按 amplifier 做白色→满色的 lerp（最低级约 70% 饱和，满级 100%），
-     * 然后多 debuff 做等权 RGB 平均。</p>
-     *
-     * <p>⭐ 零分配：不再构造中间 List，直接用静态累加器累加。</p>
-     *
-     * @param entity 实体
-     * @return 染色色值，无 debuff 返回 null
+     * 病毒触发那一下的描边闪：同一个模型、同一套姿态按中心放大一点再画一遍外壳，只剩轮廓外面一圈
      */
-    private static Vector3f getEntityTint(LivingEntity entity) {
-        TINT_ACCUMULATOR[0] = 0f;
-        TINT_ACCUMULATOR[1] = 0f;
-        TINT_ACCUMULATOR[2] = 0f;
-        TINT_ACCUMULATOR[3] = 0f;
-
-        ElementDebuffTracker.forEachActiveElement(entity, (element, amplifier) -> {
-            Vector3f tint = getElementTintForLevel(element, amplifier);
-            if (tint == null) {
-                return;
-            }
-            TINT_ACCUMULATOR[0] += tint.x();
-            TINT_ACCUMULATOR[1] += tint.y();
-            TINT_ACCUMULATOR[2] += tint.z();
-            TINT_ACCUMULATOR[3] += 1f;
-        });
-
-        int count = (int) TINT_ACCUMULATOR[3];
-        if (count <= 0) {
-            return null;
-        }
-        float inv = 1.0f / count;
-        return new Vector3f(
-                TINT_ACCUMULATOR[0] * inv,
-                TINT_ACCUMULATOR[1] * inv,
-                TINT_ACCUMULATOR[2] * inv
-        );
+    private static void renderVirusRim(RenderLivingEvent.Post<?, ?> event, LivingEntity e, float alpha) {
+        EntityModel<?> model = event.getRenderer().getModel();
+        PoseStack ps = event.getPoseStack();
+        float pt = event.getPartialTick();
+        int rgb = ElementFx.virusColor();
+        float a = 0.8F * alpha * KuvaRenderTypes.rimAlphaScale();
+        // 照原版生物渲染器的变换：转身体朝向、翻转、往下挪 1.501，模型各部件的姿态这一帧已经摆好了
+        ps.pushPose();
+        float bodyYaw = Mth.rotLerp(pt, e.yBodyRotO, e.yBodyRot);
+        ps.mulPose(Axis.YP.rotationDegrees(180.0F - bodyYaw));
+        ps.scale(-1.0F, -1.0F, 1.0F);
+        ps.translate(0.0F, -1.501F, 0.0F);
+        float cy = 1.501F - e.getBbHeight() * 0.5F;
+        ps.translate(0.0F, cy, 0.0F);
+        ps.scale(KuvaRenderTypes.RIM_HULL_SCALE, KuvaRenderTypes.RIM_HULL_SCALE, KuvaRenderTypes.RIM_HULL_SCALE);
+        ps.translate(0.0F, -cy, 0.0F);
+        model.renderToBuffer(ps, event.getMultiBufferSource().getBuffer(KuvaRenderTypes.rimHull()), 0xF000F0,
+                OverlayTexture.NO_OVERLAY, ((rgb >> 16) & 0xFF) / 255.0F, ((rgb >> 8) & 0xFF) / 255.0F,
+                (rgb & 0xFF) / 255.0F, a);
+        ps.popPose();
     }
 
-    /**
-     * 按元素 debuff 的 amplifier 计算最终染色（从白色向满色线性插值）
-     *
-     * <p>公式：{@code tint = 1 - factor * (1 - baseTint)}，factor ∈ [0.7, 1.0]：
-     * 最低级（amplifier=0）factor=0.7，保证颜色有明显辨识度不会太淡；
-     * 满级 factor=1.0，结果完全等于 baseTint。</p>
-     *
-     * <p>对单层元素（{@code getMaxLevel} 返回 0，例如毒素）直接返回满色。</p>
-     *
-     * @param element   元素名
-     * @param amplifier 当前元素等级
-     * @return 插值后的染色，无定义元素返回 null
-     */
-    private static Vector3f getElementTintForLevel(String element, int amplifier) {
-        Vector3f baseTint = getElementBaseTint(element);
-        if (baseTint == null) return null;
-
-        int maxLevel = getMaxLevel(element);
-        if (maxLevel <= 0) return baseTint;
-        if (amplifier < 0) return baseTint;
-
-        float ratio = Math.min((float) amplifier / maxLevel, 1.0f);
-        float factor = 0.7f + 0.3f * ratio;
-
-        return new Vector3f(
-                1.0f - factor * (1.0f - baseTint.x()),
-                1.0f - factor * (1.0f - baseTint.y()),
-                1.0f - factor * (1.0f - baseTint.z())
-        );
-    }
-
-    /**
-     * 元素名 → 满饱和（满级）染色常量引用
-     *
-     * @param element 元素名
-     * @return 对应的满色常量，无定义时返回 null
-     */
-    private static Vector3f getElementBaseTint(String element) {
-        switch (element) {
-            case ELEM_ICE: return TINT_ICE;
-            case ELEM_FIRE: return TINT_FIRE;
-            case ELEM_POISON: return TINT_POISON;
-            case ELEM_RADIATION: return TINT_RADIATION;
-            case ELEM_CORROSION: return TINT_CORROSION;
-            case ELEM_VIRUS: return TINT_VIRUS;
-            case ELEM_MAGNETIC: return TINT_MAGNETIC;
-            case ELEM_PUNCTURE: return TINT_PUNCTURE;
-            default: return null;
-        }
-    }
-
-    /**
-     * 元素名 → 最大 amplifier 等级
-     * <p>用于染色 lerp 计算。必须与 {@code DynamicAttributes} 里各元素
-     * createInstance 时的实际上限保持同步。</p>
-     *
-     * @param element 元素名
-     * @return 最大等级，单层元素返回 0
-     */
-    private static int getMaxLevel(String element) {
-        switch (element) {
-            case ELEM_FIRE: return 3;
-            case ELEM_ICE: return 8;
-            case ELEM_POISON: return 0;       // 单层：固定满色
-            case ELEM_RADIATION: return 9;
-            case ELEM_CORROSION: return 9;
-            case ELEM_VIRUS: return 9;
-            case ELEM_MAGNETIC: return 9;
-            case ELEM_PUNCTURE: return 3;
-            default: return 0;
-        }
-    }
-
-    // ==================== 冰块渲染 ====================
-
-    /**
-     * 在实体身上渲染蓝冰装饰（类似暮色森林寒冰弓效果）
-     *
-     * @param entity      冰冻的实体
-     * @param poseStack   渲染矩阵栈
-     * @param buffers     MultiBufferSource
-     * @param packedLight 打包光照值
-     */
+    /** 在实体身上渲染蓝冰装饰 */
     private static void renderIceCrystalsOnEntity(LivingEntity entity, PoseStack poseStack,
                                                   MultiBufferSource buffers, int packedLight) {
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
@@ -351,7 +163,6 @@ public final class ElementRenderHandler {
         }
     }
 
-    /** 工具类禁止实例化 / Utility class, no instantiation */
     private ElementRenderHandler() {
     }
 }

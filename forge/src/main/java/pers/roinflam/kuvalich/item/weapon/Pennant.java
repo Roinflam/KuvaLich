@@ -18,6 +18,11 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
+import pers.roinflam.kuvalich.client.fx.script.ItemFx;
+import pers.roinflam.kuvalich.fx.FxId;
+import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.base.item.AbstractKuvaWeapon;
 import pers.roinflam.kuvalich.config.ModConfig;
@@ -100,11 +105,13 @@ public class Pennant extends AbstractKuvaWeapon {
                     e -> !e.equals(player)
             );
 
+            int hits = 0;
             for (@Nonnull LivingEntity hurter : entities) {
                 // ✅ 使用indirectMagic（原版自带无视护甲效果）
                 if (hurter.hurt(
                         level.damageSources().indirectMagic(player, player),
                         hurter.getHealth() * 0.2f)) {
+                    hits++;
 
                     new SynchronizationTask(5, 5) {
                         private int tick = 0;
@@ -143,9 +150,26 @@ public class Pennant extends AbstractKuvaWeapon {
                 }
             }
 
+            // 冲刺的拖尾、起点地面环，打中了再加冲击环（a = 0 旗帜，b = 打中的个数）
+            KuvaFx.tracking(player, FxId.WEAPON_DASH, 0, hits);
+
             player.resetAttackStrengthTicker();
             player.getCooldowns().addCooldown(stack.getItem(), 200);
             player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
+        }
+    }
+
+    /** 用满这么多 tick 时蓄力正好满（放开时 {@code (用时) * 2 >= 40}） */
+    private static final int CHARGE_FULL_TICKS = 20;
+
+    /**
+     * 蓄满提示：客户端在数到满蓄力的那一 tick 给持有者本人一个小光环和提示音。
+     * 这一 tick 的剩余时长要减一以后才算进放开时的用时，所以看的是第 19 个 tick
+     */
+    @Override
+    public void onUseTick(@NotNull Level level, @NotNull LivingEntity entity, @NotNull ItemStack stack, int remaining) {
+        if (level.isClientSide && getUseDuration(stack) - remaining == CHARGE_FULL_TICKS - 1) {
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ItemFx.chargeReady(entity));
         }
     }
 

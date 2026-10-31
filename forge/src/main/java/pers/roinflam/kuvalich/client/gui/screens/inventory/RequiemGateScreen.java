@@ -1,40 +1,47 @@
 package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
+import pers.roinflam.kuvalich.client.KuvaKeyMappings;
+import pers.roinflam.kuvalich.client.fx.FxPalette;
+import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
+import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.client.gui.requiem.MurmurTriangle;
+import pers.roinflam.kuvalich.client.lich.LichArchiveKeys;
+import pers.roinflam.kuvalich.client.sound.KuvaSoundInstance;
+import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.network.packet.RequiemGateFillPacket;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.world.inventory.RequiemGateMenu;
 
 /**
- * 灭骸之扉GUI（1.20.1版本）
- * Requiem Gate Screen (1.20.1 version)
+ * 灭骸之扉界面（放安魂卡的方块界面）
  *
- * <p>本次改动：
- * <ol>
- *   <li>进度条宽度钳制：修复升阶瞬间/同步延迟时 schedule&gt;=threshold 导致填充宽度溢出纹理区域的问题。</li>
- *   <li>进度条过渡动画：用指数平滑（帧率无关）让填充宽度平滑逼近目标值。开界面时从0填充，
- *       之后无论目标值小步增、一次性大涨还是跳很多，都用同一套平滑逻辑补间，不瞬跳。</li>
- *   <li>揭示成功提示：检测到 level（解密阶段）递增时，在进度条上叠加暖金色双脉冲衰减闪光。</li>
- *   <li>谜语槽位洗牌动画：已揭示卡片在其所占槽位间持续循环换位（2张交换、3张轮转），
- *       交叉时上下错开弧线避免重叠；每个已揭示槽位带呼吸脉冲边框。本次放慢了换位速度。</li>
- *   <li>⭐ 创造模式底部 [TAB] 一键补全提示 + 按键触发（发送 RequiemGateFillPacket，
- *       服务端校验创造模式后填入正确答案卡片）。</li>
- * </ol></p>
+ * <ul>
+ *   <li>上排三个卡槽放安魂卡，每个槽下面三颗小红点是这张卡还能用几次（亮的带一圈暗红晕，用掉的压暗）；</li>
+ *   <li>中间是三枚安魂密语排成的三角（和玄骸档案同一个部件）：揭示了的画这张卡的符号线描，
+ *       正在解的那枚菱晶外圈和液面就是这一阶段的解密进度；三枚每 3 秒随机两枚换位，提示排列不代表顺序；</li>
+ *   <li>右下角「[K] 玄骸档案」小字，点了（或者按档案键）关掉这个界面、打开档案；</li>
+ *   <li>开界面放一声开门，再垫一层很轻的循环底噪，400 ms 淡入，关界面 300 ms 淡出；</li>
+ *   <li>创造模式下按 [TAB] 一键补上正确答案卡（服务端会再核一次创造模式）。</li>
+ * </ul>
+ *
+ * <p>数据走 {@link RequiemGateMenu} 同步的谜语三格、阶段和进度；阈值按同一套配置在客户端算。</p>
  */
 @OnlyIn(Dist.CLIENT)
 public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> {
@@ -43,112 +50,47 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
             Reference.MOD_ID, "textures/gui/container/requiem_gate.png"
     );
 
-    private static final int PROGRESS_X_OFFSET = 12;
-    private static final int PROGRESS_Y_OFFSET = 30;
-    private static final int PROGRESS_WIDTH = 152;
-    private static final int PROGRESS_HEIGHT = 18;
+    /** 三角：三枚平均点相对界面左上角的位置、符号尺寸 */
+    private static final float TRIANGLE_X = 88.0F;
+    private static final float TRIANGLE_Y = 52.0F;
+    private static final float SYMBOL_SIZE = 16.0F;
 
-    private static final int RIDDLE_Y_OFFSET = 56;
-    private static final int RIDDLE_SIZE = 16;
-    private static final int FIRST_RIDDLE_X_OFFSET = 26;
-    private static final int SECOND_RIDDLE_X_OFFSET = 80;
-    private static final int THIRD_RIDDLE_X_OFFSET = 134;
+    /** 三个卡槽的左上角 x、y（和菜单里的槽位一致），次数点所在的那一行 */
+    private static final int[] CARD_SLOT_X = {26, 80, 134};
+    private static final int DOTS_Y = 29;
+    private static final int DOT_STEP = 4;
+    private static final int DOT_COUNT = 3;
 
-    // ==================== 进度条过渡动画参数 ====================
+    /** 「[K] 玄骸档案」：右上角对齐的位置、字号 */
+    private static final int LINK_RIGHT = 164;
+    private static final int LINK_TOP = 68;
+    private static final float LINK_SCALE = 0.75F;
 
-    /** 进度条填充动画固定时长（毫秒）：开界面回放(0→当前)及界面内进度变化均用此固定时长，模拟原版进度条的缓慢手感 */
-    private static final long PROGRESS_FILL_ANIM_DURATION_MS = 3000L;
+    /** 循环底噪的音量和淡入、淡出 */
+    private static final float AMBIENCE_VOLUME = 0.6F;
+    private static final int AMBIENCE_FADE_IN_MS = 400;
+    private static final int AMBIENCE_FADE_OUT_MS = 300;
 
-    // ==================== 进度条填充染色（奥罗金金色，可调；设为 1,1,1 即原色） ====================
+    private final MurmurTriangle triangle = new MurmurTriangle(SYMBOL_SIZE);
+    private final int[] riddleBuffer = new int[3];
+    /** 谜语卡的物品缓存（悬停时显示卡的说明），只在卡 id 变了时重建 */
+    private final ItemStack[] riddleCards = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
+    private final int[] riddleCardIds = {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
 
-    /** 填充染色 R 分量 */
-    private static final float FILL_TINT_R = 1.00f;
-    /** 填充染色 G 分量 */
-    private static final float FILL_TINT_G = 0.82f;
-    /** 填充染色 B 分量 */
-    private static final float FILL_TINT_B = 0.40f;
+    private KuvaSoundInstance ambience;
+    private boolean opened;
 
-    // ==================== 揭示成功闪光参数 ====================
+    private Component linkText = Component.empty();
+    private float linkX0;
+    private float linkY0;
+    private float linkX1;
+    private float linkY1;
 
-    /** 闪光总时长（毫秒），与顶部HUD统一 */
-    private static final long REVEAL_FLASH_MS = 900L;
+    // ==================== 调试（开发环境的截图命令用） ====================
 
-    /** 闪光颜色RGB（不含alpha），暖金 */
-    private static final int REVEAL_FLASH_RGB = 0xFFE8A0;
-
-    /** 闪光脉冲周期数（衰减包络内的完整正弦周期数） */
-    private static final double REVEAL_FLASH_PULSE_CYCLES = 2.0;
-
-    /** 色洗峰值透明度（柔和发光，非实心色块） */
-    private static final int REVEAL_FLASH_WASH_ALPHA_MAX = 90;
-
-    /** 扩散光环最大外扩像素 */
-    private static final int REVEAL_FLASH_RING_OFFSET = 6;
-
-    /** 扩散光环峰值透明度 */
-    private static final int REVEAL_FLASH_RING_ALPHA_MAX = 150;
-
-    // ==================== 谜语卡片洗牌动画参数 ====================
-
-    /** 三个谜语槽位的X偏移（索引0/1/2对应一/二/三号槽） */
-    private static final int[] RIDDLE_X_OFFSETS = {
-            FIRST_RIDDLE_X_OFFSET, SECOND_RIDDLE_X_OFFSET, THIRD_RIDDLE_X_OFFSET
-    };
-
-    /** 单步洗牌循环时长（毫秒）：停留 + 平滑移动到下一槽位的总时长（已放慢） */
-    private static final long SHUFFLE_CYCLE_MS = 3400L;
-
-    /** 停留时长占比（0~1）：前段停在当前槽位，后段 smoothstep 平滑滑向下一槽位 */
-    private static final double SHUFFLE_HOLD_FRAC = 0.6;
-
-    /** 卡片换位时的垂直弧线高度（像素），避免两张卡片交叉时完全重叠 */
-    private static final int SHUFFLE_ARC_H = 4;
-
-    /** 槽位脉冲边框呼吸周期（毫秒），与洗牌循环独立 */
-    private static final long FLASH_PERIOD_MS = 1300L;
-
-    /** 脉冲边框最小透明度（0~255） */
-    private static final int FLASH_ALPHA_MIN = 50;
-
-    /** 脉冲边框最大透明度（0~255） */
-    private static final int FLASH_ALPHA_MAX = 140;
-
-    /** 脉冲颜色RGB（不含alpha），Kuva红 */
-    private static final int FLASH_RGB = 0xFF5555;
-
-    // ==================== 谜语卡片缓存（避免每帧new ItemStack） ====================
-
-    /** 谜语卡片ItemStack缓存，仅在riddleId变化时重建 */
-    private final ItemStack[] cachedRiddleCards = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
-
-    /** 上一次缓存对应的riddleId，用于判断是否需要重建 */
-    private final int[] cachedRiddleIds = {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
-
-    /** 每帧复用的riddleId缓冲，避免重复分配 */
-    private final int[] riddleIdBuffer = new int[3];
-
-    /** 每帧复用的已揭示槽位索引缓冲 */
-    private final int[] revealedSlotBuffer = new int[3];
-
-    // ==================== 进度条/揭示动画运行时状态 ====================
-
-    /** 当前渲染用填充宽度（像素），每帧由填充动画计算得出 */
-    private float displayedProgressWidth = 0.0f;
-
-    /** 上一帧观测到的解密阶段（level），用于检测阶段推进触发揭示闪光；<0 表示首帧 */
-    private int lastLevel = -1;
-
-    /** 揭示闪光起始时间戳（毫秒）；<0 表示当前无闪光 */
-    private long revealFlashStartMs = -1L;
-
-    /** 进度条填充动画起始宽度（像素） */
-    private float fillAnimStart = 0.0f;
-
-    /** 进度条填充动画目标宽度（像素） */
-    private float fillAnimTarget = 0.0f;
-
-    /** 进度条填充动画起始时间戳（毫秒，-1 表示未开始）；开界面为新实例，从此重新回放 0→当前 */
-    private long fillAnimStartMs = -1L;
+    private static boolean debugOverride;
+    private static final int[] DEBUG_RIDDLES = {-1, -1, -1};
+    private static float debugProgress;
 
     public RequiemGateScreen(RequiemGateMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -159,16 +101,28 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
     @Override
     protected void init() {
         super.init();
+        // 改窗口大小时 init 会再调一次，声音只在第一次打开时放
+        if (!opened) {
+            opened = true;
+            KuvaSoundPlayer.play(KuvaSoundPlayer.ui(KuvaLichSounds.BLOCK_REQUIEM_GATE_OPEN.get(), 1.0F, 1.0F));
+            ambience = KuvaSoundPlayer.play(KuvaSoundPlayer.uiLoop(KuvaLichSounds.BLOCK_REQUIEM_GATE_AMBIENCE.get(),
+                    AMBIENCE_VOLUME, AMBIENCE_FADE_IN_MS));
+        }
+        linkText = Component.translatable("kuvalich.archive.open_hint", KuvaKeyMappings.ARCHIVE.getTranslatedKeyMessage());
     }
 
-    /**
-     * 不渲染标签（标题和物品栏名称）
-     * Do not render labels (title and inventory name)
-     */
+    @Override
+    public void removed() {
+        super.removed();
+        if (ambience != null) {
+            ambience.fadeOut(AMBIENCE_FADE_OUT_MS);
+            ambience = null;
+        }
+    }
+
+    /** 不画标题和「物品栏」字样 */
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // 留空 - 不渲染任何标签
-        // Leave empty - do not render any labels
     }
 
     @Override
@@ -176,7 +130,7 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
         this.renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        // ⭐ 仅创造模式：底部显示 [TAB] 一键补全答案提示（与军械库 TAB 提示同风格）
+        // 仅创造模式：底部显示 [TAB] 一键补全答案提示
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.player.isCreative()) {
             String hint = "[TAB] " + Component.translatable("kuvalich.gate.fill_hint").getString();
@@ -187,233 +141,67 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
-    }
-
-    /**
-     * 监听按键：创造模式下按 TAB 请求服务端一键补全正确答案卡片。
-     * <p>
-     * 仅创造模式生效；非创造模式或非 TAB 键交还父类默认处理（如背包键关闭界面等）。
-     * 服务端收到 {@link RequiemGateFillPacket} 后会再次校验创造模式，杜绝伪造包作弊。
-     *
-     * @param keyCode   按键码
-     * @param scanCode  扫描码
-     * @param modifiers 修饰键掩码
-     * @return 是否已处理该按键
-     */
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_TAB) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null && mc.player.isCreative()) {
-                NetworkRegistryHandler.getChannel().sendToServer(new RequiemGateFillPacket());
-                return true;
+        // 悬停在已揭示的密语上：显示那张卡的说明
+        if (this.hoveredSlot == null && this.menu.getCarried().isEmpty()) {
+            Integer slot = triangle.hoveredSlot(mouseX, mouseY);
+            if (slot != null && riddleBuffer[slot] >= 0 && !riddleCards[slot].isEmpty()) {
+                guiGraphics.renderTooltip(this.font, riddleCards[slot], mouseX, mouseY);
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        // 每帧推进动画状态（进度条补间 + 揭示检测）
-        long now = Util.getMillis();
-        updateProgressTween(now);
-        updateRevealDetection(now);
-
+        long now = KuvaFxDirector.clockMs();
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+        guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        int left = (this.width - this.imageWidth) / 2;
-        int top = (this.height - this.imageHeight) / 2;
-
-        guiGraphics.blit(TEXTURE, left, top, 0, 0, this.imageWidth, this.imageHeight);
-        drawProgressBar(guiGraphics, left, top);
-        drawRiddleCards(guiGraphics, left, top, mouseX, mouseY);
+        triangle.update(readRiddles(), stageProgress(), now);
+        triangle.render(guiGraphics, leftPos + TRIANGLE_X, topPos + TRIANGLE_Y, now);
+        drawUseDots(guiGraphics);
+        drawArchiveLink(guiGraphics, mouseX, mouseY);
     }
 
-    // ==================== 进度条动画状态更新 ====================
+    // ==================== 三角的数据 ====================
 
-    /**
-     * 推进进度条填充宽度的固定时长补间。
-     * <p>
-     * 帧率无关：以 {@link #PROGRESS_FILL_ANIM_DURATION_MS}（3 秒）为固定时长、缓入缓出地从起点过渡到目标。
-     * 开界面为新实例（{@code fillAnimStartMs<0}），从 0 回放填充到当前进度（恢复"进度积累"开界面动画）；
-     * 界面打开期间进度实时变化时，则以当前显示值为起点重新开始一段固定时长动画。
-     *
-     * @param now 当前绝对时间戳（毫秒）
-     */
-    private void updateProgressTween(long now) {
-        int target = calculateProgressWidth(menu.getLevel(), menu.getSchedule());
-
-        if (fillAnimStartMs < 0L) {
-            // 开界面首帧：从 0 回放填充到当前进度
-            fillAnimStart = 0.0f;
-            fillAnimTarget = target;
-            fillAnimStartMs = now;
-        } else if (Math.abs(target - fillAnimTarget) > 0.5f) {
-            // 界面打开期间进度实时变化 → 以当前显示值为起点，重新开始一段固定时长动画
-            fillAnimStart = displayedProgressWidth;
-            fillAnimTarget = target;
-            fillAnimStartMs = now;
+    private int[] readRiddles() {
+        if (debugOverride) {
+            System.arraycopy(DEBUG_RIDDLES, 0, riddleBuffer, 0, 3);
+        } else {
+            riddleBuffer[0] = menu.getOneRiddle();
+            riddleBuffer[1] = menu.getTwoRiddle();
+            riddleBuffer[2] = menu.getThreeRiddle();
         }
-
-        // 固定时长进度（钳制到 [0,1]）+ smoothstep 缓入缓出
-        double raw = (now - fillAnimStartMs) / (double) PROGRESS_FILL_ANIM_DURATION_MS;
-        double t = raw < 0.0 ? 0.0 : (raw > 1.0 ? 1.0 : raw);
-        double eased = t * t * (3.0 - 2.0 * t);
-        displayedProgressWidth = (float) (fillAnimStart + (fillAnimTarget - fillAnimStart) * eased);
-
-        if (displayedProgressWidth < 0.0f) {
-            displayedProgressWidth = 0.0f;
-        } else if (displayedProgressWidth > PROGRESS_WIDTH) {
-            displayedProgressWidth = PROGRESS_WIDTH;
+        for (int i = 0; i < 3; i++) {
+            if (riddleBuffer[i] != riddleCardIds[i]) {
+                riddleCardIds[i] = riddleBuffer[i];
+                riddleCards[i] = riddleBuffer[i] < 0 ? ItemStack.EMPTY
+                        : new ItemStack(AbstractRequiemCard.getCard(riddleBuffer[i]));
+            }
         }
+        return riddleBuffer;
     }
 
-    /**
-     * 检测解密阶段（level）是否递增，递增即触发一次揭示闪光。
-     * <p>
-     * 首次观测仅记录基准、不触发，避免开界面时对已有进度误报。
-     *
-     * @param now 当前绝对时间戳（毫秒）
-     */
-    private void updateRevealDetection(long now) {
+    /** 这一阶段的进度 0~1；三条都揭示了算满 */
+    private float stageProgress() {
+        if (debugOverride) {
+            return debugProgress;
+        }
         int level = menu.getLevel();
-
-        if (lastLevel < 0) {
-            // 首帧仅记录基准，不触发提示
-            lastLevel = level;
-            return;
-        }
-
-        if (level > lastLevel) {
-            // 阶段推进 = 揭示新线索
-            revealFlashStartMs = now;
-        }
-        lastLevel = level;
-    }
-
-    // ==================== 进度条渲染 ====================
-
-    private void drawProgressBar(GuiGraphics guiGraphics, int left, int top) {
-        int progressX = left + PROGRESS_X_OFFSET;
-        int progressY = top + PROGRESS_Y_OFFSET;
-
-        // 进度条背景轨道
-        guiGraphics.blit(
-                TEXTURE,
-                progressX, progressY,
-                PROGRESS_HEIGHT, this.imageHeight,
-                PROGRESS_WIDTH, PROGRESS_HEIGHT
-        );
-
-        // 使用平滑后的填充宽度（再次钳制确保安全）
-        int fillWidth = Math.round(displayedProgressWidth);
-        if (fillWidth < 0) {
-            fillWidth = 0;
-        } else if (fillWidth > PROGRESS_WIDTH) {
-            fillWidth = PROGRESS_WIDTH;
-        }
-
-        if (fillWidth > 0) {
-            // 填充用奥罗金金色染色（轨道保持原色）
-            RenderSystem.setShaderColor(FILL_TINT_R, FILL_TINT_G, FILL_TINT_B, 1.0F);
-            guiGraphics.blit(
-                    TEXTURE,
-                    progressX, progressY,
-                    PROGRESS_HEIGHT, this.imageHeight + PROGRESS_HEIGHT,
-                    fillWidth, PROGRESS_HEIGHT
-            );
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        }
-
-        // 揭示成功闪光叠加
-        drawRevealFlash(guiGraphics, progressX, progressY);
-    }
-
-    /**
-     * 绘制揭示成功闪光：柔和色洗（暖金双脉冲 × 衰减包络）+ 由进度条边缘向外扩散并淡出的光环。
-     * <p>与顶部HUD视觉统一；此处不加整体缩放弹跳，避免影响谜题卡洗牌动画与鼠标悬停判定。
-     *
-     * @param guiGraphics 图形上下文
-     * @param progressX   进度条左上角 X
-     * @param progressY   进度条左上角 Y
-     */
-    private void drawRevealFlash(GuiGraphics guiGraphics, int progressX, int progressY) {
-        if (revealFlashStartMs < 0L) {
-            return;
-        }
-
-        long elapsed = Util.getMillis() - revealFlashStartMs;
-        if (elapsed >= REVEAL_FLASH_MS) {
-            revealFlashStartMs = -1L;
-            return;
-        }
-
-        double t = (double) elapsed / REVEAL_FLASH_MS;
-        double env = 1.0 - t;
-
-        // 柔和色洗（盖在进度条上，低透明度发光感）
-        double pulse = (Math.sin(t * Math.PI * 2.0 * REVEAL_FLASH_PULSE_CYCLES) + 1.0) / 2.0;
-        int washAlpha = (int) (REVEAL_FLASH_WASH_ALPHA_MAX * env * pulse);
-        if (washAlpha > 1) {
-            int washColor = (washAlpha << 24) | REVEAL_FLASH_RGB;
-            guiGraphics.fill(progressX, progressY, progressX + PROGRESS_WIDTH, progressY + PROGRESS_HEIGHT, washColor);
-        }
-
-        // 扩散光环（由进度条边缘向外扩张，env² 更快淡出）
-        int off = (int) Math.round(t * REVEAL_FLASH_RING_OFFSET) + 1;
-        int ringAlpha = (int) (REVEAL_FLASH_RING_ALPHA_MAX * env * env);
-        if (ringAlpha > 1) {
-            int ringColor = (ringAlpha << 24) | REVEAL_FLASH_RGB;
-            int left = progressX - off;
-            int right = progressX + PROGRESS_WIDTH + off;
-            int top = progressY - off;
-            int bottom = progressY + PROGRESS_HEIGHT + off;
-            guiGraphics.fill(left, top, right, top + 1, ringColor);
-            guiGraphics.fill(left, bottom - 1, right, bottom, ringColor);
-            guiGraphics.fill(left, top, left + 1, bottom, ringColor);
-            guiGraphics.fill(right - 1, top, right, bottom, ringColor);
-        }
-    }
-
-    /**
-     * 计算进度条填充的目标宽度。
-     * <p>
-     * 对 schedule/threshold 比例做 [0,1] 钳制：正常升阶会扣减 schedule，
-     * 但升阶瞬间或服务端→客户端同步延迟的那一帧可能出现 schedule>=threshold，
-     * 不钳制会使填充宽度超过 {@link #PROGRESS_WIDTH}、blit 画到纹理区域外。
-     *
-     * @param level    当前解密阶段（0~3）
-     * @param schedule 当前阶段已累积进度
-     * @return 目标填充像素宽度，范围 [0, PROGRESS_WIDTH]
-     */
-    private int calculateProgressWidth(int level, int schedule) {
         if (level >= 3) {
-            return PROGRESS_WIDTH;
+            return 1.0F;
         }
-
         int threshold = getThresholdForLevel(level);
         if (threshold <= 0) {
-            return 0;
+            return 0.0F;
         }
-
-        double ratio = (double) schedule / threshold;
-        if (ratio < 0.0) {
-            ratio = 0.0;
-        } else if (ratio > 1.0) {
-            ratio = 1.0;
-        }
-
-        return (int) (PROGRESS_WIDTH * ratio);
+        return Mth.clamp(menu.getSchedule() / (float) threshold, 0.0F, 1.0F);
     }
 
     /**
-     * 获取指定阶段的解密阈值。
-     * <p>
-     * 注意：此处读取的是客户端本地的 ModConfig 值，实际升阶判定在服务端。
-     * 若 firstStage/secondStage/thirdStage 不是 SERVER 同步配置，
-     * 两端数值不一致时进度条显示比例会与服务端真实进度对不上。
+     * 指定阶段的解密阈值。读的是客户端本地的配置值，实际升阶在服务端判定；
+     * 两边配置不一致时这里的比例会和服务端对不上
      *
      * @param level 当前阶段（0~2）
      * @return 该阶段所需总点数，越界返回 0
@@ -431,194 +219,129 @@ public class RequiemGateScreen extends AbstractContainerScreen<RequiemGateMenu> 
         }
     }
 
-    // ==================== 谜语卡片 ====================
+    // ==================== 次数点 ====================
 
-    /**
-     * 绘制三个谜语槽位。
-     * <p>
-     * 未揭示槽位绘制静止的「神秘」覆盖；已揭示卡片在揭示≥2张时播放洗牌动画，
-     * 仅1张时静止绘制。
-     *
-     * @param guiGraphics 图形上下文
-     * @param left        GUI 左上角 X
-     * @param top         GUI 左上角 Y
-     * @param mouseX      鼠标 X
-     * @param mouseY      鼠标 Y
-     */
-    private void drawRiddleCards(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
-        int riddleY = top + RIDDLE_Y_OFFSET;
-
-        // 读取三个谜语槽位卡片ID（-1=未揭示）到复用缓冲
-        riddleIdBuffer[0] = menu.getOneRiddle();
-        riddleIdBuffer[1] = menu.getTwoRiddle();
-        riddleIdBuffer[2] = menu.getThreeRiddle();
-
-        // 刷新卡片缓存（仅ID变化时重建ItemStack）
-        refreshRiddleCardCache();
-
-        // 收集已揭示的槽位索引
-        int revealedCount = 0;
+    /** 每个卡槽下面三颗 2×2 的点：还能用的亮红带一圈暗红晕，用掉的压暗；空槽不画 */
+    private void drawUseDots(GuiGraphics g) {
+        GuiShapes.begin(g);
         for (int i = 0; i < 3; i++) {
-            if (riddleIdBuffer[i] != -1) {
-                revealedSlotBuffer[revealedCount++] = i;
+            ItemStack card = menu.getSlot(i).getItem();
+            if (card.isEmpty()) {
+                continue;
+            }
+            int left = usesLeft(card);
+            float cx = leftPos + CARD_SLOT_X[i] + 8.0F;
+            float y0 = topPos + DOTS_Y;
+            for (int j = 0; j < DOT_COUNT; j++) {
+                float x = cx + (j - 1) * DOT_STEP;
+                if (j < left) {
+                    GuiShapes.rect(g, x - 2.0F, y0 - 1.0F, x + 2.0F, y0 + 3.0F, GuiShapes.argb(FxPalette.KUVA_DEEP, 0.6F));
+                    GuiShapes.rect(g, x - 1.0F, y0, x + 1.0F, y0 + 2.0F, GuiShapes.argb(FxPalette.KUVA, 1.0F));
+                } else {
+                    GuiShapes.rect(g, x - 1.0F, y0, x + 1.0F, y0 + 2.0F, GuiShapes.argb(FxPalette.KUVA_DEEP, 0.55F));
+                }
             }
         }
-
-        // 未揭示槽位绘制「神秘」覆盖（静止，不参与洗牌）
-        for (int i = 0; i < 3; i++) {
-            if (riddleIdBuffer[i] == -1) {
-                int x = left + RIDDLE_X_OFFSETS[i];
-                guiGraphics.blit(TEXTURE, x, riddleY, 0, this.imageHeight, RIDDLE_SIZE, RIDDLE_SIZE);
-            }
-        }
-
-        if (revealedCount >= 2) {
-            // 两张及以上：洗牌动画 + 槽位脉冲，提示顺序不固定
-            drawShufflingRiddles(guiGraphics, left, riddleY, revealedCount, mouseX, mouseY);
-        } else if (revealedCount == 1) {
-            // 仅一张：静止绘制，无洗牌
-            int idSlot = revealedSlotBuffer[0];
-            int x = left + RIDDLE_X_OFFSETS[idSlot];
-            drawCard(guiGraphics, cachedRiddleCards[idSlot], x, riddleY);
-            if (isMouseOver(x, riddleY, RIDDLE_SIZE, RIDDLE_SIZE, mouseX, mouseY)) {
-                guiGraphics.renderTooltip(this.font, cachedRiddleCards[idSlot], mouseX, mouseY);
-            }
-        }
+        GuiShapes.end();
     }
 
-    /**
-     * 刷新谜语卡片ItemStack缓存，仅在对应槽位ID变化时重建，避免每帧 new。
-     */
-    private void refreshRiddleCardCache() {
-        for (int i = 0; i < 3; i++) {
-            if (riddleIdBuffer[i] != cachedRiddleIds[i]) {
-                cachedRiddleIds[i] = riddleIdBuffer[i];
-                cachedRiddleCards[i] = (riddleIdBuffer[i] == -1)
-                        ? ItemStack.EMPTY
-                        : new ItemStack(AbstractRequiemCard.getCard(riddleIdBuffer[i]));
-            }
+    /** 卡还能用几次，按三颗点折算 */
+    private static int usesLeft(ItemStack card) {
+        if (!card.isDamageableItem()) {
+            return DOT_COUNT;
         }
+        int max = card.getMaxDamage();
+        int remain = max - card.getDamageValue();
+        if (max == DOT_COUNT) {
+            return Mth.clamp(remain, 0, DOT_COUNT);
+        }
+        return Mth.clamp(Mth.ceil(remain * DOT_COUNT / (float) max), 0, DOT_COUNT);
     }
 
-    /**
-     * 绘制已揭示卡片的洗牌动画。
-     * <p>
-     * 卡片身份固定，但在其所占的 k 个已揭示位置间循环换位：
-     * 逻辑步 step 时，第 j 张卡片位于第 (j+step)%k 个已揭示位置，平滑移向 (j+step+1)%k。
-     * 每个已揭示「家位置」绘制呼吸脉冲边框，卡片移走时仍发光，避免空洞。
-     *
-     * @param guiGraphics 图形上下文
-     * @param left        GUI 左上角 X
-     * @param riddleY     谜语行 Y
-     * @param k           已揭示卡片数量（>=2）
-     * @param mouseX      鼠标 X
-     * @param mouseY      鼠标 Y
-     */
-    private void drawShufflingRiddles(GuiGraphics guiGraphics, int left, int riddleY,
-                                      int k, int mouseX, int mouseY) {
-        long now = Util.getMillis();
+    // ==================== 玄骸档案入口 ====================
 
-        // 槽位脉冲边框（连续呼吸）：在每个已揭示「家位置」绘制，实现「闪烁三个槽位」效果
-        double flashPulse = (Math.sin(now * Math.PI * 2.0 / FLASH_PERIOD_MS) + 1.0) / 2.0;
-        int borderAlpha = FLASH_ALPHA_MIN + (int) ((FLASH_ALPHA_MAX - FLASH_ALPHA_MIN) * flashPulse);
-        for (int j = 0; j < k; j++) {
-            int homeX = left + RIDDLE_X_OFFSETS[revealedSlotBuffer[j]];
-            drawPulseBorder(guiGraphics, homeX, riddleY, borderAlpha);
-        }
-
-        // 洗牌进度：单步循环内前 HOLD_FRAC 停留，后段 smoothstep 平滑移动
-        long step = now / SHUFFLE_CYCLE_MS;
-        double phase = (now % SHUFFLE_CYCLE_MS) / (double) SHUFFLE_CYCLE_MS;
-        double move = phase < SHUFFLE_HOLD_FRAC ? 0.0
-                : (phase - SHUFFLE_HOLD_FRAC) / (1.0 - SHUFFLE_HOLD_FRAC);
-        double eased = move * move * (3.0 - 2.0 * move);
-
-        // 悬停命中记录：绘制完所有卡片后再渲染tooltip，避免被后绘制卡片遮挡
-        int hoverIdSlot = -1;
-        int hoverMouseX = 0;
-        int hoverMouseY = 0;
-
-        for (int j = 0; j < k; j++) {
-            // 卡片 j（身份固定）当前所在位置与目标位置（均为已揭示位置）
-            int fromPos = (int) ((j + step) % k);
-            int toPos = (int) ((j + step + 1) % k);
-            int fromX = left + RIDDLE_X_OFFSETS[revealedSlotBuffer[fromPos]];
-            int toX = left + RIDDLE_X_OFFSETS[revealedSlotBuffer[toPos]];
-            int drawX = (int) Math.round(fromX + (toX - fromX) * eased);
-
-            // 垂直弧线：相邻卡片方向相反，交叉时上下错开避免重叠
-            int arc = (int) Math.round(SHUFFLE_ARC_H * Math.sin(Math.PI * eased));
-            int drawY = riddleY + (((j & 1) == 0) ? -arc : arc);
-
-            // 卡片身份对应的逻辑槽（取卡片ItemStack），与其当前所在位置无关
-            int idSlot = revealedSlotBuffer[j];
-            drawCard(guiGraphics, cachedRiddleCards[idSlot], drawX, drawY);
-
-            if (isMouseOver(drawX, drawY, RIDDLE_SIZE, RIDDLE_SIZE, mouseX, mouseY)) {
-                hoverIdSlot = idSlot;
-                hoverMouseX = mouseX;
-                hoverMouseY = mouseY;
-            }
-        }
-
-        if (hoverIdSlot != -1) {
-            guiGraphics.renderTooltip(this.font, cachedRiddleCards[hoverIdSlot], hoverMouseX, hoverMouseY);
-        }
-    }
-
-    /**
-     * 在指定槽位绘制呼吸脉冲：1像素边框 + 柔和内填充。
-     * <p>
-     * 内填充透明度更低，卡片在位时基本被盖住，卡片移走时透出脉冲，
-     * 边框始终可见，实现「持续闪烁」的槽位提示。
-     *
-     * @param guiGraphics 图形上下文
-     * @param x           槽位左上角 X
-     * @param y           槽位左上角 Y
-     * @param alpha       当前脉冲透明度（0~255）
-     */
-    private void drawPulseBorder(GuiGraphics guiGraphics, int x, int y, int alpha) {
-        int borderColor = (alpha << 24) | FLASH_RGB;
-        // 1像素脉冲边框（上/下/左/右）
-        guiGraphics.fill(x - 1, y - 1, x + RIDDLE_SIZE + 1, y, borderColor);
-        guiGraphics.fill(x - 1, y + RIDDLE_SIZE, x + RIDDLE_SIZE + 1, y + RIDDLE_SIZE + 1, borderColor);
-        guiGraphics.fill(x - 1, y, x, y + RIDDLE_SIZE, borderColor);
-        guiGraphics.fill(x + RIDDLE_SIZE, y, x + RIDDLE_SIZE + 1, y + RIDDLE_SIZE, borderColor);
-        // 柔和内填充（更低透明度）
-        int fillAlpha = alpha / 4;
-        int fillColor = (fillAlpha << 24) | FLASH_RGB;
-        guiGraphics.fill(x, y, x + RIDDLE_SIZE, y + RIDDLE_SIZE, fillColor);
-    }
-
-    /**
-     * 判断鼠标是否在指定矩形区域内。
-     *
-     * @param x      区域左上角 X
-     * @param y      区域左上角 Y
-     * @param width  区域宽
-     * @param height 区域高
-     * @param mouseX 鼠标 X
-     * @param mouseY 鼠标 Y
-     * @return 是否命中
-     */
-    private boolean isMouseOver(int x, int y, int width, int height, int mouseX, int mouseY) {
-        return mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
-    }
-
-    /**
-     * 绘制单张卡片图标及其装饰。
-     *
-     * @param guiGraphics 图形上下文
-     * @param itemStack   卡片物品栈
-     * @param x           绘制 X
-     * @param y           绘制 Y
-     */
-    private void drawCard(GuiGraphics guiGraphics, ItemStack itemStack, int x, int y) {
-        if (itemStack.isEmpty()) {
+    private void drawArchiveLink(GuiGraphics g, int mouseX, int mouseY) {
+        if (KuvaKeyMappings.ARCHIVE.isUnbound()) {
+            linkX1 = linkX0;
             return;
         }
+        float w = this.font.width(linkText) * LINK_SCALE;
+        linkX1 = leftPos + LINK_RIGHT;
+        linkX0 = linkX1 - w;
+        linkY0 = topPos + LINK_TOP;
+        linkY1 = linkY0 + this.font.lineHeight * LINK_SCALE;
+        boolean hover = overLink(mouseX, mouseY);
+        g.pose().pushPose();
+        g.pose().translate(linkX0, linkY0, 0.0F);
+        g.pose().scale(LINK_SCALE, LINK_SCALE, 1.0F);
+        g.drawString(this.font, linkText, 0, 0, 0xFF000000 | (hover ? FxPalette.BONE : FxPalette.ASH), false);
+        g.pose().popPose();
+    }
 
-        guiGraphics.renderItem(itemStack, x, y);
-        guiGraphics.renderItemDecorations(this.font, itemStack, x, y - 8);
+    private boolean overLink(double mouseX, double mouseY) {
+        return linkX1 > linkX0 && mouseX >= linkX0 && mouseX < linkX1 && mouseY >= linkY0 - 1.0F && mouseY < linkY1 + 1.0F;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && overLink(mouseX, mouseY)) {
+            openArchive();
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /**
+     * 关掉灭骸之扉、打开玄骸档案。先关界面（顺带通知服务端关容器），再走档案键同一个入口，
+     * 能不能开（处决中不能开之类）的规矩只在 {@link LichArchiveKeys#open} 一处
+     */
+    private void openArchive() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || KuvaKeyMappings.ARCHIVE.isUnbound()) {
+            return;
+        }
+        mc.player.closeContainer();
+        LichArchiveKeys.open(mc);
+    }
+
+    /**
+     * 创造模式下按 TAB 请求服务端一键补全正确答案卡（服务端收到 {@link RequiemGateFillPacket} 后会再核一次创造模式）；
+     * 按档案键打开玄骸档案；其余交给父类（背包键关界面等）
+     */
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_TAB) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.player.isCreative()) {
+                NetworkRegistryHandler.getChannel().sendToServer(new RequiemGateFillPacket());
+                return true;
+            }
+        }
+        if (KuvaKeyMappings.ARCHIVE.matches(keyCode, scanCode)) {
+            openArchive();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    // ==================== 调试入口 ====================
+
+    /**
+     * 让界面里的三角改画给定的数据（不碰服务端），截图用
+     *
+     * @param riddles  三格卡 id，−1 为未揭示
+     * @param progress 这一阶段的进度 0~1
+     */
+    public static void debugOverride(int[] riddles, float progress) {
+        for (int i = 0; i < 3; i++) {
+            DEBUG_RIDDLES[i] = riddles != null && i < riddles.length ? riddles[i] : -1;
+        }
+        debugProgress = Mth.clamp(progress, 0.0F, 1.0F);
+        debugOverride = true;
+    }
+
+    /** 恢复读菜单里的真实数据 */
+    public static void debugClear() {
+        debugOverride = false;
     }
 }

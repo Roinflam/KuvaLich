@@ -1,0 +1,22 @@
+{
+  "textures": [
+    "kuvalich:sigil_khra",
+    "kuvalich:sigil_jahu",
+    "kuvalich:sigil_fass",
+    "kuvalich:sigil_lohk",
+    "kuvalich:sigil_netra",
+    "kuvalich:sigil_vome",
+    "kuvalich:sigil_xata",
+    "kuvalich:sigil_ris",
+    "kuvalich:sigil_unknown",
+    "kuvalich:sigil_khra_wrong",
+    "kuvalich:sigil_jahu_wrong",
+    "kuvalich:sigil_fass_wrong",
+    "kuvalich:sigil_lohk_wrong",
+    "kuvalich:sigil_netra_wrong",
+    "kuvalich:sigil_vome_wrong",
+    "kuvalich:sigil_xata_wrong",
+    "kuvalich:sigil_ris_wrong",
+    "kuvalich:sigil_unknown_wrong"
+  ]
+}

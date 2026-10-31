@@ -172,11 +172,17 @@ public class ModuleDiscoveryPacket {
         // ⭐ 增量包里此前没见过的，才是真正「刚刚解锁」的，给它们排一段解锁动画。
         //    服务端可能把同一个 key 重复发过来（比如反复捡同一种卡），
         //    用 previous 做差集就能把重复的挡掉。
+        boolean anyNew = false;
         for (String key : packet.discoveredTypes) {
             if (!previous.contains(key)) {
+                anyNew = true;
                 pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.push(
                         key, pers.roinflam.kuvalich.client.gui.codex.CodexFeedback.Kind.UNLOCKED);
             }
+        }
+        // 真有新模组时补一声提示（全量包在上面已经返回，登录和背包扫描不会响）
+        if (anyNew) {
+            pers.roinflam.kuvalich.client.fx.script.ItemFx.onModuleDiscovered();
         }
     }
 

@@ -8,6 +8,7 @@ import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.nemesis.NemesisSpawnRules;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.worldgen.KuvaSpawnLimiter;
 
@@ -26,7 +27,8 @@ import pers.roinflam.kuvalich.worldgen.KuvaSpawnLimiter;
  * 点满灯的基地地板上照刷，并且连"和平难度不生成"也一起失效。</p>
  *
  * <p>自然生成额外多一道密度限制：附近同类已经够多、或离同类太近就不刷，见 {@link KuvaSpawnLimiter}。
- * 只对 {@code MobSpawnType.NATURAL} 生效，刷怪笼等其它来源走原有规则。</p>
+ * 只对 {@code MobSpawnType.NATURAL} 生效，刷怪笼等其它来源走原有规则。现在只有奴仆还会自然生成，
+ * 玄骸的规则见下面注册处。</p>
  *
  * <p>Light rules are identical to vanilla zombies: reuse {@link Monster#checkMonsterSpawnRules}
  * (difficulty != PEACEFUL && dark enough && generic monster checks). Vanilla registers that exact
@@ -57,19 +59,17 @@ public class KuvaLichSpawnPlacements {
                 SpawnPlacementRegisterEvent.Operation.REPLACE
         );
 
-        // 赤毒玄骸：同上
-        // Kuva Master: same as above
+        // 赤毒玄骸：不再自然生成，也不从刷怪笼、结构、巡逻里出来——每个玩家的专属玄骸由玄骸导演直接放下，不走这里。
+        // 只有刷怪蛋、命令、发射器这类「有人主动造」的来源才照僵尸的亮度规则判，其余一律 false
+        // （刷怪笼数据带自定义生成条件时会跳过这里，另有两道关，见 NemesisSpawnRules）
+        // Kuva Master: never spawns naturally or from spawners; only player-made sources use the zombie light rules
         event.register(
                 KuvaLichEntities.KUVA_MASTER.get(),
                 SpawnPlacements.Type.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 (type, level, spawnType, pos, random) ->
-                        Monster.checkMonsterSpawnRules(type, level, spawnType, pos, random)
-                                && (spawnType != MobSpawnType.NATURAL
-                                || KuvaSpawnLimiter.hasRoom(level, type, pos,
-                                ModConfig.KUVA_LICH.kuvaLichMaxNearby.get(),
-                                ModConfig.KUVA_LICH.kuvaLichNearbyRadius.get(),
-                                ModConfig.KUVA_LICH.kuvaLichMinSpacing.get())),
+                        NemesisSpawnRules.placementAllows(spawnType)
+                                && Monster.checkMonsterSpawnRules(type, level, spawnType, pos, random),
                 SpawnPlacementRegisterEvent.Operation.REPLACE
         );
     }

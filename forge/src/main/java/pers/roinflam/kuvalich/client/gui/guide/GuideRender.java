@@ -20,6 +20,11 @@ import javax.annotation.Nullable;
  * 这一帧边画边记录新的结果。差一帧（十几毫秒）肉眼看不出来，却省掉了一整遍遍历。
  * 点击同理：直接用最近一帧记下的链接 / 物品，画的位置和点的位置不可能对不上。</p>
  *
+ * <h3>故障段（Ordis 的 {@code <x>…</x>}）</h3>
+ * <p>先把整行的故障字画两层残影（左下错 1px 的品红、右上错 1px 的青，各 45% 不透明），再画本体：
+ * 本体逐字按排版时算好的错位水平挪 1px。偏移全在 {@link Piece} 里，这里只查表。
+ * 画法是静态的，不闪不动；只有通讯框擦出前沿走到故障段的那两拍会通过 {@link #glitchKick} 让整段再横跳一下。</p>
+ *
  * @author RoinFlam
  */
 @OnlyIn(Dist.CLIENT)
@@ -45,8 +50,16 @@ final class GuideRender {
     /** 文字与填充的整体透明度（换页淡入用） */
     float alpha = 1f;
     long now;
+    /** 这一帧的插值进度（通讯肖像里的玄骸模型用） */
+    float partialTick;
     /** 悬停锁定括号的限速（整个界面共用一个） */
     GuideLockBudget lockBudget;
+    /** 故障段额外的整体水平错位（通讯框擦到故障段时的两拍横跳），平时为 0；谁设的谁画完清回 0 */
+    int glitchKick;
+
+    /** 故障段残影：偏红的品红、青，45% 不透明 */
+    static final int GHOST_MAGENTA = 0x73FF4FD8;
+    static final int GHOST_CYAN = 0x734FE8FF;
 
     /** 上一帧鼠标下的链接：决定本帧哪条链接画成悬停样式 */
     @Nullable
@@ -100,7 +113,23 @@ final class GuideRender {
      * @param shadow 是否带阴影
      */
     void line(Line line, int x, int y, boolean shadow) {
-        for (Piece p : line.pieces) {
+        Piece[] pieces = line.pieces;
+        int n = pieces.length;
+        if (line.glitch) {
+            // 残影整行先画，免得后一个字的残影叠在前一个字的本体上
+            int magenta = text(GHOST_MAGENTA);
+            int cyan = text(GHOST_CYAN);
+            for (int i = 0; i < n; i++) {
+                Piece p = pieces[i];
+                if (p.ghost != null) {
+                    int px = x + p.x + glitchKick;
+                    g.drawString(font, p.ghost, px - 1, y + 1, magenta, false);
+                    g.drawString(font, p.ghost, px + 1, y - 1, cyan, false);
+                }
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            Piece p = pieces[i];
             int px = x + p.x;
             Link link = p.link;
             boolean live = link != null && link.isLive();
@@ -112,7 +141,8 @@ final class GuideRender {
                 }
             }
             boolean hovered = live && link == hoverLink;
-            g.drawString(font, hovered && p.hoverSeq != null ? p.hoverSeq : p.seq, px, y, text(0xFFFFFFFF), shadow);
+            int dx = p.glitch ? p.jx + glitchKick : 0;
+            g.drawString(font, hovered && p.hoverSeq != null ? p.hoverSeq : p.seq, px + dx, y, text(0xFFFFFFFF), shadow);
             if (live) {
                 if (hovered) {
                     g.fill(px, y + 9, px + p.w, y + 10, fill(GuideTheme.KUVA));

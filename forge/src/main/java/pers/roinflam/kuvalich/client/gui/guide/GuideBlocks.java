@@ -3,22 +3,35 @@ package pers.roinflam.kuvalich.client.gui.guide;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.StringSplitter;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import pers.roinflam.kuvalich.client.comm.CommPortraits;
+import pers.roinflam.kuvalich.client.comm.CommText;
+import pers.roinflam.kuvalich.client.fx.FxCurve;
 import pers.roinflam.kuvalich.client.gui.codex.CodexTheme;
 import pers.roinflam.kuvalich.client.gui.guide.GuideContent.Block;
 import pers.roinflam.kuvalich.client.gui.guide.GuideContent.BlockType;
+import pers.roinflam.kuvalich.client.gui.guide.GuideContent.CommWho;
 import pers.roinflam.kuvalich.client.gui.guide.GuideMarkup.Rich;
 import pers.roinflam.kuvalich.client.gui.guide.GuideTextLayout.Line;
 import pers.roinflam.kuvalich.client.gui.guide.GuideView.EntryView;
+import pers.roinflam.kuvalich.comm.CommSpeaker;
+import pers.roinflam.kuvalich.comm.LichLook;
+import pers.roinflam.kuvalich.config.GuideDisplayConfig;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 各类块的排版与绘制
@@ -75,6 +88,10 @@ final class GuideBlocks {
          * 由 {@link GuideReader} 在排每张键值表前按它所在的那一段设置，其余块为 0。
          */
         int kvLabelHint;
+        /** 正在排的条目（分类/条目）：通讯框拿它拼「看过」记录的键。由 {@link GuideReader} 设 */
+        String entryKey = "";
+        /** 这一篇里已经排了几条玄骸通讯（前两条渲模型肖像，之后的退回徽记） */
+        int lichComms;
 
         Ctx(GuideView view, GuideTextLayout text, GuideMedia media, int width) {
             this.view = view;
@@ -115,6 +132,7 @@ final class GuideBlocks {
             }
             case ENTITY -> new EntityLaid(b.entity, b.height, c);
             case DIVIDER -> new Divider();
+            case COMM -> CommLaid.of(b, c);
         };
         if (laid != null) {
             laid.type = b.type;
@@ -191,7 +209,7 @@ final class GuideBlocks {
             // 左上角一枚猩红角标：这一篇就是「当前」，和左栏选中行的猩红竖条呼应
             CodexTheme.cornerTab(g, x + 1, y + 1, 5, r.fill(GuideTheme.KUVA));
             if (r.solidReady()) {
-                g.renderItem(icon, x + (ICON - 16) / 2, y + (ICON - 16) / 2);
+                GuideItemIcon.render(g, icon, x + (ICON - 16) / 2, y + (ICON - 16) / 2);
             }
 
             int tx = x + ICON + 8;
@@ -673,6 +691,529 @@ final class GuideBlocks {
     }
 
     /**
+     * 通讯框：左侧发言人的肖像窗，名牌压在肖像左下角，右边是台词
+     *
+     * <h3>只在第一次看到时演一遍</h3>
+     * <p>第一次看到（{@link CommMemory} 里没记过，开场已就绪、换篇淡入基本完成、块至少一半露在阅读栏里）的那一帧起：
+     * 色条从中点向上下长出，肖像开框（Lotus / Ordis 100ms 上下展开，玄骸 130ms 横向拖影），同时响一声接通音；
+     * 先只有肖像，330ms（玄骸 670ms）起台词整段从左到右软边擦出，用时按字数在 150~700ms 之间，擦出开始 550ms 后名牌淡入；
+     * 擦完再「说」1.2 秒（Lotus 亮线扫描、Ordis 涟漪、玄骸播说话动作）后进静止态。看过的通讯一律直接画静止态，不演、不响。
+     * 还没满足「第一次看到」之前画待机态：只有底板和暗色条。</p>
+     *
+     * <h3>故障段</h3>
+     * <p>擦出前沿走到 Ordis 的 {@code <x>…</x>} 时整段一次显出、横跳两拍（38ms × 2），肖像同时碎块错位、整窗色差，
+     * 前沿在这里停 160ms 再往后擦。</p>
+     *
+     * <h3>肖像</h3>
+     * <p>肖像和游戏里的通讯窗是同一套画面（{@link CommPortraits}），这里只给框和这一帧的状态。它是立即画的、不进
+     * {@code drawManaged} 的批次，所以它会先把前面攒着的底板、色条上屏再画，肖像正好盖在底板上；名牌、台词照常进批次，
+     * 最后画在肖像上面。Lotus / Ordis 静止后缓冲只画一次；玄骸模型的 idle 一直在动 —— 这是阅读栏里唯一的常驻动画，
+     * 原作的通讯肖像本来就是活的。没有世界（标题画面）时画不出玄骸模型，一篇里第三条起的玄骸通讯也不再渲模型，
+     * 都退回 28×28 的徽记，居中画在肖像窗里。</p>
+     *
+     * <h3>高度一次算死</h3>
+     * <p>块高按全文排好，擦出只决定每个字的不透明度，下面的块不跟着挤、页面不抖。每个字的位置、在整段上的 x、
+     * 故障段的起止都在排版时算好，渲染只做查表；擦出期间逐字画，擦完整行画。</p>
+     *
+     * <h3>不抬 z</h3>
+     * <p>通讯框的一切都在 z=0，画在阅读栏上下渐隐（z=300）之前，滚动时肖像、台词一起被渐隐盖住。</p>
+     */
+    private static final class CommLaid extends Laid {
+        private static final int PAD_L = 8;
+        private static final int PAD_R = 8;
+        private static final int PAD_Y = 6;
+
+        // ---- 肖像窗与正文的位置：换肖像尺寸只改这两个数，正文起点、块高、名牌宽度上限都跟着算 ----
+        /** 肖像窗宽高（指南像素），左上角在 (PAD_L, PAD_Y) */
+        private static final int PORTRAIT_W = 54;
+        private static final int PORTRAIT_H = 36;
+        /** 正文起点：肖像右边空 8 */
+        private static final int TEXT_X = PAD_L + PORTRAIT_W + 8;
+        /** 名牌在肖像里，正文从块顶开始 */
+        private static final int TEXT_Y = PAD_Y;
+        /** 最矮的块：肖像上下各留 PAD_Y，三行以内都是这个高度 */
+        private static final int MIN_H = PAD_Y * 2 + PORTRAIT_H;
+        /** 名牌离肖像左、下边各 3；宽过肖像宽 − 6 先去掉字距，再缩到放得下 */
+        private static final int NAME_INSET = 3;
+        private static final int NAME_MAX_W = PORTRAIT_W - 2 * NAME_INSET;
+        private static final float NAME_MIN_SCALE = 0.6f;
+        private static final int NAME_GAP = 1;
+        private static final Style NAME_STYLE = Style.EMPTY.withBold(true);
+
+        // ---- 时间轴（毫秒，从第一次看到算起；墙钟） ----
+        private static final int BAR_MS = 120;
+        /** 台词开始擦出：友方开框后先看 330ms 的脸，玄骸 670ms */
+        private static final int TEXT_FRIEND_MS = 330;
+        private static final int TEXT_LICH_MS = 670;
+        /** 擦出开始后名牌淡入 */
+        private static final int NAME_DELAY_MS = 550;
+        private static final int NAME_FADE_MS = 100;
+        /** 擦完之后还「说」这么久，再进静止态 */
+        private static final int TALK_TAIL_MS = 1200;
+        /** 擦出前沿的软边宽度（指南像素） */
+        private static final float FEATHER = 18f;
+        /** 故障段整段显出后，前沿停这么久 */
+        private static final int GLITCH_PAUSE = 160;
+        /** 故障段显出时整段横跳两拍，一拍这么长 */
+        private static final int KICK_MS = 38;
+        /** 静止态交给肖像的「开框后已过」：早就开好了，微粒也早就在 */
+        private static final long LONG_OPEN_MS = 60_000L;
+
+        // ---- 退回徽记时的动画 ----
+        private static final int FLICKER_MS = 190;
+        private static final int SCAN_MS = 700;
+        private static final int RIPPLE_EVERY = 240;
+        private static final int RIPPLE_LIFE = 480;
+        private static final float HEART_MS = 1200f;
+        /** 故障时徽记的色差副本：偏红的品红、青 */
+        private static final int SPLIT_MAGENTA = 0xFFFF4FD8;
+        private static final int SPLIT_CYAN = 0xFF4FE8FF;
+        /** 玄骸说话时裂纹随心跳在暗红和近白之间明灭 */
+        private static final int CRACK_LOW = 0xFF8E0A1E;
+        private static final int CRACK_HIGH = 0xFFFFD0C4;
+        /** 一篇里前两条玄骸通讯渲模型，第三条起退回徽记 */
+        private static final int MAX_LICH_PORTRAITS = 2;
+
+        /** 还没满足「第一次看到」 */
+        private static final long STANDBY = -1L;
+        /** 静止态（看过了 / 演完了） */
+        private static final long STILL = Long.MAX_VALUE / 4;
+
+        final CommWho who;
+        final CommSpeaker speaker;
+        /** 看过的记录用的键：分类/条目#n */
+        final String key;
+        final int color;
+        /** 待机色条、待机切角：发言人色按 35% 混进底色的不透明色（半透明的彩色叠在底上会混出脏色） */
+        final int dim;
+        final int[] palette;
+        final Line[] text;
+        /** 这一篇里第三条起的玄骸通讯，只画徽记 */
+        final boolean badgeOnly;
+
+        // ---- 名牌：排版时取好字、量好宽 ----
+        final FormattedCharSequence[] nameGlyph;
+        final float[] nameX;
+        final float nameScale;
+
+        // ---- 擦出：每个字一项，按阅读顺序 ----
+        final FormattedCharSequence[] glyph;
+        /** 故障段字的残影字形（不带颜色）；不是故障段为 null */
+        final FormattedCharSequence[] ghost;
+        /** 行内 x（不含故障段的错位）、故障段本体的错位、第几行、在整段上的 x、属于第几个故障段（-1 = 不是） */
+        final float[] glyphX;
+        final int[] glyphJx;
+        final int[] glyphLine;
+        final float[] glyphStrip;
+        final int[] glyphSeg;
+        /** 每个故障段在整段上的起止 x、擦出前沿走到它的时刻（相对擦出开始） */
+        final float[] segStart;
+        final float[] segEnd;
+        final int[] segAt;
+        /** 前沿每毫秒走多远（故障段那几截不算，一下跳过） */
+        final float speed;
+        /** 擦出开始的时刻、擦出总用时（含故障段的停顿）、演完进静止态的时刻 */
+        final int textStart;
+        final int wipeTotal;
+        final int endT;
+
+        /** 交给肖像的这一帧状态（复用，渲染路径不分配） */
+        private final CommPortraits.Frame frame = new CommPortraits.Frame();
+        /** 退回徽记时每帧算颜色用的两份四色数组（复用） */
+        private final int[] colors = new int[4];
+        private final int[] scanColors = new int[4];
+
+        private CommLaid(Block b, Ctx c) {
+            this.who = b.who;
+            this.speaker = switch (who) {
+                case LOTUS -> CommSpeaker.LOTUS;
+                case ORDIS -> CommSpeaker.ORDIS;
+                case LICH -> CommSpeaker.LICH;
+            };
+            this.key = c.entryKey + "#" + b.commIndex;
+            this.color = switch (who) {
+                case LOTUS -> GuideTheme.TECH;
+                case ORDIS -> GuideTheme.TIP_WF;
+                case LICH -> GuideTheme.KUVA;
+            };
+            this.dim = GuideTheme.lerpColor(GuideTheme.TIP_BG, color, 0.35f);
+            this.palette = CommBadges.palette(who);
+            this.badgeOnly = who == CommWho.LICH && c.lichComms++ >= MAX_LICH_PORTRAITS;
+            this.text = c.wrap(b.text, GuideTheme.BODY, false, Math.max(40, c.width - TEXT_X - PAD_R));
+            this.height = Math.max(MIN_H, TEXT_Y + Math.max(1, text.length) * LH - TAIL + PAD_Y);
+
+            Font font = c.text.font();
+            StringSplitter splitter = font.getSplitter();
+
+            // 名牌：粗体、拉丁字母转大写、字距 1；放不下先去字距，再整体缩小（最小 0.6 倍）
+            String name = I18n.get(switch (who) {
+                case LOTUS -> "kuvalich.guide.comm.lotus";
+                case ORDIS -> "kuvalich.guide.comm.ordis";
+                case LICH -> "entity.kuvalich.kuva_master";
+            }).toUpperCase(Locale.ROOT);
+            int nn = name.codePointCount(0, name.length());
+            this.nameGlyph = new FormattedCharSequence[nn];
+            float[] adv = new float[nn];
+            float bare = 0f;
+            int k = 0;
+            for (int off = 0; off < name.length(); k++) {
+                int cp = name.codePointAt(off);
+                off += Character.charCount(cp);
+                nameGlyph[k] = FormattedCharSequence.codepoint(cp, NAME_STYLE);
+                adv[k] = splitter.stringWidth(nameGlyph[k]);
+                bare += adv[k];
+            }
+            int gap = bare + NAME_GAP * Math.max(0, nn - 1) <= NAME_MAX_W ? NAME_GAP : 0;
+            this.nameX = new float[nn];
+            float nx = 0f;
+            for (int i = 0; i < nn; i++) {
+                nameX[i] = nx;
+                nx += adv[i] + (i < nn - 1 && !Character.isWhitespace(name.codePointAt(name.offsetByCodePoints(0, i))) ? gap : 0);
+            }
+            this.nameScale = nx > NAME_MAX_W ? Math.max(NAME_MIN_SCALE, NAME_MAX_W / nx) : 1f;
+
+            // 擦出：把各行接成一条，记下每个字在整条上的 x；故障段是连续的几个故障字（可以跨行）
+            int total = 0;
+            for (Line l : text) {
+                for (GuideTextLayout.Piece p : l.pieces) {
+                    total += p.text.codePointCount(0, p.text.length());
+                }
+            }
+            this.glyph = new FormattedCharSequence[total];
+            this.ghost = new FormattedCharSequence[total];
+            this.glyphX = new float[total];
+            this.glyphJx = new int[total];
+            this.glyphLine = new int[total];
+            this.glyphStrip = new float[total];
+            this.glyphSeg = new int[total];
+            List<float[]> segs = new ArrayList<>();
+            StringBuilder plain = new StringBuilder();
+            float lineBase = 0f;
+            float stripEnd = 0f;
+            k = 0;
+            for (int li = 0; li < text.length; li++) {
+                for (GuideTextLayout.Piece p : text[li].pieces) {
+                    plain.append(p.text);
+                    float px = p.x;
+                    for (int off = 0; off < p.text.length(); k++) {
+                        int cp = p.text.codePointAt(off);
+                        off += Character.charCount(cp);
+                        FormattedCharSequence one = FormattedCharSequence.codepoint(cp, p.style);
+                        float w = splitter.stringWidth(one);
+                        glyph[k] = p.glitch ? p.seq : one;
+                        ghost[k] = p.ghost;
+                        glyphX[k] = p.glitch ? p.x : px;
+                        glyphJx[k] = p.jx;
+                        glyphLine[k] = li;
+                        glyphStrip[k] = lineBase + glyphX[k];
+                        stripEnd = glyphStrip[k] + w;
+                        if (p.glitch) {
+                            boolean joins = k > 0 && glyphSeg[k - 1] >= 0;
+                            if (!joins) {
+                                segs.add(new float[]{glyphStrip[k], stripEnd});
+                            } else {
+                                segs.get(segs.size() - 1)[1] = stripEnd;
+                            }
+                            glyphSeg[k] = segs.size() - 1;
+                        } else {
+                            glyphSeg[k] = -1;
+                        }
+                        px += w;
+                    }
+                }
+                lineBase += text[li].width;
+            }
+            int n = segs.size();
+            this.segStart = new float[n];
+            this.segEnd = new float[n];
+            this.segAt = new int[n];
+            float skipped = 0f;
+            for (int i = 0; i < n; i++) {
+                segStart[i] = segs.get(i)[0];
+                segEnd[i] = segs.get(i)[1];
+                skipped += segEnd[i] - segStart[i];
+            }
+            int wipeMs = CommText.wipeDurationMs(plain.toString());
+            float travel = Math.max(1f, stripEnd + FEATHER - skipped);
+            this.speed = travel / wipeMs;
+            float before = 0f;
+            for (int i = 0; i < n; i++) {
+                segAt[i] = Math.round((segStart[i] - before) / speed) + i * GLITCH_PAUSE;
+                before += segEnd[i] - segStart[i];
+            }
+            this.textStart = who == CommWho.LICH ? TEXT_LICH_MS : TEXT_FRIEND_MS;
+            this.wipeTotal = wipeMs + n * GLITCH_PAUSE;
+            this.endT = textStart + wipeTotal + TALK_TAIL_MS;
+        }
+
+        static CommLaid of(Block b, Ctx c) {
+            return new CommLaid(b, c);
+        }
+
+        /**
+         * 这一帧处在哪个阶段：待机 / 演出中（返回第一次看到之后的毫秒数）/ 静止
+         */
+        private long phase(GuideRender r, int y) {
+            if (CommMemory.seen(key)) {
+                return STILL;
+            }
+            CommMemory.Typing typing = CommMemory.typing(key);
+            if (typing == null) {
+                // 第一次看到：开场就绪、不在翻页擦除的旧页上、换篇淡入基本完成、块至少一半露在阅读栏里（篇末那条要滚进来才开始）
+                int top = Math.max(y, r.clipTop);
+                int bottom = Math.min(y + height, r.clipBottom);
+                if (!r.mouseActive || r.alpha < 0.8f || (bottom - top) * 2 < height) {
+                    return STANDBY;
+                }
+                if (!GuideDisplayConfig.commTypewriter()) {
+                    // 开框与擦出关着：直接显示全文，也不响
+                    CommMemory.markSeen(key);
+                    return STILL;
+                }
+                CommMemory.start(key, r.now, endT);
+                GuideSfx.comm(who);
+                return 0L;
+            }
+            long e = r.now - typing.start();
+            if (e >= endT) {
+                CommMemory.markSeen(key);
+                return STILL;
+            }
+            return Math.max(0L, e);
+        }
+
+        /** 擦出前沿在整段上的 x（{@code te} = 擦出开始后的毫秒数）：走到故障段一下跳到段尾，停一会再接着走 */
+        private float front(long te) {
+            float skipped = 0f;
+            for (int i = 0; i < segAt.length; i++) {
+                if (te < segAt[i]) {
+                    return speed * (te - (long) i * GLITCH_PAUSE) + skipped;
+                }
+                if (te < segAt[i] + GLITCH_PAUSE) {
+                    return segEnd[i];
+                }
+                skipped += segEnd[i] - segStart[i];
+            }
+            return speed * (te - (long) segAt.length * GLITCH_PAUSE) + skipped;
+        }
+
+        /** 故障段显出时整段横跳的偏移：第一拍 +1、第二拍 −1，其余 0 */
+        private int kick(long te) {
+            for (int at : segAt) {
+                if (te >= at && te < at + 2 * KICK_MS) {
+                    return te - at < KICK_MS ? 1 : -1;
+                }
+            }
+            return 0;
+        }
+
+        @Override
+        void render(GuideRender r, int x, int y, int w) {
+            GuiGraphics g = r.g;
+            long e = phase(r, y);
+            boolean standby = e == STANDBY;
+            boolean still = e == STILL;
+
+            g.fill(x, y, x + w, y + height, r.fill(GuideTheme.TIP_BG));
+            // 左色条：从中点向上下长出（待机时是一道暗条，亮条从它中间长出来）
+            if (standby || e < BAR_MS) {
+                g.fill(x, y, x + 2, y + height, r.fill(dim));
+            }
+            if (!standby) {
+                float p = e >= BAR_MS ? 1f : GuideTheme.easeOutCubic(e / (float) BAR_MS);
+                int cut = Math.round(height / 2f * (1f - p));
+                g.fill(x, y + cut, x + 2, y + height - cut, r.fill(color));
+            }
+            // 右上角 5 级切角，同提示框
+            int corner = r.fill(standby ? dim : color);
+            for (int i = 0; i < 5; i++) {
+                g.fill(x + w - 5 + i, y + i, x + w, y + i + 1, corner);
+            }
+            if (standby) {
+                return;
+            }
+
+            // te：擦出开始后的毫秒数（之前为负）；说话态从擦出开始到演完
+            long te = still ? STILL : e - textStart;
+            boolean talking = !still && te >= 0L;
+            int kick = still || te < 0L ? 0 : kick(te);
+            int px = x + PAD_L;
+            int py = y + PAD_Y;
+            if (r.visible(py, PORTRAIT_H)) {
+                boolean drawn = false;
+                if (!badgeOnly) {
+                    frame.reset();
+                    frame.alpha = r.alpha;
+                    frame.talking = talking;
+                    frame.wiping = talking && te < wipeTotal;
+                    frame.still = still;
+                    frame.kick = kick != 0;
+                    frame.openMs = still ? LONG_OPEN_MS : e;
+                    // 肖像在台词左边：玄骸朝右看着台词
+                    frame.facing = 1;
+                    drawn = CommPortraits.draw(g, speaker, LichLook.NONE, px, py, PORTRAIT_W, PORTRAIT_H, frame, r.partialTick);
+                }
+                if (!drawn) {
+                    g.fill(px, py, px + PORTRAIT_W, py + PORTRAIT_H, r.fill(GuideTheme.PLATE_DEEP));
+                    badge(r, px + (PORTRAIT_W - CommBadges.SIZE) / 2, py + (PORTRAIT_H - CommBadges.SIZE) / 2,
+                            still ? FLICKER_MS : e, talking ? te : -1L, kick);
+                }
+                nameplate(r, px, py, still ? 1f : (te - NAME_DELAY_MS) / (float) NAME_FADE_MS);
+            }
+
+            int tx = x + TEXT_X;
+            int ty = y + TEXT_Y;
+            if (still || te >= wipeTotal) {
+                r.lines(text, tx, ty, LH, false);
+            } else if (te >= 0L) {
+                wipe(r, tx, ty, te, kick);
+            }
+        }
+
+        /** 名牌：肖像左下角，粗体、发言人色、带阴影 */
+        private void nameplate(GuideRender r, int px, int py, float a) {
+            if (a < CommText.MIN_GLYPH_ALPHA) {
+                return;
+            }
+            int c = r.text(GuideTheme.withAlpha(color, Math.round(Math.min(1f, a) * 255f)));
+            PoseStack ps = r.g.pose();
+            ps.pushPose();
+            ps.translate(px + NAME_INSET, py + PORTRAIT_H - NAME_INSET - 8f * nameScale, 0f);
+            if (nameScale != 1f) {
+                ps.scale(nameScale, nameScale, 1f);
+            }
+            for (int i = 0; i < nameGlyph.length; i++) {
+                r.g.drawString(r.font, nameGlyph[i], nameX[i], 0f, c, true);
+            }
+            ps.popPose();
+        }
+
+        /**
+         * 擦出中：逐字按前沿算不透明度画，太淡的字不画（原版字体把 α 低于 4/255 的颜色当成不透明，会闪一下满亮）。
+         * 故障段的字到了时刻整段直接满亮；残影先整段画、本体后画，免得后一个字的残影叠在前一个字的本体上
+         */
+        private void wipe(GuideRender r, int tx, int ty, long te, int kick) {
+            GuiGraphics g = r.g;
+            float front = front(te);
+            for (int k = 0; k < glyph.length; k++) {
+                int seg = glyphSeg[k];
+                if (seg < 0 || te < segAt[seg]) {
+                    continue;
+                }
+                int ly = ty + glyphLine[k] * LH;
+                if (!r.visible(ly, LH) || ghost[k] == null) {
+                    continue;
+                }
+                int gx = tx + Math.round(glyphX[k]) + kick;
+                g.drawString(r.font, ghost[k], gx - 1, ly + 1, r.text(GuideRender.GHOST_MAGENTA), false);
+                g.drawString(r.font, ghost[k], gx + 1, ly - 1, r.text(GuideRender.GHOST_CYAN), false);
+            }
+            for (int k = 0; k < glyph.length; k++) {
+                int seg = glyphSeg[k];
+                float a;
+                if (seg >= 0) {
+                    a = te >= segAt[seg] ? 1f : 0f;
+                } else {
+                    a = CommText.wipeAlpha(front, glyphStrip[k], FEATHER);
+                }
+                if (a < CommText.MIN_GLYPH_ALPHA) {
+                    continue;
+                }
+                int ly = ty + glyphLine[k] * LH;
+                if (!r.visible(ly, LH)) {
+                    continue;
+                }
+                int c = r.text(GuideTheme.withAlpha(0xFFFFFFFF, Math.round(a * 255f)));
+                if (seg >= 0) {
+                    g.drawString(r.font, glyph[k], tx + Math.round(glyphX[k]) + glyphJx[k] + kick, ly, c, false);
+                } else {
+                    g.drawString(r.font, glyph[k], tx + glyphX[k], (float) ly, c, false);
+                }
+            }
+        }
+
+        /**
+         * 退回徽记时：开框按全息闪烁表上屏，说话期间是说话态，其余时间静止
+         *
+         * @param e  第一次看到之后的毫秒数（闪烁用）
+         * @param te 擦出开始后的毫秒数；不在说话态为负
+         */
+        private void badge(GuideRender r, int bx, int by, long e, long te, int kick) {
+            GuiGraphics g = r.g;
+            int well = GuideTheme.PLATE_DEEP;
+            float k = e < FLICKER_MS ? FxCurve.flicker(e) : 1f;
+            for (int i = 0; i < 4; i++) {
+                colors[i] = r.fill(GuideTheme.lerpColor(well, palette[i], k));
+            }
+            boolean speaking = te >= 0L;
+            int[] frameLayer = CommBadges.frame(who);
+            int[] base = CommBadges.base(who);
+            int[] accent = CommBadges.accent(who);
+            if (who == CommWho.ORDIS && kick != 0) {
+                // 故障段的两拍：整枚徽记左右各叠一份色差副本，碎块额外往右上错一格
+                int magenta = r.fill(GuideTheme.lerpColor(well, SPLIT_MAGENTA, 0.6f));
+                int cyan = r.fill(GuideTheme.lerpColor(well, SPLIT_CYAN, 0.6f));
+                CommBadges.drawMono(g, frameLayer, bx - 1, by, magenta);
+                CommBadges.drawMono(g, base, bx - 1, by, magenta);
+                CommBadges.drawMono(g, accent, bx - 1, by, magenta);
+                CommBadges.drawMono(g, frameLayer, bx + 1, by, cyan);
+                CommBadges.drawMono(g, base, bx + 1, by, cyan);
+                CommBadges.drawMono(g, accent, bx + 1, by, cyan);
+            }
+            CommBadges.draw(g, frameLayer, bx, by, colors);
+            CommBadges.draw(g, base, bx, by, colors);
+            switch (who) {
+                case LOTUS -> {
+                    CommBadges.draw(g, accent, bx, by, colors);
+                    if (speaking) {
+                        // 一道 1px 亮线每 700ms 从顶扫到底，后面拖两行渐暗
+                        int row = 1 + (int) (te % SCAN_MS) * (CommBadges.SIZE - 2) / SCAN_MS;
+                        for (int d = 0; d < 3; d++) {
+                            int rr = row - d;
+                            if (rr < 0) {
+                                continue;
+                            }
+                            float hk = d == 0 ? 1f : d == 1 ? 0.55f : 0.25f;
+                            for (int i = 0; i < 4; i++) {
+                                scanColors[i] = r.fill(GuideTheme.lerpColor(palette[i], palette[CommBadges.C_HI], hk));
+                            }
+                            CommBadges.drawRow(g, frameLayer, bx, by, rr, scanColors);
+                            CommBadges.drawRow(g, base, bx, by, rr, scanColors);
+                        }
+                    }
+                }
+                case ORDIS -> {
+                    CommBadges.draw(g, accent, bx + (kick != 0 ? 1 : 0), by - (kick != 0 ? 1 : 0), colors);
+                    if (speaking) {
+                        // 每 240ms 生一道涟漪，480ms 里半径 10 → 14 外扩、颜色从主色褪到槽底色；同一时刻至多两道
+                        int age0 = (int) te;
+                        int newest = age0 / RIPPLE_EVERY;
+                        for (int q = newest; q >= 0 && q >= newest - 1; q--) {
+                            int age = age0 - q * RIPPLE_EVERY;
+                            if (age >= RIPPLE_LIFE) {
+                                continue;
+                            }
+                            float f = age / (float) RIPPLE_LIFE;
+                            float radius = 10f + 4f * f;
+                            int layer = radius < 11f ? 0 : radius < 13f ? 1 : 2;
+                            CommBadges.drawMono(g, CommBadges.ripple(layer), bx, by,
+                                    r.fill(GuideTheme.lerpColor(palette[CommBadges.C_MAIN], well, f)));
+                        }
+                    }
+                }
+                case LICH -> {
+                    if (speaking) {
+                        float beat = FxCurve.heartbeat(te / HEART_MS, HEART_MS);
+                        CommBadges.drawMono(g, accent, bx, by, r.fill(GuideTheme.lerpColor(CRACK_LOW, CRACK_HIGH, beat)));
+                    } else {
+                        CommBadges.draw(g, accent, bx, by, colors);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * 篇末翻页卡：左「上一篇」、右「下一篇」，跨分类时写成「下一章 · 分类名」
      *
      * <h3>为什么要有</h3>
@@ -788,7 +1329,7 @@ final class GuideBlocks {
             g.fill(ex, y, ex + 2, y + height, r.fill(hot ? GuideTheme.KUVA : GuideTheme.TECH));
             int iconX = forward ? x + w - PAD - ICON - 2 : x + PAD + 2;
             if (r.solidReady()) {
-                g.renderItem(cd.icon, iconX, y + (height - ICON) / 2);
+                GuideItemIcon.render(g, cd.icon, iconX, y + (height - ICON) / 2);
             }
             int tx = forward ? x + PAD : x + PAD + 2 + ICON + 6;
             int textW = textW(w);
@@ -904,7 +1445,7 @@ final class GuideBlocks {
                 g.fill(sx, sy, sx + SLOT, sy + SLOT, r.fill(GuideTheme.PLATE_DEEP));
                 CodexTheme.border(g, sx, sy, SLOT, SLOT, r.fill(over ? GuideTheme.KUVA : GuideTheme.withAlpha(GuideTheme.EDGE, 0xFF)));
                 if (r.solidReady()) {
-                    g.renderItem(stacks[i], sx + 1, sy + 1);
+                    GuideItemIcon.render(g, stacks[i], sx + 1, sy + 1);
                 }
                 g.drawString(r.font, names[i], sx + SLOT + 5, sy + 5, r.text(over ? GuideTheme.BONE : GuideTheme.BODY), false);
                 if (over) {
@@ -958,7 +1499,7 @@ final class GuideBlocks {
                 if (cand != null && cand.length > 0) {
                     ItemStack s = cand[(int) (tick % cand.length)];
                     if (r.solidReady()) {
-                        g.renderItem(s, sx + 1, sy + 1);
+                        GuideItemIcon.render(g, s, sx + 1, sy + 1);
                     }
                     if (cand.length > 1) {
                         // 「不止一种」：右上角 3px 小三角，抬到物品图标之上
@@ -993,7 +1534,7 @@ final class GuideBlocks {
             boolean over = r.over(rx, ry, 26, 26);
             CodexTheme.brackets(g, rx - 1, ry - 1, 28, 28, 5, r.fill(over ? GuideTheme.KUVA : GuideTheme.TECH));
             if (r.solidReady()) {
-                g.renderItem(data.result, rx + 5, ry + 5);
+                GuideItemIcon.render(g, data.result, rx + 5, ry + 5);
                 g.renderItemDecorations(r.font, data.result, rx + 5, ry + 5);
             }
             if (over) {

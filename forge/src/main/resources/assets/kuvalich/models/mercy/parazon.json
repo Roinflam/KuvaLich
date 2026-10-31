@@ -1,0 +1,268 @@
+{
+  "_comment": "腕刃：右前臂上的护腕 + 刃座 + 两节刃身。坐标按像素，原点在拳头末端的前臂中轴上：x 朝外侧，y 朝前臂背面（手臂平举时朝上），z 顺着前臂往拳头外伸。group 为 mount 的随刃伸出缩放出现，blade 的沿 z 伸长。uv 按 texture_size 的像素给，各面的 u / v 方向见 ParazonLayer；rotation 为 90 的面 u、v 对调着贴。原版会把 models 下的每个文件都当方块模型读一遍，所以各面照样写上 texture，刃尖那点上翘的角度原版不认（只许 22.5 的倍数），写在 bend 里，只有 ParazonLayer 读。",
+  "texture_size": [
+    32,
+    16
+  ],
+  "textures": {
+    "base": "kuvalich:textures/mercy/parazon",
+    "glow": "kuvalich:textures/mercy/parazon_glow"
+  },
+  "elements": [
+    {
+      "name": "guard",
+      "group": "mount",
+      "from": [
+        -2.4,
+        -2.4,
+        -8
+      ],
+      "to": [
+        2.4,
+        2.4,
+        -2
+      ],
+      "faces": {
+        "up": {
+          "texture": "#base",
+          "uv": [
+            8,
+            4,
+            18,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#base",
+          "uv": [
+            18,
+            4,
+            28,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#base",
+          "uv": [
+            18,
+            4,
+            28,
+            16
+          ],
+          "rotation": 90
+        },
+        "west": {
+          "texture": "#base",
+          "uv": [
+            18,
+            4,
+            28,
+            16
+          ],
+          "rotation": 90
+        },
+        "north": {
+          "texture": "#base",
+          "uv": [
+            26,
+            2,
+            28,
+            4
+          ]
+        },
+        "south": {
+          "texture": "#base",
+          "uv": [
+            26,
+            2,
+            28,
+            4
+          ]
+        }
+      }
+    },
+    {
+      "name": "root",
+      "group": "mount",
+      "from": [
+        -1,
+        2.4,
+        -6
+      ],
+      "to": [
+        1,
+        3.4,
+        1
+      ],
+      "faces": {
+        "up": {
+          "texture": "#base",
+          "uv": [
+            28,
+            4,
+            32,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#base",
+          "uv": [
+            24,
+            0,
+            32,
+            2
+          ]
+        },
+        "west": {
+          "texture": "#base",
+          "uv": [
+            24,
+            0,
+            32,
+            2
+          ]
+        },
+        "north": {
+          "texture": "#base",
+          "uv": [
+            24,
+            2,
+            26,
+            4
+          ]
+        },
+        "south": {
+          "texture": "#base",
+          "uv": [
+            24,
+            2,
+            26,
+            4
+          ]
+        }
+      }
+    },
+    {
+      "name": "blade_base",
+      "group": "blade",
+      "from": [
+        -0.5,
+        2.65,
+        1
+      ],
+      "to": [
+        0.5,
+        3.15,
+        9
+      ],
+      "faces": {
+        "up": {
+          "texture": "#base",
+          "uv": [
+            0,
+            0,
+            4,
+            9
+          ]
+        },
+        "down": {
+          "texture": "#base",
+          "uv": [
+            4,
+            0,
+            8,
+            9
+          ]
+        },
+        "east": {
+          "texture": "#base",
+          "uv": [
+            8,
+            0,
+            17,
+            2
+          ]
+        },
+        "west": {
+          "texture": "#base",
+          "uv": [
+            8,
+            0,
+            17,
+            2
+          ]
+        }
+      }
+    },
+    {
+      "name": "blade_tip",
+      "group": "blade",
+      "from": [
+        -0.5,
+        2.65,
+        9
+      ],
+      "to": [
+        0.5,
+        3.15,
+        15
+      ],
+      "faces": {
+        "up": {
+          "texture": "#base",
+          "uv": [
+            0,
+            9,
+            4,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#base",
+          "uv": [
+            4,
+            9,
+            8,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#base",
+          "uv": [
+            17,
+            0,
+            24,
+            2
+          ]
+        },
+        "west": {
+          "texture": "#base",
+          "uv": [
+            17,
+            0,
+            24,
+            2
+          ]
+        },
+        "south": {
+          "texture": "#base",
+          "uv": [
+            8,
+            2,
+            10,
+            4
+          ]
+        }
+      },
+      "bend": {
+        "origin": [
+          0,
+          2.9,
+          9
+        ],
+        "axis": "x",
+        "angle": 6
+      }
+    }
+  ]
+}

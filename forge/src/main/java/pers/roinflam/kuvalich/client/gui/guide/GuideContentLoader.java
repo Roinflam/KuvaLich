@@ -284,10 +284,13 @@ public final class GuideContentLoader {
         JsonElement blocksJson = o.get("blocks");
         if (blocksJson != null && blocksJson.isJsonArray()) {
             int index = 0;
+            // 通讯按内容文件里的顺序编号（看过的记录用它当键）。坏掉被跳过的通讯也占一个号，后面的不跟着变
+            int comms = 0;
             for (JsonElement el : blocksJson.getAsJsonArray()) {
                 String blockWhere = where + " 第 " + (index++ + 1) + " 块";
                 try {
-                    Block block = el.isJsonObject() ? parseBlock(el.getAsJsonObject(), blockWhere) : null;
+                    int commIndex = el.isJsonObject() && "comm".equals(str(el.getAsJsonObject(), "type")) ? comms++ : -1;
+                    Block block = el.isJsonObject() ? parseBlock(el.getAsJsonObject(), blockWhere, commIndex) : null;
                     if (block != null) {
                         blocks.add(block);
                     } else if (!el.isJsonObject()) {
@@ -314,7 +317,7 @@ public final class GuideContentLoader {
     }
 
     @Nullable
-    private static Block parseBlock(JsonObject o, String where) {
+    private static Block parseBlock(JsonObject o, String where, int commIndex) {
         String typeName = str(o, "type");
         BlockType type = BlockType.of(typeName);
         if (type == null) {
@@ -389,6 +392,20 @@ public final class GuideContentLoader {
                     // 太矮看不清，太高一屏放不下
                     b.height = Math.max(24, Math.min(200, h.getAsInt()));
                 }
+            }
+            case COMM -> {
+                b.text = str(o, "text");
+                if (b.text == null) {
+                    return missing(where, "text");
+                }
+                String who = str(o, "who");
+                GuideContent.CommWho w = GuideContent.CommWho.of(who);
+                if (w == null) {
+                    GuideLog.warnOnce("who:" + where, where + "：通讯的发言人「" + who + "」不认识（lotus / ordis / lich），按 lotus 画");
+                    w = GuideContent.CommWho.LOTUS;
+                }
+                b.who = w;
+                b.commIndex = commIndex;
             }
             case DIVIDER -> {
             }

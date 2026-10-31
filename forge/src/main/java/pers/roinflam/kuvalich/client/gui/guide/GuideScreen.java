@@ -8,9 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -116,6 +114,8 @@ public class GuideScreen extends Screen {
     private final GuideRender rc = new GuideRender();
     /** 开场 / 收场 / 翻页动效 */
     private final GuideIntro fx = new GuideIntro();
+    /** 开场 / 收场的声音，挂在 {@link #fx} 的时间轴上 */
+    private final GuideSfx sfx = new GuideSfx();
     /** 悬停锁定括号的限速（首页格子、继续阅读条、顶栏按钮共用） */
     private final GuideLockBudget lockBudget = new GuideLockBudget();
     private EditBox searchBox;
@@ -464,6 +464,8 @@ public class GuideScreen extends Screen {
     @Override
     public void removed() {
         saveState();
+        // 关书、被别的界面顶掉都经过这里：打完的通讯记为看过、没打完的下次再打，写回本地文件
+        CommMemory.close(Util.getMillis());
         if (reader != null) {
             reader.release();
         }
@@ -512,7 +514,11 @@ public class GuideScreen extends Screen {
             return;
         }
         introAnchored = true;
+        boolean running = introT < fx.introEnd();
         introT = Math.max(introT, fx.introEnd());
+        if (running) {
+            sfx.skipped(false);
+        }
         // 不只开场：回首页后格子也要重新成形（十个分类时最后一格 300 多毫秒后才可点），这期间点到一个
         // 已经画出外框、内容还没浮现过半的格子，tileAt 会当它不存在 —— 看得见却点不动。
         // 有输入就一并成形完毕；接下来这次输入若是换页，新一轮成形照常从头播
@@ -546,6 +552,7 @@ public class GuideScreen extends Screen {
             // 开场还没走完就关：开场时间轴冻结在这一刻（见 GuideIntro#update），收场从当时的样子接着走
             // 动画关着：把起点拨到收场时长以前，下一帧（或下一 tick）就是走完的状态，其余流程不变
             long now = Util.getMillis();
+            sfx.closing(introT < fx.introEnd());
             closingAt = GuideDisplayConfig.introAnimation() ? now : now - (long) GuideIntro.CLOSE_MS - 300L;
             saveState();
             return;
@@ -558,6 +565,8 @@ public class GuideScreen extends Screen {
         if (minecraft == null) {
             return;
         }
+        // 收场被按键 / 点击提前关完：断电声还没放就补上
+        sfx.closeFinished();
         if (parent != null) {
             minecraft.setScreen(parent);
         } else {
@@ -647,7 +656,7 @@ public class GuideScreen extends Screen {
             }
             home.layout(view, current, text, home.x, home.y, home.w, home.h);
             home.restart(now);
-            click();
+            GuideSfx.page(true);
         } else {
             EntryView ev = view.entries.get(loc.entryKey());
             if (ev == null) {
@@ -664,18 +673,19 @@ public class GuideScreen extends Screen {
                 }
                 sidebar.reveal(ev);
             }
-            if (changed && minecraft != null) {
-                minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F));
+            if (changed) {
+                GuideSfx.page(false);
             }
         }
         saveState();
     }
 
-    /** 回首页用按钮声；翻到某一篇用翻页声（在 {@link #show} 里）—— 同一次操作只响一个声音 */
+    /**
+     * 按钮声（「Aa」、开场动画开关）。翻到某一篇、回首页各有自己的声音（在 {@link #show} 里），
+     * 后退 / 前进 / 首页三个导航按钮也走 show —— 同一次操作只响一个声音
+     */
     private void click() {
-        if (minecraft != null) {
-            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-        }
+        GuideSfx.click();
     }
 
     private boolean navEnabled(int i) {
@@ -763,9 +773,23 @@ public class GuideScreen extends Screen {
     }
 
     private void openCursor() {
-        EntryView ev = cursor >= 0 ? sidebar.resultAt(cursor) : null;
-        if (ev != null) {
-            open(ev, 0f);
+        openHit(cursor);
+    }
+
+    /**
+     * 打开第 index 条搜索结果。最早的命中落在一条通讯里时滚到那条通讯，并把它记为看过：
+     * 直接显示全文，不演开框和擦出、不响
+     */
+    private void openHit(int index) {
+        EntryView ev = index >= 0 ? sidebar.resultAt(index) : null;
+        if (ev == null) {
+            return;
+        }
+        open(ev, 0f);
+        GuideSearch.Hit hit = index < hits.size() ? hits.get(index) : null;
+        if (hit != null && hit.entry == ev && hit.commKey != null && page == Page.READ && current == ev) {
+            CommMemory.markSeen(hit.commKey);
+            reader.scrollToBlock(hit.commBlock);
         }
     }
 
@@ -787,7 +811,8 @@ public class GuideScreen extends Screen {
                 introT = 0f;
                 home.restartIntro();
                 if (!GuideDisplayConfig.introAnimation()) {
-                    // 开场动画关着：第一帧就是终态，和开场中点一下跳过的效果一样
+                    // 开场动画关着：第一帧就是终态，和开场中点一下跳过的效果一样；开书照样响一声快开
+                    sfx.skipped(true);
                     skipIntro();
                 }
             }
@@ -798,6 +823,7 @@ public class GuideScreen extends Screen {
         refreshIfStale();
 
         fx.update(introT, closingAt, now);
+        sfx.frame(fx, now);
         // 首页格子的开场成形读开场时间轴：完整开场、查阅短开场共用一条映射
         home.setIntroTime(fx.openT);
         if (fx.closed()) {
@@ -832,6 +858,7 @@ public class GuideScreen extends Screen {
                 && GLFW.glfwGetMouseButton(minecraft.getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
         rc.lockBudget = lockBudget;
         rc.now = now;
+        rc.partialTick = partialTick;
         rc.clipTop = 0;
         rc.clipBottom = this.height;
         rc.alpha = 1f;
@@ -1000,7 +1027,7 @@ public class GuideScreen extends Screen {
         int ey = top + 6;
         GuideTheme.emblem(g, ex, ey, 22, GuideTheme.PLATE_DEEP, GuideTheme.withAlpha(GuideTheme.TECH, 0xC0));
         CodexTheme.cornerTab(g, ex + 1, ey + 1, 5, GuideTheme.KUVA);
-        g.renderItem(view.bookIcon(), ex + 3, ey + 3);
+        GuideItemIcon.render(g, view.bookIcon(), ex + 3, ey + 3);
 
         int tx = ex + 22 + 7;
         // 书名 + 副标题：开场时书名做乱码解密、副标题打字式展开，之后就是两次普通的 drawString
@@ -1137,9 +1164,10 @@ public class GuideScreen extends Screen {
             onClose();
             return true;
         }
-        // 开场中按别的键：动画跳到终态，这个键照常处理（F1~F12、单按修饰键不跳）
+        // 开场中按别的键：动画跳到终态，这个键照常处理（F1~F12、单按修饰键不跳）；正在演开框和擦出的通讯也直接进静止态
         if (!passiveKey(key)) {
             skipIntro();
+            CommMemory.finishAll();
         }
         // Ctrl − / 小键盘 −：字小一档；Ctrl = / 小键盘 +：字大一档；Ctrl 0：回到自动。搜索框聚焦时同样生效（Ctrl 组合不会上屏字）。
         // 查阅时带进来、还没松开过的 Ctrl 不算（scaleCtrlDown）
@@ -1236,8 +1264,9 @@ public class GuideScreen extends Screen {
             finishClose();
             return true;
         }
-        // 输入法直接上屏的字不经过 keyPressed：这里也要跳过开场
+        // 输入法直接上屏的字不经过 keyPressed：这里也要跳过开场、让通讯直接显示全文
         skipIntro();
+        CommMemory.finishAll();
         if (!searchBox.isFocused()) {
             // 直接打字就是搜索：不用先去点搜索框
             if (Character.isWhitespace(c) || Character.isISOControl(c)) {
@@ -1260,6 +1289,10 @@ public class GuideScreen extends Screen {
         // 面板展开过半之前例外：只跳过，不当成点到了什么
         boolean early = introEarly();
         skipIntro();
+        if (page == Page.READ && reader.contains(mx, my)) {
+            // 点在阅读栏里：正在演开框和擦出的通讯直接进静止态，这一下照常处理（通讯框里没有可点的东西）
+            CommMemory.finishAll();
+        }
         if (early) {
             return true;
         }
@@ -1274,6 +1307,7 @@ public class GuideScreen extends Screen {
                 unfocusSearch();
             }
             GuideDisplayConfig.setIntroAnimation(!GuideDisplayConfig.introAnimation());
+            click();
             return true;
         }
         // 「Aa」：左键字小一档、右键字大一档（到头了就不动）；右键在这里不是后退
@@ -1362,8 +1396,10 @@ public class GuideScreen extends Screen {
                 } else if (row.entry != null) {
                     if (row.kind == GuideSidebar.Kind.RESULT) {
                         cursor = row.resultIndex;
+                        openHit(row.resultIndex);
+                    } else {
+                        open(row.entry, 0f);
                     }
-                    open(row.entry, 0f);
                 }
                 return true;
             }

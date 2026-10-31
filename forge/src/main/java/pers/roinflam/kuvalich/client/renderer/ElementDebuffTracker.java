@@ -1,5 +1,7 @@
 package pers.roinflam.kuvalich.client.renderer;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -15,7 +17,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 客户端元素 debuff 追踪器
@@ -47,9 +48,10 @@ public final class ElementDebuffTracker {
 
     /**
      * entityId → (element → DebuffData)
-     * 外层 ConcurrentHashMap 保证 packet 线程和 tick 线程并发访问安全
+     * <p>写入（包处理已经排进主线程）、渲染读取、tick 清理都在客户端主线程，
+     * 外层用 int 键的表：渲染层每帧按实体 id 查，免得每次把 id 装箱。</p>
      */
-    private static final Map<Integer, Map<String, DebuffData>> DEBUFFS = new ConcurrentHashMap<>();
+    private static final Int2ObjectOpenHashMap<Map<String, DebuffData>> DEBUFFS = new Int2ObjectOpenHashMap<>();
 
     /**
      * 单个 debuff 的数据
@@ -103,8 +105,12 @@ public final class ElementDebuffTracker {
 
         long currentTick = mc.level.getGameTime();
         long expiresAt = currentTick + durationTicks;
-        DEBUFFS.computeIfAbsent(entityId, k -> new HashMap<>())
-                .put(element, new DebuffData(expiresAt, amplifier));
+        Map<String, DebuffData> debuffs = DEBUFFS.get(entityId);
+        if (debuffs == null) {
+            debuffs = new HashMap<>();
+            DEBUFFS.put(entityId, debuffs);
+        }
+        debuffs.put(element, new DebuffData(expiresAt, amplifier));
     }
 
     /**
@@ -226,11 +232,10 @@ public final class ElementDebuffTracker {
         long currentTick = mc.level.getGameTime();
 
         // 清理所有过期 debuff
-        Iterator<Map.Entry<Integer, Map<String, DebuffData>>> entityIter = DEBUFFS.entrySet().iterator();
+        ObjectIterator<Map<String, DebuffData>> entityIter = DEBUFFS.values().iterator();
         while (entityIter.hasNext()) {
-            Map.Entry<Integer, Map<String, DebuffData>> entityEntry = entityIter.next();
-            Map<String, DebuffData> debuffs = entityEntry.getValue();
-            debuffs.entrySet().removeIf(e -> currentTick >= e.getValue().expiresAtTick);
+            Map<String, DebuffData> debuffs = entityIter.next();
+            debuffs.values().removeIf(d -> currentTick >= d.expiresAtTick);
             if (debuffs.isEmpty()) {
                 entityIter.remove();
             }
