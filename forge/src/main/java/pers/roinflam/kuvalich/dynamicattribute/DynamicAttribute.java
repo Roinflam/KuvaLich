@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 动态属性定义
  * 支持属性修改器和Tick回调
  *
- * <p>⭐ 本版移除了 {@code withEventHandler}（运行时往 Forge 事件总线动态注册监听器）。
+ * <p>本版移除了 {@code withEventHandler}（运行时往 Forge 事件总线动态注册监听器）。
  * 原因：每施加一次 debuff 就往总线上 register 一个匿名对象，反注册只发生在
  * 「自然过期 / 显式 remove」两条路径上，一旦走到别的路径（见 {@code DynamicAttributeManager.apply}
  * 里的旧 orphan 分支）监听器就永久泄漏，之后每一次 {@code LivingHurtEvent} 都要遍历这些僵尸监听器。
@@ -22,7 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class DynamicAttribute {
 
     /**
-     * ⭐ 所有已构造的动态属性定义（构造时自注册）。
+     * 所有已构造的动态属性定义（构造时自注册）。
      *
      * <p>用途：让 {@code DynamicAttributeManager} 能汇总出「本模组真正写过的 Attribute 集合」，
      * 从而不必在实体入世界时遍历整个属性注册表（那里动辄上百个属性，而本模组只碰不到 10 个）。</p>

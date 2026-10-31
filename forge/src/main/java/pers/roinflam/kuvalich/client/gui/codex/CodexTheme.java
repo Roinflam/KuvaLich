@@ -398,7 +398,7 @@ public final class CodexTheme {
      * @param millis 当前时间
      */
     public static void dataLine(GuiGraphics g, int x, int y, int w, int color, long millis) {
-        // ⭐ 只有两端的渐隐段需要逐像素，中段是同一个 alpha，一次 fill 就够。
+        // 只有两端的渐隐段需要逐像素，中段是同一个 alpha，一次 fill 就够。
         //    改造前整条线逐像素画，一条装饰线每帧就要发起 w 次（面板宽时 500+）调用。
         int fadeW = Math.max(1, w / 6);
         if (w > fadeW * 2) {

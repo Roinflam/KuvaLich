@@ -38,7 +38,7 @@ public class ClientSetup {
             // 注册所有实体渲染器 / Register all entity renderers
             registerEntityRenderers();
 
-            // ⭐ 面板描述表自检：找出「模组系统声明了、但面板不认识」的属性
+            // 面板描述表自检：找出「模组系统声明了、但面板不认识」的属性
             verifyPanelCatalog();
 
             LogUtil.info("客户端内容注册完成");

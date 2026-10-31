@@ -9,12 +9,12 @@ package pers.roinflam.kuvalich.module.weapon.panel;
  * 从十几行压到五行的主要手段（枪械组的 10 条词条对近战武器永远是噪音）。
  * </p>
  *
- * <p>⭐ 本枚举刻意放在 {@code module.weapon.panel} 而不是 {@code client} 包下：
+ * <p>本枚举刻意放在 {@code module.weapon.panel} 而不是 {@code client} 包下：
  * 数据层与客户端展示层分家，专用服务端不会因为引用到面板描述表而
  * classload 到 {@code Font} / {@code I18n}。改造后它连 {@code ChatFormatting} 都不再依赖 ——
  * 现在是一个纯粹的「组身份 + i18n 键」枚举。</p>
 
- * <p>⭐ 曾经带过三个颜色字段（gutterColor / titleColor / valueColor）。它们已被
+ * <p>曾经带过三个颜色字段（gutterColor / titleColor / valueColor）。它们已被
  * {@code client.tooltip.PanelPalette} 的 {@code header(PanelGroup)} / {@code value(PanelGroup)}
  * 两个 RGB 方法取代，到删除前是死代码：前两个只被 {@code PanelStyle.groupPrefix} /
  * {@code groupContinuation} 用，而那两个方法全树零调用者（死代码撑死代码），
@@ -48,7 +48,7 @@ public enum PanelGroup {
     /**
      * 描述表不认识的属性
      *
-     * <p>⭐ {@code CustomModuleManager} 允许整合包作者在 JSON 里写**任意**属性 key
+     * <p>{@code CustomModuleManager} 允许整合包作者在 JSON 里写**任意**属性 key
      * （{@code CustomModuleManager.createModuleStack} 直接把 {@code entry.attributes}
      * 透传给 {@code AbstractModule.addAttributes}，不做任何校验）。
      * 这些 key 不在 {@link WeaponPanelCatalog#SPECS} 里，如果不兜底就会在武器面板上

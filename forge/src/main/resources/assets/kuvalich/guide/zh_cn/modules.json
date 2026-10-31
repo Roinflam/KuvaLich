@@ -545,7 +545,7 @@
         "item/module/weapon/WeaponRivenModule.java:277,350,399 与 item/module/warframe/WarframeRivenModule.java:122 — 裂罅只乘通用倍率",
         "config/ModConfig.java:1317-1330 与 item/module/weapon/WeaponCommonModule.java:80-97 — 倍率烧进原型 NBT，生成时写进卡",
         "结构：条件没有「或」。「规则里的词条名」一节只要单值范围或总值上限任一非空就要出现，所以写成互斥的两份（范围非空 / 范围空且上限非空）；「卡面数值的倍率」一节同理（通用倍率≠1 / 通用倍率=1 且关键倍率≠1），两个倍率都是 1 时整节不显示",
-        "删掉：v1「服主可以对模组做几类限制」开头、三处「本服没有 XX」替代块、「面板按本机配置计算」附注、「之后再调倍率已有的卡不变」（面向服主）"
+        "正文不写面向服主的内容：能做哪几类限制、功能关闭时的替代说明、面板按本机配置计算、调倍率后已有的卡不变"
       ]
     },
     {
@@ -662,7 +662,7 @@
         "item/module/warframe/WarframePrimeModule.java:84,139-200 — vitality_prime 与 executioner_* 系列（带 killStack 词条；多数是生命/护盾/护甲/抗性，另有冲刺速度、掉落倍率、挖掘速度）",
         "item/module/weapon/WeaponUncommonModule.java:159 与 WeaponPrimeModule.java:108 — 狂暴在白银和 Prime 档同 type fury",
         "结构：v1 表里的「升级费用」「分解得内融核心」两列挪进 module_level（那边整段受等级系统开关控制，分解另见 weapons/requiem_recast）",
-        "删掉：v1「服主可能追加了自定义模组」一句（面向服主；自定义模组没有配置键可做条件，config/custom/CustomModuleData.java）"
+        "不提服主追加的自定义模组（面向服主；自定义模组没有配置键可做条件，config/custom/CustomModuleData.java）"
       ]
     },
     {
@@ -887,7 +887,7 @@
         "module/level/ModuleLevelHelper.java:280-313 — 揭示时按精通赋等级；关闭 enableMasteryOnReveal 时一律 1 级",
         "capability/RequiemCard.java:398-406 — 精通只记最高值",
         "world/inventory/RequiemEvolveMenu.java:266-270,290-294 — 裂罅循环保留原等级",
-        "删掉：v1「本服已关闭模组等级 / 本条目在本服不适用」改写成正面描述；「本服关闭了精通继承」替代块删去（新揭示通常 1 级已在正文和 module_overview 里写明）"
+        "模组等级关闭时用正面描述，不写「已关闭 / 不适用」；精通继承关闭时不单写替代块（新揭示通常 1 级已在正文和 module_overview 里写明）"
       ]
     },
     {
@@ -1267,7 +1267,7 @@
         "world/inventory/RequiemEvolveMenu.java:205-210 — 裂罅 + 赤毒 → 循环",
         "world/inventory/RequiemEvolveMenu.java:262-274,286-297 — 预览时立即扣赤毒并给原卡循环次数 +1",
         "world/inventory/RequiemEvolveMenu.java:163-190,397-400,432-450 — 取走结果时原卡清空；拿走原卡或关界面则结果作废，材料不退",
-        "world/inventory/RequiemEvolveMenu.java:168-199 checkAndProcessCrafting — 预览中材料格数量一变：inputChanged → 清掉预览 → 立即 processCrafting 重新循环、再付一次（原卡循环次数再 +1）；材料拿空则只清预览。作者确认这是设计（每次洗词条都付费），按规则写，不写成警告",
+        "world/inventory/RequiemEvolveMenu.java:168-199 checkAndProcessCrafting — 预览中材料格数量一变：inputChanged → 清掉预览 → 立即 processCrafting 重新循环、再付一次（原卡循环次数再 +1）；材料拿空则只清预览。这是设计（每次洗词条都付费），按规则写，不写成警告",
         "entity/KuvaMasterEntity.java:1127-1129 与 item/module/weapon/WeaponRivenModule.java:116-132 — 玄骸掉的未揭示裂罅不检查禁用；world/inventory/RequiemRecastMenu.java:397-420,463-505 — 分解不检查禁用",
         "item/module/weapon/WeaponUncommonModule.java:328 — 白银档也有一张带腐蚀的卡，所以写「复合元素主要在黄金 / Prime」",
         "item/module/warframe/WarframeRivenModule.java:186-207 — 战甲裂罅负面只排除 killStack（战甲没有元素词条）",

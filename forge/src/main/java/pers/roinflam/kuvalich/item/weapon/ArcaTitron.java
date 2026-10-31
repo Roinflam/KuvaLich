@@ -52,7 +52,7 @@ public class ArcaTitron extends AbstractKuvaWeapon {
         ItemStack weapon = WeaponEventUtil.getActiveWeapon(attacker);
 
         if (weapon != null && weapon.getItem() instanceof ArcaTitron) {
-            // ⭐ 修复叠层：原来首杀直接 5 层、之后永远 6 层。现在每次击杀 +1 层，最高 9（共 10 层）；
+            // 修复叠层：原来首杀直接 5 层、之后永远 6 层。现在每次击杀 +1 层，最高 9（共 10 层）；
             //    到顶后只刷新持续时间
             int current = DynamicAttributeManager.getAmplifier(attacker, DynamicAttributes.ARCA_TITRON);
             int newAmplifier = current < 0 ? 0 : Math.min(MAX_AMPLIFIER, current + 1);
@@ -76,7 +76,7 @@ public class ArcaTitron extends AbstractKuvaWeapon {
         ItemStack weapon = WeaponEventUtil.getActiveWeapon(attacker);
 
         if (weapon != null && weapon.getItem() instanceof ArcaTitron) {
-            // ⭐ 修复叠层：暴击加成按实际层数算（原来写死 6 层）。每层 +5%，10 层 +50%
+            // 修复叠层：暴击加成按实际层数算（原来写死 6 层）。每层 +5%，10 层 +50%
             int amplifier = DynamicAttributeManager.getAmplifier(attacker, DynamicAttributes.ARCA_TITRON);
             if (amplifier >= 0) {
                 int level = amplifier + 1;

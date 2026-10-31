@@ -26,10 +26,10 @@ import java.util.List;
  * - 搜索框：关键词实时筛选
  * - 所有模组悬停显示原生Tooltip
  * - 底部 [TAB] 返回提示（带底衬）
- * - ⭐ 创造模式点击模组 → 发给背包（满了掉脚下）
- * - ⭐ 发现记录使用 discoveryKey（type:rarityOrder）区分品质
+ * - 创造模式点击模组 → 发给背包（满了掉脚下）
+ * - 发现记录使用 discoveryKey（type:rarityOrder）区分品质
  *
- * <p>⭐ 本次改动（配合 {@link ModuleCodexData} 的惰性化）：</p>
+ * <p>本次改动（配合 {@link ModuleCodexData} 的惰性化）：</p>
  * <ol>
  *   <li>{@code e.searchableText} 字段访问改为 {@code e.getSearchableText()} 方法调用。
  *       该字段已改为惰性构建的私有字段，只有在真正需要匹配时才会触发一次
@@ -112,7 +112,7 @@ public class ModuleCodexScreen extends Screen {
 
     // ==================== 每帧缓存 ====================
     //
-    // ⭐ 下面三组缓存解决的是同一类问题：render() 每帧都在重算一些「其实很少变」的东西。
+    // 下面三组缓存解决的是同一类问题：render() 每帧都在重算一些「其实很少变」的东西。
     //    图鉴一旦开着，哪怕玩家什么都不做，这些计算也在以帧率持续发生。
 
     /** 标题里的「已发现/总数」。原先每帧对全量条目重算。 */
@@ -151,7 +151,7 @@ public class ModuleCodexScreen extends Screen {
             openedAt = net.minecraft.Util.getMillis();
         }
 
-        // ⭐ 布局顺序是「先按屏幕算能排几列 → 再把面板收到这几列真正需要的宽度」，
+        // 布局顺序是「先按屏幕算能排几列 → 再把面板收到这几列真正需要的宽度」，
         //    而不是「先铺满屏幕 → 再往里塞格子」。
         //
         //    反过来做就会出现之前那个问题：面板铺满屏幕、列数却卡在上限，
@@ -176,12 +176,12 @@ public class ModuleCodexScreen extends Screen {
         contentY = panelY + CodexTheme.HEADER_H + 4;
         visibleH = panelH - CodexTheme.HEADER_H - CodexTheme.FOOTER_H - 8;
 
-        // ⭐ resize / 改 GUI 缩放会让 Minecraft 对同一个 Screen 实例重新调用 init()，
+        // resize / 改 GUI 缩放会让 Minecraft 对同一个 Screen 实例重新调用 init()，
         //    这里必须先把旧搜索词存下来：不存的话新建的空 EditBox 会让紧随其后的
         //    onSearchChanged() 把筛选结果重置成全表，玩家已经输入的搜索词无声消失。
         String previousSearch = searchBox != null ? searchBox.getValue() : "";
 
-        // ⭐ 搜索框靠右、与计数徽章同排：原先它单独占第二行且居中，
+        // 搜索框靠右、与计数徽章同排：原先它单独占第二行且居中，
         //    左边的标题和它之间空出一大段，顶栏看着很散。
         //
         //    徽章宽度按「最宽可能文本」预留而不是按当前文本算 —— 当前文本会随
@@ -220,18 +220,18 @@ public class ModuleCodexScreen extends Screen {
     /**
      * 搜索词变化时重新筛选条目
      *
-     * <p>⭐ 前缀增量收窄：当新查询以旧查询为前缀且已有结果集时，
+     * <p>前缀增量收窄：当新查询以旧查询为前缀且已有结果集时，
      * 只需在旧结果集内继续筛选。这在语义上完全等价——
      * 若某条目不含 "fi"，则必然也不含 "fir"。</p>
      *
-     * <p>⭐ 可搜索文本通过 {@link ModuleCodexData.CodexEntry#getSearchableText()}
+     * <p>可搜索文本通过 {@link ModuleCodexData.CodexEntry#getSearchableText()}
      * 惰性获取，未被匹配到的条目永远不会付出 tooltip 构建开销。</p>
      */
     private void onSearchChanged() {
         String query = searchBox.getValue().trim().toLowerCase();
         if (query.equals(lastSearch) && filtered != null) return;
 
-        // ⭐ 判断能否从上一次的结果集继续收窄（必须在更新 lastSearch 之前判断）
+        // 判断能否从上一次的结果集继续收窄（必须在更新 lastSearch 之前判断）
         boolean canNarrow = filtered != null
                 && !query.isEmpty()
                 && !lastSearch.isEmpty()
@@ -257,7 +257,7 @@ public class ModuleCodexScreen extends Screen {
     }
 
     private void recalcContentH() {
-        // ⭐ 顺手统计各品质条数：这个数 drawContent 画分组头时要用，
+        // 顺手统计各品质条数：这个数 drawContent 画分组头时要用，
         //    原先是每帧调 countRarity 对整个 filtered 做一次 O(n) 扫描重新数一遍，
         //    而本方法在分组时本来就数过同样的东西，算完却丢掉了。
         java.util.Arrays.fill(rarityCounts, 0);
@@ -310,7 +310,7 @@ public class ModuleCodexScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
-        // ⭐ 创造模式：左键点击模组 → 发给背包；Shift+左键 → 直接装到第一个空槽
+        // 创造模式：左键点击模组 → 发给背包；Shift+左键 → 直接装到第一个空槽
         //    用 Shift 区分而不是改掉原有的「发给背包」：两个都是有用的操作，
         //    Shift+点击在原版里本来就是「同一个位置的另一种动作」的惯例。
         if (btn == 0 && hoveredEntry != null) {
@@ -346,7 +346,7 @@ public class ModuleCodexScreen extends Screen {
         if (btn == 0 && maxScroll() > 0) {
             int sbX = panelX + panelW - CodexTheme.PAD;
             if (mx >= sbX && mx <= sbX + CodexTheme.SCROLLBAR_W && my >= contentY && my < contentY + visibleH) {
-                // ⭐ 改造前整条轨道都只是「原地开始拖拽」：点一下轨道空白处再松手，
+                // 改造前整条轨道都只是「原地开始拖拽」：点一下轨道空白处再松手，
                 //    scrollOffset 一点没变，画面纹丝不动 —— 看起来就像滚动条失灵。
                 //    滑块往往比轨道短得多，所以这块「点了没反应」的死区还不小。
                 int trackH = visibleH;
@@ -369,7 +369,7 @@ public class ModuleCodexScreen extends Screen {
     public boolean mouseReleased(double mx, double my, int btn) { dragging = false; return super.mouseReleased(mx, my, btn); }
 
     /**
-     * ⭐ 界面关闭时兜底复位拖拽状态
+     * 界面关闭时兜底复位拖拽状态
      *
      * <p>按住滚动条滑块的同时 Alt+Tab 切走、在失焦期间松手，这次 release 事件不会传到
      * {@link #mouseReleased}，{@code dragging} 会一直是 true。切回来后只要在图鉴里
@@ -384,7 +384,7 @@ public class ModuleCodexScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mx, double my, int btn, double dx, double dy) {
-        // ⭐ 同时校验按键：残留的 dragging 配上一次非左键拖拽也会触发跳变
+        // 同时校验按键：残留的 dragging 配上一次非左键拖拽也会触发跳变
         if (btn != 0) {
             dragging = false;
         }
@@ -412,7 +412,7 @@ public class ModuleCodexScreen extends Screen {
         lastMouseX = mx;
         lastMouseY = my;
 
-        // ⭐ 整块绘制包在 drawManaged 里 —— 这是这个界面最重要的一处性能处理。
+        // 整块绘制包在 drawManaged 里 —— 这是这个界面最重要的一处性能处理。
         //
         //    GuiGraphics.fill 最终那个重载会调 flushIfUnmanaged()，也就是说
         //    **每一次 fill 默认都会把批次 flush 掉、变成一个独立的 draw call**。
@@ -511,7 +511,7 @@ public class ModuleCodexScreen extends Screen {
                     ModuleCodexData.getWeaponModules() : ModuleCodexData.getWarframeModules();
             int stamp = ModuleDiscoveryPacket.getDiscoveredCount();
             if (cachedTitle == null || stamp != titleDiscoveryStamp || all != titleCountedList) {
-                // ⭐ 一次遍历同时算出总进度与各品质进度 —— 分组标题要用后者，
+                // 一次遍历同时算出总进度与各品质进度 —— 分组标题要用后者，
                 //    没必要为它再扫一遍 429 条。失效条件与总进度完全相同。
                 int discovered = 0;
                 java.util.Arrays.fill(rarityFound, 0);
@@ -536,7 +536,7 @@ public class ModuleCodexScreen extends Screen {
                     CodexTheme.withAlpha(CodexTheme.TECH, 0x22), CodexTheme.EMBER);
         }
 
-        // ⭐ 搜索框从「一圈斜切描边」改成「前导提示符 + 底部下划线」。
+        // 搜索框从「一圈斜切描边」改成「前导提示符 + 底部下划线」。
         //    整圈描边在这套以细线组织信息的界面里显得过重，而且框体本身比文字高一截，
         //    文字浮在里面上不着天下不着地 —— 你看到的「文字歪了」就是这个。
         //    下划线式的输入行把文字锚在一条基线上，也更像终端。
@@ -555,7 +555,7 @@ public class ModuleCodexScreen extends Screen {
         g.drawString(this.font, ">", searchFrameX + 3, searchFrameY + 4,
                 focused ? CodexTheme.TECH : CodexTheme.FAINT, true);
 
-        // ⭐ 清除按钮：只在有搜索词时出现。
+        // 清除按钮：只在有搜索词时出现。
         //    改造前唯一的清空方式是按 ESC，而界面上没有任何地方提到这件事 ——
         //    而且大多数人的第一反应是 ESC 会直接关掉整个图鉴（搜索框为空时它确实会），
         //    所以根本不敢试。lang 里 kuvalich.codex.clear_search 早就写好了，只是没人接。
@@ -613,7 +613,7 @@ public class ModuleCodexScreen extends Screen {
                     int rc = ModuleCodexData.getRarityColor(e.rarityOrder);
                     CodexTheme.cornerTab(g, contentX, drawY + 2, 9, rc);
 
-                    // ⭐ 分组标题显示的是**收集进度**而不是条目数：条目数在底栏的搜索命中里
+                    // 分组标题显示的是**收集进度**而不是条目数：条目数在底栏的搜索命中里
                     //    已经有了，而「这一档收集了多少」才是玩家翻图鉴时真正想知道的。
                     //    数字带阴影 —— 细体数字压在扫描线上很难读。
                     int ro = e.rarityOrder;
@@ -660,7 +660,7 @@ public class ModuleCodexScreen extends Screen {
             int cy = groupY + row * (CELL_H + GAP);
 
             if (inView(cy, CELL_H)) {
-                // ⭐ 使用 discoveryKey 检查发现状态 / Use discoveryKey for discovery check
+                // 使用 discoveryKey 检查发现状态 / Use discoveryKey for discovery check
                 boolean found = ModuleDiscoveryPacket.isDiscovered(e.discoveryKey, e.moduleType);
                 boolean hover = mx >= cx && mx < cx + CELL_W && my >= cy && my < cy + CELL_H
                         && my >= contentY && my < contentY + visibleH;
@@ -709,7 +709,7 @@ public class ModuleCodexScreen extends Screen {
         // 放到 8px 之后一眼可辨。它画在图标之前，被图标压住的只是左上角几个像素。
         CodexTheme.cornerTab(g, x + 1, y + 1, 8, rarity);
 
-        // ⭐ 悬停底色必须画在图标**之前**：同样的 z 序原因，画在 renderItem 之后
+        // 悬停底色必须画在图标**之前**：同样的 z 序原因，画在 renderItem 之后
         //    会落到图标背后，只能把格子边缘染上色，看起来像没生效。
         if (hover) {
             g.fill(x, y, x + CELL_W, y + CELL_H, CodexTheme.withAlpha(
@@ -730,7 +730,7 @@ public class ModuleCodexScreen extends Screen {
             int iconY = y + (CELL_H - 16) / 2 + 1;
             g.renderItem(e.displayStack, iconX, iconY);
         } else {
-            // ⭐ 未发现的**根本不画图标**，而不是画完再盖一层遮罩。
+            // 未发现的**根本不画图标**，而不是画完再盖一层遮罩。
             //
             //    盖遮罩这条路走不通：GuiGraphics.renderItem 把物品渲染在 z=150，
             //    而随后的 fill 落在 z=0，遮罩会跑到图标后面去 —— 表现就是
@@ -754,7 +754,7 @@ public class ModuleCodexScreen extends Screen {
         }
 
         if (hover) {
-            // ⭐ 瞄准括号只在创造模式画。
+            // 瞄准括号只在创造模式画。
             //
             //    括号是「这里能操作」的强视觉承诺，而点击拿取/装配只在创造模式生效。
             //    生存玩家看到括号亮起、点下去却毫无反应（没有闪光、没有声音、没有提示），
@@ -849,7 +849,7 @@ public class ModuleCodexScreen extends Screen {
             g.drawString(this.font, filterHint, panelX + CodexTheme.PAD, textY, CodexTheme.EMBER, true);
         }
 
-        // ⭐ 两种模式的提示各拼一次缓存起来。原先每帧都 new StringBuilder + 两次
+        // 两种模式的提示各拼一次缓存起来。原先每帧都 new StringBuilder + 两次
         //    Component.getString()，而这两句话在一次界面生命周期里根本不会变。
         //
         //    生存模式也给一行说明：改造前这里是空的，生存玩家既看不到操作提示、

@@ -23,10 +23,10 @@ import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.InventoryUtil;
 
 /**
- * 战甲军械库菜单（1.20.1版本，业务逻辑100%不变）
- * Warframe Table Menu (1.20.1 version, business logic 100% unchanged)
+ * 战甲军械库菜单
+ * Warframe Table Menu
  *
- * ⭐ 非法物品返还优先快捷栏（Inventory.add）
+ * 非法物品返还优先快捷栏（Inventory.add）
  */
 public class RequiemWarframeTableMenu extends AbstractContainerMenu {
 
@@ -161,7 +161,7 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
 
     /**
      * 保存模组到Capability
-     * ⭐ 非法物品返还使用 Inventory.add() 优先快捷栏
+     * 非法物品返还使用 Inventory.add() 优先快捷栏
      */
     private void saveModulesToCapability(Player player) {
         try {
@@ -170,7 +170,7 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
                     ItemStack stack = moduleHandler.getStackInSlot(i);
                     if (!stack.isEmpty() && !(stack.getItem() instanceof AbstractWarframeModule)) {
                         LogUtil.warn("检测到非法物品在战甲军械库槽位" + i + ": " + stack.getHoverName().getString() + " - 正在返还");
-                        // ⭐ 优先快捷栏
+                        // 优先快捷栏
                         InventoryUtil.giveOrDrop(player, stack.copy());
                         moduleHandler.setStackInSlot(i, ItemStack.EMPTY);
                     }
@@ -218,7 +218,7 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
         }
 
         /**
-         * ⭐ 判定本身已抽到 {@link ModulePlacementValidator}，与武器军械库、
+         * 判定本身已抽到 {@link ModulePlacementValidator}，与武器军械库、
          * 图鉴一键装配共用同一份实现。战甲侧没有「先放武器才解锁槽位」那一层，
          * 也没有 moduleLimit 的概念。
          */

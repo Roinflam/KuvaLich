@@ -27,7 +27,7 @@ import java.util.Optional;
  * <p>注册时机：在 {@link FMLCommonSetupEvent} 的 enqueueWork 中注册 packet，
  * 确保在网络初始化阶段之前完成。</p>
  *
- * <p>⭐ 安全修复：{@link ElementDebuffPacket} 是纯 S2C 包，注册时显式声明
+ * <p>安全修复：{@link ElementDebuffPacket} 是纯 S2C 包，注册时显式声明
  * {@link NetworkDirection#PLAY_TO_CLIENT}。此前使用不带方向的重载，
  * Forge 允许双向收发，改装客户端可以把该包发给服务端触发解码；
  * 声明方向后 Forge 会在解码之前直接拒绝。</p>
@@ -68,7 +68,7 @@ public final class ElementEffectNetwork {
     /**
      * 注册所有元素特效相关的 packet
      *
-     * <p>⭐ 显式声明为 S2C，禁止客户端反向发送。</p>
+     * <p>显式声明为 S2C，禁止客户端反向发送。</p>
      */
     private static void registerPackets() {
         CHANNEL.registerMessage(

@@ -5,7 +5,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 /**
  * 面板（tooltip）显示配置 —— 纯客户端
  *
- * <p>⭐ 刻意注册为 {@code Type.CLIENT} 而不是塞进已有的 {@code COMMON_CONFIG}：
+ * <p>刻意注册为 {@code Type.CLIENT} 而不是塞进已有的 {@code COMMON_CONFIG}：
  * 这些全是观感项，一个都不该被服务端的 toml 左右。
  * （项目里既有的 {@code kuvalich-common.toml} / {@code kuvalich-modules.toml}
  * 都注册成了 COMMON，而 Forge 只同步 {@code Type.SERVER}，

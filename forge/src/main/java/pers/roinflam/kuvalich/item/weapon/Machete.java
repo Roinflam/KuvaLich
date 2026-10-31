@@ -23,8 +23,8 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 
 /**
- * 砍刀（1.20.1版本，业务逻辑100%不变）
- * Machete (1.20.1 version, business logic 100% unchanged)
+ * 砍刀
+ * Machete
  */
 @Mod.EventBusSubscriber
 public class Machete extends AbstractKuvaWeapon {
@@ -64,7 +64,7 @@ public class Machete extends AbstractKuvaWeapon {
 
     @Override
     public double getAttackDamageAmount(ItemStack itemStack) {
-        // ✅ 注意：配置值必须加.get()
+        // 注意：配置值必须加.get()
         return AttributesUtil.getDamage(KuvaWeaponUtil.getMagnification(itemStack,
                 ModConfig.KUVA_WEAPON.attackDamageMachete.get()));
     }

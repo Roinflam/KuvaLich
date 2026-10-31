@@ -15,8 +15,8 @@ import pers.roinflam.kuvalich.block.*;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
- * 方块注册类（硬度抗性与原代码100%一致）
- * Block registration class (hardness/resistance 100% identical to original)
+ * 方块注册类（硬度、抗性与 1.12.2 版一致）
+ * Block registration class (hardness/resistance same as the 1.12.2 version)
  */
 public class KuvaLichBlocks {
 
@@ -29,8 +29,8 @@ public class KuvaLichBlocks {
      * 安魂矿石
      * Requiem Ore
      *
-     * 原代码属性（100%保持一致）：
-     * Original properties (100% unchanged):
+     * 1.12.2 版属性：
+     * Properties (same as the 1.12.2 version):
      * - 硬度 / Hardness: 100.0F
      * - 抗性 / Resistance: 2000.0F
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
@@ -40,15 +40,15 @@ public class KuvaLichBlocks {
             () -> new RequiemOreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
-                    .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
+                    .strength(100.0F, 2000.0F)  // 硬度100, 抗性2000
                     .sound(SoundType.STONE)));
 
     /**
      * 经验矿石
      * Experience Ore
      *
-     * 原代码属性（100%保持一致）：
-     * Original properties (100% unchanged):
+     * 1.12.2 版属性：
+     * Properties (same as the 1.12.2 version):
      * - 硬度 / Hardness: 3.0F
      * - 抗性 / Resistance: 3.0F
      * - 需要工具 / Required tool: 石镐 / Stone Pickaxe (level 1)
@@ -58,7 +58,7 @@ public class KuvaLichBlocks {
             () -> new ExperienceOreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
-                    .strength(3.0F, 3.0F)  // ✅ 硬度3, 抗性3
+                    .strength(3.0F, 3.0F)  // 硬度3, 抗性3
                     .sound(SoundType.STONE).sound(KuvaLichSounds.MACHINE)));
 
     // ========== 功能方块 / Functional Blocks ==========
@@ -67,8 +67,8 @@ public class KuvaLichBlocks {
      * 灭骸之扉
      * Requiem Gate
      *
-     * 原代码属性（100%保持一致）：
-     * Original properties (100% unchanged):
+     * 1.12.2 版属性：
+     * Properties (same as the 1.12.2 version):
      * - 硬度 / Hardness: 100.0F
      * - 抗性 / Resistance: 2000.0F
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
@@ -78,7 +78,7 @@ public class KuvaLichBlocks {
             () -> new RequiemGateBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
-                    .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
+                    .strength(100.0F, 2000.0F)  // 硬度100, 抗性2000
                     .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));  // 非完整方块
 
@@ -86,8 +86,8 @@ public class KuvaLichBlocks {
      * 安魂之铸
      * Requiem Recast
      *
-     * 原代码属性（100%保持一致）：
-     * Original properties (100% unchanged):
+     * 1.12.2 版属性：
+     * Properties (same as the 1.12.2 version):
      * - 硬度 / Hardness: 100.0F
      * - 抗性 / Resistance: 2000.0F
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
@@ -96,7 +96,7 @@ public class KuvaLichBlocks {
             () -> new RequiemRecastBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
-                    .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
+                    .strength(100.0F, 2000.0F)  // 硬度100, 抗性2000
                     .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));
 
@@ -104,8 +104,8 @@ public class KuvaLichBlocks {
      * 安魂之融
      * Requiem Evolve
      *
-     * 原代码属性（100%保持一致）：
-     * Original properties (100% unchanged):
+     * 1.12.2 版属性：
+     * Properties (same as the 1.12.2 version):
      * - 硬度 / Hardness: 100.0F
      * - 抗性 / Resistance: 2000.0F
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
@@ -114,7 +114,7 @@ public class KuvaLichBlocks {
             () -> new RequiemEvolveBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
-                    .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
+                    .strength(100.0F, 2000.0F)  // 硬度100, 抗性2000
                     .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));
 
@@ -122,8 +122,8 @@ public class KuvaLichBlocks {
      * 武器军械库
      * Requiem Weapon Table
      *
-     * 原代码属性（100%保持一致）：
-     * Original properties (100% unchanged):
+     * 1.12.2 版属性：
+     * Properties (same as the 1.12.2 version):
      * - 硬度 / Hardness: 100.0F
      * - 抗性 / Resistance: 2000.0F
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
@@ -132,7 +132,7 @@ public class KuvaLichBlocks {
             () -> new RequiemWeaponTableBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
-                    .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
+                    .strength(100.0F, 2000.0F)  // 硬度100, 抗性2000
                     .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));
 
@@ -140,8 +140,8 @@ public class KuvaLichBlocks {
      * 战甲军械库
      * Requiem Warframe Table
      *
-     * 原代码属性（100%保持一致）：
-     * Original properties (100% unchanged):
+     * 1.12.2 版属性：
+     * Properties (same as the 1.12.2 version):
      * - 硬度 / Hardness: 100.0F
      * - 抗性 / Resistance: 2000.0F
      * - 需要工具 / Required tool: 钻石镐 / Diamond Pickaxe (level 3)
@@ -150,7 +150,7 @@ public class KuvaLichBlocks {
             () -> new RequiemWarframeTableBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
-                    .strength(100.0F, 2000.0F)  // ✅ 硬度100, 抗性2000
+                    .strength(100.0F, 2000.0F)  // 硬度100, 抗性2000
                     .sound(KuvaLichSounds.MACHINE)
                     .noOcclusion()));
 

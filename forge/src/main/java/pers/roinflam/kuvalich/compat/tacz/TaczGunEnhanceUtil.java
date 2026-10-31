@@ -110,7 +110,7 @@ public final class TaczGunEnhanceUtil {
     }
 
     /**
-     * ⭐ 全类<b>唯一</b>触碰 TACZ 类型的地方，单独成一个内部类。
+     * 全类<b>唯一</b>触碰 TACZ 类型的地方，单独成一个内部类。
      *
      * <p>为什么非要拆出去：本工具类是<b>无条件</b>被加载的 —— tooltip 对每个物品都调
      * {@code appendEnhanceLine}，面板的 {@code PanelRowGate.RANGED} 和安魂之融的槽位判定也在调。
@@ -210,13 +210,13 @@ public final class TaczGunEnhanceUtil {
      *
      * <p>显示格式：§4✦ 玄骸之力 §c×3 §4(§c伤害+75%§4)</p>
      *
-     * <p>⭐ 改造前这是 {@code TaczCompatEventHandler} 上的一个 {@code @SubscribeEvent}，
+     * <p>改造前这是 {@code TaczCompatEventHandler} 上的一个 {@code @SubscribeEvent}，
      * 往 {@code tooltip.add(1, ...)} 这个硬编码下标插行，与
      * {@code WeaponModuleHandler} / {@code KuvaWeaponUtil} 抢同一个位置，
      * 三者的相对顺序取决于 Forge 的注解扫描顺序。
      * 现在改为被 {@code client.tooltip.KuvaTooltipCoordinator} 按固定顺序调用。</p>
      *
-     * <p>⭐ 放在本类而不是 {@code TaczCompatEventHandler}：后者直接 import 了
+     * <p>放在本类而不是 {@code TaczCompatEventHandler}：后者直接 import 了
      * {@code com.tacz.guns.api.event.*} 等一整套 TACZ 类型，而 tooltip 是每帧走的路径，
      * 不该只为了画一行字就把那个类拖进来（本类只依赖 {@code IGun}，
      * 且已经被 {@code RequiemEvolveMenu} 等无条件调用）。</p>

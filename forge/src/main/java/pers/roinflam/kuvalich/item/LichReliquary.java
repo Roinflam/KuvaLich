@@ -16,8 +16,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * 玄骸之遗（1.20.1版本，业务逻辑100%不变）
- * Lich Reliquary (1.20.1 version, business logic 100% unchanged)
+ * 玄骸之遗
+ * Lich Reliquary
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class LichReliquary extends Item {

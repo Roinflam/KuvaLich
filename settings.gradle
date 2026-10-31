@@ -11,7 +11,7 @@ pluginManagement {
 rootProject.name = providers.gradleProperty('mod_name').get()
 
 // 包含的子项目
-// ⭐ 只剩 forge 一个。common / fabric 已移除（2026-09-21）：
+// 只剩 forge 一个。common / fabric 已移除（2026-09-21）：
 //    - fabric 是坏的：fabric.mod.json 指向的入口类 pers.tany.kuvalich.fabric.KuvaLichFabric
 //      根本不存在，这个 jar 从未发布过，却每次构建都要解析整套 fabric-api
 //    - common 只有一个 409 字节的空类，包名还是 pers.tany.kuvalich（另一套 groupId），

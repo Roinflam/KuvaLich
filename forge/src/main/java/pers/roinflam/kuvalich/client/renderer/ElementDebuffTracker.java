@@ -27,7 +27,7 @@ import java.util.Map;
  * 渲染时查询。相比基于 {@code AttributeModifier} 的反查，本追踪器实现零延迟的
  * 视觉响应。</p>
  *
- * <p>⭐ 性能优化（本次）：新增 {@link #forEachActiveElement}，
+ * <p>性能优化（本次）：新增 {@link #forEachActiveElement}，
  * 供渲染层以<b>零分配</b>方式遍历实体身上的全部有效元素。
  * 原 {@link #getAllActiveElements} 每次调用都要 {@code new ArrayList}
  * 做快照 + 再 {@code new ArrayList} 遍历，而它在 {@code RenderLivingEvent}
@@ -76,7 +76,7 @@ public final class ElementDebuffTracker {
     }
 
     /**
-     * ⭐ 元素访问器（零分配遍历用）
+     * 元素访问器（零分配遍历用）
      * Element visitor for allocation-free iteration
      */
     @FunctionalInterface
@@ -159,7 +159,7 @@ public final class ElementDebuffTracker {
     }
 
     /**
-     * ⭐ 零分配遍历实体身上所有未过期的元素 debuff
+     * 零分配遍历实体身上所有未过期的元素 debuff
      * Allocation-free iteration over all active element debuffs
      *
      * <p>遍历过程中顺便懒清理过期条目（使用 {@code Iterator.remove}，

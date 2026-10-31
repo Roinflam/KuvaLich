@@ -20,7 +20,7 @@ import java.util.List;
  * 列数由 {@link ClientPanelGridTooltip} 根据内容多少自适应：
  * 属性少就一条一行（宽松好读），多到快超屏才自动切两列 / 三列。</p>
  *
- * <p>兼容性：整合包里的 {@code obscure_tooltips} 在 {@code wrapLines} 与 {@code compact}
+ * <p>兼容性：{@code obscure_tooltips} 在 {@code wrapLines} 与 {@code compact}
  * 两处都只处理 {@code ClientTextTooltip}，非文本组件原样放行（已核实源码），
  * 所以自定义组件不会被它吃掉。代价是它的「压缩行距」不会作用到本组件，
  * 行高由 {@code panel.rowHeight} 配置自己控制。</p>
@@ -37,7 +37,7 @@ public record PanelGridTooltip(List<Section> sections, int maxColumns) implement
     /**
      * 四个视图共用同一种构造 —— 排版必须一致
      *
-     * <p>⭐ 这里曾经分过 {@code compact} / {@code detail} 两种，给功能键视图更宽松的
+     * <p>这里曾经分过 {@code compact} / {@code detail} 两种，给功能键视图更宽松的
      * 行数预算。但列数是按行数预算反推的，预算不同就等于排版不同：屏幕一高，
      * SHIFT 视图停在一列、每条一行，默认视图还是两列，同一把武器按下 SHIFT
      * 像换了个模组。现在预算统一在 {@link ClientPanelGridTooltip#layout} 里算。</p>
@@ -115,7 +115,7 @@ public record PanelGridTooltip(List<Section> sections, int maxColumns) implement
      *
      * @param wide 这一条是否独占一整行
      *
-     *             <p>⭐ 为什么需要它：多列网格的列宽是<b>按该列最宽的内容</b>定的，
+     *             <p>为什么需要它：多列网格的列宽是<b>按该列最宽的内容</b>定的，
      *             所以一条特别宽的词条会把整列撑开，害得同列其它词条的标签与数值之间
      *             拉出一大段空白。最典型的是成对词条（{@code x4.5 / x2.8}）——
      *             它比同组的 {@code 113%} 宽两三倍，一挤进列里整组都变得松垮。

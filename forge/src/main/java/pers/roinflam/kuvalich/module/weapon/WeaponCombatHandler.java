@@ -57,7 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 武器战斗事件处理器
  * 负责所有伤害事件、弓箭多重射击、射速加速、攻击速度/攻击距离tick
  *
- * <p>⭐ 本次改动（魔法伤害识别与分支）：</p>
+ * <p>本次改动（魔法伤害识别与分支）：</p>
  *
  * <p><b>一、魔法判定交给 {@link MagicDamageClassifier}。</b><br>
  * 原实现只认「message_id 含 magic」或 {@code witch_resistant_to} tag，
@@ -71,7 +71,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 魔法只决定要不要在此之上再加 {@code magicDamage}，与基础分支互不排斥：
  * 施法者亲手打出的射线/触碰法术 = 近战 + 魔法，弹射物法术 = 远程 + 弹射物 + 魔法。</p>
  *
- * <p>⭐ 此前改动（伤害数字，均为显示层，不改变任何伤害数值）：</p>
+ * <p>此前改动（伤害数字，均为显示层，不改变任何伤害数值）：</p>
  *
  * <p><b>一、登记与配对迁至 {@link DamageDisplayTracker}。</b><br>
  * 原实现按「先进先出」配对：受击事件里入队、最终伤害回调里取队首。
@@ -90,7 +90,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p><b>四、普通白字（{@code damageDisplay}）也走登记</b>，同样计入护盾。</p>
  *
- * <p>⭐ 此前改动（三项，均为近战 / 远程词条串用修复）：</p>
+ * <p>此前改动（三项，均为近战 / 远程词条串用修复）：</p>
  *
  * <p><b>一、爆炸半径溅射的伤害口径与重复结算。</b><br>
  * 原实现在远程分支内立即执行溅射：
@@ -135,18 +135,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * 如需维持修复前行为，把 {@link #ENABLE_ATTACK_STRENGTH_SCALING} 改为 {@code false} 即可，
  * 其余两项修复不受影响。</p>
  *
- * <p><b>四、基础面板倍率按蓄力折算（2026-09-25，作者要求）。</b><br>
+ * <p><b>四、基础面板倍率按蓄力折算（2026-09-25）。</b><br>
  * 近战时「基础伤害」这一乘区再乘本次挥击的蓄力比例：满蓄力才吃满面板，连点轻击只拿到相应比例。
  * 原版已经用 {@code 0.2 + 0.8f²} 缩放过原始伤害，但模组面板（基础伤害、元素、暴击档）是在它之上整体相乘的，
- * 连点流派照样能吃到大半面板 —— 作者要的是「必须满蓄力才能吃满」。
+ * 连点流派照样能吃到大半面板 —— 要的就是「必须满蓄力才能吃满」。
  * 物理、元素、真伤快照一起乘，「未暴击时基础伤害」的加成也按同一比例折算；远程不受影响。
  * 同样由 {@link #ENABLE_ATTACK_STRENGTH_SCALING} 控制。</p>
  *
- * <p>⭐ 此前改动：伤害数字的取值点改为 {@code MixinForgeHooksFinalDamage}
+ * <p>此前改动：伤害数字的取值点改为 {@code MixinForgeHooksFinalDamage}
  * 捕获 {@code ForgeHooks.onLivingDamage} 的返回值（整个 {@code LivingDamageEvent} 事件链跑完后的结果），
  * 不受任何监听器优先级、注册顺序影响。登记、配对与发包现已全部由 {@link DamageDisplayTracker} 负责。</p>
  *
- * <p>⭐ 此前修复（两项）：</p>
+ * <p>此前修复（两项）：</p>
  *
  * <p><b>一、伤害显示队列内存泄漏。</b><br>
  * 已被 {@link DamageDisplayTracker} 的机制取代：登记只存玩家 UUID，未消费登记每 tick 末统一清空。</p>
@@ -162,7 +162,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mod.EventBusSubscriber
 public class WeaponCombatHandler {
 
-    // ========== ⭐ 溅射重入防护 / Splash Re-entry Guard ==========
+    // ========== 溅射重入防护 / Splash Re-entry Guard ==========
 
     /**
      * 爆炸半径溅射伤害的重入标记
@@ -210,7 +210,7 @@ public class WeaponCombatHandler {
     /** 溅射伤害占主目标最终伤害的比例 */
     private static final float SPLASH_DAMAGE_RATIO = 0.5f;
 
-    // ========== ⭐ 近战攻击强度传递 / Melee Attack Strength Relay ==========
+    // ========== 近战攻击强度传递 / Melee Attack Strength Relay ==========
 
     /**
      * 是否启用近战蓄力比例对暴击率与基础面板倍率的缩放
@@ -258,7 +258,7 @@ public class WeaponCombatHandler {
     /**
      * 额外槽位属性缓存 · 客户端侧
      *
-     * <p>⭐ 必须与服务端分开：单人游戏里逻辑服务端玩家与客户端玩家<b>UUID 相同</b>，
+     * <p>必须与服务端分开：单人游戏里逻辑服务端玩家与客户端玩家<b>UUID 相同</b>，
      * 但持有的是两份不同的 {@code ItemStack} 实例、两份不同的 gameTime。
      * 共用一张表时 {@code computeIfAbsent} 谁先跑谁定胜负，另一侧直接吃到对面的计算结果。
      * 这个缺陷本来就存在（Tooltip 早就在客户端调它），但现在 TACZ 桥的 12 个 getter
@@ -270,7 +270,7 @@ public class WeaponCombatHandler {
     /**
      * 上次清空额外槽位缓存的 gameTick（服务端侧 / 客户端侧各一份）
      *
-     * <p>⭐ volatile：本字段被服务端主线程（{@link #onLivingHurt}）与客户端渲染线程
+     * <p>volatile：本字段被服务端主线程（{@link #onLivingHurt}）与客户端渲染线程
      * （Tooltip 经 {@code ExtraSlotTooltipHelper}、TACZ 面板经 {@code WarframeTaczBridge}）读写。
      * long 的非 volatile 读写在 32 位语义下允许撕裂，且无 volatile 时一侧的写对另一侧可能永久不可见，
      * 会让缓存要么永不过期（面板长期显示旧值）、要么每次都判定过期（每帧全量重算）。</p>
@@ -284,7 +284,7 @@ public class WeaponCombatHandler {
     // ========== 元素触发硬上限 / Element Trigger Hard Cap ==========
 
     /**
-     * ⭐ 单次命中的元素触发次数上限（原 {@code MAX_ELEMENT_TRIGGER_COUNT} 的「单次」语义）
+     * 单次命中的元素触发次数上限（原 {@code MAX_ELEMENT_TRIGGER_COUNT} 的「单次」语义）
      *
      * <p>旧实现只有一个 20 的常量，同时承担「单次命中上限」与「事实上的全局上限」两个职责，
      * 结果两边都不合格：单次命中允许 20 次触发，而切割与带盾时的毒素走
@@ -294,13 +294,13 @@ public class WeaponCombatHandler {
      * <p>现拆成两个常量：本常量管单次命中，{@link #MAX_ELEMENT_TRIGGER_PER_TICK} 管单 tick 全局。
      * 5 的取值可后续提为配置项。</p>
      *
-     * <p>⭐ public：ALT 实时视图要用它把触发几率的分解结果钳到同一个上限，
+     * <p>public：ALT 实时视图要用它把触发几率的分解结果钳到同一个上限，
      * 两边各写一个 5 就又是一次「面板与实战对不上」的分叉。</p>
      */
     public static final int MAX_ELEMENT_TRIGGER_PER_HIT = 5;
 
     /**
-     * ⭐ 单 tick 内全局元素触发次数上限（跨所有攻击者与所有目标）
+     * 单 tick 内全局元素触发次数上限（跨所有攻击者与所有目标）
      *
      * <p>专治群体命中：横扫 / 霰弹一次打十几只怪时，单次命中上限管不住总量。
      * 100 的取值可后续提为配置项。</p>
@@ -314,7 +314,7 @@ public class WeaponCombatHandler {
     private static volatile int elementTriggerBudgetUsed = 0;
 
     /**
-     * ⭐ 向单 tick 全局触发预算申请触发次数
+     * 向单 tick 全局触发预算申请触发次数
      *
      * <p>不另起 tick 事件监听：以 {@code gameTime} 变化作为「新的一 tick」的判据，
      * 惰性重置计数器即可。本方法只在服务端伤害结算线程调用，字段加 volatile 只为
@@ -354,7 +354,7 @@ public class WeaponCombatHandler {
         boolean clientSide = entity.level().isClientSide();
         long currentTick = entity.level().getGameTime();
 
-        // ⭐ 两侧各用一张表、各记一个 tick：单人游戏里两边 UUID 相同但数据源不同
+        // 两侧各用一张表、各记一个 tick：单人游戏里两边 UUID 相同但数据源不同
         Map<UUID, HashMap<String, Double>> cache = clientSide ? EXTRA_SLOT_CACHE_CLIENT : EXTRA_SLOT_CACHE_SERVER;
         long lastTick = clientSide ? extraSlotCacheTickClient : extraSlotCacheTickServer;
 
@@ -370,7 +370,7 @@ public class WeaponCombatHandler {
     }
 
     /**
-     * ⭐ 额外槽位属性的<b>跨包</b>公开入口
+     * 额外槽位属性的<b>跨包</b>公开入口
      *
      * <p>{@link #getCachedExtraSlotAttributes} 是包级私有，同包的
      * {@code ExtraSlotTooltipHelper} 能直接用，但 {@code compat.tacz.WarframeTaczBridge}
@@ -523,7 +523,7 @@ public class WeaponCombatHandler {
     }
 
     /**
-     * ⭐ 把本次攻击触发的元素拼成伤害数字后缀（各元素图标自带颜色码）
+     * 把本次攻击触发的元素拼成伤害数字后缀（各元素图标自带颜色码）
      *
      * @param triggeredElements 本次攻击触发的元素集合（可为空集合）
      * @return 后缀字符串；无元素时返回空串
@@ -539,10 +539,10 @@ public class WeaponCombatHandler {
         return suffix.toString();
     }
 
-    // ========== ⭐ 近战攻击强度捕获 / Melee Attack Strength Capture ==========
+    // ========== 近战攻击强度捕获 / Melee Attack Strength Capture ==========
 
     /**
-     * ⭐ 在玩家发起近战攻击的最早时机捕获蓄力比例
+     * 在玩家发起近战攻击的最早时机捕获蓄力比例
      *
      * <p>{@code AttackEntityEvent} 由 {@code ForgeHooks.onPlayerAttackTarget} 在
      * {@code Player.attack()} 开头触发，此时 {@code resetAttackStrengthTicker()} 尚未执行，
@@ -609,7 +609,7 @@ public class WeaponCombatHandler {
     }
 
     /**
-     * ⭐ 读取本次近战攻击的蓄力比例
+     * 读取本次近战攻击的蓄力比例
      *
      * <p>只认同一攻击者、还没被 tick END 清掉的那次挥击；别的实体、已清掉的一律按满蓄力 1.0，
      * 绕过 {@code Player.attack()} 直接造成的近战伤害（其它模组、生物）因此不受影响。</p>
@@ -631,21 +631,21 @@ public class WeaponCombatHandler {
     /**
      * LivingHurt 事件入口：任何LivingEntity持有开光武器造成伤害时触发武器模组伤害计算
      *
-     * <p>⭐ 溅射重入防护：由 {@link #applySplashDamage} 派生的伤害
+     * <p>溅射重入防护：由 {@link #applySplashDamage} 派生的伤害
      * 会带着 {@code playerAttack} 伤害源重新进入本方法并被误判为近战，
      * 见到 {@link #SPLASH_REENTRY} 标记直接放行，交由原版流程结算。</p>
      *
-     * <p>⭐ 非开光武器造成的伤害：交给 {@link DamageDisplayTracker#registerPlain} 登记普通白字，
+     * <p>非开光武器造成的伤害：交给 {@link DamageDisplayTracker#registerPlain} 登记普通白字，
      * 该方法在 {@code damageDisplay} 关闭时直接返回，默认配置下没有任何开销。</p>
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingHurt(@Nonnull LivingHurtEvent evt) {
-        // ⭐ 溅射派生伤害不做模组结算，避免远程溅射被当成近战重复计算
+        // 溅射派生伤害不做模组结算，避免远程溅射被当成近战重复计算
         if (SPLASH_REENTRY.get()) {
             return;
         }
 
-        // ⭐ 0 伤害直接放行。
+        // 0 伤害直接放行。
         //    TACZ 把一发子弹拆成两次 hurt()：普通段 damage×(1−armorIgnore) 与
         //    破甲段 damage×armorIgnore，中间还把无敌帧清零。armor_ignore 为 0 或 1 的枪
         //    必有一段是 0 伤害，而 Forge 的 ForgeHooks.onLivingHurt 是在
@@ -660,7 +660,7 @@ public class WeaponCombatHandler {
         DamageSource damageSource = evt.getSource();
 
         if (!evt.getEntity().level().isClientSide()) {
-            // ⭐ 荆棘反伤按原版结算：它的直接实体和归属都是穿甲的玩家，下面的判据会把它当成「近战」，
+            // 荆棘反伤按原版结算：它的直接实体和归属都是穿甲的玩家，下面的判据会把它当成「近战」，
             //    只要主手拿着开光武器，1~4 点荆棘就会吃满近战面板、近战暴击、魔法伤害（荆棘在
             //    witch_resistant_to 里），还会掷元素、秒杀、加击杀叠层 —— 和手里的武器毫无关系。
             //    又因为不经过 Player.attack，蓄力按满 1.0 算。只登记普通白字。
@@ -683,14 +683,14 @@ public class WeaponCombatHandler {
             if (attacker != null) {
                 ItemStack weapon = attacker.getMainHandItem();
                 if (!weapon.isEmpty() && WeaponModuleHandler.hasBase(weapon)) {
-                    // ⭐ 传入真实蓄力比例，替代原先恒为 1.0f 的死代码
+                    // 传入真实蓄力比例，替代原先恒为 1.0f 的死代码
                     processDamage(evt, attacker, weapon, damageSource,
                             meleeAttackStrength(attacker, isMelee), isMelee);
                     return;
                 }
             }
 
-            // ⭐ 非开光武器：普通白字同样走登记，最终伤害回调才能算上护盾吃掉的部分
+            // 非开光武器：普通白字同样走登记，最终伤害回调才能算上护盾吃掉的部分
             DamageDisplayTracker.registerPlain(evt.getEntity(), damageSource, evt.getAmount());
         }
     }
@@ -701,12 +701,12 @@ public class WeaponCombatHandler {
      * 核心伤害处理流程：
      * 基础伤害 → 暴击计算 → 克制倍率 → 元素伤害 → 元素触发 → 最终伤害 → 溅射 → 击杀叠层
      *
-     * <p>⭐ modules 只解析一次；元素池只构建一次（{@link WeaponElementSystem.ElementPool}）。</p>
+     * <p>modules 只解析一次；元素池只构建一次（{@link WeaponElementSystem.ElementPool}）。</p>
      *
-     * <p>⭐ 爆炸半径溅射在远程分支只做半径计算并登记，实际结算延后到
+     * <p>爆炸半径溅射在远程分支只做半径计算并登记，实际结算延后到
      * {@code evt.setAmount(totalDamage)} 之后，以主目标最终伤害为基数。</p>
      *
-     * <p>⭐ 魔法伤害：由 {@link MagicDamageClassifier#isMagic} 判定，是独立于近战/远程的叠加层：
+     * <p>魔法伤害：由 {@link MagicDamageClassifier#isMagic} 判定，是独立于近战/远程的叠加层：
      * 先照常走近战或远程分支，判定为魔法再额外加 {@code magicDamage}。</p>
      *
      * @param attackStrength 近战蓄力比例（0.0 ~ 1.0），远程恒为 1.0
@@ -720,14 +720,14 @@ public class WeaponCombatHandler {
         double criticalStrikeMultiplier = WeaponModuleHandler.getBaseAttribute(weapon, "criticalStrikeMultiplier");
         double triggerChance = WeaponModuleHandler.getBaseAttribute(weapon, "triggerChance") * 100;
 
-        // ⭐ 待结算的溅射半径，<=1 表示本次不溅射（实际结算见方法末尾）
+        // 待结算的溅射半径，<=1 表示本次不溅射（实际结算见方法末尾）
         double splashRange = 0;
 
         if (isMelee) {
             criticalStrikeProbability *= attackStrength;
         }
 
-        // ⭐ modules 只解析一次，元素池构建与后续复用共享
+        // modules 只解析一次，元素池构建与后续复用共享
         List<ItemStack> modules = WeaponModuleHandler.getModules(weapon);
         HashMap<String, Double> attributes = WeaponModuleHandler.getCachedWeaponAttributes(attacker, weapon);
 
@@ -743,7 +743,7 @@ public class WeaponCombatHandler {
         if (damageSource.getDirectEntity() == attacker) {
             baseDamage += attributes.getOrDefault("meleeDamage", 0.0);
 
-            // ⭐ 暴击率：冲刺时叠加「冲刺近战暴击率」词条
+            // 暴击率：冲刺时叠加「冲刺近战暴击率」词条
             //    原实现错误地把 dashMeleeCriticalStrikeProbability 加到了暴击伤害上，此处归位
             if (attacker.isSprinting()) {
                 criticalStrikeProbability *= (1 + attributes.getOrDefault("meleeCriticalStrikeProbability", 0.0)
@@ -758,7 +758,7 @@ public class WeaponCombatHandler {
                 criticalStrikeMultiplier *= (1 + stackValue * stacks);
             }
 
-            // ⭐ 暴击伤害：只受 meleeCriticalStrikeMultiplier 影响，不再混入冲刺暴击率词条
+            // 暴击伤害：只受 meleeCriticalStrikeMultiplier 影响，不再混入冲刺暴击率词条
             criticalStrikeMultiplier *= (1 + attributes.getOrDefault("meleeCriticalStrikeMultiplier", 0.0));
         } else if (damageSource.getEntity() == attacker) {
             baseDamage += attributes.getOrDefault("remoteDamage", 0.0);
@@ -786,7 +786,7 @@ public class WeaponCombatHandler {
 
             if (!damageSource.is(DamageTypeTags.IS_EXPLOSION)) {
                 if (range > 1) {
-                    // ⭐ 此处只登记半径：evt.getAmount() 此刻仍是未经模组加成的原始伤害，
+                    // 此处只登记半径：evt.getAmount() 此刻仍是未经模组加成的原始伤害，
                     //    直接结算会得到远低于主目标的溅射值，必须等最终伤害算完再执行
                     splashRange = range;
                 }
@@ -838,7 +838,7 @@ public class WeaponCombatHandler {
         baseDamage *= charge;
         elementDamage *= charge;
 
-        // ⭐ 真实伤害：在暴击计算前捕获基伤快照
+        // 真实伤害：在暴击计算前捕获基伤快照
         double trueBulletBaseDamage = baseDamage;
 
         // ========== 暴击计算 ==========
@@ -919,16 +919,16 @@ public class WeaponCombatHandler {
             triggerChance *= (1 + stackValue * stacks);
         }
 
-        // ⭐ 元素触发硬上限（单次命中）：所有加成乘算完成后，强制截断
+        // 元素触发硬上限（单次命中）：所有加成乘算完成后，强制截断
         triggerChance = Math.min(triggerChance, MAX_ELEMENT_TRIGGER_PER_HIT * 100.0);
 
         Set<String> triggeredElements = new LinkedHashSet<>();
 
-        // ⭐ 元素池只构建一次；池为空时整段触发逻辑直接跳过
+        // 元素池只构建一次；池为空时整段触发逻辑直接跳过
         if (triggerChance > 0) {
             WeaponElementSystem.ElementPool elementPool = WeaponElementSystem.buildElementPool(weapon, modules);
             if (!elementPool.isEmpty()) {
-                // ⭐ 先把本次命中要掷的总次数算清（整数部分 + 小数部分的一次概率掷），
+                // 先把本次命中要掷的总次数算清（整数部分 + 小数部分的一次概率掷），
                 //    再一次性向单 tick 全局预算申请。若改成逐次申请，同一 tick 的前几个目标
                 //    会把预算抢光，后面的目标一次都触发不了，群体命中的表现会变得极不稳定。
                 int rolls;
@@ -954,16 +954,16 @@ public class WeaponCombatHandler {
         totalDamage = Math.max(totalDamage, 0);
         evt.setAmount(totalDamage);
 
-        // ⭐ 提前取得伤害数字接收者，溅射与主目标登记共用同一个引用
+        // 提前取得伤害数字接收者，溅射与主目标登记共用同一个引用
         ServerPlayer displayTarget = findDamageDisplayTarget(attacker);
 
-        // ⭐ 爆炸半径溅射：以主目标最终伤害为基数，自动继承远程面板与暴击结果
+        // 爆炸半径溅射：以主目标最终伤害为基数，自动继承远程面板与暴击结果
         applySplashDamage(attacker, hurter, splashRange, totalDamage, colorCode, displayTarget);
 
-        // ⭐ 真实伤害：普通伤害结算后额外结算真伤
+        // 真实伤害：普通伤害结算后额外结算真伤
         applyTrueBulletDamage(attacker, hurter, damageSource, attributes, originalDamage, trueBulletBaseDamage, baneMultiplier);
 
-        // ⭐ 净化驱散：攻击命中时按概率移除目标增益效果
+        // 净化驱散：攻击命中时按概率移除目标增益效果
         applyPurgeBuff(attacker, hurter, attributes);
 
         // ========== 武器击杀叠层累加（击杀检测）==========
@@ -971,10 +971,10 @@ public class WeaponCombatHandler {
             addWeaponKillStacks((Player) attacker, attributes);
         }
 
-        // ⭐ 处决：处决阈值 + 秒杀概率，延迟1tick执行
+        // 处决：处决阈值 + 秒杀概率，延迟1tick执行
         applyExecuteEffects(attacker, hurter, attributes, isPlayer, totalDamage);
 
-        // ⭐ 登记伤害数字，以本次 DamageSource 对象作为配对凭据。
+        // 登记伤害数字，以本次 DamageSource 对象作为配对凭据。
         //    最终伤害 ≤ 0 时原版会在 actuallyHurt 里提前返回、根本走不到最终伤害回调，登记了只会白白作废，故跳过
         if (displayTarget != null && totalDamage > 0) {
             DamageDisplayTracker.register(hurter, damageSource, displayTarget, colorCode,
@@ -983,10 +983,10 @@ public class WeaponCombatHandler {
         }
     }
 
-    // ========== ⭐ 爆炸半径溅射 / Bursting Radius Splash ==========
+    // ========== 爆炸半径溅射 / Bursting Radius Splash ==========
 
     /**
-     * ⭐ 爆炸半径溅射结算
+     * 爆炸半径溅射结算
      *
      * <p>以主目标的<b>最终伤害</b>（{@code evt.setAmount} 写入的值）乘
      * {@link #SPLASH_DAMAGE_RATIO} 作为溅射伤害，因此自动继承远程面板加成、
@@ -1002,7 +1002,7 @@ public class WeaponCombatHandler {
      * 伤害数字复用主目标的暴击颜色码，故溅射数字与主目标同色；
      * 因不触发元素，数字后不带元素图标。</p>
      *
-     * <p>⭐ 每个溅射目标都走 {@link DamageDisplayTracker#hurtWithDisplay}：登记 → {@code hurt} → 未消费即撤回。
+     * <p>每个溅射目标都走 {@link DamageDisplayTracker#hurtWithDisplay}：登记 → {@code hurt} → 未消费即撤回。
      * 连射时溅射目标大多处于受击无敌，{@code hurt} 会直接作废；
      * 旧实现在这里留下残留条目，导致该目标之后的数字整体错位，现已杜绝。</p>
      *
@@ -1154,7 +1154,7 @@ public class WeaponCombatHandler {
     /**
      * 真实伤害（true_bullet）结算。
      *
-     * <p>⭐ 伤害数字改为实测：扣血前记下血量，扣完显示实际掉了多少
+     * <p>伤害数字改为实测：扣血前记下血量，扣完显示实际掉了多少
      * （见 {@link DamageDisplayTracker#resolveDirectLoss}）。
      * Boss 锁血、伤害上限、其他模组拦截 {@code setHealth} 时数字如实变小或不显示；
      * 目标因此死亡时显示完整预算值。真伤直接改血量、不经过护盾，因此不带护盾图标。</p>
@@ -1175,7 +1175,7 @@ public class WeaponCombatHandler {
         double trueBulletValue = attributes.getOrDefault("true_bullet", 0.0);
         if (trueBulletValue <= 0) { return; }
 
-        // ⭐ 真实子弹仅对 TACZ 子弹命中生效
+        // 真实子弹仅对 TACZ 子弹命中生效
         if (!isTaczBullet(damageSource)) { return; }
 
         float trueDamage = (float) (originalDamage * trueBulletBaseDamage * baneMultiplier * trueBulletValue);
@@ -1191,7 +1191,7 @@ public class WeaponCombatHandler {
                 this.cancel();
                 if (hurter.isDeadOrDying()) { return; }
 
-                // ⭐ 先记下扣血前的血量，扣完再测实际掉了多少
+                // 先记下扣血前的血量，扣完再测实际掉了多少
                 float healthBefore = hurter.getHealth();
                 if (healthBefore - finalTrueDamage > 0.01f) {
                     LivingEntityUtil.damageHealthDirectly(hurter, finalTrueDamage);
@@ -1318,7 +1318,7 @@ public class WeaponCombatHandler {
         }.start();
     }
 
-    // ========== ⭐ 元素 DOT 去重注册表 / Element DOT Deduplication Registry ==========
+    // ========== 元素 DOT 去重注册表 / Element DOT Deduplication Registry ==========
 
     /**
      * 元素 DOT 单轮伤害执行体
@@ -1341,7 +1341,7 @@ public class WeaponCombatHandler {
     }
 
     /**
-     * ⭐ 元素 DOT 去重注册表：按「实体 + 元素」合并持续伤害
+     * 元素 DOT 去重注册表：按「实体 + 元素」合并持续伤害
      *
      * <p><b>要解决的问题。</b>元素系统此前每触发一次 fire / poison / slash 就
      * {@code new SynchronizationTask(20, 20)} 起一个<b>独立</b>任务，完全不去重，后果有两层：</p>
@@ -1450,7 +1450,7 @@ public class WeaponCombatHandler {
 
             DotState existing = perEntity.get(element);
             if (existing != null) {
-                // ⭐ 去重核心：取 max + 刷新为满，不新起任务
+                // 去重核心：取 max + 刷新为满，不新起任务
                 if (damage > existing.damage) {
                     existing.damage = damage;
                 }
@@ -1579,7 +1579,7 @@ public class WeaponCombatHandler {
     }
 
     /**
-     * ⭐ 实体死亡时清空其元素 DOT
+     * 实体死亡时清空其元素 DOT
      *
      * <p>这是防泄漏的主路径：怪物几乎总在 DOT 跑完前被打死，
      * 任务自身的轮数递减逻辑永远走不到头。LOWEST 优先级，让其它模组的死亡处理先跑完。</p>
@@ -1590,12 +1590,12 @@ public class WeaponCombatHandler {
         if (entity == null || entity.level().isClientSide()) {
             return;
         }
-        // ⭐ 只清「死亡即终止」的条目：毒气云要在锚点死后继续伤害圈内其它实体
+        // 只清「死亡即终止」的条目：毒气云要在锚点死后继续伤害圈内其它实体
         ElementDotRegistry.clearOnDeath(entity);
     }
 
     /**
-     * ⭐ 实体离开世界时清空其元素 DOT（兜底）
+     * 实体离开世界时清空其元素 DOT（兜底）
      *
      * <p>覆盖死亡之外的移除场景：区块卸载、指令 kill、跨维度传送、实体 discard。</p>
      */
@@ -1619,7 +1619,7 @@ public class WeaponCombatHandler {
         LivingEntity entity = evt.getEntity();
         if (entity.level().isClientSide()) return;
         if (!entity.isAlive()) return;
-        // ⭐ 修复 4：用「游戏时间 + 实体 ID」错开，避免所有持开光武器的实体挤在同一个 tick 里算属性
+        // 修复 4：用「游戏时间 + 实体 ID」错开，避免所有持开光武器的实体挤在同一个 tick 里算属性
         if (Math.floorMod(entity.level().getGameTime() + entity.getId(), 20L) != 0) return;
 
         ItemStack weapon = entity.getMainHandItem();
@@ -1726,7 +1726,7 @@ public class WeaponCombatHandler {
         int extraUpdates = (int) firingRate;
         for (int i = 0; i < extraUpdates; i++) { LivingEntityUtil.updateHeld(entity); }
         double fractionalPart = firingRate - extraUpdates;
-        // ⭐ 修复 2：本方法客户端、服务端都在跑（客户端跑是为了蓄力动画跟上实际进度）。
+        // 修复 2：本方法客户端、服务端都在跑（客户端跑是为了蓄力动画跟上实际进度）。
         //    小数部分原来用 RandomUtil 掷骰，两端各掷各的，动画和实际进度会对不上；
         //    现改为按「游戏时间 + 实体 ID」做确定性掷骰，两端同一 tick 得到同一结果
         if (fractionalPart > 0 && deterministicChance(entity, fractionalPart)) { LivingEntityUtil.updateHeld(entity); }

@@ -44,7 +44,7 @@ public final class OreDropRules {
     /**
      * 配置列表解析后的缓存；配置重载时置空
      *
-     * <p>⭐ 必须 {@code volatile}：{@link #invalidateCache()} 由 {@code ModConfigEvent} 触发，
+     * <p>必须 {@code volatile}：{@link #invalidateCache()} 由 {@code ModConfigEvent} 触发，
      * 而 Forge 对「运行期外部改动了 toml」派发的是<b>配置文件监视线程</b>；
      * 读这两个缓存的 {@link #isApplicableOre} 却跑在服务端主线程（挖矿时的战利品结算）。
      * 两个线程之间没有可见性保证的话，表现就是「改完配置保存了，游戏里不生效」。</p>
@@ -117,7 +117,7 @@ public final class OreDropRules {
 
     // ==================== 配置列表解析 ====================
 
-    // ⭐ 先读进局部变量再判空：字段是 volatile，若直接「判一次、再读一次」，
+    // 先读进局部变量再判空：字段是 volatile，若直接「判一次、再读一次」，
     //    两次读之间正好被配置监视线程 invalidateCache() 置空，就会返回 null。
     private static Set<ResourceLocation> whitelist() {
         Set<ResourceLocation> cached = whitelistCache;

@@ -13,8 +13,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 安魂矿石（1.20.1版本，业务逻辑100%不变）
- * Requiem Ore (1.20.1 version, business logic 100% unchanged)
+ * 安魂矿石
+ * Requiem Ore
  *
  * 属性保持不变：
  * Properties unchanged:
@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class RequiemOreBlock extends Block {
 
-    // 常量定义（业务逻辑100%保持不变）/ Constants (business logic 100% unchanged)
+    // 常量定义 / Constants
     private static final int MIN_EXP = 50;
     private static final int MAX_EXP = 100;
 
@@ -50,8 +50,8 @@ public class RequiemOreBlock extends Block {
     }
 
     /**
-     * 获取掉落物（业务逻辑100%不变：不掉落任何物品）
-     * Get drops (business logic 100% unchanged: no item drops)
+     * 获取掉落物（不掉落任何物品）
+     * Get drops (no item drops)
      */
     @Override
     public @NotNull List<ItemStack> getDrops(@NotNull BlockState state, LootParams.@NotNull Builder builder) {
@@ -64,11 +64,11 @@ public class RequiemOreBlock extends Block {
     /**
      * 挖掘经验：50-100，精准采集为 0
      *
-     * <p>⭐ 2026-09-25 修复：原先在 {@code spawnAfterBreak} 里判 {@code dropExperience} 再自己 popExperience。
+     * <p>2026-09-25 修复：原先在 {@code spawnAfterBreak} 里判 {@code dropExperience} 再自己 popExperience。
      * 但 Forge 1.20.1 玩家挖方块走的是 {@code playerDestroy → dropResources(..., false)}，这个参数恒为 false，
      * 经验改由 {@code ServerPlayerGameMode.destroyBlock} 按 {@code BreakEvent} 里的数值掉 ——
      * 而事件的初值来自本方法，没覆写就是 0。结果玩家挖安魂矿石一点经验都没有，
-     * 灭骸附魔的「经验 × expMultiplier」乘的也是 0（正式服 Tenet 同一条路径，已核对源码）。</p>
+     * 灭骸附魔的「经验 × expMultiplier」乘的也是 0（Mohist 系混合端走的也是同一条路径，已核对源码）。</p>
      *
      * <p>改成覆写本方法后：玩家挖掘走 BreakEvent（灭骸附魔在那里乘倍率）；
      * 其它需要掉经验的破坏走 Forge 基类的 {@code spawnAfterBreak → dropXpForBlock}，同样读这里。

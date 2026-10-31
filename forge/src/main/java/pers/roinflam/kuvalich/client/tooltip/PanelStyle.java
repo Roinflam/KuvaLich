@@ -20,7 +20,7 @@ public final class PanelStyle {
     /**
      * 面板符号
      *
-     * <p>⭐ 这几个字符靠原版的 unifont 回退渲染（项目里已在用的 █ ░ ● ○ 同理）。
+     * <p>这几个字符靠原版的 unifont 回退渲染（项目里已在用的 █ ░ ● ○ 同理）。
      * 整合包若自带字体包并去掉了 unifont 回退，它们会变成豆腐块 ——
      * 所以提供 ASCII 备选，由 {@code panel.symbolStyle} 配置切换。</p>
      */
@@ -71,7 +71,7 @@ public final class PanelStyle {
     /**
      * 按属性 key 查短名，三级回落
      *
-     * <p>⭐ 回落链必须包含 {@code kuvaweapon.item_attribute_type.<key>}：
+     * <p>回落链必须包含 {@code kuvaweapon.item_attribute_type.<key>}：
      * {@code meleeCriticalStrikeProbability} 这类「成对 spec 的输入 key」
      * 以及整合包自定义词条，在 {@code kuvalich.attr.short.*} 和 {@code item.module.*}
      * 两个命名空间里都没有条目，只有这个命名空间有。
@@ -121,7 +121,7 @@ public final class PanelStyle {
     public static Component progress(int current, int max) {
         int cur = Math.max(0, current);
         int cap = Math.max(1, max);
-        // ⚠️ 分母来自客户端本地配置（ModConfig 是 COMMON，不随服同步），
+        // 注意：分母来自客户端本地配置（ModConfig 是 COMMON，不随服同步），
         //    服主改过上限时可能出现 cur > cap，这里钳制以免画出 8/5 这种自相矛盾的进度。
         cur = Math.min(cur, cap);
 
@@ -146,7 +146,7 @@ public final class PanelStyle {
                     .withStyle(PanelPalette.style(PanelPalette.DOT_ON)));
         }
         if (empty.length() > 0) {
-            // ⭐ 空心圆点要能看见「还剩几格」，原版 DARK_GRAY 在深色背景上直接消失
+            // 空心圆点要能看见「还剩几格」，原版 DARK_GRAY 在深色背景上直接消失
             bar.append(Component.literal(empty.toString())
                     .withStyle(PanelPalette.style(PanelPalette.DOT_OFF)));
         }

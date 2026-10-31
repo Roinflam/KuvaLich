@@ -27,7 +27,7 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  * 青铜级武器模组（1.20.1版本）
  * Common (Bronze) tier weapon module (1.20.1 version)
  *
- * ⭐ 第六批新增 · 通用冷门组合（铜卡）：
+ * 第六批新增 · 通用冷门组合（铜卡）：
  *    专门补现有体系的冷门/空白搭配，不与已有卡重复、不引入进阶机制（处决/真伤等留给金&Prime）。
  *    覆盖方向：
  *      - impact 控场（碎骨打击 / 震退之握 / 霰射冲击 / 双刃 / 钝击）
@@ -100,7 +100,7 @@ public class WeaponCommonModule extends AbstractWeaponModule {
      * 初始化模组列表
      */
     private static void initializeModuleList() {
-        // ⭐ 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
+        // 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
         //    填完之后在方法末尾一次性换掉静态字段的引用。
         //
         //    不能就地 clear() 再填：配置热重载后本方法会被再次调用，
@@ -240,7 +240,7 @@ public class WeaponCommonModule extends AbstractWeaponModule {
                 "kuvaweapon.item_module.ballistics_expert", "ballistics_expert",
                 new Object[]{"projectileDamage", 1.25001f});
 
-        // ========== ⭐ 第六批新增 · 通用冷门组合（铜卡）==========
+        // ========== 第六批新增 · 通用冷门组合（铜卡）==========
         // 填补 impact 控场、puncture 物理、triggerTime DOT 延长、bane 克星组合、
         // 暴击双词条、magicDamage 散件、dash 入门、横扫沾染等现有体系的冷门空白。
         // 不引入处决/真伤/净化等进阶机制（留给金&Prime），数值保持铜卡入门档。
@@ -508,9 +508,9 @@ public class WeaponCommonModule extends AbstractWeaponModule {
                     "kuvaweapon.item_module.aim_training", "aim_training",
                     new Object[]{"aim_time", 0.20001f, "accuracy", 0.20001f});
 
-            // ===== ⭐ 第六批新增 · TACZ 冷门组合（铜卡）=====
+            // ===== 第六批新增 · TACZ 冷门组合（铜卡）=====
             // 补「枪伤×元素 / 爆头×元素 / 精准×元素 / 速瞄×触发 / 续航×火力」等全空搭配。
-            // gun_damage 走独立乘区，配低值元素(0.6)不超模；枪械补强符合整合包定位。
+            // gun_damage 走独立乘区，配低值元素(0.6)不超模。
 
             // 燃烧弹 —— 枪械伤害120% + 火焰60%（枪伤×元素，火）
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_COMMON_MODULE.get(), null, itemStackList,
@@ -605,7 +605,7 @@ public class WeaponCommonModule extends AbstractWeaponModule {
         items.addAll(itemStackList);
         CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, Rarity.COMMON);
 
-        // ⭐ 创造模式模组默认满级
+        // 创造模式模组默认满级
         if (ModuleLevelHelper.isLevelSystemEnabled()) {
             for (ItemStack stack : items) {
                 if (!AbstractModule.isRandom(stack)) {
@@ -631,7 +631,7 @@ public class WeaponCommonModule extends AbstractWeaponModule {
 
             ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
 
-// ⭐ 模组等级系统：赋予揭示等级
+// 模组等级系统：赋予揭示等级
             ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);

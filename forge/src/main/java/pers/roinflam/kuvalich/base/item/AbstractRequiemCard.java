@@ -16,8 +16,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * 安魂卡片基类（1.20.1版本，业务逻辑100%不变）
- * Requiem Card Base Class (1.20.1 version, business logic 100% unchanged)
+ * 安魂卡片基类
+ * Requiem Card Base Class
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public abstract class AbstractRequiemCard extends Item {
@@ -30,8 +30,8 @@ public abstract class AbstractRequiemCard extends Item {
     }
 
     /**
-     * 获取指定ID的安魂卡片（业务逻辑100%不变）
-     * Get requiem card by ID (business logic 100% unchanged)
+     * 获取指定ID的安魂卡片
+     * Get requiem card by ID
      */
     public static Item getCard(int id) {
         // 注意：这里需要从KuvaLichItems获取，需要确保KuvaLichItems已正确定义
@@ -60,8 +60,8 @@ public abstract class AbstractRequiemCard extends Item {
     }
 
     /**
-     * 根据耐久度返回稀有度（业务逻辑100%不变）
-     * Get rarity based on durability (business logic 100% unchanged)
+     * 根据耐久度返回稀有度
+     * Get rarity based on durability
      */
     @Override
     public @Nonnull Rarity getRarity(@Nonnull ItemStack stack) {

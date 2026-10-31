@@ -5,12 +5,12 @@ import java.util.Locale;
 /**
  * 面板数值的格式化方式
  *
- * <p>⭐ 本枚举收敛了以前散在三个文件里的重复格式化逻辑：
+ * <p>本枚举收敛了以前散在三个文件里的重复格式化逻辑：
  * {@code execute_chance} 的「保留三位小数再去尾零」在
  * {@code WeaponModuleHandler}、{@code AbstractWeaponModule}、{@code ExtraSlotTooltipHelper}
  * 里各写了一份，改一处另外两处不会跟着变。</p>
  *
- * <p>⭐ 一律显式传 {@link Locale#ROOT}：原先的 {@code String.format("%.3f", v)}
+ * <p>一律显式传 {@link Locale#ROOT}：原先的 {@code String.format("%.3f", v)}
  * 用的是默认 Locale，在德语 / 法语等把小数点写成逗号的区域会产出 {@code 0,010}，
  * 后面那句 {@code replaceAll("0+$", "").replaceAll("\\.$", "")} 就去不掉尾零，
  * 也可能把逗号留在末尾。</p>
@@ -69,7 +69,7 @@ public enum ValueFormat {
     /**
      * 增量半径（米）：{@code +1.0m}
      * <p>语义是「加了多少」，公式 {@code v * 2}，对应额外槽位的口径。</p>
-     * <p>⭐ 与 {@link #METERS_ABS} 是两种不同的语义，**不要统一**：
+     * <p>与 {@link #METERS_ABS} 是两种不同的语义，**不要统一**：
      * 面板要回答「这把武器炸多大」，额外槽位要回答「这身装备加了多少」。
      * 强行统一会让其中一边的数字变错。</p>
      */

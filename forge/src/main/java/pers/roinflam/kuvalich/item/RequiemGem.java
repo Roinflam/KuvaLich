@@ -16,8 +16,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * 安魂宝石（1.20.1版本，业务逻辑100%不变）
- * Requiem Gem (1.20.1 version, business logic 100% unchanged)
+ * 安魂宝石
+ * Requiem Gem
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class RequiemGem extends Item {

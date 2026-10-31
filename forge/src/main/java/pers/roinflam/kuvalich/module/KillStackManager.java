@@ -13,8 +13,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 击杀叠加效果管理器（1.20.1版本，业务逻辑100%不变）
- * Kill Stack Manager (1.20.1 version, business logic 100% unchanged)
+ * 击杀叠加效果管理器
+ * Kill Stack Manager
  */
 @Mod.EventBusSubscriber
 public class KillStackManager {
@@ -176,7 +176,7 @@ public class KillStackManager {
     private static final Map<UUID, Map<StackType, StackData>> PLAYER_STACKS = new ConcurrentHashMap<>();
 
     /**
-     * ⭐ 武器类叠层的固定顺序表：同步包按这个顺序打包 / 解包，两端必须一致，
+     * 武器类叠层的固定顺序表：同步包按这个顺序打包 / 解包，两端必须一致，
      * 所以只能追加、不能重排或删除。
      */
     public static final StackType[] WEAPON_STACK_TYPES = {
@@ -191,7 +191,7 @@ public class KillStackManager {
     };
 
     /**
-     * ⭐ 客户端镜像：本地玩家的武器叠层数量，由 {@code WarframeModuleSyncPacket} 每次同步时覆盖。
+     * 客户端镜像：本地玩家的武器叠层数量，由 {@code WarframeModuleSyncPacket} 每次同步时覆盖。
      * key = 本地玩家 UUID（只会有本地玩家一个条目），value 按 {@link #WEAPON_STACK_TYPES} 顺序排列。
      *
      * <p>以前客户端拿不到叠层数据，射速 / 多重射击等在客户端一律按 0 层算，
@@ -202,7 +202,7 @@ public class KillStackManager {
     /**
      * 该玩家是否是本客户端的本地玩家（仅在客户端调用有意义）
      *
-     * <p>⭐ 用「镜像里有没有这个 UUID」来判断，而不是碰 {@code Minecraft.getInstance()} ——
+     * <p>用「镜像里有没有这个 UUID」来判断，而不是碰 {@code Minecraft.getInstance()} ——
      * 本类是双端共用的，不能引用任何客户端专用类。
      * {@code CLIENT_WEAPON_STACKS} 只会有本地玩家一个条目
      * （{@link #onClientSyncReceived} 每次同步先 clear 再 put），所以这个判断是准的。</p>
@@ -241,7 +241,7 @@ public class KillStackManager {
         if (player == null) {
             return 0;
         }
-        // ⭐ 客户端：武器类叠层读本类的镜像，战甲类转发给 WarframeModuleHandler 的镜像。
+        // 客户端：武器类叠层读本类的镜像，战甲类转发给 WarframeModuleHandler 的镜像。
         //
         //    改造前这里遍历完 WEAPON_STACK_TYPES 找不到就 `return 0` —— 传战甲类型进来会
         //    **静默返回 0 且不报错**。这类 bug 的现象是「数字不对」但没有任何异常线索，
@@ -257,7 +257,7 @@ public class KillStackManager {
                     }
                 }
             }
-            // ⭐ 战甲类镜像是一个单例数组（不按 UUID 索引），里面只可能是本地玩家的数据。
+            // 战甲类镜像是一个单例数组（不按 UUID 索引），里面只可能是本地玩家的数据。
             //    不加这道判定的话，传其它玩家进来会拿到本地玩家的层数，
             //    与上面武器类分支「别的玩家返回 0」的语义不一致。
             if (!isLocalPlayer(player)) {
@@ -276,7 +276,7 @@ public class KillStackManager {
     }
 
     /**
-     * ⭐ 服务端：按 {@link #WEAPON_STACK_TYPES} 顺序收集玩家当前的武器叠层数量（供同步包打包）
+     * 服务端：按 {@link #WEAPON_STACK_TYPES} 顺序收集玩家当前的武器叠层数量（供同步包打包）
      *
      * @param player 服务端玩家
      * @return 各武器叠层数量，顺序与 {@link #WEAPON_STACK_TYPES} 一致
@@ -293,7 +293,7 @@ public class KillStackManager {
     }
 
     /**
-     * ⭐ 客户端：收到同步包时覆盖本地玩家的武器叠层镜像
+     * 客户端：收到同步包时覆盖本地玩家的武器叠层镜像
      *
      * @param localPlayerId 本地玩家 UUID
      * @param weaponStacks  服务端发来的数量数组，顺序与 {@link #WEAPON_STACK_TYPES} 一致；为 null 时清空
@@ -312,7 +312,7 @@ public class KillStackManager {
     }
 
     /**
-     * ⭐ 客户端：清空叠层镜像（退出世界 / 断线时调用）
+     * 客户端：清空叠层镜像（退出世界 / 断线时调用）
      */
     public static void clearClientStacks() {
         CLIENT_WEAPON_STACKS.clear();
@@ -344,7 +344,7 @@ public class KillStackManager {
     /**
      * 玩家退出时清空其叠层
      *
-     * <p>⭐ 改造前 {@link #clearStacks} 全项目**零调用**，{@code PLAYER_STACKS}
+     * <p>改造前 {@link #clearStacks} 全项目**零调用**，{@code PLAYER_STACKS}
      * 里带着非零层数下线的玩家条目永远不会被移除。后果有两层：</p>
      * <ul>
      *   <li><b>玩法</b>（主要）：刷到满层 → 下线 → 隔天上线，头几十秒仍带着满层伤害 /

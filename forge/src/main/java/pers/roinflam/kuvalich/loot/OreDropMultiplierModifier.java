@@ -39,8 +39,8 @@ import java.util.function.Supplier;
  *
  * <p><b>与战利品掉落倍率的关系</b>：{@code itemDropMultiplier} 挂在
  * {@code LivingDropsEvent} 上只管生物掉落，两者作用域不相交，各乘各的。
- * 世界等级模组的倍率同样只挂 {@code LivingDropsEvent}（已核实其字节码里
- * 没有任何方块破坏或战利品表钩子），所以挖矿这条路上目前没有第二个乘区。</p>
+ * 常见的掉落倍率模组同样只挂 {@code LivingDropsEvent}（一般不碰
+ * 方块破坏和战利品表），所以挖矿这条路上一般没有第二个乘区。</p>
  *
  * @author RoinFlam
  */
@@ -61,7 +61,7 @@ public class OreDropMultiplierModifier extends LootModifier {
             return loot;
         }
 
-        // ⭐ 精准采集直接放行。挖矿倍率放大的是「矿产」，精准采集掉的是矿石方块本体，
+        // 精准采集直接放行。挖矿倍率放大的是「矿产」，精准采集掉的是矿石方块本体，
         //    放大它就是摆回去再挖的永动机。OreDropRules.isMultipliableDrop 里还有一道
         //    「掉落物就是方块自己」的判定兜底，两道都留着是因为有些模组的精准采集
         //    不走原版战利品表的那个分支。
@@ -75,7 +75,7 @@ public class OreDropMultiplierModifier extends LootModifier {
             return loot;
         }
 
-        // ⭐ 必须是玩家亲手挖的。TNT、爬行者、其它模组的区域破坏都拿不到 THIS_ENTITY
+        // 必须是玩家亲手挖的。TNT、爬行者、其它模组的区域破坏都拿不到 THIS_ENTITY
         //    或不是玩家 —— 放行它们，否则可以用炸药刷矿。
         Entity breaker = context.getParamOrNull(LootContextParams.THIS_ENTITY);
         if (!(breaker instanceof Player player)) {
@@ -128,7 +128,7 @@ public class OreDropMultiplierModifier extends LootModifier {
      */
     private static void addMultiplied(ObjectArrayList<ItemStack> out, ItemStack stack,
                                       double multiplier, LootContext context) {
-        // ⭐ 进位要对「数量」做，不能对「倍率」做。
+        // 进位要对「数量」做，不能对「倍率」做。
         //    对倍率取整的话，+30% 会变成「70% 概率原样、30% 概率翻倍」——
         //    期望值虽然一样，方差却大得多，手感是「大部分时候没反应，偶尔爆一堆」。
         //    对数量取整则是 3 × 1.3 = 3.9 → 九成出 4 个，稳定得多，

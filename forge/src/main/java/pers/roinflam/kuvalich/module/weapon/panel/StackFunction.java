@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * 击杀叠层如何抬高一条面板属性
  *
- * <p>⭐ 这里的每一条公式都必须与 {@code WeaponCombatHandler.applyKillStackEffects}
+ * <p>这里的每一条公式都必须与 {@code WeaponCombatHandler.applyKillStackEffects}
  * 以及散落在 {@code :529 / :550 / :674} 的三处叠层计算**逐字对应**。
  * 面板一旦自己重写一份加法，就会重演项目里已经发生过一次的
  * 「tooltip 自己累加、战斗走另一套」的分叉 bug。</p>

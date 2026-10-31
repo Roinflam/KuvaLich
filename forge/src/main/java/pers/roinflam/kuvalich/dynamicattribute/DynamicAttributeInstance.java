@@ -6,7 +6,7 @@ import javax.annotation.Nonnull;
  * 动态属性实例
  * 表示应用在某个实体上的具体动态属性
  *
- * <p>⭐ 本版移除了 {@code eventHandler} 字段与 setEventHandler / unregisterEventHandler：
+ * <p>本版移除了 {@code eventHandler} 字段与 setEventHandler / unregisterEventHandler：
  * 实例不再持有、也不再需要反注册任何 Forge 事件监听器，
  * 它现在是一个纯数据对象（等级 + 剩余时间 + tick 计数）。
  * 元素 debuff 的战斗效果见 {@code DynamicAttributes.ElementCombatHandler} 的静态监听器。</p>

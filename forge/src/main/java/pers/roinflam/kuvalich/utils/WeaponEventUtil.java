@@ -18,7 +18,7 @@ public class WeaponEventUtil {
      * 安全获取攻击者当前手持的武器
      * Safely get the weapon currently held by the attacker
      *
-     * ✅ 业务逻辑与1.12.2完全一致
+     * 与 1.12.2 版逻辑一致
      *
      * @param attacker 攻击者 / attacker
      * @return 武器物品堆栈，如果不满足条件返回null / weapon ItemStack, null if conditions not met
@@ -29,11 +29,11 @@ public class WeaponEventUtil {
             return null;
         }
 
-        // ✅ 1.20.1等价API：getUsedItemHand()
+        // 1.20.1等价API：getUsedItemHand()
         // 如果实体没有在使用物品，返回null（与1.12.2一致）
         InteractionHand activeHand = attacker.getUsedItemHand();
         if (activeHand == null) {
-            return null; // ✅ 与1.12.2逻辑一致：直接返回null
+            return null; // 与1.12.2逻辑一致：直接返回null
         }
 
         ItemStack itemStack = attacker.getItemInHand(activeHand);
@@ -44,7 +44,7 @@ public class WeaponEventUtil {
      * 检查攻击者是否正在使用指定的武器（严格模式：冷却必须=1）
      * Check if attacker is using specified weapon (strict mode: cooldown must = 1)
      *
-     * ✅ 业务逻辑与1.12.2完全一致
+     * 与 1.12.2 版逻辑一致
      */
     @Nullable
     public static ItemStack checkWeaponAttack(LivingEntity attacker, Class<? extends AbstractKuvaWeapon> weaponClass) {
@@ -55,7 +55,7 @@ public class WeaponEventUtil {
      * 检查攻击者是否正在使用指定的武器（自定义冷却阈值）
      * Check if attacker is using specified weapon (custom cooldown threshold)
      *
-     * ✅ 业务逻辑与1.12.2完全一致
+     * 与 1.12.2 版逻辑一致
      */
     @Nullable
     public static ItemStack checkWeaponAttack(LivingEntity attacker,
@@ -73,11 +73,11 @@ public class WeaponEventUtil {
 
         // 如果是玩家，检查攻击冷却
         if (attacker instanceof Player player) {
-            // ✅ 1.20.1等价API：getAttackStrengthScale
+            // 1.20.1等价API：getAttackStrengthScale
             // 参数0.5F是部分tick的插值（与1.12.2的getCooledAttackStrength(0)等价）
             float attackStrength = player.getAttackStrengthScale(0.5F);
 
-            // ✅ 业务逻辑完全一致
+            // 与 1.12.2 版逻辑一致
             if (cooldownThreshold >= 1.0) {
                 if (attackStrength < cooldownThreshold) {
                     return null;

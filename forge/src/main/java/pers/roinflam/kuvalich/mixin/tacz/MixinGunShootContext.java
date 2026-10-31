@@ -59,7 +59,7 @@ public abstract class MixinGunShootContext {
      * TACZ 自己的「这把枪最多装多少发」。
      *
      * <p>不要自己去调 {@code AttachmentDataUtils.getAmmoCountWithAttachment}：别的模组
-     *（比如 AlbionMastery 的弹匣特化）是挂在<b>这个方法内部的调用点</b>上改容量的，
+     *（比如别的模组的弹匣加成）是挂在<b>这个方法内部的调用点</b>上改容量的，
      * 绕过去算出来的是没算别人加成的数。满弹判定拿它当阈值，会从「只有第一发」
      * 变成「弹药量还很高时每一发都算第一发」，或者反过来永远判不到满弹。
      *

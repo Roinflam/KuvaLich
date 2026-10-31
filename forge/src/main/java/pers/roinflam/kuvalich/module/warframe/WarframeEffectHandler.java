@@ -46,27 +46,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * 战甲效果事件处理器
  * 负责护盾恢复、生命值/护甲系统、伤害抗性、跳跃增益、掉落物、治疗、挖掘速度等
  *
- * ⭐ 重构：使用 WarframeModuleSyncPacket 替代 DiggingSpeedPacket
+ * 重构：使用 WarframeModuleSyncPacket 替代 DiggingSpeedPacket
  *    客户端 BreakSpeed 恢复使用，与服务端使用完全相同的属性计算逻辑
  *    同步时机：登录、重生/维度传送、击杀叠层变化、每5tick脏检测
  *
- * ⭐ 第三批新词条：枪械战利品掉落（gun_loot_drop，武器专属，仅 TACZ 子弹击杀生效）在
+ * 第三批新词条：枪械战利品掉落（gun_loot_drop，武器专属，仅 TACZ 子弹击杀生效）在
  *    onLivingDrops 中加法叠加到战甲的 itemDropMultiplier 上，与战甲共享同一套配置生效倍率。
  *
- * ⭐ NPC 掉落放行：onLivingDrops 的实体类型判断新增自定义NPC模组(CustomNPCs)实体放行，
+ * NPC 掉落放行：onLivingDrops 的实体类型判断新增自定义NPC模组(CustomNPCs)实体放行，
  *    使战甲 itemDropMultiplier 与武器 gun_loot_drop 对 NPC 掉落同样生效。
  *    通过注册表命名空间判断（见 {@link #isCustomNpc}），不引用该模组的 Java 类，
  *    因此本项目无需额外声明对自定义NPC模组的编译期依赖。
  *
- * ⭐ 装备判断口径：onLivingDrops 的装备判断由「盔甲/剑/有阶工具」扩大为一切装备、武器、工具
- *    （见 {@link #isEquipment}），与 WorldLevel 模组 ModEvents、ServerManager 插件
- *    DropBonusListener 的判定口径完全一致，确保同一次击杀中三套掉落倍率对物品的取舍相同。
+ * 装备判断口径：onLivingDrops 的装备判断由「盔甲/剑/有阶工具」扩大为一切装备、武器、工具
+ *    （见 {@link #isEquipment}），与常见的掉落加成模组 / 插件口径一致，
+ *    确保同一次击杀中几套掉落倍率对物品的取舍相同。
  *
- * ⭐ 本次改动：onLivingDrops 不再把普通生物的掉落钳到「最多一组」，
+ * 本次改动：onLivingDrops 不再把普通生物的掉落钳到「最多一组」，
  *    超出堆叠上限的部分另起 ItemEntity 掉成好几堆；
  *    自定义NPC 的掉落仍照旧钳。
  *
- * <p>⭐ 并发安全修复：{@code cooldownTicks} 由 {@link HashMap} 改为
+ * <p>并发安全修复：{@code cooldownTicks} 由 {@link HashMap} 改为
  * {@link ConcurrentHashMap}，并加 {@code final} 防止被外部重新赋值。
  * 该 Map 是 public static 跨玩家共享的，在伤害事件与 tick 事件中并发读写，
  * 与 WeaponModuleHandler / WarframeModuleHandler 的属性缓存属于同一类风险：
@@ -78,7 +78,7 @@ public class WarframeEffectHandler {
 
     /**
      * 护盾恢复冷却（UUID → 剩余秒数）
-     * <p>⭐ 必须使用并发容器：public static 跨线程共享，且在多个事件处理器中并发读写。</p>
+     * <p>必须使用并发容器：public static 跨线程共享，且在多个事件处理器中并发读写。</p>
      */
     public static final Map<UUID, Integer> cooldownTicks = new ConcurrentHashMap<>();
 
@@ -109,7 +109,7 @@ public class WarframeEffectHandler {
         }
     }
 
-    // ========== ⭐ 同步触发点：登录 ==========
+    // ========== 同步触发点：登录 ==========
 
     /**
      * 玩家登录时同步战甲模组数据到客户端
@@ -125,7 +125,7 @@ public class WarframeEffectHandler {
         });
     }
 
-    // ========== ⭐ 同步触发点：重生/维度传送 ==========
+    // ========== 同步触发点：重生/维度传送 ==========
 
     /**
      * 玩家 Clone 事件后同步战甲模组数据
@@ -148,7 +148,7 @@ public class WarframeEffectHandler {
      * 玩家受伤/攻击时的战甲属性处理
      * - 受伤时：应用各种抗性、设置护盾冷却
      * - 攻击时：设置护盾冷却、击杀检测
-     * ⭐ 击杀时增加叠层后立即同步到客户端
+     * 击杀时增加叠层后立即同步到客户端
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDamage(LivingDamageEvent evt) {
@@ -209,7 +209,7 @@ public class WarframeEffectHandler {
                 // 击杀检测
                 if (evt.getEntity().getHealth() - evt.getAmount() <= 0) {
                     WarframeModuleHandler.addWarframeKillStacks(player);
-                    // ⭐ 击杀叠层变化后立即同步到客户端
+                    // 击杀叠层变化后立即同步到客户端
                     if (player instanceof ServerPlayer serverPlayer) {
                         WarframeModuleSyncPacket.syncToPlayer(serverPlayer);
                     }
@@ -257,20 +257,20 @@ public class WarframeEffectHandler {
      * 当玩家击杀动物、怪物或自定义NPC(CustomNPCs)时，根据战甲模组的 itemDropMultiplier 属性
      * 和配置中的 itemDropEffectMultiplier 缩放掉落物数量。
      * <p>
-     * ⭐ 第三批新增：若击杀来源为 TACZ 枪械子弹，则把玩家主手武器的 gun_loot_drop 词条
+     * 第三批新增：若击杀来源为 TACZ 枪械子弹，则把玩家主手武器的 gun_loot_drop 词条
      *    加法叠加到 itemDropMultiplier 原始值上，与战甲共享同一套生效倍率与缩放逻辑。
      * <p>
-     * ⭐ 上次新增：自定义NPC不继承 Animal/Monster，通过 {@link #isCustomNpc} 按注册表命名空间
+     * 上次新增：自定义NPC不继承 Animal/Monster，通过 {@link #isCustomNpc} 按注册表命名空间
      *    "customnpcs" 判断后放行，使 itemDropMultiplier 与 gun_loot_drop 对 NPC 掉落同样生效。
      *    该判断置于 Animal/Monster 之后，普通生物走短路不产生额外注册表查询开销。
      * <p>
      * 缩放后倍率 &lt; 1 时按概率决定是否掉落（每组独立判定）。
      * <p>
-     * ⭐ 装备判断：装备判断改为调用 {@link #isEquipment}，覆盖范围由「盔甲/剑/有阶工具」
+     * 装备判断：装备判断改为调用 {@link #isEquipment}，覆盖范围由「盔甲/剑/有阶工具」
      *    扩大为一切装备、武器、工具。两个分支的语义保持不变——
      *    倍率 &lt;= 0 时装备仍被完整保留、只清除非装备掉落；倍率 &gt; 0 时装备不参与数量缩放。
      * <p>
-     * ⭐ 本次改动：「最多一组」上界已全面取消，普通生物（Animal / Monster）
+     * 本次改动：「最多一组」上界已全面取消，普通生物（Animal / Monster）
      *    与自定义NPC（{@link #isCustomNpc}）一视同仁：词条堆到多少就掉多少；
      *    现有 ItemEntity 装不下的余量另起新实体，每堆不超过该物品的堆叠上限，
      *    而不再把余量堆成一个超堆叠的实体。
@@ -278,13 +278,13 @@ public class WarframeEffectHandler {
      * @param evt 掉落事件
      */
     /**
-     * ⭐ 必须是 {@link EventPriority#LOWEST}：本方法要在<b>所有</b>改掉落数量的模组之后跑。
+     * 必须是 {@link EventPriority#LOWEST}：本方法要在<b>所有</b>改掉落数量的模组之后跑。
      *
-     * <p>整合包里的「世界等级」也有一条战利品倍率，挂在同一个事件上、优先级 NORMAL
-     * （已核实其字节码）。而本模组走 {@code @Mod.EventBusSubscriber} 在 mod 构造期注册，
-     * 世界等级在 {@code onServerStarting} 才注册 —— 同优先级下按注册顺序派发，
+     * <p>别的模组也常在同一个事件上挂一条战利品倍率，优先级 NORMAL、
+     * 在 {@code onServerStarting} 才注册。而本模组走 {@code @Mod.EventBusSubscriber} 在 mod 构造期注册，
+     * 同优先级下按注册顺序派发，
      * 结果是本模组<b>先</b>跑。先跑的一方无论怎么钳制总量，后跑的那一方都会在钳好的结果上
-     * 再乘一次，钳制形同虚设（10 腐肉 → 本模组夹到 64 → 世界等级 ×5 → 320）。
+     * 再乘一次，钳制形同虚设（10 腐肉 → 本模组夹到 64 → 别家 ×5 → 320）。
      * 改成 LOWEST 之后本模组最后跑，看到的是各家都乘完的结果，这时候钳才钳得住。</p>
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -299,7 +299,7 @@ public class WarframeEffectHandler {
                 // 从模组获取原始 itemDropMultiplier 值
                 double rawModuleValue = attributes.getOrDefault("itemDropMultiplier", 0.0);
 
-                // ⭐ 枪械战利品掉落：仅 TACZ 枪械击杀时叠加武器词条 gun_loot_drop（加法合并，与战甲共享配置倍率）
+                // 枪械战利品掉落：仅 TACZ 枪械击杀时叠加武器词条 gun_loot_drop（加法合并，与战甲共享配置倍率）
                 rawModuleValue += getGunLootDropValue(evt.getSource(), player);
 
                 // 应用配置中的生效倍率百分比
@@ -319,15 +319,15 @@ public class WarframeEffectHandler {
 
                 // 倍率 > 0 时：缩放掉落物数量（装备、武器、工具不参与缩放）
                 //
-                // ⭐ 不再设任何上界 —— 词条堆到多少就掉多少，
+                // 不再设任何上界 —— 词条堆到多少就掉多少，
                 //    超出堆叠上限的部分另起 ItemEntity 掉成好几堆（见下面的溢出分堆）。
                 //    自定义NPC 曾经钳到 max(介入前总量, 堆叠上限)，现在跟普通生物走同一条路：
                 //    两边都能超过一组。
-                //    代价是整合包里几套倍率会连乘：杀一只僵尸掉 10 腐肉，
-                //    世界等级 ×5 变 50，战甲再 ×10 就是 500，也就是 8 堆。
+                //    代价是装了别的掉落倍率时几套倍率会连乘：杀一只僵尸掉 10 腐肉，
+                //    别家 ×5 变 50，战甲再 ×10 就是 500，也就是 8 堆。
                 //    要收紧只能调配置里的 itemDropEffectMultiplier。
                 //
-                //    总量只能按「物品种类」汇总来算：先跑的模组（如世界等级）
+                //    总量只能按「物品种类」汇总来算：先跑的模组
                 //    会把超堆叠的量拆成好几个 ItemEntity 再塞回列表，
                 //    只看单个实体的 count 根本看不出总量。
 
@@ -352,7 +352,7 @@ public class WarframeEffectHandler {
 
                 // 把总量按原有实体逐个分配回去
                 //
-                // ⭐ 收尾必须<b>按物品种类各记各的</b>最后一个实体。
+                // 收尾必须<b>按物品种类各记各的</b>最后一个实体。
                 //    这里原先只用了一个 lastOf 变量，循环里被逐个覆盖，结束时它代表的是
                 //    「整批掉落里最后一个非装备实体」而不是「某一种物品的最后一个实体」。
                 //    一次掉出两种以上物品、而需要补余量的那种恰好不是最后遍历到的那种时，
@@ -368,14 +368,14 @@ public class WarframeEffectHandler {
                     int left = remaining.getOrDefault(item, 0);
                     int give = Math.min(left, dropStack.getMaxStackSize());
                     lastEntityOf.put(item, drop);
-                    // ⭐ 复制必须在 setCount 之前：这份原型要拿去做溢出分堆，
+                    // 复制必须在 setCount 之前：这份原型要拿去做溢出分堆，
                     //    改完 count 再复制就只能得到被截断后的数量，而且附魔/自定义名等 NBT 也要跟着走。
                     lastStackOf.put(item, dropStack.copy());
                     dropStack.setCount(give);
                     remaining.put(item, left - give);
                 }
 
-                // ⭐ 溢出分堆：现有实体按各自堆叠上限装不下的余量，另起新的 ItemEntity 掉出来，
+                // 溢出分堆：现有实体按各自堆叠上限装不下的余量，另起新的 ItemEntity 掉出来，
                 //    每堆都不超过该物品的堆叠上限。
                 //
                 //    原先是把余量全加到该物品最后一个实体上、让它的 count 超过堆叠上限
@@ -443,9 +443,9 @@ public class WarframeEffectHandler {
      * </ol>
      * 头颅、南瓜等可穿戴但属于战利品材料的物品不在此范围内，仍会正常参与缩放。
      * <p>
-     * 本方法与 WorldLevel 模组 ModEvents#isEquipment、ServerManager 插件
-     * DropBonusListener#isEquipment 的判定口径一致，修改其中一处时请同步其余两处，
-     * 否则同一次击杀中三套掉落倍率对物品的取舍会不同。
+     * 本方法与常见的掉落加成模组 / 插件用同一套判定口径，
+     * 改口径时要留意，
+     * 否则同一次击杀中几套掉落倍率对物品的取舍会不同。
      *
      * @param stack 掉落物品
      * @return true=是装备/武器/工具，跳过缩放
@@ -514,7 +514,7 @@ public class WarframeEffectHandler {
     /**
      * 挖掘速度事件处理
      *
-     * ⭐ 客户端/服务端使用完全相同的计算路径：
+     * 客户端/服务端使用完全相同的计算路径：
      *    getCachedAttributes → applyWarframeKillStackEffects → 读取 diggingSpeed
      *    客户端数据来源为 WarframeModuleSyncPacket 同步的缓存，
      *    与服务端使用相同计算逻辑，天然一致，不会回弹。
@@ -746,7 +746,7 @@ public class WarframeEffectHandler {
                             DynamicAttributeManager.apply(player, DynamicAttributes.NEGATIVE_REACH_DISTANCE.createInstance(6, level));
                         }
 
-                        // ⭐ 战甲模组同步（替代原 DiggingSpeedPacket）
+                        // 战甲模组同步（替代原 DiggingSpeedPacket）
                         // 定期脏检测：模组槽变更、击杀叠层衰减等变化会被捕获
                         // 击杀时的叠层增加已在 onLivingDamage 中立即同步
                         if (player instanceof ServerPlayer serverPlayer) {

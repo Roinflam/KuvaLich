@@ -44,8 +44,8 @@ import pers.roinflam.kuvalich.utils.InventoryUtil;
  * 4. 添加基础属性（未开光物品 + 裂罅碎块 → 开光物品）
  * 5. Forma洗面板（已开光非赤毒未锁定武器 + 塑形块 → 直接消耗并重新随机面板）
  * 6. TACZ枪械强化（TACZ枪械 + 玄骸之遗 → 永久增强基础伤害）
- * 7. ⭐ 模组升级（模组 + 内融核心 → 预览升级结果，取出时消耗材料）
- *    ⭐ 升级费用根据品质缩放：铜25% / 银50% / 金75% / Prime&裂罅100%
+ * 7. 模组升级（模组 + 内融核心 → 预览升级结果，取出时消耗材料）
+ *    升级费用根据品质缩放：铜25% / 银50% / 金75% / Prime&裂罅100%
  */
 public class RequiemEvolveMenu extends AbstractContainerMenu {
 
@@ -61,7 +61,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
     private boolean evolveMode = false;
     /** 裂罅循环预览模式 */
     private boolean cycleMode = false;
-    /** ⭐ 模组升级预览模式 */
+    /** 模组升级预览模式 */
     private boolean upgradeMode = false;
     /** 基础属性刚处理完标记（开光/Forma/TACZ强化，立即消耗型） */
     private boolean baseAttributeJustProcessed = false;
@@ -93,7 +93,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
     /**
      * 快速转移物品（Shift+点击）
      * <p>
-     * ⭐ 修复：材料类物品直接路由到材料槽，跳过武器槽判断。
+     * 修复：材料类物品直接路由到材料槽，跳过武器槽判断。
      */
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
@@ -112,7 +112,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
             boolean transferred = false;
 
             if (isMaterialOnly(slotStack)) {
-                // ⭐ 材料类物品直接进材料槽，跳过武器槽
+                // 材料类物品直接进材料槽，跳过武器槽
                 transferred = this.moveItemStackTo(slotStack, 1, 2, false);
             } else {
                 // 其他物品：先尝试武器槽，再尝试材料槽
@@ -451,7 +451,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
 
     /**
      * 将槽位中的物品返还给玩家
-     * ⭐ 使用 Inventory.add() 优先填充快捷栏，满了掉脚下
+     * 使用 Inventory.add() 优先填充快捷栏，满了掉脚下
      */
     private void returnSlotToPlayer(ItemStackHandler handler, int slot, Player player) {
         ItemStack stack = handler.getStackInSlot(slot);

@@ -22,16 +22,16 @@ import java.util.function.Supplier;
  *
  * 将玩家已发现的模组key集合同步到客户端，供图鉴界面渲染使用。
  *
- * ⭐ 发现记录键格式为 type:rarityOrder（如 "fury:1"、"fury:3"）
+ * 发现记录键格式为 type:rarityOrder（如 "fury:1"、"fury:3"）
  *    兼容旧存档：旧的纯 type 格式（如 "fury"）在查询时作为回退匹配。
  *
- * <p>⭐ 性能优化（本次）：新增<b>增量模式</b>。
+ * <p>性能优化（本次）：新增<b>增量模式</b>。
  * 原实现里 {@link #discoverAndSync} 每发现一个新模组就全量重发一次
  * （全模组数百条 key），玩家早期几乎每分钟都在触发。
  * 现在 {@code full=false} 的包只携带新增的 key，客户端做并集合并；
  * 登录 / 背包扫描等场景仍走 {@code full=true} 全量替换，保证状态权威。</p>
  *
- * <p>⭐ 安全：{@code decode} 中的条目数量与单键长度有硬上限，
+ * <p>安全：{@code decode} 中的条目数量与单键长度有硬上限，
  * 且该包在 {@code NetworkRegistryHandler} 中已显式声明为 S2C，
  * 客户端无法反向发包触发服务端解码。</p>
  */
@@ -53,7 +53,7 @@ public class ModuleDiscoveryPacket {
     private final Set<String> discoveredTypes;
 
     /**
-     * ⭐ 是否为全量包
+     * 是否为全量包
      * <p>true = 客户端整体替换缓存；false = 客户端与现有缓存做并集。</p>
      */
     private final boolean full;
@@ -169,7 +169,7 @@ public class ModuleDiscoveryPacket {
         merged.addAll(packet.discoveredTypes);
         clientDiscoveredCache = merged;
 
-        // ⭐ 增量包里此前没见过的，才是真正「刚刚解锁」的，给它们排一段解锁动画。
+        // 增量包里此前没见过的，才是真正「刚刚解锁」的，给它们排一段解锁动画。
         //    服务端可能把同一个 key 重复发过来（比如反复捡同一种卡），
         //    用 previous 做差集就能把重复的挡掉。
         boolean anyNew = false;
@@ -204,7 +204,7 @@ public class ModuleDiscoveryPacket {
     /**
      * 查询发现状态（免分配版）
      *
-     * <p>⭐ 为什么要这个重载：单参数版在「新格式未命中」时必然执行
+     * <p>为什么要这个重载：单参数版在「新格式未命中」时必然执行
      * {@code discoveryKey.substring(0, colonIdx)} 新建一个字符串再查旧格式缓存。
      * 而图鉴的标题计数会对<b>全量</b>条目（武器页 429 条）跑这个判定，
      * 未发现的条目越多分配越多 —— 发现率 12% 时每次全量扫描就是约 379 次
@@ -226,7 +226,7 @@ public class ModuleDiscoveryPacket {
         if (cache.contains(discoveryKey)) {
             return true;
         }
-        // ⭐ 旧存档兼容：新格式未命中时，检查旧格式纯type是否存在
+        // 旧存档兼容：新格式未命中时，检查旧格式纯type是否存在
         if (legacyType != null) {
             return !legacyType.isEmpty() && cache.contains(legacyType);
         }
@@ -285,7 +285,7 @@ public class ModuleDiscoveryPacket {
     /**
      * 在服务端记录模组发现并同步到客户端
      *
-     * <p>⭐ 只发送<b>增量</b>包（仅含本次新发现的一条 key），
+     * <p>只发送<b>增量</b>包（仅含本次新发现的一条 key），
      * 不再每次都把全部数百条记录重发一遍。</p>
      *
      * @param player       目标玩家
@@ -300,7 +300,7 @@ public class ModuleDiscoveryPacket {
         player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
             if (requiemCard.discoverModule(discoveryKey)) {
                 isNew[0] = true;
-                // ⭐ 增量同步：只发这一条新 key
+                // 增量同步：只发这一条新 key
                 Set<String> delta = new HashSet<>(2);
                 delta.add(discoveryKey);
                 KuvaLich.network.send(

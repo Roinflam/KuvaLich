@@ -92,13 +92,13 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
     public static ClientPanelGridTooltip layout(PanelGridTooltip data, Font font, int maxWidth, int screenHeight) {
         int rowHeight = TooltipConfig.PANEL.rowHeight.get();
 
-        // ⭐ 屏幕高度参与的是<b>列数选择</b>，不是截断。
+        // 屏幕高度参与的是<b>列数选择</b>，不是截断。
         //    屏幕矮时把内容压成多列（更宽更矮）能放下更多，这是有意义的；
         //    但真放不下时<b>不截断</b> —— 整合包里有支持按住 SHIFT 滚动 tooltip 的模组，
         //    截掉的内容玩家本来是能滚出来看的，截了反而是帮倒忙。
         int screenRows = Math.max(MIN_ROWS, (screenHeight - RESERVED_HEIGHT) / Math.max(1, rowHeight));
 
-        // ⭐ 列数目标：四个视图<b>必须用同一个值</b>。
+        // 列数目标：四个视图<b>必须用同一个值</b>。
         //
         //    列数是按行数预算反推的（下面那个循环：先试一列，够用就停），
         //    所以预算不同 = 列数不同 = 排版不同。曾经给功能键视图放宽过这个预算，
@@ -169,7 +169,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
 
         // 第二遍：模组名单可以往宽里多排一列来消掉末行空格，上限是面板允许的最大宽度
         //
-        // ⭐ 曾经把上限定为「其余分组的宽度」，结果装满 8 张 Prime 卡时名字太长，四列永远超预算，
+        // 曾经把上限定为「其余分组的宽度」，结果装满 8 张 Prime 卡时名字太长，四列永远超预算，
         //    末行空格照旧。三列模式本来就是因为太高才启用的，拿宽度换掉一行 + 空格正合其意。
         for (int i = 0; i < sections.size(); i++) {
             if (sections.get(i) instanceof PanelGridTooltip.Columns cols) {
@@ -184,7 +184,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
             PanelGridTooltip.Section section = sections.get(i);
             boolean band = false;
             if (section.header() != null) {
-                // ⭐ 标题独立成行、不缩进，内容缩进在它下面 —— 层次靠位置和颜色，不靠符号
+                // 标题独立成行、不缩进，内容缩进在它下面 —— 层次靠位置和颜色，不靠符号
                 out.add(new Line(List.of(new Piece(section.header(), 0, PanelGridTooltip.Align.LEFT)), false));
                 band = bandIndex++ % 2 == 0;
             }
@@ -208,7 +208,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
             return 0;
         }
 
-        // ⭐ 只要组里有一条「排不进格子」的宽词条，<b>整组</b>就退回单列。
+        // 只要组里有一条「排不进格子」的宽词条，<b>整组</b>就退回单列。
         //
         //    试过只让那一条独占行、其余照常分列，结果更难看：同一组里出现了三个
         //    不同的数值起点（第一列的值、第二列的值、独占行的值各对齐各的），
@@ -226,7 +226,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
         // 每一列各自算标签宽与数值宽 —— 列宽按该列实际内容定，不搞全局统一宽度，
         // 否则一条特别长的词条会把所有列都撑开
         //
-        // ⭐ 数值左对齐（紧跟标签列之后），不贴列右边界。原先右对齐时，同列里一个长值
+        // 数值左对齐（紧跟标签列之后），不贴列右边界。原先右对齐时，同列里一个长值
         //    会把短值往右推，短值与自己标签的间隙大过列间距，看起来像是下一列的值。
         //    各行单位混杂（% / x / m），右对齐带来的「上下比大小」本来也用不上。
         //    击杀叠层表（layoutTable）的数值列是同类加成，那里仍按各列声明的对齐方式（右对齐）。
@@ -296,7 +296,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
      * <p>为什么不继续用流式打包：流式排出来行尾会挂一个孤零零的分隔符，
      * 而且条目左边界参差不齐，跟面板其余部分那套「列对齐」的视觉完全不是一路。</p>
      *
-     * <p>⭐ 列数不死跟全局列数。装满 8 张卡时全局三列会排成 3+3+2，末行空一格很扎眼；
+     * <p>列数不死跟全局列数。装满 8 张卡时全局三列会排成 3+3+2，末行空一格很扎眼；
      * 所以在「不增加行数、不超过面板最大宽度」的前提下，挑末行空格最少的列数 ——
      * 8 张卡就变成 4×2（还少占一行）。只有窄屏下四列连最大宽度都放不下时才维持原列数。</p>
      *
@@ -353,7 +353,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
     /**
      * 把条目摆进 {@code cols} 列：返回 [行][列] 的条目下标，空位为 -1
      *
-     * <p>⭐ 多行时<b>按名字宽度从长到短、逐列往下填</b>，而不是按装配顺序逐行填。
+     * <p>多行时<b>按名字宽度从长到短、逐列往下填</b>，而不是按装配顺序逐行填。
      * 每列宽度取该列最长的名字，按装配顺序排时「屠魔圣典 Prime」和「辐射弹药」会落在同一列，
      * 短名后面白白空出一大截；长名跟长名、短名跟短名放一起，整块能窄一截
      * （满装 8 张 Prime 为主的卡约省 30px）。代价是名单不再对应槽位顺序 —— 名单只用来认卡，
@@ -475,7 +475,7 @@ public final class ClientPanelGridTooltip implements ClientTooltipComponent {
     /**
      * 分组背景条
      *
-     * <p>⚠️ 1.20.1 的 {@code GuiGraphics#renderTooltipInternal} 是先 {@code renderText}
+     * <p>注意：1.20.1 的 {@code GuiGraphics#renderTooltipInternal} 是先 {@code renderText}
      * 再 {@code renderImage}，两者同在 z=400 的 pose 里（已在字节码层确认：
      * renderText@292 → renderImage@369 → popPose@407）。所以这里要把 z 往回挪一点，
      * 让底色落到文字下面。颜色本身透明度很低，即便哪天渲染流程被别的模组换掉、z 没压住，

@@ -16,9 +16,9 @@ import net.minecraft.world.item.ItemStack;
  *  68: if_icmpne 91                 // 一点都没塞进去
  *  72: player.getAbilities().instabuild
  *  81: ifeq 91
- *  85: stack.setCount(0)            // ⭐ 直接把物品抹掉
+ *  85: stack.setCount(0)            // 直接把物品抹掉
  *  89: iconst_1
- *  90: ireturn                      // ⭐ 仍然返回 true
+ *  90: ireturn                      // 仍然返回 true
  * </pre>
  *
  * <p>（另一处在受损物品分支，偏移 150~168，行为相同。）</p>

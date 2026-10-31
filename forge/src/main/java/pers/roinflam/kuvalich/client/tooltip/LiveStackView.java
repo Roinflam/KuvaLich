@@ -47,7 +47,7 @@ public final class LiveStackView implements StackCounts {
     /**
      * 刷新本地推算的基准
      *
-     * <p>⭐ 重要：本方法只在构建 tooltip 时被调到，所以它观测到的不是
+     * <p>重要：本方法只在构建 tooltip 时被调到，所以它观测到的不是
      * 「层数真正变化的时刻」，而是「你把鼠标移上去的时刻」。
      * <b>因此第一次看到某一种叠层时不建立基准</b> ——
      * 否则叠层已经涨到 5 层、过了 4 秒才去悬停，面板会编出一个
@@ -89,7 +89,7 @@ public final class LiveStackView implements StackCounts {
     /**
      * 为「正在看 tooltip 的玩家」建一个叠层视图
      *
-     * <p>⭐ 叠层是**玩家级状态**，不是物品级状态，所以不做主手判定
+     * <p>叠层是**玩家级状态**，不是物品级状态，所以不做主手判定
      * （{@code ExtraSlotTooltipHelper.isMainHandWeapon} 在主副手物品完全相同时会直接放弃，
      * 那套逻辑套到叠层上会让双持同款武器时叠层莫名消失）。
      * 但必须是本地玩家：JEI 配方页 / 创造栏里 {@code entity} 可能为 null 或不是本地玩家，
@@ -105,7 +105,7 @@ public final class LiveStackView implements StackCounts {
 
     @Override
     public int stacks(StackType type) {
-        // ⭐ 统一入口：KillStackManager 的客户端分支已修为「武器类读自己的镜像，
+        // 统一入口：KillStackManager 的客户端分支已修为「武器类读自己的镜像，
         //    其余转发给 WarframeModuleHandler」，所以这里一次调用覆盖全部 20 种类型。
         int n = KillStackManager.getStacks(player, type);
         refreshClock(type, n, gameTime);
@@ -114,7 +114,7 @@ public final class LiveStackView implements StackCounts {
 
     @Override
     public int maxStacks(StackType type) {
-        // ⚠️ 已知局限：ModConfig 注册为 COMMON，Forge 只同步 Type.SERVER，
+        // 已知局限：ModConfig 注册为 COMMON，Forge 只同步 Type.SERVER，
         //    所以联机时这个分母读的是**客户端自己的 toml**。服主改过上限而玩家没改时，
         //    可能出现分子大于分母的情况；渲染层会对此做钳制。
         //    根治要把 maxStacks 随登录包下发（协议提版时一并做）。
@@ -156,7 +156,7 @@ public final class LiveStackView implements StackCounts {
      * 一张「每层 +5%、至多 20 层」的卡，满层是 +100%，但面板上永远只有那个 5%，
      * 会让玩家系统性低估这类词条的强度。</p>
      *
-     * <p>⭐ 叠层是**玩家级**状态而非物品级：在背包里看一张没装备的卡，
+     * <p>叠层是**玩家级**状态而非物品级：在背包里看一张没装备的卡，
      * 显示的是「你当前的层数」，所以文案要用「当前 3/5」这种明确措辞，
      * 不能只画一个进度条让人误以为层数属于这张卡。</p>
      *

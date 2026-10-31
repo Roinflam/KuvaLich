@@ -164,7 +164,7 @@ processResources {
     }
 }
 
-// ⭐ 不再有 shadowJar：它唯一的用途是把 :common 的代码合并进 forge jar，
+// 不再有 shadowJar：它唯一的用途是把 :common 的代码合并进 forge jar，
 //    而 :common 已移除。remapJar 现在直接用 jar 任务的产物（Loom 的默认行为），
 //    构建图少一个环节，也不再有 common/build/devlibs 下那个空壳 jar
 //    被 daemon 占住导致 "Unable to delete file" 的问题。

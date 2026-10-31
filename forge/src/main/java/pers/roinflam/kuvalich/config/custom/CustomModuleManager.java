@@ -46,7 +46,7 @@ public class CustomModuleManager {
      * Config file path
      */
     /**
-     * ⭐ 配置文件路径改为取 Forge 的 config 目录，而不是写死相对路径 "config/..."：
+     * 配置文件路径改为取 Forge 的 config 目录，而不是写死相对路径 "config/..."：
      * 相对路径依赖 JVM 的工作目录，部分启动器 / 面板的工作目录不是游戏目录，文件会生成到别处。
      */
     private static final java.nio.file.Path CONFIG_PATH =

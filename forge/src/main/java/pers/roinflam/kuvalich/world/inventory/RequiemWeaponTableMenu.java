@@ -30,7 +30,7 @@ import pers.roinflam.kuvalich.utils.InventoryUtil;
  * 武器军械库菜单（1.20.1版本，已修复无限刷模组bug）
  * Weapon Table Menu (1.20.1 version, duplication bug fixed)
  *
- * ⭐ 关闭时返还武器优先快捷栏（Inventory.add）
+ * 关闭时返还武器优先快捷栏（Inventory.add）
  */
 public class RequiemWeaponTableMenu extends AbstractContainerMenu {
 
@@ -205,7 +205,7 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
     }
 
     /**
-     * ⭐ 关闭时返还武器：使用 Inventory.add() 优先快捷栏
+     * 关闭时返还武器：使用 Inventory.add() 优先快捷栏
      */
     @Override
     public void removed(@NotNull Player player) {
@@ -214,7 +214,7 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
         if (!level.isClientSide) {
             ItemStack weaponStack = weaponHandler.getStackInSlot(0);
             if (!weaponStack.isEmpty()) {
-                // ⚠ 这里返还的是军械库里那把武器本体。用 add 的返回值判断的话，
+                // 注意：这里返还的是军械库里那把武器本体。用 add 的返回值判断的话，
                 //    背包满的创造模式玩家关一次菜单就丢一把武器（add 抹掉物品还返回 true，
                 //    drop 进不去，下面照样把槽位清空）。
                 InventoryUtil.giveOrDrop(player, weaponStack);
@@ -280,7 +280,7 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
                 ListTag itemList = weaponModule.getList("modules", Tag.TAG_COMPOUND);
                 int loadedCount = 0;
                 menu.synchronize = true;
-                // ⭐ 加载时**不能**按 limit 截断，必须把 8 格全读出来。
+                // 加载时**不能**按 limit 截断，必须把 8 格全读出来。
                 //
                 //    这里原先是 Math.min(limit, ...)。槽位数恒为 8 的时候没事，
                 //    但只要上限一旦小于武器上已装的模组数，超出的那些就不会被读进 handler；
@@ -335,7 +335,7 @@ public class RequiemWeaponTableMenu extends AbstractContainerMenu {
         }
 
         /**
-         * ⭐ 判定本身已抽到 {@link ModulePlacementValidator}，与战甲军械库、
+         * 判定本身已抽到 {@link ModulePlacementValidator}，与战甲军械库、
          * 图鉴一键装配共用同一份实现 —— 三处各写一份的话，改一条规则要同步改三处。
          *
          * <p>留在这里的只有两条属于「军械库菜单」而不属于「放置规则」的前置条件：

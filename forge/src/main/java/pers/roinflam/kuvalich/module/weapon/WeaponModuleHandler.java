@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 武器模组数据层
  * 负责NBT读写、属性缓存、Forma锁定、公共API
  *
- * <p>⭐ 本类**不再参与 tooltip 渲染**，类级 {@code @Mod.EventBusSubscriber} 也随之移除。
+ * <p>本类**不再参与 tooltip 渲染**，类级 {@code @Mod.EventBusSubscriber} 也随之移除。
  * 面板的「有哪些词条、怎么算、怎么显示」现在是一张数据表
  * （{@code module.weapon.panel.WeaponPanelCatalog}），渲染在
  * {@code client.tooltip.WeaponPanelComposer}，事件入口统一到
@@ -25,17 +25,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * 专用服务端不炸完全依赖 RuntimeDistCleaner 把带 {@code @OnlyIn} 的方法剥干净，
  * 哪天有人加个不带注解的辅助方法就会炸服。现在数据层里一个客户端类都不 import。</p>
  *
- * <p>⭐ 并发安全修复：{@code WEAPON_ATTRIBUTE_CACHE} 使用 {@link ConcurrentHashMap}。
+ * <p>并发安全修复：{@code WEAPON_ATTRIBUTE_CACHE} 使用 {@link ConcurrentHashMap}。
  * 该 Map 是 static 的、跨玩家共享的，且通过 {@code computeIfAbsent} 与 {@code clear} 并发读写。
  * 使用普通 HashMap 时，在 Mohist 这类混合端上一旦被插件线程或客户端线程触碰，
  * 就可能在扩容时形成链表环，表现为主线程 CPU 100% 且不抛任何异常。
  * {@code weaponCacheTick} 加 {@code volatile} 保证 tick 翻转跨线程可见。</p>
  *
- * <p>⭐ 正确性修复（本次）：缓存键原先<b>只有实体 UUID</b>，
+ * <p>正确性修复（本次）：缓存键原先<b>只有实体 UUID</b>，
  * 同 tick 内对同一实体传入不同武器（主手 / 副手 / 饰品）会错误返回第一次的结果。
  * 现在缓存条目额外记录武器标识，标识不符视为未命中重新计算。</p>
  *
- * <p>⭐ 性能修复（本次）：Tooltip 原先每帧调用三次 {@link #getModules}
+ * <p>性能修复（本次）：Tooltip 原先每帧调用三次 {@link #getModules}
  * （自身一次、{@code getTriggerElements(itemStack)} 内部一次、末尾列模组名一次），
  * 每次都要做 8 个 {@code ItemStack.of()} 的 NBT 反序列化，
  * 即每帧 24 次——悬停武器时纯客户端掉帧。现在只解析一次并全程复用。</p>
@@ -71,7 +71,7 @@ public class WeaponModuleHandler {
     /**
      * 武器属性每tick缓存（UUID → 缓存条目），<b>两端各一份</b>
      *
-     * <p>⭐ 必须按端分开。单人游戏里客户端与服务端在同一个 JVM，玩家 UUID 两端相同，
+     * <p>必须按端分开。单人游戏里客户端与服务端在同一个 JVM，玩家 UUID 两端相同，
      * 而缓存条目里的 {@code weaponKey} 用的是 {@code System.identityHashCode(weapon)} ——
      * 两端拿到的是<b>不同的 ItemStack 对象</b>，identityHashCode 必然不同。
      * 共用一张表的后果是两端互相顶掉对方的条目，缓存命中率归零；
@@ -93,7 +93,7 @@ public class WeaponModuleHandler {
     /**
      * 获取带缓存的武器模组属性
      *
-     * <p>⭐ 命中条件由「同实体 + 同 tick」收紧为「同实体 + 同 tick + 同武器对象」。</p>
+     * <p>命中条件由「同实体 + 同 tick」收紧为「同实体 + 同 tick + 同武器对象」。</p>
      *
      * @param entity 持有武器的实体
      * @param weapon 武器物品栈
@@ -153,7 +153,7 @@ public class WeaponModuleHandler {
     /**
      * 收集武器模组的运行时属性
      *
-     * <p>⭐ 每个模组的属性值在叠加前会乘以等级缩放倍率：value × (level / maxLevel)。
+     * <p>每个模组的属性值在叠加前会乘以等级缩放倍率：value × (level / maxLevel)。
      * 系统关闭时倍率为 1.0，效果与原逻辑完全一致。</p>
      *
      * @param modules 武器装备的模组列表
@@ -163,13 +163,13 @@ public class WeaponModuleHandler {
         HashMap<String, Double> attributes = new HashMap<>();
 
         for (ItemStack module : modules) {
-            // ⭐ 模组等级缩放：获取当前模组的有效倍率
+            // 模组等级缩放：获取当前模组的有效倍率
             double levelMultiplier = ModuleLevelHelper.getEffectiveMultiplier(module);
 
             for (Map.Entry<String, Double> entry : AbstractModule.getAttributes(module)) {
                 String key = entry.getKey();
                 double value = ModuleConfig.clampAttributeValue(key, entry.getValue());
-                // ⭐ 应用等级缩放
+                // 应用等级缩放
                 value *= levelMultiplier;
                 attributes.put(key, attributes.getOrDefault(key, 0.0) + value);
             }
@@ -276,7 +276,7 @@ public class WeaponModuleHandler {
 
     /**
      * 公共接口：获取武器运行时属性（供外部兼容模组使用）
-     * ⭐ 已包含等级缩放（通过 collectItemAttributes）
+     * 已包含等级缩放（通过 collectItemAttributes）
      */
     public static HashMap<String, Double> getWeaponAttributes(ItemStack weapon) {
         return collectItemAttributes(getModules(weapon));
@@ -287,7 +287,7 @@ public class WeaponModuleHandler {
     /**
      * 公共接口：用已解析好的模组列表算属性（避免重复反序列化）
      *
-     * <p>⭐ 面板渲染已迁出本类，见
+     * <p>面板渲染已迁出本类，见
      * {@code client.tooltip.WeaponPanelComposer} 与 {@code module.weapon.panel.WeaponPanelCatalog}。
      * 改造前这里有一个约 200 行、包含 40 多个重复 {@code if} 块的 {@code onItemTooltip}，
      * 每加一条词条都要复制粘贴一整段；现在那份信息以数据表的形式集中在

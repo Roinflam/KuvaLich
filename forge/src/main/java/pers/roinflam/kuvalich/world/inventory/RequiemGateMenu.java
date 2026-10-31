@@ -27,8 +27,8 @@ import pers.roinflam.kuvalich.utils.InventoryUtil;
  * 灭骸之扉菜单类（1.20.1版本）
  * Requiem Gate Menu (1.20.1 version)
  *
- * 业务逻辑100%保持不变，仅API迁移
- * Business logic 100% unchanged, only API migration
+ * 从 1.12.2 版迁移，只换了 API 调用
+ * Ported from the 1.12.2 version; only the API calls changed
  *
  * 核心功能：
  * Core functions:
@@ -37,7 +37,7 @@ import pers.roinflam.kuvalich.utils.InventoryUtil;
  * 3. 自动从玩家Capability加载已配置的卡片
  * 4. 关闭时保存卡片配置到Capability
  *
- * ⭐ 新增：autoFillAnswerCards —— 创造模式一键补全正确答案卡片（由 RequiemGateFillPacket 调用）
+ * 新增：autoFillAnswerCards —— 创造模式一键补全正确答案卡片（由 RequiemGateFillPacket 调用）
  */
 public class RequiemGateMenu extends AbstractContainerMenu {
 
@@ -89,8 +89,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
             }
         }
 
-        // 从玩家Capability加载已配置的卡片（业务逻辑不变）
-        // Load configured cards from player Capability (business logic unchanged)
+        // 从玩家Capability加载已配置的卡片
+        // Load configured cards from player Capability
         if (!level.isClientSide) {
             loadCardsFromCapability();
         }
@@ -100,8 +100,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 从Capability加载卡片（业务逻辑100%保持不变）
-     * Load cards from Capability (business logic 100% unchanged)
+     * 从Capability加载卡片
+     * Load cards from Capability
      */
     private void loadCardsFromCapability() {
         try {
@@ -126,8 +126,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 同步数据到客户端（业务逻辑100%保持不变）
-     * Sync data to client (business logic 100% unchanged)
+     * 同步数据到客户端
+     * Sync data to client
      */
     @Override
     public void broadcastChanges() {
@@ -152,8 +152,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 快速转移物品（Shift+点击，业务逻辑100%保持不变）
-     * Quick move item (Shift+Click, business logic 100% unchanged)
+     * 快速转移物品（Shift+点击）
+     * Quick move item (Shift+Click)
      */
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
@@ -187,8 +187,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 容器关闭时的处理（业务逻辑100%保持不变）
-     * Handle container close (business logic 100% unchanged)
+     * 容器关闭时的处理
+     * Handle container close
      */
     @Override
     public void removed(@NotNull Player player) {
@@ -200,8 +200,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 保存卡片到Capability（业务逻辑100%保持不变）
-     * Save cards to Capability (business logic 100% unchanged)
+     * 保存卡片到Capability
+     * Save cards to Capability
      */
     private void saveCardsToCapability(Player player) {
         try {
@@ -345,8 +345,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 卡片槽位类（只接受安魂卡，业务逻辑不变）
-     * Card slot class (only accepts Requiem Cards, business logic unchanged)
+     * 卡片槽位类（只接受安魂卡）
+     * Card slot class (only accepts Requiem Cards)
      */
     public static class CardSlot extends SlotItemHandler {
         public CardSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {

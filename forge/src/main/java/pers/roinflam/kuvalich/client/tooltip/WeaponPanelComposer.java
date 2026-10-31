@@ -91,7 +91,7 @@ public final class WeaponPanelComposer {
 
         HashMap<String, Double> attrs = WeaponModuleHandler.getWeaponAttributes(stack, modules);
 
-        // ⭐ 额外槽位加成**无条件**合并进面板数值：showExtraSlots 只控制「明细区块显不显示」，
+        // 额外槽位加成**无条件**合并进面板数值：showExtraSlots 只控制「明细区块显不显示」，
         //    不该让主面板的数字跟着少算。改造前也是这么分的
         //    （mergeExtraSlotIntoAttributes 无条件合并，appendExtraSlotTooltip 才是明细渲染）。
         HashMap<String, Double> extra = ExtraSlotTooltipHelper.getExtraSlotAttributes(viewer, stack);
@@ -105,11 +105,11 @@ public final class WeaponPanelComposer {
                 ? LiveStackView.of(viewer)
                 : StackCounts.NONE;
 
-        // ⭐ 门控可关：整合包里若有别的模组把 reload_speed 这类词条另作他用，
+        // 门控可关：整合包里若有别的模组把 reload_speed 这类词条另作他用，
         //    「近战武器不显示枪械词条」就不再成立。
         boolean applyGates = TooltipConfig.PANEL.hideIrrelevantGroups.get();
 
-        // ⭐ 四个视图<b>全部</b>走同一套结构化网格：列宽按像素实测、标签与数值各自左对齐、
+        // 四个视图<b>全部</b>走同一套结构化网格：列宽按像素实测、标签与数值各自左对齐、
         //    同一套 RGB 配色。改造中途只有默认视图换了新排版，三个功能键视图还留着
         //    老的纯文本 + ChatFormatting，按下 SHIFT 就像换了个模组 —— 那是个遗留状态，
         //    不是设计。
@@ -165,7 +165,7 @@ public final class WeaponPanelComposer {
                     .add(pairCell(chip, useStackedValues));
         }
 
-        // ⭐ 未登记的词条（整合包通过 JSON 自定义的）归入 OTHER 组，
+        // 未登记的词条（整合包通过 JSON 自定义的）归入 OTHER 组，
         //    不兜底的话它们在面板上会静默消失，而战斗结算里又确实算数。
         if (TooltipConfig.PANEL.showUnknownAttributes.get()) {
             for (Map.Entry<String, Double> e : WeaponPanelData.collectUnknown(attrs).entrySet()) {
@@ -177,7 +177,7 @@ public final class WeaponPanelComposer {
             }
         }
 
-        // ⭐ 分组顺序：核心面板 → 叠层 → 元素 → 其余增益。
+        // 分组顺序：核心面板 → 叠层 → 元素 → 其余增益。
         //    叠层与元素刻意排在伤害增益之前 —— 它们是「此刻生效的实时状态」，
         //    而且万一内容多到要截断，先丢掉的应该是静态词条明细而不是实时信息。
         addPairs(sections, byGroup, PanelGroup.PANEL);
@@ -232,12 +232,12 @@ public final class WeaponPanelComposer {
      * SHIFT 视图：与默认视图<b>完全一致</b>的排版、名字与条目，唯一区别是
      * 数值显示<b>不含击杀叠层</b>的基础面板。
      *
-     * <p>⭐ 这里曾经还额外关掉门控（近战武器也显示枪械词条）。那让 SHIFT 比默认视图
+     * <p>这里曾经还额外关掉门控（近战武器也显示枪械词条）。那让 SHIFT 比默认视图
      * 多出一堆条目，位置全对不上，玩家没法把两组数字并排比较 ——
      * 而「按住 SHIFT 看看这些数字里有多少是叠层撑起来的」正是这个视图的唯一用途。
      * 门控现在跟随同一个配置项，两个视图条目逐行对齐。</p>
      *
-     * <p>⭐ 这里曾经额外做过一件事：把标签换成 {@code item.module.<key>} 那套「长名」。
+     * <p>这里曾经额外做过一件事：把标签换成 {@code item.module.<key>} 那套「长名」。
      * 那是个错误设计 —— 同一条属性在默认视图叫「触发时长」、按下 SHIFT 变成「触发时间」，
      * 全项目有 17 条这样措辞不同的，玩家只会以为那是两条不同的属性。
      * 视图之间该变的是<b>看到多少</b>，不是<b>怎么称呼</b>。</p>
@@ -293,7 +293,7 @@ public final class WeaponPanelComposer {
             }
         }
 
-        // ⭐ 被配置上限截断的词条：改造前是静默裁剪，面板显示 +300%、实战按 +150% 结算，
+        // 被配置上限截断的词条：改造前是静默裁剪，面板显示 +300%、实战按 +150% 结算，
         //    玩家会以为是 bug 或被偷偷削弱。这里把它显式说出来。
         if (TooltipConfig.PANEL.showClampWarning.get()) {
             List<Component> warnings = clampWarnings(modules);
@@ -449,7 +449,7 @@ public final class WeaponPanelComposer {
         double stackTrigger = attrs.getOrDefault("killStackTriggerChance", 0.0) * stackN;
         double uncapped = baseTrigger * (1 + modTrigger) * (1 + stackTrigger);
 
-        // ⭐ 战斗端在所有乘算做完后还有一道硬上限。本视图的卖点就是「这个数就是实战的数」，
+        // 战斗端在所有乘算做完后还有一道硬上限。本视图的卖点就是「这个数就是实战的数」，
         //    不钳就会出现面板 700% / 实战 500%。
         double cap = WeaponCombatHandler.MAX_ELEMENT_TRIGGER_PER_HIT;
         double finalTrigger = Math.min(uncapped, cap);
@@ -562,7 +562,7 @@ public final class WeaponPanelComposer {
             v.append(Component.literal(chip.secondaryText())
                     .withStyle(PanelPalette.bold(chip.isNegative()
                             ? PanelPalette.PENALTY : PanelPalette.value(spec.group()))));
-            // ⭐ 「x4.5 / x2.8」比同组的「113%」宽两三倍，挤进列里会把整列撑开，
+            // 「x4.5 / x2.8」比同组的「113%」宽两三倍，挤进列里会把整列撑开，
             //    害得旁边的词条标签与数值之间拉出一大段空白。让它整行独占反而齐整
             return new PanelGridTooltip.Cell(label(PanelStyle.shortNameOf(spec.key())), v, true);
         }
@@ -595,7 +595,7 @@ public final class WeaponPanelComposer {
 
         List<PanelGridTooltip.Cell> cells = new ArrayList<>(pool.size() + 1);
         for (Map.Entry<String, String> e : pool.entrySet()) {
-            // ⭐ 元素色走自己的 RGB 表：原版的 DARK_RED / DARK_GREEN / DARK_GRAY
+            // 元素色走自己的 RGB 表：原版的 DARK_RED / DARK_GREEN / DARK_GRAY
             //    在深色背景上读不出来，而元素是靠颜色认的
             int rgb = PanelPalette.element(e.getKey());
             cells.add(new PanelGridTooltip.Cell(
@@ -603,7 +603,7 @@ public final class WeaponPanelComposer {
                     Component.literal(e.getValue()).withStyle(PanelPalette.bold(rgb))));
         }
         if (Math.abs(total) >= 1.0e-3) {
-            // ⭐ 独占一行：它是元素<b>总量</b>，与上面那些<b>占比</b>不是一回事，
+            // 独占一行：它是元素<b>总量</b>，与上面那些<b>占比</b>不是一回事，
             //    而且「元素伤害」这个标签比「冲击」「病毒」长一倍，
             //    混进同一列会把列宽撑开、把短元素的标签与数值拉散
             cells.add(new PanelGridTooltip.Cell(
@@ -623,7 +623,7 @@ public final class WeaponPanelComposer {
             Component name = label(PanelStyle.shortNameOf(row.key()));
 
             if (!row.available()) {
-                // ⭐「不知道」与「确实是 0 层」必须可区分，否则玩家会把没数据误读成机制坏了
+                // 「不知道」与「确实是 0 层」必须可区分，否则玩家会把没数据误读成机制坏了
                 rows.add(List.of(name,
                         Component.literal("?????").withStyle(PanelPalette.style(PanelPalette.FAINT)),
                         Component.literal("\u2014/" + row.max()).withStyle(PanelPalette.style(PanelPalette.MUTED)),
@@ -640,7 +640,7 @@ public final class WeaponPanelComposer {
                         ValueFormat.PERCENT_SIGNED.format(row.perStack()))
                         .withStyle(PanelPalette.style(PanelPalette.MUTED));
             } else if (row.dependsOnTarget()) {
-                // ⭐ killStackBaseDamage 的最终加成 = 每层 × 层数 × 目标身上的负面效果数，
+                // killStackBaseDamage 的最终加成 = 每层 × 层数 × 目标身上的负面效果数，
                 //    tooltip 时没有目标，所以只给「每负面效果」的口径，不编一个总百分比
                 bonus = Component.literal(ValueFormat.PERCENT_SIGNED.format(row.total()))
                         .withStyle(PanelPalette.bold(PanelPalette.STACK_ACTIVE))
@@ -742,7 +742,7 @@ public final class WeaponPanelComposer {
     private static List<Component> moduleNames(List<ItemStack> modules) {
         List<Component> names = new ArrayList<>(modules.size());
         for (ItemStack module : modules) {
-            // ⭐ 不覆盖模组卡自己的品质颜色（铜 / 银 / 金 / Prime / 裂罅），
+            // 不覆盖模组卡自己的品质颜色（铜 / 银 / 金 / Prime / 裂罅），
             //    那是玩家一眼认卡的依据；只补一个默认色兜底没有样式的名字
             MutableComponent name = module.getHoverName().copy();
             if (name.getStyle().getColor() == null) {

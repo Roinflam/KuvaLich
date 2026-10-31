@@ -20,8 +20,8 @@ import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 import javax.annotation.Nonnull;
 
 /**
- * 德斯特拉Prime（1.20.1版本，业务逻辑100%不变）
- * Destreza Prime (1.20.1 version, business logic 100% unchanged)
+ * 德斯特拉Prime
+ * Destreza Prime
  */
 @Mod.EventBusSubscriber
 public class DestrezaPrime extends AbstractKuvaWeapon {

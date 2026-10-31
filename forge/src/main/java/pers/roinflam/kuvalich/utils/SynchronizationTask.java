@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 用于在服务器tick中延迟执行或周期执行任务。
  * 使用单一全局监听器管理所有任务，避免每个任务单独注册事件总线的性能开销。
  *
- * <p>⭐ 性能优化（本次）：{@code TaskManager.onServerTick} 原先每 tick 都无条件
+ * <p>性能优化（本次）：{@code TaskManager.onServerTick} 原先每 tick 都无条件
  * {@code new ArrayList<>()} 来收集待删任务，即使本 tick 一个任务都没结束。
  * 元素 DOT 场景下任务数常年不为空，等于每 tick 白送一个短命对象给 GC。
  * 现改为惰性分配：只有真的有任务完成时才创建列表。</p>
@@ -162,7 +162,7 @@ public abstract class SynchronizationTask implements Runnable {
                 first = false;
                 tick = 0;
 
-                // 执行任务（⭐ 修复 5：异常走 LogUtil，日志带模组前缀，方便排查；任务本身照常继续或结束）
+                // 执行任务（修复 5：异常走 LogUtil，日志带模组前缀，方便排查；任务本身照常继续或结束）
                 try {
                     this.run();
                 } catch (Exception e) {
@@ -250,7 +250,7 @@ public abstract class SynchronizationTask implements Runnable {
         /**
          * 服务器tick事件处理
          *
-         * <p>⭐ 待删列表惰性分配：本 tick 无任务结束时不产生任何对象。</p>
+         * <p>待删列表惰性分配：本 tick 无任务结束时不产生任何对象。</p>
          */
         @SubscribeEvent
         public void onServerTick(@Nonnull TickEvent.ServerTickEvent evt) {
@@ -264,7 +264,7 @@ public abstract class SynchronizationTask implements Runnable {
                 return;
             }
 
-            // ⭐ 惰性分配：只有真的有任务完成时才创建列表
+            // 惰性分配：只有真的有任务完成时才创建列表
             List<Integer> toRemove = null;
 
             for (Map.Entry<Integer, SynchronizationTask> entry : tasks.entrySet()) {

@@ -26,8 +26,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * 安魂谜语（1.20.1版本，业务逻辑100%不变）
- * Requiem Riddle (1.20.1 version, business logic 100% unchanged)
+ * 安魂谜语
+ * Requiem Riddle
  *
  * 使用后可直接查看谜语答案
  * Use to directly view riddle answers
@@ -52,8 +52,8 @@ public class RequiemRiddle extends Item {
     }
 
     /**
-     * 获取卡片名称组件（业务逻辑100%不变）
-     * Get card name component (business logic 100% unchanged)
+     * 获取卡片名称组件
+     * Get card name component
      */
     private Component getCardName(int id) {
         return Component.translatable(AbstractRequiemCard.getCard(id).getDescriptionId());
@@ -74,7 +74,7 @@ public class RequiemRiddle extends Item {
                         requiemCard.getThreeAnswer() == -1) {
 
                     // 尚未解密完成 / Not yet fully decrypted
-                    // ⭐ 这里原先多传了一个 getKuvaLevel()，但译文里没有任何占位符，
+                    // 这里原先多传了一个 getKuvaLevel()，但译文里没有任何占位符，
                     //    Component.translatable 会把多余参数静默丢弃 —— 删掉以免误导
                     PlayerFeedback.chat(player, KuvaPalette.DANGER,
                             "message.kuvalich.requiemRiddleNotAnswer");

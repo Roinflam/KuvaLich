@@ -17,13 +17,13 @@ import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
- * 赤毒武器基类（1.20.1版本，业务逻辑100%不变）
- * Kuva Weapon Base Class (1.20.1 version, business logic 100% unchanged)
+ * 赤毒武器基类
+ * Kuva Weapon Base Class
  */
 public abstract class AbstractKuvaWeapon extends SwordItem {
 
-    // ✅ 1.20.1使用Tier代替ToolMaterial
-    // ✅ 1.20.1 uses Tier instead of ToolMaterial
+    // 1.20.1使用Tier代替ToolMaterial
+    // 1.20.1 uses Tier instead of ToolMaterial
     public static final Tier KUVA = new ForgeTier(
             3,                              // 采集等级 / Harvest level
             23333,                          // 耐久度 / Durability
@@ -34,7 +34,7 @@ public abstract class AbstractKuvaWeapon extends SwordItem {
             () -> Ingredient.EMPTY          // 修复材料 / Repair ingredient
     );
 
-    // UUID常量（业务逻辑100%不变）/ UUID constants (business logic 100% unchanged)
+    // UUID常量 / UUID constants
     public static UUID MOVEMENT_SPEED = UUID.fromString("ea068571-91fe-da31-18c4-ca86c557bb58");
     public static UUID KNOCKBACK_RESISTANCE = UUID.fromString("d9bb87cf-b828-2154-215b-e8ca2b21d875");
     public static UUID MAX_HEALTH = UUID.fromString("157634e9-f993-110e-8705-dab08f43c437");
@@ -167,8 +167,8 @@ public abstract class AbstractKuvaWeapon extends SwordItem {
     }
 
     /**
-     * 统一设置武器基础属性（业务逻辑100%不变）
-     * Set base weapon attributes uniformly (business logic 100% unchanged)
+     * 统一设置武器基础属性
+     * Set base weapon attributes uniformly
      */
     protected ItemStack setBaseWeaponAttribute(ItemStack itemStack,
                                                double damage,

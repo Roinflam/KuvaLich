@@ -20,18 +20,18 @@ public class PlayerUtil {
      * 获取玩家的攻击伤害
      * Get player's attack damage
      *
-     * ✅ 业务逻辑与1.12.2完全一致
+     * 与 1.12.2 版逻辑一致
      *
      * @param player 玩家 / player
      * @param targetEntity 目标实体 / target entity
      * @return 总攻击伤害 / total attack damage
      */
     public static float getAttackDamage(Player player, Entity targetEntity) {
-        // ✅ 1.12.2: getEntityAttribute(ATTACK_DAMAGE).getAttributeValue()
-        // ✅ 1.20.1: getAttributeValue(ATTACK_DAMAGE)
+        // 1.12.2: getEntityAttribute(ATTACK_DAMAGE).getAttributeValue()
+        // 1.20.1: getAttributeValue(ATTACK_DAMAGE)
         float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
 
-        // ✅ 附魔额外伤害（API重命名但逻辑一致）
+        // 附魔额外伤害（API重命名但逻辑一致）
         // 1.12.2: getModifierForCreature() → 1.20.1: getDamageBonus()
         float otherDamage = 0;
         if (targetEntity instanceof LivingEntity livingEntity) {
@@ -46,7 +46,7 @@ public class PlayerUtil {
             );
         }
 
-        // ✅ 暴击判定（与1.12.2完全一致）
+        // 暴击判定（与1.12.2完全一致）
         boolean isCriticalHit = player.fallDistance > 0.0F
                 && !player.onGround()
                 && !player.onClimbable()
@@ -56,7 +56,7 @@ public class PlayerUtil {
                 && targetEntity instanceof LivingEntity;
         isCriticalHit = isCriticalHit && !player.isSprinting();
 
-        // ✅ Forge暴击事件（与1.12.2完全一致）
+        // Forge暴击事件（与1.12.2完全一致）
         // 1.20.1中ForgeHooks.getCriticalHit仍然存在
         CriticalHitEvent hitResult = ForgeHooks.getCriticalHit(
                 player,
@@ -65,12 +65,12 @@ public class PlayerUtil {
                 isCriticalHit ? 1.5F : 1.0F
         );
 
-        // ✅ 应用暴击倍率（与1.12.2完全一致）
+        // 应用暴击倍率（与1.12.2完全一致）
         if (hitResult != null) {
             damage *= hitResult.getDamageModifier();
         }
 
-        // ✅ 总伤害计算（与1.12.2完全一致）
+        // 总伤害计算（与1.12.2完全一致）
         return damage + otherDamage;
     }
 }

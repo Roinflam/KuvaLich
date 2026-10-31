@@ -27,11 +27,11 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  * Prime级武器模组（1.20.1版本）
  * Prime (Epic) tier weapon module (1.20.1 version)
  *
- * ⭐ 第三批新增 · 单词条 Prime（银卡数值×1.5，与对应银卡同 type 互斥）：
+ * 第三批新增 · 单词条 Prime（银卡数值×1.5，与对应银卡同 type 互斥）：
  *    通用：收割之刻Prime（收集者阈值3%）、涤魂Prime（净化驱散15%）、斩首Prime（致命斩首0.015%）
  *    TACZ：洞穿弹头Prime（真实伤害30%）、战利搜集Prime（枪械战利品掉落45%）
  *
- * ⭐ 第六批新增 · 冷门 Prime（强度复合，部分与金卡同 type 互斥形成拉梯）：
+ * 第六批新增 · 冷门 Prime（强度复合，部分与金卡同 type 互斥形成拉梯）：
  *    通用：神王之锤(冲击+暴伤,与金卡titan_hammer互斥)、终焉审判(基伤+处决)、影刃刺客(冲刺+处决)、
  *      奥术终结(魔法+处决)、时之囚笼(triggerTime专精)、屠魔圣典(四bane,与slaughter_feast互斥)、
  *      瘟疫领主、磁暴领主、病毒君主、大法师(与archmage_blade互斥)、元素法神(与arcane_elements互斥)、
@@ -82,7 +82,7 @@ public class WeaponPrimeModule extends AbstractWeaponModule {
     }
 
     private static void initializeModuleList() {
-        // ⭐ 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
+        // 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
         //    填完之后在方法末尾一次性换掉静态字段的引用。
         //
         //    不能就地 clear() 再填：配置热重载后本方法会被再次调用，
@@ -279,7 +279,7 @@ public class WeaponPrimeModule extends AbstractWeaponModule {
                 "kuvaweapon.item_module.galvanized_death_barrage", "death_barrage",
                 new Object[]{"multishot", 0.45001f, "triggerChance", 0.75001f, "killStackMultishot", 0.25001f});
 
-        // ========== ⭐ 第六批新增 · 通用 Prime（冷门强度复合）==========
+        // ========== 第六批新增 · 通用 Prime（冷门强度复合）==========
         // 处决数值用 Prime 档（阈值3% / 秒杀0.015%）；部分卡复用金卡 type 形成金⇄Prime 互斥拉梯。
 
         // 神王之锤Prime —— 冲击120% + 近战暴击伤害60%（与金卡 titan_hammer 互斥）
@@ -463,7 +463,7 @@ public class WeaponPrimeModule extends AbstractWeaponModule {
                     new Object[]{"gun_damage", 1.20001f, "headshot_damage", 0.45001f, "killStackMultishot", 0.25001f},
                     "multishot");
 
-            // ===== ⭐ 第六批新增 · TACZ Prime（冷门强度复合）=====
+            // ===== 第六批新增 · TACZ Prime（冷门强度复合）=====
 
             // 燃焰处决Prime —— 枪械伤害240% + 火焰90% + 处决阈值3%（与金卡 flame_execution 互斥）
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_PRIME_MODULE.get(), null, itemStackList,
@@ -510,7 +510,7 @@ public class WeaponPrimeModule extends AbstractWeaponModule {
         items.addAll(itemStackList);
         CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, Rarity.EPIC);
 
-        // ⭐ 创造模式模组默认满级
+        // 创造模式模组默认满级
         if (ModuleLevelHelper.isLevelSystemEnabled()) {
             for (ItemStack stack : items) {
                 if (!AbstractModule.isRandom(stack)) {
@@ -536,7 +536,7 @@ public class WeaponPrimeModule extends AbstractWeaponModule {
 
             ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
 
-// ⭐ 模组等级系统：赋予揭示等级
+// 模组等级系统：赋予揭示等级
             ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);

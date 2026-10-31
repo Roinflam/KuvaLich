@@ -49,7 +49,7 @@ public class Caustacyst extends AbstractKuvaWeapon {
             String weaponType = KuvaWeaponUtil.getType(weapon);
 
             if (weaponType.equalsIgnoreCase("poison")) {
-                // ✅ 替换为动态属性系统
+                // 替换为动态属性系统
                 DynamicAttributeManager.apply(
                         hurter,
                         DynamicAttributes.VIRUS.createInstance(
@@ -59,7 +59,7 @@ public class Caustacyst extends AbstractKuvaWeapon {
                 );
             } else {
                 event.setAmount(KuvaWeaponUtil.getMagnification(weapon, event.getAmount() * 0.75f));
-                // ✅ 替换为动态属性系统
+                // 替换为动态属性系统
                 DynamicAttributeManager.apply(
                         hurter,
                         DynamicAttributes.VIRUS.createInstance(

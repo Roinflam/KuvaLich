@@ -22,8 +22,8 @@ import pers.roinflam.kuvalich.world.inventory.RequiemWeaponTableMenu;
  * 武器军械库GUI（1.20.1版本）
  * Weapon Table Screen (1.20.1 version)
  *
- * ⭐ TAB键打开武器模组图鉴（showWeapon=true）
- * ⭐ 底部提示使用清晰的浅色文字 + 半透明底衬
+ * TAB键打开武器模组图鉴（showWeapon=true）
+ * 底部提示使用清晰的浅色文字 + 半透明底衬
  *
  * <p>装入、取出模组和武器上台的演出靠每 tick 比模组格快照认出来（{@link ForgeOpClassifier.TableWatch}），
  * 点击、Shift 点击、图鉴一键装配都覆盖到。装入时从那一格沿折线流一道光到武器格。</p>
@@ -120,7 +120,7 @@ public class RequiemWeaponTableScreen extends AbstractContainerScreen<RequiemWea
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         fx.render(guiGraphics, this.leftPos, this.topPos, !this.menu.getCarried().isEmpty());
 
-        // ⭐ TAB提示（清晰可读）；先画提示再画物品说明，说明框盖得住它
+        // TAB提示（清晰可读）；先画提示再画物品说明，说明框盖得住它
         int hx = (this.width - hintWidth) / 2;
         int hy = (this.height + this.imageHeight) / 2 + 4;
         guiGraphics.drawString(this.font, hint, hx, hy, 0xFFBBBBBB, false);

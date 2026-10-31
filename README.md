@@ -299,8 +299,12 @@ Licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4
 ### 👤 Credits
 
 **Developer:** Roinflam  
-**Inspired by:** Digital Extremes - Warframe
-**Special Thanks:** 建议重开
+**Inspired by:** Digital Extremes - Warframe  
+**Special Thanks:** 白狐大小姐
+
+**Disclaimer:** Warframe is a trademark of Digital Extremes Ltd. Kuva Lich and the other names and concepts from Warframe referenced in this mod belong to their respective owners. This is an unofficial fan-made mod and is not affiliated with or endorsed by Digital Extremes.
+
+**Bundled libraries:** [Cloth Config API](https://github.com/shedaniel/cloth-config) by shedaniel (GNU LGPLv3) and [GeckoLib](https://github.com/bernie-g/geckolib) (MIT) are bundled unmodified as separate jar-in-jar files (under `META-INF/jars/`). They keep their own licenses and can be replaced with other compatible builds.
 
 </details>
 
@@ -591,6 +595,11 @@ fileTree(dir: 'dependencies', include: '*.jar').each { File file ->
 **开发者:** Roinflam  
 **灵感来源:** Digital Extremes - Warframe(星际战甲)  
 **特别鸣谢:** 白狐大小姐
+
+**声明:** 《Warframe》（星际战甲）是 Digital Extremes Ltd. 的商标。本模组中引用的赤毒玄骸等游戏名称和设定，版权归各自权利人所有。本模组为非官方同人作品，与 Digital Extremes 无关联，也未获其认可。
+
+**内嵌库:** [Cloth Config API](https://github.com/shedaniel/cloth-config)（作者 shedaniel，GNU LGPLv3 许可）和 [GeckoLib](https://github.com/bernie-g/geckolib)（MIT 许可），均未作修改，以独立 jar-in-jar 的形式内嵌（位于 `META-INF/jars/`）；它们沿用各自的许可证，可自行替换为其它兼容版本。
+
 </details>
 
 ---

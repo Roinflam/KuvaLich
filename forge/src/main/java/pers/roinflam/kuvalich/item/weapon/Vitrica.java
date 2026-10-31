@@ -50,7 +50,7 @@ public class Vitrica extends AbstractKuvaWeapon {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, Vitrica.class);
 
         if (weapon != null) {
-            // ⭐ 修复叠层：原来写成 Math.min(7, 1)，第二下起永远停在 1 层（-15%），到不了上限。
+            // 修复叠层：原来写成 Math.min(7, 1)，第二下起永远停在 1 层（-15%），到不了上限。
             //    现在每命中一次 +1 层，最高 7（对应 8 段 -7.5% = -60%）；到顶后只刷新持续时间
             int current = DynamicAttributeManager.getAmplifier(hurter, DynamicAttributes.VITRICA);
             int newAmplifier = current < 0 ? 0 : Math.min(MAX_AMPLIFIER, current + 1);
@@ -76,7 +76,7 @@ public class Vitrica extends AbstractKuvaWeapon {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, Vitrica.class);
 
         if (weapon != null) {
-            // ✅ 使用动态属性检测
+            // 使用动态属性检测
             float multiplier = DynamicAttributeManager.has(hurter, DynamicAttributes.VITRICA)
                     ? 1.25f
                     : 0.75f;

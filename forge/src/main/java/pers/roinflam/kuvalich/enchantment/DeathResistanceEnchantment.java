@@ -40,7 +40,7 @@ public class DeathResistanceEnchantment extends AbstractEnchantment {
     private static final int BASE_ENCHANTABILITY = 25;
     private static final int ENCHANTABILITY_PER_LEVEL = 25;
 
-    // ⭐ 以下三个数值是本次补实现时定的，语言文件只写了"牺牲经验值抵抗致命伤害,牺牲的数值基于附魔等级与伤害值"，
+    // 以下三个数值是本次补实现时定的，语言文件只写了"牺牲经验值抵抗致命伤害,牺牲的数值基于附魔等级与伤害值"，
     //    没有给出公式，按需调整即可
     /** 1 级时每点致命伤害要消耗的经验点数；等级越高越便宜（除以等级） */
     private static final float XP_COST_PER_DAMAGE = 4.0F;
@@ -60,7 +60,7 @@ public class DeathResistanceEnchantment extends AbstractEnchantment {
     }
 
     /**
-     * ⭐ 本附魔原来只有注册、没有任何效果实现（应是移植时丢了）。补上：
+     * 本附魔原来只有注册、没有任何效果实现（应是移植时丢了）。补上：
      * 玩家受到致命伤害时，若护甲带本附魔且经验足够，扣除经验并把伤害压到只剩 1 点血。
      *
      * <p>用 LivingDamageEvent 而不是 LivingHurtEvent：这里的伤害已经扣过护甲、抗性和吸收，

@@ -27,9 +27,9 @@ import pers.roinflam.kuvalich.utils.Reference;
  * 1. 玩家捡起模组时（PlayerEvent.ItemPickupEvent，拾取**成功之后**才触发）
  * 2. 玩家登录时扫描背包补录 + 同步客户端
  * 3. 模组揭示时（ModuleLevelHelper.applyRevealLevel 手动调用）
- * 4. ⭐ 每5秒定期扫描背包（兜底）
+ * 4. 每5秒定期扫描背包（兜底）
  *
- * ⭐ 发现记录键格式从纯 type 升级为 type:rarityOrder，
+ * 发现记录键格式从纯 type 升级为 type:rarityOrder，
  *    同一 type 不同品质的模组独立记录。
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
@@ -42,7 +42,7 @@ public class ModuleDiscoveryHandler {
      * 路径1：玩家<b>成功</b>捡起物品时检测
      * Path 1: Detect after a successful item pickup
      *
-     * <p>⭐ 这里原先用的是 {@code EntityItemPickupEvent} —— 那是**拾取前**的事件。
+     * <p>这里原先用的是 {@code EntityItemPickupEvent} —— 那是**拾取前**的事件。
      * {@code ItemEntity.playerTouch} 里的顺序是：
      * 先发 {@code EntityItemPickupEvent}，再 {@code Inventory.add}，
      * add 成功了才发 {@code PlayerEvent.ItemPickupEvent}。</p>
@@ -81,7 +81,7 @@ public class ModuleDiscoveryHandler {
     }
 
     /**
-     * ⭐ 路径4：定期背包扫描（兜底）
+     * 路径4：定期背包扫描（兜底）
      */
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -124,7 +124,7 @@ public class ModuleDiscoveryHandler {
                 if (!(stack.getItem() instanceof AbstractWeaponModule) &&
                         !(stack.getItem() instanceof AbstractWarframeModule)) continue;
                 if (AbstractModule.isRandom(stack)) continue;
-                // ⭐ 使用组合键 / Use compound key
+                // 使用组合键 / Use compound key
                 String discoveryKey = buildDiscoveryKey(stack);
                 if (discoveryKey.isEmpty()) continue;
                 if (requiemCard.discoverModule(discoveryKey)) {
@@ -146,7 +146,7 @@ public class ModuleDiscoveryHandler {
         if (!(stack.getItem() instanceof AbstractWeaponModule) &&
                 !(stack.getItem() instanceof AbstractWarframeModule)) return;
         if (AbstractModule.isRandom(stack)) return;
-        // ⭐ 使用组合键 / Use compound key
+        // 使用组合键 / Use compound key
         String discoveryKey = buildDiscoveryKey(stack);
         if (discoveryKey.isEmpty()) return;
 
@@ -156,7 +156,7 @@ public class ModuleDiscoveryHandler {
         }
     }
 
-    // ==================== ⭐ 组合键工具方法 / Compound Key Utilities ====================
+    // ==================== 组合键工具方法 / Compound Key Utilities ====================
 
     /**
      * 根据物品栈构建发现记录组合键

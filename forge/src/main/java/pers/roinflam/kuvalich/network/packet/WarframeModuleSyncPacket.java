@@ -25,7 +25,7 @@ import java.util.function.Supplier;
  * 将玩家当前装备的8个战甲模组槽 + 所有击杀叠层计数一次性同步到客户端。
  * 客户端使用同步的原始数据本地计算属性，与服务端使用完全相同的计算逻辑。
  *
- * <p>⭐ 性能修复（本次）：脏检测不再对 8 个 ItemStack 做 {@code tag.hashCode()} 全树递归。</p>
+ * <p>性能修复（本次）：脏检测不再对 8 个 ItemStack 做 {@code tag.hashCode()} 全树递归。</p>
  *
  * <p>问题：原 {@code computeStateHash} 每 5 tick、每玩家都要深度遍历 8 个模组的完整 NBT 树。
  * 60 人在线约为每秒 1920 次深度 hash，纯粹是为了「判断有没有变」而烧的 CPU。</p>
@@ -56,7 +56,7 @@ public class WarframeModuleSyncPacket {
      * 击杀叠层计数，索引对应 {@link WarframeModuleHandler#WARFRAME_STACK_TYPES}
      */
     private final int[] killStacks;
-    /** ⭐ 武器类叠层数量，顺序与 {@link KillStackManager#WEAPON_STACK_TYPES} 一致 */
+    /** 武器类叠层数量，顺序与 {@link KillStackManager#WEAPON_STACK_TYPES} 一致 */
     private final int[] weaponStacks;
 
     // ==================== 服务端状态追踪 ====================
@@ -107,7 +107,7 @@ public class WarframeModuleSyncPacket {
             buf.writeVarInt(i < pkt.killStacks.length ? pkt.killStacks[i] : 0);
         }
 
-        // ⭐ 武器类叠层：数量 + 各项，顺序见 KillStackManager.WEAPON_STACK_TYPES
+        // 武器类叠层：数量 + 各项，顺序见 KillStackManager.WEAPON_STACK_TYPES
         int weaponTypeCount = KillStackManager.WEAPON_STACK_TYPES.length;
         buf.writeVarInt(weaponTypeCount);
         for (int i = 0; i < weaponTypeCount; i++) {
@@ -133,7 +133,7 @@ public class WarframeModuleSyncPacket {
             killStacks[i] = buf.readVarInt();
         }
 
-        // ⭐ 武器类叠层
+        // 武器类叠层
         int weaponTypeCount = buf.readVarInt();
         if (weaponTypeCount < 0 || weaponTypeCount > 256) {
             weaponTypeCount = 0;
@@ -169,7 +169,7 @@ public class WarframeModuleSyncPacket {
         // 交给 Handler 管理客户端缓存
         WarframeModuleHandler.onClientSyncReceived(validModules, pkt.killStacks);
 
-        // ⭐ 武器类叠层镜像：本地玩家 UUID 只能在客户端取，本方法已由 DistExecutor 限定在客户端执行
+        // 武器类叠层镜像：本地玩家 UUID 只能在客户端取，本方法已由 DistExecutor 限定在客户端执行
         net.minecraft.client.player.LocalPlayer localPlayer = net.minecraft.client.Minecraft.getInstance().player;
         if (localPlayer != null) {
             KillStackManager.onClientSyncReceived(localPlayer.getUUID(), pkt.weaponStacks);
@@ -204,7 +204,7 @@ public class WarframeModuleSyncPacket {
      * 检测数据变化，仅在变化时发送同步包
      * 用于定期轮询场景（每5tick调用一次）
      *
-     * <p>⭐ 模组侧用版本号（O(1) int 比较），叠层侧用 12 个 int 的数组 hash，
+     * <p>模组侧用版本号（O(1) int 比较），叠层侧用 12 个 int 的数组 hash，
      * 不再做任何 NBT 深度遍历。</p>
      *
      * @param player 目标玩家
@@ -216,7 +216,7 @@ public class WarframeModuleSyncPacket {
         int version = getModuleVersion(player);
         int[] stacks = collectServerKillStacks(player);
         int stackHash = Arrays.hashCode(stacks);
-        // ⭐ 武器类叠层也纳入"有没有变化"的判断，叠层增减或衰减时才重发
+        // 武器类叠层也纳入"有没有变化"的判断，叠层增减或衰减时才重发
         int[] weaponStacks = KillStackManager.collectWeaponStacks(player);
         int weaponHash = Arrays.hashCode(weaponStacks);
         int[] last = SERVER_STATE.get(player.getUUID());
@@ -245,7 +245,7 @@ public class WarframeModuleSyncPacket {
     // ==================== 内部方法 ====================
 
     /**
-     * ⭐ 读取玩家战甲模组 capability 的版本号（脏标记）
+     * 读取玩家战甲模组 capability 的版本号（脏标记）
      *
      * @param player 目标玩家
      * @return 版本号；capability 不可用时返回 {@link #VERSION_UNAVAILABLE}

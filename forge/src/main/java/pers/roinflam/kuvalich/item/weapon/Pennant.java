@@ -107,7 +107,7 @@ public class Pennant extends AbstractKuvaWeapon {
 
             int hits = 0;
             for (@Nonnull LivingEntity hurter : entities) {
-                // ✅ 使用indirectMagic（原版自带无视护甲效果）
+                // 使用indirectMagic（原版自带无视护甲效果）
                 if (hurter.hurt(
                         level.damageSources().indirectMagic(player, player),
                         hurter.getHealth() * 0.2f)) {
@@ -118,7 +118,7 @@ public class Pennant extends AbstractKuvaWeapon {
 
                         @Override
                         public void run() {
-                            // ⭐ 修复 3：实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血
+                            // 修复 3：实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血
                             if (++tick > 20 || hurter.isDeadOrDying() || hurter.isRemoved()) {
                                 this.cancel();
                                 return;
@@ -128,13 +128,13 @@ public class Pennant extends AbstractKuvaWeapon {
                                     (hurter.getMaxHealth() - hurter.getHealth()) * 0.25f / 20);
                             damage = damage * 0.3f + damage * tick / 10 * 0.7f;
 
-                            // ⭐ 先扣血、再显示「扣之前 − 扣之后」的实际掉血：
+                            // 先扣血、再显示「扣之前 − 扣之后」的实际掉血：
                             //    Boss 锁血、伤害上限等拦截直接扣血时，数字如实变小或不显示
                             float healthBefore = hurter.getHealth();
                             if (healthBefore - damage > 0.01f) {
                                 LivingEntityUtil.damageHealthDirectly(hurter, damage);
                             } else {
-                                // ✅ 使用indirectMagic
+                                // 使用indirectMagic
                                 LivingEntityUtil.kill(hurter, level.damageSources().indirectMagic(player, player));
                                 this.cancel();
                             }

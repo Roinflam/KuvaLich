@@ -945,7 +945,7 @@ public final class ModConfig {
             oreDropWhitelist = builder
                     .comment("Extra block ids treated as ore, beyond the kuvalich:mining_multiplier_ores tag")
                     .comment("额外视为矿石的方块 id（在 kuvalich:mining_multiplier_ores 标签之外再加）")
-                    .comment("实测整合包里有 23 个方块用了原版时运公式却不在 forge:ores，")
+                    .comment("不少模组的矿石用了原版时运公式却不在 forge:ores，")
                     .comment("标签里已预置了能查到的那些；漏网的写在这里。")
                     .defineList("oreDropWhitelist", java.util.List.of(), o -> o instanceof String);
 
@@ -1576,7 +1576,7 @@ public final class ModConfig {
         // 挖矿倍率的白/黑名单是解析成 ResourceLocation 后缓存的，配置改了要重解析
         OreDropRules.invalidateCache();
 
-        // ⭐ 模组原型池：ModuleRegistryHelper#register 在建表时就把
+        // 模组原型池：ModuleRegistryHelper#register 在建表时就把
         //    moduleAttributeMultiplier / keyAttributeMultiplier 乘进了每个原型的 NBT，
         //    disabledModuleTypes 也是那时做的取舍。不重建的话这三条配置改完要重启才生效，
         //    而其余配置靠 ForgeConfigSpec.ConfigValue#get() 本身就是热的（重载时 Forge 会清掉 cachedValue）。

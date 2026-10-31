@@ -27,7 +27,7 @@ public class KuvaLichEntities {
      */
     public static final RegistryObject<EntityType<KuvaSlaveEntity>> KUVA_SLAVE = ENTITY_TYPES.register("kuva_slave",
             () -> EntityType.Builder.of(KuvaSlaveEntity::new, MobCategory.MONSTER)
-                    .sized(1.5F, 2.9F)  // ✅ 修正尺寸
+                    .sized(1.5F, 2.9F)  // 修正尺寸
                     .clientTrackingRange(8)
                     .updateInterval(3)
                     .build("kuva_slave"));
@@ -41,7 +41,7 @@ public class KuvaLichEntities {
      */
     public static final RegistryObject<EntityType<KuvaMasterEntity>> KUVA_MASTER = ENTITY_TYPES.register("kuva_master",
             () -> EntityType.Builder.of(KuvaMasterEntity::new, MobCategory.MONSTER)
-                    .sized(1.75F, 3.4F)  // ✅ 修正尺寸
+                    .sized(1.75F, 3.4F)  // 修正尺寸
                     .clientTrackingRange(10)
                     .updateInterval(3)
                     .fireImmune()

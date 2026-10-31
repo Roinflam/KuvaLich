@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 经验矿石（1.20.1版本，业务逻辑100%不变）
- * Experience Ore (1.20.1 version, business logic 100% unchanged)
+ * 经验矿石
+ * Experience Ore
  *
  * 属性保持不变：
  * Properties unchanged:
@@ -29,22 +29,22 @@ import java.util.List;
  * - 抗性: 3.0F (原 RESISTANCE)
  * - 需要工具: 石镐 / Stone Pickaxe (level 1)
  * - 基础经验: 5-20 (原 MIN_EXP - MAX_EXP)
- * - 时运加成: +fortune (业务逻辑不变)
+ * - 时运加成: +fortune
  * - 掉落: 无物品，仅经验
  *
- * ⭐ 新增：50%概率额外掉落1-2个内融核心（不受时运影响）
- * ⭐ NEW: 50% chance to drop 1-2 Endo (not affected by Fortune)
+ * 新增：50%概率额外掉落1-2个内融核心（不受时运影响）
+ * NEW: 50% chance to drop 1-2 Endo (not affected by Fortune)
  *
- * ⭐ 修复：将掉落逻辑从 spawnAfterBreak/tryDropExperience 移至 playerDestroy，
+ * 修复：将掉落逻辑从 spawnAfterBreak/tryDropExperience 移至 playerDestroy，
  *    解决 Mohist（Forge+Bukkit 混合端）环境下 spawnAfterBreak 不被调用导致什么都不掉的问题。
  *    playerDestroy 在所有环境下均可靠调用。
- * ⭐ FIX: Moved drop logic from spawnAfterBreak/tryDropExperience to playerDestroy,
+ * FIX: Moved drop logic from spawnAfterBreak/tryDropExperience to playerDestroy,
  *    fixing issue where spawnAfterBreak is not called on Mohist (Forge+Bukkit hybrid),
  *    causing no drops at all. playerDestroy is reliably called in all environments.
  */
 public class ExperienceOreBlock extends Block {
 
-    // 常量定义（业务逻辑100%保持不变）/ Constants (business logic 100% unchanged)
+    // 常量定义 / Constants
     private static final int MIN_EXP = 5;
     private static final int MAX_EXP = 20;
 
@@ -67,8 +67,8 @@ public class ExperienceOreBlock extends Block {
     }
 
     /**
-     * 获取掉落物（业务逻辑100%不变：不掉落任何物品）
-     * Get drops (business logic 100% unchanged: no item drops)
+     * 获取掉落物（不掉落任何物品）
+     * Get drops (no item drops)
      *
      * 注意：物品掉落（内融核心）在 playerDestroy 中硬编码处理，不走 loot table。
      * Note: Item drops (Endo) are hardcoded in playerDestroy, not through loot table.
@@ -81,20 +81,20 @@ public class ExperienceOreBlock extends Block {
     }
 
     /**
-     * ⭐ 修复核心：玩家破坏方块时直接处理所有掉落
-     * ⭐ Core fix: Handle all drops directly when player destroys the block
+     * 修复核心：玩家破坏方块时直接处理所有掉落
+     * Core fix: Handle all drops directly when player destroys the block
      *
      * 替代原 spawnAfterBreak → tryDropExperience 调用链。
      * playerDestroy 在原版、Forge、Mohist 环境下都会被可靠调用。
      *
-     * 掉落规则（业务逻辑100%不变）：
+     * 掉落规则：
      * - 精准采集：不掉落经验和内融核心
      * - 正常挖掘：掉落经验（基础5-20 + 时运等级），50%概率掉落1-2个内融核心
      *
      * Replaces the spawnAfterBreak → tryDropExperience call chain.
      * playerDestroy is reliably called in vanilla, Forge, and Mohist environments.
      *
-     * Drop rules (business logic 100% unchanged):
+     * Drop rules:
      * - Silk Touch: no XP or Endo drops
      * - Normal mining: XP (base 5-20 + fortune level), 50% chance for 1-2 Endo
      */
@@ -114,7 +114,7 @@ public class ExperienceOreBlock extends Block {
             return;
         }
 
-        // ========== 经验掉落（业务逻辑100%不变）/ XP drop (unchanged) ==========
+        // ========== 经验掉落 / XP drop ==========
 
         // 获取时运等级 / Get fortune level
         int fortune = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, tool);

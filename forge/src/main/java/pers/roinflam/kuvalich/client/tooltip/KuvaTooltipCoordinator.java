@@ -92,13 +92,13 @@ public final class KuvaTooltipCoordinator {
                 Minecraft mc = Minecraft.getInstance();
                 int screenWidth = mc.getWindow().getGuiScaledWidth();
 
-                // ⭐ 四个视图共用同一个宽度上限。
+                // 四个视图共用同一个宽度上限。
                 //    曾经给功能键视图单独放宽过，想让它靠「变宽」换「变矮」而不是截断，
                 //    但宽度上限同样会影响列数：默认视图卡在两列、SHIFT 能排到三列，
                 //    于是同一把武器两种排版。一致性比那点余量重要。
                 int maxWidth = (int) (screenWidth * TooltipConfig.PANEL.widthRatio.get());
 
-                // ⭐ 高度也要传进去：面板超屏时原版不裁剪也不滚动，只会把顶部推到屏幕外面
+                // 高度也要传进去：面板超屏时原版不裁剪也不滚动，只会把顶部推到屏幕外面
                 return ClientPanelGridTooltip.layout(data, mc.font, maxWidth, mc.getWindow().getGuiScaledHeight());
             });
         }
@@ -110,7 +110,7 @@ public final class KuvaTooltipCoordinator {
     // ==================== 事件 ====================
 
     /**
-     * ⭐ {@link EventPriority#LOW}：让其它模组先写完，我们最后落位，插入结果才是确定的。
+     * {@link EventPriority#LOW}：让其它模组先写完，我们最后落位，插入结果才是确定的。
      *
      * <p><b>插到哪里</b>见 {@link #insertIndex}。</p>
      */
@@ -145,10 +145,10 @@ public final class KuvaTooltipCoordinator {
      * <b>从下标 1 开始，跳过所有连续的渲染组件，插在它们后面。</b></p>
      *
      * <p>这样写还有一个好处：它不认 TACZ，只认「物品自带的组件」这个通用形态，
-     * 任何用同一套机制的模组都能正确避让。整合包里的 Iceberg 会以 HIGHEST 优先级
+     * 任何用同一套机制的模组都能正确避让。Iceberg 会以 HIGHEST 优先级
      * 在物品名后插一个分隔组件，也一并被跳过。</p>
      *
-     * <p>⭐ 这里曾经用过一套「在 ItemTooltipEvent 里放占位行、再在本事件里替换」的做法，
+     * <p>这里曾经用过一套「在 ItemTooltipEvent 里放占位行、再在本事件里替换」的做法，
      * 前提是「TACZ 会重建整个列表并把未知行挪到末尾」—— 那个前提是<b>错的</b>：
      * 实测 TACZ 全 jar 里没有任何一处订阅 {@code RenderTooltipEvent}，
      * 它唯一的 tooltip 监听器只是在 F3+H 时往末尾追加一行 {@code GunId: "..."}。
@@ -194,7 +194,7 @@ public final class KuvaTooltipCoordinator {
             return memoElements;
         }
 
-        // ⭐ 本事件拿不到「正在看 tooltip 的实体」，只能用本地玩家。
+        // 本事件拿不到「正在看 tooltip 的实体」，只能用本地玩家。
         //    叠层本来就是玩家级状态（不绑定具体物品），所以在 JEI 配方页上
         //    显示「你当前的层数」在语义上也是成立的。
         Player viewer = mc.player;
@@ -229,7 +229,7 @@ public final class KuvaTooltipCoordinator {
     /**
      * 断开连接 / 退出世界时清理客户端状态
      *
-     * <p>⭐ 不能用 {@code PlayerLoggedOutEvent}：那个事件只在服务端触发
+     * <p>不能用 {@code PlayerLoggedOutEvent}：那个事件只在服务端触发
      * （{@code PlayerList#remove}），项目里既有的
      * {@code WarframeEffectHandler.onPlayerLoggedOut} 里那段
      * {@code if (isClientSide())} 分支是恒假的死代码。</p>

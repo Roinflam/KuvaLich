@@ -27,20 +27,20 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  * 白银级武器模组（1.20.1版本）
  * Uncommon (Sliver) tier weapon module (1.20.1 version)
  *
- * ⭐ 第三批新增 · 单词条银卡：
+ * 第三批新增 · 单词条银卡：
  *    通用：收割之刻（收集者阈值 2%）、涤魂（净化驱散 10%）、斩首（致命斩首 0.01%）
  *    TACZ：洞穿弹头（真实伤害 20%）、战利搜集（枪械战利品掉落 30%）
  *
- * ⭐ 第四批新增 · 轻量银卡搭配：
+ * 第四批新增 · 轻量银卡搭配：
  *    通用：弱化打击（净化10%+近战60%）、猎魂者（阈值2%+远程60%）
  *    TACZ：实弹穿透（真伤10%+枪械伤害60%）、拾荒弹链（枪械战利品20%+弹夹30%）
  *
- * ⭐ 第五批新增 · 轻量银卡搭配（新词条 × 老词条）：
+ * 第五批新增 · 轻量银卡搭配（新词条 × 老词条）：
  *    通用：腐蚀猎手（阈值2%+腐蚀60%）、涤魂触击（抹除10%+远程60%）、
  *          毒刃斩首（秒杀0.01%+毒60%）、净化箭（抹除10%+箭矢90%）
  *    TACZ：真伤弹芯（真伤10%+爆头60%）、掠夺者之眼（枪械战利品20%+精准30%）
  *
- * ⭐ 第六批新增 · 冷门组合（银卡）：
+ * 第六批新增 · 冷门组合（银卡）：
  *    通用：基础元素×冷门载体（烈焰挥砍/冰封打击/剧毒穿刺/雷暴连射/炽炎之触/寒霜领域）、
  *          impact 控场进阶（碎骨重锤/震荡刃/霰弹冲击）、magicDamage×元素与散件、
  *          bane×暴击/×元素/×远程、基伤×元素、triggerTime 专精、dash×元素、横扫近战等。
@@ -90,7 +90,7 @@ public class WeaponUncommonModule extends AbstractWeaponModule {
     }
 
     private static void initializeModuleList() {
-        // ⭐ 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
+        // 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
         //    填完之后在方法末尾一次性换掉静态字段的引用。
         //
         //    不能就地 clear() 再填：配置热重载后本方法会被再次调用，
@@ -342,7 +342,7 @@ public class WeaponUncommonModule extends AbstractWeaponModule {
                 "kuvaweapon.item_module.purifying_arrow", "purifying_arrow",
                 new Object[]{"purge_buff", 0.10001f, "arrowDamage", 0.90001f});
 
-        // ========== ⭐ 第六批新增 · 通用冷门组合（银卡）==========
+        // ========== 第六批新增 · 通用冷门组合（银卡）==========
         // 基础元素值统一 0.9（与现有银卡单元素一致）；不引入处决/真伤等进阶机制以外的超模数值。
 
         // ----- 基础元素 × 冷门载体 -----
@@ -632,7 +632,7 @@ public class WeaponUncommonModule extends AbstractWeaponModule {
                     "kuvaweapon.item_module.plunderers_eye", "plunderers_eye",
                     new Object[]{"gun_loot_drop", 0.20001f, "accuracy", 0.30001f});
 
-            // ===== ⭐ 第六批新增 · TACZ 冷门组合（银卡）=====
+            // ===== 第六批新增 · TACZ 冷门组合（银卡）=====
             // gun_damage 独立乘区，配元素(0.6)不超模；真伤/战利品配差异化老词条避免与现有重复。
 
             // 烈焰穿甲 —— 枪械伤害150% + 火焰60% + 穿刺30%（破甲纵火弹）
@@ -710,7 +710,7 @@ public class WeaponUncommonModule extends AbstractWeaponModule {
         items.addAll(itemStackList);
         CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, Rarity.UNCOMMON);
 
-        // ⭐ 创造模式模组默认满级
+        // 创造模式模组默认满级
         if (ModuleLevelHelper.isLevelSystemEnabled()) {
             for (ItemStack stack : items) {
                 if (!AbstractModule.isRandom(stack)) {
@@ -736,7 +736,7 @@ public class WeaponUncommonModule extends AbstractWeaponModule {
 
             ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
 
-// ⭐ 模组等级系统：赋予揭示等级
+// 模组等级系统：赋予揭示等级
             ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);

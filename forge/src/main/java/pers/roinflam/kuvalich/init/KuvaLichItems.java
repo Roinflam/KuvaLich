@@ -61,8 +61,8 @@ public class KuvaLichItems {
             () -> new RIS(new Item.Properties()));
 
     /**
-     * 根据ID获取安魂卡片（业务逻辑100%不变）
-     * Get requiem card by ID (business logic 100% unchanged)
+     * 根据ID获取安魂卡片
+     * Get requiem card by ID
      *
      * @param id 卡片ID (0-7)
      * @return 对应的安魂卡片
@@ -263,7 +263,7 @@ public class KuvaLichItems {
     public static final RegistryObject<Item> SHADOW_FORMA = ITEMS.register("shadow_forma",
             () -> new pers.roinflam.kuvalich.item.ShadowForma(new Item.Properties()));
 
-    // ⭐ 内融核心（模组等级升级消耗品）/ Endo (Module level upgrade material)
+    // 内融核心（模组等级升级消耗品）/ Endo (Module level upgrade material)
     public static final RegistryObject<Item> ENDO = ITEMS.register("endo",
             () -> new pers.roinflam.kuvalich.item.Endo(new Item.Properties()));
 

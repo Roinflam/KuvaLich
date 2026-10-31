@@ -19,14 +19,14 @@ import pers.roinflam.kuvalich.utils.Reference;
  * <p>
  * 职责：等级NBT读写、属性缩放、升级费用、精通键生成、揭示等级赋予、系统开关
  * <p>
- * ⭐ 升级费用根据模组品质缩放：
+ * 升级费用根据模组品质缩放：
  *    铜卡(Common) 25% | 银卡(Uncommon) 50% | 金卡(Rare) 75% | Prime/裂罅 100%
  *
- * ⭐ 精通键从纯 type 升级为 type:rarityOrder 格式，
+ * 精通键从纯 type 升级为 type:rarityOrder 格式，
  *    不同品质的同type模组精通独立记录（如 fury:1 和 fury:3 独立）。
  *    揭示时回退检查旧格式纯type键，兼容旧存档。
  *
- * ⭐ 发现记录同步改为使用 type:rarityOrder 组合键。
+ * 发现记录同步改为使用 type:rarityOrder 组合键。
  *
  * @author RoinFlam
  */
@@ -130,7 +130,7 @@ public final class ModuleLevelHelper {
     }
 
     /**
-     * ⭐ 计算指定模组从当前等级升级所需的内融核心数量（含品质缩放）
+     * 计算指定模组从当前等级升级所需的内融核心数量（含品质缩放）
      * <p>
      * 在基础费用上乘以品质系数后向上取整，保证最低消耗1个。
      * <p>
@@ -149,7 +149,7 @@ public final class ModuleLevelHelper {
     }
 
     /**
-     * ⭐ 获取模组品质对应的内融核心费用系数
+     * 获取模组品质对应的内融核心费用系数
      * <p>
      * 品质越低，升级越便宜：
      * <pre>
@@ -202,7 +202,7 @@ public final class ModuleLevelHelper {
     // ==================== 精通键 ====================
 
     /**
-     * ⭐ 获取模组的精通键（mastery key）
+     * 获取模组的精通键（mastery key）
      * <p>
      * 新格式：type:rarityOrder（如 "fury:1"、"fury:3"）
      * 武器裂罅特殊处理：按模式分键（如 "riven_weapon_module_melee:3"）
@@ -228,12 +228,12 @@ public final class ModuleLevelHelper {
                 case WeaponRivenModule.MODE_UNIVERSAL: modeKey = type + "_universal"; break;
                 default: modeKey = type + "_melee"; break;
             }
-            // ⭐ 追加品质后缀 / Append rarity suffix
+            // 追加品质后缀 / Append rarity suffix
             int rarity = ModuleDiscoveryHandler.getRarityOrder(moduleStack);
             return rarity >= 0 ? modeKey + ":" + rarity : modeKey;
         }
 
-        // ⭐ 普通模组：type + ":" + rarityOrder / Regular modules: type + ":" + rarityOrder
+        // 普通模组：type + ":" + rarityOrder / Regular modules: type + ":" + rarityOrder
         int rarity = ModuleDiscoveryHandler.getRarityOrder(moduleStack);
         return rarity >= 0 ? type + ":" + rarity : type;
     }
@@ -261,7 +261,7 @@ public final class ModuleLevelHelper {
         return type;
     }
 
-    // ==================== ⭐ 揭示等级赋予 ====================
+    // ==================== 揭示等级赋予 ====================
 
     /**
      * 模组揭示时赋予等级
@@ -272,8 +272,8 @@ public final class ModuleLevelHelper {
      * <p>
      * 等级系统关闭时不做任何操作（所有模组按满级计算）
      *
-     * ⭐ 精通键使用新格式 type:rarityOrder，读取时回退旧格式兼容旧存档。
-     * ⭐ 发现记录同步使用 type:rarityOrder 组合键。
+     * 精通键使用新格式 type:rarityOrder，读取时回退旧格式兼容旧存档。
+     * 发现记录同步使用 type:rarityOrder 组合键。
      *
      * @param module 揭示出的模组物品
      * @param player 揭示者
@@ -290,11 +290,11 @@ public final class ModuleLevelHelper {
             String masteryKey = getMasteryKey(module);
             if (!masteryKey.isEmpty()) {
                 player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
-                    // ⭐ 先查新格式精通键 / Try new format mastery key first
+                    // 先查新格式精通键 / Try new format mastery key first
                     int masteryLevel = requiemCard.getMasteryLevel(masteryKey);
 
-                    // ⭐ 旧存档兼容：新键没命中则回退查旧格式纯type键
-                    // ⭐ Legacy compat: fallback to old type-only key if new key not found
+                    // 旧存档兼容：新键没命中则回退查旧格式纯type键
+                    // Legacy compat: fallback to old type-only key if new key not found
                     if (masteryLevel <= 0) {
                         String legacyKey = getLegacyMasteryKey(module);
                         if (!legacyKey.equals(masteryKey)) {
@@ -315,7 +315,7 @@ public final class ModuleLevelHelper {
             setModuleLevel(module, 1);
         }
 
-        // ⭐ 揭示时记录模组发现（使用 type:rarityOrder 组合键）
+        // 揭示时记录模组发现（使用 type:rarityOrder 组合键）
         if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
             String discoveryKey = ModuleDiscoveryHandler.buildDiscoveryKey(module);
             if (!discoveryKey.isEmpty()) {

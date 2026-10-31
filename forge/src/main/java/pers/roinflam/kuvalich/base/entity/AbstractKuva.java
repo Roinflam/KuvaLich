@@ -251,7 +251,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         LivingEntity target = event.getEntity();
 
         // 赤毒实体造成伤害时的加成；打的是玩家时再吃玄骸等级的受伤增幅
-        // ⭐ 2026-09-25：玄骸等级的两项惩罚（受伤增幅、输出削减）原先对玩家受到 / 造成的<b>所有</b>伤害生效
+        // 2026-09-25：玄骸等级的两项惩罚（受伤增幅、输出削减）原先对玩家受到 / 造成的<b>所有</b>伤害生效
         //    （掉落、摔伤、打僵尸都算），和配置说明「玄骸对你」「你对玄骸」不符，现只在对手是赤毒实体时生效
         if (damageSource.getEntity() instanceof AbstractKuva kuvaBase) {
             applyKuvaBaseDamageBonus(event, kuvaBase);
@@ -319,7 +319,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
      * 根据伤害来源判断伤害类别
      * 判定优先级：弓箭 > 弹射物 > 魔法 > 近战 > 其他
      *
-     * <p>⭐ 魔法判定改用 {@link MagicDamageClassifier#isMagic}：
+     * <p>魔法判定改用 {@link MagicDamageClassifier#isMagic}：
      * 原来只认 {@code witch_resistant_to} tag，Ars Nouveau / Goety / SweetMagic 的大部分法术
      * 在这里都会落到「近战」或「其他」；现在与 {@code magicDamage} 词条用同一套规则，
      * 召唤物替玩家挥砍的命中仍按近战记层。</p>
@@ -363,7 +363,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
      * 基础伤害类型修正，所有赤毒实体共有
      * 弓箭增伤125%，其他弹射物减伤75%，魔法减伤75%
      *
-     * <p>⭐ 魔法判定与 {@link #classifyDamage} 保持一致，改用 {@link MagicDamageClassifier#isMagic}。
+     * <p>魔法判定与 {@link #classifyDamage} 保持一致，改用 {@link MagicDamageClassifier#isMagic}。
      * 这意味着第三方模组的法术现在也会吃到魔法减伤。</p>
      *
      * @param source 伤害来源

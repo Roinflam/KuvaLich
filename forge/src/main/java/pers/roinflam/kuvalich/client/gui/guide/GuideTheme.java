@@ -12,7 +12,7 @@ import pers.roinflam.kuvalich.client.gui.codex.CodexTheme;
  *
  * <h3>和模组图鉴是同一套语言</h3>
  * <p>底色、结构线、科技青、赤毒猩红直接取 {@link CodexTheme} 的常量 —— 指南和图鉴是同一个模组里
- * 挨着的两块界面，玩家从一个切到另一个时不该觉得换了一个产品。规则也照搬：冷底暖芯、斜切几何、
+ * 挨着的两块界面，玩家从一个切到另一个时不该觉得换了一个产品。规则也一样：冷底暖芯、斜切几何、
  * 1px 锐线 + 微辉光、全息扫描线，<b>全屏只有一个暖色焦点（赤毒猩红）</b>，只给「当前 / 悬停」用。</p>
  *
  * <h3>正文配色为什么单列</h3>
@@ -277,7 +277,7 @@ public final class GuideTheme {
         return c * c * c;
     }
 
-    /** 带一点过冲再回弹的缓出：格子浮现用，和御炎指南的菜单同一条曲线。 */
+    /** 带一点过冲再回弹的缓出：格子浮现用。 */
     public static float easeOutBack(float t) {
         float inv = Mth.clamp(t, 0f, 1f) - 1f;
         return 1f + inv * inv * (2.70158f * inv + 1.70158f);

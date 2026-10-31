@@ -32,8 +32,8 @@ import java.util.Set;
  * 存储玩家的安魂卡片数据、解密进度、没收物品、模组精通记录、模组发现记录等
  * Stores player's requiem card data, decryption progress, confiscated items, module mastery records, module discovery records, etc.
  *
- * ⭐ 新增：模组发现记录（discoveredModules）
- * ⭐ NEW: Module discovery records (discoveredModules)
+ * 新增：模组发现记录（discoveredModules）
+ * NEW: Module discovery records (discoveredModules)
  * 记录玩家获取过的所有模组type，图鉴界面使用此数据显示已获得/未获得状态。
  * Records all module types the player has ever obtained. Codex screen uses this for discovered/undiscovered display.
  */
@@ -62,14 +62,14 @@ public class RequiemCard {
     private List<ItemStack> confiscatedItems;
 
     /**
-     * ⭐ 模组精通记录（模组type/精通键 → 最高等级）
-     * ⭐ Module mastery records (module type/mastery key → highest level)
+     * 模组精通记录（模组type/精通键 → 最高等级）
+     * Module mastery records (module type/mastery key → highest level)
      */
     private Map<String, Integer> moduleMastery;
 
     /**
-     * ⭐ 模组发现记录（已获得过的模组type集合）
-     * ⭐ Module discovery records (set of module types the player has obtained)
+     * 模组发现记录（已获得过的模组type集合）
+     * Module discovery records (set of module types the player has obtained)
      *
      * 用于图鉴界面区分已获得/未获得模组。
      * 死亡不丢失，跟随RequiemCard Capability持久化。
@@ -178,7 +178,7 @@ public class RequiemCard {
         // 克隆精通记录 / Clone mastery records
         this.moduleMastery = new HashMap<>(requiemCard.moduleMastery);
 
-        // ⭐ 克隆发现记录 / Clone discovery records
+        // 克隆发现记录 / Clone discovery records
         this.discoveredModules = new HashSet<>(requiemCard.discoveredModules);
 
         // 克隆玄骸数据
@@ -707,7 +707,7 @@ public class RequiemCard {
         return new HashMap<>(moduleMastery);
     }
 
-    // ==================== ⭐ 模组发现相关方法 / Module Discovery Methods ====================
+    // ==================== 模组发现相关方法 / Module Discovery Methods ====================
 
     /**
      * 记录模组发现
@@ -795,7 +795,7 @@ public class RequiemCard {
         }
         nbt.put("moduleMastery", masteryTag);
 
-        // ⭐ 序列化发现记录 / Serialize discovery records
+        // 序列化发现记录 / Serialize discovery records
         ListTag discoveryList = new ListTag();
         for (String type : discoveredModules) {
             discoveryList.add(StringTag.valueOf(type));
@@ -889,7 +889,7 @@ public class RequiemCard {
             }
         }
 
-        // ⭐ 反序列化发现记录 / Deserialize discovery records
+        // 反序列化发现记录 / Deserialize discovery records
         this.discoveredModules = new HashSet<>();
         if (nbt.contains("discoveredModules", Tag.TAG_LIST)) {
             ListTag discoveryList = nbt.getList("discoveredModules", Tag.TAG_STRING);

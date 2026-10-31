@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * 把「一把武器 + 一份属性表 + 一份叠层数据」变成可渲染的面板数据
  *
- * <p>⭐ 本类**没有任何 I18n / Font / Minecraft 客户端依赖**，故意放在
+ * <p>本类**没有任何 I18n / Font / Minecraft 客户端依赖**，故意放在
  * {@code module.weapon.panel} 而不是 {@code client} 包下。
  * {@code WeaponModuleHandler} 类级 {@code @Mod.EventBusSubscriber} 并没有限定 Dist
  * （只有方法带 {@code @OnlyIn}），专用服务端的类加载安全全靠 RuntimeDistCleaner 剥离；
@@ -43,7 +43,7 @@ public final class WeaponPanelData {
         List<PanelChip> out = new ArrayList<>(WeaponPanelCatalog.SPECS.size());
 
         for (AttributeSpec spec : WeaponPanelCatalog.SPECS) {
-            // ⭐ 门控：近战武器不生成枪械词条，这是压掉大半行数的关键一步
+            // 门控：近战武器不生成枪械词条，这是压掉大半行数的关键一步
             if (applyGates && !spec.gate().accepts(stack)) {
                 continue;
             }
@@ -75,7 +75,7 @@ public final class WeaponPanelData {
      * <p>只有被 {@link AttributeSpec#always()} 标记的四条（基伤 / 暴击 / 暴伤 / 触发）是
      * 武器的身份信息，即使全是基础值也要显示；其余一律「真的有非零值」才占行。</p>
      *
-     * <p>⭐ 这个判据以前挂在 {@code PanelGroup.alwaysVisible()}（已删除）上，是<b>组级</b>的，
+     * <p>这个判据以前挂在 {@code PanelGroup.alwaysVisible()}（已删除）上，是<b>组级</b>的，
      * 于是同在 PANEL 组的多重 / 攻速 / 射速 / 范围 / 触发时长也被顺带恒显 ——
      * 一把只插了伤害卡的武器会平白多出「多重 +0%  攻速 0.0%  射速 +0%  范围 +0%
      * 触发时长 100%」五个零值 chip，而改造前它们都是 {@code != 0} 才显示的。</p>
@@ -87,7 +87,7 @@ public final class WeaponPanelData {
         }
         double eps = spec.fmt().epsilon();
 
-        // ⭐ 显示值 ≠ 存在性判据的词条（triggerTime 的 provider 是 1+v、
+        // 显示值 ≠ 存在性判据的词条（triggerTime 的 provider 是 1+v、
         //    firing_rate 的 provider 乘了蓄力系数）必须按原始 key 判断有没有这条词条
         if (spec.visibilityKey() != null) {
             if (Math.abs(attrs.getOrDefault(spec.visibilityKey(), 0.0)) >= eps) {
@@ -138,7 +138,7 @@ public final class WeaponPanelData {
     /**
      * 收集描述表不认识的属性
      *
-     * <p>⭐ 这是给<b>整合包作者</b>的兜底：{@code CustomModuleManager} 允许在
+     * <p>这是给<b>整合包作者</b>的兜底：{@code CustomModuleManager} 允许在
      * {@code kuvalich-custom-modules.json} 里写任意属性 key，战斗端会照常读它，
      * 但面板的描述表是写死的 —— 不兜底的话作者写的词条在武器面板上一行都不显示，
      * 只能靠翻代码才知道为什么。</p>

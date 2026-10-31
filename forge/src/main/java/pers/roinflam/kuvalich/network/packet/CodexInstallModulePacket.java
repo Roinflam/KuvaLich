@@ -142,7 +142,7 @@ public class CodexInstallModulePacket {
                 LogUtil.debugEvent("图鉴一键装配", player.getName().getString(),
                         (msg.isWeapon ? "武器" : "战甲") + "模组 " + msg.moduleType);
             }
-            // ⭐ 成败都要回：改造前失败是完全静默的，玩家只会觉得「点了没反应」
+            // 成败都要回：改造前失败是完全静默的，玩家只会觉得「点了没反应」
             NetworkRegistryHandler.getChannel().send(
                     PacketDistributor.PLAYER.with(() -> player),
                     CodexActionResultPacket.of(msg.moduleType, msg.rarityOrder,

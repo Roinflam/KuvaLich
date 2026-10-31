@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 动态属性管理器
  * 负责应用、移除、更新实体的动态属性
  *
- * <p>⭐ 内存泄漏修复（历史，两处，均会随服务器运行时长累积）：</p>
+ * <p>内存泄漏修复（历史，两处，均会随服务器运行时长累积）：</p>
  *
  * <p><b>泄漏一：事件处理器永久驻留 Forge 事件总线（已从根上消除）。</b><br>
  * {@code MAGNETIC} / {@code RADIATION} / {@code PUNCTURE} 曾通过
@@ -69,7 +69,7 @@ public class DynamicAttributeManager {
     /**
      * 实体 UUID → 该实体身上的动态属性实例
      *
-     * <p>⭐ 内层换成 {@link CopyOnWriteArrayList}：
+     * <p>内层换成 {@link CopyOnWriteArrayList}：
      * 内层列表会在被 stream / for 遍历的过程中被改写——最典型的是
      * {@code FIRE} 的 onTick 回调里回调 {@link #apply} 给自己升一级，
      * 而外层正在 {@link #processEntityTick} 里遍历同一实体的列表。
@@ -95,7 +95,7 @@ public class DynamicAttributeManager {
         DynamicAttributeInstance old = findInstance(instances, instance.getAttribute());
 
         if (old != null) {
-            // ⭐ 性能优化（2026-09-23）：等级（amplifier）未变、且实体身上的修饰符完好时，
+            // 性能优化（2026-09-23）：等级（amplifier）未变、且实体身上的修饰符完好时，
             //    只刷新剩余时间，不摘/不重装 AttributeModifier。
             //
             //    背景：WarframeEffectHandler（每 5 tick）、WeaponCombatHandler（每 20 tick）
@@ -105,8 +105,8 @@ public class DynamicAttributeManager {
             //    每次心跳也走"覆盖"分支：removeModifiers → instances.remove → instances.add →
             //    applyModifiers，对每个目标属性做一次真实的 removeModifier + addPermanentModifier
             //    （两次 setDirty；再加两次 getModifierUUID 的 MD5）。
-            //    量级：r3 白天高峰批 WarframeEffectHandler.onPlayerTick 下 apply() 子树
-            //    A 服 0.025 ms/tick、B 服 0.015 ms/tick（MFS 采样报告，stackq 口径）。
+            //    量级：人多的服务器上实测，WarframeEffectHandler.onPlayerTick 下 apply() 子树
+            //    约 0.02 ms/tick。
             //
             //    等价性：
             //    - 同级时两条旧分支的结果都是 duration = max(旧, 新)，这里一致；
@@ -120,7 +120,7 @@ public class DynamicAttributeManager {
             //      列表顺序只影响遍历顺序，无人依赖；所以范围收窄到"无 onTick 回调"的属性。
             //      带 onTick 的 FIRE/ICE/POISON/RADIATION/CORROSION/PUNCTURE/VIRUS 完全走原逻辑。
             //    唯一可观测差异：少了"值没变"的两次 setDirty，属性不再被无谓标脏
-            //    （客户端看到的属性值不变；本服 MFS 的 VanillaAttributeSyncMixin 本来也会按值去重）。
+            //    （客户端看到的属性值不变）。
             if (instance.getAmplifier() == old.getAmplifier()
                     && old.getAttribute().getOnTickCallback() == null
                     && modifiersIntact(entity, old)) {
@@ -130,7 +130,7 @@ public class DynamicAttributeManager {
 
             if (instance.shouldOverride(old)) {
                 // 新实例等级更高或时间更长,覆盖旧实例
-                // ⭐ 这里绝不能调用 remove(entity, old)：那条路径在列表变空时会把外层 key 一起删掉
+                // 这里绝不能调用 remove(entity, old)：那条路径在列表变空时会把外层 key 一起删掉
                 //    （dropIfEmpty），于是下面的 instances.add 加进了一个脱离 map 的孤儿列表，
                 //    导致 getAmplifier 恒为 -1、磁力/辐射/穿刺静默失效。只摘修改器、只从列表里移除。
                 removeModifiers(entity, old);
@@ -147,7 +147,7 @@ public class DynamicAttributeManager {
     }
 
     /**
-     * ⭐ 核对实例对应的全部修饰符是否仍按 {@link #applyModifiers} 会写入的样子挂在实体上
+     * 核对实例对应的全部修饰符是否仍按 {@link #applyModifiers} 会写入的样子挂在实体上
      *
      * <p>供 {@link #apply} 的同级快速路径使用：只有这里返回 true，跳过"摘 + 重装"才与原逻辑
      * 结果完全一致。判据与 {@link #applyModifiers} 一一对应——目标属性不存在时同样跳过；
@@ -217,7 +217,7 @@ public class DynamicAttributeManager {
             instances.remove(target);
         }
 
-        // ⭐ 泄漏修复：列表空了就把外层 key 一并删掉
+        // 泄漏修复：列表空了就把外层 key 一并删掉
         dropIfEmpty(entityId, instances);
     }
 
@@ -233,13 +233,13 @@ public class DynamicAttributeManager {
         List<DynamicAttributeInstance> instances = ENTITY_ATTRIBUTES.get(entityId);
         if (instances != null) {
             instances.remove(instance);
-            // ⭐ 泄漏修复：列表空了就把外层 key 一并删掉
+            // 泄漏修复：列表空了就把外层 key 一并删掉
             dropIfEmpty(entityId, instances);
         }
     }
 
     /**
-     * ⭐ 内层列表为空时移除外层 map 条目，避免「UUID → 空 List」无限累积
+     * 内层列表为空时移除外层 map 条目，避免「UUID → 空 List」无限累积
      *
      * @param entityId  实体 UUID
      * @param instances 该实体的属性实例列表
@@ -380,11 +380,11 @@ public class DynamicAttributeManager {
     }
 
     /**
-     * ⭐ 性能优化（2026-09-23）：UUID 结果缓存。
+     * 性能优化（2026-09-23）：UUID 结果缓存。
      * <p>{@code UUID.nameUUIDFromBytes} 内部每次都要 {@code MessageDigest.getInstance("MD5")}
-     * 再跑一遍摘要，外加一次 {@code String.getBytes}。r3 白天高峰批里 {@code getModifierUUID}
-     * 子树（{@code UUID.nameUUIDFromBytes} + {@code String.getBytes}）A 服约 0.008 ms/tick、
-     * B 服约 0.0045 ms/tick（MFS 采样报告，stackq 口径）。输入（attributeName + targetAttr）
+     * 再跑一遍摘要，外加一次 {@code String.getBytes}。人多的服务器上实测，{@code getModifierUUID}
+     * 子树（{@code UUID.nameUUIDFromBytes} + {@code String.getBytes}）约 0.006 ms/tick。
+     * 输入（attributeName + targetAttr）
      * 只有 {@code DynamicAttributes} 里那几十种固定组合，结果是确定性哈希，
      * 缓存对新等级/新实体同样有效，不是"越攒越多"的无界缓存。</p>
      */
@@ -439,7 +439,7 @@ public class DynamicAttributeManager {
     }
 
     /**
-     * ⭐ 实体死亡时清理全部动态属性
+     * 实体死亡时清理全部动态属性
      *
      * <p>怪物几乎总是在元素 debuff 到期前被打死，死后不再 tick，
      * 自然过期逻辑永远不会执行，map 条目会一直挂着。
@@ -460,7 +460,7 @@ public class DynamicAttributeManager {
     }
 
     /**
-     * ⭐ 实体离开世界时清理全部动态属性（兜底）
+     * 实体离开世界时清理全部动态属性（兜底）
      *
      * <p>覆盖死亡事件之外的移除场景：区块卸载、指令 kill、维度传送、实体 discard 等。
      * 与 {@link #onLivingDeath} 双保险，{@link #clearAll} 幂等，重复调用无副作用。</p>
@@ -481,7 +481,7 @@ public class DynamicAttributeManager {
     private static final String MODIFIER_NAME_PREFIX = "DynamicAttribute:";
 
     /**
-     * ⭐ 实体进入世界时清掉存档里残留的临时修饰符
+     * 实体进入世界时清掉存档里残留的临时修饰符
      *
      * <p>问题背景：修饰符是用 {@code addPermanentModifier} 加的，会随实体一起写进存档
      * （这样玩家重新登录时最大生命值还在，血量不会被截断）。但效果的"还剩几秒"只记在内存里：
@@ -511,7 +511,7 @@ public class DynamicAttributeManager {
     /**
      * 移除实体身上所有本系统写入的残留修饰符
      *
-     * <p>⭐ 性能修复：本方法对<b>每一个</b>加入世界的实体各跑一次（刷怪笼、区块加载时是密集调用）。
+     * <p>性能修复：本方法对<b>每一个</b>加入世界的实体各跑一次（刷怪笼、区块加载时是密集调用）。
      * 原实现遍历 {@code ForgeRegistries.ATTRIBUTES} 的<b>全部</b>属性——整合包里轻松上百个，
      * 且对每个属性还要把 {@code getModifiers()} 整张表拉出来做字符串前缀比对。
      * 而本模组真正写过的属性不到 10 个，写过的 (属性, 修饰符 UUID) 组合也就几十个，
@@ -541,7 +541,7 @@ public class DynamicAttributeManager {
     }
 
     /**
-     * ⭐ 本模组写过的「目标属性 → 该属性下所有可能的修饰符 UUID」索引（懒加载）
+     * 本模组写过的「目标属性 → 该属性下所有可能的修饰符 UUID」索引（懒加载）
      *
      * <p>用 holder 类做懒加载而不是直接写成外层的 static final：
      * {@link DynamicAttributeManager} 带 {@code @Mod.EventBusSubscriber}，
@@ -555,7 +555,7 @@ public class DynamicAttributeManager {
         static final Map<Attribute, List<UUID>> INDEX = build();
 
         private static Map<Attribute, List<UUID>> build() {
-            // ⭐ 必须"读一个静态字段"来强制 DynamicAttributes 完成静态初始化
+            // 必须"读一个静态字段"来强制 DynamicAttributes 完成静态初始化
             //（用 .class 字面量只会加载不会初始化），否则 DynamicAttribute.getAll()
             //  可能只拿到零星几个碰巧被别处引用过的定义，索引就是残缺的。
             DynamicAttributes.HEALTH.getRegistryName();
@@ -584,7 +584,7 @@ public class DynamicAttributeManager {
 
         if (instances == null || instances.isEmpty()) return;
 
-        // ⭐ 直接遍历：内层已是 CopyOnWriteArrayList，迭代器本身就是拿到的那一刻的快照，
+        // 直接遍历：内层已是 CopyOnWriteArrayList，迭代器本身就是拿到的那一刻的快照，
         //    onTick 回调里的 apply/remove 改的是新数组，不会影响本次遍历，也不会抛 CME。
         //    原来每 tick 每实体 new 一个 ArrayList 做快照，那份临时对象现在省掉了。
         List<DynamicAttributeInstance> expired = null;

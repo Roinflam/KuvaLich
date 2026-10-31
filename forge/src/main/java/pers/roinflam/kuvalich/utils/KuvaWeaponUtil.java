@@ -14,8 +14,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 赤毒武器工具类（1.20.1版本，业务逻辑100%不变）
- * Kuva Weapon Utility Class (1.20.1 version, business logic 100% unchanged)
+ * 赤毒武器工具类
+ * Kuva Weapon Utility Class
  */
 public class KuvaWeaponUtil {
 
@@ -24,8 +24,8 @@ public class KuvaWeaponUtil {
     ));
 
     /**
-     * 生成随机赤毒武器（业务逻辑100%不变）
-     * Generate random Kuva weapon (business logic 100% unchanged)
+     * 生成随机赤毒武器
+     * Generate random Kuva weapon
      */
     public static ItemStack getItem(Item item, int min, int max) {
         return getItem(item, DAMAGE_TYPE.get(RandomUtil.getInt(0, 6)), RandomUtil.getInt(min, max));
@@ -38,7 +38,7 @@ public class KuvaWeaponUtil {
     public static ItemStack getItem(Item item, String type, int number) {
         ItemStack itemStack = new ItemStack(item);
 
-        // ✅ 1.20.1：直接使用getOrCreateTag()
+        // 1.20.1：直接使用getOrCreateTag()
         CompoundTag tag = itemStack.getOrCreateTag();
         CompoundTag kuvalich = tag.getCompound(Reference.MOD_ID);
 
@@ -55,11 +55,11 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * 获取武器元素类型（业务逻辑100%不变）
-     * Get weapon element type (business logic 100% unchanged)
+     * 获取武器元素类型
+     * Get weapon element type
      */
     public static String getType(ItemStack itemStack) {
-        // ⭐ 只读：用 getTag() 判空，不再用 getOrCreateTag() 给没有 NBT 的物品凭空塞一个空标签
+        // 只读：用 getTag() 判空，不再用 getOrCreateTag() 给没有 NBT 的物品凭空塞一个空标签
         CompoundTag tag = itemStack.getTag();
         if (tag == null) {
             return "";
@@ -68,8 +68,8 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * 设置武器元素类型（业务逻辑100%不变）
-     * Set weapon element type (business logic 100% unchanged)
+     * 设置武器元素类型
+     * Set weapon element type
      */
     public static void setType(ItemStack itemStack, String type) {
         CompoundTag tag = itemStack.getOrCreateTag();
@@ -80,11 +80,11 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * 检查是否为赤毒武器（业务逻辑100%不变）
-     * Check if is Kuva weapon (business logic 100% unchanged)
+     * 检查是否为赤毒武器
+     * Check if is Kuva weapon
      */
     public static boolean isElementalWeapon(ItemStack itemStack) {
-        // ⭐ 只读：与 hasType 同一判定，用 getTag() 判空
+        // 只读：与 hasType 同一判定，用 getTag() 判空
         return hasType(itemStack);
     }
 
@@ -98,7 +98,7 @@ public class KuvaWeaponUtil {
      * @return RGB（不再是 ChatFormatting）
      */
     public static int getColor(int number) {
-        // ✅ 注意：所有配置值必须加.get()
+        // 注意：所有配置值必须加.get()
         int benchmark = ModConfig.KUVA_LICH.benchmarkLevel.get();
 
         if (number < benchmark * 0.77777) {
@@ -135,11 +135,11 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * 获取武器等级（业务逻辑100%不变）
-     * Get weapon level (business logic 100% unchanged)
+     * 获取武器等级
+     * Get weapon level
      */
     public static int getNumber(ItemStack itemStack) {
-        // ⭐ 只读：用 getTag() 判空
+        // 只读：用 getTag() 判空
         CompoundTag tag = itemStack.getTag();
         if (tag == null) {
             return 0;
@@ -148,8 +148,8 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * 设置武器等级（业务逻辑100%不变）
-     * Set weapon level (business logic 100% unchanged)
+     * 设置武器等级
+     * Set weapon level
      */
     public static void setNumber(ItemStack itemStack, int number) {
         CompoundTag tag = itemStack.getOrCreateTag();
@@ -160,11 +160,11 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * 检查是否有类型标签（业务逻辑100%不变）
-     * Check if has type tag (business logic 100% unchanged)
+     * 检查是否有类型标签
+     * Check if has type tag
      */
     public static boolean hasType(ItemStack itemStack) {
-        // ⭐ 只读：用 getTag() 判空。Tooltip 事件对鼠标划过的每个物品都会调本方法，
+        // 只读：用 getTag() 判空。Tooltip 事件对鼠标划过的每个物品都会调本方法，
         //    以前的 getOrCreateTag() 会给所有没有 NBT 的物品塞一个空 {} 标签
         CompoundTag tag = itemStack.getTag();
         if (tag == null) {
@@ -177,7 +177,7 @@ public class KuvaWeaponUtil {
     /**
      * 追加「赤毒类型 + 等级」行
      *
-     * <p>⭐ 改造前这里是一个独立的 {@code @SubscribeEvent}，往
+     * <p>改造前这里是一个独立的 {@code @SubscribeEvent}，往
      * {@code tooltip.add(1, ...)} 这个硬编码下标插行，与
      * {@code WeaponModuleHandler} / {@code TaczCompatEventHandler} 抢同一个位置，
      * 三者的相对顺序取决于 Forge 的注解扫描顺序（当前恰好对，但随时可能无声翻转）。
@@ -213,11 +213,11 @@ public class KuvaWeaponUtil {
     }
 
     /**
-     * 获取倍率（业务逻辑100%不变）
-     * Get magnification (business logic 100% unchanged)
+     * 获取倍率
+     * Get magnification
      */
     public static float getMagnification(ItemStack itemStack) {
-        // ✅ 注意：配置值必须加.get()
+        // 注意：配置值必须加.get()
         return (float) ((getNumber(itemStack) - ModConfig.KUVA_LICH.benchmarkLevel.get())
                 / 100.0f * ModConfig.KUVA_WEAPON.attributeMultiplier.get());
     }
@@ -227,7 +227,7 @@ public class KuvaWeaponUtil {
     }
 
     public static float getMagnification(ItemStack itemStack, double number, double magnification) {
-        // ✅ 注意：配置值必须加.get()
+        // 注意：配置值必须加.get()
         return (float) (number + number * (float) ((getNumber(itemStack) - ModConfig.KUVA_LICH.benchmarkLevel.get())
                 / 100.0f * ModConfig.KUVA_WEAPON.attributeMultiplier.get() / magnification));
     }

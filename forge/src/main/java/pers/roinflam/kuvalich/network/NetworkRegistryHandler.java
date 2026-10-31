@@ -30,13 +30,13 @@ import java.util.Optional;
  *
  * 统一管理所有网络包的注册
  *
- * <p>⭐ 协议版本现为 "10"（各版本改了什么见 {@link #PROTOCOL_VERSION}）。"7" 时 {@link DamagePacket} 改为传拆开的字段
+ * <p>协议版本现为 "10"（各版本改了什么见 {@link #PROTOCOL_VERSION}）。"7" 时 {@link DamagePacket} 改为传拆开的字段
  * （伤害数字合并）、{@link WarframeModuleSyncPacket} 追加了武器类击杀叠层数组（客户端射速 / 多重射击与服务端对齐），
  * 字节流格式发生变化，与 "6" 及更早版本的客户端不兼容，必须提版本号强制握手拒绝，
  * 否则旧客户端会按老格式解码出错位数据。"8" 新增 {@link GuideConfigSyncPacket}（冒险指南的服务端配置快照），
  * "9" 新增 {@link KuvaFxPacket}（音画效果包），"10" 新增专属玄骸、档案、通讯、怜悯之击的五个包。</p>
  *
- * <p>⭐ 安全：所有包在注册时都显式声明 {@link NetworkDirection}。
+ * <p>安全：所有包在注册时都显式声明 {@link NetworkDirection}。
  * 不带方向的 5 参 {@code registerMessage} 重载会让 Forge 允许包双向收发，
  * 意味着改装客户端可以把任意 S2C 包发给服务端并触发服务端 {@code decode}。
  * 声明方向后，Forge 会在解码之前就拒绝方向不符的包。</p>
@@ -48,15 +48,15 @@ public class NetworkRegistryHandler {
 
     /**
      * 网络协议版本
-     * ⭐ "6"：DamagePacket 改为传拆开的字段（伤害数字合并），字节流格式变更
-     * ⭐ "7"：WarframeModuleSyncPacket 追加武器类击杀叠层数组，字节流格式变更
-     * ⭐ "8"：新增 GuideConfigSyncPacket（冒险指南的服务端配置快照）。旧客户端收到不认识的包 id
+     * "6"：DamagePacket 改为传拆开的字段（伤害数字合并），字节流格式变更
+     * "7"：WarframeModuleSyncPacket 追加武器类击杀叠层数组，字节流格式变更
+     * "8"：新增 GuideConfigSyncPacket（冒险指南的服务端配置快照）。旧客户端收到不认识的包 id
      *         并不会断线（Forge 47 的 IndexedMessageCodec 只记一条 error 就丢弃；旧客户端本来也没有这套指南）；
      *         提版本是为了让旧客户端在握手阶段就被拒绝、看到明确的「版本不符」提示，强制所有人更新 jar。
      *         所以「新增 S2C 包」本身不是必须提版本的理由，改了已有包的字节格式才是
-     * ⭐ "9"：新增 KuvaFxPacket（音画效果包：玄骸 / 安魂 / 暴击 / 元素等演出的统一入口）。
+     * "9"：新增 KuvaFxPacket（音画效果包：玄骸 / 安魂 / 暴击 / 元素等演出的统一入口）。
      *         客户端要靠它放声音和特效，没有它的旧客户端会少掉整套音画，所以同样提版本强制更新
-     * ⭐ "10"：新增专属玄骸、档案、通讯、怜悯之击的包（LichStatePacket、LichArchiveRequestPacket、LichArchivePacket、
+     * "10"：新增专属玄骸、档案、通讯、怜悯之击的包（LichStatePacket、LichArchiveRequestPacket、LichArchivePacket、
      *         KuvaCommPacket、MercyRequestPacket），DecryptionHudPacket 末尾追加揭示卡号。
      *         DecryptionHudPacket 的字节格式变了，旧客户端按老格式解码会错位，所以必须提版本
      */
@@ -158,7 +158,7 @@ public class NetworkRegistryHandler {
         );
 
         // 图鉴创造模式一键装配包（客户端 → 服务器）
-        // ⚠ 新包必须追加在最后：messageId 是顺序分配的，插在中间会让已有包的 id 全部后移，
+        // 注意：新包必须追加在最后：messageId 是顺序分配的，插在中间会让已有包的 id 全部后移，
         //    与旧版客户端/服务端连接时就会对不上号。
         INSTANCE.registerMessage(
                 nextMessageId(),

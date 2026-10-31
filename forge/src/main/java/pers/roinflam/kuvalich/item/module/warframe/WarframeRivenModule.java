@@ -32,7 +32,7 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 /**
  * 裂罅战甲模组（1.20.1版本）
  * <p>
- * ⭐ 负面词条排除规则（本次新增）：
+ * 负面词条排除规则（本次新增）：
  *    所有击杀叠层词条（killStack* 前缀）不再作为负面词条洗出。
  *    原因：战甲叠层累加以 containsKey 判定（WarframeModuleHandler.addWarframeKillStacks），
  *    负值词条会导致玩家"越杀越弱"的毒词条效果，与无伤负设计意图相悖。
@@ -61,7 +61,7 @@ public class WarframeRivenModule extends AbstractWarframeModule {
 
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.WARFRAME_RIVEN_MODULE.get());
-        // ⭐ 改造前是把 §5 这个传统颜色码直接拼进字符串：
+        // 改造前是把 §5 这个传统颜色码直接拼进字符串：
         //    Component.literal(ChatFormatting.DARK_PURPLE + name)。
         //    § 码是内嵌在文本里的，Style 里并没有颜色，所以
         //    WeaponPanelComposer.moduleNames() 里那句
@@ -189,7 +189,7 @@ public class WarframeRivenModule extends AbstractWarframeModule {
                     continue;
                 }
 
-                // ⭐ 击杀叠层词条不出负面：
+                // 击杀叠层词条不出负面：
                 //    战甲叠层累加以 containsKey 判定（addWarframeKillStacks），
                 //    负值词条会让玩家"越杀越弱"，属于惩罚击杀行为的毒词条，故排除。
                 if (attributeType.startsWith("killStack")) {
@@ -249,7 +249,7 @@ public class WarframeRivenModule extends AbstractWarframeModule {
         if (attributeType.equals("itemDropMultiplier")) {
             return 0.9;
         }
-        // ⭐ 挖矿倍率基准 0.3：与金卡单词条同值，作者定的。
+        // 挖矿倍率基准 0.3：与金卡单词条同值。
         //    注意它低于战利品倍率的 0.9 —— 不是笔误，是刻意压低。
         if (attributeType.equals("oreDropMultiplier")) {
             return 0.3;
@@ -317,7 +317,7 @@ public class WarframeRivenModule extends AbstractWarframeModule {
     }
 
     public static int getCycle(ItemStack itemStack) {
-        // ⭐ 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
+        // 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
         //    而 ItemStack 比较 NBT 时 null != {}，物品会因此再也堆叠不起来。
         CompoundTag tag = itemStack.getTag();
         if (tag == null) {
@@ -334,7 +334,7 @@ public class WarframeRivenModule extends AbstractWarframeModule {
     }
 
     public static int getTrend(ItemStack itemStack) {
-        // ⭐ 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
+        // 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
         //    而 ItemStack 比较 NBT 时 null != {}，物品会因此再也堆叠不起来。
         CompoundTag tag = itemStack.getTag();
         if (tag == null) {
@@ -373,7 +373,7 @@ public class WarframeRivenModule extends AbstractWarframeModule {
             }
 
 
-// ⭐ 模组等级系统：赋予揭示等级
+// 模组等级系统：赋予揭示等级
             ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);

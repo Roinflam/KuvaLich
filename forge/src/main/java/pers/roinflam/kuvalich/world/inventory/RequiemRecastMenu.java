@@ -36,7 +36,7 @@ import java.util.*;
  * <ol>
  *   <li>三张安魂卡合成随机安魂卡</li>
  *   <li>三张武器/战甲模组三合一（含同品质、跨品质、Prime、裂罅，受配置控制）</li>
- *   <li>⭐ 单张模组卡分解为内融核心（豆子）：
+ *   <li>单张模组卡分解为内融核心（豆子）：
  *       仅放入一张武器/战甲模组时，输出槽预览出对应数量的内融核心，
  *       取走内融核心后才消耗该模组卡（即分解）。
  *       分解数量公式（总量上限64）：
@@ -48,7 +48,7 @@ import java.util.*;
  *       紫卡循环加成：紫卡每循环1次多1个（武器/战甲紫卡均适用，未揭示的不计循环）。</li>
  * </ol></p>
  *
- * <p>⭐ 关闭时返还物品优先快捷栏（Inventory.add）。
+ * <p>关闭时返还物品优先快捷栏（Inventory.add）。
  *    分解预览中的内融核心（输出槽）关闭时不返还，因对应模组卡仍在输入槽且会被返还。</p>
  */
 public class RequiemRecastMenu extends AbstractContainerMenu {
@@ -64,7 +64,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
     private ItemStack lastInput2 = ItemStack.EMPTY;
 
     /**
-     * ⭐ 分解预览模式标记。
+     * 分解预览模式标记。
      * 为 true 时，输出槽中的内融核心是单卡分解的预览结果（尚未消耗输入卡），
      * 取走后由 {@link #onDecomposeResultTaken()} 消耗对应的模组卡。
      * 三合一产物不设置此标记，因此两套逻辑互不干扰。
@@ -72,7 +72,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
     private boolean decomposeMode = false;
 
     /**
-     * ⭐ 重入保护标志（仅服务端主线程访问）。
+     * 重入保护标志（仅服务端主线程访问）。
      * processDecompose / consumeAndOutput / processRequiemCardCrafting 内部会调用
      * broadcastFullState，而 broadcastFullState → broadcastChanges → checkAndProcessCrafting
      * 会重入本处理逻辑。重入时直接返回，避免无限递归导致 StackOverflowError。
@@ -90,7 +90,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
         this.addSlot(new InputSlot(this.cardHandler, 0, 31, 54));
         this.addSlot(new InputSlot(this.cardHandler, 1, 80, 54));
         this.addSlot(new InputSlot(this.cardHandler, 2, 129, 54));
-        // ⭐ 输出槽改为持有菜单引用，以便取走分解产物时回调消耗输入卡
+        // 输出槽改为持有菜单引用，以便取走分解产物时回调消耗输入卡
         this.addSlot(new OutputSlot(this, this.cardHandler, 3, 80, 10));
 
         for (int i = 0; i < 9; i++) {
@@ -150,7 +150,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
     }
 
     private void checkAndProcessCrafting() {
-        // ⭐ 重入保护：processDecompose/consumeAndOutput 内部会调用 broadcastFullState，
+        // 重入保护：processDecompose/consumeAndOutput 内部会调用 broadcastFullState，
         //    而 broadcastFullState → broadcastChanges → checkAndProcessCrafting 会重入本方法。
         //    重入时直接返回，避免无限递归导致 StackOverflowError。
         //    注意 super.broadcastChanges() 仍会在 broadcastFullState 内执行，槽位变更照常同步给客户端。
@@ -168,7 +168,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
                     !ItemStack.matches(slot1, lastInput1) ||
                     !ItemStack.matches(slot2, lastInput2);
 
-            // ⭐ 分解预览模式：输入发生变化时，先清空旧的内融核心预览，避免输入变更后残留旧预览
+            // 分解预览模式：输入发生变化时，先清空旧的内融核心预览，避免输入变更后残留旧预览
             if (inputChanged && decomposeMode && !output.isEmpty()) {
                 cardHandler.setStackInSlot(3, ItemStack.EMPTY);
                 output = ItemStack.EMPTY;
@@ -180,7 +180,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
                 return;
             }
 
-            // ⭐ 分解检测：恰好只有一张可分解模组卡时，预览分解为内融核心
+            // 分解检测：恰好只有一张可分解模组卡时，预览分解为内融核心
             int singleCardSlot = findSingleDecomposableCardSlot(slot0, slot1, slot2);
             if (singleCardSlot >= 0) {
                 if (inputChanged) {
@@ -200,7 +200,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
                 lastInput0 = slot0.copy(); lastInput1 = slot1.copy(); lastInput2 = slot2.copy();
             }
         } finally {
-            // ⭐ 无论正常返回还是异常，都恢复重入保护标志，避免后续 tick 被永久挡住
+            // 无论正常返回还是异常，都恢复重入保护标志，避免后续 tick 被永久挡住
             processing = false;
         }
     }
@@ -382,7 +382,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
         broadcastFullState();
     }
 
-    // ==================== ⭐ 模组分解为内融核心 ====================
+    // ==================== 模组分解为内融核心 ====================
 
     /**
      * 检测三个输入槽是否恰好只放了一张可分解的模组卡。
@@ -534,7 +534,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
         if (!decomposeMode) {
             return;
         }
-        // ⭐ 修复刷内融核心漏洞：原实现只在结果槽被拿空时才消耗模组卡，
+        // 修复刷内融核心漏洞：原实现只在结果槽被拿空时才消耗模组卡，
         //    右键只拿一半、再把模组卡从输入槽拿走（或直接关界面），剩下的预览结果会被清掉，
         //    但已拿走的一半内融核心留在了背包里，模组卡也还在——可以无限重复。
         //    现在只要从结果槽拿走了任意数量，就立刻消耗模组卡并退出预览模式；
@@ -556,7 +556,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
     }
 
     /**
-     * ⭐ 关闭时返还物品：使用 Inventory.add() 优先快捷栏。
+     * 关闭时返还物品：使用 Inventory.add() 优先快捷栏。
      * 分解预览中的内融核心（输出槽）不返还，因对应模组卡仍在输入槽且会被返还。
      */
     @Override
@@ -567,7 +567,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
             for (int i = 0; i < 4; i++) {
                 ItemStack stack = cardHandler.getStackInSlot(i);
                 if (!stack.isEmpty()) {
-                    // ⭐ 分解预览的内融核心（输出槽）不返还，避免玩家既拿回模组卡又白嫖内融核心
+                    // 分解预览的内融核心（输出槽）不返还，避免玩家既拿回模组卡又白嫖内融核心
                     if (i == 3 && decomposeMode) {
                         cardHandler.setStackInSlot(i, ItemStack.EMPTY);
                         continue;
@@ -595,7 +595,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
         public boolean mayPlace(@NotNull ItemStack stack) {
             // 安魂卡：用于三张安魂卡合成
             if (stack.getItem() instanceof AbstractRequiemCard) return super.mayPlace(stack);
-            // ⭐ 所有武器/战甲模组均可放入：单张→分解为内融核心，三张→三合一。
+            // 所有武器/战甲模组均可放入：单张→分解为内融核心，三张→三合一。
             //    三合一的品质限制（Prime/紫卡/跨品质开关）仍在 processCrafting 内部判定，此处不再前置拦截，
             //    否则默认配置下 Prime/紫卡卡片无法放入，也就无法被分解。
             if (stack.getItem() instanceof AbstractWeaponModule || stack.getItem() instanceof AbstractWarframeModule) {
@@ -618,7 +618,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
 
         @Override
         public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
-            // ⭐ 取走分解产物时消耗输入模组卡（三合一产物 decomposeMode=false，不受影响）
+            // 取走分解产物时消耗输入模组卡（三合一产物 decomposeMode=false，不受影响）
             menu.onDecomposeResultTaken();
             super.onTake(player, stack);
         }

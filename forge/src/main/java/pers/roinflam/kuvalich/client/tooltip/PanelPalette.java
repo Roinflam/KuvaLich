@@ -70,7 +70,7 @@ public final class PanelPalette {
      * <p>ARGB，透明度刻意压得很低：它的作用是「让相邻两组一眼分得开」，
      * 不是要成为一个视觉元素。</p>
      *
-     * <p>⚠️ 这条是在 {@code renderImage} 里画的，而 1.20.1 的
+     * <p>注意：这条是在 {@code renderImage} 里画的，而 1.20.1 的
      * {@code GuiGraphics#renderTooltipInternal} 是先 {@code renderText} 再
      * {@code renderImage}（两者同在 z=400 的 pose 里，文字进的是延迟批次）。
      * 所以绘制时要把 z 往后挪一点让它落到文字下面；即便哪天被别的模组换掉渲染流程、
@@ -123,7 +123,7 @@ public final class PanelPalette {
     /**
      * 元素专属色
      *
-     * <p>⭐ 起因：{@code KuvaWeaponUtil.getColor} 原先返回 {@code ChatFormatting}，
+     * <p>起因：{@code KuvaWeaponUtil.getColor} 原先返回 {@code ChatFormatting}，
      * 里面有 {@code DARK_RED}（#AA0000）、{@code DARK_GREEN}（#00AA00）、
      * {@code DARK_GRAY}（#555555）、{@code DARK_BLUE}（#0000AA）这几个在深色 tooltip 背景上
      * 几乎读不出来的颜色 —— 而元素恰恰是玩家靠颜色认的。</p>

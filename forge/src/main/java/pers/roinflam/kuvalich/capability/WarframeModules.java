@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * 存储玩家的战甲模组数据（8个槽位）
  * Stores player's warframe module data (8 slots)
  *
- * <p>⭐ 性能修复（本次）：新增 {@code version} 脏标记计数器。</p>
+ * <p>性能修复（本次）：新增 {@code version} 脏标记计数器。</p>
  *
  * <p>问题：{@code WarframeModuleSyncPacket.syncIfChanged} 原先每 5 tick、每玩家
  * 都要对 8 个 {@link ItemStack} 做 {@code tag.hashCode()} 递归全树遍历来做脏检测。
@@ -39,7 +39,7 @@ public class WarframeModules {
     private ItemStack eight;
 
     /**
-     * ⭐ 数据版本号（脏标记）
+     * 数据版本号（脏标记）
      * <p>任意槽位内容发生实际变化时递增。用于同步包做 O(1) 脏检测，
      * 替代原先每 5 tick 的全量 NBT 深度 hash。</p>
      */
@@ -163,7 +163,7 @@ public class WarframeModules {
      * 克隆数据
      * Clone data
      *
-     * <p>⭐ 无条件标记脏，保证重生/维度传送后必定重新同步一次。</p>
+     * <p>无条件标记脏，保证重生/维度传送后必定重新同步一次。</p>
      */
     public void clone(WarframeModules warframeModules) {
         if (warframeModules == null) {
@@ -207,7 +207,7 @@ public class WarframeModules {
      * 从NBT反序列化
      * Deserialize from NBT
      *
-     * <p>⭐ 无条件标记脏，保证读档后必定重新同步一次。</p>
+     * <p>无条件标记脏，保证读档后必定重新同步一次。</p>
      */
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt == null) {

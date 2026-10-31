@@ -32,8 +32,8 @@ import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 import javax.annotation.Nonnull;
 
 /**
- * 收割者Prime（1.20.1版本，业务逻辑100%不变）
- * Reaper Prime (1.20.1 version, business logic 100% unchanged)
+ * 收割者Prime
+ * Reaper Prime
  */
 @Mod.EventBusSubscriber
 public class ReaperPrime extends AbstractKuvaWeapon {

@@ -27,9 +27,9 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  * 黄金级武器模组（1.20.1版本）
  * Rare (Gold) tier weapon module (1.20.1 version)
  *
- * ⭐ 第三~五批新增 · 复合金卡（处决/真伤/净化体系，详见各注释）。
+ * 第三~五批新增 · 复合金卡（处决/真伤/净化体系，详见各注释）。
  *
- * ⭐ 第六批新增 · 冷门组合（金卡）：
+ * 第六批新增 · 冷门组合（金卡）：
  *    处决复合（用户点名）：终焉重击(基伤+处决)、刺客信条(冲刺+处决)、冲锋斩首(冲刺+秒杀)、
  *      奥术处决(魔法+秒杀)、魔能净化(魔法+净化)、暴君处决(基伤+秒杀)、冲刺净化、元素处决；
  *    impact 控场：泰坦重锤、冲击波领域、毁灭冲撞；
@@ -82,7 +82,7 @@ public class WeaponRareModule extends AbstractWeaponModule {
     }
 
     private static void initializeModuleList() {
-        // ⭐ 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
+        // 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
         //    填完之后在方法末尾一次性换掉静态字段的引用。
         //
         //    不能就地 clear() 再填：配置热重载后本方法会被再次调用，
@@ -433,7 +433,7 @@ public class WeaponRareModule extends AbstractWeaponModule {
                 "kuvaweapon.item_module.tyrants_end", "tyrants_end",
                 new Object[]{"execute_threshold", 0.02501f, "bane_of_undefined", 0.30001f, "bane_of_illager", 0.30001f});
 
-        // ========== ⭐ 第六批新增 · 通用冷门组合（金卡）==========
+        // ========== 第六批新增 · 通用冷门组合（金卡）==========
         // 处决复合走金卡强度档（用户点名）；复合元素 0.9~1.2、双bane 0.45 与现有金卡同档，不超模。
 
         // ----- 处决复合（基伤/冲刺/魔法 × 处决/秒杀/净化）-----
@@ -813,7 +813,7 @@ public class WeaponRareModule extends AbstractWeaponModule {
                     "kuvaweapon.item_module.truth_barrage", "truth_barrage",
                     new Object[]{"true_bullet", 0.10001f, "gun_damage", 1.50001f, "multishot", 0.30001f});
 
-            // ===== ⭐ 第六批新增 · TACZ 冷门组合（金卡）=====
+            // ===== 第六批新增 · TACZ 冷门组合（金卡）=====
 
             // 燃焰处决 —— 枪械伤害180% + 火焰90% + 处决阈值2%（纵火压血处决）
             ModuleRegistryHelper.register(KuvaLichItems.ITEM_RARE_MODULE.get(), null, itemStackList,
@@ -860,7 +860,7 @@ public class WeaponRareModule extends AbstractWeaponModule {
         items.addAll(itemStackList);
         CustomModuleManager.getInstance().addCustomItemModulesToCreativeTab(items, Rarity.RARE);
 
-        // ⭐ 创造模式模组默认满级
+        // 创造模式模组默认满级
         if (ModuleLevelHelper.isLevelSystemEnabled()) {
             for (ItemStack stack : items) {
                 if (!AbstractModule.isRandom(stack)) {
@@ -886,7 +886,7 @@ public class WeaponRareModule extends AbstractWeaponModule {
 
             ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
 
-// ⭐ 模组等级系统：赋予揭示等级
+// 模组等级系统：赋予揭示等级
             ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);

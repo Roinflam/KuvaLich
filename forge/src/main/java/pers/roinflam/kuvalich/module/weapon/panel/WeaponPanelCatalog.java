@@ -60,7 +60,7 @@ public final class WeaponPanelCatalog {
             AttributeSpec.of("attackSpeed", PanelGroup.PANEL, ValueFormat.PERCENT_1F)
                     .stacked(StackType.ATTACK_SPEED, StackFunction.add("killStackAttackSpeed")),
 
-            // ⭐ 射速：弓的蓄力加速是双倍生效的，显示口径跟着翻倍（与改造前一致）。
+            // 射速：弓的蓄力加速是双倍生效的，显示口径跟着翻倍（与改造前一致）。
             //    叠层部分同样要乘这个系数，否则弓上的箭头会指向一个偏小的数。
             AttributeSpec.of("firing_rate", PanelGroup.PANEL, ValueFormat.PERCENT_SIGNED)
                     .withProviderInternal((stack, attrs) -> attrs.getOrDefault("firing_rate", 0.0) * chargeFactor(stack))
@@ -72,12 +72,12 @@ public final class WeaponPanelCatalog {
             AttributeSpec.pct("attackRange", PanelGroup.PANEL)
                     .stacked(StackType.ATTACK_RANGE, StackFunction.add("killStackAttackRange")),
 
-            // ⭐ 爆炸半径：面板口径是「最终半径」= 1 + v*2（绝对值），
+            // 爆炸半径：面板口径是「最终半径」= 1 + v*2（绝对值），
             //    与额外槽位的「加了多少」= v*2（增量）是两种不同语义，不要统一。
             AttributeSpec.of("bursting_radius", PanelGroup.PANEL, ValueFormat.METERS_ABS)
                     .stacked(StackType.BURSTING_RADIUS, StackFunction.addScaled("killStackBurstingRadius", 1.0)),
 
-            // ⭐ provider 是 1+v，词条为 0 时结果是 1.0，直接拿它跟 epsilon 比会永远过阈值，
+            // provider 是 1+v，词条为 0 时结果是 1.0，直接拿它跟 epsilon 比会永远过阈值，
             //    渲染出一条「触发时长 100%」的空行，所以要显式指出存在性判据。
             AttributeSpec.of("triggerTime", PanelGroup.PANEL, ValueFormat.PERCENT)
                     .withProviderInternal(ValueProvider.onePlus("triggerTime"))
@@ -214,7 +214,7 @@ public final class WeaponPanelCatalog {
     /**
      * 蓄力类武器的射速显示系数
      *
-     * <p>⭐ 弓<b>与弩</b>都吃双倍：战斗端的两处射速结算用的是
+     * <p>弓<b>与弩</b>都吃双倍：战斗端的两处射速结算用的是
      * {@code usingItem.getItem() instanceof BowItem || usingItem.getItem() instanceof CrossbowItem}
      * （见 {@code WeaponCombatHandler} 里的蓄力速度计算）。
      * 改造前的 tooltip 只判了 {@code BowItem}，所以弩的面板值一直只有实际生效值的一半。

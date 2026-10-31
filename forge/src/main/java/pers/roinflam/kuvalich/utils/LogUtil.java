@@ -88,7 +88,7 @@ public class LogUtil {
      * @param message 调试消息 / debug message
      */
     /**
-     * ⭐ 详细日志是否开启。热点路径（每颗子弹、每次命中）里请先判断再拼字符串，
+     * 详细日志是否开启。热点路径（每颗子弹、每次命中）里请先判断再拼字符串，
      * 否则 String.format 的开销在日志关闭时也会白白付出。
      *
      * @return 配置已加载且 enableDetailedLogging=true 时返回 true
@@ -98,7 +98,7 @@ public class LogUtil {
     }
 
     public static void debug(String message) {
-        // ✅ 添加配置加载检查
+        // 添加配置加载检查
         if (isConfigLoaded() && ModConfig.KUVA_LICH.enableDetailedLogging.get()) {
             LOGGER.info("[详细] " + message);
         }
@@ -119,7 +119,7 @@ public class LogUtil {
      */
     public static void debugCalculation(String type, String entity,
                                         double base, double modifier, double result) {
-        // ✅ 添加配置加载检查
+        // 添加配置加载检查
         if (isConfigLoaded() && ModConfig.KUVA_LICH.enableDetailedLogging.get()) {
             LOGGER.info(String.format("[详细][%s] 实体: %s, 基础: %.2f, 修正: %.2f, 结果: %.2f",
                     type, entity, base, modifier, result));
@@ -138,7 +138,7 @@ public class LogUtil {
      * @param details 详细信息 / details
      */
     public static void debugEvent(String event, String entity, String details) {
-        // ✅ 添加配置加载检查
+        // 添加配置加载检查
         if (isConfigLoaded() && ModConfig.KUVA_LICH.enableDetailedLogging.get()) {
             LOGGER.info(String.format("[详细][事件] %s - 实体: %s, 详情: %s",
                     event, entity, details));
@@ -157,7 +157,7 @@ public class LogUtil {
      * @param details 详细信息 / details
      */
     public static void debugItem(String action, String item, String details) {
-        // ✅ 添加配置加载检查
+        // 添加配置加载检查
         if (isConfigLoaded() && ModConfig.KUVA_LICH.enableDetailedLogging.get()) {
             LOGGER.info(String.format("[详细][物品] %s - 物品: %s, 详情: %s",
                     action, item, details));
@@ -176,7 +176,7 @@ public class LogUtil {
      * @param details 详细信息 / details
      */
     public static void debugDecryption(String stage, int progress, String details) {
-        // ✅ 添加配置加载检查
+        // 添加配置加载检查
         if (isConfigLoaded() && ModConfig.KUVA_LICH.enableDetailedLogging.get()) {
             LOGGER.info(String.format("[详细][解密] 阶段: %s, 进度: %d, 详情: %s",
                     stage, progress, details));

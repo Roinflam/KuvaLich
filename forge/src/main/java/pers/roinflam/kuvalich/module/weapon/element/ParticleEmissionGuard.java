@@ -10,7 +10,7 @@ import java.util.Map;
  * 元素音画效果包的发射限流门控（仅服务端主线程使用）
  * Element Particle Effect Emission Throttle Guard (server main thread only)
  *
- * <p>背景：SlashBlade 群体斩击 / 多元素武器 / 多重射击 在一帧内可能触发数百次
+ * <p>背景：范围斩击 / 多元素武器 / 多重射击 在一帧内可能触发数百次
  * 元素触发，以前每次都落到 {@code ServerLevel.sendParticles} 上做包广播，曾经造成主线程在该方法链上
  * RUNNABLE 卡死并触发 Watchdog。现在每次触发只发一个效果包（{@link ElementParticleEffects}），照样要限流。</p>
  *

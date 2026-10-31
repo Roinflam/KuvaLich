@@ -18,7 +18,7 @@ import java.util.List;
  * 升级费用仅在安魂之融界面中以灰色显示
  * 裂罅循环费用仅在安魂之融界面中以灰色显示
  * <p>
- * ⭐ 升级费用已根据模组品质缩放：铜25% / 银50% / 金75% / Prime&裂罅100%
+ * 升级费用已根据模组品质缩放：铜25% / 银50% / 金75% / Prime&裂罅100%
  *
  * @author RoinFlam
  */
@@ -31,7 +31,7 @@ public final class ModuleLevelTooltipHelper {
 
     /**
      * 向Tooltip插入等级进度条行
-     * ⭐ 满级时不显示，返回0
+     * 满级时不显示，返回0
      *
      * @return 插入的行数（0或1）
      */
@@ -76,7 +76,7 @@ public final class ModuleLevelTooltipHelper {
     }
 
     /**
-     * ⭐ 仅在安魂之融界面中显示升级费用（含品质缩放，灰色）
+     * 仅在安魂之融界面中显示升级费用（含品质缩放，灰色）
      *
      * @param moduleStack 模组物品栈（用于计算品质费用系数）
      * @return 插入的行数（0或1）
@@ -94,7 +94,7 @@ public final class ModuleLevelTooltipHelper {
     }
 
     /**
-     * ⭐ 仅在安魂之融界面中显示裂罅循环费用（灰色）
+     * 仅在安魂之融界面中显示裂罅循环费用（灰色）
      * <p>
      * 区分武器裂罅和战甲裂罅，使用与实际消耗一致的公式。
      *

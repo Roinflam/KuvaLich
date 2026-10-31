@@ -21,7 +21,7 @@ import pers.roinflam.kuvalich.worldgen.KuvaSpawnLimiter;
  * 原版 {@code EntityType.ZOMBIE} 注册的就是这个方法引用，放置类型与高度图同样是
  * {@code ON_GROUND + MOTION_BLOCKING_NO_LEAVES}，所以这里三项全部对齐僵尸。</p>
  *
- * <p>⚠ 不要再改回 {@code (type, level, spawnType, pos, random) -> true}。
+ * <p>注意：不要再改回 {@code (type, level, spawnType, pos, random) -> true}。
  * 对怪物来说亮度判定只存在于 SpawnPlacements 这一处（{@code Monster} 没有重写实例方法
  * {@code checkSpawnRules}），无条件返回 true 会让赤毒实体在大白天的地表、火把底下、
  * 点满灯的基地地板上照刷，并且连"和平难度不生成"也一起失效。</p>

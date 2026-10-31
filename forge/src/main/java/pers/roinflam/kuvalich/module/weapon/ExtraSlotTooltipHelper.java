@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * 额外装备槽位（副手 / 护甲 / Curios）加成的取数辅助（客户端专用）
  *
- * <p>⭐ 本类原先还负责渲染——{@code appendExtraSlotTooltip} 会把每一条额外加成
+ * <p>本类原先还负责渲染——{@code appendExtraSlotTooltip} 会把每一条额外加成
  * 单独列成一行（最多 48 行），而这些数值**同时**已经被 {@code mergeExtraSlotIntoAttributes}
  * 合进了主面板。也就是说同一份加成显示了两遍、每条占 2 行，
  * 这是「tooltip 整个屏幕都是属性」的主要来源之一。</p>
@@ -34,7 +34,7 @@ public final class ExtraSlotTooltipHelper {
      * 引用比较优先（物品栏GUI中tooltip事件通常传入槽位原始引用）；
      * 内容比较兜底，但当主副手内容完全相同时仅引用匹配才通过。
      *
-     * <p>⚠️ 这个判定只适用于**物品级**加成（额外槽位的属性确实只在拿着主手武器时生效）。
+     * <p>注意：这个判定只适用于**物品级**加成（额外槽位的属性确实只在拿着主手武器时生效）。
      * 击杀叠层是**玩家级**状态，不要套用这个判定 ——
      * 否则双持同款武器时（{@code weaponStack} 与主副手内容都匹配）叠层会莫名消失。</p>
      *
@@ -76,7 +76,7 @@ public final class ExtraSlotTooltipHelper {
         if (player == null || !isMainHandWeapon(weaponStack, player)) {
             return new HashMap<>();
         }
-        // ⭐ WeaponCombatHandler 里有按 tick 的缓存，同一帧多次调用不会重算
+        // WeaponCombatHandler 里有按 tick 的缓存，同一帧多次调用不会重算
         return new HashMap<>(WeaponCombatHandler.getCachedExtraSlotAttributes(player));
     }
 

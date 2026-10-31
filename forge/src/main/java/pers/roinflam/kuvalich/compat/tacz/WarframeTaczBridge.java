@@ -170,10 +170,10 @@ public class WarframeTaczBridge {
         cacheContextGunItem.remove();
     }
 
-    // ========== ⭐ 属性读取 helper / Attribute Read Helper ==========
+    // ========== 属性读取 helper / Attribute Read Helper ==========
 
     /**
-     * ⭐ 单条目 memo 的有效期（纳秒），40ms < 一 tick 的 50ms
+     * 单条目 memo 的有效期（纳秒），40ms < 一 tick 的 50ms
      *
      * <p>用挂钟窗口而不是 gameTime：本类有一半方法（如 {@link #getMagazineSizeMod(ItemStack)}）
      * 签名里根本没有 shooter，拿不到 {@code Level}，也就取不到 gameTime。
@@ -183,7 +183,7 @@ public class WarframeTaczBridge {
     private static final long MEMO_VALID_NANOS = 40_000_000L;
 
     /**
-     * ⭐ 单条目属性 memo（不可变快照）
+     * 单条目属性 memo（不可变快照）
      *
      * <p><b>为什么是「一个 volatile 的不可变持有者」而不是四个 volatile 字段：</b>
      * 四个独立 volatile 字段每个都是独立的读，线程 A 读到新的 stackIdentity、
@@ -228,7 +228,7 @@ public class WarframeTaczBridge {
     private static volatile AttrMemo attrMemo;
 
     /**
-     * ⭐ 取枪械的<b>完整</b>模组属性：枪本体 + 副手 / 护甲 / 饰品额外槽位
+     * 取枪械的<b>完整</b>模组属性：枪本体 + 副手 / 护甲 / 饰品额外槽位
      *
      * <p>此前 12 个属性读取方法都只读枪本体，而枪的 tooltip 面板
      * （{@code ExtraSlotTooltipHelper.mergeExtraSlotIntoAttributes}）已经把额外槽位算进去了。
@@ -245,7 +245,7 @@ public class WarframeTaczBridge {
      */
     @Nonnull
     private static HashMap<String, Double> gunAttrs(@Nonnull ItemStack gunItem, @Nullable LivingEntity shooter) {
-        // ⭐ 签名里没有 shooter 时（如 getMagazineSizeMod 的旧重载），
+        // 签名里没有 shooter 时（如 getMagazineSizeMod 的旧重载），
         //    退而用「属性缓存刷新上下文」里的射手；该 ThreadLocal 只在
         //    AttachmentPropertyManager.postChangeEvent 期间有值，出了那段就是 null，不会串场
         LivingEntity resolvedShooter = shooter != null ? shooter : cacheContextShooter.get();
@@ -255,7 +255,7 @@ public class WarframeTaczBridge {
         final int shooterIdentity = resolvedShooter == null ? 0 : System.identityHashCode(resolvedShooter);
         final long now = System.nanoTime();
 
-        // ⭐ 单次 volatile 读拿到自洽快照
+        // 单次 volatile 读拿到自洽快照
         AttrMemo memo = attrMemo;
         if (memo != null
                 && memo.stackIdentity == stackIdentity
@@ -356,7 +356,7 @@ public class WarframeTaczBridge {
     /**
      * 弹匣容量修正（无射手上下文的旧签名，保留供现有调用方使用）
      *
-     * <p>⭐ 本重载拿不到 shooter，只能退化为「枪本体 + 当前线程的缓存刷新上下文」。
+     * <p>本重载拿不到 shooter，只能退化为「枪本体 + 当前线程的缓存刷新上下文」。
      * 想让护甲 / 副手 / 饰品上的弹匣卡也吃到，请改调
      * {@link #getMagazineSizeMod(ItemStack, LivingEntity)}。</p>
      */

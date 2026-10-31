@@ -64,8 +64,8 @@ public class CapabilityRegistryHandler {
      * 注意：此方法通过KuvaLich主类在MOD事件总线上手动注册
      * Note: This method is manually registered on MOD event bus via KuvaLich main class
      *
-     * ⚠️ 不要添加@SubscribeEvent注解，因为已经手动注册了
-     * ⚠️ Do NOT add @SubscribeEvent annotation as it's already manually registered
+     * 注意：不要添加@SubscribeEvent注解，因为已经手动注册了
+     * Note: Do NOT add @SubscribeEvent annotation as it's already manually registered
      */
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         LogUtil.info("开始注册Capabilities...");
@@ -93,8 +93,8 @@ public class CapabilityRegistryHandler {
      * 2. 从末地返回主世界 (isWasDeath=false)
      * 3. 其他导致玩家实体重建的情况 (isWasDeath=false)
      *
-     * ⚠️ 所有场景都必须克隆数据！
-     * ⚠️ ALL scenarios must clone data!
+     * 注意：所有场景都必须克隆数据！
+     * Note: ALL scenarios must clone data!
      *
      * 修复说明（2025-01-14）：
      * Fix notes:
@@ -116,7 +116,7 @@ public class CapabilityRegistryHandler {
             return;
         }
 
-        // ✅ 修复：不再检查isWasDeath()，所有Clone事件都必须克隆数据
+        // 修复：不再检查isWasDeath()，所有Clone事件都必须克隆数据
         // Fix: No longer check isWasDeath(), ALL Clone events must clone data
         // 原因：从末地返回时isWasDeath()=false，但玩家实体同样会被重建
         // Reason: isWasDeath()=false when returning from End, but player entity is still recreated
@@ -128,7 +128,7 @@ public class CapabilityRegistryHandler {
                 + (event.isWasDeath() ? "（死亡重生）" : "（维度传送等）")
                 + "，开始克隆Capability数据");
 
-        // ✅ 关键修复：恢复旧实体的Capability访问权限
+        // 关键修复：恢复旧实体的Capability访问权限
         // Critical fix: Revive old entity's Capability access
         // 说明：玩家死亡后,Minecraft会自动调用invalidateCaps()使所有Capability失效
         // Note: After player death, Minecraft automatically calls invalidateCaps() to invalidate all Capabilities
@@ -158,7 +158,7 @@ public class CapabilityRegistryHandler {
             // Catch any exceptions during cloning to avoid game crash
             LogUtil.error("克隆玩家Capability数据时出错: " + player.getName().getString(), e);
         } finally {
-            // ✅ 确保旧实体的Capability被正确失效
+            // 确保旧实体的Capability被正确失效
             // Ensure old entity's Capabilities are properly invalidated
             // 说明：克隆完成后必须再次失效,确保资源正确释放,防止内存泄漏
             // Note: Must invalidate again after cloning to ensure proper resource cleanup and prevent memory leaks

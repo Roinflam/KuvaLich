@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * 服务端验证：1.必须创造模式 2.moduleType必须在已注册列表中（防伪造）
  * 背包满则掉落在玩家脚下。
  *
- * ⭐ 修复：增加 rarityOrder 字段，优先搜索对应品质列表，
+ * 修复：增加 rarityOrder 字段，优先搜索对应品质列表，
  *    避免不同品质共享同一type时返回低品质模组。
  */
 public class CodexGiveItemPacket {
@@ -35,7 +35,7 @@ public class CodexGiveItemPacket {
     private final String moduleType;
     /** 是否为武器模组（false=战甲）/ Is weapon module (false=warframe) */
     private final boolean isWeapon;
-    /** ⭐ 模组品质序号（0=青铜 1=白银 2=黄金 3=Prime）/ Rarity order */
+    /** 模组品质序号（0=青铜 1=白银 2=黄金 3=Prime）/ Rarity order */
     private final int rarityOrder;
 
     public CodexGiveItemPacket(String moduleType, boolean isWeapon, int rarityOrder) {
@@ -63,14 +63,14 @@ public class CodexGiveItemPacket {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
 
-            // ⭐ 安全校验：必须是创造模式
+            // 安全校验：必须是创造模式
             if (!player.isCreative()) {
                 LogUtil.warn("非创造模式玩家 " + player.getName().getString()
                         + " 尝试通过图鉴获取物品，已拒绝");
                 return;
             }
 
-            // ⭐ 安全校验：rarityOrder 合法性
+            // 安全校验：rarityOrder 合法性
             if (msg.rarityOrder < 0 || msg.rarityOrder > 3) {
                 LogUtil.debug("图鉴给予：非法品质序号 rarityOrder=" + msg.rarityOrder);
                 return;
@@ -84,9 +84,9 @@ public class CodexGiveItemPacket {
                 return;
             }
 
-            // ⭐ 背包满就**直接拒绝**，什么都不发生：格子红闪 + 抖动，和军械库「装不上」统一。
+            // 背包满就**直接拒绝**，什么都不发生：格子红闪 + 抖动，和军械库「装不上」统一。
             //
-            //    ⚠ 这里**不能**写成 if (!inv.add(give))。图鉴给予是创造模式专用功能，
+            //    注意：这里**不能**写成 if (!inv.add(give))。图鉴给予是创造模式专用功能，
             //    而创造模式下 Inventory#add 塞不下时会静默销毁物品并照样返回 true
             //    （字节码见 InventoryUtil 类注释）—— 那个 if 一次都不会进，
             //    等于这段拒绝逻辑完全不存在，玩家点一百次解锁一百张却一张也没拿到。
@@ -129,8 +129,8 @@ public class CodexGiveItemPacket {
      * 从已注册的静态列表中查找指定type和品质的模组
      * Find module with given type and rarity from registered static lists
      *
-     * ⭐ 优先搜索 rarityOrder 对应的品质列表，找不到再搜索全部列表。
-     * ⭐ Prioritizes the list matching rarityOrder, falls back to full search.
+     * 优先搜索 rarityOrder 对应的品质列表，找不到再搜索全部列表。
+     * Prioritizes the list matching rarityOrder, falls back to full search.
      *
      * 只返回已注册的合法模组，防止伪造type字符串获取非法物品。
      * Only returns legitimately registered modules, prevents forged type strings.
@@ -147,7 +147,7 @@ public class CodexGiveItemPacket {
      * 两个包都必须走「绝不根据客户端传来的字符串或 NBT 直接构造物品」这条底线，
      * 各写一份迟早漂移。</p>
      *
-     * <p>⭐ 修复：原先只搜八个内置原型池，漏了自定义模组。
+     * <p>修复：原先只搜八个内置原型池，漏了自定义模组。
      * {@code ModuleCodexData.buildWeaponModuleList/buildWarframeModuleList} 会通过
      * {@code CustomModuleManager} 把整合包作者在 custom_modules.json 里配的模组
      * 一并放进图鉴，也就是**图鉴里点得到**；但服务端这边找不到，于是创造模式点击自定义模组
@@ -164,7 +164,7 @@ public class CodexGiveItemPacket {
         // 确保列表已初始化 / Ensure lists are initialized
         ensureListsInitialized(isWeapon);
 
-        // ⭐ 优先搜索指定品质的列表 / Priority: search the target rarity list first
+        // 优先搜索指定品质的列表 / Priority: search the target rarity list first
         List<ItemStack> targetList = isWeapon
                 ? getWeaponListByRarity(rarityOrder)
                 : getWarframeListByRarity(rarityOrder);
@@ -173,7 +173,7 @@ public class CodexGiveItemPacket {
             if (!result.isEmpty()) return result;
         }
 
-        // ⭐ 自定义模组：与 ModuleCodexData 的取数口径一致（先查目标品质，再兜底全品质）
+        // 自定义模组：与 ModuleCodexData 的取数口径一致（先查目标品质，再兜底全品质）
         ItemStack custom = searchCustomModules(type, isWeapon, rarityOrder);
         if (!custom.isEmpty()) return custom;
 

@@ -8,7 +8,7 @@ import pers.roinflam.kuvalich.compat.tacz.TaczGunEnhanceUtil;
 /**
  * 一条面板属性是否该为这件武器生成
  *
- * <p>⭐ 这是把 tooltip 从五六十行压回来的**性价比最高的单点改动**：
+ * <p>这是把 tooltip 从五六十行压回来的**性价比最高的单点改动**：
  * 改造前，{@code reload_speed / magazine_size / recoil_reduction / gun_damage /
  * headshot_damage / aim_time / accuracy / true_bullet / gun_loot_drop / projectile_speed}
  * 这 10 条枪械词条对一把铁剑也会无条件生成——只要玩家在别处堆了这些词条，
@@ -37,7 +37,7 @@ public enum PanelRowGate {
     RANGED {
         @Override
         public boolean accepts(ItemStack stack) {
-            // ⭐ 用 ProjectileWeaponItem 而不是 BowItem/CrossbowItem：
+            // 用 ProjectileWeaponItem 而不是 BowItem/CrossbowItem：
             //    arrowDamage 在战斗端的生效条件跟武器是什么类无关，只看弹体
             //    （{@code damageSource.getDirectEntity() instanceof Arrow}）。
             //    整合包里不继承 BowItem 但发射原版 Arrow 的自定义弓并不罕见，

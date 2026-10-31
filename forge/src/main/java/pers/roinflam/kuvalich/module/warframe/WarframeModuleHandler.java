@@ -17,12 +17,12 @@ import java.util.function.ToIntFunction;
  * 战甲模组数据层
  * 负责模组获取、属性收集与缓存、击杀叠层效果计算
  *
- * ⭐ 重构：客户端/服务端共用同一套属性计算逻辑
+ * 重构：客户端/服务端共用同一套属性计算逻辑
  *    服务端从 Capability + KillStackManager 取数据
  *    客户端从 WarframeModuleSyncPacket 同步的缓存取数据
  *    两端调用方代码完全一致，无需区分侧
  *
- * <p>⭐ 并发安全修复：{@code ATTRIBUTE_CACHE} 由 {@link HashMap} 改为
+ * <p>并发安全修复：{@code ATTRIBUTE_CACHE} 由 {@link HashMap} 改为
  * {@link ConcurrentHashMap}。该 Map 是 static 的、跨玩家共享的，
  * 且存在 {@code computeIfAbsent} 与 {@code clear} / {@code remove} 的并发组合
  * （{@code cleanupCache} 在玩家退出事件中调用）。
@@ -69,13 +69,13 @@ public class WarframeModuleHandler {
 
     /**
      * 服务端每tick属性缓存（UUID → 基础属性Map）
-     * <p>⭐ 必须使用并发容器：static 跨线程共享，且存在 computeIfAbsent / clear / remove 的并发组合。</p>
+     * <p>必须使用并发容器：static 跨线程共享，且存在 computeIfAbsent / clear / remove 的并发组合。</p>
      */
     private static final Map<UUID, HashMap<String, Double>> ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
 
     /**
      * 缓存对应的tick
-     * <p>⭐ volatile：保证 tick 翻转后的清空动作对其他线程立即可见。</p>
+     * <p>volatile：保证 tick 翻转后的清空动作对其他线程立即可见。</p>
      */
     private static volatile long attributeCacheTick = -1;
 
@@ -140,7 +140,7 @@ public class WarframeModuleHandler {
      * 服务端：从 Capability 实时计算 + 每tick缓存
      * 客户端：从同步包缓存的模组数据计算 + 惰性缓存
      *
-     * ⭐ 调用方无需区分客户端/服务端，接口完全一致
+     * 调用方无需区分客户端/服务端，接口完全一致
      *
      * @param player 玩家
      * @return 属性Map的副本
@@ -208,8 +208,8 @@ public class WarframeModuleHandler {
      * 从模组列表计算战甲基础属性（不含击杀叠层）
      * 纯计算函数，无副作用，服务端和客户端使用完全相同的逻辑
      *
-     * ⭐ 区分加算、乘算、固定上限三种属性类型
-     * ⭐ 每个模组的属性值在叠加前会乘以等级缩放倍率
+     * 区分加算、乘算、固定上限三种属性类型
+     * 每个模组的属性值在叠加前会乘以等级缩放倍率
      *
      * @param modules 非空模组列表
      * @return 计算后的属性Map
@@ -226,13 +226,13 @@ public class WarframeModuleHandler {
         multiplicativeAttributes.put("shieldRecoveryDelay", 1.0);
 
         for (ItemStack module : modules) {
-            // ⭐ 模组等级缩放
+            // 模组等级缩放
             double levelMultiplier = ModuleLevelHelper.getEffectiveMultiplier(module);
 
             for (Map.Entry<String, Double> entry : AbstractModule.getAttributes(module)) {
                 String key = entry.getKey();
                 double value = ModuleConfig.clampAttributeValue(key, entry.getValue());
-                // ⭐ 应用等级缩放
+                // 应用等级缩放
                 value *= levelMultiplier;
 
                 if (MULTIPLICATIVE_ATTRIBUTES.contains(key)) {
@@ -268,7 +268,7 @@ public class WarframeModuleHandler {
      * 服务端：从 KillStackManager 读取实时叠层计数
      * 客户端：从同步包缓存读取叠层计数
      *
-     * ⭐ 调用方无需区分客户端/服务端，接口完全一致
+     * 调用方无需区分客户端/服务端，接口完全一致
      *
      * @param player     玩家
      * @param attributes 属性Map（会被原地修改）
@@ -349,7 +349,7 @@ public class WarframeModuleHandler {
 
     /**
      * 击杀时增加战甲叠层（仅服务端调用）
-     * ⭐ 不在此处触发同步，由 WarframeEffectHandler 的击杀逻辑负责
+     * 不在此处触发同步，由 WarframeEffectHandler 的击杀逻辑负责
      *    因为 WarframeEffectHandler 知道触发时机且已引用 WarframeModuleSyncPacket
      */
     static void addWarframeKillStacks(Player player) {

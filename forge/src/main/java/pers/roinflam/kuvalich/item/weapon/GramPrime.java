@@ -22,8 +22,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * 巨剑Prime（1.20.1版本，业务逻辑100%不变）
- * Gram Prime (1.20.1 version, business logic 100% unchanged)
+ * 巨剑Prime
+ * Gram Prime
  */
 @Mod.EventBusSubscriber
 public class GramPrime extends AbstractKuvaWeapon {

@@ -21,8 +21,8 @@ import pers.roinflam.kuvalich.utils.WeaponEventUtil;
 import javax.annotation.Nonnull;
 
 /**
- * 帕拉西斯（1.20.1版本，业务逻辑100%不变）
- * Paracesis (1.20.1 version, business logic 100% unchanged)
+ * 帕拉西斯
+ * Paracesis
  */
 @Mod.EventBusSubscriber
 public class Paracesis extends AbstractKuvaWeapon {
@@ -78,7 +78,7 @@ public class Paracesis extends AbstractKuvaWeapon {
 
                 @Override
                 public void run() {
-                    // ⭐ 实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血（与其他 DoT 一致）
+                    // 实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血（与其他 DoT 一致）
                     if (++tick > 100 || hurter.isDeadOrDying() || hurter.isRemoved()) {
                         this.cancel();
                         return;

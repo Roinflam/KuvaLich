@@ -21,12 +21,12 @@ import java.util.*;
  * 战甲模组基类（1.20.1版本）
  * Warframe Module Base Class
  *
- * ⭐ 属性词条根据等级动态缩放显示
- * ⭐ 满级不显示等级Tooltip
- * ⭐ 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
- * ⭐ 升级费用根据品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
+ * 属性词条根据等级动态缩放显示
+ * 满级不显示等级Tooltip
+ * 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
+ * 升级费用根据品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
  *
- * <p>⭐ 显示取整修正：百分比与固定值显示由向零截断改为 {@code Math.round}。
+ * <p>显示取整修正：百分比与固定值显示由向零截断改为 {@code Math.round}。
  * float 无法精确表示 0.9 / 0.7 / 0.35 这类十进制小数
  * （0.9f 的真实值是 0.89999997615814209），乘 100 后截断会掉一位，
  * 把 90% 显示成 89%。模组定义里的 {@code 0.90001F} 尾数即为绕开此问题的补丁，
@@ -69,7 +69,7 @@ public abstract class AbstractWarframeModule extends AbstractModule {
         if (!(item instanceof AbstractWarframeModule)) { return; }
         List<Component> tooltip = event.getToolTip();
         if (AbstractModule.isRandom(itemStack)) {
-            // ⭐ 固定在名称后插入三行 "+??% ???"，不再依赖 tooltip 当前行数（同 AbstractItemModule）
+            // 固定在名称后插入三行 "+??% ???"，不再依赖 tooltip 当前行数（同 AbstractItemModule）
             for (int i = 1; i <= 3; i++) {
                 tooltip.add(Math.min(i, tooltip.size()), Component.translatable("kuvaweapon.warframe_type_random.tooltip")
                         .withStyle(KuvaPalette.style(KuvaPalette.MUTED)));
@@ -79,7 +79,7 @@ public abstract class AbstractWarframeModule extends AbstractModule {
         }
     }
 
-    // ⭐ @OnlyIn：本方法引用了 @OnlyIn(Dist.CLIENT) 的 LiveStackView。
+    // @OnlyIn：本方法引用了 @OnlyIn(Dist.CLIENT) 的 LiveStackView。
     //    HotSpot 对 invokestatic 是惰性解析的，不标也不会在专用服务端炸；
     //    但标上之后 RuntimeDistCleaner 会直接把整段字节码剔掉，是零成本的保险，
     //    也与旧 WeaponModuleHandler 的做法一致。
@@ -92,16 +92,16 @@ public abstract class AbstractWarframeModule extends AbstractModule {
             number = addRivenTooltips(tooltip, itemStack, number);
         }
 
-        // ⭐ 等级系统Tooltip（满级自动跳过）
+        // 等级系统Tooltip（满级自动跳过）
         if (ModuleLevelHelper.isLevelSystemEnabled()) {
             int currentLevel = ModuleLevelHelper.getModuleLevel(itemStack);
             int maxLevel = ModuleLevelHelper.getMaxLevel();
             number += ModuleLevelTooltipHelper.appendLevelTooltip(tooltip, number, currentLevel, maxLevel);
-            // ⭐ 传入itemStack以支持品质缩放费用显示
+            // 传入itemStack以支持品质缩放费用显示
             number += ModuleLevelTooltipHelper.appendUpgradeCostTooltipIfInEvolve(tooltip, number, currentLevel, itemStack);
         }
 
-        // ⭐ 属性值根据等级缩放后显示
+        // 属性值根据等级缩放后显示
         double levelMult = ModuleLevelHelper.getEffectiveMultiplier(itemStack);
 
         for (Map.Entry<String, Double> attributeTag : AbstractModule.getAttributes(itemStack)) {
@@ -111,12 +111,12 @@ public abstract class AbstractWarframeModule extends AbstractModule {
             if (attributeKey.equals("fixedHealth") || attributeKey.equals("fixedShield") || attributeKey.equals("fixedArmor")) {
                 Component attributeName = Component.translatable("kuvaweapon.warframe_attribute_type." + attributeKey);
                 int color = getModuleColor(item);
-                // ⭐ 用 Math.round 代替截断：固定值同样可能因 float 精度掉 1
+                // 用 Math.round 代替截断：固定值同样可能因 float 精度掉 1
                 tooltip.add(number++, Component.literal("+" + (int) Math.round(scaledValue) + " ")
                         .append(attributeName).withStyle(KuvaPalette.style(color)));
             } else {
                 String prefix = scaledValue >= 0 ? "+" : "";
-                // ⭐ 用 Math.round 代替截断：避免 0.9 因 float 精度显示成 89%
+                // 用 Math.round 代替截断：避免 0.9 因 float 精度显示成 89%
                 int percentage = (int) Math.round(scaledValue * 100);
                 Component attributeName;
                 if (attributeKey.startsWith("killStack")) {
@@ -129,7 +129,7 @@ public abstract class AbstractWarframeModule extends AbstractModule {
                 net.minecraft.network.chat.MutableComponent line = Component.literal(prefix + percentage + "% ")
                         .append(attributeName).withStyle(KuvaPalette.style(color));
 
-                // ⭐ 叠层词条追加玩家当前层数。
+                // 叠层词条追加玩家当前层数。
                 //    战甲类叠层的客户端镜像在 WarframeModuleHandler 里，与武器类不是同一张表；
                 //    LiveStackView 已统一两条读取路径，这里不要直接调 KillStackManager。
                 Component live = pers.roinflam.kuvalich.client.tooltip.LiveStackView.liveStackSuffix(attributeKey, viewer);
@@ -179,7 +179,7 @@ public abstract class AbstractWarframeModule extends AbstractModule {
                             .append(" ").append(Component.literal(String.valueOf(cycle)).withStyle(ChatFormatting.BOLD))
                             .withStyle(KuvaPalette.style(KuvaPalette.rarity(4))));
         }
-        // ⭐ 在安魂之融中显示洗卡所需赤毒（战甲裂罅公式：min(cycle,8) + trend²）
+        // 在安魂之融中显示洗卡所需赤毒（战甲裂罅公式：min(cycle,8) + trend²）
         startIndex += ModuleLevelTooltipHelper.appendRivenCycleCostTooltipIfInEvolve(
                 tooltip, startIndex, trend, cycle, true);
         return startIndex;

@@ -64,7 +64,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * <h3>合并分组</h3>
  *
- * <p>⭐ 本次改动：每条数字多带一个「合并分组」（{@code mergeGroup}）发给客户端。
+ * <p>本次改动：每条数字多带一个「合并分组」（{@code mergeGroup}）发给客户端。
  * 普通伤害（命中本体、溅射、真伤、白字、武器持续伤害）用 {@link DamagePacket#MERGE_GROUP_GENERAL}，
  * 本模组自己的元素伤害用元素名。客户端开启合并后，只有同一只怪、同一分组的数字才会并成一条，
  * 这样元素图标不会被别的伤害混进去。不带分组参数的旧重载一律按普通伤害处理，调用方无需改动。</p>
@@ -600,7 +600,7 @@ public final class DamageDisplayTracker {
     /**
      * 统一发包出口：现查接收者、选位置、把各字段拆开装进 {@link DamagePacket}
      *
-     * <p>⭐ 本次改动：文本不再在服务端拼好，而是把数值、颜色码、前缀、后缀、护盾标记、合并分组
+     * <p>本次改动：文本不再在服务端拼好，而是把数值、颜色码、前缀、后缀、护盾标记、合并分组
      * 原样发给客户端，由客户端决定是单独显示还是并进已有的数字里。</p>
      *
      * @param viewerId   接收数字的玩家 UUID
@@ -706,7 +706,7 @@ public final class DamageDisplayTracker {
             return;
         }
 
-        // ⭐ 自检：回调从未触发过、却反复出现未消费登记 → 几乎可以断定 Mixin 未生效
+        // 自检：回调从未触发过、却反复出现未消费登记 → 几乎可以断定 Mixin 未生效
         if (!finalDamageHookVerified && !hookMissingWarned
                 && ++leftoverTicksWithoutHook >= HOOK_MISSING_TICK_THRESHOLD) {
             hookMissingWarned = true;

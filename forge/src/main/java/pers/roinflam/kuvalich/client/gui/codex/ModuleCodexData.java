@@ -21,7 +21,7 @@ import java.util.List;
  * 模组图鉴数据提供器
  * Module Codex Data Provider
  *
- * <p>⭐ 性能修复（本次）：{@code searchableText} 改为<b>惰性构建</b>。</p>
+ * <p>性能修复（本次）：{@code searchableText} 改为<b>惰性构建</b>。</p>
  *
  * <p>问题：原实现在 {@code CodexEntry} 构造时就调用 {@code getTooltipLines}
  * 拼接可搜索文本。而 {@code getTooltipLines} 会反过来触发本 mod 自己的
@@ -36,7 +36,7 @@ import java.util.List;
  * 不搜索就完全不产生这笔开销；即使搜索，也只在首次输入时摊销一次。
  * 搜索结果与原来完全一致（文本内容、大小写处理均未改变）。</p>
  *
- * <p>⭐ discoveryKey = type + ":" + rarityOrder，区分不同品质的同type模组。</p>
+ * <p>discoveryKey = type + ":" + rarityOrder，区分不同品质的同type模组。</p>
  */
 public class ModuleCodexData {
 
@@ -67,7 +67,7 @@ public class ModuleCodexData {
         public final String discoveryKey;
 
         /**
-         * ⭐ 可搜索文本（小写，包含名称 + 全部 Tooltip 行）
+         * 可搜索文本（小写，包含名称 + 全部 Tooltip 行）
          *
          * <p>惰性构建：构造时为 null，首次调用 {@link #getSearchableText()} 时才生成并缓存。
          * 外部<b>必须</b>通过 {@link #getSearchableText()} 访问，不要直接读本字段。</p>
@@ -90,12 +90,12 @@ public class ModuleCodexData {
             this.rarityOrder = rarityOrder;
             // 组合键：type + ":" + rarityOrder / Compound key
             this.discoveryKey = this.moduleType + ":" + rarityOrder;
-            // ⭐ 不在构造时构建 searchableText，避免打开图鉴时批量触发 tooltip 计算
+            // 不在构造时构建 searchableText，避免打开图鉴时批量触发 tooltip 计算
             this.searchableText = null;
         }
 
         /**
-         * ⭐ 获取可搜索文本（惰性构建 + 缓存）
+         * 获取可搜索文本（惰性构建 + 缓存）
          *
          * <p>只在用户实际输入搜索词并需要匹配本条目时才会触发构建，
          * 之后一直复用缓存结果。</p>
@@ -152,7 +152,7 @@ public class ModuleCodexData {
     /**
      * 丢弃图鉴缓存，下一次访问时重建
      *
-     * <p>⭐ 必须 {@code synchronized}，且三个字段必须 {@code volatile}：本方法是被
+     * <p>必须 {@code synchronized}，且三个字段必须 {@code volatile}：本方法是被
      * Forge 的<b>配置监视线程</b>调用的（见 {@code ClientSetup.onConfigReload}），
      * 而 {@link #ensureInitialized()} 在渲染线程上用 synchronized 块重建缓存。
      * 两者不在同一把锁上就构不成 happens-before —— 渲染线程可能读到「initialized 仍是 true、
@@ -171,7 +171,7 @@ public class ModuleCodexData {
     /**
      * 提前把图鉴数据建好
      *
-     * <p>⭐ 为什么需要它：{@link #ensureInitialized()} 这条链路是<b>同步</b>的 ——
+     * <p>为什么需要它：{@link #ensureInitialized()} 这条链路是<b>同步</b>的 ——
      * {@code ModuleCodexScreen.init()} → {@code onSearchChanged()} →
      * {@code getWeaponModules()} → 本类初始化 → {@code forceInitModuleLists()}
      * → 八个原型池 {@code initializeModuleList()}（每个几十到上百个 register，

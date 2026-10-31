@@ -21,16 +21,16 @@ import java.util.*;
  * 武器模组基类（1.20.1版本）
  * Weapon Module Base Class
  *
- * ⭐ 属性词条根据等级动态缩放显示
- * ⭐ 满级不显示等级Tooltip
- * ⭐ 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
- * ⭐ 升级费用根据品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
+ * 属性词条根据等级动态缩放显示
+ * 满级不显示等级Tooltip
+ * 裂罅在安魂之融中显示洗卡费用（倾向+次数双维度）
+ * 升级费用根据品质缩放（铜25%/银50%/金75%/Prime&裂罅100%）
  *
- * ⭐ 第三批新词条：true_bullet（真实伤害）、gun_loot_drop（枪械战利品掉落，TACZ 专属），
+ * 第三批新词条：true_bullet（真实伤害）、gun_loot_drop（枪械战利品掉落，TACZ 专属），
  *    execute_threshold（收集者阈值）、purge_buff（净化驱散）、execute_chance（致命斩首，通用）。
  *    其中 execute_chance 数值极小（如 0.01%），显示时保留小数避免取整为 0%。
  *
- * <p>⭐ 显示取整修正：百分比显示由 {@code (int) (x * 100)} 改为
+ * <p>显示取整修正：百分比显示由 {@code (int) (x * 100)} 改为
  * {@code (int) Math.round(x * 100)}。
  * 原写法是向零截断，而 float 无法精确表示 0.9 / 0.7 / 0.35 这类十进制小数
  * （0.9f 的真实值是 0.89999997615814209），乘 100 后截断会掉一位，
@@ -80,7 +80,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
         if (!(item instanceof AbstractWeaponModule)) { return; }
         List<Component> tooltip = event.getToolTip();
         if (AbstractModule.isRandom(itemStack)) {
-            // ⭐ 固定在名称后插入三行 "+??% ???"（模仿三条被遮住的词条）。
+            // 固定在名称后插入三行 "+??% ???"（模仿三条被遮住的词条）。
             //    原来的 i < tooltip.size() 条件让行数取决于 tooltip 当前有几行：
             //    普通模式下只有名称一行时一行都不显示，开了 F3+H 又会显示三行
             for (int i = 1; i <= 3; i++) {
@@ -92,7 +92,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
         }
     }
 
-    // ⭐ @OnlyIn：本方法引用了 @OnlyIn(Dist.CLIENT) 的 LiveStackView。
+    // @OnlyIn：本方法引用了 @OnlyIn(Dist.CLIENT) 的 LiveStackView。
     //    HotSpot 对 invokestatic 是惰性解析的，不标也不会在专用服务端炸；
     //    但标上之后 RuntimeDistCleaner 会直接把整段字节码剔掉，是零成本的保险，
     //    也与旧 WeaponModuleHandler 的做法一致。
@@ -105,23 +105,23 @@ public abstract class AbstractWeaponModule extends AbstractModule {
             number = addRivenTooltips(tooltip, itemStack, number);
         }
 
-        // ⭐ 等级系统Tooltip（满级自动跳过）
+        // 等级系统Tooltip（满级自动跳过）
         if (ModuleLevelHelper.isLevelSystemEnabled()) {
             int currentLevel = ModuleLevelHelper.getModuleLevel(itemStack);
             int maxLevel = ModuleLevelHelper.getMaxLevel();
             number += ModuleLevelTooltipHelper.appendLevelTooltip(tooltip, number, currentLevel, maxLevel);
-            // ⭐ 传入itemStack以支持品质缩放费用显示
+            // 传入itemStack以支持品质缩放费用显示
             number += ModuleLevelTooltipHelper.appendUpgradeCostTooltipIfInEvolve(tooltip, number, currentLevel, itemStack);
         }
 
-        // ⭐ 属性值根据等级缩放后显示
+        // 属性值根据等级缩放后显示
         double levelMult = ModuleLevelHelper.getEffectiveMultiplier(itemStack);
 
         for (Map.Entry<String, Double> attributeTag : AbstractModule.getAttributes(itemStack)) {
             double scaledValue = attributeTag.getValue() * levelMult;
             String prefix = scaledValue >= 0 ? "+" : "";
             String attributeKey = attributeTag.getKey();
-            // ⭐ 秒杀概率数值极小（如0.01%），保留小数避免取整后显示为0%，并去掉末尾多余的0（0.010%→0.01%）；其余词条整数显示
+            // 秒杀概率数值极小（如0.01%），保留小数避免取整后显示为0%，并去掉末尾多余的0（0.010%→0.01%）；其余词条整数显示
             String valueText;
             if (attributeKey.equals("execute_chance")) {
                 String percentText = String.format("%.3f", scaledValue * 100);
@@ -130,7 +130,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
                 }
                 valueText = percentText + "%";
             } else {
-                // ⭐ 用 Math.round 代替截断：避免 0.9 因 float 精度显示成 89%
+                // 用 Math.round 代替截断：避免 0.9 因 float 精度显示成 89%
                 valueText = (int) Math.round(scaledValue * 100) + "%";
             }
 
@@ -142,7 +142,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
                 attributeName = Component.translatable("kuvaweapon.item_attribute_type." + attributeKey);
             }
 
-            // ⭐ 词条颜色**只跟模组品质走**，不因为属性是哪种元素而变。
+            // 词条颜色**只跟模组品质走**，不因为属性是哪种元素而变。
             //
             //    这里曾经有过一个「病毒粉 / 毒气青覆盖品质色」的机制（类注释里宣称过、
             //    但 switch 里从来没写 case，所以其实一直没生效）。我按注释补齐过一版，
@@ -154,7 +154,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
                     .append(attributeName)
                     .withStyle(KuvaPalette.style(color));
 
-            // ⭐ 叠层词条追加玩家当前层数：卡面原先只写「至多 N 层」，
+            // 叠层词条追加玩家当前层数：卡面原先只写「至多 N 层」，
             //    玩家看不出这条词条现在到底生效了多少，容易低估它的强度。
             Component live = pers.roinflam.kuvalich.client.tooltip.LiveStackView.liveStackSuffix(attributeKey, viewer);
             if (live != null) {
@@ -198,7 +198,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
                             .append(" ").append(Component.literal(String.valueOf(cycle)).withStyle(ChatFormatting.BOLD))
                             .withStyle(KuvaPalette.style(KuvaPalette.rarity(4))));
         }
-        // ⭐ 在安魂之融中显示洗卡所需赤毒（武器裂罅公式：min(cycle,8) + trend² - (trend-1)²）
+        // 在安魂之融中显示洗卡所需赤毒（武器裂罅公式：min(cycle,8) + trend² - (trend-1)²）
         startIndex += ModuleLevelTooltipHelper.appendRivenCycleCostTooltipIfInEvolve(
                 tooltip, startIndex, trend, cycle, false);
         return startIndex;

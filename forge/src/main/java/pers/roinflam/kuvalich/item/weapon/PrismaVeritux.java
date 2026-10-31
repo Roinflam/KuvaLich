@@ -84,7 +84,7 @@ public class PrismaVeritux extends AbstractKuvaWeapon {
         if (slot == EquipmentSlot.MAINHAND) {
             double reachBonus = KuvaWeaponUtil.getMagnification(stack, 1, 2);
 
-            // ✅ 添加方块交互距离（挖掘、放置方块）
+            // 添加方块交互距离（挖掘、放置方块）
             // Add block reach (mining, placing blocks)
             multimap.put(
                     ForgeMod.BLOCK_REACH.get(),
@@ -96,7 +96,7 @@ public class PrismaVeritux extends AbstractKuvaWeapon {
                     )
             );
 
-            // ✅ 关键修复：添加实体交互距离（攻击、交互实体）
+            // 关键修复：添加实体交互距离（攻击、交互实体）
             // Critical fix: Add entity reach (attacking, interacting with entities)
             multimap.put(
                     ForgeMod.ENTITY_REACH.get(),

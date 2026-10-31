@@ -18,7 +18,7 @@ import java.util.List;
  * 动态属性注册（v7）
  * Dynamic Attribute Registration
  *
- * <p>⭐ v7 变更（性能 + 正确性）：
+ * <p>v7 变更（性能 + 正确性）：
  * <ul>
  *     <li><b>取消动态事件监听器。</b>MAGNETIC / RADIATION / PUNCTURE 原先用
  *         {@code withEventHandler} 在每次施加 debuff 时往 Forge 事件总线 register 一个
@@ -134,7 +134,7 @@ public class DynamicAttributes {
             });
 
     /**
-     * ⭐ 毒素持续标记 DynamicAttribute（纯视觉）
+     * 毒素持续标记 DynamicAttribute（纯视觉）
      * DOT 由 WeaponElementSystem 的 SynchronizationTask 负责
      */
     public static final DynamicAttribute POISON = new DynamicAttribute("poison")
@@ -154,13 +154,13 @@ public class DynamicAttributes {
     /**
      * 磁力效果 - 有护盾时受到伤害增加（0级100% → 9级325%）
      * 持续期间身上的横向光带由客户端的 ElementGeometryRenderer 画。
-     * ⭐ v7：护盾增伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
+     * v7：护盾增伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
      */
     public static final DynamicAttribute MAGNETIC = new DynamicAttribute("magnetic");
 
     /**
      * 辐射效果 - 混乱攻击同类并增伤（0级100% → 9级550%）
-     * ⭐ v7：同类增伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
+     * v7：同类增伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
      */
     public static final DynamicAttribute RADIATION = new DynamicAttribute("radiation")
             .setTickInterval(10)
@@ -214,9 +214,9 @@ public class DynamicAttributes {
 
     /**
      * 穿刺效果 - 挂着它的生物<b>造成</b>的伤害降低（0级40% → 3级70%，每级 +10%）
-     * ⭐ 2026-09-25：原先是挂着它的生物<b>受到</b>的近战伤害降低 —— 玩家越打越打不动，方向反了；
+     * 2026-09-25：原先是挂着它的生物<b>受到</b>的近战伤害降低 —— 玩家越打越打不动，方向反了；
      *    照《星际战甲》原作改成削弱它的输出。注释原写「3级80%」，按常量实际是 70%
-     * ⭐ v7：减伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
+     * v7：减伤逻辑搬到 {@link ElementCombatHandler}，数值与触发条件不变。
      */
     public static final DynamicAttribute PUNCTURE = new DynamicAttribute("puncture")
             .setTickInterval(10)
@@ -255,7 +255,7 @@ public class DynamicAttributes {
     /**
      * 元素 debuff 战斗效果处理器
      *
-     * <p>⭐ 这里取代了原先的 {@code withEventHandler}「运行时往事件总线动态 register 监听器」方案。</p>
+     * <p>这里取代了原先的 {@code withEventHandler}「运行时往事件总线动态 register 监听器」方案。</p>
      *
      * <p>旧方案的问题：
      * <ol>
@@ -342,7 +342,7 @@ public class DynamicAttributes {
         /**
          * 穿刺：<b>攻击方</b>身上挂着穿刺时，它造成的伤害降低
          *
-         * <p>⭐ 2026-09-25 改方向：原先判的是受击方（挂穿刺的目标被生物近战打中时减伤），
+         * <p>2026-09-25 改方向：原先判的是受击方（挂穿刺的目标被生物近战打中时减伤），
          * 玩家给怪挂上穿刺反而削弱自己的近战。现在看伤害归属者（{@code getEntity()}，
          * 含它射出的箭、火球等），与原作「穿刺削弱敌人输出」一致；没有归属者的伤害（摔落、DoT）不受影响。</p>
          *
@@ -369,7 +369,7 @@ public class DynamicAttributes {
          * 辐射：<b>攻击方</b>带辐射且打的是同类型生物时增伤
          * 等价于旧 {@code onAttack}（那里绑定的是攻击方的 UUID，不是受击方）
          *
-         * <p>⭐ 旧代码把 {@code event.getSource().getEntity()} 直接强转成 LivingEntity，
+         * <p>旧代码把 {@code event.getSource().getEntity()} 直接强转成 LivingEntity，
          * 只因为它一定等于当初绑定的那个 LivingEntity 才没炸；
          * 静态监听器没有这层保证，这里必须用 instanceof 兜住（箭矢、TNT 等非生物伤害源）。</p>
          *

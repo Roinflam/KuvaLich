@@ -33,7 +33,7 @@ public class ClothConfigScreen {
                 .setSavingRunnable(() -> {
                     ModConfig.COMMON_CONFIG.save();
                     ModuleConfig.MODULE_CONFIG.save();
-                    // ⭐ 面板配置是独立的 CLIENT spec，要单独存
+                    // 面板配置是独立的 CLIENT spec，要单独存
                     TooltipConfig.CLIENT_CONFIG.save();
                 });
 
@@ -588,12 +588,12 @@ public class ClothConfigScreen {
         moduleLevelCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableModuleLevelSystem"), ModConfig.KUVA_LICH.enableModuleLevelSystem.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableModuleLevelSystem.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableModuleLevelSystem::set).build());
         moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.moduleMaxLevel"), ModConfig.KUVA_LICH.moduleMaxLevel.get()).setDefaultValue(10).setMin(2).setMax(100).setTooltip(Component.translatable("config.kuvalich.moduleMaxLevel.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.moduleMaxLevel::set).build());
         moduleLevelCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.endoDropChance"), ModConfig.KUVA_LICH.endoDropChance.get()).setDefaultValue(10.0).setMin(0.0).setMax(100.0).setTooltip(Component.translatable("config.kuvalich.endoDropChance.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropChance::set).build());
-        // ⭐ 新增：内融核心掉落数量范围
+        // 新增：内融核心掉落数量范围
         moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoDropMinAmount"), ModConfig.KUVA_LICH.endoDropMinAmount.get()).setDefaultValue(1).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.endoDropMinAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropMinAmount::set).build());
         moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoDropMaxAmount"), ModConfig.KUVA_LICH.endoDropMaxAmount.get()).setDefaultValue(5).setMin(1).setMax(64).setTooltip(Component.translatable("config.kuvalich.endoDropMaxAmount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoDropMaxAmount::set).build());
         moduleLevelCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.endoLastLevelCost"), ModConfig.KUVA_LICH.endoLastLevelCost.get()).setDefaultValue(64).setMin(1).setMax(1024).setTooltip(Component.translatable("config.kuvalich.endoLastLevelCost.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoLastLevelCost::set).build());
         moduleLevelCategory.addEntry(entryBuilder.startDoubleField(Component.translatable("config.kuvalich.endoCostExponent"), ModConfig.KUVA_LICH.endoCostExponent.get()).setDefaultValue(2.0).setMin(1.0).setMax(5.0).setTooltip(Component.translatable("config.kuvalich.endoCostExponent.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.endoCostExponent::set).build());
-        // ⭐ 补全遗漏：精通赋予开关
+        // 补全遗漏：精通赋予开关
         moduleLevelCategory.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich.enableMasteryOnReveal"), ModConfig.KUVA_LICH.enableMasteryOnReveal.get()).setDefaultValue(true).setTooltip(Component.translatable("config.kuvalich.enableMasteryOnReveal.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.enableMasteryOnReveal::set).build());
 
         // ═══════════════════════════════════════════════════════════════
@@ -681,7 +681,7 @@ public class ClothConfigScreen {
     /**
      * 面板显示分类
      *
-     * <p>⭐ 这些配置项来自独立的 {@link TooltipConfig#CLIENT_CONFIG}（{@code Type.CLIENT}），
+     * <p>这些配置项来自独立的 {@link TooltipConfig#CLIENT_CONFIG}（{@code Type.CLIENT}），
      * 与 {@code ModConfig.COMMON_CONFIG} 分开存盘，所以这里要单独 save 一次
      * —— {@code createConfigScreen} 顶上的 {@code setSavingRunnable} 只保存了另外两份。</p>
      */

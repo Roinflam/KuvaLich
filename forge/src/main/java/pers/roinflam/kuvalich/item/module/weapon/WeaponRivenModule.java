@@ -34,7 +34,7 @@ import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
  * 支持三种模式：近战(0)、远程(1)、通用(2)
  * 通用模式近战和远程词条均可出现，形成大混池
  *
- * ⭐ 负面词条排除规则（本次新增）：
+ * 负面词条排除规则（本次新增）：
  *    以下词条不会作为负面词条被洗出，原因分两类：
  *    1. 机制类新词条（true_bullet / gun_loot_drop / execute_threshold / purge_buff / execute_chance）——
  *       除 gun_loot_drop 外，其余在战斗代码中均有正值守卫，负值完全无效（死负面），
@@ -63,7 +63,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
      * 需要 TACZ 模组才能生效的词条集合。
      * 未安装 TACZ 时，这些词条不会出现在紫卡随机池中，避免洗出无效废词条。
      * <p>
-     * ⭐ 第三批新增：true_bullet（真实伤害）、gun_loot_drop（枪械战利品掉落）为 TACZ 专属。
+     * 第三批新增：true_bullet（真实伤害）、gun_loot_drop（枪械战利品掉落）为 TACZ 专属。
      *    execute_threshold / purge_buff / execute_chance 为通用词条，不在此集合内。
      */
     private static final Set<String> TACZ_EXCLUSIVE_ATTRIBUTES = Set.of(
@@ -75,7 +75,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
     );
 
     /**
-     * ⭐ 禁止作为负面词条出现的机制类新词条集合。
+     * 禁止作为负面词条出现的机制类新词条集合。
      * <p>
      * true_bullet / execute_threshold / purge_buff / execute_chance 在战斗代码中
      * 均有 {@code <= 0} 正值守卫，负值完全无效（死负面）；
@@ -115,7 +115,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
 
     public static ItemStack getRandomModule() {
         ItemStack itemStack = new ItemStack(KuvaLichItems.ITEM_RIVEN_MODULE.get());
-        // ⭐ 改造前是把 §5 这个传统颜色码直接拼进字符串：
+        // 改造前是把 §5 这个传统颜色码直接拼进字符串：
         //    Component.literal(ChatFormatting.DARK_PURPLE + name)。
         //    § 码是内嵌在文本里的，Style 里并没有颜色，所以
         //    WeaponPanelComposer.moduleNames() 里那句
@@ -174,7 +174,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
     }
 
     public static int getRivenMode(ItemStack itemStack) {
-        // ⭐ 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
+        // 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
         //    而 ItemStack 比较 NBT 时 null != {}，物品会因此再也堆叠不起来。
         CompoundTag tag = itemStack.getTag();
         if (tag == null) {
@@ -259,7 +259,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
      * 根据倾向性、洗卡次数和裂罅模式重新随机所有词条
      * 未安装 TACZ 时自动过滤枪械专属词条
      * <p>
-     * ⭐ 负面词条额外排除（仅影响负面槽，正面词条池不变）：
+     * 负面词条额外排除（仅影响负面槽，正面词条池不变）：
      *    机制类新词条（NEGATIVE_EXCLUDED_ATTRIBUTES）与所有击杀叠层词条（killStack* 前缀）。
      */
     public static ItemStack cycleModule(int trend, int cycleNumber, int rivenMode) {
@@ -377,7 +377,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
                     continue;
                 }
 
-                // ⭐ 机制类新词条不出负面：
+                // 机制类新词条不出负面：
                 //    true_bullet / execute_threshold / purge_buff / execute_chance 负值在战斗代码中
                 //    被正值守卫拦截，属于完全无效的"死负面"（白吃 ×1.2 正面加成）；
                 //    gun_loot_drop 负值虽有效，但为保持新词条规则统一一并排除。
@@ -385,7 +385,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
                     continue;
                 }
 
-                // ⭐ 击杀叠层词条不出负面：
+                // 击杀叠层词条不出负面：
                 //    战斗代码以 containsKey 判定累加叠层，负值词条会让玩家"越杀越弱"，
                 //    属于惩罚击杀行为的毒词条，与无伤负设计意图相悖。
                 if (attributeType.startsWith("killStack")) {
@@ -557,7 +557,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
     }
 
     public static int getCycle(ItemStack itemStack) {
-        // ⭐ 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
+        // 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
         //    而 ItemStack 比较 NBT 时 null != {}，物品会因此再也堆叠不起来。
         CompoundTag tag = itemStack.getTag();
         if (tag == null) {
@@ -574,7 +574,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
     }
 
     public static int getTrend(ItemStack itemStack) {
-        // ⭐ 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
+        // 只读：必须用 getTag()。getOrCreateTag() 会给没有 NBT 的物品塞一个空 {} 标签，
         //    而 ItemStack 比较 NBT 时 null != {}，物品会因此再也堆叠不起来。
         CompoundTag tag = itemStack.getTag();
         if (tag == null) {
@@ -604,7 +604,7 @@ public class WeaponRivenModule extends AbstractWeaponModule {
             }
 
 
-// ⭐ 模组等级系统：赋予揭示等级
+// 模组等级系统：赋予揭示等级
             ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);

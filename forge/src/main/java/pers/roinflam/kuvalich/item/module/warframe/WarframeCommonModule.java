@@ -70,7 +70,7 @@ public class WarframeCommonModule extends AbstractWarframeModule {
     }
 
     private static void initializeModuleList() {
-        // ⭐ 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
+        // 这个局部变量刻意与静态字段同名：下面所有 register 调用填的都是它，
         //    填完之后在方法末尾一次性换掉静态字段的引用。
         //
         //    不能就地 clear() 再填：配置热重载后本方法会被再次调用，
@@ -180,7 +180,7 @@ public class WarframeCommonModule extends AbstractWarframeModule {
         items.addAll(itemStackList);
         CustomModuleManager.getInstance().addCustomWarframeModulesToCreativeTab(items, Rarity.COMMON);
 
-        // ⭐ 创造模式模组默认满级
+        // 创造模式模组默认满级
         if (ModuleLevelHelper.isLevelSystemEnabled()) {
             for (ItemStack stack : items) {
                 if (!AbstractModule.isRandom(stack)) {
@@ -206,7 +206,7 @@ public class WarframeCommonModule extends AbstractWarframeModule {
 
             ItemStack module = availableModules.get(RandomUtil.getInt(0, availableModules.size() - 1)).copy();
 
-// ⭐ 模组等级系统：赋予揭示等级
+// 模组等级系统：赋予揭示等级
             ModuleLevelHelper.applyRevealLevel(module, player);
             ItemEntity entityItem = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), module);
             level.addFreshEntity(entityItem);

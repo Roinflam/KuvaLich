@@ -21,8 +21,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * 圣教权杖（1.20.1版本，业务逻辑100%不变）
- * Sancti Magistar (1.20.1 version, business logic 100% unchanged)
+ * 圣教权杖
+ * Sancti Magistar
  */
 @Mod.EventBusSubscriber
 public class SanctiMagistar extends AbstractKuvaWeapon {

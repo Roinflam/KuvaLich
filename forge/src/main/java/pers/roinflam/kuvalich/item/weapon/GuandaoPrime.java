@@ -51,7 +51,7 @@ public class GuandaoPrime extends AbstractKuvaWeapon {
         ItemStack weapon = WeaponEventUtil.checkWeaponAttack(attacker, GuandaoPrime.class);
 
         if (weapon != null) {
-            // ✅ 替换为动态属性系统（简化处理）
+            // 替换为动态属性系统（简化处理）
             int currentLevel = DynamicAttributeManager.has(attacker, DynamicAttributes.GUANDAO_PRIME)
                     ? 10
                     : 5;
@@ -73,13 +73,13 @@ public class GuandaoPrime extends AbstractKuvaWeapon {
 
                 @Override
                 public void run() {
-                    // ⭐ 修复 3：实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血
+                    // 修复 3：实体被移除（卸载 / 消失 / 传送走）时也停止，不再对脱离世界的实体扣血
                     if (++tick > 20 || hurter.isDeadOrDying() || hurter.isRemoved()) {
                         this.cancel();
                         return;
                     }
 
-                    // ⭐ 先扣血、再显示「扣之前 − 扣之后」的实际掉血：
+                    // 先扣血、再显示「扣之前 − 扣之后」的实际掉血：
                     //    Boss 锁血、伤害上限等拦截直接扣血时，数字如实变小或不显示
                     float healthBefore = hurter.getHealth();
                     if (healthBefore - dotDamage > 0.01f) {

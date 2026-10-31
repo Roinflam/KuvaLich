@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 元素 debuff 视觉同步包节流器（服务端专用）
  * Element debuff visual sync packet throttler (server-side)
  *
- * <p>解决场景：SlashBlade 群体斩击、Goety AOE、爆炸半径溅射等一 tick 命中
+ * <p>解决场景：范围斩击、范围法术、爆炸半径溅射等一 tick 命中
  * 大量目标时，每个目标都会触发若干次 {@code triggerElementEffect}，
  * 每次都通过 {@link ElementEffectNetwork#sendToTrackers} 给该目标的所有 tracker
  * 广播 ElementDebuffPacket。N 目标 × M tracker × K 触发 = 一帧内成百上千次
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li><b>实体离开 / 玩家退出</b>：清理对应条目，防内存泄漏。</li>
  * </ol></p>
  *
- * <p>⭐ 正确性修复（本次）：原 {@code cleanupStaleRecords} 把两套时间基准混用——
+ * <p>正确性修复（本次）：原 {@code cleanupStaleRecords} 把两套时间基准混用——
  * {@code now} 取 {@code System.currentTimeMillis()/50}（1970 起算，约 3.4×10¹⁰），
  * 而 {@code latestTick} 存的是 {@code level.getGameTime()}（世界启动起算，通常几百万），
  * 于是 {@code now - latestTick > 600} <b>恒为 true</b>，每次触发清理都把整张表清空。
@@ -68,7 +68,7 @@ public final class ElementSyncGuard {
 
     /**
      * 上次发送时间记录：entityId → (element → lastSentMillis)
-     * <p>⭐ 值统一为 {@link System#currentTimeMillis()}，与节流判定、过期清理共用同一基准。</p>
+     * <p>值统一为 {@link System#currentTimeMillis()}，与节流判定、过期清理共用同一基准。</p>
      */
     private static final Map<Integer, HashMap<String, Long>> LAST_SENT_MS = new ConcurrentHashMap<>();
 
@@ -127,7 +127,7 @@ public final class ElementSyncGuard {
         if (event.phase != TickEvent.Phase.END) return;
         SENT_THIS_TICK.clear();
 
-        // ⭐ 显式计数器控制清理频率，替代原先基于系统时钟取模的不可靠写法
+        // 显式计数器控制清理频率，替代原先基于系统时钟取模的不可靠写法
         if (++cleanupCounter >= CLEANUP_INTERVAL_TICKS) {
             cleanupCounter = 0;
             cleanupStaleRecords();
@@ -138,7 +138,7 @@ public final class ElementSyncGuard {
      * 清理超过 {@link #STALE_RECORD_MS} 未更新的实体记录，防止内存泄漏
      * （{@link EntityLeaveLevelEvent} 在某些场景可能漏触发，此处是兜底）
      *
-     * <p>⭐ 与 {@link #trySend} 共用 {@link System#currentTimeMillis()} 基准，
+     * <p>与 {@link #trySend} 共用 {@link System#currentTimeMillis()} 基准，
      * 不再出现「条件恒真、整表被清空」的问题。</p>
      */
     private static void cleanupStaleRecords() {

@@ -31,7 +31,7 @@ import java.util.*;
  * 武器元素系统 · v9
  * 负责元素组合计算、元素效果触发、伤害位置和元素表情符号
  *
- * <p>⭐ v9 伤害数字改为「实际扣了多少就显示多少」：</p>
+ * <p>v9 伤害数字改为「实际扣了多少就显示多少」：</p>
  * <ul>
  *   <li><b>走 hurt 的元素伤害</b>（火焰 DoT、无盾毒素、电击、毒气）：改用
  *       {@link DamageDisplayTracker#hurtWithDisplay}，数字取自最终伤害回调。
@@ -45,7 +45,7 @@ import java.util.*;
  *   <li>元素数字统一走附加通道限流（{@link DamagePacket.Channel#SECONDARY}），不挤占主伤害的额度。</li>
  * </ul>
  *
- * <p>⭐ v8 性能修复：新增 {@link ElementPool} 预计算元素池。</p>
+ * <p>v8 性能修复：新增 {@link ElementPool} 预计算元素池。</p>
  *
  * <p>问题：原 {@code triggerElementEffect} 每次触发第一行都调用
  * {@code getTriggerElement} → {@code getTriggerElements}，后者会完整重建元素池：
@@ -53,7 +53,7 @@ import java.util.*;
  * 用 {@code String.format("%.0f%%")} 把权重格式化成百分比字符串 →
  * 返回后调用方又 {@code Double.parseDouble(v.replace("%",""))} 解析回 double。<br>
  * 元素池在<b>一次攻击内是常量</b>，但单次伤害最多触发 20 次
- * （{@code MAX_ELEMENT_TRIGGER_PER_HIT}），SlashBlade 群体斩击命中 20 个目标
+ * （{@code MAX_ELEMENT_TRIGGER_PER_HIT}），一次范围斩击命中 20 个目标
  * 就是 400 次完整重建 + 800 次字符串格式化/解析。</p>
  *
  * <p>修复：{@link #buildElementPool} 在 {@code processDamage} 里对每次攻击算<b>一次</b>，
@@ -85,7 +85,7 @@ public class WeaponElementSystem {
         return number / 100.0;
     }
 
-    // ========== ⭐ 元素池 / Element Pool ==========
+    // ========== 元素池 / Element Pool ==========
 
     /**
      * 预计算好的元素池（一次攻击内复用）
@@ -331,7 +331,7 @@ public class WeaponElementSystem {
     }
 
     /**
-     * ⭐ 造成一次元素伤害并按实际扣除量显示数字
+     * 造成一次元素伤害并按实际扣除量显示数字
      *
      * <p>数字取自最终伤害回调：免疫、受击无敌、护甲、其他模组减伤都会如实体现；
      * 这一下被整个挡掉时不跳字；打到护盾时计入护盾部分并追加护盾图标。</p>
@@ -350,7 +350,7 @@ public class WeaponElementSystem {
     }
 
     /**
-     * ⭐ 发送一条「直接改血量」类元素伤害的数字
+     * 发送一条「直接改血量」类元素伤害的数字
      *
      * @param victim   受击实体
      * @param amount   应显示的数值（由 {@link DamageDisplayTracker#resolveDirectLoss} 算出）
@@ -364,7 +364,7 @@ public class WeaponElementSystem {
     }
 
     /**
-     * ⭐ 为爆炸元素拍一份血量快照
+     * 为爆炸元素拍一份血量快照
      *
      * <p>原版爆炸会对「中心 ±（半径 × 2 + 1）格」方盒内的生物结算伤害，这里取同样的方盒；
      * 排除攻击者本人（自伤不给攻击者跳字），并跳过已死亡的实体。</p>
@@ -526,7 +526,7 @@ public class WeaponElementSystem {
     /**
      * 触发一次元素效果
      *
-     * <p>⭐ v8：元素池由调用方预计算并传入，本方法内不再重建元素池。</p>
+     * <p>v8：元素池由调用方预计算并传入，本方法内不再重建元素池。</p>
      *
      * @param damageSource   伤害来源
      * @param hurter         受害者
@@ -577,12 +577,12 @@ public class WeaponElementSystem {
                         * ModConfig.KUVA_LICH.elementFireDamageMultiplier.get());
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
-                    // ⭐ 走去重注册表：同一只怪身上每种元素永远只有一条 DOT 在跑，
+                    // 走去重注册表：同一只怪身上每种元素永远只有一条 DOT 在跑，
                     //    重复触发取 max 并刷新轮数，而不是再起一个独立任务。
                     WeaponCombatHandler.ElementDotRegistry.apply(hurter, "fire", dotDamage,
                             (int) Math.ceil(6 * triggerTime), (t, d) -> {
                                 t.setSecondsOnFire(6);
-                                // ⭐ 按实际扣除量显示：免疫火焰、受击无敌、其他模组减伤都会如实体现
+                                // 按实际扣除量显示：免疫火焰、受击无敌、其他模组减伤都会如实体现
                                 hurtWithElementDisplay(t, t.damageSources().inFire(), d, dotAttacker, "fire");
                                 return true;
                             });
@@ -603,12 +603,12 @@ public class WeaponElementSystem {
                 if (dotDamage > 0) {
                     final LivingEntity dotAttacker = attacker;
                     final DamageSource attackSource = getAttackDamageSource(attacker);
-                    // ⭐ 走去重注册表（带盾时毒素绕过无敌帧，重复 DOT 是真·线性叠加，
+                    // 走去重注册表（带盾时毒素绕过无敌帧，重复 DOT 是真·线性叠加，
                     //    一次命中触发六次就是六份同时扣血 —— 这是平衡问题，比性能更要紧）
                     WeaponCombatHandler.ElementDotRegistry.apply(hurter, "poison", dotDamage,
                             (int) Math.ceil(6 * triggerTime), (t, d) -> {
                                 if (t.getAbsorptionAmount() > 0) {
-                                    // ⭐ 有护盾：毒素绕过护盾直接扣血，显示「扣之前 − 扣之后」的实际掉血
+                                    // 有护盾：毒素绕过护盾直接扣血，显示「扣之前 − 扣之后」的实际掉血
                                     float healthBefore = t.getHealth();
                                     boolean lethal = !(healthBefore - d > 0.01f);
                                     if (lethal) { LivingEntityUtil.kill(t, attackSource); }
@@ -617,7 +617,7 @@ public class WeaponElementSystem {
                                             dotAttacker, "poison");
                                     return !lethal;
                                 }
-                                // ⭐ 无护盾：走魔法伤害，按实际扣除量显示（女巫等魔法抗性会如实体现）
+                                // 无护盾：走魔法伤害，按实际扣除量显示（女巫等魔法抗性会如实体现）
                                 hurtWithElementDisplay(t, dotAttacker.damageSources().magic(), d, dotAttacker, "poison");
                                 return true;
                             });
@@ -648,7 +648,7 @@ public class WeaponElementSystem {
                     // 以前这里召一道只有画面的原版闪电（连带雷声和满屏闪白），现在电弧和声音由客户端按效果包画
                     int paralysisTicks = (int) (10 * triggerTime);
                     ElementParticleEffects.proc(hurter, attacker, ElementParticleEffects.ELECTRICITY, 0, paralysisTicks);
-                    // ⭐ 按实际扣除量显示。注意这一下嵌套在主目标自己的受击事件里，
+                    // 按实际扣除量显示。注意这一下嵌套在主目标自己的受击事件里，
                     //    原版此时已给主目标上了受击无敌，电击伤害常被部分或全部吃掉，数字会如实变小或不显示
                     hurtWithElementDisplay(hurter, level.damageSources().lightningBolt(), lightningDamage, attacker, "electricity");
                     DynamicAttributeManager.apply(hurter, DynamicAttributes.ELECTRICITY_PARALYSIS.createInstance(paralysisTicks, 0));
@@ -670,11 +670,11 @@ public class WeaponElementSystem {
                     float finalDotDamage = dotDamage;
                     final LivingEntity dotAttacker = attacker;
                     final DamageSource attackSource = getAttackDamageSource(attacker);
-                    // ⭐ 走去重注册表：切割走 damageHealthDirectly 绕过无敌帧，
+                    // 走去重注册表：切割走 damageHealthDirectly 绕过无敌帧，
                     //    不去重的话一次命中触发六次就是六份同时扣血，直接秒杀。
                     WeaponCombatHandler.ElementDotRegistry.apply(hurter, "slash", finalDotDamage,
                             bleedRounds, (t, d) -> {
-                                // ⭐ 切割直接扣血：先扣、再显示「扣之前 − 扣之后」的实际掉血
+                                // 切割直接扣血：先扣、再显示「扣之前 − 扣之后」的实际掉血
                                 float healthBefore = t.getHealth();
                                 boolean lethal = !(healthBefore - d > 0.01f);
                                 if (lethal) { LivingEntityUtil.kill(t, attackSource); }
@@ -778,12 +778,12 @@ public class WeaponElementSystem {
                 float explosionDamage = (float) (0.5 * coreDamage * elementValue * baneMultiplier * armorMultiplier
                         * ModConfig.KUVA_LICH.elementExplosionDamageMultiplier.get());
                 if (explosionDamage > 0) {
-                    // ⭐ 爆炸元素的实际伤害 = level.explode 的原版冲击 + 下面补的元素伤害（主目标 + 3 格范围），
+                    // 爆炸元素的实际伤害 = level.explode 的原版冲击 + 下面补的元素伤害（主目标 + 3 格范围），
                     //    两段都在这里同步打完：先给冲击范围内的生物拍快照，打完再逐个算「扣之前 − 扣之后」，
                     //    每个目标只跳一个合计数字；受击无敌、护甲、其他模组减伤、护盾都会如实体现
                     DamageDisplayTracker.HealthSnapshot blastSnapshot = captureBlastSnapshot(level, hurter, attacker);
 
-                    // ⭐ 以前这里是 level.explode(null, ..., NONE)：虽然不炸方块，但原版爆炸本身会对范围内
+                    // 以前这里是 level.explode(null, ..., NONE)：虽然不炸方块，但原版爆炸本身会对范围内
                     //    所有实体（包括近战时站在旁边的攻击者自己）造成威力 3（苦力怕级）的伤害和击退，
                     //    目标还会被"原版爆炸 + 下面的自定义伤害"打两次，且原版那份不受伤害倍率配置控制。
                     //    后来只剩原版的爆炸粒子和爆炸声；现在连这两样也换成效果包，画面和声音由客户端放，
@@ -821,9 +821,9 @@ public class WeaponElementSystem {
                     if (level instanceof ServerLevel sl) {
                         ElementParticleEffects.gasCloud(sl, gasCenter, gasRounds * 20, attacker);
                     }
-                    // ⭐ 走去重注册表：毒气每轮都要做一次 AABB 实体扫描，
+                    // 走去重注册表：毒气每轮都要做一次 AABB 实体扫描，
                     //    是刷怪场里唯一能拉出可测 tick 时间的一条路径，去重收益最大。
-                    //    ⭐ stopOnDeath = false：毒气是以命中位置为中心的 AoE 云，
+                    //    stopOnDeath = false：毒气是以命中位置为中心的 AoE 云，
                     //       锚点怪死了云还要继续（改造前这条任务的判定也只有 isRemoved()）。
                     WeaponCombatHandler.ElementDotRegistry.apply(hurter, "gas", dotDamage,
                             gasRounds, (t, d) -> {
@@ -833,7 +833,7 @@ public class WeaponElementSystem {
                                         e -> !e.equals(dotAttacker) && e.distanceToSqr(gasCenter) <= gasRadius * gasRadius);
                                 for (LivingEntity entity : entities) {
                                     if (entity.isDeadOrDying()) continue;
-                                    // ⭐ 按实际扣除量显示：处于受击无敌、免疫魔法的目标不再凭空跳字
+                                    // 按实际扣除量显示：处于受击无敌、免疫魔法的目标不再凭空跳字
                                     hurtWithElementDisplay(entity, dotAttacker.damageSources().magic(), d, dotAttacker, "gas");
                                 }
                                 return true;
@@ -884,7 +884,7 @@ public class WeaponElementSystem {
     /**
      * 在实体附近生成随机偏移的伤害数字显示位置
      *
-     * <p>⭐ 已统一委托给 {@link DamageDisplayTracker#randomDisplayPosition}（高度改为身体上半截，
+     * <p>已统一委托给 {@link DamageDisplayTracker#randomDisplayPosition}（高度改为身体上半截，
      * 配合客户端改为以相机为原点渲染）。保留本方法仅为兼容，新代码请直接调用委托目标。</p>
      *
      * @param entity 受击实体
