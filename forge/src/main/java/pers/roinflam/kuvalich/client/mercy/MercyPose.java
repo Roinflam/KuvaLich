@@ -126,15 +126,21 @@ public final class MercyPose {
             k(3400, SINE, row(NA, 5, 0, 50, 10, NA, 20, 0, 0, 0)),
     };
 
-    /** 刀没入跪着的玄骸胸口、左手按在它头盔上 */
+    /** 刀没入跪着的玄骸胸口、左手按在它头盔上（第三人称收尾） */
     private static final float[] PLUNGED = row(5, 18, 0, 62, 0, 0, 120, 10, 0, 20);
 
     /**
-     * 成功收尾（三套共用）：切跪地特写那一刻就摆成刀没入胸口（特写里要拍到这只手和刀），一直保持到第三人称；抽刀；交还
+     * 跪地特写这一段：刀刚扎进去、刃身还有一截露在外面。拿 {@link #PLUNGED} 拍特写，拳头已经贴到（站得近的套路是埋进）
+     * 目标身上，刀整根在它身体里，镜头里只剩刀柄和手。这里上身往后仰、右肩往回带，胳膊抬平、稍往里收，拳头停在
+     * 目标身前，刃身从拳头一路斜着扎进它腹部，从特写那一侧看得见。处决者站得越近（A 1.25、B 1.10、C 0.95 格），
+     * 往后让得越多；左手照旧按在它头盔上。切到第三人称时直接换成 {@link #PLUNGED}，看着就是一刀捅到底
      */
+    private static final float[] CLOSEUP_A = row(-12, -5, 0, 80, 0, 12, 120, 10, 0, 20);
+    private static final float[] CLOSEUP_B = row(-26, -20, 0, 80, 0, 14, 120, 10, 0, 20);
+    private static final float[] CLOSEUP_C = row(-30, -25, 0, 80, 0, 15, 120, 10, 0, 20);
+
+    /** 成功收尾抽刀以后（三套共用）：抽刀；交还 */
     private static final Key[] SUCCESS_TAIL = {
-            k(MercyTimeline.CLOSEUP_MS, SNAP, PLUNGED),
-            k(MercyTimeline.THIRD_MS, SNAP, PLUNGED),
             k(7680, MercyTimeline.DRAW_OUT_MS, OUT, row(-8, 8, 0, 25, 20, 0, 30, 0, 0, 0)),
             k(MercyTimeline.SUCCESS_END_MS, MercyTimeline.SUCCESS_END_MS - 200, SINE, zero()),
     };
@@ -216,6 +222,14 @@ public final class MercyPose {
         };
     }
 
+    private static float[] closeupPose(MercyVariant v) {
+        return switch (v) {
+            case LICH_B -> CLOSEUP_B;
+            case LICH_C -> CLOSEUP_C;
+            default -> CLOSEUP_A;
+        };
+    }
+
     /** 按计划位拼出这一场的姿态轨道 */
     static Track track(MercyPlan.Plan p, boolean shortOutro) {
         MercyVariant v = p.variant();
@@ -229,12 +243,16 @@ public final class MercyPose {
         switch (MercyTimeline.outcome(p)) {
             case SUCCESS -> {
                 out.addAll(Arrays.asList(table));
+                // 切跪地特写那一刻直接摆成刀扎进去、刃身露一截（特写里要拍到这只手和刀）
+                float[] closeup = closeupPose(v);
+                out.add(k(MercyTimeline.CLOSEUP_MS, SNAP, closeup));
                 if (shortOutro) {
-                    // 特写完直接交还：刀没入胸口那一帧保持到 7320，再 400 ms 回 0（刀跟着抽出来）
-                    out.add(SUCCESS_TAIL[0]);
-                    out.add(k(MercyTimeline.THIRD_MS, SNAP, PLUNGED));
+                    // 特写完直接交还：保持到 7320，再 400 ms 回 0（刀跟着抽出来）
+                    out.add(k(MercyTimeline.THIRD_MS, SNAP, closeup));
                     out.add(k(MercyTimeline.THIRD_MS + 400, MercyTimeline.THIRD_MS, SINE, zero()));
                 } else {
+                    // 切第三人称那一刻刀已整根没入，保持到抽刀
+                    out.add(k(MercyTimeline.THIRD_MS, SNAP, PLUNGED));
                     out.addAll(Arrays.asList(SUCCESS_TAIL));
                 }
             }

@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.client.fx.FxCurve;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
+import pers.roinflam.kuvalich.client.lich.ClientLichState;
 import pers.roinflam.kuvalich.client.lich.LichVoice;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundInstance;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
@@ -192,6 +193,9 @@ public final class CommHud {
     /** 一段字幕 */
     private static final class Seg {
         CommLine src;
+        /** 折行时整块保住的名字，第一次折行时取 */
+        @Nullable
+        String[] keep;
         String raw;
         String plain;
         MutableComponent text;
@@ -603,7 +607,9 @@ public final class CommHud {
     /** 一句台词排上：超过 3 行的拆成几段，第一段从 {@code textStart} 开始 */
     private static void beginLine(Win w, CommLine line, long textStart) {
         String raw = CommText.stripColors(line.line().getString());
+        splitKeep = keepOf(line);
         List<String> pieces = splitForLines(raw);
+        splitKeep = null;
         w.parts.clear();
         for (int i = 1; i < pieces.size(); i++) {
             w.parts.addLast(pieces.get(i));
@@ -958,7 +964,21 @@ public final class CommHud {
     }
 
     private static int lineCount(Font font, String raw, int wrap) {
-        return CommText.wrap(font, CommText.parse(raw), wrap).size();
+        return CommText.wrap(font, CommText.parse(raw), wrap, splitKeep).size();
+    }
+
+    /** 拆段时整块保住的名字（{@link #beginLine} 里临时设，拆完清掉；只在渲染线程用） */
+    @Nullable
+    private static String[] splitKeep;
+
+    /**
+     * 折行时要整块保住的名字：发言的玄骸名（名牌上那个），外加自己那只玄骸的名字（别的发言人提到它时）。
+     * 「Zher Vekk！记住这个名字」不能在 Zher 和 Vekk 中间断开
+     */
+    private static String[] keepOf(@Nullable CommLine line) {
+        String speaker = line != null && line.name() != null ? CommText.stripColors(line.name().getString()) : null;
+        String own = ClientLichState.nameTitle();
+        return new String[]{speaker, own == null || own.isEmpty() ? null : own};
     }
 
     /** 位置 {@code i} 是不是落在 {@code <x>} / {@code </x>} 标记的中间 */
@@ -1320,7 +1340,10 @@ public final class CommHud {
         if (s.lines != null && s.wrapWidth == wrap) {
             return;
         }
-        s.lines = CommText.wrap(font, s.text, wrap);
+        if (s.keep == null) {
+            s.keep = keepOf(s.src);
+        }
+        s.lines = CommText.wrap(font, s.text, wrap, s.keep);
         s.wrapWidth = wrap;
         s.kickAtMs = kickTimes(font, s.lines, s.wipeMs);
     }

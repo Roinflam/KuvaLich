@@ -1,6 +1,7 @@
 package pers.roinflam.kuvalich.client.comm;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.locale.Language;
@@ -14,8 +15,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import pers.roinflam.kuvalich.client.lich.LichVoice;
 import pers.roinflam.kuvalich.comm.CommSpeaker;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * 通讯窗的文字：整句软边擦出、名牌、Ordis 的故障段
@@ -182,32 +186,220 @@ public final class CommText {
         return Math.max(0.0F, Math.min(1.0F, (front - glyphX) / feather));
     }
 
-    /** 不该出现在行首的收尾标点 */
-    private static final String NO_LINE_START = "。，、；：！？…—」』）》〉,.;:!?)";
+    /** 不能出现在行首的字：句读、右括号、右引号、百分号之类 */
+    public static final String NO_LINE_START = "，。、；：！？）」』》〉】”’…,.;:!?)]}%·～ー—";
+    /** 不能留在行尾的字：左括号、左引号 */
+    public static final String NO_LINE_END = "（「『《〈【“‘([{";
 
     /**
-     * 按宽度折行（宽度单位同字体像素）。故障段的样式会带进每一行。
-     * 句号、逗号这类收尾标点折到行首时（一句话最后剩个「。」单独占一行最难看），放宽一个全角字的宽度重折，
-     * 让它挂在上一行末尾；最多放宽两次，所以最多超出两个字宽
+     * 能否在 {@code cps[i-1]} 和 {@code cps[i]} 之间断行（通讯字幕、指南正文共用这一套）：
+     * 空格两侧可以断；避头尾表里的不能断；中日韩字符前后都可以断；英文、数字按词，词内不断，
+     * 只有连字符、斜杠后面可以断；故障记号 {@code --} 当闭合标点，不放行首、两个连字符之间也不断
      */
-    public static List<FormattedCharSequence> wrap(Font font, FormattedText text, int maxWidth) {
-        int w = Math.max(8, maxWidth);
-        List<FormattedText> lines = font.getSplitter().splitLines(text, w, Style.EMPTY);
-        for (int k = 0; k < 2 && closerAtLineStart(lines); k++) {
-            w += font.width("。");
-            lines = font.getSplitter().splitLines(text, w, Style.EMPTY);
+    public static boolean canBreak(int[] cps, int i) {
+        int a = cps[i - 1];
+        int b = cps[i];
+        if (b == ' ' || a == ' ') {
+            return true;
         }
-        return Language.getInstance().getVisualOrder(lines);
+        if (b == '-' && (a == '-' || i + 1 < cps.length && cps[i + 1] == '-')) {
+            return false;
+        }
+        if (NO_LINE_START.indexOf(b) >= 0) {
+            return false;
+        }
+        if (NO_LINE_END.indexOf(a) >= 0) {
+            return false;
+        }
+        if (isCjk(a) || isCjk(b)) {
+            return true;
+        }
+        return a == '-' || a == '/';
     }
 
-    private static boolean closerAtLineStart(List<FormattedText> lines) {
-        for (int i = 1; i < lines.size(); i++) {
-            String s = lines.get(i).getString();
-            if (!s.isEmpty() && NO_LINE_START.indexOf(s.charAt(0)) >= 0) {
-                return true;
+    /** 中日韩文字、全角标点和 CJK 符号块：逐字可断 */
+    public static boolean isCjk(int cp) {
+        if (cp < 0x2E80) {
+            return false;
+        }
+        Character.UnicodeScript script = Character.UnicodeScript.of(cp);
+        if (script == Character.UnicodeScript.HAN || script == Character.UnicodeScript.HIRAGANA
+                || script == Character.UnicodeScript.KATAKANA || script == Character.UnicodeScript.HANGUL) {
+            return true;
+        }
+        return (cp >= 0x3000 && cp <= 0x303F) || (cp >= 0xFF00 && cp <= 0xFFEF);
+    }
+
+    /** 按宽度折行，见 {@link #wrap(Font, FormattedText, int, String...)}，没有要整块保住的词 */
+    public static List<FormattedCharSequence> wrap(Font font, FormattedText text, int maxWidth) {
+        return wrap(font, text, maxWidth, (String[]) null);
+    }
+
+    /**
+     * 按宽度折行（宽度单位同字体像素），中日韩友好：
+     * <ul>
+     *   <li>汉字之间可以断，英文单词整个保住、在空格处断（断开处的空格吃掉）；</li>
+     *   <li>避头尾：「，。！？」）」这类不放行首、「（「『」不放行尾，撞上了就连前一个字一起挪到下一行；</li>
+     *   <li>{@code keep} 里的词（插进台词的玄骸名，「Zher Vekk」中间那个空格不能断）整个当一个字，
+     *       只有它自己比一行还宽时才在它里面断（先找它里面的空格）；</li>
+     *   <li>一个词比整行还宽时才按字硬切；台词里的换行符照断；</li>
+     *   <li>中文句子最后一行只剩一两个字时并回上一行（最多超出两个全角字宽）。</li>
+     * </ul>
+     * 原版的 {@code StringSplitter.splitLines} 只认空格，「Vekk！记住这个名字……」整串没有空格会被当成一个词，
+     * 结果在名字中间的空格断开、第一行只剩半个名字。故障段的样式会带进每一行
+     */
+    public static List<FormattedCharSequence> wrap(Font font, FormattedText text, int maxWidth, String... keep) {
+        return Language.getInstance().getVisualOrder(wrapLines(font, text, maxWidth, keep));
+    }
+
+    /** 同 {@link #wrap(Font, FormattedText, int, String...)}，返回没转成显示顺序的各行 */
+    public static List<FormattedText> wrapLines(Font font, FormattedText text, int maxWidth, String... keep) {
+        float w = Math.max(8, maxWidth);
+        List<Integer> cpList = new ArrayList<>();
+        List<Style> styleList = new ArrayList<>();
+        text.visit((style, str) -> {
+            str.codePoints().forEach(cp -> {
+                cpList.add(cp);
+                styleList.add(style);
+            });
+            return Optional.empty();
+        }, Style.EMPTY);
+        int n = cpList.size();
+        int[] cps = new int[n];
+        Style[] styles = styleList.toArray(new Style[0]);
+        float[] cw = new float[n];
+        StringSplitter splitter = font.getSplitter();
+        for (int i = 0; i < n; i++) {
+            cps[i] = cpList.get(i);
+            cw[i] = cps[i] == '\n' ? 0.0F : splitter.stringWidth(FormattedCharSequence.codepoint(cps[i], styles[i]));
+        }
+        boolean[] brk = new boolean[n + 1];
+        for (int i = 1; i < n; i++) {
+            brk[i] = canBreak(cps, i);
+        }
+        // 要整块保住的词：词里面一律不断
+        boolean[] inKeep = new boolean[n + 1];
+        if (keep != null) {
+            for (String k : keep) {
+                if (k == null || k.isEmpty()) {
+                    continue;
+                }
+                int[] kc = k.codePoints().toArray();
+                for (int s0 = 0; s0 + kc.length <= n; s0++) {
+                    int j = 0;
+                    while (j < kc.length && cps[s0 + j] == kc[j]) {
+                        j++;
+                    }
+                    if (j == kc.length) {
+                        for (int q = s0 + 1; q < s0 + kc.length; q++) {
+                            brk[q] = false;
+                            inKeep[q] = true;
+                        }
+                        s0 += kc.length - 1;
+                    }
+                }
             }
         }
-        return false;
+
+        // 每行的 [起, 止) 码点下标，和这一行是不是因为放不下才断的（台词里的换行符断的不算）
+        int[] ls = new int[8];
+        int[] le = new int[8];
+        boolean[] soft = new boolean[8];
+        int count = 0;
+        int start = 0;
+        while (start < n) {
+            while (start < n && cps[start] == ' ') {
+                start++;
+            }
+            if (start >= n) {
+                break;
+            }
+            float x = 0.0F;
+            int last = -1;
+            int end = n;
+            int next = n;
+            for (int i = start; i < n; i++) {
+                if (cps[i] == '\n') {
+                    end = i;
+                    next = i + 1;
+                    break;
+                }
+                if (i > start && brk[i]) {
+                    last = i;
+                }
+                if (i > start && x + cw[i] > w) {
+                    if (last > start) {
+                        end = last;
+                    } else {
+                        // 这一行里一个能断的地方都没有：保住的词自己就比一行宽，先在它里面的空格断，再不行按字切
+                        end = i;
+                        for (int q = i - 1; q > start; q--) {
+                            if (inKeep[q] && cps[q] == ' ') {
+                                end = q;
+                                break;
+                            }
+                        }
+                    }
+                    next = end;
+                    break;
+                }
+                x += cw[i];
+            }
+            int e = end;
+            while (e > start && cps[e - 1] == ' ') {
+                e--;
+            }
+            if (count == ls.length) {
+                ls = Arrays.copyOf(ls, count * 2);
+                le = Arrays.copyOf(le, count * 2);
+                soft = Arrays.copyOf(soft, count * 2);
+            }
+            ls[count] = start;
+            le[count] = e;
+            soft[count] = next == end;
+            count++;
+            start = next;
+        }
+        // 防孤字：中文句子最后一行只剩一两个字（「看。」）时并回上一行，最多超出两个全角字宽
+        if (count >= 2 && soft[count - 2]) {
+            float full = font.width("。");
+            float lastW = 0.0F, prevW = 0.0F;
+            boolean han = false;
+            for (int i = ls[count - 1]; i < le[count - 1]; i++) {
+                lastW += cw[i];
+                han |= isCjk(cps[i]);
+            }
+            for (int i = ls[count - 2]; i < le[count - 2]; i++) {
+                prevW += cw[i];
+            }
+            if (han && lastW <= 2.0F * full && ls[count - 1] == le[count - 2] && prevW + lastW <= w + 2.0F * full) {
+                le[count - 2] = le[count - 1];
+                count--;
+            }
+        }
+        List<FormattedText> lines = new ArrayList<>(Math.max(1, count));
+        for (int k = 0; k < count; k++) {
+            lines.add(slice(cps, styles, ls[k], le[k]));
+        }
+        if (lines.isEmpty()) {
+            lines.add(FormattedText.EMPTY);
+        }
+        return lines;
+    }
+
+    /** [from, to) 这一段按样式切成几块拼起来 */
+    private static FormattedText slice(int[] cps, Style[] styles, int from, int to) {
+        List<FormattedText> parts = new ArrayList<>(2);
+        int i = from;
+        while (i < to) {
+            int j = i + 1;
+            while (j < to && styles[j].equals(styles[i])) {
+                j++;
+            }
+            parts.add(FormattedText.of(new String(cps, i, j - i), styles[i]));
+            i = j;
+        }
+        return parts.isEmpty() ? FormattedText.EMPTY : FormattedText.composite(parts);
     }
 
     // ==================== 整句擦出 ====================

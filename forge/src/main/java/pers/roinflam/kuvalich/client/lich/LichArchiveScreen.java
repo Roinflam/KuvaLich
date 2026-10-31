@@ -1158,7 +1158,7 @@ public class LichArchiveScreen extends Screen {
         float ts = tsOf(h, 0.018F);
         if (subtitleLines == null) {
             int maxW = Math.max(40, Math.round(w * 0.40F / ts));
-            List<FormattedCharSequence> lines = CommText.wrap(f, pendingRaw, maxW);
+            List<FormattedCharSequence> lines = CommText.wrap(f, pendingRaw, maxW, st.name);
             subtitleLines = lines.size() > 2 ? new ArrayList<>(lines.subList(0, 2)) : lines;
             subtitleWidth = 0;
             for (FormattedCharSequence l : subtitleLines) {

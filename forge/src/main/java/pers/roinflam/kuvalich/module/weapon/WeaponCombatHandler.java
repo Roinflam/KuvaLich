@@ -31,6 +31,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.compat.curios.CuriosCompat;
 import pers.roinflam.kuvalich.compat.tacz.WarframeTaczBridge;
 import pers.roinflam.kuvalich.config.ModConfig;
@@ -1275,6 +1276,8 @@ public class WeaponCombatHandler {
         double thresholdValue = attributes.getOrDefault("execute_threshold", 0.0);
         double chanceValue = attributes.getOrDefault("execute_chance", 0.0);
         if (thresholdValue <= 0 && chanceValue <= 0) { return; }
+        // 倒地 / 处决中 / 离场的玄骸和奴仆这时根本杀不掉（强杀会被它自己拦下），竖斩画面和处决声也不放，免得看着像砍中了却没死
+        if (hurter instanceof AbstractKuva kuva && kuva.isDamageProtected()) { return; }
 
         boolean shouldExecute = false;
         boolean byThreshold = false;

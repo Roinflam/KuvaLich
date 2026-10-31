@@ -8,6 +8,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import pers.roinflam.kuvalich.client.comm.CommText;
 import pers.roinflam.kuvalich.client.gui.guide.GuideMarkup.Link;
 import pers.roinflam.kuvalich.client.gui.guide.GuideMarkup.Rich;
 import pers.roinflam.kuvalich.client.gui.guide.GuideMarkup.Span;
@@ -48,11 +49,6 @@ import java.util.List;
  */
 @OnlyIn(Dist.CLIENT)
 final class GuideTextLayout {
-
-    /** 不能出现在行首 */
-    private static final String NO_LINE_START = "，。、；：！？）」』》〉】”’…,.;:!?)]}%·～ー—";
-    /** 不能留在行尾 */
-    private static final String NO_LINE_END = "（「『《〈【“‘([{";
 
     /**
      * 一行里同样式的一段
@@ -322,39 +318,12 @@ final class GuideTextLayout {
      * 能否在 i-1 与 i 之间断开
      */
     private static boolean canBreak(int[] cps, int i) {
-        int a = cps[i - 1];
-        int b = cps[i];
-        if (b == ' ' || a == ' ') {
-            return true;
-        }
-        // 故障记号 -- 当闭合标点：不放行首，两个连字符之间也不断开
-        if (b == '-' && (a == '-' || i + 1 < cps.length && cps[i + 1] == '-')) {
-            return false;
-        }
-        if (NO_LINE_START.indexOf(b) >= 0) {
-            return false;
-        }
-        if (NO_LINE_END.indexOf(a) >= 0) {
-            return false;
-        }
-        if (isCjk(a) || isCjk(b)) {
-            return true;
-        }
-        // 英文里的连字符、斜杠后面可以断：长复合词（fire/ice、wide-area）不至于整个挤到下一行
-        return a == '-' || a == '/';
+        // 和通讯字幕共用同一套断行规则
+        return CommText.canBreak(cps, i);
     }
 
     private static boolean isCjk(int cp) {
-        if (cp < 0x2E80) {
-            return false;
-        }
-        Character.UnicodeScript script = Character.UnicodeScript.of(cp);
-        if (script == Character.UnicodeScript.HAN || script == Character.UnicodeScript.HIRAGANA
-                || script == Character.UnicodeScript.KATAKANA || script == Character.UnicodeScript.HANGUL) {
-            return true;
-        }
-        // 全角标点、CJK 符号块也逐字可断（是否能放行首另由避头表管）
-        return (cp >= 0x3000 && cp <= 0x303F) || (cp >= 0xFF00 && cp <= 0xFFEF);
+        return CommText.isCjk(cp);
     }
 
     // ==================== 内部 ====================

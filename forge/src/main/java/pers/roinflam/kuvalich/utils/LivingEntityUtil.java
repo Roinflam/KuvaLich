@@ -186,18 +186,6 @@ public class LivingEntityUtil {
     }
 
     /**
-     * 真伤扣血（带DamageSource）
-     * True damage with DamageSource
-     */
-    public static void damageHealthDirectly(@Nonnull LivingEntity entity, float damage, @Nonnull DamageSource source) {
-        damageHealthDirectly(entity, damage);
-
-        if (entity.getHealth() <= 0.0F && !entity.isDeadOrDying()) {
-            entity.die(source);
-        }
-    }
-
-    /**
      * 使用缓存的信息应用伤害
      * Apply damage using cached information
      */

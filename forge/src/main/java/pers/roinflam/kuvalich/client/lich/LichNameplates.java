@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.client.lich;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
@@ -22,6 +23,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.client.fx.ElementStatusRow;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
@@ -77,6 +79,11 @@ public final class LichNameplates {
     /** 多久重做一次视线检测 */
     private static final long LOS_INTERVAL_MS = 250L;
     private static final long FORGET_MS = 10_000L;
+    /** 屏幕顶上 Boss 条那块的半宽至少这么多（GUI 像素，原版条宽 182），按屏宽算的比例更大时取比例：玄骸条占屏宽 0.264 */
+    private static final float BOSS_BAND_MIN_HALF = 91.0F;
+    private static final float BOSS_BAND_HALF_OF_WIDTH = 0.16F;
+    /** 名牌叠进 Boss 条多深完全淡掉：至少这么多 GUI 像素，近处字大时按一行字高 */
+    private static final float BOSS_FADE_MIN_SPAN = 4.0F;
 
     /** 每只实体缓存的名牌内容 */
     private static final class Plate {
@@ -170,13 +177,17 @@ public final class LichNameplates {
             return false;
         }
         Font font = mc.font;
+        float w1 = SpacedText.width(font, p.line1, SPACING);
+        // 有第二行时整块往上挪一行，第二行贴着原来的位置
+        float y1 = p.line2.isEmpty() ? 0.0F : -9.0F;
+        a *= bossBarFade(ps, mc, height + ABOVE_HEAD, LICH_SCALE, w1 * 0.5F, -y1);
+        if (a <= 0.02F) {
+            return false;
+        }
         ps.pushPose();
         ps.translate(0.0F, height + ABOVE_HEAD, 0.0F);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
         ps.scale(-LICH_SCALE, -LICH_SCALE, LICH_SCALE);
-        float w1 = SpacedText.width(font, p.line1, SPACING);
-        // 有第二行时整块往上挪一行，第二行贴着原来的位置
-        float y1 = p.line2.isEmpty() ? 0.0F : -9.0F;
         shadowedLine(ps, buffer, font, p.line1, -w1 * 0.5F, y1, FxPalette.KUVA_PALE, 0.95F * a, Font.DisplayMode.NORMAL);
         if (!p.line2.isEmpty()) {
             ps.pushPose();
@@ -233,11 +244,15 @@ public final class LichNameplates {
         Font.DisplayMode mode = visible ? Font.DisplayMode.NORMAL : Font.DisplayMode.SEE_THROUGH;
         Font font = mc.font;
         float top = height + ABOVE_HEAD;
+        float w = SpacedText.width(font, p.line1, SPACING);
+        a *= bossBarFade(ps, mc, top, THRALL_SCALE, Math.max(w, BAR_W) * 0.5F, 0.0F);
+        if (a <= 0.02F) {
+            return false;
+        }
         ps.pushPose();
         ps.translate(0.0F, top, 0.0F);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
         ps.scale(-THRALL_SCALE, -THRALL_SCALE, THRALL_SCALE);
-        float w = SpacedText.width(font, p.line1, SPACING);
         shadowedLine(ps, buffer, font, p.line1, -w * 0.5F, 0.0F, FxPalette.BONE, a, mode);
 
         // 细血条
@@ -261,6 +276,45 @@ public final class LichNameplates {
     }
 
     // ==================== 小工具 ====================
+
+    private static final Matrix4f PROJ_POSE = new Matrix4f();
+    private static final Vector4f CLIP = new Vector4f();
+
+    /**
+     * 名牌投影到屏幕顶上 Boss 条那块时淡出：离奴仆很近、平视时，头顶的名牌会投到屏幕最上沿，和 Boss 条叠成一团。
+     * 名牌上沿叠进 Boss 条下沿越深越淡，叠进一行字高就完全不画；横向只算屏幕中间 Boss 条那一段，偏到两边的照常画。
+     * Boss 条的下沿取上一帧的（世界比 HUD 先画）。投影用此刻的投影矩阵乘名牌锚点（脚底往上 {@code lift} 格）的姿势矩阵
+     *
+     * @param scale 名牌的字号（格 / 字体像素）
+     * @param halfW 名牌半宽（字体像素）
+     * @param up    名牌在锚点上方还伸出多少（字体像素；两行的玄骸名牌第一行在锚点上面）
+     */
+    private static float bossBarFade(PoseStack ps, Minecraft mc, float lift, float scale, float halfW, float up) {
+        int bottom = BossBarTracker.recentBottomY();
+        if (bottom <= 0) {
+            return 1.0F;
+        }
+        ps.pushPose();
+        ps.translate(0.0F, lift, 0.0F);
+        Matrix4f proj = RenderSystem.getProjectionMatrix();
+        PROJ_POSE.set(proj).mul(ps.last().pose());
+        ps.popPose();
+        CLIP.set(0.0F, 0.0F, 0.0F, 1.0F).mul(PROJ_POSE);
+        if (CLIP.w <= 0.05F) {
+            return 1.0F;
+        }
+        float gw = mc.getWindow().getGuiScaledWidth();
+        float gh = mc.getWindow().getGuiScaledHeight();
+        float sx = (CLIP.x / CLIP.w * 0.5F + 0.5F) * gw;
+        float sy = (0.5F - CLIP.y / CLIP.w * 0.5F) * gh;
+        // 一个字体像素此刻在屏幕上占多少 GUI 像素
+        float unit = scale * 0.5F * gh * proj.m11() / CLIP.w;
+        float span = Math.max(BOSS_FADE_MIN_SPAN, 9.0F * unit);
+        float band = Math.max(BOSS_BAND_MIN_HALF, BOSS_BAND_HALF_OF_WIDTH * gw);
+        float v = (bottom - (sy - up * unit)) / span;
+        float h = (band + halfW * unit - Math.abs(sx - gw * 0.5F)) / span;
+        return 1.0F - Mth.clamp(v, 0.0F, 1.0F) * Mth.clamp(h, 0.0F, 1.0F);
+    }
 
     /**
      * 名牌底下那一点的高度（不含离头顶的空隙）：平时是碰撞箱高；倒地、处决、离场时是站姿身高减去脖子下降的量，

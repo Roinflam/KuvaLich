@@ -37,6 +37,14 @@ public final class BossBarTracker {
         return bottomFrame == frame ? bottom : 0;
     }
 
+    /**
+     * 同上，但上一帧记下的也算：世界里的东西（头顶名牌）比 HUD 先画，那时这一帧的 Boss 条还没画，只能用上一帧的。
+     * 两帧之间 Boss 条不会挪位置，差一帧看不出来
+     */
+    public static int recentBottomY() {
+        return bottomFrame >= frame - 1L ? bottom : 0;
+    }
+
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {

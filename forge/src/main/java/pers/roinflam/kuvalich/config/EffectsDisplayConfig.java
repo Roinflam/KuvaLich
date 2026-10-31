@@ -191,9 +191,9 @@ public final class EffectsDisplayConfig {
                         "怜悯之击成功后跳过最后的第三人称镜头，特写完就交还操作")
                 .define("mercy_short_outro", false);
         mercyRankupSound = builder.comment(
-                        "Play a low sound when the Lich rank-up banner appears",
-                        "玄骸升级横幅出现时放一声低音")
-                .define("mercy_rankup_sound", false);
+                        "Play the rank-up sound when the Lich rank-up banner appears",
+                        "玄骸升级横幅出现时放升级音")
+                .define("mercy_rankup_sound", true);
         kuvaStateFx = builder.comment(
                         "Show Lich and Thrall status effects: adaptation shield, blocked hits, weak points, battle fury, life steal. Also controls their sounds: turned off, the adaptation shield is silent too",
                         "显示玄骸和奴仆身上的状态：适应护壁、挡住、弱点、战斗增幅、吸血。也管这些状态的声音：关掉后适应护壁也不出声")

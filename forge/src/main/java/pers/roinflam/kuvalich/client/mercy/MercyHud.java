@@ -96,6 +96,12 @@ public final class MercyHud {
 
     public static final float CENTER_Y = 0.500F;
     public static final float CENTER_SIZE = 0.216F;
+    /**
+     * B 套过肩镜头里中央符文挪到画面上方、缩到 0.8 倍：这个机位越过处决者的肩往前看，玄骸的头正好在画面中间，
+     * 符文画在中间就整个盖在它脸上。放到这里时符文下沿在它头盔尖上面，起手放大那一下也只擦到一点
+     */
+    private static final float SHOULDER_CENTER_Y = 0.20F;
+    private static final float SHOULDER_CENTER_SCALE = 0.8F;
     public static final float CELL_Y = 0.835F;
     public static final float CELL_DX = 0.111F;
     public static final float CELL_SIZE = 0.070F;
@@ -416,8 +422,10 @@ public final class MercyHud {
     /** 中央大符文：每一刀一枚，外框阶段放大再缩回，填满发光后停一会儿淡出；判错的是红色霓虹 + 斜杠 */
     private static void drawCenter(GuiGraphics g, MercyPlan.Plan plan, float t, int k, int judged, float cx, float H,
                                    int lwPx) {
-        float y = CENTER_Y * H;
-        float size = CENTER_SIZE * H;
+        // 只看此刻真在过肩机位上：关了电影镜头、这个机位放不下退回玩家镜头时照常画在中间
+        boolean shoulder = MercyCamera.currentShot() == MercyCamera.Shot.B;
+        float y = (shoulder ? SHOULDER_CENTER_Y : CENTER_Y) * H;
+        float size = (shoulder ? CENTER_SIZE * SHOULDER_CENTER_SCALE : CENTER_SIZE) * H;
         float lw = lwPx * 1.5F;
         for (int i = 0; i < judged; i++) {
             float gi = MercyVariant.LICH_FILL_MS[i];
