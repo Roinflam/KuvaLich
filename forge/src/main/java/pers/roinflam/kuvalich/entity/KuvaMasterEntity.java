@@ -495,6 +495,11 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.entityData.set(LICH_RANK, rank);
     }
 
+    /** 演示玄骸手里拿哪把武器（只管画面；掉落照旧看主人的档案） */
+    public void setDemoWeapon(int weaponIndex) {
+        this.entityData.set(LICH_WEAPON, weaponIndex);
+    }
+
     /**
      * 创建玄骸属性
      *

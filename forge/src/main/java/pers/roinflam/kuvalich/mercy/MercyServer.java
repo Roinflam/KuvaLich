@@ -116,9 +116,9 @@ public final class MercyServer {
     static final int THRALL_LAND_TICK = 33;
     /** 单刀：蹬开它往后空翻，身体跟着往外挪（客户端的落点和这里推出去的距离一样） */
     static final int SINGLE_HOP_TICK = 25;
-    /** 踏背下刺：蹲上后背的高度、闪到正面后比原站距多站开多少（它弯着腰，头往前探出一大截） */
+    /** 踏背下刺：蹲上后背的高度、闪到正面后比原站距多站开多少（那时它已经直起身跪着，大腿往前伸，比正面直刺站开一点） */
     static final double VAULT_BACK_UP = 1.75D;
-    static final double VAULT_FRONT_GAP = 0.95D;
+    static final double VAULT_FRONT_GAP = 0.35D;
     static final int THRALL_UNLOCK_TICK = 44;
     /** 倒地后多久玄骸说一句 */
     static final int DOWNED_COMM_DELAY = 12;
@@ -141,8 +141,9 @@ public final class MercyServer {
     static final double STAND_STEP = 0.2D;
     /** 站位贴地时上下找多远 */
     static final double GROUND_SNAP = 0.6D;
-    /** 绕背时离目标比站位再远这么多，查路线时按这个半径 */
+    /** 绕背时离目标比站位再远这么多，查路线时按这个半径。玄骸那套绕到它挫过去的那一侧，得站开得多 */
     static final double ORBIT_MARGIN = 0.2D;
+    static final double ORBIT_MARGIN_LICH = 0.8D;
     /** 玄骸 / 奴仆的效果包范围 */
     static final double LICH_RANGE = 48.0D;
     static final double THRALL_DOWNED_RANGE = 24.0D;
@@ -617,7 +618,8 @@ public final class MercyServer {
     /** 绕背走哪边：1 = 目标的左手边（{@code Y × F}），-1 = 右手边，0 = 两边都有方块挡着 */
     private static int orbitSide(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
         for (int side = 1; side >= -1; side -= 2) {
-            if (arcClear(level, player, pl, f, v.standDist + ORBIT_MARGIN, side)) {
+            double margin = v.thrall ? ORBIT_MARGIN : ORBIT_MARGIN_LICH;
+            if (arcClear(level, player, pl, f, v.standDist + margin, side)) {
                 return side;
             }
         }

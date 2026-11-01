@@ -18,6 +18,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.client.renderer.KuvaMasterRenderer;
@@ -71,14 +72,15 @@ public final class LichPuppet {
     /** 半身像默认朝向：往画面左边偏这么多度（右边的窗朝屏幕中间说话） */
     public static final float BUST_YAW = 17.0F;
     /**
-     * 半身像的两盏灯（界面坐标：x 往右、y 往下、z 朝观众）。主灯从下前方略偏右打亮脸和胸口，头盔顶背光发暗；
-     * 第二盏从右后方擦出轮廓。原版物品栏那套是从上往下打，脸是平的，压暗之后整个人糊成一片
+     * 肖像的两盏灯（半身像、全身像共用；界面坐标：x 往右、y 往下、z 朝观众）。主灯从下前方略偏右打亮脸和胸口，
+     * 头盔顶背光发暗；第二盏从右后方擦出轮廓。原版物品栏那套是从上往下打，正脸几乎只吃环境光，压暗之后整个人糊成一片；
+     * 而且灯和脸差不多垂直，说话时头一点，脸就在亮和暗之间来回跳
      */
-    private static final Vector3f BUST_LIGHT_0 = new Vector3f(0.15F, 0.5F, 0.7F).normalize();
-    private static final Vector3f BUST_LIGHT_1 = new Vector3f(0.95F, -0.1F, -0.45F).normalize();
+    private static final Vector3f PORTRAIT_LIGHT_0 = new Vector3f(0.15F, 0.5F, 0.7F).normalize();
+    private static final Vector3f PORTRAIT_LIGHT_1 = new Vector3f(0.95F, -0.1F, -0.45F).normalize();
     /** 说话状态在最后一次「在说」之后再留多久（演出钟毫秒） */
     private static final long TALK_TAIL_MS = 400L;
-    /** 正在画半身像（换成上面那两盏灯） */
+    /** 正在画半身像（武器层按这个换摆法） */
     private static boolean bustLight;
 
     /** 全身像：脚底到头盔顶（模型单位） */
@@ -191,7 +193,7 @@ public final class LichPuppet {
         ps.pushPose();
         // 模型前后最厚约 1.2 格，往屏幕外推够这么多，界面上后画的东西才不会被深度挡住
         ps.translate(cx, feetY, 50.0F + 1.3F * s);
-        ps.scale(s, s, -s);
+        mirrorScale(ps, s);
         ps.mulPose(Axis.ZP.rotationDegrees(180.0F));
         drawModel(ps, g.bufferSource(), puppet, partialTick, 180.0F + yawDeg, 1.0F, 1.0F, 1.0F, pose.dim());
         ps.popPose();
@@ -221,10 +223,21 @@ public final class LichPuppet {
         float unit = h / BUST_SPAN;
         float s = unit * 16.0F;
         ps.translate(x + w * 0.5F, y + (BUST_TOP - BUST_PIVOT) * unit, z);
-        ps.scale(s, s, -s);
+        mirrorScale(ps, s);
         ps.mulPose(Axis.ZP.rotationDegrees(180.0F));
         ps.mulPose(Axis.XP.rotationDegrees(BUST_TILT));
         ps.translate(0.0F, -BUST_PIVOT / 16.0F, 0.0F);
+    }
+
+    /**
+     * 放大到界面像素、z 翻过来朝观众（等于 {@code scale(s, s, -s)}）。不能直接调 {@code PoseStack.scale}：
+     * 三个系数不全相等时它用快速开立方倒数修法线矩阵，遇到负数会乘上一个十的二十几次方的系数，法线写进顶点时
+     * 每个分量都被截到 ±1，只剩正负号。头一点、脸的法线有个分量在 0 附近来回过零，整张脸就在亮和暗之间跳。
+     * 原版物品栏画人物也是只缩放位置矩阵；这里法线另外只翻 z，灯的方向就还是按「z 朝观众」写
+     */
+    private static void mirrorScale(PoseStack ps, float s) {
+        ps.mulPoseMatrix(new Matrix4f().scaling(s, s, -s));
+        ps.last().normal().scale(1.0F, 1.0F, -1.0F);
     }
 
     private static void drawModel(PoseStack ps, MultiBufferSource buffers, Puppet puppet, float partialTick,
@@ -250,10 +263,7 @@ public final class LichPuppet {
         float oldA = old[3];
         RenderSystem.setShaderColor(r * (1.0F + (DIM_R - 1.0F) * d), g * (1.0F + (DIM_G - 1.0F) * d),
                 b * (1.0F + (DIM_B - 1.0F) * d), 1.0F);
-        Lighting.setupForEntityInInventory();
-        if (bustLight) {
-            RenderSystem.setShaderLights(BUST_LIGHT_0, BUST_LIGHT_1);
-        }
+        RenderSystem.setShaderLights(PORTRAIT_LIGHT_0, PORTRAIT_LIGHT_1);
         drawPuppet = puppet;
         drawStack = ps;
         drawBuffers = buffers;

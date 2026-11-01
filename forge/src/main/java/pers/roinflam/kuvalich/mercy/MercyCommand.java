@@ -36,7 +36,9 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
+import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.nemesis.LichNames;
+import pers.roinflam.kuvalich.nemesis.LichProfile;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.ArrayList;
@@ -228,6 +230,9 @@ public final class MercyCommand {
             return fail(ctx, err);
         }
         lich.setDemoIdentity(name, 1);
+        // 演示玄骸不挂档案，武器照诞生时那样随机挑一把，不然倒地、处决时手里是空的
+        lich.setDemoWeapon(LichProfile.weaponIndex(ThreadLocalRandom.current().nextLong(),
+                KuvaLichItems.KUVA_WEAPONS.size()));
         lich.forceDowned(p);
         if (variantGiven) {
             MercyServer.setNextVariant(p, variant);

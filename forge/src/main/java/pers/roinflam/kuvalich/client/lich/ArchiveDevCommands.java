@@ -40,7 +40,9 @@ import java.util.Locale;
  *       空的那份是还没有玄骸、上一只已被终结。状态写 {@code LichState} 的名字（如 {@code incoming}），只对满的那份有用。</li>
  *   <li>{@code /kuvafxc archive open}：照常打开（等于按一下档案键）。</li>
  *   <li>{@code /kuvafxc archive demoweapon <下标>}：满的那份假档案换成第几把赤毒武器（看不同武器拿在手里的样子）。</li>
- *   <li>{@code /kuvafxc archive weapon [ox oy oz rx ry rz scale]}：现场改玄骸手里武器的挂点，不带参数时打印当前值。</li>
+ *   <li>{@code /kuvafxc archive weapon|weaponportrait|weaponbust [ox oy oz rx ry rz scale]}：现场改玄骸手里武器的
+ *       拳心位置（三种摆法共用）和这一种摆法绕拳心的转角（世界里、全身像、半身像），不带参数时打印当前值。</li>
+ *   <li>{@code /kuvafxc archive heldweapon <下标>}：世界里的玄骸一律画成第几把武器（-1 还原；挨把看握没握住刀柄）。</li>
  *   <li>{@code /kuvafxc archive other on|off}：名牌和 Boss 条一律按「别人的玄骸」画（只有一个客户端时看第二行用）。</li>
  * </ul>
  *
@@ -98,12 +100,20 @@ public final class ArchiveDevCommands {
                         .then(Commands.literal("other")
                                 .then(Commands.literal("on").executes(ctx -> other(ctx.getSource(), true)))
                                 .then(Commands.literal("off").executes(ctx -> other(ctx.getSource(), false))))
-                        .then(weaponCommand("weapon", false))
-                        .then(weaponCommand("weaponportrait", true))));
+                        .then(weaponCommand("weapon", LichWeaponLayer.WORLD))
+                        .then(weaponCommand("weaponportrait", LichWeaponLayer.PORTRAIT))
+                        .then(weaponCommand("weaponbust", LichWeaponLayer.BUST))
+                        .then(Commands.literal("heldweapon")
+                                .then(Commands.argument("index", IntegerArgumentType.integer(-1, 63)).executes(ctx -> {
+                                    LichWeaponLayer.forceWeapon = IntegerArgumentType.getInteger(ctx, "index");
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            LichWeaponLayer.describe(LichWeaponLayer.WORLD)), false);
+                                    return 1;
+                                })))));
     }
 
-    /** 调玄骸手里的刀：weapon 调世界里的，weaponportrait 调肖像和档案里的 */
-    private static LiteralArgumentBuilder<CommandSourceStack> weaponCommand(String literal, boolean portrait) {
+    /** 调玄骸手里的刀：weapon 调世界里的，weaponportrait 调档案、指南的全身像，weaponbust 调通讯窗的半身像 */
+    private static LiteralArgumentBuilder<CommandSourceStack> weaponCommand(String literal, int mode) {
         String[] names = {"ox", "oy", "oz", "rx", "ry", "rz", "scale"};
         ArgumentBuilder<CommandSourceStack, ?> tail =
                 Commands.argument(names[6], FloatArgumentType.floatArg(0.1F, 5.0F)).executes(ctx -> {
@@ -111,8 +121,8 @@ public final class ArchiveDevCommands {
                     for (int i = 0; i < names.length; i++) {
                         v[i] = FloatArgumentType.getFloat(ctx, names[i]);
                     }
-                    LichWeaponLayer.tune(portrait, v[0], v[1], v[2], v[3], v[4], v[5], v[6]);
-                    ctx.getSource().sendSuccess(() -> Component.literal(LichWeaponLayer.describe(portrait)), false);
+                    LichWeaponLayer.tune(mode, v[0], v[1], v[2], v[3], v[4], v[5], v[6]);
+                    ctx.getSource().sendSuccess(() -> Component.literal(LichWeaponLayer.describe(mode)), false);
                     return 1;
                 });
         for (int i = names.length - 2; i >= 0; i--) {
@@ -120,7 +130,7 @@ public final class ArchiveDevCommands {
         }
         return Commands.literal(literal)
                 .executes(ctx -> {
-                    ctx.getSource().sendSuccess(() -> Component.literal(LichWeaponLayer.describe(portrait)), false);
+                    ctx.getSource().sendSuccess(() -> Component.literal(LichWeaponLayer.describe(mode)), false);
                     return 1;
                 })
                 .then(tail);

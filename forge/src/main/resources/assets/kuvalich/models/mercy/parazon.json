@@ -1,5 +1,5 @@
 {
-  "_comment": "腕刃：右前臂上的护腕 + 刃座 + 两节刃身。坐标按像素，原点在拳头末端的前臂中轴上：x 朝外侧，y 朝前臂背面（手臂平举时朝上），z 顺着前臂往拳头外伸。group 为 mount 的随刃伸出缩放出现，blade 的沿 z 伸长。uv 按 texture_size 的像素给，各面的 u / v 方向见 ParazonLayer；rotation 为 90 的面 u、v 对调着贴。原版会把 models 下的每个文件都当方块模型读一遍，所以各面照样写上 texture，刃尖那点上翘的角度原版不认（只许 22.5 的倍数），写在 bend 里，只有 ParazonLayer 读。",
+  "_comment": "腕刃：右前臂上的护腕 + 刃座 + 两节刃身。坐标按像素，原点在拳头末端的前臂中轴上：x 朝外侧，y 朝前臂背面（手臂平举时朝上），z 顺着前臂往拳头外伸。group 为 mount 的随刃伸出缩放出现，blade 的沿 z 伸长。uv 按 texture_size 的像素给，各面的 u / v 方向见 ParazonLayer；rotation 为 90 的面 u、v 对调着贴。原版会把 models 下的每个文件都当方块模型读一遍，所以各面照样写上 texture。要给某一块转个小角度时写在 bend 里（原版只许 22.5 的倍数，不认这个键），只有 ParazonLayer 读；刃身是笔直的，现在没有哪块用它。",
   "texture_size": [
     32,
     16
@@ -253,15 +253,6 @@
             4
           ]
         }
-      },
-      "bend": {
-        "origin": [
-          0,
-          2.9,
-          9
-        ],
-        "axis": "x",
-        "angle": 6
       }
     }
   ]

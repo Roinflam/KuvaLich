@@ -110,6 +110,8 @@ public final class MercyPose {
         /** 这一段时间里改用另一套抓握点和刀口（踏背下刺往脚下扎的那一刀）；没有为 null */
         private Anchors alt;
         private int altFrom, altTo;
+        /** 过了 altTo 以后再换的一套（踏背下刺闪到正面以后照正面直刺）；没有为 null，回到 anchors */
+        private Anchors tail;
         /** 判错那一刀被顶住、手越抖越厉害的时段；没有为 −1 */
         private final int strainFrom, strainTo;
         /** 过了这一刻不再覆盖（交还后让原版的走路摆臂接手） */
@@ -130,7 +132,10 @@ public final class MercyPose {
         }
 
         private Anchors anchorsAt(long t) {
-            return alt != null && t >= altFrom && t < altTo ? alt : anchors;
+            if (alt != null && t >= altFrom) {
+                return t < altTo ? alt : tail != null ? tail : anchors;
+            }
+            return anchors;
         }
     }
 
@@ -711,12 +716,12 @@ public final class MercyPose {
 
     // ==================== 整身轨道 ====================
 
-    /** 踏背时踩在哪：比目标中轴再往它前方（负的「距」）、多高。按它被压弯以后的后背量的 */
     /**
      * 踏背下刺：蹲在它后背上的位置（它弯着腰，后背最高处在身体中心往前约 0.4 格、离地 1.8 格上下）；
-     * 闪到正面后的站距（它低着头，头盔尖往前探出两格多，得站开一大步，出刀时再扑上去）
+     * 闪到正面后的站距：人化成红光那一刻它就直起身跪着（同正面直刺第二刀，往后挫了半格），出刀那一下离它中心
+     * 1.0 格：它跪着时大腿往前伸，再近手臂会插进大腿里
      */
-    private static final float E_BACK_DIST = -1.5F, E_BACK_UP = 1.75F, E_FRONT_DIST = 0.95F;
+    private static final float E_BACK_DIST = -1.5F, E_BACK_UP = 1.75F, E_FRONT_DIST = 0.3F;
 
     /** 一刀的脚下：蓄力往后坐一点，出刀往前送，拔刀退回来 */
     private static void lunge(List<Key> b, int s, float reach) {
@@ -787,14 +792,15 @@ public final class MercyPose {
         // 蹬地，侧身扑出去，沿着它转半圈
         b.add(k(S2 + 260, SINE, m().ang(10).dist(0).yaw(35)));
         b.add(k(S2 + 360, OUT, m().ang(42).dist(0.2F).up(0.22F).yaw(80).flip(45)));
-        b.add(k(S2 + 620, SINE, m().ang(135).dist(0.25F).up(0.2F).flip(310)));
-        // 落地滑一小段，转回来对着它的后背
-        b.add(k(S3 - 180, OUT, m().ang(170).dist(0.12F).up(0).yaw(35).flip(360)));
-        b.add(k(S3 - 115, SINE, m().ang(180).dist(0.18F).yaw(0)));
-        b.add(k(S3, OUT, m().dist(-0.4F).up(-0.06F)));
-        b.add(k(S3 + 90, SINE, m().dist(-0.5F)));
-        b.add(k(S3 + 330, SINE, m().dist(-0.85F).up(0)));
-        b.add(k(S3 + 620, SINE, m().dist(-0.6F)));
+        b.add(k(S2 + 620, SINE, m().ang(135).dist(0.5F).up(0.2F).flip(310)));
+        // 落地滑一小段，转回来对着它的后背。第二刀以后它往后挫了半格，正好挫到这一侧，所以比正面那几刀站得远半格
+        b.add(k(S3 - 180, OUT, m().ang(170).dist(0.7F).up(0).yaw(35).flip(360)));
+        b.add(k(S3 - 115, SINE, m().ang(180).dist(0.8F).yaw(0)));
+        b.add(k(S3, OUT, m().dist(0.25F).up(-0.06F)));
+        b.add(k(S3 + 90, SINE, m().dist(0.15F)));
+        // 它往前扑倒，跟上去半步
+        b.add(k(S3 + 330, SINE, m().dist(-0.2F).up(0)));
+        b.add(k(S3 + 620, SINE, m().dist(0.0F)));
         return b;
     }
 
@@ -1048,6 +1054,7 @@ public final class MercyPose {
             tr.alt = ANCHOR_E;
             tr.altFrom = S1 + 560;
             tr.altTo = MercyTimeline.E_BLINK_MS;
+            tr.tail = ANCHOR_A;
         }
         return tr;
     }
@@ -1237,7 +1244,9 @@ public final class MercyPose {
     private static final float[] SCRATCH = new float[N];
     private static final Body BODY = new Body();
     private static final Quaternionf Q = new Quaternionf();
-    /** 身子、头的 z 和头的 zRot 被挪过的模型（原版不复位这几样，用完要放回去） */
+    /** 原版两条腿的左右位置（建模型时定下，之后原版不再动它） */
+    private static final float LEG_X = 1.9F;
+    /** 身子、头的 z、头的 zRot 和腿的左右位置被挪过的模型（原版不复位这几样，用完要放回去） */
     private static final Set<HumanoidModel<?>> SHIFTED = Collections.newSetFromMap(new WeakHashMap<>());
 
     /** 处决期间手里原来拿的东西不画（刀模替它） */
@@ -1261,6 +1270,8 @@ public final class MercyPose {
                 model.body.z = 0.0F;
                 model.head.z = 0.0F;
                 model.head.zRot = 0.0F;
+                model.rightLeg.x = -LEG_X;
+                model.leftLeg.x = LEG_X;
                 model.hat.copyFrom(model.head);
             }
             return;
@@ -1282,10 +1293,19 @@ public final class MercyPose {
         model.head.z = dz;
         model.rightArm.y = 2.0F + 3.2F * crouch;
         model.leftArm.y = 2.0F + 3.2F * crouch;
-        model.rightLeg.z = 4.0F * crouch + dz;
-        model.leftLeg.z = 4.0F * crouch + dz;
-        model.rightLeg.y = 12.0F + 0.2F * crouch;
-        model.leftLeg.y = 12.0F + 0.2F * crouch;
+        // 身子绕脖子转，原版那组偏移只管不扭身的 0~28.6°（下蹲）。往后仰、弯得比下蹲还深、或者边扭边弯时，
+        // 身子底边会离开胯，腰上前后、左右错开一截：腿再跟着身子底边挪过去（往后仰就是挺胯，脚往前送）
+        float leanRad = v[LEAN] * DEG;
+        float crouchRad = Mth.clamp(v[LEAN], 0.0F, 28.6F) * DEG;
+        float hipX = 12.0F * Mth.sin(leanRad) * Mth.sin(bodyY);
+        float hipZ = 12.0F * (Mth.sin(leanRad) * Mth.cos(bodyY) - Mth.sin(crouchRad));
+        float hipY = 12.0F * (Mth.cos(leanRad) - Mth.cos(crouchRad));
+        model.rightLeg.x = -LEG_X + hipX;
+        model.leftLeg.x = LEG_X + hipX;
+        model.rightLeg.z = 4.0F * crouch + dz + hipZ;
+        model.leftLeg.z = 4.0F * crouch + dz + hipZ;
+        model.rightLeg.y = 12.0F + 0.2F * crouch + hipY;
+        model.leftLeg.y = 12.0F + 0.2F * crouch + hipY;
 
         // 两肩跟着扭挪位置（照原版挥砍那几行）
         float sin = Mth.sin(bodyY);
