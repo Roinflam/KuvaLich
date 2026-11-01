@@ -24,7 +24,7 @@ import software.bernie.geckolib.model.GeoModel;
  * Kuva Master Model (GeckoLib 4.x version)
  *
  * <p>倒地 / 处决的片段单独放在 {@code kuva_mercy.animation.json}，名字以 {@code mercy.} 开头的从那里取，
- * 其余照旧读共用的 {@code kuva.animation.json}。</p>
+ * 其余照旧读 {@code kuva.animation.json}（奴仆的日常动作另有一份 {@code kuva_slave.animation.json}）。</p>
  */
 public class KuvaMasterModel extends GeoModel<KuvaMasterEntity> {
 
@@ -106,6 +106,7 @@ public class KuvaMasterModel extends GeoModel<KuvaMasterEntity> {
     @Override
     public void setCustomAnimations(KuvaMasterEntity animatable, long instanceId, AnimationState<KuvaMasterEntity> state) {
         super.setCustomAnimations(animatable, instanceId, state);
+        KuvaPoseLayer.apply(this, animatable, state, true);
         float envelope = LichVoice.envelope(animatable, KuvaFxDirector.clockMs());
         if (envelope <= 0.0F) {
             return;

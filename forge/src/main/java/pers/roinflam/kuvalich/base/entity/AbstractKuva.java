@@ -9,6 +9,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -111,10 +112,16 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     /** 交战增幅千分比 = 交战秒数 × 每秒增幅 × 1000 */
     private static final EntityDataAccessor<Integer> FURY_PERMILLE =
             SynchedEntityData.defineId(AbstractKuva.class, EntityDataSerializers.INT);
+    /** 起势：下一刀快出手了，客户端摆蓄力姿势（{@link KuvaMeleeGoal} 写） */
+    private static final EntityDataAccessor<Boolean> STRIKE_READY =
+            SynchedEntityData.defineId(AbstractKuva.class, EntityDataSerializers.BOOLEAN);
 
     // ==================== 动画 ====================
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+
+    /** 走、跑、待机和起势 / 出手怎么挑（客户端状态都在里面） */
+    private final KuvaBodyAnim bodyAnim = new KuvaBodyAnim(this);
 
     // ==================== 音画事件 ====================
 
@@ -190,6 +197,9 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     /** 客户端字段：talk 控制器这一句已经起过头了，不说话时清掉 */
     private boolean talkStarted;
+
+    /** 客户端字段：收到过几次挥臂包，出手那层动画按它变了没有来起播 */
+    int swingSeq;
 
     /** 客户端字段：进入倒地时动画计时器的时刻，没有为 NaN；选倒地进入片段时记 */
     public double downedEnterTick = Double.NaN;
@@ -454,19 +464,14 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "controller", 0, state -> {
+            // 怜悯之击的片段之间不插值；走、跑、待机的过渡在 locomotion 里另设
+            state.getController().transitionLength(0);
             // 倒地、处决、消散期间由怜悯之击挑片段；不在这些状态时返回 null，照原来的走路 / 待机
             RawAnimation mercy = MercyAnimSelector.pick(this, state);
             if (mercy != null) {
                 return state.setAndContinue(mercy);
             }
-            if (this.swinging) {
-                return state.setAndContinue(RawAnimation.begin().thenPlay("attack"));
-            } else if (state.isMoving()) {
-                String animation = this.entityData.get(HAS_TARGET) ? "run" : "walk";
-                return state.setAndContinue(RawAnimation.begin().thenLoop(animation));
-            } else {
-                return state.setAndContinue(RawAnimation.begin().thenLoop("stay"));
-            }
+            return this.bodyAnim.locomotion(state, this.entityData.get(HAS_TARGET));
         }));
         // 说话：后注册的控制器盖住同一根骨骼，说话时头部不再跟着走路 / 跑步摆。
         // 计时用客户端演出钟（静态钩子），不用 tickCount：服务端节流时 tickCount 会和声音对不上。
@@ -483,6 +488,30 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
             this.talkStarted = false;
             return PlayState.STOP;
         }));
+        // 起势 / 出手：排在最后，出手时盖住走路和说话的上身；站着出手连腿一起，边走边打只管上身（见 KuvaBodyAnim）
+        controllers.add(new AnimationController<>(this, "attack", 0, state -> this.bodyAnim.attackLayer(state)));
+    }
+
+    /** 走、跑、待机和起势 / 出手的选片状态，模型那边淡出这层动画时要读 */
+    public KuvaBodyAnim getBodyAnim() {
+        return this.bodyAnim;
+    }
+
+    /** 起势中：下一刀快出手了 */
+    public boolean isStrikeReady() {
+        return this.entityData.get(STRIKE_READY);
+    }
+
+    void setStrikeReady(boolean ready) {
+        this.entityData.set(STRIKE_READY, ready);
+    }
+
+    @Override
+    public void swing(@NotNull InteractionHand hand, boolean updateSelf) {
+        super.swing(hand, updateSelf);
+        if (this.level().isClientSide) {
+            this.swingSeq++;
+        }
     }
 
     private static final RawAnimation TALK = RawAnimation.begin().thenLoop("talk");
@@ -497,10 +526,11 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     @Override
     protected void registerGoals() {
+        // 近战排在闲逛、张望前面：闲逛的优先级要是更高，打着打着会被它抢走移动权，停下来溜达几秒
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new WaterAvoidingRandomStrollGoal(this, 0.7));
-        this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Monster.class, 32.0F));
-        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.0, true));
+        this.goalSelector.addGoal(1, new KuvaMeleeGoal(this, 1.0, true));
+        this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 0.7));
+        this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Monster.class, 32.0F));
         this.goalSelector.addGoal(4, new RandomStrollGoal(this, 0.7));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 
@@ -575,6 +605,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         this.entityData.define(DATA_MERCY_PLAN, 0);
         this.entityData.define(ADAPT_PACKED, 0);
         this.entityData.define(FURY_PERMILLE, 0);
+        this.entityData.define(STRIKE_READY, false);
     }
 
     @Override

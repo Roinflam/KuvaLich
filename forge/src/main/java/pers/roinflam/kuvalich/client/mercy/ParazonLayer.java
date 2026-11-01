@@ -258,7 +258,7 @@ public class ParazonLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<
 
     /**
      * 把一条胳膊摆到给定的拳头位置：前臂指向「肩 → 拳头」的方向（再按出刀的角度往下压一点），
-     * 前臂背面朝视角的上方，然后照原版的画法把胳膊和袖子画出来
+     * 前臂背面朝视角的上方（拧刀时绕前臂转开），然后照原版的画法把胳膊和袖子画出来
      */
     private static void drawArm(PlayerRenderer renderer, AbstractClientPlayer player, PoseStack ps,
                                 MultiBufferSource buffers, int light, MercyClient.Exec e, long t, boolean right,
@@ -291,6 +291,10 @@ public class ParazonLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<
             }
         }
         UP.set(0.0F, 1.0F, 0.0F).fma(-DIR.y, DIR).normalize();
+        if (ARM.roll != 0.0F) {
+            // 拧刀：前臂背面绕着前臂转
+            UP.rotateAxis((float) Math.toRadians(ARM.roll), DIR.x, DIR.y, DIR.z);
+        }
 
         // 旋转：把（前臂轴、背面、两者叉乘）这组正交基转到（朝向、上方、两者叉乘）
         SIDE.set(AXIS).cross(TOP);

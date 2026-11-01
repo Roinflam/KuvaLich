@@ -51,6 +51,8 @@ public final class MercyAnimSelector {
 
     /** 判错在第三刀时用的第三刀：一抽、膝盖一软，不倒（倒下去的话 700 ms 后要从躺平撑起来，处决者的刀也落了空） */
     private static final String LICH_HIT3_HELD = ".hit3f";
+    /** 单刀（卡没齐）那一刀：从被抓住的姿势直接挨最狠的一刀倒下，不像第三刀那样从第二刀的末姿势起 */
+    private static final String LICH_SINGLE = ".single";
     /** 被抓住以后挣脱（倒地超时、离场碰上被抓） */
     private static final String LICH_BREAKFREE_GRAB = "mercy.lich.breakfree.grab";
     /** C 套路被顶起来以后挣脱 */
@@ -90,6 +92,8 @@ public final class MercyAnimSelector {
     private static final RawAnimation[][] L_HIT = new RawAnimation[3][3];
     /** [套路] 判错在第三刀用的第三刀 */
     private static final RawAnimation[] L_HIT3_HELD = new RawAnimation[3];
+    /** [套路] 单刀 */
+    private static final RawAnimation[] L_SINGLE = new RawAnimation[3];
     /** [套路][判错在第几刀 0~2] 从那一刀末帧起身的挣脱 */
     private static final RawAnimation[][] L_BREAKFREE_AT = new RawAnimation[3][3];
 
@@ -115,6 +119,7 @@ public final class MercyAnimSelector {
                 L_BREAKFREE_AT[v][k] = hold("mercy.lich." + variant.animKey + ".breakfree" + (k + 1));
             }
             L_HIT3_HELD[v] = hold("mercy.lich." + variant.animKey + LICH_HIT3_HELD);
+            L_SINGLE[v] = hold("mercy.lich." + variant.animKey + LICH_SINGLE);
             T_EXECUTE[v] = hold(MercyAnimNames.thrallExecute(THRALL_VARIANTS[v]));
         }
 
@@ -129,6 +134,7 @@ public final class MercyAnimSelector {
             Collections.addAll(SHOW, L_HIT[v]);
             Collections.addAll(SHOW, L_BREAKFREE_AT[v]);
             SHOW.add(L_HIT3_HELD[v]);
+            SHOW.add(L_SINGLE[v]);
             SHOW.add(T_EXECUTE[v]);
         }
 
@@ -207,8 +213,8 @@ public final class MercyAnimSelector {
         int prefix = (bits >> 2) & 3;
 
         if (stabs == 1) {
-            // 单刀：起手照常，830 那一刀就是最狠的第三刀，倒下
-            return t >= SINGLE_STAB_MS ? L_HIT[v][2] : v == 2 ? L_C_GRAB : L_GRAB;
+            // 单刀：起手照常，830 那一刀就是最狠的一刀，倒下
+            return t >= SINGLE_STAB_MS ? L_SINGLE[v] : v == 2 ? L_C_GRAB : L_GRAB;
         }
         if (prefix == 3) {
             if (t >= SUCCESS_SLUMP_MS) {
