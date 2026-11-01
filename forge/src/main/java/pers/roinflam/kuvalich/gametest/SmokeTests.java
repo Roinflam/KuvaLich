@@ -200,13 +200,14 @@ public final class SmokeTests {
     public static void mercyCodecs(GameTestHelper h) {
         for (MercyVariant v : MercyVariant.values()) {
             MercyPlan.Plan plan = new MercyPlan.Plan(v.thrall ? 1 : 3, v.thrall ? 0 : 2, v, new int[]{7, 0, -1},
-                    new int[]{3, 1, 0}, true, 2, true);
+                    new int[]{3, 1, 0}, true, 2, true, v.orbits());
             MercyPlan.Plan back = MercyPlan.decode(MercyPlan.encode(plan));
             h.assertTrue(back.stabs() == plan.stabs() && back.prefix() == plan.prefix() && back.variant() == v,
                     "计划位：刀数、前缀、套路 " + v);
             h.assertTrue(Arrays.equals(back.cardIds(), plan.cardIds()) && Arrays.equals(back.remaining(), plan.remaining()),
                     "计划位：卡和剩余次数 " + v);
-            h.assertTrue(back.returnsItems() && back.consumed() == 2 && back.demo(), "计划位：标志位 " + v);
+            h.assertTrue(back.returnsItems() && back.consumed() == 2 && back.demo() && back.mirror() == v.orbits(),
+                    "计划位：标志位 " + v);
         }
         int a = KuvaStateKind.pack(KuvaStateKind.ADAPT, KuvaStateKind.adaptParam(5, 3, true, false));
         h.assertTrue(KuvaStateKind.kind(a) == KuvaStateKind.ADAPT, "状态特效：种类");

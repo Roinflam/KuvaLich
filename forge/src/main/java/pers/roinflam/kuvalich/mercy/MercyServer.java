@@ -112,6 +112,10 @@ public final class MercyServer {
     static final int SINGLE_UNLOCK_TICK = 50;
     /** 奴仆：死亡、解锁（刺入那一 tick 定案，看套路） */
     public static final int THRALL_DEATH_TICK = 30;
+    /** 奴仆绕到身后的两套：人落地、站位换到身后（客户端 1600 ms 前走完路线） */
+    static final int THRALL_LAND_TICK = 33;
+    /** 单刀：蹬开它往后空翻，身体跟着往外挪（客户端的落点和这里推出去的距离一样） */
+    static final int SINGLE_HOP_TICK = 25;
     static final int THRALL_UNLOCK_TICK = 44;
     /** 倒地后多久玄骸说一句 */
     static final int DOWNED_COMM_DELAY = 12;
@@ -134,6 +138,8 @@ public final class MercyServer {
     static final double STAND_STEP = 0.2D;
     /** 站位贴地时上下找多远 */
     static final double GROUND_SNAP = 0.6D;
+    /** 绕背时离目标比站位再远这么多，查路线时按这个半径 */
+    static final double ORBIT_MARGIN = 0.2D;
     /** 玄骸 / 奴仆的效果包范围 */
     static final double LICH_RANGE = 48.0D;
     static final double THRALL_DOWNED_RANGE = 24.0D;
@@ -193,8 +199,10 @@ public final class MercyServer {
         TAUNT,
         /** 推开处决者 */
         PUSH,
-        /** 背后锁颈成功时转身 */
+        /** 背对处决者的两套成功时转身 */
         TURN,
+        /** 奴仆绕到身后的两套：人落地，站位换到身后 */
+        LAND,
         /** 失败：玄骸进入离场 */
         LEAVE,
         /** 给玩家的东西：聊天、掉落、进度、完成提示 */
@@ -232,6 +240,10 @@ public final class MercyServer {
         /** 自己马上要移除目标（失败收尾），这次移除不算中断 */
         boolean expectRemoval;
         int pushLeft;
+        /** 落到目标身后的套路：客户端自己沿路线走，这段时间服务端不按站位拉人，到点把站位换成 {@link #landing} */
+        boolean roaming;
+        @Nullable
+        Vec3 landing;
         final List<Step> steps = new ArrayList<>();
         int next;
         /** 三刀成功：定案时算好的奖励 */
@@ -264,8 +276,13 @@ public final class MercyServer {
             return lich && plan.stabs() == 1;
         }
 
+        /** 按 tick 插到对的位置（同一 tick 的保持加入顺序）：推进时从头逐个往后走，排错了后面的会被前面的卡住 */
         void add(int tick, StepKind kind, Runnable action) {
-            steps.add(new Step(tick, kind, action));
+            int i = steps.size();
+            while (i > 0 && steps.get(i - 1).tick() > tick) {
+                i--;
+            }
+            steps.add(i, new Step(tick, kind, action));
         }
     }
 
@@ -511,15 +528,20 @@ public final class MercyServer {
 
     private static void start(ServerPlayer player, AbstractKuva target, boolean placeNow) {
         boolean thrall = target instanceof KuvaSlaveEntity;
-        MercyVariant variant = pickVariant(player, thrall);
-        MercyPlan.Plan plan = buildPlan(player, target, variant);
-
         ServerLevel level = (ServerLevel) target.level();
         Vec3 pl = target.position();
         Vec3 f = horizontalDir(player.position().subtract(pl), target.getYRot());
+        MercyVariant variant = pickVariant(player, thrall, level, pl, f);
+        boolean mirror = variant.orbits() && orbitSide(level, player, pl, f, variant) < 0;
+        MercyPlan.Plan plan = buildPlan(player, target, variant, mirror);
+
         Vec3 pe = standPosition(level, player, pl, f, variant.standDist);
         Exec e = new Exec(target, player, plan, variant, pl, f, pe);
         e.targetYaw = facingYaw(f, variant.facing);
+        if (variant.relocates()) {
+            e.roaming = true;
+            e.landing = landingPosition(level, player, pl, f, pe, variant);
+        }
 
         target.setTarget(null);
         target.getNavigation().stop();
@@ -547,33 +569,76 @@ public final class MercyServer {
     }
 
     /** 从同类三套里排除上一次的、均匀随机；演示命令指定过的优先（只管下一次） */
-    private static MercyVariant pickVariant(ServerPlayer player, boolean thrall) {
+    private static MercyVariant pickVariant(ServerPlayer player, boolean thrall, ServerLevel level, Vec3 pl, Vec3 f) {
         UUID id = player.getUUID();
         MercyVariant forced = NEXT_VARIANT.get(id);
         if (forced != null && forced.thrall == thrall) {
             NEXT_VARIANT.remove(id);
             return forced;
         }
-        MercyVariant[] pool = thrall
-                ? new MercyVariant[]{MercyVariant.THRALL_1, MercyVariant.THRALL_2, MercyVariant.THRALL_3}
-                : new MercyVariant[]{MercyVariant.LICH_A, MercyVariant.LICH_B, MercyVariant.LICH_C};
         MercyVariant last = (thrall ? LAST_THRALL : LAST_LICH).get(id);
-        List<MercyVariant> choices = new ArrayList<>(3);
-        for (MercyVariant v : pool) {
-            if (v != last) {
+        List<MercyVariant> choices = new ArrayList<>(MercyVariant.values().length);
+        for (MercyVariant v : MercyVariant.values()) {
+            if (v.thrall == thrall && v != last && fits(level, player, pl, f, v)) {
                 choices.add(v);
             }
         }
         return choices.get(ThreadLocalRandom.current().nextInt(choices.size()));
     }
 
+    /** 这一套在这里摆得开：绕背要有一边走得通，落到身后的要身后站得下。基础套路哪里都能演，所以总有得选 */
+    private static boolean fits(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
+        if (v.orbits() && orbitSide(level, player, pl, f, v) == 0) {
+            return false;
+        }
+        return !v.relocates() || standable(level, player, behind(level, player, pl, f, v));
+    }
+
+    /** 绕背走哪边：1 = 目标的左手边（{@code Y × F}），-1 = 右手边，0 = 两边都有方块挡着 */
+    private static int orbitSide(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
+        for (int side = 1; side >= -1; side -= 2) {
+            if (arcClear(level, player, pl, f, v.standDist + ORBIT_MARGIN, side)) {
+                return side;
+            }
+        }
+        return 0;
+    }
+
+    /** 沿半圈取几个点，蹲着都过得去 */
+    private static boolean arcClear(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, double r, int side) {
+        Vec3 s = new Vec3(f.z, 0.0D, -f.x).scale(side);
+        for (int deg = 45; deg <= 180; deg += 45) {
+            double a = Math.toRadians(deg);
+            Vec3 at = pl.add(f.scale(Math.cos(a) * r)).add(s.scale(Math.sin(a) * r));
+            at = snapToGround(level, player, at);
+            if (!level.noCollision(player, player.getDimensions(Pose.CROUCHING).makeBoundingBox(at))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Vec3 behind(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
+        return snapToGround(level, player, pl.subtract(f.scale(v.standDist)));
+    }
+
+    private static boolean standable(ServerLevel level, ServerPlayer player, Vec3 at) {
+        return level.noCollision(player, player.getDimensions(Pose.STANDING).makeBoundingBox(at));
+    }
+
+    /** 落到目标身后的位置；演示强行指定的套路身后站不下时留在原站位 */
+    private static Vec3 landingPosition(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, Vec3 pe, MercyVariant v) {
+        Vec3 at = behind(level, player, pl, f, v);
+        return standable(level, player, at) ? at : pe;
+    }
+
     /** 开始时就把整场的结果算好：刀数、猜对的前缀、三张卡和次数、有没有归还、会用完几张 */
-    private static MercyPlan.Plan buildPlan(ServerPlayer player, AbstractKuva target, MercyVariant variant) {
+    private static MercyPlan.Plan buildPlan(ServerPlayer player, AbstractKuva target, MercyVariant variant, boolean mirror) {
         boolean demo = target.isDemo();
         int[] none = {-1, -1, -1};
         int[] zero = {0, 0, 0};
         if (target instanceof KuvaSlaveEntity) {
-            return new MercyPlan.Plan(1, 0, variant, none, zero, false, 0, demo);
+            return new MercyPlan.Plan(1, 0, variant, none, zero, false, 0, demo, mirror);
         }
         RequiemCard card = card(player);
         int[] ids = none;
@@ -626,7 +691,7 @@ public final class MercyServer {
                 }
             }
         }
-        return new MercyPlan.Plan(stabs, prefix, variant, ids, remaining, success && returnsItems, consumed, demo);
+        return new MercyPlan.Plan(stabs, prefix, variant, ids, remaining, success && returnsItems, consumed, demo, mirror);
     }
 
     /** 一张卡处决之前还剩几次：可损耗的按剩余耐久，不可损耗的用一次就没（记 1） */
@@ -701,12 +766,22 @@ public final class MercyServer {
             int stab = Math.max(1, Math.round(e.variant.stabMs(0) / 50.0F));
             e.add(stab, StepKind.SETTLE, () -> e.settled = true);
             e.add(THRALL_DEATH_TICK, StepKind.KILL, () -> kill(e));
+            if (e.roaming) {
+                e.add(THRALL_LAND_TICK, StepKind.LAND, () -> {
+                    e.roaming = false;
+                    e.lockPos = e.landing;
+                });
+            }
             e.add(THRALL_UNLOCK_TICK, StepKind.UNLOCK, () -> unlock(e));
             return;
         }
         KuvaMasterEntity lich = (KuvaMasterEntity) e.target;
         if (e.single()) {
             e.add(SETTLE_TICK, StepKind.SETTLE, () -> e.settled = true);
+            if (e.variant.singleAs() == MercyVariant.LICH_A || e.variant.singleAs() == MercyVariant.LICH_C) {
+                // 这两套最后蹬开它往后空翻，落地的地方就是收尾的站位
+                e.add(SINGLE_HOP_TICK, StepKind.PUSH, () -> e.pushLeft = (int) Math.round(PUSH_DISTANCE / PUSH_STEP));
+            }
             e.add(SINGLE_DEATH_TICK, StepKind.KILL, () -> kill(e));
             e.add(SINGLE_UNLOCK_TICK, StepKind.UNLOCK, () -> unlock(e));
             return;
@@ -714,7 +789,7 @@ public final class MercyServer {
         if (!e.failure()) {
             e.add(SETTLE_TICK, StepKind.SETTLE, () -> settleSuccess(e, lich));
             e.add(STAB_COMM_TICK, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
-            if (e.variant == MercyVariant.LICH_B) {
+            if (e.variant.facing == MercyVariant.Facing.AWAY) {
                 e.add(LICH_B_TURN_TICK, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
             }
             e.add(SUCCESS_DEATH_TICK, StepKind.KILL, () -> kill(e));
@@ -932,7 +1007,7 @@ public final class MercyServer {
 
     /** 处决者：第 6 tick 起强制站位（差得多就拉回来、差一点只清速度），判错后的推开每 tick 走一小段 */
     private static void holdExecutor(Exec e) {
-        if (e.age < ENFORCE_FROM) {
+        if (e.age < ENFORCE_FROM || e.roaming) {
             return;
         }
         ServerPlayer p = e.executor;
@@ -1010,7 +1085,7 @@ public final class MercyServer {
         while (e.next < e.steps.size()) {
             Step s = e.steps.get(e.next++);
             switch (s.kind()) {
-                case COMM, TAUNT, PUSH, TURN -> {
+                case COMM, TAUNT, PUSH, TURN, LAND -> {
                 }
                 case LEAVE -> {
                     if (escapeWithFx) {

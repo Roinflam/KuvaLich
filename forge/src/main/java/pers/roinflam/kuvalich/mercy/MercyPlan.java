@@ -17,7 +17,8 @@ package pers.roinflam.kuvalich.mercy;
  *  bit 26     有没收物品要归还
  *  bit 27~28  这次会用完消失的卡张数（0~3）
  *  bit 29     演示（开发命令摆出来的）
- *  bit 30~31  保留，写 0
+ *  bit 30     绕背的方向反过来（往目标的右手边绕）
+ *  bit 31     保留，写 0
  * </pre>
  */
 public final class MercyPlan {
@@ -36,9 +37,10 @@ public final class MercyPlan {
      * @param returnsItems 有没收物品要归还
      * @param consumed     这次会用完消失的卡张数
      * @param demo         演示模式
+     * @param mirror       绕背往目标的右手边走（左手边有方块挡着时）
      */
     public record Plan(int stabs, int prefix, MercyVariant variant, int[] cardIds, int[] remaining,
-                       boolean returnsItems, int consumed, boolean demo) {
+                       boolean returnsItems, int consumed, boolean demo, boolean mirror) {
     }
 
     /** 压成一个 int；各项越界时夹到能表示的范围 */
@@ -60,6 +62,9 @@ public final class MercyPlan {
         if (p.demo()) {
             bits |= 1 << 29;
         }
+        if (p.mirror()) {
+            bits |= 1 << 30;
+        }
         return bits;
     }
 
@@ -80,7 +85,8 @@ public final class MercyPlan {
         boolean returnsItems = ((bits >> 26) & 1) != 0;
         int consumed = (bits >> 27) & 3;
         boolean demo = ((bits >> 29) & 1) != 0;
-        return new Plan(stabs, prefix, variant, cardIds, remaining, returnsItems, consumed, demo);
+        boolean mirror = ((bits >> 30) & 1) != 0;
+        return new Plan(stabs, prefix, variant, cardIds, remaining, returnsItems, consumed, demo, mirror);
     }
 
     private static int clamp(int v, int lo, int hi) {

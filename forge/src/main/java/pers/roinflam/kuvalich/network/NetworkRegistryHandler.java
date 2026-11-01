@@ -30,11 +30,12 @@ import java.util.Optional;
  *
  * 统一管理所有网络包的注册
  *
- * <p>协议版本现为 "10"（各版本改了什么见 {@link #PROTOCOL_VERSION}）。"7" 时 {@link DamagePacket} 改为传拆开的字段
+ * <p>协议版本现为 "11"（各版本改了什么见 {@link #PROTOCOL_VERSION}）。"7" 时 {@link DamagePacket} 改为传拆开的字段
  * （伤害数字合并）、{@link WarframeModuleSyncPacket} 追加了武器类击杀叠层数组（客户端射速 / 多重射击与服务端对齐），
  * 字节流格式发生变化，与 "6" 及更早版本的客户端不兼容，必须提版本号强制握手拒绝，
  * 否则旧客户端会按老格式解码出错位数据。"8" 新增 {@link GuideConfigSyncPacket}（冒险指南的服务端配置快照），
- * "9" 新增 {@link KuvaFxPacket}（音画效果包），"10" 新增专属玄骸、档案、通讯、怜悯之击的五个包。</p>
+ * "9" 新增 {@link KuvaFxPacket}（音画效果包），"10" 新增专属玄骸、档案、通讯、怜悯之击的五个包，
+ * "11" 处决计划位新增四个套路编号和绕背方向位。</p>
  *
  * <p>安全：所有包在注册时都显式声明 {@link NetworkDirection}。
  * 不带方向的 5 参 {@code registerMessage} 重载会让 Forge 允许包双向收发，
@@ -59,8 +60,10 @@ public class NetworkRegistryHandler {
      * "10"：新增专属玄骸、档案、通讯、怜悯之击的包（LichStatePacket、LichArchiveRequestPacket、LichArchivePacket、
      *         KuvaCommPacket、MercyRequestPacket），DecryptionHudPacket 末尾追加揭示卡号。
      *         DecryptionHudPacket 的字节格式变了，旧客户端按老格式解码会错位，所以必须提版本
+     * "11"：处决计划位新增四个套路编号和绕背方向位。字节长度没变，但旧客户端不认识新编号，
+     *         会把新套路当成第一套演，和服务端的时间表、目标动作对不上，所以提版本强制更新
      */
-    private static final String PROTOCOL_VERSION = "10";
+    private static final String PROTOCOL_VERSION = "11";
 
     /** 消息ID计数器 / Message ID counter */
     private static int messageId = 0;

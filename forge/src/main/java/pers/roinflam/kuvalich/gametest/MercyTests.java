@@ -53,6 +53,7 @@ import pers.roinflam.kuvalich.nemesis.SummonMode;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Collections;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
@@ -577,10 +578,13 @@ public final class MercyTests {
             h.assertTrue(MercyServer.stop(p) == null, "第 " + i + " 次应当能中止");
             h.assertTrue(target.getMercyState() == MercyState.DOWNED, "中止后应当回到倒地");
         }
+        // 平地上每一套都放得下，各套至少拿到平均份额的一半
+        long kinds = Arrays.stream(MercyVariant.values()).filter(v -> v.thrall == thrall).count();
+        int floor = (int) (rounds / kinds / 2);
         for (MercyVariant v : MercyVariant.values()) {
             if (v.thrall == thrall) {
                 int n = counts.getOrDefault(v, 0);
-                h.assertTrue(n >= rounds / 5, v + " 只占 " + n + " / " + rounds + "，应当 ≥ 20%");
+                h.assertTrue(n >= floor, v + " 只占 " + n + " / " + rounds + "，应当 ≥ " + floor);
             }
         }
     }

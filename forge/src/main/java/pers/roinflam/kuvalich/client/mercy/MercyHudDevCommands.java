@@ -147,7 +147,7 @@ public final class MercyHudDevCommands {
                 ? new int[]{IntegerArgumentType.getInteger(ctx, "c1"), IntegerArgumentType.getInteger(ctx, "c2"),
                 IntegerArgumentType.getInteger(ctx, "c3")}
                 : new int[]{5, 0, 6};
-        MercyPlan.Plan plan = new MercyPlan.Plan(3, prefix, variant, ids, new int[]{3, 2, 1}, false, 0, true);
+        MercyPlan.Plan plan = new MercyPlan.Plan(3, prefix, variant, ids, new int[]{3, 2, 1}, false, 0, true, false);
         long ms = play ? -1L : IntegerArgumentType.getInteger(ctx, "ms");
         MercyHud.setDev(plan, ms);
         if (prefix < 3) {

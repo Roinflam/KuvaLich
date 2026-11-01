@@ -107,6 +107,10 @@ public final class MercyClient {
         final Vec3 f;
         /** {@code Y × F}：从处决者看过去是它的右手边 */
         final Vec3 s;
+        /** 站位离目标多远（水平，格） */
+        final double dist;
+        /** 绕背往 {@link #s} 那边走是 1，反过来是 -1 */
+        final int side;
         /** 本地玩家就是处决者 */
         final boolean local;
         /** 本地玩家是玄骸处决的处决者（藏 HUD、界面声、压混音都看它） */
@@ -150,6 +154,8 @@ public final class MercyClient {
             this.pe = pe;
             this.f = f;
             this.s = new Vec3(f.z, 0.0D, -f.x);
+            this.dist = Math.sqrt((pe.x - pl.x) * (pe.x - pl.x) + (pe.z - pl.z) * (pe.z - pl.z));
+            this.side = plan.mirror() ? -1 : 1;
             this.local = local;
             this.cinematic = local && !variant.thrall;
             this.shortOutro = EffectsDisplayConfig.mercyShortOutro();
@@ -197,9 +203,9 @@ public final class MercyClient {
         /** 目标这一刻该朝哪（度） */
         float targetYaw(long t) {
             MercyVariant.Facing facing = variant.facing;
-            if (variant == MercyVariant.LICH_B && MercyTimeline.outcome(plan) == MercyTimeline.Outcome.SUCCESS
-                    && t >= MercyTimeline.CLOSEUP_MS) {
-                // 背后锁颈成功：切特写那一刻转成面向处决者跪着
+            if (!variant.thrall && facing == MercyVariant.Facing.AWAY
+                    && MercyTimeline.outcome(plan) == MercyTimeline.Outcome.SUCCESS && t >= MercyTimeline.CLOSEUP_MS) {
+                // 背对处决者的套路成功：切特写那一刻转成面向处决者跪着
                 facing = MercyVariant.Facing.TOWARD;
             }
             Vec3 dir = switch (facing) {
@@ -427,14 +433,14 @@ public final class MercyClient {
         }
     }
 
-    /** 本地处决者的站位缓入按帧走，转头才不会一跳一跳 */
+    /** 本地处决者的站位缓入按帧走，转头才不会一跳一跳；落到目标身后的套路接着按帧沿路线走 */
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.START) {
             return;
         }
         Exec e = localExec;
-        if (e == null || e.easeDone) {
+        if (e == null) {
             return;
         }
         LocalPlayer p = Minecraft.getInstance().player;
@@ -442,6 +448,12 @@ public final class MercyClient {
             return;
         }
         long t = e.elapsed();
+        if (e.easeDone) {
+            if (e.variant.relocates() && t < e.handbackMs) {
+                roam(e, p, t);
+            }
+            return;
+        }
         float u = Mth.clamp(t / (float) EASE_IN_MS, 0.0F, 1.0F);
         float k = 1.0F - (1.0F - u) * (1.0F - u) * (1.0F - u);
         Vec3 pos = e.startPos.lerp(e.pe, k);
@@ -451,21 +463,44 @@ public final class MercyClient {
         float pitch = pitchOf(d);
         float y = e.startYaw + Mth.wrapDegrees(yaw - e.startYaw) * k;
         float x = e.startPitch + (pitch - e.startPitch) * k;
-        p.setPos(pos.x, pos.y, pos.z);
-        p.xo = p.xOld = pos.x;
-        p.yo = p.yOld = pos.y;
-        p.zo = p.zOld = pos.z;
-        p.setYRot(y);
-        p.setXRot(x);
-        p.yRotO = y;
-        p.xRotO = x;
-        p.setYHeadRot(y);
-        p.yHeadRotO = y;
-        p.yBodyRot = y;
-        p.yBodyRotO = y;
+        place(p, pos.x, pos.y, pos.z, y, x);
         if (u >= 1.0F && e.frozenAt < 0L) {
             e.easeDone = true;
         }
+    }
+
+    private static final MercyPose.Body ROAM = new MercyPose.Body();
+
+    /**
+     * 人真的沿路线走（第一人称、原版第三人称的镜头都跟着真实位置）。绕背时一直看着目标；
+     * 从头顶翻过去的那套目标会跑到正下方，看向它的偏航角要跳半圈，所以朝向跟身体走，只有俯仰看着它
+     */
+    private static void roam(Exec e, LocalPlayer p, long t) {
+        if (!MercyPose.body(e, t, ROAM)) {
+            return;
+        }
+        Vec3 d = e.anchor().subtract(ROAM.x, ROAM.y + p.getEyeHeight(), ROAM.z);
+        float yaw = e.variant.orbits() ? yawOf(d) : ROAM.yaw;
+        double r = yaw * Mth.DEG_TO_RAD;
+        double along = -Math.sin(r) * d.x + Math.cos(r) * d.z;
+        float pitch = Mth.clamp((float) (Mth.atan2(-d.y, along) * Mth.RAD_TO_DEG), -89.0F, 89.0F);
+        place(p, ROAM.x, ROAM.y, ROAM.z, yaw, pitch);
+        p.resetFallDistance();
+    }
+
+    private static void place(LocalPlayer p, double x, double y, double z, float yaw, float pitch) {
+        p.setPos(x, y, z);
+        p.xo = p.xOld = x;
+        p.yo = p.yOld = y;
+        p.zo = p.zOld = z;
+        p.setYRot(yaw);
+        p.setXRot(pitch);
+        p.yRotO = yaw;
+        p.xRotO = pitch;
+        p.setYHeadRot(yaw);
+        p.yHeadRotO = yaw;
+        p.yBodyRot = yaw;
+        p.yBodyRotO = yaw;
     }
 
     @SubscribeEvent

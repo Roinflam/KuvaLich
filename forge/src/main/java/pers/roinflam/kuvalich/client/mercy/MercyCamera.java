@@ -67,6 +67,10 @@ public final class MercyCamera {
         B,
         /** 贴身仰拍 */
         C,
+        /** 绕背：侧面再远一点，整段翻滚都在画里 */
+        D,
+        /** 踏背：低机位仰拍 */
+        E,
         /** 成功：跪地特写 */
         CLOSEUP,
         /** 成功：膝盖高度第三人称 */
@@ -96,6 +100,9 @@ public final class MercyCamera {
      *   <li>A 侧面中近景：离目标 2.9 格、胸口偏上的高度平拍，两人都在画里；</li>
      *   <li>B 过肩：处决者右肩后上方，越过他的肩看背对着的目标的后颈；</li>
      *   <li>C 贴身仰拍：斜前方低机位往上看，目标整个头盔在画里；</li>
+     *   <li>D 绕背：和 A 同一侧，离目标 3.8 格。处决者从镜头和目标之间翻过去，放在绕背的那一侧才看得到，
+     *       放在另一侧翻滚全被目标挡住；</li>
+     *   <li>E 踏背：目标斜前方的低机位往上看，弯着腰的目标和踩在它背上的处决者都在画里；</li>
      *   <li>跪地特写：换到 {@code −S} 一侧（目标的右手边、处决者的左手边），离目标 2.8 格、腰的高度略往上看：
      *       跪着的目标从头盔尖到腰都在画里，低垂的脸在中间，处决者的头和探进去的那条胳膊在右边。
      *       {@code +S} 一侧拍不到脸：目标搭在膝上的左臂和大肩甲正好挡在脸和刀前面；离得再近，目标持武器的右前臂
@@ -110,6 +117,8 @@ public final class MercyCamera {
             new Rig(false, false, 0.45D, 2.85D, 1.6D, 0.5D, 0.0D, 1.7D, 70.0F),
             new Rig(true, false, 1.25D, 0.9D, 2.15D, -0.6D, 0.0D, 1.7D, 70.0F),
             new Rig(false, false, 1.9D, 1.9D, 0.85D, 0.3D, 0.0D, 2.5D, 74.0F),
+            new Rig(false, false, 0.2D, 3.8D, 1.35D, 0.0D, 0.0D, 1.45D, 64.0F),
+            new Rig(false, false, -1.1D, 3.1D, 0.7D, -0.35D, 0.0D, 2.15D, 70.0F),
             new Rig(false, false, 1.4D, -2.4D, 1.2D, 0.3D, 0.0D, 1.75D, 55.0F),
             new Rig(true, true, 0.6D, -1.8D, 0.55D, -0.65D, 0.0D, 1.55D, 70.0F),
             null
@@ -199,6 +208,8 @@ public final class MercyCamera {
         Shot own = switch (e.variant.camera) {
             case 1 -> Shot.B;
             case 2 -> Shot.C;
+            case 3 -> Shot.D;
+            case 4 -> Shot.E;
             default -> Shot.A;
         };
         return switch (MercyTimeline.outcome(e.plan)) {
@@ -227,7 +238,8 @@ public final class MercyCamera {
      */
     private static ShotPose fit(MercyClient.Exec e, Shot s) {
         for (int pass = 0; pass < 2; pass++) {
-            for (int side = 1; side >= -1; side -= 2) {
+            for (int i = 0; i < 2; i++) {
+                int side = i == 0 ? e.side : -e.side;
                 ShotPose base = place(e, s, side);
                 for (double deg : SWING_DEG) {
                     ShotPose p = check(e, s, swing(e, base.pos(), base.look(), side, deg), base.look(), base.fov(),

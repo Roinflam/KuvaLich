@@ -122,7 +122,7 @@ public final class MercyDevClientCommands {
         boolean success = !variant.thrall && stabs == 3 && prefix == 3;
         int[] cards = stabs == 3 && !variant.thrall ? new int[]{0, 1, 2} : new int[]{-1, -1, -1};
         int[] left = stabs == 3 && !variant.thrall ? new int[]{3, 2, 1} : new int[]{0, 0, 0};
-        MercyPlan.Plan plan = new MercyPlan.Plan(stabs, prefix, variant, cards, left, success, success ? 1 : 0, true);
+        MercyPlan.Plan plan = new MercyPlan.Plan(stabs, prefix, variant, cards, left, success, success ? 1 : 0, true, false);
         // 站位传目标自己的位置，由 begin 按处决者现在站的方向和套路的站位距离算
         MercyClient.begin(target, player.getId(), MercyPlan.encode(plan), target.position());
         reply(ctx, "mercy test: " + variant.name().toLowerCase(Locale.ROOT) + " / " + outcome + " on #" + target.getId());

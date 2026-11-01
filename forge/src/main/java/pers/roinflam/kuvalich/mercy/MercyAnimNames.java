@@ -5,7 +5,7 @@ package pers.roinflam.kuvalich.mercy;
  *
  * <p>实体里选片段的代码和动画资源文件都照这里的名字，改一处两边对得上。片段都放在
  * {@code kuva_mercy.animation.json}，名字一律以 {@code mercy.} 开头，模型据此把它们从共用动画文件里区分出来。
- * 玄骸套路片段名里的 a / b / c 对应 {@link MercyVariant#animKey}。</p>
+ * 玄骸套路片段名里的 a ~ e 对应 {@link MercyVariant#animKey}。</p>
  */
 public final class MercyAnimNames {
 
@@ -22,6 +22,8 @@ public final class MercyAnimNames {
     public static final String LICH_GRAB = "mercy.lich.grab";
     /** C 套路的被抓：从倒地姿势被顶到贴身上挑的起点 */
     public static final String LICH_C_GRAB = "mercy.lich.c.grab";
+    /** E 套路的被抓：被踩住后背压下去 */
+    public static final String LICH_E_GRAB = "mercy.lich.e.grab";
     /** 判错之后挣脱 */
     public static final String LICH_BREAKFREE = "mercy.lich.breakfree";
     /** 成功后跪地循环 */
@@ -46,7 +48,7 @@ public final class MercyAnimNames {
     /**
      * 玄骸某个套路第 {@code stab} 刀的片段名，例如 {@code mercy.lich.a.hit1}
      *
-     * @param variant 玄骸的套路（A / B / C）
+     * @param variant 玄骸的套路（A ~ E）
      * @param stab    第几刀，1~3
      */
     public static String lichHit(MercyVariant variant, int stab) {

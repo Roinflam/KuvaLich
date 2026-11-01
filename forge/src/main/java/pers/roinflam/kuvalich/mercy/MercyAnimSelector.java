@@ -57,6 +57,8 @@ public final class MercyAnimSelector {
     private static final String LICH_BREAKFREE_GRAB = "mercy.lich.breakfree.grab";
     /** C 套路被顶起来以后挣脱 */
     private static final String LICH_C_BREAKFREE_RAISED = "mercy.lich.c.breakfree0";
+    /** E 套路被踩住以后挣脱 */
+    private static final String LICH_E_BREAKFREE_PINNED = "mercy.lich.e.breakfree0";
     /** 倒地 / 处决期间替换说话动画的空片段：说话控制器注册在后面，会盖住处决姿势的头和身子 */
     public static final String LICH_MUTE = "mercy.lich.mute";
 
@@ -83,28 +85,35 @@ public final class MercyAnimSelector {
     private static final RawAnimation L_DOWNED = RawAnimation.begin().thenLoop(MercyAnimNames.LICH_DOWNED);
     private static final RawAnimation L_GRAB = hold(MercyAnimNames.LICH_GRAB);
     private static final RawAnimation L_C_GRAB = hold(MercyAnimNames.LICH_C_GRAB);
+    private static final RawAnimation L_E_GRAB = hold(MercyAnimNames.LICH_E_GRAB);
     private static final RawAnimation L_KNEEL = RawAnimation.begin().thenLoop(MercyAnimNames.LICH_KNEEL);
     private static final RawAnimation L_SLUMP = hold(MercyAnimNames.LICH_SLUMP);
     private static final RawAnimation L_BREAKFREE = hold(MercyAnimNames.LICH_BREAKFREE);
     private static final RawAnimation L_BREAKFREE_GRAB = hold(LICH_BREAKFREE_GRAB);
     private static final RawAnimation L_BREAKFREE_C0 = hold(LICH_C_BREAKFREE_RAISED);
-    /** [套路 a/b/c][第几刀 0~2] */
-    private static final RawAnimation[][] L_HIT = new RawAnimation[3][3];
+    private static final RawAnimation L_BREAKFREE_E0 = hold(LICH_E_BREAKFREE_PINNED);
+
+    private static final MercyVariant[] LICH_VARIANTS = {MercyVariant.LICH_A, MercyVariant.LICH_B, MercyVariant.LICH_C,
+            MercyVariant.LICH_D, MercyVariant.LICH_E};
+    private static final MercyVariant[] THRALL_VARIANTS = {MercyVariant.THRALL_1, MercyVariant.THRALL_2,
+            MercyVariant.THRALL_3, MercyVariant.THRALL_4, MercyVariant.THRALL_5};
+    private static final int LICH_N = LICH_VARIANTS.length;
+    private static final int THRALL_N = THRALL_VARIANTS.length;
+
+    /** [套路 a/b/c/d/e][第几刀 0~2] */
+    private static final RawAnimation[][] L_HIT = new RawAnimation[LICH_N][3];
     /** [套路] 判错在第三刀用的第三刀 */
-    private static final RawAnimation[] L_HIT3_HELD = new RawAnimation[3];
-    /** [套路] 单刀 */
-    private static final RawAnimation[] L_SINGLE = new RawAnimation[3];
+    private static final RawAnimation[] L_HIT3_HELD = new RawAnimation[LICH_N];
+    /** [套路] 单刀，绕背、踏背走基础套路，这两格空着 */
+    private static final RawAnimation[] L_SINGLE = new RawAnimation[LICH_N];
     /** [套路][判错在第几刀 0~2] 从那一刀末帧起身的挣脱 */
-    private static final RawAnimation[][] L_BREAKFREE_AT = new RawAnimation[3][3];
+    private static final RawAnimation[][] L_BREAKFREE_AT = new RawAnimation[LICH_N][3];
 
     private static final RawAnimation T_ENTER = RawAnimation.begin()
             .thenPlay(MercyAnimNames.THRALL_DOWN_ENTER).thenLoop(MercyAnimNames.THRALL_DOWNED);
     private static final RawAnimation T_DOWNED = RawAnimation.begin().thenLoop(MercyAnimNames.THRALL_DOWNED);
-    /** [套路 t1/t2/t3] */
-    private static final RawAnimation[] T_EXECUTE = new RawAnimation[3];
-
-    private static final MercyVariant[] LICH_VARIANTS = {MercyVariant.LICH_A, MercyVariant.LICH_B, MercyVariant.LICH_C};
-    private static final MercyVariant[] THRALL_VARIANTS = {MercyVariant.THRALL_1, MercyVariant.THRALL_2, MercyVariant.THRALL_3};
+    /** [套路 t1~t5] */
+    private static final RawAnimation[] T_EXECUTE = new RawAnimation[THRALL_N];
 
     /** 演出里的片段（不含倒地循环）：处决钟丢了的时候照原样播下去，不跳回倒地 */
     private static final Set<RawAnimation> SHOW = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -112,40 +121,48 @@ public final class MercyAnimSelector {
     private static final Map<RawAnimation, RawAnimation> BREAKFREE_FROM = new IdentityHashMap<>();
 
     static {
-        for (int v = 0; v < 3; v++) {
+        for (int v = 0; v < LICH_N; v++) {
             MercyVariant variant = LICH_VARIANTS[v];
             for (int k = 0; k < 3; k++) {
                 L_HIT[v][k] = hold(MercyAnimNames.lichHit(variant, k + 1));
                 L_BREAKFREE_AT[v][k] = hold("mercy.lich." + variant.animKey + ".breakfree" + (k + 1));
             }
             L_HIT3_HELD[v] = hold("mercy.lich." + variant.animKey + LICH_HIT3_HELD);
-            L_SINGLE[v] = hold("mercy.lich." + variant.animKey + LICH_SINGLE);
+            if (variant.singleAs() == variant) {
+                L_SINGLE[v] = hold("mercy.lich." + variant.animKey + LICH_SINGLE);
+                SHOW.add(L_SINGLE[v]);
+            }
+        }
+        for (int v = 0; v < THRALL_N; v++) {
             T_EXECUTE[v] = hold(MercyAnimNames.thrallExecute(THRALL_VARIANTS[v]));
+            SHOW.add(T_EXECUTE[v]);
         }
 
         SHOW.add(L_GRAB);
         SHOW.add(L_C_GRAB);
+        SHOW.add(L_E_GRAB);
         SHOW.add(L_KNEEL);
         SHOW.add(L_SLUMP);
         SHOW.add(L_BREAKFREE);
         SHOW.add(L_BREAKFREE_GRAB);
         SHOW.add(L_BREAKFREE_C0);
-        for (int v = 0; v < 3; v++) {
+        SHOW.add(L_BREAKFREE_E0);
+        for (int v = 0; v < LICH_N; v++) {
             Collections.addAll(SHOW, L_HIT[v]);
             Collections.addAll(SHOW, L_BREAKFREE_AT[v]);
             SHOW.add(L_HIT3_HELD[v]);
-            SHOW.add(L_SINGLE[v]);
-            SHOW.add(T_EXECUTE[v]);
         }
 
         BREAKFREE_FROM.put(L_ENTER, L_BREAKFREE);
         BREAKFREE_FROM.put(L_DOWNED, L_BREAKFREE);
         BREAKFREE_FROM.put(L_GRAB, L_BREAKFREE_GRAB);
         BREAKFREE_FROM.put(L_C_GRAB, L_BREAKFREE_C0);
+        BREAKFREE_FROM.put(L_E_GRAB, L_BREAKFREE_E0);
         BREAKFREE_FROM.put(L_BREAKFREE, L_BREAKFREE);
         BREAKFREE_FROM.put(L_BREAKFREE_GRAB, L_BREAKFREE_GRAB);
         BREAKFREE_FROM.put(L_BREAKFREE_C0, L_BREAKFREE_C0);
-        for (int v = 0; v < 3; v++) {
+        BREAKFREE_FROM.put(L_BREAKFREE_E0, L_BREAKFREE_E0);
+        for (int v = 0; v < LICH_N; v++) {
             for (int k = 0; k < 3; k++) {
                 BREAKFREE_FROM.put(L_HIT[v][k], L_BREAKFREE_AT[v][k]);
                 BREAKFREE_FROM.put(L_BREAKFREE_AT[v][k], L_BREAKFREE_AT[v][k]);
@@ -205,16 +222,17 @@ public final class MercyAnimSelector {
         int variantId = (bits >> 4) & 0xF;
         if (thrall) {
             int i = variantId - MercyVariant.THRALL_1.id;
-            return T_EXECUTE[i >= 0 && i < 3 ? i : 0];
+            return T_EXECUTE[i >= 0 && i < THRALL_N ? i : 0];
         }
-        int v = variantId >= 0 && variantId < 3 ? variantId : 0;
+        int v = variantId >= 0 && variantId < LICH_N ? variantId : 0;
         MercyVariant variant = LICH_VARIANTS[v];
         int stabs = (bits & 3) == 1 ? 1 : 3;
         int prefix = (bits >> 2) & 3;
 
         if (stabs == 1) {
             // 单刀：起手照常，830 那一刀就是最狠的一刀，倒下
-            return t >= SINGLE_STAB_MS ? L_SINGLE[v] : v == 2 ? L_C_GRAB : L_GRAB;
+            int base = variant.singleAs().id;
+            return t >= SINGLE_STAB_MS ? L_SINGLE[base] : grab(base);
         }
         if (prefix == 3) {
             if (t >= SUCCESS_SLUMP_MS) {
@@ -238,7 +256,12 @@ public final class MercyAnimSelector {
                 return L_HIT[v][k];
             }
         }
-        return v == 2 ? L_C_GRAB : L_GRAB;
+        return grab(v);
+    }
+
+    /** 起手被抓住的片段：贴身上挑、踏背各有一段，别的共用 */
+    private static RawAnimation grab(int v) {
+        return v == 2 ? L_C_GRAB : v == 4 ? L_E_GRAB : L_GRAB;
     }
 
     /** 倒地：刚倒下时先播倒下去那一下（播完自己接倒地循环），倒稳了只播循环 */
