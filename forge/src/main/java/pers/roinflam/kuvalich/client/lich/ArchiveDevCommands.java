@@ -98,10 +98,12 @@ public final class ArchiveDevCommands {
                         .then(Commands.literal("other")
                                 .then(Commands.literal("on").executes(ctx -> other(ctx.getSource(), true)))
                                 .then(Commands.literal("off").executes(ctx -> other(ctx.getSource(), false))))
-                        .then(weaponCommand())));
+                        .then(weaponCommand("weapon", false))
+                        .then(weaponCommand("weaponportrait", true))));
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> weaponCommand() {
+    /** 调玄骸手里的刀：weapon 调世界里的，weaponportrait 调肖像和档案里的 */
+    private static LiteralArgumentBuilder<CommandSourceStack> weaponCommand(String literal, boolean portrait) {
         String[] names = {"ox", "oy", "oz", "rx", "ry", "rz", "scale"};
         ArgumentBuilder<CommandSourceStack, ?> tail =
                 Commands.argument(names[6], FloatArgumentType.floatArg(0.1F, 5.0F)).executes(ctx -> {
@@ -109,16 +111,16 @@ public final class ArchiveDevCommands {
                     for (int i = 0; i < names.length; i++) {
                         v[i] = FloatArgumentType.getFloat(ctx, names[i]);
                     }
-                    LichWeaponLayer.tune(v[0], v[1], v[2], v[3], v[4], v[5], v[6]);
-                    ctx.getSource().sendSuccess(() -> Component.literal(LichWeaponLayer.describe()), false);
+                    LichWeaponLayer.tune(portrait, v[0], v[1], v[2], v[3], v[4], v[5], v[6]);
+                    ctx.getSource().sendSuccess(() -> Component.literal(LichWeaponLayer.describe(portrait)), false);
                     return 1;
                 });
         for (int i = names.length - 2; i >= 0; i--) {
             tail = Commands.argument(names[i], FloatArgumentType.floatArg()).then(tail);
         }
-        return Commands.literal("weapon")
+        return Commands.literal(literal)
                 .executes(ctx -> {
-                    ctx.getSource().sendSuccess(() -> Component.literal(LichWeaponLayer.describe()), false);
+                    ctx.getSource().sendSuccess(() -> Component.literal(LichWeaponLayer.describe(portrait)), false);
                     return 1;
                 })
                 .then(tail);

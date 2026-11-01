@@ -22,8 +22,6 @@ public final class MercyAnimNames {
     public static final String LICH_GRAB = "mercy.lich.grab";
     /** C 套路的被抓：从倒地姿势被顶到贴身上挑的起点 */
     public static final String LICH_C_GRAB = "mercy.lich.c.grab";
-    /** E 套路的被抓：被踩住后背压下去 */
-    public static final String LICH_E_GRAB = "mercy.lich.e.grab";
     /** 判错之后挣脱 */
     public static final String LICH_BREAKFREE = "mercy.lich.breakfree";
     /** 成功后跪地循环 */

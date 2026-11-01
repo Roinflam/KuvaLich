@@ -20,7 +20,7 @@ public enum MercyVariant {
     LICH_C(2, false, "c", 0.95F, Facing.TOWARD, 2, new int[]{790, 1680, 2670}, -1),
     /** 玄骸：翻滚绕背，前两刀在正面，翻到身后捅第三刀 */
     LICH_D(3, false, "d", 1.25F, Facing.TOWARD, 3, new int[]{790, 1680, 2670}, -1),
-    /** 玄骸：踏背下刺，跳上后背往下扎，后空翻下来 */
+    /** 玄骸：踏背下刺，背后捅一刀，跳上后背往后颈扎一刀，化作一道红光闪到正面捅第三刀，蹬开后空翻 */
     LICH_E(4, false, "e", 1.10F, Facing.AWAY, 4, new int[]{790, 1680, 2670}, -1),
     /** 奴仆：抓肩直刺 */
     THRALL_1(8, true, "t1", 1.00F, Facing.TOWARD, -1, new int[]{900}, 2200),
@@ -95,6 +95,11 @@ public enum MercyVariant {
     /** 收尾时人真的换到了目标身后（玄骸的几套都回到原站位，整身动作只是模型在动） */
     public boolean relocates() {
         return this == THRALL_4 || this == THRALL_5;
+    }
+
+    /** 跳到目标上方、最后落到它正面（离站位最远的那一侧），头顶和正面都得空着 */
+    public boolean vaultsOver() {
+        return this == LICH_E;
     }
 
     /** 单刀（卡没齐）用哪一套的动作：绕背、踏背都来不及演，走同朝向的基础套路 */

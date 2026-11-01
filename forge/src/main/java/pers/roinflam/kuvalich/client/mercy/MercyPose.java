@@ -65,8 +65,8 @@ public final class MercyPose {
             R_LEG = 13, L_LEG = 14, NOD = 15, TILT = 16, R_PULL = 17, N = 18;
     // 第一人称一行：拳头位置（视角空间：x 右、y 上、z 朝前，格）、刃尖额外下俯、绕前臂拧
     private static final int FX = 0, FY = 1, FZ = 2, FPITCH = 3, FROLL = 4, FN = 5;
-    // 整身一行：绕、距、高、转、翻、倾
-    private static final int B_ANG = 0, B_DIST = 1, B_UP = 2, B_YAW = 3, B_FLIP = 4, B_ROLL = 5, BN = 6;
+    // 整身一行：绕、距、高、转、翻、倾、藏（大于 0.5 时整个人不画）
+    private static final int B_ANG = 0, B_DIST = 1, B_UP = 2, B_YAW = 3, B_FLIP = 4, B_ROLL = 5, B_HIDE = 6, BN = 7;
     /** 整身偏移在开头和结尾怎么和真实位置接上：这么多毫秒内渐变 */
     private static final int BODY_BLEND_MS = 200;
 
@@ -107,6 +107,9 @@ public final class MercyPose {
         /** 每一刀顿挫的轻重：出结果的那一刀重 */
         private final float[] weight;
         private final Anchors anchors;
+        /** 这一段时间里改用另一套抓握点和刀口（踏背下刺往脚下扎的那一刀）；没有为 null */
+        private Anchors alt;
+        private int altFrom, altTo;
         /** 判错那一刀被顶住、手越抖越厉害的时段；没有为 −1 */
         private final int strainFrom, strainTo;
         /** 过了这一刻不再覆盖（交还后让原版的走路摆臂接手） */
@@ -124,6 +127,10 @@ public final class MercyPose {
             this.strainFrom = strainFrom;
             this.strainTo = strainTo;
             this.endT = Math.max(keys[keys.length - 1].t, fpRight[fpRight.length - 1].t);
+        }
+
+        private Anchors anchorsAt(long t) {
+            return alt != null && t >= altFrom && t < altTo ? alt : anchors;
         }
     }
 
@@ -250,6 +257,11 @@ public final class MercyPose {
             v[B_ROLL] = deg;
             return this;
         }
+
+        Move hide(boolean hidden) {
+            v[B_HIDE] = hidden ? 1.0F : 0.0F;
+            return this;
+        }
     }
 
     private static Move m() {
@@ -258,7 +270,7 @@ public final class MercyPose {
 
     /** 站在站位上 */
     private static Move still() {
-        return m().ang(0).dist(0).up(0).yaw(0).flip(0).roll(0);
+        return m().ang(0).dist(0).up(0).yaw(0).flip(0).roll(0).hide(false);
     }
 
     private static Key k(int t, int mode, Move move) {
@@ -322,7 +334,7 @@ public final class MercyPose {
     private static final Anchors ANCHOR_A = new Anchors(4, -2, -10, 0, 1, -13);
     private static final Anchors ANCHOR_B = new Anchors(2, -5, -11, 0, 4, -12);
     private static final Anchors ANCHOR_C = new Anchors(1, -1, -9, 0, -3, -9);
-    /** 踩在背上，刀往脚下的后颈扎 */
+    /** 踏背下刺蹲在背上那一段：刀往脚下的后颈扎，左手揪住肩甲 */
     private static final Anchors ANCHOR_E = new Anchors(3, 8, -9, 0, 22, -9);
 
     /** 蹲着落地、一只手撑开（翻滚和空翻的收势） */
@@ -491,36 +503,39 @@ public final class MercyPose {
         return table;
     }
 
-    /** 一刀往脚下扎：蓄力把刀举过头，出刀整个人压下去 */
-    private static void downStab(List<Key> table, int s, float twist, float rollDeg) {
-        table.add(k(s - 115, SINE, p().tw(-16).ln(6).sq(0.7F).sh(-0.5F).r(172, -8, 0).aim(0).pull(1).hd(-8, 0)));
-        table.add(k(s, OUT, p().tw(twist).ln(36).sq(1).sh(1.5F).r(96, 4, 0).aim(1).pull(-1.5F).hd(14, 0)));
-        table.add(k(s + 80, SINE, p().tw(twist + 2).ln(39).hd(16, 0)));
-        table.add(k(s + 300, SINE, p().tw(twist + 4).r(NA, NA, rollDeg).hd(14, 3)));
-        table.add(k(s + 460, SINE, p().r(NA, NA, rollDeg * 0.8F)));
-    }
-
-    /** 踏背下刺：跳上后背踩住它，左手揪住肩甲，刀一下一下往后颈扎，最后两手合握扎到底，蹬着它的背往后空翻 */
+    /**
+     * 踏背下刺：前一刀和背后锁颈一样，从背后扣住它捅进后腰；拔刀顺势把刀举过头一蹬，跳上它弯下去的后背蹲住，左手揪住肩甲，
+     * 往脚下的后颈扎第二刀；拔出来整个人化作一道红光（这一段不画人），从它头顶闪到正面，现身就是蓄满的一刀，捅进胸口，
+     * 两脚蹬着它往后空翻
+     */
     private static List<Key> lichE() {
-        List<Key> table = new ArrayList<>(List.of(
-                k(0, SINE, start()),
-                k(130, SINE, gather()),
-                k(310, BACK, p().tw(-6).ln(16).sq(0.3F).sh(1.5F).r(30, -30, 0).l(118, 15, 0).grip(1).legs(-14, 16)
-                        .hd(2, 0)),
-                // 压低、借力
-                k(400, SINE, p().ln(22).sq(0.85F).sh(0.5F).legs(-18, 22)),
-                k(500, OUT, p().tw(0).ln(-4).sq(0.1F).sh(0).r(125, -20, 0).l(150, 0, 0).grip(0).legs(-30, 42).hd(-8, 0)),
-                // 落在背上，一腿前一腿后蹲住
-                k(640, OUT, p().tw(-4).ln(30).sq(1).sh(1).r(60, -30, 0).l(92, 10, 0).grip(1).legs(-26, 36).hd(10, 0))));
-        downStab(table, S1, 12, 40);
-        table.add(k(S1 + 620, IN, p().tw(-12).ln(14).sq(0.8F).sh(0.5F).r(120, -14, -10).aim(0).pull(1).hd(0, 0)));
-        downStab(table, S2, 16, -40);
-        table.add(k(S2 + 620, IN, p().tw(-16).ln(10).sq(0.8F).sh(0.2F).r(140, -10, 0).aim(0).pull(1).hd(-4, 0)));
-        table.add(k(S3 - 115, SINE, p().tw(-8).ln(2).sq(0.6F).sh(-0.5F).r(176, -4, 0).l(172, -4, 0).grip(0).pull(1)
-                .hd(-12, 0), T_WIND3));
-        table.add(k(S3, OUT, p().tw(8).ln(42).sq(1).sh(2).r(100, 2, 0).aim(1).pull(-2).l(96, 2, 0).grip(1).hd(16, 0),
-                T_STAB3));
-        table.add(k(S3 + 90, SINE, p().ln(45).hd(18, 0), T_DRIVE3));
+        List<Key> table = lichB();
+        table.removeIf(key -> key.t >= S1 + 500);
+        table.addAll(List.of(
+                // 拔刀，顺势把刀举过头，往下一蹲蓄力
+                k(S1 + 560, IN, p().tw(-10).ln(24).sq(0.9F).sh(0.2F).r(150, -14, 0).aim(0).pull(1).l(60, 10, 0).grip(0)
+                        .reach(0).legs(-16, 20).hd(-6, 0)),
+                // 蹬地起跳：腿蹬直，刀举在头顶
+                k(S1 + 650, OUT, p().tw(-4).ln(-6).sq(0).sh(0).r(170, -8, 0).l(150, 10, 0).legs(-30, 10).hd(-14, 0)),
+                // 空中收腿
+                k(S1 + 760, SINE, p().tw(-6).ln(14).sq(0.6F).r(172, -8, 0).l(110, 10, 0).legs(40, 60).hd(-6, 0)),
+                // 落在背上蹲住，左手揪住肩甲，刀还举着
+                k(S2 - 60, IN, p().tw(-12).ln(20).sq(1).sh(0.5F).r(172, -8, 0).aim(0).pull(1).l(92, 10, 0).grip(1)
+                        .legs(-26, 36).hd(-8, 0)),
+                // 第二刀往脚下的后颈扎，整个人压下去
+                k(S2, OUT, p().tw(14).ln(38).sq(1).sh(1.5F).r(96, 4, 0).aim(1).pull(-1.5F).hd(14, 0)),
+                k(S2 + 80, SINE, p().tw(16).ln(41).hd(16, 0)),
+                k(S2 + 300, SINE, p().tw(18).r(NA, NA, 40).hd(14, 3)),
+                // 拔出来，松开肩甲
+                k(S2 + 420, IN, p().tw(-6).ln(16).sq(0.8F).sh(0.3F).r(150, -12, 0).aim(0).pull(1).l(70, 10, 0).grip(0)
+                        .hd(-4, 0)),
+                // 在正面现身：已经是蓄满的架势
+                k(MercyTimeline.E_APPEAR_MS, SNAP, p().tw(-30).ln(9).sq(0.25F).sh(-0.4F).r(80, -10, -20).aim(0.6F)
+                        .pull(4.5F).l(60, 10, 0).grip(0).reach(0).legs(-16, 20).hd(0, -2)),
+                k(S3 - 115, SINE, p().tw(-32).ln(8).sq(0.3F).sh(-0.6F).r(80, -10, -24).pull(4.8F), T_WIND3),
+                k(S3, OUT, p().tw(24).ln(22).sq(0.05F).sh(3.6F).r(88, 6, 0).aim(1).pull(-2).reach(3).legs(-24, 26)
+                        .hd(5, 0), T_STAB3),
+                k(S3 + 90, SINE, p().tw(28).ln(25).sh(4).hd(7, 0), T_DRIVE3)));
         table.addAll(kickOff(S3));
         return table;
     }
@@ -697,7 +712,11 @@ public final class MercyPose {
     // ==================== 整身轨道 ====================
 
     /** 踏背时踩在哪：比目标中轴再往它前方（负的「距」）、多高。按它被压弯以后的后背量的 */
-    private static final float BACK_DIST = -1.7F, BACK_UP = 1.55F;
+    /**
+     * 踏背下刺：蹲在它后背上的位置（它弯着腰，后背最高处在身体中心往前约 0.4 格、离地 1.8 格上下）；
+     * 闪到正面后的站距（它低着头，头盔尖往前探出两格多，得站开一大步，出刀时再扑上去）
+     */
+    private static final float E_BACK_DIST = -1.5F, E_BACK_UP = 1.75F, E_FRONT_DIST = 0.95F;
 
     /** 一刀的脚下：蓄力往后坐一点，出刀往前送，拔刀退回来 */
     private static void lunge(List<Key> b, int s, float reach) {
@@ -781,16 +800,27 @@ public final class MercyPose {
 
     private static List<Key> bodyE() {
         List<Key> b = startedBody();
-        b.add(k(360, SINE, m().dist(0.12F)));
-        b.add(k(490, OUT, m().dist(-0.75F).up(1.05F)));
-        b.add(k(640, SINE, m().dist(BACK_DIST).up(BACK_UP)));
-        b.add(k(720, SINE, m().up(BACK_UP - 0.1F)));
-        for (int s : new int[]{S1, S2, S3}) {
-            b.add(k(s - 115, SINE, m().up(BACK_UP + 0.08F)));
-            b.add(k(s, OUT, m().up(BACK_UP - 0.2F)));
-            b.add(k(s + 460, SINE, m().up(BACK_UP - 0.1F)));
-        }
-        hop(b, S3, BACK_DIST, BACK_UP - 0.1F, 0.0F);
+        b.add(k(S1 - 115, SINE, m().dist(0.12F).up(-0.02F)));
+        b.add(k(S1, OUT, m().dist(-0.24F).up(-0.06F)));
+        b.add(k(S1 + 80, SINE, m().dist(-0.28F)));
+        b.add(k(S1 + 460, SINE, m().dist(-0.18F).up(-0.03F)));
+        // 蹲下、蹬地，跳上它的后背
+        b.add(k(S1 + 560, SINE, m().dist(-0.1F).up(-0.12F)));
+        b.add(k(S1 + 650, OUT, m().dist(-0.5F).up(1.0F)));
+        b.add(k(S1 + 760, SINE, m().dist(-1.2F).up(E_BACK_UP + 0.4F)));
+        b.add(k(S2 - 60, IN, m().dist(E_BACK_DIST).up(E_BACK_UP)));
+        b.add(k(S2, OUT, m().up(E_BACK_UP - 0.06F)));
+        b.add(k(S2 + 300, SINE, m().up(E_BACK_UP - 0.02F)));
+        b.add(k(S2 + 420, SINE, m().up(E_BACK_UP + 0.05F)));
+        // 化作红光：人不画，这段时间从后背挪到它正面
+        b.add(k(MercyTimeline.E_BLINK_MS, SNAP, m().hide(true)));
+        b.add(k(MercyTimeline.E_APPEAR_MS - 10, SINE, m().ang(180).dist(E_FRONT_DIST).up(0)));
+        b.add(k(MercyTimeline.E_APPEAR_MS, SNAP, m().hide(false)));
+        // 第三刀扑上去一大步
+        b.add(k(S3 - 115, SINE, m().dist(E_FRONT_DIST + 0.05F).up(-0.02F)));
+        b.add(k(S3, OUT, m().dist(E_FRONT_DIST - 0.4F).up(-0.06F)));
+        b.add(k(S3 + 90, SINE, m().dist(E_FRONT_DIST - 0.45F)));
+        hop(b, S3, E_FRONT_DIST - 0.4F, 0.0F, E_FRONT_DIST - 0.4F + 1.5F);
         return b;
     }
 
@@ -851,11 +881,19 @@ public final class MercyPose {
         };
     }
 
-    /** 判错：被挣开甩回站位外 1.5 格（服务端同时把人推到那里）。人不在站位上时是整个人被甩出去翻一圈 */
+    /**
+     * 判错：被挣开甩回站位外 1.5 格（服务端同时把人推到那里）。人不在站位上时是整个人被甩出去翻一圈：
+     * 踏背下刺在背上被掀下来往后翻；在它正面被一把抡起来，从它头顶甩回站位那一侧（沿着中轴越过它，所以「距」是负的）
+     */
     private static void thrown(List<Key> body, MercyVariant v, int failK, int t0) {
-        if (v == MercyVariant.LICH_E) {
-            body.add(k(t0 + 180, OUT, m().dist(BACK_DIST * 0.4F).up(BACK_UP + 0.9F).flip(-110)));
-            body.add(k(t0 + 460, IN, m().dist(1.5F).up(0).flip(-360)));
+        if (v == MercyVariant.LICH_E && failK == 2) {
+            // 先被掀离它的后背（它马上要站起来，人不能还压在它身上），再往后翻一圈落地
+            body.add(k(t0 + 150, OUT, m().dist(0.3F).up(E_BACK_UP + 0.6F).flip(-150)));
+            body.add(k(t0 + 440, IN, m().dist(1.5F).up(0).flip(-360)));
+        } else if (v == MercyVariant.LICH_E && failK == 3) {
+            float across = -2.0F * v.standDist - 1.5F;
+            body.add(k(t0 + 200, OUT, m().dist(-v.standDist - 0.1F).up(E_BACK_UP + 1.0F).yaw(90).flip(160)));
+            body.add(k(t0 + 480, IN, m().dist(across).up(0).yaw(180).flip(360)));
         } else if (v == MercyVariant.LICH_D && failK == 3) {
             body.add(k(t0 + 200, OUT, m().ang(95).dist(0.6F).up(1.1F).yaw(190).flip(150)));
             body.add(k(t0 + 460, IN, m().ang(0).dist(1.5F).up(0).yaw(360).flip(360)));
@@ -870,7 +908,7 @@ public final class MercyPose {
             case LICH_B -> ANCHOR_B;
             case LICH_C -> ANCHOR_C;
             case LICH_D -> ANCHOR_A;
-            case LICH_E -> ANCHOR_E;
+            case LICH_E -> ANCHOR_B;
             case THRALL_1, THRALL_4 -> ANCHOR_T1;
             case THRALL_2 -> ANCHOR_T2;
             case THRALL_3 -> ANCHOR_T3;
@@ -1004,14 +1042,22 @@ public final class MercyPose {
         }
         Key[] keys = resolve(out);
         Key[][] fp = v.thrall ? thrallFirstPerson(v) : lichFirstPerson(p, stabs);
-        return new Track(keys, resolve(Arrays.asList(fp[0])), resolve(Arrays.asList(fp[1])), resolve(body), stabs, weight,
-                anchorsOf(v), strainFrom, strainTo);
+        Track tr = new Track(keys, resolve(Arrays.asList(fp[0])), resolve(Arrays.asList(fp[1])), resolve(body), stabs,
+                weight, anchorsOf(v), strainFrom, strainTo);
+        if (v == MercyVariant.LICH_E) {
+            tr.alt = ANCHOR_E;
+            tr.altFrom = S1 + 560;
+            tr.altTo = MercyTimeline.E_BLINK_MS;
+        }
+        return tr;
     }
 
     /** 处决者此刻的整身位置（脚底，世界坐标）、模型朝向和翻转；{@code blend} 是这些偏移此刻生效几成 */
     static final class Body {
         double x, y, z;
         float yaw, flip, roll, blend;
+        /** 这一刻整个人不画（化作红光闪过去的那一下） */
+        boolean hidden;
     }
 
     private static final float[] MOVE = new float[BN];
@@ -1038,6 +1084,7 @@ public final class MercyPose {
         out.flip = Mth.wrapDegrees(MOVE[B_FLIP]);
         out.roll = Mth.wrapDegrees(MOVE[B_ROLL] * e.side);
         out.blend = Mth.clamp(Math.min(t, end - t) / (float) BODY_BLEND_MS, 0.0F, 1.0F);
+        out.hidden = MOVE[B_HIDE] > 0.5F;
         return true;
     }
 
@@ -1248,7 +1295,7 @@ public final class MercyPose {
         model.leftArm.z = -sin * 5.0F + dz;
         model.leftArm.x = cos * 5.0F;
 
-        Anchors a = tr.anchors;
+        Anchors a = tr.anchorsAt(t);
         float reach = v[REACH];
         poseArm(model.rightArm, true, v[R_RAISE], v[R_YAW], v[R_ROLL], v[R_AIM], a.sx, a.sy, a.sz - reach, bodyY);
         poseArm(model.leftArm, false, v[L_RAISE], v[L_YAW], v[L_ROLL], v[L_GRIP], a.gx, a.gy, a.gz - reach, bodyY);

@@ -886,7 +886,7 @@ public class LichArchiveScreen extends Screen {
 
         // 当前安魂卡
         text(g, f, I18n.get("kuvalich.archive.cards"), x0, h * 0.085F, tsS, FxPalette.ASH, a, 0.0F, -1);
-        float cardY = h * 0.140F;
+        float cardY = Math.max(h * 0.140F, h * 0.085F + 9.0F * tsS + sigil * 0.5F + Math.max(2.0F, sigil * 0.3F));
         if (data == null) {
             text(g, f, unknown(), x0, cardY - 3.5F * tsS, tsS, FxPalette.ASH, a, 0.0F, -1);
         } else if (allEmpty(data.cards())) {
@@ -896,15 +896,17 @@ public class LichArchiveScreen extends Screen {
             drawCards(g, mx, my, col, cardY, w, h, data.cards(), sigil, a, lw);
         }
 
-        // 处决记录
-        text(g, f, I18n.get("kuvalich.archive.attempts"), x0, h * 0.215F, tsS, FxPalette.ASH, a, 0.0F, -1);
+        // 处决记录：第一行从标题底下排起，符号放大（小窗口）时跟着往下让，不压标题
+        float attemptsY = h * 0.215F;
+        text(g, f, I18n.get("kuvalich.archive.attempts"), x0, attemptsY, tsS, FxPalette.ASH, a, 0.0F, -1);
+        float rowY0 = attemptsY + 9.0F * tsS + sigil * 0.5F + Math.max(2.0F, sigil * 0.3F);
         if (data == null) {
-            text(g, f, unknown(), x0, h * 0.255F - 3.5F * tsS, tsS, FxPalette.ASH, a, 0.0F, -1);
+            text(g, f, unknown(), x0, rowY0 - 3.5F * tsS, tsS, FxPalette.ASH, a, 0.0F, -1);
         } else if (data.attempts().length == 0) {
-            text(g, f, I18n.get("kuvalich.archive.attempts.none"), x0, h * 0.255F - 3.5F * tsS, tsS,
+            text(g, f, I18n.get("kuvalich.archive.attempts.none"), x0, rowY0 - 3.5F * tsS, tsS,
                     FxPalette.TEXT_MID, 0.7F * a, 0.0F, -1);
         } else {
-            drawAttempts(g, f, mx, my, x0, x1, col, h, data.attempts(), sigil, a, tsS, lw);
+            drawAttempts(g, f, mx, my, x0, x1, col, h, rowY0, data.attempts(), sigil, a, tsS, lw);
         }
 
         // 已揭示的密语
@@ -995,7 +997,7 @@ public class LichArchiveScreen extends Screen {
     }
 
     private void drawAttempts(GuiGraphics g, Font f, int mx, int my, float x0, float x1, float[] col, int h,
-                              int[] attempts, float sigil, float a, float tsS, float lw) {
+                              float y0, int[] attempts, float sigil, float a, float tsS, float lw) {
         int rows = Math.min(RequiemCard.MAX_ATTEMPTS, attempts.length);
         float rowH = h * 0.067F;
         float span = x1 - x0;
@@ -1004,7 +1006,7 @@ public class LichArchiveScreen extends Screen {
         float numX = col[0] - RequiemSigils.width(sigil) * 0.5F - Math.max(2.0F, sigil * 0.2F);
         for (int i = 0; i < rows; i++) {
             int packed = attempts[i];
-            float cy = h * 0.255F + i * rowH;
+            float cy = y0 + i * rowH;
             text(g, f, Integer.toString(i + 1), numX, cy - 3.5F * tsS, tsS, FxPalette.ASH, 0.7F * a, 0.0F, 1);
             if (i > 0) {
                 GuiShapes.begin(g);

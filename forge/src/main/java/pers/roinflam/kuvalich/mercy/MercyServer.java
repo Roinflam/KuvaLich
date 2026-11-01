@@ -116,6 +116,9 @@ public final class MercyServer {
     static final int THRALL_LAND_TICK = 33;
     /** 单刀：蹬开它往后空翻，身体跟着往外挪（客户端的落点和这里推出去的距离一样） */
     static final int SINGLE_HOP_TICK = 25;
+    /** 踏背下刺：蹲上后背的高度、闪到正面后比原站距多站开多少（它弯着腰，头往前探出一大截） */
+    static final double VAULT_BACK_UP = 1.75D;
+    static final double VAULT_FRONT_GAP = 0.95D;
     static final int THRALL_UNLOCK_TICK = 44;
     /** 倒地后多久玄骸说一句 */
     static final int DOWNED_COMM_DELAY = 12;
@@ -586,12 +589,29 @@ public final class MercyServer {
         return choices.get(ThreadLocalRandom.current().nextInt(choices.size()));
     }
 
-    /** 这一套在这里摆得开：绕背要有一边走得通，落到身后的要身后站得下。基础套路哪里都能演，所以总有得选 */
+    /**
+     * 这一套在这里摆得开：绕背要有一边走得通，落到身后的要身后站得下，翻到正面的要头顶蹲得下人、正面和蹬开后的落点站得下。
+     * 基础套路哪里都能演，所以总有得选
+     */
     private static boolean fits(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
         if (v.orbits() && orbitSide(level, player, pl, f, v) == 0) {
             return false;
         }
+        if (v.vaultsOver() && !vaultClear(level, player, pl, f, v)) {
+            return false;
+        }
         return !v.relocates() || standable(level, player, behind(level, player, pl, f, v));
+    }
+
+    /** 踏背下刺：蹲在它后背上（离地约 1.75 格）、闪到它正面、再蹬开往外落 1.5 格，三处都要空着 */
+    private static boolean vaultClear(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
+        Vec3 onBack = pl.add(0.0D, VAULT_BACK_UP, 0.0D);
+        if (!level.noCollision(player, player.getDimensions(Pose.CROUCHING).makeBoundingBox(onBack))) {
+            return false;
+        }
+        double front = v.standDist + VAULT_FRONT_GAP;
+        return standable(level, player, snapToGround(level, player, pl.subtract(f.scale(front))))
+                && standable(level, player, snapToGround(level, player, pl.subtract(f.scale(front + PUSH_DISTANCE))));
     }
 
     /** 绕背走哪边：1 = 目标的左手边（{@code Y × F}），-1 = 右手边，0 = 两边都有方块挡着 */

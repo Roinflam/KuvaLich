@@ -16,6 +16,7 @@ import pers.roinflam.kuvalich.comm.KuvaComm;
 import pers.roinflam.kuvalich.comm.LichLook;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
+import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -35,7 +36,8 @@ import java.util.UUID;
  *       在 8 秒内有过任何通讯就丢掉；没收类每 30 秒至多一句，其余没收只有动作栏。</li>
  *   <li><b>聊天回显</b>：服务端配置 {@code lichCommChatEcho}，「重要」只给诞生、判错、遗言、被它打死、
  *       你死了这几类带上「同时进聊天栏」的标志，「全部」每句都带。</li>
- *   <li><b>名字和外观</b>：台词里 {@code %1$s} 是玄骸的名字（首字母大写）、{@code %2$s} 是主人的名字，两个都传，
+ *   <li><b>名字和外观</b>：台词里 {@code %1$s} 是玄骸的名字（首字母大写）、{@code %2$s} 是主人的名字、
+ *       {@code %3$s} 是它手里那把赤毒武器（诞生时 Lotus 那句靠它告诉玩家打倒它能拿到什么），三个都传，
  *       用不到的客户端会丢掉。给了说话的实体就用它的名字和外观（遗言时卡上的名字已经清掉了，
  *       演示用的玄骸也没有主人），没给就用收话人自己那只：在场的实体，或者卡上记的。</li>
  * </ul>
@@ -186,7 +188,8 @@ public final class LichComms {
             return false;
         }
 
-        Component text = Component.translatable(line.key(index), cut(speaker.lichName()), cut(speaker.ownerName()));
+        Component text = Component.translatable(line.key(index), cut(speaker.lichName()), cut(speaker.ownerName()),
+                weaponName(speaker.look()));
         int flags = flagsFor(line);
         if (line.lotus) {
             KuvaComm.say(to, CommSpeaker.LOTUS, null, text, flags, null, 0);
@@ -286,6 +289,13 @@ public final class LichComms {
     private static KuvaComm.LichNameAndLook resolveForTransport(ServerPlayer to, @Nullable LivingEntity lich) {
         Speaker s = resolve(to, lich);
         return s == null ? null : new KuvaComm.LichNameAndLook(Component.literal(s.lichName()), s.look());
+    }
+
+    /** 台词里的 {@code %3$s}：这只玄骸拿的赤毒武器，传物品名的翻译键，客户端按自己的语言显示；下标无效时空着 */
+    private static Component weaponName(LichLook look) {
+        int i = look.weapon();
+        return i >= 0 && i < KuvaLichItems.KUVA_WEAPONS.size() ? KuvaLichItems.KUVA_WEAPONS.get(i).getDescription()
+                : Component.empty();
     }
 
     private static String cut(String s) {

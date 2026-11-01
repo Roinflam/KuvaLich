@@ -57,8 +57,6 @@ public final class MercyAnimSelector {
     private static final String LICH_BREAKFREE_GRAB = "mercy.lich.breakfree.grab";
     /** C 套路被顶起来以后挣脱 */
     private static final String LICH_C_BREAKFREE_RAISED = "mercy.lich.c.breakfree0";
-    /** E 套路被踩住以后挣脱 */
-    private static final String LICH_E_BREAKFREE_PINNED = "mercy.lich.e.breakfree0";
     /** 倒地 / 处决期间替换说话动画的空片段：说话控制器注册在后面，会盖住处决姿势的头和身子 */
     public static final String LICH_MUTE = "mercy.lich.mute";
 
@@ -85,13 +83,11 @@ public final class MercyAnimSelector {
     private static final RawAnimation L_DOWNED = RawAnimation.begin().thenLoop(MercyAnimNames.LICH_DOWNED);
     private static final RawAnimation L_GRAB = hold(MercyAnimNames.LICH_GRAB);
     private static final RawAnimation L_C_GRAB = hold(MercyAnimNames.LICH_C_GRAB);
-    private static final RawAnimation L_E_GRAB = hold(MercyAnimNames.LICH_E_GRAB);
     private static final RawAnimation L_KNEEL = RawAnimation.begin().thenLoop(MercyAnimNames.LICH_KNEEL);
     private static final RawAnimation L_SLUMP = hold(MercyAnimNames.LICH_SLUMP);
     private static final RawAnimation L_BREAKFREE = hold(MercyAnimNames.LICH_BREAKFREE);
     private static final RawAnimation L_BREAKFREE_GRAB = hold(LICH_BREAKFREE_GRAB);
     private static final RawAnimation L_BREAKFREE_C0 = hold(LICH_C_BREAKFREE_RAISED);
-    private static final RawAnimation L_BREAKFREE_E0 = hold(LICH_E_BREAKFREE_PINNED);
 
     private static final MercyVariant[] LICH_VARIANTS = {MercyVariant.LICH_A, MercyVariant.LICH_B, MercyVariant.LICH_C,
             MercyVariant.LICH_D, MercyVariant.LICH_E};
@@ -140,13 +136,11 @@ public final class MercyAnimSelector {
 
         SHOW.add(L_GRAB);
         SHOW.add(L_C_GRAB);
-        SHOW.add(L_E_GRAB);
         SHOW.add(L_KNEEL);
         SHOW.add(L_SLUMP);
         SHOW.add(L_BREAKFREE);
         SHOW.add(L_BREAKFREE_GRAB);
         SHOW.add(L_BREAKFREE_C0);
-        SHOW.add(L_BREAKFREE_E0);
         for (int v = 0; v < LICH_N; v++) {
             Collections.addAll(SHOW, L_HIT[v]);
             Collections.addAll(SHOW, L_BREAKFREE_AT[v]);
@@ -157,11 +151,9 @@ public final class MercyAnimSelector {
         BREAKFREE_FROM.put(L_DOWNED, L_BREAKFREE);
         BREAKFREE_FROM.put(L_GRAB, L_BREAKFREE_GRAB);
         BREAKFREE_FROM.put(L_C_GRAB, L_BREAKFREE_C0);
-        BREAKFREE_FROM.put(L_E_GRAB, L_BREAKFREE_E0);
         BREAKFREE_FROM.put(L_BREAKFREE, L_BREAKFREE);
         BREAKFREE_FROM.put(L_BREAKFREE_GRAB, L_BREAKFREE_GRAB);
         BREAKFREE_FROM.put(L_BREAKFREE_C0, L_BREAKFREE_C0);
-        BREAKFREE_FROM.put(L_BREAKFREE_E0, L_BREAKFREE_E0);
         for (int v = 0; v < LICH_N; v++) {
             for (int k = 0; k < 3; k++) {
                 BREAKFREE_FROM.put(L_HIT[v][k], L_BREAKFREE_AT[v][k]);
@@ -261,7 +253,7 @@ public final class MercyAnimSelector {
 
     /** 起手被抓住的片段：贴身上挑、踏背各有一段，别的共用 */
     private static RawAnimation grab(int v) {
-        return v == 2 ? L_C_GRAB : v == 4 ? L_E_GRAB : L_GRAB;
+        return v == 2 ? L_C_GRAB : L_GRAB;
     }
 
     /** 倒地：刚倒下时先播倒下去那一下（播完自己接倒地循环），倒稳了只播循环 */

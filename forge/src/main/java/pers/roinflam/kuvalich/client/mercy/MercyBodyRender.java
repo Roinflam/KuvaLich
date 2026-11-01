@@ -41,6 +41,11 @@ public final class MercyBodyRender {
         if (e == null || !MercyPose.body(e, e.elapsed(), BODY)) {
             return;
         }
+        // 化作红光闪过去的那一下：整个人连同手里的刀都不画（影子在站位上，本来就不跟着动）
+        if (BODY.hidden) {
+            event.setCanceled(true);
+            return;
+        }
         float pt = event.getPartialTick();
         float k = BODY.blend;
         PoseStack ps = event.getPoseStack();

@@ -114,6 +114,11 @@ public final class LichPuppet {
     }
 
     /** 这个实体是不是肖像用的假实体（名牌、世界特效这类只该给世界里实体的东西用它跳过） */
+    /** 正在画通讯窗的半身像（不是档案、指南里的全身像） */
+    public static boolean drawingBust() {
+        return bustLight;
+    }
+
     public static boolean isPuppet(@Nullable Entity entity) {
         return entity instanceof Puppet;
     }

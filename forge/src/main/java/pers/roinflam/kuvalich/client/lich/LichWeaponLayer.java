@@ -29,7 +29,7 @@ import software.bernie.geckolib.util.RenderUtils;
  * 前臂一动刀就歪出去。这里只平移到前臂的枢轴（肘），再挪到手心、摆好刀的朝向。</p>
  *
  * <p>世界里的玄骸握住刀柄、刀身从拳头往前伸，手臂怎么挥刀就怎么走。肖像和档案（实体 id 为负）正对镜头，
- * 刀往前伸只看得到一个点，所以改成贴着身侧竖着，刀头在肩膀外侧。</p>
+ * 刀往前伸只看得到一个点：档案、指南的全身像垂在身侧、刀尖朝下往外撇；通讯窗的半身像只拍到胸口，刀头从肩膀外侧露出来。</p>
  *
  * <p>玄骸正在淡出、透明度不到一半时不画（物品渲染没法跟着半透明，留着一把实心的刀悬在半空更怪）。</p>
  */
@@ -47,9 +47,19 @@ public class LichWeaponLayer extends BlockAndItemGeoLayer<KuvaMasterEntity> {
     static float rotX = -68.0F;
     static float rotY = 0.0F;
     static float rotZ = 0.0F;
-    /** 肖像和档案里的朝向 */
-    private static final float PORTRAIT_ROT_X = -10.0F;
-    private static final float PORTRAIT_ROT_Z = -12.0F;
+    /**
+     * 档案、指南里全身像的挂点和朝向（含义同上）：正对镜头站着，刀往前伸只看得到一个点，所以垂在身侧，
+     * 刀尖朝下往外撇开，整把刀露在腿边，一眼认得出是哪一把
+     */
+    static float portraitOffsetX = 0.04F;
+    static float portraitOffsetY = -0.62F;
+    static float portraitOffsetZ = 0.0F;
+    static float portraitRotX = -155.0F;
+    static float portraitRotY = 0.0F;
+    static float portraitRotZ = -35.0F;
+    /** 通讯窗半身像只拍到胸口，刀得从肩膀外侧斜着露出来 */
+    private static final float BUST_ROT_X = -10.0F;
+    private static final float BUST_ROT_Z = -12.0F;
     /** 玄骸比玩家高一大截，刀跟着放大 */
     static float scale = 1.2F;
 
@@ -88,11 +98,22 @@ public class LichWeaponLayer extends BlockAndItemGeoLayer<KuvaMasterEntity> {
         }
         poseStack.pushPose();
         RenderUtils.translateToPivotPoint(poseStack, bone);
-        poseStack.translate(offsetX, offsetY, offsetZ);
         boolean portrait = animatable.getId() < 0;
-        poseStack.mulPose(Axis.XP.rotationDegrees(portrait ? PORTRAIT_ROT_X : rotX));
-        poseStack.mulPose(Axis.YP.rotationDegrees(portrait ? 0.0F : rotY));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(portrait ? PORTRAIT_ROT_Z : rotZ));
+        if (portrait && LichPuppet.drawingBust()) {
+            poseStack.translate(offsetX, offsetY, offsetZ);
+            poseStack.mulPose(Axis.XP.rotationDegrees(BUST_ROT_X));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(BUST_ROT_Z));
+        } else if (portrait) {
+            poseStack.translate(portraitOffsetX, portraitOffsetY, portraitOffsetZ);
+            poseStack.mulPose(Axis.XP.rotationDegrees(portraitRotX));
+            poseStack.mulPose(Axis.YP.rotationDegrees(portraitRotY));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(portraitRotZ));
+        } else {
+            poseStack.translate(offsetX, offsetY, offsetZ);
+            poseStack.mulPose(Axis.XP.rotationDegrees(rotX));
+            poseStack.mulPose(Axis.YP.rotationDegrees(rotY));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(rotZ));
+        }
         poseStack.scale(scale, scale, scale);
         Minecraft.getInstance().getItemRenderer().renderStatic(animatable, stack,
                 ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, false, poseStack, bufferSource, animatable.level(),
@@ -120,19 +141,31 @@ public class LichWeaponLayer extends BlockAndItemGeoLayer<KuvaMasterEntity> {
         return s;
     }
 
-    /** 调试用：现场改挂点（只在开发环境的命令里调） */
-    static void tune(float ox, float oy, float oz, float rx, float ry, float rz, float s) {
-        offsetX = ox;
-        offsetY = oy;
-        offsetZ = oz;
-        rotX = rx;
-        rotY = ry;
-        rotZ = rz;
+    /** 调试用：现场改挂点（只在开发环境的命令里调）；portrait 为 true 时改肖像和档案那一套，缩放两边共用 */
+    static void tune(boolean portrait, float ox, float oy, float oz, float rx, float ry, float rz, float s) {
+        if (portrait) {
+            portraitOffsetX = ox;
+            portraitOffsetY = oy;
+            portraitOffsetZ = oz;
+            portraitRotX = rx;
+            portraitRotY = ry;
+            portraitRotZ = rz;
+        } else {
+            offsetX = ox;
+            offsetY = oy;
+            offsetZ = oz;
+            rotX = rx;
+            rotY = ry;
+            rotZ = rz;
+        }
         scale = s;
     }
 
-    static String describe() {
-        return String.format(java.util.Locale.ROOT, "offset %.3f %.3f %.3f rot %.1f %.1f %.1f scale %.2f",
+    static String describe(boolean portrait) {
+        return portrait
+                ? String.format(java.util.Locale.ROOT, "portrait offset %.3f %.3f %.3f rot %.1f %.1f %.1f scale %.2f",
+                portraitOffsetX, portraitOffsetY, portraitOffsetZ, portraitRotX, portraitRotY, portraitRotZ, scale)
+                : String.format(java.util.Locale.ROOT, "offset %.3f %.3f %.3f rot %.1f %.1f %.1f scale %.2f",
                 offsetX, offsetY, offsetZ, rotX, rotY, rotZ, scale);
     }
 }

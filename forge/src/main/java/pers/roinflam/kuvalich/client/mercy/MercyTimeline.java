@@ -78,6 +78,10 @@ public final class MercyTimeline {
     /** 单刀：交还 */
     public static final int SINGLE_END_MS = 2500;
 
+    /** 踏背下刺：在它背上拔刀后化作一道红光（人不画），在它正面现身 */
+    public static final int E_BLINK_MS = 2150;
+    public static final int E_APPEAR_MS = 2470;
+
     /** 失败（从判错那一格填满的时刻 g 算）：挣脱的隆隆声 */
     public static final int FAIL_TAUNT = 300;
     /** 失败：玄骸挣脱、处决者被推开 */
@@ -313,6 +317,10 @@ public final class MercyTimeline {
         }
 
         if (oc == Outcome.SUCCESS) {
+            if (p.variant() == MercyVariant.LICH_E && (oc == Outcome.SUCCESS || k == 3)) {
+                tl.at(E_BLINK_MS, MercyTimeline::blinkOut);
+                tl.at(E_APPEAR_MS, MercyTimeline::blinkIn);
+            }
             tl.at(VERDICT_MS, x -> {
                 ui(x, KuvaLichSounds.MERCY_VERDICT.get(), 1.0F);
                 if (x.cinematic) {
@@ -496,6 +504,83 @@ public final class MercyTimeline {
             KuvaParticles.spark(hand.x, hand.y, hand.z).vel(v.x, v.y, v.z).color(FxPalette.KUVA_PALE)
                     .color2(FxPalette.KUVA).size(0.07F, 0.02F).life(6 + RANDOM.nextInt(4))
                     .orient(KuvaParticles.Orient.VELOCITY).gravity(0.02F).drag(0.9F).tier(FxTier.S).spawn();
+        }
+    }
+
+    private static final MercyPose.Body BODY_AT = new MercyPose.Body();
+
+    /** 处决者在某一刻的胸口（整身轨道上的位置；轨道走完了就是真实站位） */
+    private static Vec3 bodyChest(MercyClient.Exec e, int t) {
+        Vec3 feet = MercyPose.body(e, t, BODY_AT) ? new Vec3(BODY_AT.x, BODY_AT.y, BODY_AT.z) : e.pe;
+        return feet.add(0.0D, 1.0D, 0.0D);
+    }
+
+    /**
+     * 踏背下刺在它背上化作红光：人散成一团火星和红雾，一道光从它头顶划到正面，划过去的时候在它身前横着劈出一道刀光
+     * （和交还前那一刀的光是同一种颜色，看着是一个人闪过去顺手砍了一下）
+     */
+    private static void blinkOut(MercyClient.Exec e) {
+        Entity t = e.target();
+        if (t == null) {
+            return;
+        }
+        Vec3 from = bodyChest(e, E_BLINK_MS);
+        Vec3 to = bodyChest(e, E_APPEAR_MS);
+        world(KuvaLichSounds.WEAPON_DASH.get(), from, 0.9F, KuvaSoundPlayer.jitter(1.1F, 0.03F));
+        KuvaParticles.flare(from.x, from.y, from.z).size(1.3F, 1.3F).color(FxPalette.KUVA_PALE).alpha(0.9F).life(3)
+                .tier(FxTier.S).spawn();
+        int n = count(10);
+        for (int i = 0; i < n; i++) {
+            Vec3 v = new Vec3(rand(-1.0D, 1.0D), rand(-0.6D, 1.0D), rand(-1.0D, 1.0D)).normalize().scale(rand(0.12D, 0.26D));
+            KuvaParticles.spark(from.x, from.y, from.z).vel(v.x, v.y, v.z).color(FxPalette.KUVA_PALE)
+                    .color2(FxPalette.KUVA).size(0.09F, 0.02F).life(6 + RANDOM.nextInt(5))
+                    .orient(KuvaParticles.Orient.VELOCITY).drag(0.86F).tier(FxTier.S).spawn();
+        }
+        int puffs = count(5);
+        for (int i = 0; i < puffs; i++) {
+            double y = from.y - 0.8D + 1.5D * i / Math.max(1, puffs - 1);
+            KuvaParticles.mist(from.x, y, from.z).vel(rand(-0.02D, 0.02D), rand(0.0D, 0.02D), rand(-0.02D, 0.02D))
+                    .color(FxPalette.KUVA_MIST).alpha(0.55F).size(0.45F, 0.8F).life(10 + RANDOM.nextInt(7))
+                    .tier(FxTier.S).spawn();
+        }
+        // 光路：从后背越过它的头顶，落到正面
+        Vec3 top = new Vec3((from.x + to.x) * 0.5D, t.getY() + 3.4D, (from.z + to.z) * 0.5D);
+        int steps = count(18);
+        for (int i = 0; i <= steps; i++) {
+            double u = i / (double) Math.max(1, steps);
+            double a = (1.0D - u) * (1.0D - u), b = 2.0D * u * (1.0D - u), c = u * u;
+            Vec3 at = from.scale(a).add(top.scale(b)).add(to.scale(c));
+            Vec3 tan = top.subtract(from).scale(2.0D * (1.0D - u)).add(to.subtract(top).scale(2.0D * u)).normalize();
+            KuvaParticles.spark(at.x, at.y, at.z).vel(tan.x * 0.12D, tan.y * 0.12D, tan.z * 0.12D)
+                    .color(FxPalette.KUVA_PALE).color2(FxPalette.KUVA).size(0.16F, 0.04F).life(4 + RANDOM.nextInt(3))
+                    .orient(KuvaParticles.Orient.VELOCITY).drag(0.7F).tier(FxTier.S).spawn();
+        }
+        // 身前横着劈一道：从它左肩斜着划到右腰
+        Vec3 c0 = chest(t);
+        Vec3 cut = e.s.scale(0.9D).add(0.0D, -0.55D, 0.0D);
+        int marks = count(12);
+        for (int i = 0; i < marks; i++) {
+            double u = -1.0D + 2.0D * i / Math.max(1, marks - 1);
+            Vec3 at = c0.add(cut.scale(u)).add(e.f.scale(-0.35D));
+            KuvaParticles.spark(at.x, at.y, at.z).vel(cut.x * 0.06D, cut.y * 0.06D, cut.z * 0.06D)
+                    .color(FxPalette.KUVA_PALE).color2(FxPalette.KUVA).size(0.14F, 0.03F).life(5 + RANDOM.nextInt(3))
+                    .orient(KuvaParticles.Orient.VELOCITY).drag(0.8F).tier(FxTier.S).spawn();
+        }
+    }
+
+    /** 在它正面现身：火星从四周收拢，一下闪光 */
+    private static void blinkIn(MercyClient.Exec e) {
+        Vec3 at = bodyChest(e, E_APPEAR_MS);
+        world(KuvaLichSounds.WEAPON_DASH_HIT.get(), at, 0.55F, KuvaSoundPlayer.jitter(1.2F, 0.03F));
+        KuvaParticles.flare(at.x, at.y, at.z).size(1.0F, 1.0F).color(FxPalette.KUVA_PALE).alpha(0.8F).life(2)
+                .tier(FxTier.S).spawn();
+        int n = count(10);
+        for (int i = 0; i < n; i++) {
+            Vec3 off = new Vec3(rand(-1.0D, 1.0D), rand(-0.9D, 0.9D), rand(-1.0D, 1.0D)).normalize().scale(rand(0.6D, 0.9D));
+            Vec3 p = at.add(off);
+            Vec3 v = off.scale(-0.22D);
+            KuvaParticles.spark(p.x, p.y, p.z).vel(v.x, v.y, v.z).color(FxPalette.KUVA_PALE).color2(FxPalette.KUVA)
+                    .size(0.08F, 0.02F).life(4).orient(KuvaParticles.Orient.VELOCITY).tier(FxTier.S).spawn();
         }
     }
 
