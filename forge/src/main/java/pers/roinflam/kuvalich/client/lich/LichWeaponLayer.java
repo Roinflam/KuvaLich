@@ -26,9 +26,10 @@ import software.bernie.geckolib.util.RenderUtils;
  * 世界里的玄骸、通讯肖像、档案里的模型都走这一层，所以肖像「一侧斜着露出手里的武器」不用另做。</p>
  *
  * <p>没用 GeckoLib 自带的 {@code renderForBone}：调到这里时矩阵已经带着骨骼自己的旋转，它又转一遍，
- * 前臂一动刀就歪出去。这里只平移到前臂的枢轴（肘），再按下面几个常量挪到手心、摆好刀的朝向。
- * 常量是在游戏里对着正面、左右侧面摆出来的：握在杆子中段，杆子贴着身侧竖着，刀头在肩膀外侧、往外倾一点、略往前
- * （正面看不会被肩甲整个挡住），下端到膝盖。</p>
+ * 前臂一动刀就歪出去。这里只平移到前臂的枢轴（肘），再挪到手心、摆好刀的朝向。</p>
+ *
+ * <p>世界里的玄骸握住刀柄、刀身从拳头往前伸，手臂怎么挥刀就怎么走。肖像和档案（实体 id 为负）正对镜头，
+ * 刀往前伸只看得到一个点，所以改成贴着身侧竖着，刀头在肩膀外侧。</p>
  *
  * <p>玄骸正在淡出、透明度不到一半时不画（物品渲染没法跟着半透明，留着一把实心的刀悬在半空更怪）。</p>
  */
@@ -39,13 +40,16 @@ public class LichWeaponLayer extends BlockAndItemGeoLayer<KuvaMasterEntity> {
     private static final String HAND_BONE = "RArmF";
 
     /** 从肘部枢轴到手心（格；x 朝玄骸的右手外侧，y 朝上，z 朝前） */
-    static float offsetX = 0.26F;
+    static float offsetX = 0.04F;
     static float offsetY = -0.62F;
-    static float offsetZ = -0.04F;
-    /** 刀的朝向（度，依次绕 X、Y、Z 转），配合第三人称右手的物品变换 */
-    static float rotX = -10.0F;
+    static float offsetZ = 0.0F;
+    /** 刀的朝向（度，依次绕 X、Y、Z 转）：-90 时刀身水平朝前，这里再往下压一点 */
+    static float rotX = -68.0F;
     static float rotY = 0.0F;
-    static float rotZ = -12.0F;
+    static float rotZ = 0.0F;
+    /** 肖像和档案里的朝向 */
+    private static final float PORTRAIT_ROT_X = -10.0F;
+    private static final float PORTRAIT_ROT_Z = -12.0F;
     /** 玄骸比玩家高一大截，刀跟着放大 */
     static float scale = 1.2F;
 
@@ -85,9 +89,10 @@ public class LichWeaponLayer extends BlockAndItemGeoLayer<KuvaMasterEntity> {
         poseStack.pushPose();
         RenderUtils.translateToPivotPoint(poseStack, bone);
         poseStack.translate(offsetX, offsetY, offsetZ);
-        poseStack.mulPose(Axis.XP.rotationDegrees(rotX));
-        poseStack.mulPose(Axis.YP.rotationDegrees(rotY));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(rotZ));
+        boolean portrait = animatable.getId() < 0;
+        poseStack.mulPose(Axis.XP.rotationDegrees(portrait ? PORTRAIT_ROT_X : rotX));
+        poseStack.mulPose(Axis.YP.rotationDegrees(portrait ? 0.0F : rotY));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(portrait ? PORTRAIT_ROT_Z : rotZ));
         poseStack.scale(scale, scale, scale);
         Minecraft.getInstance().getItemRenderer().renderStatic(animatable, stack,
                 ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, false, poseStack, bufferSource, animatable.level(),

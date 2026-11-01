@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 处决时右手腕上弹出的刀：第三人称挂在玩家渲染器上，第一人称接管手的绘制
+ * 处决时从手掌下面弹出的刀：第三人称挂在玩家渲染器上，第一人称接管手的绘制
  *
  * <p>模型在 {@code models/mercy/parazon.json}，写法照方块模型（{@code from} / {@code to} / 各面 {@code uv}），
  * 但这里自己读、自己烘成顶点表：贴图不在方块图集里，发光层又要用同一套 uv 换一张图再画一遍，
@@ -77,7 +77,12 @@ public class ParazonLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<
     /** 第一人称两肩的位置（视角空间：x 右、y 上、z 朝前，格） */
     private static final float SHOULDER_X = 0.45F, SHOULDER_Y = -0.70F, SHOULDER_Z = -0.15F;
 
-    private static final Quaternionf ARM_TO_BLADE = new Quaternionf().rotationX((float) Math.toRadians(-90.0D));
+    /** 刀整体往手腕方向收的距离（像素）：刃根落在手掌下面，不是从拳头前面才开始 */
+    private static final float PALM_SHIFT_Z = -3.0F;
+
+    /** 手臂部件到模型坐标：先转到顺着前臂，再绕前臂翻半圈，把模型里朝前臂背面的刀翻到手掌那一侧 */
+    private static final Quaternionf ARM_TO_BLADE = new Quaternionf().rotationX((float) Math.toRadians(-90.0D))
+            .rotateZ((float) Math.toRadians(180.0D));
 
     private final boolean slim;
 
@@ -116,6 +121,7 @@ public class ParazonLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<
         arm.translateAndRotate(ps);
         ps.translate(armCenterX(true, slim) / 16.0F, FIST_Y / 16.0F, 0.0F);
         ps.mulPose(ARM_TO_BLADE);
+        ps.translate(0.0F, 0.0F, PALM_SHIFT_Z / 16.0F);
 
         float glow = EffectsDisplayConfig.additiveGlow() ? glowLevel(e, t) : 0.0F;
         VertexConsumer base = buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));

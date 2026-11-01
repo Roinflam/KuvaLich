@@ -20,8 +20,8 @@ import software.bernie.geckolib.model.data.EntityModelData;
  * 画面上会先闪回站姿），由这里从上一帧画出来的姿势淡过去，淡多久由 {@link KuvaBodyAnim} 定。</p>
  *
  * <p><b>转头</b>：渲染器只按身体朝向转整个模型，头看向别处时模型不跟。这里把视线和身体的夹角加到头上（玄骸分三成给腰），
- * 倒地 / 处决期间不加。两套模型的头骨枢轴都不在头的正中（玄骸偏 4.4 像素、奴仆偏 3.5 像素），绕枢轴转头会把头甩到一边，
- * 所以按转过的角度把枢轴偏出去的那段位移补回来，等于绕头的中线转。</p>
+ * 倒地 / 处决期间不加。这里只改旋转，不改位移：GeckoLib 把代码里写过的位移算作「这一帧动过」，下一帧不归零，
+ * 写一次就累加一次。</p>
  */
 @OnlyIn(Dist.CLIENT)
 final class KuvaPoseLayer {
@@ -123,30 +123,7 @@ final class KuvaPoseLayer {
                 yaw -= share;
             }
         }
-        float ry = head.getRotY();
-        float rz = head.getRotZ();
-        float ry2 = ry + yaw * Mth.DEG_TO_RAD;
         head.setRotX(head.getRotX() + pitch * Mth.DEG_TO_RAD);
-        head.setRotY(ry2);
-        recenter(head, ry, ry2, rz);
-    }
-
-    /**
-     * 头的中线在 x = 0、枢轴在 x = pivotX：绕枢轴转（Z·Y·X）比绕中线转多出 (R - I)·u，u = (pivotX, 0, 0)；
-     * 只补这次多转的那部分（动画里本来的转头保持原样）。骨骼位移的 x 在渲染时取反，其余照加
-     */
-    private static void recenter(CoreGeoBone head, float ry, float ry2, float rz) {
-        float ux = head.getPivotX();
-        if (ux == 0.0F) {
-            return;
-        }
-        float cz = Mth.cos(rz);
-        float sz = Mth.sin(rz);
-        float dx = ux * (Mth.cos(ry2) - Mth.cos(ry)) * cz;
-        float dy = ux * (Mth.cos(ry2) - Mth.cos(ry)) * sz;
-        float dz = -ux * (Mth.sin(ry2) - Mth.sin(ry));
-        head.setPosX(head.getPosX() - dx);
-        head.setPosY(head.getPosY() + dy);
-        head.setPosZ(head.getPosZ() + dz);
+        head.setRotY(head.getRotY() + yaw * Mth.DEG_TO_RAD);
     }
 }
