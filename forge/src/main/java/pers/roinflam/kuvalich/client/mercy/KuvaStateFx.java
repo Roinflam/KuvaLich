@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -41,6 +42,7 @@ import pers.roinflam.kuvalich.client.fx.KuvaGlow;
 import pers.roinflam.kuvalich.client.fx.KuvaParticleShaders;
 import pers.roinflam.kuvalich.client.fx.KuvaParticles;
 import pers.roinflam.kuvalich.client.fx.KuvaThrallRim;
+import pers.roinflam.kuvalich.client.renderer.AbstractKuvaRenderer;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
@@ -60,18 +62,25 @@ import java.util.List;
  * <ul>
  *   <li><b>适应护壁</b>（服务端发包）：命中点那一面起一片六边形格子，层数越高亮的格子越多、越实；
  *       某类伤害第一次叠满时 19 格全亮，外加一圈光环、发光提亮和一声金属鸣响。</li>
- *   <li><b>挡住了</b>（服务端发包）：连击递减或单次伤害软上限削掉一大块时，命中点一道压扁的横向偏转闪，几粒火花往攻击者那边弹回。</li>
- *   <li><b>弱点</b>（服务端按这一下实际吃到的倍率判了发包）：打中的地方一道细裂纹、两片碎屑，附近的人都看得到。
+ *   <li><b>挡住了</b>（服务端发包）：连击递减或单次伤害软上限削掉一大块时，命中点迸出一道十字白光（横长竖短）、
+ *       一圈往外扩的白环、一串往攻击者那边弹回的火星，配一声低沉的金属闷响。</li>
+ *   <li><b>弱点</b>（服务端按这一下实际吃到的倍率判了发包）：命中处炸开一圈金色的星形裂纹（70 ms 内从命中点往外裂开）、
+ *       一下金色闪光、几片碎屑，附近的人都看得到。
  *       默认弱点是弓箭；开了「每只弱点抗性不同」以后按这只自己的弱点，所以不在客户端按伤害类型猜。</li>
  *   <li><b>抗性</b>（同上，只发给打它的那个人）：一个很小的偏转闪。</li>
  *   <li><b>奴仆固定减伤</b>（客户端自己判，只给打它的那个人看）：奴仆描边闪一下。</li>
- *   <li><b>吸血、击退</b>（服务端发包）：几团赤毒雾从受击者胸口飞回玄骸胸口；击退明显时脚下一圈环、几团贴地的雾。</li>
+ *   <li><b>吸血、击退</b>（服务端发包）：受击者胸口喷出一小团赤毒雾，一道红线连到玄骸胸口，一股雾流顺着它拉回去，
+ *       到的那一刻红线断开回缩、它胸口一团红光、
+ *       发光层提亮一下；击退明显时脚下先后两圈环、一圈贴地的雾。</li>
  *   <li><b>自然回血</b>（实体那边判涨幅）：胸口冒两个光点。</li>
- *   <li><b>怒意</b>（读同步的交战增幅千分比）：分 0~4 档，玄骸的发光层持续变亮、怒意纹路层越来越明显，奴仆背囊冒光点；
- *       升到 2 档以上那一下玄骸脚下起一圈环。纹路层本身在 {@link KuvaFuryLayer}。</li>
+ *   <li><b>怒意</b>（读同步的交战增幅千分比）：分 0~4 档，玄骸的发光层持续变亮、怒意纹路层越来越明显；
+ *       2 档起身上不停往上飘赤红火星（档越高越密），3 档起身体轮廓外一圈一呼一吸的红光、脚下冒贴地的暗红雾；
+ *       奴仆背囊冒光点。
+ *       升到 2 档以上那一下玄骸脚下起一圈环、胸口炸开一圈火星。纹路层本身在 {@link KuvaFuryLayer}。</li>
  * </ul>
  *
- * <p>所有东西都贴着身体表面或脚下，最长 680 ms，头顶以上什么都不画，伤害数字从头顶往上飘，两者错开。
+ * <p>所有东西都贴着身体表面或脚下，一次性的最长 680 ms，头顶以上什么都不画（怒意的火星从腰到胸口冒出、飘不过头顶，轮廓外的红光到头顶已经淡没了），
+ * 伤害数字从头顶往上飘，两者错开。几种反馈各占一种颜色：挡住白、弱点金、吸血和怒意赤毒红。
  * 倒地、处决中、离场时什么都不画。选项 {@code kuva_state_fx} 关掉后全部不画（纹路层、发光乘子也不加），护壁叠层、满层的声音也不放。
  * 特效强度「减少」时粒子减半、护壁只画加了层的和第一次叠满的；「最少」时只画第一次叠满的护壁和挡住的那道闪，
  * 没有纹路层，发光乘子按 1（怒意不加亮、叠满也不提亮）。声音只看开关，不看强度。</p>
@@ -101,6 +110,13 @@ public final class KuvaStateFx {
     private static final long REGEN_AFTER_STRIKE_MS = 500L;
     /** 满层鸣响同一只最少隔多久 */
     private static final long FULL_SOUND_GAP_MS = 1000L;
+    /** 挡住那一声同一只最少隔多久（服务端本来就 10 tick 才发一次，这里兜底） */
+    private static final long GUARD_SOUND_GAP_MS = 250L;
+    /** 吸血雾最快、最慢几 tick 飞到它胸口 */
+    private static final float DRAIN_FAST_TICKS = 6.0F;
+    private static final float DRAIN_SLOW_TICKS = 10.0F;
+    /** 吸血那一下它胸口亮起来的时刻：雾流大半到了（毫秒） */
+    private static final int DRAIN_ARRIVE_MS = 380;
 
     // ==================== 护壁 ====================
 
@@ -150,14 +166,32 @@ public final class KuvaStateFx {
     /** 各档的千分比下限 */
     public static final int[] FURY_FLOOR = {0, 250, 750, 1500, 3000};
     /** 各档玄骸发光层的持续乘子 */
-    private static final float[] FURY_GLOW = {1.0F, 1.12F, 1.30F, 1.50F, 1.75F};
-    /** 各档纹路层的亮度 */
-    private static final float[] FURY_LAYER = {0.0F, 0.0F, 0.25F, 0.5F, 0.8F};
+    private static final float[] FURY_GLOW = {1.0F, 1.2F, 1.5F, 1.85F, 2.3F};
+    /** 各档纹路层的亮度（加法画法到 1 就封顶，4 档留出呼吸往上冲的余量） */
+    private static final float[] FURY_LAYER = {0.0F, 0.12F, 0.45F, 0.75F, 0.9F};
     /** 档位变化后纹路层多久过渡完 */
     private static final float FURY_RAMP_MS = 1000.0F;
-    /** 4 档纹路层的呼吸：1.2 Hz、±15% */
-    private static final float FURY_BREATH_HZ = 1.2F;
-    private static final float FURY_BREATH_SWING = 0.15F;
+    /** 3 档起纹路层呼吸：3 档 1.2 Hz、±15%，4 档 1.6 Hz、±25% */
+    private static final float[] FURY_BREATH_HZ = {0.0F, 0.0F, 0.0F, 1.2F, 1.6F};
+    private static final float[] FURY_BREATH_SWING = {0.0F, 0.0F, 0.0F, 0.15F, 0.25F};
+    /** 怒意火星每几 tick 冒一粒：2 档、3 档、4 档（4 档每次两粒；「减少」强度时间隔翻倍） */
+    private static final int[] FURY_EMBER_EVERY = {0, 0, 3, 2, 1};
+    /** 3 档起身体轮廓外那圈红光最亮多少（跟着纹路层的呼吸在 75%~100% 之间起伏） */
+    private static final float[] FURY_AURA_ALPHA = {0.0F, 0.0F, 0.0F, 0.55F, 0.85F};
+    /** 红光圆盘的半径（× 身高）、往身后推多远（× 身宽）：推到身子后面，中间整个被身体挡住，只从轮廓外透出来 */
+    private static final float FURY_AURA_RADIUS = 0.7F;
+    private static final float FURY_AURA_BACK = 0.9F;
+    private static final int AURA_SEGMENTS = 24;
+    private static final float[] AURA_COS = new float[AURA_SEGMENTS + 1];
+    private static final float[] AURA_SIN = new float[AURA_SEGMENTS + 1];
+
+    static {
+        for (int i = 0; i <= AURA_SEGMENTS; i++) {
+            double t = Math.PI * 2.0D * i / AURA_SEGMENTS;
+            AURA_COS[i] = (float) Math.cos(t);
+            AURA_SIN[i] = (float) Math.sin(t);
+        }
+    }
 
     // ==================== 状态 ====================
 
@@ -171,6 +205,10 @@ public final class KuvaStateFx {
     private static final Int2LongOpenHashMap LAST_RESIST = new Int2LongOpenHashMap();
     private static final Int2LongOpenHashMap LAST_STRIKE = new Int2LongOpenHashMap();
     private static final Int2LongOpenHashMap LAST_FULL_SOUND = new Int2LongOpenHashMap();
+    private static final Int2LongOpenHashMap LAST_GUARD_SOUND = new Int2LongOpenHashMap();
+    /** 晚一点才做的事（吸血雾到了那一刻提亮、击退的第二圈环），到点后在客户端 tick 里做 */
+    private static final List<Later> LATER = new ArrayList<>();
+    private static final int LATER_CAP = 32;
     private static final RandomSource RANDOM = RandomSource.create();
 
     private static RenderType typeAdd;
@@ -185,9 +223,19 @@ public final class KuvaStateFx {
         LAST_RESIST.defaultReturnValue(Long.MIN_VALUE / 2);
         LAST_STRIKE.defaultReturnValue(Long.MIN_VALUE / 2);
         LAST_FULL_SOUND.defaultReturnValue(Long.MIN_VALUE / 2);
+        LAST_GUARD_SOUND.defaultReturnValue(Long.MIN_VALUE / 2);
     }
 
     private KuvaStateFx() {
+    }
+
+    private record Later(long atMs, Runnable run) {
+    }
+
+    private static void later(int ms, Runnable run) {
+        if (LATER.size() < LATER_CAP) {
+            LATER.add(new Later(KuvaFxDirector.clockMs() + ms, run));
+        }
     }
 
     // ==================== 入口 ====================
@@ -367,33 +415,61 @@ public final class KuvaStateFx {
 
     // ==================== 挡住了 ====================
 
-    /** 连击递减 / 软上限削掉了一大块：命中点一道横向偏转闪，几粒火花弹回攻击者那边 */
+    /**
+     * 连击递减 / 软上限削掉了一大块：命中点一道十字白光、一圈往外扩的白环，一串火星往攻击者那边弹回，一声闷响。
+     * 削掉一半以上（{@code heavy}）时光更宽、环更大、火星更多、声音更沉
+     */
     public static void guard(@Nullable AbstractKuva target, Vec3 at, int param, @Nullable Entity attacker) {
-        if (!EffectsDisplayConfig.kuvaStateFx() || !near(at, NEAR)) {
+        if (!EffectsDisplayConfig.kuvaStateFx()) {
             return;
         }
         boolean heavy = KuvaStateKind.guardPercent(param) >= 50;
+        // 声音只看开关、不看强度（同护壁）；借叠层那一声往低压：叠层是越叠越高的「叮」，挡住是一声沉的「当」
+        int key = target != null ? target.getId() : Integer.MIN_VALUE;
+        long now = KuvaFxDirector.clockMs();
+        if (now - LAST_GUARD_SOUND.get(key) >= GUARD_SOUND_GAP_MS) {
+            LAST_GUARD_SOUND.put(key, now);
+            KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.ENTITY_LICH_RESIST.get(), SoundSource.HOSTILE, at,
+                    0.9F, KuvaSoundPlayer.jitter(heavy ? 0.62F : 0.72F, 0.03F)).tier(FxTier.C));
+        }
+        if (!near(at, NEAR)) {
+            return;
+        }
         Vec3 n = facing(target, at, attacker);
-        Mark m = Mark.flare(n, heavy ? 1.1F : 0.7F, FxPalette.KUVA_PALE, 0.55F, 90);
-        m.attach(target, at.add(n.scale(0.06D)));
-        m.addScale = KuvaFxDirector.additiveScale(at);
-        addMark(m);
+        Vec3 p = at.add(n.scale(0.06D));
+        float width = heavy ? 1.7F : 1.2F;
+        int life = heavy ? 380 : 300;
+        float addScale = KuvaFxDirector.additiveScale(at);
+        // 横条两头衰减得快，白天只剩中间一点：底下再垫一层更宽更厚的淡晕，整条横光才撑得开
+        Mark halo = Mark.flare(n, width * 1.1F, 0.32F, false, FxPalette.BONE, 0.4F, life);
+        Mark across = Mark.flare(n, width, 0.13F, false, FxPalette.BONE, 1.0F, life);
+        Mark upright = Mark.flare(n, width * 0.45F, 0.13F, true, FxPalette.BONE, 0.9F, life * 3 / 4);
+        for (Mark m : new Mark[]{halo, across, upright}) {
+            m.attach(target, p);
+            m.addScale = addScale;
+            addMark(m);
+        }
 
         if (minimal()) {
             return;
         }
-        int sparks = count(heavy ? 7 : 4);
+        KuvaFxGeometry.flash(p).radius(heavy ? 0.6F : 0.45F, 40).core(FxPalette.WHITE).color(FxPalette.BONE)
+                .alpha(0.95F, FxCurve.FADE_SQ).life(200).tier(FxTier.B).add();
+        KuvaFxGeometry.ring(p).normal(n).radius(0.15F, heavy ? 0.95F : 0.7F, FxCurve.OUT_CUBIC).thick(0.09F, 0.02F)
+                .color(FxPalette.WHITE).color2(FxPalette.BONE).alpha(0.95F, FxCurve.FADE_SQ).life(280)
+                .tier(FxTier.B).add();
+        int sparks = count(heavy ? 14 : 9);
         for (int i = 0; i < sparks; i++) {
-            double speed = 0.12D + RANDOM.nextDouble() * 0.10D;
-            double sx = n.x + spread(0.45D), sy = n.y + spread(0.45D) + 0.15D, sz = n.z + spread(0.45D);
+            double speed = 0.18D + RANDOM.nextDouble() * 0.16D;
+            double sx = n.x + spread(0.55D), sy = n.y + spread(0.55D) + 0.2D, sz = n.z + spread(0.55D);
             double len = Math.sqrt(sx * sx + sy * sy + sz * sz);
             if (len < 1.0E-4D) {
                 continue;
             }
-            KuvaParticles.spark(at.x, at.y, at.z)
+            KuvaParticles.spark(p.x, p.y, p.z)
                     .vel(sx / len * speed, sy / len * speed, sz / len * speed)
-                    .color(FxPalette.ASH).color2(FxPalette.KUVA_PALE).size(0.3F, 0.1F)
-                    .gravity(0.03F).drag(0.92F).life(4 + RANDOM.nextInt(4))
+                    .color(FxPalette.WHITE).color2(FxPalette.KUVA_PALE).size(0.55F, 0.14F)
+                    .gravity(0.06F).drag(0.9F).life(9 + RANDOM.nextInt(8))
                     .orient(KuvaParticles.Orient.VELOCITY).tier(FxTier.C).spawn();
         }
     }
@@ -413,7 +489,7 @@ public final class KuvaStateFx {
         }
         LAST_RESIST.put(entity.getId(), now);
         Vec3 n = facing(entity, at, viewer);
-        Mark m = Mark.flare(n, 0.4F, FxPalette.ASH, 0.35F, 70);
+        Mark m = Mark.flare(n, 0.4F, 0.06F, false, FxPalette.ASH, 0.35F, 70);
         m.attach(entity, at.add(n.scale(0.04D)));
         m.addScale = KuvaFxDirector.additiveScale(at);
         addMark(m);
@@ -421,7 +497,7 @@ public final class KuvaStateFx {
 
     // ==================== 弱点 ====================
 
-    /** 打中弱点：命中处一道细裂纹、两片碎屑；附近的人都看得到 */
+    /** 打中弱点：命中处炸开一圈金色星形裂纹、一下金色闪光、几片碎屑；附近的人都看得到 */
     public static void weakPoint(AbstractKuva entity, Vec3 hitPos) {
         if (!EffectsDisplayConfig.kuvaStateFx() || minimal() || quiet(entity)) {
             return;
@@ -438,23 +514,28 @@ public final class KuvaStateFx {
         LAST_WEAK.put(entity.getId(), now);
         Camera cam = KuvaFxDirector.camera();
         Vec3 toCam = cam != null ? cam.getPosition().subtract(at) : at.subtract(c);
-        Mark m = Mark.crack(toCam, 0.28F, 0.018F, FxPalette.BONE, 0.9F, 260);
-        m.attach(entity, at);
+        double tl = toCam.length();
+        // 往相机那边抬一点：裂纹是平的，贴着包围盒画会有一半埋进模型里
+        Vec3 p = tl < 1.0E-4D ? at : at.add(toCam.scale(0.05D / tl));
+        Mark m = Mark.crack(toCam, count(5), 0.42F, 0.035F, FxPalette.ACCENT, 1.0F, 520);
+        m.attach(entity, p);
         m.addScale = KuvaFxDirector.additiveScale(at);
         addMark(m);
+        KuvaFxGeometry.flash(p).radius(0.4F, 30).core(FxPalette.WHITE).color(FxPalette.ACCENT)
+                .alpha(0.85F, FxCurve.FADE_SQ).life(200).tier(FxTier.B).add();
 
         Vec3 out = at.subtract(c);
         double ol = out.length();
         out = ol < 1.0E-4D ? new Vec3(0.0D, 1.0D, 0.0D) : out.scale(1.0D / ol);
-        int shards = count(2);
+        int shards = count(6);
         for (int i = 0; i < shards; i++) {
-            double vx = out.x + spread(0.6D), vy = out.y + spread(0.6D) + 0.3D, vz = out.z + spread(0.6D);
+            double vx = out.x + spread(0.7D), vy = out.y + spread(0.7D) + 0.3D, vz = out.z + spread(0.7D);
             double len = Math.max(1.0E-4D, Math.sqrt(vx * vx + vy * vy + vz * vz));
-            float size = 0.05F + RANDOM.nextFloat() * 0.03F;
-            KuvaParticles.shard(at.x, at.y, at.z)
-                    .vel(vx / len * 0.08D, vy / len * 0.08D, vz / len * 0.08D)
-                    .color(FxPalette.BONE).color2(FxPalette.ASH).size(size, size)
-                    .gravity(0.04F).drag(0.96F).spin(0.3F).life(6 + RANDOM.nextInt(5)).tier(FxTier.C).spawn();
+            float size = 0.07F + RANDOM.nextFloat() * 0.04F;
+            KuvaParticles.shard(p.x, p.y, p.z)
+                    .vel(vx / len * 0.12D, vy / len * 0.12D, vz / len * 0.12D)
+                    .color(FxPalette.BONE).color2(FxPalette.ACCENT).size(size, size * 0.6F)
+                    .gravity(0.05F).drag(0.95F).spin(0.35F).life(9 + RANDOM.nextInt(7)).tier(FxTier.C).spawn();
         }
     }
 
@@ -478,32 +559,64 @@ public final class KuvaStateFx {
             // 落点取它包围盒朝受击者那一面（胸口正中在模型里面，雾飞进去、亮光画在里面都会被身体挡住）
             Vec3 chest = chest(attacker);
             Vec3 to = attacker.getBoundingBox().clip(from, chest).orElse(chest);
-            Vec3 d = to.subtract(from).scale(1.0D / 8.0D);
-            int n = count(3);
+            Vec3 path = to.subtract(from);
+            // 受击者胸口先喷出一小团
+            int puffs = count(3);
+            for (int i = 0; i < puffs; i++) {
+                KuvaParticles.mist(from.x + spread(0.1D), from.y + spread(0.1D), from.z + spread(0.1D))
+                        .vel(spread(0.03D), spread(0.03D), spread(0.03D)).drag(0.85F).gravity(0.0F)
+                        .color(FxPalette.KUVA_DEEP).color2(FxPalette.KUVA).alpha(0.55F).size(0.3F, 0.45F).life(8)
+                        .tier(FxTier.C).spawn();
+            }
+            // 一道红线 0.22 s 内从受击者胸口描到它胸口，绷紧一下，雾流到了再从中间断开回缩。
+            // 雾是半透明、吃光照的，白天露天淡得几乎看不见，这条加法发光的线才是主体
+            KuvaFxGeometry.tether(to, from).draw(0, 0, 220).boost(220, 1.8F, 120).snap(0, DRAIN_ARRIVE_MS + 60)
+                    .width(0.06F).color(FxPalette.KUVA_HOT).color2(FxPalette.KUVA)
+                    .alpha(1.0F, FxCurve.HOLD_THEN_FADE).life(DRAIN_ARRIVE_MS + 260).tier(FxTier.B).add();
+            // 雾团快慢不一（6~10 tick 飞到），一出手就拉成一条从受击者连到它胸口的雾流；夹着几粒亮点
+            int n = count(12);
             for (int i = 0; i < n; i++) {
-                KuvaParticles.mist(from.x + spread(0.12D), from.y + spread(0.12D), from.z + spread(0.12D))
+                float ticks = DRAIN_FAST_TICKS + (DRAIN_SLOW_TICKS - DRAIN_FAST_TICKS) * i / Math.max(1, n - 1);
+                Vec3 d = path.scale(1.0D / ticks);
+                KuvaParticles.mist(from.x + spread(0.1D), from.y + spread(0.1D), from.z + spread(0.1D))
                         .vel(d.x, d.y, d.z).drag(1.0F).gravity(0.0F)
-                        .color(FxPalette.KUVA).alpha(0.45F).size(0.25F, 0.25F).life(9)
+                        .color(FxPalette.KUVA).alpha(0.85F).size(0.45F, 0.3F).life(Math.round(ticks) + 1)
                         .alphaCurve(FxCurve.HOLD_THEN_FADE).tier(FxTier.C).spawn();
             }
-            // 雾 8 tick 飞到；那一刻胸口亮一下，所以前 400 ms 透明
-            KuvaFxGeometry.glow(to).size(0.35F, 0.35F, FxCurve.LINEAR)
-                    .color(FxPalette.KUVA)
-                    .alphaFn(age -> age < 400.0F ? 0.0F : 0.4F * FxCurve.fadeOut((age - 400.0F) / 120.0F))
-                    .life(520).tier(FxTier.C).add();
+            int motes = count(7);
+            for (int i = 0; i < motes; i++) {
+                float ticks = DRAIN_FAST_TICKS - 1.0F + (DRAIN_SLOW_TICKS - DRAIN_FAST_TICKS) * i / Math.max(1, motes - 1);
+                Vec3 d = path.scale(1.0D / ticks);
+                KuvaParticles.mote(from.x + spread(0.08D), from.y + spread(0.08D), from.z + spread(0.08D))
+                        .vel(d.x, d.y, d.z).drag(1.0F)
+                        .color(FxPalette.KUVA_HOT).color2(FxPalette.KUVA_PALE).size(0.15F, 0.06F)
+                        .life(Math.round(ticks) + 1).alphaCurve(FxCurve.HOLD_THEN_FADE).tier(FxTier.C).spawn();
+            }
+            // 雾流大半到了的那一刻它胸口一团红光、发光层提亮，所以光晕前 DRAIN_ARRIVE_MS 透明
+            KuvaFxGeometry.glow(to).size(1.1F, 0.7F, FxCurve.LINEAR)
+                    .color(FxPalette.KUVA_HOT).color2(FxPalette.KUVA)
+                    .alphaFn(age -> age < DRAIN_ARRIVE_MS ? 0.0F
+                            : 0.85F * FxCurve.fadeOut((age - DRAIN_ARRIVE_MS) / 240.0F))
+                    .life(DRAIN_ARRIVE_MS + 240).tier(FxTier.B).add();
+            int id = attacker.getId();
+            later(DRAIN_ARRIVE_MS, () -> KuvaGlow.boost(id, 1.6F, 380));
         }
         if (KuvaStateKind.strikeHeavyKnockback(param)) {
-            Vec3 feet = victim != null ? victim.position() : at;
-            KuvaFxGeometry.ring(feet.add(0.0D, 0.05D, 0.0D)).normal(KuvaFxGeometry.Normal.UP)
-                    .radius(0.3F, 1.1F, FxCurve.OUT_CUBIC).thick(0.09F, 0.04F)
-                    .color(FxPalette.KUVA).alpha(0.35F, FxCurve.FADE_SQ).life(200).tier(FxTier.C).add();
-            int n = count(4);
+            Vec3 feet = (victim != null ? victim.position() : at).add(0.0D, 0.05D, 0.0D);
+            KuvaFxGeometry.ring(feet).normal(KuvaFxGeometry.Normal.UP)
+                    .radius(0.4F, 1.6F, FxCurve.OUT_CUBIC).thick(0.14F, 0.05F)
+                    .color(FxPalette.KUVA_HOT).color2(FxPalette.KUVA).alpha(0.6F, FxCurve.FADE_SQ).life(280)
+                    .tier(FxTier.C).add();
+            later(70, () -> KuvaFxGeometry.ring(feet).normal(KuvaFxGeometry.Normal.UP)
+                    .radius(0.2F, 1.0F, FxCurve.OUT_CUBIC).thick(0.08F, 0.03F)
+                    .color(FxPalette.KUVA).alpha(0.45F, FxCurve.FADE_SQ).life(220).tier(FxTier.C).add());
+            int n = count(8);
             double phase = RANDOM.nextDouble() * Math.PI * 2.0D;
             for (int i = 0; i < n; i++) {
                 double t = phase + i * Math.PI * 2.0D / n;
-                KuvaParticles.mist(feet.x, feet.y + 0.15D, feet.z)
-                        .vel(Math.cos(t) * 0.08D, 0.0D, Math.sin(t) * 0.08D).drag(0.9F)
-                        .color(FxPalette.KUVA_MIST).alpha(0.4F).size(0.4F, 0.8F).life(12).tier(FxTier.C).spawn();
+                KuvaParticles.mist(feet.x, feet.y + 0.1D, feet.z)
+                        .vel(Math.cos(t) * 0.1D, 0.0D, Math.sin(t) * 0.1D).drag(0.9F)
+                        .color(FxPalette.KUVA_DEEP).alpha(0.55F).size(0.45F, 0.9F).life(14).tier(FxTier.C).spawn();
             }
         }
     }
@@ -540,7 +653,7 @@ public final class KuvaStateFx {
         }
     }
 
-    /** 纹路层此刻的亮度 0~1（已含档位过渡和 4 档的呼吸）；没有怒意或不该画时为 0 */
+    /** 纹路层此刻的亮度（已含档位过渡和 3 档起的呼吸，可能略超过 1，画的时候封顶）；没有怒意或不该画时为 0 */
     public static float furyLayerLevel(AbstractKuva e) {
         Fury f = FURY.get(e.getId());
         if (f == null) {
@@ -549,8 +662,9 @@ public final class KuvaStateFx {
         long now = KuvaFxDirector.clockMs();
         float k = FxCurve.clamp01((now - f.layerStart) / FURY_RAMP_MS);
         float a = f.layerFrom + (f.layerTo - f.layerFrom) * k;
-        if (f.shown >= 4) {
-            a *= 1.0F + FURY_BREATH_SWING * Mth.sin(now / 1000.0F * FURY_BREATH_HZ * Mth.TWO_PI);
+        int t = Mth.clamp(f.shown, 0, 4);
+        if (FURY_BREATH_SWING[t] > 0.0F) {
+            a *= 1.0F + FURY_BREATH_SWING[t] * Mth.sin(now / 1000.0F * FURY_BREATH_HZ[t] * Mth.TWO_PI);
         }
         return Math.max(0.0F, a);
     }
@@ -588,10 +702,7 @@ public final class KuvaStateFx {
             double d2 = cp == null ? 0.0D : cp.distanceToSqr(k.getX(), k.getY(), k.getZ());
 
             if (f.synced >= 0 && tier > f.synced && tier >= 2 && eligible && master && particles && d2 <= NEAR * NEAR) {
-                KuvaFxGeometry.ring(k.position().add(0.0D, 0.05D, 0.0D)).normal(KuvaFxGeometry.Normal.UP)
-                        .radius(0.6F, 1.6F, FxCurve.OUT_CUBIC).thick(0.1F, 0.05F)
-                        .color(FxPalette.KUVA).alpha(0.35F, FxCurve.FADE_SQ).life(300).tier(FxTier.C).add();
-                KuvaGlow.boost(id, 1.4F, 250);
+                furyRise(k, tier);
             }
             f.synced = tier;
 
@@ -605,12 +716,75 @@ public final class KuvaStateFx {
                 f.shown = show;
             }
 
+            if (master && eligible && particles && tier >= 2 && d2 <= CLOSE * CLOSE) {
+                furyEmbers(k, tier);
+            }
             if (k instanceof KuvaSlaveEntity slave && eligible && particles && tier >= 2 && d2 <= CLOSE * CLOSE) {
-                int period = tier >= 4 ? 5 : 10;
+                int period = tier >= 4 ? 2 : tier == 3 ? 4 : 6;
                 if ((k.tickCount + id) % period == 0) {
                     slaveMote(slave, tier);
                 }
             }
+        }
+    }
+
+    /** 升到 2 档以上那一下：脚下一圈环（4 档再套一圈）、胸口一圈火星炸开、发光层冲一下 */
+    private static void furyRise(AbstractKuva k, int tier) {
+        Vec3 feet = k.position().add(0.0D, 0.05D, 0.0D);
+        KuvaFxGeometry.ring(feet).normal(KuvaFxGeometry.Normal.UP)
+                .radius(0.6F, tier >= 4 ? 2.6F : 2.0F, FxCurve.OUT_CUBIC).thick(0.16F, 0.05F)
+                .color(FxPalette.KUVA_HOT).color2(FxPalette.KUVA).alpha(0.65F, FxCurve.FADE_SQ).life(360)
+                .tier(FxTier.B).add();
+        if (tier >= 4) {
+            later(90, () -> KuvaFxGeometry.ring(feet).normal(KuvaFxGeometry.Normal.UP)
+                    .radius(0.4F, 1.6F, FxCurve.OUT_CUBIC).thick(0.1F, 0.03F)
+                    .color(FxPalette.KUVA).alpha(0.5F, FxCurve.FADE_SQ).life(300).tier(FxTier.B).add());
+        }
+        KuvaGlow.boost(k.getId(), 1.9F, 400);
+        Vec3 c = chest(k);
+        int n = count(12);
+        double phase = RANDOM.nextDouble() * Math.PI * 2.0D;
+        for (int i = 0; i < n; i++) {
+            double t = phase + i * Math.PI * 2.0D / n;
+            double speed = 0.1D + RANDOM.nextDouble() * 0.06D;
+            KuvaParticles.mote(c.x + Math.cos(t) * 0.3D, c.y + spread(0.3D), c.z + Math.sin(t) * 0.3D)
+                    .vel(Math.cos(t) * speed, 0.02D + RANDOM.nextDouble() * 0.04D, Math.sin(t) * speed).drag(0.88F)
+                    .color(FxPalette.KUVA_PALE).color2(FxPalette.KUVA).size(0.12F, 0.03F).life(10 + RANDOM.nextInt(7))
+                    .alphaCurve(FxCurve.HOLD_THEN_FADE).tier(FxTier.C).spawn();
+        }
+    }
+
+    /**
+     * 2 档起玄骸身上不停往上飘的赤红火星：从腰到胸口的身体边缘冒出，往外、往上飘大半格就灭（飘不过头顶）；
+     * 4 档颜色偏橙、每次两粒。3 档起身体轮廓外一圈一呼一吸的红光、脚下冒一团贴地往外散的暗红雾
+     */
+    private static void furyEmbers(AbstractKuva e, int tier) {
+        int every = FURY_EMBER_EVERY[tier];
+        if (EffectsDisplayConfig.intensity() == EffectsDisplayConfig.Intensity.REDUCED) {
+            every *= 2;
+        }
+        int phase = e.tickCount + e.getId();
+        if (phase % every == 0) {
+            int per = tier >= 4 ? 2 : 1;
+            double r = e.getBbWidth() * 0.5D;
+            for (int i = 0; i < per; i++) {
+                double ang = RANDOM.nextDouble() * Math.PI * 2.0D;
+                double ox = Math.cos(ang), oz = Math.sin(ang);
+                double y = e.getY() + e.getBbHeight() * (0.2D + RANDOM.nextDouble() * 0.55D);
+                KuvaParticles.mote(e.getX() + ox * r, y, e.getZ() + oz * r)
+                        .vel(ox * 0.015D, 0.035D + RANDOM.nextDouble() * 0.025D, oz * 0.015D).drag(0.96F)
+                        .color(tier >= 4 ? FxPalette.EMBER : FxPalette.KUVA_HOT).color2(FxPalette.KUVA)
+                        .size(0.26F, 0.06F).life(14 + RANDOM.nextInt(9)).alphaCurve(FxCurve.HOLD_THEN_FADE)
+                        .tier(FxTier.C).spawn();
+            }
+        }
+        if (tier >= 3 && phase % (tier >= 4 ? 4 : 8) == 0) {
+            double ang = RANDOM.nextDouble() * Math.PI * 2.0D;
+            double ox = Math.cos(ang), oz = Math.sin(ang);
+            double r = e.getBbWidth() * 0.4D;
+            KuvaParticles.mist(e.getX() + ox * r, e.getY() + 0.1D, e.getZ() + oz * r)
+                    .vel(ox * 0.03D, 0.0D, oz * 0.03D).drag(0.94F)
+                    .color(FxPalette.KUVA_DEEP).alpha(0.4F).size(0.5F, 1.0F).life(20).tier(FxTier.C).spawn();
         }
     }
 
@@ -627,7 +801,7 @@ public final class KuvaStateFx {
         double drift = tier >= 3 ? 0.04D : 0.0D;
         KuvaParticles.mote(x + spread(0.05D), y, z + spread(0.05D))
                 .vel(bx / 0.3D * drift + spread(drift * 0.5D), 0.04D, bz / 0.3D * drift + spread(drift * 0.5D))
-                .drag(1.0F).color(FxPalette.KUVA).size(0.08F, 0.08F).life(16).alphaCurve(FxCurve.HOLD_THEN_FADE)
+                .drag(1.0F).color(FxPalette.KUVA).size(0.11F, 0.08F).life(16).alphaCurve(FxCurve.HOLD_THEN_FADE)
                 .tier(FxTier.C).spawn();
     }
 
@@ -648,6 +822,15 @@ public final class KuvaStateFx {
         }
         tickFury(mc.level);
         long now = KuvaFxDirector.clockMs();
+        for (int i = 0; i < LATER.size(); ) {
+            Later l = LATER.get(i);
+            if (now >= l.atMs()) {
+                LATER.remove(i);
+                l.run().run();
+            } else {
+                i++;
+            }
+        }
         SHIELDS.removeIf(s -> (now - s.start) / slow >= s.outEnd);
         MARKS.removeIf(m -> (now - m.start) / slow >= m.life);
     }
@@ -665,6 +848,7 @@ public final class KuvaStateFx {
         LAST_RESIST.remove(id);
         LAST_STRIKE.remove(id);
         LAST_FULL_SOUND.remove(id);
+        LAST_GUARD_SOUND.remove(id);
     }
 
     @SubscribeEvent
@@ -682,6 +866,8 @@ public final class KuvaStateFx {
         LAST_RESIST.clear();
         LAST_STRIKE.clear();
         LAST_FULL_SOUND.clear();
+        LAST_GUARD_SOUND.clear();
+        LATER.clear();
     }
 
     // ==================== 画 ====================
@@ -691,7 +877,8 @@ public final class KuvaStateFx {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             return;
         }
-        if (SHIELDS.isEmpty() && MARKS.isEmpty()) {
+        boolean auras = furyAuraShown();
+        if (SHIELDS.isEmpty() && MARKS.isEmpty() && !auras) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -717,6 +904,9 @@ public final class KuvaStateFx {
         mv.setIdentity();
         RenderSystem.applyModelViewMatrix();
         try {
+            if (auras) {
+                drawFuryAuras(d, mc, event.getCamera(), pt, now, additive);
+            }
             for (int i = 0, n = SHIELDS.size(); i < n; i++) {
                 Shield s = SHIELDS.get(i);
                 float age = (now - s.start) / slow;
@@ -735,6 +925,77 @@ public final class KuvaStateFx {
         } finally {
             mv.popPose();
             RenderSystem.applyModelViewMatrix();
+        }
+    }
+
+    /** 有没有哪只此刻按 3 档以上显示（要画轮廓外的红光）；「最少」强度不画 */
+    private static boolean furyAuraShown() {
+        if (FURY.isEmpty() || minimal()) {
+            return false;
+        }
+        for (Fury f : FURY.values()) {
+            if (f.shown >= 3) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 3 档起玄骸身体轮廓外一圈红光：朝相机的圆盘，中心在腰上、沿视线推到身子后面，中间整个被身体挡住，只从轮廓外透出来。
+     * 每帧按插值位置画（跟着它走、不拖尾），亮度跟纹路层同一个呼吸，档位变了 1 s 内淡进淡出
+     */
+    private static void drawFuryAuras(Draw d, Minecraft mc, Camera cam, float pt, long now, boolean additive) {
+        Vec3 left = new Vec3(cam.getLeftVector());
+        Vec3 up = new Vec3(cam.getUpVector());
+        for (Int2ObjectMap.Entry<Fury> en : FURY.int2ObjectEntrySet()) {
+            Fury f = en.getValue();
+            if (f.shown < 3) {
+                continue;
+            }
+            if (!(mc.level.getEntity(en.getIntKey()) instanceof KuvaMasterEntity k) || quiet(k)
+                    || mc.player != null && k.isInvisibleTo(mc.player)) {
+                continue;
+            }
+            int t = Math.min(f.shown, 4);
+            float ramp = FxCurve.clamp01((now - f.layerStart) / FURY_RAMP_MS);
+            float breath = 0.875F + 0.125F * Mth.sin(now / 1000.0F * FURY_BREATH_HZ[t] * Mth.TWO_PI);
+            double x = Mth.lerp(pt, k.xOld, k.getX());
+            double y = Mth.lerp(pt, k.yOld, k.getY()) + k.getBbHeight() * 0.5D;
+            double z = Mth.lerp(pt, k.zOld, k.getZ());
+            float a = FURY_AURA_ALPHA[t] * ramp * breath * AbstractKuvaRenderer.bodyAlpha(k, pt)
+                    * (additive ? KuvaFxDirector.additiveScale(x, y, z) : 0.6F);
+            if (a <= 0.003F) {
+                continue;
+            }
+            double dx = x - d.cx, dy = y - d.cy, dz = z - d.cz;
+            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (len > 1.0E-3D) {
+                double back = k.getBbWidth() * FURY_AURA_BACK / len;
+                x += dx * back;
+                y += dy * back;
+                z += dz * back;
+            }
+            auraDisc(d, x, y, z, left, up, k.getBbHeight() * FURY_AURA_RADIUS, FxPalette.KUVA, a);
+        }
+    }
+
+    /** 朝相机的圆盘：中心 a → 45% 半径处 0.6a → 边缘 0 */
+    private static void auraDisc(Draw d, double x, double y, double z, Vec3 left, Vec3 up, float r, int rgb, float a) {
+        float rm = r * 0.45F;
+        float am = a * 0.6F;
+        for (int i = 0; i < AURA_SEGMENTS; i++) {
+            double c0 = AURA_COS[i], s0 = AURA_SIN[i], c1 = AURA_COS[i + 1], s1 = AURA_SIN[i + 1];
+            double ax = left.x * c0 + up.x * s0, ay = left.y * c0 + up.y * s0, az = left.z * c0 + up.z * s0;
+            double bx = left.x * c1 + up.x * s1, by = left.y * c1 + up.y * s1, bz = left.z * c1 + up.z * s1;
+            d.v(x, y, z, rgb, a);
+            d.v(x, y, z, rgb, a);
+            d.v(x + bx * rm, y + by * rm, z + bz * rm, rgb, am);
+            d.v(x + ax * rm, y + ay * rm, z + az * rm, rgb, am);
+            d.v(x + ax * rm, y + ay * rm, z + az * rm, rgb, am);
+            d.v(x + bx * rm, y + by * rm, z + bz * rm, rgb, am);
+            d.v(x + bx * r, y + by * r, z + bz * r, rgb, 0.0F);
+            d.v(x + ax * r, y + ay * r, z + az * r, rgb, 0.0F);
         }
     }
 
@@ -885,7 +1146,7 @@ public final class KuvaStateFx {
         }
     }
 
-    /** 偏转闪（平面里的横向光条）和弱点裂纹（朝相机的细折线） */
+    /** 偏转闪（平面里的横向 / 竖向光条）和弱点裂纹（朝相机的星形折线） */
     private static final class Mark extends Attached {
         static final int FLARE = 0;
         static final int CRACK = 1;
@@ -901,18 +1162,32 @@ public final class KuvaStateFx {
             }
         }
 
+        /** 裂纹最多几道 */
+        private static final int MAX_BRANCHES = 6;
+        /** 裂纹从命中点往外裂开用多久（毫秒） */
+        private static final float CRACK_GROW_MS = 70.0F;
+        /** 裂纹的光晕：宽 × 3.2、α × 0.35 */
+        private static final float HALO_WIDTH = 3.2F;
+        private static final float HALO_ALPHA = 0.35F;
+
         int kind;
         int rgb;
         float alpha;
         int life;
         float width;
-        /** 裂纹：四个折点相对中心的偏移 */
-        final double[] pts = new double[12];
+        /** 偏转闪：高 = 宽 × thick；竖向的那条长边沿平面里的「上」 */
+        float thick;
+        boolean upright;
+        /** 裂纹：几道，每道两个折点（中间、末端）相对命中点的偏移 */
+        int branches;
+        final double[] pts = new double[MAX_BRANCHES * 6];
 
-        static Mark flare(Vec3 n, float width, int rgb, float alpha, int lifeMs) {
+        static Mark flare(Vec3 n, float width, float thick, boolean upright, int rgb, float alpha, int lifeMs) {
             Mark m = new Mark();
             m.kind = FLARE;
             m.width = width;
+            m.thick = thick;
+            m.upright = upright;
             m.rgb = rgb;
             m.alpha = alpha;
             m.life = lifeMs;
@@ -921,8 +1196,11 @@ public final class KuvaStateFx {
             return m;
         }
 
-        /** 三段折线，总长 {@code length}，两次折角 ±35°，朝向随机；画在垂直于视线的平面里 */
-        static Mark crack(Vec3 toCam, float length, float width, int rgb, float alpha, int lifeMs) {
+        /**
+         * 星形裂纹：{@code branches} 道从命中点往外裂，大致均分一圈、各自偏开一点；每道两段，长约 {@code radius}（±20%），
+         * 中间折一下（15°~35°）。画在垂直于视线的平面里
+         */
+        static Mark crack(Vec3 toCam, int branches, float radius, float width, int rgb, float alpha, int lifeMs) {
             Mark m = new Mark();
             m.kind = CRACK;
             m.width = width;
@@ -932,28 +1210,24 @@ public final class KuvaStateFx {
             m.start = KuvaFxDirector.clockMs();
             double l = toCam.length();
             m.setFrame(l < 1.0E-4D ? new Vec3(0.0D, 0.0D, 1.0D) : toCam.scale(1.0D / l));
-            double seg = length / 3.0D;
-            double ang = RANDOM.nextDouble() * Math.PI * 2.0D;
-            double bend = Math.toRadians(35.0D);
-            double x = 0.0D, y = 0.0D;
-            double[] px2 = new double[4];
-            double[] py2 = new double[4];
-            for (int i = 1; i <= 3; i++) {
-                if (i > 1) {
-                    ang += RANDOM.nextBoolean() ? bend : -bend;
-                }
-                x += Math.cos(ang) * seg;
-                y += Math.sin(ang) * seg;
-                px2[i] = x;
-                py2[i] = y;
-            }
-            // 以首尾中点为中心
-            double mx = px2[3] * 0.5D, my = py2[3] * 0.5D;
-            for (int i = 0; i < 4; i++) {
-                double a = px2[i] - mx, b = py2[i] - my;
-                m.pts[i * 3] = m.ux * a + m.vx * b;
-                m.pts[i * 3 + 1] = m.uy * a + m.vy * b;
-                m.pts[i * 3 + 2] = m.uz * a + m.vz * b;
+            m.branches = Mth.clamp(branches, 1, MAX_BRANCHES);
+            double base = RANDOM.nextDouble() * Math.PI * 2.0D;
+            double step = Math.PI * 2.0D / m.branches;
+            for (int b = 0; b < m.branches; b++) {
+                double ang = base + b * step + spread(step * 0.25D);
+                double len = radius * (0.8D + RANDOM.nextDouble() * 0.4D);
+                double first = len * (0.45D + RANDOM.nextDouble() * 0.15D);
+                double x1 = Math.cos(ang) * first, y1 = Math.sin(ang) * first;
+                double bend = Math.toRadians(15.0D + RANDOM.nextDouble() * 20.0D);
+                ang += RANDOM.nextBoolean() ? bend : -bend;
+                double x2 = x1 + Math.cos(ang) * (len - first), y2 = y1 + Math.sin(ang) * (len - first);
+                int o = b * 6;
+                m.pts[o] = m.ux * x1 + m.vx * y1;
+                m.pts[o + 1] = m.uy * x1 + m.vy * y1;
+                m.pts[o + 2] = m.uz * x1 + m.vz * y1;
+                m.pts[o + 3] = m.ux * x2 + m.vx * y2;
+                m.pts[o + 4] = m.uy * x2 + m.vy * y2;
+                m.pts[o + 5] = m.uz * x2 + m.vz * y2;
             }
             return m;
         }
@@ -984,7 +1258,10 @@ public final class KuvaStateFx {
                 return;
             }
             int mid = FxCurve.lerpColor(rgb, 0xFFFFFF, 0.6F);
-            double hw = width * 0.5D, hh = width * 0.06D;
+            double hw = width * 0.5D, hh = width * thick;
+            // 长边、短边方向：横向的沿平面里的「右」，竖向的沿「上」
+            double lx = upright ? vx : ux, ly = upright ? vy : uy, lz = upright ? vz : uz;
+            double sx = upright ? ux : vx, sy = upright ? uy : vy, sz = upright ? uz : vz;
             for (int r = 0; r < ROWS.length - 1; r++) {
                 double y0 = ROWS[r] * hh, y1 = ROWS[r + 1] * hh;
                 int c0 = ROWS[r] == 0.0F ? mid : rgb, c1 = ROWS[r + 1] == 0.0F ? mid : rgb;
@@ -992,40 +1269,68 @@ public final class KuvaStateFx {
                 for (int i = 0; i < COLS; i++) {
                     double x0 = (-1.0D + 2.0D * i / COLS) * hw, x1 = (-1.0D + 2.0D * (i + 1) / COLS) * hw;
                     float ca0 = COL_ALPHA[i], ca1 = COL_ALPHA[i + 1];
-                    d.v(px + ux * x0 + vx * y0, py + uy * x0 + vy * y0, pz + uz * x0 + vz * y0, c0, ra0 * ca0);
-                    d.v(px + ux * x1 + vx * y0, py + uy * x1 + vy * y0, pz + uz * x1 + vz * y0, c0, ra0 * ca1);
-                    d.v(px + ux * x1 + vx * y1, py + uy * x1 + vy * y1, pz + uz * x1 + vz * y1, c1, ra1 * ca1);
-                    d.v(px + ux * x0 + vx * y1, py + uy * x0 + vy * y1, pz + uz * x0 + vz * y1, c1, ra1 * ca0);
+                    d.v(px + lx * x0 + sx * y0, py + ly * x0 + sy * y0, pz + lz * x0 + sz * y0, c0, ra0 * ca0);
+                    d.v(px + lx * x1 + sx * y0, py + ly * x1 + sy * y0, pz + lz * x1 + sz * y0, c0, ra0 * ca1);
+                    d.v(px + lx * x1 + sx * y1, py + ly * x1 + sy * y1, pz + lz * x1 + sz * y1, c1, ra1 * ca1);
+                    d.v(px + lx * x0 + sx * y1, py + ly * x0 + sy * y1, pz + lz * x0 + sz * y1, c1, ra1 * ca0);
                 }
             }
         }
 
         private void drawCrack(Draw d, float age, boolean additive) {
-            float a = alpha * (1.0F - age / life) * alphaScale(additive, 1.0F);
+            // 70 ms 内从命中点往外裂开；撑到寿命的 35%，余下的时间平滑淡掉
+            float grow = FxCurve.easeOutCubic(FxCurve.clamp01(age / CRACK_GROW_MS));
+            float hold = life * 0.35F;
+            float a;
+            if (age < hold) {
+                a = 1.0F;
+            } else {
+                float k = FxCurve.clamp01((age - hold) / Math.max(1.0F, life - hold));
+                a = 1.0F - k * k * (3.0F - 2.0F * k);
+            }
+            a *= alpha * alphaScale(additive, 1.0F);
             if (a <= 0.003F) {
                 return;
             }
-            double hw = width * 0.5D;
-            for (int i = 0; i < 3; i++) {
-                double ax = px + pts[i * 3], ay = py + pts[i * 3 + 1], az = pz + pts[i * 3 + 2];
-                double bx = px + pts[i * 3 + 3], by = py + pts[i * 3 + 4], bz = pz + pts[i * 3 + 5];
-                double dx = bx - ax, dy = by - ay, dz = bz - az;
-                double mx = (ax + bx) * 0.5D - d.cx, my = (ay + by) * 0.5D - d.cy, mz = (az + bz) * 0.5D - d.cz;
-                // 侧向 = 线方向 × 视线，细带始终朝着相机
-                double sx = dy * mz - dz * my, sy = dz * mx - dx * mz, sz = dx * my - dy * mx;
-                double sl = Math.sqrt(sx * sx + sy * sy + sz * sz);
-                if (sl < 1.0E-9D) {
-                    continue;
+            int core = FxCurve.lerpColor(rgb, 0xFFFFFF, 0.55F);
+            float g1 = Math.min(1.0F, grow * 2.0F), g2 = Math.max(0.0F, grow * 2.0F - 1.0F);
+            for (int b = 0; b < branches; b++) {
+                int o = b * 6;
+                double mx = pts[o] * g1, my = pts[o + 1] * g1, mz = pts[o + 2] * g1;
+                crackSegment(d, 0.0D, 0.0D, 0.0D, mx, my, mz, width * HALO_WIDTH, rgb, a * HALO_ALPHA);
+                crackSegment(d, 0.0D, 0.0D, 0.0D, mx, my, mz, width, core, a);
+                if (g2 > 0.0F) {
+                    double tx = pts[o] + (pts[o + 3] - pts[o]) * g2, ty = pts[o + 1] + (pts[o + 4] - pts[o + 1]) * g2,
+                            tz = pts[o + 2] + (pts[o + 5] - pts[o + 2]) * g2;
+                    // 末段细一些，像裂到头
+                    crackSegment(d, pts[o], pts[o + 1], pts[o + 2], tx, ty, tz, width * 0.6F * HALO_WIDTH, rgb,
+                            a * HALO_ALPHA);
+                    crackSegment(d, pts[o], pts[o + 1], pts[o + 2], tx, ty, tz, width * 0.6F, core, a);
                 }
-                double k = hw / sl;
-                sx *= k;
-                sy *= k;
-                sz *= k;
-                d.v(ax - sx, ay - sy, az - sz, rgb, a);
-                d.v(bx - sx, by - sy, bz - sz, rgb, a);
-                d.v(bx + sx, by + sy, bz + sz, rgb, a);
-                d.v(ax + sx, ay + sy, az + sz, rgb, a);
             }
+        }
+
+        /** 一段朝着相机的细带，端点是相对 {@code px/py/pz} 的偏移 */
+        private void crackSegment(Draw d, double ox, double oy, double oz, double ex, double ey, double ez,
+                                  float w, int color, float a) {
+            double ax = px + ox, ay = py + oy, az = pz + oz;
+            double bx = px + ex, by = py + ey, bz = pz + ez;
+            double dx = bx - ax, dy = by - ay, dz = bz - az;
+            double mx = (ax + bx) * 0.5D - d.cx, my = (ay + by) * 0.5D - d.cy, mz = (az + bz) * 0.5D - d.cz;
+            // 侧向 = 线方向 × 视线，细带始终朝着相机
+            double sx = dy * mz - dz * my, sy = dz * mx - dx * mz, sz = dx * my - dy * mx;
+            double sl = Math.sqrt(sx * sx + sy * sy + sz * sz);
+            if (sl < 1.0E-9D) {
+                return;
+            }
+            double k = w * 0.5D / sl;
+            sx *= k;
+            sy *= k;
+            sz *= k;
+            d.v(ax - sx, ay - sy, az - sz, color, a);
+            d.v(bx - sx, by - sy, bz - sz, color, a);
+            d.v(bx + sx, by + sy, bz + sz, color, a);
+            d.v(ax + sx, ay + sy, az + sz, color, a);
         }
     }
 

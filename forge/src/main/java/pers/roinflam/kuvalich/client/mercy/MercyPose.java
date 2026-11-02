@@ -1294,22 +1294,25 @@ public final class MercyPose {
         model.rightArm.y = 2.0F + 3.2F * crouch;
         model.leftArm.y = 2.0F + 3.2F * crouch;
         // 身子绕脖子转，原版那组偏移只管不扭身的 0~28.6°（下蹲）。往后仰、弯得比下蹲还深、或者边扭边弯时，
-        // 身子底边会离开胯，腰上前后、左右错开一截：腿再跟着身子底边挪过去（往后仰就是挺胯，脚往前送）
+        // 身子底边会离开胯，腰上前后、左右错开一截：腿再跟着身子底边挪过去（往后仰就是挺胯，脚往前送）。
+        // 原版的身子是一整块、没有单独的胯，扭身时底边跟着转：两条腿也得一起转、各自落在转过去的底边两侧，
+        // 不然扭三四十度时腰上一边凸出一截，上下半身像拧开了
         float leanRad = v[LEAN] * DEG;
         float crouchRad = Mth.clamp(v[LEAN], 0.0F, 28.6F) * DEG;
-        float hipX = 12.0F * Mth.sin(leanRad) * Mth.sin(bodyY);
-        float hipZ = 12.0F * (Mth.sin(leanRad) * Mth.cos(bodyY) - Mth.sin(crouchRad));
+        float sin = Mth.sin(bodyY);
+        float cos = Mth.cos(bodyY);
+        float hipX = 12.0F * Mth.sin(leanRad) * sin;
+        float hipZ = 12.0F * (Mth.sin(leanRad) * cos - Mth.sin(crouchRad)) + 4.0F * crouch + dz;
         float hipY = 12.0F * (Mth.cos(leanRad) - Mth.cos(crouchRad));
-        model.rightLeg.x = -LEG_X + hipX;
-        model.leftLeg.x = LEG_X + hipX;
-        model.rightLeg.z = 4.0F * crouch + dz + hipZ;
-        model.leftLeg.z = 4.0F * crouch + dz + hipZ;
+        // 绕竖轴转 bodyY：(x, 0, 0) → (x·cos, 0, −x·sin)，和上面胯的算法、下面两肩的挪法同一个方向
+        model.rightLeg.x = hipX - LEG_X * cos;
+        model.leftLeg.x = hipX + LEG_X * cos;
+        model.rightLeg.z = hipZ + LEG_X * sin;
+        model.leftLeg.z = hipZ - LEG_X * sin;
         model.rightLeg.y = 12.0F + 0.2F * crouch + hipY;
         model.leftLeg.y = 12.0F + 0.2F * crouch + hipY;
 
         // 两肩跟着扭挪位置（照原版挥砍那几行）
-        float sin = Mth.sin(bodyY);
-        float cos = Mth.cos(bodyY);
         model.rightArm.z = sin * 5.0F + dz + v[R_PULL];
         model.rightArm.x = -cos * 5.0F;
         model.leftArm.z = -sin * 5.0F + dz;
@@ -1331,8 +1334,9 @@ public final class MercyPose {
         }
         model.rightLeg.xRot = -rLeg * DEG;
         model.leftLeg.xRot = -lLeg * DEG;
-        model.rightLeg.yRot = 0.0F;
-        model.leftLeg.yRot = 0.0F;
+        // 腿的截面跟身子底边一起转（前后摆按转过去的方向摆）
+        model.rightLeg.yRot = bodyY;
+        model.leftLeg.yRot = bodyY;
         model.rightLeg.zRot = 0.005F;
         model.leftLeg.zRot = -0.005F;
 

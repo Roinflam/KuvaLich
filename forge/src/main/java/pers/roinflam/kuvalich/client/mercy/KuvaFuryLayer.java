@@ -24,7 +24,8 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
  * 战斗增幅的渲染层：交战越久，玄骸身上原本那几道赤毒红纹路越亮
  *
  * <p>遮罩 {@code kuva_master_furymask.png}（tools/fx/make_furymask.py 从本体贴图挑出赤毒红像素生成）整只自发光再画一遍。
- * 亮度按怒意档位：2 档 0.25、3 档 0.5、4 档 0.8 并按 1.2 Hz 在 ±15% 之间呼吸，档位变了 1 s 内过渡过去，
+ * 亮度按怒意档位：1 档 0.12、2 档 0.45、3 档 0.75（按 1.2 Hz 在 ±15% 之间呼吸）、4 档 0.9（1.6 Hz、±25%，冲过 1 的部分封顶），
+ * 档位变了 1 s 内过渡过去，
  * 值由 {@link KuvaStateFx#furyLayerLevel} 给（倒地、死了、关掉状态特效时是 0）。特效强度「最少」时整层不画。</p>
  *
  * <p>开着「加法发光」时用 {@code eyes}（加法，不吃光照），白天露天乘 {@link KuvaFxDirector#additiveScale}；

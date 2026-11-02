@@ -889,7 +889,7 @@
           "type": "tip",
           "style": "info",
           "title": "Fury you can see",
-          "text": "The longer a fight runs, the brighter the Kuva veins on a Lich glow, and your own Lich's boss bar shows the current boost beneath it. Thralls that have fought for a while give off red motes from the sacs on their backs. The brighter the veins, the harder it hits."
+          "text": "The longer a fight runs, the brighter the Kuva veins on a Lich glow; drag it out further and red embers keep rising off its body while a dark red haze seeps from its feet. Your own Lich's boss bar shows the current boost beneath it. Thralls that have fought for a while give off red motes from the sacs on their backs. The brighter the veins and the thicker the embers, the harder it hits."
         }
       ]
     },
@@ -1136,14 +1136,14 @@
           "style": "info",
           "if": "!cfg:kuva_lich.lichSeededAffinities",
           "title": "Its defenses show",
-          "text": "These layers all show themselves. An arrow hit opens a crack on its body; adaptive resistance raises a hexagon plate on the side that was struck, more solid with every stack; and when burst diminishing or the soft cap cuts a big share, a flat deflection flash crosses the point of impact. Your own Lich's boss bar shows which damage types have stacks, and how many, in the row of icons beneath it."
+          "text": "These layers all show themselves. An arrow hit bursts a star of golden cracks across its body; adaptive resistance raises a hexagon plate on the side that was struck, more solid with every stack; and when burst diminishing or the soft cap cuts a big share, a white cross of light and a spray of sparks burst from the point of impact with a dull clang. Your own Lich's boss bar shows which damage types have stacks, and how many, in the row of icons beneath it."
         },
         {
           "type": "tip",
           "style": "info",
           "if": "cfg:kuva_lich.lichSeededAffinities",
           "title": "Its defenses show",
-          "text": "These layers all show themselves. A hit with its weakness opens a crack on its body (for Thralls and ownerless Liches, the weakness is arrows); adaptive resistance raises a hexagon plate on the side that was struck, more solid with every stack; and when burst diminishing or the soft cap cuts a big share, a flat deflection flash crosses the point of impact. Your own Lich's boss bar shows which damage types have stacks, and how many, in the row of icons beneath it."
+          "text": "These layers all show themselves. A hit with its weakness bursts a star of golden cracks across its body (for Thralls and ownerless Liches, the weakness is arrows); adaptive resistance raises a hexagon plate on the side that was struck, more solid with every stack; and when burst diminishing or the soft cap cuts a big share, a white cross of light and a spray of sparks burst from the point of impact with a dull clang. Your own Lich's boss bar shows which damage types have stacks, and how many, in the row of icons beneath it."
         },
         {
           "type": "h",

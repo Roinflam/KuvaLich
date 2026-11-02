@@ -964,7 +964,7 @@
             "<em>Bring two or three kinds of damage</em>: rotate melee, bow and spells. Keep hitting with one kind and it resists that kind more and more; the denser the hexagon shield flashing on its body, the more it has adapted.",
             {
               "if": "!cfg:kuva_lich.lichSeededAffinities",
-              "text": "<em>Bows first</em>: arrows deal ×1.25 damage to Kuva enemies, and a bright crack opens where they hit; other projectiles and spells only deal ×0.75."
+              "text": "<em>Bows first</em>: arrows deal ×1.25 damage to Kuva enemies, and a star of golden cracks bursts open where they hit; other projectiles and spells only deal ×0.75."
             },
             {
               "if": "cfg:kuva_lich.lichSeededAffinities",
