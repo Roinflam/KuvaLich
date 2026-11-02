@@ -71,13 +71,6 @@ public final class MercyTimeline {
     /** 成功：交还控制 */
     public static final int SUCCESS_END_MS = 8230;
 
-    /** 单刀：唯一一刀刺入 */
-    public static final int SINGLE_STAB_MS = 830;
-    /** 单刀：目标在服务端死亡 */
-    public static final int SINGLE_DEATH_MS = 1650;
-    /** 单刀：交还 */
-    public static final int SINGLE_END_MS = 2500;
-
     /** 踏背下刺：在它背上拔刀后化作一道红光（人不画），在它正面现身 */
     public static final int E_BLINK_MS = 2150;
     public static final int E_APPEAR_MS = 2470;
@@ -113,8 +106,6 @@ public final class MercyTimeline {
         SUCCESS,
         /** 玄骸第 k 刀判错 */
         FAIL,
-        /** 玄骸卡没放齐，只捅一刀 */
-        SINGLE,
         /** 奴仆 */
         THRALL
     }
@@ -135,9 +126,6 @@ public final class MercyTimeline {
         if (p.variant().thrall) {
             return Outcome.THRALL;
         }
-        if (p.stabs() == 1) {
-            return Outcome.SINGLE;
-        }
         return p.prefix() >= 3 ? Outcome.SUCCESS : Outcome.FAIL;
     }
 
@@ -157,7 +145,6 @@ public final class MercyTimeline {
         return switch (outcome(p)) {
             case SUCCESS -> shortOutro ? THIRD_MS : SUCCESS_END_MS;
             case FAIL -> failFillMs(p) + FAIL_END;
-            case SINGLE -> SINGLE_END_MS;
             case THRALL -> THRALL_END_MS;
         };
     }
@@ -165,7 +152,7 @@ public final class MercyTimeline {
     /** 原 HUD 藏到什么时候；奴仆不藏，返回 0 */
     public static int hudUntilMs(MercyPlan.Plan p, boolean shortOutro) {
         return switch (outcome(p)) {
-            case SUCCESS, SINGLE -> handbackMs(p, shortOutro);
+            case SUCCESS -> handbackMs(p, shortOutro);
             case FAIL -> failFillMs(p) + FAIL_HUD;
             case THRALL -> 0;
         };
@@ -186,13 +173,12 @@ public final class MercyTimeline {
         return switch (outcome(p)) {
             case SUCCESS -> t >= SUCCESS_DEATH_MS;
             case FAIL -> t >= failFillMs(p) + FAIL_ESCAPE;
-            case SINGLE -> t >= SINGLE_DEATH_MS;
             case THRALL -> t >= THRALL_DEATH_MS;
         };
     }
 
     /**
-     * 每一刀刺入（刀尖接触）的时刻，按这一场实际会捅的刀数给：成功三个，失败捅到判错那一刀为止，单刀一个，奴仆一个
+     * 每一刀刺入（刀尖接触）的时刻，按这一场实际会捅的刀数给：成功三个，失败捅到判错那一刀为止，奴仆一个
      */
     public static int[] stabTimes(MercyPlan.Plan p) {
         MercyVariant v = p.variant();
@@ -205,17 +191,15 @@ public final class MercyTimeline {
                 System.arraycopy(all, 0, out, 0, k);
                 yield out;
             }
-            case SINGLE -> new int[]{SINGLE_STAB_MS};
             case THRALL -> new int[]{v.stabMs(0)};
         };
     }
 
-    /** 第 {@code i} 刀（从 0 起）是不是「出结果的那一刀」（成功第三刀、判错那一刀、单刀）：推镜和震动加重 */
+    /** 第 {@code i} 刀（从 0 起）是不是「出结果的那一刀」（成功第三刀、判错那一刀）：推镜和震动加重 */
     public static boolean isHeavyStab(MercyPlan.Plan p, int i) {
         return switch (outcome(p)) {
             case SUCCESS -> i == 2;
             case FAIL -> i == failK(p) - 1;
-            case SINGLE -> true;
             case THRALL -> false;
         };
     }
@@ -279,18 +263,6 @@ public final class MercyTimeline {
             world(KuvaLichSounds.MERCY_DRAW.get(), x.handPos(), 1.0F, 1.0F);
             drawFlare(x);
         });
-
-        if (oc == Outcome.SINGLE) {
-            tl.at(SINGLE_STAB_MS, x -> {
-                Entity t = x.target();
-                if (t == null) {
-                    return;
-                }
-                world(KuvaLichSounds.MERCY_STAB_FINAL.get(), chest(t), 1.0F, KuvaSoundPlayer.jitter(1.0F, 0.02F));
-                RequiemFx.bladeSpark(t, 3, false);
-            });
-            return tl.done();
-        }
 
         int[] stab = p.variant().stabMs();
         int[] fill = MercyVariant.LICH_FILL_MS;

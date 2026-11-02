@@ -20,6 +20,7 @@ import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
+import pers.roinflam.kuvalich.item.card.OULL;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.InventoryUtil;
 
@@ -35,7 +36,7 @@ import pers.roinflam.kuvalich.utils.InventoryUtil;
  * 1. 显示当前解密进度和已解锁的卡片
  * 2. 允许玩家放置3张安魂卡进行解密
  * 3. 自动从玩家Capability加载已配置的卡片
- * 4. 关闭时保存卡片配置到Capability
+ * 4. 卡槽一有变化就写回 Capability（不等关界面，见 {@link #mirrorCardsToCapability}）
  *
  * 新增：autoFillAnswerCards —— 创造模式一键补全正确答案卡片（由 RequiemGateFillPacket 调用）
  */
@@ -50,6 +51,9 @@ public class RequiemGateMenu extends AbstractContainerMenu {
 
     /** 同步数据容器 / Synchronized data container */
     private final ContainerData data;
+
+    /** removed() 已经把卡存走、清了数量，之后不再往玩家数据里写 */
+    private boolean closed;
 
     /** 数据索引常量 / Data index constants */
     private static final int DATA_ONE_RIDDLE = 0;
@@ -69,7 +73,12 @@ public class RequiemGateMenu extends AbstractContainerMenu {
         this.player = playerInventory.player;
         this.level = level;
         this.pos = pos;
-        this.cardHandler = new ItemStackHandler(3);
+        this.cardHandler = new ItemStackHandler(3) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                mirrorCardsToCapability();
+            }
+        };
         this.data = new SimpleContainerData(DATA_COUNT);
 
         // 添加卡片槽位（可放置）/ Add card slots (placeable)
@@ -111,10 +120,11 @@ public class RequiemGateMenu extends AbstractContainerMenu {
                 ItemStack threeCard = cardHandler.getStackInSlot(2);
 
                 // 只有当槽位为空时才加载 / Only load if slots are empty
+                // 放副本：卡槽和玩家数据各管各的对象，拿出来的那张不会还挂在玩家数据上
                 if (oneCard.isEmpty() && twoCard.isEmpty() && threeCard.isEmpty()) {
-                    cardHandler.insertItem(0, requiemCard.getOneCard(), false);
-                    cardHandler.insertItem(1, requiemCard.getTwoCard(), false);
-                    cardHandler.insertItem(2, requiemCard.getThreeCard(), false);
+                    cardHandler.insertItem(0, requiemCard.getOneCard().copy(), false);
+                    cardHandler.insertItem(1, requiemCard.getTwoCard().copy(), false);
+                    cardHandler.insertItem(2, requiemCard.getThreeCard().copy(), false);
 
                     LogUtil.debugEvent("灭骸之扉菜单创建", player.getName().getString(),
                             "已加载玩家的卡片配置");
@@ -134,6 +144,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
         super.broadcastChanges();
 
         if (!level.isClientSide) {
+            // 槽位里的物品被原地改了数量 / NBT 时不会触发 onContentsChanged，每 tick 再对一遍
+            mirrorCardsToCapability();
             try {
                 player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
                     // 同步谜语卡片ID / Sync riddle card IDs
@@ -149,6 +161,35 @@ public class RequiemGateMenu extends AbstractContainerMenu {
                 LogUtil.error("同步解密数据到客户端时发生错误", e);
             }
         }
+    }
+
+    /**
+     * 卡槽写回玩家数据（只在服务端；和现有的不一样才写）
+     *
+     * <p>以前只在关界面时写回，可原版下线时是先存档、后关界面（{@code PlayerList#remove}），
+     * 开着界面下线，刚放进去的卡写在存档之后就丢了；从卡槽拿出来的那张，玩家数据里却还留着，等于多了一张。
+     * 现在放进 / 拿走当下就写，玩家数据始终和卡槽一致；下线时由 {@link RequiemMenuLogoutGuard} 在存档前关界面，
+     * 两头都兜住。不是安魂卡的东西不写进去（卡槽本来也不收），关界面时照旧退回。</p>
+     */
+    private void mirrorCardsToCapability() {
+        if (level.isClientSide || closed) {
+            return;
+        }
+        player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
+            ItemStack[] saved = {requiemCard.getOneCard(), requiemCard.getTwoCard(), requiemCard.getThreeCard()};
+            for (int i = 0; i < 3; i++) {
+                ItemStack inSlot = cardHandler.getStackInSlot(i);
+                ItemStack card = inSlot.getItem() instanceof AbstractRequiemCard ? inSlot : ItemStack.EMPTY;
+                if (ItemStack.matches(saved[i], card)) {
+                    continue;
+                }
+                switch (i) {
+                    case 0 -> requiemCard.setOneCard(card.copy());
+                    case 1 -> requiemCard.setTwoCard(card.copy());
+                    default -> requiemCard.setThreeCard(card.copy());
+                }
+            }
+        });
     }
 
     /**
@@ -196,6 +237,7 @@ public class RequiemGateMenu extends AbstractContainerMenu {
 
         if (!level.isClientSide) {
             saveCardsToCapability(player);
+            closed = true;
         }
     }
 
@@ -205,6 +247,17 @@ public class RequiemGateMenu extends AbstractContainerMenu {
      */
     private void saveCardsToCapability(Player player) {
         try {
+            // 兜底：卡槽本身不收第二张 Oull，万一还是多出来了（别的模组往里塞），多的退回背包
+            boolean oullSeen = false;
+            for (int i = 0; i < 3; i++) {
+                if (OULL.is(cardHandler.getStackInSlot(i))) {
+                    if (oullSeen) {
+                        InventoryUtil.giveOrDrop(player, cardHandler.getStackInSlot(i).copy());
+                        cardHandler.setStackInSlot(i, ItemStack.EMPTY);
+                    }
+                    oullSeen = true;
+                }
+            }
             ItemStack oneCard = cardHandler.getStackInSlot(0);
             ItemStack twoCard = cardHandler.getStackInSlot(1);
             ItemStack threeCard = cardHandler.getStackInSlot(2);
@@ -254,7 +307,7 @@ public class RequiemGateMenu extends AbstractContainerMenu {
      * <p>
      * 从玩家 RequiemCard 能力读取 oneAnswer/twoAnswer/threeAnswer（带正确顺序），
      * 创建对应的三张安魂卡按正确顺序填入卡槽，省去手动查看答案并从背包找卡的步骤。
-     * 玩家关闭界面时，{@link #saveCardsToCapability} 会把这三张卡持久化到能力，
+     * 填入当下就写进能力（{@link #mirrorCardsToCapability}），
      * 之后击杀玄骸即可用这些卡自动验证解密。
      * <p>
      * 若答案尚未生成（玩家还未解锁第一阶段，answer 为 -1），静默返回不做任何操作。
@@ -353,9 +406,23 @@ public class RequiemGateMenu extends AbstractContainerMenu {
             super(itemHandler, index, xPosition, yPosition);
         }
 
+        /** 只收安魂卡；Oull 同时只能装一张，别的格子已经有一张时不收（拖放、Shift 快速移动、数字键换位都走这里） */
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            return (stack.getItem() instanceof AbstractRequiemCard) && super.mayPlace(stack);
+            if (!(stack.getItem() instanceof AbstractRequiemCard) || !super.mayPlace(stack)) {
+                return false;
+            }
+            return !OULL.is(stack) || !hasOullElsewhere(getItemHandler(), getSlotIndex());
         }
+    }
+
+    /** 卡槽里除了 {@code except} 这一格，别的格子有没有 Oull */
+    static boolean hasOullElsewhere(IItemHandler handler, int except) {
+        for (int i = 0; i < Math.min(3, handler.getSlots()); i++) {
+            if (i != except && OULL.is(handler.getStackInSlot(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -145,6 +145,15 @@ public final class MurmurTriangle {
      * @param nowMs 演出时钟
      */
     public void render(GuiGraphics g, float cx, float cy, long nowMs) {
+        render(g, cx, cy, nowMs, 1.0F);
+    }
+
+    /**
+     * 画三角，整体乘一个透明度（界面开场淡入用）
+     *
+     * @param alpha 整体透明度 0~1
+     */
+    public void render(GuiGraphics g, float cx, float cy, long nowMs, float alpha) {
         advanceCycle(nowMs);
         float move = moveFraction(nowMs - cycle * CYCLE_MS);
         float lw = GuiShapes.pixels(g, GuiShapes.lineWidthPx());
@@ -189,14 +198,28 @@ public final class MurmurTriangle {
             if (crystalA > 0.0F) {
                 // 刚揭示的那一枚淡出时是满的（它这一阶段刚走完）
                 float p = id >= 0 ? 1.0F : (i == active ? progress : 0.0F);
-                drawCrystal(g, x, y, size * 0.5F, p, crystalA, 0.0F, lw, nowMs);
+                drawCrystal(g, x, y, size * 0.5F, p, crystalA * alpha, 0.0F, lw, nowMs);
             }
             if (sigilA > 0.0F) {
-                RequiemSigils.draw(g, id, x, y, size, GuiShapes.argb(FxPalette.KUVA_PALE, sigilA), 0);
+                RequiemSigils.draw(g, id, x, y, size, GuiShapes.argb(FxPalette.KUVA_PALE, sigilA * alpha), 0);
             }
         }
         GuiShapes.end();
         rendered = true;
+    }
+
+    /** 第 {@code i} 格上一帧画在哪（揭示时在那一枚上扩一圈之类） */
+    public float lastX(int i) {
+        return lastX[i];
+    }
+
+    public float lastY(int i) {
+        return lastY[i];
+    }
+
+    /** 正在解的那一枚此刻显示的进度（补间过的），和菱晶液面同步 */
+    public float shown(long nowMs) {
+        return shownProgress(nowMs);
     }
 
     /**

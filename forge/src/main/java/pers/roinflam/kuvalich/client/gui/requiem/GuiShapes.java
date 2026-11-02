@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.client.gui.requiem;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -12,6 +13,7 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
+import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 
 /**
  * 界面里用的抗锯齿线框图元：菱形、圆环弧、三角、发丝线、凸多边形和小圆点
@@ -51,6 +53,8 @@ public final class GuiShapes {
     private static Matrix4f mat;
     /** 当前坐标下 1 个物理像素有多长 */
     private static float px = 1.0F;
+    /** 提交时用加法混合（见 {@link #additive}） */
+    private static boolean additive;
 
     private GuiShapes() {
     }
@@ -109,11 +113,16 @@ public final class GuiShapes {
         }
         // 三角形的绕向不统一（接头、过渡带两侧方向相反），提交时关掉背面剔除
         RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        if (additive) {
+            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+        } else {
+            RenderSystem.defaultBlendFunc();
+        }
         RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         BufferUploader.drawWithShader(rb);
         RenderSystem.enableCull();
+        RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
     }
 
@@ -133,6 +142,105 @@ public final class GuiShapes {
         if (own) {
             submit();
         }
+    }
+
+    /**
+     * 切换加法混合（SRC_ALPHA, ONE）：闪光、光晕叠上去只会更亮。切换前把已经攒着的图元按原来的混合提交掉；
+     * 关掉「加法发光」选项时一直走普通混合。用完记得切回 {@code false}
+     */
+    public static void additive(GuiGraphics g, boolean on) {
+        boolean want = on && EffectsDisplayConfig.additiveGlow();
+        if (additive == want) {
+            return;
+        }
+        flush(g);
+        additive = want;
+    }
+
+    // ==================== 对齐物理像素的横竖线 ====================
+
+    /** 实心矩形，不带边缘过渡：坐标已经对齐到物理像素时用（过渡带反而会让细线糊一圈） */
+    public static void block(GuiGraphics g, float x0, float y0, float x1, float y1, int argb) {
+        if ((argb >>> 24) == 0 || x1 <= x0 || y1 <= y0) {
+            return;
+        }
+        boolean own = enter(g);
+        quad(x0, y0, argb, x1, y0, argb, x1, y1, argb, x0, y1, argb);
+        leave(own);
+    }
+
+    /** 横细线：中线在 {@code y}、粗 {@code lwPx} 个物理像素，四边都对齐到物理像素，界面倍数 2、3 时也不糊 */
+    public static void hline(GuiGraphics g, float x0, float x1, float y, int lwPx, int argb) {
+        hlineFade(g, x0, x1, y, lwPx, argb, argb);
+    }
+
+    /** 横细线，左端 {@code argb0}、右端 {@code argb1} 之间渐变（一端渐隐的下划线） */
+    public static void hlineFade(GuiGraphics g, float x0, float x1, float y, int lwPx, int argb0, int argb1) {
+        if (((argb0 | argb1) >>> 24) == 0) {
+            return;
+        }
+        float p = pixel(g);
+        float a = snapPx(Math.min(x0, x1), p);
+        float b = snapPx(Math.max(x0, x1), p);
+        if (b <= a) {
+            return;
+        }
+        int c0 = x0 <= x1 ? argb0 : argb1;
+        int c1 = x0 <= x1 ? argb1 : argb0;
+        float top = Math.round(y / p - lwPx * 0.5F) * p;
+        float bot = top + lwPx * p;
+        boolean own = enter(g);
+        quad(a, top, c0, b, top, c1, b, bot, c1, a, bot, c0);
+        leave(own);
+    }
+
+    /** 竖细线，同 {@link #hline} */
+    public static void vline(GuiGraphics g, float x, float y0, float y1, int lwPx, int argb) {
+        float p = pixel(g);
+        float a = snapPx(Math.min(y0, y1), p);
+        float b = snapPx(Math.max(y0, y1), p);
+        float left = Math.round(x / p - lwPx * 0.5F) * p;
+        block(g, left, a, left + lwPx * p, b, argb);
+    }
+
+    /** 矩形细框：四条边各一条对齐的细线，角上不重叠 */
+    public static void frame(GuiGraphics g, float x0, float y0, float x1, float y1, int lwPx, int argb) {
+        if ((argb >>> 24) == 0) {
+            return;
+        }
+        float p = pixel(g);
+        float w = lwPx * p;
+        float l = Math.round(x0 / p - lwPx * 0.5F) * p;
+        float r = Math.round(x1 / p - lwPx * 0.5F) * p;
+        float t = Math.round(y0 / p - lwPx * 0.5F) * p;
+        float b = Math.round(y1 / p - lwPx * 0.5F) * p;
+        begin(g);
+        block(g, l, t, r + w, t + w, argb);
+        block(g, l, b, r + w, b + w, argb);
+        block(g, l, t + w, l + w, b, argb);
+        block(g, r, t + w, r + w, b, argb);
+        end();
+    }
+
+    /** 虚线框：每段 2 个界面单位、间隔 2 */
+    public static void dashedFrame(GuiGraphics g, float x0, float y0, float x1, float y1, int lwPx, int argb) {
+        if ((argb >>> 24) == 0) {
+            return;
+        }
+        begin(g);
+        for (float x = x0; x < x1; x += 4.0F) {
+            hline(g, x, Math.min(x + 2.0F, x1), y0, lwPx, argb);
+            hline(g, x, Math.min(x + 2.0F, x1), y1, lwPx, argb);
+        }
+        for (float y = y0 + 2.0F; y < y1 - 1.0F; y += 4.0F) {
+            vline(g, x0, y, Math.min(y + 2.0F, y1), lwPx, argb);
+            vline(g, x1, y, Math.min(y + 2.0F, y1), lwPx, argb);
+        }
+        end();
+    }
+
+    private static float snapPx(float v, float p) {
+        return Math.round(v / p) * p;
     }
 
     // ==================== 尺寸换算 ====================

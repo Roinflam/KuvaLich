@@ -25,6 +25,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -37,6 +38,7 @@ import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.item.card.OULL;
 import pers.roinflam.kuvalich.mercy.KuvaStateKind;
 import pers.roinflam.kuvalich.mercy.KuvaStateServer;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
@@ -51,6 +53,9 @@ import pers.roinflam.kuvalich.module.KillStackManager.StackType;
 import pers.roinflam.kuvalich.module.weapon.WeaponCombatHandler;
 import pers.roinflam.kuvalich.utils.LivingEntityUtil;
 import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.world.inventory.RequiemGateMenu;
+import pers.roinflam.kuvalich.world.inventory.RequiemMenuLogoutGuard;
+import pers.roinflam.kuvalich.world.inventory.RequiemWeaponTableMenu;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -60,7 +65,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 怜悯之击服务端核心：倒地不死、倒地无敌、按前缀定案、失败和成功的时间轴、卡没齐的单刀、
+ * 怜悯之击服务端核心：倒地不死、倒地无敌、按前缀定案、失败和成功的时间轴、空格算判错、Oull、
  * 奴仆处决、自然消失的截停、碰撞箱跟着同步数据变
  *
  * <p>处决时间轴在每个服务端 tick 末尾推进一步，从开始处决的那个测试回调起算，第 k 个测试 tick 时处决正好走了 k 步，
@@ -76,7 +81,12 @@ public final class MercyCoreTests {
     private static final String ISO_PREFIX = "kl_mercy_iso_prefixJudgement";
     private static final String ISO_FAIL = "kl_mercy_iso_failTimeline";
     private static final String ISO_SUCCESS = "kl_mercy_iso_successRewardTiming";
-    private static final String ISO_SINGLE = "kl_mercy_iso_unreadySingleStab";
+    private static final String ISO_EMPTY = "kl_mercy_iso_emptyCardsFailFirst";
+    private static final String ISO_THIRD_EMPTY = "kl_mercy_iso_thirdEmptyFailsThird";
+    private static final String ISO_OULL_SUCCESS = "kl_mercy_iso_oullDefeatsLich";
+    private static final String CFG_OULL_DROP = "kl_cfg_oullDropOnFailure";
+    private static final String CFG_OULL_PREFIX0 = "kl_cfg_oullNoDropWithoutHit";
+    private static final String CFG_OULL_ZERO = "kl_cfg_oullNoDropAtZero";
     private static final String ISO_THRALL = "kl_cfg_thrallExecution";
     private static final String ISO_THRALL_BIRTH = "kl_mercy_iso_thrallRevealBirth";
     private static final String CFG_AFFINITY = "kl_cfg_affinityHitFlags";
@@ -292,10 +302,11 @@ public final class MercyCoreTests {
         KuvaTestKit.afterBatch(level);
     }
 
-    // ==================== #12 卡没齐：单刀 ====================
+    // ==================== #12 卡没放齐：照三刀判，空格算判错 ====================
 
-    @GameTest(template = "empty", batch = ISO_SINGLE, timeoutTicks = 200)
-    public static void unreadySingleStab(GameTestHelper h) {
+    @GameTest(template = "empty", batch = ISO_EMPTY, timeoutTicks = 200)
+    public static void emptyCardsFailFirst(GameTestHelper h) {
+        listenDeaths();
         ServerPlayer p = KuvaTestKit.player(h);
         RequiemCard card = card(p);
         bornByProgress(p, card);
@@ -305,30 +316,292 @@ public final class MercyCoreTests {
             card.setOneCard(ItemStack.EMPTY);
             card.setTwoCard(ItemStack.EMPTY);
             card.setThreeCard(ItemStack.EMPTY);
-            card.setDecryptionProgress(0);
-            int stage = card.getUnlockedCardStatus();
+            int level = card.getKuvaLevel();
             int attempts = card.getAttempts().length;
             lich.forceDowned(p);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
-            h.assertTrue(MercyPlan.decode(lich.getMercyPlan()).stabs() == 1, "卡没齐应当只有一刀");
-            h.runAfterDelay(32, () -> h.assertTrue(lich.isAlive(), "tick 32 还活着"));
-            h.runAfterDelay(33, () -> {
-                h.assertTrue(!lich.isAlive(), "tick 33 应当死了");
-                double mul = ModConfig.KUVA_LICH.masterPotionMultiplier.get();
-                int min = (int) (ModConfig.KUVA_LICH.minDecryptionProgress.get() * mul);
-                int max = (int) (ModConfig.KUVA_LICH.maxDecryptionProgress.get() * mul);
-                int got = card.getDecryptionProgress();
-                h.assertTrue(card.getUnlockedCardStatus() == stage, "这一下不该跨阶段（测试前提）");
-                h.assertTrue(got >= min && got <= max, "进度应当在 [" + min + ", " + max + "]，实际 " + got);
-                h.assertTrue(card.getAttempts().length == attempts, "单刀不记尝试");
+            MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
+            h.assertTrue(plan.stabs() == 3 && plan.prefix() == 0, "没装卡也照三刀判、第一刀错：刀数 " + plan.stabs()
+                    + "，前缀 " + plan.prefix());
+            h.runAfterDelay(17, () -> {
+                h.assertTrue(card.getKuvaLevel() == level + 1, "定案后玄骸应当升一级");
+                h.assertTrue(card.getAttempts().length == Math.min(attempts + 1, RequiemCard.MAX_ATTEMPTS), "应当记一行尝试");
+                int row = card.getAttempts()[0];
+                h.assertTrue(RequiemCard.attemptCardId(row, 0) == RequiemCard.ATTEMPT_NO_CARD
+                                && RequiemCard.attemptResult(row, 0) == RequiemCard.ATTEMPT_WRONG
+                                && RequiemCard.attemptResult(row, 1) == RequiemCard.ATTEMPT_UNJUDGED,
+                        "记录：第一位没放卡、判错，后面没判到");
+            });
+            // 第一格 tick 17 判错：+48 离场、+58 移除（逃走）
+            h.runAfterDelay(76, () -> {
+                h.assertTrue(lich.isRemoved() && !DIED.contains(lich.getUUID()), "玄骸应当逃走了，不是死了");
+                h.assertTrue(card.hasLich() && card.getKuvaLevel() == level + 1, "这一轮还在，等级 +1");
+            });
+            // 解锁在 +55，之后还有 10 tick 无敌余量
+            h.runAfterDelay(84, () -> {
+                h.assertTrue(!MercyServer.isBusy(p), "处决者应当已经解锁、过了无敌余量");
                 h.succeed();
             });
         });
     }
 
-    @AfterBatch(batch = ISO_SINGLE)
-    public static void afterSingle(ServerLevel level) {
+    @AfterBatch(batch = ISO_EMPTY)
+    public static void afterEmpty(ServerLevel level) {
         KuvaTestKit.afterBatch(level);
+    }
+
+    @GameTest(template = "empty", batch = ISO_THIRD_EMPTY, timeoutTicks = 200)
+    public static void thirdEmptyFailsThird(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = card(p);
+        bornByProgress(p, card);
+        KuvaMasterEntity lich = summonFront(h, p);
+        p.setGameMode(GameType.CREATIVE);
+        h.runAfterDelay(2, () -> {
+            setCards(card, 3);
+            card.setThreeCard(ItemStack.EMPTY);
+            h.assertTrue(card.correctPrefixLength() == 2, "两对一空：前缀应当是 2，实际 " + card.correctPrefixLength());
+            int level = card.getKuvaLevel();
+            lich.forceDowned(p);
+            h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
+            MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
+            h.assertTrue(plan.stabs() == 3 && plan.prefix() == 2 && plan.cardIds()[2] == -1,
+                    "计划位：三刀、第三刀判错、第三格空：刀数 " + plan.stabs() + "，前缀 " + plan.prefix());
+            h.runAfterDelay(17, () -> {
+                h.assertTrue(card.getKuvaLevel() == level + 1, "定案后玄骸应当升一级");
+                int row = card.getAttempts()[0];
+                h.assertTrue(RequiemCard.attemptResult(row, 0) == RequiemCard.ATTEMPT_RIGHT
+                                && RequiemCard.attemptResult(row, 1) == RequiemCard.ATTEMPT_RIGHT
+                                && RequiemCard.attemptResult(row, 2) == RequiemCard.ATTEMPT_WRONG
+                                && RequiemCard.attemptCardId(row, 2) == RequiemCard.ATTEMPT_NO_CARD,
+                        "记录：前两位对、第三位没放卡判错");
+                h.succeed();
+            });
+        });
+    }
+
+    @AfterBatch(batch = ISO_THIRD_EMPTY)
+    public static void afterThirdEmpty(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    // ==================== Oull：放在哪一格都算对 ====================
+
+    @GameTest(template = "empty", batch = CORE)
+    public static void oullFitsAnySlot(GameTestHelper h) {
+        RequiemCard card = new RequiemCard();
+        card.setUnlockedCardStatus(1);
+        card.setOneAnswer(0);
+        card.setTwoAnswer(1);
+        card.setThreeAnswer(2);
+        int[] answers = {0, 1, 2};
+        for (int at = 0; at < 3; at++) {
+            ItemStack[] stacks = new ItemStack[3];
+            for (int i = 0; i < 3; i++) {
+                stacks[i] = new ItemStack(KuvaLichItems.getRequiemCard(i == at ? OULL.ID : answers[i]));
+            }
+            card.setOneCard(stacks[0]);
+            card.setTwoCard(stacks[1]);
+            card.setThreeCard(stacks[2]);
+            h.assertTrue(card.correctPrefixLength() == 3 && card.isCorrectAnswer(), "Oull 在第 " + (at + 1) + " 格应当算对");
+            h.assertTrue(card.isFirstCorrectAnswer() && card.isTwoCorrectAnswer(), "Oull 在第 " + (at + 1) + " 格：单格判定也算对");
+        }
+        // Oull 只顶它自己那一格：第一格 Oull、第二格放错，前缀停在 1
+        card.setOneCard(new ItemStack(KuvaLichItems.OULL_CARD.get()));
+        card.setTwoCard(new ItemStack(KuvaLichItems.getRequiemCard(7)));
+        card.setThreeCard(new ItemStack(KuvaLichItems.getRequiemCard(2)));
+        h.assertTrue(card.correctPrefixLength() == 1 && !card.isCorrectAnswer(), "Oull + 错卡：前缀应当是 1");
+        h.assertTrue(KuvaLichItems.getRequiemCard(OULL.ID) == KuvaLichItems.OULL_CARD.get(), "id 8 应当取到 Oull");
+        h.assertTrue(!RequiemCard.fits(ItemStack.EMPTY, 0), "空格不算对");
+        int packed = RequiemCard.packAttempt(new int[]{OULL.ID, 1, -1}, new byte[]{1, 2, 0}, true);
+        h.assertTrue(RequiemCard.attemptCardId(packed, 0) == OULL.ID && RequiemCard.attemptCardId(packed, 2) == RequiemCard.ATTEMPT_NO_CARD,
+                "处决记录应当能记下 Oull");
+        h.succeed();
+    }
+
+    // ==================== Oull：同时只能装一张 ====================
+
+    @GameTest(template = "empty", batch = CORE)
+    public static void gateRejectsSecondOull(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = card(p);
+        card.setOneCard(ItemStack.EMPTY);
+        card.setTwoCard(ItemStack.EMPTY);
+        card.setThreeCard(ItemStack.EMPTY);
+        p.getInventory().clearContent();
+        RequiemGateMenu menu = new RequiemGateMenu(1, p.getInventory(), h.getLevel(), p.blockPosition());
+        ItemStack oull = new ItemStack(KuvaLichItems.OULL_CARD.get());
+        h.assertTrue(menu.getSlot(0).mayPlace(oull), "第一张 Oull 应当放得进");
+        menu.getSlot(0).set(oull.copy());
+        h.assertTrue(!menu.getSlot(1).mayPlace(oull) && !menu.getSlot(2).mayPlace(oull), "第二张 Oull 应当放不进");
+        h.assertTrue(menu.getSlot(1).mayPlace(new ItemStack(KuvaLichItems.getRequiemCard(1))), "普通卡照常放得进");
+        h.assertTrue(menu.getSlot(0).mayPlace(oull), "同一格换一张 Oull 不算第二张");
+        // Shift 快速移动：快捷栏第一格（菜单里的第 3 格）放一张 Oull，移不进卡槽
+        p.getInventory().setItem(0, oull.copy());
+        menu.quickMoveStack(p, 3);
+        h.assertTrue(OULL.is(p.getInventory().getItem(0)), "Shift 移动：第二张 Oull 应当留在背包里");
+        h.assertTrue(menu.getSlot(1).getItem().isEmpty() && menu.getSlot(2).getItem().isEmpty(), "Shift 移动：卡槽里不该多出 Oull");
+        // 普通卡照常能 Shift 进去
+        p.getInventory().setItem(1, new ItemStack(KuvaLichItems.getRequiemCard(2)));
+        menu.quickMoveStack(p, 4);
+        h.assertTrue(p.getInventory().getItem(1).isEmpty() && !menu.getSlot(1).getItem().isEmpty(), "Shift 移动：普通卡应当进卡槽");
+        menu.removed(p);
+        h.assertTrue(OULL.is(card.getOneCard()) && !OULL.is(card.getTwoCard()) && !OULL.is(card.getThreeCard()),
+                "关界面后存下的只有一张 Oull");
+        h.succeed();
+    }
+
+    // ==================== 灭骸之扉：放进 / 拿走当下就存，不等关界面 ====================
+
+    @GameTest(template = "empty", batch = CORE)
+    public static void gateSavesCardsWhileOpen(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = card(p);
+        card.setOneCard(ItemStack.EMPTY);
+        card.setTwoCard(ItemStack.EMPTY);
+        card.setThreeCard(ItemStack.EMPTY);
+        p.getInventory().clearContent();
+        RequiemGateMenu menu = new RequiemGateMenu(1, p.getInventory(), h.getLevel(), p.blockPosition());
+        ItemStack first = new ItemStack(KuvaLichItems.getRequiemCard(1));
+        menu.getSlot(0).set(first.copy());
+        h.assertTrue(ItemStack.matches(card.getOneCard(), first), "放进卡槽当下就该写进玩家数据");
+        ItemStack taken = menu.getSlot(0).remove(1);
+        h.assertTrue(!taken.isEmpty() && card.getOneCard().isEmpty(), "拿走当下玩家数据里也该清掉");
+        // 重开界面：卡槽里放的是副本，拿出来的那张不会还挂在玩家数据上
+        card.setTwoCard(first.copy());
+        RequiemGateMenu again = new RequiemGateMenu(2, p.getInventory(), h.getLevel(), p.blockPosition());
+        h.assertTrue(again.getSlot(1).getItem() != card.getTwoCard(), "卡槽和玩家数据不该共用同一个物品对象");
+        again.getSlot(1).remove(1);
+        h.assertTrue(card.getTwoCard().isEmpty(), "重开后拿走的卡也该从玩家数据里清掉");
+        h.succeed();
+    }
+
+    // ==================== 开着安魂界面下线：存档前先关界面 ====================
+
+    @GameTest(template = "empty", batch = CORE)
+    public static void logoutClosesRequiemMenuBeforeSave(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        p.getInventory().clearContent();
+        RequiemWeaponTableMenu menu = new RequiemWeaponTableMenu(1, p.getInventory(), h.getLevel(), p.blockPosition());
+        menu.weaponHandler.setStackInSlot(0, new ItemStack(KuvaLichItems.KUVA_SHILDEG.get()));
+        menu.setCarried(new ItemStack(KuvaLichItems.getRequiemCard(3)));
+        p.containerMenu = menu;
+        RequiemMenuLogoutGuard.closeRequiemMenuBeforeSave(new PlayerEvent.PlayerLoggedOutEvent(p));
+        h.assertTrue(p.containerMenu == p.inventoryMenu, "下线时应当先关掉安魂界面");
+        h.assertTrue(p.getInventory().countItem(KuvaLichItems.KUVA_SHILDEG.get()) == 1, "军械库里的武器应当退回背包");
+        h.assertTrue(p.getInventory().countItem(KuvaLichItems.getRequiemCard(3)) == 1, "光标上的卡应当放回背包，不是扔在地上");
+        h.succeed();
+    }
+
+    // ==================== Oull：和两张对的卡一起击败玄骸，扣一次 ====================
+
+    @GameTest(template = "empty", batch = ISO_OULL_SUCCESS, timeoutTicks = 200)
+    public static void oullDefeatsLich(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = card(p);
+        bornByProgress(p, card);
+        KuvaMasterEntity lich = summonFront(h, p);
+        p.setGameMode(GameType.CREATIVE);
+        h.runAfterDelay(2, () -> {
+            setCards(card, 3);
+            card.setTwoCard(new ItemStack(KuvaLichItems.OULL_CARD.get()));
+            p.getInventory().clearContent();
+            lich.forceDowned(p);
+            h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
+            MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
+            h.assertTrue(plan.prefix() == 3 && plan.cardIds()[1] == OULL.ID, "计划位：成功、第二格是 Oull");
+            h.runAfterDelay(17, () -> {
+                h.assertTrue(!card.isReadyCard() && !card.hasLich(), "成功：卡扣掉、这一轮结束");
+                ItemStack back = ItemStack.EMPTY;
+                for (ItemStack s : p.getInventory().items) {
+                    if (OULL.is(s)) {
+                        back = s;
+                    }
+                }
+                h.assertTrue(!back.isEmpty() && back.getDamageValue() == 1, "Oull 应当扣一次后回到背包，耐久损耗 "
+                        + (back.isEmpty() ? "（没找到）" : back.getDamageValue()));
+                h.succeed();
+            });
+        });
+    }
+
+    @AfterBatch(batch = ISO_OULL_SUCCESS)
+    public static void afterOullSuccess(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    // ==================== Oull：处决失败、猜对过才按几率掉 ====================
+
+    /** 概率配 100、第二刀判错（前缀 1）：收尾时给一张 */
+    @GameTest(template = "empty", batch = CFG_OULL_DROP, timeoutTicks = 200)
+    public static void oullDropOnFailure(GameTestHelper h) {
+        KuvaTestKit.override(ModConfig.KUVA_LICH.oullDropChance, 100);
+        oullDropRound(h, 1, true);
+    }
+
+    @AfterBatch(batch = CFG_OULL_DROP)
+    public static void afterOullDrop(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    /** 概率配 100、第一刀就错（前缀 0）：不给 */
+    @GameTest(template = "empty", batch = CFG_OULL_PREFIX0, timeoutTicks = 200)
+    public static void oullNoDropWithoutHit(GameTestHelper h) {
+        KuvaTestKit.override(ModConfig.KUVA_LICH.oullDropChance, 100);
+        oullDropRound(h, 0, false);
+    }
+
+    @AfterBatch(batch = CFG_OULL_PREFIX0)
+    public static void afterOullPrefix0(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    /** 概率配 0、第三刀判错（前缀 2）：不给 */
+    @GameTest(template = "empty", batch = CFG_OULL_ZERO, timeoutTicks = 260)
+    public static void oullNoDropAtZero(GameTestHelper h) {
+        KuvaTestKit.override(ModConfig.KUVA_LICH.oullDropChance, 0);
+        oullDropRound(h, 2, false);
+    }
+
+    @AfterBatch(batch = CFG_OULL_ZERO)
+    public static void afterOullZero(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    /** 处决到判错、等收尾走完，看背包里有没有多一张 Oull（地上也不该有） */
+    private static void oullDropRound(GameTestHelper h, int prefix, boolean expect) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = card(p);
+        bornByProgress(p, card);
+        KuvaMasterEntity lich = summonFront(h, p);
+        p.setGameMode(GameType.CREATIVE);
+        h.runAfterDelay(2, () -> {
+            setCards(card, prefix);
+            p.getInventory().clearContent();
+            lich.forceDowned(p);
+            h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
+            AABB area = new AABB(lich.blockPosition()).inflate(12.0D);
+            clearItems(h, area);
+            // 第 k 格判错（tick 17 / 34 / 53），聊天和掉落在那一格 + 60
+            int give = new int[]{17, 34, 53}[prefix] + 60;
+            h.runAfterDelay(give - 1, () -> h.assertTrue(oullCount(p) == 0, "收尾之前还不该给"));
+            h.runAfterDelay(give + 1, () -> {
+                int got = oullCount(p);
+                h.assertTrue(got == (expect ? 1 : 0), "前缀 " + prefix + "：应当" + (expect ? "给一张" : "不给") + " Oull，实际 " + got);
+                h.assertTrue(itemsIn(h, area) == 0, "不该掉在地上：" + itemNames(h, area));
+                h.succeed();
+            });
+        });
+    }
+
+    private static int oullCount(ServerPlayer p) {
+        int n = 0;
+        for (ItemStack s : p.getInventory().items) {
+            if (OULL.is(s)) {
+                n += s.getCount();
+            }
+        }
+        return n;
     }
 
     // ==================== #13 处决奴仆 ====================

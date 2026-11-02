@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -38,6 +39,9 @@ import pers.roinflam.kuvalich.utils.Reference;
  * 符号块本身近似方形，留位按宽 = 高 × {@link #ASPECT}。卡 id 认不出（越界、包里给的 15）时画中性占位：
  * 圆角框 + 中间一个小环。</p>
  *
+ * <p>Oull（id 8）没有自己的符号：在八张卡的符号之间按时间轮流切换，每 {@link #OULL_FRAME_MS} 毫秒换一张，
+ * 和它物品贴图的动画同一个节奏（贴图每帧 10 tick）；换的时候最后 {@link #OULL_FADE_MS} 毫秒交叉淡化。</p>
+ *
  * <p>两层光按加法叠（关掉「加法发光」时退回普通透明混合）；没开界面（画在 HUD 上）时再乘相机处的白天补偿，
  * 白天露天不会整片发白。画的时候不分配：顶点走 {@link Tesselator} 的公用缓冲；混合、剔除用完还原成默认
  * （关混合、开剔除）。和 {@link GuiShapes} 混着画时先把它批里攒着的提交掉，前后顺序和调用顺序一致。</p>
@@ -47,8 +51,13 @@ public final class RequiemSigils {
 
     /** 符号块的宽高比（留位用；八张卡的符号块宽高比在 1.04~1.15 之间） */
     public static final float ASPECT = 20.0F / 18.0F;
-    /** 卡的种数 */
+    /** 卡的种数（不含 Oull） */
     public static final int CARD_COUNT = 8;
+    /** Oull 的卡 id：轮流画八张卡的符号 */
+    public static final int OULL_ID = 8;
+    /** Oull 每张符号停多久、换下一张前交叉淡化多久（毫秒） */
+    private static final int OULL_FRAME_MS = 500;
+    private static final int OULL_FADE_MS = 120;
 
     /** 贴图里每行的格数：8 张卡 + 占位 */
     private static final int COLS = CARD_COUNT + 1;
@@ -95,7 +104,7 @@ public final class RequiemSigils {
     /**
      * 画一张卡的符号：线 + 填，不发光（档案的线描、灭骸之扉之类）
      *
-     * @param cardId   卡 id（0~7）；认不出画中性占位
+     * @param cardId   卡 id（0~7，8 = Oull 轮流切换）；认不出画中性占位
      * @param cx       中心 x
      * @param cy       中心 y
      * @param size     符号的高
@@ -178,6 +187,24 @@ public final class RequiemSigils {
      */
     public static void drawLayers(GuiGraphics g, int cardId, float cx, float cy, float size,
                                   int fillArgb, int haloArgb, int glowArgb, int lineArgb) {
+        if (cardId == OULL_ID) {
+            long t = Util.getMillis();
+            int frame = (int) ((t / OULL_FRAME_MS) % CARD_COUNT);
+            int into = (int) (t % OULL_FRAME_MS);
+            float mix = into <= OULL_FRAME_MS - OULL_FADE_MS ? 0.0F
+                    : (into - (OULL_FRAME_MS - OULL_FADE_MS)) / (float) OULL_FADE_MS;
+            if (mix <= 0.0F) {
+                drawLayers(g, frame, cx, cy, size, fillArgb, haloArgb, glowArgb, lineArgb);
+                return;
+            }
+            // 交叉淡化：两张按 1 − mix : mix 各画一遍
+            float keep = 1.0F - mix;
+            drawLayers(g, frame, cx, cy, size, GuiShapes.mulAlpha(fillArgb, keep), GuiShapes.mulAlpha(haloArgb, keep),
+                    GuiShapes.mulAlpha(glowArgb, keep), GuiShapes.mulAlpha(lineArgb, keep));
+            drawLayers(g, (frame + 1) % CARD_COUNT, cx, cy, size, GuiShapes.mulAlpha(fillArgb, mix),
+                    GuiShapes.mulAlpha(haloArgb, mix), GuiShapes.mulAlpha(glowArgb, mix), GuiShapes.mulAlpha(lineArgb, mix));
+            return;
+        }
         boolean fill = (fillArgb >>> 24) != 0;
         boolean halo = (haloArgb >>> 24) != 0;
         boolean glow = (glowArgb >>> 24) != 0;

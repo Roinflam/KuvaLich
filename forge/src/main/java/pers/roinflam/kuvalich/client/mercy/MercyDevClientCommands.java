@@ -35,7 +35,7 @@ import java.util.Locale;
  *   <li>{@code /kuvafxc mercyat <毫秒>}：把正在进行的处决冻在某一刻，镜头、姿态、刀模、界面都停在那一帧，
  *       逐个时刻截图核对用；{@code /kuvafxc mercyat off} 从冻住的那一刻接着走。</li>
  *   <li>{@code /kuvafxc mercytest <套路> <结果>}：不经服务端，本地直接对准星指着的（或 16 格内最近的）赤毒实体
- *       起一场处决，只演客户端这一半（服务端不锁目标、不结算）。结果是 {@code success / fail1 / fail2 / fail3 / single}，
+ *       起一场处决，只演客户端这一半（服务端不锁目标、不结算）。结果是 {@code success / fail1 / fail2 / fail3}，
  *       奴仆套路忽略结果。配合 {@code mercyat} 可以不等真打倒一只就看任意一刻。</li>
  * </ul>
  */
@@ -43,7 +43,7 @@ import java.util.Locale;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class MercyDevClientCommands {
 
-    private static final String[] OUTCOMES = {"success", "fail1", "fail2", "fail3", "single"};
+    private static final String[] OUTCOMES = {"success", "fail1", "fail2", "fail3"};
 
     private MercyDevClientCommands() {
     }
@@ -101,10 +101,6 @@ public final class MercyDevClientCommands {
             case "fail1" -> prefix = 0;
             case "fail2" -> prefix = 1;
             case "fail3" -> prefix = 2;
-            case "single" -> {
-                stabs = 1;
-                prefix = 0;
-            }
             default -> {
                 reply(ctx, "unknown outcome: " + outcome);
                 return 0;
@@ -119,9 +115,9 @@ public final class MercyDevClientCommands {
             reply(ctx, "no kuva entity in sight");
             return 0;
         }
-        boolean success = !variant.thrall && stabs == 3 && prefix == 3;
-        int[] cards = stabs == 3 && !variant.thrall ? new int[]{0, 1, 2} : new int[]{-1, -1, -1};
-        int[] left = stabs == 3 && !variant.thrall ? new int[]{3, 2, 1} : new int[]{0, 0, 0};
+        boolean success = !variant.thrall && prefix == 3;
+        int[] cards = !variant.thrall ? new int[]{0, 1, 2} : new int[]{-1, -1, -1};
+        int[] left = !variant.thrall ? new int[]{3, 2, 1} : new int[]{0, 0, 0};
         MercyPlan.Plan plan = new MercyPlan.Plan(stabs, prefix, variant, cards, left, success, success ? 1 : 0, true, false);
         // 站位传目标自己的位置，由 begin 按处决者现在站的方向和套路的站位距离算
         MercyClient.begin(target, player.getId(), MercyPlan.encode(plan), target.position());

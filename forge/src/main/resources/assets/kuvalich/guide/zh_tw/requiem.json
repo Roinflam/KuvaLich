@@ -104,10 +104,20 @@
                 "<t>{cfg:kuva_lich.minDecryptionProgress}~{cfg:kuva_lich.maxDecryptionProgress}</t> 點之間隨機"
               ]
             },
-            [
-              "你自己的{lang:entity.kuvalich.kuva_master}，卡沒放滿或猜錯時",
-              "奴僕的點數範圍 × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "你自己的{lang:entity.kuvalich.kuva_master}，解密失敗時（卡沒放滿也算）",
+                "奴僕的點數範圍 × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "你自己的{lang:entity.kuvalich.kuva_master}，卡沒放滿或猜錯時",
+                "奴僕的點數範圍 × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
+              ]
+            },
             [
               "別人的玄骸、無主的玄骸、其它生物",
               "<dim>不增加</dim>"
@@ -398,12 +408,13 @@
         "kuvalich:netra",
         "kuvalich:vome",
         "kuvalich:xata",
-        "kuvalich:ris"
+        "kuvalich:ris",
+        "kuvalich:oull"
       ],
       "blocks": [
         {
           "type": "p",
-          "text": "安魂卡是放進[[requiem/requiem_gate]]的鑰匙，共 8 種，你的答案就是其中 <t>3 張不同的卡</t>按固定順序排成的一串。"
+          "text": "安魂卡是放進[[requiem/requiem_gate]]的鑰匙，共 8 種，你的答案就是其中 <t>3 張不同的卡</t>按固定順序排成的一串。另有一張萬能的 Oull，見本篇最後。"
         },
         {
           "type": "items",
@@ -509,6 +520,51 @@
           "style": "good",
           "title": "舊卡回收",
           "text": "用舊的卡別扔。把三張只剩 1 次的黃卡放進{item:kuvalich:requiem_recast}，換回 1 張有 3 次耐久的新卡，新卡從 8 種裡等機率隨機，可能和放進去的卡重複。"
+        },
+        {
+          "type": "h",
+          "text": "萬能卡 Oull"
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:oull"
+          ],
+          "caption": "萬能安魂卡"
+        },
+        {
+          "type": "p",
+          "text": "{item:kuvalich:oull}是第 9 種安魂卡，卡面在八個符號之間輪流變換。它<g>放在哪一格都算這一格猜對</g>，能頂替答案裡的任何一張。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<b>同時只能裝一張</b>：滅骸之扉裡已經有一張 Oull 時，第二張放不進去。",
+            "和別的卡一樣有 <t>3</t> 次耐久，只在解密成功時扣。",
+            "挖礦挖不到，也不能放進{item:kuvalich:requiem_recast}，三合一不會出它。"
+          ]
+        },
+        {
+          "type": "tip",
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.oullDropChance>0"
+          ],
+          "style": "good",
+          "title": "怎麼得到",
+          "text": "處決你的玄骸<b>失敗</b>、但這次第一刀猜對了時，有 <t>{cfg:kuva_lich.oullDropChance|pctv}</t> 的機率得到一張 Oull，背包滿了就掉在腳下。第一刀就錯的失敗不給。"
+        },
+        {
+          "type": "tip",
+          "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.oullDropChance>0",
+          "style": "info",
+          "title": "怎麼得到",
+          "text": "眼下沒有得到 Oull 的途徑。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "在始源星系，Oull 同樣是一張能頂替任何安魂 MOD 的萬能 MOD。"
         }
       ]
     },
@@ -607,10 +663,20 @@
             5
           ],
           "rows": [
-            [
-              "沒放滿 3 張",
-              "不算一次判定：它消散離開，你只拿到解密進度，過些時候它還會再來"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "沒放滿 3 張",
+                "照樣三刀判，空著的格子算錯：判到第一個空格就是<b>解密失敗</b>，結果同「放滿但不對」"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "沒放滿 3 張",
+                "不算一次判定：它消散離開，你只拿到解密進度，過些時候它還會再來"
+              ]
+            },
             [
               "放滿，順序全對",
               "<g>解密成功</g>，它被徹底終結，領下面的獎勵，這一輪隨之清零"
@@ -692,11 +758,14 @@
           "type": "list",
           "items": [
             "介面開著時，你要待在方塊 <t>8</t> 格以內。",
-            "只想靠它積攢進度、不想冒失敗的風險時，先從門裡取出一張卡。",
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "只想靠它積攢進度、不想冒失敗的風險時，先從門裡取出一張卡。"
+            },
             "背包滿時，沒用完的安魂卡會掉在玄骸倒下的位置。",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "開始處決那一刻卡沒放滿，就按沒放滿算，中途放滿也不補判。"
+              "text": "處決按開始那一刻門裡的卡判，中途換卡、補卡都不算；空著的格子算錯。"
             },
             "每次成功後，武器等級範圍的上下限各提高<em>同一個</em>隨機數 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，分別以 <t>{cfg:kuva_lich.minimumLevel}</t> 和 <t>{cfg:kuva_lich.maximumLevel}</t> 封頂。",
             "上下限提高的幅度相同，所以兩頭都沒到頂時，範圍的寬度不變，這次掉的武器按提升前的範圍生成。",
@@ -713,6 +782,12 @@
       "blocks": [
         {
           "type": "p",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "試順序要有章法，猜錯的代價會一直記在你身上，到解密成功才清掉。處決[[enemies/kuva_master|玄骸]]時卡序不對，或者有格子空著，就是一次<b>解密失敗</b>：它會掙脫逃走，留給你一條縮小範圍的提示，代價是<hl>玄骸等級</hl> +1。"
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.mercyEnabled",
           "text": "試順序要有章法，猜錯的代價會一直記在你身上，到解密成功才清掉。帶著放滿卻不對的三張卡對[[enemies/kuva_master|玄骸]]下手，就是一次<b>解密失敗</b>：它會掙脫逃走，留給你一條縮小範圍的提示，代價是<hl>玄骸等級</hl> +1。"
         },
         {

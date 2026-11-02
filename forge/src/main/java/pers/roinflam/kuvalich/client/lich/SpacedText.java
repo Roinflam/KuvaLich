@@ -19,7 +19,7 @@ import java.util.Map;
  * 同一个名字每帧画不再拆、不再量。坐标都是字体像素，可以是小数。</p>
  */
 @OnlyIn(Dist.CLIENT)
-final class SpacedText {
+public final class SpacedText {
 
     private static final int CACHE_SIZE = 96;
 
@@ -80,7 +80,7 @@ final class SpacedText {
     }
 
     /** 这行字加上字距之后有多宽（字体像素） */
-    static float width(Font font, String text, float spacing) {
+    public static float width(Font font, String text, float spacing) {
         return of(font, text).width(spacing);
     }
 
@@ -88,7 +88,7 @@ final class SpacedText {
      * 画进界面：左上角 (x, y)，用当前 {@code g.pose()}。字形攒在 {@code g.bufferSource()} 里，
      * 调用方在要和别的画法分先后的地方自己 {@code g.flush()}
      */
-    static float draw(GuiGraphics g, Font font, String text, float x, float y, float spacing, int argb,
+    public static float draw(GuiGraphics g, Font font, String text, float x, float y, float spacing, int argb,
                       boolean shadow) {
         if ((argb >>> 24) < 4 || text.isEmpty()) {
             return 0.0F;
@@ -106,7 +106,7 @@ final class SpacedText {
     }
 
     /** 同上，以 {@code cx} 为中心 */
-    static float drawCentered(GuiGraphics g, Font font, String text, float cx, float y, float spacing, int argb,
+    public static float drawCentered(GuiGraphics g, Font font, String text, float cx, float y, float spacing, int argb,
                               boolean shadow) {
         float w = width(font, text, spacing);
         draw(g, font, text, cx - w * 0.5F, y, spacing, argb, shadow);

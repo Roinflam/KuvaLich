@@ -1,11 +1,10 @@
 package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
@@ -14,29 +13,91 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
+import pers.roinflam.kuvalich.base.item.AbstractModule;
+import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.fx.gui.ForgeOpClassifier;
 import pers.roinflam.kuvalich.client.fx.gui.ForgeOpClassifier.Op;
 import pers.roinflam.kuvalich.client.fx.gui.GuiFx;
-import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.compat.tacz.TaczGunEnhanceUtil;
+import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.item.Endo;
+import pers.roinflam.kuvalich.item.Forma;
+import pers.roinflam.kuvalich.item.Kuva;
+import pers.roinflam.kuvalich.item.LichReliquary;
+import pers.roinflam.kuvalich.item.RivenSliver;
+import pers.roinflam.kuvalich.item.ShadowForma;
+import pers.roinflam.kuvalich.item.module.warframe.WarframeRivenModule;
+import pers.roinflam.kuvalich.item.module.weapon.WeaponRivenModule;
+import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
+import pers.roinflam.kuvalich.module.level.ModuleLevelTooltipHelper;
+import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.world.inventory.RequiemEvolveMenu;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 安魂之融GUI（1.20.1版本）
- * Requiem Evolve Screen (1.20.1 version)
+ * 安魂之融界面（融合、开光、塑形、裂罅循环、模组升级、枪械强化），画成玄骸档案的另一页
  *
- * <p>取走结果格时按这次是哪种操作（融合、塑形块、升级……）放演出和声音，全部只在本人客户端。</p>
+ * <ul>
+ *   <li>左栏：配方表，一行一种操作、图标是它的材料；当前这一步是哪种就点亮哪一行，
+ *       手上拿着、或者鼠标停在背包里的东西能参与的几行半亮；悬停一行看左格、中格放什么，什么时候扣材料；</li>
+ *   <li>中栏：左格（物品）、中格（材料）、右边结果格的炉膛（主角）。左格的线从上面绕过去、中格的线从下面绕过去，
+ *       都落到结果格，和融合演出走同一条路。结果出来时光沿两条线流进炉膛再揭示；
+ *       预览类（融合、裂罅循环、模组升级，拿走才算数）的炉膛是虚线框，当场处理类是实线框。下部是背包；</li>
+ *   <li>右栏「结果」：有结果时写这是哪种操作、等级怎么变、材料什么时候扣、有什么要当心的；
+ *       只放了一边时列另一边能放什么；两边都放了却没有结果时写为什么；</li>
+ *   <li>取走结果时按这次是哪种操作放演出和声音（{@link GuiFx}），全部只在本人客户端。</li>
+ * </ul>
  */
 @OnlyIn(Dist.CLIENT)
-public class RequiemEvolveScreen extends AbstractContainerScreen<RequiemEvolveMenu> {
+public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
 
-    private static final ResourceLocation TEXTURE = new ResourceLocation(
-            Reference.MOD_ID, "textures/gui/container/requiem_evolve.png"
-    );
+    private static final int IN = ForgeOpClassifier.EVOLVE_INPUT;
+    private static final int MAT = ForgeOpClassifier.EVOLVE_MATERIAL;
+    private static final int RES = ForgeOpClassifier.EVOLVE_RESULT;
 
-    private final GuiFx fx = new GuiFx();
-    /** 融合时两条线：左边输入格从上面绕过去，中间材料格从下面绕过去，都落到结果格 */
-    private final int pathFromInput;
-    private final int pathFromMaterial;
+    /** 两边都放了、结果还没出来时，等多久才说「凑不成」（服务端算结果要一个来回） */
+    private static final long STUCK_GRACE_MS = 350L;
+    /** 暗影塑形块的颜色（和它的演出同色） */
+    private static final int ORDIS = 0xB9A0FF;
+
+    /** 配方表的行 */
+    private enum Row {
+        FUSION("fusion"), IMBUE("imbue"), FORMA("forma"), RIVEN("riven"), RANK("rank"), GUN("gun");
+
+        final String key;
+
+        Row(String key) {
+            this.key = key;
+        }
+    }
+
+    private final List<Row> rows = new ArrayList<>();
+    private final List<Recipe> recipes = new ArrayList<>();
+
+    /** 融合演出的两条线：左边输入格从上面绕过去，中间材料格从下面绕过去，都落到结果格 */
+    private int pathFromInput = -1;
+    private int pathFromMaterial = -1;
+    private int[] topPath = new int[0];
+    /** 常驻光点这一帧走哪几条 */
+    private final int[][] pulsePaths = new int[2][];
+    private static final int[] PULSE_RGBS = {FxPalette.KUVA, FxPalette.KUVA};
+    private int[] bottomPath = new int[0];
+
+    /** 版式：中栏内容的顶、三格的中线 x、格子的中线 y、两条线的高度、状态行 */
+    private int pTop;
+    private int inX;
+    private int matX;
+    private int outX;
+    private int ocy;
+    private int above;
+    private int below;
+    private int statusY;
 
     /** 最后一次看到的非空材料 */
     @Nullable
@@ -45,35 +106,69 @@ public class RequiemEvolveScreen extends AbstractContainerScreen<RequiemEvolveMe
     @Nullable
     private Item madeWith;
     private boolean hadResult;
-    private boolean opened;
+    /** 当前结果是哪种操作（结果出现时判一次） */
+    private Op resultOp = Op.NONE;
+
+    /** 左格、中格上一帧的东西，和这个组合是从什么时候开始的 */
+    private ItemStack prevIn = ItemStack.EMPTY;
+    private ItemStack prevMat = ItemStack.EMPTY;
+    private long comboAt;
 
     public RequiemEvolveScreen(RequiemEvolveMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 185;
-
-        Slot in = menu.getSlot(ForgeOpClassifier.EVOLVE_INPUT);
-        Slot mat = menu.getSlot(ForgeOpClassifier.EVOLVE_MATERIAL);
-        Slot out = menu.getSlot(ForgeOpClassifier.EVOLVE_RESULT);
-        int inX = in.x + 8;
-        int matX = mat.x + 8;
-        int outX = out.x + 8;
-        // 格框占 y-1 ~ y+16，线从框外一格起步
-        int above = in.y - 6;
-        int below = mat.y + 21;
-        this.pathFromInput = fx.path(inX, in.y - 2, inX, above, outX, above, outX, out.y - 2);
-        this.pathFromMaterial = fx.path(matX, mat.y + 17, matX, below, outX, below, outX, out.y + 17);
     }
 
     @Override
     protected void init() {
         super.init();
-        // 从别的界面回来、改窗口大小都会再走一次 init，开机音只在第一次打开时放
-        if (!opened) {
-            opened = true;
-            GuiFx.playOpen();
+        rows.clear();
+        recipes.clear();
+        addRow(Row.FUSION, KuvaLichItems.KUVA_SHILDEG.get());
+        addRow(Row.IMBUE, KuvaLichItems.RIVEN_SLIVER.get());
+        addRow(Row.FORMA, KuvaLichItems.FORMA.get());
+        addRow(Row.RIVEN, KuvaLichItems.KUVA.get());
+        if (ModuleLevelHelper.isLevelSystemEnabled()) {
+            addRow(Row.RANK, KuvaLichItems.ENDO.get());
+        }
+        if (gunEnabled()) {
+            addRow(Row.GUN, KuvaLichItems.LICH_RELIQUARY.get());
         }
     }
+
+    private void addRow(Row row, Item icon) {
+        rows.add(row);
+        recipes.add(new Recipe(new ItemStack(icon), Component.translatable("kuvalich.evolve.op." + row.key), null,
+                () -> rowTip(row)));
+    }
+
+    @Override
+    protected void layout() {
+        pTop = small ? hairY + 1 : hairY + 5;
+        chHalf = small ? 18 : 21;
+        ocy = pTop + (small ? 34 : 42);
+        inX = cx - (small ? 66 : 74);
+        matX = inX + (small ? 48 : 54);
+        outX = cx + (small ? 46 : 52);
+        above = ocy - chHalf - 6;
+        below = ocy + chHalf + 6;
+        statusY = pTop + (small ? 86 : 100);
+        Slot in = menu.getSlot(IN);
+        Slot mat = menu.getSlot(MAT);
+        resultSlot = menu.getSlot(RES);
+        place(in, inX - 8, ocy - 8);
+        place(mat, matX - 8, ocy - 8);
+        place(resultSlot, outX - 8, ocy - 8);
+        placeInventory();
+        track(IN, MAT);
+        // 格框占 y-1 ~ y+16，线从框外一格起步，落到结果格的框外一格
+        topPath = new int[]{inX, in.y - 2, inX, above, outX, above, outX, resultSlot.y - 2};
+        bottomPath = new int[]{matX, mat.y + 17, matX, below, outX, below, outX, resultSlot.y + 17};
+        int[] ids = registerFxPaths(topPath, bottomPath);
+        pathFromInput = ids[0];
+        pathFromMaterial = ids[1];
+    }
+
+    // ==================== 锻造演出（取走结果时） ====================
 
     @Override
     protected void containerTick() {
@@ -85,8 +180,8 @@ public class RequiemEvolveScreen extends AbstractContainerScreen<RequiemEvolveMe
      * 记下材料和结果的变化：结果从无到有的那一刻，把当时的材料（已经用光的话就是之前最后看到的那个）记成 madeWith
      */
     private void observe() {
-        ItemStack material = menu.getSlot(ForgeOpClassifier.EVOLVE_MATERIAL).getItem();
-        boolean hasResult = menu.getSlot(ForgeOpClassifier.EVOLVE_RESULT).hasItem();
+        ItemStack material = menu.getSlot(MAT).getItem();
+        boolean hasResult = menu.getSlot(RES).hasItem();
         if (hasResult && !hadResult) {
             madeWith = material.isEmpty() ? seenMaterial : material.getItem();
         }
@@ -102,7 +197,7 @@ public class RequiemEvolveScreen extends AbstractContainerScreen<RequiemEvolveMe
         Op op = Op.NONE;
         int level = 0;
         boolean locked = false;
-        Slot out = menu.getSlot(ForgeOpClassifier.EVOLVE_RESULT);
+        Slot out = menu.getSlot(RES);
         // 在 super 之前判：super 会在本地先把结果拿走
         if (slot == out && ForgeOpClassifier.takesOutput(out, menu.getCarried(), button, type)) {
             op = ForgeOpClassifier.classify(menu, madeWith);
@@ -119,9 +214,9 @@ public class RequiemEvolveScreen extends AbstractContainerScreen<RequiemEvolveMe
     }
 
     private void playOp(Op op, int level, boolean locked) {
-        Slot in = menu.getSlot(ForgeOpClassifier.EVOLVE_INPUT);
-        Slot mat = menu.getSlot(ForgeOpClassifier.EVOLVE_MATERIAL);
-        Slot out = menu.getSlot(ForgeOpClassifier.EVOLVE_RESULT);
+        Slot in = menu.getSlot(IN);
+        Slot mat = menu.getSlot(MAT);
+        Slot out = menu.getSlot(RES);
         switch (op) {
             case FUSION -> fx.fusion(pathFromInput, pathFromMaterial, out);
             case RIVEN_CYCLE -> fx.rivenCycle(out);
@@ -137,37 +232,499 @@ public class RequiemEvolveScreen extends AbstractContainerScreen<RequiemEvolveMe
         }
     }
 
+    // ==================== 结果出现 ====================
+
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        fx.render(guiGraphics, this.leftPos, this.topPos, !this.menu.getCarried().isEmpty());
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+    protected void afterScan(long now) {
+        observe();
+        super.afterScan(now);
+        if (!resultSlot.hasItem()) {
+            resultOp = Op.NONE;
+        }
+    }
+
+    /** 结果出现：两条线一起流进炉膛；预览类是虚线炉膛。颜色按操作 */
+    @Override
+    protected Arrival arrival(ItemStack result) {
+        resultOp = ForgeOpClassifier.classify(menu, madeWith);
+        return new Arrival(opColor(resultOp), isPreview(resultOp), new int[][]{topPath, bottomPath});
+    }
+
+    private static boolean isPreview(Op op) {
+        return op == Op.FUSION || op == Op.RIVEN_CYCLE || op == Op.RANK_UP || op == Op.MAX_RANK;
+    }
+
+    private static int opColor(Op op) {
+        return switch (op) {
+            case FUSION, MAX_RANK -> FxPalette.ACCENT;
+            case RIVEN_CYCLE, IMBUE -> GuiFx.rarityColor(4);
+            case FORMA, RANK_UP -> FxPalette.TECH;
+            case SHADOW_FORMA -> ORDIS;
+            default -> FxPalette.KUVA;
+        };
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+    protected Component rejectMessage(Slot slot, ItemStack carried) {
+        if (slot.index == IN) {
+            return Component.translatable(carried.getCount() > 1
+                    ? "kuvalich.evolve.reject.one" : "kuvalich.evolve.reject.item");
+        }
+        return Component.translatable("kuvalich.evolve.reject.material");
+    }
 
-        int left = (this.width - this.imageWidth) / 2;
-        int top = (this.height - this.imageHeight) / 2;
+    // ==================== 画 ====================
 
-        // 绘制背景 / Draw background
-        guiGraphics.blit(TEXTURE, left, top, 0, 0, this.imageWidth, this.imageHeight);
+    @Override
+    protected void drawPage(GuiGraphics g, int mx, int my, long now, long t, float eF) {
+        float eT = phase(t, T_TEXT_IN, T_TEXT_DONE);
+        ItemStack in = menu.getSlot(IN).getItem();
+        ItemStack mat = menu.getSlot(MAT).getItem();
+        if (!ItemStack.matches(in, prevIn) || !ItemStack.matches(mat, prevMat)) {
+            prevIn = in.copy();
+            prevMat = mat.copy();
+            comboAt = now;
+        }
+        boolean shown = resultShown();
+        boolean stuck = !in.isEmpty() && !mat.isEmpty() && !resultSlot.hasItem() && now - comboAt > STUCK_GRACE_MS;
 
-        // 绘制进度条背景 / Draw progress bar background
-        guiGraphics.blit(TEXTURE, left + 12, top + 30, 18, this.imageHeight, 152, 18);
+        // ---- 左栏：配方表 ----
+        int y = drawLeftHead(g, Component.translatable("kuvalich.evolve.recipes"), eF, eT);
+        int hint = hintRows(mx, my) | (mat.isEmpty() ? leftRows(in) : 0) | (in.isEmpty() ? matRows(mat) : 0);
+        drawRecipes(g, recipes, y, litRows(in, mat), hint, eT, now);
+
+        // ---- 中栏：背光、两条线、三格、状态行 ----
+        drawBacklight(g, cx - 110, pTop - 30, 220, 150, 0.85F * eT);
+        // 两条线要穿过炉膛的墨底接到结果格上，所以炉膛先画
+        drawChamber(g, mx, my, now, phase(t, 600, 950));
+        drawCircuit(g, phase(t, 600, 950), in, mat, now);
+        drawFlows(g);
+        drawCell(g, menu.getSlot(IN), mx, my, phase(t, 650, 1050), now);
+        drawCell(g, menu.getSlot(MAT), mx, my, phase(t, 770, 1170), now);
+        drawCaptions(g, eT);
+        drawStatus(g, in, mat, shown, stuck, eF);
+        drawDrift(g, cx, pTop + 6, 150, 92, now, eF);
+
+        // ---- 右栏：结果 ----
+        drawRightHead(g, Component.translatable("kuvalich.evolve.output"), eF);
+        drawLines(g, detail(in, mat, shown, stuck), rx0, hairY + 8, rx1 - rx0, eF, sepB);
+    }
+
+    @Override
+    protected void drawOverlay(GuiGraphics g, int mx, int my, long now, long t) {
+        drawCellOverlay(g, menu.getSlot(IN), t, 800, 1100);
+        drawCellOverlay(g, menu.getSlot(MAT), t, 920, 1220);
+        drawChamberOverlay(g, t, 750, 1050);
+        drawRecipeVeils(g, t);
+    }
+
+    /** 两条线常亮一层淡底；格子里有东西的那条亮起来；左格和中格之间一个「+」，线进炉膛前各一个箭头 */
+    private void drawCircuit(GuiGraphics g, float e, ItemStack in, ItemStack mat, long now) {
+        if (e <= 0.0F) {
+            return;
+        }
+        boolean inOn = !in.isEmpty() && !pending(Ev.PLACE, IN);
+        boolean matOn = !mat.isEmpty() && !pending(Ev.PLACE, MAT);
+        GuiShapes.begin(g);
+        path(g, topPath, 1.0F, FxPalette.KUVA_PALE, 0.12F * e, null);
+        path(g, bottomPath, 1.0F, FxPalette.KUVA_PALE, 0.12F * e, null);
+        if (inOn) {
+            path(g, topPath, 1.0F, FxPalette.KUVA, 0.5F * e, null);
+        }
+        if (matOn) {
+            path(g, bottomPath, 1.0F, FxPalette.KUVA, 0.5F * e, null);
+        }
+        // 「+」
+        float px = Math.round((inX + 8 + matX - 8) * 0.5F);
+        hl(g, px - 3, px + 3, ocy, FxPalette.KUVA_PALE, 0.35F * e);
+        vl(g, px, ocy - 3, ocy + 3, FxPalette.KUVA_PALE, 0.35F * e);
+        GuiShapes.end();
+        // 上下两段横线在中格和炉膛之间各放一个往右的小箭头：流向结果
+        float ax = Math.round((matX + 8 + outX - chHalf) * 0.5F);
+        chevronRight(g, ax, above, inOn ? FxPalette.KUVA : FxPalette.ASH, (inOn ? 0.85F : 0.35F) * e);
+        chevronRight(g, ax, below, matOn ? FxPalette.KUVA : FxPalette.ASH, (matOn ? 0.85F : 0.35F) * e);
+        // 有东西的那条线上光点一直往结果格流
+        pulsePaths[0] = inOn ? topPath : null;
+        pulsePaths[1] = matOn ? bottomPath : null;
+        drawPulses(g, pulsePaths, PULSE_RGBS, 1700, now, e);
+    }
+
+    /** 左格下面写「物品」、中格上面写「材料」：各自的线往另一边走，字放在没线的那一侧 */
+    private void drawCaptions(GuiGraphics g, float eT) {
+        Slot in = menu.getSlot(IN);
+        Slot mat = menu.getSlot(MAT);
+        textC(g, tr("kuvalich.evolve.slot.item"), inX, in.y + 20, FxPalette.ASH, 0.6F * eT);
+        textC(g, tr("kuvalich.evolve.slot.material"), matX, mat.y - 11, FxPalette.ASH, 0.6F * eT);
+    }
+
+    /** 状态行：提示 → 结果 → 凑不成的原因 → 还差哪一边 */
+    private void drawStatus(GuiGraphics g, ItemStack in, ItemStack mat, boolean shown, boolean stuck, float eF) {
+        if (drawMessage(g, cx, statusY, eF)) {
+            return;
+        }
+        if (resultSlot.hasItem()) {
+            if (!shown) {
+                return;
+            }
+            String op = opName(resultOp);
+            boolean preview = isPreview(resultOp);
+            textC(g, tr(preview ? "kuvalich.evolve.status.preview" : "kuvalich.evolve.status.done", op), cx, statusY,
+                    FxPalette.BONE, 0.85F * eF);
+            long r = resultAge();
+            if (r < 600) {
+                additive(g, () -> hl(g, cx - 70, cx + 70, statusY + 11, FxPalette.KUVA_PALE, 0.8F * (1.0F - r / 600.0F)));
+            }
+            return;
+        }
+        if (in.isEmpty() && mat.isEmpty()) {
+            textC(g, tr("kuvalich.evolve.status.empty"), cx, statusY, FxPalette.ASH, 0.7F * eF);
+        } else if (mat.isEmpty()) {
+            textC(g, tr("kuvalich.evolve.status.need_mat"), cx, statusY, FxPalette.ASH, 0.7F * eF);
+        } else if (in.isEmpty()) {
+            textC(g, tr("kuvalich.evolve.status.need_item"), cx, statusY, FxPalette.ASH, 0.7F * eF);
+        } else if (stuck) {
+            textC(g, why(in, mat), cx, statusY, FxPalette.KUVA, 0.9F * eF);
+        }
+    }
+
+    // ==================== 右栏 ====================
+
+    private List<Line> detail(ItemStack in, ItemStack mat, boolean shown, boolean stuck) {
+        List<Line> out = new ArrayList<>();
+        if (resultSlot.hasItem()) {
+            if (shown) {
+                resultDetail(out, in);
+            }
+            return out;
+        }
+        if (in.isEmpty() && mat.isEmpty()) {
+            out.add(new Line(tr("kuvalich.evolve.detail_empty"), FxPalette.ASH, 0.6F, 0));
+            return out;
+        }
+        if (mat.isEmpty()) {
+            // 只放了左格：列出中格能放什么
+            out.add(new Line(tr("kuvalich.evolve.status.need_mat"), FxPalette.BONE, 1.0F, 4));
+            int m = leftRows(in);
+            if (m == 0) {
+                out.add(new Line(tr("kuvalich.evolve.no_recipe.item"), KuvaPalette.MUTED, 0.85F, 0));
+            }
+            for (Row r : rows) {
+                if ((m & bit(r)) != 0) {
+                    out.add(new Line(opName(r) + " · " + materialName(r), KuvaPalette.MUTED, 0.85F, 2));
+                }
+            }
+            return out;
+        }
+        if (in.isEmpty()) {
+            // 只放了中格：列出左格能放什么
+            out.add(new Line(tr("kuvalich.evolve.status.need_item"), FxPalette.BONE, 1.0F, 4));
+            int m = matRows(mat);
+            for (Row r : rows) {
+                if ((m & bit(r)) != 0) {
+                    out.add(new Line(opName(r), FxPalette.TEXT_MID, 0.9F, 0));
+                    out.add(new Line(tr("kuvalich.evolve.recipe." + r.key + ".left"), KuvaPalette.MUTED, 0.8F, 4));
+                }
+            }
+            return out;
+        }
+        if (stuck) {
+            out.add(new Line(tr("kuvalich.evolve.no_recipe"), FxPalette.KUVA, 1.0F, 3));
+            out.add(new Line(why(in, mat), KuvaPalette.MUTED, 0.85F, 0));
+        }
+        return out;
+    }
+
+    /** 有结果时：操作名、结果名、这一种操作要知道的、材料什么时候扣 */
+    private void resultDetail(List<Line> out, ItemStack in) {
+        ItemStack res = resultSlot.getItem();
+        Op op = resultOp;
+        boolean preview = isPreview(op);
+        String head = op == Op.NONE ? tr("kuvalich.evolve.output") : opName(op);
+        if (preview) {
+            head += " · " + tr("kuvalich.evolve.preview");
+        }
+        out.add(new Line(head, resultRgb, 1.0F, 2));
+        out.add(new Line(typed(res.getHoverName().getString(), resultAge()), FxPalette.BONE, 1.0F, 4));
+        switch (op) {
+            case FUSION -> {
+                if (!in.isEmpty()) {
+                    out.add(new Line(tr("kuvalich.evolve.level", KuvaWeaponUtil.getNumber(in), KuvaWeaponUtil.getNumber(res)),
+                            FxPalette.TEXT_MID, 0.95F, 3));
+                }
+                out.add(new Line(tr("kuvalich.evolve.fusion.keep"), KuvaPalette.MUTED, 0.85F, 3));
+                out.add(new Line(tr("kuvalich.evolve.fusion.warn"), FxPalette.KUVA, 0.9F, 4));
+            }
+            case RIVEN_CYCLE -> {
+                out.add(new Line(tr("kuvalich.evolve.riven.paid"), KuvaPalette.MUTED, 0.85F, 3));
+                if (!in.isEmpty()) {
+                    out.add(new Line(tr("kuvalich.evolve.riven.cycles", rivenCycle(in)), FxPalette.TEXT_MID, 0.9F, 3));
+                }
+                out.add(new Line(tr("kuvalich.evolve.riven.warn"), FxPalette.KUVA, 0.9F, 4));
+            }
+            case RANK_UP, MAX_RANK -> {
+                if (!in.isEmpty()) {
+                    int a = ModuleLevelHelper.getModuleLevel(in);
+                    out.add(new Line(tr("kuvalich.evolve.level", a, ModuleLevelHelper.getModuleLevel(res)),
+                            FxPalette.TEXT_MID, 0.95F, 3));
+                    int cost = ModuleLevelHelper.getUpgradeCost(a, in);
+                    if (cost > 0) {
+                        out.add(new Line(tr("kuvalich.evolve.rank.cost", cost), KuvaPalette.MUTED, 0.85F, 3));
+                    }
+                }
+                if (op == Op.MAX_RANK) {
+                    out.add(new Line(tr("kuvalich.evolve.rank.max"), FxPalette.ACCENT, 0.9F, 4));
+                }
+            }
+            case FORMA -> {
+                out.add(new Line(tr("kuvalich.evolve.forma.done"), KuvaPalette.MUTED, 0.85F, 3));
+                if (WeaponModuleHandler.isFormaLocked(res)) {
+                    out.add(new Line(tr("kuvalich.evolve.forma.locked"), FxPalette.KUVA, 0.9F, 4));
+                }
+            }
+            case SHADOW_FORMA -> out.add(new Line(tr("kuvalich.evolve.shadow.done"), KuvaPalette.MUTED, 0.85F, 4));
+            case IMBUE -> out.add(new Line(tr("kuvalich.evolve.imbue.done"), KuvaPalette.MUTED, 0.85F, 4));
+            case GUN_ENHANCE -> out.add(new Line(tr("kuvalich.evolve.gun.done",
+                    TaczGunEnhanceUtil.getEnhanceCount(res)), KuvaPalette.MUTED, 0.85F, 4));
+            default -> {
+            }
+        }
+        if (op != Op.NONE) {
+            out.add(new Line(tr(preview ? "kuvalich.evolve.when.take" : "kuvalich.evolve.when.now"),
+                    FxPalette.ASH, 0.6F, 0));
+        }
+    }
+
+    // ==================== 配方表 ====================
+
+    private int bit(Row r) {
+        int i = rows.indexOf(r);
+        return i < 0 ? 0 : 1 << i;
+    }
+
+    @Nullable
+    private static Row rowOf(Op op) {
+        return switch (op) {
+            case FUSION -> Row.FUSION;
+            case IMBUE -> Row.IMBUE;
+            case FORMA, SHADOW_FORMA -> Row.FORMA;
+            case RIVEN_CYCLE -> Row.RIVEN;
+            case RANK_UP, MAX_RANK -> Row.RANK;
+            case GUN_ENHANCE -> Row.GUN;
+            default -> null;
+        };
     }
 
     /**
-     * 不渲染标签（标题和物品栏名称）
-     * Do not render labels (title and inventory name)
+     * 点亮哪一行：有结果看结果是哪种；两边都放了、还没结果时看中格的材料想走哪一种
+     * （材料决定了是哪种操作，凑不成时这一行照样亮着，状态行写为什么）；只放了一边的不点亮，只半亮
      */
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // 留空 - 不渲染任何标签
-        // Leave empty - do not render any labels
+    private int litRows(ItemStack in, ItemStack mat) {
+        if (resultSlot.hasItem()) {
+            Row r = rowOf(resultOp);
+            return r == null ? 0 : bit(r);
+        }
+        return !in.isEmpty() && !mat.isEmpty() ? matRows(mat) : 0;
+    }
+
+    /** 半亮哪几行：手上拿着的、或者鼠标停着的那件东西能参与的（放左格或放中格都算） */
+    private int hintRows(int mx, int my) {
+        ItemStack s = menu.getCarried();
+        if (s.isEmpty()) {
+            Slot over = slotAt(mx, my);
+            s = over == null || over == resultSlot ? ItemStack.EMPTY : over.getItem();
+        }
+        return s.isEmpty() ? 0 : leftRows(s) | matRows(s);
+    }
+
+    /** 放在左格时能走哪几种 */
+    private int leftRows(ItemStack s) {
+        if (s.isEmpty()) {
+            return 0;
+        }
+        Item it = s.getItem();
+        int m = 0;
+        if (KuvaWeaponUtil.hasType(s)) {
+            m |= bit(Row.FUSION);
+        }
+        if (it instanceof AbstractModule) {
+            if (AbstractModule.isRandom(s)) {
+                return m;
+            }
+            if (it instanceof WeaponRivenModule || it instanceof WarframeRivenModule) {
+                m |= bit(Row.RIVEN);
+            }
+            if (!ModuleLevelHelper.isMaxLevel(s)) {
+                m |= bit(Row.RANK);
+            }
+            return m;
+        }
+        if (isMaterial(it) || s.getCount() != 1) {
+            return m;
+        }
+        boolean base = WeaponModuleHandler.hasBase(s);
+        if (!base) {
+            m |= bit(Row.IMBUE);
+        } else if (!KuvaWeaponUtil.hasType(s)) {
+            m |= bit(Row.FORMA);
+        }
+        if (gunEnabled() && TaczGunEnhanceUtil.isTaczGun(s)) {
+            m |= bit(Row.GUN);
+        }
+        return m;
+    }
+
+    /** 放在中格时能走哪几种 */
+    private int matRows(ItemStack s) {
+        if (s.isEmpty()) {
+            return 0;
+        }
+        Item it = s.getItem();
+        if (KuvaWeaponUtil.hasType(s)) {
+            return bit(Row.FUSION);
+        }
+        if (it instanceof Kuva) {
+            return bit(Row.RIVEN);
+        }
+        if (it instanceof Forma) {
+            return bit(Row.FORMA);
+        }
+        if (it instanceof RivenSliver) {
+            return bit(Row.IMBUE);
+        }
+        if (it instanceof LichReliquary) {
+            return bit(Row.GUN);
+        }
+        if (it instanceof Endo) {
+            return bit(Row.RANK);
+        }
+        return 0;
+    }
+
+    private static boolean isMaterial(Item it) {
+        return it instanceof Kuva || it instanceof Endo || it instanceof RivenSliver || it instanceof Forma
+                || it instanceof LichReliquary;
+    }
+
+    private List<Component> rowTip(Row row) {
+        List<Component> out = new ArrayList<>();
+        out.add(tip("kuvalich.evolve.op." + row.key, FxPalette.BONE));
+        out.add(tip("kuvalich.evolve.tip.left", KuvaPalette.MUTED,
+                Component.translatable("kuvalich.evolve.recipe." + row.key + ".left")));
+        out.add(tip("kuvalich.evolve.tip.mid", KuvaPalette.MUTED, materialName(row)));
+        out.add(tip("kuvalich.evolve.recipe." + row.key + ".when", FxPalette.KUVA));
+        if (row == Row.FORMA) {
+            out.add(tip("kuvalich.evolve.recipe.forma.shadow", KuvaPalette.MUTED));
+        }
+        return out;
+    }
+
+    private static MutableComponent tip(String key, int rgb, Object... args) {
+        return Component.translatable(key, args).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb)));
+    }
+
+    private static String opName(Row row) {
+        return tr("kuvalich.evolve.op." + row.key);
+    }
+
+    private static String opName(Op op) {
+        return switch (op) {
+            case SHADOW_FORMA -> tr("kuvalich.evolve.op.shadow_forma");
+            case MAX_RANK -> tr("kuvalich.evolve.op.max_rank");
+            default -> {
+                Row r = rowOf(op);
+                yield r == null ? "" : opName(r);
+            }
+        };
+    }
+
+    /** 中格放什么（拿物品名，免得和物品本身的叫法对不上） */
+    private static String materialName(Row row) {
+        return switch (row) {
+            case FUSION -> tr("kuvalich.evolve.mat.kuva_weapon");
+            case IMBUE -> KuvaLichItems.RIVEN_SLIVER.get().getDescription().getString();
+            case FORMA -> KuvaLichItems.FORMA.get().getDescription().getString() + " / "
+                    + KuvaLichItems.SHADOW_FORMA.get().getDescription().getString();
+            case RIVEN -> KuvaLichItems.KUVA.get().getDescription().getString();
+            case RANK -> KuvaLichItems.ENDO.get().getDescription().getString();
+            case GUN -> KuvaLichItems.LICH_RELIQUARY.get().getDescription().getString();
+        };
+    }
+
+    // ==================== 凑不成的原因（照 RequiemEvolveMenu#processCrafting 的条件） ====================
+
+    /** 两边都放了、却没有结果：为什么 */
+    private String why(ItemStack in, ItemStack mat) {
+        Item i = in.getItem();
+        Item m = mat.getItem();
+        boolean riven = i instanceof WeaponRivenModule || i instanceof WarframeRivenModule;
+        if (riven && m instanceof Kuva) {
+            if (AbstractModule.isRandom(in)) {
+                return tr("kuvalich.evolve.why.riven_unrevealed");
+            }
+            int cost = i instanceof WarframeRivenModule
+                    ? ModuleLevelTooltipHelper.getWarframeRivenCycleCost(WarframeRivenModule.getTrend(in), WarframeRivenModule.getCycle(in))
+                    : ModuleLevelTooltipHelper.getWeaponRivenCycleCost(WeaponRivenModule.getTrend(in), WeaponRivenModule.getCycle(in));
+            if (mat.getCount() < cost) {
+                return tr("kuvalich.evolve.why.kuva_short", cost);
+            }
+        }
+        if (KuvaWeaponUtil.hasType(mat) && !KuvaWeaponUtil.hasType(in)) {
+            return tr("kuvalich.evolve.why.fusion_both");
+        }
+        if (m instanceof Kuva && !riven) {
+            return tr("kuvalich.evolve.why.kuva_riven");
+        }
+        if (m instanceof Forma) {
+            if (KuvaWeaponUtil.hasType(in)) {
+                return tr("kuvalich.evolve.why.forma_kuva");
+            }
+            if (!WeaponModuleHandler.hasBase(in)) {
+                return tr("kuvalich.evolve.why.forma_unimbued");
+            }
+            if (!(m instanceof ShadowForma) && WeaponModuleHandler.isFormaLocked(in)) {
+                return tr("kuvalich.evolve.why.forma_locked");
+            }
+        }
+        if (m instanceof RivenSliver && WeaponModuleHandler.hasBase(in)) {
+            return tr("kuvalich.evolve.why.imbued");
+        }
+        if (m instanceof LichReliquary) {
+            if (!gunEnabled()) {
+                return tr("kuvalich.evolve.why.gun_off");
+            }
+            return tr(TaczGunEnhanceUtil.isTaczGun(in) ? "kuvalich.evolve.why.gun_max" : "kuvalich.evolve.why.gun_only");
+        }
+        if (m instanceof Endo) {
+            if (!ModuleLevelHelper.isLevelSystemEnabled()) {
+                return tr("kuvalich.evolve.why.level_off");
+            }
+            if (!(i instanceof AbstractModule)) {
+                return tr("kuvalich.evolve.why.endo_module");
+            }
+            if (AbstractModule.isRandom(in)) {
+                return tr("kuvalich.evolve.why.unrevealed");
+            }
+            int cost = ModuleLevelHelper.getUpgradeCost(ModuleLevelHelper.getModuleLevel(in), in);
+            if (cost > 0 && mat.getCount() < cost) {
+                return tr("kuvalich.evolve.why.endo_short", cost);
+            }
+        }
+        return tr("kuvalich.evolve.why.generic");
+    }
+
+    private static int rivenCycle(ItemStack s) {
+        return s.getItem() instanceof WarframeRivenModule ? WarframeRivenModule.getCycle(s) : WeaponRivenModule.getCycle(s);
+    }
+
+    /** 装了 TACZ、而且开了枪械强化 */
+    private static boolean gunEnabled() {
+        if (!TaczGunEnhanceUtil.isTaczLoaded()) {
+            return false;
+        }
+        try {
+            return ModConfig.KUVA_LICH.taczGunEnhanceEnable.get();
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
 }

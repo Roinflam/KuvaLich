@@ -218,7 +218,6 @@ public final class MercyCamera {
             case SUCCESS -> t < MercyTimeline.CLOSEUP_MS ? own
                     : t < MercyTimeline.THIRD_MS ? Shot.CLOSEUP : Shot.THIRD;
             case FAIL -> t < MercyTimeline.failFillMs(e.plan) + MercyTimeline.FAIL_WIDE ? own : Shot.WIDE;
-            case SINGLE -> own;
             case THRALL -> Shot.GAME;
         };
     }

@@ -115,10 +115,20 @@
                 "<t>{cfg:kuva_lich.minDecryptionProgress}~{cfg:kuva_lich.maxDecryptionProgress}</t> 点之间随机"
               ]
             },
-            [
-              "你自己的{lang:entity.kuvalich.kuva_master}，卡没放满或猜错时",
-              "奴仆的点数范围 × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "你自己的{lang:entity.kuvalich.kuva_master}，解密失败时（卡没放满也算）",
+                "奴仆的点数范围 × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "你自己的{lang:entity.kuvalich.kuva_master}，卡没放满或猜错时",
+                "奴仆的点数范围 × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
+              ]
+            },
             [
               "别人的玄骸、无主的玄骸、其它生物",
               "<dim>不增加</dim>"
@@ -442,12 +452,13 @@
         "kuvalich:netra",
         "kuvalich:vome",
         "kuvalich:xata",
-        "kuvalich:ris"
+        "kuvalich:ris",
+        "kuvalich:oull"
       ],
       "blocks": [
         {
           "type": "p",
-          "text": "安魂卡是放进[[requiem/requiem_gate]]的钥匙，共 8 种，你的答案就是其中 <t>3 张不同的卡</t>按固定顺序排成的一串。"
+          "text": "安魂卡是放进[[requiem/requiem_gate]]的钥匙，共 8 种，你的答案就是其中 <t>3 张不同的卡</t>按固定顺序排成的一串。另有一张万能的 Oull，见本篇最后。"
         },
         {
           "type": "items",
@@ -553,6 +564,51 @@
           "style": "good",
           "title": "旧卡回收",
           "text": "用旧的卡别扔。把三张只剩 1 次的黄卡放进{item:kuvalich:requiem_recast}，换回 1 张有 3 次耐久的新卡，新卡从 8 种里等概率随机，可能和放进去的卡重复。"
+        },
+        {
+          "type": "h",
+          "text": "万能卡 Oull"
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:oull"
+          ],
+          "caption": "万能安魂卡"
+        },
+        {
+          "type": "p",
+          "text": "{item:kuvalich:oull}是第 9 种安魂卡，卡面在八个符号之间轮流变换。它<g>放在哪一格都算这一格猜对</g>，能顶替答案里的任何一张。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<b>同时只能装一张</b>：灭骸之扉里已经有一张 Oull 时，第二张放不进去。",
+            "和别的卡一样有 <t>3</t> 次耐久，只在解密成功时扣。",
+            "挖矿挖不到，也不能放进{item:kuvalich:requiem_recast}，三合一不会出它。"
+          ]
+        },
+        {
+          "type": "tip",
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.oullDropChance>0"
+          ],
+          "style": "good",
+          "title": "怎么得到",
+          "text": "处决你的玄骸<b>失败</b>、但这次第一刀猜对了时，有 <t>{cfg:kuva_lich.oullDropChance|pctv}</t> 的概率得到一张 Oull，背包满了就掉在脚下。第一刀就错的失败不给。"
+        },
+        {
+          "type": "tip",
+          "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.oullDropChance>0",
+          "style": "info",
+          "title": "怎么得到",
+          "text": "眼下没有得到 Oull 的途径。"
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "在始源星系，Oull 同样是一张能顶替任何安魂 MOD 的万能 MOD。"
         }
       ],
       "_src": [
@@ -569,7 +625,12 @@
         "enchantment/RequiemDestroyedEnchantment.java:186 — 掉落的卡在 8 种中均匀随机",
         "world/inventory/RequiemRecastMenu.java:208 — 三格都是安魂卡即走卡片合成（不看耐久）",
         "world/inventory/RequiemRecastMenu.java:227 — 产出 new ItemStack(getCard(random.nextInt(8)))，即满耐久随机卡",
-        "wf 小知识：原作《星际战甲》事实，不是本模组机制"
+        "wf 小知识：原作《星际战甲》事实，不是本模组机制",
+        "item/card/OULL.java — id 8；init/KuvaLichItems.java getRequiemCard(8)；capability/RequiemCard.java fits — Oull 在任何一格都算对",
+        "world/inventory/RequiemGateMenu.java CardSlot.mayPlace — 别的格子已有 Oull 时不收（拖放、Shift、数字键都走 mayPlace）",
+        "world/inventory/RequiemRecastMenu.java InputSlot.mayPlace — 不收 Oull；processRequiemCardCrafting 只抽 0~7；enchantment/RequiemDestroyedEnchantment.java getRequiemCards — 池里只有 8 张普通卡",
+        "mercy/MercyServer.java settleFailure / rollOull / giveOull — 玄骸处决失败、前缀 ≥ 1（第一刀对）时按 oullDropChance% 给处决者一张，演示目标不给，InventoryUtil.giveOrDrop 背包满掉脚下；怜悯之击关着时没有掉落途径",
+        "client/gui/requiem/RequiemSigils.java — id 8 每 500 ms 换一张符号；textures/item/oull.png 八帧动画，每帧 10 tick"
       ]
     },
     {
@@ -667,10 +728,20 @@
             5
           ],
           "rows": [
-            [
-              "没放满 3 张",
-              "不算一次判定：它消散离开，你只拿到解密进度，过些时候它还会再来"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "没放满 3 张",
+                "照样三刀判，空着的格子算错：判到第一个空格就是<b>解密失败</b>，结果同「放满但不对」"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "没放满 3 张",
+                "不算一次判定：它消散离开，你只拿到解密进度，过些时候它还会再来"
+              ]
+            },
             [
               "放满，顺序全对",
               "<g>解密成功</g>，它被彻底终结，领下面的奖励，这一轮随之清零"
@@ -752,11 +823,14 @@
           "type": "list",
           "items": [
             "界面开着时，你要待在方块 <t>8</t> 格以内。",
-            "只想靠它积攒进度、不想冒失败的风险时，先从门里取出一张卡。",
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "只想靠它积攒进度、不想冒失败的风险时，先从门里取出一张卡。"
+            },
             "背包满时，没用完的安魂卡会掉在玄骸倒下的位置。",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "开始处决那一刻卡没放满，就按没放满算，中途放满也不补判。"
+              "text": "处决按开始那一刻门里的卡判，中途换卡、补卡都不算；空着的格子算错。"
             },
             "每次成功后，武器等级范围的上下限各提高<em>同一个</em>随机数 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，分别以 <t>{cfg:kuva_lich.minimumLevel}</t> 和 <t>{cfg:kuva_lich.maximumLevel}</t> 封顶。",
             "上下限提高的幅度相同，所以两头都没到顶时，范围的宽度不变，这次掉的武器按提升前的范围生成。",
@@ -772,8 +846,8 @@
         "client/gui/screens/inventory/RequiemGateScreen.java:32-44 — 上排卡槽下三颗红点是剩余次数（:225 drawUseDots）；中间三枚密语符号（MurmurTriangle）兼作这一阶段的进度、每 3 秒随机两枚换位；右下角档案入口；创造模式 TAB 补全",
         "nemesis/LichDirector.java:192-197 — 第 1 条线索揭示时诞生玄骸；:474 怒气满后定到场时间；item/RequiemUltimatum.java:98 tryCall 召来自己的玄骸",
         "mercy/MercyRules.java:31 — mercyEnabled 时有主玄骸受致命伤先倒地；mercy/MercyServer.java:333 handleRequest 只有主人能处决、要在 mercyReach 内；:470 倒地 mercyDownedSeconds 到点它起身逃走",
-        "capability/RequiemCard.java:416 correctPrefixLength — 从第 1 位起逐位比、遇错即停，决定第几刀判错；:259 isReadyCard 三格都非空",
-        "entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时按主人的卡判定，主人要在线、同一世界、64 格内（:178 RESOLVE_RANGE），否则不判定、不给进度；卡没放满只给进度并按 KILLED_OTHER 结束遭遇（之后照常再来）；开始处决时没放满、途中放满也不补判",
+        "capability/RequiemCard.java correctPrefixLength — 从第 1 位起逐位比、遇错即停（空格算错、Oull 算对，见 fits），决定第几刀判错；isReadyCard 三格都非空",
+        "entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时按主人的卡判定，主人要在线、同一世界、64 格内（:178 RESOLVE_RANGE），否则不判定、不给进度；卡没放满只给进度并按 KILLED_OTHER 结束遭遇（之后照常再来）；mercy/MercyServer.java buildPlan — 怜悯之击开着时按开始那一刻的卡定下整场结果，一律三刀，空格算判错",
         "entity/KuvaMasterEntity.java:921 directFailure / mercy/MercyServer.java:763 settleFailure — 判错 kuvaLevel+1、给进度、按 MERCY_FAILED 离场；聊天：直接判定发 firstCorrect / secondCorrect + failedToDecrypt，怜悯之击发 message.kuvalich.mercy.failed.1~3（第几刀判错）",
         "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 武器 = KUVA_WEAPONS.get(card.getLichWeapon())（诞生时定下的那把），元素随机、等级在当前范围内；玄骸之遗 ×1；裂罅碎块、赤毒、高级模组（:1119 rollAdvancedModule：masterPrimeModuleChance% Prime 否则裂罅，moduleWeaponRatio% 武器模组）；requiemUltimatumDropChance 通牒；奖励生成在它倒下的位置，幸存卡回背包、放不下也掉在那里",
         "entity/KuvaMasterEntity.java:1139 upgradeWeaponLevelCap — 上下限各加同一个 getInt(minimumLevelCapIncrease, maximumLevelCapIncrease)，分别封顶 minimumLevel / maximumLevel；在生成武器之后调用",
@@ -790,6 +864,12 @@
       "blocks": [
         {
           "type": "p",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "试顺序要有章法，猜错的代价会一直记在你身上，到解密成功才清掉。处决[[enemies/kuva_master|玄骸]]时卡序不对，或者有格子空着，就是一次<b>解密失败</b>：它会挣脱逃走，留给你一条缩小范围的提示，代价是<hl>玄骸等级</hl> +1。"
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.mercyEnabled",
           "text": "试顺序要有章法，猜错的代价会一直记在你身上，到解密成功才清掉。带着放满却不对的三张卡对[[enemies/kuva_master|玄骸]]下手，就是一次<b>解密失败</b>：它会挣脱逃走，留给你一条缩小范围的提示，代价是<hl>玄骸等级</hl> +1。"
         },
         {

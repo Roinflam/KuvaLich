@@ -60,11 +60,15 @@ public class KuvaLichItems {
     public static final RegistryObject<Item> RIS_CARD = ITEMS.register("ris",
             () -> new RIS(new Item.Properties()));
 
+    /** 万能卡：不在下面 0~7 的随机池里，只靠处决失败时掉 */
+    public static final RegistryObject<Item> OULL_CARD = ITEMS.register("oull",
+            () -> new OULL(new Item.Properties()));
+
     /**
      * 根据ID获取安魂卡片
      * Get requiem card by ID
      *
-     * @param id 卡片ID (0-7)
+     * @param id 卡片ID (0-8，8 是 Oull)
      * @return 对应的安魂卡片
      */
     public static Item getRequiemCard(int id) {
@@ -77,6 +81,7 @@ public class KuvaLichItems {
             case 5: return VOME_CARD.get();
             case 6: return XATA_CARD.get();
             case 7: return RIS_CARD.get();
+            case OULL.ID: return OULL_CARD.get();
             default: return KHRA_CARD.get();
         }
     }

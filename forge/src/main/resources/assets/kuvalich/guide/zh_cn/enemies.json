@@ -605,10 +605,20 @@
             4
           ],
           "rows": [
-            [
-              "灭骸之扉里没放满 3 张卡",
-              "不判定，它消散离开，你拿到解密进度，数量是奴仆的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "灭骸之扉里没放满 3 张卡",
+                "照样按三刀判，空着的格子算错：<b>解密失败</b>，同下面「有错」"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "灭骸之扉里没放满 3 张卡",
+                "不判定，它消散离开，你拿到解密进度，数量是奴仆的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"
+              ]
+            },
             [
               "放满 3 张，<g>顺序全对</g>",
               "<g>解密成功</g>，它被终结，你拿到下面的奖励并开始新一轮"
@@ -789,7 +799,14 @@
           "items": [
             "等级记在<em>你自己</em>身上，算的是这一轮你那只玄骸",
             "<b>死亡不会重置</b>，只有解密成功才清掉，下一只从 1 级重新算",
-            "卡没放满就对它下手不算猜错，只拿解密进度"
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "处决时空着的格子也算猜错，卡没放满照样升级"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "卡没放满就对它下手不算猜错，只拿解密进度"
+            }
           ]
         },
         {
@@ -871,7 +888,7 @@
       ],
       "_src": [
         "capability/RequiemCard.java:467 getLichRank = kuvaLevel + 1：玄骸诞生时 1 级，档案、Boss 条、聊天栏（failedToDecrypt / mercy.failed.k 的等级参数）都显示这个数",
-        "entity/KuvaMasterEntity.java:921 directFailure / mercy/MercyServer.java:763 settleFailure — 判错 kuvaLevel + 1；卡没放满走单刀 / 只给进度，不加等级",
+        "entity/KuvaMasterEntity.java:921 directFailure / mercy/MercyServer.java:763 settleFailure — 判错 kuvaLevel + 1；怜悯之击开着时空格算判错，同样 +1；关着时卡没放满只给进度，不加等级",
         "capability/RequiemCard.java — kuvaLevel 是玩家 capability 上的字段（记在玩家身上，对应这一轮的玄骸）；:379 reset()（仅成功终结时调用）归零；CapabilityRegistryHandler 死亡 / 换维度克隆全部数据",
         "base/entity/AbstractKuva.java:311 applyPlayerDefense — 伤害归属者是赤毒实体且目标是玩家时 × (1 + kuvaLevel × increaseDamage)；kuvaLevel = 显示等级 − 1，所以 2 级起才有加成，表里 2 / 3 / 4 / 6 级对应 kuvaLevel 1 / 2 / 3 / 5",
         "base/entity/AbstractKuva.java:296 applyPlayerDamageModifier — 归属者是玩家且目标是赤毒实体时 × (1 − min(0.999, kuvaLevel × reducedDamage))，默认 reducedDamage = 0；奴仆、玄骸都继承 AbstractKuva",
@@ -1282,7 +1299,14 @@
         {
           "type": "steps",
           "items": [
-            "检查[[requiem/requiem_gate|灭骸之扉]]里的三张卡是不是这次想试的顺序，没放满只是刷进度",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "检查[[requiem/requiem_gate|灭骸之扉]]里的三张卡是不是这次想试的顺序，空着的格子算错"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "检查[[requiem/requiem_gate|灭骸之扉]]里的三张卡是不是这次想试的顺序，没放满只是刷进度"
+            },
             "至少带上两三种伤害类型，比如近战武器、弓或弩，再加上法术，最好再有一把模组倍率高的[[weapons/kuva_weapons|赤毒武器]]",
             {
               "if": "cfg:kuva_lich.lichSeededAffinities",

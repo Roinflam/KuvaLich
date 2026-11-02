@@ -705,7 +705,19 @@
         },
         {
           "type": "tip",
-          "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+          "if": [
+            "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+            "cfg:kuva_lich.mercyEnabled"
+          ],
+          "style": "info",
+          "text": "{lang:entity.kuvalich.kuva_slave}s do not appear in the wild. Once you have a Lich, decryption progress comes only from it: each failed decryption (an execution with fewer than three cards set counts as one) is worth <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's progress."
+        },
+        {
+          "type": "tip",
+          "if": [
+            "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+            "!cfg:kuva_lich.mercyEnabled"
+          ],
           "style": "info",
           "text": "{lang:entity.kuvalich.kuva_slave}s do not appear in the wild. Once you have a Lich, decryption progress comes only from it: each time you take it down with fewer than three cards set, or a decryption fails, it is worth <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's progress."
         },
@@ -775,7 +787,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.mercyEnabled",
-          "text": "With all three cards set, every stab checks your answer. The first stab checks position 1, the second position 2 and the third position 3; the three slots at the bottom of the screen light up stab by stab, and a wrong one turns red."
+          "text": "Every stab of the execution checks your answer. The first stab checks position 1, the second position 2 and the third position 3; the three slots at the bottom of the screen light up stab by stab, and a wrong one turns red. <b>An empty slot counts as wrong</b>."
         },
         {
           "type": "table",
@@ -792,7 +804,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "Fewer than 3 cards",
-                "The execution is a single stab: you only get decryption progress and it is not a failure; this encounter ends, and it will still come back later"
+                "Still judged over three stabs, and an empty slot counts as wrong: reaching the first empty slot is a <b>decryption failure</b> (with no cards at all, the first stab is wrong), same as “3 cards, any mistake” below"
               ]
             },
             {
@@ -987,6 +999,14 @@
         },
         {
           "type": "tip",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "style": "warn",
+          "title": "Two traps",
+          "text": "① A Lich from a spawn egg or <t>/summon</t> is not yours: it never goes down, and killing it gives <b>nothing</b>, no judgement and no progress. ② In an execution an empty slot counts as wrong: taking a card out does not dodge the judgement, and an incomplete set is still a failed decryption."
+        },
+        {
+          "type": "tip",
+          "if": "!cfg:kuva_lich.mercyEnabled",
           "style": "warn",
           "title": "Two traps",
           "text": "① A Lich from a spawn egg or <t>/summon</t> is not yours: it never goes down, and killing it gives <b>nothing</b>, no judgement and no progress. ② If you're unsure, take one card out first; with an empty slot, taking it down only adds progress and never counts as a failure."
@@ -2078,7 +2098,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× Executing the Lich with cards you're unsure of</b>: while all three slots are full, the execution checks your order stab by stab; one wrong stab and it escapes, raising your Lich rank by 1. If in doubt, take one card out; the execution is then a single stab that only adds progress."
+              "text": "<b>× Thinking that taking a card out only earns progress</b>: the execution checks your order stab by stab, an empty slot counts as wrong, and one wrong stab lets it escape, raising your Lich rank by 1. Treat an uncertain order as a probe: on a failure, chat tells you which stab was wrong."
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",

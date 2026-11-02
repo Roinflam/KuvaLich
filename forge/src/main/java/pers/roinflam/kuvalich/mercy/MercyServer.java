@@ -44,11 +44,14 @@ import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.fx.FxId;
 import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.fx.ServerFxQueue;
+import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.item.card.OULL;
 import pers.roinflam.kuvalich.nemesis.EncounterEnd;
 import pers.roinflam.kuvalich.nemesis.LichComms;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.LichLine;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
@@ -107,15 +110,10 @@ public final class MercyServer {
     static final int FAIL_REMOVE = 58;
     static final int FAIL_CHAT = 60;
     static final int FAIL_PROGRESS = 70;
-    /** 卡没齐的单刀：死亡、解锁 */
-    public static final int SINGLE_DEATH_TICK = 33;
-    static final int SINGLE_UNLOCK_TICK = 50;
     /** 奴仆：死亡、解锁（刺入那一 tick 定案，看套路） */
     public static final int THRALL_DEATH_TICK = 30;
     /** 奴仆绕到身后的两套：人落地、站位换到身后（客户端 1600 ms 前走完路线） */
     static final int THRALL_LAND_TICK = 33;
-    /** 单刀：蹬开它往后空翻，身体跟着往外挪（客户端的落点和这里推出去的距离一样） */
-    static final int SINGLE_HOP_TICK = 25;
     /** 踏背下刺：蹲上后背的高度、闪到正面后比原站距多站开多少（那时它已经直起身跪着，大腿往前伸，比正面直刺站开一点） */
     static final double VAULT_BACK_UP = 1.75D;
     static final double VAULT_FRONT_GAP = 0.35D;
@@ -180,7 +178,7 @@ public final class MercyServer {
 
     /** 演示目标的处决结果（{@link #REAL} = 按处决者身上的卡判） */
     public enum Outcome {
-        SUCCESS, FAIL1, FAIL2, FAIL3, SINGLE, REAL
+        SUCCESS, FAIL1, FAIL2, FAIL3, REAL
     }
 
     /** 中断的原因 */
@@ -256,6 +254,8 @@ public final class MercyServer {
         /** 失败：定案时记下的名字和等级（收尾时实体可能已经没了） */
         Component lichName = Component.empty();
         int rankAfter;
+        /** 失败：定案时掷过的「给一张 Oull」 */
+        boolean oullDrop;
 
         Exec(AbstractKuva target, ServerPlayer executor, MercyPlan.Plan plan, MercyVariant variant,
              Vec3 pl, Vec3 f, Vec3 pe) {
@@ -273,11 +273,7 @@ public final class MercyServer {
         }
 
         boolean failure() {
-            return lich && plan.stabs() == 3 && plan.prefix() < 3;
-        }
-
-        boolean single() {
-            return lich && plan.stabs() == 1;
+            return lich && plan.prefix() < 3;
         }
 
         /** 按 tick 插到对的位置（同一 tick 的保持加入顺序）：推进时从头逐个往后走，排错了后面的会被前面的卡住 */
@@ -311,7 +307,7 @@ public final class MercyServer {
      *   <li>倒地、消散中：改成离场中（客户端播起身），离场照常走，返回 false；</li>
      *   <li>处决中、还没定案：作废这一场、处决者解锁，离场照常走，返回 false；</li>
      *   <li>处决中、已定案、判错了：给玩家的聊天和进度立刻发，冲击和失败的结算不做了（离场本身就是结算），返回 false；</li>
-     *   <li>处决中、已定案、成功或单刀：快进到死、奖励立刻发，返回 true，调用方不再放离场。</li>
+     *   <li>处决中、已定案、成功：快进到死、奖励立刻发，返回 true，调用方不再放离场。</li>
      * </ul>
      */
     public static boolean interceptDeparture(KuvaMasterEntity lich) {
@@ -654,7 +650,10 @@ public final class MercyServer {
         return standable(level, player, at) ? at : pe;
     }
 
-    /** 开始时就把整场的结果算好：刀数、猜对的前缀、三张卡和次数、有没有归还、会用完几张 */
+    /**
+     * 开始时就把整场的结果算好：猜对的前缀、三张卡和次数、有没有归还、会用完几张。
+     * 玄骸一律三刀，从第一格起逐格判，空着的格子算这一格判错（一张没装就是第一刀判错）
+     */
     private static MercyPlan.Plan buildPlan(ServerPlayer player, AbstractKuva target, MercyVariant variant, boolean mirror) {
         boolean demo = target.isDemo();
         int[] none = {-1, -1, -1};
@@ -665,7 +664,6 @@ public final class MercyServer {
         RequiemCard card = card(player);
         int[] ids = none;
         int[] remaining = zero;
-        boolean ready = false;
         int prefix = 0;
         boolean hasConfiscated = false;
         if (card != null) {
@@ -676,8 +674,7 @@ public final class MercyServer {
                 ids[i] = placed[i] != null && placed[i].getItem() instanceof AbstractRequiemCard c ? c.getID() : -1;
                 remaining[i] = usesLeft(placed[i]);
             }
-            ready = card.isReadyCard();
-            prefix = ready ? card.correctPrefixLength() : 0;
+            prefix = card.correctPrefixLength();
             hasConfiscated = card.hasConfiscatedItems();
         }
         boolean returnsItems = hasConfiscated;
@@ -687,24 +684,21 @@ public final class MercyServer {
                 ids = dc.ids().clone();
                 remaining = dc.remaining().clone();
                 returnsItems = dc.returnsItems();
-                ready = ids[0] >= 0 && ids[1] >= 0 && ids[2] >= 0;
             }
             Outcome o = NEXT_OUTCOME.remove(player.getUUID());
             if (o != null && o != Outcome.REAL) {
-                ready = o != Outcome.SINGLE;
                 prefix = switch (o) {
                     case FAIL1 -> 0;
                     case FAIL2 -> 1;
                     case FAIL3 -> 2;
                     default -> 3;
                 };
+            } else {
+                // 按身上的卡判、界面上摆的是演示卡：前缀不越过演示卡里第一个空格
+                prefix = Math.min(prefix, firstEmpty(ids));
             }
         }
-        int stabs = ready ? 3 : 1;
-        if (!ready) {
-            prefix = 0;
-        }
-        boolean success = ready && prefix >= 3;
+        boolean success = prefix >= 3;
         int consumed = 0;
         if (success) {
             for (int i = 0; i < 3; i++) {
@@ -713,7 +707,17 @@ public final class MercyServer {
                 }
             }
         }
-        return new MercyPlan.Plan(stabs, prefix, variant, ids, remaining, success && returnsItems, consumed, demo, mirror);
+        return new MercyPlan.Plan(3, prefix, variant, ids, remaining, success && returnsItems, consumed, demo, mirror);
+    }
+
+    /** 第一个空格的下标；三格都放了返回 3 */
+    private static int firstEmpty(int[] ids) {
+        for (int i = 0; i < 3; i++) {
+            if (i >= ids.length || ids[i] < 0) {
+                return i;
+            }
+        }
+        return 3;
     }
 
     /** 一张卡处决之前还剩几次：可损耗的按剩余耐久，不可损耗的用一次就没（记 1） */
@@ -798,16 +802,6 @@ public final class MercyServer {
             return;
         }
         KuvaMasterEntity lich = (KuvaMasterEntity) e.target;
-        if (e.single()) {
-            e.add(SETTLE_TICK, StepKind.SETTLE, () -> e.settled = true);
-            if (e.variant.singleAs() == MercyVariant.LICH_A || e.variant.singleAs() == MercyVariant.LICH_C) {
-                // 这两套最后蹬开它往后空翻，落地的地方就是收尾的站位
-                e.add(SINGLE_HOP_TICK, StepKind.PUSH, () -> e.pushLeft = (int) Math.round(PUSH_DISTANCE / PUSH_STEP));
-            }
-            e.add(SINGLE_DEATH_TICK, StepKind.KILL, () -> kill(e));
-            e.add(SINGLE_UNLOCK_TICK, StepKind.UNLOCK, () -> unlock(e));
-            return;
-        }
         if (!e.failure()) {
             e.add(SETTLE_TICK, StepKind.SETTLE, () -> settleSuccess(e, lich));
             e.add(STAB_COMM_TICK, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
@@ -837,6 +831,7 @@ public final class MercyServer {
         e.add(g + FAIL_UNLOCK, StepKind.UNLOCK, () -> unlock(e));
         e.add(g + FAIL_REMOVE, StepKind.ESCAPE, () -> escape(e, lich, false));
         e.add(g + FAIL_CHAT, StepKind.PLAYER, () -> failureChat(e, k));
+        e.add(g + FAIL_CHAT, StepKind.PLAYER, () -> giveOull(e));
         e.add(g + FAIL_PROGRESS, StepKind.PLAYER, () -> failureProgress(e, lich));
     }
 
@@ -877,17 +872,18 @@ public final class MercyServer {
             }
             LichDirector.onMercyResult(owner, lich, RequiemCard.packAttempt(e.plan.cardIds(), results, true), false);
             e.rankAfter = lich.applyFailure(card);
+            e.oullDrop = rollOull(k - 1);
         }
         KuvaFx.player(owner, FxId.RANK_UP, lich.chest(), lich.getId(), e.rankAfter, 1 | (k << 1));
     }
 
-    /** 目标死亡：玄骸成功收尾放 REQUIEM 消散、单刀和奴仆走各自的死亡结算 */
+    /** 目标死亡：玄骸成功收尾放 REQUIEM 消散，奴仆走自己的死亡结算 */
     private static void kill(Exec e) {
         AbstractKuva t = e.target;
         if (!t.isAlive() || t.isRemoved()) {
             return;
         }
-        if (e.lich && !e.single() && t.level() instanceof ServerLevel level) {
+        if (e.lich && t.level() instanceof ServerLevel level) {
             t.holdDeathTicks(SUCCESS_HOLD_TICKS);
             KuvaFx.near(level, t.chest(), LICH_RANGE, FxId.LICH_DEATH, t, e.executor.getId() + 1, 2);
             t.markDeathFxSent();
@@ -914,8 +910,42 @@ public final class MercyServer {
 
     private static void failureChat(Exec e, int k) {
         if (!e.executor.hasDisconnected()) {
-            PlayerFeedback.chat(e.executor, KuvaPalette.DANGER, "message.kuvalich.mercy.failed." + k,
-                    e.lichName, e.rankAfter);
+            // 一张卡都没装：单独一句，点明是没装安魂卡
+            String key = noCards(e.plan.cardIds())
+                    ? "message.kuvalich.mercy.failed.nocard" : "message.kuvalich.mercy.failed." + k;
+            PlayerFeedback.chat(e.executor, KuvaPalette.DANGER, key, e.lichName, e.rankAfter);
+        }
+    }
+
+    private static boolean noCards(int[] ids) {
+        for (int id : ids) {
+            if (id >= 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 失败时给不给一张 Oull：这次至少判对了一格才掷，概率看配置（百分比）。
+     * 在定案时掷好，收尾和快进都只是照结果发
+     */
+    static boolean rollOull(int prefix) {
+        int chance = ModConfig.KUVA_LICH.oullDropChance.get();
+        return prefix >= 1 && chance > 0 && (chance >= 100 || ThreadLocalRandom.current().nextInt(100) < chance);
+    }
+
+    /** 失败收尾：掷中了就给处决者一张 Oull（背包满了掉在脚下），再发一句聊天 */
+    private static void giveOull(Exec e) {
+        if (!e.oullDrop || e.demo) {
+            return;
+        }
+        e.oullDrop = false;
+        ServerPlayer p = e.executor;
+        InventoryUtil.giveOrDrop(p, new ItemStack(KuvaLichItems.OULL_CARD.get()));
+        if (!p.hasDisconnected()) {
+            PlayerFeedback.chat(p, KuvaPalette.ACCENT, "message.kuvalich.mercy.oull",
+                    Component.translatable(KuvaLichItems.OULL_CARD.get().getDescriptionId()));
         }
     }
 
@@ -1338,7 +1368,7 @@ public final class MercyServer {
     }
 
     /**
-     * 演示目标在处决界面上显示的三张卡（卡 id 0~7，-1 = 空）和处决前剩余次数（0~3），{@code returnsItems} = 成功时演「归还物品」。
+     * 演示目标在处决界面上显示的三张卡（卡 id 0~8，-1 = 空）和处决前剩余次数（0~3），{@code returnsItems} = 成功时演「归还物品」。
      * 传 null 清掉，回到用处决者身上的卡
      */
     public static void setDemoCards(ServerPlayer player, @Nullable int[] ids, @Nullable int[] remaining, boolean returnsItems) {
@@ -1350,7 +1380,7 @@ public final class MercyServer {
         int[] r3 = {3, 3, 3};
         for (int i = 0; i < 3; i++) {
             if (i < ids.length) {
-                i3[i] = ids[i] >= 0 && ids[i] <= 7 ? ids[i] : -1;
+                i3[i] = ids[i] >= 0 && ids[i] <= OULL.ID ? ids[i] : -1;
             }
             if (remaining != null && i < remaining.length) {
                 r3[i] = Mth.clamp(remaining[i], 0, 3);

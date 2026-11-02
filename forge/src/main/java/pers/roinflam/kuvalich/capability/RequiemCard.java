@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.item.card.OULL;
 import pers.roinflam.kuvalich.nemesis.RageTier;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 
@@ -264,26 +265,31 @@ public class RequiemCard {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
             return false;
         }
-        AbstractRequiemCard one = (AbstractRequiemCard) oneCard.getItem();
-        AbstractRequiemCard two = (AbstractRequiemCard) twoCard.getItem();
-        AbstractRequiemCard three = (AbstractRequiemCard) threeCard.getItem();
-        return one.getID() == oneAnswer && two.getID() == twoAnswer && three.getID() == threeAnswer;
+        return fits(oneCard, oneAnswer) && fits(twoCard, twoAnswer) && fits(threeCard, threeAnswer);
     }
 
     public boolean isFirstCorrectAnswer() {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
             return false;
         }
-        AbstractRequiemCard one = (AbstractRequiemCard) oneCard.getItem();
-        return one.getID() == oneAnswer;
+        return fits(oneCard, oneAnswer);
     }
 
     public boolean isTwoCorrectAnswer() {
         if (unlockedCardStatus <= 0 || !isReadyCard()) {
             return false;
         }
-        AbstractRequiemCard two = (AbstractRequiemCard) twoCard.getItem();
-        return two.getID() == twoAnswer;
+        return fits(twoCard, twoAnswer);
+    }
+
+    /**
+     * 这一格放的卡算不算对：和答案同一张，或者是 Oull（放在哪一格都算对）。空格、不是安魂卡的都不算
+     */
+    public static boolean fits(@Nullable ItemStack placed, int answer) {
+        if (placed == null || placed.isEmpty() || !(placed.getItem() instanceof AbstractRequiemCard card)) {
+            return false;
+        }
+        return card.getID() == OULL.ID || card.getID() == answer;
     }
 
     public int getLockCard(int level) {
@@ -409,19 +415,19 @@ public class RequiemCard {
     }
 
     /**
-     * 密语的前缀长度：从第 1 位起逐位比较放着的卡和答案，遇到第一个不对的就停。
-     * 3 表示全对；小于 3 时在第 {@code 前缀长度 + 1} 位判错。三张卡没放齐、还没揭示任何阶段时恒为 0。
-     * 注意 {@link #isTwoCorrectAnswer()} 只看第 2 位本身，不是前缀
+     * 密语的前缀长度：从第 1 位起逐位比较放着的卡和答案，遇到第一个不对的就停；空着的格子算这一位不对，
+     * Oull 在哪一位都算对（见 {@link #fits}）。3 表示全对；小于 3 时在第 {@code 前缀长度 + 1} 位判错。
+     * 还没揭示任何阶段时恒为 0。注意 {@link #isTwoCorrectAnswer()} 只看第 2 位本身，不是前缀
      */
     public int correctPrefixLength() {
-        if (unlockedCardStatus <= 0 || !isReadyCard()) {
+        if (unlockedCardStatus <= 0) {
             return 0;
         }
         ItemStack[] placed = {oneCard, twoCard, threeCard};
         int[] answers = {oneAnswer, twoAnswer, threeAnswer};
         int length = 0;
         for (int i = 0; i < 3; i++) {
-            if (!(placed[i].getItem() instanceof AbstractRequiemCard card) || card.getID() != answers[i]) {
+            if (!fits(placed[i], answers[i])) {
                 break;
             }
             length++;
@@ -608,7 +614,7 @@ public class RequiemCard {
     public static final int ATTEMPT_WRONG = 2;
 
     /**
-     * 把一次判定压成一个 int。每一位占 6 比特：低 4 位是卡 id（0~7，15 = 没放），再 2 位是结果
+     * 把一次判定压成一个 int。每一位占 6 比特：低 4 位是卡 id（0~8，15 = 没放），再 2 位是结果
      * （0 没判到 / 1 对 / 2 错）；第 18 位为 1 表示是怜悯之击，0 表示击杀时直接判定。
      * 判定按位置顺序、遇错即停，错的那一位之后记「没判到」。
      *
@@ -619,7 +625,7 @@ public class RequiemCard {
     public static int packAttempt(int[] cardIds, byte[] results, boolean mercy) {
         int packed = 0;
         for (int i = 0; i < 3; i++) {
-            int id = i < cardIds.length && cardIds[i] >= 0 && cardIds[i] <= 7 ? cardIds[i] : ATTEMPT_NO_CARD;
+            int id = i < cardIds.length && cardIds[i] >= 0 && cardIds[i] <= OULL.ID ? cardIds[i] : ATTEMPT_NO_CARD;
             int result = i < results.length ? results[i] & 3 : ATTEMPT_UNJUDGED;
             packed |= (id | (result << 4)) << (6 * i);
         }

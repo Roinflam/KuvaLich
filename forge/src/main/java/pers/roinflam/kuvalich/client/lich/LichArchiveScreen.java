@@ -27,6 +27,7 @@ import pers.roinflam.kuvalich.client.fx.FxCurve;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.client.gui.screens.inventory.ArchivePageScreen;
 import pers.roinflam.kuvalich.client.gui.requiem.MurmurTriangle;
 import pers.roinflam.kuvalich.client.gui.requiem.RequiemSigils;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundInstance;
@@ -452,19 +453,7 @@ public class LichArchiveScreen extends Screen {
 
     /** 墨烟铺满全屏，按高度缩放、每秒往左飘 0.01 屏宽；贴图四边无缝，靠重复铺开 */
     private static void drawSmoke(GuiGraphics g, int w, int h, long now, float alpha) {
-        if (alpha <= 0.004F) {
-            return;
-        }
-        float tileW = h * 2.0F;
-        float drift = (now / 1000.0F) * 0.01F * w;
-        float u = (drift / tileW) * 256.0F % 256.0F;
-        int uw = Math.max(1, Math.round(256.0F * w / tileW));
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
-        g.blit(SMOKE, 0, 0, w, h, u, 0.0F, uw, 128, 256, 128);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.disableBlend();
+        ArchivePageScreen.drawSmoke(g, w, h, now, alpha);
     }
 
     // ---------- 中间 ----------
@@ -1018,26 +1007,37 @@ public class LichArchiveScreen extends Screen {
                 int id = RequiemCard.attemptCardId(packed, pos);
                 int result = RequiemCard.attemptResult(packed, pos);
                 float x = col[pos];
-                switch (result) {
-                    case RequiemCard.ATTEMPT_RIGHT -> RequiemSigils.drawLayers(g, id, x, cy, sigil, 0, 0,
-                            GuiShapes.argb(0xFFFFFF, 0.4F * a), GuiShapes.argb(FxPalette.KUVA_PALE, a));
-                    case RequiemCard.ATTEMPT_WRONG -> {
-                        // 暗红底 + 赤毒色线：线和底同色时整块糊成一片红，看不出是哪个符号
-                        RequiemSigils.drawLayers(g, id, x, cy, sigil, GuiShapes.argb(FxPalette.KUVA_DEEP, 0.95F * a), 0, 0,
-                                GuiShapes.argb(FxPalette.KUVA, 0.9F * a));
-                        // 斜杠：左下 → 右上，长 = 符号对角线的 0.8 倍
-                        float hx = RequiemSigils.width(sigil) * 0.4F;
-                        float hy = sigil * 0.4F;
-                        GuiShapes.begin(g);
-                        GuiShapes.hairline(g, x - hx, cy + hy, x + hx, cy - hy, lw * 1.5F, GuiShapes.argb(FxPalette.KUVA, a));
-                        GuiShapes.end();
+                boolean noCard = id == RequiemCard.ATTEMPT_NO_CARD;
+                if (noCard && result == RequiemCard.ATTEMPT_WRONG) {
+                    // 这一位没放卡、按错判：空圈 + 斜杠，和处决 HUD 上的空格一个画法
+                    float r = RequiemSigils.width(sigil) * 0.42F;
+                    GuiShapes.begin(g);
+                    GuiShapes.ring(g, x, cy, r, lw * 1.5F, GuiShapes.argb(FxPalette.KUVA, 0.9F * a), 1.0F);
+                    RequiemSigils.slash(g, x, cy, r * 2.0F, lw * 1.5F, GuiShapes.argb(FxPalette.KUVA, a));
+                    GuiShapes.end();
+                } else {
+                    switch (result) {
+                        case RequiemCard.ATTEMPT_RIGHT -> RequiemSigils.drawLayers(g, id, x, cy, sigil, 0, 0,
+                                GuiShapes.argb(0xFFFFFF, 0.4F * a), GuiShapes.argb(FxPalette.KUVA_PALE, a));
+                        case RequiemCard.ATTEMPT_WRONG -> {
+                            // 暗红底 + 赤毒色线：线和底同色时整块糊成一片红，看不出是哪个符号
+                            RequiemSigils.drawLayers(g, id, x, cy, sigil, GuiShapes.argb(FxPalette.KUVA_DEEP, 0.95F * a), 0, 0,
+                                    GuiShapes.argb(FxPalette.KUVA, 0.9F * a));
+                            // 斜杠：左下 → 右上，长 = 符号对角线的 0.8 倍
+                            float hx = RequiemSigils.width(sigil) * 0.4F;
+                            float hy = sigil * 0.4F;
+                            GuiShapes.begin(g);
+                            GuiShapes.hairline(g, x - hx, cy + hy, x + hx, cy - hy, lw * 1.5F, GuiShapes.argb(FxPalette.KUVA, a));
+                            GuiShapes.end();
+                        }
+                        default -> RequiemSigils.drawLayers(g, id, x, cy, sigil, 0, 0, 0,
+                                GuiShapes.argb(FxPalette.ASH, 0.5F * a));
                     }
-                    default -> RequiemSigils.drawLayers(g, id, x, cy, sigil, 0, 0, 0,
-                            GuiShapes.argb(FxPalette.ASH, 0.5F * a));
                 }
                 float hw = RequiemSigils.width(sigil) * 0.5F;
                 if (inRect(mx, my, x - hw, cy - sigil * 0.5F, x + hw, cy + sigil * 0.5F)) {
                     String key = result == RequiemCard.ATTEMPT_RIGHT ? "kuvalich.archive.attempt.correct"
+                            : result == RequiemCard.ATTEMPT_WRONG && noCard ? "kuvalich.archive.attempt.empty"
                             : result == RequiemCard.ATTEMPT_WRONG ? "kuvalich.archive.attempt.wrong"
                             : "kuvalich.archive.attempt.untried";
                     hover(Component.translatable(key, pos + 1));
@@ -1432,7 +1432,7 @@ public class LichArchiveScreen extends Screen {
 
     /**
      * 档案开着时整个 HUD 不画：底板只压暗到 85%，聊天栏的字、热栏会从底下透出来，正好叠在左栏和状态行上。
-     * HUD 在界面之前画、中间清过深度，靠 z 挡不住，只能不画
+     * HUD 在界面之前画、中间清过深度，靠 z 挡不住，只能不画。安魂系列的方块界面（{@link ArchivePageScreen}）同理
      */
     @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
     public static final class HideHud {
@@ -1441,7 +1441,8 @@ public class LichArchiveScreen extends Screen {
 
         @SubscribeEvent
         public static void onOverlay(RenderGuiOverlayEvent.Pre event) {
-            if (Minecraft.getInstance().screen instanceof LichArchiveScreen) {
+            if (Minecraft.getInstance().screen instanceof LichArchiveScreen
+                    || Minecraft.getInstance().screen instanceof ArchivePageScreen<?>) {
                 event.setCanceled(true);
             }
         }

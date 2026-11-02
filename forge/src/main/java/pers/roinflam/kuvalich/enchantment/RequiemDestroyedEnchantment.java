@@ -185,6 +185,7 @@ public class RequiemDestroyedEnchantment extends AbstractEnchantment {
 
     private static void dropRequiemCard(ServerLevel world, BlockPos pos) {
         // 修复：使用缓存数组，不再每次 new / Fix: use cached array, no new allocation every call
+        // 池里只有八张普通卡，Oull 不从挖矿掉
         Item[] cards = getRequiemCards();
         Item card = cards[RandomUtil.getInt(0, cards.length - 1)];
         spawnItem(world, pos, new ItemStack(card, 1));

@@ -583,10 +583,20 @@
             4
           ],
           "rows": [
-            [
-              "Fewer than 3 cards in the Requiem Gate",
-              "No judgement: it dissolves and leaves, and you get decryption progress, <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "Fewer than 3 cards in the Requiem Gate",
+                "Still judged over three stabs, and an empty slot counts as wrong: a <b>decryption failure</b>, same as “any wrong” below"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "Fewer than 3 cards in the Requiem Gate",
+                "No judgement: it dissolves and leaves, and you get decryption progress, <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's"
+              ]
+            },
             [
               "3 cards, <g>all in the right order</g>",
               "<g>Decryption succeeds</g>: it is ended, you get the rewards below, and a new round starts"
@@ -741,7 +751,14 @@
           "items": [
             "The rank is stored on <em>you</em> and belongs to this round's Lich",
             "<b>Dying does not reset it</b>; only a successful decryption clears it, and the next Lich starts again at 1",
-            "Going after it with an incomplete set is not a wrong guess; you only get progress"
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "In an execution an empty slot counts as a wrong guess too, so an incomplete set still raises the rank"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "Going after it with an incomplete set is not a wrong guess; you only get progress"
+            }
           ]
         },
         {
@@ -1195,7 +1212,14 @@
         {
           "type": "steps",
           "items": [
-            "Check that the three cards in the [[requiem/requiem_gate|Requiem Gate]] are the order you want to test; with fewer than three it is only a progress run",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "Check that the three cards in the [[requiem/requiem_gate|Requiem Gate]] are the order you want to test; an empty slot counts as wrong"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "Check that the three cards in the [[requiem/requiem_gate|Requiem Gate]] are the order you want to test; with fewer than three it is only a progress run"
+            },
             "Bring at least two or three damage types, such as a melee weapon, a bow or crossbow and spells, and ideally a [[weapons/kuva_weapons|Kuva weapon]] with strong mod multipliers",
             {
               "if": "cfg:kuva_lich.lichSeededAffinities",

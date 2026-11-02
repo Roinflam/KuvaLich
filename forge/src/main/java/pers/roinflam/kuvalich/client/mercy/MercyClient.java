@@ -239,7 +239,7 @@ public final class MercyClient {
         return e != null && e.cinematic && e.elapsed() < e.hudUntilMs;
     }
 
-    /** 本地玩家是一场玄骸三刀 / 单刀处决的处决者、演出还没交还 */
+    /** 本地玩家是一场玄骸处决的处决者、演出还没交还 */
     public static boolean isCinematic() {
         Exec e = localExec;
         return e != null && e.cinematic && e.elapsed() < e.handbackMs;

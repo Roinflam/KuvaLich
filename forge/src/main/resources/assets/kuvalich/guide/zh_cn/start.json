@@ -762,7 +762,19 @@
         },
         {
           "type": "tip",
-          "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+          "if": [
+            "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+            "cfg:kuva_lich.mercyEnabled"
+          ],
+          "style": "info",
+          "text": "{lang:entity.kuvalich.kuva_slave}不会在野外出现。有了玄骸以后，解密进度只能从它身上拿：每次解密失败（处决时卡没放满也算），给的进度都是奴仆的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>。"
+        },
+        {
+          "type": "tip",
+          "if": [
+            "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+            "!cfg:kuva_lich.mercyEnabled"
+          ],
           "style": "info",
           "text": "{lang:entity.kuvalich.kuva_slave}不会在野外出现。有了玄骸以后，解密进度只能从它身上拿：卡没放满时拿下它，或者解密失败，每次给的进度都是奴仆的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>。"
         },
@@ -854,7 +866,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.mercyEnabled",
-          "text": "三张卡放满时，每一刀都在核对你的答案。第一刀核第 1 位，第二刀核第 2 位，第三刀核第 3 位，屏幕底部的三格随刀亮起，判错的那一格会变红。"
+          "text": "处决的每一刀都在核对你的答案。第一刀核第 1 位，第二刀核第 2 位，第三刀核第 3 位，屏幕底部的三格随刀亮起，判错的那一格会变红；<b>空着的格子也算错</b>。"
         },
         {
           "type": "table",
@@ -871,7 +883,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "没放满 3 张",
-                "处决只有一刀：只获得解密进度，不算失败；这次遭遇就此结束，之后它照样会再来"
+                "照样三刀判，空着的格子算错：判到第一个空格就是<b>解密失败</b>（一张没装就是第一刀错），和下面「放满但有错」一样"
               ]
             },
             {
@@ -1066,6 +1078,14 @@
         },
         {
           "type": "tip",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "style": "warn",
+          "title": "两处陷阱",
+          "text": "① 刷怪蛋或 <t>/summon</t> 召出来的玄骸不是你的：它不会倒地，打死它<b>什么都不给</b>，不判定、不给进度。② 处决时空着的格子算错：取出一张卡躲不过判定，没放满照样是一次解密失败。"
+        },
+        {
+          "type": "tip",
+          "if": "!cfg:kuva_lich.mercyEnabled",
           "style": "warn",
           "title": "两处陷阱",
           "text": "① 刷怪蛋或 <t>/summon</t> 召出来的玄骸不是你的：它不会倒地，打死它<b>什么都不给</b>，不判定、不给进度。② 没把握时，先取出一张卡，没放满时拿下它只加进度，不算失败。"
@@ -1087,7 +1107,7 @@
         "mercy/MercyRules.java:42-53 + base/entity/AbstractKuva.java:889-906 — 有主玄骸致命伤拦下进倒地（mercyDownedSeconds）；mercy/MercyServer.java:427-430 — 资格人只有主人，别人打出致命一击照样倒地；:333-366 — 处决要 mercyReach 内、看得见；client/mercy/MercyPrompt.java:325 — 提示「安魂 怜悯之击」；client/KuvaKeyMappings.java:37-39 — 默认 X",
         "entity/KuvaMasterEntity.java:772-783,816-846 — 怜悯之击关着：死亡时主人在线、同一世界、64 格内（:178 RESOLVE_RANGE）才按主人的卡判定，谁打最后一击不论；否则 KILLED_OTHER 不判定",
         "mercy/MercyServer.java:592-593,700-745 — 卡齐算前缀 correctPrefixLength，三刀逐位；client/mercy/MercyHud.java — 底部三格随刀亮、判错格红符",
-        "mercy/MercyServer.java:708-711 + entity/KuvaMasterEntity.java:840-845 — 卡没放齐：单刀，只给进度，endEncounter(KILLED_OTHER)（怒气清零进冷却，玄骸还在，之后照样来）；关着时同样只给进度",
+        "mercy/MercyServer.java buildPlan + capability/RequiemCard.java correctPrefixLength — 怜悯之击开着：一律三刀，从第 1 格逐格判，空格算这一格错（没装卡 = 第一刀错），走判错流程；entity/KuvaMasterEntity.java resolveForOwner — 关着时卡没放齐只给进度、KILLED_OTHER 结束遭遇",
         "mercy/MercyServer.java:747-761 settleSuccess → entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 成功：扣卡、onVanquished → reset（这一轮清零）、掉落",
         "mercy/MercyServer.java:763-787,825-833 + entity/KuvaMasterEntity.java:964-968 — 判错：kuvaLevel +1、挣脱逃走、不碰卡、照给进度；关着时 directFailure（:921-955）同样不碰卡、给进度、结束这次遭遇",
         "mercy/MercyServer.java:470-483 onDownedTimeout — 倒地到点：endEncounter(UNCLAIMED)，起身逃走，不判定、不给东西、不加等级",
@@ -2304,7 +2324,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× 摆着没把握的卡去处决玄骸</b>：三格放满时，处决会一刀一刀核对卡序，有一刀不对，它就逃走，玄骸等级 +1。没把握时先取出一张卡，这样处决只捅一刀，只加进度。"
+              "text": "<b>× 以为取出一张卡就只拿进度</b>：处决会一刀一刀核对卡序，空着的格子也算错，有一刀不对它就逃走，玄骸等级 +1。没把握的顺序就当一次试探，失败时聊天栏会告诉你错在第几刀。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -2379,7 +2399,7 @@
         "world/inventory/RequiemGateMenu.java:106-121,206-231 — 卡片读写都在玩家能力上，与方块无关",
         "capability/RequiemCard.java:291-304 + base/item/AbstractRequiemCard.java:27-28 — 仅成功时每张卡损耗 +1，耐久 3",
         "capability/RequiemCard.java:333-347 — 揭示的卡随机落位；item/RequiemRiddle.java:69 — 谜语给出顺序",
-        "entity/KuvaMasterEntity.java:816-850 resolveForOwner — 怜悯之击关着：死时按主人的卡判定（谁打最后一击不重要），主人不在线 / 不在同一世界 / 超过 RESOLVE_RANGE（:178，64 格）→ KILLED_OTHER 什么都不算；卡没放齐只给进度。mercy/MercyServer.java:592,708-710 — 怜悯之击开着：开始处决时卡没齐 = 单刀、只给进度；判错 applyFailure kuvaLevel +1（entity/KuvaMasterEntity.java:964-968），玄骸逃走（MERCY_FAILED）。不再写「第一段还没解开就放满必定失败」：玄骸只在揭开第一条线索时诞生（nemesis/LichDirector.java:192-199），阶段 0 时没有自己的玄骸可打",
+        "entity/KuvaMasterEntity.java:816-850 resolveForOwner — 怜悯之击关着：死时按主人的卡判定（谁打最后一击不重要），主人不在线 / 不在同一世界 / 超过 RESOLVE_RANGE（:178，64 格）→ KILLED_OTHER 什么都不算；卡没放齐只给进度。mercy/MercyServer.java buildPlan — 怜悯之击开着：一律三刀，空格算判错；判错 applyFailure kuvaLevel +1（entity/KuvaMasterEntity.java:964-968），玄骸逃走（MERCY_FAILED）。不再写「第一段还没解开就放满必定失败」：玄骸只在揭开第一条线索时诞生（nemesis/LichDirector.java:192-199），阶段 0 时没有自己的玄骸可打",
         "entity/KuvaSlaveEntity.java:194-209 onKilled — 奴仆：怜悯之击 + mercyThralls 开着时只有处决收尾的死亡给进度和掉落，关着时 source.getEntity() 是玩家才给（弹射物 getEntity 是射手）；mercy/MercyServer.java:427-442 qualifiedFor — 奴仆资格人：直接打的玩家 → 宠物 / 召唤物（OwnableEntity）的主人 → 最近 5 秒打过它的任一玩家（recentPlayerAttacker，火烧、岩浆这类没有来源实体的伤害走这一步；赤毒敌人免疫摔落，base/entity/AbstractKuva.java hurt），都没有就谁也捅不了；:381-407 enterDowned 倒地 mercyDownedSeconds；:470-482 onDownedTimeout — 玄骸 UNCLAIMED 逃走、奴仆 beginExpire 消散，都不给（不判定、不加等级）；玄骸资格人永远是主人（:428-430）",
         "capability/RequiemCard.java:379-393 reset + :569-585 endLichRound — 成功后答案、进度、玄骸等级清零，这只玄骸清掉，下一轮诞生新的",
         "entity/KuvaMasterEntity.java:81-105,211-283 — 适应抗性每层 5%、6 层封顶；2 秒窗口每命中 -5%、最低 0.4；单次超过最大生命 15% 的部分对数衰减",

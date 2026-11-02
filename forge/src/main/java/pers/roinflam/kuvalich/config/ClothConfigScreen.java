@@ -195,6 +195,7 @@ public class ClothConfigScreen {
         mercyCategory.addEntry(intIn(entryBuilder, "mercyDownedSeconds", k.mercyDownedSeconds, 60, 10, 600));
         mercyCategory.addEntry(dblIn(entryBuilder, "mercyReach", k.mercyReach, 3.0, 1.5, 6.0));
         mercyCategory.addEntry(intIn(entryBuilder, "mercyResumeFloorSeconds", k.mercyResumeFloorSeconds, 5, 0, 60));
+        mercyCategory.addEntry(intIn(entryBuilder, "oullDropChance", k.oullDropChance, 25, 0, 100));
 
         // ═══════════════════════════════════════════════════════════════
         // 专属玄骸：怒气 → 登场 → 狩猎 → 离场，再加几项杂项

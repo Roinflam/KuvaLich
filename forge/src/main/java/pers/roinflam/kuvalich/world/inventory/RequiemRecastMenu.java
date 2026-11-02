@@ -16,6 +16,7 @@ import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
+import pers.roinflam.kuvalich.item.card.OULL;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
@@ -226,6 +227,7 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
 
     private void processRequiemCardCrafting() {
         try {
+            // 只在八张普通卡（0~7）里抽，不出 Oull
             int randomId = level.random.nextInt(8);
             ItemStack result = new ItemStack(AbstractRequiemCard.getCard(randomId));
             cardHandler.setStackInSlot(3, result);
@@ -593,7 +595,8 @@ public class RequiemRecastMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            // 安魂卡：用于三张安魂卡合成
+            // 安魂卡：用于三张安魂卡合成；Oull 不当原料（三合一只出普通卡，放进来就白白耗掉）
+            if (OULL.is(stack)) return false;
             if (stack.getItem() instanceof AbstractRequiemCard) return super.mayPlace(stack);
             // 所有武器/战甲模组均可放入：单张→分解为内融核心，三张→三合一。
             //    三合一的品质限制（Prime/紫卡/跨品质开关）仍在 processCrafting 内部判定，此处不再前置拦截，

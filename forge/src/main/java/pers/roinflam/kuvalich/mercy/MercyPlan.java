@@ -5,8 +5,8 @@ package pers.roinflam.kuvalich.mercy;
  * （也写进实体同步数据，给晚进视野的客户端选姿势）。
  *
  * <pre>
- *  bit 0~1    刀数（1 或 3）
- *  bit 2~3    前缀长度 p（0~3；单刀时 0）
+ *  bit 0~1    刀数（玄骸 3，奴仆 1）
+ *  bit 2~3    前缀长度 p（0~3；奴仆为 0）
  *  bit 4~7    套路编号（{@link MercyVariant#id}）
  *  bit 8~11   第 1 张卡的 id + 1（0 = 没放）
  *  bit 12~15  第 2 张
@@ -29,8 +29,8 @@ public final class MercyPlan {
     /**
      * 解开后的计划
      *
-     * @param stabs        刀数，1 或 3
-     * @param prefix       猜对的前缀长度，3 = 成功，小于 3 在第 prefix + 1 刀判错
+     * @param stabs        刀数，玄骸 3、奴仆 1
+     * @param prefix       猜对的前缀长度，3 = 成功，小于 3 在第 prefix + 1 刀判错（空格算错）
      * @param variant      套路
      * @param cardIds      三张卡的 id，-1 = 没放；长度 3
      * @param remaining    三张卡处决之前还剩几次；长度 3

@@ -27,7 +27,7 @@ import pers.roinflam.kuvalich.utils.Reference;
 /**
  * 处决玄骸时屏幕上的界面：中央大符文、底部三格、格下小点和托架
  *
- * <p>只在本地玩家是一场玄骸三刀处决的处决者时画（单刀、奴仆都不画）。一切位置都按屏幕高 H 算、横向从屏幕中线量，
+ * <p>只在本地玩家是一场玄骸处决的处决者时画（奴仆不画）。一切位置都按屏幕高 H 算、横向从屏幕中线量，
  * 超宽屏不会把三格拉散；细线按物理像素画（{@link GuiShapes#lineWidthPx()}，1080p 是 2 px），GUI 缩放大的时候线不变粗。
  * 符号统一走 {@link RequiemSigils}，每一格画的都是这一刀那张卡自己的符号。</p>
  *
@@ -39,7 +39,8 @@ import pers.roinflam.kuvalich.utils.Reference;
  *   <li>g：中央和这一格同一帧填满发光。中央满亮 400 ms 后淡出 300 ms（第三刀 550 ms）；格子保持峰值 400 ms，
  *       再 250 ms 回落到 0.88 的亮度，之后一直保持；</li>
  *   <li>判错的那一刀在本该发光的那一帧直接变成红色霓虹 + 斜杠：中央的 250 ms 后淡出 320 ms，格子里的一直留着；
- *       后面的格保持空圈，不浮现、不变灰；</li>
+ *       后面的格保持空圈，不浮现、不变灰。这一格没放卡时没有符号可画：格子里一直是空圈，判错那一帧空圈变红、
+ *       加斜杠；中央先浮出一个暗色空圈，判错时同样变成红圈 + 斜杠；</li>
  *   <li>格下小点（这张卡的剩余次数，每格 3 颗）和第三格的外框同一帧出现，这次用掉的那颗 2770 ms 起画一道斜杠；
  *       第一、二刀就判错时根本不出现；</li>
  *   <li>成功 5400 ms 起整组淡出 200 ms；失败在 g_k + 2000 切宽镜头时直接不画，没开电影镜头（没有宽镜头）时改成
@@ -354,8 +355,11 @@ public final class MercyHud {
             float x = cx + (i - 1) * CELL_DX * H;
             int card = plan.cardIds()[i];
             float gi = MercyVariant.LICH_FILL_MS[i];
-            if (i >= judged || t < gi - CELL_LEAD) {
+            if (i >= judged || t < gi - CELL_LEAD || (card < 0 && t < gi)) {
                 GuiShapes.ring(g, x, y, ringR, lw, GuiShapes.argb(FxPalette.KUVA_PALE, 0.45F * alpha), 1.0F);
+            } else if (card < 0 && i == k - 1) {
+                // 没放卡的格子算判错，前面的格都对、都放了卡，所以空格只会是判错的那一格
+                drawEmptyWrong(g, x, y, ringR, alpha, lwPx);
             } else if (t < gi) {
                 RequiemSigils.drawLook(g, card, x, y, size, SigilLook.OUTLINE_DARK, alpha, lwPx);
             } else if (i == k - 1) {
@@ -396,6 +400,10 @@ public final class MercyHud {
         float slash = FxCurve.clamp01((t - DOT_SLASH_MS) / DOT_SLASH_DRAW);
         GuiShapes.begin(g);
         for (int i = 0; i < 3; i++) {
+            if (plan.cardIds()[i] < 0) {
+                // 没放卡的格子没有次数可画
+                continue;
+            }
             float x0 = cx + (i - 1) * CELL_DX * H;
             int left = plan.remaining()[i];
             int usedNow = success ? left - 1 : -1;
@@ -433,20 +441,50 @@ public final class MercyHud {
                 continue;
             }
             int card = plan.cardIds()[i];
+            float emptyR = RequiemSigils.width(size) * 0.42F;
             if (t < gi) {
                 float dt = t - (gi - CENTER_LEAD);
                 float s = dt < POP_HOLD ? POP_SCALE
                         : POP_SCALE - (POP_SCALE - 1.0F) * FxCurve.easeOutCubic(FxCurve.clamp01((dt - POP_HOLD) / POP_SHRINK));
-                RequiemSigils.drawLook(g, card, cx, y, size * s, SigilLook.OUTLINE_DARK, 1.0F, lw);
+                if (card < 0) {
+                    GuiShapes.ring(g, cx, y, emptyR * s, GuiShapes.pixels(g, lw), GuiShapes.argb(FxPalette.ASH, 0.7F), 1.0F);
+                } else {
+                    RequiemSigils.drawLook(g, card, cx, y, size * s, SigilLook.OUTLINE_DARK, 1.0F, lw);
+                }
             } else if (i == k - 1) {
                 float a = 1.0F - FxCurve.clamp01((t - gi - WRONG_FADE_DELAY) / WRONG_FADE);
-                RequiemSigils.drawLook(g, card, cx, y, size, SigilLook.WRONG, a, lw);
+                if (card < 0) {
+                    drawEmptyWrong(g, cx, y, emptyR, a, lw);
+                } else {
+                    RequiemSigils.drawLook(g, card, cx, y, size, SigilLook.WRONG, a, lw);
+                }
             } else {
                 int fade = i == 2 ? CENTER_FADE_LAST : CENTER_FADE;
                 float a = 1.0F - FxCurve.clamp01((t - gi - CENTER_HOLD) / fade);
                 RequiemSigils.drawLook(g, card, cx, y, size, SigilLook.LIT, a, lw);
             }
         }
+    }
+
+    /**
+     * 没放卡的那一格判错：红色空圈 + 斜杠，配色和判错符号一样（粉白的线、两遍猩红光晕），斜杠两端伸出圈外 10%
+     *
+     * @param r           圈的半径
+     * @param lineWidthPx 基础线宽，物理像素
+     */
+    private static void drawEmptyWrong(GuiGraphics g, float x, float y, float r, float alpha, float lineWidthPx) {
+        if (alpha <= 0.002F) {
+            return;
+        }
+        float lw = GuiShapes.pixels(g, lineWidthPx);
+        GuiShapes.begin(g);
+        GuiShapes.ring(g, x, y, r, lw * 3.0F, GuiShapes.argb(FxPalette.KUVA, 0.28F * alpha), 1.0F);
+        GuiShapes.ring(g, x, y, r, lw * 2.0F, GuiShapes.argb(FxPalette.KUVA, 0.47F * alpha), 1.0F);
+        GuiShapes.ring(g, x, y, r, lw * 1.5F, GuiShapes.argb(FxPalette.KUVA_PALE, alpha), 1.0F);
+        RequiemSigils.slash(g, x, y, r * 2.0F, lw * 3.0F, GuiShapes.argb(FxPalette.KUVA, 0.28F * alpha));
+        RequiemSigils.slash(g, x, y, r * 2.0F, lw * 2.0F, GuiShapes.argb(FxPalette.KUVA, 0.47F * alpha));
+        RequiemSigils.slash(g, x, y, r * 2.0F, lw * 1.5F, GuiShapes.argb(FxPalette.KUVA_PALE, alpha));
+        GuiShapes.end();
     }
 
     // ==================== 成功分支收通讯窗 ====================

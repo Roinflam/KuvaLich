@@ -314,7 +314,7 @@ public final class WeaponPanelComposer {
     }
 
     /** 来源视图一律用「加了多少」的口径，而不是「最终是多少」 */
-    private static ValueFormat sourceFormat(String key) {
+    public static ValueFormat sourceFormat(String key) {
         AttributeSpec spec = WeaponPanelCatalog.byKey(key);
         if (spec == null) {
             return ValueFormat.PERCENT_SIGNED;

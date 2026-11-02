@@ -1,11 +1,13 @@
 package pers.roinflam.kuvalich.client.fx;
 
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import pers.roinflam.kuvalich.client.gui.requiem.RequiemSigils;
 
 /**
  * 自制粒子的统一入口，链式构造：
@@ -110,12 +112,13 @@ public final class KuvaParticles {
 
     /**
      * 安魂符号：{@code cardId} 是那张卡的 id（0~7），认不出（越界、包里给的 15）就画中性占位。
+     * Oull（8）取出现这一刻轮到的那张卡的符号（和界面上轮流切换的节奏一样），之后不再换。
      * 颜色已经在贴图里，顶点色一般给白色，想整体偏色再给别的
      */
     public static Builder glyph(int cardId, GlyphKind kind, double x, double y, double z) {
         Builder b = new Builder(Kind.GLYPH, x, y, z);
         b.glyphKind = kind;
-        b.glyphCard = cardId;
+        b.glyphCard = cardId == RequiemSigils.OULL_ID ? (int) ((Util.getMillis() / 500L) % GLYPH_CARDS) : cardId;
         return b;
     }
 

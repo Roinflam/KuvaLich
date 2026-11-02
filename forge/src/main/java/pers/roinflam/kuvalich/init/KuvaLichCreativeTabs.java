@@ -50,6 +50,7 @@ public class KuvaLichCreativeTabs {
                         output.accept(KuvaLichItems.RIS_CARD.get());
                         output.accept(KuvaLichItems.VOME_CARD.get());
                         output.accept(KuvaLichItems.XATA_CARD.get());
+                        output.accept(KuvaLichItems.OULL_CARD.get());
 
                         // ========== 基础物品 / Basic Items ==========
                         output.accept(KuvaLichItems.KUVA.get());

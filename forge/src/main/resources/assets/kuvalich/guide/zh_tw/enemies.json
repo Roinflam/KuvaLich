@@ -583,10 +583,20 @@
             4
           ],
           "rows": [
-            [
-              "滅骸之扉裡沒放滿 3 張卡",
-              "不判定，它消散離開，你拿到解密進度，數量是奴僕的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "滅骸之扉裡沒放滿 3 張卡",
+                "照樣按三刀判，空著的格子算錯：<b>解密失敗</b>，同下面「有錯」"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "滅骸之扉裡沒放滿 3 張卡",
+                "不判定，它消散離開，你拿到解密進度，數量是奴僕的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"
+              ]
+            },
             [
               "放滿 3 張，<g>順序全對</g>",
               "<g>解密成功</g>，它被終結，你拿到下面的獎勵並開始新一輪"
@@ -741,7 +751,14 @@
           "items": [
             "等級記在<em>你自己</em>身上，算的是這一輪你那隻玄骸",
             "<b>死亡不會重置</b>，只有解密成功才清掉，下一隻從 1 級重新算",
-            "卡沒放滿就對它下手不算猜錯，只拿解密進度"
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "處決時空著的格子也算猜錯，卡沒放滿照樣升級"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "卡沒放滿就對它下手不算猜錯，只拿解密進度"
+            }
           ]
         },
         {
@@ -1195,7 +1212,14 @@
         {
           "type": "steps",
           "items": [
-            "檢查[[requiem/requiem_gate|滅骸之扉]]裡的三張卡是不是這次想試的順序，沒放滿只是刷進度",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "檢查[[requiem/requiem_gate|滅骸之扉]]裡的三張卡是不是這次想試的順序，空著的格子算錯"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "檢查[[requiem/requiem_gate|滅骸之扉]]裡的三張卡是不是這次想試的順序，沒放滿只是刷進度"
+            },
             "至少帶上兩三種傷害類型，比如近戰武器、弓或弩，再加上法術，最好再有一把模組倍率高的[[weapons/kuva_weapons|赤毒武器]]",
             {
               "if": "cfg:kuva_lich.lichSeededAffinities",

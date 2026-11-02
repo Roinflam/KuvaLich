@@ -363,7 +363,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      * 开始离场演出（服务端）：标记离场、关 AI、撤 Boss 条、发赤毒雾瞬移的效果包，{@link #DEPART_TICKS} tick 后移除。
      * 离场期间不挨打（不用 setInvulnerable：那是存盘字段）。已经在离场、已经死了的不再处理。
      *
-     * <p>倒地、处决中的先交给怜悯之击处理：已经定案、三刀全对或单刀的直接快进到死（不再离场），
+     * <p>倒地、处决中的先交给怜悯之击处理：已经定案、三刀全对的直接快进到死（不再离场），
      * 其余的照常离场。</p>
      */
     public void beginDeparture(EncounterEnd reason) {
@@ -788,7 +788,7 @@ public class KuvaMasterEntity extends AbstractKuva {
         resolveForOwner(source.getEntity());
     }
 
-    /** 没有别的路发过死亡包时的默认那个：处决单刀收尾 b = 1（卡没放齐），其余 b = 0 */
+    /** 没有别的路发过死亡包时的默认那个：处决收尾 b = 1，其余 b = 0（三刀成功的收尾自己发 b = 2，不走这里） */
     @Override
     protected void sendDeathFx(DamageSource source) {
         if (level() instanceof ServerLevel serverLevel) {
@@ -813,8 +813,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      * 玄骸死了：按<b>主人</b>的卡判定，谁打出最后一击不重要（帮打的人不吃亏，主人也不会被别人「代捅」掉三张卡）。
      *
      * <p>主人不在线、不在同一个世界、或离它超过 64 格：这次遭遇按「被别的东西打死」结束，不判定、不给进度。
-     * 三张卡放齐了就判定并记一行处决记录（直接判定，不是怜悯之击）；没放齐只给主人解密进度。
-     * 怜悯之击的单刀收尾也走这里，那时按开始处决那一刻「卡没放齐」算，途中放齐了也不补判。</p>
+     * 三张卡放齐了就判定并记一行处决记录（直接判定，不是怜悯之击）；没放齐只给主人解密进度。</p>
      *
      * @param killer 打出最后一击的实体（效果包里的朝向用），不知道为 null
      */
@@ -842,10 +841,6 @@ public class KuvaMasterEntity extends AbstractKuva {
             }
             return;
         }
-        if (card.isReadyCard()) {
-            LogUtil.warn("玄骸 " + getLichName() + " 按卡没放齐开始的处决收尾时，主人的卡已经放齐，这次不判定");
-        }
-
         giveDecryptionProgress(owner, card);
         LichDirector.endEncounter(owner, this, EncounterEnd.KILLED_OTHER, false);
         if (level() instanceof ServerLevel serverLevel) {

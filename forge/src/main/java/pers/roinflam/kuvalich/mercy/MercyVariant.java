@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>编号写进计划位的 bit 4~7，只追加不改：玄骸 0~7，奴仆 8~15。站位距离是初值，
  * 以「刀尖刚好没入胸口 / 后背、两具模型不明显穿插」为准，摆出来看过再调。</p>
  *
- * <p>时间都是毫秒，从处决开始那一帧算。玄骸的整条时间轴长短取决于结果（成功、判错、单刀），
+ * <p>时间都是毫秒，从处决开始那一帧算。玄骸的整条时间轴长短取决于结果（成功、第几刀判错），
  * 所以 {@link #totalMs} 对玄骸是 -1；奴仆固定 2200。</p>
  */
 public enum MercyVariant {
@@ -100,15 +100,6 @@ public enum MercyVariant {
     /** 跳到目标上方、最后落到它正面（离站位最远的那一侧），头顶和正面都得空着 */
     public boolean vaultsOver() {
         return this == LICH_E;
-    }
-
-    /** 单刀（卡没齐）用哪一套的动作：绕背、踏背都来不及演，走同朝向的基础套路 */
-    public MercyVariant singleAs() {
-        return switch (this) {
-            case LICH_D -> LICH_A;
-            case LICH_E -> LICH_B;
-            default -> this;
-        };
     }
 
     /** 按编号取；不认识的编号返回 {@code null} */

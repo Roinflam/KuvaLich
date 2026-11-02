@@ -705,7 +705,19 @@
         },
         {
           "type": "tip",
-          "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+          "if": [
+            "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+            "cfg:kuva_lich.mercyEnabled"
+          ],
+          "style": "info",
+          "text": "{lang:entity.kuvalich.kuva_slave}不會在野外出現。有了玄骸以後，解密進度只能從它身上拿：每次解密失敗（處決時卡沒放滿也算），給的進度都是奴僕的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>。"
+        },
+        {
+          "type": "tip",
+          "if": [
+            "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+            "!cfg:kuva_lich.mercyEnabled"
+          ],
           "style": "info",
           "text": "{lang:entity.kuvalich.kuva_slave}不會在野外出現。有了玄骸以後，解密進度只能從它身上拿：卡沒放滿時拿下它，或者解密失敗，每次給的進度都是奴僕的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>。"
         },
@@ -775,7 +787,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.mercyEnabled",
-          "text": "三張卡放滿時，每一刀都在核對你的答案。第一刀核第 1 位，第二刀核第 2 位，第三刀核第 3 位，螢幕底部的三格隨刀亮起，判錯的那一格會變紅。"
+          "text": "處決的每一刀都在核對你的答案。第一刀核第 1 位，第二刀核第 2 位，第三刀核第 3 位，螢幕底部的三格隨刀亮起，判錯的那一格會變紅；<b>空著的格子也算錯</b>。"
         },
         {
           "type": "table",
@@ -792,7 +804,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "沒放滿 3 張",
-                "處決只有一刀：只獲得解密進度，不算失敗；這次遭遇就此結束，之後它照樣會再來"
+                "照樣三刀判，空著的格子算錯：判到第一個空格就是<b>解密失敗</b>（一張沒裝就是第一刀錯），和下面「放滿但有錯」一樣"
               ]
             },
             {
@@ -987,6 +999,14 @@
         },
         {
           "type": "tip",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "style": "warn",
+          "title": "兩處陷阱",
+          "text": "① 生怪蛋或 <t>/summon</t> 召出來的玄骸不是你的：它不會倒地，打死它<b>什麼都不給</b>，不判定、不給進度。② 處決時空著的格子算錯：取出一張卡躲不過判定，沒放滿照樣是一次解密失敗。"
+        },
+        {
+          "type": "tip",
+          "if": "!cfg:kuva_lich.mercyEnabled",
           "style": "warn",
           "title": "兩處陷阱",
           "text": "① 生怪蛋或 <t>/summon</t> 召出來的玄骸不是你的：它不會倒地，打死它<b>什麼都不給</b>，不判定、不給進度。② 沒把握時，先取出一張卡，沒放滿時拿下它只加進度，不算失敗。"
@@ -2078,7 +2098,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× 擺著沒把握的卡去處決玄骸</b>：三格放滿時，處決會一刀一刀核對卡序，有一刀不對，它就逃走，玄骸等級 +1。沒把握時先取出一張卡，這樣處決只捅一刀，只加進度。"
+              "text": "<b>× 以為取出一張卡就只拿進度</b>：處決會一刀一刀核對卡序，空著的格子也算錯，有一刀不對它就逃走，玄骸等級 +1。沒把握的順序就當一次試探，失敗時聊天欄會告訴你錯在第幾刀。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",

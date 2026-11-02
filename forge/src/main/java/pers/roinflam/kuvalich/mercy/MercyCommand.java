@@ -85,10 +85,10 @@ public final class MercyCommand {
     private static final int DEFAULT_GUARD_PERCENT = 60;
     /** {@code state strike} 演示的吸血量 × 10（2 点血）和「击退明显」 */
     private static final int DEMO_STRIKE_DRAIN_TENTHS = 20;
-    /** 八张安魂卡的名字，下标就是卡 id */
-    static final String[] CARD_NAMES = {"khra", "jahu", "fass", "lohk", "netra", "vome", "xata", "ris"};
+    /** 安魂卡的名字，下标就是卡 id（8 是 Oull） */
+    static final String[] CARD_NAMES = {"khra", "jahu", "fass", "lohk", "netra", "vome", "xata", "ris", "oull"};
 
-    private static final String[] OUTCOMES = {"success", "fail1", "fail2", "fail3", "single", "real"};
+    private static final String[] OUTCOMES = {"success", "fail1", "fail2", "fail3", "real"};
 
     private static final SuggestionProvider<CommandSourceStack> ALL_VARIANTS = (ctx, b) ->
             SharedSuggestionProvider.suggest(variantNames(null, true), b);
@@ -512,7 +512,7 @@ public final class MercyCommand {
     }
 
     /**
-     * {@code cards <c1> <c2> <c3> [<r1> <r2> <r3>] [return]}：卡名或 0~7（{@code -} = 空格子），处决前剩余次数 0~3，
+     * {@code cards <c1> <c2> <c3> [<r1> <r2> <r3>] [return]}：卡名或 0~8（{@code -} = 空格子），处决前剩余次数 0~3，
      * 带 {@code return} 就演「归还物品」；{@code cards clear} 回到用身上的卡
      */
     private static int cards(CommandContext<CommandSourceStack> ctx, String spec) throws CommandSyntaxException {
@@ -538,7 +538,7 @@ public final class MercyCommand {
         for (int i = 0; i < 3; i++) {
             ids[i] = parseCard(rest.get(i));
             if (ids[i] == Integer.MIN_VALUE) {
-                return fail(ctx, "unknown card: " + rest.get(i) + " (use " + String.join(", ", CARD_NAMES) + ", 0~7 or -)");
+                return fail(ctx, "unknown card: " + rest.get(i) + " (use " + String.join(", ", CARD_NAMES) + ", 0~8 or -)");
             }
         }
         int[] remaining = null;
@@ -739,7 +739,7 @@ public final class MercyCommand {
         return null;
     }
 
-    /** 卡名、0~7 或 {@code -}（空格子，返回 -1）；认不出返回 {@link Integer#MIN_VALUE} */
+    /** 卡名、0~8 或 {@code -}（空格子，返回 -1）；认不出返回 {@link Integer#MIN_VALUE} */
     static int parseCard(String s) {
         if ("-".equals(s) || "none".equals(s) || "empty".equals(s)) {
             return -1;

@@ -104,10 +104,20 @@
                 "<t>{cfg:kuva_lich.minDecryptionProgress}~{cfg:kuva_lich.maxDecryptionProgress}</t> points, random"
               ]
             },
-            [
-              "Your own {lang:entity.kuvalich.kuva_master}, with an incomplete set or a wrong guess",
-              "The Thrall range × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "Your own {lang:entity.kuvalich.kuva_master}, on a failed decryption (an incomplete set counts)",
+                "The Thrall range × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "Your own {lang:entity.kuvalich.kuva_master}, with an incomplete set or a wrong guess",
+                "The Thrall range × <t>{cfg:kuva_lich.masterPotionMultiplier}</t>"
+              ]
+            },
             [
               "Someone else's Lich, an ownerless Lich, anything else",
               "<dim>None</dim>"
@@ -398,12 +408,13 @@
         "kuvalich:netra",
         "kuvalich:vome",
         "kuvalich:xata",
-        "kuvalich:ris"
+        "kuvalich:ris",
+        "kuvalich:oull"
       ],
       "blocks": [
         {
           "type": "p",
-          "text": "Requiem Cards are the keys you slot into the [[requiem/requiem_gate]]. There are 8 kinds, and your answer is <t>3 different cards</t> among them, in a fixed order."
+          "text": "Requiem Cards are the keys you slot into the [[requiem/requiem_gate]]. There are 8 kinds, and your answer is <t>3 different cards</t> among them, in a fixed order. There is also a wildcard, Oull, covered at the end."
         },
         {
           "type": "items",
@@ -509,6 +520,51 @@
           "style": "good",
           "title": "Recycle worn cards",
           "text": "Don't throw worn cards away. Put three yellow cards with 1 use left into the {item:kuvalich:requiem_recast} to get back 1 fresh card with 3 uses. The new card is equally likely to be any of the 8 and may repeat one you put in."
+        },
+        {
+          "type": "h",
+          "text": "Oull, the wildcard"
+        },
+        {
+          "type": "items",
+          "items": [
+            "kuvalich:oull"
+          ],
+          "caption": "Wildcard Requiem Card"
+        },
+        {
+          "type": "p",
+          "text": "{item:kuvalich:oull} is a ninth Requiem Card whose face cycles through the eight symbols. <g>It counts as correct in any slot</g>, standing in for any card of the answer."
+        },
+        {
+          "type": "list",
+          "items": [
+            "<b>Only one can be equipped at a time</b>: once the Gate holds an Oull, a second one won't go in.",
+            "Like the others it has <t>3</t> uses, spent only on a successful decryption.",
+            "It can't be mined, can't go into the {item:kuvalich:requiem_recast}, and the three-for-one never yields it."
+          ]
+        },
+        {
+          "type": "tip",
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.oullDropChance>0"
+          ],
+          "style": "good",
+          "title": "How to get it",
+          "text": "When an execution of your Lich <b>fails</b> but the first stab was right, you have a <t>{cfg:kuva_lich.oullDropChance|pctv}</t> chance to get an Oull; if your inventory is full, it drops at your feet. A failure on the very first stab gives none."
+        },
+        {
+          "type": "tip",
+          "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.oullDropChance>0",
+          "style": "info",
+          "title": "How to get it",
+          "text": "There is currently no way to get an Oull."
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the Origin System, Oull is likewise a wildcard Requiem mod that can stand in for any other."
         }
       ]
     },
@@ -607,10 +663,20 @@
             5
           ],
           "rows": [
-            [
-              "Fewer than 3 cards",
-              "Not a judgement: it dissolves and leaves, you only get progress, and it will be back later"
-            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "Fewer than 3 cards",
+                "Still judged over three stabs, and an empty slot counts as wrong: reaching the first empty slot is a <b>decryption failure</b>, same as “3 cards, wrong”"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "Fewer than 3 cards",
+                "Not a judgement: it dissolves and leaves, you only get progress, and it will be back later"
+              ]
+            },
             [
               "3 cards, exact order",
               "<g>Decryption success</g>: it is ended for good, you get the rewards below, and the round resets"
@@ -692,11 +758,14 @@
           "type": "list",
           "items": [
             "Stay within <t>8</t> blocks of the Gate while its screen is open.",
-            "To get progress from your Lich without risking a failure, take one card out of the Gate first.",
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "To get progress from your Lich without risking a failure, take one card out of the Gate first."
+            },
             "If your inventory is full, unspent Requiem Cards drop where the Lich falls.",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "If the set is incomplete when an execution starts, it counts as incomplete, even if you fill it partway through."
+              "text": "An execution is judged by the cards in the Gate when it starts; swapping or adding cards partway through doesn't count, and an empty slot counts as wrong."
             },
             "After each success, the minimum and maximum of your weapon level range both rise by <em>the same</em> random amount, <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>, capped at <t>{cfg:kuva_lich.minimumLevel}</t> and <t>{cfg:kuva_lich.maximumLevel}</t> respectively.",
             "Both ends rise by the same amount, so the range keeps its width until one end hits its cap. This kill's weapon uses the range from before the increase.",
@@ -713,6 +782,12 @@
       "blocks": [
         {
           "type": "p",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "Test orders methodically, because the cost of a wrong guess stays on you until a decryption succeeds. Executing your [[enemies/kuva_master|Lich]] with a wrong order, or with an empty slot, is a <b>decryption failure</b>: it breaks free and escapes, you get a hint to narrow things down, and the cost is <hl>Lich rank</hl> +1."
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.mercyEnabled",
           "text": "Test orders methodically, because the cost of a wrong guess stays on you until a decryption succeeds. Going after your [[enemies/kuva_master|Lich]] with all three slots filled but wrong is a <b>decryption failure</b>: it breaks free and escapes, you get a hint to narrow things down, and the cost is <hl>Lich rank</hl> +1."
         },
         {

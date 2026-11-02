@@ -81,6 +81,7 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue mercyDownedSeconds;
         public final ForgeConfigSpec.DoubleValue mercyReach;
         public final ForgeConfigSpec.IntValue mercyResumeFloorSeconds;
+        public final ForgeConfigSpec.IntValue oullDropChance;
 
         // ===== 伤害系统 / Damage System =====
         public final ForgeConfigSpec.BooleanValue damageDisplay;
@@ -416,6 +417,11 @@ public final class ModConfig {
                     .comment("If a Mercy is interrupted before the first stab lands, the target stays down at least this many more seconds")
                     .comment("处决在第一刀落下前被打断时，目标至少还会再倒地这么多秒")
                     .defineInRange("mercyResumeFloorSeconds", 5, 0, 60);
+
+            oullDropChance = builder
+                    .comment("Chance (percent) that a failed Lich Mercy gives the executor an Oull, the wildcard Requiem card. Only rolls when at least one stab was correct")
+                    .comment("处决玄骸失败时给处决者一张 Oull（万能安魂卡）的几率（百分比）；这次至少猜对一格才掷")
+                    .defineInRange("oullDropChance", 25, 0, 100);
 
             builder.comment("")
                     .comment("═══ Damage System / 伤害系统 ═══");
