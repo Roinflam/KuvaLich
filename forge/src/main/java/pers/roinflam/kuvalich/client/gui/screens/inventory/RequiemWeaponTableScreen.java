@@ -1,6 +1,7 @@
 package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
@@ -14,7 +15,9 @@ import pers.roinflam.kuvalich.base.item.AbstractWeaponModule;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.fx.gui.GuiFx;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.module.weapon.WeaponModuleHandler;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.world.inventory.RequiemWeaponTableMenu;
 
 import java.util.ArrayList;
@@ -26,7 +29,8 @@ import java.util.List;
  * <ul>
  *   <li>左栏：武器的大投影（三倍大的物品图标轻轻浮着，背后两道反向转的圆弧，框里一层全息横纹、四角括号、底边刻度，
  *       隔几秒一道扫描光从上往下扫过），往下一根细线连到武器格，再下面是武器名和模组上限；
- *       武器放上去时投影从下往上扫出来、名字「解码」出来，拿走时投影往中线收拢；</li>
+ *       武器放上去时投影从下往上扫出来、名字「解码」出来，拿走时投影往中线收拢；最下面一块「武器信息」
+ *       （赤毒元素和等级 / 塑形锁、已装配几个、模组等级合计）；</li>
  *   <li>中栏：八张模组卡，没放武器时全部画叉，武器上台后叉一个个淡掉；电路从各卡流到武器格；</li>
  *   <li>右栏：已装模组清单和属性加成；底部「[TAB] 模组图鉴」（见 {@link ArmoryPageScreen}）。</li>
  * </ul>
@@ -203,9 +207,9 @@ public class RequiemWeaponTableScreen extends ArmoryPageScreen<RequiemWeaponTabl
             if (wi < 300) {
                 // 放上去：投影从下往上扫出来（扫描线在 drawLeftOverlay 里，要压在图标上面）
                 int cy = Math.round(by1 - (by1 - by0) * easeOut(wi / 300.0F));
-                g.enableScissor(bx0, cy, bx1, by1);
+                clip(g, bx0, cy, bx1, by1);
                 drawBig(g, w, bob);
-                g.disableScissor();
+                unclip(g);
             } else {
                 drawBig(g, w, bob);
             }
@@ -227,9 +231,9 @@ public class RequiemWeaponTableScreen extends ArmoryPageScreen<RequiemWeaponTabl
                 float e = 1.0F - rm / 180.0F;
                 int hh = Math.round((by1 - by0) * 0.5F * e);
                 if (hh > 0) {
-                    g.enableScissor(bx0, wcy - hh, bx1, wcy + hh);
+                    clip(g, bx0, wcy - hh, bx1, wcy + hh);
                     drawBig(g, taken.stack(), 0.0F);
-                    g.disableScissor();
+                    unclip(g);
                 }
                 additive(g, () -> hl(g, bx0, bx1, wcy, FxPalette.KUVA_PALE, 0.8F * e));
             }
@@ -270,7 +274,27 @@ public class RequiemWeaponTableScreen extends ArmoryPageScreen<RequiemWeaponTabl
             }
             textC(g, Component.translatable("kuvalich.weapon_table.limit", moduleLimit()).getString(), lcx, ty + 1,
                     FxPalette.ASH, 0.7F * eT);
+            drawInfo(g, tr("kuvalich.armory.info.weapon"), weaponInfo(w), ty + 17, eT, now);
         }
+    }
+
+    /** 武器信息：赤毒武器写元素和赤毒等级，开过光的普通武器写塑形锁没锁，再接装配概要 */
+    private List<Info> weaponInfo(ItemStack w) {
+        List<Info> out = new ArrayList<>();
+        if (KuvaWeaponUtil.hasType(w)) {
+            String type = KuvaWeaponUtil.getType(w);
+            String key = I18n.exists("kuvaweapon.type." + type) ? "kuvaweapon.type." + type : "kuvaweapon.type.unknown";
+            out.add(new Info(tr("kuvalich.armory.info.element"), tr(key), KuvaWeaponUtil.getColor(type)));
+            int number = KuvaWeaponUtil.getNumber(w);
+            out.add(new Info(tr("kuvalich.armory.info.kuva_level"), String.valueOf(number), KuvaWeaponUtil.getColor(number)));
+        } else if (WeaponModuleHandler.hasBase(w)) {
+            boolean locked = WeaponModuleHandler.isFormaLocked(w);
+            out.add(new Info(tr("kuvalich.armory.info.forma"),
+                    tr(locked ? "kuvalich.armory.info.forma.locked" : "kuvalich.armory.info.forma.open"),
+                    locked ? FxPalette.KUVA : FxPalette.BONE));
+        }
+        loadoutInfo(out);
+        return out;
     }
 
     /** 投影框四角的括号，长 6 */

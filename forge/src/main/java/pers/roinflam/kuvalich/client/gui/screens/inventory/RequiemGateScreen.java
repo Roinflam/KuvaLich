@@ -266,7 +266,7 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             float hw = rd[k] >= 0 ? RequiemSigils.width(TRI_SIZE) * 0.5F : TRI_SIZE * 0.5F * GuiShapes.DIAMOND_ASPECT;
             hot(x - hw, y - TRI_SIZE * 0.5F, x + hw, y + TRI_SIZE * 0.5F, () -> murmurTip(slot), null);
         }
-        text(g, Component.translatable("kuvalich.gate.order_hint").getString(), lx0, triY + 24, FxPalette.ASH, 0.5F * eT);
+        text(g, fit(Component.translatable("kuvalich.gate.order_hint").getString(), lx1 - lx0), lx0, triY + 24, FxPalette.ASH, 0.5F * eT);
 
         int ly = triY + 38;
         text(g, Component.translatable("kuvalich.gate.progress").getString(), lx0, ly, FxPalette.ASH, eT);
@@ -350,9 +350,9 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             if (ins < 320) {
                 // 放进去：符号从下往上扫出来，扫描线带一道红光
                 int cy0 = Math.round(by1 - (by1 - by0) * easeOut(ins / 320.0F));
-                g.enableScissor(bx0, cy0, bx1, by1);
+                clip(g, bx0, cy0, bx1, by1);
                 drawCardSigil(g, id, x, pcy, SOCKET_SIGIL, eS * flick, boost);
-                g.disableScissor();
+                unclip(g);
                 hl(g, bx0 + 1, bx1 - 1, cy0, FxPalette.KUVA_PALE, 0.9F);
                 additive(g, () -> GuiShapes.hline(g, bx0, bx1, cy0, lw() * 3, GuiShapes.argb(FxPalette.KUVA, 0.5F)));
             } else {
@@ -372,9 +372,9 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
                 float e = 1.0F - rm / 180.0F;
                 int hh = Math.round((by1 - by0) * 0.5F * e);
                 if (hh > 0) {
-                    g.enableScissor(bx0, pcy - hh, bx1, pcy + hh);
+                    clip(g, bx0, pcy - hh, bx1, pcy + hh);
                     drawCardSigil(g, cardId(taken.stack()), x, pcy, SOCKET_SIGIL, e, 1.0F);
-                    g.disableScissor();
+                    unclip(g);
                 }
                 additive(g, () -> hl(g, bx0, bx1, pcy, FxPalette.KUVA_PALE, 0.8F * e));
             }
@@ -492,7 +492,7 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
         float cw = rx1 - rx0;
         int y = hairY + 8;
         if (focus.isEmpty()) {
-            for (String line : wrap(Component.translatable("kuvalich.gate.detail_empty").getString(), cw)) {
+            for (String line : wrapEven(Component.translatable("kuvalich.gate.detail_empty").getString(), cw)) {
                 text(g, line, x0, y, FxPalette.ASH, 0.6F * a);
                 y += 10;
             }

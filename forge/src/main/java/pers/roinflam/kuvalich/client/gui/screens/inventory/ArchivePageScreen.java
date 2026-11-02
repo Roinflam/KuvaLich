@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
@@ -38,7 +39,8 @@ import java.util.function.Supplier;
  * 安魂系列方块界面的底子：照玄骸档案的样子铺满整屏、不画外框，像是档案的另一页
  *
  * <ul>
- *   <li>压暗 85% + 墨烟，两条竖分隔线把屏幕分成左、中、右三栏（和档案同一组比例）；背包在中栏下部，细线方格；</li>
+ *   <li>压暗 85% + 墨烟，两条竖分隔线把屏幕分成左、中、右三栏（和档案同一组比例），分隔线内侧带刻度，
+ *       整页四角各一个裁切括号；背包在中栏下部，细线方格；</li>
  *   <li>开场沿用档案的时间轴：压暗 0~250 ms，框架 300~600 ms，文字 450~850 ms，背包一行一行淡入；
  *       同一种界面 10 秒内重开、或者关了档案开场选项时，150 ms 一起淡入；</li>
  *   <li>物品图标不能半透明：背景压暗之前格子挪到屏幕外、图标不画（子类的盖板和自己画的图标也要看 {@link #dimmed}），
@@ -115,6 +117,7 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
     /** 「解码」出字时乱码的取字表：汉字换汉字、西文换西文，宽度不跳 */
     private static final String GLYPH_CJK = "赤毒骸魂安铸融械库模组扉灭档案玄卡锻";
     private static final String GLYPH_ASCII = "#%&*+=<>/?0123456789ABCDEFX";
+    private static final String ELLIPSIS = "…";
 
     private static final class Mote {
         float x;
@@ -129,6 +132,14 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
 
     // ==================== 版式（init 时按窗口算） ====================
 
+    /** 版式至少要这么高；界面比它矮时整页换一个小一档的整数缩放来画 */
+    private static final int MIN_CANVAS_H = 240;
+    /**
+     * 整页相对窗口界面缩放再乘的倍数，1 = 不缩。强制 Unicode 字体时原版把奇数档缩放往上凑成偶数，
+     * 1280×720、1366×768 这类窗口会变成 4 档、界面只有 180~192 高，三栏和背包挤成一团；
+     * 这时改按 {@code 物理高度 / 240} 取整那一档画（每个单位仍是整数个物理像素），鼠标坐标同样换算
+     */
+    private float canvas = 1.0F;
     /** 窗口高不到 260 个界面单位：间距收紧 */
     protected boolean small;
     /** 两条竖分隔线、它们的上下端 */
@@ -215,6 +226,7 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
 
     @Override
     protected void init() {
+        fitCanvas();
         this.imageWidth = this.width;
         this.imageHeight = this.height;
         super.init();
@@ -232,6 +244,48 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
     public void removed() {
         super.removed();
         LAST_CLOSE.put(getClass(), Util.getMillis());
+    }
+
+    /** 界面太矮时算出整页的缩放倍数，并把 width / height 换成缩放后的画布尺寸（每次 init 都从窗口尺寸重算） */
+    private void fitCanvas() {
+        canvas = 1.0F;
+        Window win = this.minecraft.getWindow();
+        double gui = win.getGuiScale();
+        if (this.height >= MIN_CANVAS_H || gui <= 1.0) {
+            return;
+        }
+        int k = Math.max(1, win.getHeight() / MIN_CANVAS_H);
+        if (k >= gui) {
+            return;
+        }
+        canvas = (float) (k / gui);
+        this.width = Mth.ceil(win.getWidth() / (double) k);
+        this.height = win.getHeight() / k;
+    }
+
+    /** 窗口界面坐标换成画布坐标 */
+    private double toCanvas(double v) {
+        return canvas == 1.0F ? v : v / canvas;
+    }
+
+    /**
+     * 裁剪框（画布坐标）。原版 {@code enableScissor} 只乘窗口的界面缩放、不认姿态矩阵，画布缩小时会裁错地方，
+     * 所以这里自己按物理像素算
+     */
+    protected void clip(GuiGraphics g, float x0, float y0, float x1, float y1) {
+        g.flush();
+        Window win = this.minecraft.getWindow();
+        double f = win.getGuiScale() * canvas;
+        int px0 = Mth.floor(x0 * f);
+        int py0 = Mth.floor(y0 * f);
+        int px1 = Mth.ceil(x1 * f);
+        int py1 = Mth.ceil(y1 * f);
+        RenderSystem.enableScissor(px0, win.getHeight() - py1, Math.max(0, px1 - px0), Math.max(0, py1 - py0));
+    }
+
+    protected void unclip(GuiGraphics g) {
+        g.flush();
+        RenderSystem.disableScissor();
     }
 
     private void computeColumns() {
@@ -356,8 +410,27 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         g.pose().popPose();
     }
 
+    /**
+     * 绘制入口：画布缩小时整页（连同物品、提示框）套一层缩放，鼠标按画布坐标重新取；子类要加东西覆写 {@link #renderPage}，
+     * 这样加的东西也在缩放里
+     */
     @Override
-    public void render(GuiGraphics g, int mx, int my, float partialTick) {
+    public final void render(GuiGraphics g, int mx, int my, float partialTick) {
+        if (canvas == 1.0F) {
+            renderPage(g, mx, my, partialTick);
+            return;
+        }
+        Window win = this.minecraft.getWindow();
+        int vx = (int) (this.minecraft.mouseHandler.xpos() * this.width / win.getScreenWidth());
+        int vy = (int) (this.minecraft.mouseHandler.ypos() * this.height / win.getScreenHeight());
+        g.pose().pushPose();
+        g.pose().scale(canvas, canvas, 1.0F);
+        renderPage(g, vx, vy, partialTick);
+        g.flush();
+        g.pose().popPose();
+    }
+
+    protected void renderPage(GuiGraphics g, int mx, int my, float partialTick) {
         hots.clear();
         super.render(g, mx, my, partialTick);
         this.renderTooltip(g, mx, my);
@@ -400,10 +473,54 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
                 }
             });
         }
+        drawRulers(g, now, eFrame);
         drawInventory(g, mx, my, t);
         drawPage(g, mx, my, now, t, eFrame);
         drawOpenBeam(g, t);
         g.flush();
+    }
+
+    /**
+     * 分隔线内侧的刻度（每 8 格一短刻、每 32 格一长刻），一颗亮刻度沿两条分隔线慢慢来回走；
+     * 整页四角各一个直角括号，像档案扫描件的裁切标
+     */
+    private void drawRulers(GuiGraphics g, long now, float e) {
+        if (e <= 0.0F) {
+            return;
+        }
+        GuiShapes.begin(g);
+        for (int y = sepT + 8, k = 1; y < sepB - 2; y += 8, k++) {
+            boolean major = k % 4 == 0;
+            float len = major ? 3.0F : 1.5F;
+            float a = (major ? 0.16F : 0.08F) * e;
+            hl(g, sepL + 1, sepL + 1 + len, y, FxPalette.KUVA_PALE, a);
+            hl(g, sepR - len, sepR, y, FxPalette.KUVA_PALE, a);
+        }
+        int x0 = lx0 - 12;
+        int x1 = rx1 + 12;
+        int y0 = Math.max(2, titleY - 7);
+        int y1 = Math.min(height - 3, botY + 15);
+        float c = 7.0F;
+        float a = 0.2F * e;
+        hl(g, x0, x0 + c, y0, FxPalette.KUVA_PALE, a);
+        vl(g, x0, y0, y0 + c, FxPalette.KUVA_PALE, a);
+        hl(g, x1 - c, x1, y0, FxPalette.KUVA_PALE, a);
+        vl(g, x1, y0, y0 + c, FxPalette.KUVA_PALE, a);
+        hl(g, x0, x0 + c, y1, FxPalette.KUVA_PALE, a);
+        vl(g, x0, y1 - c, y1, FxPalette.KUVA_PALE, a);
+        hl(g, x1 - c, x1, y1, FxPalette.KUVA_PALE, a);
+        vl(g, x1, y1 - c, y1, FxPalette.KUVA_PALE, a);
+        GuiShapes.end();
+        // 亮刻度：9 秒一个来回，两条线错开半程
+        float span = sepB - sepT - 12;
+        additive(g, () -> {
+            for (int side = 0; side < 2; side++) {
+                float u = ((now + side * 4500L) % 9000L) / 9000.0F;
+                float y = sepT + 6 + span * sine(u < 0.5F ? u * 2.0F : 2.0F - u * 2.0F);
+                float x = side == 0 ? sepL + 1 : sepR - 4;
+                fill(g, x, y, x + 4, y + 1, FxPalette.KUVA, 0.45F * e);
+            }
+        });
     }
 
     /** 开场时一道扫描光从上往下扫过整页（快速开场不扫） */
@@ -422,6 +539,8 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
+        mx = toCanvas(mx);
+        my = toCanvas(my);
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.menu.getCarried().isEmpty()) {
             Hot h = hotAt(mx, my);
             if (h != null && h.click() != null && slotAt(mx, my) == null) {
@@ -436,6 +555,26 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
             message(rejectMessage(s, carried), FxPalette.KUVA, 1600);
         }
         return super.mouseClicked(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mx, double my, int button) {
+        return super.mouseReleased(toCanvas(mx), toCanvas(my), button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        return super.mouseDragged(toCanvas(mx), toCanvas(my), button, toCanvas(dx), toCanvas(dy));
+    }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double delta) {
+        return super.mouseScrolled(toCanvas(mx), toCanvas(my), delta);
+    }
+
+    @Override
+    public void mouseMoved(double mx, double my) {
+        super.mouseMoved(toCanvas(mx), toCanvas(my));
     }
 
     /** 鼠标下面的格子（按坐标现找，不靠上一帧的悬停） */
@@ -824,6 +963,30 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         return w;
     }
 
+    /** 放不下就从尾巴截掉、补一个省略号 */
+    protected String fit(String s, float maxW) {
+        if (textW(s, 0.0F) <= maxW) {
+            return s;
+        }
+        int n = s.length();
+        while (n > 0 && textW(s.substring(0, n) + ELLIPSIS, 0.0F) > maxW) {
+            n--;
+        }
+        return s.substring(0, n) + ELLIPSIS;
+    }
+
+    protected static String tr(String key, Object... args) {
+        return Component.translatable(key, args).getString();
+    }
+
+    /** 右对齐、右下带一格墨色投影的字（叠在物品图标上的数量） */
+    protected float textShadowR(GuiGraphics g, String s, float right, float y, int rgb, float a) {
+        float w = textW(s, 0.0F);
+        text(g, s, Math.round(right - w) + 1, y + 1, INK, a);
+        text(g, s, Math.round(right - w), y, rgb, a);
+        return w;
+    }
+
     /**
      * 按宽度断行。纯西文交给原版（在空格处断）；带汉字的自己断：汉字逐字可断，西文单词、数字不拆开，
      * 行首不放逗号句号这类标点（宁可这一行超一点）。原版遇到「1 张模组换……」会在数字后的空格处断，
@@ -1156,6 +1319,25 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         g.blit(SMOKE, 0, 0, w, h, u, 0.0F, uw, 128, 256, 128);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
+    }
+
+    /**
+     * 画一个调暗了的物品图标：{@code lum} 压低颜色，{@code alpha} 管淡入（半透明只对用半透明材质的物品有效，
+     * 方块物品只会跟着变暗）。以前是在图标上盖一块墨色方块，底下的页面是半透明的，盖上去就是一块方的黑底。
+     * 先把前面排着没画的字和色块画掉，不然它们会一起被调暗
+     */
+    protected static void renderItemDim(GuiGraphics g, ItemStack stack, int x, int y, float lum, float alpha) {
+        if (alpha <= 0.02F || lum <= 0.02F) {
+            return;
+        }
+        if (lum >= 0.999F && alpha >= 0.999F) {
+            g.renderItem(stack, x, y);
+            return;
+        }
+        g.flush();
+        RenderSystem.setShaderColor(lum, lum, lum, alpha);
+        g.renderItem(stack, x, y);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     /** 档案那张背光，拉到给定的框里 */

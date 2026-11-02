@@ -14,7 +14,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
+import pers.roinflam.kuvalich.client.fx.FxCurve;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
+import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.fx.gui.ForgeOpClassifier;
 import pers.roinflam.kuvalich.client.fx.gui.GuiFx;
 import pers.roinflam.kuvalich.client.gui.codex.ModuleCodexScreen;
@@ -28,6 +30,7 @@ import pers.roinflam.kuvalich.module.weapon.panel.ValueFormat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -38,10 +41,13 @@ import java.util.Map;
  *
  * <ul>
  *   <li>中栏：八张模组卡排成 2×4（切角卡形，装着的按稀有度着色、边上有一道光绕着走，没解锁的画叉），
- *       背后一圈慢慢转的全息椭圆环；卡下面一条八段的容量条，再下面一行是已装几个，放不进去时临时换成原因；</li>
+ *       卡底一排等级刻度，刚装上时一颗颗亮起、卡上方浮起「等级 N / M」；背后一圈慢慢转的全息椭圆环；
+ *       卡下面一条八段的容量条，再下面一行是已装几个，手上拿着模组时换成它的名字和等级，放不进去时临时换成原因；</li>
  *   <li>电路：每张卡到装模组的那件东西（武器格 / 玩家）有一条折线，装着模组的那条亮着、光点一直往那边流；</li>
  *   <li>右栏：已装模组的清单（名字按稀有度着色，悬停一行显示说明、同时点亮它所在的卡），
- *       下面是各词条加起来的属性加成，装上 / 拿走时数字滚到新值；</li>
+ *       下面是各词条加起来的属性加成；装上 / 拿走时一道光从那张卡飞到属性栏，变了的词条再错开着滚到新值、
+ *       扫一道增减色的光、行外留一个增减标（见 {@link #drawStats}）；</li>
+ *   <li>左栏底下的小表（{@link #drawInfo}）由子类摆，共用的「装配概要」几项见 {@link #loadoutInfo}；</li>
  *   <li>底部「[TAB] 模组图鉴」，按 TAB 或者点它打开图鉴；</li>
  *   <li>装入、取出、武器上台的锻造演出照旧交给 {@link GuiFx}，每 tick 由 {@link ForgeOpClassifier.TableWatch}
  *       比快照认出来（点击、Shift 点击、图鉴一键装配都算）。</li>
@@ -64,16 +70,26 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
     /** 卡的左上、右下切角 */
     private static final int CHAMFER = 3;
     /** 清单里宽度够这么多才在名字后面带等级，窄了只剩名字 */
-    private static final int LEVEL_MIN_WIDTH = 100;
-    private static final String ELLIPSIS = "…";
+    private static final int LEVEL_MIN_WIDTH = 60;
     /** 卡边那道光绕一圈的周期、真正在走的那一段占比 */
     private static final int GLINT_PERIOD = 3600;
     private static final float GLINT_RUN = 0.45F;
     /** 电路光点：一趟的周期、在路上的那一段占比 */
     private static final int PULSE_PERIOD = 1900;
     private static final float PULSE_RUN = 0.7F;
-    /** 属性数字滚到新值用的时间 */
-    private static final int STAT_ROLL_MS = 450;
+    /**
+     * 属性加成的演出：卡到属性栏的那道光走多久（属性等光到了才开始变）、数字滚到新值多久、几条一起变时每条错开多久、
+     * 变化那一行的光扫多久、行右边的增减标留多久
+     */
+    private static final int STREAK_MS = 420;
+    private static final int STAT_ROLL_MS = 1000;
+    private static final int STAT_STAGGER_MS = 70;
+    private static final int STAT_WIPE_MS = 1600;
+    private static final int STAT_DELTA_MS = 2600;
+    /** 卡底等级刻度：装上后第一颗什么时候亮、之后每颗隔多久；状态行「装配完成」留多久 */
+    private static final int RANK_PIP_MS = 240;
+    private static final int RANK_PIP_STEP = 45;
+    private static final int RANK_POP_MS = 1800;
 
     /** 武器格的菜单格号，没有传 −1 */
     private final int weaponSlot;
@@ -116,9 +132,21 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
     /** 属性加成：上次算的时候各格是什么、各词条从哪个值滚到哪个值 */
     private final ItemStack[] statBasis = new ItemStack[MODULES];
     private final List<Stat> stats = new ArrayList<>();
+    /** 第一次算属性不演（打开界面时本来就装着的） */
+    private boolean statsPrimed;
+    /** 从卡飞向属性栏的光；属性栏标题上一帧的 y（光的终点）；各行长短条的满格对应多大的数（平滑跟着变） */
+    private final List<Streak> streaks = new ArrayList<>();
+    private int statsTop = -1;
+    private float statScale = Float.NaN;
+    private long statClock = Long.MIN_VALUE;
 
-    /** 画卡形用的点缓冲 */
+    /** 左栏小表各项上一帧的值、变了的时刻 */
+    private final Map<String, String> infoSeen = new HashMap<>();
+    private final Map<String, Long> infoAt = new HashMap<>();
+
+    /** 画卡形用的点缓冲；增减标的小三角 */
     private final float[] pts = new float[2 * 8];
+    private final float[] tri = new float[6];
 
     private static final class Stat {
         final String key;
@@ -127,6 +155,10 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         double to;
         long t0;
         boolean leaving;
+        /** 这次变了多少；新词条出现的时刻（老词条是 0）；画在哪一行（平滑挪到目标行） */
+        double delta;
+        long born;
+        float y = Float.NaN;
 
         Stat(String key, String name) {
             this.key = key;
@@ -137,6 +169,14 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             float u = clamp01((now - t0) / (float) STAT_ROLL_MS);
             return from + (to - from) * easeOut(u);
         }
+    }
+
+    /** 一道从第 {@code card} 张卡飞向属性栏的光 */
+    private record Streak(int card, int rgb, long t0) {
+    }
+
+    /** 左栏小表的一项：名称、数值、数值的颜色 */
+    protected record Info(String key, String value, int rgb) {
     }
 
     protected ArmoryPageScreen(M menu, Inventory playerInventory, Component title, int weaponSlot, boolean weaponCodex) {
@@ -273,8 +313,8 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
 
     /** 原版只给有东西的格子出说明：没解锁的空格子、清单行、武器投影的说明在这里补 */
     @Override
-    public void render(GuiGraphics g, int mx, int my, float partialTick) {
-        super.render(g, mx, my, partialTick);
+    protected void renderPage(GuiGraphics g, int mx, int my, float partialTick) {
+        super.renderPage(g, mx, my, partialTick);
         if (!menu.getCarried().isEmpty()) {
             return;
         }
@@ -379,15 +419,21 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         }
         drawGlints(g, now, t);
         drawBar(g, now, t);
+        ItemStack carried = menu.getCarried();
         if (!drawMessage(g, cx, statusY, eF)) {
             if (!hasHost()) {
                 textC(g, hostMissing().getString(), cx, statusY, FxPalette.ASH, 0.7F * eF);
+            } else if (!carried.isEmpty() && acceptsModule(carried)) {
+                drawCarrying(g, carried, eF);
             } else {
+                float k = drawPlaced(g, eF);
                 int used = installedCount();
                 int lim = moduleLimit();
                 boolean full = lim > 0 && used >= lim;
-                textC(g, Component.translatable("kuvalich.armory.count", used, lim).getString(), cx, statusY,
-                        full ? FxPalette.BONE : FxPalette.ASH, (full ? 0.85F : 0.7F) * eF);
+                if (k < 1.0F) {
+                    textC(g, Component.translatable("kuvalich.armory.count", used, lim).getString(), cx, statusY,
+                            full ? FxPalette.BONE : FxPalette.ASH, (full ? 0.85F : 0.7F) * (1.0F - k) * eF);
+                }
             }
         }
         drawDrift(g, cx, pTop + 6, 150, 70, now, eF);
@@ -397,6 +443,7 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         hl(g, rx0, rx1, hairY, FxPalette.KUVA_PALE, 0.35F * eF);
         int y = drawList(g, eF);
         drawStats(g, y + 8, now, eF);
+        drawStreaks(g, now, eF);
 
         // ---- 底部：图鉴入口 ----
         float w = textW(codexHint, 0.0F);
@@ -506,13 +553,20 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             float dy = modY[i] + 10.0F;
             if (has) {
                 fill(g, x0 + CHAMFER + 1, y0, x1 - 1, y0 + 1, col, 0.9F * e * open);
-                GuiShapes.diamondFill(g, modX[i] + dx, dy, 2.0F, 2.5F, GuiShapes.argb(col, 0.85F * e * open));
+                if (ModuleLevelHelper.isLevelSystemEnabled()) {
+                    drawRankPips(g, i, st, col, e * open, dx);
+                } else {
+                    GuiShapes.diamondFill(g, modX[i] + dx, dy, 2.0F, 2.5F, GuiShapes.argb(col, 0.85F * e * open));
+                }
             } else {
                 GuiShapes.diamondOutline(g, modX[i] + dx, dy, 2.0F, 2.5F, lineW,
                         GuiShapes.argb(FxPalette.KUVA_PALE, 0.25F * e * open));
             }
         }
         GuiShapes.end();
+        if (has && open > 0.0F && ModuleLevelHelper.isLevelSystemEnabled()) {
+            drawRankFlash(g, i, st, col, e * open);
+        }
         if (rj < 300) {
             int c = GuiShapes.argb(FxPalette.KUVA, 0.5F * (1.0F - rj / 300.0F));
             additive(g, () -> GuiShapes.convexFill(g, pts, cardShape(i, 0), c));
@@ -523,6 +577,65 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             additive(g, () -> GuiShapes.frame(g, modX[i] - CELL - 1, modY[i] - CELL_HH - 1, modX[i] + CELL + 1,
                     modY[i] + CELL_HH + 1, lw(), c));
         }
+    }
+
+    /**
+     * 卡底的等级刻度，一级一颗（满级不超过 5 级时每颗宽一倍）；满级超过 10 级的改成一根按比例填的条。
+     * 刚装上时从左往右一颗颗亮起来；打开界面时本来就装着的直接是亮的
+     */
+    private void drawRankPips(GuiGraphics g, int i, ItemStack st, int col, float a, int dx) {
+        int max = ModuleLevelHelper.getMaxLevel();
+        int lv = ModuleLevelHelper.getModuleLevel(st);
+        long ins = age(Ev.PLACE, i);
+        float y = modY[i] + 9.0F;
+        float mid = modX[i] + dx;
+        if (max > 10) {
+            float w = 2 * CELL - 6;
+            float x0 = mid - w * 0.5F;
+            long fillMs = RANK_PIP_MS + RANK_PIP_STEP * 6L;
+            float u = ins < fillMs ? easeOut(seg(ins, RANK_PIP_MS, fillMs)) : 1.0F;
+            fill(g, x0, y, x0 + w, y + 2, FxPalette.KUVA_PALE, 0.15F * a);
+            fill(g, x0, y, x0 + w * lv / max * u, y + 2, col, 0.95F * a);
+            return;
+        }
+        int pw = max <= 5 ? 2 : 1;
+        int x = Math.round(mid - (max * pw + max - 1) * 0.5F);
+        for (int k = 0; k < max; k++) {
+            boolean lit = k < lv && ins >= RANK_PIP_MS + (long) RANK_PIP_STEP * k;
+            fill(g, x, y, x + pw, y + 2, lit ? col : FxPalette.KUVA_PALE, (lit ? 0.95F : 0.18F) * a);
+            x += pw + 1;
+        }
+    }
+
+    /** 等级刻度一颗颗亮起时每颗白闪一下；满级的卡刻度底下一道光慢慢呼吸 */
+    private void drawRankFlash(GuiGraphics g, int i, ItemStack st, int col, float a) {
+        int max = ModuleLevelHelper.getMaxLevel();
+        int lv = ModuleLevelHelper.getModuleLevel(st);
+        long ins = age(Ev.PLACE, i);
+        float y = modY[i] + 9.0F;
+        boolean pips = max <= 10;
+        int pw = max <= 5 ? 2 : 1;
+        int x0 = Math.round(modX[i] - (max * pw + max - 1) * 0.5F);
+        long now = KuvaFxDirector.clockMs();
+        GuiShapes.additive(g, true);
+        GuiShapes.begin(g);
+        if (pips && ins < RANK_PIP_MS + (long) RANK_PIP_STEP * lv + 220) {
+            for (int k = 0; k < lv; k++) {
+                long since = ins - RANK_PIP_MS - (long) RANK_PIP_STEP * k;
+                if (since >= 0 && since < 220) {
+                    int x = x0 + k * (pw + 1);
+                    fill(g, x - 1, y - 1, x + pw + 1, y + 3, FxPalette.WHITE, 0.8F * (1.0F - since / 220.0F) * a);
+                }
+            }
+        }
+        if (lv >= max) {
+            float br = 0.5F + 0.5F * Mth.sin((now % 2200L) / 2200.0F * Mth.TWO_PI);
+            float w = pips ? max * pw + max - 1 : 2 * CELL - 6;
+            float gx0 = modX[i] - w * 0.5F;
+            fill(g, gx0 - 1, y + 3, gx0 + w + 1, y + 4, col, (0.25F + 0.35F * br) * a);
+        }
+        GuiShapes.end();
+        GuiShapes.additive(g, false);
     }
 
     /** 卡形的 6 个点写进 {@link #pts}，返回点数 */
@@ -685,7 +798,7 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         float cw = rx1 - rx0;
         int y = hairY + 8;
         if (rowCount == 0) {
-            for (String line : wrap(emptyDetail().getString(), cw)) {
+            for (String line : wrapEven(emptyDetail().getString(), cw)) {
                 text(g, line, x0, y, FxPalette.ASH, 0.6F * eF);
                 y += 10;
             }
@@ -731,51 +844,293 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
     }
 
     /**
-     * 属性加成：所有已装模组的词条按面板的口径加起来（单张夹值 × 等级倍率，合计再夹一次），
-     * 数值滚到新值的那一下整行亮一下。放不下的行收成「还有 N 项」
+     * 属性加成：所有已装模组的词条按面板的口径加起来（单张夹值 × 等级倍率，合计再夹一次），放不下的行收成「另有 N 项」。
+     * 每行下面一根长短条，按这一页里最大的那个数折算。装上 / 取下模组时，一道光从那张卡飞到这里（{@link #drawStreaks}），
+     * 到了标题下划线亮一下，变了的词条再一条条错开着变（{@link #drawStatRow}）；新词条等光到了才占一行，
+     * 去掉的词条淡掉以后下面的行平滑地补上来
      */
     private void drawStats(GuiGraphics g, int top, long now, float eF) {
+        statsTop = top;
+        float dt = statClock == Long.MIN_VALUE ? 1000.0F : Math.min(200.0F, now - statClock);
+        statClock = now;
+        float k = 1.0F - (float) Math.exp(-dt / 70.0F);
         if (stats.isEmpty() || top > sepB - 24) {
             return;
         }
-        text(g, Component.translatable("kuvalich.armory.stats").getString(), rx0, top, FxPalette.TEXT_MID, 0.9F * eF);
+        text(g, tr("kuvalich.armory.stats"), rx0, top, FxPalette.TEXT_MID, 0.9F * eF);
         hl(g, rx0, rx1, top + 10, FxPalette.KUVA_PALE, 0.25F * eF);
-        int y = top + 14;
-        int room = Math.max(0, (sepB - 2 - y) / 10);
-        int shown = stats.size() <= room ? stats.size() : Math.max(0, room - 1);
-        float cw = rx1 - rx0;
-        for (int k = 0; k < shown; k++) {
-            Stat s = stats.get(k);
-            double v = s.value(now);
-            String val = formatStat(s.key, v);
-            float vw = textW(val, 0.0F);
-            long since = now - s.t0;
-            float fresh = since < STAT_ROLL_MS + 250 ? 1.0F - since / (float) (STAT_ROLL_MS + 250) : 0.0F;
-            float alive = s.leaving ? 1.0F - clamp01(since / (float) STAT_ROLL_MS) : 1.0F;
-            text(g, fit(s.name, cw - vw - 4), rx0, y, FxPalette.ASH, (0.75F + 0.25F * fresh) * eF * alive);
-            textR(g, val, rx1, y, v >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY,
-                    (0.85F + 0.15F * fresh) * eF * alive);
-            if (fresh > 0.0F) {
-                int yy = y;
-                additive(g, () -> fill(g, rx0, yy - 1, rx1, yy + 9, FxPalette.KUVA_PALE, 0.12F * fresh));
+        float arrive = 0.0F;
+        int arriveRgb = FxPalette.KUVA_PALE;
+        for (Streak s : streaks) {
+            long a = now - s.t0() - STREAK_MS;
+            if (a >= 0 && a < 500 && 1.0F - a / 500.0F > arrive) {
+                arrive = 1.0F - a / 500.0F;
+                arriveRgb = s.rgb();
             }
-            y += 10;
         }
-        if (shown < stats.size()) {
-            text(g, Component.translatable("kuvalich.armory.more", stats.size() - shown).getString(), rx0, y,
-                    FxPalette.ASH, 0.5F * eF);
+        if (arrive > 0.0F) {
+            float ar = arrive;
+            int ac = arriveRgb;
+            additive(g, () -> {
+                hl(g, rx0, rx1, top + 10, ac, 0.9F * ar);
+                fill(g, rx0, top - 1, rx1, top + 10, ac, 0.08F * ar);
+            });
+        }
+        int y0 = top + 14;
+        int visible = 0;
+        double maxAbs = 1.0e-6;
+        for (Stat s : stats) {
+            if (now >= s.born) {
+                visible++;
+                maxAbs = Math.max(maxAbs, Math.max(Math.abs(s.to), Math.abs(s.value(now))));
+            }
+        }
+        statScale = Float.isNaN(statScale) ? (float) maxAbs : statScale + ((float) maxAbs - statScale) * k;
+        int room = Math.max(0, (sepB - 2 - y0) / 10);
+        int shown = visible <= room ? visible : Math.max(0, room - 1);
+        float cw = rx1 - rx0;
+        int row = 0;
+        for (Stat s : stats) {
+            if (now < s.born || row >= shown) {
+                continue;
+            }
+            float target = y0 + row * 10;
+            s.y = Float.isNaN(s.y) ? target : s.y + (target - s.y) * k;
+            drawStatRow(g, s, Math.round(s.y), cw, now, eF);
+            row++;
+        }
+        if (shown < visible) {
+            text(g, tr("kuvalich.armory.more", visible - shown), rx0, y0 + shown * 10, FxPalette.ASH, 0.5F * eF);
         }
     }
 
     /**
-     * 汇总里的数值：和提示框同一套格式，只是不到 1% 的百分比留一位小数——击杀叠层每层的加成常常只有零点几，
-     * 取整会显示成「+0%」
+     * 属性加成的一行。开始变的那一刻起：数字一秒滚到新值，数值先发白再回本色、弹一下；增（绿）/ 减（红）色的光从左扫过整行、
+     * 慢慢退掉；行右边（栏外的空白里）留一个带箭头的增减标约两秒半；长短条跟着数字伸缩、条头亮着。
+     * 新词条从右边滑进来，去掉的词条名字上划一道删除线再淡掉
+     */
+    private void drawStatRow(GuiGraphics g, Stat s, int y, float cw, long now, float eF) {
+        double v = s.value(now);
+        long since = now - s.t0;
+        boolean live = since >= 0;
+        float alive = s.leaving ? 1.0F - clamp01((since - STAT_ROLL_MS * 0.4F) / (STAT_ROLL_MS * 0.6F)) : 1.0F;
+        long age = now - s.born;
+        float enter = s.born > 0 ? clamp01(age / 250.0F) : 1.0F;
+        float slide = s.born > 0 && age < 320 ? 10.0F * (1.0F - easeOut(age / 320.0F)) : 0.0F;
+        float a = eF * alive * enter;
+        if (a <= 0.004F) {
+            return;
+        }
+        String val = formatStat(s.key, v);
+        float vw = textW(val, 0.0F);
+        int base = v >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY;
+        int dRgb = s.delta >= 0 ? PanelPalette.BONUS : PanelPalette.PENALTY;
+        float wipe = live && since < STAT_WIPE_MS ? 1.0F - since / (float) STAT_WIPE_MS : 0.0F;
+        float frac = (float) Math.min(1.0D, Math.abs(v) / Math.max(1.0e-6, statScale));
+
+        GuiShapes.begin(g);
+        hl(g, rx0, rx1, y + 9, FxPalette.KUVA_PALE, 0.05F * a);
+        if (frac > 0.002F) {
+            hl(g, rx0, rx0 + cw * frac, y + 9, base, 0.45F * a);
+        }
+        GuiShapes.end();
+
+        String name = fit(s.name, cw - vw - 4);
+        text(g, name, rx0 + slide, y, FxPalette.ASH, (0.75F + 0.25F * wipe) * a);
+        float flash = live && since < 700 ? 1.0F - since / 700.0F : 0.0F;
+        int vRgb = FxCurve.lerpColor(base, FxPalette.WHITE, 0.8F * flash);
+        float va = (0.85F + 0.15F * wipe) * a;
+        float pop = live && since < 350 ? 0.22F * Mth.square(1.0F - since / 350.0F) : 0.0F;
+        if (pop > 0.0F) {
+            g.pose().pushPose();
+            g.pose().translate(rx1 + slide, y + 4, 0.0F);
+            g.pose().scale(1.0F + pop, 1.0F + pop, 1.0F);
+            textR(g, val, 0, -4, vRgb, va);
+            g.pose().popPose();
+        } else {
+            textR(g, val, rx1 + slide, y, vRgb, va);
+        }
+        if (s.leaving && live) {
+            float u = easeOut(clamp01(since / 400.0F));
+            float nw = textW(name, 0.0F);
+            GuiShapes.begin(g);
+            hl(g, rx0, rx0 + nw * u, y + 4, PanelPalette.PENALTY, 0.85F * a);
+            GuiShapes.end();
+        }
+        if (wipe > 0.0F) {
+            float front = easeOut(clamp01(since / 380.0F));
+            boolean rolling = since < STAT_ROLL_MS && frac > 0.002F;
+            additive(g, () -> {
+                fill(g, rx0, y - 1, rx0 + cw * front, y + 9, dRgb, 0.16F * wipe * a);
+                if (front < 1.0F) {
+                    fill(g, rx0 + cw * front - 1, y - 1, rx0 + cw * front, y + 9, FxPalette.WHITE, 0.7F * a);
+                }
+                if (rolling) {
+                    float hx = rx0 + cw * frac;
+                    fill(g, hx - 1, y + 8, hx + 1, y + 10, FxPalette.WHITE, 0.8F * a);
+                }
+            });
+        }
+        if (live && !s.leaving && since < STAT_DELTA_MS && Math.abs(s.delta) > 1.0e-4) {
+            String d = formatStat(s.key, s.delta);
+            if (s.delta > 0 && !d.startsWith("+")) {
+                d = "+" + d;
+            }
+            if (width - rx1 - 4 >= textW(d, 0.0F) + 11) {
+                float da = (since < 150 ? since / 150.0F
+                        : since > STAT_DELTA_MS - 700 ? (STAT_DELTA_MS - since) / 700.0F : 1.0F) * eF;
+                float dx = rx1 + 5 + 2.0F * easeOut(clamp01(since / 300.0F));
+                triangle(g, dx + 2.5F, y + 4, s.delta > 0, dRgb, da);
+                text(g, d, dx + 7, y, dRgb, da);
+            }
+        }
+    }
+
+    /** 增减标的小三角：增朝上、减朝下 */
+    private void triangle(GuiGraphics g, float x, float y, boolean up, int rgb, float a) {
+        if (a <= 0.004F) {
+            return;
+        }
+        float h = 2.0F;
+        tri[0] = x - 2.5F;
+        tri[1] = up ? y + h : y - h;
+        tri[2] = x + 2.5F;
+        tri[3] = up ? y + h : y - h;
+        tri[4] = x;
+        tri[5] = up ? y - h : y + h;
+        GuiShapes.begin(g);
+        GuiShapes.convexFill(g, tri, 3, GuiShapes.argb(rgb, a));
+        GuiShapes.end();
+    }
+
+    /**
+     * 从卡飞向属性栏的光：从卡的右边出来，在两列卡之间的缝里往上走到卡的上方，横穿到右边的分隔线，
+     * 沿分隔线落到属性栏标题的高度，再往右进栏；拖一截尾巴。到站时那里扩一圈环
+     */
+    private void drawStreaks(GuiGraphics g, long now, float eF) {
+        if (streaks.isEmpty()) {
+            return;
+        }
+        int ty = (statsTop >= 0 ? statsTop : hairY + 8) + 4;
+        GuiShapes.additive(g, true);
+        GuiShapes.begin(g);
+        for (Streak s : streaks) {
+            long t = now - s.t0();
+            if (t < 0 || t > STREAK_MS) {
+                continue;
+            }
+            int i = s.card();
+            int gapX = modX[i] + GRID_SP / 2;
+            int[] p = {modX[i] + CELL + 1, modY[i], gapX, modY[i], gapX, pTop - 2, sepR, pTop - 2, sepR, ty, rx0 - 3, ty};
+            float[] cum = cumulative(p);
+            float d = cum[cum.length - 1] * inOut(t / (float) STREAK_MS);
+            for (int tail = 0; tail < 12; tail++) {
+                float dd = d - tail * 3.0F;
+                if (dd < 0.0F) {
+                    break;
+                }
+                float[] q = pointAt(p, cum, dd);
+                float r = tail == 0 ? 1.5F : 0.6F;
+                fill(g, q[0] - r, q[1] - r, q[0] + r, q[1] + r, tail == 0 ? FxPalette.WHITE : s.rgb(),
+                        (tail == 0 ? 0.95F : 0.75F - tail * 0.055F) * eF);
+            }
+        }
+        GuiShapes.end();
+        GuiShapes.additive(g, false);
+    }
+
+    /** 状态行：手上拿着这一种模组时，写它的名字和等级（未揭示的写装不了） */
+    private void drawCarrying(GuiGraphics g, ItemStack carried, float eF) {
+        float maxW = sepR - sepL - 16;
+        if (AbstractModule.isRandom(carried)) {
+            textC(g, fit(tr("kuvalich.armory.unrevealed"), maxW), cx, statusY, FxPalette.KUVA, 0.9F * eF);
+            return;
+        }
+        String name = plainName(carried);
+        String s = ModuleLevelHelper.isLevelSystemEnabled()
+                ? tr("kuvalich.armory.carry", name, ModuleLevelHelper.getModuleLevel(carried), ModuleLevelHelper.getMaxLevel())
+                : tr("kuvalich.armory.carry.plain", name);
+        textC(g, fit(s, maxW), cx, statusY, rarityColor(carried), 0.9F * eF);
+    }
+
+    /**
+     * 左栏底下的一块小表：标题、细线，一行一项「名称 … 数值」，数值右对齐；某一项的数值变了，那一行亮一下。
+     * 放不下的行不画
+     *
+     * @return 表格下面的 y
+     */
+    protected int drawInfo(GuiGraphics g, String title, List<Info> rows, int y, float eT, long now) {
+        if (rows.isEmpty() || y + 26 > sepB) {
+            return y;
+        }
+        text(g, title, lx0, y, FxPalette.ASH, eT);
+        hlFade(g, lx0, lx1, y + 11, FxPalette.KUVA_PALE, 0.3F * eT);
+        int yy = y + 15;
+        for (Info r : rows) {
+            if (yy + 9 > sepB) {
+                break;
+            }
+            String old = infoSeen.put(r.key(), r.value());
+            if (old != null && !old.equals(r.value())) {
+                infoAt.put(r.key(), now);
+            }
+            long ch = now - infoAt.getOrDefault(r.key(), Long.MIN_VALUE / 4);
+            float fresh = ch < 900 ? 1.0F - ch / 900.0F : 0.0F;
+            float vw = textR(g, r.value(), lx1, yy, r.rgb(), (0.9F + 0.1F * fresh) * eT);
+            text(g, fit(r.key(), lx1 - lx0 - vw - 4), lx0, yy, FxPalette.ASH, (0.7F + 0.3F * fresh) * eT);
+            if (fresh > 0.0F) {
+                int ry = yy;
+                additive(g, () -> fill(g, lx0, ry - 1, lx1, ry + 9, FxPalette.KUVA_PALE, 0.14F * fresh));
+            }
+            yy += 11;
+        }
+        return yy;
+    }
+
+    /** 装配概要的几项：已装配几个、模组等级合计、满级几张（后两项只在开了模组等级时有） */
+    protected void loadoutInfo(List<Info> out) {
+        int n = installedCount();
+        out.add(new Info(tr("kuvalich.armory.info.installed"), n + " / " + moduleLimit(), FxPalette.BONE));
+        if (!ModuleLevelHelper.isLevelSystemEnabled() || n == 0) {
+            return;
+        }
+        int max = ModuleLevelHelper.getMaxLevel();
+        int sum = 0;
+        int maxed = 0;
+        for (int i = 0; i < MODULES; i++) {
+            ItemStack st = menu.getSlot(i).getItem();
+            if (!st.isEmpty()) {
+                int lv = ModuleLevelHelper.getModuleLevel(st);
+                sum += lv;
+                if (lv >= max) {
+                    maxed++;
+                }
+            }
+        }
+        out.add(new Info(tr("kuvalich.armory.info.level"), sum + " / " + n * max,
+                sum >= n * max ? FxPalette.ACCENT : FxPalette.BONE));
+        out.add(new Info(tr("kuvalich.armory.info.maxed"), maxed + " / " + n,
+                maxed == n ? FxPalette.ACCENT : FxPalette.BONE));
+    }
+
+    /**
+     * 汇总里的数值：和提示框同一套格式，几处小数值多留一位——击杀叠层每层的加成常常只有零点几，
+     * 取整会显示成「+0%」；低等级模组的爆炸半径只加零点零几米，一位小数是「+0.0m」。
+     * 攻击速度那套格式本身不带正负号，汇总是「加了多少」，补上
      */
     private static String formatStat(String key, double v) {
         ValueFormat fmt = WeaponPanelComposer.sourceFormat(key);
+        String sign = v < 0 ? "-" : "+";
         double pct = Math.abs(v * 100.0);
         if (fmt == ValueFormat.PERCENT_SIGNED && pct >= 0.05 && pct < 0.95) {
-            return (v > 0 ? "+" : "-") + String.format(Locale.ROOT, "%.1f%%", pct);
+            return sign + String.format(Locale.ROOT, "%.1f%%", pct);
+        }
+        if (fmt == ValueFormat.PERCENT_1F) {
+            return sign + String.format(Locale.ROOT, "%.1f%%", pct);
+        }
+        double m = Math.abs(v * 2.0);
+        if (fmt == ValueFormat.METERS_DELTA && m >= 0.005 && m < 0.095) {
+            return sign + String.format(Locale.ROOT, "%.2fm", m);
         }
         return fmt.format(v);
     }
@@ -786,20 +1141,31 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         return key.startsWith("killStack") ? name + Component.translatable("kuvalich.armory.per_kill").getString() : name;
     }
 
-    /** 各格的模组变了才重算属性；变了的词条从当前显示的值滚到新值，没了的滚到 0 再去掉 */
+    /**
+     * 各格的模组变了才重算属性；变了的词条从当前显示的值滚到新值，没了的滚到 0 再去掉。
+     * 除了打开界面时第一次算，变了的那张卡各放一道光飞向属性栏，词条等光到了才开始变，几条一起变时错开
+     */
     private void refreshStats(long now) {
+        boolean animate = statsPrimed;
+        statsPrimed = true;
         boolean changed = false;
         for (int i = 0; i < MODULES; i++) {
             ItemStack st = installed(i);
             if (!ItemStack.matches(st, statBasis[i])) {
+                if (animate) {
+                    streaks.add(new Streak(i, rarityColor(st.isEmpty() ? statBasis[i] : st), now));
+                }
                 statBasis[i] = st.copy();
                 changed = true;
             }
         }
         stats.removeIf(s -> s.leaving && now - s.t0 > STAT_ROLL_MS);
+        streaks.removeIf(s -> now - s.t0() > STREAK_MS + 600);
         if (!changed) {
             return;
         }
+        long start = animate ? now + STREAK_MS : now - STAT_ROLL_MS - STAT_DELTA_MS;
+        int order = 0;
         Map<String, Double> sum = new LinkedHashMap<>();
         for (ItemStack st : statBasis) {
             if (st.isEmpty()) {
@@ -817,9 +1183,11 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             }
             double to = raw == null ? 0.0D : ModuleConfig.clampAttributeTotal(s.key, raw);
             if (Math.abs(to - s.to) > 1.0e-4 || s.leaving != (raw == null)) {
-                s.from = s.value(now);
+                double cur = s.value(now);
+                s.from = cur;
+                s.delta = to - cur;
                 s.to = to;
-                s.t0 = now;
+                s.t0 = start + (long) STAT_STAGGER_MS * order++;
                 s.leaving = raw == null;
             }
         }
@@ -830,7 +1198,9 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             }
             Stat s = new Stat(e.getKey(), statName(e.getKey()));
             s.to = to;
-            s.t0 = now;
+            s.delta = to;
+            s.t0 = start + (long) STAT_STAGGER_MS * order++;
+            s.born = animate ? s.t0 : 0L;
             stats.add(s);
         }
     }
@@ -866,6 +1236,49 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         drawLeftOverlay(g, mx, my, now, t);
     }
 
+    /**
+     * 刚装上一张模组：状态行换成「装配完成：名字 · 等级 N / M」（稀有度色，满级的写满级），底下一道同色细线从中间展开，
+     * 停一会儿再淡回「已装配」。卡上方没有地方（上面一排顶着栏标题、下面一排顶着上面一排），所以放在这里。
+     * 跟着武器一起上台的模组不算（八张一齐上，说哪张都不对）
+     *
+     * @return 这一行现在的不透明度，0 表示没在显示
+     */
+    private float drawPlaced(GuiGraphics g, float eF) {
+        int pick = -1;
+        long best = RANK_POP_MS;
+        for (int i = 0; i < MODULES; i++) {
+            long ins = age(Ev.PLACE, i);
+            boolean withWeapon = weaponSlot >= 0 && age(Ev.PLACE, weaponSlot) - ins < 1000L;
+            if (ins < best && !withWeapon && !installed(i).isEmpty()) {
+                best = ins;
+                pick = i;
+            }
+        }
+        if (pick < 0) {
+            return 0.0F;
+        }
+        ItemStack st = installed(pick);
+        String name = plainName(st);
+        String s;
+        boolean maxed = false;
+        if (ModuleLevelHelper.isLevelSystemEnabled()) {
+            int max = ModuleLevelHelper.getMaxLevel();
+            int lv = ModuleLevelHelper.getModuleLevel(st);
+            maxed = lv >= max;
+            s = maxed ? tr("kuvalich.armory.placed.max", name, lv) : tr("kuvalich.armory.placed", name, lv, max);
+        } else {
+            s = tr("kuvalich.armory.placed.plain", name);
+        }
+        float a = best < 150 ? best / 150.0F : best > RANK_POP_MS - 500 ? (RANK_POP_MS - best) / 500.0F : 1.0F;
+        int rgb = rarityColor(st);
+        float w = textC(g, fit(s, sepR - sepL - 16), cx, statusY, maxed ? FxPalette.ACCENT : rgb, a * eF);
+        float half = (w * 0.5F + 4.0F) * easeOut(clamp01(best / 300.0F));
+        GuiShapes.begin(g);
+        hl(g, cx - half, cx + half, statusY + 11, rgb, 0.8F * a * eF);
+        GuiShapes.end();
+        return a;
+    }
+
     // ==================== 小工具 ====================
 
     /** 这一格现在算装着的模组（还没轮到揭示的当空的） */
@@ -882,18 +1295,6 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             }
         }
         heading(g, fit(s, maxW), x, a, 0.0F);
-    }
-
-    /** 放不下就从尾巴截掉、补一个省略号 */
-    protected String fit(String s, float maxW) {
-        if (textW(s, 0.0F) <= maxW) {
-            return s;
-        }
-        int n = s.length();
-        while (n > 0 && textW(s.substring(0, n) + ELLIPSIS, 0.0F) > maxW) {
-            n--;
-        }
-        return s.substring(0, n) + ELLIPSIS;
     }
 
     /** 物品名去掉颜色代码（未揭示模组的名字里带着 §d 这类） */

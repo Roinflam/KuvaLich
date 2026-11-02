@@ -2,6 +2,8 @@ package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -16,10 +18,12 @@ import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.fx.gui.ForgeOpClassifier;
 import pers.roinflam.kuvalich.client.fx.gui.GuiFx;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -33,7 +37,8 @@ import java.util.function.Supplier;
  *   <li>格子之间的连线常亮一层很淡的底，放了东西的那条亮起来；结果出来时光先沿连线从输入格流进炉膛，
  *       流到了才揭示结果（流的这 300 ms 里结果格用墨色盖住）；</li>
  *   <li>左栏配方表：每行一个图标和名字，当前这一步对应的那行点亮，手上拿着、或者鼠标停在背包里的东西
- *       能参与的几行半亮；悬停一行看完整说明；</li>
+ *       能参与的几行半亮；悬停一行看完整说明。下面是「持有材料」，背包里各种材料各有多少；</li>
+ *   <li>右栏底部「流程」：这台工作台要走的几步，做到哪一步就亮到哪一步；</li>
  *   <li>取走结果时的演出和声音仍由 {@link GuiFx} 放，在 {@link #renderLabels} 里叠在物品上面画。</li>
  * </ul>
  */
@@ -93,8 +98,38 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
     /** 配方表每行当前的亮度（平滑过渡），以及上一帧的时刻 */
     private final float[] rowGlow = new float[8];
     private long rowClock = Long.MIN_VALUE;
-    /** 这一帧配方表画了图标的位置和要压的暗度（x, y, 千分比），盖板在 drawOverlay 里画 */
-    private final List<int[]> iconVeils = new ArrayList<>();
+
+    /** 左栏「持有材料」的一格：图标、算哪些东西、属于配方表的哪几行（那几行点亮时这一格跟着亮）、悬停时的名字 */
+    protected record Stock(ItemStack icon, Predicate<ItemStack> match, int rows, Component name) {
+    }
+
+    /** 右栏「流程」的一步；note 是靠右的一小段补充（如「2 / 3」），没有就是 null */
+    protected record Step(String text, int state, String note) {
+        protected Step(String text, int state) {
+            this(text, state, null);
+        }
+    }
+
+    protected static final int STEP_PENDING = 0;
+    protected static final int STEP_ACTIVE = 1;
+    protected static final int STEP_DONE = 2;
+    protected static final int STEP_FAILED = 3;
+
+    private static final int STOCK_PITCH = 22;
+    private static final int STOCK_ROW = 20;
+    /** 窄屏：左栏只有 80 来宽，22 的间距一排只放得下 3 个 */
+    private static final int STOCK_PITCH_SMALL = 20;
+    private static final int STOCK_ROW_SMALL = 19;
+    private static final int STOCK_FLASH_MS = 900;
+    private static final int STEP_ROW = 12;
+    /** 持有材料各格上一帧的数量、数量变了的时刻和变了多少；这一帧画了哪几格（序号, x, y, 数量） */
+    private int[] stockSeen = new int[0];
+    private long[] stockAt = new long[0];
+    private int[] stockDelta = new int[0];
+    private final List<int[]> stockCells = new ArrayList<>();
+    /** 流程各步上一帧的状态、变成「完成」的时刻 */
+    private int[] stepSeen = new int[0];
+    private long[] stepAt = new long[0];
 
     protected ForgePageScreen(M menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -136,12 +171,6 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
             }
         }
         return fxPathIds;
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mx, int my) {
-        iconVeils.clear();
-        super.renderBg(g, partialTick, mx, my);
     }
 
     /** 底子画完盖板、粒子之后，再叠锻造演出（和原来一样在格子物品之上、提示框之下） */
@@ -554,7 +583,7 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
 
     /**
      * 配方表：一行一个图标 + 名字（+ 一行小字）。{@code lit} 的那几行点亮（左边一道红杠、字变亮、图标不压暗），
-     * {@code hint} 的那几行半亮；亮度按 90 ms 的时间常数平滑过渡
+     * {@code hint} 的那几行半亮；亮度按 90 ms 的时间常数平滑过渡。没点亮的图标直接调暗颜色，不再盖方块
      *
      * @return 表格下面的 y
      */
@@ -578,9 +607,9 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
                 fill(g, lx0 - 5, y - 2, lx0 - 4, y + rowH - 3, FxPalette.KUVA, 0.9F * gl * eT);
                 GuiShapes.end();
             }
-            if (dimmed(now - openClock)) {
-                g.renderItem(r.icon(), lx0, y);
-                iconVeils.add(new int[]{lx0, y, Math.round(450.0F * (1.0F - gl))});
+            long t = now - openClock;
+            if (dimmed(t)) {
+                renderItemDim(g, r.icon(), lx0, y, 0.5F + 0.5F * gl, phase(t, T_TEXT_IN, T_TEXT_DONE));
             }
             int nameRgb = FxCurve.lerpColor(FxPalette.ASH, FxPalette.BONE, Math.min(1.0F, gl * 1.6F));
             text(g, r.name().getString(), textX, lines > 0 ? y : y + 4, nameRgb, (0.65F + 0.35F * gl) * eT);
@@ -593,16 +622,186 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
         return y;
     }
 
-    /** 配方表的图标：开场盖板 + 没点亮的那几行压暗一点（物品不能半透明，只能盖）；背景压暗前图标不画，这里也就没有要盖的 */
-    protected void drawRecipeVeils(GuiGraphics g, long t) {
-        float cov = 1.0F - phase(t, T_TEXT_IN, T_TEXT_DONE);
+    // ==================== 左栏：持有材料 ====================
+
+    /**
+     * 配方表下面的「持有材料」：背包里各种材料各有多少，图标一格格排开，数量叠在图标右下角（{@link #drawStockOverlay}）。
+     * 一个也没有的那种图标调暗；配方表点亮的那一行用到的，图标下面亮一道红杠；数量变了的那一格扩一圈环、飘一个增减。
+     * 左栏底下（页底分隔线以下）是空的，排不下时可以往下占到页面底边，再不够就少画几排
+     */
+    protected void drawStock(GuiGraphics g, List<Stock> stocks, int y, int lit, float eT, long now) {
+        stockCells.clear();
+        int n = stocks.size();
+        if (stockSeen.length != n) {
+            stockSeen = new int[n];
+            Arrays.fill(stockSeen, -1);
+            stockAt = new long[n];
+            Arrays.fill(stockAt, Long.MIN_VALUE / 4);
+            stockDelta = new int[n];
+        }
+        int pitch = small ? STOCK_PITCH_SMALL : STOCK_PITCH;
+        int rowH = small ? STOCK_ROW_SMALL : STOCK_ROW;
+        int perRow = Math.max(1, (lx1 - lx0 + 6) / pitch);
+        int top = y + 15;
+        int show = Math.min(n, Math.max(0, (height - 4 - top) / rowH) * perRow);
+        if (show <= 0) {
+            return;
+        }
+        text(g, tr("kuvalich.forge.stock"), lx0, y, FxPalette.ASH, eT);
+        hlFade(g, lx0, lx0 + 64, y + 11, FxPalette.KUVA_PALE, 0.35F * eT);
+        int[] counts = countInventory(stocks);
+        long t = now - openClock;
+        float eIcon = phase(t, T_TEXT_IN, T_TEXT_DONE);
+        for (int i = 0; i < show; i++) {
+            Stock s = stocks.get(i);
+            int c = counts[i];
+            int x = lx0 + (i % perRow) * pitch;
+            int yy = top + (i / perRow) * rowH;
+            if (stockSeen[i] >= 0 && c != stockSeen[i]) {
+                stockAt[i] = now;
+                stockDelta[i] = c - stockSeen[i];
+                ring(x + 8, yy + 8, stockDelta[i] < 0 ? FxPalette.KUVA : FxPalette.KUVA_PALE, 0L);
+            }
+            stockSeen[i] = c;
+            boolean on = (s.rows() & lit) != 0;
+            GuiShapes.begin(g);
+            hl(g, x + 2, x + 14, yy + 18, on ? FxPalette.KUVA : FxPalette.KUVA_PALE, (on ? 0.85F : 0.15F) * eT);
+            GuiShapes.end();
+            if (dimmed(t)) {
+                renderItemDim(g, s.icon(), x, yy, c > 0 ? 1.0F : 0.35F, eIcon);
+            }
+            stockCells.add(new int[]{i, x, yy, c});
+            int held = c;
+            hot(x - 1, yy - 1, x + 17, yy + 17, () -> List.of(
+                    s.name().copy().withStyle(Style.EMPTY.withColor(TextColor.fromRgb(FxPalette.BONE))),
+                    Component.translatable("kuvalich.forge.stock.count", held)
+                            .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(KuvaPalette.MUTED)))), null);
+        }
+    }
+
+    /** 持有材料的数量（叠在图标右下角）和数量变化时往上飘的增减 */
+    protected void drawStockOverlay(GuiGraphics g, long now, long t) {
+        float a = phase(t, T_TEXT_IN, T_TEXT_DONE);
+        for (int[] c : stockCells) {
+            int i = c[0];
+            int x = c[1];
+            int y = c[2];
+            int n = c[3];
+            textShadowR(g, n > 999 ? "999+" : String.valueOf(n), x + 17, y + 9, n > 0 ? FxPalette.BONE : FxPalette.ASH,
+                    (n > 0 ? 1.0F : 0.6F) * a);
+            long ch = now - stockAt[i];
+            int d = stockDelta[i];
+            if (ch < STOCK_FLASH_MS && d != 0) {
+                float u = ch / (float) STOCK_FLASH_MS;
+                float al = ch < 450 ? 1.0F : 1.0F - (ch - 450) / (float) (STOCK_FLASH_MS - 450);
+                textC(g, (d > 0 ? "+" : "-") + Math.abs(d), x + 8, y - 9 - 5.0F * easeOut(u),
+                        d > 0 ? FxPalette.KUVA_PALE : FxPalette.KUVA, al);
+            }
+        }
+    }
+
+    /** 背包（含快捷栏）里各格材料的总数 */
+    private int[] countInventory(List<Stock> stocks) {
+        int[] out = new int[stocks.size()];
+        for (Slot s : menu.slots) {
+            if (!(s.container instanceof Inventory) || s.getContainerSlot() >= 36 || !s.hasItem()) {
+                continue;
+            }
+            ItemStack st = s.getItem();
+            for (int i = 0; i < out.length; i++) {
+                if (stocks.get(i).match().test(st)) {
+                    out[i] += st.getCount();
+                }
+            }
+        }
+        return out;
+    }
+
+    // ==================== 右栏：流程 ====================
+
+    /**
+     * 右栏底部的「流程」：一步一行，左边一颗菱形，上下用点线串起来。完成的实心、正在等的那一步呼吸着亮、
+     * 还没轮到的空心发灰，出错的那一步是红叉；一步刚完成时菱形往外扩一圈。贴着栏底排
+     *
+     * @return 这一块最上面的 y（上面的说明排到这里为止）
+     */
+    protected int drawSteps(GuiGraphics g, List<Step> steps, float eF, long now) {
+        int n = steps.size();
+        if (stepSeen.length != n) {
+            stepSeen = new int[n];
+            Arrays.fill(stepSeen, -1);
+            stepAt = new long[n];
+            Arrays.fill(stepAt, Long.MIN_VALUE / 4);
+        }
+        int top = sepB - 2 - n * STEP_ROW - 15;
+        text(g, tr("kuvalich.forge.steps"), rx0, top, FxPalette.ASH, eF);
+        hlFade(g, rx0, rx1, top + 11, FxPalette.KUVA_PALE, 0.3F * eF);
+        int y = top + 16;
+        float dx = rx0 + 3.5F;
+        float lineW = GuiShapes.pixels(g, lw());
+        float breath = 0.55F + 0.45F * Mth.sin((now % 1600L) / 1600.0F * Mth.TWO_PI);
         GuiShapes.begin(g);
-        for (int[] v : iconVeils) {
-            float veil = v[2] / 1000.0F;
-            float a = 1.0F - (1.0F - cov) * (1.0F - veil);
-            fill(g, v[0], v[1], v[0] + 16, v[1] + 16, INK, a);
+        for (int k = 0; k + 1 < n; k++) {
+            boolean done = steps.get(k).state() == STEP_DONE;
+            for (float yy = y + k * STEP_ROW + 8; yy < y + (k + 1) * STEP_ROW; yy += 2.0F) {
+                fill(g, dx - 0.5F, yy, dx + 0.5F, yy + 1, done ? FxPalette.KUVA : FxPalette.KUVA_PALE,
+                        (done ? 0.5F : 0.15F) * eF);
+            }
+        }
+        for (int k = 0; k < n; k++) {
+            Step s = steps.get(k);
+            float dy = y + k * STEP_ROW + 4;
+            switch (s.state()) {
+                case STEP_DONE -> GuiShapes.diamondFill(g, dx, dy, 2.5F, 3.0F, GuiShapes.argb(FxPalette.KUVA, 0.9F * eF));
+                case STEP_ACTIVE -> {
+                    GuiShapes.diamondOutline(g, dx, dy, 2.5F, 3.0F, lineW, GuiShapes.argb(FxPalette.BONE, breath * eF));
+                    GuiShapes.diamondFill(g, dx, dy, 1.0F, 1.2F, GuiShapes.argb(FxPalette.BONE, breath * eF));
+                }
+                case STEP_FAILED -> {
+                    int c = GuiShapes.argb(FxPalette.KUVA, 0.95F * eF);
+                    GuiShapes.hairline(g, dx - 2.5F, dy - 2.5F, dx + 2.5F, dy + 2.5F, lineW, c);
+                    GuiShapes.hairline(g, dx - 2.5F, dy + 2.5F, dx + 2.5F, dy - 2.5F, lineW, c);
+                }
+                default -> GuiShapes.diamondOutline(g, dx, dy, 2.5F, 3.0F, lineW,
+                        GuiShapes.argb(FxPalette.ASH, 0.45F * eF));
+            }
         }
         GuiShapes.end();
+        for (int k = 0; k < n; k++) {
+            Step s = steps.get(k);
+            if (s.state() == STEP_DONE && stepSeen[k] >= 0 && stepSeen[k] != STEP_DONE) {
+                stepAt[k] = now;
+            }
+            stepSeen[k] = s.state();
+            int rgb = switch (s.state()) {
+                case STEP_ACTIVE -> FxPalette.BONE;
+                case STEP_FAILED -> FxPalette.KUVA;
+                default -> FxPalette.ASH;
+            };
+            float a = switch (s.state()) {
+                case STEP_ACTIVE, STEP_FAILED -> 0.95F;
+                case STEP_DONE -> 0.7F;
+                default -> 0.45F;
+            };
+            // 补充放在行尾；窄屏放不下时让给正文
+            float room = rx1 - rx0 - 10;
+            if (s.note() != null && textW(s.text(), 0.0F) + textW(s.note(), 0.0F) + 4.0F <= room) {
+                textR(g, s.note(), rx1, y + k * STEP_ROW, rgb, 0.8F * a * eF);
+            }
+            text(g, fit(s.text(), room), rx0 + 10, y + k * STEP_ROW, rgb, a * eF);
+            long since = now - stepAt[k];
+            if (since < 380) {
+                float u = since / 380.0F;
+                float r = 3.0F + 6.0F * easeOut(u);
+                float dy = y + k * STEP_ROW + 4;
+                additive(g, () -> {
+                    GuiShapes.begin(g);
+                    GuiShapes.diamondOutline(g, dx, dy, r, r * 1.2F, lineW, GuiShapes.argb(FxPalette.KUVA, 0.8F * (1.0F - u)));
+                    GuiShapes.end();
+                });
+            }
+        }
+        return top;
     }
 
     // ==================== 右栏 ====================
@@ -631,9 +830,5 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
     /** 名字「解码」出来：揭示后 {@code age} 毫秒时解到第几个字（前沿带几个乱码） */
     protected static String typed(String s, long age) {
         return scramble(s, age, 40);
-    }
-
-    protected static String tr(String key, Object... args) {
-        return Component.translatable(key, args).getString();
     }
 }

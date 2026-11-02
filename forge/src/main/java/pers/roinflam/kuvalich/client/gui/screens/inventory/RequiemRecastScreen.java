@@ -36,12 +36,13 @@ import java.util.Map;
  *
  * <ul>
  *   <li>左栏：配方表三行（安魂卡三合一、模组三合一、分解），这次放的东西对应哪一行就点亮哪一行，
- *       手上拿着、或者鼠标停在背包里的卡 / 模组时，它能走的那几行半亮；</li>
+ *       手上拿着、或者鼠标停在背包里的卡 / 模组时，它能走的那几行半亮；下面「持有材料」列出背包里的卡、
+ *       两种模组和内融核心各有多少；</li>
  *   <li>中栏：上面是产出格的炉膛（主角），下面三个输入格，三条线汇到一根总线、往上接进炉膛。
  *       三合一做出来的那一刻三张输入被吃掉，光沿三条线流进炉膛，流到了产出从下往上扫出来；
  *       只放一张模组时是分解预览，炉膛换成虚线框、内融核心色。下部是背包；</li>
  *   <li>右栏「产出」：已经有产出时写它是什么、拿走会怎样；还没放齐时按已经放的几张预告会出什么、
- *       放第三张就会立刻合成；放的组合合不了时写为什么；</li>
+ *       放第三张就会立刻合成；放的组合合不了时写为什么。栏底是三步「流程」；</li>
  *   <li>取走产出时的三合一 / 分解演出和声音照旧由 {@link GuiFx} 放。</li>
  * </ul>
  *
@@ -79,6 +80,7 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
             "item.kuvalich.item_riven_module"};
 
     private final List<Recipe> recipes = new ArrayList<>();
+    private final List<Stock> stocks = new ArrayList<>();
 
     /** 版式：炉膛中心 y、输入格的中线 x 和格子 y、总线的 y、状态行的 y */
     private int pTop;
@@ -115,6 +117,18 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
         recipes.add(new Recipe(new ItemStack(KuvaLichItems.ENDO.get()),
                 Component.translatable("kuvalich.recast.row.decompose"),
                 Component.translatable("kuvalich.recast.row.decompose.sub"), this::decomposeTip));
+        int modules = 1 << ROW_MODULES | 1 << ROW_DECOMPOSE;
+        stocks.clear();
+        stocks.add(new Stock(new ItemStack(KuvaLichItems.KHRA_CARD.get()), s -> s.getItem() instanceof AbstractRequiemCard,
+                1 << ROW_CARDS, Component.translatable("kuvalich.recast.stock.cards")));
+        stocks.add(new Stock(new ItemStack(KuvaLichItems.ITEM_RARE_MODULE.get()),
+                s -> s.getItem() instanceof AbstractWeaponModule, modules,
+                Component.translatable("kuvalich.recast.stock.weapon")));
+        stocks.add(new Stock(new ItemStack(KuvaLichItems.WARFRAME_RARE_MODULE.get()),
+                s -> s.getItem() instanceof AbstractWarframeModule, modules,
+                Component.translatable("kuvalich.recast.stock.warframe")));
+        stocks.add(new Stock(new ItemStack(KuvaLichItems.ENDO.get()), s -> s.is(KuvaLichItems.ENDO.get()),
+                1 << ROW_DECOMPOSE, KuvaLichItems.ENDO.get().getDescription()));
     }
 
     @Override
@@ -194,9 +208,12 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
         boolean hasOut = resultSlot.hasItem();
         boolean decompose = hasOut && ForgeOpClassifier.classify(menu) == Op.DECOMPOSE;
 
-        // ---- 左栏：配方表 ----
+        // ---- 左栏：配方表、持有材料 ----
         int y = drawLeftHead(g, Component.translatable("kuvalich.recast.recipes"), eF, eT);
-        drawRecipes(g, recipes, y, litRows(plan, hasOut, decompose), hintRows(mx, my), eT, now);
+        int lit = litRows(plan, hasOut, decompose);
+        int hint = hintRows(mx, my);
+        y = drawRecipes(g, recipes, y, lit, hint, eT, now);
+        drawStock(g, stocks, y + 4, lit | hint, eT, now);
 
         // ---- 中栏：背光、连线、炉膛、输入格 ----
         drawBacklight(g, cx - 110, pTop - 30, 220, 150, 0.85F * eT);
@@ -209,9 +226,25 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
         drawStatus(g, plan, hasOut, decompose, eF);
         drawDrift(g, cx, pTop + 6, 150, 92, now, eF);
 
-        // ---- 右栏：产出 ----
+        // ---- 右栏：产出、流程 ----
         drawRightHead(g, Component.translatable("kuvalich.recast.output"), eF);
-        drawLines(g, detail(plan, hasOut, decompose), rx0, hairY + 8, rx1 - rx0, eF, sepB);
+        int stepTop = drawSteps(g, steps(plan, hasOut), eF, now);
+        drawLines(g, detail(plan, hasOut, decompose), rx0, hairY + 8, rx1 - rx0, eF, stepTop - 6);
+    }
+
+    /** 流程三步：放卡、出产出、取走；放的组合合不了时第一步是红叉 */
+    private List<Step> steps(Plan plan, boolean hasOut) {
+        boolean shown = hasOut && resultShown();
+        List<Step> out = new ArrayList<>(3);
+        if (!hasOut && plan.kind() == Kind.INVALID) {
+            out.add(new Step(tr("kuvalich.recast.invalid"), STEP_FAILED));
+        } else {
+            out.add(new Step(tr("kuvalich.recast.step.put"), hasOut ? STEP_DONE : STEP_ACTIVE,
+                    hasOut ? null : plan.count() + "/3"));
+        }
+        out.add(new Step(tr("kuvalich.recast.step.make"), shown ? STEP_DONE : STEP_PENDING));
+        out.add(new Step(tr("kuvalich.recast.step.take"), shown ? STEP_ACTIVE : STEP_PENDING));
+        return out;
     }
 
     @Override
@@ -220,7 +253,7 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
             drawCellOverlay(g, menu.getSlot(i), t, 800 + 120 * i, 1100 + 120 * i);
         }
         drawChamberOverlay(g, t, 700, 1000);
-        drawRecipeVeils(g, t);
+        drawStockOverlay(g, now, t);
     }
 
     /**
@@ -326,7 +359,7 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
                 out.add(new Line(tr("kuvalich.recast.invalid.fix"), FxPalette.ASH, 0.6F, 0));
             }
             case CARDS -> {
-                out.add(new Line(tr("kuvalich.recast.row.cards") + " · " + plan.count() + " / 3", FxPalette.BONE, 1.0F, 4));
+                out.add(new Line(tr("kuvalich.recast.row.cards"), FxPalette.BONE, 1.0F, 4));
                 out.add(new Line(tr("kuvalich.recast.cards.out"), KuvaPalette.MUTED, 0.85F, 4));
                 if (plan.count() == 2) {
                     out.add(new Line(tr("kuvalich.recast.warn_third"), FxPalette.KUVA, 0.9F, 0));
@@ -340,7 +373,7 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
                     out.add(new Line(tr("kuvalich.recast.single.merge"), FxPalette.ASH, 0.6F, 0));
                     return out;
                 }
-                out.add(new Line(tr("kuvalich.recast.row.modules") + " · " + plan.count() + " / 3", FxPalette.BONE, 1.0F, 4));
+                out.add(new Line(tr("kuvalich.recast.row.modules"), FxPalette.BONE, 1.0F, 4));
                 int single = singleTier(plan.tiers());
                 boolean cross = on(plan.kind() == Kind.WARFRAME
                         ? ModConfig.KUVA_LICH.enableWarframeCrossTierRecast : ModConfig.KUVA_LICH.enableCrossTierRecast);

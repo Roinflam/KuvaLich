@@ -45,12 +45,13 @@ import java.util.List;
  *
  * <ul>
  *   <li>左栏：配方表，一行一种操作、图标是它的材料；当前这一步是哪种就点亮哪一行，
- *       手上拿着、或者鼠标停在背包里的东西能参与的几行半亮；悬停一行看左格、中格放什么，什么时候扣材料；</li>
+ *       手上拿着、或者鼠标停在背包里的东西能参与的几行半亮；悬停一行看物品槽、材料槽放什么，什么时候扣材料。
+ *       下面「持有材料」列出背包里各种材料的数量；</li>
  *   <li>中栏：左格（物品）、中格（材料）、右边结果格的炉膛（主角）。左格的线从上面绕过去、中格的线从下面绕过去，
  *       都落到结果格，和融合演出走同一条路。结果出来时光沿两条线流进炉膛再揭示；
  *       预览类（融合、裂罅循环、模组升级，拿走才算数）的炉膛是虚线框，当场处理类是实线框。下部是背包；</li>
  *   <li>右栏「结果」：有结果时写这是哪种操作、等级怎么变、材料什么时候扣、有什么要当心的；
- *       只放了一边时列另一边能放什么；两边都放了却没有结果时写为什么；</li>
+ *       只放了一边时列另一边能放什么；两边都放了却没有结果时写为什么。栏底是三步「流程」；</li>
  *   <li>取走结果时按这次是哪种操作放演出和声音（{@link GuiFx}），全部只在本人客户端。</li>
  * </ul>
  */
@@ -79,6 +80,7 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
 
     private final List<Row> rows = new ArrayList<>();
     private final List<Recipe> recipes = new ArrayList<>();
+    private final List<Stock> stocks = new ArrayList<>();
 
     /** 融合演出的两条线：左边输入格从上面绕过去，中间材料格从下面绕过去，都落到结果格 */
     private int pathFromInput = -1;
@@ -133,6 +135,21 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
         if (gunEnabled()) {
             addRow(Row.GUN, KuvaLichItems.LICH_RELIQUARY.get());
         }
+        stocks.clear();
+        addStock(KuvaLichItems.KUVA.get(), Row.RIVEN);
+        if (ModuleLevelHelper.isLevelSystemEnabled()) {
+            addStock(KuvaLichItems.ENDO.get(), Row.RANK);
+        }
+        addStock(KuvaLichItems.FORMA.get(), Row.FORMA);
+        addStock(KuvaLichItems.SHADOW_FORMA.get(), Row.FORMA);
+        addStock(KuvaLichItems.RIVEN_SLIVER.get(), Row.IMBUE);
+        if (gunEnabled()) {
+            addStock(KuvaLichItems.LICH_RELIQUARY.get(), Row.GUN);
+        }
+    }
+
+    private void addStock(Item item, Row row) {
+        stocks.add(new Stock(new ItemStack(item), s -> s.is(item), bit(row), item.getDescription()));
     }
 
     private void addRow(Row row, Item icon) {
@@ -288,10 +305,12 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
         boolean shown = resultShown();
         boolean stuck = !in.isEmpty() && !mat.isEmpty() && !resultSlot.hasItem() && now - comboAt > STUCK_GRACE_MS;
 
-        // ---- 左栏：配方表 ----
+        // ---- 左栏：配方表、持有材料 ----
         int y = drawLeftHead(g, Component.translatable("kuvalich.evolve.recipes"), eF, eT);
         int hint = hintRows(mx, my) | (mat.isEmpty() ? leftRows(in) : 0) | (in.isEmpty() ? matRows(mat) : 0);
-        drawRecipes(g, recipes, y, litRows(in, mat), hint, eT, now);
+        int lit = litRows(in, mat);
+        y = drawRecipes(g, recipes, y, lit, hint, eT, now);
+        drawStock(g, stocks, y + 4, lit | hint, eT, now);
 
         // ---- 中栏：背光、两条线、三格、状态行 ----
         drawBacklight(g, cx - 110, pTop - 30, 220, 150, 0.85F * eT);
@@ -305,9 +324,26 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
         drawStatus(g, in, mat, shown, stuck, eF);
         drawDrift(g, cx, pTop + 6, 150, 92, now, eF);
 
-        // ---- 右栏：结果 ----
+        // ---- 右栏：结果、流程 ----
         drawRightHead(g, Component.translatable("kuvalich.evolve.output"), eF);
-        drawLines(g, detail(in, mat, shown, stuck), rx0, hairY + 8, rx1 - rx0, eF, sepB);
+        int stepTop = drawSteps(g, steps(in, mat, shown, stuck), eF, now);
+        drawLines(g, detail(in, mat, shown, stuck), rx0, hairY + 8, rx1 - rx0, eF, stepTop - 6);
+    }
+
+    /** 流程三步：放物品、放材料、取结果；两边都放了却凑不成时第三步是红叉 */
+    private List<Step> steps(ItemStack in, ItemStack mat, boolean shown, boolean stuck) {
+        boolean has = resultSlot.hasItem();
+        boolean item = !in.isEmpty() || has;
+        boolean material = !mat.isEmpty() || has;
+        List<Step> out = new ArrayList<>(3);
+        out.add(new Step(tr("kuvalich.evolve.step.item"), item ? STEP_DONE : STEP_ACTIVE));
+        out.add(new Step(tr("kuvalich.evolve.step.material"), material ? STEP_DONE : item ? STEP_ACTIVE : STEP_PENDING));
+        if (stuck) {
+            out.add(new Step(tr("kuvalich.evolve.no_recipe"), STEP_FAILED));
+        } else {
+            out.add(new Step(tr("kuvalich.evolve.step.take"), shown ? STEP_ACTIVE : STEP_PENDING));
+        }
+        return out;
     }
 
     @Override
@@ -315,7 +351,7 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
         drawCellOverlay(g, menu.getSlot(IN), t, 800, 1100);
         drawCellOverlay(g, menu.getSlot(MAT), t, 920, 1220);
         drawChamberOverlay(g, t, 750, 1050);
-        drawRecipeVeils(g, t);
+        drawStockOverlay(g, now, t);
     }
 
     /** 两条线常亮一层淡底；格子里有东西的那条亮起来；左格和中格之间一个「+」，线进炉膛前各一个箭头 */

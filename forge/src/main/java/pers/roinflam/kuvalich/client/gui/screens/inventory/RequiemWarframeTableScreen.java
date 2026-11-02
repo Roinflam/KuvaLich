@@ -18,12 +18,15 @@ import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
 import pers.roinflam.kuvalich.module.ModulePlacementValidator;
 import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 安魂之战甲军械库界面，画成玄骸档案的另一页
  *
  * <ul>
  *   <li>左栏：玩家自己（战甲模组挂在玩家身上，不在哪件护甲上），垫一层背光、脚下一道细线，眼睛跟着鼠标；
- *       开场时人像从脚往头扫出来。下面是名字和一句说明；</li>
+ *       开场时人像从脚往头扫出来。下面是名字、一句说明和「装配概要」（已装配几个、模组等级合计、满级几张）；</li>
  *   <li>中栏：八张模组卡，没有上限、不画叉；电路从各卡流到人像旁边的节点；</li>
  *   <li>右栏：已装模组清单和属性加成；底部「[TAB] 模组图鉴」（见 {@link ArmoryPageScreen}）。</li>
  * </ul>
@@ -157,9 +160,9 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         if (p != null && eS > 0.0F && !figureFailed) {
             // 开场：从脚往头扫出来（扫描线在 drawLeftOverlay 里，要压在人像上面）
             if (eS < 1.0F) {
-                g.enableScissor(lx0 - 8, scanY(top, eS), lx1 + 8, feetY + 3);
+                clip(g, lx0 - 8, scanY(top, eS), lx1 + 8, feetY + 3);
                 drawFigure(g, p, mx, my);
-                g.disableScissor();
+                unclip(g);
             } else {
                 drawFigure(g, p, mx, my);
             }
@@ -174,6 +177,9 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
             text(g, line, lx0, ty, FxPalette.ASH, 0.5F * eT);
             ty += 10;
         }
+        List<Info> info = new ArrayList<>();
+        loadoutInfo(info);
+        drawInfo(g, tr("kuvalich.armory.info.loadout"), info, ty + 6, eT, now);
     }
 
     /** 开场扫描线；之后隔几秒一道扫描光从脚扫到头 */
