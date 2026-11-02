@@ -147,6 +147,7 @@ public final class NemesisCommand {
             sb.append(", name=").append(card.getLichName())
                     .append(", seed=").append(Long.toHexString(card.getLichSeed()))
                     .append(", affinity=0x").append(Integer.toHexString(LichProfile.affinities(card.getLichSeed()) & 0xFF))
+                    .append(", persona=").append(LichPersona.of((int) card.getLichSeed()).id)
                     .append(", generation=").append(card.getLichGeneration())
                     .append(", rank=").append(card.getLichRank())
                     .append(", rage=").append(String.format(Locale.ROOT, "%.3f", card.getLichRage()))

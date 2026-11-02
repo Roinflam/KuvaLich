@@ -50,6 +50,7 @@ import pers.roinflam.kuvalich.nemesis.EncounterEnd;
 import pers.roinflam.kuvalich.nemesis.LichComms;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.LichLine;
+import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichProfile;
 import pers.roinflam.kuvalich.mercy.KuvaStateServer;
 import pers.roinflam.kuvalich.mercy.MercyRules;
@@ -211,19 +212,6 @@ public class KuvaMasterEntity extends AbstractKuva {
     private boolean wildTagLoaded;
     /** 三刀成功的结算已经在定案那一刻做过：死的时候不再按直接击杀判一次 */
     private boolean mercySuccessApplied;
-
-    // ==================== 死亡语音 ====================
-
-    private static final String[] DEATH_MESSAGES = {
-            "message.kuvalich.death.hurts",
-            "message.kuvalich.death.fair",
-            "message.kuvalich.death.nexttime",
-            "message.kuvalich.death.winsome",
-            "message.kuvalich.death.comeon",
-            "message.kuvalich.death.forgive",
-            "message.kuvalich.death.failed",
-            "message.kuvalich.death.unacceptable"
-    };
 
     // ==================== 抗性运行时数据 ====================
 
@@ -1100,7 +1088,7 @@ public class KuvaMasterEntity extends AbstractKuva {
 
     /**
      * 玄骸的遗言：走通讯窗（带聊天回显），说话的是这只实体本身——这时主人卡上的这一轮已经结束、名字清空了。
-     * 通讯没能发出去时退回原来的聊天栏一句
+     * 通讯没能发出去时退回聊天栏，从同一套遗言里随便挑一句（按这只的性格）
      *
      * @param player 玩家
      */
@@ -1108,8 +1096,9 @@ public class KuvaMasterEntity extends AbstractKuva {
         if (player instanceof ServerPlayer serverPlayer && LichComms.say(serverPlayer, LichLine.VANQUISHED, this)) {
             return;
         }
-        String messageKey = DEATH_MESSAGES[RandomUtil.getInt(0, DEATH_MESSAGES.length - 1)];
-        PlayerFeedback.chat(player, KuvaPalette.LICH, messageKey);
+        LichLine line = LichLine.VANQUISHED;
+        String messageKey = line.key(LichPersona.of(getLichSeed()), RandomUtil.getInt(0, line.count() - 1));
+        PlayerFeedback.chat(player, KuvaPalette.LICH, messageKey, getLichName(), getOwnerName(), "");
     }
 
     /**

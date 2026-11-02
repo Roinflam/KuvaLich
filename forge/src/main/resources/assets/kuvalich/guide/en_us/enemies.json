@@ -385,6 +385,10 @@
           ]
         },
         {
+          "type": "p",
+          "text": "How it talks over comms depends on the <t>personality</t> it was born with. Some are jovial: they call you “friend” and keep joking even as they lose. Others are cold and logical: they call you “adversary” and speak as if passing a verdict. The personality is fixed the moment it is born and only changes what it says, not how strong it is."
+        },
+        {
           "type": "h",
           "text": "When it holds off"
         },

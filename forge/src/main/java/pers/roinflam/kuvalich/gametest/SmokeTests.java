@@ -145,7 +145,7 @@ public final class SmokeTests {
         // ---- 通讯
         LichLook look = new LichLook(-99, 5, (byte) 3, 4321);
         KuvaCommPacket lichLine = new KuvaCommPacket(CommSpeaker.LICH, 1 | 8, Component.literal("Drokag Tuzz"),
-                Component.translatable("kuvalich.comm.lich.arrive.1", "Drokag Tuzz", "Steve"), look, 2500);
+                Component.translatable("kuvalich.comm.lich.jovial.arrive.1", "Drokag Tuzz", "Steve"), look, 2500);
         buf = newBuf();
         KuvaCommPacket.encode(lichLine, buf);
         byte[] commBytes = bytes(buf);

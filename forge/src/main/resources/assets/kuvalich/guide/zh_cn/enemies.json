@@ -407,6 +407,10 @@
           ]
         },
         {
+          "type": "p",
+          "text": "它在通讯里怎么说话，看它生来的<t>性格</t>：有的爱说爱笑，管你叫「朋友」，输了也不肯住嘴；有的冷静寡言，管你叫「对手」，开口像在下判决。性格从它诞生那一刻就定了，只影响它说什么，不影响强度。"
+        },
+        {
           "type": "h",
           "text": "它不来的时候"
         },
@@ -781,7 +785,8 @@
         "utils/KuvaPalette.java — Prime 55FFFF / 裂罅 FF55FF",
         "nemesis/NemesisSpawnRules.java:105 — 刷怪蛋 / 发射器 / 命令生成的是无主玄骸（lichWildAllowed 为 false 时拒绝加入世界）；自然生成、刷怪笼一律拦下；entity/KuvaMasterEntity.java:772 onKilled 无主直接 return、:797 shouldDropLoot 只有有主的掉东西；名牌、Boss 条只给有主的",
         "module/weapon/WeaponCombatHandler.java — execute_threshold / execute_chance 触发后 LivingEntityUtil.kill 先改血量再调 die，被 AbstractKuva.java:913 die 拦成倒地",
-        "星际战甲小知识：原作 Kuva Lich 是玩家自己产生的宿敌；Requiem 模组装在 Parazon 上，按正确顺序 Mercy 才能 Vanquish，并获得其 Kuva 武器"
+        "星际战甲小知识：原作 Kuva Lich 是玩家自己产生的宿敌；Requiem 模组装在 Parazon 上，按正确顺序 Mercy 才能 Vanquish，并获得其 Kuva 武器",
+        "nemesis/LichPersona.java — 性格由玄骸种子的低 32 位算出，活泼 / 理性两种，各有一整套台词；LichComms.send、LichArchiveScreen.planTalk 按它取键，不影响任何数值"
       ]
     },
     {

@@ -47,6 +47,7 @@ import pers.roinflam.kuvalich.nemesis.LichComms;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.LichLine;
 import pers.roinflam.kuvalich.nemesis.LichNames;
+import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichProfile;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.network.packet.KuvaCommPacket;
@@ -166,7 +167,7 @@ public final class NemesisExtraTests {
         h.assertTrue(LichComms.say(p, LichLine.ARRIVE), "第一句应当发出去");
         List<KuvaCommPacket> sent = comms(p);
         h.assertTrue(sent.size() == 1 && sent.get(0).speaker == CommSpeaker.LICH
-                        && keyOf(sent.get(0).line).startsWith("kuvalich.comm.lich.arrive."),
+                        && keyOf(sent.get(0).line).startsWith(lichKeyPrefix(p, "arrive")),
                 "应当正好发了一个玄骸的到场通讯包，实际 " + sent.size());
         h.assertTrue((sent.get(0).flags & KuvaComm.ARRIVAL) != 0, "到场那句应当带青色故障显形");
         h.assertTrue(sent.get(0).look != null && sent.get(0).look.seed() == (int) card(p).getLichSeed(),
@@ -277,7 +278,7 @@ public final class NemesisExtraTests {
                 .thenIdle(8)
                 .thenExecute(() -> {
                     List<KuvaCommPacket> sent = comms(with);
-                    h.assertTrue(sent.size() == 1 && keyOf(sent.get(0).line).startsWith("message.kuvalich.confiscation."),
+                    h.assertTrue(sent.size() == 1 && keyOf(sent.get(0).line).startsWith(lichKeyPrefix(with, "confiscate")),
                             "没收后应当嘲讽一句（通讯），实际 " + sent.size());
                 })
                 .thenSucceed();
@@ -345,11 +346,20 @@ public final class NemesisExtraTests {
             JsonObject json = readJson("/assets/kuvalich/lang/" + lang + ".json");
             h.assertTrue(json != null, "读不到语言文件 " + lang);
             for (LichLine line : LichLine.values()) {
-                for (int i = 0; i < line.count(); i++) {
-                    h.assertTrue(json.has(line.key(i)), lang + " 缺台词键 " + line.key(i));
+                for (LichPersona persona : LichPersona.values()) {
+                    for (int i = 0; i < line.count(); i++) {
+                        String key = line.key(persona, i);
+                        h.assertTrue(json.has(key), lang + " 缺台词键 " + key);
+                    }
                 }
             }
         }
+        // 两种性格大致各占一半
+        int jovial = 0;
+        for (int seed = 0; seed < 2000; seed++) {
+            jovial += LichPersona.of(seed * 7919 + 13) == LichPersona.JOVIAL ? 1 : 0;
+        }
+        h.assertTrue(jovial > 800 && jovial < 1200, "两种性格应当差不多一样多，实际活泼 " + jovial + " / 2000");
         JsonObject anim = readJson("/assets/kuvalich/animations/kuva.animation.json");
         h.assertTrue(anim != null, "读不到动画文件");
         JsonObject all = anim.getAsJsonObject("animations");
@@ -393,7 +403,7 @@ public final class NemesisExtraTests {
         h.assertTrue(LichDirector.stateOf(p) == LichState.ARRIVING, "应当在来的路上：" + LichDirector.stateOf(p));
         h.assertTrue(p.getCooldowns().isOnCooldown(ultimatum), "用完应当有冷却");
         List<KuvaCommPacket> said = comms(p);
-        h.assertTrue(said.stream().anyMatch(c -> keyOf(c.line).startsWith("kuvalich.comm.lich.ultimatum.")
+        h.assertTrue(said.stream().anyMatch(c -> keyOf(c.line).startsWith(lichKeyPrefix(p, "ultimatum"))
                 && (c.flags & KuvaComm.ARRIVAL) != 0), "应当先发通牒那句（带青色故障显形）");
 
         h.startSequence()
@@ -618,6 +628,11 @@ public final class NemesisExtraTests {
 
     private static String keyOf(Component c) {
         return c.getContents() instanceof TranslatableContents t ? t.getKey() : c.getString();
+    }
+
+    /** 这个玩家那只玄骸在某个场合的台词键前缀（按它的性格） */
+    private static String lichKeyPrefix(ServerPlayer p, String situation) {
+        return "kuvalich.comm.lich." + LichPersona.of((int) card(p).getLichSeed()).id + "." + situation + ".";
     }
 
     private static JsonObject readJson(String path) {

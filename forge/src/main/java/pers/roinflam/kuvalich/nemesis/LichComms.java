@@ -29,8 +29,8 @@ import java.util.UUID;
  * 玄骸和 Lotus 的台词层：挑哪一句、限流、要不要同时进聊天栏，最后交给 {@link KuvaComm} 发出去
  *
  * <ul>
- *   <li><b>挑句子</b>：同一类里随机一条，同一个玩家连着两次不抽到同一条。处决判错那一类有两句是同一句话的两个版本，
- *       「刀落偏了」那句只在怜悯之击开着时进池子，另一句只在关着时进（关着时没有落刀的场面）。</li>
+ *   <li><b>挑句子</b>：同一类里随机一条，同一个玩家连着两次不抽到同一条。处决判错那一类有两句挑场面：
+ *       说落刀的那句只在怜悯之击开着时进池子，说「被打倒又站起来」的那句只在关着时进（关着时没有落刀的场面）。</li>
  *   <li><b>限流</b>（每人，按主世界 gameTime 算）：同一个发言人两句之间至少隔 400 ms；Lotus 和玄骸分开算，
  *       这样诞生时 Lotus 那句和玄骸那句同一刻发，客户端排队、一前一后地放。低优先级的（随机嘲讽、没收）
  *       在 8 秒内有过任何通讯就丢掉；没收类每 30 秒至多一句，其余没收只有动作栏。</li>
@@ -40,6 +40,7 @@ import java.util.UUID;
  *       {@code %3$s} 是它手里那把赤毒武器（诞生时 Lotus 那句靠它告诉玩家打倒它能拿到什么），三个都传，
  *       用不到的客户端会丢掉。给了说话的实体就用它的名字和外观（遗言时卡上的名字已经清掉了，
  *       演示用的玄骸也没有主人），没给就用收话人自己那只：在场的实体，或者卡上记的。</li>
+ *   <li><b>性格</b>：说哪一套台词看说话那只的种子（{@link LichPersona#of}），和外观同一个来源。</li>
  * </ul>
  *
  * <p>通用代码，专用服也加载，不引用任何客户端类。</p>
@@ -188,7 +189,8 @@ public final class LichComms {
             return false;
         }
 
-        Component text = Component.translatable(line.key(index), cut(speaker.lichName()), cut(speaker.ownerName()),
+        String key = line.key(LichPersona.of(speaker.look().seed()), index);
+        Component text = Component.translatable(key, cut(speaker.lichName()), cut(speaker.ownerName()),
                 weaponName(speaker.look()));
         int flags = flagsFor(line);
         if (line.lotus) {
@@ -203,7 +205,7 @@ public final class LichComms {
             m.lastConfiscate = now;
         }
         m.lastIndex.put(line, index);
-        debug(to, line, "发出 " + line.key(index) + "，标志 " + flags);
+        debug(to, line, "发出 " + key + "，标志 " + flags);
         return true;
     }
 

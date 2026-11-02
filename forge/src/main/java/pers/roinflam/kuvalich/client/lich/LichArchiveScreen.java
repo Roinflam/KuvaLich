@@ -34,6 +34,8 @@ import pers.roinflam.kuvalich.client.sound.KuvaSoundInstance;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
+import pers.roinflam.kuvalich.nemesis.LichLine;
+import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.nemesis.RageTier;
 import pers.roinflam.kuvalich.nemesis.WaitReason;
@@ -126,8 +128,6 @@ public class LichArchiveScreen extends Screen {
     private static long lastCloseMs = Long.MIN_VALUE / 4;
     /** 每只玄骸（按种子）上次在档案里说话的时刻（真实时钟），只在内存里 */
     private static final Map<Integer, Long> TALKED = new HashMap<>();
-    /** 档案嘲讽有几句（第一次用时数语言文件里的键） */
-    private static int tauntCount = -1;
 
     @Nullable
     private final LichArchivePacket.Data demo;
@@ -321,12 +321,10 @@ public class LichArchiveScreen extends Screen {
         if (last != null && real - last < TALK_COOLDOWN_MS) {
             return;
         }
-        int n = tauntCount();
-        if (n <= 0) {
-            return;
-        }
-        int pick = Math.floorMod((int) (real / 997L) ^ st.seed, n) + 1;
-        String raw = Component.translatable("kuvalich.comm.lich.archive." + pick).getString();
+        // 和服务端发的台词一样按这只的性格挑那一套
+        LichLine line = LichLine.ARCHIVE;
+        int pick = Math.floorMod((int) (real / 997L) ^ st.seed, line.count());
+        String raw = Component.translatable(line.key(LichPersona.of(st.seed), pick)).getString();
         String plain = CommText.plain(raw);
         MutableComponent text = CommText.parse(raw);
         talkSeed = st.seed;
@@ -348,17 +346,6 @@ public class LichArchiveScreen extends Screen {
     private MutableComponent pendingRaw;
     private String pendingPlain;
     private boolean voiceStarted;
-
-    private static int tauntCount() {
-        if (tauntCount < 0) {
-            int n = 0;
-            while (n < 16 && I18n.exists("kuvalich.comm.lich.archive." + (n + 1))) {
-                n++;
-            }
-            tauntCount = n;
-        }
-        return tauntCount;
-    }
 
     // ==================== 画 ====================
 
