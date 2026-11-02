@@ -172,6 +172,12 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
 
     // ==================== 画 ====================
 
+    /** 中栏只有三个卡槽和背包，右栏放宽到和左栏一样宽：卡的两句说明在 1280×720 下也不从词中间折开 */
+    @Override
+    protected float rightSeparator() {
+        return 0.72F;
+    }
+
     @Override
     protected void drawPage(GuiGraphics g, int mx, int my, long now, long t, float eF) {
         float eT = phase(t, T_TEXT_IN, T_TEXT_DONE);

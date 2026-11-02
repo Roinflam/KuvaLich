@@ -288,15 +288,23 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         RenderSystem.disableScissor();
     }
 
+    /**
+     * 右边那道竖分隔线占屏宽的比例，右栏从它右边 0.025 屏宽开始。中栏东西少、右栏要放说明文字的界面往左挪，
+     * 右栏宽了窄窗口下说明也少折行
+     */
+    protected float rightSeparator() {
+        return 0.75F;
+    }
+
     private void computeColumns() {
         int w = this.width;
         int h = this.height;
         small = h < 260;
         sepL = Math.round(w * 0.29F);
-        sepR = Math.round(w * 0.75F);
+        sepR = Math.round(w * rightSeparator());
         lx0 = Math.round(w * 0.077F);
         lx1 = Math.round(w * 0.265F);
-        rx0 = Math.round(w * 0.775F);
+        rx0 = sepR + Math.round(w * 0.025F);
         rx1 = Math.round(w * 0.93F);
         cx = Math.round((sepL + sepR) * 0.5F);
         lcx = Math.round((lx0 + lx1) * 0.5F);
@@ -988,9 +996,13 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
     }
 
     /**
-     * 按宽度断行。纯西文交给原版（在空格处断）；带汉字的自己断：汉字逐字可断，西文单词、数字不拆开，
-     * 行首不放逗号句号这类标点（宁可这一行超一点）。原版遇到「1 张模组换……」会在数字后的空格处断，
-     * 剩下一长串汉字再被硬切，窄栏里常常只剩一个数字孤零零一行
+     * 按宽度断行。纯西文交给原版（在空格处断）；带汉字的自己断：先按分句（逗号、句号这类标点之后，
+     * 以及语言文件里预先标好的断点 U+200C）整段往行里排，一行最多比栏宽多出一个字，不从词中间切
+     * （「在一切尚未 / 落定之前」那种断法）；一段长到怎么都放不下才另起一行逐字断、几行一样长：
+     * 汉字逐字可断，西文单词、数字不拆开，行首不放逗号句号这类标点。
+     * U+200C（零宽不连字）在原版 space 字体里宽 0、不画，物品提示里也看不见，没有标点的长句靠它标出词和词的分界。
+     * 原版遇到「1 张模组换……」会在数字后的空格处断，剩下一长串汉字再被硬切，窄栏里常常只剩一个数字孤零零一行，
+     * 所以空格不算分句
      */
     protected List<String> wrap(String s, float maxW) {
         List<String> out = new ArrayList<>();
@@ -1000,17 +1012,88 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
             }
             return out;
         }
+        String[] paras = s.split("\n", -1);
+        int last = paras[paras.length - 1].isEmpty() && paras.length > 1 ? paras.length - 1 : paras.length;
+        float slack = this.font.width("一");
+        for (int p = 0; p < last; p++) {
+            StringBuilder line = new StringBuilder();
+            for (String clause : clauses(paras[p])) {
+                if (this.font.width(clause) > maxW + slack) {
+                    // 长到非拆不可：另起一行，拆成的几行一样长，不在下一行留「线，」这种一两个字的零头
+                    if (!line.isEmpty()) {
+                        out.add(line.toString().stripTrailing());
+                        line.setLength(0);
+                    }
+                    List<String> parts = splitEven(clause.stripLeading(), maxW);
+                    out.addAll(parts.subList(0, parts.size() - 1));
+                    line.append(parts.get(parts.size() - 1));
+                    continue;
+                }
+                if (!line.isEmpty() && this.font.width(line + clause) > maxW + slack) {
+                    out.add(line.toString().stripTrailing());
+                    line.setLength(0);
+                }
+                line.append(line.isEmpty() ? clause.stripLeading() : clause);
+            }
+            out.add(line.toString().stripTrailing());
+        }
+        return out;
+    }
+
+    /** 分句结束的标点和预标的断点：分句连同它和后面的收尾引号、括号算一段 */
+    private static final String CLAUSE_END = "，。、；：！？,;!?\u200C";
+    private static final String CLAUSE_CLOSERS = "」』）》”’)";
+
+    /** 一段（不含换行）切成分句，拼回去和原文一样 */
+    private static List<String> clauses(String s) {
+        List<String> out = new ArrayList<>();
+        int start = 0;
+        int n = s.length();
+        for (int i = 0; i < n; i++) {
+            if (CLAUSE_END.indexOf(s.charAt(i)) < 0) {
+                continue;
+            }
+            int j = i + 1;
+            while (j < n && (CLAUSE_CLOSERS.indexOf(s.charAt(j)) >= 0 || CLAUSE_END.indexOf(s.charAt(j)) >= 0)) {
+                j++;
+            }
+            out.add(s.substring(start, j));
+            start = j;
+            i = j - 1;
+        }
+        if (start < n) {
+            out.add(s.substring(start));
+        }
+        return out;
+    }
+
+    /** 逐字断成和按 {@code maxW} 断一样多的行，每行尽量一样长；至少返回一行 */
+    private List<String> splitEven(String s, float maxW) {
+        List<String> parts = splitChars(s, maxW);
+        int n = parts.size();
+        for (float w = (float) Math.ceil(this.font.width(s) / (float) n); n > 1 && w < maxW; w += 1.0F) {
+            List<String> even = splitChars(s, w);
+            if (even.size() == n) {
+                return even;
+            }
+        }
+        return parts;
+    }
+
+    private List<String> splitChars(String s, float maxW) {
+        List<String> out = new ArrayList<>();
         StringBuilder line = new StringBuilder();
+        wrapChars(s, maxW, out, line);
+        out.add(line.toString().stripTrailing());
+        return out;
+    }
+
+    /** 逐字断一段放不下的文字：接着 {@code line} 往下排，排满的行进 {@code out}，最后没排满的留在 {@code line} 里 */
+    private void wrapChars(String s, float maxW, List<String> out, StringBuilder line) {
         int n = s.length();
         int i = 0;
         while (i < n) {
             char c = s.charAt(i);
-            if (c == '\n') {
-                out.add(line.toString().stripTrailing());
-                line.setLength(0);
-                i++;
-                continue;
-            }
             int j = i + 1;
             if (c < 0x2E80 && !Character.isWhitespace(c)) {
                 while (j < n && s.charAt(j) < 0x2E80 && !Character.isWhitespace(s.charAt(j))) {
@@ -1029,10 +1112,6 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
             }
             i = j;
         }
-        if (!line.isEmpty()) {
-            out.add(line.toString().stripTrailing());
-        }
-        return out;
     }
 
     /** 不放在行首的标点 */

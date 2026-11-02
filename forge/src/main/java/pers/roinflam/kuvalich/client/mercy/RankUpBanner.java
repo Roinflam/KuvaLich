@@ -1,19 +1,11 @@
 package pers.roinflam.kuvalich.client.mercy;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -30,6 +22,7 @@ import org.joml.Matrix4f;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.client.gui.requiem.HoloShapes;
 import pers.roinflam.kuvalich.client.lich.BossBarTracker;
 import pers.roinflam.kuvalich.client.lich.ClientLichState;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
@@ -136,7 +129,6 @@ public final class RankUpBanner {
     private static final float SHADOW_IN = 1.5F;
     private static final float SHADOW_OUT = 2.0F;
 
-    private static final int GLASS = 0x2A050C;
     private static final int NUMBER_WHITE = 0xF4F7F8;
     private static final int NUMBER_SHADOW = 0x2A0308;
     private static final int NAME_SHADOW = 0x1A0206;
@@ -148,8 +140,6 @@ public final class RankUpBanner {
 
     private static final float[] POLY = new float[12];
     private static final float[] POLY_A = new float[6];
-    private static final float[] RING_IN = new float[12];
-    private static final float[] RING_OUT = new float[12];
     private static final float[] PATH = new float[6];
 
     private static boolean active;
@@ -205,7 +195,7 @@ public final class RankUpBanner {
         nameAdv = new int[nameChars.length];
         nameWide = new boolean[nameChars.length];
         for (int i = 0; i < nameChars.length; i++) {
-            nameAdv[i] = font.width(nameChars[i]);
+            nameAdv[i] = HoloShapes.hudWidth(font, nameChars[i]);
             nameWide[i] = MercyPrompt.hasWide(nameChars[i]);
         }
         labelChars = split(I18n.get("kuvalich.mercy.banner.rank_up"));
@@ -214,7 +204,7 @@ public final class RankUpBanner {
             labelAdv[i] = font.width(labelChars[i]);
         }
         for (int i = 0; i < SCRAMBLE.length; i++) {
-            SCRAMBLE_ADV[i] = font.width(SCRAMBLE[i]);
+            SCRAMBLE_ADV[i] = HoloShapes.hudWidth(font, SCRAMBLE[i]);
         }
         fromMercy = mercy;
         wrongStab = Mth.clamp(k, 1, 3);
@@ -434,17 +424,17 @@ public final class RankUpBanner {
         // ---- 底：和框线同形的暗红玻璃板，外面垫一圈软阴影 ----
         if (bandA > 0.002F && frameK > 0.0F) {
             float ch = chev * Math.min(1.0F, (rx - lx) / (2 * chev + 1));
-            hexagon(POLY, lx, rx, ay, bh, ch);
+            HoloShapes.hexagon(POLY, lx, rx, ay, bh, ch);
             float soft = SHADOW_SOFT * S;
             // 刚展开时板子很窄，往里缩的那一圈不能比板子还宽
             float in = Math.min(SHADOW_IN * soft, Math.min(0.5F * bh, 0.25F * (rx - lx)));
-            softPolygon(g, m, POLY, 6, in, SHADOW_OUT * soft, GuiShapes.argb(FxPalette.INK, 0.45F * bandA));
+            HoloShapes.softPolygon(g, m, POLY, 6, in, SHADOW_OUT * soft, GuiShapes.argb(FxPalette.INK, 0.45F * bandA));
             // 横向渐变：中间 0.80、两头 0.62（按展开完的半宽量）
             for (int i = 0; i < 6; i++) {
                 float d = Math.min(1.0F, Math.abs(POLY[i * 2] - cx) / halfSpan);
                 POLY_A[i] = (0.80F - 0.18F * d) * bandA;
             }
-            glass(g, m, POLY, POLY_A, cx, ay, bh, bandA);
+            HoloShapes.glass(g, m, POLY, POLY_A, cx, ay, bh, 0.80F * bandA, HoloShapes.GLASS);
             float hy = ay - bh + lw;
             GuiShapes.hairline(g, lx + ch, crisp(hy, lw), rx - ch, crisp(hy, lw), lw,
                     GuiShapes.argb(FxPalette.KUVA_PALE, 0.12F * bandA));
@@ -528,9 +518,9 @@ public final class RankUpBanner {
         if (fillA > 0.002F && ddh > 2.0F) {
             // 竖向渐变：上亮下暗（按菱框上下各再留 0.03 参考屏高的那一截量）
             float top = ay - dh - 0.03F * S, h = 2 * dh + 0.06F * S;
-            diamondFill(g, m, cx, ay, ihw, ihh, FxPalette.KUVA_DEEP, (0.75F - 0.3F * (ay - ihh - top) / h) * fillA,
+            HoloShapes.diamondFill(g, m, cx, ay, ihw, ihh, FxPalette.KUVA_DEEP, (0.75F - 0.3F * (ay - ihh - top) / h) * fillA,
                     (0.75F - 0.3F * (ay - top) / h) * fillA, (0.75F - 0.3F * (ay + ihh - top) / h) * fillA, false);
-            diamondFill(g, m, cx, ay, ihw, ihh, FxPalette.INK, 0.25F * fillA, 0.25F * fillA, 0.25F * fillA, false);
+            HoloShapes.diamondFill(g, m, cx, ay, ihw, ihh, FxPalette.INK, 0.25F * fillA, 0.25F * fillA, 0.25F * fillA, false);
         }
         if (diaK > 0.0F && ddh > 1.0F) {
             GuiShapes.begin(g);
@@ -546,7 +536,7 @@ public final class RankUpBanner {
         // 落定那一拍里面一闪
         if (t >= IMPACT_MS && t < IMPACT_MS + 250 && EffectsDisplayConfig.screenFlash()) {
             float a = 0.55F * (1.0F - seg(t, IMPACT_MS, IMPACT_MS + 250)) * glow;
-            diamondFill(g, m, cx, ay, ihw, ihh, FxPalette.KUVA_PALE, a, a, a, additive);
+            HoloShapes.diamondFill(g, m, cx, ay, ihw, ihh, FxPalette.KUVA_PALE, a, a, a, additive);
         }
         // 停留时的扫描线
         if (t >= SCAN_AT && t < HOLD_UNTIL) {
@@ -556,7 +546,7 @@ public final class RankUpBanner {
                 float half = dw * (1.0F - Math.abs(yy - ay) / dh) - inset;
                 if (half > 2.0F) {
                     float y0 = Math.round(yy - lw * 0.5F);
-                    softRect(g, m, cx - half, y0, cx + half, y0 + lw, 0.0F,
+                    HoloShapes.softRect(g, m, cx - half, y0, cx + half, y0 + lw, 0.0F,
                             GuiShapes.argb(FxPalette.KUVA_PALE, 0.35F * glow), additive);
                 }
             }
@@ -565,7 +555,7 @@ public final class RankUpBanner {
         // ---- 等级数字：红、青两色错位砸进来 ----
         if (t >= IMPACT_MS && diaV > 0.3F) {
             float insetW = dw - inset, insetH = dh - inset * (float) dh / dw;
-            int adv = font.width(rankText);
+            int adv = HoloShapes.hudWidth(font, rankText);
             int p = Math.max(1, Math.round(NUMBER_PX * S / 8.0F));
             while (p > igs && ((adv * p - p) * 0.5F + 2.0F) / insetW + (3.5F * p + 2.0F) / insetH > 0.92F) {
                 p--;
@@ -578,14 +568,14 @@ public final class RankUpBanner {
             if (a >= 0.02F) {
                 float d = Math.round(SPLIT * S * (1.0F - easeOutCubic(k)));
                 float sg = NUMBER_GLOW * S;
-                softRect(g, m, x - sg, y - sg, x + tw + sg, y + 7 * p + sg, 2.0F * sg,
+                HoloShapes.softRect(g, m, x - sg, y - sg, x + tw + sg, y + 7 * p + sg, 2.0F * sg,
                         GuiShapes.argb(FxPalette.KUVA, 0.3F * a * glow), additive);
                 if (d > 0.0F) {
-                    text(g, font, rankText, x - d, y, p, GuiShapes.argb(FxPalette.KUVA, 0.8F * a));
-                    text(g, font, rankText, x + d, y, p, GuiShapes.argb(FxPalette.TECH, 0.6F * a));
+                    HoloShapes.hudText(g, font, rankText, x - d, y, p, GuiShapes.argb(FxPalette.KUVA, 0.8F * a));
+                    HoloShapes.hudText(g, font, rankText, x + d, y, p, GuiShapes.argb(FxPalette.TECH, 0.6F * a));
                 }
-                text(g, font, rankText, x + igs, y + igs, p, GuiShapes.argb(NUMBER_SHADOW, 0.7F * a));
-                text(g, font, rankText, x, y, p, GuiShapes.argb(NUMBER_WHITE, a));
+                HoloShapes.hudText(g, font, rankText, x + igs, y + igs, p, GuiShapes.argb(NUMBER_SHADOW, 0.7F * a));
+                HoloShapes.hudText(g, font, rankText, x, y, p, GuiShapes.argb(NUMBER_WHITE, a));
             }
         }
 
@@ -605,8 +595,8 @@ public final class RankUpBanner {
                 int shadow = GuiShapes.argb(LABEL_SHADOW, a);
                 int col = GuiShapes.argb(FxPalette.BONE, a);
                 for (int i = 0; i < labelChars.length; i++) {
-                    text(g, font, labelChars[i], x + pl, y + pl, pl, shadow);
-                    text(g, font, labelChars[i], x, y, pl, col);
+                    HoloShapes.text(g, font, labelChars[i], x + pl, y + pl, pl, shadow);
+                    HoloShapes.text(g, font, labelChars[i], x, y, pl, col);
                     x += labelAdv[i] * pl + sp;
                 }
             }
@@ -615,7 +605,7 @@ public final class RankUpBanner {
         // ---- 入场时中心一点亮光 ----
         if (t < 160.0F) {
             float r = Math.round(SPARK * S);
-            softRect(g, m, cx - 0.5F * r, ay - 0.5F * r, cx + 0.5F * r, ay + 0.5F * r, 1.2F * r,
+            HoloShapes.softRect(g, m, cx - 0.5F * r, ay - 0.5F * r, cx + 0.5F * r, ay + 0.5F * r, 1.2F * r,
                     GuiShapes.argb(FxPalette.KUVA_PALE, 0.85F * (1.0F - seg(t, 0, 160)) * glow), additive);
         }
         GuiShapes.flush(g);
@@ -645,7 +635,7 @@ public final class RankUpBanner {
         }
         if (gx1 > gx0) {
             float sg = Math.max(1.0F, NAME_GLOW * S);
-            softRect(g, m, gx0 - sg, y - sg, gx1 + sg, y + 7 * p + sg, 2.0F * sg,
+            HoloShapes.softRect(g, m, gx0 - sg, y - sg, gx1 + sg, y + 7 * p + sg, 2.0F * sg,
                     GuiShapes.argb(FxPalette.KUVA, 0.2F * glow), additive);
         }
         x = nameL;
@@ -678,8 +668,8 @@ public final class RankUpBanner {
             }
             // 乱码字和真字不一样宽：按真字的宽居中，整排不跳
             float xx = x + Math.round(((nameAdv[i] - 1) - (shownAdv - 1)) * p * 0.5F);
-            text(g, font, shown, xx + igs, y + igs, p, GuiShapes.argb(NAME_SHADOW, 0.6F * a));
-            text(g, font, shown, xx, y, p, GuiShapes.argb(col, a));
+            HoloShapes.hudText(g, font, shown, xx + igs, y + igs, p, GuiShapes.argb(NAME_SHADOW, 0.6F * a));
+            HoloShapes.hudText(g, font, shown, xx, y, p, GuiShapes.argb(col, a));
             x += adv;
         }
     }
@@ -706,22 +696,6 @@ public final class RankUpBanner {
         return KuvaFxDirector.additiveScale(p.x, p.y, p.z);
     }
 
-    /** 读数条的外形：左右两个尖、上下两条平边，顺序是左尖 → 左上 → 右上 → 右尖 → 右下 → 左下 */
-    private static void hexagon(float[] out, float lx, float rx, float cy, float hh, float ch) {
-        out[0] = lx;
-        out[1] = cy;
-        out[2] = lx + ch;
-        out[3] = cy - hh;
-        out[4] = rx - ch;
-        out[5] = cy - hh;
-        out[6] = rx;
-        out[7] = cy;
-        out[8] = rx - ch;
-        out[9] = cy + hh;
-        out[10] = lx + ch;
-        out[11] = cy + hh;
-    }
-
     /** 沿 a → b → c 两段折线描出 {@code k} 比例（0~1）的长度，两段各算一半 */
     private static void trace(GuiGraphics g, float ax, float ay, float bx, float by, float cx, float cy, float k,
                               float lw, int argb) {
@@ -741,194 +715,16 @@ public final class RankUpBanner {
         GuiShapes.polyline(g, PATH, 3, false, lw, argb);
     }
 
-    // ==================== 顶点色图元（GuiShapes 只有单色、普通混合，这几样要渐变或加法） ====================
-
-    private static BufferBuilder open(GuiGraphics g, boolean additive) {
-        GuiShapes.flush(g);
-        RenderSystem.enableBlend();
-        if (additive) {
-            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
-        } else {
-            RenderSystem.defaultBlendFunc();
-        }
-        RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferBuilder buf = Tesselator.getInstance().getBuilder();
-        buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        return buf;
-    }
-
-    private static void close(BufferBuilder buf) {
-        BufferUploader.drawWithShader(buf.end());
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.enableCull();
-        RenderSystem.disableBlend();
-    }
-
-    private static void vtx(BufferBuilder buf, Matrix4f m, float x, float y, int rgb, float a) {
-        int al = Math.round(Mth.clamp(a, 0.0F, 1.0F) * 255.0F);
-        buf.vertex(m, x, y, 0.0F).color((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255, al).endVertex();
-    }
-
-    /**
+        /**
      * 玻璃板：六边形按 {@code alpha[i]}（每个顶点的透明度）横向渐变。从中线劈成左右两半各自扇形三角化，
      * 中线上两点的透明度是 0.80 × bandA（透明度只随 x 线性变，三角形插值是准的）
      */
-    private static void glass(GuiGraphics g, Matrix4f m, float[] p, float[] alpha, float cx, float cy, float hh,
-                              float bandA) {
-        float mid = 0.80F * bandA;
-        BufferBuilder buf = open(g, false);
-        // 左半：左尖、左上、中上、中下、左下
-        tri(buf, m, p[0], p[1], alpha[0], p[2], p[3], alpha[1], cx, cy - hh, mid);
-        tri(buf, m, p[0], p[1], alpha[0], cx, cy - hh, mid, cx, cy + hh, mid);
-        tri(buf, m, p[0], p[1], alpha[0], cx, cy + hh, mid, p[10], p[11], alpha[5]);
-        // 右半：右尖、右上、中上、中下、右下
-        tri(buf, m, p[6], p[7], alpha[3], p[4], p[5], alpha[2], cx, cy - hh, mid);
-        tri(buf, m, p[6], p[7], alpha[3], cx, cy - hh, mid, cx, cy + hh, mid);
-        tri(buf, m, p[6], p[7], alpha[3], cx, cy + hh, mid, p[8], p[9], alpha[4]);
-        close(buf);
-    }
-
-    private static void tri(BufferBuilder buf, Matrix4f m, float x0, float y0, float a0, float x1, float y1, float a1,
-                            float x2, float y2, float a2) {
-        vtx(buf, m, x0, y0, GLASS, a0);
-        vtx(buf, m, x1, y1, GLASS, a1);
-        vtx(buf, m, x2, y2, GLASS, a2);
-    }
-
-    /** 实心菱形，上、中、下三档透明度（中间那一档给左右两个顶点），竖向渐变 */
-    private static void diamondFill(GuiGraphics g, Matrix4f m, float cx, float cy, float hw, float hh, int rgb,
-                                    float aTop, float aMid, float aBottom, boolean additive) {
-        if (hh <= 0.0F || hw <= 0.0F || Math.max(aTop, Math.max(aMid, aBottom)) <= 0.002F) {
-            return;
-        }
-        BufferBuilder buf = open(g, additive);
-        vtx(buf, m, cx, cy - hh, rgb, aTop);
-        vtx(buf, m, cx + hw, cy, rgb, aMid);
-        vtx(buf, m, cx, cy + hh, rgb, aBottom);
-        vtx(buf, m, cx, cy - hh, rgb, aTop);
-        vtx(buf, m, cx, cy + hh, rgb, aBottom);
-        vtx(buf, m, cx - hw, cy, rgb, aMid);
-        close(buf);
-    }
-
     /**
      * 凸多边形的软边：往里缩 {@code in} 那一圈实色，往外扩 {@code out} 那一圈透明，中间顶点色插值。
      * 当阴影用，原多边形本身随后会被玻璃板盖住
      */
-    private static void softPolygon(GuiGraphics g, Matrix4f m, float[] p, int n, float in, float out, int argb) {
-        if ((argb >>> 24) == 0) {
-            return;
-        }
-        offset(p, n, -in, RING_IN);
-        offset(p, n, out, RING_OUT);
-        int rgb = argb & 0xFFFFFF;
-        float a = (argb >>> 24) / 255.0F;
-        BufferBuilder buf = open(g, false);
-        for (int i = 1; i < n - 1; i++) {
-            vtx(buf, m, RING_IN[0], RING_IN[1], rgb, a);
-            vtx(buf, m, RING_IN[i * 2], RING_IN[i * 2 + 1], rgb, a);
-            vtx(buf, m, RING_IN[i * 2 + 2], RING_IN[i * 2 + 3], rgb, a);
-        }
-        for (int i = 0; i < n; i++) {
-            int j = (i + 1) % n;
-            vtx(buf, m, RING_IN[i * 2], RING_IN[i * 2 + 1], rgb, a);
-            vtx(buf, m, RING_OUT[i * 2], RING_OUT[i * 2 + 1], rgb, 0.0F);
-            vtx(buf, m, RING_OUT[j * 2], RING_OUT[j * 2 + 1], rgb, 0.0F);
-            vtx(buf, m, RING_IN[i * 2], RING_IN[i * 2 + 1], rgb, a);
-            vtx(buf, m, RING_OUT[j * 2], RING_OUT[j * 2 + 1], rgb, 0.0F);
-            vtx(buf, m, RING_IN[j * 2], RING_IN[j * 2 + 1], rgb, a);
-        }
-        close(buf);
-    }
-
     /** 凸多边形每条边往外平移 {@code d}（负数往里），转角按斜接算，太尖的截到 3 倍 */
-    private static void offset(float[] p, int n, float d, float[] out) {
-        float area = 0.0F;
-        for (int i = 0; i < n; i++) {
-            int j = (i + 1) % n;
-            area += p[i * 2] * p[j * 2 + 1] - p[j * 2] * p[i * 2 + 1];
-        }
-        // 屏幕坐标 y 朝下：面积为正是顺时针，边的外法线是 (dy, -dx)
-        float sign = area >= 0.0F ? 1.0F : -1.0F;
-        for (int i = 0; i < n; i++) {
-            int a = (i + n - 1) % n, b = (i + 1) % n;
-            float n1x = p[i * 2 + 1] - p[a * 2 + 1], n1y = -(p[i * 2] - p[a * 2]);
-            float n2x = p[b * 2 + 1] - p[i * 2 + 1], n2y = -(p[b * 2] - p[i * 2]);
-            float l1 = Mth.sqrt(n1x * n1x + n1y * n1y), l2 = Mth.sqrt(n2x * n2x + n2y * n2y);
-            if (l1 < 1.0E-4F || l2 < 1.0E-4F) {
-                out[i * 2] = p[i * 2];
-                out[i * 2 + 1] = p[i * 2 + 1];
-                continue;
-            }
-            n1x = n1x / l1 * sign;
-            n1y = n1y / l1 * sign;
-            n2x = n2x / l2 * sign;
-            n2y = n2y / l2 * sign;
-            float bx = n1x + n2x, by = n1y + n2y;
-            float bl = Mth.sqrt(bx * bx + by * by);
-            if (bl < 1.0E-4F) {
-                bx = n1x;
-                by = n1y;
-                bl = 1.0F;
-            }
-            bx /= bl;
-            by /= bl;
-            float cos = bx * n1x + by * n1y;
-            float len = d / Math.max(cos, 1.0F / 3.0F);
-            out[i * 2] = p[i * 2] + bx * len;
-            out[i * 2 + 1] = p[i * 2 + 1] + by * len;
-        }
-    }
-
     /** 矩形，四周再各有 {@code edge} 宽从实色渐到透明；{@code edge} 为 0 就是硬边 */
-    private static void softRect(GuiGraphics g, Matrix4f m, float x0, float y0, float x1, float y1, float edge,
-                                 int argb, boolean additive) {
-        if ((argb >>> 24) == 0 || x1 <= x0 || y1 <= y0) {
-            return;
-        }
-        int rgb = argb & 0xFFFFFF;
-        float a = (argb >>> 24) / 255.0F;
-        BufferBuilder buf = open(g, additive);
-        if (edge <= 0.0F) {
-            quad(buf, m, x0, y0, x1, y1, rgb, a, a, a, a);
-        } else {
-            float ox0 = x0 - edge, oy0 = y0 - edge, ox1 = x1 + edge, oy1 = y1 + edge;
-            quad(buf, m, x0, y0, x1, y1, rgb, a, a, a, a);
-            quad(buf, m, ox0, y0, x0, y1, rgb, 0.0F, a, a, 0.0F);
-            quad(buf, m, x1, y0, ox1, y1, rgb, a, 0.0F, 0.0F, a);
-            quad(buf, m, x0, oy0, x1, y0, rgb, 0.0F, 0.0F, a, a);
-            quad(buf, m, x0, y1, x1, oy1, rgb, a, a, 0.0F, 0.0F);
-            quad(buf, m, ox0, oy0, x0, y0, rgb, 0.0F, 0.0F, a, 0.0F);
-            quad(buf, m, x1, oy0, ox1, y0, rgb, 0.0F, 0.0F, 0.0F, a);
-            quad(buf, m, x1, y1, ox1, oy1, rgb, a, 0.0F, 0.0F, 0.0F);
-            quad(buf, m, ox0, y1, x0, oy1, rgb, 0.0F, a, 0.0F, 0.0F);
-        }
-        close(buf);
-    }
-
-    /** 轴对齐四边形：四个角的透明度依次是 左上、右上、右下、左下 */
-    private static void quad(BufferBuilder buf, Matrix4f m, float x0, float y0, float x1, float y1, int rgb,
-                             float aTL, float aTR, float aBR, float aBL) {
-        vtx(buf, m, x0, y0, rgb, aTL);
-        vtx(buf, m, x1, y0, rgb, aTR);
-        vtx(buf, m, x1, y1, rgb, aBR);
-        vtx(buf, m, x0, y0, rgb, aTL);
-        vtx(buf, m, x1, y1, rgb, aBR);
-        vtx(buf, m, x0, y1, rgb, aBL);
-    }
-
-    private static void text(GuiGraphics g, Font font, String s, float x, float y, int p, int argb) {
-        if ((argb >>> 24) < 5) {
-            return;
-        }
-        g.pose().pushPose();
-        g.pose().translate(x, y, 0.0F);
-        g.pose().scale(p, p, 1.0F);
-        g.drawString(font, s, 0, 0, argb, false);
-        g.pose().popPose();
-    }
-
     /** 调试用：现在有没有横幅、等级多少 */
     @Nullable
     static String debugState() {

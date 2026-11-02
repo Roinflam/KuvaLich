@@ -97,6 +97,9 @@ public final class ArchiveDevCommands {
                                             + (n == 0 ? "-" : Integer.toString(demoWeapon % n)) + " / " + n), false);
                                     return 1;
                                 })))
+                        .then(Commands.literal("bardemo")
+                                .then(Commands.literal("on").executes(ctx -> barDemo(ctx.getSource(), true)))
+                                .then(Commands.literal("off").executes(ctx -> barDemo(ctx.getSource(), false))))
                         .then(Commands.literal("other")
                                 .then(Commands.literal("on").executes(ctx -> other(ctx.getSource(), true)))
                                 .then(Commands.literal("off").executes(ctx -> other(ctx.getSource(), false))))
@@ -110,6 +113,13 @@ public final class ArchiveDevCommands {
                                             LichWeaponLayer.describe(LichWeaponLayer.WORLD)), false);
                                     return 1;
                                 })))));
+    }
+
+    /** Boss 条的增幅、适应层数换成演示值 */
+    private static int barDemo(CommandSourceStack src, boolean on) {
+        LichBossBar.demoReadout = on;
+        src.sendSuccess(() -> Component.literal("boss bar demo " + (on ? "on" : "off")), false);
+        return 1;
     }
 
     /** 调玄骸手里的刀：weapon 调世界里的，weaponportrait 调档案、指南的全身像，weaponbust 调通讯窗的半身像 */
