@@ -10,6 +10,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.util.Mth;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -17,6 +19,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -51,7 +54,7 @@ import pers.roinflam.kuvalich.nemesis.LichComms;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.LichLine;
 import pers.roinflam.kuvalich.nemesis.LichPersona;
-import pers.roinflam.kuvalich.nemesis.LichProfile;
+import pers.roinflam.kuvalich.nemesis.LichTraits;
 import pers.roinflam.kuvalich.mercy.KuvaStateServer;
 import pers.roinflam.kuvalich.mercy.MercyRules;
 import pers.roinflam.kuvalich.mercy.MercyServer;
@@ -131,19 +134,14 @@ public class KuvaMasterEntity extends AbstractKuva {
     private static final float VERTICAL_KNOCKBACK = 2.15f;
     /** 自身受到的击退倍率 */
     private static final float SELF_KNOCKBACK_MULTIPLIER = 1.15f;
-    /** 每次攻击命中的自愈比例 */
+    /** 每次攻击命中的自愈比例（没有专属面板时；有的按它的吸血档位） */
     private static final float HEAL_PER_ATTACK = 0.2f;
-    /** AOE范围攻击半径 */
+    /** AOE范围攻击半径（没有专属面板时；有的按它的震荡档位） */
     private static final float AOE_RADIUS = 3.0f;
 
     // ==================== 适应性抗性参数 ====================
 
-    /** 每种伤害类别的最大适应层数 */
-    private static final int MAX_ADAPTIVE_STACKS = 6;
-    /** 每层提供的伤害减免比例（5%每层，满层30%） */
-    private static final float RESISTANCE_PER_STACK = 0.05f;
-    /** 某类伤害无命中后单层衰减间隔（80tick = 4秒） */
-    private static final int STACK_DECAY_TICKS = 80;
+    // 每类至多几层、每层减多少、多久掉一层看 LichTraits 的适应档位；没有专属面板的照中档（每层 5%、6 层、4 秒）
     /** 完全无受击后全部层数重置的时间（200tick = 10秒） */
     private static final int FULL_RESET_TICKS = 200;
 
@@ -192,6 +190,14 @@ public class KuvaMasterEntity extends AbstractKuva {
     /** 判定结果包里卡位「不知道」的值 */
     private static final int UNKNOWN_CARD = 15;
 
+    /** 专属面板的属性修饰符：生命、攻击、护甲、击退抗性、移速（只在内存里，有主玄骸不存盘） */
+    private static final UUID TRAIT_HEALTH_ID = UUID.fromString("0f5a8d7e-2c41-4f3b-9e6d-5a1c7b3e8d21");
+    private static final UUID TRAIT_ATTACK_ID = UUID.fromString("7b2e4c9a-8d13-4a6f-b5e2-1c9d3f7a6e42");
+    private static final UUID TRAIT_ARMOR_ID = UUID.fromString("c3d81f6b-5a27-4e9c-8b4d-2e6f1a9c7d53");
+    private static final UUID TRAIT_KNOCKBACK_ID = UUID.fromString("9e6c2a4d-1b58-4d7e-a3f9-6b2d8e1c5f64");
+    private static final UUID TRAIT_SPEED_ID = UUID.fromString("4a9f7e1c-6d32-4b8a-9c5e-3f7b2d6a1e75");
+    private static final String TRAIT_MODIFIER_NAME = "kuvalich:lich_traits";
+
     /** 有主玄骸的追踪距离加成：64 + 32 = 96 */
     private static final UUID NEMESIS_FOLLOW_ID = UUID.fromString("6c1d7f0e-3b52-4b7a-9a43-2f5e8d1c0b96");
     private static final String NEMESIS_FOLLOW_NAME = "kuvalich:nemesis_follow";
@@ -203,8 +209,11 @@ public class KuvaMasterEntity extends AbstractKuva {
     /** 这一次遭遇已经按什么原因结算过；结算过的不再重复结算 */
     @Nullable
     private EncounterEnd encounterEnd;
-    /** 完整的 64 位种子（同步数据里只有低 32 位），按种子派生弱点抗性时用；只在服务端 */
+    /** 完整的 64 位种子（同步数据里只有低 32 位）；只在服务端 */
     private long lichSeedFull;
+    /** 按种子和等级算出来的战斗面板；无主的、演示用的、客户端上都是 null */
+    @Nullable
+    private LichTraits traits;
     /** finalizeSpawn 时记下的生成方式；不存盘，读档、带 NBT 的命令、直接加进世界的都是 null */
     @Nullable
     private MobSpawnType freshSpawnType;
@@ -404,6 +413,7 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.entityData.set(LICH_WEAPON, card.getLichWeapon());
         this.entityData.set(WILD, false);
         this.lichSeedFull = card.getLichSeed();
+        applyTraits(LichTraits.current(this.lichSeedFull, card.getLichRank()));
         this.setPersistenceRequired();
         this.markAlerted();
 
@@ -419,9 +429,55 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.getNavigation().setMaxVisitedNodesMultiplier(1.5F);
     }
 
-    /** 等级变了（处决失败等）时把同步数据跟上 */
+    /** 等级变了（处决失败等）时把同步数据和面板跟上 */
     public void refreshRank(RequiemCard card) {
         this.entityData.set(LICH_RANK, card.getLichRank());
+        if (this.traits != null) {
+            applyTraits(LichTraits.current(this.lichSeedFull, card.getLichRank()));
+        }
+    }
+
+    /**
+     * 换上一套面板：生命、攻击、护甲、击退抗性、移速用临时修饰符改（基础值仍是 {@link #createAttributes}），
+     * 血量按原来的比例跟着最大生命缩放
+     */
+    private void applyTraits(LichTraits next) {
+        float ratio = this.getMaxHealth() > 0.0F ? this.getHealth() / this.getMaxHealth() : 1.0F;
+        this.traits = next;
+        setTraitModifier(Attributes.MAX_HEALTH, TRAIT_HEALTH_ID, next.maxHealth - LichTraits.BASE_HEALTH,
+                AttributeModifier.Operation.ADDITION);
+        setTraitModifier(Attributes.ATTACK_DAMAGE, TRAIT_ATTACK_ID, next.attack - LichTraits.BASE_ATTACK,
+                AttributeModifier.Operation.ADDITION);
+        setTraitModifier(Attributes.ARMOR, TRAIT_ARMOR_ID, next.armor - LichTraits.BASE_ARMOR,
+                AttributeModifier.Operation.ADDITION);
+        setTraitModifier(Attributes.KNOCKBACK_RESISTANCE, TRAIT_KNOCKBACK_ID,
+                next.knockbackResist - LichTraits.BASE_KNOCKBACK_RESIST, AttributeModifier.Operation.ADDITION);
+        setTraitModifier(Attributes.MOVEMENT_SPEED, TRAIT_SPEED_ID, next.speedScale - 1.0D,
+                AttributeModifier.Operation.MULTIPLY_BASE);
+        this.setHealth(Math.max(1.0F, this.getMaxHealth() * Mth.clamp(ratio, 0.0F, 1.0F)));
+    }
+
+    private void setTraitModifier(Attribute attribute, UUID id, double amount, AttributeModifier.Operation op) {
+        AttributeInstance instance = this.getAttribute(attribute);
+        if (instance == null) {
+            return;
+        }
+        instance.removeModifier(id);
+        if (Math.abs(amount) > 1.0E-6D) {
+            instance.addTransientModifier(new AttributeModifier(id, TRAIT_MODIFIER_NAME, amount, op));
+        }
+    }
+
+    /** 专属玄骸的战斗面板（服务端）；无主的、演示用的为 null */
+    @Override
+    @Nullable
+    public LichTraits combatTraits() {
+        return this.traits;
+    }
+
+    /** 一刀的伤害（服务端算法）：攻击 × 难度序号 × 0.85，不含交战增幅和玩家身上的等级加成 */
+    public static double hitDamage(double attack, Difficulty difficulty) {
+        return attack * difficulty.getId() * ATTACK_DAMAGE_MULTIPLIER;
     }
 
     /**
@@ -495,12 +551,12 @@ public class KuvaMasterEntity extends AbstractKuva {
      */
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 200.0)
-                .add(Attributes.ATTACK_DAMAGE, 13.0)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 0.65)
+                .add(Attributes.MAX_HEALTH, LichTraits.BASE_HEALTH)
+                .add(Attributes.ATTACK_DAMAGE, LichTraits.BASE_ATTACK)
+                .add(Attributes.KNOCKBACK_RESISTANCE, LichTraits.BASE_KNOCKBACK_RESIST)
                 .add(Attributes.MOVEMENT_SPEED, 0.35)
                 .add(Attributes.FOLLOW_RANGE, 64.0)
-                .add(Attributes.ARMOR, 8.0);
+                .add(Attributes.ARMOR, LichTraits.BASE_ARMOR);
     }
 
     // ==================== 三层动态抗性 ====================
@@ -543,7 +599,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      * 第一层：适应性抗性
      * 先用当前层数计算减伤，再叠一层
      * 第一击无减伤（0层），后续同类伤害逐渐增强抗性
-     * 满6层时该类伤害减免30%
+     * 每层多少、至多几层看适应档位（中档每层 5%、满 6 层 30%）
      *
      * @param category 伤害类别
      * @param currentTick 当前gameTick
@@ -555,11 +611,11 @@ public class KuvaMasterEntity extends AbstractKuva {
         AdaptiveStack stack = adaptiveResistance.get(category);
 
         // 先用当前层数计算减伤（第一击层数为0，不减伤）
-        float resistance = stack.stacks * RESISTANCE_PER_STACK;
+        float resistance = stack.stacks * adaptPercent() / 100.0F;
         damage *= (1.0f - resistance);
 
         // 再叠一层（为下次同类伤害准备）
-        if (stack.stacks < MAX_ADAPTIVE_STACKS) {
+        if (stack.stacks < adaptStackCap()) {
             stack.stacks++;
         }
         stack.lastHitTick = currentTick;
@@ -638,7 +694,7 @@ public class KuvaMasterEntity extends AbstractKuva {
     /**
      * 定期处理适应性抗性的时效衰减逻辑（由基类每秒调用一次）
      * - 10秒完全无受击 → 所有层数清零（全局重置）
-     * - 单类4秒无命中 → 该类逐层衰减（每4秒掉1层）
+     * - 单类一段时间无命中 → 该类逐层衰减（间隔看适应档位，中档 4 秒）
      */
     @Override
     protected void tickResistance() {
@@ -654,12 +710,14 @@ public class KuvaMasterEntity extends AbstractKuva {
             return;
         }
 
-        // 单类衰减：某类伤害4秒内无命中，每4秒衰减1层
+        // 单类衰减：某类伤害一段时间内无命中，每隔这么久衰减1层
+        int decayTicks = this.traits != null ? this.traits.adaptDecayTicks()
+                : LichTraits.ADAPT_DECAY_TICKS[LichTraits.NORMAL];
         for (Map.Entry<DamageCategory, AdaptiveStack> entry : adaptiveResistance.entrySet()) {
             AdaptiveStack stack = entry.getValue();
-            if (stack.stacks > 0 && currentTick - stack.lastHitTick > STACK_DECAY_TICKS) {
+            if (stack.stacks > 0 && currentTick - stack.lastHitTick > decayTicks) {
                 stack.stacks--;
-                // 重置该类的计时器，下一层衰减需要再等4秒
+                // 重置该类的计时器，下一层衰减需要再等一个间隔
                 stack.lastHitTick = currentTick;
                 KuvaStateServer.onAdaptDecayed(this, entry.getKey(), stack.stacks);
             }
@@ -669,14 +727,25 @@ public class KuvaMasterEntity extends AbstractKuva {
 
     // ==================== 回血 ====================
 
+    /** 每层适应减多少（百分数） */
+    private int adaptPercent() {
+        return this.traits != null ? this.traits.adaptPercent() : LichTraits.ADAPT_PCT[LichTraits.NORMAL];
+    }
+
     @Override
     protected float getTickHeal() {
-        return Math.max(MIN_HEAL_NO_TARGET, (this.getMaxHealth() - this.getHealth()) * BASE_HEAL_MULTIPLIER);
+        return Math.max(MIN_HEAL_NO_TARGET, (this.getMaxHealth() - this.getHealth()) * BASE_HEAL_MULTIPLIER)
+                * regenScale();
     }
 
     @Override
     protected float getHasTargetTickHeal() {
-        return Math.max(MIN_HEAL_HAS_TARGET, (this.getMaxHealth() - this.getHealth()) * TARGET_HEAL_MULTIPLIER);
+        return Math.max(MIN_HEAL_HAS_TARGET, (this.getMaxHealth() - this.getHealth()) * TARGET_HEAL_MULTIPLIER)
+                * regenScale();
+    }
+
+    private float regenScale() {
+        return this.traits != null ? (float) this.traits.regenScale() : 1.0F;
     }
 
     // ==================== 攻击 ====================
@@ -691,14 +760,17 @@ public class KuvaMasterEntity extends AbstractKuva {
     public boolean doHurtTarget(@NotNull Entity target) {
         // 挥砍声、命中声都由客户端按挥臂和实体事件 103 放，服务端不再直接放
         float attackDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
-        float finalDamage = attackDamage * this.level().getDifficulty().getId() * ATTACK_DAMAGE_MULTIPLIER;
+        float finalDamage = (float) hitDamage(attackDamage, this.level().getDifficulty());
+        float lifesteal = this.traits != null ? (float) this.traits.lifesteal() : HEAL_PER_ATTACK;
 
-        attackNearbyEntities(finalDamage, target);
+        int swept = attackNearbyEntities(finalDamage, target);
 
         if (target.hurt(this.damageSources().mobAttack(this), finalDamage)) {
             applyKnockback(target);
             float before = this.getHealth();
-            this.heal(attackDamage * HEAL_PER_ATTACK);
+            // 吸血是专长时，震荡扫到的每一个也回一份
+            int heals = this.traits != null && this.traits.isSignature(LichTraits.LIFESTEAL) ? 1 + swept : 1;
+            this.heal(attackDamage * lifesteal * heals);
             this.level().broadcastEntityEvent(this, EV_HIT);
             KuvaStateServer.onStrike(this, target, this.getHealth() - before);
             return true;
@@ -713,20 +785,25 @@ public class KuvaMasterEntity extends AbstractKuva {
      *
      * @param damage 伤害值
      * @param excludeEntity 排除的实体（主目标）
+     * @return 扫到并打中了几个
      */
-    private void attackNearbyEntities(float damage, Entity excludeEntity) {
-        AABB aabb = this.getBoundingBox().inflate(AOE_RADIUS);
+    private int attackNearbyEntities(float damage, Entity excludeEntity) {
+        double radius = this.traits != null ? this.traits.quakeRadius() : AOE_RADIUS;
+        AABB aabb = this.getBoundingBox().inflate(radius);
         List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(
                 LivingEntity.class,
                 aabb,
                 entity -> !(entity instanceof AbstractKuva) && !entity.equals(excludeEntity)
         );
 
+        int hit = 0;
         for (LivingEntity nearby : nearbyEntities) {
             if (nearby.hurt(this.damageSources().mobAttack(this), damage)) {
                 applyKnockback(nearby);
+                hit++;
             }
         }
+        return hit;
     }
 
     /**
@@ -737,11 +814,12 @@ public class KuvaMasterEntity extends AbstractKuva {
      */
     private void applyKnockback(Entity target) {
         Vec3 originalTargetVelocity = target.getDeltaMovement();
+        double knock = this.traits != null ? this.traits.quakeKnock() : 1.0D;
 
         target.setDeltaMovement(
-                originalTargetVelocity.x * KNOCKBACK_MULTIPLIER,
-                originalTargetVelocity.y * VERTICAL_KNOCKBACK,
-                originalTargetVelocity.z * KNOCKBACK_MULTIPLIER
+                originalTargetVelocity.x * KNOCKBACK_MULTIPLIER * knock,
+                originalTargetVelocity.y * VERTICAL_KNOCKBACK * knock,
+                originalTargetVelocity.z * KNOCKBACK_MULTIPLIER * knock
         );
 
         this.setDeltaMovement(
@@ -1426,15 +1504,6 @@ public class KuvaMasterEntity extends AbstractKuva {
             }
         }
         return super.getName();
-    }
-
-    /** 开了「每只弱点抗性不同」时，有主的按种子取；奴仆和无主的照固定倍率 */
-    @Override
-    protected int seededAffinities() {
-        if (isOwned() && ModConfig.KUVA_LICH.lichSeededAffinities.get()) {
-            return LichProfile.affinities(this.lichSeedFull) & 0xFF;
-        }
-        return -1;
     }
 
     /** 追主人：主人在 96 格内、能被当成敌人就盯上他；被别人打的时候让给优先级更高的「回头砍」 */

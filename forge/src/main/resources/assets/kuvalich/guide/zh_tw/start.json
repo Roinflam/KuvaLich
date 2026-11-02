@@ -975,14 +975,14 @@
           "items": [
             "<em>帶兩三種輸出</em>：近戰、弓弩、法術輪換著用。同一類傷害連著打，它對這一類的抗性會越來越高，身上閃出的六邊形護壁越密，說明它適應得越多。",
             {
-              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "if": "!cfg:kuva_lich.lichVariedTraits",
               "text": "<em>弓弩優先</em>：箭矢對赤毒敵人的傷害 ×1.25，射中處會炸開一圈金色裂紋；其他彈射物和法術只有 ×0.75。"
             },
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
-              "text": "<em>先看弱點</em>：每隻玄骸的弱點和抗性在它誕生時隨機定下。開啟{lang:key.kuvalich.lich_archive}看「{lang:kuvalich.archive.attr.weakness}」「{lang:kuvalich.archive.attr.resistance}」兩行，弱點那類傷害 ×1.25，抗性那類 ×0.75，挑它怕的打。"
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "<em>先看性格和弱點</em>：每隻玄骸誕生時就定下了性格、弱點和抗性。開啟{lang:key.kuvalich.lich_archive}看名字下面的性格和「{lang:kuvalich.archive.attr.weakness}」「{lang:kuvalich.archive.attr.resistance}」幾行：活潑的血薄、越打越兇，要速戰速決；理性的血厚、適應快，要多換幾種傷害。弱點那類傷害 ×1.25~1.40，挑它怕的打。"
             },
-            "<em>寵物留在家裡</em>：玄骸每次出手都會波及周圍 3 格內的其他生物，寵物和隊友都會挨打。",
+            "<em>寵物留在家裡</em>：玄骸每次出手都會波及周圍好幾格內的其他生物，寵物和隊友都會挨打。",
             "<em>選安全場地</em>：收尾時<b>遠離岩漿和虛空</b>，獎勵會掉在它倒下的地方。",
             {
               "if": "cfg:kuva_lich.battleBoost>0",

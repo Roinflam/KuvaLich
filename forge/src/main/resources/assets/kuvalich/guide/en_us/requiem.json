@@ -262,24 +262,31 @@
           "rows": [
             [
               "Rank badge",
-              "The diamond badge at the top left shows its current <t>Lich rank</t>, see [[enemies/kuva_escalation]]"
+              "The diamond badge at the top left shows its current <t>Lich rank</t>; hover to see what the next rank will change, see [[enemies/kuva_escalation]]"
             ],
             [
               "Name",
-              "The name it was born with; the line below says which of your Liches it is"
+              "The name it was born with; the line below says which of your Liches it is and its personality"
             ],
             {
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "Abilities",
-                "A row of small icons: adaptation, battle fury (the [[enemies/battle_boost|Battle Boost]]), regeneration and quake; hover for details"
+                "A row of small icons: adaptation, battle fury (the [[enemies/battle_boost|Battle Boost]]), regeneration, quake and lifesteal; hover for details and exact numbers"
               ]
             },
             {
               "if": "!cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "Abilities",
-                "A row of small icons: adaptation, regeneration and quake; hover for details"
+                "A row of small icons: adaptation, regeneration, quake and lifesteal; hover for details and exact numbers"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Strength",
+                "The dots under each ability icon show its strength: one weak, two average, three strong; the icon with a red outline is its signature, see [[enemies/lich_traits]]"
               ]
             },
             [
@@ -290,14 +297,14 @@
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "Stats",
-                "Weakness, resistances, adaptation, the weapon it carries with your weapon level range, birthplace, battle fury, your damage to it and its damage to you, and encounters, listing only the rows that apply to it"
+                "Health and armor, roughly how hard one blow hits you (at the current difficulty, including the extra damage from its rank, without battle fury), weaknesses, resistances, adaptation, the weapon it carries with your weapon level range, birthplace, battle fury, your damage to it and its damage to you, and encounters, listing only the rows that apply to it"
               ]
             },
             {
               "if": "!cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "Stats",
-                "Weakness, resistances, adaptation, the weapon it carries with your weapon level range, birthplace, your damage to it and its damage to you, and encounters, listing only the rows that apply to it"
+                "Health and armor, roughly how hard one blow hits you (at the current difficulty, including the extra damage from its rank), weaknesses, resistances, adaptation, the weapon it carries with your weapon level range, birthplace, your damage to it and its damage to you, and encounters, listing only the rows that apply to it"
               ]
             },
             {

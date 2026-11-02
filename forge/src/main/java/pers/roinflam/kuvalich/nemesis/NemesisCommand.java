@@ -41,7 +41,7 @@ import java.util.stream.Stream;
  * 专属玄骸的管理 / 录像命令 {@code /kuvalich lich …}，权限 2，正式版也有
  *
  * <p>服主处理玩家的问题、录演示都用得上：查状态、补生、立刻召来、直接倒地、让它走、改怒气 / 冷却 / 暂停、
- * 指定一句台词（类名写 {@code random} 就随便挑一类）、往处决记录里塞一行、改名、作废这一轮。反馈是管理用的英文细节，套在
+ * 指定一句台词（类名写 {@code random} 就随便挑一类）、往处决记录里塞一行、直接设等级、改名、作废这一轮。反馈是管理用的英文细节，套在
  * {@code commands.kuvalich.lich.ok} / {@code .fail} 里。</p>
  *
  * <p>录一段完整演示的顺序：{@code pause on} → {@code birth} → {@code attempt} 塞几行 → 开档案录 →
@@ -115,6 +115,10 @@ public final class NemesisCommand {
                 .then(Commands.argument("name", StringArgumentType.greedyString())
                         .executes(ctx -> rename(ctx, StringArgumentType.getString(ctx, "name"))))));
 
+        lich.then(Commands.literal("rank").then(target()
+                .then(Commands.argument("rank", IntegerArgumentType.integer(1, 99))
+                        .executes(ctx -> rank(ctx, IntegerArgumentType.getInteger(ctx, "rank"))))));
+
         lich.then(Commands.literal("reset").then(target().executes(NemesisCommand::reset)));
 
         d.register(Commands.literal(Reference.MOD_ID).requires(s -> s.hasPermission(2)).then(lich));
@@ -146,7 +150,7 @@ public final class NemesisCommand {
             long cooldownLeft = Math.max(0L, card.getLichCooldownUntil() - now);
             sb.append(", name=").append(card.getLichName())
                     .append(", seed=").append(Long.toHexString(card.getLichSeed()))
-                    .append(", affinity=0x").append(Integer.toHexString(LichProfile.affinities(card.getLichSeed()) & 0xFF))
+                    .append(", traits=[").append(LichTraits.current(card.getLichSeed(), card.getLichRank()).describe()).append(']')
                     .append(", persona=").append(LichPersona.of((int) card.getLichSeed()).id)
                     .append(", generation=").append(card.getLichGeneration())
                     .append(", rank=").append(card.getLichRank())
@@ -395,6 +399,22 @@ public final class NemesisCommand {
         card.recordAttempt(packed);
         return ok(ctx, "attempt recorded for " + card.getLichName() + ": " + describe(packed)
                 + " (" + card.getAttempts().length + " kept)");
+    }
+
+    /** 直接设玄骸等级（判错次数 + 1）；在场的那只按新等级重套面板 */
+    private static int rank(CommandContext<CommandSourceStack> ctx, int rank) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        RequiemCard card = card(p);
+        if (card == null || !card.hasLich()) {
+            return fail(ctx, p.getGameProfile().getName() + " has no lich");
+        }
+        card.setKuvaLevel(rank - 1);
+        LichDirector.HuntView view = LichDirector.view(p);
+        KuvaMasterEntity lich = view == null ? null : view.lich();
+        if (lich != null) {
+            lich.refreshRank(card);
+        }
+        return ok(ctx, card.getLichName() + " is now rank " + card.getLichRank());
     }
 
     private static int rename(CommandContext<CommandSourceStack> ctx, String name) throws CommandSyntaxException {

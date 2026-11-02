@@ -975,14 +975,14 @@
           "items": [
             "<em>Bring two or three kinds of damage</em>: rotate melee, bow and spells. Keep hitting with one kind and it resists that kind more and more; the denser the hexagon shield flashing on its body, the more it has adapted.",
             {
-              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "if": "!cfg:kuva_lich.lichVariedTraits",
               "text": "<em>Bows first</em>: arrows deal ×1.25 damage to Kuva enemies, and a star of golden cracks bursts open where they hit; other projectiles and spells only deal ×0.75."
             },
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
-              "text": "<em>Check its weakness first</em>: each Lich's weakness and resistances are rolled when it is born. Open the {lang:key.kuvalich.lich_archive} and read the “{lang:kuvalich.archive.attr.weakness}” and “{lang:kuvalich.archive.attr.resistance}” rows: its weakness takes ×1.25 damage and its resistances ×0.75, so hit it with what it fears."
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "<em>Check its personality and weaknesses first</em>: each Lich's personality, weaknesses and resistances are fixed when it is born. Open the {lang:key.kuvalich.lich_archive} and read the personality under its name and the “{lang:kuvalich.archive.attr.weakness}” and “{lang:kuvalich.archive.attr.resistance}” rows: a jovial Lich is fragile but grows fiercer fast, so end it quickly; a logical one is tough and adapts fast, so keep switching damage types. Its weaknesses take ×1.25–1.40 damage, so hit it with what it fears."
             },
-            "<em>Leave pets behind</em>: every attack the Lich makes also hits other creatures within 3 blocks, pets and teammates included.",
+            "<em>Leave pets behind</em>: every attack the Lich makes also hits other creatures within a few blocks, pets and teammates included.",
             "<em>Pick a safe arena</em>: <b>don't finish it near lava or the void</b>; rewards drop where it falls.",
             {
               "if": "cfg:kuva_lich.battleBoost>0",

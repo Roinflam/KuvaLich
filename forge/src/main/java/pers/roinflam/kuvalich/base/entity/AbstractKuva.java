@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.client.mercy.KuvaStateFx;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.nemesis.LichTraits;
 import pers.roinflam.kuvalich.fx.FxId;
 import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
@@ -291,8 +292,14 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
      * @param kuvaBase 攻击方赤毒实体
      */
     private static void applyKuvaBaseDamageBonus(LivingHurtEvent event, AbstractKuva kuvaBase) {
-        float multiplier = (float) (1.0f + (kuvaBase.getBattleTick() / 20f) * ModConfig.KUVA_LICH.battleBoost.get());
+        float multiplier = (float) (1.0D + kuvaBase.getBattleTick() / 20.0D * kuvaBase.furyPerSecond());
         event.setAmount(event.getAmount() * multiplier);
+    }
+
+    /** 交战中每秒的增幅（配置值 × 这只自己的增幅档位） */
+    public double furyPerSecond() {
+        LichTraits traits = combatTraits();
+        return ModConfig.KUVA_LICH.battleBoost.get() * (traits != null ? traits.furyScale() : 1.0D);
     }
 
     /**
@@ -390,12 +397,12 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     /**
      * 这一下按伤害类型吃到的倍率：大于 1 是打中了弱点，小于 1 是被抗性削了，等于 1 是都不沾。
      * 固定倍率是弓箭 ×1.25、其他弹射物 ×0.75、魔法（弹射物以外的）×0.75；
-     * 有自己的弱点 / 抗性掩码的（{@link #seededAffinities}）按掩码算
+     * 按种子抽过面板的专属玄骸（{@link #combatTraits}）按它自己那四类的倍率算，「其他」类不受影响
      */
     public float damageTypeMultiplier(DamageSource source) {
-        int affinities = seededAffinities();
-        if (affinities >= 0) {
-            return seededMultiplier(classifyDamage(source), affinities);
+        LichTraits traits = combatTraits();
+        if (traits != null && traits.varied) {
+            return (float) traits.affinity(classifyDamage(source).ordinal());
         }
         float multiplier = 1.0F;
         if (source.getDirectEntity() instanceof AbstractArrow) {
@@ -410,28 +417,17 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     }
 
     /**
-     * 这只实体自己的弱点 / 抗性位掩码；返回负数表示用上面那套固定倍率（默认）。
-     *
-     * <p>位序和 {@link DamageCategory} 的前四个序号一致：bit0 近战、bit1 弓箭、bit2 其他弹射物、bit3 魔法。
-     * 低 4 位是弱点（×1.25），4~7 位是抗性（×0.75）。固定倍率写成掩码就是 {@code 0xC2}。</p>
+     * 专属玄骸按种子、等级算出来的战斗面板；奴仆、无主玄骸、客户端上都没有，返回 null（照固定数值）
      */
-    protected int seededAffinities() {
-        return -1;
+    @Nullable
+    public LichTraits combatTraits() {
+        return null;
     }
 
-    /** 按位掩码取弱点 / 抗性的倍率；「其他」类伤害不在四类里，不受影响 */
-    private static float seededMultiplier(DamageCategory category, int affinities) {
-        int bit = category.ordinal();
-        if (bit > 3) {
-            return 1.0F;
-        }
-        if ((affinities & (1 << bit)) != 0) {
-            return ARROW_DAMAGE_MULTIPLIER;
-        }
-        if ((affinities & (1 << (bit + 4))) != 0) {
-            return PROJECTILE_DAMAGE_MULTIPLIER;
-        }
-        return 1.0F;
+    /** 每类适应至多叠几层（特效判「叠满」用） */
+    public int adaptStackCap() {
+        LichTraits traits = combatTraits();
+        return traits != null ? traits.adaptStacks() : LichTraits.ADAPT_STACKS[LichTraits.NORMAL];
     }
 
     /**
@@ -1225,7 +1221,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         }
         if (this.entityData.get(HAS_TARGET)) {
             battleTick++;
-        } else if (battleTick > 0) {
+        } else if (battleTick > 0 && (this.tickCount % 2 == 0 || !furyLingers())) {
             battleTick--;
         }
         if (!this.level().isClientSide && this.tickCount % 20 == 0 && this.furyOverrideTicks <= 0) {
@@ -1234,7 +1230,13 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     }
 
     private int furyFromBattle() {
-        return (int) Math.round(this.battleTick / 20.0D * ModConfig.KUVA_LICH.battleBoost.get() * 1000.0D);
+        return (int) Math.round(this.battleTick / 20.0D * furyPerSecond() * 1000.0D);
+    }
+
+    /** 增幅是专长：丢了目标后增幅掉得慢一半 */
+    private boolean furyLingers() {
+        LichTraits traits = combatTraits();
+        return traits != null && traits.isSignature(LichTraits.FURY);
     }
 
     @Override

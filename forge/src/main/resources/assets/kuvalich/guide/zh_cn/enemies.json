@@ -408,7 +408,13 @@
         },
         {
           "type": "p",
-          "text": "它在通讯里怎么说话，看它生来的<t>性格</t>：有的爱说爱笑，管你叫「朋友」，输了也不肯住嘴；有的冷静寡言，管你叫「对手」，开口像在下判决。性格从它诞生那一刻就定了，只影响它说什么，不影响强度。"
+          "if": "cfg:kuva_lich.lichVariedTraits",
+          "text": "它在通讯里怎么说话、打起来什么路数，都看它生来的<t>性格</t>：活泼的爱说爱笑，管你叫「朋友」，打起来攻击高、血薄、越打越凶；理性的冷静寡言，管你叫「对手」，血厚甲硬、适应得快。性格从它诞生那一刻就定了，每只的弱点、抗性和各项能力的强弱也各不相同，见[[enemies/lich_traits]]。"
+        },
+        {
+          "type": "p",
+          "text": "它在通讯里怎么说话，看它生来的<t>性格</t>：有的爱说爱笑，管你叫「朋友」，输了也不肯住嘴；有的冷静寡言，管你叫「对手」，开口像在下判决。性格从它诞生那一刻就定了，只影响它说什么，不影响强度。",
+          "if": "!cfg:kuva_lich.lichVariedTraits"
         },
         {
           "type": "h",
@@ -487,22 +493,62 @@
         {
           "type": "kv",
           "rows": [
-            [
-              "生命",
-              "<t>200</t>"
-            ],
-            [
-              "护甲",
-              "<t>8</t>"
-            ],
-            [
-              "击退抗性",
-              "<t>65%</t>"
-            ],
-            [
-              "移动速度",
-              "<t>0.35</t>"
-            ],
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "生命",
+                "2 级时活泼的约 <t>170</t>、理性的约 <t>240</t>，每只还会上下浮动，见[[enemies/lich_traits]]"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "生命",
+                "<t>200</t>"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "护甲",
+                "2 级时活泼的 <t>6</t>、理性的 <t>11</t>"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "护甲",
+                "<t>8</t>"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "击退抗性",
+                "活泼的 <t>50%</t>、理性的 <t>80%</t>"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "击退抗性",
+                "<t>65%</t>"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "移动速度",
+                "<t>0.35</t>，活泼的快 <t>8%</t>、理性的慢 <t>5%</t>"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "移动速度",
+                "<t>0.35</t>"
+              ]
+            },
             [
               "索敌范围",
               "<t>64</t> 格，冲你来时 <t>96</t> 格"
@@ -528,9 +574,30 @@
         {
           "type": "list",
           "items": [
-            "下手更重，每一下在简单难度是 <t>11.05</t>，普通 <t>22.1</t>，困难 <t>33.15</t>",
-            "命中后把你<w>远远击飞</w>，并回复 <t>2.6</t> 点生命",
-            "每秒回血，有目标时回 <t>2</t> 点或已损失生命的 <t>2%</t>，取较大者，没有目标时则是 <t>1</t> 点或 <t>1%</t>",
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "下手更重：一下 = 攻击力 × 难度系数 × 0.85，攻击力活泼的约 <t>15.6</t>、理性的约 <t>11</t>，普通难度一下约 <t>26.5</t> / <t>18.8</t>；[[requiem/lich_archive]]里的「一刀」写着你那只砍你一下有多疼"
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "text": "下手更重，每一下在简单难度是 <t>11.05</t>，普通 <t>22.1</t>，困难 <t>33.15</t>"
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "命中后把你<w>远远击飞</w>，并回一口血：中档回攻击力的 <t>20%</t>，弱档 <t>10%</t>，强档 <t>30%</t>，专长 <t>45%</t>"
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "text": "命中后把你<w>远远击飞</w>，并回复 <t>2.6</t> 点生命"
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "每秒回血，有目标时回 <t>2</t> 点或已损失生命的 <t>2%</t>，取较大者，没有目标时则是 <t>1</t> 点或 <t>1%</t>；自愈档位再把它乘上 <t>0.5~2.2</t>"
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "text": "每秒回血，有目标时回 <t>2</t> 点或已损失生命的 <t>2%</t>，取较大者，没有目标时则是 <t>1</t> 点或 <t>1%</t>"
+            },
             {
               "if": "cfg:kuva_lich.battleBoost>0",
               "text": "战斗拖得越久，它打得越痛，见[[enemies/battle_boost]]"
@@ -542,7 +609,15 @@
           "type": "tip",
           "style": "warn",
           "title": "它不认敌友",
-          "text": "它打的是<w>范围攻击</w>，每次出手，身体周围 <t>3</t> 格内的其他生物都挨一份同样的伤害，只有赤毒敌人不受影响。它出手不认敌友，你带来的每一条命都在它够得着的地方。"
+          "text": "它打的是<w>范围攻击</w>，每次出手，身体周围 <t>2.5~4.5</t> 格内（看它的震荡档位，档案里写着）的其他生物都挨一份同样的伤害，只有赤毒敌人不受影响。它出手不认敌友，你带来的每一条命都在它够得着的地方。",
+          "if": "cfg:kuva_lich.lichVariedTraits"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "它不认敌友",
+          "text": "它打的是<w>范围攻击</w>，每次出手，身体周围 <t>3</t> 格内的其他生物都挨一份同样的伤害，只有赤毒敌人不受影响。它出手不认敌友，你带来的每一条命都在它够得着的地方。",
+          "if": "!cfg:kuva_lich.lichVariedTraits"
         },
         {
           "type": "h",
@@ -742,7 +817,7 @@
         {
           "type": "list",
           "items": [
-            "伤害公式是 13 × 难度系数 × 0.85，和奴仆同一套算法",
+            "伤害公式是攻击力 × 难度系数 × 0.85，和奴仆同一套算法",
             "击飞力度为水平 ×3.15、垂直 ×2.15",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
@@ -771,8 +846,8 @@
         "client/lich/LichNameplates.java:20-35 — 有主玄骸名牌 32 格内、看得见才显示，不是主人在看时第二行写「某某的玄骸」；无主玄骸不显示",
         "nemesis/LichDirector.java:818-835 — 等待原因：维度不在 lichHuntDimensions、和平、创造 / 旁观（lichHuntCreative 为 false 时）、睡觉 / 骑乘 / 死亡 / 处决中、登录未满 lichLoginGraceSeconds",
         "nemesis/LichDirector.java:858-895 checkDeparture — 跑出 lichLeashDistance、和平、lichIdleDepartSeconds 内没交手（0 = 不会）、卡住 lichRepositionSeconds 后重定位（每次遭遇至多 lichRepositionMax 次）；下线 / 换维度 / 死亡走事件；:1169 冷却 lichCooldownMinutes（0 = 没有冷却，那一句分两种写法）；endEncounter 怒气清零",
-        "entity/KuvaMasterEntity.java:503 createAttributes — 生命 200 / 攻击 13 / 击退抗性 0.65 / 移速 0.35 / 追踪 64 / 护甲 8；init/KuvaLichEntities.java 尺寸 1.75 × 3.4，fireImmune()",
-        "entity/KuvaMasterEntity.java doHurtTarget — 伤害 = 攻击力 × 难度 id × 0.85；:725 AOE inflate(3)，排除 AbstractKuva 与主目标，同额伤害并击退；击退 ×3.15/×2.15；命中回血 13 × 0.2 = 2.6；回血：有目标 max(2, 缺失×2%)，无目标 max(1, 缺失×1%)",
+        "entity/KuvaMasterEntity.java createAttributes — 基础 生命 200 / 攻击 13 / 击退抗性 0.65 / 移速 0.35 / 追踪 64 / 护甲 8；bindOwner → applyTraits 按 nemesis/LichTraits 用临时修饰符改成这只的面板（活泼 生命 ×0.85、攻击 ×1.2、护甲 6、击退 0.5、移速 +8%；理性 生命 ×1.2、攻击 ×0.85、护甲 11、击退 0.8、移速 −5%；生命、攻击再各 ±8%；生命、护甲 × rankScale）；lichVariedTraits 关着时是 uniform：基础值 × rankScale；init/KuvaLichEntities.java 尺寸 1.75 × 3.4，fireImmune()",
+        "entity/KuvaMasterEntity.java doHurtTarget — 伤害 = hitDamage(攻击力, 难度) = 攻击力 × 难度 id × 0.85；attackNearbyEntities 半径 LichTraits.QUAKE_RADIUS（2.5 / 3 / 3.5 / 4.5），排除 AbstractKuva 与主目标，同额伤害并击退；击退 ×3.15/×2.15 再 × QUAKE_KNOCK（0.8 / 1 / 1.2 / 1.5）；命中回血 = 攻击力 × LIFESTEAL_RATIO（0.1 / 0.2 / 0.3 / 0.45），吸血专长时 × (1 + 扫到的数量)；回血：有目标 max(2, 缺失×2%)，无目标 max(1, 缺失×1%)，再 × REGEN_SCALE（0.5 / 1 / 1.5 / 2.2）；没有面板的（无主、演示）照中档",
         "mercy/MercyRules.java:31 enabledFor / :42 canDown — mercyEnabled 时有主玄骸受致命伤（伤害源不带 BYPASSES_INVULNERABILITY）先倒地；无主玄骸不倒地；/kill（generic_kill）、虚空（fell_out_of_world）带这个标签，照常真死 → entity/KuvaMasterEntity.java:772 onKilled 按 KILLED_OTHER 结束、不判定",
         "mercy/MercyServer.java:333 handleRequest — 只有主人能处决（canBeExecutedBy）、mercyReach 内、视线；别人看到 kuvalich.mercy.prompt.other；:1070 onLivingAttack 处决者无敌；:470 onDownedTimeout 倒地 mercyDownedSeconds 后起身逃走（UNCLAIMED），什么都不给；:995 定案前中断则作废、回到倒地，剩余不足 mercyResumeFloorSeconds 的补到这个数（max(剩余, 下限)，0 时不补、计时接着走）；定案后中断当场结算",
         "client/KuvaKeyMappings.java:39 — 处决键默认 X，和原版 key.loadToolbarActivator 同键",
@@ -786,7 +861,7 @@
         "nemesis/NemesisSpawnRules.java:105 — 刷怪蛋 / 发射器 / 命令生成的是无主玄骸（lichWildAllowed 为 false 时拒绝加入世界）；自然生成、刷怪笼一律拦下；entity/KuvaMasterEntity.java:772 onKilled 无主直接 return、:797 shouldDropLoot 只有有主的掉东西；名牌、Boss 条只给有主的",
         "module/weapon/WeaponCombatHandler.java — execute_threshold / execute_chance 触发后 LivingEntityUtil.kill 先改血量再调 die，被 AbstractKuva.java:913 die 拦成倒地",
         "星际战甲小知识：原作 Kuva Lich 是玩家自己产生的宿敌；Requiem 模组装在 Parazon 上，按正确顺序 Mercy 才能 Vanquish，并获得其 Kuva 武器",
-        "nemesis/LichPersona.java — 性格由玄骸种子的低 32 位算出，活泼 / 理性两种，各有一整套台词；LichComms.send、LichArchiveScreen.planTalk 按它取键，不影响任何数值"
+        "nemesis/LichPersona.java — 性格由玄骸种子的低 32 位算出，活泼 / 理性两种，各有一整套台词；LichComms.send、LichArchiveScreen.planTalk 按它取键；lichVariedTraits 开着时 nemesis/LichTraits 按性格定面板偏向，关着时只管台词"
       ]
     },
     {
@@ -876,6 +951,46 @@
           "text": "玄骸等级只记着你猜错的次数，不会削弱你，猜错只是少了一次成功。"
         },
         {
+          "type": "h",
+          "if": "cfg:kuva_lich.lichRankHealthStep>0",
+          "text": "对它的影响"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.lichRankHealthStep>0",
+          "text": "它自己也跟着等级变：生命和护甲以 2 级为准，每升一级 +<t>{cfg:kuva_lich.lichRankHealthStep|pct}</t>，到 <t>6</t> 级封顶；刚诞生的 1 级要少这么多。攻击力不跟等级涨。"
+        },
+        {
+          "type": "table",
+          "if": "cfg:kuva_lich.lichRankHealthStep>0",
+          "header": [
+            "玄骸等级",
+            "生命、护甲"
+          ],
+          "rows": [
+            [
+              "1",
+              "<t>{cfg:kuva_lich.lichRankHealthStep|mul:-1|add:1|round:2|x}</t>"
+            ],
+            [
+              "2",
+              "<t>1×</t>"
+            ],
+            [
+              "3",
+              "<t>{cfg:kuva_lich.lichRankHealthStep|add:1|round:2|x}</t>"
+            ],
+            [
+              "4",
+              "<w>{cfg:kuva_lich.lichRankHealthStep|mul:2|add:1|round:2|x}</w>"
+            ],
+            [
+              "6 级起",
+              "<b>{cfg:kuva_lich.lichRankHealthStep|mul:4|add:1|round:2|x}</b>"
+            ]
+          ]
+        },
+        {
           "type": "tip",
           "style": "warn",
           "title": "猜错了先换卡",
@@ -900,7 +1015,167 @@
         "increaseDamage 与 reducedDamage 都为 0 时，等级照常 +1 并显示，但不影响任何伤害（good tip 描述的就是这种实际行为）",
         "失败分支不动卡；RequiemCard 只有 consumeCardsAndGetSurvivors（成功时）清卡",
         "capability/RequiemCard.java:91 MAX_ATTEMPTS = 5 — 档案的处决记录留最近 5 行",
-        "星际战甲小知识：原作用错误 Requiem 顺序 Mercy 玄骸会失败，玄骸 Rank 提升；末句「本模组里记在你身上」对应上面 kuvaLevel 在玩家 capability 上（不写「代价」，因为 increaseDamage / reducedDamage 都为 0 时没有惩罚）"
+        "星际战甲小知识：原作用错误 Requiem 顺序 Mercy 玄骸会失败，玄骸 Rank 提升；末句「本模组里记在你身上」对应上面 kuvaLevel 在玩家 capability 上（不写「代价」，因为 increaseDamage / reducedDamage 都为 0 时没有惩罚）",
+        "nemesis/LichTraits.java rankScale — 生命、护甲 × (1 + lichRankHealthStep × (min(等级, 6) − 2))，最低 0.1；entity/KuvaMasterEntity.java refreshRank（applyFailure 里调）按新等级重套面板，血量按比例；攻击不乘"
+      ]
+    },
+    {
+      "id": "lich_traits",
+      "title": "玄骸的性格与面板",
+      "icon": "kuvalich:kuva_master_spawn_egg",
+      "summary": "活泼还是理性，弱点、抗性、各项能力强弱每只都不同",
+      "if": "cfg:kuva_lich.lichVariedTraits",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "每只玄骸诞生时就定下了<hl>性格</hl>，性格不光决定它在通讯里怎么说话，也决定它怎么打。具体的数都在[[requiem/lich_archive]]里：名字下面写着性格，属性栏有生命、护甲、砍你一刀多疼、弱点和抗性，能力图标下面的小点是档位。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "",
+            "活泼",
+            "理性"
+          ],
+          "widths": [
+            2,
+            4,
+            4
+          ],
+          "rows": [
+            [
+              "生命（2 级）",
+              "约 <t>170</t>，每只 ±8%",
+              "约 <t>240</t>，每只 ±8%"
+            ],
+            [
+              "攻击力",
+              "约 <t>15.6</t>，每只 ±8%",
+              "约 <t>11</t>，每只 ±8%"
+            ],
+            [
+              "护甲（2 级）",
+              "<t>6</t>",
+              "<t>11</t>"
+            ],
+            [
+              "击退抗性",
+              "<t>50%</t>",
+              "<t>80%</t>"
+            ],
+            [
+              "移动速度",
+              "快 <t>8%</t>",
+              "慢 <t>5%</t>"
+            ],
+            [
+              "弱点",
+              "两类，<g>×1.25~1.40</g>",
+              "一类，<g>×1.25~1.40</g>"
+            ],
+            [
+              "抗性",
+              "一类，<b>×0.75~0.85</b>",
+              "两类，<b>×0.60~0.75</b>"
+            ],
+            [
+              "偏强的能力",
+              "交战增幅、震荡、吸血",
+              "适应、自愈"
+            ],
+            [
+              "专长从这里抽",
+              "震荡、吸血、交战增幅",
+              "适应、自愈、震荡"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "弱点和抗性在近战、箭矢、其他弹射物、魔法四类里抽，剩下的类别不变；近战的抗性最多到 <b>×0.85</b>，只带刀也打得动",
+            "攻击力不跟等级涨，生命和护甲跟着[[enemies/kuva_escalation|玄骸等级]]变，上表是 2 级的数"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "能力的档位"
+        },
+        {
+          "type": "p",
+          "text": "五项能力各有弱、中、强三档：性格偏强的那几项一半是强档，偏弱的那几项一半是弱档。另外每只有一项<hl>专长</hl>，比强档还强一截，档案里那枚图标描着红边。"
+        },
+        {
+          "type": "table",
+          "header": [
+            "能力",
+            "弱",
+            "中",
+            "强",
+            "专长"
+          ],
+          "widths": [
+            2,
+            3,
+            3,
+            3,
+            4
+          ],
+          "rows": [
+            [
+              "适应",
+              "每层 3%，最多 4 层，3 秒掉层",
+              "每层 5%，6 层，4 秒",
+              "每层 6%，6 层，5 秒",
+              "每层 7%，6 层，6 秒"
+            ],
+            {
+              "if": "cfg:kuva_lich.battleBoost>0",
+              "cells": [
+                "交战增幅",
+                "每秒 +{cfg:kuva_lich.battleBoost|mul:0.6|pct}",
+                "每秒 +{cfg:kuva_lich.battleBoost|pct}",
+                "每秒 +{cfg:kuva_lich.battleBoost|mul:1.35|pct}",
+                "每秒 +{cfg:kuva_lich.battleBoost|mul:1.6|pct}，丢了目标后退得慢一半"
+              ]
+            },
+            [
+              "自愈",
+              "回血 ×0.5",
+              "×1",
+              "×1.5",
+              "×2.2"
+            ],
+            [
+              "震荡",
+              "范围 2.5 格，击退 ×0.8",
+              "3 格，×1",
+              "3.5 格，×1.2",
+              "4.5 格，×1.5"
+            ],
+            [
+              "吸血",
+              "每刀回攻击力的 10%",
+              "20%",
+              "30%",
+              "45%，重击扫到的每个人也各回一份"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "怎么对付",
+          "text": "活泼的血薄、越打越凶：备好它的弱点，趁增幅还没涨起来<g>速战速决</g>。理性的血厚、适应快：<g>多带几种伤害轮着打</g>，别一招用到底。打法细节见[[enemies/lich_tactics]]。"
+        }
+      ],
+      "_src": [
+        "nemesis/LichTraits.java — seeded(seed, rank, step)：性格 LichPersona.of((int) seed)；Leaning JOVIAL 生命 0.85 / 攻击 1.2 / 护甲 6 / 击退 0.5 / 移速 1.08 / 2 弱 1 抗（0.75~0.85），LOGICAL 1.2 / 0.85 / 11 / 0.8 / 0.95 / 1 弱 2 抗（0.60~0.75）；弱点 1.25 + 0.05 × [0,3]；生命、攻击各 ±8%（spread）；近战抗性不低于 0.85",
+        "nemesis/LichTraits.java — 档位概率 FAVORED 10/40/50、EVEN 30/40/30、DISFAVORED 50/40/10；活泼 增幅 / 震荡 / 吸血偏强、适应 / 自愈偏弱，专长池 震荡 40 / 吸血 30 / 增幅 30；理性 适应 / 自愈偏强、增幅 / 吸血偏弱、震荡居中，专长池 适应 40 / 自愈 35 / 震荡 25",
+        "nemesis/LichTraits.java — ADAPT_PCT 3/5/6/7、ADAPT_STACKS 4/6/6/6、ADAPT_DECAY_TICKS 60/80/100/120、FURY_SCALE 0.6/1/1.35/1.6、REGEN_SCALE 0.5/1/1.5/2.2、QUAKE_RADIUS 2.5/3/3.5/4.5、QUAKE_KNOCK 0.8/1/1.2/1.5、LIFESTEAL_RATIO 0.1/0.2/0.3/0.45",
+        "entity/KuvaMasterEntity.java applyTraits / doHurtTarget / tickResistance、base/entity/AbstractKuva.java furyPerSecond / furyLingers — 各档位实际生效处；吸血专长按扫到的数量多回，增幅专长无目标时退得慢一半",
+        "client/lich/LichArchiveScreen.java drawAbilities — 图标下 1~3 个小点（弱 1、中 2、强和专长 3），专长描 KUVA 红边；悬停写档位和具体数；名字下一行「第 N 只 · 性格」，悬停讲性格打法（只在 lichVariedTraits 开着时）",
+        "整篇只在 lichVariedTraits 开着时显示；关着时所有专属玄骸是固定面板（基础值 × 等级倍率）"
       ]
     },
     {
@@ -959,6 +1234,10 @@
             "计时从它<w>锁定目标那一刻</w>就开始，不等到交手：奴仆在 <t>32</t> 格内看见你就会锁定，你的玄骸一现身就盯上你，无主的玄骸在 <t>64</t> 格内看见你才锁定",
             "只要它有攻击目标，倍率就一直上涨，目标可以是你、你的宠物，或它正在打的其他怪",
             "失去目标后按同样的速度往回退，打了 60 秒就要脱战 60 秒才能完全归零",
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "你的玄骸涨得多快看它的增幅档位：每秒 +<t>{cfg:kuva_lich.battleBoost|mul:0.6|pct}</t>~<t>{cfg:kuva_lich.battleBoost|mul:1.6|pct}</t>，[[requiem/lich_archive]]里写着；增幅是专长的那只，失去目标后退得慢一半"
+            },
             "奴仆的计时跟着实体一起存盘，区块卸载再加载不会清零",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
@@ -978,7 +1257,8 @@
         "base/entity/AbstractKuva.java:1146 updateBattleTick — 有目标每 tick +1，无目标每 tick −1（至 0）；只看 target 非空且存活，不看是否已交手；倒地时 :1109 前就返回，计数冻结",
         "base/entity/AbstractKuva.java registerGoals — NearestAttackableTargetGoal<Player>(mustSee=true)，搜索半径 = FOLLOW_RANGE：奴仆 32、无主玄骸 64；entity/KuvaMasterEntity.java:423-424 有主玄骸 OwnerHuntGoal，现身后直接锁定主人",
         "base/entity/AbstractKuva.java:1198 — BattleTick 写入 NBT；entity/KuvaMasterEntity.java:1417 有主玄骸不存盘，所以存盘那一条只写奴仆",
-        "client/mercy/KuvaStateFx.java:149 FURY_FLOOR {0, 250, 750, 1500, 3000}（千分比）— 玄骸发光层逐档加亮，client/mercy/KuvaFuryLayer.java 赤毒纹路层 2 档起显出；奴仆 2 档起背囊冒光点；client/lich/LichBossBar.java:64 / :234 增幅 ≥ 5% 时 Boss 条状态行出「+N%」小牌"
+        "client/mercy/KuvaStateFx.java:149 FURY_FLOOR {0, 250, 750, 1500, 3000}（千分比）— 玄骸发光层逐档加亮，client/mercy/KuvaFuryLayer.java 赤毒纹路层 2 档起显出；奴仆 2 档起背囊冒光点；client/lich/LichBossBar.java:64 / :234 增幅 ≥ 5% 时 Boss 条状态行出「+N%」小牌",
+        "base/entity/AbstractKuva.java furyPerSecond — battleBoost × LichTraits.FURY_SCALE（0.6 / 1 / 1.35 / 1.6，没有面板的按 1）；updateBattleTick 增幅专长（furyLingers）无目标时隔一 tick 才退一次"
       ]
     },
     {
@@ -1005,7 +1285,7 @@
           ],
           "rows": [
             {
-              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "if": "!cfg:kuva_lich.lichVariedTraits",
               "cells": [
                 "① 伤害类型修正",
                 "箭矢 <g>×1.25</g>，其他弹射物和魔法 <b>×0.75</b>",
@@ -1013,10 +1293,10 @@
               ]
             },
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
+              "if": "cfg:kuva_lich.lichVariedTraits",
               "cells": [
                 "① 伤害类型修正",
-                "奴仆和无主玄骸：箭矢 <g>×1.25</g>，其他弹射物和魔法 <b>×0.75</b>；有主的玄骸：一类弱点 <g>×1.25</g>、两类抗性 <b>×0.75</b>，每只不同",
+                "奴仆和无主玄骸：箭矢 <g>×1.25</g>，其他弹射物和魔法 <b>×0.75</b>；你的玄骸：活泼的两类弱点一类抗性，理性的一类弱点两类抗性，倍率每只不同",
                 "都有"
               ]
             },
@@ -1025,11 +1305,22 @@
               "一律 <b>×0.75</b>",
               "奴仆"
             ],
-            [
-              "② 适应性抗性",
-              "同一类伤害连续打，每层 <b>-5%</b>，最多 <b>-30%</b>",
-              "玄骸"
-            ],
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "② 适应性抗性",
+                "同一类伤害连续打，每层 <b>-3%~-7%</b>，最多 <t>4~6</t> 层，看它的适应档位",
+                "玄骸"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "② 适应性抗性",
+                "同一类伤害连续打，每层 <b>-5%</b>，最多 <b>-30%</b>",
+                "玄骸"
+              ]
+            },
             [
               "③ 连击递减",
               "2 秒内挨打越多越低，最低 <b>40%</b>",
@@ -1099,9 +1390,9 @@
         {
           "type": "tip",
           "style": "info",
-          "if": "cfg:kuva_lich.lichSeededAffinities",
+          "if": "cfg:kuva_lich.lichVariedTraits",
           "title": "每只玄骸不一样",
-          "text": "你的玄骸诞生时，会从近战、箭矢、其他弹射物、魔法四类里抽一类当弱点（×1.25）、两类当抗性（×0.75），剩下一类不变，每只都不同，[[requiem/lich_archive]]里写着它的弱点和抗性。奴仆和无主的玄骸照上表。"
+          "text": "你的玄骸诞生时，会从近战、箭矢、其他弹射物、魔法四类里抽弱点和抗性：活泼的两类弱点（<g>×1.25~1.40</g>）、一类抗性（<b>×0.75~0.85</b>），理性的一类弱点（<g>×1.25~1.40</g>）、两类抗性（<b>×0.60~0.75</b>），剩下的不变；近战的抗性最多到 <b>×0.85</b>。[[requiem/lich_archive]]里写着它的弱点和抗性。奴仆和无主的玄骸照上表。"
         },
         {
           "type": "h",
@@ -1118,7 +1409,11 @@
             "每挨一下，先按这一类现有的层数减伤，每层 <t>5%</t>，再给这一类 +1 层，所以第一下不减伤",
             "最多叠 <t>6</t> 层，叠满时这一类伤害 <b>-30%</b>",
             "某一类 <t>4~5</t> 秒没再打中，就掉 1 层，之后每 <t>5</t> 秒再掉 1 层",
-            "它超过 <t>10</t> 秒没受任何伤害，所有类别一起清零"
+            "它超过 <t>10</t> 秒没受任何伤害，所有类别一起清零",
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "上面是中档的数。你的玄骸看适应档位：弱档每层 <t>3%</t>、最多 <t>4</t> 层、<t>3</t> 秒就掉层，强档每层 <t>6%</t>，专长每层 <t>7%</t>、<t>6</t> 秒才掉一层，见[[enemies/lich_traits]]"
+            }
           ]
         },
         {
@@ -1222,14 +1517,14 @@
         {
           "type": "tip",
           "style": "info",
-          "if": "!cfg:kuva_lich.lichSeededAffinities",
+          "if": "!cfg:kuva_lich.lichVariedTraits",
           "title": "它的防御看得见",
           "text": "这几道关卡都会显形：箭矢射中时它身上会炸开一圈金色裂纹，适应性抗性在挨打的那一面浮起一片六边形护壁，层数越多越实；连击递减和软上限削掉一大截时，命中处迸出一道十字白光和一串火星，伴着一声闷响。哪一类伤害叠了几层，看你的玄骸 Boss 条下面那排小图标。"
         },
         {
           "type": "tip",
           "style": "info",
-          "if": "cfg:kuva_lich.lichSeededAffinities",
+          "if": "cfg:kuva_lich.lichVariedTraits",
           "title": "它的防御看得见",
           "text": "这几道关卡都会显形：打中它的弱点时，它身上会炸开一圈金色裂纹（奴仆和无主的玄骸，弱点就是箭矢），适应性抗性在挨打的那一面浮起一片六边形护壁，层数越多越实；连击递减和软上限削掉一大截时，命中处迸出一道十字白光和一串火星，伴着一声闷响。哪一类伤害叠了几层，看你的玄骸 Boss 条下面那排小图标。"
         },
@@ -1257,22 +1552,22 @@
         "base/entity/AbstractKuva.java:106-135 — LivingHurtEvent（默认 NORMAL 优先级）里对 AbstractKuva 目标调用 applyResistance",
         "module/weapon/WeaponCombatHandler.java:543-590 — 武器模组结算在 LivingHurtEvent LOWEST，读取的 evt.getAmount() 已被赤毒抗性改过，所以抗性作用在模组倍率之前",
         "base/entity/AbstractKuva.java:214-220 — 先 applyBaseDamageTypeModifier 再 applyAdvancedResistance",
-        "base/entity/AbstractKuva.java:374-376 — 有主玄骸在 lichSeededAffinities 开着时改读种子抽出的弱点 / 抗性（:404 applySeededAffinities：近战 / 箭矢 / 其他弹射物 / 魔法里一弱 ×1.25、两抗 ×0.75），奴仆和无主玄骸照固定值；档案的弱点 / 抗性行读同一个结果",
+        "base/entity/AbstractKuva.java damageTypeMultiplier — 有主玄骸在 lichVariedTraits 开着时按 combatTraits()（nemesis/LichTraits.seeded）那四类的倍率：活泼 2 弱（1.25~1.40，步长 0.05）1 抗（0.75~0.85），理性 1 弱 2 抗（0.60~0.75），近战抗性不低于 MELEE_RESIST_FLOOR 0.85；奴仆和无主玄骸照固定值；档案的弱点 / 抗性行读同一个结果（LichArchiveService.stats）",
         "base/entity/AbstractKuva.java:51-55,233-246 — 直接实体 AbstractArrow ×1.25；否则 IS_PROJECTILE ×0.75；魔法且非 IS_PROJECTILE ×0.75（原版 ThrownTrident 继承 AbstractArrow）",
         "entity/KuvaSlaveEntity.java:67,99-101 — 奴仆固定 ×0.75",
         "entity/KuvaMasterEntity.java:181-198 — 玄骸：适应性 → 连击递减 → 软上限",
         "base/entity/AbstractKuva.java:190-204 — 分类优先级 ARROW > PROJECTILE > MAGIC > MELEE（直接实体是 LivingEntity）> OTHER",
         "module/weapon/MagicDamageClassifier.java:107-132,144-147,179-183 — 魔法 = 原版（msgId 含 magic 或 witch_resistant_to：magic / indirect_magic / sonic_boom / thorns，许多模组法术 msgId 带 magic 也命中这条）或第三方（开关 enableThirdPartyMagicRecognition：白名单、forge:is_magic、命名空间）；召唤物挥砍按近战。所以「被认作魔法的模组法术」一句不随开关隐藏",
         "config/ModConfig.java:243-244 — 默认命名空间 irons_spellbooks / gtbcs_geomancy_plus / goety / ars_nouveau / sweetmagic；命名空间那一项加了「开关开启 + 列表非空」的行级条件",
-        "entity/KuvaMasterEntity.java:81-87,211-226 — 每层 0.05，最多 6 层；先按当前层减伤再 +1",
-        "entity/KuvaMasterEntity.java:291-310 + AbstractKuva.java:335-337 — 每 20 tick 检查：距上次任意受击 >200 tick 全清；某类 >80 tick 未命中则 -1 层并把该类计时设为当前 tick（检查粒度 20 tick，所以首次 81~100 tick、之后每 100 tick 掉一层）",
+        "entity/KuvaMasterEntity.java applyAdaptiveResistance — 每层 LichTraits.ADAPT_PCT（3 / 5 / 6 / 7%），最多 ADAPT_STACKS（4 / 6 / 6 / 6）层；先按当前层减伤再 +1；没有面板的照中档 5% × 6",
+        "entity/KuvaMasterEntity.java tickResistance + AbstractKuva.java — 每 20 tick 检查：距上次任意受击 >200 tick 全清；某类超过 ADAPT_DECAY_TICKS（60 / 80 / 100 / 120）未命中则 -1 层并把该类计时设为当前 tick（检查粒度 20 tick，中档首次 81~100 tick、之后每 100 tick 掉一层）",
         "entity/KuvaMasterEntity.java:92-98,238-263 — 统计 40 tick 内已有命中数（不含本次），倍率 max(0.4, 1 − hits×0.05)",
         "base/entity/AbstractKuva.java:132-133 — 每次 LivingHurtEvent 都走抗性（不看伤害是否为 0），即每跳 DoT / 荆棘 / 宠物攻击都记层记次；原版 LivingEntity.hurt 在受击无敌 >10 且 amount ≤ lastHurt 时直接 return false，不进 actuallyHurt，也就没有 LivingHurtEvent",
         "module/weapon/WeaponElementSystem.java:626,659,817,863 — 毒素/毒气用 magic()、电击 lightningBolt()、爆炸 explosion(null)，都经 hurt() 触发 LivingHurtEvent；679-692 切割走 damageHealthDirectly，不触发",
         "原版 DamageTypeTags.IS_FIRE 含 fireball / unattributed_fireball，玄骸 fireImmune（init/KuvaLichEntities.java:47）→ 火球对玄骸无效，所以弹射物举例里不写火球",
         "entity/KuvaMasterEntity.java:103-105,274-283 — 阈值 = 最大生命 × 0.15；超出按 ln(1 + excess×0.5)/0.5 压缩；200→约 38.9 与源码注释一致",
         "星际战甲小知识：原作 Adaptation 战甲模组——受伤时对该伤害类型叠加伤害抗性",
-        "client/mercy/KuvaStateFx.java weakPoint — 裂纹画在弱点命中处：lichSeededAffinities 开时跟着这只玄骸实际的弱点走（服务端判定后下发 WEAK 标记），关着时、以及奴仆和无主玄骸，弱点就是箭矢；适应性抗性 ADAPT 在命中面画六边形护壁，层数越多越亮；GUARD（连击递减 + 软上限合起来削掉 ≥ 10%）画横向偏转闪；client/lich/LichBossBar.java:166 Boss 条状态行画各类适应层数图标"
+        "client/mercy/KuvaStateFx.java weakPoint — 裂纹画在弱点命中处：lichVariedTraits 开时跟着这只玄骸实际的弱点走（服务端判定后下发 WEAK 标记），关着时、以及奴仆和无主玄骸，弱点就是箭矢；适应性抗性 ADAPT 在命中面画六边形护壁，层数越多越亮；GUARD（连击递减 + 软上限合起来削掉 ≥ 10%）画横向偏转闪；client/lich/LichBossBar.java:166 Boss 条状态行画各类适应层数图标"
       ]
     },
     {
@@ -1314,10 +1609,10 @@
             },
             "至少带上两三种伤害类型，比如近战武器、弓或弩，再加上法术，最好再有一把模组倍率高的[[weapons/kuva_weapons|赤毒武器]]",
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
-              "text": "先在[[requiem/lich_archive]]里看清它的弱点和抗性，照着挑武器"
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "先在[[requiem/lich_archive]]里看清它的性格、弱点和抗性，照着挑武器"
             },
-            "怒气快满时，待在开阔平坦、远离宠物和村民的地方，它的范围攻击会波及周围 3 格，击飞还可能把你甩下悬崖",
+            "怒气快满时，待在开阔平坦、远离宠物和村民的地方，它的范围攻击会波及周围好几格（档案里震荡图标写着多远），击飞还可能把你甩下悬崖",
             {
               "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
               "text": "想挑场地，就在准备好的地方用{item:kuvalich:requiem_ultimatum}把它叫来"
@@ -1332,16 +1627,20 @@
           "type": "list",
           "items": [
             {
-              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "if": "!cfg:kuva_lich.lichVariedTraits",
               "text": "<g>优先用弓弩</g>，箭矢是唯一吃 ×1.25 的类别，而且和近战分开记层"
             },
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
-              "text": "<g>优先用它的弱点</g>，那一类吃 ×1.25，而且各类分开记层"
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "<g>优先用它的弱点</g>，那一类吃 ×1.25~1.40，而且各类分开记层"
             },
-            "按类别轮换，每类打几下就换，把各类的层数都压在 6 层以下",
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "看它的性格出手：活泼的血薄、越打越凶，趁增幅还没涨起来速战速决；理性的血厚、适应快，多带几种伤害轮着打"
+            },
+            "按类别轮换，每类打几下就换，别让哪一类叠满",
             "节奏比手速要紧，2 秒内从第 13 下起只剩 40%，一记蓄满力的攻击比两下半蓄力更划算",
-            "按默认生命算，单下原始伤害控制在 30 左右就够，超出的部分几乎全被软上限吃掉，资源花在模组倍率上",
+            "单下原始伤害控制在它最大生命的 <t>15%</t> 左右就够（200 生命时是 30），超出的部分几乎全被软上限吃掉，资源花在模组倍率上",
             {
               "if": "cfg:kuva_lich.battleBoost>0",
               "text": "<w>速战速决</w>，它的伤害按战斗秒数一路上涨，每秒 +<t>{cfg:kuva_lich.battleBoost|pct}</t>，见[[enemies/battle_boost]]"
@@ -1398,8 +1697,8 @@
       "_src": [
         "item/RequiemUltimatum.java — 通牒唯一产出是解密成功时按 requiemUltimatumDropChance 掉落，所以教玩家用通牒召唤的句子都带 requiemUltimatumDropChance>0",
         "capability/RequiemCard.java:259 isReadyCard — 三槽全满才判定解密，否则只给进度",
-        "base/entity/AbstractKuva.java:374-376 / :404 — lichSeededAffinities 开着时有主玄骸一弱两抗按种子抽，档案里显示；关着时箭矢 ×1.25 是唯一的加成类别",
-        "entity/KuvaMasterEntity.java:725 — AOE inflate(3)；击退 ×3.15/×2.15；nemesis/LichDirector.java — 怒气满后它来找你，所以场地要在怒气快满时挑",
+        "nemesis/LichTraits.java — lichVariedTraits 开着时有主玄骸按性格抽弱点抗性（活泼 2 弱 1 抗、理性 1 弱 2 抗，弱点 ×1.25~1.40），档案里显示；关着时箭矢 ×1.25 是唯一的加成类别；性格偏向：活泼 生命 ×0.85、增幅 / 震荡 / 吸血偏强，理性 生命 ×1.2、适应 / 自愈偏强",
+        "entity/KuvaMasterEntity.java attackNearbyEntities — 范围半径按震荡档位 2.5~4.5（档案能力图标的悬停写着）；击退 ×3.15/×2.15 × 档位；nemesis/LichDirector.java — 怒气满后它来找你，所以场地要在怒气快满时挑",
         "entity/KuvaMasterEntity.java — 连击递减 max(0.4, 1 − hits×0.05)；原版 Player.attack 伤害 × (0.2 + 蓄力²×0.8)；软上限阈值 = 最大生命 15%（200 → 30）；module/weapon/WeaponCombatHandler.java 模组在 LOWEST 之后乘",
         "base/entity/AbstractKuva.java:284 — battleBoost 每秒增幅",
         "module/weapon/WeaponCombatHandler.java — execute_threshold / execute_chance 触发后下一 tick LivingEntityUtil.kill；怜悯之击开着时被 base/entity/AbstractKuva.java:913 die 拦成倒地，关着时直接死",

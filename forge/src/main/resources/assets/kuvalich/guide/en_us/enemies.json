@@ -386,7 +386,13 @@
         },
         {
           "type": "p",
-          "text": "How it talks over comms depends on the <t>personality</t> it was born with. Some are jovial: they call you “friend” and keep joking even as they lose. Others are cold and logical: they call you “adversary” and speak as if passing a verdict. The personality is fixed the moment it is born and only changes what it says, not how strong it is."
+          "if": "cfg:kuva_lich.lichVariedTraits",
+          "text": "How it talks over comms, and how it fights, both come from the <t>personality</t> it was born with. A jovial Lich laughs a lot and calls you \"friend\"; it hits hard, is fragile and grows fiercer by the second. A logical Lich is cold and terse and calls you \"opponent\"; it is tough, heavily armored and adapts fast. The personality is fixed at birth, and each Lich also rolls its own weaknesses, resistances and ability strengths, see [[enemies/lich_traits]]."
+        },
+        {
+          "type": "p",
+          "text": "How it talks over comms depends on the <t>personality</t> it was born with. Some are jovial: they call you “friend” and keep joking even as they lose. Others are cold and logical: they call you “adversary” and speak as if passing a verdict. The personality is fixed the moment it is born and only changes what it says, not how strong it is.",
+          "if": "!cfg:kuva_lich.lichVariedTraits"
         },
         {
           "type": "h",
@@ -465,22 +471,62 @@
         {
           "type": "kv",
           "rows": [
-            [
-              "Health",
-              "<t>200</t>"
-            ],
-            [
-              "Armor",
-              "<t>8</t>"
-            ],
-            [
-              "Knockback resistance",
-              "<t>65%</t>"
-            ],
-            [
-              "Movement speed",
-              "<t>0.35</t>"
-            ],
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Health",
+                "At rank 2, about <t>170</t> for a jovial Lich and <t>240</t> for a logical one, varying a little per Lich, see [[enemies/lich_traits]]"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Health",
+                "<t>200</t>"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Armor",
+                "At rank 2, <t>6</t> jovial, <t>11</t> logical"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Armor",
+                "<t>8</t>"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Knockback resistance",
+                "<t>50%</t> jovial, <t>80%</t> logical"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Knockback resistance",
+                "<t>65%</t>"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Movement speed",
+                "<t>0.35</t>; jovial ones are <t>8%</t> faster, logical ones <t>5%</t> slower"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "Movement speed",
+                "<t>0.35</t>"
+              ]
+            },
             [
               "Follow range",
               "<t>64</t> blocks, <t>96</t> while it is hunting you"
@@ -506,9 +552,30 @@
         {
           "type": "list",
           "items": [
-            "Hits even harder: Easy <t>11.05</t>, Normal <t>22.1</t>, Hard <t>33.15</t> per hit",
-            "A hit <w>sends you flying</w> and heals the Lich <t>2.6</t>",
-            "It regenerates every second: with a target, <t>2</t> or <t>2%</t> of missing health, whichever is larger; without one, <t>1</t> or <t>1%</t>",
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "It hits harder: one blow = attack × difficulty factor × 0.85, with attack about <t>15.6</t> for a jovial Lich and <t>11</t> for a logical one, so about <t>26.5</t> / <t>18.8</t> per blow on Normal. \"Per blow\" in the [[requiem/lich_archive]] shows exactly how hard yours hits you"
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "text": "Hits even harder: Easy <t>11.05</t>, Normal <t>22.1</t>, Hard <t>33.15</t> per hit"
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "A hit <w>sends you flying</w> and heals it: <t>20%</t> of its attack at average strength, <t>10%</t> weak, <t>30%</t> strong, <t>45%</t> as its signature"
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "text": "A hit <w>sends you flying</w> and heals the Lich <t>2.6</t>"
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "It regenerates every second: <t>2</t> health or <t>2%</t> of missing health with a target, whichever is larger, and <t>1</t> or <t>1%</t> without one; its regeneration strength multiplies that by <t>0.5–2.2</t>"
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "text": "It regenerates every second: with a target, <t>2</t> or <t>2%</t> of missing health, whichever is larger; without one, <t>1</t> or <t>1%</t>"
+            },
             {
               "if": "cfg:kuva_lich.battleBoost>0",
               "text": "The longer the fight, the harder it hits, see [[enemies/battle_boost]]"
@@ -520,7 +587,15 @@
           "type": "tip",
           "style": "warn",
           "title": "It spares no one",
-          "text": "Its attacks are <w>area attacks</w>: every swing also deals the same damage to every other creature within <t>3</t> blocks of its body, and only Kuva enemies are spared. It strikes without regard for friend or foe, and everything you bring is within its reach."
+          "text": "Its attacks are <w>area attacks</w>: every swing deals the same damage to every other creature within <t>2.5–4.5</t> blocks of its body (depending on its quake strength, shown in the archive); only Kuva enemies are spared. It does not tell friend from foe, and every life you bring along is within its reach.",
+          "if": "cfg:kuva_lich.lichVariedTraits"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "It spares no one",
+          "text": "Its attacks are <w>area attacks</w>: every swing also deals the same damage to every other creature within <t>3</t> blocks of its body, and only Kuva enemies are spared. It strikes without regard for friend or foe, and everything you bring is within its reach.",
+          "if": "!cfg:kuva_lich.lichVariedTraits"
         },
         {
           "type": "h",
@@ -720,7 +795,7 @@
         {
           "type": "list",
           "items": [
-            "Damage formula: 13 × difficulty factor × 0.85, the same formula as Thralls",
+            "Its damage formula is attack × difficulty factor × 0.85, the same as Thralls",
             "Knockback strength: horizontal ×3.15, vertical ×2.15",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
@@ -827,6 +902,46 @@
           "text": "Your Lich rank only counts wrong guesses and does not weaken you; a wrong guess only costs you a success."
         },
         {
+          "type": "h",
+          "if": "cfg:kuva_lich.lichRankHealthStep>0",
+          "text": "Its effect on the Lich"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.lichRankHealthStep>0",
+          "text": "The Lich itself changes with rank too: its health and armor are based on rank 2 and gain <t>{cfg:kuva_lich.lichRankHealthStep|pct}</t> per rank, capped at rank <t>6</t>; a newborn rank 1 Lich has that much less. Its attack does not grow with rank."
+        },
+        {
+          "type": "table",
+          "if": "cfg:kuva_lich.lichRankHealthStep>0",
+          "header": [
+            "Lich rank",
+            "Health and armor"
+          ],
+          "rows": [
+            [
+              "1",
+              "<t>{cfg:kuva_lich.lichRankHealthStep|mul:-1|add:1|round:2|x}</t>"
+            ],
+            [
+              "2",
+              "<t>1×</t>"
+            ],
+            [
+              "3",
+              "<t>{cfg:kuva_lich.lichRankHealthStep|add:1|round:2|x}</t>"
+            ],
+            [
+              "4",
+              "<w>{cfg:kuva_lich.lichRankHealthStep|mul:2|add:1|round:2|x}</w>"
+            ],
+            [
+              "6+",
+              "<b>{cfg:kuva_lich.lichRankHealthStep|mul:4|add:1|round:2|x}</b>"
+            ]
+          ]
+        },
+        {
           "type": "tip",
           "style": "warn",
           "title": "Swap cards after a wrong guess",
@@ -840,6 +955,157 @@
           "type": "tip",
           "style": "wf",
           "text": "Operator, the archives say finishing a Lich with the wrong Requiem sequence fails; it survives the blade, ranks up and grows stronger. Here, the rank is kept on you instead. A Lich that slips the blade a rank stronger, Ordis would <x>feed to the engines-- slowly-- GRIND to dust--</x> pardon. That half need not be filed."
+        }
+      ]
+    },
+    {
+      "id": "lich_traits",
+      "title": "Lich Personality and Stats",
+      "icon": "kuvalich:kuva_master_spawn_egg",
+      "summary": "Jovial or logical: weaknesses, resistances and ability strengths differ for every Lich",
+      "if": "cfg:kuva_lich.lichVariedTraits",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Every Lich is born with a <hl>personality</hl>. It decides not only how the Lich talks over comms but also how it fights. The exact numbers are in the [[requiem/lich_archive]]: its personality sits under its name, the stats list its health, armor, how hard one blow hits you, its weaknesses and resistances, and the dots under the ability icons show their strength."
+        },
+        {
+          "type": "table",
+          "header": [
+            "",
+            "Jovial",
+            "Logical"
+          ],
+          "widths": [
+            2,
+            4,
+            4
+          ],
+          "rows": [
+            [
+              "Health (rank 2)",
+              "About <t>170</t>, ±8% per Lich",
+              "About <t>240</t>, ±8% per Lich"
+            ],
+            [
+              "Attack",
+              "About <t>15.6</t>, ±8% per Lich",
+              "About <t>11</t>, ±8% per Lich"
+            ],
+            [
+              "Armor (rank 2)",
+              "<t>6</t>",
+              "<t>11</t>"
+            ],
+            [
+              "Knockback resistance",
+              "<t>50%</t>",
+              "<t>80%</t>"
+            ],
+            [
+              "Movement speed",
+              "<t>8%</t> faster",
+              "<t>5%</t> slower"
+            ],
+            [
+              "Weaknesses",
+              "Two types, <g>×1.25–1.40</g>",
+              "One type, <g>×1.25–1.40</g>"
+            ],
+            [
+              "Resistances",
+              "One type, <b>×0.75–0.85</b>",
+              "Two types, <b>×0.60–0.75</b>"
+            ],
+            [
+              "Stronger abilities",
+              "Battle fury, quake, lifesteal",
+              "Adaptation, regeneration"
+            ],
+            [
+              "Signature drawn from",
+              "Quake, lifesteal, battle fury",
+              "Adaptation, regeneration, quake"
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Weaknesses and resistances are drawn among melee, arrows, other projectiles and magic; the remaining types stay unchanged. A melee resistance never goes below <b>×0.85</b>, so a blade alone still works",
+            "Attack does not grow with rank; health and armor follow the [[enemies/kuva_escalation|Lich rank]], and the table shows rank 2"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Ability strength"
+        },
+        {
+          "type": "p",
+          "text": "Each of the five abilities is weak, average or strong. Half of the abilities its personality favors come out strong, and half of the ones it disfavors come out weak. Every Lich also has one <hl>signature</hl> ability, stronger still, whose icon has a red outline in the archive."
+        },
+        {
+          "type": "table",
+          "header": [
+            "Ability",
+            "Weak",
+            "Average",
+            "Strong",
+            "Signature"
+          ],
+          "widths": [
+            2,
+            3,
+            3,
+            3,
+            4
+          ],
+          "rows": [
+            [
+              "Adaptation",
+              "3% per stack, max 4, lost after 3s",
+              "5% per stack, 6, 4s",
+              "6% per stack, 6, 5s",
+              "7% per stack, 6, 6s"
+            ],
+            {
+              "if": "cfg:kuva_lich.battleBoost>0",
+              "cells": [
+                "Battle fury",
+                "+{cfg:kuva_lich.battleBoost|mul:0.6|pct} per second",
+                "+{cfg:kuva_lich.battleBoost|pct} per second",
+                "+{cfg:kuva_lich.battleBoost|mul:1.35|pct} per second",
+                "+{cfg:kuva_lich.battleBoost|mul:1.6|pct} per second, winds down half as fast without a target"
+              ]
+            },
+            [
+              "Regeneration",
+              "Healing ×0.5",
+              "×1",
+              "×1.5",
+              "×2.2"
+            ],
+            [
+              "Quake",
+              "Radius 2.5 blocks, knockback ×0.8",
+              "3 blocks, ×1",
+              "3.5 blocks, ×1.2",
+              "4.5 blocks, ×1.5"
+            ],
+            [
+              "Lifesteal",
+              "10% of its attack per blow",
+              "20%",
+              "30%",
+              "45%, plus a share for everyone its heavy blow sweeps"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "title": "How to deal with it",
+          "text": "A jovial Lich is fragile but grows fiercer fast: prepare for its weaknesses and <g>end it quickly</g> before its fury builds. A logical one is tough and adapts fast: <g>bring several damage types and keep rotating</g>. More in [[enemies/lich_tactics]]."
         }
       ]
     },
@@ -899,6 +1165,10 @@
             "It starts <w>the moment it locks on</w>, not when blows are exchanged: a Thrall locks on when it sees you within <t>32</t> blocks, your own Lich locks onto you the moment it appears, and an ownerless Lich locks on when it sees you within <t>64</t>",
             "It keeps climbing as long as it has a target, whether that is you, your pets or a mob it is fighting",
             "Without a target it counts back down at the same rate, so after 60 seconds of fighting it takes 60 seconds out of combat to reach zero",
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "How fast your Lich builds up depends on its fury strength: <t>{cfg:kuva_lich.battleBoost|mul:0.6|pct}</t> to <t>{cfg:kuva_lich.battleBoost|mul:1.6|pct}</t> per second, as shown in the [[requiem/lich_archive]]; one with fury as its signature also winds down half as fast after losing its target"
+            },
             "A Thrall's timer is saved with it; unloading and reloading the chunk does not clear it",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
@@ -938,7 +1208,7 @@
           ],
           "rows": [
             {
-              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "if": "!cfg:kuva_lich.lichVariedTraits",
               "cells": [
                 "1. Damage type modifier",
                 "Arrows <g>×1.25</g>; other projectiles and magic <b>×0.75</b>",
@@ -946,10 +1216,10 @@
               ]
             },
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
+              "if": "cfg:kuva_lich.lichVariedTraits",
               "cells": [
                 "1. Damage type modifier",
-                "Thralls and ownerless Liches: arrows <g>×1.25</g>, other projectiles and magic <b>×0.75</b>. Liches with an owner: one weakness <g>×1.25</g> and two resistances <b>×0.75</b>, different for every Lich",
+                "Thralls and wild Liches: arrows <g>×1.25</g>, other projectiles and magic <b>×0.75</b>. Your Lich: two weaknesses and one resistance if jovial, one weakness and two resistances if logical, with its own multipliers",
                 "Both"
               ]
             },
@@ -958,11 +1228,22 @@
               "Always <b>×0.75</b>",
               "Thrall"
             ],
-            [
-              "2. Adaptive resistance",
-              "Repeated hits of one type stack <b>-5%</b> each, up to <b>-30%</b>",
-              "Lich"
-            ],
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "② Adaptation",
+                "Repeated hits of one damage type, <b>-3% to -7%</b> per stack, up to <t>4–6</t> stacks depending on its adaptation strength",
+                "Lich"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "2. Adaptive resistance",
+                "Repeated hits of one type stack <b>-5%</b> each, up to <b>-30%</b>",
+                "Lich"
+              ]
+            },
             [
               "3. Burst diminishing",
               "The more hits within 2 seconds, the less each does, down to <b>40%</b>",
@@ -1032,9 +1313,9 @@
         {
           "type": "tip",
           "style": "info",
-          "if": "cfg:kuva_lich.lichSeededAffinities",
+          "if": "cfg:kuva_lich.lichVariedTraits",
           "title": "Every Lich is different",
-          "text": "When your Lich is born, it draws one of melee, arrows, other projectiles and magic as its weakness (×1.25) and two as resistances (×0.75), leaving the last unchanged, so every Lich differs; the [[requiem/lich_archive]] lists its weakness and resistances. Thralls and ownerless Liches follow the table above."
+          "text": "When your Lich is born it rolls its weaknesses and resistances among melee, arrows, other projectiles and magic: a jovial Lich gets two weaknesses (<g>×1.25–1.40</g>) and one resistance (<b>×0.75–0.85</b>), a logical one gets one weakness (<g>×1.25–1.40</g>) and two resistances (<b>×0.60–0.75</b>); the rest stay unchanged, and a melee resistance never goes below <b>×0.85</b>. The [[requiem/lich_archive]] lists its weaknesses and resistances. Thralls and wild Liches follow the table above."
         },
         {
           "type": "h",
@@ -1051,7 +1332,11 @@
             "Each hit is first reduced by that type's current stacks, <t>5%</t> per stack, and then that type gains one more, so the first hit goes through in full",
             "Stacks cap at <t>6</t>, which is <b>-30%</b> for that type",
             "A type that lands no hit for <t>4-5</t> seconds loses a stack, then one more every <t>5</t> seconds",
-            "After more than <t>10</t> seconds without taking any damage, every type resets to zero"
+            "After more than <t>10</t> seconds without taking any damage, every type resets to zero",
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "Those are the numbers at average strength. Your Lich follows its adaptation strength: weak is <t>3%</t> per stack, at most <t>4</t> stacks, losing them after <t>3</t> seconds; strong is <t>6%</t> per stack; as its signature it is <t>7%</t> per stack and keeps each stack for <t>6</t> seconds, see [[enemies/lich_traits]]"
+            }
           ]
         },
         {
@@ -1155,14 +1440,14 @@
         {
           "type": "tip",
           "style": "info",
-          "if": "!cfg:kuva_lich.lichSeededAffinities",
+          "if": "!cfg:kuva_lich.lichVariedTraits",
           "title": "Its defenses show",
           "text": "These layers all show themselves. An arrow hit bursts a star of golden cracks across its body; adaptive resistance raises a hexagon plate on the side that was struck, more solid with every stack; and when burst diminishing or the soft cap cuts a big share, a white cross of light and a spray of sparks burst from the point of impact with a dull clang. Your own Lich's boss bar shows which damage types have stacks, and how many, in the row of icons beneath it."
         },
         {
           "type": "tip",
           "style": "info",
-          "if": "cfg:kuva_lich.lichSeededAffinities",
+          "if": "cfg:kuva_lich.lichVariedTraits",
           "title": "Its defenses show",
           "text": "These layers all show themselves. A hit with its weakness bursts a star of golden cracks across its body (for Thralls and ownerless Liches, the weakness is arrows); adaptive resistance raises a hexagon plate on the side that was struck, more solid with every stack; and when burst diminishing or the soft cap cuts a big share, a white cross of light and a spray of sparks burst from the point of impact with a dull clang. Your own Lich's boss bar shows which damage types have stacks, and how many, in the row of icons beneath it."
         },
@@ -1226,10 +1511,10 @@
             },
             "Bring at least two or three damage types, such as a melee weapon, a bow or crossbow and spells, and ideally a [[weapons/kuva_weapons|Kuva weapon]] with strong mod multipliers",
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
-              "text": "Read its weakness and resistances in the [[requiem/lich_archive]] first and pick your weapons to match"
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "Check its personality, weaknesses and resistances in the [[requiem/lich_archive]] first and pick weapons to match"
             },
-            "When its rage is nearly full, stay on flat, open ground away from pets and villagers; its area attack hits everything within 3 blocks, and the knockback can throw you off a cliff",
+            "When its rage is nearly full, wait somewhere open and flat, away from pets and villagers: its area attack reaches several blocks around it (the quake icon in the archive says how far), and the knockback can throw you off a cliff",
             {
               "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
               "text": "To choose the arena, call it there with a {item:kuvalich:requiem_ultimatum}"
@@ -1244,16 +1529,20 @@
           "type": "list",
           "items": [
             {
-              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "if": "!cfg:kuva_lich.lichVariedTraits",
               "text": "<g>Bows and crossbows first</g>, since Arrow is the only type with ×1.25 and it stacks separately from melee"
             },
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
-              "text": "<g>Hit its weakness first</g>; that type takes ×1.25, and every type keeps its own stacks"
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "<g>Use its weaknesses first</g>: that type takes ×1.25–1.40, and each type stacks separately"
             },
-            "Rotate types every few hits so no type reaches 6 stacks",
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "Fight to its personality: a jovial Lich is fragile but grows fiercer fast, so finish it before its fury builds; a logical one is tough and adapts fast, so bring several damage types and keep rotating"
+            },
+            "Rotate damage types and switch after a few hits, so no type reaches full stacks",
             "Pacing beats speed. From the 13th hit within 2 seconds you deal only 40%, so one fully charged hit beats two half-charged ones",
-            "At default health, about 30 raw damage per hit is enough; the soft cap eats almost all of the excess, so put your resources into mod multipliers",
+            "Keeping each raw hit around <t>15%</t> of its max health (30 at 200 health) is enough; almost everything beyond that is eaten by the soft cap, so invest in module multipliers instead",
             {
               "if": "cfg:kuva_lich.battleBoost>0",
               "text": "<w>Finish fast</w>; its damage keeps rising with every second of combat, +<t>{cfg:kuva_lich.battleBoost|pct}</t> per second (see [[enemies/battle_boost]])"

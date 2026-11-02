@@ -40,8 +40,6 @@ public final class KuvaStateServer {
     private static final float GUARD_MIN_CUT = 0.10F;
     /** 受击者击退后的水平速度超过这个（格 / tick）算「击退明显」 */
     private static final double HEAVY_KNOCKBACK = 0.6D;
-    /** 适应满层 */
-    private static final int MAX_LAYERS = 6;
     /** 命中点往胸口方向收多少（格），免得正好落在包围盒面上被深度测试吃掉 */
     private static final double INSET = 0.05D;
 
@@ -86,7 +84,9 @@ public final class KuvaStateServer {
         int bit = 1 << category.ordinal();
         long now = level.getGameTime();
         boolean firstFull = false;
-        if (layers >= MAX_LAYERS) {
+        // 满层按这只自己的上限算（专属玄骸的适应档位不同，至多 4~6 层）
+        int cap = target.adaptStackCap();
+        if (layers >= cap) {
             if ((t.fullAnnounced & bit) == 0) {
                 t.fullAnnounced |= bit;
                 firstFull = true;
@@ -98,7 +98,7 @@ public final class KuvaStateServer {
             }
             t.adaptRepeatAt[category.ordinal()] = now;
         }
-        int param = KuvaStateKind.adaptParam(Math.min(layers, MAX_LAYERS), category.ordinal(), added, firstFull);
+        int param = KuvaStateKind.adaptParam(Math.min(layers, cap), category.ordinal(), added, firstFull);
         send(level, target, hitPoint(target, source), KuvaStateKind.ADAPT, param, attackerArg(source));
         if (added) {
             sentAdaptAdded++;
@@ -107,7 +107,7 @@ public final class KuvaStateServer {
 
     /** 某类适应层数衰减 / 全清后调：掉到满层以下就允许下次再宣布一次「第一次叠满」 */
     public static void onAdaptDecayed(AbstractKuva target, AbstractKuva.DamageCategory category, int layers) {
-        if (layers < MAX_LAYERS) {
+        if (layers < target.adaptStackCap()) {
             target.stateTrack.fullAnnounced &= ~(1 << category.ordinal());
         }
     }

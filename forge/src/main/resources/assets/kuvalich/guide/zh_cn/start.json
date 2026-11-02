@@ -1054,14 +1054,14 @@
           "items": [
             "<em>带两三种输出</em>：近战、弓弩、法术轮换着用。同一类伤害连着打，它对这一类的抗性会越来越高，身上闪出的六边形护壁越密，说明它适应得越多。",
             {
-              "if": "!cfg:kuva_lich.lichSeededAffinities",
+              "if": "!cfg:kuva_lich.lichVariedTraits",
               "text": "<em>弓弩优先</em>：箭矢对赤毒敌人的伤害 ×1.25，射中处会炸开一圈金色裂纹；其他弹射物和法术只有 ×0.75。"
             },
             {
-              "if": "cfg:kuva_lich.lichSeededAffinities",
-              "text": "<em>先看弱点</em>：每只玄骸的弱点和抗性在它诞生时随机定下。打开{lang:key.kuvalich.lich_archive}看「{lang:kuvalich.archive.attr.weakness}」「{lang:kuvalich.archive.attr.resistance}」两行，弱点那类伤害 ×1.25，抗性那类 ×0.75，挑它怕的打。"
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "text": "<em>先看性格和弱点</em>：每只玄骸诞生时就定下了性格、弱点和抗性。打开{lang:key.kuvalich.lich_archive}看名字下面的性格和「{lang:kuvalich.archive.attr.weakness}」「{lang:kuvalich.archive.attr.resistance}」几行：活泼的血薄、越打越凶，要速战速决；理性的血厚、适应快，要多换几种伤害。弱点那类伤害 ×1.25~1.40，挑它怕的打。"
             },
-            "<em>宠物留在家里</em>：玄骸每次出手都会波及周围 3 格内的其他生物，宠物和队友都会挨打。",
+            "<em>宠物留在家里</em>：玄骸每次出手都会波及周围好几格内的其他生物，宠物和队友都会挨打。",
             "<em>选安全场地</em>：收尾时<b>远离岩浆和虚空</b>，奖励会掉在它倒下的地方。",
             {
               "if": "cfg:kuva_lich.battleBoost>0",
@@ -1119,7 +1119,7 @@
         "推导（requiem/decrypt_failure 同）：两种提示给的都是「从第 1 位起对了几位」，已知三张卡时最坏 4 次（3 败）必中",
         "nemesis/LichDirector.java:260-266 onMercyResult → RequiemCard.recordAttempt；client/lich/LichArchiveScreen.java:896-900 — 档案「处决记录」逐位对 / 错 / 没判到（直接判定也记一行）；capability/RequiemCard.java:91,530-532 — 处决记录最多 MAX_ATTEMPTS = 5 行，新的插最前、超过丢最旧的",
         "base/entity/AbstractKuva.java（伤害类型分类、箭矢 ×1.25）+ entity/KuvaMasterEntity.java:560 applyAdaptiveResistance — 玄骸适应性抗性按类别叠层；client/mercy/KuvaStateFx.java:274 adapt — 六边形护壁亮格数随层数增加；:419 weakPoint — 箭命中裂纹",
-        "entity/KuvaMasterEntity.java:1440-1446 seededAffinities + nemesis/LichProfile.java:91-116 + base/entity/AbstractKuva.java:373-376,403-414 — lichSeededAffinities 开时有主玄骸按种子（诞生时定下，nemesis/LichDirector.java:628-662）抽 1 弱（×1.25）2 抗（×0.75），固定的箭矢 ×1.25 不再套在它身上（奴仆和无主的照旧）；client/lich/LichArchiveScreen.java:745-749 — 档案「弱点」「抗性」两行；base/entity/AbstractKuva.java:78-82,379-388 — 固定倍率（lichSeededAffinities 关，也是奴仆、无主玄骸）：箭 ×1.25、其他弹射物 ×0.75、不是弹射物的魔法 ×0.75",
+        "nemesis/LichTraits.java + base/entity/AbstractKuva.java damageTypeMultiplier — lichVariedTraits 开（默认）时有主玄骸按种子（诞生时定下）抽性格偏向的弱点抗性：活泼 2 弱 1 抗、理性 1 弱 2 抗，弱点 ×1.25~1.40，固定的箭矢 ×1.25 不再套在它身上（奴仆和无主的照旧）；client/lich/LichArchiveScreen.java buildRows 弱点 / 抗性逐类带倍率、名字下一行写性格；entity/KuvaMasterEntity.java attackNearbyEntities 范围按震荡档位 2.5~4.5 格",
         "entity/KuvaMasterEntity.java:725 — AOE inflate(AOE_RADIUS)，排除赤毒实体与主目标",
         "entity/KuvaMasterEntity.java:979 computeAndApplySuccess(pos = blockPosition) — 奖励落在玄骸倒地 / 死亡位置",
         "base/entity/AbstractKuva.java:283-286,1146 — 交战增幅：有目标时每秒增幅（行级 if >0）；client/mercy/KuvaFuryLayer.java — 交战越久赤毒纹路越亮",

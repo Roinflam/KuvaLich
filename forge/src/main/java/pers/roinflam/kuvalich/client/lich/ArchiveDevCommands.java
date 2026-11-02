@@ -202,7 +202,9 @@ public final class ArchiveDevCommands {
             taken.add(s);
         }
         return new LichArchivePacket.Data(st, "minecraft:dark_forest", "minecraft:overworld", weaponStack, 3, 7,
-                0xC2, 5, 30, 75, 21, 35, 15, 4,
+                // 档位：适应强、增幅中、自愈专长、震荡中、吸血弱，按种子抽的
+                new LichArchivePacket.Stats(new int[]{100, 130, 75, 70}, 6, 6, 50, 276, 127, 352, 0x476, 15, 25),
+                21, 35, 15, 4,
                 2, 7, 11, new int[]{3, -1, 6},
                 new LichArchivePacket.Card[]{
                         new LichArchivePacket.Card(3, 1, 3), new LichArchivePacket.Card(6, 0, 3),
@@ -213,7 +215,7 @@ public final class ArchiveDevCommands {
     private static LichArchivePacket.Data emptyDemo() {
         LichStatePacket st = new LichStatePacket(LichState.UNBORN, WaitReason.NONE, "", 0, -1, 0, 0, 0, 0, 0, 2, false);
         return new LichArchivePacket.Data(st, "", "", ItemStack.EMPTY, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
+                LichArchivePacket.Stats.NONE, 0, 0, 0, 0,
                 0, 2, 6, new int[]{-1, -1, -1},
                 new LichArchivePacket.Card[]{new LichArchivePacket.Card(5, 0, 3), LichArchivePacket.Card.EMPTY,
                         LichArchivePacket.Card.EMPTY},

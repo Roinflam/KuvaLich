@@ -41,6 +41,50 @@ public class LichArchivePacket {
     }
 
     /**
+     * 这只玄骸自己的战斗面板（服务端按它当前的等级、主人所在世界的难度算好）
+     *
+     * @param affinityPct  四类伤害打它的倍率百分数，按近战、弓箭、其他弹射物、魔法排（100 = 不变）
+     * @param adaptPct     适应每层减多少百分比
+     * @param adaptStacks  适应至多几层
+     * @param furyPermille 交战中每秒增幅的千分比
+     * @param health       最大生命（取整）
+     * @param armorTenths  护甲 × 10
+     * @param hitTenths    一刀打主人多少 × 10（含难度和主人身上的等级加成，不含交战增幅；和平难度为 0）
+     * @param skills       五项技能的档位，压法见 {@code LichTraits#packedTiers}
+     * @param rankStepPct  每级生命、护甲变化的百分比，0 = 不随等级变
+     * @param takenStepPct 每级主人多受赤毒伤害的百分比
+     */
+    public record Stats(int[] affinityPct, int adaptPct, int adaptStacks, int furyPermille, int health,
+                        int armorTenths, int hitTenths, int skills, int rankStepPct, int takenStepPct) {
+
+        public static final Stats NONE = new Stats(new int[]{100, 100, 100, 100}, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+        private void write(FriendlyByteBuf buf) {
+            for (int i = 0; i < 4; i++) {
+                buf.writeVarInt(Math.max(0, i < affinityPct.length ? affinityPct[i] : 100));
+            }
+            buf.writeVarInt(Math.max(0, adaptPct));
+            buf.writeVarInt(Math.max(0, adaptStacks));
+            buf.writeVarInt(Math.max(0, furyPermille));
+            buf.writeVarInt(Math.max(0, health));
+            buf.writeVarInt(Math.max(0, armorTenths));
+            buf.writeVarInt(Math.max(0, hitTenths));
+            buf.writeVarInt(Math.max(0, skills));
+            buf.writeVarInt(Math.max(0, rankStepPct));
+            buf.writeVarInt(Math.max(0, takenStepPct));
+        }
+
+        private static Stats read(FriendlyByteBuf buf) {
+            int[] affinity = new int[4];
+            for (int i = 0; i < 4; i++) {
+                affinity[i] = buf.readVarInt();
+            }
+            return new Stats(affinity, buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+                    buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+        }
+    }
+
+    /**
      * 档案内容。{@code riddles}、{@code cards} 的长度恒为 3。
      *
      * @param state            状态包那一套
@@ -49,10 +93,7 @@ public class LichArchivePacket {
      * @param weaponStack      手里那把赤毒武器（不带 NBT）
      * @param weaponLvMin      武器等级下限
      * @param weaponLvMax      武器等级上限
-     * @param affinity         低 4 位弱点类别位掩码、4~7 位抗性位掩码
-     * @param adaptPct         适应抗性已叠到百分之几
-     * @param adaptMax         适应抗性上限百分比
-     * @param furyPermille     交战增幅千分比
+     * @param stats            这只玄骸自己的战斗面板；没有玄骸时是 {@link Stats#NONE}
      * @param dealtPct         玩家对玄骸的输出削减百分比
      * @param takenPct         玄骸对玩家的伤害增幅百分比
      * @param rageSources      怒气来源位掩码：1 奴仆 / 2 进度 / 4 揭示 / 8 时间
@@ -70,7 +111,7 @@ public class LichArchivePacket {
      */
     public record Data(LichStatePacket state, String birthBiome, String birthDim,
                        ItemStack weaponStack, int weaponLvMin, int weaponLvMax,
-                       int affinity, int adaptPct, int adaptMax, int furyPermille, int dealtPct, int takenPct,
+                       Stats stats, int dealtPct, int takenPct,
                        int rageSources, int encounters,
                        int stage, int progress, int threshold,
                        int[] riddles, Card[] cards, int[] attempts,
@@ -98,10 +139,7 @@ public class LichArchivePacket {
         buf.writeItem(d.weaponStack() == null ? ItemStack.EMPTY : d.weaponStack());
         buf.writeVarInt(Math.max(0, d.weaponLvMin()));
         buf.writeVarInt(Math.max(0, d.weaponLvMax()));
-        buf.writeInt(d.affinity());
-        buf.writeVarInt(Math.max(0, d.adaptPct()));
-        buf.writeVarInt(Math.max(0, d.adaptMax()));
-        buf.writeVarInt(Math.max(0, d.furyPermille()));
+        (d.stats() == null ? Stats.NONE : d.stats()).write(buf);
         buf.writeVarInt(Math.max(0, d.dealtPct()));
         buf.writeVarInt(Math.max(0, d.takenPct()));
         buf.writeByte(d.rageSources());
@@ -141,10 +179,7 @@ public class LichArchivePacket {
         ItemStack weaponStack = buf.readItem();
         int weaponLvMin = buf.readVarInt();
         int weaponLvMax = buf.readVarInt();
-        int affinity = buf.readInt();
-        int adaptPct = buf.readVarInt();
-        int adaptMax = buf.readVarInt();
-        int furyPermille = buf.readVarInt();
+        Stats stats = Stats.read(buf);
         int dealtPct = buf.readVarInt();
         int takenPct = buf.readVarInt();
         int rageSources = buf.readByte();
@@ -174,7 +209,7 @@ public class LichArchivePacket {
         String lastName = buf.readUtf(LichStatePacket.MAX_NAME);
         int lastFate = buf.readByte();
         return new LichArchivePacket(new Data(state, birthBiome, birthDim, weaponStack, weaponLvMin, weaponLvMax,
-                affinity, adaptPct, adaptMax, furyPermille, dealtPct, takenPct, rageSources, encounters,
+                stats, dealtPct, takenPct, rageSources, encounters,
                 stage, progress, threshold, riddles, cards, attempts, confiscatedCount, confiscated,
                 lastName, lastFate));
     }

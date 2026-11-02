@@ -13,6 +13,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.Arrow;
@@ -45,7 +46,7 @@ import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
-import pers.roinflam.kuvalich.nemesis.LichProfile;
+import pers.roinflam.kuvalich.nemesis.LichTraits;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.nemesis.SummonMode;
 import pers.roinflam.kuvalich.module.KillStackManager;
@@ -817,31 +818,73 @@ public final class MercyCoreTests {
         h.assertTrue(KuvaStateServer.sentCount(KuvaStateKind.RESIST) == resist0 + 1, "魔法打奴仆应当发一次抗性");
         thrall.discard();
 
-        // 开了每只不同：有主的玄骸按自己的掩码算倍率，箭不一定是弱点
-        KuvaTestKit.override(ModConfig.KUVA_LICH.lichSeededAffinities, true);
+        // 每只不同（默认开）：有主的玄骸按自己那四类的倍率算，箭不一定是弱点
+        KuvaTestKit.override(ModConfig.KUVA_LICH.lichVariedTraits, true);
         RequiemCard card = card(p);
         bornByProgress(p, card);
         KuvaMasterEntity lich = KuvaLichEntities.KUVA_MASTER.get().create(h.getLevel());
         h.assertTrue(lich != null, "应当能造出玄骸");
         lich.bindOwner(p, card);
-        int mask = LichProfile.affinities(card.getLichSeed()) & 0xFF;
+        LichTraits traits = LichTraits.current(card.getLichSeed(), card.getLichRank());
         float arrowMult = lich.damageTypeMultiplier(lich.damageSources().arrow(arrow, p));
         float meleeMult = lich.damageTypeMultiplier(p.damageSources().playerAttack(p));
-        h.assertTrue(arrowMult == expectedMultiplier(mask, 1), "弓箭的倍率应当按掩码 " + Integer.toHexString(mask)
-                + " 算，实际 " + arrowMult);
-        h.assertTrue(meleeMult == expectedMultiplier(mask, 0), "近战的倍率应当按掩码 " + Integer.toHexString(mask)
-                + " 算，实际 " + meleeMult);
+        h.assertTrue(arrowMult == (float) traits.affinity(1), "弓箭的倍率应当是 " + traits.affinity(1) + "，实际 " + arrowMult);
+        h.assertTrue(meleeMult == (float) traits.affinity(0), "近战的倍率应当是 " + traits.affinity(0) + "，实际 " + meleeMult);
         lich.discard();
+
+        // 关掉：专属玄骸也照固定倍率（弓箭 ×1.25、近战 ×1）
+        KuvaTestKit.override(ModConfig.KUVA_LICH.lichVariedTraits, false);
+        KuvaMasterEntity plain = KuvaLichEntities.KUVA_MASTER.get().create(h.getLevel());
+        h.assertTrue(plain != null, "应当能造出玄骸");
+        plain.bindOwner(p, card);
+        h.assertTrue(plain.damageTypeMultiplier(plain.damageSources().arrow(arrow, p)) == 1.25F
+                && plain.damageTypeMultiplier(p.damageSources().playerAttack(p)) == 1.0F, "关掉后应当是固定倍率");
+        plain.discard();
         arrow.discard();
         h.succeed();
     }
 
-    /** 掩码里第 {@code bit} 类的倍率：弱点 ×1.25、抗性 ×0.75、都不是 ×1 */
-    private static float expectedMultiplier(int mask, int bit) {
-        if ((mask & (1 << bit)) != 0) {
-            return 1.25F;
-        }
-        return (mask & (1 << (bit + 4))) != 0 ? 0.75F : 1.0F;
+    // ==================== 专属面板套到实体上 ====================
+
+    @GameTest(template = "empty", batch = CFG_AFFINITY, timeoutTicks = 60)
+    public static void traitsOnEntity(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.lichVariedTraits, true);
+        RequiemCard card = card(p);
+        bornByProgress(p, card);
+        KuvaMasterEntity lich = KuvaLichEntities.KUVA_MASTER.get().create(h.getLevel());
+        h.assertTrue(lich != null, "应当能造出玄骸");
+        lich.bindOwner(p, card);
+        LichTraits t = LichTraits.current(card.getLichSeed(), card.getLichRank());
+        h.assertTrue(Math.abs(lich.getMaxHealth() - t.maxHealth) < 1.0E-3D && lich.getHealth() == lich.getMaxHealth(),
+                "最大生命应当是 " + t.maxHealth + " 且满血，实际 " + lich.getHealth() + " / " + lich.getMaxHealth());
+        h.assertTrue(Math.abs(lich.getAttributeValue(Attributes.ATTACK_DAMAGE) - t.attack) < 1.0E-6D
+                && Math.abs(lich.getAttributeValue(Attributes.ARMOR) - t.armor) < 1.0E-6D
+                && Math.abs(lich.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE) - t.knockbackResist) < 1.0E-6D,
+                "攻击、护甲、击退抗性应当套上面板");
+        h.assertTrue(lich.adaptStackCap() == t.adaptStacks() && lich.combatTraits() != null,
+                "适应上限应当按面板");
+        double fury = ModConfig.KUVA_LICH.battleBoost.get() * t.furyScale();
+        h.assertTrue(Math.abs(lich.furyPerSecond() - fury) < 1.0E-9D, "交战增幅应当按档位");
+
+        // 判错一次：等级 +1，最大生命跟着等级曲线涨，血量比例不变
+        lich.setHealth(lich.getMaxHealth() * 0.5F);
+        int rank = card.getLichRank();
+        lich.applyFailure(card);
+        double step = ModConfig.KUVA_LICH.lichRankHealthStep.get();
+        double expect = t.maxHealth * LichTraits.rankScale(rank + 1, step) / LichTraits.rankScale(rank, step);
+        h.assertTrue(card.getLichRank() == rank + 1 && Math.abs(lich.getMaxHealth() - expect) < 1.0E-2D,
+                "升一级后最大生命应当是 " + expect + "，实际 " + lich.getMaxHealth());
+        h.assertTrue(Math.abs(lich.getHealth() / lich.getMaxHealth() - 0.5F) < 1.0E-3F, "血量比例应当不变");
+        lich.discard();
+
+        // 无主的不套面板，照原来的固定数值
+        KuvaMasterEntity wild = KuvaLichEntities.KUVA_MASTER.get().create(h.getLevel());
+        h.assertTrue(wild != null && wild.combatTraits() == null
+                && Math.abs(wild.getMaxHealth() - LichTraits.BASE_HEALTH) < 1.0E-3D
+                && wild.adaptStackCap() == 6, "无主的玄骸应当还是 200 血、适应 6 层");
+        wild.discard();
+        h.succeed();
     }
 
     @AfterBatch(batch = CFG_AFFINITY)

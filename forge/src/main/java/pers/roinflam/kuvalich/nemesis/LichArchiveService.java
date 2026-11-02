@@ -7,6 +7,7 @@ import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
@@ -20,10 +21,6 @@ import java.util.List;
  * 客户端只管显示。档案里那句嘲讽是客户端自己抽、自己放的（只有本人看得到，服务端不用知道）。</p>
  */
 public final class LichArchiveService {
-
-    /** 适应抗性：每层减伤百分比、满层减伤百分比（实体那边是每层 5%、至多 6 层） */
-    static final int ADAPT_PCT_PER_STACK = 5;
-    static final int ADAPT_PCT_MAX = 30;
 
     /** 怒气来源的位：处决奴仆、解密进度、揭示密语、在线时间 */
     public static final int RAGE_FROM_THRALLS = 1;
@@ -60,7 +57,6 @@ public final class LichArchiveService {
         int kuvaLevel = card.getKuvaLevel();
         int dealt = (int) Math.round(kuvaLevel * ModConfig.KUVA_LICH.reducedDamage.get() * 100.0D);
         int taken = (int) Math.round(kuvaLevel * ModConfig.KUVA_LICH.increaseDamage.get() * 100.0D);
-        int fury = (int) Math.round(ModConfig.KUVA_LICH.battleBoost.get() * 1000.0D);
 
         int sources = 0;
         if (ModConfig.KUVA_LICH.lichRagePerThrallExecution.get() > 0.0D) {
@@ -89,12 +85,27 @@ public final class LichArchiveService {
         return new LichArchivePacket.Data(state(player, card),
                 hasLich ? card.getLichBirthBiome() : "", hasLich ? card.getLichBirthDim() : "",
                 weapon, card.getMinimumLevelWeapon(), card.getMaximumLevelWeapon(),
-                LichProfile.affinities(card.getLichSeed()), ADAPT_PCT_PER_STACK, ADAPT_PCT_MAX, fury,
-                dealt, taken, sources, hasLich ? card.getLichEncounters() : 0,
+                hasLich ? stats(player, card) : LichArchivePacket.Stats.NONE, dealt, taken, sources, hasLich ? card.getLichEncounters() : 0,
                 card.getUnlockedCardStatus(), card.getDecryptionProgress(), card.getPointsRequired(),
                 riddles, cards, card.getAttempts(),
                 card.getConfiscatedItemCount(), confiscated,
                 last == null ? "" : last.name(), last == null ? 0 : last.fate());
+    }
+
+    /**
+     * 这只玄骸的战斗面板，按卡上的种子、等级现算（和实体那边 {@link LichTraits#current} 同一个函数）。
+     * 「一刀」按主人所在世界的难度，再乘主人身上的等级加成，不含交战增幅
+     */
+    static LichArchivePacket.Stats stats(ServerPlayer player, RequiemCard card) {
+        LichTraits traits = LichTraits.current(card.getLichSeed(), card.getLichRank());
+        double taken = 1.0D + card.getKuvaLevel() * ModConfig.KUVA_LICH.increaseDamage.get();
+        double hit = KuvaMasterEntity.hitDamage(traits.attack, player.level().getDifficulty()) * taken;
+        double fury = ModConfig.KUVA_LICH.battleBoost.get() * traits.furyScale();
+        return new LichArchivePacket.Stats(traits.affinityPercents(), traits.adaptPercent(), traits.adaptStacks(),
+                (int) Math.round(fury * 1000.0D), (int) Math.round(traits.maxHealth),
+                (int) Math.round(traits.armor * 10.0D), (int) Math.round(hit * 10.0D), traits.packedTiers(),
+                (int) Math.round(ModConfig.KUVA_LICH.lichRankHealthStep.get() * 100.0D),
+                (int) Math.round(ModConfig.KUVA_LICH.increaseDamage.get() * 100.0D));
     }
 
     /** 和状态包同一套内容，按此刻现算（不走状态包的限流） */

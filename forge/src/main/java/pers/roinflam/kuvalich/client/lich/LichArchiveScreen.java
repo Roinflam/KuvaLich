@@ -37,6 +37,7 @@ import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.nemesis.LichLine;
 import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichState;
+import pers.roinflam.kuvalich.nemesis.LichTraits;
 import pers.roinflam.kuvalich.nemesis.RageTier;
 import pers.roinflam.kuvalich.nemesis.WaitReason;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
@@ -110,16 +111,15 @@ public class LichArchiveScreen extends Screen {
     /** 松手后转回默认朝向用多久 */
     private static final int YAW_RETURN_MS = 1500;
 
-    /** 弱点、抗性的倍率（和实体里的固定倍率一致；按种子抽的那套也只换类别、不换倍率） */
-    private static final String WEAK_MULT = "1.25";
-    private static final String RESIST_MULT = "0.75";
     private static final String[] CATEGORY_KEYS = {
             "kuvalich.archive.cat.melee", "kuvalich.archive.cat.arrow",
             "kuvalich.archive.cat.projectile", "kuvalich.archive.cat.magic"
     };
+    /** 能力图标的说明，下标和 {@link LichTraits} 的技能序号一致 */
     private static final String[] ABILITY_KEYS = {
             "kuvalich.archive.ability.adaptive", "kuvalich.archive.ability.fury",
-            "kuvalich.archive.ability.regen", "kuvalich.archive.ability.quake"
+            "kuvalich.archive.ability.regen", "kuvalich.archive.ability.quake",
+            "kuvalich.archive.ability.lifesteal"
     };
     /** 怒气档位的分界（和 {@link RageTier} 一致） */
     private static final float[] RAGE_TICKS = {0.12F, 0.5F, 0.8F, 0.96F};
@@ -578,7 +578,7 @@ public class LichArchiveScreen extends Screen {
         float rs = rank.length() >= 3 ? tsR * 0.8F : tsR;
         text(g, f, rank, cx, by - 3.5F * rs, rs, FxPalette.BONE, a, 0.0F, 0);
         if (lich && inRect(mx, my, cx - bhw, by - ba, cx + bhw, by + ba)) {
-            hover(Component.translatable("kuvalich.archive.rank.tooltip", st.rank));
+            hoverLines = rankTooltip(st.rank, data);
         }
 
         // 名字、第几只
@@ -590,8 +590,16 @@ public class LichArchiveScreen extends Screen {
             float nw = SpacedText.width(f, name, 1.0F) * tsN;
             float s = nw > colW ? tsN * colW / nw : tsN;
             text(g, f, name, cx, ny - 3.5F * s, s, FxPalette.KUVA, a, 1.0F, 0);
-            String gen = I18n.get("kuvalich.archive.generation", Math.max(1, st.generation));
-            text(g, f, gen, cx, h * 0.305F - 3.5F * tsS, tsS, FxPalette.ASH, a, 0.0F, 0);
+            LichPersona persona = LichPersona.of(st.seed);
+            String gen = I18n.get("kuvalich.archive.generation", Math.max(1, st.generation)) + " · "
+                    + I18n.get("kuvalich.archive.persona." + persona.id);
+            float gy = h * 0.305F - 3.5F * tsS;
+            float gw = text(g, f, gen, cx, gy, tsS, FxPalette.ASH, a, 0.0F, 0);
+            if (data != null && LichTraits.unpackVaried(data.stats().skills())
+                    && inRect(mx, my, cx - gw * 0.5F, gy - 1.0F, cx + gw * 0.5F, gy + 8.0F * tsS)) {
+                String key = "kuvalich.archive.persona." + persona.id + ".tooltip.";
+                hoverLines = List.of(Component.translatable(key + "0"), Component.translatable(key + "1"));
+            }
         } else {
             text(g, f, I18n.get("kuvalich.lich.state.unborn"), cx, ny - 3.5F * tsN, tsN, FxPalette.TEXT_MID, a, 1.0F, 0);
         }
@@ -609,31 +617,108 @@ public class LichArchiveScreen extends Screen {
 
     private void drawAbilities(GuiGraphics g, int mx, int my, float cx, float cy, int h,
                                @Nullable LichArchivePacket.Data data, float a, float lw) {
-        boolean fury = data != null && data.furyPermille() > 0;
-        int count = fury ? 4 : 3;
+        LichArchivePacket.Stats stats = data != null ? data.stats() : null;
+        boolean fury = stats != null && stats.furyPermille() > 0;
+        boolean varied = stats != null && LichTraits.unpackVaried(stats.skills());
+        int count = fury ? LichTraits.SKILLS : LichTraits.SKILLS - 1;
         float step = h * 0.045F;
         float size = h * 0.030F;
         float x = cx - step * (count - 1) * 0.5F;
         GuiShapes.begin(g);
         int base = GuiShapes.argb(FxPalette.KUVA_MIST, 0.6F * a);
         int line = GuiShapes.argb(FxPalette.KUVA_PALE, 0.85F * a);
+        int sigFill = GuiShapes.argb(FxPalette.KUVA_DEEP, 0.95F * a);
+        int sigEdge = GuiShapes.argb(FxPalette.KUVA, a);
+        int pipOn = GuiShapes.argb(FxPalette.KUVA_PALE, 0.9F * a);
+        int pipOff = GuiShapes.argb(FxPalette.KUVA_MIST, 0.55F * a);
+        float pip = Math.max(lw, size * 0.07F);
         int hovered = -1;
-        for (int i = 0; i < 4; i++) {
-            if (i == 1 && !fury) {
+        for (int i = 0; i < LichTraits.SKILLS; i++) {
+            if (i == LichTraits.FURY && !fury) {
                 continue;
             }
             float r = size * 0.5F;
-            GuiShapes.diamondFill(g, x, cy, r * 0.75F, r, base);
+            int tier = stats != null ? LichTraits.unpackTier(stats.skills(), i) : LichTraits.NORMAL;
+            boolean sig = varied && tier == LichTraits.SIGNATURE;
+            GuiShapes.diamondFill(g, x, cy, r * 0.75F, r, sig ? sigFill : base);
+            if (sig) {
+                GuiShapes.diamondOutline(g, x, cy, r * 0.75F + lw, r + lw, lw, sigEdge);
+            }
             ArchiveIcons.ability(g, i, x, cy, size * 0.62F, lw, line);
-            if (inRect(mx, my, x - r, cy - r, x + r, cy + r)) {
+            if (varied) {
+                // 档位：弱一点、中两点、强和专长三点
+                int lit = Math.min(3, tier + 1);
+                float py = cy + r + size * 0.16F;
+                for (int k = 0; k < 3; k++) {
+                    float px = x + (k - 1) * size * 0.26F;
+                    GuiShapes.rect(g, px - pip, py - pip, px + pip, py + pip, k < lit ? pipOn : pipOff);
+                }
+            }
+            if (inRect(mx, my, x - r, cy - r, x + r, cy + r + size * 0.3F)) {
                 hovered = i;
             }
             x += step;
         }
         GuiShapes.end();
         if (hovered >= 0) {
-            hover(Component.translatable(ABILITY_KEYS[hovered]));
+            hoverLines = abilityTooltip(hovered, stats, varied);
         }
+    }
+
+    /** 能力图标的悬停：说明一句，再写这只的档位和具体数 */
+    private static List<Component> abilityTooltip(int skill, @Nullable LichArchivePacket.Stats stats, boolean varied) {
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.translatable(ABILITY_KEYS[skill]));
+        if (stats == null) {
+            return lines;
+        }
+        int tier = LichTraits.unpackTier(stats.skills(), skill);
+        String detail = switch (skill) {
+            case LichTraits.ADAPT -> I18n.get("kuvalich.archive.skill.adaptive", stats.adaptPct(), stats.adaptStacks(),
+                    num(LichTraits.ADAPT_DECAY_TICKS[tier] / 20.0D));
+            case LichTraits.FURY -> I18n.get("kuvalich.archive.skill.fury", pct1(stats.furyPermille()));
+            case LichTraits.REGEN -> I18n.get("kuvalich.archive.skill.regen", num(LichTraits.REGEN_SCALE[tier]));
+            case LichTraits.QUAKE -> I18n.get("kuvalich.archive.skill.quake", num(LichTraits.QUAKE_RADIUS[tier]),
+                    num(LichTraits.QUAKE_KNOCK[tier]));
+            default -> I18n.get("kuvalich.archive.skill.lifesteal",
+                    (int) Math.round(LichTraits.LIFESTEAL_RATIO[tier] * 100.0D));
+        };
+        lines.add(Component.literal(varied
+                ? I18n.get("kuvalich.archive.skill.line", I18n.get("kuvalich.archive.tier." + tier), detail)
+                : detail));
+        if (varied && tier == LichTraits.SIGNATURE) {
+            if (skill == LichTraits.FURY) {
+                lines.add(Component.translatable("kuvalich.archive.skill.fury.signature"));
+            } else if (skill == LichTraits.LIFESTEAL) {
+                lines.add(Component.translatable("kuvalich.archive.skill.lifesteal.signature"));
+            }
+        }
+        return lines;
+    }
+
+    /** 等级徽章的悬停：等级怎么涨，下一级生命、护甲和你受到的伤害变成多少 */
+    private static List<Component> rankTooltip(int rank, @Nullable LichArchivePacket.Data data) {
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.translatable("kuvalich.archive.rank.tooltip", rank));
+        if (data == null) {
+            return lines;
+        }
+        LichArchivePacket.Stats st = data.stats();
+        double step = st.rankStepPct() / 100.0D;
+        if (st.health() > 0 && step > 0.0D) {
+            if (rank >= LichTraits.RANK_SCALE_CAP) {
+                lines.add(Component.translatable("kuvalich.archive.rank.capped", LichTraits.RANK_SCALE_CAP));
+            } else {
+                double k = LichTraits.rankScale(rank + 1, step) / LichTraits.rankScale(rank, step);
+                lines.add(Component.translatable("kuvalich.archive.rank.next.health", st.health(),
+                        (int) Math.round(st.health() * k)));
+            }
+        }
+        if (st.takenStepPct() > 0) {
+            lines.add(Component.translatable("kuvalich.archive.rank.next.taken", data.takenPct(),
+                    data.takenPct() + st.takenStepPct()));
+        }
+        return lines;
     }
 
     private void drawRage(GuiGraphics g, Font f, int mx, int my, float x0, float x1, int h, long now,
@@ -723,13 +808,19 @@ public class LichArchiveScreen extends Screen {
         rowsLang = lang;
         rowLabels.clear();
         rowValues.clear();
-        int weak = d.affinity() & 0xF;
-        int resist = (d.affinity() >> 4) & 0xF;
-        addMaskRows("kuvalich.archive.attr.weakness", weak, WEAK_MULT);
-        addMaskRows("kuvalich.archive.attr.resistance", resist, RESIST_MULT);
-        if (d.adaptPct() > 0 && d.adaptMax() > 0) {
+        LichArchivePacket.Stats st = d.stats();
+        if (st.health() > 0) {
+            addRow("kuvalich.archive.attr.health",
+                    I18n.get("kuvalich.archive.val.health", st.health(), tenths(st.armorTenths())));
+        }
+        if (st.hitTenths() > 0) {
+            addRow("kuvalich.archive.attr.hit", I18n.get("kuvalich.archive.val.hit", tenths(st.hitTenths())));
+        }
+        addAffinityRows("kuvalich.archive.attr.weakness", st.affinityPct(), true);
+        addAffinityRows("kuvalich.archive.attr.resistance", st.affinityPct(), false);
+        if (st.adaptPct() > 0 && st.adaptStacks() > 0) {
             addRow("kuvalich.archive.attr.adaptive",
-                    I18n.get("kuvalich.archive.val.adaptive", d.adaptPct(), Math.max(1, d.adaptMax() / d.adaptPct())));
+                    I18n.get("kuvalich.archive.val.adaptive", st.adaptPct(), st.adaptStacks()));
         }
         if (!d.weaponStack().isEmpty()) {
             addRow("kuvalich.archive.attr.weapon", d.weaponStack().getHoverName().getString());
@@ -742,8 +833,8 @@ public class LichArchiveScreen extends Screen {
             addRow("kuvalich.archive.attr.birthplace",
                     I18n.get("kuvalich.archive.val.birthplace", biomeName(d.birthBiome()), dimName(d.birthDim())));
         }
-        if (d.furyPermille() > 0) {
-            addRow("kuvalich.archive.attr.fury", I18n.get("kuvalich.archive.val.fury", pct1(d.furyPermille())));
+        if (st.furyPermille() > 0) {
+            addRow("kuvalich.archive.attr.fury", I18n.get("kuvalich.archive.val.fury", pct1(st.furyPermille())));
         }
         if (d.dealtPct() > 0) {
             addRow("kuvalich.archive.attr.dealt", I18n.get("kuvalich.archive.val.minus", d.dealtPct()));
@@ -754,17 +845,30 @@ public class LichArchiveScreen extends Screen {
         addRow("kuvalich.archive.attr.encounters", I18n.get("kuvalich.archive.val.encounters", d.encounters()));
     }
 
-    /** 位掩码按「近战 / 弓箭 / 其他弹射物 / 魔法」的顺序逐类列一行，标签只写在第一行 */
-    private void addMaskRows(String labelKey, int mask, String mult) {
+    /** 弱点（倍率 > 1）或抗性（< 1）按「近战 / 弓箭 / 其他弹射物 / 魔法」的顺序逐类列一行，标签只写在第一行 */
+    private void addAffinityRows(String labelKey, int[] pct, boolean weak) {
         boolean first = true;
-        for (int c = 0; c < CATEGORY_KEYS.length; c++) {
-            if ((mask & (1 << c)) == 0) {
+        for (int c = 0; c < CATEGORY_KEYS.length && c < pct.length; c++) {
+            if (weak ? pct[c] <= 100 : pct[c] >= 100) {
                 continue;
             }
             rowLabels.add(first ? I18n.get(labelKey) : "");
-            rowValues.add(I18n.get("kuvalich.archive.val.mult", I18n.get(CATEGORY_KEYS[c]), mult));
+            rowValues.add(I18n.get("kuvalich.archive.val.mult", I18n.get(CATEGORY_KEYS[c]),
+                    String.format(Locale.ROOT, "%.2f", pct[c] / 100.0D)));
             first = false;
         }
+    }
+
+    /** ×10 存的数写成一位小数，整数不带小数（127 → 12.7，80 → 8） */
+    private static String tenths(int v) {
+        return v % 10 == 0 ? Integer.toString(v / 10) : String.format(Locale.ROOT, "%.1f", v / 10.0F);
+    }
+
+    /** 倍率、半径这类小数：最多两位，去掉末尾的 0（1.5、2.2、0.8） */
+    private static String num(double v) {
+        String s = String.format(Locale.ROOT, "%.2f", v);
+        s = s.replaceAll("0+$", "");
+        return s.endsWith(".") ? s.substring(0, s.length() - 1) : s;
     }
 
     private void addRow(String labelKey, String value) {
@@ -1218,7 +1322,7 @@ public class LichArchiveScreen extends Screen {
 
     // ==================== 能力图标 ====================
 
-    /** 档案左栏四枚能力图标的线描；点存在一个复用的数组里，不分配 */
+    /** 档案左栏五枚能力图标的线描；点存在一个复用的数组里，不分配 */
     private static final class ArchiveIcons {
 
         private static final float[] PTS = new float[64];
@@ -1267,6 +1371,20 @@ public class LichArchiveScreen extends Screen {
                         PTS[n++] = ccy - (float) Math.sin(ang) * rr;
                     }
                     GuiShapes.polyline(g, PTS, n / 2, true, lw, argb);
+                }
+                case 4 -> {
+                    // 两颗獠牙挂在一道横线下
+                    float top = cy - r * 0.45F;
+                    GuiShapes.hairline(g, cx - r * 0.8F, top, cx + r * 0.8F, top, lw, argb);
+                    for (int side = -1; side <= 1; side += 2) {
+                        PTS[0] = cx + side * r * 0.62F;
+                        PTS[1] = top;
+                        PTS[2] = cx + side * r * 0.32F;
+                        PTS[3] = cy + r * 0.75F;
+                        PTS[4] = cx + side * r * 0.08F;
+                        PTS[5] = top;
+                        GuiShapes.polyline(g, PTS, 3, false, lw, argb);
+                    }
                 }
                 default -> {
                     float oy = cy + r * 0.65F;

@@ -293,24 +293,31 @@
           "rows": [
             [
               "等级徽章",
-              "左上角的菱形徽章写着它现在的<t>玄骸等级</t>，见[[enemies/kuva_escalation]]"
+              "左上角的菱形徽章写着它现在的<t>玄骸等级</t>，鼠标移上去能看到下一级它会变成什么样，见[[enemies/kuva_escalation]]"
             ],
             [
               "名字",
-              "它诞生时就有的名字，下面一行写着它是你的第几只玄骸"
+              "它诞生时就有的名字，下面一行写着它是你的第几只玄骸、什么性格"
             ],
             {
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "能力",
-                "一排小图标：适应、交战增幅（也就是[[enemies/battle_boost|战斗增幅]]）、自愈、震荡，鼠标移上去看说明"
+                "一排小图标：适应、交战增幅（也就是[[enemies/battle_boost|战斗增幅]]）、自愈、震荡、吸血，鼠标移上去看说明和具体数值"
               ]
             },
             {
               "if": "!cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "能力",
-                "一排小图标：适应、自愈、震荡，鼠标移上去看说明"
+                "一排小图标：适应、自愈、震荡、吸血，鼠标移上去看说明和具体数值"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichVariedTraits",
+              "cells": [
+                "档位",
+                "能力图标下面的小点是这只的档位：一点弱、两点中、三点强，描红边的那一枚是它的专长，见[[enemies/lich_traits]]"
               ]
             },
             [
@@ -321,14 +328,14 @@
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "属性",
-                "弱点、抗性、适应、它手里的武器和你的武器等级范围、出生地、交战增幅、你对它和它对你的伤害倍率、交手次数，只列它身上有的那几行"
+                "生命和护甲、它砍你一刀大约多疼（按当前难度，算上玄骸等级让你多受的伤害，不算交战增幅）、弱点、抗性、适应、它手里的武器和你的武器等级范围、出生地、交战增幅、你对它和它对你的伤害倍率、交手次数，只列它身上有的那几行"
               ]
             },
             {
               "if": "!cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "属性",
-                "弱点、抗性、适应、它手里的武器和你的武器等级范围、出生地、你对它和它对你的伤害倍率、交手次数，只列它身上有的那几行"
+                "生命和护甲、它砍你一刀大约多疼（按当前难度，算上玄骸等级让你多受的伤害）、弱点、抗性、适应、它手里的武器和你的武器等级范围、出生地、你对它和它对你的伤害倍率、交手次数，只列它身上有的那几行"
               ]
             },
             {
@@ -428,9 +435,9 @@
       "_src": [
         "client/KuvaKeyMappings.java:35 — 档案键 key.kuvalich.lich_archive，默认 K，可在控制设置里改；冲突范围 GUI，只在灭骸之扉 / 档案界面里认，游戏中按 K 不开档案；client/lich/LichArchiveKeys.open 是唯一入口，只有 RequiemGateScreen#openArchive 调",
         "client/lich/LichArchiveKeys.java:39 — 处决进行中不打开档案",
-        "client/lich/LichArchiveScreen.java:191 isPauseScreen 返回 false（不暂停）；左栏等级徽章、名字、「赤毒玄骸 · 第 N 只」、能力图标（悬停看说明；:631 drawAbilities 交战增幅为 0 时不画这一枚，只剩 3 枚）、怒气条与档位（悬停列出让它更怒的来源）、属性栏（:738 buildRows 只列它有的行：弱点 / 抗性按位掩码、适应、武器与等级范围、出生地、交战增幅 > 0、两种伤害倍率 > 0、交手次数）、被没收的物品（:824-831）；中间模型可拖动旋转、偶尔说话、下面状态行；右栏当前安魂卡与剩余次数、处决记录、已揭示的密语三角，:869 drawRight 不看状态照常画",
+        "client/lich/LichArchiveScreen.java:191 isPauseScreen 返回 false（不暂停）；左栏等级徽章（悬停 rankTooltip：下一级生命 a → b、它对你的伤害 +x% → +y%，6 级起写封顶）、名字、「赤毒玄骸 · 第 N 只 · 性格」（lichVariedTraits 开着时悬停讲性格打法）、能力图标（五枚：适应、增幅、自愈、震荡、吸血；悬停看说明和档位数值；drawAbilities 交战增幅为 0 时不画那一枚；lichVariedTraits 开着时图标下 1~3 个小点、专长描红边）、怒气条与档位（悬停列出让它更怒的来源）、属性栏（buildRows 只列它有的行：生命 · 护甲、一刀（LichArchiveService.stats：hitDamage × (1 + kuvaLevel × increaseDamage)，和平难度为 0 不列）、弱点 / 抗性逐类带倍率、适应、武器与等级范围、出生地、交战增幅 > 0、两种伤害倍率 > 0、交手次数）、被没收的物品；中间模型可拖动旋转、偶尔说话、下面状态行；右栏当前安魂卡与剩余次数、处决记录、已揭示的密语",
         "client/lich/LichArchiveScreen.java:1100 — 没有玄骸时模型一直是暗剪影，状态行写 kuvalich.archive.status.unborn + kuvalich.archive.status.unborn.hint；右栏照画，三角里第一枚菱晶带第一段的进度",
-        "nemesis/LichArchiveService.java:63 — 档案里的交战增幅 = battleBoost × 1000（千分比），为 0 时能力图标和属性行都不出现",
+        "nemesis/LichArchiveService.java stats — 档案里的交战增幅 = battleBoost × FURY_SCALE（档位）× 1000（千分比），为 0 时能力图标和属性行都不出现；面板按 LichTraits.current(种子, 等级) 现算，和实体同一个函数",
         "capability/RequiemCard.java:91 MAX_ATTEMPTS = 5 — 处决记录最多留 5 行，每位记对 / 错 / 没判到",
         "client/gui/screens/inventory/RequiemGateScreen.java:111 — 灭骸之扉右下角的档案入口（kuvalich.archive.open_hint）",
         "nemesis/RageTier.java — 怒气五档：冷漠 0 / 恼怒 0.12 / 气得冒烟 0.5 / 狂怒 0.8 / 暴怒 0.96，只影响显示和嘲讽，不影响强度",

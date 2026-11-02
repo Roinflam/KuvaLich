@@ -106,7 +106,9 @@ public final class SmokeTests {
         smallTag.putInt("k", 7);
         light.setTag(smallTag);
         LichArchivePacket.Data data = new LichArchivePacket.Data(state, "minecraft:plains", "minecraft:overworld",
-                new ItemStack(Items.IRON_SWORD), 12, 34, 0x21, 30, 60, 450, 55, 18, 0b0101, 6,
+                new ItemStack(Items.IRON_SWORD), 12, 34,
+                new LichArchivePacket.Stats(new int[]{140, 100, 85, 60}, 7, 4, 1600, 384, 165, 1275, 0x5E7, 30, 40),
+                55, 18, 0b0101, 6,
                 2, 17, -1, new int[]{3, -1, 6},
                 new LichArchivePacket.Card[]{new LichArchivePacket.Card(3, 1, 3), LichArchivePacket.Card.EMPTY,
                         new LichArchivePacket.Card(6, 0, 3)},
@@ -119,8 +121,11 @@ public final class SmokeTests {
         h.assertTrue("Drokag Tuzz".equals(d2.state().name) && d2.state().rank == 4, "档案：内嵌的状态");
         h.assertTrue("minecraft:plains".equals(d2.birthBiome()) && "minecraft:overworld".equals(d2.birthDim()), "档案：出生地");
         h.assertTrue(d2.weaponStack().is(Items.IRON_SWORD) && d2.weaponLvMin() == 12 && d2.weaponLvMax() == 34, "档案：武器");
-        h.assertTrue(d2.affinity() == 0x21 && d2.adaptPct() == 30 && d2.adaptMax() == 60 && d2.furyPermille() == 450,
-                "档案：属性");
+        LichArchivePacket.Stats s2 = d2.stats();
+        h.assertTrue(Arrays.equals(s2.affinityPct(), new int[]{140, 100, 85, 60}) && s2.adaptPct() == 7
+                && s2.adaptStacks() == 4 && s2.furyPermille() == 1600, "档案：弱点抗性、适应、增幅");
+        h.assertTrue(s2.health() == 384 && s2.armorTenths() == 165 && s2.hitTenths() == 1275 && s2.skills() == 0x5E7
+                && s2.rankStepPct() == 30 && s2.takenStepPct() == 40, "档案：生命、护甲、一刀、技能档位、每级变化");
         h.assertTrue(d2.dealtPct() == 55 && d2.takenPct() == 18 && d2.rageSources() == 5 && d2.encounters() == 6,
                 "档案：伤害修正、怒气来源、交手");
         h.assertTrue(d2.stage() == 2 && d2.progress() == 17 && d2.threshold() == -1, "档案：进度（阈值 -1 要读回 -1）");

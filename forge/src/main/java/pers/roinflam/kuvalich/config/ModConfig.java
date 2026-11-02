@@ -289,7 +289,8 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue lichRandomTauntMinutes;
         public final ForgeConfigSpec.DoubleValue lichRandomTauntChance;
         public final ForgeConfigSpec.EnumValue<LichCommEcho> lichCommChatEcho;
-        public final ForgeConfigSpec.BooleanValue lichSeededAffinities;
+        public final ForgeConfigSpec.BooleanValue lichVariedTraits;
+        public final ForgeConfigSpec.DoubleValue lichRankHealthStep;
         public final ForgeConfigSpec.BooleanValue lichWildAllowed;
         public final ForgeConfigSpec.BooleanValue lichPurgeLegacy;
 
@@ -1318,10 +1319,18 @@ public final class ModConfig {
                     .comment("通讯台词要不要同时进聊天栏：NONE 不进 / IMPORTANT 只进重要的 / ALL 全进")
                     .defineEnum("lichCommChatEcho", LichCommEcho.IMPORTANT);
 
-            lichSeededAffinities = builder
-                    .comment("Each Lich rolls its own weakness and resistances (half of them will resist melee)")
-                    .comment("每只玄骸的弱点和抗性各不相同（会有一半的玄骸抗近战）")
-                    .define("lichSeededAffinities", false);
+            lichVariedTraits = builder
+                    .comment("Each personal Lich rolls its own stats, weaknesses, resistances and skill strengths from its seed,")
+                    .comment("leaning by personality (jovial: hits hard but fragile; logical: tough and adapts fast).")
+                    .comment("Off = every personal Lich uses the same stats (weak to arrows, resists other projectiles and magic)")
+                    .comment("每只专属玄骸按种子抽自己的面板、弱点抗性和各项技能的强弱，并按性格偏向（活泼：攻高血薄；理性：血厚、适应快）")
+                    .comment("关掉 = 所有专属玄骸用同一套面板（弱弓箭，抗其他弹射物和魔法）")
+                    .define("lichVariedTraits", true);
+
+            lichRankHealthStep = builder
+                    .comment("Personal Lich health and armor change by this much per Lich rank (rank 2 = 100%, capped at rank 6); 0 = not affected by rank")
+                    .comment("专属玄骸的生命和护甲每级变化多少（2 级 = 100%，6 级封顶）；0 = 不随等级变")
+                    .defineInRange("lichRankHealthStep", 0.15, 0.0, 1.0);
 
             lichWildAllowed = builder
                     .comment("Spawn eggs and commands may still create wild Liches (no rewards); off = refuse them")

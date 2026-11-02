@@ -239,7 +239,8 @@ public class ClothConfigScreen {
                 .setTooltip(Component.translatable("config.kuvalich.lichCommChatEcho.tooltip"))
                 .setSaveConsumer(k.lichCommChatEcho::set)
                 .build());
-        lichCategory.addEntry(bool(entryBuilder, "lichSeededAffinities", k.lichSeededAffinities, false));
+        lichCategory.addEntry(bool(entryBuilder, "lichVariedTraits", k.lichVariedTraits, true));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichRankHealthStep", k.lichRankHealthStep, 0.15, 0.0, 1.0));
         lichCategory.addEntry(bool(entryBuilder, "lichWildAllowed", k.lichWildAllowed, true));
         lichCategory.addEntry(bool(entryBuilder, "lichPurgeLegacy", k.lichPurgeLegacy, true));
 

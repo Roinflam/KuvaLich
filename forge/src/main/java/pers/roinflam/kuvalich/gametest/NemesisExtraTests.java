@@ -49,6 +49,7 @@ import pers.roinflam.kuvalich.nemesis.LichLine;
 import pers.roinflam.kuvalich.nemesis.LichNames;
 import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichProfile;
+import pers.roinflam.kuvalich.nemesis.LichTraits;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.network.packet.KuvaCommPacket;
 import pers.roinflam.kuvalich.network.packet.KuvaFxPacket;
@@ -133,27 +134,86 @@ public final class NemesisExtraTests {
         h.succeed();
     }
 
-    // ==================== 弱点 / 抗性的位 ====================
+    // ==================== 专属面板（按种子、等级、性格） ====================
 
     @GameTest(template = "empty", batch = CORE)
-    public static void affinityBits(GameTestHelper h) {
-        h.assertTrue(LichProfile.FIXED_AFFINITIES == 0xC2, "固定值应当是弱点弓箭、抗性其他弹射物和魔法（0xC2）");
-        if (!ModConfig.KUVA_LICH.lichSeededAffinities.get()) {
-            h.assertTrue(LichProfile.affinities(12345L) == 0xC2, "配置关着时所有玄骸都应当是固定值");
-        }
+    public static void traitsBySeed(GameTestHelper h) {
+        int[] personas = new int[2];
         int[] weakCount = new int[4];
+        // 各性格各项技能的档位合计（专长按 3 算），比两种性格的偏向
+        int[][] tierSum = new int[2][LichTraits.SKILLS];
         for (long seed = 0; seed < 4000; seed++) {
-            int a = LichProfile.seededAffinities(seed);
-            int weak = LichProfile.weakMask(a);
-            int resist = LichProfile.resistMask(a);
-            h.assertTrue(a == LichProfile.seededAffinities(seed), "同一个种子应当同一个结果");
-            h.assertTrue(Integer.bitCount(weak) == 1 && Integer.bitCount(resist) == 2 && (weak & resist) == 0
-                    && (a & ~0xFF) == 0, "应当是 1 弱 2 抗、互不重叠：种子 " + seed + " 得到 0x" + Integer.toHexString(a));
-            weakCount[Integer.numberOfTrailingZeros(weak)]++;
+            LichTraits t = LichTraits.seeded(seed, 2, 0.15D);
+            LichTraits again = LichTraits.seeded(seed, 2, 0.15D);
+            h.assertTrue(t.packedTiers() == again.packedTiers() && t.maxHealth == again.maxHealth
+                    && java.util.Arrays.equals(t.affinityPercents(), again.affinityPercents()), "同一个种子应当同一个结果");
+            boolean jovial = t.persona == LichPersona.JOVIAL;
+            h.assertTrue(t.persona == LichPersona.of((int) seed), "性格和台词那边同一个算法");
+            personas[jovial ? 0 : 1]++;
+            int weak = 0;
+            int resist = 0;
+            for (int c = 0; c < LichTraits.CATEGORIES; c++) {
+                double m = t.affinity(c);
+                if (m > 1.0D) {
+                    weak++;
+                    weakCount[c]++;
+                    h.assertTrue(m >= 1.25D - 1.0E-9D && m <= 1.40D + 1.0E-9D, "弱点倍率应当在 1.25~1.40：" + m);
+                } else if (m < 1.0D) {
+                    resist++;
+                    double low = c == LichTraits.CAT_MELEE ? LichTraits.MELEE_RESIST_FLOOR : jovial ? 0.75D : 0.60D;
+                    h.assertTrue(m >= low - 1.0E-9D && m <= (jovial ? 0.85D : 0.75D) + 1.0E-9D
+                            || c == LichTraits.CAT_MELEE && Math.abs(m - LichTraits.MELEE_RESIST_FLOOR) < 1.0E-9D,
+                            "抗性倍率越界：种子 " + seed + " 第 " + c + " 类 " + m);
+                }
+            }
+            h.assertTrue(jovial ? weak == 2 && resist == 1 : weak == 1 && resist == 2,
+                    "活泼 2 弱 1 抗、理性 1 弱 2 抗：种子 " + seed + " 得到 " + weak + " 弱 " + resist + " 抗");
+            int sig = t.signature();
+            h.assertTrue(sig >= 0 && (jovial ? sig == LichTraits.FURY || sig == LichTraits.QUAKE || sig == LichTraits.LIFESTEAL
+                    : sig == LichTraits.ADAPT || sig == LichTraits.REGEN || sig == LichTraits.QUAKE),
+                    "专长应当在性格的池子里：种子 " + seed + " 得到 " + sig);
+            int sigs = 0;
+            for (int i = 0; i < LichTraits.SKILLS; i++) {
+                sigs += t.isSignature(i) ? 1 : 0;
+                tierSum[jovial ? 0 : 1][i] += t.tier(i);
+            }
+            h.assertTrue(sigs == 1, "专长恰好一项");
+            double hpBase = LichTraits.BASE_HEALTH * (jovial ? 0.85D : 1.20D);
+            h.assertTrue(t.maxHealth >= hpBase * 0.92D - 1.0E-6D && t.maxHealth <= hpBase * 1.08D + 1.0E-6D,
+                    "2 级生命应当在性格底子 ±8% 内：" + t.maxHealth);
         }
+        h.assertTrue(personas[0] > 1600 && personas[1] > 1600, "两种性格应当差不多一半一半：" + personas[0] + " / " + personas[1]);
         for (int i = 0; i < 4; i++) {
             h.assertTrue(weakCount[i] > 700, "四类都应当有机会当弱点：第 " + i + " 类只有 " + weakCount[i] + " 次");
         }
+        h.assertTrue(tierSum[0][LichTraits.FURY] > tierSum[1][LichTraits.FURY]
+                && tierSum[0][LichTraits.LIFESTEAL] > tierSum[1][LichTraits.LIFESTEAL]
+                && tierSum[1][LichTraits.ADAPT] > tierSum[0][LichTraits.ADAPT]
+                && tierSum[1][LichTraits.REGEN] > tierSum[0][LichTraits.REGEN], "活泼偏增幅、吸血，理性偏适应、自愈");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = CORE)
+    public static void traitsRankCurve(GameTestHelper h) {
+        double[] expect = {0.85D, 1.0D, 1.15D, 1.30D, 1.45D, 1.60D, 1.60D, 1.60D};
+        for (int rank = 1; rank <= expect.length; rank++) {
+            h.assertTrue(Math.abs(LichTraits.rankScale(rank, 0.15D) - expect[rank - 1]) < 1.0E-9D,
+                    rank + " 级的倍率应当是 " + expect[rank - 1]);
+        }
+        h.assertTrue(LichTraits.rankScale(5, 0.0D) == 1.0D, "步长 0 时不随等级变");
+        // 关掉每只不同：2 级就是改版前所有玄骸那套
+        LichTraits plain = LichTraits.uniform(12345L, 2, 0.15D);
+        h.assertTrue(!plain.varied && plain.maxHealth == LichTraits.BASE_HEALTH && plain.attack == LichTraits.BASE_ATTACK
+                && plain.armor == LichTraits.BASE_ARMOR && plain.signature() == -1
+                && plain.adaptPercent() == 5 && plain.adaptStacks() == 6 && plain.furyScale() == 1.0D
+                && plain.lifesteal() == 0.2D && plain.quakeRadius() == 3.0D && plain.regenScale() == 1.0D,
+                "固定面板 2 级应当和改版前一样");
+        h.assertTrue(plain.affinityMask() == 0xC2, "固定面板的弱点抗性应当是弱弓箭、抗其他弹射物和魔法（0xC2）");
+        h.assertTrue(Math.abs(LichTraits.uniform(12345L, 1, 0.15D).maxHealth - 170.0D) < 1.0E-9D, "1 级是 85%");
+        LichTraits r2 = LichTraits.seeded(777L, 2, 0.15D);
+        LichTraits r4 = LichTraits.seeded(777L, 4, 0.15D);
+        h.assertTrue(Math.abs(r4.maxHealth - r2.maxHealth * 1.30D) < 1.0E-6D && Math.abs(r4.armor - r2.armor * 1.30D) < 1.0E-9D
+                && r4.attack == r2.attack && r4.packedTiers() == r2.packedTiers(), "等级只改生命和护甲");
         h.succeed();
     }
 
@@ -303,7 +363,10 @@ public final class NemesisExtraTests {
         LichArchivePacket.Data d = first.get(0).data();
         RequiemCard card = card(p);
         h.assertTrue(d.state().name.equals(card.getLichName()), "回的是他自己那只");
-        h.assertTrue(d.affinity() == LichProfile.affinities(card.getLichSeed()), "弱点抗性照同一个函数");
+        LichTraits traits = LichTraits.current(card.getLichSeed(), card.getLichRank());
+        h.assertTrue(java.util.Arrays.equals(d.stats().affinityPct(), traits.affinityPercents())
+                && d.stats().skills() == traits.packedTiers() && d.stats().health() == (int) Math.round(traits.maxHealth),
+                "档案面板照同一个函数");
         // 测试服的 tick 跑得比真实时间快，限流按真实时间算，所以按真实时间等
         long sentAt = Util.getMillis();
         h.startSequence()
