@@ -24,11 +24,13 @@ import pers.roinflam.kuvalich.client.tooltip.PanelStyle;
 import pers.roinflam.kuvalich.client.tooltip.WeaponPanelComposer;
 import pers.roinflam.kuvalich.config.ModuleConfig;
 import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
+import pers.roinflam.kuvalich.module.weapon.panel.ValueFormat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -745,7 +747,7 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         for (int k = 0; k < shown; k++) {
             Stat s = stats.get(k);
             double v = s.value(now);
-            String val = WeaponPanelComposer.sourceFormat(s.key).format(v);
+            String val = formatStat(s.key, v);
             float vw = textW(val, 0.0F);
             long since = now - s.t0;
             float fresh = since < STAT_ROLL_MS + 250 ? 1.0F - since / (float) (STAT_ROLL_MS + 250) : 0.0F;
@@ -763,6 +765,25 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             text(g, Component.translatable("kuvalich.armory.more", stats.size() - shown).getString(), rx0, y,
                     FxPalette.ASH, 0.5F * eF);
         }
+    }
+
+    /**
+     * 汇总里的数值：和提示框同一套格式，只是不到 1% 的百分比留一位小数——击杀叠层每层的加成常常只有零点几，
+     * 取整会显示成「+0%」
+     */
+    private static String formatStat(String key, double v) {
+        ValueFormat fmt = WeaponPanelComposer.sourceFormat(key);
+        double pct = Math.abs(v * 100.0);
+        if (fmt == ValueFormat.PERCENT_SIGNED && pct >= 0.05 && pct < 0.95) {
+            return (v > 0 ? "+" : "-") + String.format(Locale.ROOT, "%.1f%%", pct);
+        }
+        return fmt.format(v);
+    }
+
+    /** 汇总里的属性名：击杀叠层的词条是每杀一个叠一层，名字后面标出来，免得和同名的常驻属性看成一回事 */
+    private static String statName(String key) {
+        String name = PanelStyle.shortNameOf(key);
+        return key.startsWith("killStack") ? name + Component.translatable("kuvalich.armory.per_kill").getString() : name;
     }
 
     /** 各格的模组变了才重算属性；变了的词条从当前显示的值滚到新值，没了的滚到 0 再去掉 */
@@ -807,7 +828,7 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             if (Math.abs(to) < 1.0e-3) {
                 continue;
             }
-            Stat s = new Stat(e.getKey(), PanelStyle.shortNameOf(e.getKey()));
+            Stat s = new Stat(e.getKey(), statName(e.getKey()));
             s.to = to;
             s.t0 = now;
             stats.add(s);
@@ -836,7 +857,7 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
                 additive(g, () -> GuiShapes.convexFill(g, pts, n, c));
             }
             float cov = 1.0F - phase(t, 600 + 50 * i, 900 + 50 * i);
-            if (cov > 0.0F && slot.hasItem()) {
+            if (cov > 0.0F && slot.hasItem() && dimmed(t)) {
                 GuiShapes.begin(g);
                 fill(g, x0, y0, x1, y1, INK, cov);
                 GuiShapes.end();

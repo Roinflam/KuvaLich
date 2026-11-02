@@ -171,7 +171,8 @@ public class RequiemWeaponTableScreen extends ArmoryPageScreen<RequiemWeaponTabl
         hl(g, lx0, lx1, hairY, FxPalette.KUVA_PALE, 0.35F * eF);
 
         Slot ws = menu.getSlot(WEAPON_SLOT);
-        ItemStack w = pending(Ev.PLACE, WEAPON_SLOT) ? ItemStack.EMPTY : ws.getItem();
+        // 背景压暗前不画武器大图（图标不能半透明，盖板盖在亮处是一块黑）
+        ItemStack w = pending(Ev.PLACE, WEAPON_SLOT) || !dimmed(t) ? ItemStack.EMPTY : ws.getItem();
         long wi = age(Ev.PLACE, WEAPON_SLOT);
         float lineW = GuiShapes.pixels(g, lw());
         if (!w.isEmpty()) {
@@ -322,7 +323,7 @@ public class RequiemWeaponTableScreen extends ArmoryPageScreen<RequiemWeaponTabl
             additive(g, () -> fill(g, cx0, cy0, cx0 + 18, cy0 + 18, FxPalette.KUVA_PALE, k));
         }
         float cov = 1.0F - phase(t, T_TEXT_IN, T_TEXT_DONE);
-        if (cov > 0.0F) {
+        if (cov > 0.0F && dimmed(t)) {
             GuiShapes.begin(g);
             fill(g, bx0, by0, bx1, by1, INK, cov);
             fill(g, cx0 + 1, cy0 + 1, cx0 + 17, cy0 + 17, INK, cov);

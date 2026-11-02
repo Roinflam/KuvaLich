@@ -1429,6 +1429,7 @@
   "kuvalich.armory.conflict": "Conflicts with %s",
   "kuvalich.armory.stats": "Mod Bonuses",
   "kuvalich.armory.more": "+%s more",
+  "kuvalich.armory.per_kill": "/kill",
   "kuvalich.weapon_table.place_weapon": "Place a weapon",
   "kuvalich.weapon_table.need_weapon": "Place a weapon first",
   "kuvalich.weapon_table.limit": "Mod capacity: %s",

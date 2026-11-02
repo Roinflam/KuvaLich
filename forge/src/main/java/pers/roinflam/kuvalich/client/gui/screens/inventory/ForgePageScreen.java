@@ -294,7 +294,7 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
                 additive(g, () -> fill(g, x0, y0, x0 + 18, y0 + 18, FxPalette.KUVA_PALE, 0.5F * (1.0F - ins / 250.0F)));
             }
             float cov = 1.0F - phase(t, introA, introB);
-            if (cov > 0.0F) {
+            if (cov > 0.0F && dimmed(t)) {
                 GuiShapes.begin(g);
                 fill(g, x0 + 1, y0 + 1, x0 + 17, y0 + 17, INK, cov);
                 GuiShapes.end();
@@ -426,7 +426,7 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
             additive(g, () -> fill(g, x0 - 1, y0 - 1, x0 + 17, y0 + 17, FxPalette.WHITE, 0.45F * (1.0F - r / 260.0F)));
         }
         float cov = 1.0F - phase(t, introA, introB);
-        if (cov > 0.0F) {
+        if (cov > 0.0F && dimmed(t)) {
             GuiShapes.begin(g);
             fill(g, x0, y0, x0 + 16, y0 + 16, INK, cov);
             GuiShapes.end();
@@ -578,8 +578,10 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
                 fill(g, lx0 - 5, y - 2, lx0 - 4, y + rowH - 3, FxPalette.KUVA, 0.9F * gl * eT);
                 GuiShapes.end();
             }
-            g.renderItem(r.icon(), lx0, y);
-            iconVeils.add(new int[]{lx0, y, Math.round(450.0F * (1.0F - gl))});
+            if (dimmed(now - openClock)) {
+                g.renderItem(r.icon(), lx0, y);
+                iconVeils.add(new int[]{lx0, y, Math.round(450.0F * (1.0F - gl))});
+            }
             int nameRgb = FxCurve.lerpColor(FxPalette.ASH, FxPalette.BONE, Math.min(1.0F, gl * 1.6F));
             text(g, r.name().getString(), textX, lines > 0 ? y : y + 4, nameRgb, (0.65F + 0.35F * gl) * eT);
             for (int l = 0; l < lines; l++) {
@@ -591,7 +593,7 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
         return y;
     }
 
-    /** 配方表的图标：开场盖板 + 没点亮的那几行压暗一点（物品不能半透明，只能盖） */
+    /** 配方表的图标：开场盖板 + 没点亮的那几行压暗一点（物品不能半透明，只能盖）；背景压暗前图标不画，这里也就没有要盖的 */
     protected void drawRecipeVeils(GuiGraphics g, long t) {
         float cov = 1.0F - phase(t, T_TEXT_IN, T_TEXT_DONE);
         GuiShapes.begin(g);

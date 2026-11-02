@@ -90,6 +90,11 @@ public final class PanelStyle {
         if (I18n.exists(longKey)) {
             return firstLine(I18n.get(longKey));
         }
+        // 战甲的击杀叠层词条没有短名，下面两级只有带「最多叠加 %s 次」的长描述，不带参数取会变成「Format error」：
+        // 按去掉前缀的本体词条取名（killStackHealth → health）
+        if (key.startsWith("killStack") && key.length() > 9) {
+            return shortNameOf(Character.toLowerCase(key.charAt(9)) + key.substring(10));
+        }
         String descKey = "kuvaweapon.item_attribute_type." + key;
         if (I18n.exists(descKey)) {
             return firstLine(I18n.get(descKey));

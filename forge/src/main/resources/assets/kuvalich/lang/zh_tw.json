@@ -1427,6 +1427,7 @@
   "kuvalich.armory.conflict": "和「%s」衝突",
   "kuvalich.armory.stats": "屬性加成",
   "kuvalich.armory.more": "還有 %s 項",
+  "kuvalich.armory.per_kill": "/擊殺",
   "kuvalich.weapon_table.place_weapon": "放上武器",
   "kuvalich.weapon_table.need_weapon": "先放上武器",
   "kuvalich.weapon_table.limit": "模組上限 %s 格",

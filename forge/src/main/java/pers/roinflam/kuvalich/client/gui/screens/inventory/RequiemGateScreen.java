@@ -446,7 +446,7 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
                 additive(g, () -> fill(g, cx0, cy0, cx0 + 18, cy0 + 18, FxPalette.KUVA_PALE, 0.5F * (1.0F - ins / 250.0F)));
             }
             float cov = 1.0F - phase(t, 800 + 120 * i, 1100 + 120 * i);
-            if (cov > 0.0F && slot.hasItem()) {
+            if (cov > 0.0F && slot.hasItem() && dimmed(t)) {
                 GuiShapes.begin(g);
                 fill(g, cx0 + 1, cy0 + 1, cx0 + 17, cy0 + 17, INK, cov);
                 GuiShapes.end();

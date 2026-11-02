@@ -41,7 +41,8 @@ import java.util.function.Supplier;
  *   <li>压暗 85% + 墨烟，两条竖分隔线把屏幕分成左、中、右三栏（和档案同一组比例）；背包在中栏下部，细线方格；</li>
  *   <li>开场沿用档案的时间轴：压暗 0~250 ms，框架 300~600 ms，文字 450~850 ms，背包一行一行淡入；
  *       同一种界面 10 秒内重开、或者关了档案开场选项时，150 ms 一起淡入；</li>
- *   <li>物品图标不能半透明，淡入用墨色盖板压在图标上面（z 300）；</li>
+ *   <li>物品图标不能半透明：背景压暗之前格子挪到屏幕外、图标不画（子类的盖板和自己画的图标也要看 {@link #dimmed}），
+ *       之后淡入用墨色盖板压在图标上面（z 300）；背包的图标在这一行淡入到一半时直接出来；</li>
  *   <li>槽位坐标每次 init 按窗口大小重排；整屏都算界面里面，点哪儿都不会把手上的东西扔出去；</li>
  *   <li>盯着子类指定的几格，放进、拿走、次数变少时各记一条演出事件；往不收的格子里放东西记一条「拒绝」。</li>
  * </ul>
@@ -155,6 +156,11 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
     protected long openClock;
     protected boolean quick;
     private boolean started;
+    /** 开场时藏起来的格子都已放回（之后不再每帧摆格子）；藏起来之前各格的位置 */
+    private boolean slotsShown;
+    private int[] homeX = new int[0];
+    private int[] homeY = new int[0];
+    private static final int PARKED = -10000;
 
     private final List<Fx> fxs = new ArrayList<>();
     private final List<Hot> hots = new ArrayList<>();
@@ -259,16 +265,62 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
     /** 玩家背包摆成 3 行 + 隔一道缝的快捷栏，(gx, gy) 是方格外沿左上角 */
     protected void placeInventory() {
         for (Slot s : menu.slots) {
-            if (!(s.container instanceof Inventory)) {
-                continue;
-            }
-            int c = s.getContainerSlot();
-            if (c < 9) {
-                place(s, gx + 1 + 18 * c, gy + 59);
-            } else if (c < 36) {
-                place(s, gx + 1 + 18 * ((c - 9) % 9), gy + 1 + 18 * ((c - 9) / 9));
+            if (inventoryRow(s) >= 0) {
+                place(s, inventoryX(s), inventoryY(s));
             }
         }
+    }
+
+    /** 背包格在排版里的位置（物品图标左上角）；开场时格子本身可能被挪到屏幕外，画方格按这个 */
+    private int inventoryX(Slot s) {
+        int c = s.getContainerSlot();
+        return gx + 1 + 18 * (c < 9 ? c : (c - 9) % 9);
+    }
+
+    private int inventoryY(Slot s) {
+        int c = s.getContainerSlot();
+        return c < 9 ? gy + 59 : gy + 1 + 18 * ((c - 9) / 9);
+    }
+
+    /**
+     * 开场时物品图标先不画：格子挪到屏幕外，到点再放回 layout 摆好的位置。图标不能半透明，以前是压一块不透明的墨色盖板，
+     * 可背景还没压暗时亮处看着就是几块黑斑。背包一行淡入到一半时图标出来；别的格子等背景压暗（{@link #dimmed}）以后才放回，
+     * 之后各页自己的盖板再从实到虚（那时底下已经是暗的）
+     */
+    private void hideSlotsDuringIntro(long t) {
+        if (slotsShown) {
+            return;
+        }
+        int n = menu.slots.size();
+        if (homeX.length != n) {
+            homeX = new int[n];
+            homeY = new int[n];
+        }
+        boolean all = true;
+        for (int i = 0; i < n; i++) {
+            Slot s = menu.slots.get(i);
+            if (s.x != PARKED) {
+                // layout 摆过的位置（重排过就是新位置）
+                homeX[i] = s.x;
+                homeY[i] = s.y;
+            }
+            int row = inventoryRow(s);
+            boolean show = row >= 0 ? rowPhase(t, row) >= 0.5F : dimmed(t);
+            if (show) {
+                if (s.x == PARKED) {
+                    place(s, homeX[i], homeY[i]);
+                }
+            } else {
+                place(s, PARKED, PARKED);
+                all = false;
+            }
+        }
+        slotsShown = all;
+    }
+
+    /** 开场时背景已经压暗了：在这之前别画物品图标，也别画压在图标上的墨色盖板 */
+    protected boolean dimmed(long t) {
+        return quick ? lin(t) >= 1.0F : t >= T_DIM;
     }
 
     /** 背包格子在第几行（快捷栏算第 3 行），不是背包格返回 −1 */
@@ -298,7 +350,6 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         g.pose().pushPose();
         g.pose().translate(0.0F, 0.0F, OVERLAY_Z);
         drawOverlay(g, mx, my, now, now - openClock);
-        drawInventoryCovers(g, now - openClock);
         drawRings(g, now);
         drawMotes(g, now);
         g.flush();
@@ -326,6 +377,7 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         long now = KuvaFxDirector.clockMs();
         long t = now - openClock;
         scan(now);
+        hideSlotsDuringIntro(t);
         float eDim = quick ? lin(t) : easeOut(seg(t, 0, T_DIM));
         float eFrame = phase(t, T_FRAME_IN, T_FRAME_DONE);
         g.fill(0, 0, width, height, GuiShapes.argb(0x000000, 0.85F * eDim));
@@ -562,7 +614,7 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
 
     // ==================== 背包 ====================
 
-    /** 背包：墨底 + 细线方格，开场一行一行淡入；物品由原版画在上面，盖板在 {@link #drawInventoryCovers} */
+    /** 背包：墨底 + 细线方格，开场一行一行淡入；物品由原版画在上面，淡入到一半才放出来（{@link #hideSlotsDuringIntro}） */
     private void drawInventory(GuiGraphics g, int mx, int my, long t) {
         float eLine = phase(t, T_INV_IN, T_INV_IN + 320);
         GuiShapes.begin(g);
@@ -579,12 +631,14 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
             if (e <= 0.0F) {
                 continue;
             }
-            boolean hv = isHovering(s.x, s.y, 16, 16, mx, my);
-            fill(g, s.x - 1, s.y - 1, s.x + 17, s.y + 17, INK, 0.6F * e);
+            int x = inventoryX(s);
+            int y = inventoryY(s);
+            boolean hv = isHovering(x, y, 16, 16, mx, my);
+            fill(g, x - 1, y - 1, x + 17, y + 17, INK, 0.6F * e);
             if (hv) {
-                fill(g, s.x - 1, s.y - 1, s.x + 17, s.y + 17, FxPalette.KUVA_PALE, 0.1F);
+                fill(g, x - 1, y - 1, x + 17, y + 17, FxPalette.KUVA_PALE, 0.1F);
             }
-            GuiShapes.frame(g, s.x - 1, s.y - 1, s.x + 17, s.y + 17, lw(),
+            GuiShapes.frame(g, x - 1, y - 1, x + 17, y + 17, lw(),
                     GuiShapes.argb(FxPalette.KUVA_PALE, (hv ? 0.55F : 0.1F) * e));
         }
         GuiShapes.end();
@@ -593,24 +647,6 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
     private float rowPhase(long t, int row) {
         int a = T_INV_IN + T_INV_STEP * row;
         return phase(t, a, a + T_INV_LEN);
-    }
-
-    private void drawInventoryCovers(GuiGraphics g, long t) {
-        if (rowPhase(t, 3) >= 1.0F) {
-            return;
-        }
-        GuiShapes.begin(g);
-        for (Slot s : menu.slots) {
-            int row = inventoryRow(s);
-            if (row < 0 || !s.hasItem()) {
-                continue;
-            }
-            float e = rowPhase(t, row);
-            if (e < 1.0F) {
-                fill(g, s.x - 1, s.y - 1, s.x + 17, s.y + 17, INK, 1.0F - e);
-            }
-        }
-        GuiShapes.end();
     }
 
     // ==================== 微粒 ====================
