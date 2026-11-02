@@ -67,6 +67,8 @@ public final class KuvaLichSounds {
     public static final RegistryObject<SoundEvent> UI_DECRYPT_REVEAL3 = reg("ui.decrypt.reveal3");
     public static final RegistryObject<SoundEvent> UI_DECRYPT_COMPLETE = reg("ui.decrypt.complete");
     public static final RegistryObject<SoundEvent> MERCY_DOWNED = reg("mercy.downed");
+    /** 奴仆倒地：和玄骸同一个声音，单独一个事件只为字幕能写「奴仆」 */
+    public static final RegistryObject<SoundEvent> MERCY_DOWNED_THRALL = reg("mercy.downed.thrall");
     public static final RegistryObject<SoundEvent> MERCY_DOWNED_LOOP = reg("mercy.downed.loop");
     public static final RegistryObject<SoundEvent> MERCY_DRAW = reg("mercy.draw");
     public static final RegistryObject<SoundEvent> MERCY_STAB = reg("mercy.stab");

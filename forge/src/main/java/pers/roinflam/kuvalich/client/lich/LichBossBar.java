@@ -163,8 +163,12 @@ public final class LichBossBar {
         float barH = Math.max(2, Math.round(0.007F * h));
         float badgeY = y0 + 0.055F * h;
         float a = Math.max(6, Math.round(0.022F * h));
-        float statusY = y0 + 0.072F * h;
         float iconH = Math.max(6.0F, 0.016F * h);
+        float px = GuiShapes.pixel(g);
+        float digitTs = digitScale(iconH, px);
+        // 状态行整行落在等级菱形的下尖下面（增幅小牌比图标高，按小牌的上沿算），不让尖插进小牌里
+        float diamondBottom = badgeY + a + Math.max(1.0F, 0.004F * h);
+        float statusY = Math.max(y0 + 0.072F * h, diamondBottom + Math.max(0.0F, 4.5F * digitTs - iconH * 0.5F));
 
         GuiShapes.begin(g);
         // 名字右边的小晶
@@ -216,10 +220,10 @@ public final class LichBossBar {
         // 状态行的图标（字在后面一起画）
         int adapt = entity != null ? entity.getAdaptPacked() : 0;
         int fury = entity != null ? entity.getFuryPermille() : 0;
-        float rowW = statusRowWidth(font, adapt, fury, iconH);
-        float rx = cx - rowW * 0.5F;
+        float rowW = statusRowWidth(font, adapt, fury, iconH, digitTs);
+        float rx = snap(cx - rowW * 0.5F, px);
         float iconGap = iconH * 0.35F;
-        float digitTs = SpacedText.round8(iconH / 7.0F, 0.5F);
+        float digitY = snap(statusY + iconH * 0.5F - 3.5F * digitTs, px);
         for (int c = 0; c < 5; c++) {
             int n = (adapt >> (c * 3)) & 7;
             if (n <= 0) {
@@ -229,13 +233,16 @@ public final class LichBossBar {
                     GuiShapes.argb(FxPalette.BONE, 0.85F));
             rx += iconH + 1.0F + font.width(NUM[n]) * digitTs + iconGap;
         }
-        float furyX = rx;
+        float furyX = snap(rx, px);
+        // 牌子按字的实际大小留边：上下各 1 个字像素、左右各 2 个，竖直方向对准图标行的中线
+        float furyY = snap(statusY + iconH * 0.5F - 4.5F * digitTs, px);
         String furyText = null;
         if (fury >= FURY_SHOW_PERMILLE) {
             furyText = plusPct(Math.round(fury / 10.0F));
-            float fw = font.width(furyText) * digitTs + 4.0F;
-            GuiShapes.rect(g, furyX, statusY, furyX + fw, statusY + iconH, GuiShapes.argb(FxPalette.KUVA_MIST, 0.7F));
-            GuiShapes.rect(g, furyX, statusY, furyX + fw, statusY + lw, GuiShapes.argb(FxPalette.KUVA, 0.6F));
+            float fw = furyBadgeWidth(font, furyText, digitTs);
+            float fh = 9.0F * digitTs;
+            GuiShapes.rect(g, furyX, furyY, furyX + fw, furyY + fh, GuiShapes.argb(FxPalette.KUVA_MIST, 0.7F));
+            GuiShapes.rect(g, furyX, furyY, furyX + fw, furyY + lw, GuiShapes.argb(FxPalette.KUVA, 0.6F));
         }
         GuiShapes.end();
 
@@ -266,7 +273,7 @@ public final class LichBossBar {
         ps.popPose();
 
         // 层数、增幅
-        rx = cx - rowW * 0.5F;
+        rx = snap(cx - rowW * 0.5F, px);
         ps.pushPose();
         for (int c = 0; c < 5; c++) {
             int n = (adapt >> (c * 3)) & 7;
@@ -274,12 +281,11 @@ public final class LichBossBar {
                 continue;
             }
             float tx = rx + iconH + 1.0F;
-            drawSmall(g, font, NUM[n], tx, statusY + iconH * 0.5F - 3.5F * digitTs, digitTs,
-                    GuiShapes.argb(FxPalette.BONE, 0.85F));
+            drawSmall(g, font, NUM[n], snap(tx, px), digitY, digitTs, GuiShapes.argb(FxPalette.BONE, 0.85F));
             rx = tx + font.width(NUM[n]) * digitTs + iconGap;
         }
         if (furyText != null) {
-            drawSmall(g, font, furyText, furyX + 2.0F, statusY + iconH * 0.5F - 3.5F * digitTs, digitTs,
+            drawSmall(g, font, furyText, furyX + 2.0F * digitTs, furyY + digitTs, digitTs,
                     GuiShapes.argb(FxPalette.KUVA_PALE, 0.95F));
         }
         ps.popPose();
@@ -307,8 +313,25 @@ public final class LichBossBar {
         ps.popPose();
     }
 
-    private static float statusRowWidth(Font font, int adapt, int fury, float iconH) {
-        float digitTs = SpacedText.round8(iconH / 7.0F, 0.5F);
+    /**
+     * 状态行小字的缩放：一个字像素取整数个物理像素（向下取整，字不会比图标高）。
+     * 取零碎倍数时同一笔画有的列占 3 个屏幕像素、有的占 4 个，字看着忽粗忽细、是歪的
+     */
+    private static float digitScale(float iconH, float px) {
+        return Math.max(1, (int) Math.floor(iconH / 7.0F / px + 1.0E-3F)) * px;
+    }
+
+    /** 对齐到物理像素格 */
+    private static float snap(float v, float px) {
+        return Math.round(v / px) * px;
+    }
+
+    /** 增幅小牌的宽：字的实际宽度（去掉末字后面那 1 像素字距）+ 左右各 2 个字像素 */
+    private static float furyBadgeWidth(Font font, String text, float digitTs) {
+        return (font.width(text) - 1 + 4) * digitTs;
+    }
+
+    private static float statusRowWidth(Font font, int adapt, int fury, float iconH, float digitTs) {
         float iconGap = iconH * 0.35F;
         float wsum = 0.0F;
         boolean any = false;
@@ -320,7 +343,7 @@ public final class LichBossBar {
             }
         }
         if (fury >= FURY_SHOW_PERMILLE) {
-            wsum += font.width(plusPct(Math.round(fury / 10.0F))) * digitTs + 4.0F;
+            wsum += furyBadgeWidth(font, plusPct(Math.round(fury / 10.0F)), digitTs);
         } else if (any) {
             wsum -= iconGap;
         }

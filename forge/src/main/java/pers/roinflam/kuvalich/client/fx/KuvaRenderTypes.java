@@ -77,8 +77,9 @@ public final class KuvaRenderTypes {
         };
 
         static RenderType createRimHull() {
+            // 不按距离排序：同一圈壳是同一个颜色、同一个透明度，片与片谁先画叠出来都一样，排序是白花的（围上来二十只时约占一成帧时间）
             return RenderType.create("kuvalich_rim_hull", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
-                    256, true, true,
+                    256, true, false,
                     CompositeState.builder()
                             .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
                             .setTextureState(new TextureStateShard(WHITE, false, false))

@@ -30,6 +30,8 @@ import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.util.RenderUtils;
 
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -79,6 +81,8 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
 
     private final Vector4f scratchPos = new Vector4f();
     private final Vector3f scratchNormal = new Vector3f();
+    /** 撑壳用的立方体缓存：烘好的模型不会变，重载资源后旧立方体没人引用了，条目跟着回收 */
+    private final Map<GeoCube, HullCube> hullCache = new WeakHashMap<>();
 
     // 名牌跟着姿势走：画本体时顺手记下脖子（头骨的支点）在站姿时和此刻各在哪
     @Nullable
@@ -308,20 +312,62 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
     /**
      * 把立方体每个顶点沿它所在的三个轴各往外推 {@code t} 格再画：盒子各面都均匀撑大 {@code t}，转角接得上。
      * 片状立方体（某个轴厚度为 0）在那个轴上按面的朝向分开，两片各退 {@code t}，免得撑出来的壳和原片重合。
-     * {@code push} 大于 0 时变换后的顶点再沿相机到它的射线往远处推这么多格
+     * {@code push} 大于 0 时变换后的顶点再沿相机到它的射线往远处推这么多格。
+     * 往哪边推、顶点按什么顺序发只和模型有关，按立方体算一次存在 {@link #hullCache} 里，每帧只做变换
      */
     private void renderHullCube(PoseStack poseStack, GeoCube cube, VertexConsumer buffer, int packedLight,
                                 int packedOverlay, float red, float green, float blue, float alpha, float t, float push) {
+        HullCube hc = this.hullCache.computeIfAbsent(cube, AbstractKuvaRenderer::bakeHull);
+        if (hc.quadCount == 0) {
+            return;
+        }
         RenderUtils.translateToPivotPoint(poseStack, cube);
         RenderUtils.rotateMatrixAroundCube(poseStack, cube);
         RenderUtils.translateAwayFromPivotPoint(poseStack, cube);
 
         Matrix4f pose = poseStack.last().pose();
         Matrix3f normalMat = poseStack.last().normal();
+        float[] pos = hc.pos;
+        float[] dir = hc.dir;
+        float[] uv = hc.uv;
+        int i = 0;
+        for (int q = 0; q < hc.quadCount; q++) {
+            this.scratchNormal.set(hc.normal[q * 3], hc.normal[q * 3 + 1], hc.normal[q * 3 + 2]);
+            normalMat.transform(this.scratchNormal);
+            int end = hc.quadEnd[q];
+            for (; i < end; i++) {
+                int j = i * 3;
+                this.scratchPos.set(pos[j] + dir[j] * t, pos[j + 1] + dir[j + 1] * t, pos[j + 2] + dir[j + 2] * t, 1.0F);
+                pose.transform(this.scratchPos);
+                if (push > 0.0F) {
+                    // 实体渲染时姿态矩阵的原点就是相机，沿原点到顶点的方向放大：投影后的屏幕位置不变，深度变远
+                    float x = this.scratchPos.x(), y = this.scratchPos.y(), z = this.scratchPos.z();
+                    float len = Mth.sqrt(x * x + y * y + z * z);
+                    if (len > 1.0E-4F) {
+                        float stretch = (len + push) / len;
+                        this.scratchPos.set(x * stretch, y * stretch, z * stretch, 1.0F);
+                    }
+                }
+                buffer.vertex(this.scratchPos.x(), this.scratchPos.y(), this.scratchPos.z(), red, green, blue, alpha,
+                        uv[i * 2], uv[i * 2 + 1], packedOverlay, packedLight,
+                        this.scratchNormal.x(), this.scratchNormal.y(), this.scratchNormal.z());
+            }
+        }
+    }
 
+    /**
+     * 一个立方体撑壳要用的、只和模型有关的量：按发出顺序排好的顶点（模型坐标）、每个顶点往外推的方向（各轴 ±1 或 0）、
+     * 贴图坐标，以及每个面的原始法线和它的最后一个顶点在哪
+     */
+    private record HullCube(int quadCount, int[] quadEnd, float[] pos, float[] dir, float[] uv, float[] normal) {
+    }
+
+    private static HullCube bakeHull(GeoCube cube) {
         float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, minZ = Float.MAX_VALUE;
         float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
         GeoQuad[] quads = cube.quads();
+        int quadCount = 0;
+        int vertexCount = 0;
         for (GeoQuad quad : quads) {
             if (quad == null) {
                 continue;
@@ -335,13 +381,24 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
                 maxY = Math.max(maxY, p.y());
                 maxZ = Math.max(maxZ, p.z());
             }
+            if (quad.vertices().length >= 3) {
+                quadCount++;
+                vertexCount += quad.vertices().length;
+            }
         }
-        if (minX > maxX) {
-            return;
+        if (minX > maxX || quadCount == 0) {
+            return new HullCube(0, new int[0], new float[0], new float[0], new float[0], new float[0]);
         }
         float cx = (minX + maxX) * 0.5F, cy = (minY + maxY) * 0.5F, cz = (minZ + maxZ) * 0.5F;
         boolean flatX = maxX - minX < 1.0E-4F, flatY = maxY - minY < 1.0E-4F, flatZ = maxZ - minZ < 1.0E-4F;
 
+        int[] quadEnd = new int[quadCount];
+        float[] pos = new float[vertexCount * 3];
+        float[] dir = new float[vertexCount * 3];
+        float[] uv = new float[vertexCount * 2];
+        float[] normal = new float[quadCount * 3];
+        int q = 0;
+        int i = 0;
         for (GeoQuad quad : quads) {
             if (quad == null) {
                 continue;
@@ -370,29 +427,24 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
             // 片状轴按（排正以后的）绕向朝外推；不用 quad.normal()，镜像、负尺寸的立方体那里会反
             float s = reverse ? -1.0F : 1.0F;
             float wx = Math.signum(nx) * s, wy = Math.signum(ny) * s, wz = Math.signum(nz) * s;
-            this.scratchNormal.set(quad.normal());
-            normalMat.transform(this.scratchNormal);
-            for (int k = 0; k < vs.length; k++) {
+            Vector3f n = quad.normal();
+            normal[q * 3] = n.x();
+            normal[q * 3 + 1] = n.y();
+            normal[q * 3 + 2] = n.z();
+            for (int k = 0; k < vs.length; k++, i++) {
                 GeoVertex v = vs[reverse ? vs.length - 1 - k : k];
                 Vector3f p = v.position();
-                float ox = flatX ? wx : Math.signum(p.x() - cx);
-                float oy = flatY ? wy : Math.signum(p.y() - cy);
-                float oz = flatZ ? wz : Math.signum(p.z() - cz);
-                this.scratchPos.set(p.x() + ox * t, p.y() + oy * t, p.z() + oz * t, 1.0F);
-                pose.transform(this.scratchPos);
-                if (push > 0.0F) {
-                    // 实体渲染时姿态矩阵的原点就是相机，沿原点到顶点的方向放大：投影后的屏幕位置不变，深度变远
-                    float x = this.scratchPos.x(), y = this.scratchPos.y(), z = this.scratchPos.z();
-                    float len = Mth.sqrt(x * x + y * y + z * z);
-                    if (len > 1.0E-4F) {
-                        float stretch = (len + push) / len;
-                        this.scratchPos.set(x * stretch, y * stretch, z * stretch, 1.0F);
-                    }
-                }
-                buffer.vertex(this.scratchPos.x(), this.scratchPos.y(), this.scratchPos.z(), red, green, blue, alpha,
-                        v.texU(), v.texV(), packedOverlay, packedLight,
-                        this.scratchNormal.x(), this.scratchNormal.y(), this.scratchNormal.z());
+                pos[i * 3] = p.x();
+                pos[i * 3 + 1] = p.y();
+                pos[i * 3 + 2] = p.z();
+                dir[i * 3] = flatX ? wx : Math.signum(p.x() - cx);
+                dir[i * 3 + 1] = flatY ? wy : Math.signum(p.y() - cy);
+                dir[i * 3 + 2] = flatZ ? wz : Math.signum(p.z() - cz);
+                uv[i * 2] = v.texU();
+                uv[i * 2 + 1] = v.texV();
             }
+            quadEnd[q++] = i;
         }
+        return new HullCube(quadCount, quadEnd, pos, dir, uv, normal);
     }
 }

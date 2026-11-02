@@ -185,7 +185,7 @@ public final class MercyFx {
             KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.MERCY_DOWNED.get(), SoundSource.HOSTILE, c, 1.0F, 1.0F)
                     .follow(e).tier(FxTier.A));
         } else {
-            KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.MERCY_DOWNED.get(), SoundSource.HOSTILE, c, 0.5F, 1.3F)
+            KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.MERCY_DOWNED_THRALL.get(), SoundSource.HOSTILE, c, 0.5F, 1.3F)
                     .tier(FxTier.B));
         }
     }
