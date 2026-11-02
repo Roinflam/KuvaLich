@@ -262,7 +262,7 @@
             ],
             [
               "{lang:key.kuvalich.lich_archive}",
-              "預設按 K 打開的面板，能看到你那隻玄骸的名字、等級、怒氣和最近 5 次判定的記錄",
+              "從{lang:block.kuvalich.requiem_gate}裏打開的面板，能看到你那隻玄骸的名字、等級、怒氣和最近 5 次判定的記錄",
               "[[requiem/lich_archive|詳情]]"
             ]
           ]
@@ -674,7 +674,7 @@
           "type": "tip",
           "style": "info",
           "title": "玄骸檔案",
-          "text": "玄骸誕生以後，奴僕頭頂會寫着「它的名字 + 奴僕」，還沒有玄骸的人看到的仍是「{lang:entity.kuvalich.kuva_slave}」。預設按 <t>K</t> 打開{lang:key.kuvalich.lich_archive}，它的名字、等級、怒氣，以及它此刻在做什麼，都在裏面。"
+          "text": "玄骸誕生以後，奴僕頭頂會寫着「它的名字 + 奴僕」，還沒有玄骸的人看到的仍是「{lang:entity.kuvalich.kuva_slave}」。打開{item:kuvalich:requiem_gate}，點右下角那行字或按 <t>K</t>，就能進{lang:key.kuvalich.lich_archive}，它的名字、等級、怒氣，以及它此刻在做什麼，都在裏面。"
         },
         {
           "type": "tip",

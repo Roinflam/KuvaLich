@@ -262,7 +262,7 @@
             ],
             [
               "{lang:key.kuvalich.lich_archive}",
-              "The panel you open with K by default: your Lich's name, rank, rage and your last 5 judgements",
+              "The panel you open from the {lang:block.kuvalich.requiem_gate}: your Lich's name, rank, rage and your last 5 judgements",
               "[[requiem/lich_archive|More]]"
             ]
           ]
@@ -674,7 +674,7 @@
           "type": "tip",
           "style": "info",
           "title": "Lich Profile",
-          "text": "Once your Lich is born, Thralls carry its name over their heads, as “its name + Thrall”; anyone without a Lich still sees “{lang:entity.kuvalich.kuva_slave}”. Press <t>K</t> (default) to open the {lang:key.kuvalich.lich_archive}: its name, rank, rage and what it is doing right now are all in there."
+          "text": "Once your Lich is born, Thralls carry its name over their heads, as “its name + Thrall”; anyone without a Lich still sees “{lang:entity.kuvalich.kuva_slave}”. Open the {item:kuvalich:requiem_gate} and click the small text in its bottom right or press <t>K</t> to reach the {lang:key.kuvalich.lich_archive}: its name, rank, rage and what it is doing right now are all in there."
         },
         {
           "type": "tip",

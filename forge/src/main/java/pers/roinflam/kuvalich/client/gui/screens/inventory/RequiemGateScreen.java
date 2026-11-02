@@ -107,7 +107,9 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             ambience = KuvaSoundPlayer.play(KuvaSoundPlayer.uiLoop(KuvaLichSounds.BLOCK_REQUIEM_GATE_AMBIENCE.get(),
                     AMBIENCE_VOLUME, AMBIENCE_FADE_IN_MS));
         }
-        linkText = Component.translatable("kuvalich.archive.open_hint", KuvaKeyMappings.ARCHIVE.getTranslatedKeyMessage());
+        // 档案只能从这里进，档案键解绑了也照样显示入口，只是不带按键
+        linkText = KuvaKeyMappings.ARCHIVE.isUnbound() ? Component.translatable(KuvaKeyMappings.ARCHIVE.getName())
+                : Component.translatable("kuvalich.archive.open_hint", KuvaKeyMappings.ARCHIVE.getTranslatedKeyMessage());
     }
 
     @Override
@@ -225,15 +227,12 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
         drawDetail(g, mx, my, now, eF, rd);
 
         // ---- 底部：档案入口、创造补全 ----
-        if (!KuvaKeyMappings.ARCHIVE.isUnbound()) {
-            String s = linkText.getString();
-            float w = textW(s, 0.0F);
-            float x0 = rx1 - w;
-            boolean hv = mx >= x0 && mx < rx1 && my >= botY - 1 && my < botY + 10;
-            text(g, s, x0, botY, hv ? FxPalette.BONE : FxPalette.ASH, eF);
-            hot(x0, botY - 1, rx1, botY + 10, () -> List.of(tip("kuvalich.gate.tip.archive", FxPalette.BONE)),
-                    this::openArchive);
-        }
+        String link = linkText.getString();
+        float linkX = rx1 - textW(link, 0.0F);
+        boolean hv = mx >= linkX && mx < rx1 && my >= botY - 1 && my < botY + 10;
+        text(g, link, linkX, botY, hv ? FxPalette.BONE : FxPalette.ASH, eF);
+        hot(linkX, botY - 1, rx1, botY + 10, () -> List.of(tip("kuvalich.gate.tip.archive", FxPalette.BONE)),
+                this::openArchive);
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.player.isCreative()) {
             textC(g, "[TAB] " + Component.translatable("kuvalich.gate.fill_hint").getString(), cx, botY,
@@ -677,12 +676,12 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
     // ==================== 玄骸档案入口、按键 ====================
 
     /**
-     * 关掉灭骸之扉、打开玄骸档案。先关界面（顺带通知服务端关容器），再走档案键同一个入口，
-     * 能不能开（处决中不能开之类）的规矩只在 {@link LichArchiveKeys#open} 一处
+     * 关掉灭骸之扉、打开玄骸档案（档案只能从这里进）。先关界面（顺带通知服务端关容器），再走
+     * {@link LichArchiveKeys#open}，能不能开（处决中不能开之类）的规矩只在那一处
      */
     private void openArchive() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || KuvaKeyMappings.ARCHIVE.isUnbound()) {
+        if (mc.player == null) {
             return;
         }
         mc.player.closeContainer();

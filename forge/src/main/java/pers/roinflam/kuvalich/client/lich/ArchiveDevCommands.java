@@ -38,7 +38,7 @@ import java.util.Locale;
  *   <li>{@code /kuvafxc archive demo [full|empty|满|空] [状态]}：本地塞一份假档案打开界面（截图用，不碰服务端）。
  *       满的那份什么都有（两条已揭示的密语、三张卡、五条处决记录、二十多件被拿走的东西）；
  *       空的那份是还没有玄骸、上一只已被终结。状态写 {@code LichState} 的名字（如 {@code incoming}），只对满的那份有用。</li>
- *   <li>{@code /kuvafxc archive open}：照常打开（等于按一下档案键）。</li>
+ *   <li>{@code /kuvafxc archive open}：照常打开（和从灭骸之扉进去一样，只是不用先开扉）。</li>
  *   <li>{@code /kuvafxc archive demoweapon <下标>}：满的那份假档案换成第几把赤毒武器（看不同武器拿在手里的样子）。</li>
  *   <li>{@code /kuvafxc archive weapon|weaponportrait|weaponbust [ox oy oz rx ry rz scale]}：现场改玄骸手里武器的
  *       拳心位置（三种摆法共用）和这一种摆法绕拳心的转角（世界里、全身像、半身像），不带参数时打印当前值。</li>

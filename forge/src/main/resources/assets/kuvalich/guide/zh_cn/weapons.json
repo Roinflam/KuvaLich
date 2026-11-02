@@ -49,7 +49,7 @@
             "从{lang:entity.kuvalich.kuva_slave}身上积攒解密进度，揭示第一条线索时，你的{lang:entity.kuvalich.kuva_master}随之诞生，再一条条解开由三张安魂卡组成的答案，见[[requiem/decryption]]",
             "在{item:kuvalich:requiem_gate}里按正确顺序放好三张卡，见[[requiem/requiem_gate]]",
             "讨伐你的{lang:entity.kuvalich.kuva_master}，卡序全对才算成功，成功时掉落它手里那把赤毒武器，另有{item:kuvalich:lich_reliquary}等奖励",
-            "武器种类在它诞生时就从 13 把里<em>等概率</em>定下，[[requiem/lich_archive|玄骸档案]]（默认 <t>K</t> 键）里能提前看到；等级在你当前的个人等级范围里随机，掉落之后这个范围才上涨，见[[weapons/weapon_level]]"
+            "武器种类在它诞生时就从 13 把里<em>等概率</em>定下，[[requiem/lich_archive|玄骸档案]]里能提前看到；等级在你当前的个人等级范围里随机，掉落之后这个范围才上涨，见[[weapons/weapon_level]]"
           ]
         },
         {

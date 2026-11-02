@@ -49,7 +49,7 @@
             "Build decryption progress from {lang:entity.kuvalich.kuva_slave}s and unlock the three Requiem cards of the answer; your {lang:entity.kuvalich.kuva_master} is born the moment the first clue is revealed. See [[requiem/decryption]]",
             "Place the three cards in the right order in a {item:kuvalich:requiem_gate}; see [[requiem/requiem_gate]]",
             "Hunt down your {lang:entity.kuvalich.kuva_master}. Only a fully correct card order counts as a success, and a success drops the Kuva weapon in its hand, along with a {item:kuvalich:lich_reliquary} and other rewards",
-            "The weapon type is picked from the 13 at <em>equal odds</em> when the Lich is born, and the [[requiem/lich_archive|Lich Profile]] (<t>K</t> by default) shows it in advance. Its level is rolled inside your current personal level range, and the range only rises after the drop; see [[weapons/weapon_level]]"
+            "The weapon type is picked from the 13 at <em>equal odds</em> when the Lich is born, and the [[requiem/lich_archive|Lich Profile]] shows it in advance. Its level is rolled inside your current personal level range, and the range only rises after the drop; see [[weapons/weapon_level]]"
           ]
         },
         {

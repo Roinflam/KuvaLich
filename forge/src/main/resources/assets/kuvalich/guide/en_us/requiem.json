@@ -232,13 +232,13 @@
     },
     {
       "id": "lich_archive",
-      "title": "Lich Profile (K)",
+      "title": "Lich Profile",
       "icon": "kuvalich:kuva",
       "summary": "Who your Lich is, its rage, your attempts",
       "blocks": [
         {
           "type": "p",
-          "text": "Your Lich is a creature of the Queens. It does not deserve your awe. Still, you need to know who it is, what it is doing and how close it is to coming for you, and all of that is in this profile, Tenno. Press <t>K</t> to open it."
+          "text": "Your Lich is a creature of the Queens. It does not deserve your awe. Still, you need to know who it is, what it is doing and how close it is to coming for you, and all of that is in this profile, Tenno. It opens only from the {item:kuvalich:requiem_gate}: click “{lang:key.kuvalich.lich_archive}” in its bottom right, or press <t>K</t> while the gate is open."
         },
         {
           "type": "list",
@@ -606,7 +606,7 @@
               "Each revealed clue is drawn as that card's symbol and each unrevealed one as a Kuva crystal; on the one being decrypted, the outline and liquid show this stage's progress; <w>they swap places every few seconds, and their arrangement has nothing to do with the order</w>"
             ],
             [
-              "Small text, bottom right",
+              "Small text, bottom right (or <t>K</t>)",
               "Opens the [[requiem/lich_archive]]"
             ]
           ]

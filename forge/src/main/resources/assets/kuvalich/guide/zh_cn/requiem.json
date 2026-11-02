@@ -263,13 +263,13 @@
     },
     {
       "id": "lich_archive",
-      "title": "玄骸档案（K 键）",
+      "title": "玄骸档案",
       "icon": "kuvalich:kuva",
       "summary": "你的玄骸是谁、怒气多少、试过哪些卡",
       "blocks": [
         {
           "type": "p",
-          "text": "你的玄骸是女皇的爪牙，不配让你敬畏。可它是谁、在做什么、离上门还有多久，你都得清楚，这些全记在这份档案里，Tenno。按 <t>K</t> 打开。"
+          "text": "你的玄骸是女皇的爪牙，不配让你敬畏。可它是谁、在做什么、离上门还有多久，你都得清楚，这些全记在这份档案里，Tenno。档案只能从{item:kuvalich:requiem_gate}里打开：点它右下角那行「{lang:key.kuvalich.lich_archive}」，或者在扉里按 <t>K</t>。"
         },
         {
           "type": "list",
@@ -426,7 +426,7 @@
         }
       ],
       "_src": [
-        "client/KuvaKeyMappings.java:35 — 档案键 key.kuvalich.lich_archive，默认 K，可在控制设置里改",
+        "client/KuvaKeyMappings.java:35 — 档案键 key.kuvalich.lich_archive，默认 K，可在控制设置里改；冲突范围 GUI，只在灭骸之扉 / 档案界面里认，游戏中按 K 不开档案；client/lich/LichArchiveKeys.open 是唯一入口，只有 RequiemGateScreen#openArchive 调",
         "client/lich/LichArchiveKeys.java:39 — 处决进行中不打开档案",
         "client/lich/LichArchiveScreen.java:191 isPauseScreen 返回 false（不暂停）；左栏等级徽章、名字、「赤毒玄骸 · 第 N 只」、能力图标（悬停看说明；:631 drawAbilities 交战增幅为 0 时不画这一枚，只剩 3 枚）、怒气条与档位（悬停列出让它更怒的来源）、属性栏（:738 buildRows 只列它有的行：弱点 / 抗性按位掩码、适应、武器与等级范围、出生地、交战增幅 > 0、两种伤害倍率 > 0、交手次数）、被没收的物品（:824-831）；中间模型可拖动旋转、偶尔说话、下面状态行；右栏当前安魂卡与剩余次数、处决记录、已揭示的密语三角，:869 drawRight 不看状态照常画",
         "client/lich/LichArchiveScreen.java:1100 — 没有玄骸时模型一直是暗剪影，状态行写 kuvalich.archive.status.unborn + kuvalich.archive.status.unborn.hint；右栏照画，三角里第一枚菱晶带第一段的进度",
@@ -671,7 +671,7 @@
               "已揭示的线索画成那张卡的符号，没揭示的画成赤毒菱晶，正在解的那一枚，外圈和液面就是这一段的解密进度；<w>三枚每隔几秒随机换位，排列和答案顺序无关</w>"
             ],
             [
-              "右下角小字",
+              "右下角小字（或按 <t>K</t>）",
               "打开[[requiem/lich_archive]]"
             ]
           ]
