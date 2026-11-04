@@ -29,6 +29,7 @@ import pers.roinflam.kuvalich.mixin.client.SlotPositionAccessor;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,7 +118,7 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
     /** 「解码」出字时乱码的取字表：汉字换汉字、西文换西文，宽度不跳 */
     private static final String GLYPH_CJK = "赤毒骸魂安铸融械库模组扉灭档案玄卡锻";
     private static final String GLYPH_ASCII = "#%&*+=<>/?0123456789ABCDEFX";
-    private static final String ELLIPSIS = "…";
+    protected static final String ELLIPSIS = "…";
 
     private static final class Mote {
         float x;
@@ -288,12 +289,16 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         RenderSystem.disableScissor();
     }
 
+    /** 中栏要的宽度：背包方格 162 加两边各 11；五个界面中栏的东西都不比背包宽 */
+    protected static final int MIDDLE_W = 184;
+
     /**
-     * 右边那道竖分隔线占屏宽的比例，右栏从它右边 0.025 屏宽开始。中栏东西少、右栏要放说明文字的界面往左挪，
-     * 右栏宽了窄窗口下说明也少折行
+     * 右边那道竖分隔线占屏宽的比例，右栏从它右边 0.025 屏宽开始。中栏只要放下背包方格，多出来的宽度都让给右栏
+     * （模组名、属性名、卡和配方的说明都长，右栏窄了只能截断或折得很碎）；宽屏下最多挪到 0.66，免得右栏的行拉得太长
      */
     protected float rightSeparator() {
-        return 0.75F;
+        float want = (Math.round(width * 0.29F) + MIDDLE_W) / (float) width;
+        return Mth.clamp(want, 0.66F, 0.75F);
     }
 
     private void computeColumns() {
@@ -302,6 +307,10 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         small = h < 260;
         sepL = Math.round(w * 0.29F);
         sepR = Math.round(w * rightSeparator());
+        // 两条分隔线之间是奇数宽时中线落在半格上，背包只能偏一格；右线往左挪一格，背包两边离分隔线一样远
+        if (((sepL + sepR) & 1) != 0) {
+            sepR--;
+        }
         lx0 = Math.round(w * 0.077F);
         lx1 = Math.round(w * 0.265F);
         rx0 = sepR + Math.round(w * 0.025F);
@@ -315,6 +324,24 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         gx = cx - 81;
         gy = sepB - 76;
         botY = sepB + 6;
+    }
+
+    /**
+     * 中栏背包以上那一块（卡槽、炉膛、状态行）的竖直位置：在栏标题线和背包上面那道线之间居中，
+     * 上沿不高过 {@code minTop}，最下面一道线离背包线至少空 3 格；居中的位置离 {@code snapY}（左右两栏第一行字）
+     * 不到 6 格时干脆对齐过去，差几格看着像排歪了。以前一律贴着标题线排，大屏上中栏下面空出一百多格
+     *
+     * @param blockH 块顶到最下面一道线的距离
+     * @param snapY  要对齐的 y，不对齐给负数
+     * @return 块顶的 y
+     */
+    protected int middleTop(int blockH, int minTop, int snapY) {
+        int maxTop = gy - 9 - blockH;
+        int top = hairY + Math.round((gy - 5 - hairY - blockH - 1) * 0.5F);
+        if (snapY >= 0 && Math.abs(top - snapY) <= 6) {
+            top = snapY;
+        }
+        return Math.max(minTop, Math.min(top, maxTop));
     }
 
     /** 把一格摆到 (x, y)（物品图标左上角，屏幕坐标） */
@@ -504,8 +531,9 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
             hl(g, sepL + 1, sepL + 1 + len, y, FxPalette.KUVA_PALE, a);
             hl(g, sepR - len, sepR, y, FxPalette.KUVA_PALE, a);
         }
-        int x0 = lx0 - 12;
+        // 左右对称：右栏边（0.93 屏宽）到屏右比左栏边（0.077 屏宽）到屏左窄 3~5 格，按窄的那边定，左括号跟着往外挪
         int x1 = rx1 + 12;
+        int x0 = width - x1;
         int y0 = Math.max(2, titleY - 7);
         int y1 = Math.min(height - 3, botY + 15);
         float c = 7.0F;
@@ -577,7 +605,15 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
 
     @Override
     public boolean mouseScrolled(double mx, double my, double delta) {
+        if (scrollPage(toCanvas(mx), toCanvas(my), delta)) {
+            return true;
+        }
         return super.mouseScrolled(toCanvas(mx), toCanvas(my), delta);
+    }
+
+    /** 页面自己的滚动区（画布坐标）；吃掉了返回 true */
+    protected boolean scrollPage(double mx, double my, double delta) {
+        return false;
     }
 
     @Override
@@ -1005,6 +1041,11 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
      * 所以空格不算分句
      */
     protected List<String> wrap(String s, float maxW) {
+        return wrap(s, maxW, this.font.width("一"));
+    }
+
+    /** 同 {@link #wrap(String, float)}，{@code slack} 是一行最多能比栏宽多出多少（0 = 一格也不许多） */
+    private List<String> wrap(String s, float maxW, float slack) {
         List<String> out = new ArrayList<>();
         if (!hasCjk(s)) {
             for (FormattedText line : this.font.getSplitter().splitLines(s, Math.max(1, (int) maxW), Style.EMPTY)) {
@@ -1014,7 +1055,6 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         }
         String[] paras = s.split("\n", -1);
         int last = paras[paras.length - 1].isEmpty() && paras.length > 1 ? paras.length - 1 : paras.length;
-        float slack = this.font.width("一");
         for (int p = 0; p < last; p++) {
             StringBuilder line = new StringBuilder();
             for (String clause : clauses(paras[p])) {
@@ -1024,7 +1064,7 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
                         out.add(line.toString().stripTrailing());
                         line.setLength(0);
                     }
-                    List<String> parts = splitEven(clause.stripLeading(), maxW);
+                    List<String> parts = splitEven(clause.stripLeading(), maxW, slack);
                     out.addAll(parts.subList(0, parts.size() - 1));
                     line.append(parts.get(parts.size() - 1));
                     continue;
@@ -1067,18 +1107,107 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
         return out;
     }
 
-    /** 逐字断成和按 {@code maxW} 断一样多的行，每行尽量一样长；至少返回一行 */
+    /**
+     * 逐字断成和按 {@code maxW} 断一样多的行；断在哪儿按代价挑：几行越一样长越好，断在词中间要罚
+     * （断在虚词、连词、介词前面，或「的、时、为」这类字后面不罚：「产出槽将预览 / 可分解出的内融核心数量」，
+     * 不要「可分解出的内 / 融核心数量」）。至少返回一行
+     */
     private List<String> splitEven(String s, float maxW) {
+        return splitEven(s, maxW, this.font.width("一"));
+    }
+
+    /** 同上；{@code slack} 和整段排行时一样，是一行最多能比栏宽多出多少 */
+    private List<String> splitEven(String s, float maxW, float slack) {
         List<String> parts = splitChars(s, maxW);
         int n = parts.size();
-        for (float w = (float) Math.ceil(this.font.width(s) / (float) n); n > 1 && w < maxW; w += 1.0F) {
-            List<String> even = splitChars(s, w);
-            if (even.size() == n) {
-                return even;
+        if (n <= 1) {
+            return parts;
+        }
+        // 切成不可拆的小段：一个汉字、一个标点，或连着的西文 / 数字
+        List<String> tok = new ArrayList<>();
+        for (int i = 0; i < s.length(); ) {
+            int j = i + 1;
+            if (s.charAt(i) < 0x2E80 && !Character.isWhitespace(s.charAt(i))) {
+                while (j < s.length() && s.charAt(j) < 0x2E80 && !Character.isWhitespace(s.charAt(j))) {
+                    j++;
+                }
+            }
+            tok.add(s.substring(i, j));
+            i = j;
+        }
+        int m = tok.size();
+        // 各段宽度的前缀和（原版字体没有字距调整，整行宽 = 各段宽之和）；行首行尾的空格不算
+        float[] pre = new float[m + 1];
+        for (int k = 0; k < m; k++) {
+            pre[k + 1] = pre[k] + this.font.width(tok.get(k));
+        }
+        // cost[j][k]：前 k 段排成 j 行的最小代价；from 记上一行从哪儿开始
+        double[][] cost = new double[n + 1][m + 1];
+        int[][] from = new int[n + 1][m + 1];
+        for (double[] row : cost) {
+            Arrays.fill(row, Double.MAX_VALUE);
+        }
+        cost[0][0] = 0.0D;
+        for (int j = 1; j <= n; j++) {
+            for (int k = 1; k <= m; k++) {
+                for (int a = j - 1; a < k; a++) {
+                    if (cost[j - 1][a] == Double.MAX_VALUE || (a > 0 && !breakable(tok, a))) {
+                        continue;
+                    }
+                    float lw = pre[k] - pre[a];
+                    if (tok.get(a).isBlank()) {
+                        lw -= pre[a + 1] - pre[a];
+                    }
+                    if (k - 1 > a && (tok.get(k - 1).isBlank() || NO_LINE_START.indexOf(tok.get(k - 1).charAt(0)) >= 0)) {
+                        // 行尾的空格不算宽，逗号句号这类标点挂在行尾也不算
+                        lw -= pre[k] - pre[k - 1];
+                    }
+                    if (lw > maxW + slack) {
+                        continue;
+                    }
+                    double c = cost[j - 1][a] + (maxW - lw) * (maxW - lw) + (a > 0 ? breakPenalty(tok, a) : 0.0D);
+                    if (c < cost[j][k]) {
+                        cost[j][k] = c;
+                        from[j][k] = a;
+                    }
+                }
             }
         }
-        return parts;
+        if (cost[n][m] == Double.MAX_VALUE) {
+            return parts;
+        }
+        String[] lines = new String[n];
+        for (int j = n, k = m; j > 0; j--) {
+            int a = from[j][k];
+            lines[j - 1] = String.join("", tok.subList(a, k)).strip();
+            k = a;
+        }
+        return List.of(lines);
     }
+
+    /** 能不能断在第 k 段前面：行首不放逗号句号这类标点 */
+    private static boolean breakable(List<String> tok, int k) {
+        return NO_LINE_START.indexOf(tok.get(k).charAt(0)) < 0;
+    }
+
+    /** 断在第 k 段前面的罚分（像素平方；几行长短差一个汉字约 80~160）：词和词的分界不罚，像是词中间的罚 1200 */
+    private static double breakPenalty(List<String> tok, int k) {
+        return breakPenalty(tok.get(k - 1).charAt(tok.get(k - 1).length() - 1), tok.get(k).charAt(0));
+    }
+
+    private static double breakPenalty(char before, char after) {
+        if (Character.isWhitespace(before) || Character.isWhitespace(after) || before < 0x2E80 || after < 0x2E80) {
+            return 0.0D;
+        }
+        if (BREAK_BEFORE.indexOf(after) >= 0 || BREAK_AFTER.indexOf(before) >= 0 || CLAUSE_END.indexOf(before) >= 0) {
+            return 0.0D;
+        }
+        return 1200.0D;
+    }
+
+    /** 断在它前面像是新的一截（虚词、连词、介词、副词）、断在它后面像是一截结束的字 */
+    private static final String BREAK_BEFORE = "可将于并即与或按及而但则再均需请被把在从向至以使让每各该此已仍亦也都就又还";
+    private static final String BREAK_AFTER = "的了时后为着过";
 
     private List<String> splitChars(String s, float maxW) {
         List<String> out = new ArrayList<>();
@@ -1128,18 +1257,45 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
 
     /** 断成和 {@link #wrap} 一样多的行，但每行尽量一样长（免得最后一行只剩一个字） */
     protected List<String> wrapEven(String s, float maxW) {
-        List<String> lines = wrap(s, maxW);
+        return wrapEven(s, maxW, this.font.width("一"));
+    }
+
+    /**
+     * 同 {@link #wrapEven}，但每行都不超过 {@code maxW}（行尾挂着的逗号句号除外，它们的笔画只占格子左边一小块）。
+     * 贴着栏边、右边就是页边或别的东西的字用这个；wrapEven 允许多出一个字，窄栏里会越过栏边 9 格
+     */
+    protected List<String> wrapEvenWithin(String s, float maxW) {
+        return wrapEven(s, maxW, 0.0F);
+    }
+
+    private List<String> wrapEven(String s, float maxW, float slack) {
+        List<String> lines = wrap(s, maxW, slack);
         int n = lines.size();
         if (n < 2) {
             return lines;
         }
+        // 收窄去凑等长时，断点不能比原来的差（「三张合成一 / 张未揭示模组」这种不要）
+        int bad = badBreaks(lines);
         for (float w = (float) Math.ceil(textW(s, 0.0F) / n); w < maxW; w += 3.0F) {
-            List<String> even = wrap(s, w);
-            if (even.size() == n) {
+            List<String> even = wrap(s, w, slack);
+            if (even.size() == n && badBreaks(even) <= bad) {
                 return even;
             }
         }
         return lines;
+    }
+
+    /** 几处换行像是断在词中间 */
+    private static int badBreaks(List<String> lines) {
+        int bad = 0;
+        for (int i = 0; i + 1 < lines.size(); i++) {
+            String a = lines.get(i);
+            String b = lines.get(i + 1);
+            if (!a.isEmpty() && !b.isEmpty() && breakPenalty(a.charAt(a.length() - 1), b.charAt(0)) > 0.0D) {
+                bad++;
+            }
+        }
+        return bad;
     }
 
     /**

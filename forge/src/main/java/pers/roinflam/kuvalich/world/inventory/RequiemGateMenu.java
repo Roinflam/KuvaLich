@@ -12,6 +12,9 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
@@ -20,9 +23,14 @@ import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
-import pers.roinflam.kuvalich.item.card.OULL;
+import pers.roinflam.kuvalich.mercy.MercyServer;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.InventoryUtil;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
+import pers.roinflam.kuvalich.utils.Reference;
+
+import java.util.List;
 
 /**
  * 灭骸之扉菜单类（1.20.1版本）
@@ -34,7 +42,7 @@ import pers.roinflam.kuvalich.utils.InventoryUtil;
  * 核心功能：
  * Core functions:
  * 1. 显示当前解密进度和已解锁的卡片
- * 2. 允许玩家放置3张安魂卡进行解密
+ * 2. 允许玩家放置3张安魂卡进行解密（同一种卡只能放一张，见 {@link CardSlot#mayPlace}）
  * 3. 自动从玩家Capability加载已配置的卡片
  * 4. 卡槽一有变化就写回 Capability（不等关界面，见 {@link #mirrorCardsToCapability}）
  *
@@ -54,6 +62,9 @@ public class RequiemGateMenu extends AbstractContainerMenu {
 
     /** removed() 已经把卡存走、清了数量，之后不再往玩家数据里写 */
     private boolean closed;
+
+    /** 正在把玩家数据摆进卡槽，这期间卡槽的变化不回写（见 {@link #loadCardsFromCapability}） */
+    private boolean loading;
 
     /** 数据索引常量 / Data index constants */
     private static final int DATA_ONE_RIDDLE = 0;
@@ -111,6 +122,12 @@ public class RequiemGateMenu extends AbstractContainerMenu {
     /**
      * 从Capability加载卡片
      * Load cards from Capability
+     *
+     * <p>三张先一起读出来，摆进卡槽时不回写。卡槽一变就回写玩家数据（{@link #mirrorCardsToCapability}），
+     * 以前逐格 insertItem：摆第 1 格触发的回写拿还空着的第 2、3 格把玩家数据里的那两张清成了空，
+     * 接着读第 2、3 格读到的已经是空的——第 1 格有卡时关了扉再开，第 2、3 格的卡就没了，哪儿也找不回来。</p>
+     *
+     * <p>摆之前先把存档里同一种卡多出来的退还玩家（{@link #returnDuplicateCards}）。</p>
      */
     private void loadCardsFromCapability() {
         try {
@@ -122,9 +139,17 @@ public class RequiemGateMenu extends AbstractContainerMenu {
                 // 只有当槽位为空时才加载 / Only load if slots are empty
                 // 放副本：卡槽和玩家数据各管各的对象，拿出来的那张不会还挂在玩家数据上
                 if (oneCard.isEmpty() && twoCard.isEmpty() && threeCard.isEmpty()) {
-                    cardHandler.insertItem(0, requiemCard.getOneCard().copy(), false);
-                    cardHandler.insertItem(1, requiemCard.getTwoCard().copy(), false);
-                    cardHandler.insertItem(2, requiemCard.getThreeCard().copy(), false);
+                    returnDuplicateCards(player);
+                    ItemStack[] saved = {requiemCard.getOneCard().copy(), requiemCard.getTwoCard().copy(),
+                            requiemCard.getThreeCard().copy()};
+                    loading = true;
+                    try {
+                        for (int i = 0; i < 3; i++) {
+                            cardHandler.setStackInSlot(i, saved[i]);
+                        }
+                    } finally {
+                        loading = false;
+                    }
 
                     LogUtil.debugEvent("灭骸之扉菜单创建", player.getName().getString(),
                             "已加载玩家的卡片配置");
@@ -172,7 +197,7 @@ public class RequiemGateMenu extends AbstractContainerMenu {
      * 两头都兜住。不是安魂卡的东西不写进去（卡槽本来也不收），关界面时照旧退回。</p>
      */
     private void mirrorCardsToCapability() {
-        if (level.isClientSide || closed) {
+        if (level.isClientSide || closed || loading) {
             return;
         }
         player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
@@ -235,7 +260,8 @@ public class RequiemGateMenu extends AbstractContainerMenu {
     public void removed(@NotNull Player player) {
         super.removed(player);
 
-        if (!level.isClientSide) {
+        // 只存一次：存完卡槽的数量已经清零，同一个界面再关一次就会拿空卡槽把玩家数据里的卡全清掉
+        if (!level.isClientSide && !closed) {
             saveCardsToCapability(player);
             closed = true;
         }
@@ -247,15 +273,15 @@ public class RequiemGateMenu extends AbstractContainerMenu {
      */
     private void saveCardsToCapability(Player player) {
         try {
-            // 兜底：卡槽本身不收第二张 Oull，万一还是多出来了（别的模组往里塞），多的退回背包
-            boolean oullSeen = false;
-            for (int i = 0; i < 3; i++) {
-                if (OULL.is(cardHandler.getStackInSlot(i))) {
-                    if (oullSeen) {
+            // 兜底：卡槽本身不收同一种的第二张（含 Oull），万一还是多出来了（别的模组往里塞），留最前面那张，多的退回背包
+            for (int i = 1; i < 3; i++) {
+                int id = RequiemCard.placedCardId(cardHandler.getStackInSlot(i));
+                for (int j = 0; id >= 0 && j < i; j++) {
+                    if (RequiemCard.placedCardId(cardHandler.getStackInSlot(j)) == id) {
                         InventoryUtil.giveOrDrop(player, cardHandler.getStackInSlot(i).copy());
                         cardHandler.setStackInSlot(i, ItemStack.EMPTY);
+                        break;
                     }
-                    oullSeen = true;
                 }
             }
             ItemStack oneCard = cardHandler.getStackInSlot(0);
@@ -369,6 +395,11 @@ public class RequiemGateMenu extends AbstractContainerMenu {
      */
     @Override
     public boolean stillValid(@NotNull Player player) {
+        // 处决中（含结束后那一小段余量）卡槽不许动：处决开始时就按当时放的卡定了结果，中途把卡拿走，成功时就扣不到卡。
+        // 正常客户端开着界面按不出处决键，这里挡的是改过的客户端。失效的界面原版不处理点击，下一 tick 关掉（关时照常存卡）
+        if (player instanceof ServerPlayer serverPlayer && MercyServer.isBusy(serverPlayer)) {
+            return false;
+        }
         return player.level().equals(this.level) &&
                 player.blockPosition().distSqr(this.pos) <= 64;
     }
@@ -406,23 +437,81 @@ public class RequiemGateMenu extends AbstractContainerMenu {
             super(itemHandler, index, xPosition, yPosition);
         }
 
-        /** 只收安魂卡；Oull 同时只能装一张，别的格子已经有一张时不收（拖放、Shift 快速移动、数字键换位都走这里） */
+        /**
+         * 只收安魂卡；同一种卡（Oull 也一样）同时只能装一张，别的格子已经有同种的时不收。
+         * 光标放、右键放、拖放、Shift 快速移动、数字键 / 副手键换位都走这里；同一格换一张同种的不算第二张
+         */
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
             if (!(stack.getItem() instanceof AbstractRequiemCard) || !super.mayPlace(stack)) {
                 return false;
             }
-            return !OULL.is(stack) || !hasOullElsewhere(getItemHandler(), getSlotIndex());
+            return !hasSameCardElsewhere(getItemHandler(), getSlotIndex(), stack);
         }
     }
 
-    /** 卡槽里除了 {@code except} 这一格，别的格子有没有 Oull */
-    static boolean hasOullElsewhere(IItemHandler handler, int except) {
+    /** 卡槽里除了 {@code except} 这一格，别的格子有没有和 {@code stack} 同一种的卡 */
+    static boolean hasSameCardElsewhere(IItemHandler handler, int except, ItemStack stack) {
+        int id = RequiemCard.placedCardId(stack);
+        if (id < 0) {
+            return false;
+        }
         for (int i = 0; i < Math.min(3, handler.getSlots()); i++) {
-            if (i != except && OULL.is(handler.getStackInSlot(i))) {
+            if (i != except && RequiemCard.placedCardId(handler.getStackInSlot(i)) == id) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * 玩家数据里同一种卡多出来的（不许放重复卡之前放进去、存在档里的）退还玩家：放回背包，满了掉在脚下，提示一句。
+     * 登录和开扉时各查一次，没有重复的什么都不做
+     *
+     * @return 退还了几张
+     */
+    public static int returnDuplicateCards(Player player) {
+        RequiemCard requiemCard = player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).orElse(null);
+        if (requiemCard == null) {
+            return 0;
+        }
+        List<ItemStack> extra = requiemCard.takeDuplicateCards();
+        if (extra.isEmpty()) {
+            return 0;
+        }
+        for (ItemStack stack : extra) {
+            InventoryUtil.giveOrDrop(player, stack);
+        }
+        LogUtil.info("灭骸之扉：" + player.getName().getString() + " 的卡槽里有 " + extra.size() + " 张重复的安魂卡，已退还");
+        PlayerFeedback.chat(player, KuvaPalette.WARN, "kuvalich.gate.duplicates_returned", extra.size());
+        return extra.size();
+    }
+
+    /**
+     * 要改玩家数据里的卡之前（安魂成功扣卡）先关掉这个玩家开着的扉。
+     *
+     * <p>卡槽和玩家数据是两份：扉开着的时候扣了玩家数据里的卡，卡槽里还是扣之前那几张，
+     * 下一 tick 的回写就把它们原样写回去——用完的卡又回来了，留下的那几张背包里一份、扉里一份。
+     * 先关：关的时候卡槽写回玩家数据，之后不再回写，扣卡照常扣；光标上拿着的卡不在玩家数据里，退回背包，不扣。</p>
+     */
+    public static void closeBeforeCardsChange(Player player) {
+        if (player instanceof ServerPlayer serverPlayer && serverPlayer.containerMenu instanceof RequiemGateMenu) {
+            serverPlayer.closeContainer();
+        }
+    }
+
+    /** 登录时查一次存档里的重复卡。死亡界面上登录的先不动（这时放进背包，重生不保留物品栏就没了），等开扉时再查 */
+    @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
+    public static final class DuplicateCardLoginCheck {
+
+        private DuplicateCardLoginCheck() {
+        }
+
+        @SubscribeEvent
+        public static void onLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+            if (event.getEntity() instanceof ServerPlayer player && player.isAlive()) {
+                returnDuplicateCards(player);
+            }
+        }
     }
 }

@@ -46,10 +46,10 @@
         {
           "type": "steps",
           "items": [
-            "从{lang:entity.kuvalich.kuva_slave}身上积攒解密进度，揭示第一条线索时，你的{lang:entity.kuvalich.kuva_master}随之诞生，再一条条解开由三张安魂卡组成的答案，见[[requiem/decryption]]",
+            "了结一只{lang:entity.kuvalich.kuva_larvling}，你的{lang:entity.kuvalich.kuva_master}随之诞生；再从{lang:entity.kuvalich.kuva_slave}身上积攒解密进度，一条条解开由三张安魂卡组成的答案，见[[requiem/decryption]]",
             "在{item:kuvalich:requiem_gate}里按正确顺序放好三张卡，见[[requiem/requiem_gate]]",
             "讨伐你的{lang:entity.kuvalich.kuva_master}，卡序全对才算成功，成功时掉落它手里那把赤毒武器，另有{item:kuvalich:lich_reliquary}等奖励",
-            "武器种类在它诞生时就从 13 把里<em>等概率</em>定下，[[requiem/lich_archive|玄骸档案]]里能提前看到；等级在你当前的个人等级范围里随机，掉落之后这个范围才上涨，见[[weapons/weapon_level]]"
+            "武器种类在幼体出现时就从 13 把里<em>等概率</em>定下，幼体手里拿的就是这一把，玄骸诞生后[[requiem/lich_archive|玄骸档案]]里也能看到；等级在你当前的个人等级范围里随机，掉落之后这个范围才上涨，见[[weapons/weapon_level]]"
           ]
         },
         {
@@ -155,7 +155,8 @@
         "wf 小知识为原作《星际战甲》设定，不涉及本模组代码",
         "nemesis/LichArchiveService.java:51-58 — 有玄骸时档案里列出它的武器；client/KuvaKeyMappings.java:35 — 档案键 key.kuvalich.lich_archive 默认 K，可改键",
         "entity/KuvaSlaveEntity.java:185-213 + mercy/MercyRules.java:31-36 — 奴仆给进度的条件：mercyEnabled 和 mercyThralls 都开着时只有处决走完的那次死亡给，关着时被玩家打死就给；正文写成「从奴仆身上积攒」，两种都对，细节在 requiem/decryption",
-        "nemesis/LichDirector.java:192-199,628-649 — 解密进度从 0 条跨到揭示第 1 条线索时 birth → beginLich，玄骸诞生（名字、种子、武器下标、出生地）；老存档已有线索、还没玄骸的，登录时补生（:424-426）"
+        "nemesis/LichDirector.java:224 birthFromLarvling → :685 birth → beginLich，处决赤毒幼体时玄骸诞生（名字、种子、武器下标、出生地，种子和武器沿用幼体的）；老存档已有线索、还没玄骸的，登录时补生（:453 onLogin）",
+        "entity/KuvaLarvlingEntity.java setup — 幼体刷出时掷种子，武器 = LichProfile.weaponIndex(种子, 13)（等概率），手里拿的就是它；nemesis/LichDirector.java:224 birthFromLarvling 诞生时沿用这把"
       ]
     },
     {

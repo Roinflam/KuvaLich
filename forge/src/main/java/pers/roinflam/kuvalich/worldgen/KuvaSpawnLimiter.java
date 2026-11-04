@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -122,6 +123,38 @@ public final class KuvaSpawnLimiter {
             }
         }
         return true;
+    }
+
+    /**
+     * 某个点水平 {@code radius} 格内（纵向 ±48）活着的某种赤毒实体有几只。奴仆小队数「身边已经有几只」用
+     *
+     * @param level  世界
+     * @param type   实体类型（幼体、奴仆、玄骸各算各的）
+     * @param center 中心
+     * @param radius 半径（格）
+     * @return 只数
+     */
+    public static int countNear(ServerLevel level, EntityType<?> type, Vec3 center, double radius) {
+        List<AbstractKuva> live = LIVE.get(level);
+        if (live == null || live.isEmpty()) {
+            return 0;
+        }
+        double radiusSq = radius * radius;
+        int n = 0;
+        for (AbstractKuva other : live) {
+            if (other.isRemoved() || other.getType() != type || !other.isAlive()) {
+                continue;
+            }
+            if (Math.abs(other.getY() - center.y) > VERTICAL_REACH) {
+                continue;
+            }
+            double dx = other.getX() - center.x;
+            double dz = other.getZ() - center.z;
+            if (dx * dx + dz * dz <= radiusSq) {
+                n++;
+            }
+        }
+        return n;
     }
 
     /**

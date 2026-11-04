@@ -192,10 +192,15 @@ public class ClothConfigScreen {
 
         mercyCategory.addEntry(bool(entryBuilder, "mercyEnabled", k.mercyEnabled, true));
         mercyCategory.addEntry(bool(entryBuilder, "mercyThralls", k.mercyThralls, true));
-        mercyCategory.addEntry(intIn(entryBuilder, "mercyDownedSeconds", k.mercyDownedSeconds, 60, 10, 600));
+        mercyCategory.addEntry(intIn(entryBuilder, "mercyDownedSeconds", k.mercyDownedSeconds, 20, 10, 600));
         mercyCategory.addEntry(dblIn(entryBuilder, "mercyReach", k.mercyReach, 3.0, 1.5, 6.0));
         mercyCategory.addEntry(intIn(entryBuilder, "mercyResumeFloorSeconds", k.mercyResumeFloorSeconds, 5, 0, 60));
         mercyCategory.addEntry(intIn(entryBuilder, "oullDropChance", k.oullDropChance, 25, 0, 100));
+        mercyCategory.addEntry(dblIn(entryBuilder, "lichShieldRatio", k.lichShieldRatio, 1.0, 0.0, 10.0));
+        mercyCategory.addEntry(intIn(entryBuilder, "lichShieldDelaySeconds", k.lichShieldDelaySeconds, 10, 0, 600));
+        mercyCategory.addEntry(dblIn(entryBuilder, "lichShieldBrokenDelayMultiplier", k.lichShieldBrokenDelayMultiplier,
+                3.0, 1.0, 10.0));
+        mercyCategory.addEntry(dblIn(entryBuilder, "lichShieldRegenPercent", k.lichShieldRegenPercent, 1.0, 0.0, 100.0));
 
         // ═══════════════════════════════════════════════════════════════
         // 专属玄骸：怒气 → 登场 → 狩猎 → 离场，再加几项杂项
@@ -387,12 +392,22 @@ public class ClothConfigScreen {
                 Component.translatable("config.kuvalich.category.spawn"));
         // 玄骸不再自然生成：配置里那几项玄骸生成设置只为老配置文件读得进来才留着，这里不再列出
 
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight"), ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight.get()).setDefaultValue(35).setMin(0).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveSpawnWeight.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMinSpawnCount"), ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMinSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMaxSpawnCount"), ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount.get()).setDefaultValue(1).setMin(1).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMaxSpawnCount.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMaxNearby"), ModConfig.KUVA_LICH.kuvaSlaveMaxNearby.get()).setDefaultValue(4).setMin(0).setMax(64).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMaxNearby.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMaxNearby::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveNearbyRadius"), ModConfig.KUVA_LICH.kuvaSlaveNearbyRadius.get()).setDefaultValue(48).setMin(8).setMax(512).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveNearbyRadius.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveNearbyRadius::set).build());
-        spawnCategory.addEntry(entryBuilder.startIntField(Component.translatable("config.kuvalich.kuvaSlaveMinSpacing"), ModConfig.KUVA_LICH.kuvaSlaveMinSpacing.get()).setDefaultValue(12).setMin(0).setMax(512).setTooltip(Component.translatable("config.kuvalich.kuvaSlaveMinSpacing.tooltip")).setSaveConsumer(ModConfig.KUVA_LICH.kuvaSlaveMinSpacing::set).build());
+        // 奴仆也不再自然生成：kuvaSlave* 那几项同样只为老配置文件读得进来才留着，换成幼体和奴仆小队
+        ModConfig.KuvaLichConfig sk = ModConfig.KUVA_LICH;
+        spawnCategory.addEntry(bool(entryBuilder, "larvlingEnabled", sk.larvlingEnabled, true));
+        spawnCategory.addEntry(dblIn(entryBuilder, "larvlingIntervalMinMinutes", sk.larvlingIntervalMinMinutes, 10.0, 0.5, 600.0));
+        spawnCategory.addEntry(dblIn(entryBuilder, "larvlingIntervalMaxMinutes", sk.larvlingIntervalMaxMinutes, 20.0, 0.5, 600.0));
+        spawnCategory.addEntry(intIn(entryBuilder, "larvlingDownedSeconds", sk.larvlingDownedSeconds, 30, 10, 600));
+        spawnCategory.addEntry(dimensions(entryBuilder, "larvlingDimensions", sk.larvlingDimensions));
+        spawnCategory.addEntry(bool(entryBuilder, "thrallSquadEnabled", sk.thrallSquadEnabled, true));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadIntervalMinSeconds", sk.thrallSquadIntervalMinSeconds, 60, 5, 3600));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadIntervalMaxSeconds", sk.thrallSquadIntervalMaxSeconds, 120, 5, 3600));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadSizeMin", sk.thrallSquadSizeMin, 1, 1, 8));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadSizeMax", sk.thrallSquadSizeMax, 3, 1, 8));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadMaxNearby", sk.thrallSquadMaxNearby, 6, 1, 32));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadRadius", sk.thrallSquadRadius, 48, 16, 128));
+        spawnCategory.addEntry(dimensions(entryBuilder, "thrallSquadDimensions", sk.thrallSquadDimensions));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallProgressShareRange", sk.thrallProgressShareRange, 48, 0, 256));
 
         // ═══════════════════════════════════════════════════════════════
         // 矿石生成配置
@@ -771,6 +786,18 @@ public class ClothConfigScreen {
             net.minecraftforge.common.ForgeConfigSpec.BooleanValue value, boolean defaultValue) {
         return entryBuilder.startBooleanToggle(Component.translatable("config.kuvalich." + name), value.get())
                 .setDefaultValue(defaultValue)
+                .setTooltip(Component.translatable("config.kuvalich." + name + ".tooltip"))
+                .setSaveConsumer(value::set)
+                .build();
+    }
+
+    /** 维度列表（默认只有主世界） */
+    private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<java.util.List<String>> dimensions(
+            ConfigEntryBuilder entryBuilder, String name,
+            net.minecraftforge.common.ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> value) {
+        return entryBuilder.startStrList(Component.translatable("config.kuvalich." + name),
+                        new java.util.ArrayList<String>(value.get()))
+                .setDefaultValue(java.util.List.of("minecraft:overworld"))
                 .setTooltip(Component.translatable("config.kuvalich." + name + ".tooltip"))
                 .setSaveConsumer(value::set)
                 .build();

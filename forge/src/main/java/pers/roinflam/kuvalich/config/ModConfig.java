@@ -82,6 +82,11 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue mercyReach;
         public final ForgeConfigSpec.IntValue mercyResumeFloorSeconds;
         public final ForgeConfigSpec.IntValue oullDropChance;
+        // ===== 玄骸护盾 / Lich Shield =====
+        public final ForgeConfigSpec.DoubleValue lichShieldRatio;
+        public final ForgeConfigSpec.IntValue lichShieldDelaySeconds;
+        public final ForgeConfigSpec.DoubleValue lichShieldBrokenDelayMultiplier;
+        public final ForgeConfigSpec.DoubleValue lichShieldRegenPercent;
 
         // ===== 伤害系统 / Damage System =====
         public final ForgeConfigSpec.BooleanValue damageDisplay;
@@ -294,6 +299,24 @@ public final class ModConfig {
         public final ForgeConfigSpec.BooleanValue lichWildAllowed;
         public final ForgeConfigSpec.BooleanValue lichPurgeLegacy;
 
+        // ===== 赤毒幼体 / Kuva Larvling =====
+        public final ForgeConfigSpec.BooleanValue larvlingEnabled;
+        public final ForgeConfigSpec.DoubleValue larvlingIntervalMinMinutes;
+        public final ForgeConfigSpec.DoubleValue larvlingIntervalMaxMinutes;
+        public final ForgeConfigSpec.IntValue larvlingDownedSeconds;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> larvlingDimensions;
+
+        // ===== 奴仆小队 / Thrall Squads =====
+        public final ForgeConfigSpec.BooleanValue thrallSquadEnabled;
+        public final ForgeConfigSpec.IntValue thrallSquadIntervalMinSeconds;
+        public final ForgeConfigSpec.IntValue thrallSquadIntervalMaxSeconds;
+        public final ForgeConfigSpec.IntValue thrallSquadSizeMin;
+        public final ForgeConfigSpec.IntValue thrallSquadSizeMax;
+        public final ForgeConfigSpec.IntValue thrallSquadMaxNearby;
+        public final ForgeConfigSpec.IntValue thrallSquadRadius;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> thrallSquadDimensions;
+        public final ForgeConfigSpec.IntValue thrallProgressShareRange;
+
         /** 玄骸的通讯台词要不要同时进聊天栏 */
         public enum LichCommEcho {
             /** 都不进 */
@@ -405,9 +428,11 @@ public final class ModConfig {
                     .define("mercyThralls", true);
 
             mercyDownedSeconds = builder
-                    .comment("Seconds a downed Lich or Thrall waits. When time runs out the Lich escapes and the Thrall fades away, giving nothing")
-                    .comment("倒地后等多少秒；超时玄骸逃走、奴仆消散，什么都不给")
-                    .defineInRange("mercyDownedSeconds", 60, 10, 600);
+                    .comment("Seconds a downed Lich or Thrall waits. A downed Lich refills the emptied health segment over this time and gets back up if nobody uses Mercy; after 3 such downs in a row it escapes. A Thrall fades away, giving nothing")
+                    .comment("倒地后等多少秒。专属玄骸倒地期间这一段血慢慢回满，到时没人处决就站起来接着打，连续 3 次都没人处决就逃走；奴仆到时消散，什么都不给")
+                    .comment("Default lowered from 60 to 20; existing config files are not changed")
+                    .comment("默认值从 60 改成 20；已经生成的配置文件不会自动改")
+                    .defineInRange("mercyDownedSeconds", 20, 10, 600);
 
             mercyReach = builder
                     .comment("How close you must be to use Mercy (blocks)")
@@ -423,6 +448,29 @@ public final class ModConfig {
                     .comment("Chance (percent) that a failed Lich Mercy gives the executor an Oull, the wildcard Requiem card. Only rolls when at least one stab was correct")
                     .comment("处决玄骸失败时给处决者一张 Oull（万能安魂卡）的几率（百分比）；这次至少猜对一格才掷")
                     .defineInRange("oullDropChance", 25, 0, 100);
+
+            builder.comment("")
+                    .comment("═══ Lich Shield / 玄骸护盾 ═══");
+
+            lichShieldRatio = builder
+                    .comment("Shield of your own Kuva Lich = its max health × this. The shield takes damage before health; 0 = no shield")
+                    .comment("专属玄骸的护盾 = 最大生命 × 这个倍率，先扣护盾再扣血；0 = 没有护盾")
+                    .defineInRange("lichShieldRatio", 1.0, 0.0, 10.0);
+
+            lichShieldDelaySeconds = builder
+                    .comment("Seconds the Lich must go without taking damage before its shield starts to recharge (same as a player's base shield)")
+                    .comment("玄骸多少秒没挨打护盾才开始恢复（和玩家护盾的基础延迟一样）")
+                    .defineInRange("lichShieldDelaySeconds", 10, 0, 600);
+
+            lichShieldBrokenDelayMultiplier = builder
+                    .comment("If the hit broke the shield, the recharge delay is multiplied by this (same as a player's shield)")
+                    .comment("这一下把护盾打空时，恢复延迟再乘以这个倍率（和玩家护盾一样）")
+                    .defineInRange("lichShieldBrokenDelayMultiplier", 3.0, 1.0, 10.0);
+
+            lichShieldRegenPercent = builder
+                    .comment("Percent of the shield cap recharged per second once recharging (same as a player's base shield)")
+                    .comment("开始恢复后每秒回护盾上限的百分之几（和玩家护盾的基础速率一样）")
+                    .defineInRange("lichShieldRegenPercent", 1.0, 0.0, 100.0);
 
             builder.comment("")
                     .comment("═══ Damage System / 伤害系统 ═══");
@@ -716,12 +764,12 @@ public final class ModConfig {
                     .comment("═══ Entity Spawning / 实体生成 ═══")
                     .comment("Note: These values are read during world generation setup")
                     .comment("注意：这些值在世界生成初始化时读取，修改后重启游戏生效")
-                    .comment("The Kuva Lich entries here are no longer read; they stay only so old config files still load")
-                    .comment("这里几项玄骸的设置已经不读了，留着只是为了老配置文件读起来不报错");
+                    .comment("Neither Kuva Liches nor Thralls spawn naturally any more; the entries here are no longer read and stay only so old config files still load")
+                    .comment("玄骸和奴仆都不再自然生成，这里几项已经不读了，留着只是为了老配置文件读起来不报错");
 
             kuvaLichSpawnWeight = builder
-                    .comment("Unused: Kuva Liches no longer spawn naturally, they only hunt players who have uncovered a Murmur")
-                    .comment("已停用：玄骸不再自然生成，只会找上解开密语的玩家，这一项不起作用")
+                    .comment("Unused: Kuva Liches no longer spawn naturally, they only hunt the player who gave birth to them")
+                    .comment("已停用：玄骸不再自然生成，只会找上处决幼体让它诞生的那个玩家，这一项不起作用")
                     .defineInRange("kuvaLichSpawnWeight", 0, 0, Integer.MAX_VALUE);
 
             kuvaLichMinSpawnCount = builder
@@ -739,18 +787,22 @@ public final class ModConfig {
                     .defineInRange("kuvaLichMaxSpawnCount", 1, 1, Integer.MAX_VALUE);
 
             kuvaSlaveSpawnWeight = builder
-                    .comment("Kuva Thrall spawn weight. At 0 no Thralls spawn in the wild, and new players can only get their first clue from spawn eggs or commands")
-                    .comment("赤毒奴仆生成权重。设成 0 时野外没有奴仆，新玩家只能靠刷怪蛋 / 指令拿到第一条线索")
+                    .comment("Unused: Thralls no longer spawn in the wild, they come in squads to players who have a Lich (see thrallSquad*)")
+                    .comment("已停用：奴仆不再在野外自然生成，改成一小队一小队地找有玄骸的玩家（见 thrallSquad* 几项），这一项不起作用")
                     .defineInRange("kuvaSlaveSpawnWeight", 35, 0, Integer.MAX_VALUE);
 
             kuvaSlaveMinSpawnCount = builder
                     .comment("Kuva Slave minimum spawn count")
                     .comment("赤毒奴仆最小生成数量")
+                    .comment("Unused: Thralls no longer spawn in the wild")
+                    .comment("已停用：奴仆不再在野外自然生成，这一项不起作用")
                     .defineInRange("kuvaSlaveMinSpawnCount", 1, 1, Integer.MAX_VALUE);
 
             kuvaSlaveMaxSpawnCount = builder
                     .comment("Kuva Slave maximum spawn count")
                     .comment("赤毒奴仆最大生成数量")
+                    .comment("Unused: Thralls no longer spawn in the wild")
+                    .comment("已停用：奴仆不再在野外自然生成，这一项不起作用")
                     .defineInRange("kuvaSlaveMaxSpawnCount", 1, 1, Integer.MAX_VALUE);
 
             builder.comment("")
@@ -784,16 +836,22 @@ public final class ModConfig {
             kuvaSlaveMaxNearby = builder
                     .comment("Max Kuva Slave within the radius below of a spawn point (0 = no limit)")
                     .comment("生成点半径内最多已有几只赤毒奴仆才允许再刷(0=不限)")
+                    .comment("Unused by this mod: Thralls no longer spawn in the wild; it only applies if another datapack adds them back. Squads use thrallSquadMaxNearby")
+                    .comment("本模组已经不用：奴仆不再自然生成，只有别的数据包把奴仆加回刷怪表时才管用；小队的上限见 thrallSquadMaxNearby")
                     .defineInRange("kuvaSlaveMaxNearby", 4, 0, 64);
 
             kuvaSlaveNearbyRadius = builder
                     .comment("Radius in blocks used for the Kuva Slave limit above")
                     .comment("奴仆数量上限统计的半径(格)")
+                    .comment("Unused by this mod: Thralls no longer spawn in the wild")
+                    .comment("本模组已经不用：奴仆不再自然生成")
                     .defineInRange("kuvaSlaveNearbyRadius", 48, 8, 512);
 
             kuvaSlaveMinSpacing = builder
                     .comment("Minimum distance in blocks to another Kuva Slave for a new one to spawn (0 = no limit)")
                     .comment("新刷出的奴仆与已有奴仆的最小间距(格，0=不限)")
+                    .comment("Unused by this mod: Thralls no longer spawn in the wild")
+                    .comment("本模组已经不用：奴仆不再自然生成")
                     .defineInRange("kuvaSlaveMinSpacing", 12, 0, 512);
 
             builder.comment("")
@@ -1206,8 +1264,8 @@ public final class ModConfig {
 
             builder.comment("")
                     .comment("═══ Personal Kuva Lich / 专属玄骸 ═══")
-                    .comment("Every player has one Kuva Lich of their own, born when they uncover the first Requiem Murmur. Its rage rises over time and with what the player does; when it is full the Lich comes hunting.")
-                    .comment("每位玩家有一只自己的玄骸，揭示第一条安魂密语时诞生；它的怒气随时间和玩家的行为上涨，满了就来找主人。");
+                    .comment("Every player has one Kuva Lich of their own, born when they use Mercy on a Kuva Larvling. Its rage rises over time and with what the player does; when it is full the Lich comes hunting.")
+                    .comment("每位玩家有一只自己的玄骸，处决赤毒幼体时诞生；它的怒气随时间和玩家的行为上涨，满了就来找主人。");
 
             lichRageOnlineMinutes = builder
                     .comment("Minutes of play for rage to fill on its own; 0 = time does not raise rage")
@@ -1341,6 +1399,86 @@ public final class ModConfig {
                     .comment("Remove naturally spawned Liches saved in old worlds")
                     .comment("读档时清掉以前自然生成、存在世界里的玄骸")
                     .define("lichPurgeLegacy", true);
+
+            builder.comment("")
+                    .comment("═══ Kuva Larvling / 赤毒幼体 ═══")
+                    .comment("Players without a Lich are visited by a Kuva Larvling now and then. Down it, then use Mercy on it to give birth to your Lich (it carries the weapon your Lich will hold); hit it while it is down, or let the time run out, and it simply dies.")
+                    .comment("还没有玄骸的玩家附近隔一阵会出现一只赤毒幼体。打倒后用怜悯之击处决它，你的玄骸就诞生了（它手里拿的就是玄骸将来的武器）；倒地时再打它、或者等时间过去，它就这么死了。");
+
+            larvlingEnabled = builder
+                    .comment("Larvlings appear near players who have no Lich yet. Off = no new Lich can be born except by admin command")
+                    .comment("还没有玄骸的玩家附近会出现幼体；关掉后除了管理命令，不会再有新玄骸诞生")
+                    .define("larvlingEnabled", true);
+
+            larvlingIntervalMinMinutes = builder
+                    .comment("Shortest play time (minutes) between one Larvling and the next; the timer runs only while you are online and have no Lich")
+                    .comment("两只幼体之间至少要在线多少分钟；只在你在线、还没有玄骸时计时")
+                    .defineInRange("larvlingIntervalMinMinutes", 10.0, 0.5, 600.0);
+
+            larvlingIntervalMaxMinutes = builder
+                    .comment("Longest play time (minutes) between one Larvling and the next; each wait is rolled between the two")
+                    .comment("两只幼体之间最多在线多少分钟；每次在两者之间随机")
+                    .defineInRange("larvlingIntervalMaxMinutes", 20.0, 0.5, 600.0);
+
+            larvlingDownedSeconds = builder
+                    .comment("Seconds a downed Larvling waits for Mercy before it dies")
+                    .comment("幼体倒地后等多少秒，没人处决就死掉")
+                    .defineInRange("larvlingDownedSeconds", 30, 10, 600);
+
+            larvlingDimensions = builder
+                    .comment("Dimensions where Larvlings appear")
+                    .comment("幼体在哪些维度出现")
+                    .defineList("larvlingDimensions", List.of("minecraft:overworld"), o -> o instanceof String);
+
+            builder.comment("")
+                    .comment("═══ Thrall Squads / 奴仆小队 ═══")
+                    .comment("Thralls no longer spawn in the wild. Every so often a small squad shows up near each player who has a Lich.")
+                    .comment("奴仆不再在野外自然生成，改成隔一段时间在每个有玄骸的玩家身边放一小队。");
+
+            thrallSquadEnabled = builder
+                    .comment("Send Thrall squads to players who have a Lich")
+                    .comment("给有玄骸的玩家放奴仆小队")
+                    .define("thrallSquadEnabled", true);
+
+            thrallSquadIntervalMinSeconds = builder
+                    .comment("Shortest time (seconds) between two squads for the same player")
+                    .comment("同一个玩家两队之间至少隔多少秒")
+                    .defineInRange("thrallSquadIntervalMinSeconds", 60, 5, 3600);
+
+            thrallSquadIntervalMaxSeconds = builder
+                    .comment("Longest time (seconds) between two squads; each wait is rolled between the two")
+                    .comment("两队之间最多隔多少秒；每次在两者之间随机")
+                    .defineInRange("thrallSquadIntervalMaxSeconds", 120, 5, 3600);
+
+            thrallSquadSizeMin = builder
+                    .comment("Fewest Thralls in a squad")
+                    .comment("一队最少几只")
+                    .defineInRange("thrallSquadSizeMin", 1, 1, 8);
+
+            thrallSquadSizeMax = builder
+                    .comment("Most Thralls in a squad")
+                    .comment("一队最多几只")
+                    .defineInRange("thrallSquadSizeMax", 3, 1, 8);
+
+            thrallSquadMaxNearby = builder
+                    .comment("No new squad while this many Thralls are already within the radius below; a squad that would go over is trimmed")
+                    .comment("身边下面这个半径内已经有这么多只奴仆时不再放；放一队会超的话少放几只")
+                    .defineInRange("thrallSquadMaxNearby", 6, 1, 32);
+
+            thrallSquadRadius = builder
+                    .comment("Radius (blocks) used for the count above")
+                    .comment("上面那个数按多大半径数（格）")
+                    .defineInRange("thrallSquadRadius", 48, 16, 128);
+
+            thrallSquadDimensions = builder
+                    .comment("Dimensions where Thrall squads are sent")
+                    .comment("在哪些维度放奴仆小队")
+                    .defineList("thrallSquadDimensions", List.of("minecraft:overworld"), o -> o instanceof String);
+
+            thrallProgressShareRange = builder
+                    .comment("When a player kills (or executes) a Thrall, every player with a Lich within this many blocks gains the same decryption progress; 0 = only the killer")
+                    .comment("奴仆死于玩家之手时，这么多格内所有有玄骸的玩家都加同样多的解密进度；0 = 只给击杀者")
+                    .defineInRange("thrallProgressShareRange", 48, 0, 256);
 
             builder.pop();
         }

@@ -52,7 +52,8 @@ import java.util.function.Predicate;
  * 怜悯之击的管理 / 录像命令 {@code /kuvalich mercy …}，权限 2，正式版也有
  *
  * <p>录演示用：一条命令摆出倒地的演示目标、指定下一次用哪套动作和什么结果、立刻处决、改倒地倒计时、
- * 冻结所有倒计时、对一只赤毒实体播一次特殊状态特效、一键复位、中止自己的处决。服主处理「卡在倒地」之类的问题也用得上。</p>
+ * 冻结所有倒计时、对一只赤毒实体播一次特殊状态特效、一键复位、中止自己的处决、改玄骸打空了几段血和护盾。
+ * 服主处理「卡在倒地」之类的问题也用得上。</p>
  *
  * <p>演示目标（{@code spawn} 摆出来的）只在内存里：不存盘、不进专属玄骸的任何记录，处决它不扣卡、不记尝试、
  * 不给进度和掉落。真玄骸的结果只看卡，{@code outcome} 对它无效。</p>
@@ -164,6 +165,14 @@ public final class MercyCommand {
         mercy.then(Commands.literal("timer")
                 .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 3600))
                         .executes(ctx -> timer(ctx, IntegerArgumentType.getInteger(ctx, "seconds")))));
+
+        mercy.then(Commands.literal("phase")
+                .then(Commands.argument("emptied", IntegerArgumentType.integer(0, KuvaMasterEntity.SEGMENTS - 1))
+                        .executes(ctx -> phase(ctx, IntegerArgumentType.getInteger(ctx, "emptied")))));
+
+        mercy.then(Commands.literal("shield")
+                .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
+                        .executes(ctx -> shield(ctx, IntegerArgumentType.getInteger(ctx, "percent")))));
 
         mercy.then(Commands.literal("state")
                 .then(Commands.literal("adapt")
@@ -476,7 +485,7 @@ public final class MercyCommand {
         }
         MercyPlan.Plan plan = MercyPlan.decode(target.getMercyPlan());
         return ok(ctx, "executing " + describe(target) + ": " + variantName(plan.variant()) + ", " + plan.stabs()
-                + (plan.stabs() == 1 ? " stab" : " stabs, " + plan.prefix() + " right")
+                + (plan.stabs() == 1 ? " stab" : " stabs") + (thrall ? "" : ", " + plan.prefix() + " right")
                 + (plan.demo() ? " (demo)" : ""));
     }
 
@@ -582,6 +591,38 @@ public final class MercyCommand {
         }
         return ok(ctx, describe(target) + " stays down for " + seconds + " s"
                 + (MercyServer.isFrozen(target.level()) ? " (timers are frozen here)" : ""));
+    }
+
+    /**
+     * 准星指着的玄骸打空了几段血：下一次处决就捅（这个数 + 1）刀。真玄骸没倒地时血量压进对应的那一段；
+     * 演示玄骸不分段，只改刀数，设成 0 / 1 就能演挣开站起
+     */
+    private static int phase(CommandContext<CommandSourceStack> ctx, int emptied) throws CommandSyntaxException {
+        ServerPlayer p = ctx.getSource().getPlayerOrException();
+        AbstractKuva target = aimed(p, e -> e instanceof KuvaMasterEntity && e.isAlive()
+                && e.getMercyState() != MercyState.EXECUTING);
+        if (!(target instanceof KuvaMasterEntity lich)) {
+            return fail(ctx, "no Kuva Lich in sight that is not being executed (" + (int) AIM_RANGE + " blocks)");
+        }
+        lich.setLichPhase(emptied);
+        return ok(ctx, describe(lich) + ": " + emptied + " segment(s) emptied, next execution has "
+                + lich.mercyStabs() + " stab(s)" + (lich.isSegmented() ? "" : " (not segmented)"));
+    }
+
+    /** 准星指着的玄骸的护盾设成上限的这么多百分比，之后照常按规则恢复 */
+    private static int shield(CommandContext<CommandSourceStack> ctx, int percent) throws CommandSyntaxException {
+        ServerPlayer p = ctx.getSource().getPlayerOrException();
+        AbstractKuva target = aimed(p, e -> e instanceof KuvaMasterEntity && e.isAlive());
+        if (!(target instanceof KuvaMasterEntity lich)) {
+            return fail(ctx, "no Kuva Lich in sight (" + (int) AIM_RANGE + " blocks)");
+        }
+        float cap = lich.shieldCap();
+        if (cap <= 0.0F) {
+            return fail(ctx, describe(lich) + " has no shield");
+        }
+        lich.setAbsorptionAmount(cap * percent / 100.0F);
+        return ok(ctx, describe(lich) + " shield " + percent + "% (" + Math.round(cap * percent / 100.0F)
+                + " / " + Math.round(cap) + ")");
     }
 
     private static int stateAdapt(CommandContext<CommandSourceStack> ctx, int layers) throws CommandSyntaxException {

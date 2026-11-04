@@ -36,7 +36,9 @@ import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.ArrayList;
@@ -188,14 +190,18 @@ public final class LichDirector {
 
     // ==================== 对外入口 ====================
 
-    /** 解密进度增加之后调（每个发解密进度包的地方紧跟着调）：揭开第一条密语就诞生，之后的进度和揭示加怒气 */
+    /**
+     * 解密进度增加之后调（每个发解密进度包的地方紧跟着调）：有玄骸时进度和揭示加怒气。
+     * 玄骸不再由进度诞生，改成处决赤毒幼体（{@link #birthFromLarvling}）；没有玄骸时这里什么都不做
+     */
     public static void onDecryptionProgress(ServerPlayer player, RequiemCard card, int added, int levelBefore) {
         long now = now(player.server);
         int level = card.getUnlockedCardStatus();
+        if (levelBefore < 3 && level >= 3) {
+            // 三条刚好揭完只提示这一次（顶部解密条之后只显示「已全部揭示」，接下来去哪、做什么靠这一句）
+            PlayerFeedback.chat(player, KuvaPalette.ACCENT, "message.kuvalich.maxLevel");
+        }
         if (!card.hasLich()) {
-            if (levelBefore == 0 && level >= 1) {
-                birth(player, card, ModConfig.KUVA_LICH.lichBirthRage.get().floatValue(), BIRTH_COMM_DELAY, now);
-            }
             return;
         }
         Hunt h = hunt(player);
@@ -207,6 +213,33 @@ public final class LichDirector {
             card.setLichRage((float) (card.getLichRage() + add));
         }
         h.dirty = true;
+    }
+
+    /**
+     * 处决了一只赤毒幼体：处决者的玄骸诞生，种子和武器都用幼体刷出来时掷好的（头顶亮出来的就是这把）。
+     * 他已经有玄骸了返回 false、什么都不做
+     *
+     * @param weapon 幼体身上的武器下标；无效（-1）时按种子算
+     */
+    public static boolean birthFromLarvling(ServerPlayer executor, long seed, int weapon) {
+        RequiemCard card = card(executor);
+        if (card == null || card.hasLich()) {
+            return false;
+        }
+        birth(executor, card, seed, weapon, ModConfig.KUVA_LICH.lichBirthRage.get().floatValue(), BIRTH_COMM_DELAY,
+                now(executor.server));
+        return true;
+    }
+
+    /** 管理命令、测试用：不经过幼体直接诞生一只（随机种子，武器按种子算），通讯照常。已经有玄骸返回 false */
+    public static boolean birthNow(ServerPlayer player) {
+        RequiemCard card = card(player);
+        if (card == null || card.hasLich()) {
+            return false;
+        }
+        birth(player, card, randomSeed(player), -1, ModConfig.KUVA_LICH.lichBirthRage.get().floatValue(),
+                BIRTH_COMM_DELAY, now(player.server));
+        return true;
     }
 
     /** 奴仆被处决完成（怜悯之击关掉时就是被玩家杀死）：处决者有玄骸就加怒气 */
@@ -389,11 +422,17 @@ public final class LichDirector {
         }
     }
 
-    /** 玄骸进入或离开倒地：只改状态、推状态包；倒地期间 Boss 条血量不动 */
+    /**
+     * 玄骸进入或离开倒地：改状态、推状态包。倒地期间这段血会慢慢回满，Boss 条照常跟着血量走；
+     * 站起来时把「最近交手」记到现在，倒地那段不算晾着
+     */
     public static void onDownedChanged(KuvaMasterEntity lich, boolean downed) {
         Hunt h = huntOf(lich);
         if (h != null && h.lich == lich) {
             h.downed = downed;
+            if (!downed) {
+                h.lastEngageAt = now(lich.getServer());
+            }
             h.dirty = true;
         }
     }
@@ -422,7 +461,9 @@ public final class LichDirector {
             return;
         }
         if (card.getUnlockedCardStatus() >= 1 && !card.hasLich()) {
-            birth(player, card, ModConfig.KUVA_LICH.lichMigrationRage.get().floatValue(), MIGRATION_COMM_DELAY, now);
+            // 揭开过密语却没有玄骸：玄骸出现之前的老存档，或者这一轮被管理命令作废了（现在没有玄骸拿不到解密进度），照旧直接补一只
+            birth(player, card, randomSeed(player), -1, ModConfig.KUVA_LICH.lichMigrationRage.get().floatValue(),
+                    MIGRATION_COMM_DELAY, now);
         }
         if (card.isLichEncounterOpen()) {
             card.setLichRage(0.0F);
@@ -630,23 +671,38 @@ public final class LichDirector {
 
     // ==================== 诞生 ====================
 
-    private static void birth(ServerPlayer player, RequiemCard card, float rage, int commDelay, long now) {
-        long seed = player.getRandom().nextLong() ^ System.nanoTime();
+    /** 新掷一个种子（管理命令、老存档补生用；幼体刷出来时也用它） */
+    public static long randomSeed(ServerPlayer player) {
+        return player.getRandom().nextLong() ^ System.nanoTime();
+    }
+
+    /**
+     * 诞生：种子是这一只的身份（性格、面板、嗓音都由它算），不改；名字先按种子起，重名时只换起名用的种子，
+     * 种子和武器都不动——幼体倒地时头顶亮出来的武器，诞生后手里拿的必须还是那把
+     *
+     * @param weapon 武器下标；无效（-1）时按种子算
+     */
+    private static void birth(ServerPlayer player, RequiemCard card, long seed, int weapon, float rage, int commDelay,
+                              long now) {
         Set<String> taken = takenNames(player, card);
         String name = null;
+        long nameSeed = seed;
         for (int i = 0; i < NAME_TRIES; i++) {
-            String candidate = LichNames.generate(seed);
+            String candidate = LichNames.generate(nameSeed);
             if (LichNames.isAllowed(candidate) && !taken.contains(candidate.toLowerCase(Locale.ROOT))) {
                 name = candidate;
                 break;
             }
-            seed = mixSeed(seed);
+            nameSeed = mixSeed(nameSeed);
         }
         if (name == null) {
-            // 躲不开重名时就用最后一个种子的名字：名字只是显示，种子才是这一只的身份
-            name = LichNames.generate(seed);
+            // 躲不开重名时就用最后一个名字：名字只是显示，种子才是这一只的身份
+            name = LichNames.generate(nameSeed);
         }
-        int weapon = LichProfile.weaponIndex(seed, KuvaLichItems.KUVA_WEAPONS.size());
+        int weaponCount = KuvaLichItems.KUVA_WEAPONS.size();
+        if (weapon < 0 || weapon >= weaponCount) {
+            weapon = LichProfile.weaponIndex(seed, weaponCount);
+        }
         ServerLevel level = player.serverLevel();
         String biome = level.getBiome(player.blockPosition()).unwrapKey()
                 .map(key -> key.location().toString()).orElse("");
@@ -849,7 +905,7 @@ public final class LichDirector {
             if (h.relocateAt >= 0 && now >= h.relocateAt) {
                 finishRelocate(player, h, lich);
             }
-            if (h.bossBar != null && !h.downed) {
+            if (h.bossBar != null) {
                 h.bossBar.setProgress(Mth.clamp(lich.getHealth() / Math.max(1.0F, lich.getMaxHealth()), 0.0F, 1.0F));
             }
             return;

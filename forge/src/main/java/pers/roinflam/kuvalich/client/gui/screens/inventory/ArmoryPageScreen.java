@@ -90,6 +90,18 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
     private static final int RANK_PIP_MS = 240;
     private static final int RANK_PIP_STEP = 45;
     private static final int RANK_POP_MS = 1800;
+    /**
+     * 模组托架框：比八张卡和容量条宽出的边距（横、竖）和切角。横向留得多些，上面一排最左边那张的电路在卡和框之间往下走，
+     * 贴得近了两道竖线挤在一起
+     */
+    private static final int BAY_MX = 12;
+    private static final int BAY_MY = 7;
+    private static final int BAY_CHAMFER = 8;
+    /** 属性加成一行多高；模组名折行时第二行比第一行低多少 */
+    private static final int STAT_ROW = 10;
+    private static final int WRAP_LINE = 9;
+    /** 模组名折成两行以后，属性加成至少还要留几行，不够就不折、截断（悬停看全名） */
+    private static final int MIN_STAT_ROWS = 4;
 
     /** 武器格的菜单格号，没有传 −1 */
     private final int weaponSlot;
@@ -123,6 +135,14 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
     /** 右栏这一帧列出的格号（按格号排，跳过还没轮到的） */
     private final int[] rows = new int[MODULES];
     private int rowCount;
+    /** 清单各行的顶（多一个是最后一行的下沿）；名字折了行的那一行高一些，命中按这个算 */
+    private final int[] rowTop = new int[MODULES + 1];
+    /** 属性加成的滚动：从第几行开始看、画面上平滑跟着的偏移、最多能往下滚几行、滚动区范围 */
+    private int statFirst;
+    private float statShift;
+    private int statMaxFirst;
+    private int statAreaTop = -1;
+    private int statAreaBottom = -1;
     /** 这一帧鼠标下的清单行对应的格号、鼠标下的模组卡；都没有是 −1 */
     private int listHover = -1;
     private int cellHover = -1;
@@ -144,9 +164,12 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
     private final Map<String, String> infoSeen = new HashMap<>();
     private final Map<String, Long> infoAt = new HashMap<>();
 
-    /** 画卡形用的点缓冲；增减标的小三角 */
+    /** 画卡形用的点缓冲；增减标的小三角；托架框的外圈、里圈和沿框取的点 */
     private final float[] pts = new float[2 * 8];
     private final float[] tri = new float[6];
+    private final float[] bayOuter = new float[2 * 6];
+    private final float[] bayInner = new float[2 * 6];
+    private final float[] bayPt = new float[2];
 
     private static final class Stat {
         final String key;
@@ -255,7 +278,8 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
 
     @Override
     protected final void layout() {
-        pTop = small ? hairY + 4 : hairY + 8;
+        // 托架框顶在栏标题下划线下面留 5（框比卡顶高出 BAY_MY + 2）
+        pTop = hairY + 10;
         for (int i = 0; i < MODULES; i++) {
             modX[i] = cx + Math.round((i % 4 - 1.5F) * GRID_SP);
             modY[i] = pTop + 16 + (i / 4) * ROW_SP;
@@ -265,7 +289,8 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         gridBottom = modY[MODULES - 1] + CELL_HH;
         laneY = gridBottom + 5;
         barY = laneY + 6;
-        statusY = barY + 7;
+        // 状态行放在托架框下面，隔 5
+        statusY = bayBottom() + 5;
         placeInventory();
         layoutLeft();
         for (int i = 0; i < MODULES; i++) {
@@ -407,10 +432,9 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
 
         drawLeft(g, mx, my, now, t, eF, eT);
 
-        // ---- 中栏：背光、全息环、标题、电路、八张卡、容量条、状态行 ----
-        int gcy = (modY[0] + modY[MODULES - 1]) / 2;
-        drawBacklight(g, cx - 110, pTop - 30, 220, 130, 0.85F * eT);
-        drawHoloRing(g, cx, gcy, 82.0F, small ? 34.0F : 38.0F, now, eF);
+        // ---- 中栏：背光、托架、标题、电路、八张卡、容量条、状态行 ----
+        drawBacklight(g, sepL, pTop - 30, sepR - sepL, 130, 0.85F * eT);
+        drawBayFrame(g, now, eF);
         heading(g, Component.translatable("kuvalich.armory.mods").getString(), cx - 56, eF, 2.0F);
         hl(g, cx - 56, cx + 56, hairY, FxPalette.KUVA_PALE, 0.2F * eF);
         drawCircuits(g, now, eT);
@@ -436,7 +460,10 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
                 }
             }
         }
-        drawDrift(g, cx, pTop + 6, 150, 70, now, eF);
+        // 赤毒点往上飘最多 0.12 屏高：起点放在模组块下部，飘到头也不出卡顶
+        int rise = Math.round(0.12F * height);
+        int driftTop = pTop + 2 + rise;
+        drawDrift(g, cx, driftTop, 2 * (modX[3] + CELL - cx), barY + 3 - driftTop, now, eF);
 
         // ---- 右栏：已装模组、属性加成 ----
         drawTitle(g, Component.translatable("kuvalich.armory.installed").getString(), rx0, rx1 - rx0, eF);
@@ -737,6 +764,123 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         return pl < 800 ? 1.0F - seg(pl, 120 + 30 * i, 280 + 30 * i) : 0.0F;
     }
 
+    // ---------- 托架框 ----------
+
+    /** 托架框的下沿：容量条下面再留 BAY_MY */
+    private int bayBottom() {
+        return barY + 3 + BAY_MY;
+    }
+
+    /**
+     * 模组块外面的托架框，和卡一样左上、右下切角，把八张卡和容量条整块框在里面：
+     * 外圈一道虚线沿框慢慢走，里圈一道实线，三颗光点沿里圈绕
+     */
+    private void drawBayFrame(GuiGraphics g, long now, float a) {
+        if (a <= 0.0F) {
+            return;
+        }
+        int x0 = modX[0] - CELL - BAY_MX;
+        int x1 = modX[3] + CELL + BAY_MX;
+        int y0 = modY[0] - CELL_HH - BAY_MY;
+        int y1 = bayBottom();
+        float lineW = GuiShapes.pixels(g, lw());
+        int n = chamferRect(bayOuter, x0, y0, x1, y1, BAY_CHAMFER);
+        chamferRect(bayInner, x0 + 3, y0 + 3, x1 - 3, y1 - 3, BAY_CHAMFER - 1);
+        // 虚线一节 3、周期按周长取整（约 6），绕一圈接缝处不断
+        float per = perimeter(bayOuter, n);
+        float period = per / Math.max(1, Math.round(per / 6.0F));
+        float off = (now % 30000L) / 30000.0F * per;
+        GuiShapes.begin(g);
+        dashes(g, bayOuter, n, off, 3.0F, period, lineW, GuiShapes.argb(FxPalette.KUVA_PALE, 0.10F * a));
+        GuiShapes.polyline(g, bayInner, n, true, lineW, GuiShapes.argb(FxPalette.KUVA, 0.08F * a));
+        GuiShapes.end();
+        float inPer = perimeter(bayInner, n);
+        GuiShapes.additive(g, true);
+        GuiShapes.begin(g);
+        for (int k = 0; k < 3; k++) {
+            float s = ((now % 12000L) / 12000.0F + k / 3.0F) * inPer;
+            for (int tail = 0; tail < 4; tail++) {
+                float[] q = pointOn(bayInner, n, s - tail * 1.2F);
+                fill(g, q[0] - 0.5F, q[1] - 0.5F, q[0] + 0.5F, q[1] + 0.5F, FxPalette.KUVA,
+                        0.6F * (1.0F - tail * 0.25F) * a);
+            }
+        }
+        GuiShapes.end();
+        GuiShapes.additive(g, false);
+    }
+
+    /** 左上、右下切角的框（和卡同一种切法）写进 p，返回点数 */
+    private static int chamferRect(float[] p, float x0, float y0, float x1, float y1, float c) {
+        p[0] = x0 + c;
+        p[1] = y0;
+        p[2] = x1;
+        p[3] = y0;
+        p[4] = x1;
+        p[5] = y1 - c;
+        p[6] = x1 - c;
+        p[7] = y1;
+        p[8] = x0;
+        p[9] = y1;
+        p[10] = x0;
+        p[11] = y0 + c;
+        return 6;
+    }
+
+    private static float perimeter(float[] p, int n) {
+        float per = 0.0F;
+        for (int k = 0; k < n; k++) {
+            int k2 = (k + 1) % n;
+            per += Mth.sqrt(Mth.square(p[k2 * 2] - p[k * 2]) + Mth.square(p[k2 * 2 + 1] - p[k * 2 + 1]));
+        }
+        return per;
+    }
+
+    /** 闭合折线上周长位置 s 那一点（s 可以超出一圈或是负的），结果放在共用的数组里 */
+    private float[] pointOn(float[] p, int n, float s) {
+        float per = perimeter(p, n);
+        s = ((s % per) + per) % per;
+        for (int k = 0; k < n; k++) {
+            int k2 = (k + 1) % n;
+            float ax = p[k * 2];
+            float ay = p[k * 2 + 1];
+            float seg = Mth.sqrt(Mth.square(p[k2 * 2] - ax) + Mth.square(p[k2 * 2 + 1] - ay));
+            if (s <= seg || k == n - 1) {
+                float u = seg > 0.0F ? Math.min(1.0F, s / seg) : 0.0F;
+                bayPt[0] = ax + (p[k2 * 2] - ax) * u;
+                bayPt[1] = ay + (p[k2 * 2 + 1] - ay) * u;
+                return bayPt;
+            }
+            s -= seg;
+        }
+        return bayPt;
+    }
+
+    /** 沿闭合折线画虚线：从周长位置 offset 起，每 period 一节、一节长 dash，跨过拐角的一节折过去接着画 */
+    private static void dashes(GuiGraphics g, float[] p, int n, float offset, float dash, float period, float lineW,
+                               int argb) {
+        float pos = 0.0F;
+        for (int k = 0; k < n; k++) {
+            int k2 = (k + 1) % n;
+            float ax = p[k * 2];
+            float ay = p[k * 2 + 1];
+            float bx = p[k2 * 2];
+            float by = p[k2 * 2 + 1];
+            float len = Mth.sqrt(Mth.square(bx - ax) + Mth.square(by - ay));
+            if (len > 0.0F) {
+                float s = offset + Mth.floor((pos - offset) / period) * period;
+                for (; s < pos + len; s += period) {
+                    float u0 = (Math.max(s, pos) - pos) / len;
+                    float u1 = (Math.min(s + dash, pos + len) - pos) / len;
+                    if (u1 > u0) {
+                        GuiShapes.hairline(g, ax + (bx - ax) * u0, ay + (by - ay) * u0, ax + (bx - ax) * u1,
+                                ay + (by - ay) * u1, lineW, argb);
+                    }
+                }
+            }
+            pos += len;
+        }
+    }
+
     // ---------- 容量条 ----------
 
     /**
@@ -792,7 +936,10 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
 
     // ---------- 右栏 ----------
 
-    /** 右栏清单：一行一个，左边一道稀有度色条；刚放进去的名字「解码」出来、底下亮一道。返回清单下沿 */
+    /**
+     * 右栏清单：一行一个，左边一道稀有度色条；刚放进去的名字「解码」出来、底下亮一道。名字和等级一行放不下时名字折成两行
+     * （等级留在第一行右边）；折了以后属性加成剩不到 {@link #MIN_STAT_ROWS} 行就都不折、截断，悬停看全名。返回清单下沿
+     */
     private int drawList(GuiGraphics g, float eF) {
         int x0 = rx0;
         float cw = rx1 - rx0;
@@ -802,33 +949,61 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
                 text(g, line, x0, y, FxPalette.ASH, 0.6F * eF);
                 y += 10;
             }
+            rowTop[0] = y;
             return y;
         }
         boolean showLevel = ModuleLevelHelper.isLevelSystemEnabled() && cw >= LEVEL_MIN_WIDTH;
         int rowH = rowHeight();
+        String[][] lines = new String[rowCount][];
+        String[] lvs = new String[rowCount];
+        int wrapped = 0;
+        for (int k = 0; k < rowCount; k++) {
+            ItemStack st = menu.getSlot(rows[k]).getItem();
+            lvs[k] = showLevel ? "Lv." + ModuleLevelHelper.getModuleLevel(st) : "";
+            float room = cw - 5 - (showLevel ? textW(lvs[k], 0.0F) + 4 : 0);
+            lines[k] = splitName(plainName(st), room, cw - 5);
+            if (lines[k].length > 1) {
+                wrapped++;
+            }
+        }
+        // 折行吃掉的高度：属性加成（标题 14 + 至少几行）放不下就不折
+        int statsNeed = 8 + 14 + MIN_STAT_ROWS * STAT_ROW;
+        if (wrapped > 0 && y + rowCount * rowH + wrapped * WRAP_LINE + statsNeed > sepB) {
+            for (int k = 0; k < rowCount; k++) {
+                if (lines[k].length > 1) {
+                    ItemStack st = menu.getSlot(rows[k]).getItem();
+                    float room = cw - 5 - (showLevel ? textW(lvs[k], 0.0F) + 4 : 0);
+                    lines[k] = new String[]{fit(plainName(st), room)};
+                }
+            }
+        }
         for (int k = 0; k < rowCount; k++) {
             int i = rows[k];
             ItemStack st = menu.getSlot(i).getItem();
             int col = rarityColor(st);
             boolean hv = listHover == i || cellHover == i;
             long ins = age(Ev.PLACE, i);
-            String lv = showLevel ? "Lv." + ModuleLevelHelper.getModuleLevel(st) : "";
-            float room = cw - 5 - (showLevel ? textW(lv, 0.0F) + 4 : 0);
-            String name = fit(plainName(st), room);
+            int extra = (lines[k].length - 1) * WRAP_LINE;
             int yy = y;
+            rowTop[k] = yy;
 
             GuiShapes.begin(g);
             if (hv) {
-                fill(g, x0, yy - 1, rx1, yy + 9, FxPalette.KUVA_PALE, 0.06F);
+                fill(g, x0, yy - 1, rx1, yy + 9 + extra, FxPalette.KUVA_PALE, 0.06F);
             }
-            fill(g, x0, yy, x0 + 2, yy + 8, col, 0.9F * eF);
+            fill(g, x0, yy, x0 + 2, yy + 8 + extra, col, 0.9F * eF);
             GuiShapes.end();
-            drawDecode(g, name, x0 + 5, yy, col, (hv ? 1.0F : 0.9F) * eF, ins, 35, 0.0F);
+            float ta = (hv ? 1.0F : 0.9F) * eF;
+            drawDecode(g, lines[k][0], x0 + 5, yy, col, ta, ins, 35, 0.0F);
+            if (lines[k].length > 1) {
+                // 第二行接着第一行往下解码
+                drawDecode(g, lines[k][1], x0 + 5, yy + WRAP_LINE, col, ta, ins - 35L * lines[k][0].length(), 35, 0.0F);
+            }
             if (showLevel) {
-                textR(g, lv, rx1, yy, FxPalette.ASH, 0.7F * eF);
+                textR(g, lvs[k], rx1, yy, FxPalette.ASH, 0.7F * eF);
             }
             if (hv) {
-                hlFade(g, x0 + 5, rx1, yy + 10, col, 0.5F * eF);
+                hlFade(g, x0 + 5, rx1, yy + 10 + extra, col, 0.5F * eF);
             }
             // 悬停卡时原版自己出说明，这里只管悬停清单行
             if (listHover == i) {
@@ -836,11 +1011,39 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             }
             if (ins < 500) {
                 float k2 = 0.8F * (1.0F - ins / 500.0F);
-                additive(g, () -> hlFade(g, x0, rx1, yy + 10, col, k2));
+                int ly = yy + 10 + extra;
+                additive(g, () -> hlFade(g, x0, rx1, ly, col, k2));
             }
-            y += rowH;
+            y += rowH + extra;
         }
+        rowTop[rowCount] = y;
         return y;
+    }
+
+    /**
+     * 模组名分成一行或两行：第一行宽 first（右边要放等级），第二行宽 rest。优先在空格处断（「灭亡 节肢动物 Prime」
+     * 断成「灭亡 节肢动物 / Prime」），没有合适的空格就按字断；两行还放不下，第二行截断
+     */
+    private String[] splitName(String name, float first, float rest) {
+        if (textW(name, 0.0F) <= first) {
+            return new String[]{name};
+        }
+        int cut = -1;
+        for (int k = name.length() - 1; k > 0; k--) {
+            if (name.charAt(k) == ' ' && textW(name.substring(0, k), 0.0F) <= first) {
+                cut = k;
+                break;
+            }
+        }
+        if (cut < 0) {
+            cut = name.length() - 1;
+            while (cut > 1 && textW(name.substring(0, cut), 0.0F) > first) {
+                cut--;
+            }
+        }
+        String a = name.substring(0, cut).stripTrailing();
+        String b = name.substring(cut).stripLeading();
+        return new String[]{a, fit(b, rest)};
     }
 
     /**
@@ -851,6 +1054,7 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
      */
     private void drawStats(GuiGraphics g, int top, long now, float eF) {
         statsTop = top;
+        statMaxFirst = 0;
         float dt = statClock == Long.MIN_VALUE ? 1000.0F : Math.min(200.0F, now - statClock);
         statClock = now;
         float k = 1.0F - (float) Math.exp(-dt / 70.0F);
@@ -886,22 +1090,59 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             }
         }
         statScale = Float.isNaN(statScale) ? (float) maxAbs : statScale + ((float) maxAbs - statScale) * k;
-        int room = Math.max(0, (sepB - 2 - y0) / 10);
-        int shown = visible <= room ? visible : Math.max(0, room - 1);
+        int room = Math.max(0, (sepB - 2 - y0) / STAT_ROW);
+        // 放不下时最后一行留给提示，其余的用滚轮翻
+        int view = visible <= room ? visible : Math.max(0, room - 1);
+        statMaxFirst = Math.max(0, visible - view);
+        statFirst = Mth.clamp(statFirst, 0, statMaxFirst);
+        float shiftTo = statFirst * STAT_ROW;
+        statShift = Math.abs(shiftTo - statShift) < 0.05F ? shiftTo : statShift + (shiftTo - statShift) * k;
+        statAreaTop = y0 - 1;
+        statAreaBottom = y0 + Math.max(view, 1) * STAT_ROW;
         float cw = rx1 - rx0;
         int row = 0;
+        // 裁到看得见的几行；右边留给栏外的增减标
+        clip(g, rx0 - 2, y0 - 1, width, y0 + view * STAT_ROW);
         for (Stat s : stats) {
-            if (now < s.born || row >= shown) {
+            if (now < s.born) {
                 continue;
             }
-            float target = y0 + row * 10;
+            float target = y0 + row * STAT_ROW;
             s.y = Float.isNaN(s.y) ? target : s.y + (target - s.y) * k;
-            drawStatRow(g, s, Math.round(s.y), cw, now, eF);
+            int yy = Math.round(s.y - statShift);
+            if (yy > y0 - STAT_ROW && yy < y0 + view * STAT_ROW) {
+                drawStatRow(g, s, yy, cw, now, eF);
+            }
             row++;
         }
-        if (shown < visible) {
-            text(g, tr("kuvalich.armory.more", visible - shown), rx0, y0 + shown * 10, FxPalette.ASH, 0.5F * eF);
+        unclip(g);
+        if (view > 0 && view < visible) {
+            int below = visible - view - statFirst;
+            String hint = below > 0 ? tr("kuvalich.armory.more", below) : tr("kuvalich.armory.more_above", statFirst);
+            text(g, fit(hint, cw - 4), rx0, y0 + view * STAT_ROW, FxPalette.ASH, 0.5F * eF);
+            // 滚动条：栏右边一道细轨，亮的一截是看得见的那几行
+            float track = view * STAT_ROW - 2;
+            float t0 = y0 + track * statShift / (visible * STAT_ROW);
+            float t1 = t0 + track * view / visible;
+            GuiShapes.begin(g);
+            fill(g, rx1 + 2, y0, rx1 + 3, y0 + track, FxPalette.KUVA_PALE, 0.08F * eF);
+            fill(g, rx1 + 2, t0, rx1 + 3, t1, FxPalette.KUVA_PALE, 0.45F * eF);
+            GuiShapes.end();
         }
+    }
+
+    /** 鼠标在属性加成上滚轮：一格翻一行 */
+    @Override
+    protected boolean scrollPage(double mx, double my, double delta) {
+        if (statMaxFirst <= 0 || mx < rx0 || mx >= rx1 + 4 || my < statAreaTop || my >= statAreaBottom + STAT_ROW) {
+            return false;
+        }
+        int to = Mth.clamp(statFirst - (int) Math.signum(delta), 0, statMaxFirst);
+        if (to == statFirst) {
+            return false;
+        }
+        statFirst = to;
+        return true;
     }
 
     /**
@@ -1331,12 +1572,16 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         }
     }
 
+    /** 鼠标下的清单行（行高不一样，按上一帧排好的各行的顶算） */
     private int rowAt(int mx, int my) {
-        int top = hairY + 7;
-        if (mx < rx0 || mx >= rx1 || my < top) {
+        if (mx < rx0 || mx >= rx1) {
             return -1;
         }
-        int k = (my - top) / rowHeight();
-        return k < rowCount ? rows[k] : -1;
+        for (int k = 0; k < rowCount; k++) {
+            if (my >= rowTop[k] - 1 && my < rowTop[k + 1] - 1) {
+                return rows[k];
+            }
+        }
+        return -1;
     }
 }

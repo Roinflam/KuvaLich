@@ -1082,6 +1082,49 @@ public final class CommHud {
         }
     }
 
+    /**
+     * 这一侧的通讯窗连名牌、开框时横向拉宽的那一截、最多 {@link #MAX_LINES} 行字幕一起占的外接框（GUI 坐标），
+     * 不管现在有没有开窗。提示条按它算最宽能有多宽、什么时候要往旁边让
+     *
+     * @param out 依次写入 x0, y0, x1, y1
+     */
+    public static void reservedGui(boolean left, float[] out) {
+        Layout.compute(Minecraft.getInstance(), left);
+        int ts = Layout.subtitleScale(Layout.t, true);
+        int subW = Layout.subtitleWidth(Layout.W, Layout.sw, ts);
+        int subX = Layout.subtitleX(left, subW);
+        // 友方开框从 1.3 倍宽收回来，往两边各多出 0.15 窗宽
+        int open = Math.round(0.15F * Layout.w);
+        int x0 = Math.min(Layout.x0 - open, subX);
+        int x1 = Math.max(Layout.x1 + open, subX + subW);
+        // 名牌：右侧的右对齐在 nameRight（比窗还靠外一点），左侧的从 nameLeft 往右长。
+        // 一般都在窗里；名字特别长时按这一侧现在开着的窗的名字算
+        Win cur = win;
+        int nameW = cur != null && cur.who.isLeft() == left && cur.name != null
+                ? CommText.nameplateWidth(Minecraft.getInstance().font, cur.name) * Layout.t : 0;
+        if (left) {
+            x1 = Math.max(x1, Layout.nameLeft + nameW);
+        } else {
+            x1 = Math.max(x1, Layout.nameRight);
+            x0 = Math.min(x0, Layout.nameRight - nameW);
+        }
+        int y1 = Layout.sy + MAX_LINES * Layout.subtitlePitch(ts);
+        float inv = (float) (1.0D / Layout.g);
+        out[0] = x0 * inv;
+        out[1] = Layout.y0 * inv;
+        out[2] = x1 * inv;
+        out[3] = y1 * inv;
+    }
+
+    /** 现在开着窗的是哪一侧：0 左（Lotus）、1 右（玄骸、Ordis）；没开窗、窗还没到开的时刻或者关了通讯窗是 −1 */
+    public static int openSide() {
+        Win w = win;
+        if (w == null || !EffectsDisplayConfig.commHud() || now(KuvaFxDirector.clockMs()) < w.openMs) {
+            return -1;
+        }
+        return w.who.isLeft() ? 0 : 1;
+    }
+
     /** 带汉字的字幕最小字号 */
     static final int SUBTITLE_MIN_WIDE_SCALE = 2;
     /** 字幕一行至少容得下这么宽（字体像素，约 16 个汉字） */

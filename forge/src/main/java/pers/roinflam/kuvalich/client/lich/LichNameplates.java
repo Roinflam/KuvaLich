@@ -31,6 +31,7 @@ import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
 import pers.roinflam.kuvalich.client.mercy.MercyClient;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.mercy.MercyState;
@@ -222,12 +223,15 @@ public final class LichNameplates {
             return false;
         }
         Plate p = plateOf(thrall.getId(), now);
-        String lichName = ClientLichState.nameUpper();
+        // 幼体还不属于哪只玄骸，只写「赤毒幼体」
+        boolean larvling = thrall instanceof KuvaLarvlingEntity;
+        String lichName = larvling ? "" : ClientLichState.nameUpper();
         String lang = mc.options.languageCode;
         if (!lichName.equals(p.source) || !lang.equals(p.lang) || p.line1.isEmpty()) {
             p.source = lichName;
             p.lang = lang;
-            p.line1 = lichName.isEmpty() ? Component.translatable("entity.kuvalich.kuva_slave").getString()
+            p.line1 = lichName.isEmpty() ? Component.translatable(larvling ? "entity.kuvalich.kuva_larvling"
+                    : "entity.kuvalich.kuva_slave").getString()
                     : Component.translatable("kuvalich.nameplate.thrall", lichName).getString();
         }
         float a = fade * 0.9F;

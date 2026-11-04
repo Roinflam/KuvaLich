@@ -2,9 +2,112 @@
   "id": "enemies",
   "order": 30,
   "title": "Enemies",
-  "subtitle": "Thralls & Liches: spawns, loot, tactics",
+  "subtitle": "Larvlings, Thralls, Liches: spawns, loot",
   "icon": "kuvalich:kuva_master_spawn_egg",
   "entries": [
+    {
+      "id": "kuva_larvling",
+      "title": "Kuva Larvling",
+      "icon": "kuvalich:kuva_larvling_spawn_egg",
+      "summary": "Finish it, and your Lich is born",
+      "items": [
+        "kuvalich:kuva_larvling_spawn_egg"
+      ],
+      "blocks": [
+        {
+          "type": "comm",
+          "who": "lotus",
+          "text": "Tenno, what it clutches is your future nemesis's weapon. End it, and the Lich will wake."
+        },
+        {
+          "type": "p",
+          "text": "The <hl>{lang:entity.kuvalich.kuva_larvling}</hl> is a Lich that has not grown up yet. While you have no Lich, one turns up near you every so often, holding the very weapon your future Lich will carry. Finish it, and your own {lang:entity.kuvalich.kuva_master} is born, coming for you alone from then on."
+        },
+        {
+          "type": "entity",
+          "id": "kuvalich:kuva_larvling",
+          "height": 88
+        },
+        {
+          "type": "h",
+          "text": "When it comes"
+        },
+        {
+          "type": "list",
+          "items": [
+            "It only comes to players <em>without a Lich</em>; once you have one, no more Larvlings come for you",
+            "One comes every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes you spend online; the timer pauses while you are offline and picks up when you return. Only one at a time",
+            "It usually appears <t>16-28</t> blocks away, somewhere out of your sight, and charges at you, with a notice reading “{lang:message.kuvalich.larvling.appeared}”",
+            "It doesn't come while you are in a dimension it doesn't go to, on Peaceful, or in Creative or Spectator, nor in your first <t>30</t> seconds after joining",
+            "While it is still on its feet, if you get more than <t>96</t> blocks away, change dimension, log out or die, it dissolves, and another comes <t>2</t> minutes later"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "How your Lich is born"
+        },
+        {
+          "type": "steps",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "items": [
+            "Knock it down: it has only <t>70</t> health, easier than a Thrall. A lethal blow doesn't kill it; it goes <w>down</w> for <t>{cfg:kuva_lich.larvlingDownedSeconds}</t> s",
+            "Look above its head: once it is down, the weapon of your future Lich shows over it. That is the weapon your Lich will carry, and the one you earn when you finally end it",
+            "Get within <t>{cfg:kuva_lich.mercyReach}</t> blocks and look at it; when “{lang:kuvalich.mercy.prompt.larvling}” appears, press the <t>{lang:key.kuvalich.mercy}</t> key (default <t>X</t>)",
+            "When the execution finishes it dissolves into Kuva, and your {lang:entity.kuvalich.kuva_master} is born and speaks to you for the first time"
+          ]
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.mercyEnabled",
+          "text": "Kill it with your own hands and your {lang:entity.kuvalich.kuva_master} is born, carrying the weapon it held. The killing blow must come from a player who has no Lich yet; one finished off by a pet, another mob or lava gives nothing."
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "title": "Don't hit it again",
+          "text": "Once a Larvling is down, <b>a single hit from any player or pet</b> makes it dissolve on the spot, and so does letting the downed timer run out. A dissolved Larvling gives nothing, and the next one is <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes away."
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "Who can execute it"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "items": [
+            "<b>Players who already have a Lich can't execute a Larvling</b>, and knocking one down for someone else doesn't take it from them",
+            "The executor is decided the moment it goes down: if the player who downed it (a pet counts as its owner) has no Lich yet, it is theirs",
+            "Otherwise it belongs to the player it came for, as long as they are online, in the same world and still without a Lich; if neither fits, no one can execute it and it dissolves when its timer runs out",
+            "So if a friend without a Lich knocks your Larvling down, the Lich is born on their side; a friend who already has one can help you down it and you keep the claim"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "In the Origin System, a Kuva Larvling shows up mid-mission and, once downed, reveals its future Lich's weapon, bonus element and Ephemera. You can Mercy it to make it your nemesis, or simply leave it be."
+        },
+        {
+          "type": "h",
+          "text": "Details"
+        },
+        {
+          "type": "list",
+          "items": [
+            "<t>70</t> health, <t>5</t> attack, <t>2</t> armor, <t>0.33</t> speed; damage uses the Thrall formula (attack × difficulty factor × 0.85), and like a Thrall it takes a flat <t>×0.75</t> damage and counts as undead",
+            "It drops nothing and gives no decryption progress",
+            "It is never saved: when the world is closed or its chunk unloads before it is downed, it simply leaves, and another comes <t>2</t> minutes later",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "Once a Larvling has been down, however it ends (a Lich born, hit again, or timed out), the next one takes a full wait"
+            },
+            "Larvlings from spawn eggs work too: finish one while you have no Lich and you get a Lich all the same"
+          ]
+        }
+      ]
+    },
     {
       "id": "kuva_slave",
       "title": "Kuva Thrall",
@@ -34,47 +137,37 @@
         },
         {
           "type": "h",
-          "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
-          "text": "Where to find it"
+          "if": "cfg:kuva_lich.thrallSquadEnabled",
+          "text": "When they come"
         },
         {
           "type": "kv",
-          "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+          "if": "cfg:kuva_lich.thrallSquadEnabled",
           "rows": [
             [
+              "Who",
+              "Only players who <em>already have a Lich</em>; without one, first finish off a [[enemies/kuva_larvling|Kuva Larvling]]"
+            ],
+            [
+              "How often",
+              "A squad every <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}-{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> s, <t>{cfg:kuva_lich.thrallSquadSizeMin}-{cfg:kuva_lich.thrallSquadSizeMax}</t> Thralls each; the timer starts over when your Lich is born and when you log in"
+            ],
+            [
               "Where",
-              "Any Overworld biome <b>except Mushroom Fields</b>"
+              "<t>16-28</t> blocks from you, out of sight, close together, and they charge you as soon as they land"
             ],
             [
-              "Light",
-              "Like zombies: only where it is dark enough, never on <t>Peaceful</t>"
+              "Cap",
+              "No squad comes while <t>{cfg:kuva_lich.thrallSquadMaxNearby}</t> Thralls are already within <t>{cfg:kuva_lich.thrallSquadRadius}</t> blocks of you; near the cap, fewer come"
             ],
             [
-              "Space",
-              "It is big and needs a clear <t>3×3</t> area <t>3</t> blocks high, so it is rare in low caves"
+              "When they don't",
+              "While you are in a dimension they don't go to, on Peaceful, in Creative or Spectator, or in the middle of an execution"
             ],
             [
-              "Group size",
-              "<t>{cfg:kuva_lich.kuvaSlaveMinSpawnCount}-{cfg:kuva_lich.kuvaSlaveMaxSpawnCount}</t>"
-            ],
-            [
-              "Spawn weight",
-              "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>; higher means more common <dim>(vanilla zombie: 95)</dim>"
-            ],
-            {
-              "if": "cfg:kuva_lich.kuvaSlaveMaxNearby>0",
-              "cells": [
-                "Nearby limit",
-                "Nothing new spawns at a spot that already has <t>{cfg:kuva_lich.kuvaSlaveMaxNearby}</t> within <t>{cfg:kuva_lich.kuvaSlaveNearbyRadius}</t> blocks"
-              ]
-            },
-            {
-              "if": "cfg:kuva_lich.kuvaSlaveMinSpacing>0",
-              "cells": [
-                "Spacing",
-                "A new one spawns at least <t>{cfg:kuva_lich.kuvaSlaveMinSpacing}</t> blocks from another, so they do not pile up"
-              ]
-            }
+              "Leaving",
+              "They don't stay: walk far away and they despawn like ordinary monsters"
+            ]
           ]
         },
         {
@@ -252,6 +345,11 @@
           "type": "list",
           "items": [
             "Enough <t>decryption progress</t> reveals, one by one, the Requiem cards you need to beat the Lich (see [[requiem/decryption]]); once all three clues are revealed, kills stop adding progress",
+            {
+              "if": "cfg:kuva_lich.thrallProgressShareRange>0",
+              "text": "<t>Decryption progress</t> isn't only for whoever finishes it: when it falls, every player with a Lich within <t>{cfg:kuva_lich.thrallProgressShareRange}</t> blocks gets the same amount; drops and Lich rage go to the finisher alone"
+            },
+            "Players without a Lich get no decryption progress",
             "<t>Mods</t> are upgrade cards you fit to a weapon or to yourself (see [[modules/module_overview]]). <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> of dropped mods are weapon mods, and the rest are Warframe mods, which go on you",
             "The three mod tiers share a single roll, so at most one mod drops per kill; see [[modules/module_rarity]] for the tiers",
             "Kuva, Riven Slivers and Requiem Gems each roll independently; see [[start/materials]] for their uses"
@@ -299,7 +397,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "The <hl>{lang:entity.kuvalich.kuva_master}</hl> is the boss, waiting at the end of the Requiem decryption road. Each player has exactly one: it is born when you reveal Clue 1, and from then on it comes for you alone. The progress you built and the card order you worked out are all put to the test on this creature of the Queens, Tenno; do not falter here. Guess right, and the Kuva weapon it carries is yours."
+          "text": "The <hl>{lang:entity.kuvalich.kuva_master}</hl> is the boss, waiting at the end of the Requiem decryption road. Each player has exactly one: it is born when you finish off a [[enemies/kuva_larvling|Kuva Larvling]], and from then on it comes for you alone. The progress you built and the card order you worked out are all put to the test on this creature of the Queens, Tenno; do not falter here. Guess right, and the Kuva weapon it carries is yours."
         },
         {
           "type": "entity",
@@ -313,6 +411,14 @@
         {
           "type": "steps",
           "items": [
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "Knock down a [[enemies/kuva_larvling|Kuva Larvling]] and execute it; your Lich is born, carrying the weapon shown above the downed Larvling's head"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "Kill a [[enemies/kuva_larvling|Kuva Larvling]] yourself; your Lich is born, carrying the weapon the Larvling held"
+            },
             {
               "if": [
                 "cfg:kuva_lich.mercyEnabled",
@@ -335,7 +441,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "Knock it down and finish it with {lang:key.kuvalich.mercy}; three stabs check the cards one by one. All right ends it; one wrong and it breaks free and escapes, with [[enemies/kuva_escalation|Lich rank]] +1"
+              "text": "Its health comes in three segments, and it goes down each time one empties. Execute it with {lang:key.kuvalich.mercy}: the 1st time is 1 stab checking card 1, the 2nd is 2 stabs checking the first two, and only three right stabs on the 3rd end it. Any wrong stab and it breaks free and escapes, with [[enemies/kuva_escalation|Lich rank]] +1"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -459,7 +565,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "If you do not execute it within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> seconds of it going down, it rises and escapes in a Kuva mist, leaving nothing"
+              "text": "If you do not execute it within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> seconds of it going down, it refills that segment and gets back up to fight on; only after <b>3 downs in a row</b> go unexecuted does it escape in a Kuva mist, leaving nothing"
             },
             "What leaves is the same Lich, and it will be back; the round only ends when you end it"
           ]
@@ -497,6 +603,13 @@
               "cells": [
                 "Armor",
                 "<t>8</t>"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichShieldRatio>0",
+              "cells": [
+                "Shield",
+                "Max health × <t>{cfg:kuva_lich.lichShieldRatio}</t>; damage hits the shield before health. It starts recharging after <t>{cfg:kuva_lich.lichShieldDelaySeconds}</t> s without being hit, at <t>{cfg:kuva_lich.lichShieldRegenPercent|pctv}</t> of the cap per second; a hit that empties it makes the wait × <t>{cfg:kuva_lich.lichShieldBrokenDelayMultiplier}</t>. It refills whenever the Lich breaks loose from an execution and stands. While the shield holds, {lang:kuvaweapon.type.magnetic} status makes it take far more damage; see [[combat/element_status]]"
               ]
             },
             {
@@ -606,11 +719,12 @@
           "type": "list",
           "if": "cfg:kuva_lich.mercyEnabled",
           "items": [
-            "A lethal hit does not kill it; it goes <w>down</w> instead: no moving, no attacking, no healing and no further damage, and its boss bar turns grey",
+            "Its health bar has <t>three segments</t>, and it goes <w>down</w> each time one empties: no moving, no attacking and no further damage, and its boss bar turns grey, while that segment slowly refills as the downed timer runs",
             "It does not matter who lands that hit; people helping you can knock it down too, but <em>only you can execute it</em>, and anyone else up close only sees “someone's quarry”",
             "Get within <t>{cfg:kuva_lich.mercyReach}</t> blocks and look at it; when “{lang:kuvalich.mercy.prompt.lich}” appears, press the {lang:key.kuvalich.mercy} key (default <t>X</t>, the same as vanilla Creative's “Load Hotbar Activator”; change it in Controls)",
-            "You cannot be hurt during the execution and cannot do anything else; three stabs check the cards from position 1 on and stop at the first wrong one",
-            "If you do not act within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> seconds of it going down, it gets up and escapes, leaving nothing",
+            "You cannot be hurt during the execution and cannot do anything else. The 1st down takes <t>1</t> stab checking card 1 only, the 2nd takes <t>2</t> checking the first two, and the 3rd takes <t>3</t>; stabs always check from position 1 on and stop at the first wrong one",
+            "If every stab is right on the 1st or 2nd execution, it breaks loose and stands with the next segment full, and the fight goes on; only three right stabs on the 3rd end it",
+            "If you do not act within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> seconds of it going down, the segment refills and it stands to fight on; after <t>3</t> unexecuted downs in a row it escapes, leaving nothing",
             "Damage such as <t>/kill</t> or falling into the void kills it outright without downing it; the encounter is void and gives nothing"
           ]
         },
@@ -666,7 +780,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "Fewer than 3 cards in the Requiem Gate",
-                "Still judged over three stabs, and an empty slot counts as wrong: a <b>decryption failure</b>, same as “any wrong” below"
+                "Still judged stab by stab; an empty slot among the ones checked this time counts as wrong: a <b>decryption failure</b>, same as “any wrong” below"
               ]
             },
             {
@@ -689,7 +803,7 @@
         {
           "type": "list",
           "items": [
-            "On success, progress and clues are all cleared and the next round's answer is rolled anew; your next Lich is born when you reveal Clue 1 again, and your Lich rank starts over at 1",
+            "On success, progress and clues are all cleared and the next round's answer is rolled anew; your next Lich is born when you finish off another [[enemies/kuva_larvling|Kuva Larvling]], and your Lich rank starts over at 1",
             "On failure, chat tells you where the cards started going wrong; see [[requiem/decrypt_failure]] for how to test orders"
           ]
         },

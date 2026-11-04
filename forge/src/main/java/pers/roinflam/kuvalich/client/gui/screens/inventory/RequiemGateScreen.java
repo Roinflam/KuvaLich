@@ -24,6 +24,7 @@ import pers.roinflam.kuvalich.client.sound.KuvaSoundInstance;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
+import pers.roinflam.kuvalich.item.card.OULL;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
 import pers.roinflam.kuvalich.network.packet.RequiemGateFillPacket;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
@@ -66,7 +67,9 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
     private static final int AMBIENCE_FADE_IN_MS = 400;
     private static final int AMBIENCE_FADE_OUT_MS = 300;
 
-    private final MurmurTriangle triangle = new MurmurTriangle(TRI_SIZE);
+    /** 左栏窄时三角的符号会缩小（{@link #layout}），尺寸变了才重建 */
+    private MurmurTriangle triangle;
+    private float triSize;
     private final int[] riddleBuffer = new int[3];
     /** 上一帧的谜语三格，揭示时比出来；−2 = 还没读过 */
     private final int[] lastRiddles = {-2, -2, -2};
@@ -79,8 +82,9 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
     private boolean opened;
     private Component linkText = Component.empty();
 
-    /** 版式：卡槽那一块的顶、三个卡槽的中线 x、卡槽格子的 y；左栏三角的中心、进度行距 */
+    /** 版式：卡槽那一块的顶、状态行离它多远、三个卡槽的中线 x、卡槽格子的 y；左栏三角的中心、进度行距 */
     private int pTop;
+    private int statusOff;
     private final int[] sockX = new int[3];
     private int sockIY;
     private int triX;
@@ -112,9 +116,15 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
                 : Component.translatable("kuvalich.archive.open_hint", KuvaKeyMappings.ARCHIVE.getTranslatedKeyMessage());
     }
 
+    /**
+     * 卡槽那一块从编号排到状态行下面的闪线，在中栏里居中，离左右两栏第一行字不到 6 格时对齐它
+     * （以前窄屏顶在标题线下 1 格、非窄屏 5 格，比两边第一行高 7 / 3 格）。
+     * 窄屏状态行离卡名 5 格（非窄屏 7 格）：427×240 里块底的闪线要离背包线 3 格以上，块顶又不能高过标题线
+     */
     @Override
     protected void layout() {
-        pTop = small ? hairY + 1 : hairY + 5;
+        statusOff = small ? 93 : 95;
+        pTop = middleTop(statusOff + 11, hairY + 1, hairY + 8);
         int sp = small ? 54 : 60;
         sockIY = pTop + 54;
         for (int i = 0; i < 3; i++) {
@@ -124,6 +134,14 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
         placeInventory();
         triX = lcx;
         triY = hairY + 50;
+        // 三角最宽处 = 半宽（1.39 个符号）+ 半个符号宽；左栏只有 80 宽（427×240）时两边只剩 1 格，符号缩到两边各留 3 格
+        float fitSize = (float) Math.floor(((lx1 - lx0) * 0.5F - 3.0F)
+                / (MurmurTriangle.SPREAD + RequiemSigils.width(1.0F) * 0.5F));
+        float size = Math.min(TRI_SIZE, fitSize);
+        if (triangle == null || size != triSize) {
+            triSize = size;
+            triangle = new MurmurTriangle(size);
+        }
         rowSp = small ? 16 : 19;
         track(0, 1, 2);
     }
@@ -165,18 +183,14 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
 
     @Override
     protected Component rejectMessage(Slot slot, ItemStack carried) {
-        // 安魂卡本身也被拒，只会是同一种卡不能装两张（Oull）
-        return Component.translatable(carried.getItem() instanceof AbstractRequiemCard
-                ? "kuvalich.gate.one_oull" : "kuvalich.gate.only_cards");
+        if (!(carried.getItem() instanceof AbstractRequiemCard)) {
+            return Component.translatable("kuvalich.gate.only_cards");
+        }
+        // 安魂卡本身也被拒，只会是别的格子已经有同一种卡；Oull 沿用它自己那句
+        return Component.translatable(OULL.is(carried) ? "kuvalich.gate.one_oull" : "kuvalich.gate.one_each");
     }
 
     // ==================== 画 ====================
-
-    /** 中栏只有三个卡槽和背包，右栏放宽到和左栏一样宽：卡的两句说明在 1280×720 下也不从词中间折开 */
-    @Override
-    protected float rightSeparator() {
-        return 0.72F;
-    }
 
     @Override
     protected void drawPage(GuiGraphics g, int mx, int my, long now, long t, float eF) {
@@ -211,7 +225,7 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             GuiShapes.hairline(g, mid + 1.0F, y, mid - 1.5F, y + 2.5F, lineW, c);
         }
         GuiShapes.end();
-        int sy = pTop + 95;
+        int sy = pTop + statusOff;
         if (!drawMessage(g, cx, sy, eF)) {
             int filled = filledCount();
             if (filled == 3) {
@@ -269,8 +283,8 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             final int slot = k;
             float x = triangle.lastX(k);
             float y = triangle.lastY(k);
-            float hw = rd[k] >= 0 ? RequiemSigils.width(TRI_SIZE) * 0.5F : TRI_SIZE * 0.5F * GuiShapes.DIAMOND_ASPECT;
-            hot(x - hw, y - TRI_SIZE * 0.5F, x + hw, y + TRI_SIZE * 0.5F, () -> murmurTip(slot), null);
+            float hw = rd[k] >= 0 ? RequiemSigils.width(triSize) * 0.5F : triSize * 0.5F * GuiShapes.DIAMOND_ASPECT;
+            hot(x - hw, y - triSize * 0.5F, x + hw, y + triSize * 0.5F, () -> murmurTip(slot), null);
         }
         text(g, fit(Component.translatable("kuvalich.gate.order_hint").getString(), lx1 - lx0), lx0, triY + 24, FxPalette.ASH, 0.5F * eT);
 
@@ -296,7 +310,7 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
                 int n = rv < 400 ? (int) Math.min(v.length(), rv / 90) : v.length();
                 text(g, v.substring(0, n), lx1 - textW(v, 0.0F), y, FxPalette.KUVA_PALE, 0.85F * eT);
             } else if (active) {
-                textR(g, menu.getSchedule() + " / " + threshold(k), lx1, y, FxPalette.BONE, 0.9F * eT);
+                textR(g, progressText(k, w - textW(stageName(k), 0.0F) - 4.0F), lx1, y, FxPalette.BONE, 0.9F * eT);
             } else {
                 textR(g, Component.translatable("kuvalich.gate.not_started").getString(), lx1, y, FxPalette.ASH, 0.45F * eT);
             }
@@ -322,6 +336,24 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             final int stage = k;
             hot(lx0, y - 1, lx1, by + 3, () -> stageTip(stage), null);
         }
+    }
+
+    /**
+     * 当前阶段的进度，放得下写「12 / 60」；默认字体下阈值上了四位数会压到段名上，
+     * 依次换成去掉空格的「1234/5000」、百分比（完整数字在悬停提示里）
+     */
+    private String progressText(int k, float room) {
+        int now = menu.getSchedule();
+        int max = threshold(k);
+        String s = now + " / " + max;
+        if (textW(s, 0.0F) <= room) {
+            return s;
+        }
+        s = now + "/" + max;
+        if (textW(s, 0.0F) <= room) {
+            return s;
+        }
+        return Math.round(100.0F * Mth.clamp(now / (float) Math.max(1, max), 0.0F, 1.0F)) + "%";
     }
 
     /** 一个卡槽：编号、投影框、往下的细线、格子（物品由原版画在上面）、次数点、卡名 */
@@ -497,8 +529,9 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
         int x0 = rx0;
         float cw = rx1 - rx0;
         int y = hairY + 8;
+        // 右栏的字右边就是页边的裁切括号，用不许多出一个字的断行
         if (focus.isEmpty()) {
-            for (String line : wrapEven(Component.translatable("kuvalich.gate.detail_empty").getString(), cw)) {
+            for (String line : wrapEvenWithin(Component.translatable("kuvalich.gate.detail_empty").getString(), cw)) {
                 text(g, line, x0, y, FxPalette.ASH, 0.6F * a);
                 y += 10;
             }
@@ -509,8 +542,9 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
         drawCardSigil(g, id, x0 + 12, y + 13, DETAIL_SIGIL, a, 1.0F);
         text(g, focus.getHoverName().getString(), x0 + 28, y + 3, FxPalette.BONE, a, 1.0F);
         GuiShapes.begin(g);
+        // 次数点的亮芯和卡名的第一笔对齐（以前在卡名右边 2 格）
         for (int k = 0; k < DOT_COUNT; k++) {
-            int px = x0 + 30 + k * 5;
+            int px = x0 + 28 + k * 5;
             if (k < left) {
                 fill(g, px - 1, y + 15, px + 3, y + 19, FxPalette.KUVA_DEEP, 0.6F * a);
                 fill(g, px, y + 16, px + 2, y + 18, FxPalette.KUVA, a);
@@ -524,7 +558,7 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
         y += 14;
         String key = focus.getItem().getDescriptionId();
         for (String part : new String[]{key + ".first_tooltip", key + ".second_tooltip"}) {
-            for (String line : wrapEven(Component.translatable(part).getString(), cw)) {
+            for (String line : wrapEvenWithin(Component.translatable(part).getString(), cw)) {
                 text(g, line, x0, y, KuvaPalette.MUTED, 0.85F * a);
                 y += 10;
             }

@@ -3,20 +3,30 @@ package pers.roinflam.kuvalich.utils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.network.PacketDistributor;
+import pers.roinflam.kuvalich.KuvaLich;
+import pers.roinflam.kuvalich.network.packet.NoticePacket;
 
 /**
  * 玩家提示的统一出口：选通道（聊天 / 动作栏）、上 RGB 色、把句子里的值挑出来高亮
  *
- * <p><b>为什么要分通道</b>：改造前全部走 {@code sendSystemMessage}，也就是全进聊天框。
+ * <p><b>现在的走法</b>：{@link #chat} 和 {@link #actionBar} 都不再直接发原版消息，而是发一个 {@link NoticePacket}
+ * （语言键 + 参数 + 颜色 + 原来走哪个通道），由客户端决定怎么显示：默认画成和模组界面同一套风格的提示条
+ * （{@code client.gui.hud.NoticeHud}），关掉 {@code kuvalich-tooltip.toml} 里的 {@code hud_notices} 就用
+ * {@link #translate} 拼出和以前一模一样的整句，照原通道交给原版聊天 / 动作栏。
+ * 原来的通道仍然有意义：进聊天框的那一类在提示条里停得久一些。</p>
+ *
+ * <p><b>为什么当初要分通道</b>：改造前全部走 {@code sendSystemMessage}，也就是全进聊天框。
  * 其中「解密进度 +N」和「答案已全部解出」是<b>每杀一只奴仆就发一次</b>的，
  * 刷怪时聊天框会被这两条刷满，把玩家自己的对话和别的模组的提示全顶上去；
- * 而顶部本来就有一条带动画的解密 HUD（{@code DecryptionHudOverlay}）在显示同一件事，
- * 聊天框那份纯属重复。这类「看一眼就过去」的反馈改走动作栏
- * （{@code displayClientMessage(comp, true)}）—— 不进聊天历史、不互相堆叠。</p>
+ * 而顶部本来就有一条带动画的解密 HUD（{@code DecryptionHudOverlay}）在显示同一件事。
+ * 这类「看一眼就过去」的反馈走动作栏；<b>里程碑</b>（解密成功、等级上限提升、物品归还、解密失败）走聊天框。</p>
  *
- * <p>留在聊天框的是两类：<b>里程碑</b>（解密成功、等级上限提升、物品归还、解密失败）
- * 和<b>剧情台词</b>（玄骸的死亡台词与没收嘲讽）。这两类玩家会想往上翻着重看。</p>
+ * <p><b>剧情台词不进提示条</b>：玄骸的台词平时走通讯窗，只有通讯发不出去时才退到这里，
+ * 键以 {@link #SPEECH_PREFIX} 开头的一律照旧直接进聊天框（{@link #speech}）。</p>
  *
  * <p><b>值高亮</b>：{@code Component.translatable} 的参数可以是 {@code Component}，
  * 所以这里把每个参数都包成一个显式着色的子组件。子组件有自己的颜色，
@@ -28,34 +38,84 @@ import net.minecraft.world.entity.player.Player;
  */
 public final class PlayerFeedback {
 
+    /** 剧情台词的语言键前缀（通讯窗那套台词），这类键不进提示条 */
+    public static final String SPEECH_PREFIX = "kuvalich.comm.";
+
     private PlayerFeedback() {}
 
     /**
-     * 发到聊天框：里程碑与剧情台词，玩家会想往上翻。
+     * 里程碑一类的提示：提示条里停得久一些；客户端关掉提示条时进聊天框，玩家可以往上翻。
+     * 键是剧情台词（{@link #SPEECH_PREFIX}）时直接进聊天框，同 {@link #speech}
      *
      * @param player 目标玩家
-     * @param rgb    整句的颜色，取自 {@link KuvaPalette}
+     * @param rgb    这一类提示的颜色，取自 {@link KuvaPalette}
      * @param key    译文键
      * @param args   译文参数，会被逐个包成高亮子组件
      */
     public static void chat(Player player, int rgb, String key, Object... args) {
-        player.sendSystemMessage(translate(rgb, key, args));
+        if (key.startsWith(SPEECH_PREFIX)) {
+            speech(player, rgb, key, args);
+            return;
+        }
+        send(player, NoticePacket.CHAT, rgb, key, args);
     }
 
     /**
-     * 发到动作栏：看一眼就过去的反馈，不进聊天历史。
+     * 看一眼就过去的反馈：提示条里停一会儿就收；客户端关掉提示条时进动作栏，不进聊天历史。
      *
      * @param player 目标玩家
-     * @param rgb    整句的颜色，取自 {@link KuvaPalette}
+     * @param rgb    这一类提示的颜色，取自 {@link KuvaPalette}
      * @param key    译文键
      * @param args   译文参数，会被逐个包成高亮子组件
      */
     public static void actionBar(Player player, int rgb, String key, Object... args) {
-        player.displayClientMessage(translate(rgb, key, args), true);
+        send(player, 0, rgb, key, args);
     }
 
     /**
-     * 拼一条着色并且值已高亮的译文组件。
+     * 剧情台词：不走提示条，直接进聊天框（通讯窗发不出去时的退路）
+     *
+     * @param player 目标玩家
+     * @param rgb    整句的颜色
+     * @param key    译文键
+     * @param args   译文参数
+     */
+    public static void speech(Player player, int rgb, String key, Object... args) {
+        player.sendSystemMessage(translate(rgb, key, args));
+    }
+
+    /**
+     * 发一条提示包。拿不到连接的（逻辑客户端上的玩家、网络还没注册）照旧走原版；假玩家什么都不发
+     *
+     * @param flags {@link NoticePacket#CHAT} 或 0
+     */
+    private static void send(Player player, int flags, int rgb, String key, Object[] args) {
+        if (player instanceof FakePlayer) {
+            return;
+        }
+        if (player instanceof ServerPlayer serverPlayer && serverPlayer.connection != null && KuvaLich.network != null) {
+            Component[] raw = new Component[Math.min(args.length, NoticePacket.MAX_ARGS)];
+            for (int i = 0; i < raw.length; i++) {
+                raw[i] = rawArg(args[i]);
+            }
+            KuvaLich.network.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new NoticePacket(flags, rgb, key, raw));
+            return;
+        }
+        Component line = translate(rgb, key, args);
+        if ((flags & NoticePacket.CHAT) != 0) {
+            player.sendSystemMessage(line);
+        } else {
+            player.displayClientMessage(line, true);
+        }
+    }
+
+    /** 参数原样转成组件、不上色（颜色由客户端按显示方式上） */
+    private static Component rawArg(Object raw) {
+        return raw instanceof Component c ? c.copy() : Component.literal(String.valueOf(raw));
+    }
+
+    /**
+     * 拼一条着色并且值已高亮的译文组件（原版聊天 / 动作栏的样子）。
      *
      * @param rgb  整句颜色
      * @param key  译文键
@@ -72,19 +132,30 @@ public final class PlayerFeedback {
     }
 
     /**
-     * 把一个译文参数包成高亮子组件。
+     * 把一个译文参数包成高亮子组件，用 {@link KuvaPalette#VALUE} 色。
+     *
+     * @param raw 原始参数
+     * @return 着上 {@link KuvaPalette#VALUE} 的子组件
+     */
+    public static MutableComponent value(Object raw) {
+        return value(raw, KuvaPalette.VALUE);
+    }
+
+    /**
+     * 把一个译文参数包成指定颜色的子组件。
      *
      * <p>已经是 {@code Component} 的（比如安魂卡名是一条 {@code translatable}）走 copy，
      * 否则按 {@code String.valueOf} 转字面量。两种都显式着色 ——
      * 不显式着色的子组件会整条继承父组件的颜色，也就看不出高亮。</p>
      *
      * @param raw 原始参数
-     * @return 着上 {@link KuvaPalette#VALUE} 的子组件
+     * @param rgb 颜色
+     * @return 着好色的子组件
      */
-    public static MutableComponent value(Object raw) {
+    public static MutableComponent value(Object raw, int rgb) {
         MutableComponent component = (raw instanceof Component)
                 ? ((Component) raw).copy()
                 : Component.literal(String.valueOf(raw));
-        return component.withStyle(style -> style.withColor(TextColor.fromRgb(KuvaPalette.VALUE)));
+        return component.withStyle(style -> style.withColor(TextColor.fromRgb(rgb)));
     }
 }

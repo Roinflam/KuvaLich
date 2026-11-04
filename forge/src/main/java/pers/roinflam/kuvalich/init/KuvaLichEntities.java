@@ -5,6 +5,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -46,4 +47,16 @@ public class KuvaLichEntities {
                     .updateInterval(3)
                     .fireImmune()
                     .build("kuva_master"));
+
+    /**
+     * 赤毒幼体：还没有玄骸的玩家附近出现，处决它诞生玄骸。骨架和奴仆同一套，渲染时整只缩到 0.75（见
+     * KuvaLarvlingRenderer.MODEL_SCALE），碰撞箱按缩放后的身高 1.9 格，宽比玩家多一点
+     * Kuva Larvling
+     */
+    public static final RegistryObject<EntityType<KuvaLarvlingEntity>> KUVA_LARVLING = ENTITY_TYPES.register("kuva_larvling",
+            () -> EntityType.Builder.of(KuvaLarvlingEntity::new, MobCategory.MONSTER)
+                    .sized(0.7F, 1.9F)
+                    .clientTrackingRange(8)
+                    .updateInterval(3)
+                    .build("kuva_larvling"));
 }

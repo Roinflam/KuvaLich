@@ -24,6 +24,8 @@ public final class MercyAnimNames {
     public static final String LICH_C_GRAB = "mercy.lich.c.grab";
     /** 判错之后挣脱 */
     public static final String LICH_BREAKFREE = "mercy.lich.breakfree";
+    /** 倒地到时没人处决：从倒地姿势站起来接着打（不化雾），末帧是日常站姿 */
+    public static final String LICH_RISE = "mercy.lich.rise";
     /** 成功后跪地循环 */
     public static final String LICH_KNEEL = "mercy.lich.kneel";
     /** 成功后瘫倒，末帧保持 */
@@ -51,6 +53,16 @@ public final class MercyAnimNames {
      */
     public static String lichHit(MercyVariant variant, int stab) {
         return "mercy.lich." + variant.animKey + ".hit" + stab;
+    }
+
+    /**
+     * 这次验的几刀全对、还没到第三刀：从第 {@code stab} 刀停下的姿势挣开站起来，例如 {@code mercy.lich.a.rise1}
+     *
+     * @param variant 玄骸的套路（A ~ E）
+     * @param stab    这次捅了几刀，1~2
+     */
+    public static String lichRise(MercyVariant variant, int stab) {
+        return "mercy.lich." + variant.animKey + ".rise" + stab;
     }
 
     /** 奴仆某个套路的处决片段名 */

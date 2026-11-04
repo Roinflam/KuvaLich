@@ -1,6 +1,7 @@
 package pers.roinflam.kuvalich.client.mercy;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -35,15 +36,19 @@ import java.util.Locale;
  *   <li>{@code /kuvafxc mercyat <毫秒>}：把正在进行的处决冻在某一刻，镜头、姿态、刀模、界面都停在那一帧，
  *       逐个时刻截图核对用；{@code /kuvafxc mercyat off} 从冻住的那一刻接着走。</li>
  *   <li>{@code /kuvafxc mercytest <套路> <结果>}：不经服务端，本地直接对准星指着的（或 16 格内最近的）赤毒实体
- *       起一场处决，只演客户端这一半（服务端不锁目标、不结算）。结果是 {@code success / fail1 / fail2 / fail3}，
+ *       起一场处决，只演客户端这一半（服务端不锁目标、不结算）。结果是第三次处决的 {@code success / fail1 / fail2 / fail3}，
+ *       第一、二次处决全对的 {@code adv1 / adv2}（挣开站起），第一、二次处决判错的 {@code k1fail1 / k2fail1 / k2fail2}；
  *       奴仆套路忽略结果。配合 {@code mercyat} 可以不等真打倒一只就看任意一刻。</li>
+ *   <li>{@code /kuvafxc mercyorbit <角度> <距离> <高度>}：处决期间镜头换到绕目标的固定机位，平视（角度 0 在处决者那一侧，
+ *       90 是侧面），要先切第三人称才画得出处决者；奴仆处决不切镜头、视角锁着，核对刀口靠它。{@code off} 关掉。</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class MercyDevClientCommands {
 
-    private static final String[] OUTCOMES = {"success", "fail1", "fail2", "fail3"};
+    private static final String[] OUTCOMES = {"success", "fail1", "fail2", "fail3", "adv1", "adv2", "k1fail1", "k2fail1",
+            "k2fail2"};
 
     private MercyDevClientCommands() {
     }
@@ -67,6 +72,23 @@ public final class MercyDevClientCommands {
                             reply(ctx, ok ? "mercy timeline frozen at " + ms + " ms" : "no execution in progress");
                             return ok ? 1 : 0;
                         })))
+                .then(Commands.literal("mercyorbit")
+                        .then(Commands.literal("off").executes(ctx -> {
+                            MercyCamera.devOrbitDist = 0.0F;
+                            reply(ctx, "mercy orbit off");
+                            return 1;
+                        }))
+                        .then(Commands.argument("angle", FloatArgumentType.floatArg(-360.0F, 360.0F))
+                                .then(Commands.argument("dist", FloatArgumentType.floatArg(0.5F, 16.0F))
+                                        .then(Commands.argument("height", FloatArgumentType.floatArg(0.0F, 6.0F))
+                                                .executes(ctx -> {
+                                                    MercyCamera.devOrbitAngle = FloatArgumentType.getFloat(ctx, "angle");
+                                                    MercyCamera.devOrbitDist = FloatArgumentType.getFloat(ctx, "dist");
+                                                    MercyCamera.devOrbitHeight = FloatArgumentType.getFloat(ctx, "height");
+                                                    reply(ctx, "mercy orbit " + MercyCamera.devOrbitAngle + "° "
+                                                            + MercyCamera.devOrbitDist + " m, h " + MercyCamera.devOrbitHeight);
+                                                    return 1;
+                                                })))))
                 .then(Commands.literal("mercytest")
                         .then(Commands.argument("variant", StringArgumentType.word())
                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(
@@ -101,6 +123,26 @@ public final class MercyDevClientCommands {
             case "fail1" -> prefix = 0;
             case "fail2" -> prefix = 1;
             case "fail3" -> prefix = 2;
+            case "adv1" -> {
+                stabs = 1;
+                prefix = 1;
+            }
+            case "adv2" -> {
+                stabs = 2;
+                prefix = 2;
+            }
+            case "k1fail1" -> {
+                stabs = 1;
+                prefix = 0;
+            }
+            case "k2fail1" -> {
+                stabs = 2;
+                prefix = 0;
+            }
+            case "k2fail2" -> {
+                stabs = 2;
+                prefix = 1;
+            }
             default -> {
                 reply(ctx, "unknown outcome: " + outcome);
                 return 0;
@@ -115,7 +157,7 @@ public final class MercyDevClientCommands {
             reply(ctx, "no kuva entity in sight");
             return 0;
         }
-        boolean success = !variant.thrall && prefix == 3;
+        boolean success = !variant.thrall && stabs == 3 && prefix == 3;
         int[] cards = !variant.thrall ? new int[]{0, 1, 2} : new int[]{-1, -1, -1};
         int[] left = !variant.thrall ? new int[]{3, 2, 1} : new int[]{0, 0, 0};
         MercyPlan.Plan plan = new MercyPlan.Plan(stabs, prefix, variant, cards, left, success, success ? 1 : 0, true, false);

@@ -24,25 +24,33 @@
           "type": "steps",
           "items": [
             {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "<em>喚醒宿敵</em>：還沒有玄骸時，每隔一陣會有一隻{lang:entity.kuvalich.kuva_larvling}出現在你附近。把它打倒、用{lang:key.kuvalich.mercy}處決，你的{lang:entity.kuvalich.kuva_master}就誕生了，拿的就是幼體倒地時頭頂亮出的那把武器，見[[enemies/kuva_larvling]]。"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "<em>喚醒宿敵</em>：還沒有玄骸時，每隔一陣會有一隻{lang:entity.kuvalich.kuva_larvling}出現在你附近。親手打死它，你的{lang:entity.kuvalich.kuva_master}就誕生了，拿的就是幼體手裡那把武器，見[[enemies/kuva_larvling]]。"
+            },
+            {
               "if": [
                 "cfg:kuva_lich.mercyEnabled",
                 "cfg:kuva_lich.mercyThralls"
               ],
-              "text": "<em>積攢線索</em>：打倒{lang:entity.kuvalich.kuva_slave}，再用{lang:key.kuvalich.mercy}處決它，積攢<t>解密進度</t>，每積滿一段，答案就揭示出一張卡，見[[requiem/decryption]]。"
+              "text": "<em>積攢線索</em>：玄骸誕生後，打倒找上門的{lang:entity.kuvalich.kuva_slave}，再用{lang:key.kuvalich.mercy}處決它，積攢<t>解密進度</t>，每積滿一段，答案就揭示出一張卡，見[[requiem/decryption]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
-              "text": "<em>積攢線索</em>：親手擊殺{lang:entity.kuvalich.kuva_slave}，積攢<t>解密進度</t>，每積滿一段，答案就揭示出一張卡，見[[requiem/decryption]]。"
+              "text": "<em>積攢線索</em>：玄骸誕生後，親手擊殺找上門的{lang:entity.kuvalich.kuva_slave}，積攢<t>解密進度</t>，每積滿一段，答案就揭示出一張卡，見[[requiem/decryption]]。"
             },
             "<em>備卡</em>：<t>安魂卡</t>是 8 種卡片道具，答案是其中 3 張，這三張要真正拿到手。挖{item:kuvalich:requiem_ore}會掉安魂卡，用不上的卡可以 3 張換 1 張隨機新卡，見[[requiem/requiem_cards]]。",
             "<em>擺卡</em>：在{item:kuvalich:requiem_gate}裡按你猜的順序放好三張卡，見[[requiem/requiem_gate]]。",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>討伐</em>：揭示第 1 條線索時，你的{lang:entity.kuvalich.kuva_master}就誕生了，怒氣攢滿它會自己找上門。把它打到倒地，在它起身之前用{lang:key.kuvalich.mercy}處決，三刀逐張核對答案，見[[enemies/kuva_master]]。"
+              "text": "<em>討伐</em>：你的{lang:entity.kuvalich.kuva_master}怒氣攢滿會自己找上門。它的血分三段，每打空一段倒地一次，用{lang:key.kuvalich.mercy}處決：第 1 次核對第 1 張卡，第 2 次核對前 2 張，第 3 次三張全對才終結它，見[[enemies/kuva_master]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "<em>討伐</em>：揭示第 1 條線索時，你的{lang:entity.kuvalich.kuva_master}就誕生了，怒氣攢滿它會自己找上門。擊殺它時你要在附近，它倒下的那一刻，答案自動核對，見[[enemies/kuva_master]]。"
+              "text": "<em>討伐</em>：你的{lang:entity.kuvalich.kuva_master}怒氣攢滿會自己找上門。擊殺它時你要在附近，它倒下的那一刻，答案自動核對，見[[enemies/kuva_master]]。"
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
@@ -74,7 +82,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "你的<hl>答案</hl>只屬於你自己，Tenno，誰也替你猜不了。它由 3 張[[requiem/requiem_cards|安魂卡]]按固定順序排成，起初藏著，要靠消滅赤毒敵人積攢<t>解密進度</t>，一張一張揭開。"
+          "text": "你的<hl>答案</hl>只屬於你自己，Tenno，誰也替你猜不了。它由 3 張[[requiem/requiem_cards|安魂卡]]按固定順序排成，起初藏著，你的玄骸誕生以後，要靠消滅赤毒敵人積攢<t>解密進度</t>，一張一張揭開。"
         },
         {
           "type": "table",
@@ -121,14 +129,18 @@
             [
               "別人的玄骸、無主的玄骸、其它生物",
               "<dim>不增加</dim>"
+            ],
+            [
+              "還沒有玄骸時，什麼來源都算",
+              "<dim>不增加</dim>"
             ]
           ]
         },
         {
           "type": "tip",
           "style": "info",
-          "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight",
-          "text": "{lang:entity.kuvalich.kuva_slave}不會在野外自然出現。第 1 條線索要從奴僕身上攢，你的玄骸在那之後才會誕生。"
+          "if": "!cfg:kuva_lich.thrallSquadEnabled",
+          "text": "{lang:entity.kuvalich.kuva_slave}不會找上門來，解密進度只能從你的玄骸身上拿，見[[enemies/kuva_master]]。"
         },
         {
           "type": "tip",
@@ -145,7 +157,14 @@
           "style": "warn",
           "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
           "title": "最後一擊自己打",
-          "text": "奴僕給的解密進度只歸<em>親手打出最後一擊的人</em>，組隊時歸補刀的那一個，被寵物、岩漿，或燃燒、電擊等元素額外傷害收掉的都不算。收尾時自己動手，近戰和弓箭都行。"
+          "text": "奴僕要由<em>玩家親手打出最後一擊</em>才給解密進度，被寵物、岩漿，或燃燒、電擊等元素額外傷害收掉的都不算。收尾時自己動手，近戰和弓箭都行。"
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "if": "cfg:kuva_lich.thrallProgressShareRange>0",
+          "title": "一起刷",
+          "text": "奴僕倒下時，它 <t>{cfg:kuva_lich.thrallProgressShareRange}</t> 格內每個有玄骸的玩家都拿到同樣多的解密進度，不用搶最後一下；掉落和玄骸的怒氣只歸收尾的那個人。還沒有玄骸的人拿不到進度。"
         },
         {
           "type": "h",
@@ -172,7 +191,7 @@
           "type": "list",
           "items": [
             "每積滿一段揭示一張答案卡，進度從頭算起，<g>多出來的點數帶進下一段</g>。",
-            "<hl>第 1 條線索出現時，整道答案就定下了</hl>，用哪 3 張卡、按什麼順序，之後都不再變。也就在這一刻，你的[[requiem/lich_archive|玄骸]]誕生，開始攢怒氣。",
+            "<hl>第 1 條線索出現時，整道答案就定下了</hl>，用哪 3 張卡、按什麼順序，之後都不再變。",
             "揭示出的卡顯示在[[requiem/requiem_gate]]和[[requiem/lich_archive]]裡，<w>排列是隨機的，不代表答案順序</w>。",
             "三條線索都揭示後，再消滅敵人不加進度，動作欄會提醒你去擺卡。"
           ]
@@ -390,7 +409,7 @@
             },
             {
               "if": "cfg:kuva_lich.lichRagePerClueRevealed>0",
-              "text": "揭示第 2、第 3 條線索：每條 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>（第 1 條揭示時它才誕生，不算）"
+              "text": "揭示第 2、第 3 條線索：每條 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>（第 1 條不算）"
             },
             {
               "if": "cfg:kuva_lich.lichRageOnlineMinutes>0",
@@ -439,7 +458,7 @@
         },
         {
           "type": "p",
-          "text": "答案裡的 3 張卡互不相同，排法共 8 × 7 × 6 = <t>336</t> 種，所以同一種卡放兩張，永遠猜不對。"
+          "text": "答案裡的 3 張卡互不相同，排法共 8 × 7 × 6 = <t>336</t> 種，滅骸之扉裡也不讓同一種卡放兩張。"
         },
         {
           "type": "h",
@@ -546,7 +565,7 @@
         {
           "type": "list",
           "items": [
-            "<b>同時只能裝一張</b>：滅骸之扉裡已經有一張 Oull 時，第二張放不進去。",
+            "<b>同時只能裝一張</b>：和別的卡一樣，同一種卡在滅骸之扉裡只能放一張，已經有一張 Oull 時，第二張放不進去。",
             "和別的卡一樣有 <t>3</t> 次耐久，只在解密成功時扣。",
             "挖礦挖不到，也不能放進{item:kuvalich:requiem_recast}，三合一不會出它。"
           ]
@@ -631,7 +650,7 @@
         {
           "type": "steps",
           "items": [
-            "先積攢進度，揭示第 <t>1</t> 條線索，見[[requiem/decryption]]，你的玄骸在這一刻誕生。",
+            "先了結一隻[[enemies/kuva_larvling|赤毒幼體]]，讓你的玄骸誕生，再積攢進度揭示線索，見[[requiem/decryption]]。",
             "右鍵開啟滅骸之扉，在三格裡放滿安魂卡，關上介面就儲存好了。",
             {
               "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
@@ -643,7 +662,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "把它打到倒地，在 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒內走到它身邊，用{lang:key.kuvalich.mercy}處決，三刀逐張核對。"
+              "text": "每打空它一段血，它就倒地一次，在 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒內走到它身邊，用{lang:key.kuvalich.mercy}處決：第 1 次核對第 1 張卡，第 2 次核對前 2 張，第 3 次三張全對才算成功。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -674,7 +693,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "沒放滿 3 張",
-                "照樣三刀判，空著的格子算錯：判到第一個空格就是<b>解密失敗</b>，結果同「放滿但不對」"
+                "照樣逐刀判，空著的格子算錯：判到第一個空格就是<b>解密失敗</b>，結果同「放滿但不對」"
               ]
             },
             {
@@ -765,6 +784,7 @@
           "type": "list",
           "items": [
             "介面開著時，你要待在方塊 <t>8</t> 格以內。",
+            "<b>同一種卡只能放一張</b>，Oull 也一樣；以前放進去的重複卡，開啟滅骸之扉時會退回你的背包，背包滿了掉在腳下。",
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
               "text": "只想靠它積攢進度、不想冒失敗的風險時，先從門裡取出一張卡。"
@@ -973,7 +993,7 @@
             ],
             [
               "生效期間",
-              "從你的玄骸誕生（揭示第 1 條線索）到解密成功"
+              "從你的玄骸誕生（了結赤毒幼體）到解密成功"
             ],
             [
               "歸還",

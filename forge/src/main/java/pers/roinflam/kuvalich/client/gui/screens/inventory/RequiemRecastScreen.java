@@ -82,9 +82,10 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
     private final List<Recipe> recipes = new ArrayList<>();
     private final List<Stock> stocks = new ArrayList<>();
 
-    /** 版式：炉膛中心 y、输入格的中线 x 和格子 y、总线的 y、状态行的 y */
+    /** 版式：背光和飘点的参照 y、炉膛中心 y、输入格的间距、中线 x 和格子 y、总线的 y、状态行的 y */
     private int pTop;
     private int ocy;
+    private int sp;
     private final int[] inX = new int[3];
     private int iy;
     private int busY;
@@ -131,15 +132,27 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
                 1 << ROW_DECOMPOSE, KuvaLichItems.ENDO.get().getDescription()));
     }
 
+    /**
+     * 竖直方向都按炉膛中心 ocy 排：炉膛的转弧绕开框角以后半径是 ⌈h√2⌉ + 2 和再大 3 格，总线放在外弧外面 3 格
+     * （以前总线离外弧 4 格、往上的箭头夹在两道弧中间），进料格、状态行依次往下；整块在中栏里居中，上沿不高过分隔线顶。
+     * 窄屏（427×240）分隔线顶到背包线（下面留 3 格）之间只放得下 107 格高的一块，炉膛半边还是 18 时要 113 格，
+     * 所以炉膛半边从 18 收到 16（非窄屏 21 → 19）
+     */
     @Override
     protected void layout() {
-        pTop = small ? hairY + 1 : hairY + 5;
-        chHalf = small ? 18 : 21;
-        ocy = pTop + (small ? 22 : 27);
-        int sp = small ? 54 : 60;
-        iy = pTop + (small ? 62 : 74);
-        busY = iy - (small ? 9 : 11);
-        statusY = pTop + (small ? 88 : 104);
+        chHalf = small ? 16 : 19;
+        sp = small ? 54 : 60;
+        int arc = chamberArcOuter(chHalf);
+        int busOff = arc + 3;
+        int iyOff = busOff + (small ? 9 : 11);
+        int statusOff = iyOff + (small ? 26 : 30);
+        // 块顶是外弧最上面那一格，块底是合成完成时状态行下面那道闪线
+        int top = middleTop(arc + 1 + statusOff + 11, sepT + 1, -1);
+        ocy = top + arc + 1;
+        pTop = ocy - (small ? 22 : 27);
+        busY = ocy + busOff;
+        iy = ocy + iyOff;
+        statusY = ocy + statusOff;
         for (int i = 0; i < 3; i++) {
             inX[i] = cx + (i - 1) * sp;
             place(menu.getSlot(i), inX[i] - 8, iy);
@@ -258,7 +271,8 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
 
     /**
      * 三条进料线 + 总线 + 进炉膛的一截：常亮一层淡底，放了东西的那条亮起来、光点一直往总线流
-     * （有产出时一路流进炉膛）；总线上一个往上的小箭头
+     * （有产出时一路流进炉膛）；总线左右两段的正中各一个指向中间的小箭头。
+     * 箭头以前画在进炉膛那一截竖线的正中，正好夹在两道转弧中间，弧转过来就和它叠在一起
      */
     private void drawCircuit(GuiGraphics g, float e, boolean hasOut, long now) {
         if (e <= 0.0F) {
@@ -278,8 +292,10 @@ public class RequiemRecastScreen extends ForgePageScreen<RequiemRecastMenu> {
             vl(g, cx, busY, ocy + chHalf + 1, resultRgb, 0.6F * e);
         }
         GuiShapes.end();
-        int mid = Math.round((busY + ocy + chHalf + 1) * 0.5F);
-        chevronUp(g, cx, mid, hasOut ? resultRgb : FxPalette.ASH, (hasOut ? 0.85F : 0.35F) * e);
+        int arrowRgb = hasOut ? resultRgb : FxPalette.ASH;
+        float arrowA = (hasOut ? 0.85F : 0.35F) * e;
+        chevronRight(g, cx - sp * 0.5F, busY, arrowRgb, arrowA);
+        chevronLeft(g, cx + sp * 0.5F, busY, arrowRgb, arrowA);
         boolean into = hasOut && resultShown();
         for (int i = 0; i < 3; i++) {
             boolean on = menu.getSlot(i).hasItem() && !pending(Ev.PLACE, i);

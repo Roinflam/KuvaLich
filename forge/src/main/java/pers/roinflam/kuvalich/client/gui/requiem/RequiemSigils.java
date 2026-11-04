@@ -39,8 +39,9 @@ import pers.roinflam.kuvalich.utils.Reference;
  * 符号块本身近似方形，留位按宽 = 高 × {@link #ASPECT}。卡 id 认不出（越界、包里给的 15）时画中性占位：
  * 圆角框 + 中间一个小环。</p>
  *
- * <p>Oull（id 8）没有自己的符号：在八张卡的符号之间按时间轮流切换，每 {@link #OULL_FRAME_MS} 毫秒换一张，
- * 和它物品贴图的动画同一个节奏（贴图每帧 10 tick）；换的时候最后 {@link #OULL_FADE_MS} 毫秒交叉淡化。</p>
+ * <p>Oull（id 8）没有自己的符号：在八张卡的符号之间按时间轮流切换，每张停 {@link #OULL_HOLD_MS} 毫秒；
+ * 换的时候「灼热变形」——旧符号烧亮、亮着交叉淡化成新符号、再冷却回原色。和它物品贴图的动画同一个节奏
+ * （贴图那边是停 50 tick、烧亮 5、变形 7、冷却 5）。</p>
  *
  * <p>两层光按加法叠（关掉「加法发光」时退回普通透明混合）；没开界面（画在 HUD 上）时再乘相机处的白天补偿，
  * 白天露天不会整片发白。画的时候不分配：顶点走 {@link Tesselator} 的公用缓冲；混合、剔除用完还原成默认
@@ -55,9 +56,16 @@ public final class RequiemSigils {
     public static final int CARD_COUNT = 8;
     /** Oull 的卡 id：轮流画八张卡的符号 */
     public static final int OULL_ID = 8;
-    /** Oull 每张符号停多久、换下一张前交叉淡化多久（毫秒） */
-    private static final int OULL_FRAME_MS = 500;
-    private static final int OULL_FADE_MS = 120;
+    /** Oull 每张符号停多久，换下一张时烧亮、亮着变形、冷却各多久（毫秒） */
+    private static final int OULL_HOLD_MS = 2500;
+    private static final int OULL_HEAT_MS = 250;
+    private static final int OULL_MORPH_MS = 350;
+    private static final int OULL_COOL_MS = 250;
+    private static final int OULL_PERIOD_MS = OULL_HOLD_MS + OULL_HEAT_MS + OULL_MORPH_MS + OULL_COOL_MS;
+    /** 烧亮到顶时线往这个粉白靠多少；本来不发光的画法补一圈赤毒红的沿线光，到顶时多亮 */
+    private static final int OULL_HOT_LINE = 0xFFD6CE;
+    private static final float OULL_HOT_MIX = 0.55F;
+    private static final float OULL_HOT_GLOW = 0.45F;
 
     /** 贴图里每行的格数：8 张卡 + 占位 */
     private static final int COLS = CARD_COUNT + 1;
@@ -171,6 +179,22 @@ public final class RequiemSigils {
         }
     }
 
+    /**
+     * Oull 换符号时烧亮的样子：线往粉白靠，沿线的光加亮（本来不发光的画法补一圈赤毒红）；
+     * {@code heat} 0 是原样、1 是烧到顶，整张再乘 {@code alpha}
+     */
+    private static void drawOullHot(GuiGraphics g, int cardId, float cx, float cy, float size, int fillArgb,
+                                    int haloArgb, int glowArgb, int lineArgb, float heat, float alpha) {
+        float lineA = (lineArgb >>> 24) / 255.0F;
+        float glowA = (glowArgb >>> 24) / 255.0F;
+        int line = GuiShapes.argb(FxCurve.lerpColor(lineArgb, OULL_HOT_LINE, OULL_HOT_MIX * heat), lineA * alpha);
+        int glow = glowA > 0.0F
+                ? GuiShapes.argb(glowArgb, Math.min(1.0F, glowA * (1.0F + heat)) * alpha)
+                : GuiShapes.argb(FxPalette.KUVA, OULL_HOT_GLOW * heat * lineA * alpha);
+        drawLayers(g, cardId, cx, cy, size, GuiShapes.mulAlpha(fillArgb, alpha), GuiShapes.mulAlpha(haloArgb, alpha),
+                glow, line);
+    }
+
     /** 判错斜杠：过中心、左下到右上 45°，两端伸出符号框（以高为准）10% */
     public static void slash(GuiGraphics g, float cx, float cy, float size, float lineW, int argb) {
         float h = size * 0.5F * 1.1F;
@@ -188,21 +212,24 @@ public final class RequiemSigils {
     public static void drawLayers(GuiGraphics g, int cardId, float cx, float cy, float size,
                                   int fillArgb, int haloArgb, int glowArgb, int lineArgb) {
         if (cardId == OULL_ID) {
-            long t = Util.getMillis();
-            int frame = (int) ((t / OULL_FRAME_MS) % CARD_COUNT);
-            int into = (int) (t % OULL_FRAME_MS);
-            float mix = into <= OULL_FRAME_MS - OULL_FADE_MS ? 0.0F
-                    : (into - (OULL_FRAME_MS - OULL_FADE_MS)) / (float) OULL_FADE_MS;
-            if (mix <= 0.0F) {
+            long t = Util.getMillis() % ((long) OULL_PERIOD_MS * CARD_COUNT);
+            int frame = (int) (t / OULL_PERIOD_MS);
+            int next = (frame + 1) % CARD_COUNT;
+            int into = (int) (t % OULL_PERIOD_MS) - OULL_HOLD_MS;
+            if (into < 0) {
                 drawLayers(g, frame, cx, cy, size, fillArgb, haloArgb, glowArgb, lineArgb);
-                return;
+            } else if (into < OULL_HEAT_MS) {
+                drawOullHot(g, frame, cx, cy, size, fillArgb, haloArgb, glowArgb, lineArgb,
+                        into / (float) OULL_HEAT_MS, 1.0F);
+            } else if (into < OULL_HEAT_MS + OULL_MORPH_MS) {
+                // 亮着变形：两张烧亮的按 1 − mix : mix 各画一遍
+                float mix = (into - OULL_HEAT_MS) / (float) OULL_MORPH_MS;
+                drawOullHot(g, frame, cx, cy, size, fillArgb, haloArgb, glowArgb, lineArgb, 1.0F, 1.0F - mix);
+                drawOullHot(g, next, cx, cy, size, fillArgb, haloArgb, glowArgb, lineArgb, 1.0F, mix);
+            } else {
+                drawOullHot(g, next, cx, cy, size, fillArgb, haloArgb, glowArgb, lineArgb,
+                        1.0F - (into - OULL_HEAT_MS - OULL_MORPH_MS) / (float) OULL_COOL_MS, 1.0F);
             }
-            // 交叉淡化：两张按 1 − mix : mix 各画一遍
-            float keep = 1.0F - mix;
-            drawLayers(g, frame, cx, cy, size, GuiShapes.mulAlpha(fillArgb, keep), GuiShapes.mulAlpha(haloArgb, keep),
-                    GuiShapes.mulAlpha(glowArgb, keep), GuiShapes.mulAlpha(lineArgb, keep));
-            drawLayers(g, (frame + 1) % CARD_COUNT, cx, cy, size, GuiShapes.mulAlpha(fillArgb, mix),
-                    GuiShapes.mulAlpha(haloArgb, mix), GuiShapes.mulAlpha(glowArgb, mix), GuiShapes.mulAlpha(lineArgb, mix));
             return;
         }
         boolean fill = (fillArgb >>> 24) != 0;

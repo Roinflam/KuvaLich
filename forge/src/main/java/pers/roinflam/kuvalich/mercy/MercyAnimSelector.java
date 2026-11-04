@@ -23,7 +23,9 @@ import java.util.function.ToLongFunction;
  *
  * <p>控制器的过渡时长是 0，切片段不插值，所以每个片段的第 0 帧都等于上一段的末帧（动画文件由
  * {@code tools/anim/build_mercy_anim.py} 按同一张姿势表生成）。玄骸判错以后的挣脱从哪个姿势起身取决于
- * 判错的是第几刀，所以挣脱按起点拆成了几段，名字只在这个类里用。</p>
+ * 判错的是第几刀，所以挣脱按起点拆成了几段，名字只在这个类里用。这次验的几刀全对、还没到第三刀时的挣开站起
+ * 同样按「第几刀」分段；倒地到时没人处决的站起从倒地姿势起。只有这一段切进来时淡 {@value #RISE_BLEND_TICKS} tick：
+ * 倒地循环停在哪一帧不一定，第 0 帧对不齐。</p>
  *
  * <p>每帧都会调，返回的都是下面建好的常量，不分配；同一个常量连着返回时 GeckoLib 不会重播。</p>
  */
@@ -67,8 +69,10 @@ public final class MercyAnimSelector {
     private static final int SUCCESS_KNEEL_MS = 4670;
     /** 成功：抽刀、瘫倒 */
     private static final int SUCCESS_SLUMP_MS = 7530;
-    /** 判错之后多久挣脱 */
+    /** 判错之后多久挣脱；这次验的几刀全对、还没到第三刀时，最后一刀之后多久挣开站起，也是这么久 */
     private static final int FAIL_BREAKFREE_AFTER_MS = 700;
+    /** 倒地到时站起来：从倒地循环切过来时淡多少 tick */
+    public static final int RISE_BLEND_TICKS = 3;
     /** 刚出现在这个客户端的实体，前几 tick 看到的倒地算「早就倒了」，不补倒下去那一下 */
     private static final int LATE_VIEW_TICKS = 3;
 
@@ -98,6 +102,10 @@ public final class MercyAnimSelector {
     private static final RawAnimation[] L_HIT3_HELD = new RawAnimation[LICH_N];
     /** [套路][判错在第几刀 0~2] 从那一刀末帧起身的挣脱 */
     private static final RawAnimation[][] L_BREAKFREE_AT = new RawAnimation[LICH_N][3];
+    /** 倒地到时没人处决，从倒地姿势站起来 */
+    private static final RawAnimation L_RISE_DOWN = hold(MercyAnimNames.LICH_RISE);
+    /** [套路][这次捅了几刀 − 1，0~1] 全对、还没到第三刀，从最后那一刀挣开站起来 */
+    private static final RawAnimation[][] L_RISE_AT = new RawAnimation[LICH_N][2];
 
     private static final RawAnimation T_ENTER = RawAnimation.begin()
             .thenPlay(MercyAnimNames.THRALL_DOWN_ENTER).thenLoop(MercyAnimNames.THRALL_DOWNED);
@@ -109,6 +117,8 @@ public final class MercyAnimSelector {
     private static final Set<RawAnimation> SHOW = Collections.newSetFromMap(new IdentityHashMap<>());
     /** 玄骸进入离场时，正在播的片段 → 从它的末帧起身的挣脱 */
     private static final Map<RawAnimation, RawAnimation> BREAKFREE_FROM = new IdentityHashMap<>();
+    /** 玄骸进入起身时，正在播的片段 → 从它的末帧站起来的那一段（本地时间轴已经结束、晚进视野时按计划位挑） */
+    private static final Map<RawAnimation, RawAnimation> RISE_FROM = new IdentityHashMap<>();
 
     static {
         for (int v = 0; v < LICH_N; v++) {
@@ -116,6 +126,9 @@ public final class MercyAnimSelector {
             for (int k = 0; k < 3; k++) {
                 L_HIT[v][k] = hold(MercyAnimNames.lichHit(variant, k + 1));
                 L_BREAKFREE_AT[v][k] = hold("mercy.lich." + variant.animKey + ".breakfree" + (k + 1));
+            }
+            for (int k = 0; k < 2; k++) {
+                L_RISE_AT[v][k] = hold(MercyAnimNames.lichRise(variant, k + 1));
             }
             L_HIT3_HELD[v] = hold("mercy.lich." + variant.animKey + LICH_HIT3_HELD);
         }
@@ -131,10 +144,25 @@ public final class MercyAnimSelector {
         SHOW.add(L_BREAKFREE);
         SHOW.add(L_BREAKFREE_GRAB);
         SHOW.add(L_BREAKFREE_C0);
+        SHOW.add(L_RISE_DOWN);
         for (int v = 0; v < LICH_N; v++) {
             Collections.addAll(SHOW, L_HIT[v]);
             Collections.addAll(SHOW, L_BREAKFREE_AT[v]);
+            Collections.addAll(SHOW, L_RISE_AT[v]);
             SHOW.add(L_HIT3_HELD[v]);
+        }
+
+        // 起身中被叫走（主人下线之类）：已经在站起来了，接着这一段演完，离场的雾照放
+        BREAKFREE_FROM.put(L_RISE_DOWN, L_RISE_DOWN);
+        RISE_FROM.put(L_ENTER, L_RISE_DOWN);
+        RISE_FROM.put(L_DOWNED, L_RISE_DOWN);
+        RISE_FROM.put(L_RISE_DOWN, L_RISE_DOWN);
+        for (int v = 0; v < LICH_N; v++) {
+            for (int k = 0; k < 2; k++) {
+                BREAKFREE_FROM.put(L_RISE_AT[v][k], L_RISE_AT[v][k]);
+                RISE_FROM.put(L_HIT[v][k], L_RISE_AT[v][k]);
+                RISE_FROM.put(L_RISE_AT[v][k], L_RISE_AT[v][k]);
+            }
         }
 
         BREAKFREE_FROM.put(L_ENTER, L_BREAKFREE);
@@ -195,6 +223,9 @@ public final class MercyAnimSelector {
             if (mercy == MercyState.DOWNED) {
                 return downed(entity, state, thrall, current);
             }
+            if (mercy == MercyState.RISING && !thrall) {
+                return rising(entity, current);
+            }
             // 处决中但本地没有时间轴：演到一半时间轴先结束了（交还控制之后、消散途中）就停在当前片段；
             // 晚进视野的保持倒地循环，不补演出
             return SHOW.contains(current) ? current : thrall ? T_DOWNED : L_DOWNED;
@@ -208,14 +239,20 @@ public final class MercyAnimSelector {
         }
         int v = variantId >= 0 && variantId < LICH_N ? variantId : 0;
         MercyVariant variant = LICH_VARIANTS[v];
-        int prefix = (bits >> 2) & 3;
+        int stabs = stabsOf(bits);
+        int prefix = Math.min((bits >> 2) & 3, stabs);
 
-        if (prefix == 3) {
+        if (prefix >= stabs && stabs >= 3) {
             if (t >= SUCCESS_SLUMP_MS) {
                 return L_SLUMP;
             }
             if (t >= SUCCESS_KNEEL_MS) {
                 return L_KNEEL;
+            }
+        } else if (prefix >= stabs) {
+            // 这次验的几刀全对、还没到第三刀：最后一刀照常刺入，700 ms 后挣开站起来
+            if (t >= variant.stabMs(stabs - 1) + FAIL_BREAKFREE_AFTER_MS) {
+                return L_RISE_AT[v][stabs - 1];
             }
         } else {
             // 判错在第 prefix + 1 刀：这一刀照常刺入，之后不再有刀，700 ms 后挣脱
@@ -227,12 +264,41 @@ public final class MercyAnimSelector {
                 return prefix == 2 ? L_HIT3_HELD[v] : L_HIT[v][prefix];
             }
         }
-        for (int k = 2; k >= 0; k--) {
+        for (int k = stabs - 1; k >= 0; k--) {
             if (t >= variant.stabMs(k)) {
                 return L_HIT[v][k];
             }
         }
         return grab(v);
+    }
+
+    /** 计划位里的刀数（0 按 3 读，和 {@link MercyPlan#decode} 一致） */
+    private static int stabsOf(int bits) {
+        int stabs = bits & 3;
+        return stabs == 0 ? 3 : stabs;
+    }
+
+    /**
+     * 起身中、本地没有时间轴（倒地到时没人处决；挣开站起时本地时间轴先结束了；晚进视野）：
+     * 正在播的片段能接上就接，否则按计划位挑——没有计划位就是从倒地站起来
+     */
+    private static RawAnimation rising(AbstractKuva entity, @Nullable RawAnimation current) {
+        RawAnimation from = current == null ? null : RISE_FROM.get(current);
+        if (from != null) {
+            return from;
+        }
+        int bits = planBits.applyAsInt(entity);
+        int stabs = stabsOf(bits);
+        if (bits == 0 || stabs >= 3) {
+            return L_RISE_DOWN;
+        }
+        int variantId = (bits >> 4) & 0xF;
+        return L_RISE_AT[variantId >= 0 && variantId < LICH_N ? variantId : 0][stabs - 1];
+    }
+
+    /** 切进这一段时控制器淡多少 tick：只有从倒地循环站起来那一段淡，别的切片段不插值（首帧对得上） */
+    public static int blendTicks(RawAnimation animation) {
+        return animation == L_RISE_DOWN ? RISE_BLEND_TICKS : 0;
     }
 
     /** 起手被抓住的片段：贴身上挑、踏背各有一段，别的共用 */

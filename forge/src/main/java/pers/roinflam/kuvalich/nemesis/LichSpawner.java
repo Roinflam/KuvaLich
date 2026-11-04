@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  * <p>站立判定两种一样：脚下方块上表面结实，玄骸的整个包围盒放得下、不碰液体、岩浆、火和细雪。
  * 不看亮度、不看时间，也不受怪物数量上限影响。</p>
+ *
+ * <p>幼体、奴仆小队也用这里找落点，传自己的碰撞箱尺寸（带 {@code halfWidth} / {@code height} 的那几个重载）。</p>
  */
 public final class LichSpawner {
 
@@ -52,6 +54,13 @@ public final class LichSpawner {
      */
     @Nullable
     public static Vec3 findHidden(ServerPlayer owner, int minDist, int maxDist, int tries, boolean relaxed) {
+        return findHidden(owner, minDist, maxDist, tries, relaxed, HALF_WIDTH, HEIGHT);
+    }
+
+    /** 同上，按给定的碰撞箱（半宽、高）判能不能站、挡不挡得住 */
+    @Nullable
+    public static Vec3 findHidden(ServerPlayer owner, int minDist, int maxDist, int tries, boolean relaxed,
+                                  double halfWidth, double height) {
         ServerLevel level = owner.serverLevel();
         RandomSource random = owner.getRandom();
         Vec3 fallback = null;
@@ -60,7 +69,7 @@ public final class LichSpawner {
             double dist = minDist + random.nextDouble() * Math.max(0, maxDist - minDist);
             double x = owner.getX() + Math.cos(angle) * dist;
             double z = owner.getZ() + Math.sin(angle) * dist;
-            Vec3 feet = findStanding(level, x, z, Mth.floor(owner.getY()));
+            Vec3 feet = findStanding(level, x, z, Mth.floor(owner.getY()), halfWidth, height);
             if (feet == null) {
                 continue;
             }
@@ -74,7 +83,7 @@ public final class LichSpawner {
                 }
                 continue;
             }
-            if (behind || isOccluded(level, owner, feet)) {
+            if (behind || isOccluded(level, owner, feet, height)) {
                 return feet;
             }
         }
@@ -87,9 +96,16 @@ public final class LichSpawner {
      */
     @Nullable
     public static Vec3 findFront(ServerPlayer owner, @Nullable BlockPos preferred, int tries) {
+        return findFront(owner, preferred, tries, HALF_WIDTH, HEIGHT);
+    }
+
+    /** 同上，按给定的碰撞箱 */
+    @Nullable
+    public static Vec3 findFront(ServerPlayer owner, @Nullable BlockPos preferred, int tries, double halfWidth,
+                                 double height) {
         ServerLevel level = owner.serverLevel();
         if (preferred != null) {
-            Vec3 feet = standingAt(level, preferred);
+            Vec3 feet = standingAt(level, preferred, halfWidth, height);
             if (feet != null) {
                 return feet;
             }
@@ -102,7 +118,7 @@ public final class LichSpawner {
             double dist = FRONT_MIN + random.nextDouble() * (FRONT_MAX - FRONT_MIN);
             double x = owner.getX() - Math.sin(yawRad + off) * dist;
             double z = owner.getZ() + Math.cos(yawRad + off) * dist;
-            Vec3 feet = findStanding(level, x, z, Mth.floor(owner.getY()));
+            Vec3 feet = findStanding(level, x, z, Mth.floor(owner.getY()), halfWidth, height);
             if (feet != null) {
                 return feet;
             }
@@ -115,6 +131,11 @@ public final class LichSpawner {
      */
     @Nullable
     static Vec3 findStanding(ServerLevel level, double x, double z, int ownerY) {
+        return findStanding(level, x, z, ownerY, HALF_WIDTH, HEIGHT);
+    }
+
+    @Nullable
+    public static Vec3 findStanding(ServerLevel level, double x, double z, int ownerY, double halfWidth, double height) {
         int bx = Mth.floor(x);
         int bz = Mth.floor(z);
         BlockPos column = new BlockPos(bx, ownerY, bz);
@@ -124,7 +145,7 @@ public final class LichSpawner {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int y = ownerY + SCAN_UP; y >= ownerY - SCAN_DOWN; y--) {
             pos.set(bx, y, bz);
-            Vec3 feet = standingAt(level, pos);
+            Vec3 feet = standingAt(level, pos, halfWidth, height);
             if (feet != null) {
                 return feet;
             }
@@ -135,7 +156,13 @@ public final class LichSpawner {
     /** 玄骸能不能站在 {@code feet} 这一格（脚底所在方块）上；能就返回脚底中心 */
     @Nullable
     public static Vec3 standingAt(ServerLevel level, BlockPos feet) {
-        if (feet.getY() <= level.getMinBuildHeight() || feet.getY() + 4 >= level.getMaxBuildHeight()) {
+        return standingAt(level, feet, HALF_WIDTH, HEIGHT);
+    }
+
+    /** 同上，按给定的碰撞箱 */
+    @Nullable
+    public static Vec3 standingAt(ServerLevel level, BlockPos feet, double halfWidth, double height) {
+        if (feet.getY() <= level.getMinBuildHeight() || feet.getY() + Mth.ceil(height) >= level.getMaxBuildHeight()) {
             return null;
         }
         if (!level.hasChunkAt(feet) || !level.getWorldBorder().isWithinBounds(feet)) {
@@ -146,8 +173,8 @@ public final class LichSpawner {
             return null;
         }
         Vec3 center = new Vec3(feet.getX() + 0.5D, feet.getY(), feet.getZ() + 0.5D);
-        AABB box = new AABB(center.x - HALF_WIDTH, center.y, center.z - HALF_WIDTH,
-                center.x + HALF_WIDTH, center.y + HEIGHT, center.z + HALF_WIDTH);
+        AABB box = new AABB(center.x - halfWidth, center.y, center.z - halfWidth,
+                center.x + halfWidth, center.y + height, center.z + halfWidth);
         if (!level.noCollision(box) || level.containsAnyLiquid(box)) {
             return null;
         }
@@ -180,8 +207,13 @@ public final class LichSpawner {
 
     /** 主人眼睛到玄骸脚、腰、头三条线都被方块挡住 */
     static boolean isOccluded(ServerLevel level, ServerPlayer owner, Vec3 feet) {
+        return isOccluded(level, owner, feet, HEIGHT);
+    }
+
+    /** 主人眼睛到脚、腰、头（按身高 {@code height} 取）三条线都被方块挡住 */
+    static boolean isOccluded(ServerLevel level, ServerPlayer owner, Vec3 feet, double height) {
         Vec3 eye = owner.getEyePosition();
-        double[] heights = {0.2D, 1.7D, 3.2D};
+        double[] heights = {0.2D, height * 0.5D, height - 0.2D};
         for (double h : heights) {
             Vec3 to = feet.add(0.0D, h, 0.0D);
             HitResult hit = level.clip(new ClipContext(eye, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner));

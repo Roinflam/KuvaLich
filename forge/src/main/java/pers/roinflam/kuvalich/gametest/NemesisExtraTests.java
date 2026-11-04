@@ -540,6 +540,8 @@ public final class NemesisExtraTests {
         h.assertTrue(run.apply("info " + n) == 1, "info（在场）");
         run.apply("down " + n);
         h.assertTrue(run.apply("depart " + n) == 1, "depart");
+        // birth 不碰密语，这里先揭开一条，看 reset 动不动它
+        card.setUnlockedCardStatus(1);
         h.assertTrue(run.apply("reset " + n) == 1 && !card.hasLich(), "reset");
         h.assertTrue(card.getUnlockedCardStatus() >= 1, "reset 不动谜语阶段");
         h.assertTrue(run.apply("summon " + n + " ultimatum") == 0, "没有玄骸时 summon ultimatum 应当失败");
@@ -601,13 +603,14 @@ public final class NemesisExtraTests {
                 "minecraft:plains", "minecraft:overworld");
     }
 
-    /** 走正常的进度流程揭开第一条密语 */
+    /** 走正常的进度流程揭开第一条密语，再让玄骸诞生（平常要处决一只幼体，这里直接生） */
     private static void bornByProgress(ServerPlayer p, RequiemCard card) {
         int threshold = ModConfig.KUVA_LICH.firstStage.get();
         card.setDecryptionProgress(Math.max(0, threshold - 1));
         int levelBefore = card.getUnlockedCardStatus();
         card.addPotion(1);
         LichDirector.onDecryptionProgress(p, card, 1, levelBefore);
+        LichDirector.birthNow(p);
     }
 
     private static ItemEntity drop(ServerLevel level, ServerPlayer p, ItemStack stack) {

@@ -165,7 +165,8 @@ public final class MercyClient {
             this.stabs = MercyTimeline.stabTimes(plan);
             this.startMs = KuvaFxDirector.clockMs();
             this.timeline = MercyTimeline.build(this);
-            this.pose = MercyPose.track(plan, shortOutro);
+            this.pose = MercyPose.track(plan, shortOutro,
+                    target instanceof AbstractKuva k ? k.mercyBodyScale() : 1.0F);
             FxTimeline h = KuvaFxDirector.start("mercy", MercyTimeline.chest(target), FxTier.S);
             this.hero = h.follow(target).until(endMs);
         }
@@ -208,6 +209,12 @@ public final class MercyClient {
                 // 背对处决者的套路成功：切特写那一刻转成面向处决者跪着
                 facing = MercyVariant.Facing.TOWARD;
             }
+            float turn = turnProgress(t);
+            if (turn > 0.0F) {
+                // 背对处决者的套路挣开站起：一边站起来一边转半圈面向他
+                float away = yawOf(f.scale(-1.0D));
+                return away + 180.0F * side * turn;
+            }
             Vec3 dir = switch (facing) {
                 case TOWARD -> f;
                 case AWAY -> f.scale(-1.0D);
@@ -215,6 +222,18 @@ public final class MercyClient {
                 case SIDE -> s.scale(-1.0D);
             };
             return yawOf(dir);
+        }
+
+        /** 背对处决者的套路挣开站起时转身转到几成（0~1，easeInOutSine）；别的情况恒为 0 */
+        float turnProgress(long t) {
+            if (variant.thrall || variant.facing != MercyVariant.Facing.AWAY
+                    || MercyTimeline.outcome(plan) != MercyTimeline.Outcome.ADVANCE) {
+                return 0.0F;
+            }
+            int g = MercyTimeline.verdictFillMs(plan);
+            float u = Mth.clamp((t - g - MercyTimeline.ADVANCE_TURN_FROM)
+                    / (float) (MercyTimeline.ADVANCE_TURN_TO - MercyTimeline.ADVANCE_TURN_FROM), 0.0F, 1.0F);
+            return (float) (0.5D - 0.5D * Math.cos(Math.PI * u));
         }
     }
 
@@ -511,6 +530,7 @@ public final class MercyClient {
                 // 不画世界的帧（窗口最小化之类）也照样推进
                 for (Exec e : BY_TARGET.values().toArray(new Exec[0])) {
                     e.timeline.advance(e, e.elapsed());
+                    smoothTurn(e);
                 }
             }
             return;
@@ -549,7 +569,7 @@ public final class MercyClient {
             MercyState st = kuva.getMercyState();
             if (st == MercyState.EXECUTING) {
                 e.seenExecuting = true;
-            } else if (e.seenExecuting && !mayVanish && !(st == MercyState.LEAVING && failBrokeFree(e, t))) {
+            } else if (e.seenExecuting && !mayVanish && !brokeFree(e, st, t)) {
                 // 处决中途退回倒地 / 复位 / 被提前离场：收场
                 end(e);
                 return;
@@ -576,10 +596,40 @@ public final class MercyClient {
         }
     }
 
-    /** 失败分支里玄骸挣脱以后转入离场状态是正常的 */
-    private static boolean failBrokeFree(Exec e, long t) {
-        return MercyTimeline.outcome(e.plan) == MercyTimeline.Outcome.FAIL
-                && t >= MercyTimeline.failFillMs(e.plan) + MercyTimeline.FAIL_BREAKFREE;
+    /**
+     * 玄骸挣脱以后离开「处决中」是正常的：失败分支转入离场；挣开站起转入起身、再回到能打的状态
+     * （服务端在挣开那一 tick 就改状态，同步可能比本地时间轴早到一点，放宽 {@value #VANISH_SLACK_MS} ms）
+     */
+    private static boolean brokeFree(Exec e, MercyState st, long t) {
+        return switch (MercyTimeline.outcome(e.plan)) {
+            case FAIL -> st == MercyState.LEAVING && t >= MercyTimeline.breakFreeMs(e.plan);
+            case ADVANCE -> (st == MercyState.RISING || st == MercyState.NONE)
+                    && t + VANISH_SLACK_MS >= MercyTimeline.breakFreeMs(e.plan);
+            default -> false;
+        };
+    }
+
+    /**
+     * 挣开站起时转身那一段：tick 开头按住的朝向在实体自己的 tick 里被抄进 O 值，渲染时两头一样、一 tick 跳一格。
+     * 这里在实体 tick 之后把 O 值写成这一刻、当前值写成下一 tick 的朝向，画面上就按帧转过去
+     */
+    private static void smoothTurn(Exec e) {
+        long t = e.elapsed();
+        if (e.frozenAt >= 0L || (e.turnProgress(t) <= 0.0F && e.turnProgress(t + 50L) <= 0.0F)
+                || e.turnProgress(t) >= 1.0F) {
+            return;
+        }
+        if (!(e.target() instanceof LivingEntity le) || !le.isAlive()) {
+            return;
+        }
+        float now = e.targetYaw(t);
+        float next = e.targetYaw(t + 50L);
+        le.yRotO = now;
+        le.yBodyRotO = now;
+        le.yHeadRotO = now;
+        le.setYRot(next);
+        le.yBodyRot = next;
+        le.setYHeadRot(next);
     }
 
     /** 目标在处决开始那一刻被转向（服务端同时设同样的朝向）；期间每 tick 再按住，免得插值把它拧回去 */

@@ -39,6 +39,7 @@ import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.fx.FxId;
@@ -78,6 +79,10 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>定案（tick 17）之前被打断：作废，目标回到倒地、计时接着走（不足几秒的补到几秒），处决者解锁。
  * 定案之后被打断：把剩下的结算一次做完（快进）——第一刀亮起时处决者已经知道第一张卡对不对，
  * 这时下线要是能让处决作废，就能白拿「第几张对」的信息。</p>
+ *
+ * <p>有主玄骸的血分三段，每打空一段倒地一次：第 k 次处决只验前 k 张卡、捅 k 刀。验的几刀全对、还没到第三刀，
+ * 玄骸挣开站起来（下一段满血、护盾回满）接着打；第三次全对才终结；哪一刀错了照旧升级逃走。
+ * 倒地到时没人处决，玄骸把这段血回满站起来，连着三次没人处决才逃走。</p>
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public final class MercyServer {
@@ -102,7 +107,7 @@ public final class MercyServer {
     public static final int SUCCESS_HOLD_TICKS = 32;
     /** 第 1 / 2 / 3 格填满发光的 tick（830 / 1680 / 2670 毫秒） */
     static final int[] FILL_TICKS = {17, 34, 53};
-    /** 判错之后各件事相对那一格的 tick 偏移：推开、嘲讽、离场开始、解锁、移除、聊天、进度 */
+    /** 判错之后各件事相对那一格的 tick 偏移：推开、嘲讽、离场开始、解锁、移除、Oull、进度 */
     static final int FAIL_PUSH = 14;
     static final int FAIL_TAUNT = 26;
     static final int FAIL_LEAVE = 48;
@@ -110,6 +115,20 @@ public final class MercyServer {
     static final int FAIL_REMOVE = 58;
     static final int FAIL_CHAT = 60;
     static final int FAIL_PROGRESS = 70;
+    /**
+     * 这次验的几刀全对、还没到第三刀：相对最后一格的偏移。挣开（客户端 700 毫秒）那一刻推开处决者、进起身，
+     * 起身演完（2300 毫秒）回到能打的状态、处决者解锁
+     */
+    static final int ADVANCE_RISE = 14;
+    /** 背对处决者的套路站起时转过来面向他（客户端 1320 毫秒转完） */
+    static final int ADVANCE_TURN = 27;
+    static final int ADVANCE_STAND = 46;
+    /** 挣开时处决者被推开多远（比判错那一下轻） */
+    static final double ADVANCE_PUSH_DISTANCE = 1.0D;
+    /** 倒地到时没人处决：站起来要多久（这段时间不动、不挨打） */
+    public static final int RISE_TICKS = 32;
+    /** 连着这么多次倒地都没人处决，玄骸就逃走 */
+    public static final int UNCLAIMED_LIMIT = 3;
     /** 奴仆：死亡、解锁（刺入那一 tick 定案，看套路） */
     public static final int THRALL_DEATH_TICK = 30;
     /** 奴仆绕到身后的两套：人落地、站位换到身后（客户端 1600 ms 前走完路线） */
@@ -207,6 +226,8 @@ public final class MercyServer {
         LAND,
         /** 失败：玄骸进入离场 */
         LEAVE,
+        /** 还没到第三刀全对：玄骸挣开、进起身 */
+        RISE,
         /** 给玩家的东西：聊天、掉落、进度、完成提示 */
         PLAYER,
         /** 目标死亡 */
@@ -251,8 +272,7 @@ public final class MercyServer {
         /** 三刀成功：定案时算好的奖励 */
         @Nullable
         KuvaMasterEntity.SuccessResult success;
-        /** 失败：定案时记下的名字和等级（收尾时实体可能已经没了） */
-        Component lichName = Component.empty();
+        /** 失败：定案时算好的等级（收尾时实体可能已经没了） */
         int rankAfter;
         /** 失败：定案时掷过的「给一张 Oull」 */
         boolean oullDrop;
@@ -273,7 +293,12 @@ public final class MercyServer {
         }
 
         boolean failure() {
-            return lich && plan.prefix() < 3;
+            return lich && plan.failure();
+        }
+
+        /** 这次验的几刀全对、还没到第三刀 */
+        boolean advance() {
+            return lich && plan.advance();
         }
 
         /** 按 tick 插到对的位置（同一 tick 的保持加入顺序）：推进时从头逐个往后走，排错了后面的会被前面的卡住 */
@@ -304,9 +329,9 @@ public final class MercyServer {
      *
      * <ul>
      *   <li>没倒地：不管，返回 false；</li>
-     *   <li>倒地、消散中：改成离场中（客户端播起身），离场照常走，返回 false；</li>
+     *   <li>倒地、起身中、消散中：改成离场中（客户端播起身），离场照常走，返回 false；</li>
      *   <li>处决中、还没定案：作废这一场、处决者解锁，离场照常走，返回 false；</li>
-     *   <li>处决中、已定案、判错了：给玩家的聊天和进度立刻发，冲击和失败的结算不做了（离场本身就是结算），返回 false；</li>
+     *   <li>处决中、已定案、判错了或者还没到第三刀：给玩家的东西立刻发，冲击和失败的结算不做了（离场本身就是结算），返回 false；</li>
      *   <li>处决中、已定案、成功：快进到死、奖励立刻发，返回 true，调用方不再放离场。</li>
      * </ul>
      */
@@ -335,10 +360,11 @@ public final class MercyServer {
             }
             return false;
         }
-        if (e.failure()) {
+        if (e.failure() || e.advance()) {
             fastForward(e, false);
             if (lich.isAlive()) {
                 lich.setMercyState(MercyState.LEAVING);
+                downedChanged(lich, false);
             }
             return false;
         }
@@ -370,6 +396,11 @@ public final class MercyServer {
         if (!MercyRules.canAct(player) || LOCKED.containsKey(id)) {
             return;
         }
+        if (target instanceof KuvaLarvlingEntity && !KuvaLarvlingEntity.canReceiveLich(player)) {
+            // 倒地以后他又从别处得了一只玄骸：已经有玄骸的人处决不了幼体
+            deny(player, "has_lich");
+            return;
+        }
         if (!MercyRules.inReach(player, target, MercyRules.REACH_SLACK)) {
             deny(player, "reach");
             return;
@@ -394,7 +425,7 @@ public final class MercyServer {
 
     // ==================== 倒地 ====================
 
-    /** 致命伤拦下来之后（实体已经把血量压回 1）：进倒地 */
+    /** 致命伤拦下来、或者这段血打空之后（实体已经把血量压到这段的底）：进倒地 */
     public static void enterDowned(AbstractKuva target, DamageSource source) {
         beginDowned(target, qualifiedFor(target, source));
     }
@@ -409,8 +440,11 @@ public final class MercyServer {
             return;
         } else {
             q = qualified == null ? null : qualified.getUUID();
+            if (target instanceof KuvaLarvlingEntity larvling) {
+                q = larvling.pickClaimant(q);
+            }
         }
-        target.setHealth(1.0F);
+        target.setHealth(target.downedHealth());
         beginDowned(target, q);
     }
 
@@ -420,7 +454,7 @@ public final class MercyServer {
         target.getNavigation().stop();
         Vec3 v = target.getDeltaMovement();
         target.setDeltaMovement(0.0D, v.y, 0.0D);
-        target.setMercyRemaining(ModConfig.KUVA_LICH.mercyDownedSeconds.get() * 20);
+        target.setMercyRemaining(target.downedSeconds() * 20);
         target.setMercyActorId(resolveQualifiedId(target));
         target.setMercyPlanBits(0);
         target.setMercyState(MercyState.DOWNED);
@@ -438,7 +472,8 @@ public final class MercyServer {
 
     /**
      * 致命一击的资格人：玄骸 = 主人；奴仆按顺序判——伤害来自玩家就是他；来自宠物、召唤物就是它的主人；
-     * 烧伤、推下岩浆这类延后的伤害看最近一次被哪个玩家打过；都不是就没有资格人（谁也捅不了，到时消散）
+     * 烧伤、推下岩浆这类延后的伤害看最近一次被哪个玩家打过；都不是就没有资格人（谁也捅不了，到时消散）。
+     * 幼体先按奴仆的规矩找出打倒它的人，他已经有玄骸就退给幼体的主人（见 {@link KuvaLarvlingEntity#pickClaimant}）
      */
     @Nullable
     private static UUID qualifiedFor(AbstractKuva target, DamageSource source) {
@@ -448,6 +483,13 @@ public final class MercyServer {
         if (target.isDemo() && target.getMercyQualified() != null) {
             return target.getMercyQualified();
         }
+        UUID hitter = hitterOf(target, source);
+        return target instanceof KuvaLarvlingEntity larvling ? larvling.pickClaimant(hitter) : hitter;
+    }
+
+    /** 这一下算谁打的：玩家本人、宠物 / 召唤物的主人、最近 5 秒打过它的玩家，都不是返回 null */
+    @Nullable
+    private static UUID hitterOf(AbstractKuva target, DamageSource source) {
         Entity e = source.getEntity();
         if (e instanceof Player p) {
             return p.getUUID();
@@ -483,10 +525,21 @@ public final class MercyServer {
         KuvaFx.near(level, target.chest(), range, FxId.LICH_DOWNED, target, target.getMercyActorId() + 1, b);
     }
 
-    /** 倒地时间到了：奴仆原地消散，玄骸起身逃走（宿敌那边发嘲讽、放赤毒雾）。什么都不给 */
+    /**
+     * 倒地时间到了：分段的玄骸这时这段血已经回满，站起来接着打；连着第 {@link #UNCLAIMED_LIMIT} 次没人处决、
+     * 不分段的玄骸起身逃走（宿敌那边发嘲讽、放赤毒雾）；奴仆原地消散。逃走和消散什么都不给
+     */
     public static void onDownedTimeout(AbstractKuva target) {
         target.setMercyRemaining(0);
         if (target instanceof KuvaMasterEntity lich) {
+            if (lich.isSegmented() && lich.noteUnclaimedDown() < UNCLAIMED_LIMIT) {
+                lich.refillSegment();
+                // 中途作废的处决会把计划位留下来；清掉，客户端才按「从倒地站起来」挑动作
+                lich.setMercyPlanBits(0);
+                lich.beginRise(RISE_TICKS);
+                downedChanged(lich, false);
+                return;
+            }
             lich.setMercyState(MercyState.LEAVING);
             downedChanged(lich, false);
             if (lich.isOwned() && !lich.isDemo()) {
@@ -651,8 +704,9 @@ public final class MercyServer {
     }
 
     /**
-     * 开始时就把整场的结果算好：猜对的前缀、三张卡和次数、有没有归还、会用完几张。
-     * 玄骸一律三刀，从第一格起逐格判，空着的格子算这一格判错（一张没装就是第一刀判错）
+     * 开始时就把整场的结果算好：刀数、猜对的前缀、三张卡和次数、有没有归还、会用完几张。
+     * 玄骸第 k 次处决（打空了 k 段）捅 k 刀、只验前 k 张，从第一格起逐格判，空着的格子算这一格判错
+     * （一张没装就是第一刀判错）；第三次全对才算终结，这时才扣卡、归还物品
      */
     private static MercyPlan.Plan buildPlan(ServerPlayer player, AbstractKuva target, MercyVariant variant, boolean mirror) {
         boolean demo = target.isDemo();
@@ -661,6 +715,7 @@ public final class MercyServer {
         if (target instanceof KuvaSlaveEntity) {
             return new MercyPlan.Plan(1, 0, variant, none, zero, false, 0, demo, mirror);
         }
+        int stabs = target instanceof KuvaMasterEntity lich ? lich.mercyStabs() : 3;
         RequiemCard card = card(player);
         int[] ids = none;
         int[] remaining = zero;
@@ -698,7 +753,8 @@ public final class MercyServer {
                 prefix = Math.min(prefix, firstEmpty(ids));
             }
         }
-        boolean success = prefix >= 3;
+        prefix = Math.min(prefix, stabs);
+        boolean success = stabs >= 3 && prefix >= 3;
         int consumed = 0;
         if (success) {
             for (int i = 0; i < 3; i++) {
@@ -707,7 +763,7 @@ public final class MercyServer {
                 }
             }
         }
-        return new MercyPlan.Plan(3, prefix, variant, ids, remaining, success && returnsItems, consumed, demo, mirror);
+        return new MercyPlan.Plan(stabs, prefix, variant, ids, remaining, success && returnsItems, consumed, demo, mirror);
     }
 
     /** 第一个空格的下标；三格都放了返回 3 */
@@ -802,6 +858,19 @@ public final class MercyServer {
             return;
         }
         KuvaMasterEntity lich = (KuvaMasterEntity) e.target;
+        if (e.advance()) {
+            int g = FILL_TICKS[e.plan.stabs() - 1];
+            e.add(SETTLE_TICK, StepKind.SETTLE, () -> settleAdvance(e, lich));
+            e.add(STAB_COMM_TICK, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
+            e.add(g + ADVANCE_RISE, StepKind.PUSH, () -> e.pushLeft = (int) Math.round(ADVANCE_PUSH_DISTANCE / PUSH_STEP));
+            e.add(g + ADVANCE_RISE, StepKind.RISE, () -> rise(e, lich));
+            if (e.variant.facing == MercyVariant.Facing.AWAY) {
+                // 背对处决者的套路：客户端在挣开后 820~1320 毫秒让它边站边转过来，这边转完再跟上，免得交还时又拧回去
+                e.add(g + ADVANCE_TURN, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
+            }
+            e.add(g + ADVANCE_STAND, StepKind.UNLOCK, () -> unlock(e));
+            return;
+        }
         if (!e.failure()) {
             e.add(SETTLE_TICK, StepKind.SETTLE, () -> settleSuccess(e, lich));
             e.add(STAB_COMM_TICK, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
@@ -830,7 +899,6 @@ public final class MercyServer {
         });
         e.add(g + FAIL_UNLOCK, StepKind.UNLOCK, () -> unlock(e));
         e.add(g + FAIL_REMOVE, StepKind.ESCAPE, () -> escape(e, lich, false));
-        e.add(g + FAIL_CHAT, StepKind.PLAYER, () -> failureChat(e, k));
         e.add(g + FAIL_CHAT, StepKind.PLAYER, () -> giveOull(e));
         e.add(g + FAIL_PROGRESS, StepKind.PLAYER, () -> failureProgress(e, lich));
     }
@@ -851,10 +919,38 @@ public final class MercyServer {
         e.success = lich.computeAndApplySuccess(owner, card, lich.blockPosition());
     }
 
+    /**
+     * 这次验的几刀全对、还没到第三刀，定案：「没人处决」的连续次数清零，记一行尝试（只亮这次验的几格）。
+     * 不扣卡、不给解密进度，第三次全对才一起结算
+     */
+    private static void settleAdvance(Exec e, KuvaMasterEntity lich) {
+        e.settled = true;
+        lich.clearUnclaimedDowns();
+        if (e.demo) {
+            return;
+        }
+        int k = e.plan.stabs();
+        byte[] results = new byte[3];
+        for (int i = 0; i < 3; i++) {
+            results[i] = (byte) (i < k ? RequiemCard.ATTEMPT_RIGHT : RequiemCard.ATTEMPT_UNJUDGED);
+        }
+        LichDirector.onMercyResult(e.executor, lich, RequiemCard.packAttempt(e.plan.cardIds(), results, true), false);
+    }
+
+    /** 挣开：下一段满血、护盾回满，进起身；演完自己回到能打的状态 */
+    private static void rise(Exec e, KuvaMasterEntity lich) {
+        if (!lich.isAlive() || lich.isRemoved() || lich.getMercyState() != MercyState.EXECUTING) {
+            return;
+        }
+        lich.advanceSegment();
+        lich.beginRise(ADVANCE_STAND - ADVANCE_RISE);
+        downedChanged(lich, false);
+    }
+
     /** 判错，定案：记一行尝试、玄骸升级、给主人发升级横幅 */
     private static void settleFailure(Exec e, KuvaMasterEntity lich, int k) {
         e.settled = true;
-        e.lichName = lich.getLichNameComponent(false);
+        lich.clearUnclaimedDowns();
         ServerPlayer owner = e.executor;
         if (e.demo) {
             lich.addDemoFailure();
@@ -906,24 +1002,6 @@ public final class MercyServer {
         if (e.success != null && !e.executor.hasDisconnected()) {
             DecryptionHudPacket.sendComplete(e.executor, e.success.riddles(), e.success.lichName());
         }
-    }
-
-    private static void failureChat(Exec e, int k) {
-        if (!e.executor.hasDisconnected()) {
-            // 一张卡都没装：单独一句，点明是没装安魂卡
-            String key = noCards(e.plan.cardIds())
-                    ? "message.kuvalich.mercy.failed.nocard" : "message.kuvalich.mercy.failed." + k;
-            PlayerFeedback.chat(e.executor, KuvaPalette.DANGER, key, e.lichName, e.rankAfter);
-        }
-    }
-
-    private static boolean noCards(int[] ids) {
-        for (int id : ids) {
-            if (id >= 0) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -1441,7 +1519,7 @@ public final class MercyServer {
     }
 
     /**
-     * 一键复位：范围内所有倒地 / 处决中的目标回到满血、没有状态，相关处决作废、处决者解锁（不写任何数据）。
+     * 一键复位：范围内所有倒地 / 处决中 / 起身中的目标回到满血、没有状态，相关处决作废、处决者解锁（不写任何数据）。
      * 已经在消散、死亡的不管
      *
      * @return 复位了几只
@@ -1450,7 +1528,8 @@ public final class MercyServer {
         int n = 0;
         AABB box = new AABB(center, center).inflate(radius);
         for (AbstractKuva t : level.getEntitiesOfClass(AbstractKuva.class, box,
-                k -> k.isAlive() && (k.getMercyState() == MercyState.DOWNED || k.getMercyState() == MercyState.EXECUTING))) {
+                k -> k.isAlive() && (k.getMercyState() == MercyState.DOWNED || k.getMercyState() == MercyState.EXECUTING
+                        || k.getMercyState() == MercyState.RISING))) {
             Exec e = execFor(t);
             if (e != null) {
                 finish(e);

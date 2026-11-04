@@ -237,13 +237,13 @@ public class KuvaLichItems {
      * 赤毒奴仆刷怪蛋
      * Kuva Slave Spawn Egg
      *
-     * 颜色：主色 0x8B0000 (深红), 次色 0x2F4F4F (深灰)
+     * 颜色：主色 0x8B0000 (深红，红甲), 次色 0x35363F (枪灰，连体服)
      */
     public static final RegistryObject<Item> KUVA_SLAVE_SPAWN_EGG = ITEMS.register("kuva_slave_spawn_egg",
             () -> new ForgeSpawnEggItem(
                     KuvaLichEntities.KUVA_SLAVE,
                     0x8B0000,  // 主色：深红色
-                    0x2F4F4F,  // 次色：深灰色
+                    0x35363F,  // 次色：枪灰色
                     new Item.Properties()
             ));
 
@@ -251,13 +251,27 @@ public class KuvaLichItems {
      * 赤毒玄骸刷怪蛋
      * Kuva Master Spawn Egg
      *
-     * 颜色：主色 0xDC143C (猩红), 次色 0x1C1C1C (黑色)
+     * 颜色：主色 0x3D3B4B (暗钢), 次色 0xC09846 (旧金)
      */
     public static final RegistryObject<Item> KUVA_MASTER_SPAWN_EGG = ITEMS.register("kuva_master_spawn_egg",
             () -> new ForgeSpawnEggItem(
                     KuvaLichEntities.KUVA_MASTER,
-                    0xDC143C,  // 主色：猩红色
-                    0x1C1C1C,  // 次色：黑色
+                    0x3D3B4B,  // 主色：暗钢
+                    0xC09846,  // 次色：旧金
+                    new Item.Properties()
+            ));
+
+    /**
+     * 赤毒幼体刷怪蛋。蛋孵出来的幼体没有主人，谁打倒谁处决（自己还没有玄骸才行）
+     * Kuva Larvling Spawn Egg
+     *
+     * 颜色：主色 0x6E1A22（暗赤），次色 0xC9B79C（骨白）
+     */
+    public static final RegistryObject<Item> KUVA_LARVLING_SPAWN_EGG = ITEMS.register("kuva_larvling_spawn_egg",
+            () -> new ForgeSpawnEggItem(
+                    KuvaLichEntities.KUVA_LARVLING,
+                    0xBEB09A,  // 主色：灰沙（兜帽）
+                    0xC41A36,  // 次色：赤毒红（晶体）
                     new Item.Properties()
             ));
 

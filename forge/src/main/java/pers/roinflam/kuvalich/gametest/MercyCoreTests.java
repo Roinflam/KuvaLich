@@ -9,6 +9,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -71,6 +72,9 @@ import java.util.UUID;
  *
  * <p>处决时间轴在每个服务端 tick 末尾推进一步，从开始处决的那个测试回调起算，第 k 个测试 tick 时处决正好走了 k 步，
  * 下面的「tick 17」「tick 151」都是这个意思。会放出玄骸的、会动的奴仆、改配置或难度的，各自单独一个 batch。</p>
+ *
+ * <p>这里召出来的玄骸一律先摆到最后一段（打空过两段，下次处决捅三刀、倒地血量 1）、打掉护盾，测的是三刀处决本身；
+ * 分段、护盾、第一 / 二次处决见 {@link MercySegmentTests}。</p>
  */
 @GameTestHolder(Reference.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -154,7 +158,9 @@ public final class MercyCoreTests {
         h.getLevel().explode(null, lich.getX() + 1.0D, lich.getY() + 0.5D, lich.getZ(), 4.0F, Level.ExplosionInteraction.NONE);
         h.runAfterDelay(40, () -> {
             h.assertTrue(lich.isAlive(), "应当还活着");
-            h.assertTrue(Math.abs(lich.getHealth() - 1.0F) < 1.0E-4F, "血量应当还是 1，实际 " + lich.getHealth());
+            float expect = downedRefill(lich);
+            h.assertTrue(Math.abs(lich.getHealth() - expect) < 0.01F, "血量应当只跟着倒地计时往回涨（" + expect
+                    + "），实际 " + lich.getHealth());
             h.assertTrue(lich.position().distanceTo(at) < 0.05D, "不应当被推走：" + at + " → " + lich.position());
             h.assertTrue(lich.getMercyState() == MercyState.DOWNED, "应当还在倒地");
             h.succeed();
@@ -759,16 +765,17 @@ public final class MercyCoreTests {
         KuvaTestKit.afterBatch(level);
     }
 
-    // ==================== 处决奴仆揭开第一条密语：玄骸当场诞生 ====================
+    // ==================== 没有玄骸时处决奴仆：不给进度，也不诞生（玄骸只从幼体来） ====================
 
     @GameTest(template = "empty", batch = ISO_THRALL_BIRTH, timeoutTicks = 120)
-    public static void thrallRevealBirthsLich(GameTestHelper h) {
+    public static void thrallWithoutLichGivesNothing(GameTestHelper h) {
         clearAround(h);
         ServerPlayer p = KuvaTestKit.player(h);
         RequiemCard card = card(p);
         h.assertTrue(!card.hasLich() && card.getUnlockedCardStatus() == 0, "测试前提：新玩家没有玄骸、一条密语都没揭");
-        // 进度补到第一段只差一点，这只奴仆给的进度（至少 1 点）必然揭开第一条
-        card.setDecryptionProgress(Math.max(0, ModConfig.KUVA_LICH.firstStage.get() - 1));
+        // 进度补到第一段只差一点：以前这一下就会揭开第一条、当场诞生
+        int before = Math.max(0, ModConfig.KUVA_LICH.firstStage.get() - 1);
+        card.setDecryptionProgress(before);
         KuvaSlaveEntity thrall = spawnThrall(h, p.position().add(0.0D, 0.0D, 2.0D));
         thrall.setHealth(1.0F);
         h.assertTrue(thrall.hurt(p.damageSources().playerAttack(p), 20.0F), "致命一击应当打得进去");
@@ -776,14 +783,9 @@ public final class MercyCoreTests {
         h.assertTrue(MercyServer.executeNow(p, thrall) == null, "应当能开始处决");
         h.runAfterDelay(30, () -> {
             h.assertTrue(!thrall.isAlive(), "tick 30 应当死了");
-            h.assertTrue(card.getUnlockedCardStatus() >= 1, "这一下应当揭开第一条密语（进度 "
-                    + card.getDecryptionProgress() + "）");
-            h.assertTrue(card.hasLich(), "揭开第一条密语时玄骸应当当场诞生，不用等下次登录");
-            h.assertTrue(LichDirector.stateOf(p) == LichState.STALKING, "刚诞生应当在跟踪，实际 " + LichDirector.stateOf(p));
-            // 处决这只奴仆的时候还没有玄骸，处决的怒气不算；出生用的是出生初值，不是老存档补生的那个
-            double birth = ModConfig.KUVA_LICH.lichBirthRage.get();
-            h.assertTrue(Math.abs(card.getLichRage() - birth) < 1.0E-3D,
-                    "刚诞生的怒气应当是 " + birth + "，实际 " + card.getLichRage());
+            h.assertTrue(card.getDecryptionProgress() == before && card.getUnlockedCardStatus() == 0,
+                    "没有玄骸时奴仆不给进度（进度 " + card.getDecryptionProgress() + "）");
+            h.assertTrue(!card.hasLich(), "处决奴仆不应当诞生玄骸");
             h.succeed();
         });
     }
@@ -1044,10 +1046,20 @@ public final class MercyCoreTests {
         }
     }
 
+    /** 还在倒地、血量没掉出这一段（倒地期间这一段的血跟着计时从底往回涨，所以不比具体值） */
     private static void assertStillDowned(GameTestHelper h, AbstractKuva t, String when) {
-        h.assertTrue(t.isAlive() && t.getMercyState() == MercyState.DOWNED && Math.abs(t.getHealth() - 1.0F) < 1.0E-4F,
-                when + "应当还在倒地、血量还是 1：状态 " + t.getMercyState() + "，活着 " + t.isAlive()
+        h.assertTrue(t.isAlive() && t.getMercyState() == MercyState.DOWNED
+                        && t.getHealth() >= t.downedHealth() - 1.0E-4F && t.getHealth() <= t.segmentCeil() + 1.0E-3F,
+                when + "应当还在倒地、血量还在这一段里：状态 " + t.getMercyState() + "，活着 " + t.isAlive()
                         + "，移除 " + t.getRemovalReason() + "，血 " + t.getHealth());
+    }
+
+    /** 倒地中此刻该有的血量：这一段的底按倒地计时走过的比例往顶涨（最后一段从 1 起） */
+    private static float downedRefill(AbstractKuva t) {
+        int total = Math.max(1, ModConfig.KUVA_LICH.mercyDownedSeconds.get() * 20);
+        float u = Mth.clamp(1.0F - (float) t.getMercyRemainingServer() / total, 0.0F, 1.0F);
+        float floor = t.segmentFloor();
+        return Math.max(1.0F, floor + (t.segmentCeil() - floor) * u);
     }
 
     private static RequiemCard card(ServerPlayer p) {
@@ -1055,13 +1067,14 @@ public final class MercyCoreTests {
                 .orElseThrow(() -> new IllegalStateException("测试玩家没有安魂卡能力"));
     }
 
-    /** 走正常的进度流程揭开第一条密语（玄骸随之诞生） */
+    /** 走正常的进度流程揭开第一条密语，再让玄骸诞生（平常要处决一只幼体，这里直接生） */
     private static void bornByProgress(ServerPlayer p, RequiemCard card) {
         int threshold = ModConfig.KUVA_LICH.firstStage.get();
         card.setDecryptionProgress(Math.max(0, threshold - 1));
         int levelBefore = card.getUnlockedCardStatus();
         card.addPotion(1);
         LichDirector.onDecryptionProgress(p, card, 1, levelBefore);
+        LichDirector.birthNow(p);
     }
 
     /**
@@ -1095,14 +1108,20 @@ public final class MercyCoreTests {
         return n;
     }
 
-    /** 立即召到面前并返回那只 */
+    /** 立即召到面前并返回那只：摆到最后一段（下次处决三刀）、打掉护盾且不再恢复 */
     private static KuvaMasterEntity summonFront(GameTestHelper h, ServerPlayer p) {
         loadTestChunks(h);
         BlockPos c = KuvaTestKit.center(h);
         openArena(h, c.getX() - 6, c.getX() + 6, c.getZ() - 3, c.getZ() + 11);
         h.assertTrue(LichDirector.summonNow(p, SummonMode.FRONT), "立即召唤应当成功");
-        return LichDirector.getLich(p).orElseThrow(() -> new IllegalStateException("召唤后应当有在场的玄骸"));
+        KuvaMasterEntity lich = LichDirector.getLich(p).orElseThrow(() -> new IllegalStateException("召唤后应当有在场的玄骸"));
+        lich.setLichPhase(KuvaMasterEntity.SEGMENTS - 1);
+        lich.breakShield(SHIELD_HOLD);
+        return lich;
     }
+
+    /** 测试期间护盾不恢复 */
+    private static final int SHIELD_HOLD = 1_000_000;
 
     private static KuvaSlaveEntity spawnThrall(GameTestHelper h, Vec3 at) {
         KuvaSlaveEntity thrall = KuvaLichEntities.KUVA_SLAVE.get().create(h.getLevel());

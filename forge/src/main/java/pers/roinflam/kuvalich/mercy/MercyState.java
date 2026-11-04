@@ -11,7 +11,12 @@ public enum MercyState {
     /** 正在被处决 */
     EXECUTING,
     /** 消散或逃走的演出中，即将移除 */
-    LEAVING;
+    LEAVING,
+    /**
+     * 起身中：倒地到时没人处决，或者这次验的几刀全对、还没到第三刀，从倒地 / 处决的姿势站起来；
+     * 这段时间不动、不挨打，演完回到 {@link #NONE} 接着打
+     */
+    RISING;
 
     private static final MercyState[] VALUES = values();
 

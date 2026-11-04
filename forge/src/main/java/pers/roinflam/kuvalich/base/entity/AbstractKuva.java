@@ -9,6 +9,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityDimensions;
@@ -85,6 +86,9 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     /** 抗性衰减检查间隔（20tick = 1秒，无需每tick检查） */
     private static final int RESISTANCE_CHECK_INTERVAL = 20;
+
+    /** 处决时的胸口在碰撞箱多高处（比例） */
+    protected static final double MERCY_CHEST_FRAC = 0.62D;
 
     // ==================== 同步数据 ====================
 
@@ -171,6 +175,8 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     private int leaveTicks = -1;
     /** 演示目标被判错过几次（升级横幅的等级 = 1 + 这个数）。只在内存里 */
     private int demoFailures;
+    /** 起身剩余 tick（{@link MercyState#RISING}），到 0 回到能打的状态。服务端 */
+    private int riseTicks;
     /** 交战增幅的临时值（演示命令用），{@link #furyOverrideTicks} 到 0 后恢复按交战时长算 */
     private int furyOverride;
     private int furyOverrideTicks;
@@ -362,13 +368,17 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     /**
      * 抗性计算入口
-     * 执行顺序：基础伤害类型修正 → 高级抗性（子类实现）
+     * 执行顺序：基础伤害类型修正 → 高级抗性（子类实现）。/kill、虚空这类绕过无敌的不吃抗性：
+     * 单次伤害软上限会把它压成几十点，玄骸有护盾、倒地压在段底时就打不死了
      *
      * @param source 伤害来源
      * @param damage 原始伤害值
      * @return 最终伤害值
      */
     public float applyResistance(DamageSource source, float damage) {
+        if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return damage;
+        }
         // 第一步：基础伤害类型修正（弓箭增伤、弹射物/魔法减伤）
         damage = applyBaseDamageTypeModifier(source, damage);
         // 第二步：高级抗性（子类覆写实现）
@@ -465,6 +475,8 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
             // 倒地、处决、消散期间由怜悯之击挑片段；不在这些状态时返回 null，照原来的走路 / 待机
             RawAnimation mercy = MercyAnimSelector.pick(this, state);
             if (mercy != null) {
+                // 只有从倒地循环站起来那一段要淡进来（循环停在哪一帧不一定）
+                state.getController().transitionLength(MercyAnimSelector.blendTicks(mercy));
                 return state.setAndContinue(mercy);
             }
             return this.bodyAnim.locomotion(state, this.entityData.get(HAS_TARGET));
@@ -764,7 +776,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     /**
      * 让这只实体立刻进入倒地状态（管理命令、演示用）。{@code qualified} 是有资格处决的人：
      * 奴仆和演示目标就是他，有主玄骸永远是主人（传什么都一样），无主的野生玄骸不倒地。
-     * 血量直接压到 1；已经倒地、正在处决、已经死了的不处理
+     * 血量直接压到这一段的底（最后一段留 1）；已经倒地、正在处决、起身中、已经死了的不处理
      */
     public void forceDowned(@Nullable ServerPlayer qualified) {
         if (this.level().isClientSide || !this.isAlive() || this.dead || getMercyState() != MercyState.NONE) {
@@ -840,8 +852,25 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     /** 把倒地剩余 tick、可处决距离、倒地总时长写进同步数据 */
     public void syncMercyTimer() {
-        setMercyTimerBits(packMercyTimer(this.mercyRemaining, MercyRules.reach(),
-                ModConfig.KUVA_LICH.mercyDownedSeconds.get()));
+        setMercyTimerBits(packMercyTimer(this.mercyRemaining, MercyRules.reach(), downedSeconds()));
+    }
+
+    /** 倒地一次等多少秒：玄骸、奴仆照 {@code mercyDownedSeconds}，幼体有自己的 */
+    public int downedSeconds() {
+        return ModConfig.KUVA_LICH.mercyDownedSeconds.get();
+    }
+
+    /** 处决时胸口离脚底多高（格）：处决者看向这里，处决特效从这里出 */
+    public double mercyChestHeight() {
+        return getBbHeight() * MERCY_CHEST_FRAC;
+    }
+
+    /**
+     * 身材相对处决动作原本按的那只缩了多少：处决者的刀位、跳起的高度按它缩。
+     * 玄骸、奴仆是 1；幼体借奴仆的动作，模型又缩小过
+     */
+    public float mercyBodyScale() {
+        return 1.0F;
     }
 
     /**
@@ -893,12 +922,99 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         this.mercyQualified = null;
         this.mercyFinishing = false;
         this.leaveTicks = -1;
+        this.riseTicks = 0;
         this.setNoAi(false);
         setMercyActorId(-1);
         setMercyTimerBits(0);
         setMercyPlanBits(0);
         setMercyState(MercyState.NONE);
-        this.setHealth(this.getMaxHealth());
+        this.setHealth(segmentCeil());
+    }
+
+    /**
+     * 进起身（服务端）：{@code ticks} 后自己回到能打的状态。倒地到时没人处决、处决还没到第三刀全对时由怜悯之击调；
+     * 计划位留着，客户端按它挑从哪个姿势站起来
+     */
+    public void beginRise(int ticks) {
+        if (this.level().isClientSide || !this.isAlive()) {
+            return;
+        }
+        this.riseTicks = Math.max(1, ticks);
+        this.setTarget(null);
+        this.getNavigation().stop();
+        setMercyRemaining(0);
+        setMercyState(MercyState.RISING);
+    }
+
+    /** 起身演完：回到能打的状态 */
+    private void finishRise() {
+        this.riseTicks = 0;
+        this.mercyQualified = null;
+        setMercyActorId(-1);
+        setMercyPlanBits(0);
+        setMercyState(MercyState.NONE);
+    }
+
+    // ==================== 怜悯之击：分段血条 ====================
+
+    /** 血条分不分段：分段的每打空一段倒地一次（有主玄骸），不分段的打到 0 才倒地 */
+    public boolean isSegmented() {
+        return false;
+    }
+
+    /** 这一段的下沿：伤害最多打到这里，打到就倒地 */
+    public float segmentFloor() {
+        return 0.0F;
+    }
+
+    /** 这一段的上沿：自己回血最多回到这里 */
+    public float segmentCeil() {
+        return this.getMaxHealth();
+    }
+
+    /** 倒地时的血量：这一段的底，最后一段（底是 0）留 1 */
+    public float downedHealth() {
+        return Math.max(1.0F, segmentFloor());
+    }
+
+    /** 分段的：这一下（已经扣过护盾和血）把这一段打空了 */
+    private boolean reachedSegmentFloor(DamageSource source) {
+        if (this.level().isClientSide || this.dead || this.isRemoved() || getMercyState() != MercyState.NONE
+                || !isSegmented() || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || !MercyRules.canDown(this)) {
+            return false;
+        }
+        float floor = segmentFloor();
+        return floor > 0.0F && this.getHealth() <= floor + 1.0E-3F;
+    }
+
+    /** 分段的回血不越过这一段的上沿 */
+    @Override
+    public void heal(float amount) {
+        if (!this.level().isClientSide && isSegmented() && getMercyState() == MercyState.NONE) {
+            amount = Math.min(amount, segmentCeil() - this.getHealth());
+            if (amount <= 0.0F) {
+                return;
+            }
+        }
+        super.heal(amount);
+    }
+
+    /**
+     * 分段兜底（能打的时候每 tick）：别的路线直接写血量（毒素、真伤、别的模组回血）也越不过这一段的上下沿，
+     * 打穿下沿的照样在下沿倒地
+     */
+    private void holdSegment() {
+        float ceil = segmentCeil();
+        if (this.getHealth() > ceil + 1.0E-3F) {
+            this.setHealth(ceil);
+            return;
+        }
+        float floor = segmentFloor();
+        if (floor > 0.0F && this.getHealth() <= floor + 1.0E-3F && MercyRules.canDown(this)) {
+            DamageSource last = this.getLastDamageSource();
+            this.setHealth(floor);
+            MercyServer.enterDowned(this, last != null ? last : this.damageSources().generic());
+        }
     }
 
     // ==================== 演示用实体 ====================
@@ -924,7 +1040,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     // ==================== 致命伤先倒地 ====================
 
     /**
-     * 致命伤先倒地：满足条件就把血量压回 1、进倒地，返回 true，调用方不要再往下走。
+     * 致命伤先倒地：满足条件就把血量压回这一段的底（最后一段留 1）、进倒地，返回 true，调用方不要再往下走。
      * 绕过无敌的伤害（{@code /kill}、虚空）照常真死
      */
     private boolean interceptLethal(DamageSource source) {
@@ -932,7 +1048,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
                 || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || !MercyRules.canDown(this)) {
             return false;
         }
-        this.setHealth(1.0F);
+        this.setHealth(downedHealth());
         MercyServer.enterDowned(this, source);
         return true;
     }
@@ -947,7 +1063,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     }
 
     /**
-     * 受保护期间被直接写血量再调 die 的路线：血量补回 1、留在原状态。
+     * 受保护期间被直接写血量再调 die 的路线：血量补回倒地时的值、留在原状态。
      * 不拦的话会按「绕过倒地的死亡」结算，不判定、不给进度，怜悯之击就白打了
      */
     private boolean keepAliveWhileProtected(DamageSource source) {
@@ -955,18 +1071,30 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
                 || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             return false;
         }
-        if (this.getHealth() < 1.0F) {
-            this.setHealth(1.0F);
+        float keep = protectedHealth();
+        if (this.getHealth() < keep) {
+            this.setHealth(keep);
         }
         return true;
     }
 
-    /** 主路线：扣完血看一眼，到 0 就拦下。血量不到 0，原版 hurt 就不会放死亡音、不调 die */
+    /** 受保护期间血量被写坏时补回多少：起身中是这一段满血，其余是倒地时的值 */
+    private float protectedHealth() {
+        return getMercyState() == MercyState.RISING ? segmentCeil() : downedHealth();
+    }
+
+    /**
+     * 主路线：扣完血看一眼，到 0 就拦下；分段的打到这一段的底就压在底上、进倒地。
+     * 血量不到 0，原版 hurt 就不会放死亡音、不调 die
+     */
     @Override
     protected void actuallyHurt(@NotNull DamageSource source, float amount) {
         super.actuallyHurt(source, amount);
         if (this.getHealth() <= 0.0F) {
             interceptLethal(source);
+        } else if (reachedSegmentFloor(source)) {
+            this.setHealth(segmentFloor());
+            MercyServer.enterDowned(this, source);
         }
     }
 
@@ -1001,14 +1129,14 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     /**
      * 死亡计时：不调原版，原版第 20 tick 发实体事件 60（白烟）再移除；这里只按留的时长移除，演出全由死亡 / 离场包驱动。
-     * 开头兜底「直接把血量写成 0、没调 die」的路线：受保护期间补回 1，没倒地的照常先倒地
+     * 开头兜底「直接把血量写成 0、没调 die」的路线：受保护期间补回倒地时的值，没倒地的照常先倒地
      */
     @Override
     protected void tickDeath() {
         if (!this.level().isClientSide && !this.dead) {
-            // 受保护期间血量被直接写成 0、又没走 die：补回 1，不然这里数满就悄悄移除了
+            // 受保护期间血量被直接写成 0、又没走 die：补回来，不然这里数满就悄悄移除了
             if (isDamageProtected()) {
-                this.setHealth(1.0F);
+                this.setHealth(protectedHealth());
                 return;
             }
             if (getMercyState() == MercyState.NONE) {
@@ -1121,15 +1249,37 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
             }
             return;
         }
-        if (getMercyState() == MercyState.DOWNED && this.isAlive()) {
+        if (!this.isAlive()) {
+            return;
+        }
+        MercyState state = getMercyState();
+        if (state == MercyState.DOWNED) {
             tickDowned();
+        } else if (state == MercyState.RISING) {
+            if (--this.riseTicks <= 0) {
+                finishRise();
+            }
+        } else if (state == MercyState.NONE && isSegmented()) {
+            holdSegment();
         }
     }
 
-    /** 倒地计时：冻结时不走；每 20 tick 同步一次剩余时间、按 UUID 重新找资格人（重登后实体 id 会变） */
+    /**
+     * 倒地计时：冻结时不走；每 20 tick 同步一次剩余时间、按 UUID 重新找资格人（重登后实体 id 会变）。
+     * 分段的这段血跟着计时从底回到顶，到时正好满
+     */
     private void tickDowned() {
         if (!MercyServer.isFrozen(this.level())) {
             this.mercyRemaining--;
+        }
+        if (isSegmented()) {
+            int total = Math.max(1, downedSeconds() * 20);
+            float t = Mth.clamp(1.0F - (float) this.mercyRemaining / total, 0.0F, 1.0F);
+            float floor = segmentFloor();
+            float refill = Math.max(1.0F, floor + (segmentCeil() - floor) * t);
+            if (refill > this.getHealth()) {
+                this.setHealth(refill);
+            }
         }
         if (this.tickCount % 20 == 0) {
             setMercyActorId(MercyServer.resolveQualifiedId(this));
@@ -1195,7 +1345,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
      * 有目标时回复更快
      */
     private void handleHealing() {
-        // 倒地、处决、消散期间不回血
+        // 倒地、处决、起身、消散期间不自己回血（倒地时分段的回血在倒地计时里）
         if (getMercyState() != MercyState.NONE) {
             return;
         }
@@ -1245,7 +1395,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         if (source.is(DamageTypeTags.IS_FALL)) {
             return false;
         }
-        // 倒地、处决、消散、自然离开期间不受伤；/kill、虚空这类绕过无敌的照常
+        // 倒地、处决、起身、消散、自然离开期间不受伤；/kill、虚空这类绕过无敌的照常
         if ((getMercyState() != MercyState.NONE || this.leaveTicks >= 0)
                 && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             return false;

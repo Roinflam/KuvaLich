@@ -4,6 +4,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 
@@ -25,18 +26,21 @@ public final class MercyRules {
     }
 
     /**
-     * 这只实体走不走怜悯之击：玄骸看 {@code mercyEnabled}，奴仆还要 {@code mercyThralls}。
-     * 不走的就照旧被打死时当场结算
+     * 这只实体走不走怜悯之击：玄骸、幼体看 {@code mercyEnabled}，奴仆还要 {@code mercyThralls}。
+     * 不走的就照旧被打死时当场结算（幼体被玩家打死就诞生玄骸）
      */
     public static boolean enabledFor(AbstractKuva e) {
         if (!ModConfig.KUVA_LICH.mercyEnabled.get()) {
             return false;
         }
+        if (e instanceof KuvaLarvlingEntity) {
+            return true;
+        }
         return !(e instanceof KuvaSlaveEntity) || ModConfig.KUVA_LICH.mercyThralls.get();
     }
 
     /**
-     * 受到致命伤时会不会先倒地：有主玄骸、演示目标、开了奴仆倒地的奴仆。
+     * 受到致命伤时会不会先倒地：有主玄骸、演示目标、幼体、开了奴仆倒地的奴仆。
      * 无主的野生玄骸不倒地，直接死
      */
     public static boolean canDown(AbstractKuva e) {
@@ -48,6 +52,9 @@ public final class MercyRules {
         }
         if (e instanceof KuvaMasterEntity lich) {
             return lich.shouldEnterDowned();
+        }
+        if (e instanceof KuvaLarvlingEntity) {
+            return true;
         }
         return e instanceof KuvaSlaveEntity && ModConfig.KUVA_LICH.mercyThralls.get();
     }

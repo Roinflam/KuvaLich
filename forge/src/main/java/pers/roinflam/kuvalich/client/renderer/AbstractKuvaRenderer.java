@@ -20,6 +20,8 @@ import pers.roinflam.kuvalich.client.fx.ElementTint;
 import pers.roinflam.kuvalich.client.fx.script.LichFx;
 import pers.roinflam.kuvalich.client.lich.LichNameplates;
 import pers.roinflam.kuvalich.client.lich.LichRenderState;
+import pers.roinflam.kuvalich.client.mercy.MercyPrompt;
+import pers.roinflam.kuvalich.mercy.MercyState;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.cache.object.GeoCube;
@@ -98,8 +100,34 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
     private float upY;
     private float upZ;
 
+    // 倒地圈跟着姿势走：倒地时画本体顺手记下锚点（挂在某根骨骼上的一个模型点）此刻在哪，交给 MercyPrompt
+    @Nullable
+    private String anchorBoneName;
+    private float anchorX;
+    private float anchorY;
+    private float anchorZ;
+    @Nullable
+    private BakedGeoModel anchorOf;
+    @Nullable
+    private GeoBone anchorBone;
+    private boolean anchorWanted;
+    private boolean anchorSeen;
+    private final Vector3f anchorNow = new Vector3f();
+    /** 这一帧实体原点的矩阵（相机的转动 + 平移），把记下的点换回世界方向 */
+    private final Matrix4f origin = new Matrix4f();
+
     protected AbstractKuvaRenderer(EntityRendererProvider.Context context, GeoModel<T> model) {
         super(context, model);
+    }
+
+    /**
+     * 倒地圈的锚点：挂在 {@code bone} 上、模型坐标（像素，和几何文件一样）{@code (x, y, z)} 的那一点，跟着骨骼的转动和位移走
+     */
+    protected void setMercyAnchor(String bone, float x, float y, float z) {
+        this.anchorBoneName = bone;
+        this.anchorX = x;
+        this.anchorY = y;
+        this.anchorZ = z;
     }
 
     /** 这一帧本体的透明度（层要跟着淡） */
@@ -142,6 +170,10 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
         this.upZ = origin.m12();
         this.neckRestSeen = false;
         this.neckSeen = false;
+        this.origin.set(origin);
+        this.anchorSeen = false;
+        this.anchorWanted = this.anchorBoneName != null && entity.getId() >= 0
+                && entity.getMercyState() == MercyState.DOWNED;
 
         if (this.frameAlpha > 0.003F) {
             float shake = LichFx.staggerAmplitude(entity);
@@ -154,6 +186,16 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
             } else {
                 super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
             }
+        }
+
+        if (this.anchorSeen) {
+            // 记下的点减去实体原点，再用相机转动的逆（正交矩阵 = 转置）换回世界方向
+            Matrix4f o = this.origin;
+            float dx = this.anchorNow.x - o.m30(), dy = this.anchorNow.y - o.m31(), dz = this.anchorNow.z - o.m32();
+            MercyPrompt.noteAnchor(entity.getId(),
+                    dx * o.m00() + dy * o.m01() + dz * o.m02(),
+                    dx * o.m10() + dy * o.m11() + dz * o.m12(),
+                    dx * o.m20() + dy * o.m21() + dz * o.m22());
         }
 
         // 肖像里的假实体（负数 id）不画名牌
@@ -195,6 +237,15 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
                         (h.getPivotY() + h.getPosY()) / 16.0F, (h.getPivotZ() + h.getPosZ()) / 16.0F, this.neckNow);
                 this.neckSeen = true;
             }
+        }
+        if (!isReRender && this.anchorWanted && bone == this.anchorBone) {
+            // 父骨骼已经摆好，再按 GeckoLib 的顺序摆上这根骨骼自己的位移和转动，锚点就在它上面
+            poseStack.pushPose();
+            RenderUtils.prepMatrixForBone(poseStack, bone);
+            poseStack.last().pose().transformPosition(-this.anchorX / 16.0F, this.anchorY / 16.0F,
+                    this.anchorZ / 16.0F, this.anchorNow);
+            poseStack.popPose();
+            this.anchorSeen = true;
         }
         super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick,
                 packedLight, packedOverlay, red, green, blue, alpha);
@@ -265,6 +316,10 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
             if (model != this.headOf) {
                 this.headOf = model;
                 this.head = model.getBone("Head").orElse(null);
+            }
+            if (model != this.anchorOf) {
+                this.anchorOf = model;
+                this.anchorBone = this.anchorBoneName == null ? null : model.getBone(this.anchorBoneName).orElse(null);
             }
             GeoBone h = helmetBone(model);
             if (h != null && this.frameAlpha < HIDE_HELMET_BELOW && !h.isHidden()) {

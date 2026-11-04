@@ -12,13 +12,13 @@ import pers.roinflam.kuvalich.utils.Reference;
 /**
  * 赤毒玄骸渲染器
  *
- * <p>层：胸口晶体和面甲两点的发光（{@link KuvaGlowLayer}）、手里的赤毒武器、交战越久越明显的怒意纹路。
+ * <p>层：胸口晶体和两只眼睛的发光（{@link KuvaGlowLayer}）、手里的赤毒武器、交战越久越明显的怒意纹路。
  * 淡入淡出、死亡不翻倒、元素染色、名牌这些和奴仆共用，见 {@link AbstractKuvaRenderer}。
  * 通讯肖像和档案立像也是 new 一个这个渲染器来画，所以层和状态都要容得下负数 id 的假实体。</p>
  */
 public class KuvaMasterRenderer extends AbstractKuvaRenderer<KuvaMasterEntity> {
 
-    /** 发光遮罩：只点胸口晶体和面甲上两点（tools/fx/make_glowmask.py 生成） */
+    /** 发光遮罩：只点胸口晶体和两只眼睛（tools/fx/make_glowmask.py 生成） */
     public static final ResourceLocation GLOW_MASK = new ResourceLocation(Reference.MOD_ID,
             "textures/entity/kuva_master_glowmask.png");
     /** 遮罩上有亮点的骨骼，其余骨骼发光层不画 */
@@ -26,6 +26,8 @@ public class KuvaMasterRenderer extends AbstractKuvaRenderer<KuvaMasterEntity> {
 
     public KuvaMasterRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new KuvaMasterModel());
+        // 倒地圈挂在胸板中间（胸口晶体那一带），跪、趴、扭身都跟着躯干走
+        setMercyAnchor("Body", 0.0F, 36.5F, 0.7F);
         addRenderLayer(new KuvaGlowLayer<>(this, GLOW_MASK, GLOW_BONES));
         addRenderLayer(new LichWeaponLayer(this));
         addRenderLayer(new KuvaFuryLayer<>(this));

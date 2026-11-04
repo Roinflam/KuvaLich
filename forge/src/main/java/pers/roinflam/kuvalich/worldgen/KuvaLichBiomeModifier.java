@@ -6,9 +6,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -18,14 +16,12 @@ import net.minecraft.world.level.levelgen.placement.*;
 import net.minecraft.world.level.levelgen.structure.templatesystem.TagMatchTest;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.world.BiomeModifier;
-import net.minecraftforge.common.world.MobSpawnSettingsBuilder;
 import net.minecraftforge.common.world.ModifiableBiomeInfo.BiomeInfo;
 
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.guide.GuideConfigSnapshot;
 import pers.roinflam.kuvalich.init.KuvaLichBiomeModifierSerializers;
 import pers.roinflam.kuvalich.init.KuvaLichBlocks;
-import pers.roinflam.kuvalich.init.KuvaLichEntities;
 
 import java.util.List;
 
@@ -34,11 +30,12 @@ import java.util.List;
  * KuvaLich Custom Biome Modifier
  *
  * 生成规则：
- * - 实体生成：仅限主世界，排除蘑菇岛
+ * - 实体生成：不再往任何群系的刷怪表里加东西。玄骸只由玄骸导演放，奴仆只由奴仆小队放给有玄骸的玩家
+ *   （nemesis/ThrallDirector），幼体只由幼体导演放给还没有玄骸的玩家（nemesis/LarvlingDirector）
  * - 矿石生成：所有维度（依赖方块Tag自动过滤，无石头的维度自然不会生成），但排除末地
  *
  * Spawn rules:
- * - Entity spawning: Overworld only, excludes mushroom islands
+ * - Entity spawning: nothing is added to biome spawn lists any more (Liches, Thralls and Larvlings are placed by directors)
  * - Ore generation: All dimensions except The End (block tag filtering handles incompatible biomes naturally)
  */
 public class KuvaLichBiomeModifier implements BiomeModifier {
@@ -50,27 +47,11 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
     public static final Codec<KuvaLichBiomeModifier> CODEC = Codec.unit(INSTANCE);
 
     /**
-     * 蘑菇岛Tag / Mushroom biome tag
-     */
-    private static final TagKey<Biome> IS_MUSHROOM_TAG = TagKey.create(
-            Registries.BIOME,
-            new ResourceLocation("minecraft", "is_mushroom")
-    );
-
-    /**
      * 末地Tag / The End biome tag
      */
     private static final TagKey<Biome> IS_END_TAG = TagKey.create(
             Registries.BIOME,
             new ResourceLocation("minecraft", "is_end")
-    );
-
-    /**
-     * 主世界Tag / Overworld biome tag
-     */
-    private static final TagKey<Biome> IS_OVERWORLD_TAG = TagKey.create(
-            Registries.BIOME,
-            new ResourceLocation("minecraft", "is_overworld")
     );
 
     private KuvaLichBiomeModifier() {}
@@ -90,11 +71,8 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
         // Ore gen: all dims except The End (block tags handle incompatible biomes naturally)
         addOreGeneration(builder);
 
-        // 实体生成：仅限主世界，排除蘑菇岛（同时使用Tag和注册ID双重判定，防止Tag未绑定）
-        // Entity spawning: Overworld only, exclude mushroom islands (dual check: tag + registry ID)
-        if (isOverworld(biome) && !isMushroom(biome)) {
-            addEntitySpawns(builder.getMobSpawnSettings());
-        }
+        // 实体生成：不再加。奴仆以前在主世界（蘑菇岛除外）的刷怪表里，现在改成只给有玄骸的玩家按小队放，
+        // kuvaSlaveSpawnWeight 等几项旧配置留着不删（老配置文件不报错），已经不读了
     }
 
     /**
@@ -113,69 +91,6 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
     }
 
     // ═══ 生物群系判定辅助方法 / Biome identification helpers ═══
-
-    /**
-     * 判断是否为蘑菇岛生物群系（Tag + 注册ID双重判定，避免Tag未绑定导致失效）
-     * Check if the biome is a mushroom biome (dual check to avoid unbound tag issues)
-     *
-     * @param biome 生物群系Holder / biome holder
-     * @return 是否为蘑菇岛 / whether it's a mushroom biome
-     */
-    private static boolean isMushroom(Holder<Biome> biome) {
-        // 优先使用Tag判定
-        if (biome.is(IS_MUSHROOM_TAG)) {
-            return true;
-        }
-        // Tag可能未绑定，回退到注册ID判定
-        return biome.unwrapKey()
-                .map(key -> key.location().getPath().equals("mushroom_fields"))
-                .orElse(false);
-    }
-
-    /**
-     * 判断是否为主世界生物群系（Tag + 注册ID双重判定）
-     * Check if the biome is an overworld biome (dual check: tag + registry ID)
-     *
-     * 回退逻辑采用保守策略：仅匹配原版命名空间下的已知主世界生物群系，
-     * 模组维度（如暮色森林 twilightforest:xxx）的生物群系不会被误判为主世界。
-     *
-     * Fallback uses conservative strategy: only matches known vanilla overworld biomes,
-     * mod dimensions (e.g. Twilight Forest) won't be misidentified as overworld.
-     *
-     * @param biome 生物群系Holder / biome holder
-     * @return 是否为主世界 / whether it's overworld
-     */
-    private static boolean isOverworld(Holder<Biome> biome) {
-        // 优先使用Tag判定
-        if (biome.is(IS_OVERWORLD_TAG)) {
-            return true;
-        }
-        // Tag未绑定时，保守处理：仅匹配原版命名空间下的已知主世界生物群系注册ID
-        return biome.unwrapKey()
-                .map(key -> {
-                    String namespace = key.location().getNamespace();
-                    String path = key.location().getPath();
-                    // 非原版命名空间的生物群系直接返回false，避免模组维度被误判
-                    if (!"minecraft".equals(namespace)) {
-                        return false;
-                    }
-                    // 排除末地生物群系
-                    if (path.equals("the_end") || path.equals("end_barrens")
-                            || path.equals("end_highlands") || path.equals("end_midlands")
-                            || path.equals("small_end_islands")) {
-                        return false;
-                    }
-                    // 排除下界生物群系
-                    if (path.equals("nether_wastes") || path.equals("soul_sand_valley")
-                            || path.equals("crimson_forest") || path.equals("warped_forest")
-                            || path.equals("basalt_deltas")) {
-                        return false;
-                    }
-                    // 原版命名空间下，排除末地和下界后，剩余的就是主世界生物群系
-                    return true;
-                })
-                .orElse(false);
-    }
 
     /**
      * 判断是否为末地生物群系（Tag + 注册ID双重判定）
@@ -292,28 +207,6 @@ public class KuvaLichBiomeModifier implements BiomeModifier {
                 GenerationStep.Decoration.UNDERGROUND_ORES,
                 Holder.direct(placedFeature)
         );
-    }
-
-    // ═══ 实体生成 / Entity spawning ═══
-
-    /**
-     * 添加实体生成
-     * Add entity spawning
-     *
-     * @param spawnBuilder 怪物生成设置构建器 / mob spawn settings builder
-     */
-    private void addEntitySpawns(MobSpawnSettingsBuilder spawnBuilder) {
-        // 玄骸不再进刷怪表：每个玩家的专属玄骸只会在他解开第一条密语后由玄骸导演找上门。
-        // kuvaLichSpawnWeight 等几项旧配置先留着不删（老配置文件不报错），这里已经不读了
-        int slaveWeight = pinned(ModConfig.KUVA_LICH.kuvaSlaveSpawnWeight);
-        if (slaveWeight > 0) {
-            spawnBuilder.addSpawn(MobCategory.MONSTER, new MobSpawnSettings.SpawnerData(
-                    KuvaLichEntities.KUVA_SLAVE.get(),
-                    slaveWeight,
-                    pinned(ModConfig.KUVA_LICH.kuvaSlaveMinSpawnCount),
-                    pinned(ModConfig.KUVA_LICH.kuvaSlaveMaxSpawnCount)
-            ));
-        }
     }
 
     @Override

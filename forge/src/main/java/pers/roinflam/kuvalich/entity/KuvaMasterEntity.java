@@ -68,6 +68,7 @@ import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
 import pers.roinflam.kuvalich.utils.InventoryUtil;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.world.inventory.RequiemGateMenu;
 
 import java.util.*;
 
@@ -112,6 +113,14 @@ public class KuvaMasterEntity extends AbstractKuva {
     /** 无主的野生玄骸 */
     private static final EntityDataAccessor<Boolean> WILD =
             SynchedEntityData.defineId(KuvaMasterEntity.class, EntityDataSerializers.BOOLEAN);
+    /** 护盾现值和上限（原版不同步怪物的吸收值，Boss 条要画） */
+    private static final EntityDataAccessor<Float> SHIELD =
+            SynchedEntityData.defineId(KuvaMasterEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> SHIELD_MAX =
+            SynchedEntityData.defineId(KuvaMasterEntity.class, EntityDataSerializers.FLOAT);
+    /** 打空了几段血（0~2），Boss 条认出倒地时正在回满的是哪一段 */
+    private static final EntityDataAccessor<Byte> LICH_PHASE =
+            SynchedEntityData.defineId(KuvaMasterEntity.class, EntityDataSerializers.BYTE);
 
     // ==================== 回血参数（已砍半） ====================
 
@@ -222,6 +231,17 @@ public class KuvaMasterEntity extends AbstractKuva {
     /** 三刀成功的结算已经在定案那一刻做过：死的时候不再按直接击杀判一次 */
     private boolean mercySuccessApplied;
 
+    // ==================== 分段血条与护盾 ====================
+
+    /** 血条分几段；每打空一段倒地一次，第 k 次处决捅 k 刀 */
+    public static final int SEGMENTS = 3;
+    /** 打空了几段（0~2）。只在内存里：有主玄骸不存盘 */
+    private int lichPhase;
+    /** 连着几次倒地没人处决；有人处决过就清零 */
+    private int unclaimedDowns;
+    /** 护盾还要等多少 tick 才开始恢复 */
+    private int shieldDelayTicks;
+
     // ==================== 抗性运行时数据 ====================
 
     /**
@@ -268,6 +288,9 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.entityData.define(LICH_WEAPON, -1);
         this.entityData.define(DEPARTING, false);
         this.entityData.define(WILD, false);
+        this.entityData.define(SHIELD, 0.0F);
+        this.entityData.define(SHIELD_MAX, 0.0F);
+        this.entityData.define(LICH_PHASE, (byte) 0);
     }
 
     // ==================== 专属玄骸：主人与身份 ====================
@@ -427,6 +450,152 @@ public class KuvaMasterEntity extends AbstractKuva {
                     AttributeModifier.Operation.ADDITION));
         }
         this.getNavigation().setMaxVisitedNodesMultiplier(1.5F);
+
+        setLichPhase(0);
+        this.unclaimedDowns = 0;
+        this.shieldDelayTicks = 0;
+        this.entityData.set(SHIELD_MAX, shieldCap());
+        this.setAbsorptionAmount(shieldCap());
+    }
+
+    // ==================== 分段血条 ====================
+
+    /** 有主的真玄骸（开着怜悯之击）血条分三段；无主的、演示用的照旧打到 0 才倒地 */
+    @Override
+    public boolean isSegmented() {
+        return isOwned() && !isDemo() && MercyRules.enabledFor(this);
+    }
+
+    @Override
+    public float segmentFloor() {
+        return isSegmented() ? this.getMaxHealth() * (SEGMENTS - 1 - this.lichPhase) / SEGMENTS : 0.0F;
+    }
+
+    @Override
+    public float segmentCeil() {
+        return isSegmented() ? this.getMaxHealth() * (SEGMENTS - this.lichPhase) / SEGMENTS : this.getMaxHealth();
+    }
+
+    /** 这次处决捅几刀、验前几张卡：打空了几段就是第几次处决；不分段的一次三刀（演示用的按设的段数） */
+    public int mercyStabs() {
+        return isSegmented() || isDemo() ? this.lichPhase + 1 : SEGMENTS;
+    }
+
+    /** 打空了几段（0~2）；客户端读同步数据 */
+    public int getLichPhase() {
+        return this.level().isClientSide ? Mth.clamp(this.entityData.get(LICH_PHASE), 0, SEGMENTS - 1) : this.lichPhase;
+    }
+
+    /** 直接设打空了几段（开发命令、测试用）；没倒地时血量压进新的这一段 */
+    public void setLichPhase(int phase) {
+        this.lichPhase = Mth.clamp(phase, 0, SEGMENTS - 1);
+        this.entityData.set(LICH_PHASE, (byte) this.lichPhase);
+        if (!this.level().isClientSide && isSegmented() && getMercyState() == MercyState.NONE) {
+            this.setHealth(Mth.clamp(this.getHealth(), Math.min(segmentFloor() + 1.0F, segmentCeil()), segmentCeil()));
+        }
+    }
+
+    /**
+     * 这次验的几刀全对、还没到第三刀：进下一段，血量回到下一段的顶（不分段的回满），护盾回满
+     */
+    public void advanceSegment() {
+        setLichPhase(this.lichPhase + 1);
+        this.setHealth(isSegmented() ? segmentCeil() : this.getMaxHealth());
+        this.shieldDelayTicks = 0;
+        this.setAbsorptionAmount(shieldCap());
+    }
+
+    /** 倒地到时没人处决：这段血回满 */
+    public void refillSegment() {
+        this.setHealth(segmentCeil());
+    }
+
+    /** 又一次倒地没人处决，返回连着第几次 */
+    public int noteUnclaimedDown() {
+        return ++this.unclaimedDowns;
+    }
+
+    public void clearUnclaimedDowns() {
+        this.unclaimedDowns = 0;
+    }
+
+    public int getUnclaimedDowns() {
+        return this.unclaimedDowns;
+    }
+
+    // ==================== 护盾 ====================
+
+    /** 护盾上限：有主的真玄骸是最大生命 × 配置倍数，其余没有 */
+    public float shieldCap() {
+        if (!isOwned() || isDemo()) {
+            return 0.0F;
+        }
+        return (float) (this.getMaxHealth() * ModConfig.KUVA_LICH.lichShieldRatio.get());
+    }
+
+    /** 护盾现值；客户端读同步数据 */
+    public float getShield() {
+        return this.level().isClientSide ? this.entityData.get(SHIELD) : this.getAbsorptionAmount();
+    }
+
+    /** 护盾上限；客户端读同步数据 */
+    public float getShieldMax() {
+        return this.level().isClientSide ? this.entityData.get(SHIELD_MAX) : shieldCap();
+    }
+
+    /** 护盾就是原版的吸收值：伤害先扣它、磁力伤害认它；改了顺手写进同步数据 */
+    @Override
+    public void setAbsorptionAmount(float amount) {
+        super.setAbsorptionAmount(amount);
+        if (!this.level().isClientSide) {
+            this.entityData.set(SHIELD, this.getAbsorptionAmount());
+        }
+    }
+
+    /** 打掉护盾、这么多 tick 内不恢复（开发命令、测试用） */
+    public void breakShield(int holdTicks) {
+        this.setAbsorptionAmount(0.0F);
+        this.shieldDelayTicks = Math.max(0, holdTicks);
+    }
+
+    /** 护盾还要等多少 tick 才开始恢复（测试用） */
+    public int getShieldDelayTicks() {
+        return this.shieldDelayTicks;
+    }
+
+    /**
+     * 挨了打：护盾的恢复重新等。规则和玩家的基础护盾一样，这一下之后护盾空了，等的时间乘倍数
+     */
+    @Override
+    protected void actuallyHurt(@NotNull DamageSource source, float amount) {
+        super.actuallyHurt(source, amount);
+        if (this.level().isClientSide || shieldCap() <= 0.0F) {
+            return;
+        }
+        int delay = ModConfig.KUVA_LICH.lichShieldDelaySeconds.get() * 20;
+        if (this.getAbsorptionAmount() <= 0.0F) {
+            delay = (int) Math.round(delay * ModConfig.KUVA_LICH.lichShieldBrokenDelayMultiplier.get());
+        }
+        this.shieldDelayTicks = delay;
+    }
+
+    /** 每 tick：等待倒数；能打的时候每秒回一截，超过上限的压回上限 */
+    private void tickShield() {
+        float cap = shieldCap();
+        this.entityData.set(SHIELD_MAX, cap);
+        float shield = this.getAbsorptionAmount();
+        if (shield > cap) {
+            this.setAbsorptionAmount(cap);
+            return;
+        }
+        if (this.shieldDelayTicks > 0) {
+            this.shieldDelayTicks--;
+            return;
+        }
+        if (shield < cap && getMercyState() == MercyState.NONE && this.tickCount % 20 == 0) {
+            float step = (float) (cap * ModConfig.KUVA_LICH.lichShieldRegenPercent.get() / 100.0D);
+            this.setAbsorptionAmount(Math.min(cap, shield + step));
+        }
     }
 
     /** 等级变了（处决失败等）时把同步数据和面板跟上 */
@@ -1043,6 +1212,8 @@ public class KuvaMasterEntity extends AbstractKuva {
      * @param pos    掉落位置
      */
     public SuccessResult computeAndApplySuccess(ServerPlayer player, RequiemCard card, BlockPos pos) {
+        // 主人开着灭骸之扉（玄骸被同伴 / 别的东西打死时可能开着）：先关，不然卡槽会把扣掉的卡写回去
+        RequiemGateMenu.closeBeforeCardsChange(player);
         this.mercySuccessApplied = true;
         List<Runnable> chats = new ArrayList<>();
         List<ItemStack> drops = new ArrayList<>();
@@ -1245,27 +1416,17 @@ public class KuvaMasterEntity extends AbstractKuva {
 
         if (requiemCard.addPotion(addPotion)) {
             // 同步顶部解密HUD（带过渡动画；阶段推进时触发揭示提示）
+            // 顶部解密 HUD 已经把这次加了多少、现在多少写清楚了，不再另发动作栏
             DecryptionHudPacket.sendProgress(player, requiemCard, addPotion, levelBefore);
             if (player instanceof ServerPlayer serverPlayer) {
                 LichDirector.onDecryptionProgress(serverPlayer, requiemCard, addPotion, levelBefore);
             }
-
-            boolean max = requiemCard.getPointsRequired() == -1;
-            // 与奴仆那条同通道：顶部解密 HUD 已经在显示，这里只做一次性确认
-            PlayerFeedback.actionBar(player, KuvaPalette.PROGRESS,
-                    "message.kuvalich.getPoints",
-                    addPotion,
-                    max ? "Max" : requiemCard.getDecryptionProgress(),
-                    max ? "Max" : requiemCard.getPointsRequired());
         } else {
             // 已满级（线索全部揭示）：进度未变化，但仍补发一个 added=0 的进度包，
             // 使顶部HUD在满级后继续击杀时也能弹出（显示满进度条与提示，不触发闪光）
             DecryptionHudPacket.sendProgress(player, requiemCard, 0, levelBefore);
             if (player instanceof ServerPlayer serverPlayer) {
                 LichDirector.onDecryptionProgress(serverPlayer, requiemCard, 0, levelBefore);
-            }
-            if (!requiemCard.isCorrectAnswer() && !requiemCard.isReadyCard()) {
-                PlayerFeedback.actionBar(player, KuvaPalette.ACCENT, "message.kuvalich.maxLevel");
             }
         }
     }
@@ -1422,6 +1583,14 @@ public class KuvaMasterEntity extends AbstractKuva {
         if (this.appearGraceTicks > 0 && --this.appearGraceTicks == 0) {
             endAppearGrace();
         }
+        tickShield();
+    }
+
+    /** 演示用的一次三刀（用 {@link #setLichPhase} 改成少刀数来演挣开站起） */
+    @Override
+    public void markDemo() {
+        super.markDemo();
+        setLichPhase(SEGMENTS - 1);
     }
 
     /** 显形结束：开 AI，直接盯上主人往他那边走 */

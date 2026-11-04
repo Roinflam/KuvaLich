@@ -42,11 +42,15 @@ import pers.roinflam.kuvalich.utils.Reference;
  *       后面的格保持空圈，不浮现、不变灰。这一格没放卡时没有符号可画：格子里一直是空圈，判错那一帧空圈变红、
  *       加斜杠；中央先浮出一个暗色空圈，判错时同样变成红圈 + 斜杠；</li>
  *   <li>格下小点（这张卡的剩余次数，每格 3 颗）和第三格的外框同一帧出现，这次用掉的那颗 2770 ms 起画一道斜杠；
- *       第一、二刀就判错时根本不出现；</li>
+ *       第一、二刀就判错、或者这次只验到第一、二刀时根本不出现；</li>
  *   <li>成功 5400 ms 起整组淡出 200 ms；失败在 g_k + 2000 切宽镜头时直接不画，没开电影镜头（没有宽镜头）时改成
  *       g_k + 2750 起淡出 200 ms，免得在第三人称画面里突然消失。</li>
  * </ul>
- * 成功分支在 3670 ms 把玄骸正开着的通讯窗快速收起，4670 切跪地特写时画面上就没有窗了。</p>
+ * 第 k 次处决只验前 k 格（k = 计划里的刀数）：前 k 格照上面一格一格点亮，k 之后的格整场是暗灰的细圈（这次不验）。
+ * 前 k 格全对、k 还不到 3 是「挣开站起」：亮到第 k 格为止，没有判错；开着电影镜头时在 g_k + 1200 切宽镜头那一刻不画，
+ * 没开时到交还（g_k + 2300）前 200 ms 淡出。</p>
+ *
+ * <p>成功分支在 3670 ms 把玄骸正开着的通讯窗快速收起，4670 切跪地特写时画面上就没有窗了。</p>
  *
  * <p>画的时候不分配；用到的 GL 状态由 {@link GuiShapes} / {@link RequiemSigils} 各自还原。</p>
  */
@@ -191,14 +195,25 @@ public final class MercyHud {
         return v != null && v.targetId() == targetId ? v.elapsedMs() : -1L;
     }
 
-    /** 这一场要不要画处决界面：玄骸三刀才画 */
+    /** 这一场要不要画处决界面：玄骸才画（奴仆不画） */
     public static boolean drawsFor(@Nullable MercyPlan.Plan plan) {
-        return plan != null && plan.stabs() == 3 && !plan.variant().thrall;
+        return plan != null && !plan.variant().thrall;
     }
 
-    /** 判错的是第几刀（1~3）；成功返回 0 */
+    /** 判错的是第几刀（1~3）；这次验的几刀全对（成功、挣开站起）返回 0 */
     public static int wrongStab(MercyPlan.Plan plan) {
-        return plan.prefix() >= 3 ? 0 : plan.prefix() + 1;
+        return plan.prefix() >= plan.stabs() ? 0 : plan.prefix() + 1;
+    }
+
+    /** 三刀全对：处决成功 */
+    public static boolean succeeds(MercyPlan.Plan plan) {
+        return plan.stabs() >= 3 && plan.prefix() >= 3;
+    }
+
+    /** 这一场亮到第几格：成功 3，挣开站起是这次验的刀数，失败是判错那一格 */
+    private static int judgedOf(MercyPlan.Plan plan) {
+        int k = wrongStab(plan);
+        return k != 0 ? k : Math.min(3, plan.stabs());
     }
 
     /** 第 k 刀（1~3）填满发光的时刻 */
@@ -249,14 +264,14 @@ public final class MercyHud {
             return;
         }
         int k = wrongStab(plan);
-        boolean success = k == 0;
-        int judged = success ? 3 : k;
+        boolean success = succeeds(plan);
+        int judged = judgedOf(plan);
         float cx = w * 0.5F;
         float H = h;
         int lwPx = GuiShapes.lineWidthPx();
         float lw = GuiShapes.pixels(g, lwPx);
 
-        float group = groupAlpha(t, k);
+        float group = groupAlpha(plan, t);
         if (group > 0.002F) {
             drawPlate(g, cx, H, lw, group, t, judged);
             drawCells(g, plan, t, k, judged, cx, H, lw, lwPx, group);
@@ -268,24 +283,27 @@ public final class MercyHud {
     }
 
     /** 托架、三格、小点这一组的整体透明度 */
-    static float groupAlpha(float t, int k) {
+    static float groupAlpha(MercyPlan.Plan plan, float t) {
         if (t < CUT_MS) {
             return 0.0F;
         }
         float a = FxCurve.clamp01((t - CUT_MS) / PLATE_FADE_IN);
-        if (k == 0) {
+        if (succeeds(plan)) {
             if (t >= SUCCESS_FADE_MS) {
                 a *= 1.0F - FxCurve.clamp01((t - SUCCESS_FADE_MS) / GROUP_FADE);
             }
             return a;
         }
-        float gk = fillMs(k);
+        int k = wrongStab(plan);
+        boolean advance = k == 0;
+        float gk = fillMs(advance ? plan.stabs() : k);
         if (EffectsDisplayConfig.mercyCamera()) {
             // 开着电影镜头时这一刻硬切宽镜头，界面跟着镜头一起切掉
-            return t >= gk + FAIL_WIDE_AFTER ? 0.0F : a;
+            return t >= gk + (advance ? MercyTimeline.ADVANCE_WIDE : FAIL_WIDE_AFTER) ? 0.0F : a;
         }
-        if (t >= gk + FAIL_FADE_AFTER) {
-            a *= 1.0F - FxCurve.clamp01((t - gk - FAIL_FADE_AFTER) / GROUP_FADE);
+        float fadeAt = gk + (advance ? MercyTimeline.ADVANCE_END - GROUP_FADE : FAIL_FADE_AFTER);
+        if (t >= fadeAt) {
+            a *= 1.0F - FxCurve.clamp01((t - fadeAt) / GROUP_FADE);
         }
         return a;
     }
@@ -345,7 +363,10 @@ public final class MercyHud {
         GuiShapes.end();
     }
 
-    /** 底部三格：没轮到的是细圆圈；轮到的先出暗外框、再填满发光、再回落；判错的那格红色霓虹 + 斜杠 */
+    /**
+     * 底部三格：没轮到的是细圆圈；轮到的先出暗外框、再填满发光、再回落；判错的那格红色霓虹 + 斜杠；
+     * 这次不验的（计划刀数之后的）一直是暗灰细圈
+     */
     private static void drawCells(GuiGraphics g, MercyPlan.Plan plan, float t, int k, int judged, float cx, float H,
                                   float lw, int lwPx, float alpha) {
         float y = CELL_Y * H;
@@ -355,7 +376,9 @@ public final class MercyHud {
             float x = cx + (i - 1) * CELL_DX * H;
             int card = plan.cardIds()[i];
             float gi = MercyVariant.LICH_FILL_MS[i];
-            if (i >= judged || t < gi - CELL_LEAD || (card < 0 && t < gi)) {
+            if (i >= plan.stabs()) {
+                GuiShapes.ring(g, x, y, ringR, lw, GuiShapes.argb(FxPalette.ASH, 0.3F * alpha), 1.0F);
+            } else if (i >= judged || t < gi - CELL_LEAD || (card < 0 && t < gi)) {
                 GuiShapes.ring(g, x, y, ringR, lw, GuiShapes.argb(FxPalette.KUVA_PALE, 0.45F * alpha), 1.0F);
             } else if (card < 0 && i == k - 1) {
                 // 没放卡的格子算判错，前面的格都对、都放了卡，所以空格只会是判错的那一格
@@ -506,7 +529,7 @@ public final class MercyHud {
                 return;
             }
             MercyClient.View v = MercyClient.view();
-            if (v == null || !drawsFor(v.plan()) || wrongStab(v.plan()) != 0) {
+            if (v == null || !drawsFor(v.plan()) || !succeeds(v.plan())) {
                 if (v == null) {
                     dismissedFor = Integer.MIN_VALUE;
                 }

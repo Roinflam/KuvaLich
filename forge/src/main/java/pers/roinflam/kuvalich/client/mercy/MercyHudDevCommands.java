@@ -40,8 +40,10 @@ import java.lang.reflect.Field;
  * <ul>
  *   <li>{@code /kuvafxc mercygrid [on|off]}：铺一层量位置的网格——横线每 0.01H 一条、每 0.05H 加粗带刻度，竖线从屏幕中线
  *       往两边同样排；处决界面和横幅各元素该在的中心画成青色小十字，元素中心和十字对上就说明位置对；</li>
- *   <li>{@code /kuvafxc mercyhud <a|b|c> <success|fail1|fail2|fail3> <毫秒|play> [卡1 卡2 卡3]}：本地摆一场假处决只给界面画
- *       （冻在这一毫秒，或者从 0 实时播一遍）；判错的同时排一条跟着这场走的升级横幅。{@code /kuvafxc mercyhud off} 撤掉；</li>
+ *   <li>{@code /kuvafxc mercyhud <a|b|c> <结果> <毫秒|play> [卡1 卡2 卡3]}：本地摆一场假处决只给界面画
+ *       （冻在这一毫秒，或者从 0 实时播一遍）；判错的同时排一条跟着这场走的升级横幅。结果：第三次处决
+ *       {@code success / fail1 / fail2 / fail3}，第一、二次处决全对 {@code adv1 / adv2}，第一、二次处决判错
+ *       {@code k1fail1 / k2fail1 / k2fail2}（k 后面是第几次处决，fail 后面是判错的第几刀）。{@code /kuvafxc mercyhud off} 撤掉；</li>
  *   <li>{@code /kuvafxc banner <等级> [direct|fled] [毫秒]}：直接排一条升级横幅（{@code fled} = 怜悯之击判错后逃走那种，
  *       按第一刀判错排时间），给了毫秒就冻在横幅的这一刻；{@code /kuvafxc banner off} 撤掉；</li>
  *   <li>{@code /kuvafxc mercydown [own|other|none] [秒]}：把准星指着的（或者最近的）赤毒实体在本客户端上摆成倒地
@@ -53,7 +55,10 @@ import java.lang.reflect.Field;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class MercyHudDevCommands {
 
-    private static final String[] RESULTS = {"success", "fail1", "fail2", "fail3"};
+    /** 结果名和对应的（刀数，前缀对几张） */
+    private static final String[] RESULTS = {"success", "fail1", "fail2", "fail3", "adv1", "adv2", "k1fail1", "k2fail1",
+            "k2fail2"};
+    private static final int[][] RESULT_PLAN = {{3, 3}, {3, 0}, {3, 1}, {3, 2}, {1, 1}, {2, 2}, {1, 0}, {2, 0}, {2, 1}};
     private static boolean grid;
 
     private MercyHudDevCommands() {
@@ -105,7 +110,18 @@ public final class MercyHudDevCommands {
                                 .executes(ctx -> down(ctx.getSource(), StringArgumentType.getString(ctx, "who"), 60))
                                 .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 600))
                                         .executes(ctx -> down(ctx.getSource(), StringArgumentType.getString(ctx, "who"),
-                                                IntegerArgumentType.getInteger(ctx, "seconds")))))));
+                                                IntegerArgumentType.getInteger(ctx, "seconds"))))))
+                .then(Commands.literal("mercyring")
+                        .then(Commands.literal("kuva").executes(ctx -> ring(ctx.getSource(), MercyPrompt.RingStyle.KUVA)))
+                        .then(Commands.literal("bone").executes(ctx -> ring(ctx.getSource(), MercyPrompt.RingStyle.BONE)))
+                        .then(Commands.literal("gold").executes(ctx -> ring(ctx.getSource(), MercyPrompt.RingStyle.GOLD)))));
+    }
+
+    /** 倒地倒计时圈换颜色（三版给人挑） */
+    private static int ring(CommandSourceStack src, MercyPrompt.RingStyle style) {
+        MercyPrompt.ringStyle = style;
+        src.sendSuccess(() -> Component.literal("mercy ring " + style.name().toLowerCase(java.util.Locale.ROOT)), false);
+        return 1;
     }
 
     /** {@code play} / {@code <ms>} 后面可选再跟三张卡的 id */
@@ -133,24 +149,26 @@ public final class MercyHudDevCommands {
             case "c" -> MercyVariant.LICH_C;
             default -> null;
         };
-        int prefix = -1;
+        int stabs = -1, prefix = -1;
         for (int i = 0; i < RESULTS.length; i++) {
             if (RESULTS[i].equals(r)) {
-                prefix = i == 0 ? 3 : i - 1;
+                stabs = RESULT_PLAN[i][0];
+                prefix = RESULT_PLAN[i][1];
             }
         }
         if (variant == null || prefix < 0) {
-            ctx.getSource().sendFailure(Component.literal("mercyhud <a|b|c> <success|fail1|fail2|fail3> <ms|play> [c1 c2 c3]"));
+            ctx.getSource().sendFailure(Component.literal("mercyhud <a|b|c> <" + String.join("|", RESULTS)
+                    + "> <ms|play> [c1 c2 c3]"));
             return 0;
         }
         int[] ids = cards
                 ? new int[]{IntegerArgumentType.getInteger(ctx, "c1"), IntegerArgumentType.getInteger(ctx, "c2"),
                 IntegerArgumentType.getInteger(ctx, "c3")}
                 : new int[]{5, 0, 6};
-        MercyPlan.Plan plan = new MercyPlan.Plan(3, prefix, variant, ids, new int[]{3, 2, 1}, false, 0, true, false);
+        MercyPlan.Plan plan = new MercyPlan.Plan(stabs, prefix, variant, ids, new int[]{3, 2, 1}, false, 0, true, false);
         long ms = play ? -1L : IntegerArgumentType.getInteger(ctx, "ms");
         MercyHud.setDev(plan, ms);
-        if (prefix < 3) {
+        if (prefix < stabs) {
             int rank = ClientLichState.hasLich() ? ClientLichState.get().rank() + 1 : 4;
             RankUpBanner.show(rank, true, prefix + 1, MercyHud.DEV_TARGET, RankUpBanner.nameOf(-1), -1L);
         } else {

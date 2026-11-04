@@ -24,25 +24,33 @@
           "type": "steps",
           "items": [
             {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "<em>唤醒宿敌</em>：还没有玄骸时，每隔一阵会有一只{lang:entity.kuvalich.kuva_larvling}出现在你附近。把它打倒、用{lang:key.kuvalich.mercy}处决，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是幼体倒地时头顶亮出的那把武器，见[[enemies/kuva_larvling]]。"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "<em>唤醒宿敌</em>：还没有玄骸时，每隔一阵会有一只{lang:entity.kuvalich.kuva_larvling}出现在你附近。亲手打死它，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是幼体手里那把武器，见[[enemies/kuva_larvling]]。"
+            },
+            {
               "if": [
                 "cfg:kuva_lich.mercyEnabled",
                 "cfg:kuva_lich.mercyThralls"
               ],
-              "text": "<em>积攒线索</em>：打倒{lang:entity.kuvalich.kuva_slave}，再用{lang:key.kuvalich.mercy}处决它，积攒<t>解密进度</t>，每积满一段，答案就揭示出一张卡，见[[requiem/decryption]]。"
+              "text": "<em>积攒线索</em>：玄骸诞生后，打倒找上门的{lang:entity.kuvalich.kuva_slave}，再用{lang:key.kuvalich.mercy}处决它，积攒<t>解密进度</t>，每积满一段，答案就揭示出一张卡，见[[requiem/decryption]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
-              "text": "<em>积攒线索</em>：亲手击杀{lang:entity.kuvalich.kuva_slave}，积攒<t>解密进度</t>，每积满一段，答案就揭示出一张卡，见[[requiem/decryption]]。"
+              "text": "<em>积攒线索</em>：玄骸诞生后，亲手击杀找上门的{lang:entity.kuvalich.kuva_slave}，积攒<t>解密进度</t>，每积满一段，答案就揭示出一张卡，见[[requiem/decryption]]。"
             },
             "<em>备卡</em>：<t>安魂卡</t>是 8 种卡片道具，答案是其中 3 张，这三张要真正拿到手。挖{item:kuvalich:requiem_ore}会掉安魂卡，用不上的卡可以 3 张换 1 张随机新卡，见[[requiem/requiem_cards]]。",
             "<em>摆卡</em>：在{item:kuvalich:requiem_gate}里按你猜的顺序放好三张卡，见[[requiem/requiem_gate]]。",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>讨伐</em>：揭示第 1 条线索时，你的{lang:entity.kuvalich.kuva_master}就诞生了，怒气攒满它会自己找上门。把它打到倒地，在它起身之前用{lang:key.kuvalich.mercy}处决，三刀逐张核对答案，见[[enemies/kuva_master]]。"
+              "text": "<em>讨伐</em>：你的{lang:entity.kuvalich.kuva_master}怒气攒满会自己找上门。它的血分三段，每打空一段倒地一次，用{lang:key.kuvalich.mercy}处决：第 1 次核对第 1 张卡，第 2 次核对前 2 张，第 3 次三张全对才终结它，见[[enemies/kuva_master]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "<em>讨伐</em>：揭示第 1 条线索时，你的{lang:entity.kuvalich.kuva_master}就诞生了，怒气攒满它会自己找上门。击杀它时你要在附近，它倒下的那一刻，答案自动核对，见[[enemies/kuva_master]]。"
+              "text": "<em>讨伐</em>：你的{lang:entity.kuvalich.kuva_master}怒气攒满会自己找上门。击杀它时你要在附近，它倒下的那一刻，答案自动核对，见[[enemies/kuva_master]]。"
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
@@ -70,11 +78,13 @@
         "mercy/MercyRules.java:31 enabledFor / :42 canDown — 怜悯之击开着时，玄骸（mercyEnabled）和奴仆（再加 mercyThralls）受致命伤先倒地，处决完才结算；所以第 1、4、5 步按这两项分两种写法",
         "entity/KuvaSlaveEntity.java:194 onKilled — 奴仆倒地时只有处决完成那次死亡才给进度；关掉时照旧要玩家亲手击杀",
         "capability/RequiemCard.java:320 processStage / :333 generateAnswers — 满一段揭示一张答案卡；答案 = 8 种卡里三个互不相同的 id（带顺序）",
-        "nemesis/LichDirector.java:192-197 onDecryptionProgress — 揭示第 1 条线索（阶段 0 → 1）时诞生专属玄骸；:474 怒气满后定到场时间",
+        "nemesis/LichDirector.java:224 birthFromLarvling — 处决赤毒幼体时诞生专属玄骸；:474 怒气满后定到场时间",
         "mercy/MercyServer.java:747 settleSuccess / :763 settleFailure — 三刀全对终结，刺错 kuvaLevel+1 并逃走（EncounterEnd.MERCY_FAILED，之后照常再来）；entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时击杀即按主人的卡判定，主人要在 64 格内",
         "init/KuvaLichItems.java:39 — 8 张安魂卡；enchantment/RequiemDestroyedEnchantment.java:175 — 挖安魂矿石掉随机安魂卡；world/inventory/RequiemRecastMenu.java:208/:227 — 安魂之铸 3 张卡换 1 张随机新卡",
         "capability/RequiemCard.java:379 reset() — 成功终结时清零并重新开始（下一轮答案重新随机）",
-        "wf 小知识：原作《星际战甲》事实，不是本模组机制"
+        "wf 小知识：原作《星际战甲》事实，不是本模组机制",
+        "nemesis/LarvlingDirector.java + entity/KuvaLarvlingEntity.java:220 onKilled — 没有玄骸时幼体隔 larvlingIntervalMin~MaxMinutes 分钟出现，处决（怜悯之击关着时亲手打死）它诞生玄骸；nemesis/ThrallDirector.java — 奴仆只成队找有玄骸的人",
+        "entity/KuvaMasterEntity.java:465 isSegmented / mercy/MercyServer.java:711 buildPlan — 血分三段，第 k 次处决验前 k 张，第三次全对才成功"
       ]
     },
     {
@@ -85,7 +95,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "你的<hl>答案</hl>只属于你自己，Tenno，谁也替你猜不了。它由 3 张[[requiem/requiem_cards|安魂卡]]按固定顺序排成，起初藏着，要靠消灭赤毒敌人积攒<t>解密进度</t>，一张一张揭开。"
+          "text": "你的<hl>答案</hl>只属于你自己，Tenno，谁也替你猜不了。它由 3 张[[requiem/requiem_cards|安魂卡]]按固定顺序排成，起初藏着，你的玄骸诞生以后，要靠消灭赤毒敌人积攒<t>解密进度</t>，一张一张揭开。"
         },
         {
           "type": "table",
@@ -132,14 +142,18 @@
             [
               "别人的玄骸、无主的玄骸、其它生物",
               "<dim>不增加</dim>"
+            ],
+            [
+              "还没有玄骸时，什么来源都算",
+              "<dim>不增加</dim>"
             ]
           ]
         },
         {
           "type": "tip",
           "style": "info",
-          "if": "!cfg:kuva_lich.kuvaSlaveSpawnWeight",
-          "text": "{lang:entity.kuvalich.kuva_slave}不会在野外自然出现。第 1 条线索要从奴仆身上攒，你的玄骸在那之后才会诞生。"
+          "if": "!cfg:kuva_lich.thrallSquadEnabled",
+          "text": "{lang:entity.kuvalich.kuva_slave}不会找上门来，解密进度只能从你的玄骸身上拿，见[[enemies/kuva_master]]。"
         },
         {
           "type": "tip",
@@ -156,7 +170,14 @@
           "style": "warn",
           "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
           "title": "最后一击自己打",
-          "text": "奴仆给的解密进度只归<em>亲手打出最后一击的人</em>，组队时归补刀的那一个，被宠物、岩浆，或燃烧、电击等元素额外伤害收掉的都不算。收尾时自己动手，近战和弓箭都行。"
+          "text": "奴仆要由<em>玩家亲手打出最后一击</em>才给解密进度，被宠物、岩浆，或燃烧、电击等元素额外伤害收掉的都不算。收尾时自己动手，近战和弓箭都行。"
+        },
+        {
+          "type": "tip",
+          "style": "good",
+          "if": "cfg:kuva_lich.thrallProgressShareRange>0",
+          "title": "一起刷",
+          "text": "奴仆倒下时，它 <t>{cfg:kuva_lich.thrallProgressShareRange}</t> 格内每个有玄骸的玩家都拿到同样多的解密进度，不用抢最后一下；掉落和玄骸的怒气只归收尾的那个人。还没有玄骸的人拿不到进度。"
         },
         {
           "type": "h",
@@ -183,7 +204,7 @@
           "type": "list",
           "items": [
             "每积满一段揭示一张答案卡，进度从头算起，<g>多出来的点数带进下一段</g>。",
-            "<hl>第 1 条线索出现时，整道答案就定下了</hl>，用哪 3 张卡、按什么顺序，之后都不再变。也就在这一刻，你的[[requiem/lich_archive|玄骸]]诞生，开始攒怒气。",
+            "<hl>第 1 条线索出现时，整道答案就定下了</hl>，用哪 3 张卡、按什么顺序，之后都不再变。",
             "揭示出的卡显示在[[requiem/requiem_gate]]和[[requiem/lich_archive]]里，<w>排列是随机的，不代表答案顺序</w>。",
             "三条线索都揭示后，再消灭敌人不加进度，动作栏会提醒你去摆卡。"
           ]
@@ -249,7 +270,7 @@
         "entity/KuvaMasterEntity.java:772 onKilled — 无主玄骸直接 return，什么都不给；有主玄骸只按它主人的卡结算",
         "module/weapon/WeaponElementSystem.java — 燃烧 inFire()、毒气 magic()、电击 lightningBolt()、爆炸 explosion(null) 都没有攻击者实体，怜悯之击关掉时用它们补刀奴仆不算玩家击杀",
         "capability/RequiemCard.java:320 processStage — 满阈值则阶段 +1、进度减去阈值（溢出保留），一次调用只跨一个阶段；:333 generateAnswers 第一阶段满时一次性生成三个互不相同的答案（0~7），之后不再变",
-        "nemesis/LichDirector.java:192-197 onDecryptionProgress — 阶段 0 → 1 时诞生专属玄骸（怒气从 lichBirthRage 起）",
+        "nemesis/LichDirector.java:224 birthFromLarvling — 处决赤毒幼体时诞生专属玄骸（怒气从 lichBirthRage 起）；:197 onDecryptionProgress 不再触发诞生",
         "client/gui/requiem/MurmurTriangle.java:11-19 — 灭骸之扉和玄骸档案共用的三枚密语符号，每 3 秒随机两枚换位，排列不代表顺序",
         "capability/RequiemCard.java:307 addPotion — 三阶段满后返回 false，动作栏发 message.kuvalich.maxLevel（entity/KuvaSlaveEntity.java:268）",
         "client/gui/hud/DecryptionHudOverlay.java:44-55 — 屏幕上方正中的赤毒菱晶：外圈从上顶点顺时针点亮、液面升高；下面「安魂密语」（lang kuvalich.hud.murmur.label）、右边三颗小菱、有玄骸时一行名字；淡入 500 ms、停 3.15 s、淡出 350 ms；揭示时换成这张卡的符号和卡名，第三条揭示时三枚并排",
@@ -257,8 +278,9 @@
         "capability/CapabilityRegistryHandler.java — PlayerEvent.Clone（死亡 / 换维度）整份复制 RequiemCard",
         "capability/RequiemCard.java:379 reset() — 只在成功终结时调用，清空阶段、进度、答案、玄骸等级",
         "event/ConfiscationHandler.java:53 — 没收要求 hasLich()，即从玄骸诞生起",
-        "worldgen/KuvaLichBiomeModifier.java — kuvaSlaveSpawnWeight ≤ 0 时不注册奴仆的自然生成（配置下限为 0）；玄骸只在第 1 条线索揭示后诞生，所以这时只能靠别处来的奴仆起步",
-        "wf 小知识：原作《星际战甲》事实，不是本模组机制"
+        "nemesis/ThrallDirector.java — thrallSquadEnabled 关掉时奴仆不来，进度只能从玄骸身上拿（解密失败给 masterPotionMultiplier 倍）",
+        "wf 小知识：原作《星际战甲》事实，不是本模组机制",
+        "entity/KuvaSlaveEntity.java:223 progressRecipients — 解密进度给击杀者（有玄骸时）和 thrallProgressShareRange 格内所有有玄骸的人，同样多；没有玄骸的拿不到；怒气、掉落只归击杀者"
       ]
     },
     {
@@ -421,7 +443,7 @@
             },
             {
               "if": "cfg:kuva_lich.lichRagePerClueRevealed>0",
-              "text": "揭示第 2、第 3 条线索：每条 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>（第 1 条揭示时它才诞生，不算）"
+              "text": "揭示第 2、第 3 条线索：每条 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>（第 1 条不算）"
             },
             {
               "if": "cfg:kuva_lich.lichRageOnlineMinutes>0",
@@ -483,7 +505,7 @@
         },
         {
           "type": "p",
-          "text": "答案里的 3 张卡互不相同，排法共 8 × 7 × 6 = <t>336</t> 种，所以同一种卡放两张，永远猜不对。"
+          "text": "答案里的 3 张卡互不相同，排法共 8 × 7 × 6 = <t>336</t> 种，灭骸之扉里也不让同一种卡放两张。"
         },
         {
           "type": "h",
@@ -590,7 +612,7 @@
         {
           "type": "list",
           "items": [
-            "<b>同时只能装一张</b>：灭骸之扉里已经有一张 Oull 时，第二张放不进去。",
+            "<b>同时只能装一张</b>：和别的卡一样，同一种卡在灭骸之扉里只能放一张，已经有一张 Oull 时，第二张放不进去。",
             "和别的卡一样有 <t>3</t> 次耐久，只在解密成功时扣。",
             "挖矿挖不到，也不能放进{item:kuvalich:requiem_recast}，三合一不会出它。"
           ]
@@ -696,7 +718,7 @@
         {
           "type": "steps",
           "items": [
-            "先积攒进度，揭示第 <t>1</t> 条线索，见[[requiem/decryption]]，你的玄骸在这一刻诞生。",
+            "先了结一只[[enemies/kuva_larvling|赤毒幼体]]，让你的玄骸诞生，再积攒进度揭示线索，见[[requiem/decryption]]。",
             "右键打开灭骸之扉，在三格里放满安魂卡，关上界面就保存好了。",
             {
               "if": "cfg:kuva_lich.requiemUltimatumDropChance>0",
@@ -708,7 +730,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "把它打到倒地，在 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒内走到它身边，用{lang:key.kuvalich.mercy}处决，三刀逐张核对。"
+              "text": "每打空它一段血，它就倒地一次，在 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒内走到它身边，用{lang:key.kuvalich.mercy}处决：第 1 次核对第 1 张卡，第 2 次核对前 2 张，第 3 次三张全对才算成功。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -739,7 +761,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "没放满 3 张",
-                "照样三刀判，空着的格子算错：判到第一个空格就是<b>解密失败</b>，结果同「放满但不对」"
+                "照样逐刀判，空着的格子算错：判到第一个空格就是<b>解密失败</b>，结果同「放满但不对」"
               ]
             },
             {
@@ -830,6 +852,7 @@
           "type": "list",
           "items": [
             "界面开着时，你要待在方块 <t>8</t> 格以内。",
+            "<b>同一种卡只能放一张</b>，Oull 也一样；以前放进去的重复卡，打开灭骸之扉时会退回你的背包，背包满了掉在脚下。",
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
               "text": "只想靠它积攒进度、不想冒失败的风险时，先从门里取出一张卡。"
@@ -851,16 +874,18 @@
         "resources data/kuvalich/recipes/requiem_gate.json — 5 安魂宝石 + 4 黑曜石",
         "world/inventory/RequiemGateMenu.java — 三个卡槽对应第 1/2/3 位；打开时从玩家能力载入卡片，关闭时写回玩家能力（方块本身不存卡）；stillValid distSqr ≤ 64（8 格）；卡槽只收 AbstractRequiemCard",
         "client/gui/screens/inventory/RequiemGateScreen.java:32-44 — 上排卡槽下三颗红点是剩余次数（:225 drawUseDots）；中间三枚密语符号（MurmurTriangle）兼作这一阶段的进度、每 3 秒随机两枚换位；右下角档案入口；创造模式 TAB 补全",
-        "nemesis/LichDirector.java:192-197 — 第 1 条线索揭示时诞生玄骸；:474 怒气满后定到场时间；item/RequiemUltimatum.java:98 tryCall 召来自己的玄骸",
+        "nemesis/LichDirector.java:224 birthFromLarvling — 处决赤毒幼体时诞生玄骸；:474 怒气满后定到场时间；item/RequiemUltimatum.java:98 tryCall 召来自己的玄骸",
         "mercy/MercyRules.java:31 — mercyEnabled 时有主玄骸受致命伤先倒地；mercy/MercyServer.java:333 handleRequest 只有主人能处决、要在 mercyReach 内；:470 倒地 mercyDownedSeconds 到点它起身逃走",
         "capability/RequiemCard.java correctPrefixLength — 从第 1 位起逐位比、遇错即停（空格算错、Oull 算对，见 fits），决定第几刀判错；isReadyCard 三格都非空",
-        "entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时按主人的卡判定，主人要在线、同一世界、64 格内（:178 RESOLVE_RANGE），否则不判定、不给进度；卡没放满只给进度并按 KILLED_OTHER 结束遭遇（之后照常再来）；mercy/MercyServer.java buildPlan — 怜悯之击开着时按开始那一刻的卡定下整场结果，一律三刀，空格算判错",
+        "entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时按主人的卡判定，主人要在线、同一世界、64 格内（:178 RESOLVE_RANGE），否则不判定、不给进度；卡没放满只给进度并按 KILLED_OTHER 结束遭遇（之后照常再来）；mercy/MercyServer.java buildPlan — 怜悯之击开着时按开始那一刻的卡定下整场结果，第 k 次处决捅 k 刀、验前 k 张，空格算判错",
         "entity/KuvaMasterEntity.java:921 directFailure / mercy/MercyServer.java:763 settleFailure — 判错 kuvaLevel+1、给进度、按 MERCY_FAILED 离场；聊天：直接判定发 firstCorrect / secondCorrect + failedToDecrypt，怜悯之击发 message.kuvalich.mercy.failed.1~3（第几刀判错）",
         "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 武器 = KUVA_WEAPONS.get(card.getLichWeapon())（诞生时定下的那把），元素随机、等级在当前范围内；玄骸之遗 ×1；裂罅碎块、赤毒、高级模组（:1119 rollAdvancedModule：masterPrimeModuleChance% Prime 否则裂罅，moduleWeaponRatio% 武器模组）；requiemUltimatumDropChance 通牒；奖励生成在它倒下的位置，幸存卡回背包、放不下也掉在那里",
         "entity/KuvaMasterEntity.java:1139 upgradeWeaponLevelCap — 上下限各加同一个 getInt(minimumLevelCapIncrease, maximumLevelCapIncrease)，分别封顶 minimumLevel / maximumLevel；在生成武器之后调用",
         "capability/RequiemCard.java 构造函数 — 新角色武器等级范围 baseMinimumLevel~baseMaximumLevel；旧存档补上基础值，只升不降；utils/RandomUtil.java min>=max 时返回 min，所以两头都没封顶时宽度不变",
         "modules 分类 module_rarity — Prime 与裂罅是最高两档；warframe 分类 warframe_table — 「战甲」指玩家本人",
-        "network/packet/RequiemGateFillPacket.java — 校验创造模式 + 当前菜单为灭骸之扉；答案未生成则忽略，旧卡退回背包"
+        "network/packet/RequiemGateFillPacket.java — 校验创造模式 + 当前菜单为灭骸之扉；答案未生成则忽略，旧卡退回背包",
+        "world/inventory/RequiemGateMenu.java:445 CardSlot.mayPlace — 同一种卡（Oull 也一样）同时只能装一张；:473 returnDuplicateCards 打开时把存档里重复的退还，背包满了掉在脚下",
+        "mercy/MercyServer.java:711 buildPlan — 第 k 次处决只验前 k 张，第三次全对才成功"
       ]
     },
     {
@@ -1072,7 +1097,7 @@
             ],
             [
               "生效期间",
-              "从你的玄骸诞生（揭示第 1 条线索）到解密成功"
+              "从你的玄骸诞生（了结赤毒幼体）到解密成功"
             ],
             [
               "归还",
@@ -1121,7 +1146,7 @@
         "event/ConfiscationHandler.java — 监听 EntityItemPickupEvent（捡起地上掉落物）；背包里的物品不经过这个事件",
         "Forge 1.20.1 ItemEntity.playerTouch — pickupDelay 为 0 时先发 EntityItemPickupEvent，之后才检查背包放不放得下；Player.aiStep 每 tick 对碰到的掉落物调用一次，所以背包满时站在掉落物上每 tick（每秒 20 次）都判定一次",
         "capability/RequiemCard.java:653 addConfiscatedItem / :665 canConfiscateMore — 上限比较的是列表条目数（每次一条）",
-        "event/ConfiscationHandler.java:53 — 要求 card.hasLich()：第 1 条线索揭示、玄骸诞生起，到成功终结 reset 为止",
+        "event/ConfiscationHandler.java:53 — 要求 card.hasLich()：处决赤毒幼体、玄骸诞生起，到成功终结 reset 为止",
         "event/ConfiscationHandler.java — RandomUtil.percentageChance(confiscationChance)，参数是 0~100 百分数",
         "event/ConfiscationHandler.java:76 — 复制整个 ItemEntity 的物品堆，取消拾取并 discard；动作栏 message.kuvalich.confiscation.stolen（谁拿走了什么）；玄骸的嘲讽通讯限流，没收类 30 秒一句（:31）",
         "capability/RequiemCard.java:379 reset() 不清没收列表；失败分支不碰列表；CapabilityRegistryHandler 死亡 / 换维度深拷贝",

@@ -2,9 +2,126 @@
   "id": "enemies",
   "order": 30,
   "title": "敌人",
-  "subtitle": "奴仆与玄骸：生成、掉落与打法",
+  "subtitle": "幼体、奴仆与玄骸：生成、掉落与打法",
   "icon": "kuvalich:kuva_master_spawn_egg",
   "entries": [
+    {
+      "id": "kuva_larvling",
+      "title": "赤毒幼体",
+      "icon": "kuvalich:kuva_larvling_spawn_egg",
+      "summary": "了结它，你的玄骸就诞生了",
+      "items": [
+        "kuvalich:kuva_larvling_spawn_egg"
+      ],
+      "blocks": [
+        {
+          "type": "comm",
+          "who": "lotus",
+          "text": "Tenno，它手里攥着的，就是你未来宿敌的武器。了结它，它就会醒来。"
+        },
+        {
+          "type": "p",
+          "text": "<hl>{lang:entity.kuvalich.kuva_larvling}</hl>是还没长成的玄骸。你还没有玄骸时，它会隔一阵出现在你附近，手里握着的就是将来那只玄骸的武器。了结它，属于你的{lang:entity.kuvalich.kuva_master}就此诞生，此后它只冲你一个人来。"
+        },
+        {
+          "type": "entity",
+          "id": "kuvalich:kuva_larvling",
+          "height": 88
+        },
+        {
+          "type": "h",
+          "text": "它什么时候来"
+        },
+        {
+          "type": "list",
+          "items": [
+            "只找<em>还没有玄骸</em>的人，有了玄骸就不会再有幼体来找你",
+            "你在线时每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟来一只，下线时计时停住，上线接着数；同一时间最多一只",
+            "一般落在你 <t>16~28</t> 格外、你看不见的地方，一出现就冲你来，屏幕上会提示「{lang:message.kuvalich.larvling.appeared}」",
+            "你在它不去的维度、和平难度、创造或旁观模式下时不来，刚进游戏的 <t>30</t> 秒内也不来",
+            "还没被打倒时，你离它超过 <t>96</t> 格、换了维度、下线或者死了，它就地消散，<t>2</t> 分钟后再来一只"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "怎么让玄骸诞生"
+        },
+        {
+          "type": "steps",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "items": [
+            "把它打倒：它只有 <t>70</t> 点生命，比奴仆好对付；受到致命一击时不死，而是<w>倒地</w> <t>{cfg:kuva_lich.larvlingDownedSeconds}</t> 秒",
+            "看它头顶：倒地后，将来那只玄骸的武器会亮在它头顶，你的玄骸拿的就是这一把，终结玄骸时你拿到的也是这一把",
+            "走到 <t>{cfg:kuva_lich.mercyReach}</t> 格内看着它，出现「{lang:kuvalich.mercy.prompt.larvling}」时按<t>{lang:key.kuvalich.mercy}</t>键（默认 <t>X</t>）",
+            "处决完成，它化作赤毒消散，你的{lang:entity.kuvalich.kuva_master}随之诞生，第一次开口和你打招呼"
+          ]
+        },
+        {
+          "type": "p",
+          "if": "!cfg:kuva_lich.mercyEnabled",
+          "text": "亲手打死它，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是它手里那把武器。最后一击必须是还没有玄骸的玩家打出的，被宠物、别的怪或岩浆收掉的什么都不给。"
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "title": "别补刀",
+          "text": "幼体倒地以后，<b>任何玩家或宠物再打它一下</b>，它就当场消散；倒地时间到了没人处决，也一样。消散的幼体什么都不给，下一只要再等 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "谁能处决"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "items": [
+            "<b>已经有玄骸的人处决不了幼体</b>，帮别人打倒它也不会抢走资格",
+            "倒地那一刻定下处决的人：打倒它的玩家（宠物打倒的算主人）还没有玄骸，就归他",
+            "不然就归它来找的那个人，前提是他在线、在同一个世界、也还没有玄骸；都不满足就谁也处决不了，等倒地时间到了消散",
+            "所以还没有玄骸的朋友打倒了你的幼体，玄骸就诞生在他那边；有玄骸的朋友帮你打倒，资格还是你的"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "wf",
+          "text": "在始源星系，赤毒幼体会在任务里突然现身，倒地后亮出将来那只玄骸的武器、元素加成和幻纹。指挥官可以处决它，让它成为自己的宿敌，也可以放着不管。"
+        },
+        {
+          "type": "h",
+          "text": "深层情报"
+        },
+        {
+          "type": "list",
+          "items": [
+            "生命 <t>70</t>、攻击力 <t>5</t>、护甲 <t>2</t>、移速 <t>0.33</t>；伤害公式和奴仆一样（攻击力 × 难度系数 × 0.85），同样固定 <t>×0.75</t> 减伤、属于亡灵",
+            "它不掉任何东西，也不给解密进度",
+            "它不进存档：退出存档、区块卸载时还没倒地的幼体直接离开，<t>2</t> 分钟后再来一只",
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "倒地过的幼体不管结局如何（诞生了玄骸、被补刀、超时消散），下一只都要重新等一整轮"
+            },
+            "刷怪蛋放出来的幼体同样有效，还没有玄骸的人了结它，一样得到玄骸"
+          ]
+        }
+      ],
+      "_src": [
+        "entity/KuvaLarvlingEntity.java:78 createAttributes — 生命 70 / 攻击 5 / 击退抗性 0.3 / 移速 0.33 / 追踪 32 / 护甲 2；继承 KuvaSlaveEntity：doHurtTarget 伤害 = 攻击力 × 难度 id(1/2/3) × 0.85，applyAdvancedResistance 固定 ×0.75，生物类型 UNDEAD；init/KuvaLichEntities.java 尺寸 1.5 × 2.9",
+        "nemesis/LarvlingDirector.java:135 tick — 只给没有玄骸的人计时（larvlingEnabled），在线才走，剩余存 RequiemCard.larvlingWait，下线不丢；:279 rollWait 掷 larvlingIntervalMin~MaxMinutes；:187 blocker — 不在 larvlingDimensions、和平、创造 / 旁观、死了、睡觉、骑乘、处决中都不放，登录后 30 秒内不放（LOGIN_GRACE_TICKS）",
+        "nemesis/LarvlingDirector.java:211 spawn — 先找 16~28 格外看不见的落点（LichSpawner.findHidden），找不到放宽到 10 格、不要求看不见；setTarget(主人)；动作栏 message.kuvalich.larvling.appeared；同一个人同时只有一只",
+        "nemesis/LarvlingDirector.java:179 shouldDismiss — 主人下线、死亡、换世界、离它超过 LEASH 96 格、已有玄骸时，没倒地的就地消散；没倒地就没了的 RETRY_AFTER_LOST 2 分钟后补，倒地过的重新掷完整间隔；刷出时计时先记成 2 分钟（关服丢了也是 2 分钟后补）",
+        "mercy/MercyRules.java:32 enabledFor / :46 canDown — 幼体只看 mercyEnabled，不看 mercyThralls；entity/KuvaLarvlingEntity.java downedSeconds = larvlingDownedSeconds；mercy/MercyRules.java reach = mercyReach",
+        "entity/KuvaLarvlingEntity.java:164 pickClaimant — 倒地那一刻定资格人：打倒它的人（MercyServer.qualifiedFor 的规矩，含宠物、延后伤害）还没有玄骸 → 他；否则主人（在线、同一个世界、没有玄骸）；都不行 → 没人能处决；:151 canReceiveLich；mercy/MercyServer.java:398 倒地后又有了玄骸的处决请求被拒（has_lich）",
+        "entity/KuvaLarvlingEntity.java:194 hurt — 倒地时挨玩家或玩家宠物一下（不带 BYPASSES_INVULNERABILITY）→ beginExpire 就地消散；mercy/MercyServer.java:532 onDownedTimeout 超时 → beginExpire；都不给东西",
+        "entity/KuvaLarvlingEntity.java:220 onKilled — 处决走完（怜悯之击关着时是被 Player 打死，宠物、环境不算）→ LichDirector.birthFromLarvling(击杀者, 种子, 武器)，击杀者已有玄骸时什么都不给；不掉落、不给解密进度；shouldBeSaved / removeWhenFarAway 均为 false",
+        "nemesis/LichDirector.java:224 birthFromLarvling — 种子、武器都用幼体刷出时掷好的；名字重名时换名字不换武器；诞生通讯照旧",
+        "client/larvling/LarvlingOverhead.java — 倒地时头顶亮出武器；client/larvling/LarvlingWeaponLayer.java — 手里拿着同一把（DATA_WEAPON 同步）",
+        "entity/KuvaLarvlingEntity.java onAddedToWorld → ensureSeeded — 刷怪蛋、命令造的进世界时自己掷种子，同样能诞生玄骸（没有主人，资格人只能是打倒它的人）",
+        "星际战甲小知识：原作 Kuva Larvling 出现在任务中，倒地后显示将来玄骸的武器、元素加成和幻纹，可以处决（Mercy）让它成为宿敌，也可以放着不管"
+      ]
+    },
     {
       "id": "kuva_slave",
       "title": "赤毒奴仆",
@@ -34,47 +151,37 @@
         },
         {
           "type": "h",
-          "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
-          "text": "在哪遇到"
+          "if": "cfg:kuva_lich.thrallSquadEnabled",
+          "text": "它们什么时候来"
         },
         {
           "type": "kv",
-          "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+          "if": "cfg:kuva_lich.thrallSquadEnabled",
           "rows": [
             [
-              "地点",
-              "主世界任意生物群系，<b>蘑菇岛除外</b>"
+              "找谁",
+              "只找<em>已经有玄骸</em>的人，还没有的先去了结一只[[enemies/kuva_larvling|赤毒幼体]]"
             ],
             [
-              "亮度",
-              "和僵尸一样只在够暗的地方刷新，<t>和平</t>难度下不刷新"
+              "多久一队",
+              "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一队，一队 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸刚诞生、你刚上线时从头计时"
             ],
             [
-              "空间",
-              "体型庞大，需要 <t>3×3</t>、<t>3</t> 格高的空位，所以在低矮的洞穴里很少见"
+              "落点",
+              "你身边 <t>16~28</t> 格外、你看不见的地方，几只挨在一起，一落地就冲你来"
             ],
             [
-              "每群数量",
-              "<t>{cfg:kuva_lich.kuvaSlaveMinSpawnCount}~{cfg:kuva_lich.kuvaSlaveMaxSpawnCount}</t> 只"
+              "上限",
+              "你身边 <t>{cfg:kuva_lich.thrallSquadRadius}</t> 格内已经有 <t>{cfg:kuva_lich.thrallSquadMaxNearby}</t> 只奴仆时这一队不来，快够数时少来几只"
             ],
             [
-              "刷新权重",
-              "<t>{cfg:kuva_lich.kuvaSlaveSpawnWeight}</t>，越大越常见 <dim>（原版僵尸 95）</dim>"
+              "不来的时候",
+              "你在它们不去的维度、和平难度、创造或旁观模式下，或者正在处决"
             ],
-            {
-              "if": "cfg:kuva_lich.kuvaSlaveMaxNearby>0",
-              "cells": [
-                "数量上限",
-                "刷新点 <t>{cfg:kuva_lich.kuvaSlaveNearbyRadius}</t> 格内已有 <t>{cfg:kuva_lich.kuvaSlaveMaxNearby}</t> 只时，就不再往那里刷新"
-              ]
-            },
-            {
-              "if": "cfg:kuva_lich.kuvaSlaveMinSpacing>0",
-              "cells": [
-                "间距",
-                "新刷出的离同类至少 <t>{cfg:kuva_lich.kuvaSlaveMinSpacing}</t> 格，不会挤成一堆"
-              ]
-            }
+            [
+              "离开",
+              "不常驻，你走远了它们会像普通怪物一样自然消失"
+            ]
           ]
         },
         {
@@ -252,6 +359,11 @@
           "type": "list",
           "items": [
             "<t>解密进度</t>攒够了，会一条条揭示打败玄骸要用的安魂卡，见[[requiem/decryption]]，三条线索都揭示后，再杀就不再增加",
+            {
+              "if": "cfg:kuva_lich.thrallProgressShareRange>0",
+              "text": "<t>解密进度</t>不只给收尾的人：它倒下那一刻，<t>{cfg:kuva_lich.thrallProgressShareRange}</t> 格内每个有玄骸的玩家都拿到同样多；掉落和玄骸的怒气只归收尾的那个人"
+            },
+            "还没有玄骸的人拿不到解密进度",
             "<t>模组</t>是装在武器或你自己身上的强化卡，见[[modules/module_overview]]，掉出的模组有 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模组，其余是装在你身上的战甲模组",
             "三种品质的模组共用一次抽取，一只最多掉一张，品质见[[modules/module_rarity]]",
             "赤毒、裂罅碎块、安魂宝石各自独立判定，用途见[[start/materials]]"
@@ -289,9 +401,8 @@
       ],
       "_src": [
         "entity/KuvaSlaveEntity.java — 继承 AbstractKuva；AbstractKuva 生物类型 UNDEAD",
-        "worldgen/KuvaLichBiomeModifier.java — 仅主世界（is_overworld）且排除蘑菇岛才加刷怪；MONSTER 类别，权重 kuvaSlaveSpawnWeight，数量 kuvaSlaveMin/MaxSpawnCount；权重 0 不加（所以「在哪遇到」整节用 kuvaSlaveSpawnWeight>0 控制）",
-        "init/KuvaLichSpawnPlacements.java — ON_GROUND + MOTION_BLOCKING_NO_LEAVES + Monster.checkMonsterSpawnRules（同僵尸：非和平、够暗），自然生成再过 KuvaSpawnLimiter.hasRoom（kuvaSlaveNearbyRadius / MaxNearby / MinSpacing，0 = 不限，所以两行用行级 if）",
-        "init/KuvaLichEntities.java + 原版 NaturalSpawner noCollision(getAABB) — 宽 1.5 的碰撞箱占 3×3 格，高 2.9 占 3 格；原版 BiomeDefaultFeatures.monsters 僵尸权重 95",
+        "nemesis/ThrallDirector.java:109 tick — 奴仆不再自然生成（worldgen/KuvaLichBiomeModifier.java 不再加刷怪），只给有玄骸的人按 thrallSquadIntervalMin~MaxSeconds 放一队 thrallSquadSizeMin~Max 只；:144 blocker — 不在 thrallSquadDimensions、和平、创造 / 旁观、死了、处决中不放；:162 nearby — thrallSquadRadius 内已有 thrallSquadMaxNearby 只跳过、快够数少放；:171 spawnSquad — 16~28 格外看不见的落点（找不到放宽到 12 格），其余挨着放，setTarget(玩家)；计时只在内存，下线删掉、上线和刚诞生玄骸时从头计一整个间隔；不 setPersistenceRequired，走远照原版消失",
+        "init/KuvaLichEntities.java + 原版 NaturalSpawner noCollision(getAABB) — 宽 1.5 的碰撞箱占 3×3 格，高 2.9 占 3 格",
         "entity/KuvaSlaveEntity.java:98 createAttributes — 生命 100 / 攻击 8 / 击退抗性 0.4 / 移速 0.35 / 追踪 32 / 护甲 4；原版 Zombie 移速 0.23；尺寸 1.5 × 2.9",
         "原版 DamageEnchantment（亡灵杀手）、LivingEntity.isInvertedHealAndHarm；module/weapon/WeaponCombatHandler.java bane_of_undead 对 UNDEAD 生效",
         "entity/KuvaSlaveEntity.java applyAdvancedResistance — 固定 ×0.75；base/entity/AbstractKuva.java 直接继承 Monster，aiStep 没有晒太阳着火",
@@ -307,7 +418,8 @@
         "entity/KuvaSlaveEntity.java:243 giveDecryptionProgress — 进度 = random(minDecryptionProgress, maxDecryptionProgress)；capability/RequiemCard.java:307 addPotion 三阶段满后返回 false",
         "entity/KuvaSlaveEntity.java:277 dropLoot — 掉落用 addFreshEntity 直接生成在倒下的位置，在 LivingDropsEvent 之后，所以 itemDropMultiplier 不作用；赤毒 slaveKuvaDropChance% × slaveKuvaMin~MaxAmount；裂罅碎块 slaveRivenSliverDropChance% × 1；:297 宝石 = slaveRequiemGemBaseChance + slaveRequiemGemLootingBonus × 结算那一刻主手 MOB_LOOTING 等级（怜悯之击开着时是处决者的主手）；模组单次掷骰：铜 / 银 / 金三档共用一次；武器 / 战甲按 moduleWeaponRatio%",
         "utils/RandomUtil.java — percentageChance 参数是 0~100 百分数（所以用 pctv）；utils/KuvaPalette.java — 品质色 青铜 CD7F32 / 白银 C0C0C0 / 黄金 FFD700",
-        "星际战甲小知识：原作 Kuva Thrall 出现在玄骸影响的节点，处决（Mercy）后积累 Murmur 进度揭示 Requiem 模组"
+        "星际战甲小知识：原作 Kuva Thrall 出现在玄骸影响的节点，处决（Mercy）后积累 Murmur 进度揭示 Requiem 模组",
+        "entity/KuvaSlaveEntity.java:201 onKilled + :223 progressRecipients + :268 shareProgress — 进度给击杀者（有玄骸时）和 thrallProgressShareRange 格内（同一个世界、活着、不是旁观）所有有玄骸的人，同样多；0 时只看击杀者；没有玄骸的人拿不到；怒气（LichDirector.onThrallExecuted）和掉落只归击杀者"
       ]
     },
     {
@@ -321,7 +433,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是 Boss，安魂解密这条路走到头，等着你的就是它。每人只有一只，你揭示第 1 条线索时它诞生，此后它只冲你一个人来。你攒下的进度和推敲出的卡序，最后都要在这只女皇的爪牙身上见分晓，Tenno，别在这一步失手。猜对了，它手里那把赤毒武器就归你。"
+          "text": "<hl>{lang:entity.kuvalich.kuva_master}</hl>是 Boss，安魂解密这条路走到头，等着你的就是它。每人只有一只，你了结一只[[enemies/kuva_larvling|赤毒幼体]]时它诞生，此后它只冲你一个人来。你攒下的进度和推敲出的卡序，最后都要在这只女皇的爪牙身上见分晓，Tenno，别在这一步失手。猜对了，它手里那把赤毒武器就归你。"
         },
         {
           "type": "entity",
@@ -335,6 +447,14 @@
         {
           "type": "steps",
           "items": [
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "打倒一只[[enemies/kuva_larvling|赤毒幼体]]并处决它，你的玄骸就此诞生，拿的就是幼体倒地时头顶亮出的那把武器"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "亲手打死一只[[enemies/kuva_larvling|赤毒幼体]]，你的玄骸就此诞生，拿的就是幼体手里那把武器"
+            },
             {
               "if": [
                 "cfg:kuva_lich.mercyEnabled",
@@ -357,7 +477,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "把它打到倒地，用{lang:key.kuvalich.mercy}处决，三刀逐张核对：全对就终结它，错一张它就挣脱逃走，[[enemies/kuva_escalation|玄骸等级]] +1"
+              "text": "它的血分三段，每打空一段倒地一次，用{lang:key.kuvalich.mercy}处决：第 1 次捅 1 刀、核对第 1 张卡，第 2 次捅 2 刀、核对前 2 张，第 3 次三刀全对才终结它；哪一刀错了，它就挣脱逃走，[[enemies/kuva_escalation|玄骸等级]] +1"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -481,7 +601,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "它倒地后 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒你没处决，它起身化作赤毒雾逃走，什么都不给"
+              "text": "它倒地后 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒你没处决，它会把这一段血回满、站起来接着打；<b>连着 3 次</b>倒地都没处决，它才化作赤毒雾逃走，什么都不给"
             },
             "走了的还是同一只，过些时候还会再来；只有终结它，这一轮才算结束"
           ]
@@ -519,6 +639,13 @@
               "cells": [
                 "护甲",
                 "<t>8</t>"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichShieldRatio>0",
+              "cells": [
+                "护盾",
+                "最大生命 × <t>{cfg:kuva_lich.lichShieldRatio}</t>，挨打先扣护盾再扣血；<t>{cfg:kuva_lich.lichShieldDelaySeconds}</t> 秒没挨打开始恢复，每秒回上限的 <t>{cfg:kuva_lich.lichShieldRegenPercent|pctv}</t>，这一下把护盾打空的话要多等，等待 × <t>{cfg:kuva_lich.lichShieldBrokenDelayMultiplier}</t>；每次处决后挣开站起来时回满。带着护盾时，{lang:kuvaweapon.type.magnetic}状态让它受到的伤害大幅提高，见[[combat/element_status]]"
               ]
             },
             {
@@ -628,11 +755,12 @@
           "type": "list",
           "if": "cfg:kuva_lich.mercyEnabled",
           "items": [
-            "受到致命伤时它不会死，而是<w>倒地</w>：不动、不打人、不回血，也不再受伤，Boss 条变灰",
+            "它的血条分<t>三段</t>，每打空一段就<w>倒地</w>一次：不动、不打人，也不再受伤，Boss 条变灰，这一段血随着倒地计时慢慢涨回来",
             "谁打出这一击都一样，帮你打的人也能把它打倒，但<em>只有你能处决它</em>，别人走近只会看到「某某的猎物」",
             "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格内、看着它，出现「{lang:kuvalich.mercy.prompt.lich}」时按{lang:key.kuvalich.mercy}键（默认 <t>X</t>，和原版创造模式的「加载快捷栏」同键，可在控制设置里改）",
-            "处决时你不会受伤，也不能做别的事；三刀从第 1 位起逐张核对，刺错一张就停",
-            "倒地 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒内你没动手，它就起身逃走，什么都不给",
+            "处决时你不会受伤，也不能做别的事。第 1 次倒地捅 <t>1</t> 刀、只核对第 1 张卡，第 2 次捅 <t>2</t> 刀、核对前 2 张，第 3 次捅 <t>3</t> 刀；都从第 1 位起逐张核对，刺错一张就停",
+            "前 1 次或前 2 次处决刀刀都对时，它挣开你站起来，下一段血回满，接着打；第 3 次三刀全对才终结它",
+            "倒地 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒内你没动手，这一段血回满，它站起来接着打；连着 <t>3</t> 次没处决，它就逃走，什么都不给",
             "被 <t>/kill</t> 或掉进虚空这类伤害直接打死时不倒地，这次遭遇作废，什么都不给"
           ]
         },
@@ -688,7 +816,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "灭骸之扉里没放满 3 张卡",
-                "照样按三刀判，空着的格子算错：<b>解密失败</b>，同下面「有错」"
+                "照样逐刀判，这次要核对的格子空着就算错：<b>解密失败</b>，同下面「有错」"
               ]
             },
             {
@@ -711,7 +839,7 @@
         {
           "type": "list",
           "items": [
-            "成功后，解密进度和线索全部清空，下一轮的答案重新随机；下一只玄骸在你再次揭示第 1 条线索时诞生，玄骸等级从 1 级重新算",
+            "成功后，解密进度和线索全部清空，下一轮的答案重新随机；下一只玄骸要你再了结一只[[enemies/kuva_larvling|赤毒幼体]]才诞生，玄骸等级从 1 级重新算",
             "失败时聊天栏会告诉你从哪一位开始错，试顺序的方法见[[requiem/decrypt_failure]]"
           ]
         },
@@ -838,7 +966,7 @@
       ],
       "_src": [
         "entity/KuvaMasterEntity.java — 继承 AbstractKuva（UNDEAD、免摔落、战斗增幅、类型修正同奴仆）",
-        "nemesis/LichDirector.java:192-197 onDecryptionProgress — 每人一只，揭示第 1 条线索时诞生；:242 同一时间只有一只（liveLich）",
+        "nemesis/LichDirector.java:224 birthFromLarvling — 每人一只，处决赤毒幼体时诞生（进度不再触发诞生，onDecryptionProgress 没有玄骸时直接返回）；:242 同一时间只有一只（liveLich）",
         "item/RequiemUltimatum.java — 通牒唯一产出是解密成功时按 requiemUltimatumDropChance 掉落，所以教玩家用通牒召唤的句子都带 requiemUltimatumDropChance>0",
         "nemesis/LichDirector.java:474-475 — 怒气满且冷却已过后 lichArrivalDelayMin~MaxSeconds 秒到场；:694-711 startArrival 先发通讯、lichCommLeadTicks 后现身（0 时同一刻定下现身，所以分 >0 / 0 两种写法）；nemesis/LichSpawner.java — 看不见的落点 lichSpawnMin~MaxDistance 格",
         "client/lich/LichBossBar.java — 名字、等级徽章、血条、三段副条（主人看按已揭示条数亮）、:166 状态行（适应层数图标、:234 交战增幅小牌，增幅 ≥ 5% 才画，battleBoost 为 0 时永远没有，所以那一项分开写）；倒地时改灰",
@@ -849,19 +977,22 @@
         "entity/KuvaMasterEntity.java createAttributes — 基础 生命 200 / 攻击 13 / 击退抗性 0.65 / 移速 0.35 / 追踪 64 / 护甲 8；bindOwner → applyTraits 按 nemesis/LichTraits 用临时修饰符改成这只的面板（活泼 生命 ×0.85、攻击 ×1.2、护甲 6、击退 0.5、移速 +8%；理性 生命 ×1.2、攻击 ×0.85、护甲 11、击退 0.8、移速 −5%；生命、攻击再各 ±8%；生命、护甲 × rankScale）；lichVariedTraits 关着时是 uniform：基础值 × rankScale；init/KuvaLichEntities.java 尺寸 1.75 × 3.4，fireImmune()",
         "entity/KuvaMasterEntity.java doHurtTarget — 伤害 = hitDamage(攻击力, 难度) = 攻击力 × 难度 id × 0.85；attackNearbyEntities 半径 LichTraits.QUAKE_RADIUS（2.5 / 3 / 3.5 / 4.5），排除 AbstractKuva 与主目标，同额伤害并击退；击退 ×3.15/×2.15 再 × QUAKE_KNOCK（0.8 / 1 / 1.2 / 1.5）；命中回血 = 攻击力 × LIFESTEAL_RATIO（0.1 / 0.2 / 0.3 / 0.45），吸血专长时 × (1 + 扫到的数量)；回血：有目标 max(2, 缺失×2%)，无目标 max(1, 缺失×1%)，再 × REGEN_SCALE（0.5 / 1 / 1.5 / 2.2）；没有面板的（无主、演示）照中档",
         "mercy/MercyRules.java:31 enabledFor / :42 canDown — mercyEnabled 时有主玄骸受致命伤（伤害源不带 BYPASSES_INVULNERABILITY）先倒地；无主玄骸不倒地；/kill（generic_kill）、虚空（fell_out_of_world）带这个标签，照常真死 → entity/KuvaMasterEntity.java:772 onKilled 按 KILLED_OTHER 结束、不判定",
-        "mercy/MercyServer.java:333 handleRequest — 只有主人能处决（canBeExecutedBy）、mercyReach 内、视线；别人看到 kuvalich.mercy.prompt.other；:1070 onLivingAttack 处决者无敌；:470 onDownedTimeout 倒地 mercyDownedSeconds 后起身逃走（UNCLAIMED），什么都不给；:995 定案前中断则作废、回到倒地，剩余不足 mercyResumeFloorSeconds 的补到这个数（max(剩余, 下限)，0 时不补、计时接着走）；定案后中断当场结算",
+        "mercy/MercyServer.java:333 handleRequest — 只有主人能处决（canBeExecutedBy）、mercyReach 内、视线；别人看到 kuvalich.mercy.prompt.other；:1070 onLivingAttack 处决者无敌；:532 onDownedTimeout 倒地 mercyDownedSeconds 到点：分段的回满这一段起身（refillSegment + beginRise RISE_TICKS），连着 UNCLAIMED_LIMIT=3 次没人处决才 UNCLAIMED 逃走，什么都不给；:995 定案前中断则作废、回到倒地，剩余不足 mercyResumeFloorSeconds 的补到这个数（max(剩余, 下限)，0 时不补、计时接着走）；定案后中断当场结算",
         "client/KuvaKeyMappings.java:39 — 处决键默认 X，和原版 key.loadToolbarActivator 同键",
         "entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时按主人的卡判定，谁打出最后一击不重要；主人不在线、不在同一世界或离它超过 64 格（:178 RESOLVE_RANGE）→ KILLED_OTHER，不判定、不给进度",
         "capability/RequiemCard.java:259 isReadyCard / :416 correctPrefixLength — 三格全满才判定，前缀判定；卡没放满只给进度（:1170 giveDecryptionProgress，min/max × masterPotionMultiplier），按 KILLED_OTHER 结束遭遇（之后照常再来）",
         "entity/KuvaMasterEntity.java:921 directFailure / mercy/MercyServer.java:763 settleFailure — 判错 kuvaLevel + 1、给进度、按 MERCY_FAILED 离场（同一只，冷却后再来）",
         "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 成功：遗言、归还没收、消耗卡、武器 = KUVA_WEAPONS.get(card.getLichWeapon())（它诞生时定下的那把），元素随机、等级在当前范围内；玄骸之遗、裂罅碎块、赤毒、高级模组（:1119）、通牒概率、:1139 提升等级范围（在生成武器之后）；全部生成在它倒下的位置，不吃 itemDropMultiplier",
-        "capability/RequiemCard.java:345 consumeCardsAndGetSurvivors — 卡耐久 +1，未坏的返还；:379 reset() 清空卡、线索、答案、进度、kuvaLevel 和玄骸（不清武器等级范围和没收列表）；下一只在重新过第一阶段时诞生",
+        "capability/RequiemCard.java:345 consumeCardsAndGetSurvivors — 卡耐久 +1，未坏的返还；:379 reset() 清空卡、线索、答案、进度、kuvaLevel 和玄骸（不清武器等级范围和没收列表）；下一只要再处决一只赤毒幼体才诞生",
         "奖励表「被没收的物品」行的条件与 requiem/confiscation 一致：confiscationChance 与 maxConfiscatedItems 都非 0 才有没收",
         "utils/KuvaPalette.java — Prime 55FFFF / 裂罅 FF55FF",
         "nemesis/NemesisSpawnRules.java:105 — 刷怪蛋 / 发射器 / 命令生成的是无主玄骸（lichWildAllowed 为 false 时拒绝加入世界）；自然生成、刷怪笼一律拦下；entity/KuvaMasterEntity.java:772 onKilled 无主直接 return、:797 shouldDropLoot 只有有主的掉东西；名牌、Boss 条只给有主的",
         "module/weapon/WeaponCombatHandler.java — execute_threshold / execute_chance 触发后 LivingEntityUtil.kill 先改血量再调 die，被 AbstractKuva.java:913 die 拦成倒地",
         "星际战甲小知识：原作 Kuva Lich 是玩家自己产生的宿敌；Requiem 模组装在 Parazon 上，按正确顺序 Mercy 才能 Vanquish，并获得其 Kuva 武器",
-        "nemesis/LichPersona.java — 性格由玄骸种子的低 32 位算出，活泼 / 理性两种，各有一整套台词；LichComms.send、LichArchiveScreen.planTalk 按它取键；lichVariedTraits 开着时 nemesis/LichTraits 按性格定面板偏向，关着时只管台词"
+        "nemesis/LichPersona.java — 性格由玄骸种子的低 32 位算出，活泼 / 理性两种，各有一整套台词；LichComms.send、LichArchiveScreen.planTalk 按它取键；lichVariedTraits 开着时 nemesis/LichTraits 按性格定面板偏向，关着时只管台词",
+        "entity/KuvaMasterEntity.java:465 isSegmented — 有主、非演示、开着怜悯之击时血条分 SEGMENTS=3 段；segmentFloor / segmentCeil；base/entity/AbstractKuva.java reachedSegmentFloor 打到这一段的底就倒地，tickDowned 倒地时这一段血随计时回到顶；:480 mercyStabs = 打空的段数 + 1",
+        "mercy/MercyServer.java:711 buildPlan — 第 k 次处决捅 k 刀、只验前 k 张，空格算错；:926 settleAdvance 验的几刀全对且不到第三刀：清零没人处决的次数、记一行尝试，不扣卡不给进度；:941 rise → KuvaMasterEntity.java:501 advanceSegment 进下一段、血到下一段顶、护盾回满",
+        "entity/KuvaMasterEntity.java:529 shieldCap = 最大生命 × lichShieldRatio（无主 / 演示为 0），护盾就是吸收值；:570 actuallyHurt 挨打后等 lichShieldDelaySeconds 秒，这一下后护盾为 0 时 × lichShieldBrokenDelayMultiplier；:583 tickShield 能打时每秒回上限的 lichShieldRegenPercent%；module/weapon/WeaponCombatHandler.java:871 磁力：目标有吸收值时伤害提高"
       ]
     },
     {

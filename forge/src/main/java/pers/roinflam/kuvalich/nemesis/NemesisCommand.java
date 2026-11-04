@@ -17,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -27,10 +28,10 @@ import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.fx.ServerFxQueue;
 import pers.roinflam.kuvalich.mercy.MercyState;
-import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Arrays;
@@ -46,6 +47,17 @@ import java.util.stream.Stream;
  *
  * <p>录一段完整演示的顺序：{@code pause on} → {@code birth} → {@code attempt} 塞几行 → 开档案录 →
  * {@code summon front} 录登场 → {@code down} 录处决 → {@code taunt} 录通讯窗。</p>
+ *
+ * <p>幼体、奴仆小队和两边导演的状态另有几条（同样权限 2）：</p>
+ * <ul>
+ *   <li>{@code /kuvalich larvling spawn <玩家> [front|hidden]}：立刻在他身边放一只幼体（默认面前 5~9 格，
+ *       hidden = 照导演的规矩放在看不见的地方），记成他的，原来那只收掉；</li>
+ *   <li>{@code /kuvalich larvling due <玩家> [秒]}：把幼体计时拨到还剩几秒（默认 3），顺带去掉登录宽限；</li>
+ *   <li>{@code /kuvalich larvling down <玩家>}：他那只幼体直接倒地，资格人照规矩定；</li>
+ *   <li>{@code /kuvalich thrall squad <玩家> [只数]}：立刻在他身边放一队奴仆（只数默认按配置随机，不看在场上限）；</li>
+ *   <li>{@code /kuvalich thrall due <玩家> [秒]}：把下一队拨到几秒后（默认 3）；</li>
+ *   <li>{@code /kuvalich director <玩家>}：玄骸、幼体、奴仆小队三边导演眼下的状态。</li>
+ * </ul>
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public final class NemesisCommand {
@@ -121,7 +133,32 @@ public final class NemesisCommand {
 
         lich.then(Commands.literal("reset").then(target().executes(NemesisCommand::reset)));
 
-        d.register(Commands.literal(Reference.MOD_ID).requires(s -> s.hasPermission(2)).then(lich));
+        LiteralArgumentBuilder<CommandSourceStack> larvling = Commands.literal("larvling");
+        larvling.then(Commands.literal("spawn").then(target()
+                .executes(ctx -> larvlingSpawn(ctx, true))
+                .then(Commands.literal("front").executes(ctx -> larvlingSpawn(ctx, true)))
+                .then(Commands.literal("hidden").executes(ctx -> larvlingSpawn(ctx, false)))));
+        larvling.then(Commands.literal("due").then(target()
+                .executes(ctx -> larvlingDue(ctx, 3))
+                .then(Commands.argument("seconds", IntegerArgumentType.integer(0, 36000))
+                        .executes(ctx -> larvlingDue(ctx, IntegerArgumentType.getInteger(ctx, "seconds"))))));
+        larvling.then(Commands.literal("down").then(target().executes(NemesisCommand::larvlingDown)));
+
+        LiteralArgumentBuilder<CommandSourceStack> thrall = Commands.literal("thrall");
+        thrall.then(Commands.literal("squad").then(target()
+                .executes(ctx -> thrallSquad(ctx, 0))
+                .then(Commands.argument("size", IntegerArgumentType.integer(1, 8))
+                        .executes(ctx -> thrallSquad(ctx, IntegerArgumentType.getInteger(ctx, "size"))))));
+        thrall.then(Commands.literal("due").then(target()
+                .executes(ctx -> thrallDue(ctx, 3))
+                .then(Commands.argument("seconds", IntegerArgumentType.integer(0, 36000))
+                        .executes(ctx -> thrallDue(ctx, IntegerArgumentType.getInteger(ctx, "seconds"))))));
+
+        LiteralArgumentBuilder<CommandSourceStack> director = Commands.literal("director");
+        director.then(target().executes(NemesisCommand::director));
+
+        d.register(Commands.literal(Reference.MOD_ID).requires(s -> s.hasPermission(2))
+                .then(lich).then(larvling).then(thrall).then(director));
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, ?> target() {
@@ -192,19 +229,8 @@ public final class NemesisCommand {
         if (wanted != null && !LichNames.isAllowed(wanted)) {
             return fail(ctx, "name not allowed (max " + LichNames.MAX_LENGTH + " chars, no profanity): " + wanted);
         }
-        int levelBefore = card.getUnlockedCardStatus();
-        if (levelBefore == 0) {
-            // 走正常的进度流程补满第一阶段：解密 HUD、揭示、诞生通讯都照常放
-            int threshold = card.getPointsRequired();
-            int added = Math.max(1, threshold - card.getDecryptionProgress());
-            card.addPotion(added);
-            DecryptionHudPacket.sendProgress(p, card, added, levelBefore);
-            LichDirector.onDecryptionProgress(p, card, added, levelBefore);
-        } else {
-            // 已经揭开过密语、却没有玄骸（上一只被作废了）：按「刚揭开第一条」通知导演，它照样诞生、发通讯
-            LichDirector.onDecryptionProgress(p, card, 0, 0);
-        }
-        if (!card.hasLich()) {
+        // 不经过幼体直接诞生（随机种子），诞生通讯照常放；密语阶段、进度都不动
+        if (!LichDirector.birthNow(p) || !card.hasLich()) {
             return fail(ctx, "birth did not happen (riddle stage " + card.getUnlockedCardStatus() + ")");
         }
         if (wanted != null) {
@@ -445,6 +471,111 @@ public final class NemesisCommand {
         // 只作废这一轮玄骸：谜语阶段、答案、手里的卡、被没收的东西都不动，也不给奖励
         card.endLichRound(RequiemCard.FATE_ADMIN);
         return ok(ctx, name + " is gone (reset, no rewards)");
+    }
+
+    // ==================== 幼体、奴仆小队、导演状态 ====================
+
+    private static int larvlingSpawn(CommandContext<CommandSourceStack> ctx, boolean front) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        KuvaLarvlingEntity larvling = LarvlingDirector.spawn(p, front);
+        if (larvling == null) {
+            return fail(ctx, "no room for a larvling near " + p.getGameProfile().getName());
+        }
+        Item weapon = larvling.getWeaponItem();
+        RequiemCard card = card(p);
+        String warn = card != null && card.hasLich() ? " (warning: " + p.getGameProfile().getName()
+                + " already has a lich and cannot execute it)" : "";
+        return ok(ctx, "larvling #" + larvling.getId() + " at " + larvling.blockPosition().toShortString()
+                + ", seed=" + Long.toHexString(larvling.getLichSeed()) + ", weapon=" + larvling.getWeaponIndex()
+                + (weapon == null ? "" : " " + new ItemStack(weapon).getHoverName().getString()) + warn);
+    }
+
+    private static int larvlingDue(CommandContext<CommandSourceStack> ctx, int seconds) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        LarvlingDirector.setWait(p, seconds * 20);
+        String blocker = LarvlingDirector.blocker(p);
+        return ok(ctx, "next larvling for " + p.getGameProfile().getName() + " in " + seconds + "s of play"
+                + (blocker.isEmpty() ? "" : " (blocked now: " + blocker + ")"));
+    }
+
+    private static int larvlingDown(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        KuvaLarvlingEntity larvling = LarvlingDirector.larvlingOf(p);
+        if (larvling == null) {
+            return fail(ctx, p.getGameProfile().getName() + " has no larvling out");
+        }
+        larvling.forceDowned(p);
+        if (larvling.getMercyState() == MercyState.NONE) {
+            return fail(ctx, "larvling cannot go down right now (mercy disabled, leaving or dead)");
+        }
+        return ok(ctx, "larvling #" + larvling.getId() + " is down for " + larvling.downedSeconds()
+                + "s, claimant=" + (larvling.getMercyQualified() == null ? "none" : larvling.getMercyQualified()));
+    }
+
+    private static int thrallSquad(CommandContext<CommandSourceStack> ctx, int size) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        if (size <= 0) {
+            int min = ModConfig.KUVA_LICH.thrallSquadSizeMin.get();
+            int max = Math.max(min, ModConfig.KUVA_LICH.thrallSquadSizeMax.get());
+            size = min + p.getRandom().nextInt(max - min + 1);
+        }
+        int placed = ThrallDirector.spawnSquad(p, size).size();
+        if (placed == 0) {
+            return fail(ctx, "no room for thralls near " + p.getGameProfile().getName());
+        }
+        return ok(ctx, "sent " + placed + "/" + size + " thralls to " + p.getGameProfile().getName());
+    }
+
+    private static int thrallDue(CommandContext<CommandSourceStack> ctx, int seconds) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        RequiemCard card = card(p);
+        ThrallDirector.setNext(p, seconds * 20);
+        String blocker = card == null || !card.hasLich() ? "no lich" : ThrallDirector.blocker(p);
+        return ok(ctx, "next thrall squad for " + p.getGameProfile().getName() + " in " + seconds + "s"
+                + (blocker.isEmpty() ? "" : " (blocked now: " + blocker + ")"));
+    }
+
+    private static int director(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        RequiemCard card = card(p);
+        if (card == null) {
+            return fail(ctx, p.getGameProfile().getName() + " has no requiem data");
+        }
+        StringBuilder sb = new StringBuilder(p.getGameProfile().getName());
+        sb.append(": lich=").append(card.hasLich() ? card.getLichName() + " (" + LichDirector.stateOf(p) + ")" : "none");
+        LarvlingDirector.View lv = LarvlingDirector.view(p);
+        sb.append(" | larvling: ");
+        if (!ModConfig.KUVA_LICH.larvlingEnabled.get()) {
+            sb.append("disabled");
+        } else if (lv.larvling() != null) {
+            KuvaLarvlingEntity l = lv.larvling();
+            sb.append("out #").append(l.getId()).append(" at ").append(l.blockPosition().toShortString())
+                    .append(", ").append(Math.round(Math.sqrt(l.distanceToSqr(p)))).append(" blocks away, mercy=")
+                    .append(l.getMercyState()).append(", weapon=").append(l.getWeaponIndex());
+        } else if (card.hasLich()) {
+            sb.append("not needed (has lich)");
+        } else {
+            sb.append("next in ").append(lv.waitTicks() < 0 ? "?" : String.valueOf((lv.waitTicks() + 19) / 20))
+                    .append("s of play");
+            if (!lv.blocker().isEmpty()) {
+                sb.append(", blocked: ").append(lv.blocker());
+            }
+        }
+        ThrallDirector.View tv = ThrallDirector.view(p);
+        sb.append(" | thralls: ").append(tv.nearby()).append('/').append(ModConfig.KUVA_LICH.thrallSquadMaxNearby.get())
+                .append(" within ").append(ModConfig.KUVA_LICH.thrallSquadRadius.get()).append(" blocks");
+        if (!ModConfig.KUVA_LICH.thrallSquadEnabled.get()) {
+            sb.append(", squads disabled");
+        } else if (!card.hasLich()) {
+            sb.append(", no squads (no lich)");
+        } else {
+            sb.append(", next squad in ").append(tv.nextInTicks() < 0 ? "?" : String.valueOf((tv.nextInTicks() + 19) / 20))
+                    .append('s');
+            if (!tv.blocker().isEmpty()) {
+                sb.append(", blocked: ").append(tv.blocker());
+            }
+        }
+        return ok(ctx, sb.toString());
     }
 
     // ==================== 工具 ====================

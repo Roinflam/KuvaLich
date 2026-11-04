@@ -69,6 +69,8 @@ import java.util.UUID;
  * <p>处决时间轴在每个服务端 tick 末尾推进一步：从开始处决的那个测试回调起算，第 k 个测试 tick 时处决正好走了 k 步，
  * 下面的「tick 20」都是这个意思。会放出玄骸的、会动的、改配置或难度的、动全局计数和冻结开关的，各自单独一个 batch；
  * 只摆不动的实体的几条放在 {@link #MORE} 里一起跑。</p>
+ *
+ * <p>{@link #summonFront} 召出来的玄骸先摆到最后一段（下次处决三刀）、打掉护盾；/kill 那条用刚召出来的原样（第一段、满护盾）。</p>
  */
 @GameTestHolder(Reference.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -146,8 +148,10 @@ public final class MercyTests {
             clearItems(h, area);
             la.kill();
             lb.hurt(lb.damageSources().fellOutOfWorld(), 1000.0F);
-            h.assertTrue(!la.isAlive() && DIED.contains(la.getUUID()), "/kill 应当直接打死倒地的玄骸");
-            h.assertTrue(!lb.isAlive() && DIED.contains(lb.getUUID()), "掉出世界应当直接打死倒地的玄骸");
+            h.assertTrue(!la.isAlive() && DIED.contains(la.getUUID()), "/kill 应当直接打死倒地的玄骸：" + aliveDetail(la)
+                    + "，护盾 " + la.getAbsorptionAmount() + "，死亡事件 " + DIED.contains(la.getUUID()));
+            h.assertTrue(!lb.isAlive() && DIED.contains(lb.getUUID()), "掉出世界应当直接打死倒地的玄骸：" + aliveDetail(lb)
+                    + "，护盾 " + lb.getAbsorptionAmount() + "，死亡事件 " + DIED.contains(lb.getUUID()));
             h.runAfterDelay(22, () -> {
                 h.assertTrue(la.isRemoved() && lb.isRemoved(), "死后 20 tick 内应当移除");
                 h.assertTrue(la.getEncounterEnd() == EncounterEnd.KILLED_OTHER, "/kill 的结束原因应当是 KILLED_OTHER：" + la.getEncounterEnd());
@@ -464,9 +468,9 @@ public final class MercyTests {
         KuvaTestKit.afterBatch(level);
     }
 
-    // ==================== #16 有主玄骸倒地超时：逃走，什么都不写 ====================
+    // ==================== #16 有主玄骸倒地超时：前两次站起来接着打，连着第三次逃走，什么都不写 ====================
 
-    @GameTest(template = "empty", batch = ISO_UNCLAIMED, timeoutTicks = 200)
+    @GameTest(template = "empty", batch = ISO_UNCLAIMED, timeoutTicks = 320)
     public static void lichUnclaimed(GameTestHelper h) {
         ServerPlayer p = KuvaTestKit.player(h);
         RequiemCard card = card(p);
@@ -476,17 +480,40 @@ public final class MercyTests {
         h.runAfterDelay(2, () -> {
             int level = card.getKuvaLevel();
             int attempts = card.getAttempts().length;
-            lich.forceDowned(p);
-            h.assertTrue(MercyServer.setTimer(lich, 2), "改倒地剩余时间应当成功");
-            h.runAfterDelay(37, () -> h.assertTrue(lich.getMercyState() == MercyState.DOWNED, "tick 37 还在倒地"));
-            h.runAfterDelay(43, () -> {
-                h.assertTrue(lich.getMercyState() == MercyState.LEAVING || lich.isRemoved(),
-                        "tick 40 前后应当逃走：" + lich.getMercyState());
-                h.assertTrue(lich.getEncounterEnd() == EncounterEnd.UNCLAIMED, "结束原因应当是 UNCLAIMED：" + lich.getEncounterEnd());
-                h.assertTrue(card.getKuvaLevel() == level && card.getAttempts().length == attempts, "等级和尝试记录都不该变");
-                h.assertTrue(card.hasLich(), "玄骸只是逃走，这一轮还在");
-                h.succeed();
-            });
+            Runnable third = () -> {
+                lich.forceDowned(p);
+                h.assertTrue(MercyServer.setTimer(lich, 2), "改倒地剩余时间应当成功");
+                h.runAfterDelay(37, () -> h.assertTrue(lich.getMercyState() == MercyState.DOWNED, "第三次：tick 37 还在倒地"));
+                h.runAfterDelay(43, () -> {
+                    h.assertTrue(lich.getMercyState() == MercyState.LEAVING || lich.isRemoved(),
+                            "第三次：tick 40 前后应当逃走：" + lich.getMercyState());
+                    h.assertTrue(lich.getEncounterEnd() == EncounterEnd.UNCLAIMED, "结束原因应当是 UNCLAIMED：" + lich.getEncounterEnd());
+                    h.assertTrue(card.getKuvaLevel() == level && card.getAttempts().length == attempts, "等级和尝试记录都不该变");
+                    h.assertTrue(card.hasLich(), "玄骸只是逃走，这一轮还在");
+                    h.succeed();
+                });
+            };
+            unclaimedRise(h, p, lich, 1, () -> unclaimedRise(h, p, lich, 2, third));
+        });
+    }
+
+    /** 打倒、2 秒后没人处决：站起来（这一段回满），起身演完回到能打的状态，再接下一步 */
+    private static void unclaimedRise(GameTestHelper h, ServerPlayer p, KuvaMasterEntity lich, int nth, Runnable next) {
+        lich.forceDowned(p);
+        h.assertTrue(MercyServer.setTimer(lich, 2), "第 " + nth + " 次：改倒地剩余时间应当成功");
+        h.runAfterDelay(37, () -> h.assertTrue(lich.getMercyState() == MercyState.DOWNED, "第 " + nth + " 次：tick 37 还在倒地"));
+        h.runAfterDelay(43, () -> {
+            h.assertTrue(lich.getMercyState() == MercyState.RISING, "第 " + nth + " 次：tick 40 前后应当站起来："
+                    + lich.getMercyState());
+            h.assertTrue(lich.getUnclaimedDowns() == nth, "连着没人处决的次数应当是 " + nth + "，实际 " + lich.getUnclaimedDowns());
+            h.assertTrue(Math.abs(lich.getHealth() - lich.segmentCeil()) < 1.0E-3F, "站起来时这一段回满：" + lich.getHealth()
+                    + " / " + lich.segmentCeil());
+            h.assertTrue(lich.getEncounterEnd() == null, "站起来不结束遭遇");
+        });
+        h.runAfterDelay(43 + MercyServer.RISE_TICKS + 2, () -> {
+            h.assertTrue(lich.getMercyState() == MercyState.NONE, "第 " + nth + " 次：起身演完应当回到能打的状态："
+                    + lich.getMercyState());
+            next.run();
         });
     }
 
@@ -942,6 +969,10 @@ public final class MercyTests {
             KuvaMasterEntity lich = nearestDemo(h, p, KuvaMasterEntity.class);
             h.assertTrue(lich != null && "Vor Kalla".equals(lich.getLichName()) && lich.getLichRank() == 1,
                     "演示玄骸的名字和等级：" + (lich == null ? "没有" : lich.getLichName() + " / " + lich.getLichRank()));
+            aimAt(p, lich);
+            h.assertTrue(run(p, "kuvalich mercy phase 1") == 1 && lich.getLichPhase() == 1 && lich.mercyStabs() == 2,
+                    "phase 1：演示玄骸下次处决应当两刀，实际 " + lich.mercyStabs());
+            h.assertTrue(run(p, "kuvalich mercy shield 50") == 0, "演示玄骸没有护盾，shield 应当失败");
             h.assertTrue(run(p, "kuvalich mercy reset") == 1, "收尾 reset");
             MercyServer.setNextVariant(p, null);
             MercyServer.setNextOutcome(p, null);
@@ -998,13 +1029,14 @@ public final class MercyTests {
                 .orElseThrow(() -> new IllegalStateException("测试玩家没有安魂卡能力"));
     }
 
-    /** 走正常的进度流程揭开第一条密语（玄骸随之诞生） */
+    /** 走正常的进度流程揭开第一条密语，再让玄骸诞生（平常要处决一只幼体，这里直接生） */
     private static void bornByProgress(ServerPlayer p, RequiemCard card) {
         int threshold = ModConfig.KUVA_LICH.firstStage.get();
         card.setDecryptionProgress(Math.max(0, threshold - 1));
         int levelBefore = card.getUnlockedCardStatus();
         card.addPotion(1);
         LichDirector.onDecryptionProgress(p, card, 1, levelBefore);
+        LichDirector.birthNow(p);
     }
 
     /**
@@ -1068,13 +1100,16 @@ public final class MercyTests {
         p.teleportTo((ServerLevel) p.level(), x, t.y, z, face, 20.0F);
     }
 
-    /** 立即召到面前并返回那只 */
+    /** 立即召到面前并返回那只：摆到最后一段（下次处决三刀）、打掉护盾且不再恢复 */
     private static KuvaMasterEntity summonFront(GameTestHelper h, ServerPlayer p) {
         loadTestChunks(h);
         BlockPos c = KuvaTestKit.center(h);
         openArena(h, c.getX() - 6, c.getX() + 6, c.getZ() - 3, c.getZ() + 11);
         h.assertTrue(LichDirector.summonNow(p, SummonMode.FRONT), "立即召唤应当成功");
-        return LichDirector.getLich(p).orElseThrow(() -> new IllegalStateException("召唤后应当有在场的玄骸"));
+        KuvaMasterEntity lich = LichDirector.getLich(p).orElseThrow(() -> new IllegalStateException("召唤后应当有在场的玄骸"));
+        lich.setLichPhase(KuvaMasterEntity.SEGMENTS - 1);
+        lich.breakShield(1_000_000);
+        return lich;
     }
 
     /** 倒地断言失败时的现场：状态、死活、血量、位置和脚下、身上的方块 */

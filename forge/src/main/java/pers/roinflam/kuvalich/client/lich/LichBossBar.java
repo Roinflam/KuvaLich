@@ -1,6 +1,7 @@
 package pers.roinflam.kuvalich.client.lich;
 
 import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -16,7 +17,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
-import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.client.fx.ElementStatusRow;
 import pers.roinflam.kuvalich.client.fx.FxCurve;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
@@ -34,9 +34,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 专属玄骸的 Boss 条，和升级横幅一套画法（细线框、尖头玻璃板、青色刻度、双线菱框装等级）：
- * 左头一颗大菱框装等级，右边拉一条带十格刻度的血条；血条上方左边是名字和三颗密语小晶，右边是交战增幅；
- * 刻度下面靠右一行适应层数，再往下是元素状态
+ * 专属玄骸的 Boss 条，和升级横幅一套画法（细线框、尖头玻璃板、双线菱框装等级）：
+ * 左头一颗大菱框装等级，右边拉出分开的三段血条，正下方一条更细的科技青护盾线；血条上方左边是名字和三颗密语小晶，
+ * 右边是交战增幅；底板下面靠右一行适应层数，再往下是元素状态
  *
  * <p>服务端发的是普通的 Boss 条，名字用 {@code kuvalich.bossbar.lich} 这个键、带四个参数（全大写名字、等级、
  * 主人名、主人 UUID），原版画法下只显示名字。这里认出这个键就取消原版绘制、自己画，并把这一条的行高改成
@@ -47,9 +47,15 @@ import java.util.UUID;
  * 名字、小晶、增幅、等级数字、层数都按这个量居中；字底下不垫错开一个字像素的暗影（放大后像两层字印歪了），
  * 浮在画面上的字各自垫一块软边暗红玻璃。</p>
  *
+ * <p>三段对应三次处决：血按整条的比例从右往左掉，每段有自己的暗底、填充和残影，打空的段只剩暗底。
+ * 长度从菱框右尖量到血条尾巴，扣掉两道空隙三等分，除不尽的 1~2 像素给第 0 段（它左头本来就插在菱框底下）。
+ * 护盾线和血条一样从菱框底下伸到尾巴，按护盾 / 上限缩短，空的部分不画；涨回来时从左往右匀速长
+ * （服务端一秒回一跳，每跳摊开到一秒里），掉了直接缩。底板往下包住护盾线，尖头斜度不变。</p>
+ *
  * <p>入场：这条第一次出现（或者 5 秒没画过又出现）时，0–280 ms 菱框从上顶点描一圈，80 起菱框里填色、数字淡入，
- * 140–440 血条和底板从菱框往右展开，300–520 字和小晶淡入。掉血后一段淡色残影停 250 ms 再追上。
- * 倒地时整条变灰。别人的玄骸（客户端比对第 4 个参数和本地玩家 UUID）名字后面接「· 某某的玄骸」，小晶全暗。
+ * 140–440 血条、护盾线和底板从菱框往右展开，300–520 字和小晶淡入。掉血后一段淡色残影停 250 ms 再追上。
+ * 倒地（被处决时也算）：底板、菱框和满着的段变灰，正在回满的那段换成暗赤毒红、前头一道骨白，跟着倒地计时从空涨到满；
+ * 起身时血已经回到段顶，照常画。别人的玄骸（客户端比对第 4 个参数和本地玩家 UUID）名字后面接「· 某某的玄骸」，小晶全暗。
  * 处决运镜中整条不画（行高照样留着，免得别的条跳位）。</p>
  */
 @OnlyIn(Dist.CLIENT)
@@ -79,8 +85,11 @@ public final class LichBossBar {
     private static final float BAR_H = 0.010F;
     private static final float GAP = 0.010F;
     private static final float CHEV = 0.008F;
-    private static final float TICK_SHORT = 0.004F;
-    private static final float TICK_LONG = 0.009F;
+    /** 三段之间的空隙（至少两条线宽） */
+    private static final float SEG_GAP = 0.005F;
+    /** 护盾线和血条之间的缝、护盾线的粗细（都至少一条线宽） */
+    private static final float SHIELD_GAP = 0.0025F;
+    private static final float SHIELD_H = 0.0035F;
     /** 血条尾巴后面拖出去的渐隐红线（屏宽比例） */
     private static final float TAIL = 0.05F;
     private static final float PIP_HW = 0.0045F;
@@ -93,7 +102,13 @@ public final class LichBossBar {
     private static final int DOWNED_GLASS = 0x15181A;
     private static final int NUMBER_WHITE = 0xF4F7F8;
 
-    /** 每一条 Boss 条自己的状态：解析好的参数、对应实体、残影、入场时刻 */
+    private static final int SEGMENTS = KuvaMasterEntity.SEGMENTS;
+    /** 一段装了多满，离 0、1 这么近就当 0、1（血正好压在段边上时浮点会差一丁点，别在空段上画出亮边） */
+    private static final float FILL_EPS = 0.002F;
+    /** 护盾涨一跳摊开的时长：服务端一秒回一跳，连起来就是匀速；一下回满的也按这个从左往右长 */
+    private static final int SHIELD_GROW_MS = 1000;
+
+    /** 每一条 Boss 条自己的状态：解析好的参数、对应实体、残影、护盾显示值、入场时刻 */
     private static final class Bar {
         String nameUpper = "";
         String rankText = "";
@@ -116,10 +131,26 @@ public final class LichBossBar {
         float chaseFrom;
         long lastSeenMs;
         long bornMs;
+
+        /** 护盾线现在画多长（比例），小于 0 是还没有值 */
+        float shieldShown = -1.0F;
+        float shieldFrom;
+        float shieldTo;
+        long shieldAtMs;
     }
 
     /** 开发用：增幅、适应层数换成演示值（+465%，近战 2 / 弓箭 1 / 魔法 3），截图对齐用 */
     static boolean demoReadout;
+    /** 开发用：生命按这个比例画（0~1），小于 0 不替换 */
+    static float demoHealth = -1.0F;
+    /** 开发用：护盾按这个比例画（0~1），小于 0 不替换 */
+    static float demoShield = -1.0F;
+    /** 开发用：按倒地画，打空了几段（0~2）；小于 0 不演 */
+    private static int demoDownPhase = -1;
+    private static float demoDownFrom;
+    /** 回满一整段要多少毫秒，0 = 停在起点不动 */
+    private static int demoDownMs;
+    private static long demoDownAtMs;
 
     private static final Map<UUID, Bar> BARS = new HashMap<>();
     private static long lastPruneMs;
@@ -130,6 +161,9 @@ public final class LichBossBar {
     private static final float[] POLY = new float[12];
     private static final float[] POLY_A = new float[6];
     private static final float[] PATH = new float[8];
+    /** 这一帧三段各自的长度区间（第 0 段左头往菱框底下伸的那截不算） */
+    private static final float[] SX0 = new float[SEGMENTS];
+    private static final float[] SX1 = new float[SEGMENTS];
 
     static {
         for (int i = 0; i < NUM.length; i++) {
@@ -186,11 +220,36 @@ public final class LichBossBar {
         H = win.getHeight();
         lw = Math.max(1, Math.round(gs) / 2);
 
-        AbstractKuva entity = entityOf(bar, now);
-        boolean down = entity != null && entity.getMercyState() != MercyState.NONE
-                && entity.getMercyState() != MercyState.LEAVING;
+        KuvaMasterEntity entity = entityOf(bar, now);
+        MercyState state = entity != null ? entity.getMercyState() : MercyState.NONE;
+        // 倒地、被处决时按倒地画；起身时血已经回到段顶，照常画
+        boolean down = state == MercyState.DOWNED || state == MercyState.EXECUTING;
+        int phase = entity != null ? entity.getLichPhase() : 0;
         float progress = Math.max(0.0F, Math.min(1.0F, boss.getProgress()));
+        float shieldTarget = entity != null && entity.getShieldMax() > 0.0F
+                ? FxCurve.clamp01(entity.getShield() / entity.getShieldMax()) : -1.0F;
+        if (demoHealth >= 0.0F) {
+            progress = demoHealth;
+        }
+        if (demoShield >= 0.0F) {
+            shieldTarget = demoShield;
+        }
+        if (demoDownPhase >= 0) {
+            int seg = SEGMENTS - 1 - demoDownPhase;
+            float r = demoDownFrom + (demoDownMs > 0 ? (now - demoDownAtMs) / (float) demoDownMs : 0.0F);
+            if (r >= 1.0F && demoDownMs > 0) {
+                // 回满了就站起来：这段满着回到常态
+                demoDownPhase = -1;
+                demoHealth = (seg + 1) / (float) SEGMENTS;
+                progress = demoHealth;
+            } else {
+                down = true;
+                phase = demoDownPhase;
+                progress = (seg + FxCurve.clamp01(r)) / SEGMENTS;
+            }
+        }
         updateTrail(bar, progress, now);
+        float shield = updateShield(bar, shieldTarget, now);
         int clues = bar.mine ? ClientLichState.get().clues() : 0;
         int adapt = entity != null ? entity.getAdaptPacked() : 0;
         int fury = entity != null ? entity.getFuryPermille() : 0;
@@ -224,44 +283,56 @@ public final class LichBossBar {
         float bt = ny + 7 * pn + pn + gap + pad, bb = bt + Math.round(BAR_H * H);
         // 菱框中心对准血条中线
         float ay = Math.round((bt + bb) * 0.5F);
-        float bx0 = dcx + dw * 0.55F;
-        float bx1 = bx0 + (x1 - bx0) * barK;
+        // 血条左头插在菱框底下
+        float bx0 = Math.round(dcx + dw * 0.55F);
+        float bx1 = Math.round(bx0 + (x1 - bx0) * barK);
+        // 三段：从菱框右尖量到血条尾巴，扣掉两道空隙三等分，零头给第 0 段
+        float vL = dcx + dw;
+        int sg = Math.max(2 * lw, Math.round(SEG_GAP * H));
+        int span = Math.round(x1 - vL) - 2 * sg;
+        int sw = span / SEGMENTS;
+        float sx = vL;
+        for (int i = 0; i < SEGMENTS; i++) {
+            SX0[i] = sx;
+            sx += i == 0 ? span - sw * (SEGMENTS - 1) : sw;
+            SX1[i] = sx;
+            sx += sg;
+        }
+        // 护盾线：血条正下方，同样从菱框底下伸到尾巴；长度从它在菱框斜边上露头的地方量起
+        float st = bb + Math.max(lw, Math.round(SHIELD_GAP * H));
+        float sb = st + Math.max(lw, Math.round(SHIELD_H * H));
+        float sl = Math.round(dcx + dw * (1.0F - ((st + sb) * 0.5F - ay) / dh));
+        // 底板包住血条和护盾线；左下角收进菱框斜边里至少一条线宽，不从菱框底下露出来
+        float pt = bt - pad, pb = sb + pad;
+        float plateL = Math.min(bx0, (float) Math.floor(dcx + dw * (1.0F - (pb - ay) / dh)) - lw);
 
         g.pose().pushPose();
         g.pose().scale(1.0F / gs, 1.0F / gs, 1.0F);
         m = g.pose().last().pose();
 
-        // ---- 血条底板、血条 ----
+        // ---- 血条底板、三段血条、护盾线 ----
         if (barK > 0.0F) {
-            float pcy = (bt + bb) * 0.5F, phh = (bb - bt) * 0.5F + pad;
-            HoloShapes.hexagon(POLY, bx0 - chev, bx1 + chev, pcy, phh, chev);
+            float pcy = (pt + pb) * 0.5F, phh = (pb - pt) * 0.5F;
+            // 尖头斜度和只包血条时一样
+            float ch = Math.round(chev * phh / ((bb - bt) * 0.5F + pad));
+            HoloShapes.hexagon(POLY, plateL - ch, bx1 + ch, pcy, phh, ch);
             HoloShapes.softPolygon(g, m, POLY, 6, Math.min(0.01F * H, 0.5F * phh), 0.02F * H,
                     GuiShapes.argb(FxPalette.INK, 0.45F * barK));
             for (int i = 0; i < 6; i++) {
                 POLY_A[i] = 0.78F;
             }
-            HoloShapes.glass(g, m, POLY, POLY_A, (bx0 + bx1) * 0.5F, pcy, phh, 0.78F,
+            HoloShapes.glass(g, m, POLY, POLY_A, (plateL + bx1) * 0.5F, pcy, phh, 0.78F,
                     down ? DOWNED_GLASS : HoloShapes.GLASS);
-            healthFill(g, bx0, bt, bx1, bb, x1 - bx0, progress, bar.trail, down);
+            bars(g, bx0, bx1, bt, bb, progress, bar.trail, down, SEGMENTS - 1 - phase, shield, sl, x1, st, sb);
 
             GuiShapes.begin(g);
             int red = GuiShapes.argb(down ? FxPalette.ASH : FxPalette.KUVA, 0.9F);
-            int cyan = GuiShapes.argb(FxPalette.TECH, 0.75F);
             // 底板上沿一道红线，过了尾巴再拖一截渐隐
-            float ly = crisp(bt - pad);
+            float ly = crisp(pt);
             GuiShapes.hairline(g, bx0, ly, bx1, ly, lw, red);
             if (barK >= 1.0F) {
                 GuiShapes.hairline(g, bx1, ly, bx1 + Math.round(TAIL * W), ly, lw, red,
                         GuiShapes.argb(FxPalette.KUVA, 0.0F));
-            }
-            // 十格刻度：每 10% 短、50% 长，展开到哪画到哪
-            for (int q = 1; q < 10; q++) {
-                float x = crisp(bx0 + (x1 - bx0) * q / 10.0F);
-                if (x > bx1) {
-                    break;
-                }
-                float len = Math.round((q == 5 ? TICK_LONG : TICK_SHORT) * H);
-                GuiShapes.hairline(g, x, bb + pad, x, bb + pad + len, lw, cyan);
             }
             GuiShapes.end();
         }
@@ -300,8 +371,8 @@ public final class LichBossBar {
             }
         }
 
-        // ---- 适应层数：右边对齐血条尾巴，在刻度下面 ----
-        float bottom = Math.max(ay + dh, bb + pad + Math.round(TICK_LONG * H));
+        // ---- 适应层数：右边对齐血条尾巴，在菱框和底板下面 ----
+        float bottom = Math.max(ay + dh, pb);
         if (adapt != 0 && textA > 0.0F) {
             float sy = bottom + Math.round(0.005F * H);
             bottom = adaptRow(g, adapt, x1, sy, ps, textA);
@@ -322,25 +393,89 @@ public final class LichBossBar {
         return used;
     }
 
-    /** 血条：底、残影、填充、上半截高光、血条头一道亮边；{@code full} 是展开完的长度，展开中按它截 */
-    private static void healthFill(GuiGraphics g, float x0, float y0, float x1, float y1, float full, float p,
-                                   float trail, boolean down) {
-        HoloShapes.softRect(g, m, x0, y0, x1, y1, 0.0F, GuiShapes.argb(FxPalette.KUVA_MIST, 0.85F), false);
-        if (trail > p + 1.0E-3F) {
-            HoloShapes.softRect(g, m, x0 + full * p, y0, Math.min(x1, x0 + full * Math.min(1.0F, trail)), y1, 0.0F,
-                    GuiShapes.argb(FxPalette.KUVA_PALE, 0.6F), false);
-        }
-        if (p <= 0.0F) {
+    /**
+     * 三段血条和护盾线，一批提交。段 i 的长度区间是 {@link #SX0}~{@link #SX1}；第 0 段和护盾线左头都往左伸进菱框底下
+     * （到 {@code left}），那截不算长度、有就涂满。每段：暗底、残影、填充、上半截高光，最前面那段的填充头一道亮边
+     *
+     * @param clip   入场展开到的位置
+     * @param p      血占整条的比例
+     * @param refill 倒地时正在回满的那段
+     * @param shield 护盾比例，小于 0 不画（实体没加载、没有护盾）
+     * @param sl     护盾线长度的起点（在菱框斜边上露头的地方），满了到 {@code right}
+     */
+    private static void bars(GuiGraphics g, float left, float clip, float bt, float bb, float p, float trail,
+                             boolean down, int refill, float shield, float sl, float right, float st, float sb) {
+        if (clip <= left) {
             return;
         }
-        float fx = Math.min(x1, Math.round(x0 + full * p));
-        if (down) {
-            HoloShapes.softRect(g, m, x0, y0, fx, y1, 0.0F, GuiShapes.argb(FxPalette.ASH, 0.7F), false);
-            return;
+        int front = -1;
+        for (int i = 0; i < SEGMENTS; i++) {
+            if (segFill(p, i) > 0.0F) {
+                front = i;
+            }
         }
-        HoloShapes.softRect(g, m, x0, y0, fx, y1, 0.0F, GuiShapes.argb(FxPalette.KUVA, 1.0F), false);
-        HoloShapes.vgrad(g, m, x0, y0, fx, y1, FxPalette.KUVA_HOT, 0.45F, 0.0F, false);
-        HoloShapes.softRect(g, m, fx - lw, y0, fx, y1, 0.0F, GuiShapes.argb(FxPalette.KUVA_PALE, 0.9F), false);
+        BufferBuilder buf = HoloShapes.open(g, false);
+        for (int i = 0; i < SEGMENTS; i++) {
+            float a = i == 0 ? left : SX0[i];
+            float r = Math.min(SX1[i], clip);
+            if (r <= a) {
+                break;
+            }
+            rect(buf, a, bt, r, bb, FxPalette.KUVA_MIST, 0.85F, 0.85F);
+            float f = segFill(p, i), tr = segFill(trail, i);
+            float fx = f > 0.0F ? Math.min(r, segX(i, f)) : a;
+            if (tr > f) {
+                rect(buf, fx, bt, Math.min(r, segX(i, tr)), bb, FxPalette.KUVA_PALE, 0.6F, 0.6F);
+            }
+            if (down && i == refill) {
+                // 倒地回血的那段：暗红跟着倒地计时涨回去，前头一道骨白（空着时贴在段头），当倒计时看
+                rect(buf, a, bt, fx, bb, FxPalette.KUVA_DEEP, 1.0F, 1.0F);
+                head(buf, i, f, r, bt, bb, FxPalette.BONE, 0.9F);
+            } else if (down) {
+                rect(buf, a, bt, fx, bb, FxPalette.ASH, 0.7F, 0.7F);
+            } else if (f > 0.0F) {
+                rect(buf, a, bt, fx, bb, FxPalette.KUVA, 1.0F, 1.0F);
+                rect(buf, a, bt, fx, bb, FxPalette.KUVA_HOT, 0.45F, 0.0F);
+                if (i == front) {
+                    head(buf, i, f, r, bt, bb, FxPalette.KUVA_PALE, 0.9F);
+                }
+            }
+        }
+        if (shield > 0.0F) {
+            float sx = Math.min(clip, Math.round(sl + (right - sl) * shield));
+            if (down) {
+                rect(buf, left, st, sx, sb, FxPalette.ASH, 0.7F, 0.7F);
+            } else {
+                rect(buf, left, st, sx, sb, FxPalette.TECH, 0.9F, 0.9F);
+                rect(buf, Math.max(left, sx - lw), st, sx, sb, FxPalette.TECH_PALE, 0.95F, 0.95F);
+            }
+        }
+        HoloShapes.close(buf);
+    }
+
+    /** 第 i 段装了多满（0~1）；{@code p} 是整条的比例 */
+    private static float segFill(float p, int i) {
+        float f = p * SEGMENTS - i;
+        return f < FILL_EPS ? 0.0F : f > 1.0F - FILL_EPS ? 1.0F : f;
+    }
+
+    /** 第 i 段装到 {@code f} 时填充的右边，取整到像素 */
+    private static float segX(int i, float f) {
+        return Math.round(SX0[i] + (SX1[i] - SX0[i]) * f);
+    }
+
+    /** 填充头一道一条线宽的亮边，贴在填充里面；空段贴在段头 */
+    private static void head(BufferBuilder buf, int i, float f, float clip, float y0, float y1, int rgb, float a) {
+        float hx1 = Math.min(clip, Math.max(segX(i, f), SX0[i] + lw));
+        rect(buf, hx1 - lw, y0, hx1, y1, rgb, a, a);
+    }
+
+    /** 轴对齐矩形（坐标已取整），上沿透明度 {@code aTop}、下沿 {@code aBottom} */
+    private static void rect(BufferBuilder buf, float x0, float y0, float x1, float y1, int rgb, float aTop,
+                             float aBottom) {
+        if (x1 > x0 && y1 > y0) {
+            HoloShapes.quad(buf, m, x0, y0, x1, y1, rgb, aTop, aTop, aBottom, aBottom);
+        }
     }
 
     /** 双线菱框 + 等级数字；{@code traceK} 是外框描到哪，{@code fillA} 是填色和数字的透明度 */
@@ -591,7 +726,7 @@ public final class LichBossBar {
 
     /** 世界里对应的那只玄骸（按主人 UUID 找），离得太远没加载时为 null */
     @Nullable
-    private static AbstractKuva entityOf(Bar bar, long now) {
+    private static KuvaMasterEntity entityOf(Bar bar, long now) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || bar.owner == null) {
             return null;
@@ -636,6 +771,51 @@ public final class LichBossBar {
                 bar.trail = progress;
             }
         }
+    }
+
+    /**
+     * 护盾线画多长：掉了直接缩；涨了从现在的长度匀速长到新值，用 {@link #SHIELD_GROW_MS}。
+     * {@code target} 小于 0（没有护盾、实体没加载）时不画，下次有值直接取那个值
+     */
+    private static float updateShield(Bar bar, float target, long now) {
+        if (target < 0.0F) {
+            bar.shieldShown = -1.0F;
+            return -1.0F;
+        }
+        if (bar.shieldShown < 0.0F || target < bar.shieldShown) {
+            bar.shieldShown = target;
+            bar.shieldFrom = target;
+            bar.shieldTo = target;
+            return target;
+        }
+        if (Math.abs(target - bar.shieldTo) > 1.0E-4F) {
+            bar.shieldFrom = bar.shieldShown;
+            bar.shieldTo = target;
+            bar.shieldAtMs = now;
+        }
+        float k = FxCurve.clamp01((now - bar.shieldAtMs) / (float) SHIELD_GROW_MS);
+        bar.shieldShown = bar.shieldFrom + (bar.shieldTo - bar.shieldFrom) * k;
+        return bar.shieldShown;
+    }
+
+    // ==================== 开发用演示 ====================
+
+    /** 生命、护盾、倒地的演示值全部清掉 */
+    static void clearDemo() {
+        demoHealth = -1.0F;
+        demoShield = -1.0F;
+        demoDownPhase = -1;
+    }
+
+    /**
+     * 按倒地画：打空了 {@code phase} 段，正在回满的那段从 {@code from}（0~1）起、按 {@code seconds} 秒回满一整段的速度涨，
+     * 满了站起来（恢复常态，生命停在这段顶上）；{@code seconds} 为 0 时停在起点不动
+     */
+    static void demoDown(int phase, float seconds, float from) {
+        demoDownPhase = Math.max(0, Math.min(SEGMENTS - 1, phase));
+        demoDownFrom = FxCurve.clamp01(from);
+        demoDownMs = Math.round(Math.max(0.0F, seconds) * 1000.0F);
+        demoDownAtMs = KuvaFxDirector.clockMs();
     }
 
     @SubscribeEvent

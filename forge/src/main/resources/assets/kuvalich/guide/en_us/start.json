@@ -37,29 +37,29 @@
           "type": "steps",
           "items": [
             "<em>Mine</em>: break {item:kuvalich:requiem_ore} with a {lang:enchantment.kuvalich.requiem_destroyed} pickaxe to collect Requiem cards and materials.",
+            "<em>Nemesis</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} turns up near you every so often; finish it off and your Lich is born. Once its rage is full, it comes looking for you on its own.",
             {
               "if": [
                 "cfg:kuva_lich.mercyEnabled",
                 "cfg:kuva_lich.mercyThralls"
               ],
-              "text": "<em>Farm</em>: knock down {lang:entity.kuvalich.kuva_slave}s and execute them for <t>decryption progress</t>, which comes in three stages; each full stage reveals an answer card."
+              "text": "<em>Farm</em>: once your Lich is born, {lang:entity.kuvalich.kuva_slave}s come at you in squads; knock them down and execute them for <t>decryption progress</t>, which comes in three stages; each full stage reveals an answer card."
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
-              "text": "<em>Farm</em>: kill {lang:entity.kuvalich.kuva_slave}s for <t>decryption progress</t>, which comes in three stages; each full stage reveals an answer card."
+              "text": "<em>Farm</em>: once your Lich is born, {lang:entity.kuvalich.kuva_slave}s come at you in squads; kill them for <t>decryption progress</t>, which comes in three stages; each full stage reveals an answer card."
             },
-            "<em>Nemesis</em>: your Lich is born when the first answer card is revealed; once its rage is full, it comes looking for you on its own.",
             "<em>Set the cards</em>: place three Requiem cards in the {item:kuvalich:requiem_gate} in the order you think is right.",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>Confront</em>: knock it down, then step in and execute it with <t>{lang:key.kuvalich.mercy}</t>; three stabs check your card order one position at a time. All right means <g>decryption succeeds</g>; a wrong stab lets it break free and flee, your <b>Lich rank rises by 1</b>, and you try another order."
+              "text": "<em>Confront</em>: its health has three segments and it goes down each time one empties; step in and execute it with <t>{lang:key.kuvalich.mercy}</t>, the 1st, 2nd and 3rd times checking the first 1, 2 and 3 cards. Right all three times means <g>decryption succeeds</g>; a wrong stab lets it break free and flee, your <b>Lich rank rises by 1</b>, and you try another order."
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
               "text": "<em>Confront</em>: your card order is checked on the spot when you kill a {lang:entity.kuvalich.kuva_master}. The right order means <g>decryption succeeds</g>; a wrong one raises your <b>Lich rank by 1</b>, and you try another order."
             },
             "<em>Upgrade</em>: use the Kuva weapons, mods and materials you earn to consecrate gear, install mods and fuse weapons at the utility blocks.",
-            "<em>Next round</em>: after a success the answer is rolled again, your next Lich is born when you reveal the first card again, and the Kuva weapons you get from then on are higher level."
+            "<em>Next round</em>: after a success the answer is rolled again, your next Lich is born when you finish off another Kuva Larvling, and the Kuva weapons you get from then on are higher level."
           ]
         },
         {
@@ -173,6 +173,11 @@
               "The boss, called the <t>Lich</t> for short. Each hunter gets one of their own, with a name and a rank; finish it with the right card order for a big reward",
               "[[enemies/kuva_master|More]]"
             ],
+            [
+              "{lang:entity.kuvalich.kuva_larvling}",
+              "An unborn Lich that turns up while you have none; finish it and your Lich is born",
+              "[[enemies/kuva_larvling|More]]"
+            ],
             {
               "if": [
                 "cfg:kuva_lich.mercyEnabled",
@@ -180,7 +185,7 @@
               ],
               "cells": [
                 "{lang:entity.kuvalich.kuva_slave}",
-                "A common Kuva mob, called the <t>Thrall</t> for short; knock it down and execute it for decryption progress",
+                "A common Kuva mob that comes at you in squads once your Lich is born, called the <t>Thrall</t> for short; knock it down and execute it for decryption progress",
                 "[[enemies/kuva_slave|More]]"
               ]
             },
@@ -188,13 +193,13 @@
               "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
               "cells": [
                 "{lang:entity.kuvalich.kuva_slave}",
-                "A common Kuva mob, called the <t>Thrall</t> for short; kill it for decryption progress",
+                "A common Kuva mob that comes at you in squads once your Lich is born, called the <t>Thrall</t> for short; kill it for decryption progress",
                 "[[enemies/kuva_slave|More]]"
               ]
             },
             [
               "Kuva enemies",
-              "Thralls and Liches together",
+              "Larvlings, Thralls and Liches together",
               "[[enemies|More]]"
             ],
             [
@@ -216,7 +221,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "Decryption success / failure",
-                "When you execute a Lich, three stabs check your cards one position at a time; all right is a success, a wrong stab is a failure",
+                "When you execute a Lich, its stabs check your cards one position at a time; right through all three executions is a success, a wrong stab is a failure",
                 "[[requiem/requiem_gate|More]]"
               ]
             },
@@ -240,7 +245,7 @@
               ],
               "cells": [
                 "{lang:key.kuvalich.mercy}",
-                "A lethal blow knocks a Lich or a Thrall down instead of killing it; step in and press a key to execute it",
+                "Liches, Thralls and Larvlings go down instead of dying; step in and press a key to execute them",
                 "[[start/tut_3_lich|More]]"
               ]
             },
@@ -251,7 +256,7 @@
               ],
               "cells": [
                 "{lang:key.kuvalich.mercy}",
-                "A lethal blow knocks a Lich down instead of killing it; step in and press a key to execute it",
+                "Liches and Larvlings go down instead of dying; step in and press a key to execute them",
                 "[[start/tut_3_lich|More]]"
               ]
             },
@@ -601,7 +606,7 @@
       "id": "tut_2_thralls",
       "title": "Ch. 2 · Thralls & Decryption",
       "icon": "kuvalich:requiem_gem",
-      "summary": "Finish off Thralls, reveal answer cards",
+      "summary": "Wake your Lich, then reveal cards from Thralls",
       "blocks": [
         {
           "type": "comm",
@@ -610,7 +615,7 @@
         },
         {
           "type": "p",
-          "text": "<em>Objective</em>: build <t>decryption progress</t> from {lang:entity.kuvalich.kuva_slave}s and reveal answer cards, collecting {item:kuvalich:requiem_gem}s on the way to build a {item:kuvalich:requiem_gate}. Start with the Thralls: the clues to your answer surface one card at a time, and when the first one shows, your Lich is born with it."
+          "text": "<em>Objective</em>: first finish off a {lang:entity.kuvalich.kuva_larvling} so your Lich is born; then build <t>decryption progress</t> from the {lang:entity.kuvalich.kuva_slave}s that come for you and reveal answer cards, collecting {item:kuvalich:requiem_gem}s on the way to build a {item:kuvalich:requiem_gate}."
         },
         {
           "type": "p",
@@ -629,8 +634,16 @@
           "type": "steps",
           "items": [
             {
-              "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
-              "text": "<em>Find Thralls</em>: they spawn in dark places in the Overworld like zombies, except on mushroom islands. They are big, so low caves rarely have them."
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "<em>Wait for a Larvling</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} finds you every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes online, with a notice reading “{lang:message.kuvalich.larvling.appeared}”. Knock it down: the weapon shown above its head is the one your future Lich will carry. Step in and press the <t>{lang:key.kuvalich.mercy}</t> key to execute it, and your Lich is born. <b>Don't hit it again</b> once it's down, or it dissolves; see [[enemies/kuva_larvling]]."
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled",
+              "text": "<em>Wait for a Larvling</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} finds you every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes online, with a notice reading “{lang:message.kuvalich.larvling.appeared}”. Kill it yourself, and your Lich is born, carrying the weapon it held; see [[enemies/kuva_larvling]]."
+            },
+            {
+              "if": "cfg:kuva_lich.thrallSquadEnabled",
+              "text": "<em>Wait for Thralls</em>: once your Lich is born, a small squad of {lang:entity.kuvalich.kuva_slave}s charges at you from out of sight every <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}-{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> s, so there's no need to hunt for them."
             },
             {
               "if": [
@@ -688,6 +701,13 @@
         },
         {
           "type": "tip",
+          "style": "good",
+          "if": "cfg:kuva_lich.thrallProgressShareRange>0",
+          "title": "Farm together",
+          "text": "Farming with friends pays: when a Thrall falls, everyone with a Lich within <t>{cfg:kuva_lich.thrallProgressShareRange}</t> blocks gets the same decryption progress, so there's no need to fight over the last hit; drops and rage go only to whoever finished it."
+        },
+        {
+          "type": "tip",
           "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
           "style": "warn",
           "title": "Two traps",
@@ -706,20 +726,20 @@
         {
           "type": "tip",
           "if": [
-            "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+            "!cfg:kuva_lich.thrallSquadEnabled",
             "cfg:kuva_lich.mercyEnabled"
           ],
           "style": "info",
-          "text": "{lang:entity.kuvalich.kuva_slave}s do not appear in the wild. Once you have a Lich, decryption progress comes only from it: each failed decryption (an execution with fewer than three cards set counts as one) is worth <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's progress."
+          "text": "{lang:entity.kuvalich.kuva_slave}s won't come for you. Once you have a Lich, decryption progress comes only from it: each failed decryption (an execution with fewer than three cards set counts as one) is worth <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's progress."
         },
         {
           "type": "tip",
           "if": [
-            "!cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
+            "!cfg:kuva_lich.thrallSquadEnabled",
             "!cfg:kuva_lich.mercyEnabled"
           ],
           "style": "info",
-          "text": "{lang:entity.kuvalich.kuva_slave}s do not appear in the wild. Once you have a Lich, decryption progress comes only from it: each time you take it down with fewer than three cards set, or a decryption fails, it is worth <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's progress."
+          "text": "{lang:entity.kuvalich.kuva_slave}s won't come for you. Once you have a Lich, decryption progress comes only from it: each time you take it down with fewer than three cards set, or a decryption fails, it is worth <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's progress."
         },
         {
           "type": "tip",
@@ -787,7 +807,7 @@
         {
           "type": "p",
           "if": "cfg:kuva_lich.mercyEnabled",
-          "text": "Every stab of the execution checks your answer. The first stab checks position 1, the second position 2 and the third position 3; the three slots at the bottom of the screen light up stab by stab, and a wrong one turns red. <b>An empty slot counts as wrong</b>."
+          "text": "Its health has three segments and it goes down each time one empties, so you execute it three times: the 1st time is 1 stab checking position 1, the 2nd is 2 stabs checking the first two, and the 3rd is 3 stabs checking the whole answer. The three slots at the bottom of the screen light up stab by stab, and a wrong one turns red; <b>an empty slot counts as wrong</b>. Get the first two right and it breaks loose, standing up with its next segment full to fight on."
         },
         {
           "type": "table",
@@ -804,7 +824,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "Fewer than 3 cards",
-                "Still judged over three stabs, and an empty slot counts as wrong: reaching the first empty slot is a <b>decryption failure</b> (with no cards at all, the first stab is wrong), same as “3 cards, any mistake” below"
+                "Still judged stab by stab, and an empty slot counts as wrong: reaching the first empty slot is a <b>decryption failure</b> (with no cards at all, the very first stab is wrong), same as “3 cards, any mistake” below"
               ]
             },
             {
@@ -836,7 +856,7 @@
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
                 "Downed, not executed",
-                "After <t>{cfg:kuva_lich.mercyDownedSeconds}</t> s it gets up and flees, giving nothing; this is not a failure"
+                "After <t>{cfg:kuva_lich.mercyDownedSeconds}</t> s the segment refills and it stands up to fight on; only after <t>3</t> unexecuted downs in a row does it flee, giving nothing; this is not a failure"
               ]
             }
           ]
@@ -1789,7 +1809,7 @@
         {
           "type": "list",
           "items": [
-            "A success ends this Lich for good and resets your decryption progress, the answer and your Lich rank. The next round's answer is rolled again, and when you reveal its first clue, a new Lich is born.",
+            "A success ends this Lich for good and resets your decryption progress, the answer and your Lich rank. The next round's answer is rolled again, and a new Lich is born when you finish off the next {lang:entity.kuvalich.kuva_larvling}.",
             "Both ends of your weapon level range rise by the same random amount, <t>{cfg:kuva_lich.minimumLevelCapIncrease}</t>-<t>{cfg:kuva_lich.maximumLevelCapIncrease}</t> levels, so later Kuva weapons are stronger.",
             "The range has caps, with the minimum topping out at <t>{cfg:kuva_lich.minimumLevel}</t> and the maximum at <t>{cfg:kuva_lich.maximumLevel}</t>; beyond that, only fusion helps.",
             "Each Requiem card lasts 3 successes. Old cards go into the {item:kuvalich:requiem_recast}, 3 for 1 new card."
@@ -2083,14 +2103,14 @@
           "items": [
             "<b>× Thinking the Gate eats your cards</b>: cards are only registered to you and can be taken back any time, from any Requiem Gate. Only a successful decryption costs each card 1 durability (3 in total); failures cost nothing.",
             "<b>× Taking the clue slots as the order</b>: revealed answer cards land in random positions, so you have to test the order. A {item:kuvalich:requiem_riddle} tells you the right order directly.",
-            "<b>× Searching the world for a Lich</b>: Liches don't spawn in the wild. Yours is born when you reveal your first clue, and once its rage fills up, it comes looking for you. For the times it won't come, see [[start/tut_3_lich]].",
+            "<b>× Searching the world for a Lich</b>: Liches don't spawn in the wild. Yours is born when you finish off a {lang:entity.kuvalich.kuva_larvling}, and once its rage fills up, it comes looking for you. For the times it won't come, see [[start/tut_3_lich]].",
             {
               "if": "cfg:kuva_lich.lichWildAllowed",
               "text": "<b>× Farming Liches from spawn eggs or commands</b>: a Lich made that way belongs to no one, and killing it gives nothing: no card check, no progress, no drops."
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× Thinking the fight ends when the Lich drops</b>: a fatal blow only brings it down, and you have to walk up and press the Mercy key (default <t>X</t>) to execute it. Only you can execute it, though others can help knock it down. If you don't execute it within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> s, it gets up and escapes; that encounter gives nothing and doesn't count as a wrong guess."
+              "text": "<b>× Thinking the fight ends when the Lich drops</b>: its health has three segments, emptying one only brings it down, and you have to walk up and press the Mercy key (default <t>X</t>) to execute it, three times in all. Only you can execute it, though others can help knock it down. If you don't execute it within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> s, it refills that segment and gets back up; only after <t>3</t> missed downs in a row does it escape, which gives nothing and doesn't count as a wrong guess."
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -2114,6 +2134,10 @@
             {
               "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.mercyThralls",
               "text": "<b>× Letting pets or summons clear Thralls</b>: Thrall progress and drops only count kills you make yourself; arrows you shoot count."
+            },
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "text": "<b>× Hitting a downed Larvling</b>: once a {lang:entity.kuvalich.kuva_larvling} is down, one more hit from anyone makes it dissolve on the spot, giving nothing, and the next one is a full wait away. Once it's down, stop attacking and go execute it."
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
@@ -2207,6 +2231,45 @@
               "Points needed per stage",
               "{cfg:kuva_lich.firstStage} / {cfg:kuva_lich.secondStage} / {cfg:kuva_lich.thirdStage}"
             ],
+            [
+              "How often a Kuva Larvling comes",
+              "Every {cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes} minutes online"
+            ],
+            {
+              "if": "cfg:kuva_lich.mercyEnabled",
+              "cells": [
+                "How long a downed Larvling waits for execution",
+                "{cfg:kuva_lich.larvlingDownedSeconds} s"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.thrallSquadEnabled",
+              "cells": [
+                "How often a Thrall squad comes",
+                "Every {cfg:kuva_lich.thrallSquadIntervalMinSeconds}-{cfg:kuva_lich.thrallSquadIntervalMaxSeconds} s, {cfg:kuva_lich.thrallSquadSizeMin}-{cfg:kuva_lich.thrallSquadSizeMax} per squad"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.thrallSquadEnabled",
+              "cells": [
+                "Most Thralls around you",
+                "{cfg:kuva_lich.thrallSquadMaxNearby} within {cfg:kuva_lich.thrallSquadRadius} blocks"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.thrallProgressShareRange>0",
+              "cells": [
+                "A Thrall's progress is shared with Lich owners within",
+                "{cfg:kuva_lich.thrallProgressShareRange} blocks"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichShieldRatio>0",
+              "cells": [
+                "Lich shield",
+                "Max health × {cfg:kuva_lich.lichShieldRatio}; recharges after {cfg:kuva_lich.lichShieldDelaySeconds} s unhit, {cfg:kuva_lich.lichShieldRegenPercent|pctv} per second"
+              ]
+            },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
@@ -2477,13 +2540,6 @@
               "cells": [
                 "{item:kuvalich:experience_ore}",
                 "{cfg:ore_gen.experienceOreVeinCount} veins per chunk, up to {cfg:ore_gen.experienceOreVeinSize} blocks each, Y {cfg:ore_gen.experienceOreMinHeight} to {cfg:ore_gen.experienceOreMaxHeight}"
-              ]
-            },
-            {
-              "if": "cfg:kuva_lich.kuvaSlaveSpawnWeight>0",
-              "cells": [
-                "Thrall spawn weight in the wild",
-                "{cfg:kuva_lich.kuvaSlaveSpawnWeight} (zombies: 95)"
               ]
             },
             {

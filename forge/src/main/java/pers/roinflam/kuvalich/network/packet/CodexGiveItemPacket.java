@@ -158,7 +158,7 @@ public class CodexGiveItemPacket {
      * @param rarityOrder 品质序号 0~3
      * @return 服务端的权威实例副本；找不到返回 {@link ItemStack#EMPTY}
      */
-    static ItemStack findModule(String type, boolean isWeapon, int rarityOrder) {
+    public static ItemStack findModule(String type, boolean isWeapon, int rarityOrder) {
         if (type == null || type.isEmpty()) return ItemStack.EMPTY;
 
         // 确保列表已初始化 / Ensure lists are initialized

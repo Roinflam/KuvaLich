@@ -122,6 +122,11 @@ public class RequiemCard {
     private List<HistoryEntry> lichHistory = new ArrayList<>();
     /** 被管理命令暂停：怒气不涨、不来找人、不随机嘲讽 */
     private boolean lichPaused;
+    /**
+     * 还要在线多少 tick 才出下一只赤毒幼体（只在没有玄骸时数）；-1 = 还没掷过。
+     * 跟着卡存盘，下线再上来接着数，不会因为每次玩得短就永远等不到
+     */
+    private int larvlingWait = -1;
 
     /**
      * 存档标记：武器等级区间已按基础值初始化 / 迁移过
@@ -197,6 +202,7 @@ public class RequiemCard {
         this.lichAttempts = requiemCard.lichAttempts.clone();
         this.lichHistory = new ArrayList<>(requiemCard.lichHistory);
         this.lichPaused = requiemCard.lichPaused;
+        this.larvlingWait = requiemCard.larvlingWait;
     }
 
     // ==================== Getters and Setters ====================
@@ -290,6 +296,41 @@ public class RequiemCard {
             return false;
         }
         return card.getID() == OULL.ID || card.getID() == answer;
+    }
+
+    /** 一格里放的是哪种卡（卡 id）；空格、不是安魂卡的为 -1 */
+    public static int placedCardId(@Nullable ItemStack placed) {
+        return placed != null && !placed.isEmpty() && placed.getItem() instanceof AbstractRequiemCard card ? card.getID() : -1;
+    }
+
+    /**
+     * 三个卡位里同一种卡只留最前面那张，后面重复的从卡位上拿下来，交给调用方退还玩家。
+     *
+     * <p>灭骸之扉同一种卡只能放一张：三格答案各不相同，两张同种的至少有一张不对，Oull 本来就限一张。
+     * 卡槽那边已经拦住了，这里清的是拦之前放进去、存在档里的。</p>
+     *
+     * @return 拿下来的卡（原物，不是副本）；没有重复的为空表
+     */
+    public List<ItemStack> takeDuplicateCards() {
+        ItemStack[] placed = {oneCard, twoCard, threeCard};
+        List<ItemStack> extra = new ArrayList<>();
+        for (int i = 1; i < 3; i++) {
+            int id = placedCardId(placed[i]);
+            if (id < 0) {
+                continue;
+            }
+            for (int j = 0; j < i; j++) {
+                if (placedCardId(placed[j]) == id) {
+                    extra.add(placed[i]);
+                    placed[i] = ItemStack.EMPTY;
+                    break;
+                }
+            }
+        }
+        oneCard = placed[0];
+        twoCard = placed[1];
+        threeCard = placed[2];
+        return extra;
     }
 
     public int getLockCard(int level) {
@@ -540,6 +581,15 @@ public class RequiemCard {
         next[0] = packed;
         System.arraycopy(lichAttempts, 0, next, 1, size - 1);
         this.lichAttempts = next;
+    }
+
+    /** 还要在线多少 tick 才出下一只幼体，-1 = 还没掷过 */
+    public int getLarvlingWait() {
+        return larvlingWait;
+    }
+
+    public void setLarvlingWait(int ticks) {
+        this.larvlingWait = ticks;
     }
 
     /** 处决记录的副本，最新在前 */
@@ -832,6 +882,7 @@ public class RequiemCard {
         }
         nbt.put("lichHistory", historyList);
         nbt.putBoolean("lichPaused", lichPaused);
+        nbt.putInt("larvlingWait", larvlingWait);
 
         return nbt;
     }
@@ -916,6 +967,7 @@ public class RequiemCard {
      */
     private void readLichData(CompoundTag nbt) {
         resetLichData();
+        this.larvlingWait = nbt.contains("larvlingWait") ? nbt.getInt("larvlingWait") : -1;
         if (nbt.getInt("lichDataVersion") < LICH_DATA_VERSION) {
             return;
         }

@@ -46,6 +46,9 @@ import pers.roinflam.kuvalich.utils.Reference;
  * <p>位置和朝向由 {@code MixinCameraMercy} 在 {@code Camera#setup} 末尾整个换掉；推镜（FOV）、震动、甩镜、滚转走
  * Forge 的视角事件。机位 FOV 是绝对值，不跟玩家的 FOV 设置（电影镜头要一致）。不做黑边、不做动态模糊。</p>
  *
+ * <p>失败和「挣开站起」（这次验的几刀全对、还没到第三刀）在玄骸挣开之后都切宽镜头，看它和被推开的处决者：
+ * 失败在判错那一格 + 2000 ms 切、看它化雾；挣开站起在最后那一格 + 1200 ms 切、看它站起来，2300 ms 交还。</p>
+ *
  * <p>{@code mercy_camera} 关着时不接管位置，开始时切到原版第三人称背后视角、交还时切回；界面、压混音、声音照常。
  * 奴仆处决不切镜头，{@code thrall_third_person} 开着时同样整段切第三人称背后视角。</p>
  */
@@ -75,7 +78,7 @@ public final class MercyCamera {
         CLOSEUP,
         /** 成功：膝盖高度第三人称 */
         THIRD,
-        /** 失败：宽镜头 */
+        /** 失败、挣开站起：宽镜头 */
         WIDE
     }
 
@@ -170,6 +173,12 @@ public final class MercyCamera {
     private static double outX, outY, outZ;
     private static float outYaw, outPitch;
 
+    /**
+     * 开发命令 {@code /kuvafxc mercyorbit} 摆的固定机位：绕目标转的角度（0 = 处决者那一侧，90 = 侧面）、离目标多远、
+     * 镜头和注视点离地多高（平视）。距离不大于 0 就是关着
+     */
+    static float devOrbitAngle, devOrbitDist, devOrbitHeight;
+
     private MercyCamera() {
     }
 
@@ -217,7 +226,7 @@ public final class MercyCamera {
         return switch (MercyTimeline.outcome(e.plan)) {
             case SUCCESS -> t < MercyTimeline.CLOSEUP_MS ? own
                     : t < MercyTimeline.THIRD_MS ? Shot.CLOSEUP : Shot.THIRD;
-            case FAIL -> t < MercyTimeline.failFillMs(e.plan) + MercyTimeline.FAIL_WIDE ? own : Shot.WIDE;
+            case ADVANCE, FAIL -> t < MercyTimeline.wideFromMs(e.plan) ? own : Shot.WIDE;
             case THRALL -> Shot.GAME;
         };
     }
@@ -259,8 +268,8 @@ public final class MercyCamera {
     private static ShotPose place(MercyClient.Exec e, Shot s, int side) {
         double u = e.shots.unit;
         if (s == Shot.WIDE) {
-            // 离玄骸 ≈5.4 格的低机位，在它背后那一侧，看玄骸和被推开后的处决者（Pe + 1.5F）的中点
-            Vec3 pushed = e.pe.add(e.f.scale(1.5D));
+            // 离玄骸 ≈5.4 格的低机位，在它背后那一侧，看玄骸和被推开后的处决者（失败 Pe + 1.5F，挣开站起 Pe + 1.0F）的中点
+            Vec3 pushed = e.pe.add(e.f.scale(MercyTimeline.pushDistance(e.plan)));
             Vec3 mid = e.pl.add(pushed).scale(0.5D);
             return new ShotPose(frame(e, e.pl, -4.2D * u, 3.4D * u * side, 0.6D * u), mid.add(0.0D, 1.2D * u, 0.0D),
                     70.0F, true);
@@ -482,6 +491,19 @@ public final class MercyCamera {
         if (e == null || camera != Minecraft.getInstance().gameRenderer.getMainCamera()) {
             return false;
         }
+        if (devOrbitDist > 0.0F) {
+            // 奴仆处决不切镜头、视角又被锁着朝向目标，要从侧面核对刀口就只能这样换机位（要先切到第三人称才画得出处决者）
+            double a = devOrbitAngle * Mth.DEG_TO_RAD;
+            Vec3 look = e.pl.add(0.0D, devOrbitHeight, 0.0D);
+            Vec3 pos = look.add(e.f.scale(Math.cos(a) * devOrbitDist)).add(e.s.scale(Math.sin(a) * devOrbitDist));
+            Vec3 n = look.subtract(pos).normalize();
+            outX = pos.x;
+            outY = pos.y;
+            outZ = pos.z;
+            outYaw = MercyClient.yawOf(n);
+            outPitch = MercyClient.pitchOf(n);
+            return true;
+        }
         long t = e.elapsed();
         Shot s = shotAt(e, t);
         if (s == Shot.GAME) {
@@ -498,7 +520,7 @@ public final class MercyCamera {
             pos = pos.add(n.scale(0.08D * sine(u)));
         } else if (s == Shot.WIDE) {
             // 沿视线反方向匀速后拉 0.2 格 / 秒
-            long since = t - (MercyTimeline.failFillMs(e.plan) + MercyTimeline.FAIL_WIDE);
+            long since = t - MercyTimeline.wideFromMs(e.plan);
             pos = pos.subtract(n.scale(0.2D * Math.max(0L, since) / 1000.0D));
         }
         if (EffectsDisplayConfig.screenEffects()) {

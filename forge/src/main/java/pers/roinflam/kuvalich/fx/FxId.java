@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
  *   2  REQUIEM_SUCCESS  玄骸                 击杀者 id+1                             bit0 怜悯之击后 / bit1 有没收物品归还 / bit2~3 用完消失的安魂卡张数 / bit8~19 三格的卡 id（每格 4 位，第 0 格在 bit8~11，15 = 不知道）
  *   3  REQUIEM_FAIL     玄骸                 击杀者 id+1                             bit0~1 猜对的前几位 / bit2 怜悯之击后 / bit8~19 三格的卡 id（同上）
  *   4  LICH_DEATH       玄骸                 击杀者 id+1（0=非玩家）                 0 非玩家击杀 / 1 卡没放齐 / 2 怜悯之击成功收尾
- *   5  THRALL_DEATH     奴仆                 击杀者 id+1                             bit0 这次给了密语进度 / bit1 怜悯之击之后
+ *   5  THRALL_DEATH     奴仆 / 幼体          击杀者 id+1（给了进度时是密语流飞向的人）  bit0 这次给了密语进度 / bit1 怜悯之击之后
  *   6  CONFISCATE       无                   被没收的玩家 id+1                       物品稀有度序号
  *   7  CRIT             受击者               档位 1/2/3                              攻击者 id+1
  *   8  ELEMENT_PROC     受击者               元素序号 | 等级（层数 − 1）&lt;&lt; 8 | extra &lt;&lt; 16（extra：电击 = 麻痹 tick，切割 = 流血轮数，其余 0）   攻击者 id+1

@@ -10,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
+import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 
@@ -565,6 +566,27 @@ public final class MercyPose {
     private static final Anchors ANCHOR_T2 = new Anchors(-2, 4, -9, 0, 7, -10);
     private static final Anchors ANCHOR_T3 = new Anchors(0, 10, -10, 0, 12, -11);
 
+    /** 飞跃下刺翻到最高点时整身离地多高（格） */
+    private static final float T5_APEX = 2.2F;
+    /** 飞跃下刺头朝下那一刻，刀尖比整身位置低多少（格）：支点 0.85 格处翻过来，肩到了身位上方 0.4，再往下一条胳膊加一截刀 */
+    private static final float T5_TIP_DROP = 0.6F;
+    /** 奴仆几套出刀时往前送的距离（0.12~0.22 格，取中），缩锚点时算目标中心在哪用 */
+    private static final float THRALL_LUNGE = 0.17F;
+
+    /**
+     * 目标比动作原本按的那只小（{@code scale} < 1）时的抓握点和刀口。目标是绕自己的脚底中心缩的，点也照着缩：
+     * 高度按离地多高缩，前后按离目标中心多远缩（目标中心在处决者前方「站距 − 出刀前送」处），左右按离中轴多远缩。
+     * 锚点是玩家模型坐标（像素，y 朝下、脚底是 24，往前是 −z），换算成格要乘玩家的 0.9375，两边一除就约掉了
+     */
+    private static Anchors scaled(Anchors a, MercyVariant v, float scale) {
+        if (scale >= 0.999F) {
+            return a;
+        }
+        float center = -(v.standDist - THRALL_LUNGE) * 16.0F / 0.9375F;
+        return new Anchors(a.gx * scale, 24.0F - scale * (24.0F - a.gy), center + scale * (a.gz - center),
+                a.sx * scale, 24.0F - scale * (24.0F - a.sy), center + scale * (a.sz - center));
+    }
+
     /** 抓肩直刺：揪着肩把它拽直，往下捅进胸口、拧刀，拔刀的同时一把推开 */
     private static List<Key> thrall1() {
         int s = MercyVariant.THRALL_1.stabMs(0);
@@ -845,23 +867,29 @@ public final class MercyPose {
         return b;
     }
 
-    /** 飞跃下刺：从站位直直翻过它头顶，落在身后，再转回来看着它倒下 */
-    private static List<Key> bodyT5() {
+    /**
+     * 飞跃下刺：从站位直直翻过它头顶，落在身后，再转回来看着它倒下
+     *
+     * <p>目标小一号时整条弧压低：头朝下那一刻刀尖在整身位置下方约 {@link #T5_TIP_DROP} 格，要刀尖跟着它的后颈按
+     * {@code scale} 缩，跳起的高度就得缩成 {@code scale + (1 − scale) × 0.6 / 2.2}（2.2 是最高点）</p>
+     */
+    private static List<Key> bodyT5(float scale) {
         float across = -MercyVariant.THRALL_5.standDist;
+        float h = scale + (1.0F - scale) * T5_TIP_DROP / T5_APEX;
         List<Key> b = startedBody();
         b.add(k(120, SINE, m().dist(0.15F)));
-        b.add(k(280, OUT, m().dist(across * 0.24F).up(0.55F).flip(30)));
-        b.add(k(560, SINE, m().dist(across * 0.5F).up(1.85F).flip(130)));
+        b.add(k(280, OUT, m().dist(across * 0.24F).up(0.55F * h).flip(30)));
+        b.add(k(560, SINE, m().dist(across * 0.5F).up(1.85F * h).flip(130)));
         // 正好翻到头朝下，手臂朝下对着它的后颈（它面向处决者，后颈在中轴偏处决者这一侧）
-        b.add(k(800, SINE, m().dist(across * 0.72F).up(2.2F).flip(190)));
-        b.add(k(1040, SINE, m().dist(across * 1.3F).up(1.6F).flip(268)));
+        b.add(k(800, SINE, m().dist(across * 0.72F).up(T5_APEX * h).flip(190)));
+        b.add(k(1040, SINE, m().dist(across * 1.3F).up(1.6F * h).flip(268)));
         b.add(k(1280, IN, m().dist(across * 1.92F).up(0).flip(360)));
         b.add(k(1340, OUT, m().dist(across * 2.0F)));
         b.add(k(1620, 1380, OUT, m().yaw(180)));
         return b;
     }
 
-    private static List<Key> bodyOf(MercyVariant v) {
+    private static List<Key> bodyOf(MercyVariant v, float scale) {
         return switch (v) {
             case LICH_A -> bodyA();
             case LICH_B -> bodyB();
@@ -872,28 +900,38 @@ public final class MercyPose {
             case THRALL_2 -> bodyThrall(v.stabMs(0), 0.18F, 1500);
             case THRALL_3 -> bodyThrall(v.stabMs(0), 0.12F, 1530);
             case THRALL_4 -> bodyT4();
-            case THRALL_5 -> bodyT5();
+            case THRALL_5 -> bodyT5(scale);
         };
     }
 
     /**
-     * 判错：被挣开甩回站位外 1.5 格（服务端同时把人推到那里）。人不在站位上时是整个人被甩出去翻一圈：
-     * 踏背下刺在背上被掀下来往后翻；在它正面被一把抡起来，从它头顶甩回站位那一侧（沿着中轴越过它，所以「距」是负的）
+     * 被挣开：甩回站位外 {@code push} 格（判错 1.5、挣开站起 1.0，服务端同时把人推到那里）。人不在站位上时是整个人
+     * 被甩出去翻一圈：踏背下刺在背上被掀下来往后翻；在它正面被一把抡起来，从它头顶甩回站位那一侧（沿着中轴越过它，
+     * 所以「距」是负的）
      */
-    private static void thrown(List<Key> body, MercyVariant v, int failK, int t0) {
-        if (v == MercyVariant.LICH_E && failK == 2) {
+    private static void thrown(List<Key> body, MercyVariant v, int lastK, int t0, float push) {
+        if (v == MercyVariant.LICH_E && lastK == 2) {
             // 先被掀离它的后背（它马上要站起来，人不能还压在它身上），再往后翻一圈落地
             body.add(k(t0 + 150, OUT, m().dist(0.3F).up(E_BACK_UP + 0.6F).flip(-150)));
-            body.add(k(t0 + 440, IN, m().dist(1.5F).up(0).flip(-360)));
-        } else if (v == MercyVariant.LICH_E && failK == 3) {
-            float across = -2.0F * v.standDist - 1.5F;
+            body.add(k(t0 + 440, IN, m().dist(push).up(0).flip(-360)));
+        } else if (v == MercyVariant.LICH_E && lastK == 3) {
+            float across = -2.0F * v.standDist - push;
             body.add(k(t0 + 200, OUT, m().dist(-v.standDist - 0.1F).up(E_BACK_UP + 1.0F).yaw(90).flip(160)));
             body.add(k(t0 + 480, IN, m().dist(across).up(0).yaw(180).flip(360)));
-        } else if (v == MercyVariant.LICH_D && failK == 3) {
+        } else if (v == MercyVariant.LICH_D && lastK == 3) {
             body.add(k(t0 + 200, OUT, m().ang(95).dist(0.6F).up(1.1F).yaw(190).flip(150)));
-            body.add(k(t0 + 460, IN, m().ang(0).dist(1.5F).up(0).yaw(360).flip(360)));
+            body.add(k(t0 + 460, IN, m().ang(0).dist(push).up(0).yaw(360).flip(360)));
         } else {
-            body.add(k(t0 + 300, OUT, m().dist(1.5F).up(0)));
+            body.add(k(t0 + 300, OUT, m().dist(push).up(0)));
+        }
+    }
+
+    /** 套路表里到 {@code until} 为止的帧（之后是下一刀的蓄力，这一场不演了） */
+    private static void cutAfter(List<Key> from, List<Key> to, int until) {
+        for (Key key : from) {
+            if (key.t <= until) {
+                to.add(key);
+            }
         }
     }
 
@@ -914,12 +952,16 @@ public final class MercyPose {
 
     // ==================== 拼轨道 ====================
 
-    /** 按计划位拼出这一场的姿态轨道 */
-    static Track track(MercyPlan.Plan p, boolean shortOutro) {
+    /**
+     * 按计划位拼出这一场的姿态轨道
+     *
+     * @param scale 目标身材相对动作原本按的那只（{@link AbstractKuva#mercyBodyScale}），奴仆几套的刀口、抓握点和跳起的高度按它缩
+     */
+    static Track track(MercyPlan.Plan p, boolean shortOutro, float scale) {
         MercyTimeline.Outcome oc = MercyTimeline.outcome(p);
         MercyVariant v = p.variant();
         List<Key> table = tableOf(v);
-        List<Key> moves = bodyOf(v);
+        List<Key> moves = bodyOf(v, scale);
         List<Key> body = new ArrayList<>();
         int[] stabs = MercyTimeline.stabTimes(p);
         float[] weight = new float[stabs.length];
@@ -959,37 +1001,59 @@ public final class MercyPose {
                     out.add(k(MercyTimeline.SUCCESS_END_MS, MercyTimeline.SUCCESS_END_MS - 200, SINE, zero()));
                 }
             }
+            case ADVANCE -> {
+                // 这一刀也对：照常拧刀，它攒着劲往上顶（最后 250 ms 手开始抖），猛地挣开站起来，人被推开 1 格、
+                // 踉跄一下稳住，刀架在身前接着打
+                int stabK = stabs[stabs.length - 1];
+                int free = MercyTimeline.breakFreeMs(p);
+                cutAfter(table, out, stabK + 90);
+                cutAfter(moves, body, stabK + 90);
+                body.add(k(free, SINE, m()));
+                thrown(body, v, stabs.length, free, (float) MercyTimeline.ADVANCE_PUSH);
+                body.add(k(MercyTimeline.handbackMs(p, shortOutro), SINE, m()));
+                // 第二刀往回拧（踏背下刺那一刀在背上，照它自己的方向）
+                float roll = stabs.length == 2 && v != MercyVariant.LICH_E ? -40.0F : 40.0F;
+                out.add(k(stabK + 300, SINE, p().r(NA, NA, roll).hd(NA, Math.signum(roll) * 3.0F)));
+                out.add(k(stabK + 460, SINE, p().r(NA, NA, roll * 0.8F)));
+                out.add(k(free - 60, SINE, p().r(NA, NA, roll * 0.7F)));
+                strainFrom = free - 250;
+                strainTo = free;
+                // 被顶开：比判错那一下轻，两臂往外一甩、上身后仰，退一步就站住
+                out.add(k(free + 70, OUT, p().tw(-16).ln(-8).sq(0).sh(-1.5F)
+                        .r(70, -50, 0).aim(0).pull(0).l(112, -25, 0).grip(0).reach(0).legs(-4, 8).hd(-10, 4)));
+                out.add(k(free + 300, SINE, p().tw(-10).ln(-8).sh(-2)
+                        .r(54, -52, 16).l(92, -28, 0).legs(12, -8).hd(-6, 2)));
+                out.add(k(free + 460, OUT, p().tw(-6).ln(12).sq(0.35F).sh(0)
+                        .r(40, -40, 16).l(48, -28, 0).legs(-18, 18).hd(4, 0)));
+                // 刀横在身前，盯着它站起来
+                out.add(k(free + 800, SINE, p().tw(-10).ln(10).sq(0.25F).sh(0.4F)
+                        .r(60, -14, -18).l(40, 24, 0).legs(-14, 14).hd(0, 0)));
+                int handback = MercyTimeline.handbackMs(p, shortOutro);
+                out.add(k(handback, handback - 200, SINE, zero()));
+            }
             case FAIL -> {
                 int stabK = stabs[stabs.length - 1];
-                int g = MercyTimeline.failFillMs(p);
-                for (Key key : table) {
-                    if (key.t <= stabK + 90) {
-                        out.add(key);
-                    }
-                }
-                for (Key key : moves) {
-                    if (key.t <= stabK + 90) {
-                        body.add(key);
-                    }
-                }
-                body.add(k(g + MercyTimeline.FAIL_BREAKFREE, SINE, m()));
-                thrown(body, v, stabs.length, g + MercyTimeline.FAIL_BREAKFREE);
+                int free = MercyTimeline.breakFreeMs(p);
+                cutAfter(table, out, stabK + 90);
+                cutAfter(moves, body, stabK + 90);
+                body.add(k(free, SINE, m()));
+                thrown(body, v, stabs.length, free, (float) MercyTimeline.FAIL_PUSH);
                 body.add(k(MercyTimeline.handbackMs(p, shortOutro), SINE, m()));
                 // 判错那一刀拧不动：顶着、手越抖越厉害（抖是叠上去的），直到被挣开
                 Row stuck = p().r(NA, NA, 18);
                 out.add(k(stabK + 300, SINE, stuck));
-                out.add(k(g + MercyTimeline.FAIL_BREAKFREE - 60, SINE, p()));
+                out.add(k(free - 60, SINE, p()));
                 strainFrom = stabK + 120;
-                strainTo = g + MercyTimeline.FAIL_BREAKFREE;
+                strainTo = free;
                 // 刀被挣出来、整个人被震开：两臂往外甩、往后仰，脚在身前往后滑（服务端这 300 ms 把人往后推 1.5 格）
-                out.add(k(g + MercyTimeline.FAIL_BREAKFREE + 70, OUT, p().tw(-22).ln(-14).sq(0).sh(-2)
+                out.add(k(free + 70, OUT, p().tw(-22).ln(-14).sq(0).sh(-2)
                         .r(78, -55, 0).aim(0).pull(0).l(135, -25, 0).grip(0).reach(0).legs(-6, 10).hd(-14, 6)));
-                out.add(k(g + MercyTimeline.FAIL_BREAKFREE + 300, SINE, p().tw(-14).ln(-18).sh(-3)
+                out.add(k(free + 300, SINE, p().tw(-14).ln(-18).sh(-3)
                         .r(60, -60, 20).l(118, -30, 0).legs(16, -12).hd(-10, 4)));
                 // 踉跄一步稳住，刀横在身前防着它
-                out.add(k(g + MercyTimeline.FAIL_BREAKFREE + 460, OUT, p().tw(-6).ln(12).sq(0.4F).sh(0)
+                out.add(k(free + 460, OUT, p().tw(-6).ln(12).sq(0.4F).sh(0)
                         .r(38, -45, 20).l(50, -30, 0).legs(-22, 20).hd(4, 0)));
-                out.add(k(g + MercyTimeline.FAIL_BREAKFREE + 800, SINE, p().tw(-10).ln(12).sq(0.25F).sh(0.5F)
+                out.add(k(free + 800, SINE, p().tw(-10).ln(12).sq(0.25F).sh(0.5F)
                         .r(62, -12, -20).l(42, 25, 0).legs(-16, 16).hd(0, 0)));
                 int handback = MercyTimeline.handbackMs(p, shortOutro);
                 out.add(k(handback, handback - 200, SINE, zero()));
@@ -1002,8 +1066,9 @@ public final class MercyPose {
         }
         Key[] keys = resolve(out);
         Key[][] fp = v.thrall ? thrallFirstPerson(v) : lichFirstPerson(p, stabs);
+        Anchors anchors = v.thrall ? scaled(anchorsOf(v), v, scale) : anchorsOf(v);
         Track tr = new Track(keys, resolve(Arrays.asList(fp[0])), resolve(Arrays.asList(fp[1])), resolve(body), stabs,
-                weight, anchorsOf(v), strainFrom, strainTo);
+                weight, anchors, strainFrom, strainTo);
         if (v == MercyVariant.LICH_E) {
             tr.alt = ANCHOR_E;
             tr.altFrom = S1 + 560;
@@ -1297,7 +1362,7 @@ public final class MercyPose {
         // 头看向目标胸口，再叠点头、歪头；翻过来的时候看不了，头跟着身子走
         Entity target = e.target();
         double ax = target != null ? target.getX() : e.pl.x;
-        double ay = target != null ? target.getY() + target.getBbHeight() * 0.62D : e.pl.y + 1.45D;
+        double ay = target != null ? MercyTimeline.chest(target).y : e.pl.y + 1.45D;
         double az = target != null ? target.getZ() : e.pl.z;
         boolean moved = body(e, t, BODY);
         double dx = ax - (moved ? BODY.x : entity.getX());
@@ -1477,21 +1542,21 @@ public final class MercyPose {
             r.add(f(s - 200, SINE, 0.50F, -0.46F, 0.40F, -8, -25));
             r.add(f(s - 115, SINE, 0.53F, -0.45F, 0.36F, -10, -28));
             r.add(f(s, OUT, 0.12F, -0.36F, 1.00F, 6, 0));
-            if (last && oc == MercyTimeline.Outcome.FAIL) {
-                int g = MercyTimeline.failFillMs(p);
-                stabFollow(r, s, 0.10F, -0.37F, 1.06F, 8, g + MercyTimeline.FAIL_BREAKFREE);
+            if (last && (oc == MercyTimeline.Outcome.FAIL || oc == MercyTimeline.Outcome.ADVANCE)) {
+                int free = MercyTimeline.breakFreeMs(p);
+                stabFollow(r, s, 0.10F, -0.37F, 1.06F, 8, free);
                 // 被震开：刀被挣出来，两只手往外一甩
-                r.add(f(g + MercyTimeline.FAIL_BREAKFREE + 80, OUT, 0.62F, -0.30F, 0.30F, -20, 0));
-                l.add(f(g + MercyTimeline.FAIL_BREAKFREE, SINE, -0.16F, -0.21F, 0.80F, 6, 0));
-                l.add(f(g + MercyTimeline.FAIL_BREAKFREE + 80, OUT, -0.50F, -0.10F, 0.55F, -20, 0));
-                r.add(f(g + MercyTimeline.FAIL_BREAKFREE + 700, SINE, 0.40F, -0.48F, 0.55F, 0, -10));
-                l.add(f(g + MercyTimeline.FAIL_BREAKFREE + 700, SINE, -0.45F, -0.70F, 0.55F, 0, 0));
+                r.add(f(free + 80, OUT, 0.62F, -0.30F, 0.30F, -20, 0));
+                l.add(f(free, SINE, -0.16F, -0.21F, 0.80F, 6, 0));
+                l.add(f(free + 80, OUT, -0.50F, -0.10F, 0.55F, -20, 0));
+                r.add(f(free + 700, SINE, 0.40F, -0.48F, 0.55F, 0, -10));
+                l.add(f(free + 700, SINE, -0.45F, -0.70F, 0.55F, 0, 0));
             } else {
                 stabFollow(r, s, 0.10F, -0.37F, 1.06F, 8, s + 460);
                 r.add(f(s + 620, IN, 0.45F, -0.42F, 0.45F, -6, -15));
             }
         }
-        if (oc != MercyTimeline.Outcome.FAIL) {
+        if (oc == MercyTimeline.Outcome.SUCCESS) {
             int end = stabs[stabs.length - 1];
             l.add(f(end + 330, SINE, -0.45F, -0.70F, 0.60F, 0, 0));
             r.add(f(end + 900, OUT, 0.60F, -0.72F, 0.55F, 10, 30));

@@ -7,12 +7,14 @@ import pers.roinflam.kuvalich.client.comm.CommHud;
 import pers.roinflam.kuvalich.client.comm.CommLine;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.hud.DecryptionHudOverlay;
+import pers.roinflam.kuvalich.client.gui.hud.NoticeHud;
 import pers.roinflam.kuvalich.client.lich.ClientLichArchive;
 import pers.roinflam.kuvalich.client.lich.ClientLichState;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.network.packet.KuvaCommPacket;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
+import pers.roinflam.kuvalich.network.packet.NoticePacket;
 
 /**
  * 几个服务端 → 客户端的包到了以后的客户端处理
@@ -33,6 +35,11 @@ public final class ClientPacketHandlers {
     public static void onComm(KuvaCommPacket msg) {
         CommHud.enqueue(new CommLine(msg.speaker, msg.flags, msg.name, msg.line, msg.look, msg.holdMs,
                 KuvaFxDirector.clockMs()));
+    }
+
+    /** 一条玩家提示到了：开着提示条就排进去，关着就交回原版聊天 / 动作栏 */
+    public static void onNotice(NoticePacket msg) {
+        NoticeHud.accept(msg);
     }
 
     /** 玄骸状态到了 */

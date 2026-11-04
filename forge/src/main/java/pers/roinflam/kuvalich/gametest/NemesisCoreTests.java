@@ -76,14 +76,14 @@ public final class NemesisCoreTests {
     private NemesisCoreTests() {
     }
 
-    // ==================== #1 揭开第一条密语就诞生 ====================
+    // ==================== #1 诞生 ====================
 
     @GameTest(template = "empty", batch = CORE)
-    public static void birthOnFirstClue(GameTestHelper h) {
+    public static void birthBasics(GameTestHelper h) {
         ServerPlayer p = KuvaTestKit.player(h);
         RequiemCard card = card(p);
         bornByProgress(p, card);
-        h.assertTrue(card.hasLich(), "揭开第一条密语后应当有玄骸");
+        h.assertTrue(card.hasLich(), "诞生后应当有玄骸");
         h.assertTrue(LichNames.isAllowed(card.getLichName()), "名字应当合规：" + card.getLichName());
         h.assertTrue(card.getLichGeneration() == 1, "第一只的代数应当是 1");
         h.assertTrue(LichDirector.stateOf(p) == LichState.STALKING, "刚诞生应当在跟踪：" + LichDirector.stateOf(p));
@@ -742,13 +742,14 @@ public final class NemesisCoreTests {
                 .orElseThrow(() -> new IllegalStateException("测试玩家没有安魂卡能力"));
     }
 
-    /** 走正常的进度流程揭开第一条密语：进度补到阈值 - 1，再加 1 点，紧跟着通知导演 */
+    /** 走正常的进度流程揭开第一条密语，再让玄骸诞生（平常要处决一只幼体，这里直接生） */
     private static void bornByProgress(ServerPlayer p, RequiemCard card) {
         int threshold = ModConfig.KUVA_LICH.firstStage.get();
         card.setDecryptionProgress(Math.max(0, threshold - 1));
         int levelBefore = card.getUnlockedCardStatus();
         card.addPotion(1);
         LichDirector.onDecryptionProgress(p, card, 1, levelBefore);
+        LichDirector.birthNow(p);
     }
 
     /** 立即召到面前并返回那只 */

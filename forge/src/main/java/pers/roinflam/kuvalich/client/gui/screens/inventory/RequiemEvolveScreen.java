@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
@@ -91,7 +92,7 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
     private static final int[] PULSE_RGBS = {FxPalette.KUVA, FxPalette.KUVA};
     private int[] bottomPath = new int[0];
 
-    /** 版式：中栏内容的顶、三格的中线 x、格子的中线 y、两条线的高度、状态行 */
+    /** 版式：背光和飘点的参照 y、三格的中线 x、格子的中线 y、两条线的高度、状态行 */
     private int pTop;
     private int inX;
     private int matX;
@@ -158,17 +159,34 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
                 () -> rowTip(row)));
     }
 
+    /**
+     * 炉膛半边和安魂之铸一样（窄屏 16、非窄屏 19），转弧半径按框角算。
+     * 横向：物品格左沿到炉膛右沿整块在中栏居中（以前偏左 5 格多）；炉膛背后的全息环比炉膛往右多伸 1.1 个半边，
+     * 居中以后环不能压到右分隔线和刻度，中栏只有 184 宽时就收紧材料格到炉膛这一段。
+     * 竖向：上下两条线离炉膛 6 格，还要离「材料」两个字 3 格以上；整块在中栏里居中，上沿不高过分隔线顶
+     */
     @Override
     protected void layout() {
-        pTop = small ? hairY + 1 : hairY + 5;
-        chHalf = small ? 18 : 21;
-        ocy = pTop + (small ? 34 : 42);
-        inX = cx - (small ? 66 : 74);
-        matX = inX + (small ? 48 : 54);
-        outX = cx + (small ? 46 : 52);
-        above = ocy - chHalf - 6;
-        below = ocy + chHalf + 6;
-        statusY = pTop + (small ? 86 : 100);
+        chHalf = small ? 16 : 19;
+        int dIM = small ? 48 : 50;
+        int dMO = small ? 64 : 72;
+        float room = sepR - 4 - cx - chHalf * 1.1F;
+        int over = Mth.ceil(dIM + dMO + 9 + chHalf - 2.0F * room);
+        if (over > 0) {
+            dMO -= over;
+        }
+        inX = cx - Math.round((dIM + dMO + chHalf - 9) * 0.5F);
+        matX = inX + dIM;
+        outX = matX + dMO;
+        int arc = chamberArcOuter(chHalf);
+        int lane = Math.max(chHalf + 6, 23);
+        int statusOff = small ? 52 : 58;
+        int top = middleTop(arc + 1 + statusOff + 11, sepT + 1, -1);
+        ocy = top + arc + 1;
+        pTop = ocy - (small ? 34 : 42);
+        above = ocy - lane;
+        below = ocy + lane;
+        statusY = ocy + statusOff;
         Slot in = menu.getSlot(IN);
         Slot mat = menu.getSlot(MAT);
         resultSlot = menu.getSlot(RES);
@@ -385,12 +403,28 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
         drawPulses(g, pulsePaths, PULSE_RGBS, 1700, now, e);
     }
 
-    /** 左格下面写「物品」、中格上面写「材料」：各自的线往另一边走，字放在没线的那一侧 */
+    /**
+     * 左格下面写「物品」、中格上面写「材料」：各自的线往另一边走，字放在没线的那一侧。
+     * 两个字离各自的格框一样空 2 格（以前上 2 下 3）
+     */
     private void drawCaptions(GuiGraphics g, float eT) {
         Slot in = menu.getSlot(IN);
         Slot mat = menu.getSlot(MAT);
-        textC(g, tr("kuvalich.evolve.slot.item"), inX, in.y + 20, FxPalette.ASH, 0.6F * eT);
+        textC(g, tr("kuvalich.evolve.slot.item"), inX, in.y + 19, FxPalette.ASH, 0.6F * eT);
         textC(g, tr("kuvalich.evolve.slot.material"), matX, mat.y - 11, FxPalette.ASH, 0.6F * eT);
+    }
+
+    /**
+     * 材料格上面写着「材料」，再上面还有一条线，扣材料的「−N」改到格子左下方（往下那条线的左边，和「物品」同一行），
+     * 右对齐、只淡出不飘。格子右边、右下都挨着炉膛的转弧和往右的箭头，「−120」在默认字体下 24 宽，放那边会压上去
+     */
+    @Override
+    protected void drawSpend(GuiGraphics g, Slot s, String text, float u, float a) {
+        if (s.index != MAT) {
+            super.drawSpend(g, s, text, u, a);
+            return;
+        }
+        textR(g, text, s.x + 5, s.y + 19, FxPalette.KUVA, a);
     }
 
     /** 状态行：提示 → 结果 → 凑不成的原因 → 还差哪一边 */

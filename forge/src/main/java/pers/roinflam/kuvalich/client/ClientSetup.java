@@ -10,6 +10,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import pers.roinflam.kuvalich.client.fx.KuvaParticleProviders;
 import pers.roinflam.kuvalich.client.gui.screens.inventory.*;
 import pers.roinflam.kuvalich.client.renderer.KuvaMasterRenderer;
+import pers.roinflam.kuvalich.client.renderer.KuvaLarvlingRenderer;
 import pers.roinflam.kuvalich.client.renderer.KuvaSlaveRenderer;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichMenuTypes;
@@ -114,6 +115,9 @@ public class ClientSetup {
     private static void registerEntityRenderers() {
         // 注册赤毒奴仆渲染器 / Register Kuva Slave renderer
         EntityRenderers.register(KuvaLichEntities.KUVA_SLAVE.get(), KuvaSlaveRenderer::new);
+
+        // 赤毒幼体
+        EntityRenderers.register(KuvaLichEntities.KUVA_LARVLING.get(), KuvaLarvlingRenderer::new);
 
         // 注册赤毒玄骸渲染器 / Register Kuva Master renderer
         EntityRenderers.register(KuvaLichEntities.KUVA_MASTER.get(), KuvaMasterRenderer::new);

@@ -10,6 +10,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,8 +23,10 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.module.level.ModuleLevelHelper;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.nemesis.WaitReason;
+import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -30,6 +34,7 @@ import pers.roinflam.kuvalich.utils.Reference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
  * 档案的客户端调试命令，只在开发环境注册（{@link FMLEnvironment#production} 为真时不注册）
@@ -44,6 +49,10 @@ import java.util.Locale;
  *       拳心位置（三种摆法共用）和这一种摆法绕拳心的转角（世界里、全身像、半身像），不带参数时打印当前值。</li>
  *   <li>{@code /kuvafxc archive heldweapon <下标>}：世界里的玄骸一律画成第几把武器（-1 还原；挨把看握没握住刀柄）。</li>
  *   <li>{@code /kuvafxc archive other on|off}：名牌和 Boss 条一律按「别人的玄骸」画（只有一个客户端时看第二行用）。</li>
+ *   <li>{@code /kuvafxc archive bardemo on|off}：Boss 条的增幅、适应层数换成演示值；off 连下面几项一起清掉。
+ *       {@code bardemo health|shield <0~100>}：生命、护盾按这个百分比画；
+ *       {@code bardemo down <打空几段 0~2> <秒> [起点%]}：按倒地画，正在回满的那段从起点按「这么多秒回满一整段」涨，
+ *       满了站起来，秒数写 0 就停在起点。都只换 Boss 条的画法，要场上有自己的玄骸（有 Boss 条）。</li>
  * </ul>
  *
  * <p>命令在聊天框里执行，执行完聊天框会关掉、顺手把刚开的界面也关了，所以界面挪到下一个客户端 tick 再开。</p>
@@ -99,7 +108,35 @@ public final class ArchiveDevCommands {
                                 })))
                         .then(Commands.literal("bardemo")
                                 .then(Commands.literal("on").executes(ctx -> barDemo(ctx.getSource(), true)))
-                                .then(Commands.literal("off").executes(ctx -> barDemo(ctx.getSource(), false))))
+                                .then(Commands.literal("off").executes(ctx -> barDemo(ctx.getSource(), false)))
+                                .then(Commands.literal("health")
+                                        .then(Commands.argument("percent", FloatArgumentType.floatArg(0.0F, 100.0F))
+                                                .executes(ctx -> barHealth(ctx.getSource(),
+                                                        FloatArgumentType.getFloat(ctx, "percent")))))
+                                .then(Commands.literal("shield")
+                                        .then(Commands.argument("percent", FloatArgumentType.floatArg(0.0F, 100.0F))
+                                                .executes(ctx -> barShield(ctx.getSource(),
+                                                        FloatArgumentType.getFloat(ctx, "percent")))))
+                                .then(Commands.literal("down")
+                                        .then(Commands.argument("phase", IntegerArgumentType.integer(0, 2))
+                                                .then(Commands.argument("seconds", FloatArgumentType.floatArg(0.0F, 600.0F))
+                                                        .executes(ctx -> barDown(ctx.getSource(),
+                                                                IntegerArgumentType.getInteger(ctx, "phase"),
+                                                                FloatArgumentType.getFloat(ctx, "seconds"), 0.0F))
+                                                        .then(Commands.argument("from",
+                                                                        FloatArgumentType.floatArg(0.0F, 100.0F))
+                                                                .executes(ctx -> barDown(ctx.getSource(),
+                                                                        IntegerArgumentType.getInteger(ctx, "phase"),
+                                                                        FloatArgumentType.getFloat(ctx, "seconds"),
+                                                                        FloatArgumentType.getFloat(ctx, "from"))))))))
+                        .then(Commands.literal("givemod")
+                                .then(Commands.argument("type", StringArgumentType.word())
+                                        .then(Commands.argument("rarity", IntegerArgumentType.integer(0, 3))
+                                                .then(Commands.argument("level", IntegerArgumentType.integer(0, 100))
+                                                        .executes(ctx -> giveModule(ctx.getSource(),
+                                                                StringArgumentType.getString(ctx, "type"),
+                                                                IntegerArgumentType.getInteger(ctx, "rarity"),
+                                                                IntegerArgumentType.getInteger(ctx, "level")))))))
                         .then(Commands.literal("other")
                                 .then(Commands.literal("on").executes(ctx -> other(ctx.getSource(), true)))
                                 .then(Commands.literal("off").executes(ctx -> other(ctx.getSource(), false))))
@@ -116,9 +153,60 @@ public final class ArchiveDevCommands {
     }
 
     /** Boss 条的增幅、适应层数换成演示值 */
+    /**
+     * 单人存档里直接往背包塞一张指定的武器模组并设等级（摆界面测试用）：走内置服务器的线程，取图鉴给物品用的同一份模组
+     */
+    private static int giveModule(CommandSourceStack src, String type, int rarity, int level) {
+        Minecraft mc = Minecraft.getInstance();
+        MinecraftServer server = mc.getSingleplayerServer();
+        if (server == null || mc.player == null) {
+            src.sendFailure(Component.literal("singleplayer only"));
+            return 0;
+        }
+        UUID id = mc.player.getUUID();
+        server.execute(() -> {
+            ServerPlayer p = server.getPlayerList().getPlayer(id);
+            ItemStack st = CodexGiveItemPacket.findModule(type, true, rarity).copy();
+            if (p == null || st.isEmpty()) {
+                return;
+            }
+            if (level > 0) {
+                ModuleLevelHelper.setModuleLevel(st, level);
+            }
+            p.getInventory().add(st);
+        });
+        src.sendSuccess(() -> Component.literal("give module " + type), false);
+        return 1;
+    }
+
     private static int barDemo(CommandSourceStack src, boolean on) {
         LichBossBar.demoReadout = on;
+        if (!on) {
+            LichBossBar.clearDemo();
+        }
         src.sendSuccess(() -> Component.literal("boss bar demo " + (on ? "on" : "off")), false);
+        return 1;
+    }
+
+    /** Boss 条的生命按这个百分比画 */
+    private static int barHealth(CommandSourceStack src, float percent) {
+        LichBossBar.demoHealth = percent / 100.0F;
+        src.sendSuccess(() -> Component.literal("boss bar health " + percent + "%"), false);
+        return 1;
+    }
+
+    /** Boss 条的护盾按上限的这个百分比画（往上调时照常从左往右长） */
+    private static int barShield(CommandSourceStack src, float percent) {
+        LichBossBar.demoShield = percent / 100.0F;
+        src.sendSuccess(() -> Component.literal("boss bar shield " + percent + "%"), false);
+        return 1;
+    }
+
+    /** Boss 条按倒地画：打空了 {@code phase} 段，那段从 {@code from}% 起按 {@code seconds} 秒回满一整段的速度涨 */
+    private static int barDown(CommandSourceStack src, int phase, float seconds, float from) {
+        LichBossBar.demoDown(phase, seconds, from / 100.0F);
+        src.sendSuccess(() -> Component.literal("boss bar downed: phase " + phase + ", "
+                + (seconds > 0.0F ? seconds + " s per segment" : "held") + " from " + from + "%"), false);
         return 1;
     }
 

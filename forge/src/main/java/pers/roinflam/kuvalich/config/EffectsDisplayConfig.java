@@ -62,6 +62,7 @@ public final class EffectsDisplayConfig {
     private static ForgeConfigSpec.BooleanValue mercyShortOutro;
     private static ForgeConfigSpec.BooleanValue mercyRankupSound;
     private static ForgeConfigSpec.BooleanValue kuvaStateFx;
+    private static ForgeConfigSpec.BooleanValue hudNotices;
 
     private static volatile Intensity cachedIntensity = Intensity.FULL;
     private static volatile boolean cachedAdditiveGlow = true;
@@ -88,6 +89,7 @@ public final class EffectsDisplayConfig {
     private static volatile boolean cachedMercyShortOutro = false;
     private static volatile boolean cachedMercyRankupSound = false;
     private static volatile boolean cachedKuvaStateFx = true;
+    private static volatile boolean cachedHudNotices = true;
 
     private EffectsDisplayConfig() {
     }
@@ -198,6 +200,10 @@ public final class EffectsDisplayConfig {
                         "Show Lich and Thrall status effects: adaptation shield, blocked hits, weak points, battle fury, life steal. Also controls their sounds: turned off, the adaptation shield is silent too",
                         "显示玄骸和奴仆身上的状态：适应护壁、挡住、弱点、战斗增幅、吸血。也管这些状态的声音：关掉后适应护壁也不出声")
                 .define("kuva_state_fx", true);
+        hudNotices = builder.comment(
+                        "Show this mod's messages (Ultimatum, Mercy, Death Resistance, confiscation, rewards...) as notice bars above the hotbar. When off, they go to the action bar and chat as before",
+                        "本模组的提示（安魂通牒、处决、死亡抵抗、没收、奖励等）显示成物品栏上方的提示条；关掉后照旧进动作栏和聊天栏")
+                .define("hud_notices", true);
         builder.pop();
     }
 
@@ -326,6 +332,11 @@ public final class EffectsDisplayConfig {
         return cachedKuvaStateFx;
     }
 
+    /** 本模组的提示画成提示条；关掉时交回原版动作栏 / 聊天栏 */
+    public static boolean hudNotices() {
+        return cachedHudNotices;
+    }
+
     private static void refresh(ModConfigEvent event) {
         if (intensity != null && event.getConfig().getSpec() == TooltipConfig.CLIENT_CONFIG) {
             cachedIntensity = intensity.get();
@@ -353,6 +364,7 @@ public final class EffectsDisplayConfig {
             cachedMercyShortOutro = mercyShortOutro.get();
             cachedMercyRankupSound = mercyRankupSound.get();
             cachedKuvaStateFx = kuvaStateFx.get();
+            cachedHudNotices = hudNotices.get();
         }
     }
 

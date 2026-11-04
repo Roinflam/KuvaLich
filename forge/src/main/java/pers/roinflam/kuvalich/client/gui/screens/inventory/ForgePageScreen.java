@@ -334,8 +334,13 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
         if (spend != null && sp < 800) {
             float u = sp / 800.0F;
             float a = sp < 400 ? 1.0F : 1.0F - (sp - 400) / 400.0F;
-            textC(g, "-" + spend.stack().getCount(), s.x + 8, s.y - 10 - 6.0F * easeOut(u), FxPalette.KUVA, a);
+            drawSpend(g, s, "-" + spend.stack().getCount(), easeOut(u), a);
         }
+    }
+
+    /** 扣材料时飘的「−N」：默认从格子正上方往上飘 6 格。格子上方有标签的页面覆写成别的位置；{@code u} 是 0~1 的进度 */
+    protected void drawSpend(GuiGraphics g, Slot s, String text, float u, float a) {
+        textC(g, text, s.x + 8, s.y - 10 - 6.0F * u, FxPalette.KUVA, a);
     }
 
     // ==================== 炉膛 ====================
@@ -363,12 +368,12 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
         float rot = (now % 12000L) / 12000.0F * Mth.TWO_PI;
         float lineW = GuiShapes.pixels(g, lw());
         int arcRgb = shown ? rgb : FxPalette.KUVA_PALE;
-        float ar = h + 6.0F;
+        float ar = chamberArc(h);
         GuiShapes.additive(g, true);
         GuiShapes.begin(g);
         arc(g, ox, oy, ar, ar, rot, 1.4F, lineW, GuiShapes.argb(arcRgb, (shown ? 0.4F : 0.18F) * e));
         arc(g, ox, oy, ar, ar, rot + Mth.PI, 0.5F, lineW, GuiShapes.argb(arcRgb, (shown ? 0.3F : 0.12F) * e));
-        arc(g, ox, oy, ar + 3.0F, ar + 3.0F, -rot * 1.5F, 0.8F, lineW * 2.0F,
+        arc(g, ox, oy, chamberArcOuter(h), chamberArcOuter(h), -rot * 1.5F, 0.8F, lineW * 2.0F,
                 GuiShapes.argb(FxPalette.KUVA, (shown ? 0.3F : 0.12F) * e));
         GuiShapes.end();
         GuiShapes.additive(g, false);
@@ -460,6 +465,19 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
             fill(g, x0, y0, x0 + 16, y0 + 16, INK, cov);
             GuiShapes.end();
         }
+    }
+
+    /**
+     * 炉膛外面那道转弧的半径：框角离中心 h√2，弧比它大 2 格才绕得开四个角
+     * （以前取 h + 6，h = 18 时 24 对 25.5、h = 21 时 27 对 29.7，弧转到角上就切进框里）
+     */
+    protected static int chamberArc(int h) {
+        return Mth.ceil(h * (float) Math.sqrt(2.0D)) + 2;
+    }
+
+    /** 最外一道（双倍线宽、反着转）的半径，比 {@link #chamberArc} 再大 3 格；子类排版时拿它当炉膛占的范围 */
+    protected static int chamberArcOuter(int h) {
+        return chamberArc(h) + 3;
     }
 
     /** 四个 L 角 */
@@ -569,6 +587,17 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
         GuiShapes.hairline(g, x + 1.0F, y, x - 1.5F, y + 2.5F, w, c);
     }
 
+    /** 向左的小箭头（{@link #chevronRight} 左右翻过来） */
+    protected static void chevronLeft(GuiGraphics g, float x, float y, int rgb, float a) {
+        if (a <= 0.002F) {
+            return;
+        }
+        float w = GuiShapes.pixels(g, lw());
+        int c = GuiShapes.argb(rgb, a);
+        GuiShapes.hairline(g, x + 1.5F, y - 2.5F, x - 1.0F, y, w, c);
+        GuiShapes.hairline(g, x - 1.0F, y, x + 1.5F, y + 2.5F, w, c);
+    }
+
     // ==================== 左栏：标题、配方表 ====================
 
     /** 左栏标题和下面一个小节名，返回小节内容从哪个 y 开始 */
@@ -598,13 +627,22 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
             float target = (lit >> i & 1) != 0 ? 1.0F : (hint >> i & 1) != 0 ? 0.55F : 0.0F;
             rowGlow[i] += (target - rowGlow[i]) * k;
             float gl = rowGlow[i];
-            List<String> sub = r.sub() == null ? List.of() : wrapEven(r.sub().getString(), textW);
+            // 小字的右边就是左栏边，一格也不能多出去
+            List<String> sub = r.sub() == null ? List.of() : wrapEvenWithin(r.sub().getString(), textW);
             int lines = Math.min(2, sub.size());
+            if (sub.size() > 2) {
+                // 只画两行，第二行截短补省略号（整句在悬停说明里）
+                sub = List.of(sub.get(0), fit(sub.get(1) + ELLIPSIS, textW));
+            }
             int rowH = (small ? 19 : 21) + (lines > 0 ? 10 * lines - (small ? 2 : 0) : 0);
+            // 高亮底按这一行实际画了东西的范围（图标 16 高；有小字时到最后一行字的底）上下各留一样多：
+            // 以前一律 y − 2 ~ y + rowH − 3，有小字的行下面空出 10 格，窄屏没小字的行图标贴着底边
+            int contentH = Math.max(16, lines > 0 ? 8 + 10 * lines : 0);
+            int pad = Math.min(2, (rowH - contentH - 1) / 2);
             if (gl > 0.01F) {
                 GuiShapes.begin(g);
-                fill(g, lx0 - 3, y - 2, lx1, y + rowH - 3, FxPalette.KUVA, 0.07F * gl * eT);
-                fill(g, lx0 - 5, y - 2, lx0 - 4, y + rowH - 3, FxPalette.KUVA, 0.9F * gl * eT);
+                fill(g, lx0 - 3, y - pad, lx1, y + contentH + pad, FxPalette.KUVA, 0.07F * gl * eT);
+                fill(g, lx0 - 5, y - pad, lx0 - 4, y + contentH + pad, FxPalette.KUVA, 0.9F * gl * eT);
                 GuiShapes.end();
             }
             long t = now - openClock;
@@ -692,10 +730,12 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
             long ch = now - stockAt[i];
             int d = stockDelta[i];
             if (ch < STOCK_FLASH_MS && d != 0) {
-                float u = ch / (float) STOCK_FLASH_MS;
                 float al = ch < 450 ? 1.0F : 1.0F - (ch - 450) / (float) (STOCK_FLASH_MS - 450);
-                textC(g, (d > 0 ? "+" : "-") + Math.abs(d), x + 8, y - 9 - 5.0F * easeOut(u),
-                        d > 0 ? FxPalette.KUVA_PALE : FxPalette.KUVA, al);
+                // 增减叠在这一格图标的左上角（数量在右下角），带墨色投影，只淡出不飘。
+                // 以前飘到格子上方 9~14 格，正好压在上一排的数量、第一排压在小节下划线上
+                String s = (d > 0 ? "+" : "-") + Math.abs(d);
+                text(g, s, x + 1, y + 1, INK, al);
+                text(g, s, x, y, d > 0 ? FxPalette.KUVA_PALE : FxPalette.KUVA, al);
             }
         }
     }
@@ -721,7 +761,9 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
 
     /**
      * 右栏底部的「流程」：一步一行，左边一颗菱形，上下用点线串起来。完成的实心、正在等的那一步呼吸着亮、
-     * 还没轮到的空心发灰，出错的那一步是红叉；一步刚完成时菱形往外扩一圈。贴着栏底排
+     * 还没轮到的空心发灰，出错的那一步是红叉；一步刚完成时菱形往外扩一圈。
+     * 最后一步落在页底那一行（{@link #botY}，和灭骸之扉的档案入口同一行）：分隔线下面这一截本来空着，
+     * 以前整块排在分隔线以上，窄屏里右栏的说明会被挤掉一两行
      *
      * @return 这一块最上面的 y（上面的说明排到这里为止）
      */
@@ -733,7 +775,7 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
             stepAt = new long[n];
             Arrays.fill(stepAt, Long.MIN_VALUE / 4);
         }
-        int top = sepB - 2 - n * STEP_ROW - 15;
+        int top = botY - 16 - (n - 1) * STEP_ROW;
         text(g, tr("kuvalich.forge.steps"), rx0, top, FxPalette.ASH, eF);
         hlFade(g, rx0, rx1, top + 11, FxPalette.KUVA_PALE, 0.3F * eF);
         int y = top + 16;
@@ -812,19 +854,73 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
         hl(g, rx0, rx1, hairY, FxPalette.KUVA_PALE, 0.35F * eF);
     }
 
-    /** 一段段字往下排（按栏宽断行），到 {@code maxY} 为止，返回排到的 y */
+    /**
+     * 一段段字往下排（按栏宽断行，每行都不超过 {@code w}），到 {@code maxY} 为止，返回排到的 y。
+     * 排不下时先把段后的空都压成 1 格；还排不下就画到放得下的最后一行、截短补省略号，鼠标停在这一栏上看全文。
+     * 以前排到底直接不画了，最后一句（往往是「不可撤销」这种提醒）没了也看不出来
+     */
     protected int drawLines(GuiGraphics g, List<Line> lines, int x, int y, float w, float alpha, int maxY) {
+        List<String> rows = new ArrayList<>();
+        List<Line> from = new ArrayList<>();
+        List<Integer> gaps = new ArrayList<>();
         for (Line line : lines) {
-            for (String s : wrapEven(line.text(), w)) {
-                if (y + 9 > maxY) {
-                    return y;
-                }
-                text(g, s, x, y, line.rgb(), line.alpha() * alpha);
-                y += 10;
+            List<String> ws = noLeadingDot(wrapEvenWithin(line.text(), w), w);
+            for (int i = 0; i < ws.size(); i++) {
+                rows.add(ws.get(i));
+                from.add(line);
+                gaps.add(i == ws.size() - 1 ? line.gap() : 0);
             }
-            y += line.gap();
+        }
+        int n = rows.size();
+        if (n == 0) {
+            return y;
+        }
+        int full = 0;
+        int squeezed = 0;
+        for (int k = 0; k < n - 1; k++) {
+            full += gaps.get(k);
+            squeezed += Math.min(1, gaps.get(k));
+        }
+        boolean squeeze = y + 10 * (n - 1) + full + 9 > maxY;
+        boolean cut = squeeze && y + 10 * (n - 1) + squeezed + 9 > maxY;
+        int y0 = y;
+        for (int k = 0; k < n; k++) {
+            if (y + 9 > maxY) {
+                break;
+            }
+            String s = rows.get(k);
+            Line line = from.get(k);
+            int gap = squeeze ? Math.min(1, gaps.get(k)) : gaps.get(k);
+            boolean last = cut && (k + 1 >= n || y + 10 + gap + 9 > maxY);
+            text(g, last ? fit(s + ELLIPSIS, w) : s, x, y, line.rgb(), line.alpha() * alpha);
+            y += 10 + gap;
+            if (last) {
+                break;
+            }
+        }
+        if (cut) {
+            List<Component> tip = new ArrayList<>();
+            for (Line line : lines) {
+                tip.add(Component.literal(line.text())
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(line.rgb()))));
+            }
+            hot(x, y0 - 1, x + w, y, () -> tip, null);
         }
         return y;
+    }
+
+    /** 「·」不放行首：断在「名字 · 材料」的点前面时，把点挪到上一行末尾（上一行放得下的话） */
+    private List<String> noLeadingDot(List<String> ws, float w) {
+        for (int i = 1; i < ws.size(); i++) {
+            String cur = ws.get(i);
+            if (cur.startsWith("·") && textW(ws.get(i - 1) + " ·", 0.0F) <= w) {
+                List<String> out = new ArrayList<>(ws);
+                out.set(i - 1, ws.get(i - 1) + " ·");
+                out.set(i, cur.substring(1).strip());
+                ws = out;
+            }
+        }
+        return ws;
     }
 
     /** 名字「解码」出来：揭示后 {@code age} 毫秒时解到第几个字（前沿带几个乱码） */

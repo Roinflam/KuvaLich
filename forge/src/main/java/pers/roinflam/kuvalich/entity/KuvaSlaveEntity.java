@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
+import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.fx.FxId;
 import pers.roinflam.kuvalich.fx.KuvaFx;
@@ -34,8 +35,9 @@ import pers.roinflam.kuvalich.item.module.weapon.*;
 import pers.roinflam.kuvalich.item.module.warframe.*;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.utils.RandomUtil;
-import pers.roinflam.kuvalich.utils.KuvaPalette;
-import pers.roinflam.kuvalich.utils.PlayerFeedback;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 赤毒奴仆实体
@@ -188,26 +190,95 @@ public class KuvaSlaveEntity extends AbstractKuva {
      * <p>怜悯之击开着时只有处决走完的那次死亡给东西；{@code /kill}、虚空、摔死、被别的怪打死这类绕过倒地的死亡什么都不给。
      * 关着时照旧：被玩家打死就给。演示用的奴仆一律不给。</p>
      *
-     * <p>先发死亡包、再给进度和掉落：客户端的密语光点和解密 HUD 的进度音靠这个先后对齐。</p>
+     * <p>给什么：处决者（击杀者）有玄骸就加怒气、掉落归他；解密进度给 {@code thrallProgressShareRange} 格内所有有玄骸的人
+     * （击杀者有玄骸时不管多远都算他一份），同样多。没有玄骸的人拿不到进度——玄骸只能从幼体诞生。</p>
+     *
+     * <p>先发死亡包、再给进度和掉落：客户端的密语光点和解密 HUD 的进度音靠这个先后对齐。密语光点飞向击杀者，
+     * 他没分到进度时飞向离得最近的分到的人。</p>
      */
     @Override
     protected void onKilled(DamageSource source) {
         boolean reward = (isMercyFinishing() || !MercyRules.enabledFor(this)) && !isDemo();
         Player player = source.getEntity() instanceof Player p ? p : null;
-        boolean gaveProgress = reward && player != null
-                && player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).isPresent();
-        int b = (gaveProgress ? DEATH_GAVE_PROGRESS : 0) | (isMercyFinishing() ? DEATH_AFTER_MERCY : 0);
-        sendThrallDeath(player, b);
+        List<ServerPlayer> sharers = reward && player != null ? progressRecipients(player) : List.of();
+        Player stream = streamTarget(player, sharers);
+        int b = (stream != null ? DEATH_GAVE_PROGRESS : 0) | (isMercyFinishing() ? DEATH_AFTER_MERCY : 0);
+        sendThrallDeath(stream != null ? stream : player, b);
         markDeathFxSent();
         if (!reward || player == null) {
             return;
         }
-        // 先记处决的怒气、再给进度：这一下要是揭开了第一条密语，玄骸是在这之后才诞生的，
-        // 不该把这只奴仆的处决算到刚出生的玄骸头上（出生时的怒气照配置的初值）
+        // 先记处决的怒气、再给进度：这一下要是揭开了新的密语，那一份怒气另算，不和处决的混在一起
         if (player instanceof ServerPlayer serverPlayer) {
             LichDirector.onThrallExecuted(serverPlayer, this);
         }
-        handlePlayerKill(player);
+        dropLoot(player);
+        shareProgress(sharers);
+    }
+
+    /**
+     * 这一只的解密进度给谁：击杀者有玄骸就有他；再加上范围内（同一个世界、活着、不是旁观）所有有玄骸的玩家。
+     * 范围是 0 时只看击杀者
+     */
+    private List<ServerPlayer> progressRecipients(Player killer) {
+        List<ServerPlayer> out = new ArrayList<>();
+        if (killer instanceof ServerPlayer sp && hasLich(sp)) {
+            out.add(sp);
+        }
+        int range = ModConfig.KUVA_LICH.thrallProgressShareRange.get();
+        if (range <= 0 || !(level() instanceof ServerLevel serverLevel)) {
+            return out;
+        }
+        double rangeSq = (double) range * range;
+        for (ServerPlayer p : serverLevel.players()) {
+            if (p != killer && p.isAlive() && !p.isSpectator() && p.distanceToSqr(this) <= rangeSq && hasLich(p)) {
+                out.add(p);
+            }
+        }
+        return out;
+    }
+
+    private static boolean hasLich(ServerPlayer p) {
+        RequiemCard card = p.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).orElse(null);
+        return card != null && card.hasLich();
+    }
+
+    /** 密语光点飞向谁：击杀者分到了就是他，否则离这里最近的分到的人；谁都没分到返回 null */
+    @Nullable
+    private Player streamTarget(@Nullable Player killer, List<ServerPlayer> sharers) {
+        if (sharers.isEmpty()) {
+            return null;
+        }
+        if (killer != null && sharers.contains(killer)) {
+            return killer;
+        }
+        ServerPlayer best = null;
+        double bestSq = Double.MAX_VALUE;
+        for (ServerPlayer p : sharers) {
+            double d = p.distanceToSqr(this);
+            if (d < bestSq) {
+                bestSq = d;
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    /** 掷一次进度，分到的人每人加这么多 */
+    private void shareProgress(List<ServerPlayer> sharers) {
+        if (sharers.isEmpty()) {
+            return;
+        }
+        int amount = RandomUtil.getInt(
+                ModConfig.KUVA_LICH.minDecryptionProgress.get(),
+                ModConfig.KUVA_LICH.maxDecryptionProgress.get()
+        );
+        for (ServerPlayer p : sharers) {
+            RequiemCard card = p.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).orElse(null);
+            if (card != null) {
+                giveDecryptionProgress(p, card, amount);
+            }
+        }
     }
 
     /** 没有别的路发过死亡包时的默认那个（什么都没给） */
@@ -224,49 +295,24 @@ public class KuvaSlaveEntity extends AbstractKuva {
     }
 
     /**
-     * 处理玩家击杀奴仆的逻辑
-     * 给予解密进度并掉落物品
-     *
-     * @param player 击杀的玩家
-     */
-    private void handlePlayerKill(Player player) {
-        player.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).ifPresent(requiemCard -> {
-            giveDecryptionProgress(player, requiemCard);
-            dropLoot(player);
-        });
-    }
-
-    /**
      * 给予安魂密语解密进度
      *
      * @param player 玩家
      * @param requiemCard 安魂卡片能力
+     * @param addPotion 加多少（同一只奴仆分给几个人时是同一个数）
      */
-    private void giveDecryptionProgress(Player player, pers.roinflam.kuvalich.capability.RequiemCard requiemCard) {
-        int addPotion = RandomUtil.getInt(
-                ModConfig.KUVA_LICH.minDecryptionProgress.get(),
-                ModConfig.KUVA_LICH.maxDecryptionProgress.get()
-        );
-
+    private void giveDecryptionProgress(Player player, RequiemCard requiemCard, int addPotion) {
         // 记录加成前的阶段，用于判断本次是否揭示了新线索
         int levelBefore = requiemCard.getUnlockedCardStatus();
 
         if (requiemCard.addPotion(addPotion)) {
             // 同步顶部解密HUD（带过渡动画；阶段推进时触发揭示提示）
             DecryptionHudPacket.sendProgress(player, requiemCard, addPotion, levelBefore);
-            // 和玄骸那份一样紧跟着通知导演：没有玄骸时揭开第一条密语就在这里诞生，有玄骸时进度和揭示加怒气
+            // 和玄骸那份一样紧跟着通知导演：进度和揭示加怒气
             if (player instanceof ServerPlayer serverPlayer) {
                 LichDirector.onDecryptionProgress(serverPlayer, requiemCard, addPotion, levelBefore);
             }
-
-            boolean max = requiemCard.getPointsRequired() == -1;
-            // 走动作栏而不是聊天框：刷奴仆时这条每杀一只发一次，
-            // 而顶部的解密 HUD 已经在显示同一件事，进聊天历史纯属刷屏。
-            PlayerFeedback.actionBar(player, KuvaPalette.PROGRESS,
-                    "message.kuvalich.getPoints",
-                    addPotion,
-                    max ? "Max" : requiemCard.getDecryptionProgress(),
-                    max ? "Max" : requiemCard.getPointsRequired());
+            // 不再另发「解密进度 +N」的文字提示：顶部解密 HUD 已经在显示同一件事
         } else {
             // 已满级（线索全部揭示）：进度未变化，但仍补发一个 added=0 的进度包，
             // 使顶部HUD在满级后继续击杀时也能弹出（显示满进度条与提示，不触发闪光）
@@ -274,7 +320,7 @@ public class KuvaSlaveEntity extends AbstractKuva {
             if (player instanceof ServerPlayer serverPlayer) {
                 LichDirector.onDecryptionProgress(serverPlayer, requiemCard, 0, levelBefore);
             }
-            PlayerFeedback.actionBar(player, KuvaPalette.ACCENT, "message.kuvalich.maxLevel");
+            // 「三条密语都已揭开」同样不另发：解密 HUD 这时显示三枚并排和「三条密语已全部揭示」
         }
     }
 

@@ -5,8 +5,8 @@ package pers.roinflam.kuvalich.mercy;
  * （也写进实体同步数据，给晚进视野的客户端选姿势）。
  *
  * <pre>
- *  bit 0~1    刀数（玄骸 3，奴仆 1）
- *  bit 2~3    前缀长度 p（0~3；奴仆为 0）
+ *  bit 0~1    刀数：玄骸 1~3（第 k 次处决验前 k 张卡，就捅 k 刀），奴仆 1；0 按 3 读
+ *  bit 2~3    前缀长度 p（0~刀数；奴仆为 0）。只记到这次要验的刀数为止，后面几张对不对不往客户端透露
  *  bit 4~7    套路编号（{@link MercyVariant#id}）
  *  bit 8~11   第 1 张卡的 id + 1（0 = 没放）
  *  bit 12~15  第 2 张
@@ -29,8 +29,9 @@ public final class MercyPlan {
     /**
      * 解开后的计划
      *
-     * @param stabs        刀数，玄骸 3、奴仆 1
-     * @param prefix       猜对的前缀长度，3 = 成功，小于 3 在第 prefix + 1 刀判错（空格算错）
+     * @param stabs        刀数：玄骸是这次要验的张数（1~3），奴仆 1
+     * @param prefix       猜对的前缀长度（不超过刀数）：等于刀数 = 这次验的全对（第三次才算终结），
+     *                     小于刀数在第 prefix + 1 刀判错（空格算错）
      * @param variant      套路
      * @param cardIds      三张卡的 id，-1 = 没放；长度 3
      * @param remaining    三张卡处决之前还剩几次；长度 3
@@ -41,12 +42,31 @@ public final class MercyPlan {
      */
     public record Plan(int stabs, int prefix, MercyVariant variant, int[] cardIds, int[] remaining,
                        boolean returnsItems, int consumed, boolean demo, boolean mirror) {
+
+        private boolean lich() {
+            return variant == null || !variant.thrall;
+        }
+
+        /** 玄骸：三刀全对，终结 */
+        public boolean success() {
+            return lich() && stabs >= 3 && prefix >= 3;
+        }
+
+        /** 玄骸：这次验的几刀全对、还没到第三刀，挣开站起来接着打 */
+        public boolean advance() {
+            return lich() && stabs < 3 && prefix >= stabs;
+        }
+
+        /** 玄骸：这次验的某一刀判错 */
+        public boolean failure() {
+            return lich() && prefix < stabs;
+        }
     }
 
     /** 压成一个 int；各项越界时夹到能表示的范围 */
     public static int encode(Plan p) {
         int bits = 0;
-        bits |= (p.stabs() == 1 ? 1 : 3);
+        bits |= clamp(p.stabs(), 1, 3);
         bits |= clamp(p.prefix(), 0, 3) << 2;
         bits |= (p.variant() == null ? 0 : p.variant().id & 0xF) << 4;
         for (int i = 0; i < 3; i++) {
@@ -70,7 +90,10 @@ public final class MercyPlan {
 
     /** 解开；套路编号不认识时按玄骸的 {@link MercyVariant#LICH_A} 处理 */
     public static Plan decode(int bits) {
-        int stabs = (bits & 3) == 1 ? 1 : 3;
+        int stabs = bits & 3;
+        if (stabs == 0) {
+            stabs = 3;
+        }
         int prefix = (bits >> 2) & 3;
         MercyVariant variant = MercyVariant.byId((bits >> 4) & 0xF);
         if (variant == null) {

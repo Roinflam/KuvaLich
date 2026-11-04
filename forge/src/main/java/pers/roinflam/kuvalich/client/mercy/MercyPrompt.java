@@ -10,6 +10,9 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -44,6 +47,7 @@ import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
 import pers.roinflam.kuvalich.client.lich.LichNameplates;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.network.NetworkRegistryHandler;
@@ -59,12 +63,13 @@ import java.util.UUID;
  * 倒地的玄骸 / 奴仆身上的提示，和处决键
  *
  * <p><b>世界里的标记</b>（所有人都看得到）：目标头顶一枚赤毒晶体下挂三滴，一道细光束往下连到锚点（玄骸胸口、奴仆头），
- * 锚点上一圈倒计时弧（从 12 点顺时针，剩下的亮、过去的暗，最后 10 秒剩下那段按 2 Hz 呼吸）。本地玩家能处决它时是猩红，
+ * 锚点上一圈倒计时弧（从 12 点顺时针，剩下的亮、过去的暗，最后 10 秒剩下那段按 2 Hz 呼吸，颜色见 {@link RingStyle}）。
+ * 锚点取渲染器这一帧记下的姿势位置（{@link #noteAnchor}），跪下、趴倒、整个人挪开时圈和小牌都跟着走。本地玩家能处决它时标记是猩红，
  * 别人的猎物是灰的；隔着墙再淡淡画一遍标记。投影到屏幕上太小（不到 0.046H）就放大，远处也认得出。没有资格人的奴仆
  * 只画灰色标记，没有光束和圆环。都是加法混合的面片（关掉「加法发光」时改普通透明混合）。</p>
  *
  * <p><b>屏幕上的小牌</b>：挂在锚点圆环的右边。本地玩家是资格人、站得够近（不超过同步下来的可处决距离）、
- * 视线和锚点夹角不超过 30°（或者准星正指着它）时，画骨白底的「[键] 安魂 怜悯之击」（奴仆「密语」）；
+ * 视线和锚点夹角不超过 30°（或者准星正指着它）时，画骨白底的「[键] 安魂 怜悯之击」（奴仆「密语」、幼体「诞生」）；
  * 别人的猎物在 8 格内看着它时画暗灰底的「某某 的猎物」。同时有好几只倒地时只给夹角最小的一只画，处决键也只对它发请求。
  * 字和线都按物理像素画，GUI 缩放大的时候不糊、不变粗。</p>
  *
@@ -78,7 +83,7 @@ public final class MercyPrompt {
     /** 覆盖层 id */
     public static final ResourceLocation OVERLAY_ID = new ResourceLocation(Reference.MOD_ID, "mercy_prompt");
 
-    /** 锚点高度（占身高的比例，画倒地标记时按姿势头顶算）：玄骸胸口、奴仆头 */
+    /** 渲染器没记到姿势时的锚点高度（占头顶高度的比例）：玄骸胸口、奴仆头 */
     private static final double LICH_ANCHOR = 0.62D;
     private static final double THRALL_ANCHOR = 0.82D;
     /** 标记最下沿在头顶（有名牌时是名牌最上沿）上方多高 */
@@ -114,6 +119,10 @@ public final class MercyPrompt {
     private static final float RING_R = 0.16F;
     private static final float RING_HW = 0.01F;
     private static final int RING_SEGMENTS = 48;
+    /** 旧金那一版圈的颜色（比贴图上的金亮一档，加法混合下才不发暗） */
+    private static final int RING_GOLD = 0xE2C26E;
+    /** 渲染器记下的锚点超过这么久没更新（这一帧没画本体）就不信，退回按头顶高度估 */
+    private static final long ANCHOR_STALE_MS = 250L;
     /** 隔墙那一遍的透明度系数 */
     private static final float XRAY = 0.35F;
 
@@ -127,8 +136,21 @@ public final class MercyPrompt {
     /** 每秒最多发几个请求 */
     private static final int SEND_PER_SECOND = 4;
 
+    /** 倒计时圈的颜色：赤毒红（和头顶标记同色）、骨白（和小牌同色）、旧金（和玄骸的金饰同路）；别人的猎物一律灰 */
+    public enum RingStyle {
+        KUVA, BONE, GOLD
+    }
+
+    /** 当前用哪一版（开发命令 {@code /kuvafxc mercyring} 切） */
+    public static RingStyle ringStyle = RingStyle.BONE;
+
     /** 这一 tick 视野里倒地的目标（每 tick 重扫；画的时候只读） */
     private static final List<AbstractKuva> DOWNED = new ArrayList<>();
+
+    /** 倒地实体此刻锚点相对实体原点的世界偏移（格）和记下的时刻，渲染器画本体时记 */
+    private static final Int2ObjectOpenHashMap<PoseAnchor> ANCHORS = new Int2ObjectOpenHashMap<>();
+    /** 算锚点用（只在主线程用） */
+    private static final double[] AW = new double[3];
 
     /** 选中的那只（画小牌、处决键对它）；-1 = 没有 */
     private static int selectedId = -1;
@@ -145,6 +167,7 @@ public final class MercyPrompt {
     private static String keyText = "";
     private static String lichText = "";
     private static String thrallText = "";
+    private static String larvlingText = "";
     private static String otherText = "";
     private static String otherName = null;
     private static String cachedLang = null;
@@ -197,6 +220,64 @@ public final class MercyPrompt {
         select(mc, player);
         refreshTexts(mc);
         handleKey();
+        pruneAnchors();
+    }
+
+    // ==================== 锚点 ====================
+
+    private static final class PoseAnchor {
+        float x;
+        float y;
+        float z;
+        long atMs;
+    }
+
+    /**
+     * 渲染器画倒地实体的本体时调：锚点（玄骸胸口、奴仆头）此刻相对实体原点（插值后的位置）的世界偏移，单位格
+     */
+    public static void noteAnchor(int entityId, float dx, float dy, float dz) {
+        PoseAnchor a = ANCHORS.get(entityId);
+        if (a == null) {
+            a = new PoseAnchor();
+            ANCHORS.put(entityId, a);
+        }
+        a.x = dx;
+        a.y = dy;
+        a.z = dz;
+        a.atMs = KuvaFxDirector.clockMs();
+    }
+
+    /**
+     * 锚点的世界坐标写进 {@code out}（还没往相机方向挪）：这一帧画过本体就用渲染器记下的姿势位置，
+     * 否则退回「头顶高度 × 比例」
+     */
+    private static void anchorWorld(AbstractKuva k, float pt, double[] out) {
+        double x = Mth.lerp(pt, k.xo, k.getX());
+        double y = Mth.lerp(pt, k.yo, k.getY());
+        double z = Mth.lerp(pt, k.zo, k.getZ());
+        PoseAnchor a = ANCHORS.get(k.getId());
+        if (a != null && KuvaFxDirector.clockMs() - a.atMs <= ANCHOR_STALE_MS) {
+            out[0] = x + a.x;
+            out[1] = y + a.y;
+            out[2] = z + a.z;
+        } else {
+            out[0] = x;
+            out[1] = y + LichNameplates.poseTop(k) * anchorFrac(k);
+            out[2] = z;
+        }
+    }
+
+    private static void pruneAnchors() {
+        if (ANCHORS.isEmpty()) {
+            return;
+        }
+        long now = KuvaFxDirector.clockMs();
+        ObjectIterator<Int2ObjectMap.Entry<PoseAnchor>> it = ANCHORS.int2ObjectEntrySet().fastIterator();
+        while (it.hasNext()) {
+            if (now - it.next().getValue().atMs > 1000L) {
+                it.remove();
+            }
+        }
     }
 
     /** 本地玩家眼下能不能看小牌、按处决键：活着、不是旁观、没骑东西、没睡觉、没开界面、不在处决里 */
@@ -218,7 +299,8 @@ public final class MercyPrompt {
             Entity aimed = mc.crosshairPickEntity;
             for (int i = 0, n = DOWNED.size(); i < n; i++) {
                 AbstractKuva k = DOWNED.get(i);
-                double ax = k.getX() - ex, ay = k.getY() + k.getBbHeight() * anchorFrac(k) - ey, az = k.getZ() - ez;
+                anchorWorld(k, 1.0F, AW);
+                double ax = AW[0] - ex, ay = AW[1] - ey, az = AW[2] - ez;
                 double d = Math.sqrt(ax * ax + ay * ay + az * az);
                 boolean own = isOwn(k, player);
                 double range = own ? k.getMercyReach() : OTHER_CARD_RANGE;
@@ -327,6 +409,7 @@ public final class MercyPrompt {
             keyText = KuvaKeyMappings.MERCY.getTranslatedKeyMessage().getString();
             lichText = I18n.get("kuvalich.mercy.prompt.lich");
             thrallText = I18n.get("kuvalich.mercy.prompt.thrall");
+            larvlingText = I18n.get("kuvalich.mercy.prompt.larvling");
             otherName = null;
         }
         if (selectedId >= 0 && !selectedOwn && mc.level != null
@@ -428,7 +511,8 @@ public final class MercyPrompt {
             drawMarker(buf, m, fx + UP.x() * shift, fy + UP.y() * shift, fz + UP.z() * shift, scale, markRgb, markA, own);
             if (!xray && claimed) {
                 // 锚点在身体里面，圆环往相机方向挪出身体表面，免得被模型挡住
-                float ax = fx, ay = (float) (y + h * anchorFrac(k) - camY), az = fz;
+                anchorWorld(k, pt, AW);
+                float ax = (float) (AW[0] - camX), ay = (float) (AW[1] - camY), az = (float) (AW[2] - camZ);
                 float pull = towardCamera(ax, ay, az, k.getBbWidth());
                 float dist = Mth.sqrt(ax * ax + ay * ay + az * az);
                 if (dist > 1.0E-4F) {
@@ -455,7 +539,7 @@ public final class MercyPrompt {
                     float phase = (KuvaFxDirector.clockMs() % 500L) / 500.0F;
                     leftA = 0.8F + 0.2F * Mth.cos(phase * Mth.TWO_PI);
                 }
-                ring(buf, m, ax, ay, az, left, leftA * add, 0.2F * add);
+                ring(buf, m, ax, ay, az, own, left, leftA * add, 0.2F * add);
             }
         }
         BufferBuilder.RenderedBuffer rb = buf.endOrDiscardIfEmpty();
@@ -582,9 +666,13 @@ public final class MercyPrompt {
     }
 
     /** 倒计时圈：从 12 点顺时针，前 {@code left} 圈是剩下的（{@code leftA}），其余是过去的（{@code goneA}） */
-    private static void ring(BufferBuilder buf, Matrix4f m, float x, float y, float z, float left, float leftA,
-                             float goneA) {
-        int rgb = FxPalette.TECH;
+    private static void ring(BufferBuilder buf, Matrix4f m, float x, float y, float z, boolean own, float left,
+                             float leftA, float goneA) {
+        int rgb = !own ? FxPalette.ASH : switch (ringStyle) {
+            case KUVA -> FxPalette.KUVA;
+            case BONE -> FxPalette.BONE;
+            case GOLD -> RING_GOLD;
+        };
         float split = left * Mth.TWO_PI;
         arc(buf, m, x, y, z, 0.0F, split, rgb, leftA);
         arc(buf, m, x, y, z, split, Mth.TWO_PI, rgb, goneA);
@@ -654,15 +742,14 @@ public final class MercyPrompt {
             cardAlpha = 0.0F;
             return;
         }
-        String text = cardOwn ? (k instanceof KuvaMasterEntity ? lichText : thrallText) : otherText;
+        String text = cardOwn ? (k instanceof KuvaMasterEntity ? lichText
+                : k instanceof KuvaLarvlingEntity ? larvlingText : thrallText) : otherText;
         if (!cardOwn && otherName == null) {
             return;
         }
-        // 锚点投到屏幕
-        double x = Mth.lerp(partialTick, k.xo, k.getX());
-        double y = Mth.lerp(partialTick, k.yo, k.getY()) + k.getBbHeight() * anchorFrac(k);
-        double z = Mth.lerp(partialTick, k.zo, k.getZ());
-        float rx = (float) (x - camX), ry = (float) (y - camY), rz = (float) (z - camZ);
+        // 锚点投到屏幕（和世界里的圆环同一个锚点）
+        anchorWorld(k, partialTick, AW);
+        float rx = (float) (AW[0] - camX), ry = (float) (AW[1] - camY), rz = (float) (AW[2] - camZ);
         float dist = Mth.sqrt(rx * rx + ry * ry + rz * rz);
         if (dist > 1.0E-4F) {
             // 和世界里的圆环挪到同一处，小牌才贴着圆环

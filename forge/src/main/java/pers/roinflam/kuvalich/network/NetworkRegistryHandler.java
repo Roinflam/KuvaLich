@@ -17,6 +17,7 @@ import pers.roinflam.kuvalich.network.packet.LichArchiveRequestPacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
 import pers.roinflam.kuvalich.network.packet.MercyRequestPacket;
 import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
+import pers.roinflam.kuvalich.network.packet.NoticePacket;
 import pers.roinflam.kuvalich.network.packet.RequiemGateFillPacket;
 import pers.roinflam.kuvalich.network.packet.WarframeModuleSyncPacket;
 import pers.roinflam.kuvalich.utils.LogUtil;
@@ -30,12 +31,12 @@ import java.util.Optional;
  *
  * 统一管理所有网络包的注册
  *
- * <p>协议版本现为 "12"（各版本改了什么见 {@link #PROTOCOL_VERSION}）。"7" 时 {@link DamagePacket} 改为传拆开的字段
+ * <p>协议版本现为 "14"（各版本改了什么见 {@link #PROTOCOL_VERSION}）。"7" 时 {@link DamagePacket} 改为传拆开的字段
  * （伤害数字合并）、{@link WarframeModuleSyncPacket} 追加了武器类击杀叠层数组（客户端射速 / 多重射击与服务端对齐），
  * 字节流格式发生变化，与 "6" 及更早版本的客户端不兼容，必须提版本号强制握手拒绝，
  * 否则旧客户端会按老格式解码出错位数据。"8" 新增 {@link GuideConfigSyncPacket}（冒险指南的服务端配置快照），
  * "9" 新增 {@link KuvaFxPacket}（音画效果包），"10" 新增专属玄骸、档案、通讯、怜悯之击的五个包，
- * "11" 处决计划位新增四个套路编号和绕背方向位，"12" 档案包的玄骸属性改成整套战斗面板。</p>
+ * "11" 处决计划位新增四个套路编号和绕背方向位，"12" 档案包的玄骸属性改成整套战斗面板，"13" 玄骸血条分段、护盾，"14" 新增 {@link NoticePacket}（玩家提示条）。</p>
  *
  * <p>安全：所有包在注册时都显式声明 {@link NetworkDirection}。
  * 不带方向的 5 参 {@code registerMessage} 重载会让 Forge 允许包双向收发，
@@ -64,8 +65,12 @@ public class NetworkRegistryHandler {
      *         会把新套路当成第一套演，和服务端的时间表、目标动作对不上，所以提版本强制更新
      * "12"：LichArchivePacket 的弱点抗性、适应、增幅几项换成整套战斗面板（四类倍率、生命、护甲、一刀、技能档位），
      *         字节格式变了，旧客户端解码会错位
+     * "13"：玄骸血条分三段、加护盾：计划位的刀数改成 1~3（第 k 次处决捅 k 刀），怜悯之击多了「起身中」状态，
+     *         玄骸多了护盾、段数的同步数据。旧客户端会把少刀数的处决演成三刀、实体同步数据也对不上，所以提版本
+     * "14"：新增 NoticePacket（玩家提示改走提示条，聊天 / 动作栏退成客户端的备用显示）。
+     *         服务端不再直接发聊天 / 动作栏，旧客户端不认识这个包，所有提示都会丢，所以提版本强制更新
      */
-    private static final String PROTOCOL_VERSION = "12";
+    private static final String PROTOCOL_VERSION = "14";
 
     /** 消息ID计数器 / Message ID counter */
     private static int messageId = 0;
@@ -252,6 +257,16 @@ public class NetworkRegistryHandler {
                 MercyRequestPacket::decode,
                 MercyRequestPacket::handle,
                 TO_SERVER
+        );
+
+        // 一条玩家提示（服务器 → 客户端）：客户端按设置画成提示条，或者退回聊天 / 动作栏
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                NoticePacket.class,
+                NoticePacket::encode,
+                NoticePacket::decode,
+                NoticePacket::handle,
+                TO_CLIENT
         );
     }
 

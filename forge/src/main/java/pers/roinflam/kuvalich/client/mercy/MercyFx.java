@@ -229,6 +229,11 @@ public final class MercyFx {
                     continue;
                 }
                 leave(d, st == MercyState.EXECUTING ? 150 : 300, true);
+                if (st == MercyState.RISING && d.lich) {
+                    // 倒地到时没人处决，自己站起来：低吼一声
+                    KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.REQUIEM_TAUNT.get(), SoundSource.HOSTILE,
+                            MercyTimeline.chest(e), 0.9F, 1.0F).follow(e).tier(FxTier.A));
+                }
                 continue;
             }
             if (d.lich && now >= d.nextRingMs) {
