@@ -409,7 +409,7 @@
             },
             {
               "if": "cfg:kuva_lich.lichRagePerClueRevealed>0",
-              "text": "揭示第 2、第 3 條線索：每條 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>（第 1 條不算）"
+              "text": "每揭示一條線索：+<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>"
             },
             {
               "if": "cfg:kuva_lich.lichRageOnlineMinutes>0",

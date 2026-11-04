@@ -926,7 +926,7 @@
               "if": "cfg:kuva_lich.lichRagePerClueRevealed>0",
               "cells": [
                 "Each new answer card revealed",
-                "Rage +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>; the first card doesn't count"
+                "Rage +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>"
               ]
             },
             [

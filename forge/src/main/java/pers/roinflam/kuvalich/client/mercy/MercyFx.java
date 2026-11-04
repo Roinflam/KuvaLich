@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -27,6 +28,7 @@ import pers.roinflam.kuvalich.client.fx.script.LichFx;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundInstance;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.mercy.MercyState;
@@ -185,7 +187,9 @@ public final class MercyFx {
             KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.MERCY_DOWNED.get(), SoundSource.HOSTILE, c, 1.0F, 1.0F)
                     .follow(e).tier(FxTier.A));
         } else {
-            KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.MERCY_DOWNED_THRALL.get(), SoundSource.HOSTILE, c, 0.5F, 1.3F)
+            SoundEvent downed = e instanceof KuvaLarvlingEntity ? KuvaLichSounds.MERCY_DOWNED_LARVLING.get()
+                    : KuvaLichSounds.MERCY_DOWNED_THRALL.get();
+            KuvaSoundPlayer.play(KuvaSoundPlayer.at(downed, SoundSource.HOSTILE, c, 0.5F, 1.3F)
                     .tier(FxTier.B));
         }
     }

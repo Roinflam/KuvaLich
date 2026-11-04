@@ -5,6 +5,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -25,6 +26,7 @@ import pers.roinflam.kuvalich.fx.FxId;
 import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.mercy.MercyRules;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
@@ -179,6 +181,17 @@ public class KuvaLarvlingEntity extends KuvaSlaveEntity {
     @Override
     public int downedSeconds() {
         return ModConfig.KUVA_LICH.larvlingDownedSeconds.get();
+    }
+
+    /** 声音同奴仆，事件分开只为字幕写「幼体」 */
+    @Override
+    protected SoundEvent getAmbientSound() {
+        return KuvaLichSounds.ENTITY_LARVLING_AMBIENT.get();
+    }
+
+    @Override
+    protected SoundEvent getHurtSound(@NotNull DamageSource damageSource) {
+        return KuvaLichSounds.ENTITY_LARVLING_HURT.get();
     }
 
     /** 处决用奴仆那几套，处决者的刀位、跳起的高度照模型的缩放一起缩 */

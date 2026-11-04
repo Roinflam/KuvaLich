@@ -43,6 +43,9 @@ public class KuvaMasterModel extends GeoModel<KuvaMasterEntity> {
     private static final float NOD_HELMET_DEG = -1.5F;
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0D);
 
+    /** 转头、点头叠在关键帧上的转角（骨骼是这个模型的所有玄骸共用的，记录也跟模型走） */
+    private final KuvaPoseLayer.Additive poseAdded = new KuvaPoseLayer.Additive();
+
     @Override
     public ResourceLocation getModelResource(KuvaMasterEntity entity) {
         return new ResourceLocation(Reference.MOD_ID, "geo/kuva_master.geo.json");
@@ -106,7 +109,7 @@ public class KuvaMasterModel extends GeoModel<KuvaMasterEntity> {
     @Override
     public void setCustomAnimations(KuvaMasterEntity animatable, long instanceId, AnimationState<KuvaMasterEntity> state) {
         super.setCustomAnimations(animatable, instanceId, state);
-        KuvaPoseLayer.apply(this, animatable, state, true);
+        KuvaPoseLayer.apply(this, animatable, state, true, this.poseAdded);
         float envelope = LichVoice.envelope(animatable, KuvaFxDirector.clockMs());
         if (envelope <= 0.0F) {
             return;
@@ -117,9 +120,7 @@ public class KuvaMasterModel extends GeoModel<KuvaMasterEntity> {
         nod(getAnimationProcessor().getBone("helmet"), NOD_HELMET_DEG * envelope);
     }
 
-    private static void nod(@Nullable CoreGeoBone bone, float fileDeg) {
-        if (bone != null) {
-            bone.setRotX(bone.getRotX() - fileDeg * DEG_TO_RAD);
-        }
+    private void nod(@Nullable CoreGeoBone bone, float fileDeg) {
+        this.poseAdded.add(bone, KuvaPoseLayer.ROT_X, -fileDeg * DEG_TO_RAD);
     }
 }

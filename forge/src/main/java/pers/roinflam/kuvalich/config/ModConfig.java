@@ -1283,8 +1283,8 @@ public final class ModConfig {
                     .defineInRange("lichRagePerProgressPoint", 0.002, 0.0, 1.0);
 
             lichRagePerClueRevealed = builder
-                    .comment("Rage gained per new Murmur revealed (not the first)")
-                    .comment("每揭示一条新密语加多少怒气（第一条除外）")
+                    .comment("Rage gained per new Murmur revealed")
+                    .comment("每揭示一条新密语加多少怒气")
                     .defineInRange("lichRagePerClueRevealed", 0.25, 0.0, 1.0);
 
             lichBirthRage = builder

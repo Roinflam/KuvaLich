@@ -25,6 +25,7 @@ import pers.roinflam.kuvalich.client.fx.KuvaParticles;
 import pers.roinflam.kuvalich.client.lich.LichRenderState;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.network.packet.KuvaFxPacket;
@@ -469,7 +470,8 @@ public final class LichFx {
                 s.shatterR = 0.6F;
                 s.fadeMs = 600;
                 s.scale = 0.6F;
-                s.sound = KuvaLichSounds.ENTITY_THRALL_DEATH.get();
+                s.sound = e instanceof KuvaLarvlingEntity ? KuvaLichSounds.ENTITY_LARVLING_DEATH.get()
+                        : KuvaLichSounds.ENTITY_THRALL_DEATH.get();
                 s.tier = FxTier.B;
             }
             case DEPART -> {
@@ -794,7 +796,9 @@ public final class LichFx {
         }
         lastThrallSound = now;
         float vol = 0.8F * KuvaSoundPlayer.distFalloff(d, 16.0D, 40.0D, 0.375F);
-        KuvaSoundPlayer.play(KuvaSoundPlayer.atFixed(KuvaLichSounds.ENTITY_THRALL_ALERT.get(), SoundSource.HOSTILE, c, vol, 1.0F)
+        SoundEvent alert = e instanceof KuvaLarvlingEntity ? KuvaLichSounds.ENTITY_LARVLING_ALERT.get()
+                : KuvaLichSounds.ENTITY_THRALL_ALERT.get();
+        KuvaSoundPlayer.play(KuvaSoundPlayer.atFixed(alert, SoundSource.HOSTILE, c, vol, 1.0F)
                 .tier(FxTier.A));
     }
 

@@ -207,7 +207,8 @@ public final class LichDirector {
         Hunt h = hunt(player);
         if (rageCanRise(h, card, now)) {
             double add = Math.max(0, added) * ModConfig.KUVA_LICH.lichRagePerProgressPoint.get();
-            if (level > levelBefore && levelBefore >= 1) {
+            // 玄骸由处决幼体诞生，三条线索都在诞生之后揭，第一条也算
+            if (level > levelBefore) {
                 add += (level - levelBefore) * ModConfig.KUVA_LICH.lichRagePerClueRevealed.get();
             }
             card.setLichRage((float) (card.getLichRage() + add));

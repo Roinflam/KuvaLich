@@ -20,6 +20,7 @@ import pers.roinflam.kuvalich.client.sound.KuvaMixer;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.comm.CommSpeaker;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
@@ -315,7 +316,8 @@ public final class MercyTimeline {
                     return;
                 }
                 if (KuvaSoundPlayer.gate("mercy.thrall." + x.targetId, 300)) {
-                    world(KuvaLichSounds.MERCY_THRALL.get(), chest(t), 0.9F, KuvaSoundPlayer.jitter(1.0F, 0.04F));
+                    world(t instanceof KuvaLarvlingEntity ? KuvaLichSounds.MERCY_LARVLING.get() : KuvaLichSounds.MERCY_THRALL.get(),
+                            chest(t), 0.9F, KuvaSoundPlayer.jitter(1.0F, 0.04F));
                 }
                 RequiemFx.bladeSpark(t, 1, false);
             });

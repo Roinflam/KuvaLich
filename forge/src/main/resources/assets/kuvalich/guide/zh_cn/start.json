@@ -1009,7 +1009,7 @@
               "if": "cfg:kuva_lich.lichRagePerClueRevealed>0",
               "cells": [
                 "每揭示一张新答案卡",
-                "怒气 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>，第一张不算"
+                "怒气 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>"
               ]
             },
             [
@@ -1136,7 +1136,7 @@
         "mercy/MercyServer.java:763-787,825-833 + entity/KuvaMasterEntity.java:964-968 — 判错：kuvaLevel +1、挣脱逃走、不碰卡、照给进度；关着时 directFailure（:921-955）同样不碰卡、给进度、结束这次遭遇",
         "mercy/MercyServer.java:470-483 onDownedTimeout — 倒地到点：分段的回满这一段起身，连着 UNCLAIMED_LIMIT=3 次没人处决才 endEncounter(UNCLAIMED) 逃走，不判定、不给东西、不加等级",
         "base/entity/AbstractKuva.java:294-313 — 伤害归属者是赤毒实体且目标是玩家时 ×(1 + kuvaLevel×increaseDamage)；归属者是玩家且目标是赤毒实体时 ×(1 − min(0.999, kuvaLevel×reducedDamage))；kuvaLevel = 显示等级 − 1，所以写「每升一级」；各自按 >0 显示行",
-        "nemesis/LichDirector.java:192-223 — 怒气：进度每点 lichRagePerProgressPoint、揭示（不含第一条）lichRagePerClueRevealed、奴仆 onThrallExecuted lichRagePerThrallExecution（entity/KuvaSlaveEntity.java:206-208：怜悯之击关着时玩家击杀即算）；:461-465 — 在线 lichRageOnlineMinutes 分钟满（0 不涨）；怒气是 0~1，所以用 pct",
+        "nemesis/LichDirector.java:192-223 — 怒气：进度每点 lichRagePerProgressPoint、揭示 lichRagePerClueRevealed、奴仆 onThrallExecuted lichRagePerThrallExecution（entity/KuvaSlaveEntity.java:206-208：怜悯之击关着时玩家击杀即算）；:461-465 — 在线 lichRageOnlineMinutes 分钟满（0 不涨）；怒气是 0~1，所以用 pct",
         "nemesis/LichDirector.java:815-835 waitReason — 到点但不来：维度不在 lichHuntDimensions、和平、创造 / 旁观（lichHuntCreative 关时）、睡觉 / 骑乘 / 处决中 / 死亡、登录宽限",
         "nemesis/LichDirector.java:530-560,582-595,858-882 — 离场：主人下线、换维度、死亡、离开 lichLeashDistance、lichIdleDepartSeconds 内无交手（0 不判）；:1016-1019 + :1168-1170 — 遭遇结束怒气清零、冷却 lichCooldownMinutes",
         "entity/KuvaMasterEntity.java:921-955 directFailure — 关着时照旧发 firstCorrect / secondCorrect / failedToDecrypt；开着时 mercy/MercyServer.java failureChat 发 message.kuvalich.mercy.failed.<k>（错在第几刀）",

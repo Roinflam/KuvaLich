@@ -45,9 +45,9 @@ import pers.roinflam.kuvalich.utils.Reference;
  * 所以只亮武器。摆在倒地标记的上面（标记远了会放大，这里跟着它的上沿走），24 格内画，20 格外渐隐，
  * 被方块挡住照常挡。两种样子，开发命令 {@code /kuvafxc larvling style} 切换：</p>
  * <ul>
- *   <li><b>甲 浮刃</b>（默认）：武器本身浮在空中，6 秒转一圈、上下轻轻起伏，下面一行武器名（淡赤毒色、墨色底影）。
+ *   <li><b>甲 浮刃</b>：武器本身浮在空中，6 秒转一圈、上下轻轻起伏，下面一行武器名（淡赤毒色、墨色底影）。
  *       出现时从小长到原大，收起时缩回去；</li>
- *   <li><b>乙 全息牌</b>：一块暗红玻璃小牌，左上、右下切角，上沿亮赤毒线、下沿暗赤毒线；左边方框里是武器图标，
+ *   <li><b>乙 全息牌</b>（默认，原作倒地时也是武器图标加名字的小卡；离得近时不会出画面）：一块暗红玻璃小牌，左上、右下切角，上沿亮赤毒线、下沿暗赤毒线；左边方框里是武器图标，
  *       右边小字「玄骸武器」和剩余秒数、下面武器名，最底一条倒计时细条（最后 10 秒按 2 Hz 呼吸，同倒地标记的圆环）。
  *       出现、收起都是淡入淡出。</li>
  * </ul>
@@ -60,8 +60,8 @@ public final class LarvlingOverhead {
 
     public static final int STYLE_FLOAT = 0;
     public static final int STYLE_CARD = 1;
-    /** 现在用哪一种（开发命令切），默认甲 */
-    static int style = STYLE_FLOAT;
+    /** 现在用哪一种（开发命令切），默认乙 */
+    static int style = STYLE_CARD;
 
     private static final double RANGE = 24.0D;
     private static final double FADE_FROM = 20.0D;

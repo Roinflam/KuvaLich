@@ -12,6 +12,7 @@ import software.bernie.geckolib.core.animation.AnimationProcessor;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 关键帧算完以后再叠的两样：出手那层停下后的淡出、头跟着视线转
@@ -22,6 +23,10 @@ import software.bernie.geckolib.model.data.EntityModelData;
  * <p><b>转头</b>：渲染器只按身体朝向转整个模型，头看向别处时模型不跟。这里把视线和身体的夹角加到头上（玄骸分三成给腰），
  * 倒地 / 处决期间不加。这里只改旋转，不改位移：GeckoLib 把代码里写过的位移算作「这一帧动过」，下一帧不归零，
  * 写一次就累加一次。</p>
+ *
+ * <p><b>叠加不累积</b>：旋转其实也一样——这一帧关键帧没重写那根骨骼时，骨骼里留着上一帧叠过的值，再 {@code +=} 就越叠越多。
+ * 世界里的实体每帧都有待机 / 走路的关键帧盖过头骨，看不出来；冒险指南的预览实体不走 tick、开着指南时单人游戏又是暂停的，
+ * 关键帧不重写头骨，头就一帧帧转个不停。所以叠加一律经 {@link Additive}：记下写进去的值，下一帧开头骨骼还是那个值就先减回去。</p>
  */
 @OnlyIn(Dist.CLIENT)
 final class KuvaPoseLayer {
@@ -38,14 +43,77 @@ final class KuvaPoseLayer {
     /** 玄骸转头时腰分走的比例：脖子短、头盔大，只转头像拧螺丝 */
     private static final float LICH_WAIST_SHARE = 0.3F;
 
+    private static final int X = 0;
+    private static final int Y = 1;
+    static final int ROT_X = X;
+
     private KuvaPoseLayer() {
     }
 
-    static void apply(GeoModel<?> model, AbstractKuva entity, AnimationState<?> state, boolean lich) {
+    /**
+     * 在 {@code setCustomAnimations} 里、父类之后调。{@code added} 是这个模型自己的那一份（同一个模型的骨骼所有实体共用）；
+     * 模型在这之后还要叠别的转角（玄骸说话点头）也走它
+     */
+    static void apply(GeoModel<?> model, AbstractKuva entity, AnimationState<?> state, boolean lich, Additive added) {
+        added.restore();
         AnimationProcessor<?> processor = model.getAnimationProcessor();
         fade(processor, entity.getBodyAnim(), lich ? LICH_BONES : THRALL_BONES);
         if (entity.getMercyState() == MercyState.NONE && !entity.isDeadOrDying()) {
-            look(processor, state, lich);
+            look(processor, state, lich, added);
+        }
+    }
+
+    /**
+     * 叠在关键帧之上的转角记录：每次叠加记下骨骼、轴、写进去的值和叠了多少；下一帧 {@link #restore} 时骨骼还是写进去的那个值
+     * （关键帧没重写），就减回叠加前，再重新叠。倒着撤，同一根骨骼同一轴叠过两次也能一层层还原
+     */
+    static final class Additive {
+        private static final int MAX = 8;
+        private final CoreGeoBone[] bone = new CoreGeoBone[MAX];
+        private final int[] axis = new int[MAX];
+        private final float[] written = new float[MAX];
+        private final float[] delta = new float[MAX];
+        private int n;
+
+        void restore() {
+            for (int i = this.n - 1; i >= 0; i--) {
+                CoreGeoBone b = this.bone[i];
+                if (rot(b, this.axis[i]) == this.written[i]) {
+                    setRot(b, this.axis[i], this.written[i] - this.delta[i]);
+                }
+                this.bone[i] = null;
+            }
+            this.n = 0;
+        }
+
+        /** 给骨骼的 {@code ax} 轴转角加 {@code radians} */
+        void add(@Nullable CoreGeoBone b, int ax, float radians) {
+            if (b == null || radians == 0.0F) {
+                return;
+            }
+            float v = rot(b, ax) + radians;
+            setRot(b, ax, v);
+            if (this.n < MAX) {
+                this.bone[this.n] = b;
+                this.axis[this.n] = ax;
+                this.written[this.n] = v;
+                this.delta[this.n] = radians;
+                this.n++;
+            }
+        }
+
+        private static float rot(CoreGeoBone b, int ax) {
+            return ax == X ? b.getRotX() : ax == Y ? b.getRotY() : b.getRotZ();
+        }
+
+        private static void setRot(CoreGeoBone b, int ax, float v) {
+            if (ax == X) {
+                b.setRotX(v);
+            } else if (ax == Y) {
+                b.setRotY(v);
+            } else {
+                b.setRotZ(v);
+            }
         }
     }
 
@@ -106,7 +174,7 @@ final class KuvaPoseLayer {
         }
     }
 
-    private static void look(AnimationProcessor<?> processor, AnimationState<?> state, boolean lich) {
+    private static void look(AnimationProcessor<?> processor, AnimationState<?> state, boolean lich, Additive added) {
         EntityModelData data = state.getData(DataTickets.ENTITY_MODEL_DATA);
         CoreGeoBone head = processor.getBone("Head");
         if (data == null || head == null) {
@@ -119,11 +187,11 @@ final class KuvaPoseLayer {
             CoreGeoBone waist = processor.getBone("waist");
             if (waist != null) {
                 float share = yaw * LICH_WAIST_SHARE;
-                waist.setRotY(waist.getRotY() + share * Mth.DEG_TO_RAD);
+                added.add(waist, Y, share * Mth.DEG_TO_RAD);
                 yaw -= share;
             }
         }
-        head.setRotX(head.getRotX() + pitch * Mth.DEG_TO_RAD);
-        head.setRotY(head.getRotY() + yaw * Mth.DEG_TO_RAD);
+        added.add(head, X, pitch * Mth.DEG_TO_RAD);
+        added.add(head, Y, yaw * Mth.DEG_TO_RAD);
     }
 }

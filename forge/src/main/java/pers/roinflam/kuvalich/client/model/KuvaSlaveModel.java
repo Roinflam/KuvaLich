@@ -18,6 +18,8 @@ import software.bernie.geckolib.model.GeoModel;
  */
 public class KuvaSlaveModel extends GeoModel<KuvaSlaveEntity> {
 
+    private final KuvaPoseLayer.Additive poseAdded = new KuvaPoseLayer.Additive();
+
     @Override
     public ResourceLocation getModelResource(KuvaSlaveEntity entity) {
         return new ResourceLocation(Reference.MOD_ID, "geo/kuva_slave.geo.json");
@@ -45,6 +47,6 @@ public class KuvaSlaveModel extends GeoModel<KuvaSlaveEntity> {
     @Override
     public void setCustomAnimations(KuvaSlaveEntity animatable, long instanceId, AnimationState<KuvaSlaveEntity> state) {
         super.setCustomAnimations(animatable, instanceId, state);
-        KuvaPoseLayer.apply(this, animatable, state, false);
+        KuvaPoseLayer.apply(this, animatable, state, false, this.poseAdded);
     }
 }

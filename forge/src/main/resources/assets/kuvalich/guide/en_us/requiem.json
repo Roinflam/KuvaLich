@@ -409,7 +409,7 @@
             },
             {
               "if": "cfg:kuva_lich.lichRagePerClueRevealed>0",
-              "text": "Revealing Clue 2 or Clue 3: +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t> each (Clue 1 does not count)"
+              "text": "Each Clue revealed: +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>"
             },
             {
               "if": "cfg:kuva_lich.lichRageOnlineMinutes>0",

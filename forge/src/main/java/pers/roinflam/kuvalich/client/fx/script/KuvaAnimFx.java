@@ -15,6 +15,7 @@ import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.fx.KuvaFxGeometry;
 import pers.roinflam.kuvalich.client.fx.KuvaParticles;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
 
@@ -130,7 +131,8 @@ public final class KuvaAnimFx {
         long delay = t0 != Long.MIN_VALUE && now - t0 <= HIT_PAIR_MS ? t0 + STRIKE_MS - now : 0L;
         boolean lich = e instanceof KuvaMasterEntity;
         Runnable hit = () -> KuvaSoundPlayer.play(KuvaSoundPlayer.at(
-                lich ? KuvaLichSounds.ENTITY_LICH_STRIKE.get() : KuvaLichSounds.ENTITY_THRALL_STRIKE.get(), SoundSource.HOSTILE,
+                lich ? KuvaLichSounds.ENTITY_LICH_STRIKE.get() : e instanceof KuvaLarvlingEntity
+                        ? KuvaLichSounds.ENTITY_LARVLING_STRIKE.get() : KuvaLichSounds.ENTITY_THRALL_STRIKE.get(), SoundSource.HOSTILE,
                 LichFx.chest(e), lich ? 1.2F : 1.0F,
                 lich ? KuvaSoundPlayer.jitter(0.98F, 0.06F) : KuvaSoundPlayer.jitter(1.02F, 0.06F)).tier(FxTier.C));
         if (delay <= 0L) {

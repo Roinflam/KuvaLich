@@ -1549,6 +1549,9 @@ final class GuideBlocks {
      * 实体预览：鼠标在阅读区时模型跟着鼠标转头，不在时静止侧身；建不出来时框里换成问号占位，框下照常写名字
      */
     private static final class EntityLaid extends Laid {
+        /** 预览实体推到第几 tick 停住：够走完待机的淡入（玄骸 4 tick、奴仆 3 tick）再往里走几帧 */
+        private static final int SETTLE_TICKS = 12;
+
         final String id;
         final int boxH;
         final String name;
@@ -1600,6 +1603,11 @@ final class GuideBlocks {
                     // 鼠标不在阅读区时停在微微侧身、略抬头的姿势（原先会自己左右环顾；读的地方不放常驻动画）
                     lookX = 24f;
                     lookY = -10f;
+                }
+                // 预览实体不在世界里、不走 tick，GeckoLib 按 tickCount 算动画时间：一直是 0 就永远卡在「淡进待机」的头几帧，
+                // 摆出来的是别处同模型实体留在骨骼上的姿势（头歪着）。头几帧每帧推一 tick，让待机走完淡入再停住（读的地方不放常驻动画）
+                if (entity.tickCount < SETTLE_TICKS) {
+                    entity.tickCount++;
                 }
                 PoseStack.Pose top = g.pose().last();
                 try {

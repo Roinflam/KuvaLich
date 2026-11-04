@@ -443,7 +443,7 @@
             },
             {
               "if": "cfg:kuva_lich.lichRagePerClueRevealed>0",
-              "text": "揭示第 2、第 3 条线索：每条 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>（第 1 条不算）"
+              "text": "每揭示一条线索：+<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>"
             },
             {
               "if": "cfg:kuva_lich.lichRageOnlineMinutes>0",
@@ -463,7 +463,7 @@
         "capability/RequiemCard.java:91 MAX_ATTEMPTS = 5 — 处决记录最多留 5 行，每位记对 / 错 / 没判到",
         "client/gui/screens/inventory/RequiemGateScreen.java:111 — 灭骸之扉右下角的档案入口（kuvalich.archive.open_hint）",
         "nemesis/RageTier.java — 怒气五档：冷漠 0 / 恼怒 0.12 / 气得冒烟 0.5 / 狂怒 0.8 / 暴怒 0.96，只影响显示和嘲讽，不影响强度",
-        "nemesis/LichDirector.java:203-205 — 每点进度 lichRagePerProgressPoint；揭示新线索 lichRagePerClueRevealed（levelBefore ≥ 1，第一条不算）；:213-221 onThrallExecuted 处决奴仆 lichRagePerThrallExecution（怜悯之击关掉时由奴仆被玩家杀死触发）；:458-465 在线时间按 lichRageOnlineMinutes 分钟涨满；:1201 rageCanRise — 只在狩猎中 / 冷却中涨，在场、正在来时不涨",
+        "nemesis/LichDirector.java:203-205 — 每点进度 lichRagePerProgressPoint；揭示新线索 lichRagePerClueRevealed（三条都算）；:213-221 onThrallExecuted 处决奴仆 lichRagePerThrallExecution（怜悯之击关掉时由奴仆被玩家杀死触发）；:458-465 在线时间按 lichRageOnlineMinutes 分钟涨满；:1201 rageCanRise — 只在狩猎中 / 冷却中涨，在场、正在来时不涨",
         "nemesis/LichDirector.java endEncounter — 每次遭遇结束怒气清零、进冷却",
         "lang kuvalich.archive.* / kuvalich.lich.rage.* — 档案各栏的叫法"
       ]

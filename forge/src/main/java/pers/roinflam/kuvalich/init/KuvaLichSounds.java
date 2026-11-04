@@ -38,16 +38,22 @@ public final class KuvaLichSounds {
     // ==================== 赤毒 / 玄骸 / 奴仆 ====================
     public static final RegistryObject<SoundEvent> ENTITY_LICH_ALERT = reg("entity.lich.alert");
     public static final RegistryObject<SoundEvent> ENTITY_THRALL_ALERT = reg("entity.thrall.alert");
+    /** 幼体借奴仆的几种声音，单独几个事件只为字幕能写「幼体」 */
+    public static final RegistryObject<SoundEvent> ENTITY_LARVLING_ALERT = reg("entity.larvling.alert");
     public static final RegistryObject<SoundEvent> ENTITY_LICH_SUMMON = reg("entity.lich.summon");
     public static final RegistryObject<SoundEvent> ENTITY_LICH_AMBIENT = reg("entity.lich.ambient");
     public static final RegistryObject<SoundEvent> ENTITY_THRALL_AMBIENT = reg("entity.thrall.ambient");
+    public static final RegistryObject<SoundEvent> ENTITY_LARVLING_AMBIENT = reg("entity.larvling.ambient");
     public static final RegistryObject<SoundEvent> ENTITY_LICH_HURT = reg("entity.lich.hurt");
     public static final RegistryObject<SoundEvent> ENTITY_THRALL_HURT = reg("entity.thrall.hurt");
+    public static final RegistryObject<SoundEvent> ENTITY_LARVLING_HURT = reg("entity.larvling.hurt");
     public static final RegistryObject<SoundEvent> ENTITY_LICH_DEATH = reg("entity.lich.death");
     public static final RegistryObject<SoundEvent> ENTITY_THRALL_DEATH = reg("entity.thrall.death");
+    public static final RegistryObject<SoundEvent> ENTITY_LARVLING_DEATH = reg("entity.larvling.death");
     public static final RegistryObject<SoundEvent> ENTITY_KUVA_SWING = reg("entity.kuva.swing");
     public static final RegistryObject<SoundEvent> ENTITY_LICH_STRIKE = reg("entity.lich.strike");
     public static final RegistryObject<SoundEvent> ENTITY_THRALL_STRIKE = reg("entity.thrall.strike");
+    public static final RegistryObject<SoundEvent> ENTITY_LARVLING_STRIKE = reg("entity.larvling.strike");
     public static final RegistryObject<SoundEvent> ENTITY_KUVA_STEP = reg("entity.kuva.step");
     public static final RegistryObject<SoundEvent> ENTITY_LICH_RESIST = reg("entity.lich.resist");
     public static final RegistryObject<SoundEvent> ENTITY_LICH_CONFISCATE = reg("entity.lich.confiscate");
@@ -69,6 +75,8 @@ public final class KuvaLichSounds {
     public static final RegistryObject<SoundEvent> MERCY_DOWNED = reg("mercy.downed");
     /** 奴仆倒地：和玄骸同一个声音，单独一个事件只为字幕能写「奴仆」 */
     public static final RegistryObject<SoundEvent> MERCY_DOWNED_THRALL = reg("mercy.downed.thrall");
+    /** 幼体倒地：同上，字幕写「幼体」 */
+    public static final RegistryObject<SoundEvent> MERCY_DOWNED_LARVLING = reg("mercy.downed.larvling");
     public static final RegistryObject<SoundEvent> MERCY_DOWNED_LOOP = reg("mercy.downed.loop");
     public static final RegistryObject<SoundEvent> MERCY_DRAW = reg("mercy.draw");
     public static final RegistryObject<SoundEvent> MERCY_STAB = reg("mercy.stab");
@@ -153,6 +161,8 @@ public final class KuvaLichSounds {
     public static final RegistryObject<SoundEvent> MERCY_STAB_FINAL = reg("mercy.stab.final");
     /** 奴仆被处决时的每一记刺 */
     public static final RegistryObject<SoundEvent> MERCY_THRALL = reg("mercy.thrall");
+    /** 幼体被处决时的每一记刺：声音同奴仆，字幕写「幼体」 */
+    public static final RegistryObject<SoundEvent> MERCY_LARVLING = reg("mercy.larvling");
     /** 玄骸挣脱后遁入赤毒雾 */
     public static final RegistryObject<SoundEvent> MERCY_ESCAPE = reg("mercy.escape");
     /** 怜悯之击成功的裁决（只给处决者） */

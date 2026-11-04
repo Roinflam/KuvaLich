@@ -23,6 +23,8 @@ public class KuvaLarvlingModel extends GeoModel<KuvaLarvlingEntity> {
     private static final ResourceLocation ANIMATION = new ResourceLocation(Reference.MOD_ID,
             "animations/kuva_slave.animation.json");
 
+    private final KuvaPoseLayer.Additive poseAdded = new KuvaPoseLayer.Additive();
+
     @Override
     public ResourceLocation getModelResource(KuvaLarvlingEntity entity) {
         return MODEL;
@@ -50,6 +52,6 @@ public class KuvaLarvlingModel extends GeoModel<KuvaLarvlingEntity> {
     @Override
     public void setCustomAnimations(KuvaLarvlingEntity animatable, long instanceId, AnimationState<KuvaLarvlingEntity> state) {
         super.setCustomAnimations(animatable, instanceId, state);
-        KuvaPoseLayer.apply(this, animatable, state, false);
+        KuvaPoseLayer.apply(this, animatable, state, false, this.poseAdded);
     }
 }

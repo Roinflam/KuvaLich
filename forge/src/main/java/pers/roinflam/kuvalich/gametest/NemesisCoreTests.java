@@ -94,6 +94,26 @@ public final class NemesisCoreTests {
         h.succeed();
     }
 
+    /** 玄骸由幼体诞生，三条线索都在诞生之后揭：第一条也要加怒气 */
+    @GameTest(template = "empty", batch = CORE)
+    public static void firstClueAddsRage(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = card(p);
+        h.assertTrue(LichDirector.birthNow(p), "应当能直接诞生");
+        h.assertTrue(card.getUnlockedCardStatus() == 0, "诞生时还没揭线索（测试前提）");
+        float rage = card.getLichRage();
+        card.setDecryptionProgress(Math.max(0, ModConfig.KUVA_LICH.firstStage.get() - 1));
+        card.addPotion(1);
+        h.assertTrue(card.getUnlockedCardStatus() == 1, "这一点进度应当揭开第一条");
+        LichDirector.onDecryptionProgress(p, card, 1, 0);
+        double expect = ModConfig.KUVA_LICH.lichRagePerClueRevealed.get()
+                + ModConfig.KUVA_LICH.lichRagePerProgressPoint.get();
+        double delta = card.getLichRage() - rage;
+        h.assertTrue(Math.abs(delta - expect) < 1.0E-3D,
+                "第一条线索应当加 " + expect + " 怒气（" + rage + " → " + card.getLichRage() + "）");
+        h.succeed();
+    }
+
     // ==================== #2 同一个玩家同时最多一只 ====================
 
     @GameTest(template = "empty", batch = ISO_ONE, timeoutTicks = 100)

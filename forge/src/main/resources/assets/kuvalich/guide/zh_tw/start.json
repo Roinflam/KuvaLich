@@ -926,7 +926,7 @@
               "if": "cfg:kuva_lich.lichRagePerClueRevealed>0",
               "cells": [
                 "每揭示一張新答案卡",
-                "怒氣 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>，第一張不算"
+                "怒氣 +<t>{cfg:kuva_lich.lichRagePerClueRevealed|pct}</t>"
               ]
             },
             [

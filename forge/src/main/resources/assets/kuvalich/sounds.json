@@ -19,6 +19,13 @@
       "kuvalich:entity/thrall/alert/2"
     ]
   },
+  "entity.larvling.alert": {
+    "subtitle": "subtitles.kuvalich.entity.larvling.alert",
+    "sounds": [
+      "kuvalich:entity/thrall/alert/1",
+      "kuvalich:entity/thrall/alert/2"
+    ]
+  },
   "entity.lich.summon": {
     "subtitle": "subtitles.kuvalich.entity.lich.summon",
     "sounds": [
@@ -47,6 +54,15 @@
       "kuvalich:entity/thrall/ambient/4"
     ]
   },
+  "entity.larvling.ambient": {
+    "subtitle": "subtitles.kuvalich.entity.larvling.ambient",
+    "sounds": [
+      "kuvalich:entity/thrall/ambient/1",
+      "kuvalich:entity/thrall/ambient/2",
+      "kuvalich:entity/thrall/ambient/3",
+      "kuvalich:entity/thrall/ambient/4"
+    ]
+  },
   "entity.lich.hurt": {
     "subtitle": "subtitles.kuvalich.entity.lich.hurt",
     "sounds": [
@@ -58,6 +74,15 @@
   },
   "entity.thrall.hurt": {
     "subtitle": "subtitles.kuvalich.entity.thrall.hurt",
+    "sounds": [
+      "kuvalich:entity/thrall/hurt/1",
+      "kuvalich:entity/thrall/hurt/2",
+      "kuvalich:entity/thrall/hurt/3",
+      "kuvalich:entity/thrall/hurt/4"
+    ]
+  },
+  "entity.larvling.hurt": {
+    "subtitle": "subtitles.kuvalich.entity.larvling.hurt",
     "sounds": [
       "kuvalich:entity/thrall/hurt/1",
       "kuvalich:entity/thrall/hurt/2",
@@ -97,6 +122,23 @@
       }
     ]
   },
+  "entity.larvling.death": {
+    "subtitle": "subtitles.kuvalich.entity.larvling.death",
+    "sounds": [
+      {
+        "name": "kuvalich:entity/thrall/death/1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:entity/thrall/death/2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:entity/thrall/death/3",
+        "attenuation_distance": 24
+      }
+    ]
+  },
   "entity.kuva.swing": {
     "subtitle": "subtitles.kuvalich.entity.kuva.swing",
     "sounds": [
@@ -115,6 +157,14 @@
   },
   "entity.thrall.strike": {
     "subtitle": "subtitles.kuvalich.entity.thrall.strike",
+    "sounds": [
+      "kuvalich:entity/thrall/strike/1",
+      "kuvalich:entity/thrall/strike/2",
+      "kuvalich:entity/thrall/strike/3"
+    ]
+  },
+  "entity.larvling.strike": {
+    "subtitle": "subtitles.kuvalich.entity.larvling.strike",
     "sounds": [
       "kuvalich:entity/thrall/strike/1",
       "kuvalich:entity/thrall/strike/2",
@@ -276,6 +326,16 @@
   },
   "mercy.downed.thrall": {
     "subtitle": "subtitles.kuvalich.mercy.downed.thrall",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/downed/1",
+        "attenuation_distance": 32,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.downed.larvling": {
+    "subtitle": "subtitles.kuvalich.mercy.downed.larvling",
     "sounds": [
       {
         "name": "kuvalich:mercy/downed/1",
@@ -780,6 +840,23 @@
   },
   "mercy.thrall": {
     "subtitle": "subtitles.kuvalich.mercy.thrall",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/thrall/1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:mercy/thrall/2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:mercy/thrall/3",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mercy.larvling": {
+    "subtitle": "subtitles.kuvalich.mercy.larvling",
     "sounds": [
       {
         "name": "kuvalich:mercy/thrall/1",
