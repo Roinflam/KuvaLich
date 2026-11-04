@@ -220,15 +220,18 @@ public final class LichDirector {
      * 处决了一只赤毒幼体：处决者的玄骸诞生，种子和武器都用幼体刷出来时掷好的（头顶亮出来的就是这把）。
      * 他已经有玄骸了返回 false、什么都不做
      *
-     * @param weapon 幼体身上的武器下标；无效（-1）时按种子算
+     * @param weapon      幼体身上的武器下标；无效（-1）时按种子算
+     * @param weaponLevel 幼体倒地时亮出来的武器等级；0 时按种子在处决者的武器等级范围里取
+     * @param weaponType  幼体倒地时亮出来的元素；空时按种子取
      */
-    public static boolean birthFromLarvling(ServerPlayer executor, long seed, int weapon) {
+    public static boolean birthFromLarvling(ServerPlayer executor, long seed, int weapon, int weaponLevel,
+                                            String weaponType) {
         RequiemCard card = card(executor);
         if (card == null || card.hasLich()) {
             return false;
         }
-        birth(executor, card, seed, weapon, ModConfig.KUVA_LICH.lichBirthRage.get().floatValue(), BIRTH_COMM_DELAY,
-                now(executor.server));
+        birth(executor, card, seed, weapon, weaponLevel, weaponType,
+                ModConfig.KUVA_LICH.lichBirthRage.get().floatValue(), BIRTH_COMM_DELAY, now(executor.server));
         return true;
     }
 
@@ -238,7 +241,7 @@ public final class LichDirector {
         if (card == null || card.hasLich()) {
             return false;
         }
-        birth(player, card, randomSeed(player), -1, ModConfig.KUVA_LICH.lichBirthRage.get().floatValue(),
+        birth(player, card, randomSeed(player), -1, 0, "", ModConfig.KUVA_LICH.lichBirthRage.get().floatValue(),
                 BIRTH_COMM_DELAY, now(player.server));
         return true;
     }
@@ -463,7 +466,7 @@ public final class LichDirector {
         }
         if (card.getUnlockedCardStatus() >= 1 && !card.hasLich()) {
             // 揭开过密语却没有玄骸：玄骸出现之前的老存档，或者这一轮被管理命令作废了（现在没有玄骸拿不到解密进度），照旧直接补一只
-            birth(player, card, randomSeed(player), -1, ModConfig.KUVA_LICH.lichMigrationRage.get().floatValue(),
+            birth(player, card, randomSeed(player), -1, 0, "", ModConfig.KUVA_LICH.lichMigrationRage.get().floatValue(),
                     MIGRATION_COMM_DELAY, now);
         }
         if (card.isLichEncounterOpen()) {
@@ -683,8 +686,8 @@ public final class LichDirector {
      *
      * @param weapon 武器下标；无效（-1）时按种子算
      */
-    private static void birth(ServerPlayer player, RequiemCard card, long seed, int weapon, float rage, int commDelay,
-                              long now) {
+    private static void birth(ServerPlayer player, RequiemCard card, long seed, int weapon, int weaponLevel,
+                              String weaponType, float rage, int commDelay, long now) {
         Set<String> taken = takenNames(player, card);
         String name = null;
         long nameSeed = seed;
@@ -704,11 +707,18 @@ public final class LichDirector {
         if (weapon < 0 || weapon >= weaponCount) {
             weapon = LichProfile.weaponIndex(seed, weaponCount);
         }
+        // 等级和元素一出生就定死，打赢时掉的就是这一把；不经幼体诞生的（管理命令、老存档补生）按种子在自己的范围里取
+        if (weaponLevel <= 0) {
+            weaponLevel = LichProfile.weaponLevel(seed, card.getMinimumLevelWeapon(), card.getMaximumLevelWeapon());
+        }
+        if (weaponType == null || weaponType.isEmpty()) {
+            weaponType = LichProfile.weaponElement(seed);
+        }
         ServerLevel level = player.serverLevel();
         String biome = level.getBiome(player.blockPosition()).unwrapKey()
                 .map(key -> key.location().toString()).orElse("");
         String dim = level.dimension().location().toString();
-        card.beginLich(name, seed, weapon, biome, dim);
+        card.beginLich(name, seed, weapon, weaponLevel, weaponType, biome, dim);
         card.setLichRage(rage);
 
         Hunt h = hunt(player);

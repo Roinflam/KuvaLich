@@ -31,6 +31,7 @@ import pers.roinflam.kuvalich.mercy.MercyRules;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.LichProfile;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -60,8 +61,14 @@ public class KuvaLarvlingEntity extends KuvaSlaveEntity {
     /** 整只的缩放：模型照奴仆的骨架摆（40.25 像素），画的时候缩到这么大，站着约 1.89 格；渲染和处决动作共用 */
     public static final float MODEL_SCALE = 0.75F;
 
-    /** 将来那只玄骸的武器下标，-1 = 还没掷（客户端画手里的刀、倒地时头顶的展示都靠它） */
+    /** 将来那只玄骸的武器下标，-1 = 还没掷（倒地时亮给玩家看的就是这把；幼体自己空着手，原作如此） */
     private static final EntityDataAccessor<Integer> DATA_WEAPON =
+            SynchedEntityData.defineId(KuvaLarvlingEntity.class, EntityDataSerializers.INT);
+    /** 那把武器定下的等级，0 = 还没掷 */
+    private static final EntityDataAccessor<Integer> DATA_WEAPON_LEVEL =
+            SynchedEntityData.defineId(KuvaLarvlingEntity.class, EntityDataSerializers.INT);
+    /** 那把武器定下的元素在 {@link KuvaWeaponUtil#LICH_ELEMENTS} 里的下标，-1 = 还没掷 */
+    private static final EntityDataAccessor<Integer> DATA_WEAPON_TYPE =
             SynchedEntityData.defineId(KuvaLarvlingEntity.class, EntityDataSerializers.INT);
 
     /** 为谁刷的（导演刷的才有；刷怪蛋、命令造的没有）。服务端 */
@@ -94,16 +101,33 @@ public class KuvaLarvlingEntity extends KuvaSlaveEntity {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(DATA_WEAPON, -1);
+        this.entityData.define(DATA_WEAPON_LEVEL, 0);
+        this.entityData.define(DATA_WEAPON_TYPE, -1);
     }
 
     // ==================== 种子与武器 ====================
 
-    /** 导演刷之前调：定下主人、种子，武器按种子算（和老规矩「种子定武器」一致） */
+    /**
+     * 导演刷之前调：定下主人、种子，武器、元素、等级都按种子算（和老规矩「种子定武器」一致）。
+     * 等级在主人当前的武器等级范围里取，主人不在线、没有主人时按新玩家的初始范围；谁处决诞生的玄骸，拿的都是这里定的这一把
+     */
     public void setup(@Nullable UUID owner, long seed) {
         this.owner = owner;
         this.seed = seed;
         this.seeded = true;
         this.entityData.set(DATA_WEAPON, LichProfile.weaponIndex(seed, KuvaLichItems.KUVA_WEAPONS.size()));
+        int min = ModConfig.KUVA_LICH.baseMinimumLevel.get();
+        int max = ModConfig.KUVA_LICH.baseMaximumLevel.get();
+        if (owner != null && this.level() instanceof ServerLevel server) {
+            ServerPlayer p = server.getServer().getPlayerList().getPlayer(owner);
+            RequiemCard card = p == null ? null : p.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).orElse(null);
+            if (card != null) {
+                min = card.getMinimumLevelWeapon();
+                max = card.getMaximumLevelWeapon();
+            }
+        }
+        this.entityData.set(DATA_WEAPON_LEVEL, Math.max(1, LichProfile.weaponLevel(seed, min, max)));
+        this.entityData.set(DATA_WEAPON_TYPE, KuvaWeaponUtil.LICH_ELEMENTS.indexOf(LichProfile.weaponElement(seed)));
     }
 
     /** 刷怪蛋、命令造的：进世界时自己掷一个 */
@@ -133,6 +157,17 @@ public class KuvaLarvlingEntity extends KuvaSlaveEntity {
     /** 手里那把（也是将来玄骸的那把）在武器列表里的下标，-1 = 没有。两端都能读 */
     public int getWeaponIndex() {
         return this.entityData.get(DATA_WEAPON);
+    }
+
+    /** 那把武器定下的等级，0 = 还没掷。两端都能读 */
+    public int getWeaponLevel() {
+        return this.entityData.get(DATA_WEAPON_LEVEL);
+    }
+
+    /** 那把武器定下的元素（如 {@code fire}），还没掷是空串。两端都能读 */
+    public String getWeaponType() {
+        int i = this.entityData.get(DATA_WEAPON_TYPE);
+        return i >= 0 && i < KuvaWeaponUtil.LICH_ELEMENTS.size() ? KuvaWeaponUtil.LICH_ELEMENTS.get(i) : "";
     }
 
     /** 武器物品，下标无效返回 null */
@@ -263,7 +298,7 @@ public class KuvaLarvlingEntity extends KuvaSlaveEntity {
             return;
         }
         this.birthGiven = true;
-        LichDirector.birthFromLarvling(executor, this.seed, getWeaponIndex());
+        LichDirector.birthFromLarvling(executor, this.seed, getWeaponIndex(), getWeaponLevel(), getWeaponType());
     }
 
     @Override

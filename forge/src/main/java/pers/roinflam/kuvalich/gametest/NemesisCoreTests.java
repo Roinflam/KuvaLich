@@ -625,7 +625,10 @@ public final class NemesisCoreTests {
 
         KuvaMasterEntity wild = reloaded(level, at, true);
         level.addLegacyChunkEntities(Stream.of(wild));
-        h.assertTrue(level.getEntity(wild.getUUID()) == wild && wild.isWild(), "带 KuvaWild 的应当留下、还是野生的");
+        h.assertTrue(level.getEntity(wild.getUUID()) == wild && wild.isWild(),
+                "带 KuvaWild 的应当留下、还是野生的（added=" + wild.isAddedToWorld() + "，removed=" + wild.isRemoved()
+                        + "，tag=" + wild.hasWildTag() + "，wild=" + wild.isWild() + "，同 UUID=" + wild.getUUID().equals(legacy.getUUID())
+                        + "，世界里那只=" + level.getEntity(wild.getUUID()) + "）");
         wild.discard();
         h.succeed();
     }

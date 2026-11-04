@@ -19,16 +19,18 @@ import java.util.List;
  */
 public class KuvaWeaponUtil {
 
-    private static final List<String> DAMAGE_TYPE = new ArrayList<>(Arrays.asList(
+    /** 赤毒武器会带的 7 种元素（玄骸那把在幼体出现时从这里按种子挑一种） */
+    public static final List<String> LICH_ELEMENTS = List.of(
             "fire", "poison", "ice", "electricity", "impact", "magnetic", "radiation"
-    ));
+    );
+    private static final List<String> DAMAGE_TYPE = new ArrayList<>(LICH_ELEMENTS);
 
     /**
      * 生成随机赤毒武器
      * Generate random Kuva weapon
      */
     public static ItemStack getItem(Item item, int min, int max) {
-        return getItem(item, DAMAGE_TYPE.get(RandomUtil.getInt(0, 6)), RandomUtil.getInt(min, max));
+        return getItem(item, DAMAGE_TYPE.get(RandomUtil.getInt(0, DAMAGE_TYPE.size() - 1)), RandomUtil.getInt(min, max));
     }
 
     /**

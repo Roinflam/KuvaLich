@@ -49,6 +49,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  *   <li><b>无主玄骸</b>：不显示。</li>
  *   <li><b>奴仆</b>：16 格内满显示、16 → 20 格淡出。看的人自己有玄骸写「DROKAG TUZZ 奴仆」（名字取他自己那只的），
  *       还没有就写「赤毒奴仆」；下面一条细血条和一行元素状态。被墙挡住时整块降到 α 0.3、透过墙照样画（同原版名牌）。</li>
+ *   <li><b>幼体</b>：同奴仆的距离和遮挡规则，但只有一行「赤毒幼体」，字底离头顶 0.1 格；倒地起换成屏幕标注，名牌不画。</li>
  * </ul>
  *
  * <p>倒地、处决、挣脱离场时名牌照留，高度跟着姿势走：站姿身高减去脖子此刻比站着时低了多少（渲染器画本体时量的），
@@ -65,6 +66,8 @@ public final class LichNameplates {
     private static final float THRALL_SCALE = 0.020F;
     /** 名牌离头顶多高（格） */
     private static final float ABOVE_HEAD = 0.5F;
+    /** 幼体名牌的上沿离头顶多高（格）：只有一行字，字底离头顶 0.1 格 */
+    private static final float LARVLING_ABOVE_HEAD = 0.1F + 9.0F * THRALL_SCALE;
     private static final double LICH_RANGE = 32.0D;
     /** 玄骸名牌在最后这 4 格里淡出，免得走到 32 格一下没了 */
     private static final double LICH_FADE_FROM = 28.0D;
@@ -123,6 +126,11 @@ public final class LichNameplates {
         notePoseTop(entity, headDrop);
         if (!EffectsDisplayConfig.lichNameplates() || LichPuppet.isPuppet(entity) || entity.getId() < 0
                 || entity.hasCustomName() || !entity.isAlive()) {
+            return false;
+        }
+        if (entity instanceof KuvaLarvlingEntity && entity.getMercyState() != MercyState.NONE) {
+            // 倒地的幼体有屏幕标注（LarvlingTag），小标题已经说明是什么，名牌收起来免得和标注挤在头顶；
+            // 处决时也不再冒出来
             return false;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -247,9 +255,9 @@ public final class LichNameplates {
         }
         Font.DisplayMode mode = visible ? Font.DisplayMode.NORMAL : Font.DisplayMode.SEE_THROUGH;
         Font font = mc.font;
-        float top = height + ABOVE_HEAD;
+        float top = height + (larvling ? LARVLING_ABOVE_HEAD : ABOVE_HEAD);
         float w = SpacedText.width(font, p.line1, SPACING);
-        a *= bossBarFade(ps, mc, top, THRALL_SCALE, Math.max(w, BAR_W) * 0.5F, 0.0F);
+        a *= bossBarFade(ps, mc, top, THRALL_SCALE, (larvling ? w : Math.max(w, BAR_W)) * 0.5F, 0.0F);
         if (a <= 0.02F) {
             return false;
         }
@@ -258,6 +266,11 @@ public final class LichNameplates {
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
         ps.scale(-THRALL_SCALE, -THRALL_SCALE, THRALL_SCALE);
         shadowedLine(ps, buffer, font, p.line1, -w * 0.5F, 0.0F, FxPalette.BONE, a, mode);
+        if (larvling) {
+            // 幼体只有一行名字：一两刀就倒，血条和元素那行用不上，挂着反倒把名字顶得离头老高
+            ps.popPose();
+            return true;
+        }
 
         // 细血条
         float hp = Mth.clamp(thrall.getHealth() / Math.max(1.0F, thrall.getMaxHealth()), 0.0F, 1.0F);
@@ -382,7 +395,8 @@ public final class LichNameplates {
             boolean mine = lich.isOwner(player) && !ArchiveDevCommands.forceOtherView;
             return ABOVE_HEAD + (mine ? 0.0F : 9.0F * LICH_SCALE);
         }
-        return e instanceof KuvaSlaveEntity ? ABOVE_HEAD : 0.0D;
+        // 幼体倒地后名牌不画（换成屏幕标注）
+        return e instanceof KuvaSlaveEntity && !(e instanceof KuvaLarvlingEntity) ? ABOVE_HEAD : 0.0D;
     }
 
     /** 一行带墨色底影的字：先在 (+1, +1) 画 {@code INK} α 0.6 的影，再往前挪一点画正文（同原版带影文字的做法） */

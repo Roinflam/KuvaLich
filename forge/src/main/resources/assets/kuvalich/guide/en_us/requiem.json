@@ -25,11 +25,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>Wake your nemesis</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} turns up near you every so often. Knock it down and execute it with {lang:key.kuvalich.mercy}, and your {lang:entity.kuvalich.kuva_master} is born, carrying the weapon the Larvling showed above its head. [[enemies/kuva_larvling|More]]"
+              "text": "<em>Wake your nemesis</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} turns up near you every so often. Knock it down and execute it with {lang:key.kuvalich.mercy}, and your {lang:entity.kuvalich.kuva_master} is born, carrying the weapon the downed Larvling revealed, level and element included. [[enemies/kuva_larvling|More]]"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "<em>Wake your nemesis</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} turns up near you every so often. Kill it yourself, and your {lang:entity.kuvalich.kuva_master} is born, carrying the weapon the Larvling held. [[enemies/kuva_larvling|More]]"
+              "text": "<em>Wake your nemesis</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} turns up near you every so often. Kill it yourself, and your {lang:entity.kuvalich.kuva_master} is born, carrying the weapon settled when the Larvling appeared. [[enemies/kuva_larvling|More]]"
             },
             {
               "if": [
@@ -316,14 +316,14 @@
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "Stats",
-                "Health and armor, roughly how hard one blow hits you (at the current difficulty, including the extra damage from its rank, without battle fury), weaknesses, resistances, adaptation, the weapon it carries with your weapon level range, birthplace, battle fury, your damage to it and its damage to you, and encounters, listing only the rows that apply to it"
+                "Health and armor, roughly how hard one blow hits you (at the current difficulty, including the extra damage from its rank, without battle fury), weaknesses, resistances, adaptation, the weapon it carries with that weapon's level and element, birthplace, battle fury, your damage to it and its damage to you, and encounters, listing only the rows that apply to it"
               ]
             },
             {
               "if": "!cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "Stats",
-                "Health and armor, roughly how hard one blow hits you (at the current difficulty, including the extra damage from its rank), weaknesses, resistances, adaptation, the weapon it carries with your weapon level range, birthplace, your damage to it and its damage to you, and encounters, listing only the rows that apply to it"
+                "Health and armor, roughly how hard one blow hits you (at the current difficulty, including the extra damage from its rank), weaknesses, resistances, adaptation, the weapon it carries with that weapon's level and element, birthplace, your damage to it and its damage to you, and encounters, listing only the rows that apply to it"
               ]
             },
             {
@@ -730,7 +730,7 @@
           "rows": [
             [
               "Kuva weapon",
-              "1, the very weapon it carries, with a random element"
+              "1, the very weapon it carries, with the level and element settled when the Larvling appeared"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -765,7 +765,7 @@
           "type": "list",
           "items": [
             "<em>Kuva weapons</em> come only from successful Lich hunts. The kind is the one your Lich was born carrying, which you can check in advance in the [[requiem/lich_archive]], and its level is rolled within your <t>weapon level range</t>; see [[weapons/kuva_weapons]].",
-            "A new character's range is <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t>, and your first success rolls a weapon level inside it. Each later success raises the range until it hits its cap; see [[weapons/weapon_level]].",
+            "A new character's range is <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t>, and your first Larvling's weapon level is rolled inside it. Each later success raises the range until it hits its cap; see [[weapons/weapon_level]].",
             "Mods are upgrade cards you fit to a weapon or to yourself, and the <em>high-tier mod</em> here comes from the top two quality tiers, <t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> Prime and the rest Riven; see [[modules/module_rarity]].",
             "<t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> of them are weapon mods and the rest are Warframe mods. Here the “Warframe” is you, so Warframe mods go on yourself."
           ]
@@ -795,7 +795,7 @@
               "text": "An execution is judged by the cards in the Gate when it starts; swapping or adding cards partway through doesn't count, and an empty slot counts as wrong."
             },
             "After each success, the minimum and maximum of your weapon level range both rise by <em>the same</em> random amount, <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>, capped at <t>{cfg:kuva_lich.minimumLevel}</t> and <t>{cfg:kuva_lich.maximumLevel}</t> respectively.",
-            "Both ends rise by the same amount, so the range keeps its width until one end hits its cap. This kill's weapon uses the range from before the increase.",
+            "Both ends rise by the same amount, so the range keeps its width until one end hits its cap. This kill's weapon was settled with the range from before the increase.",
             "In Creative mode, press <t>TAB</t> in the Requiem Gate to fill in the correct answer. It only works once at least 1 clue is revealed, and your old cards go back to your inventory."
           ]
         }

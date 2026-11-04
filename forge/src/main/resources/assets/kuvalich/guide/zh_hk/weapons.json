@@ -49,7 +49,7 @@
             "了結一隻{lang:entity.kuvalich.kuva_larvling}，你的{lang:entity.kuvalich.kuva_master}隨之誕生；再從{lang:entity.kuvalich.kuva_slave}身上積攢解密進度，一條條解開由三張安魂卡組成的答案，見[[requiem/decryption]]",
             "在{item:kuvalich:requiem_gate}裏按正確順序放好三張卡，見[[requiem/requiem_gate]]",
             "討伐你的{lang:entity.kuvalich.kuva_master}，卡序全對才算成功，成功時掉落它手裏那把赤毒武器，另有{item:kuvalich:lich_reliquary}等獎勵",
-            "武器種類在幼體出現時就從 13 把裏<em>等概率</em>定下，幼體手裏拿的就是這一把，玄骸誕生後[[requiem/lich_archive|玄骸檔案]]裏也能看到；等級在你當前的個人等級範圍裏隨機，掉落之後這個範圍才上漲，見[[weapons/weapon_level]]"
+            "武器種類、等級和元素在幼體出現時就定下：種類從 13 把裏<em>等概率</em>挑，等級在你當前的個人等級範圍裏取，元素是 7 種之一；幼體倒地時會亮出來，玄骸誕生後[[requiem/lich_archive|玄骸檔案]]裏也能看到。掉落之後這個範圍才上漲，見[[weapons/weapon_level]]"
           ]
         },
         {
@@ -575,7 +575,7 @@
         },
         {
           "type": "p",
-          "text": "掉落武器的等級在你個人的<t>下限 ~ 上限</t>之間隨機，這個範圍記在你的角色身上，死了也不會丟，新角色從 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 起步。"
+          "text": "玄骸掉的那把武器，等級在幼體出現時就從你個人的<t>下限 ~ 上限</t>之間取好，幼體倒地時會亮出來。這個範圍記在你的角色身上，死了也不會丟，新角色從 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 起步。"
         },
         {
           "type": "steps",

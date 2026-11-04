@@ -635,11 +635,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>等幼體</em>：還沒有玄骸時，在線每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分鐘會有一隻{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上會提示「{lang:message.kuvalich.larvling.appeared}」。把它打倒，它頭頂亮出的就是你將來那隻玄骸的武器；走近按<t>{lang:key.kuvalich.mercy}</t>鍵處決，玄骸就此誕生。倒地後<b>別再打它</b>，補一下它就消散了，見[[enemies/kuva_larvling]]。"
+              "text": "<em>等幼體</em>：還沒有玄骸時，在線每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分鐘會有一隻{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上會提示「{lang:message.kuvalich.larvling.appeared}」。把它打倒，它亮出的就是你將來那隻玄骸的武器，連等級、元素都定好了；走近按<t>{lang:key.kuvalich.mercy}</t>鍵處決，玄骸就此誕生。倒地後<b>別再打它</b>，補一下它就消散了，見[[enemies/kuva_larvling]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "<em>等幼體</em>：還沒有玄骸時，在線每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分鐘會有一隻{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上會提示「{lang:message.kuvalich.larvling.appeared}」。親手打死它，你的玄骸就此誕生，拿的就是它手裏那把武器，見[[enemies/kuva_larvling]]。"
+              "text": "<em>等幼體</em>：還沒有玄骸時，在線每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分鐘會有一隻{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上會提示「{lang:message.kuvalich.larvling.appeared}」。親手打死它，你的玄骸就此誕生，拿的就是它出現時就定好的那把武器，見[[enemies/kuva_larvling]]。"
             },
             {
               "if": "cfg:kuva_lich.thrallSquadEnabled",
@@ -1071,7 +1071,7 @@
           "rows": [
             [
               "赤毒武器",
-              "1 把，和玄骸手裏握着的同一種，13 種之一"
+              "1 把，就是玄骸手裏那一把（13 種之一），等級、元素在幼體倒地時就亮出來了"
             ],
             [
               "{item:kuvalich:lich_reliquary}",

@@ -114,6 +114,10 @@ public class RequiemCard {
     private int lichEncounters;
     /** 它手里的赤毒武器在武器列表里的下标，-1 = 没有 */
     private int lichWeapon = -1;
+    /** 那把武器定下的等级（幼体出现时就定了），0 = 没定：老存档的玄骸，成功时照旧在武器等级范围里随机 */
+    private int lichWeaponLevel;
+    /** 那把武器定下的元素（{@code KuvaWeaponUtil.LICH_ELEMENTS} 之一），空 = 没定 */
+    private String lichWeaponType = "";
     private String lichBirthBiome = "";
     private String lichBirthDim = "";
     /** 处决记录，最新在前，最多 {@link #MAX_ATTEMPTS} 个，编码见 {@link #packAttempt} */
@@ -197,6 +201,8 @@ public class RequiemCard {
         this.lichEncounterOpen = requiemCard.lichEncounterOpen;
         this.lichEncounters = requiemCard.lichEncounters;
         this.lichWeapon = requiemCard.lichWeapon;
+        this.lichWeaponLevel = requiemCard.lichWeaponLevel;
+        this.lichWeaponType = requiemCard.lichWeaponType;
         this.lichBirthBiome = requiemCard.lichBirthBiome;
         this.lichBirthDim = requiemCard.lichBirthDim;
         this.lichAttempts = requiemCard.lichAttempts.clone();
@@ -558,6 +564,16 @@ public class RequiemCard {
         return lichWeapon;
     }
 
+    /** 那把武器定下的等级，0 = 没定 */
+    public int getLichWeaponLevel() {
+        return lichWeaponLevel;
+    }
+
+    /** 那把武器定下的元素，空 = 没定 */
+    public String getLichWeaponType() {
+        return lichWeaponType;
+    }
+
     public String getLichBirthBiome() {
         return lichBirthBiome;
     }
@@ -601,9 +617,19 @@ public class RequiemCard {
      * 诞生一只新玄骸：写名字、种子、武器、出生地，代数加一，怒气、冷却、交手次数、处决记录清零
      */
     public void beginLich(String name, long seed, int weaponIndex, String biome, String dim) {
+        beginLich(name, seed, weaponIndex, 0, "", biome, dim);
+    }
+
+    /**
+     * 同上，连那把武器定下的等级和元素一起写（{@code weaponLevel} 0、{@code weaponType} 空 = 不定，成功时照旧随机）
+     */
+    public void beginLich(String name, long seed, int weaponIndex, int weaponLevel, String weaponType, String biome,
+                          String dim) {
         this.lichName = name == null ? "" : name;
         this.lichSeed = seed;
         this.lichWeapon = weaponIndex;
+        this.lichWeaponLevel = Math.max(0, weaponLevel);
+        this.lichWeaponType = weaponType == null ? "" : weaponType;
         this.lichBirthBiome = biome == null ? "" : biome;
         this.lichBirthDim = dim == null ? "" : dim;
         this.lichGeneration++;
@@ -632,6 +658,8 @@ public class RequiemCard {
         this.lichName = "";
         this.lichSeed = 0L;
         this.lichWeapon = -1;
+        this.lichWeaponLevel = 0;
+        this.lichWeaponType = "";
         this.lichBirthBiome = "";
         this.lichBirthDim = "";
         this.lichRage = 0.0F;
@@ -868,6 +896,8 @@ public class RequiemCard {
         nbt.putBoolean("lichEncounterOpen", lichEncounterOpen);
         nbt.putInt("lichEncounters", lichEncounters);
         nbt.putInt("lichWeapon", lichWeapon);
+        nbt.putInt("lichWeaponLevel", lichWeaponLevel);
+        nbt.putString("lichWeaponType", lichWeaponType);
         nbt.putString("lichBirthBiome", lichBirthBiome);
         nbt.putString("lichBirthDim", lichBirthDim);
         nbt.putIntArray("lichAttempts", lichAttempts);
@@ -979,6 +1009,8 @@ public class RequiemCard {
         this.lichEncounterOpen = nbt.getBoolean("lichEncounterOpen");
         this.lichEncounters = nbt.getInt("lichEncounters");
         this.lichWeapon = nbt.contains("lichWeapon") ? nbt.getInt("lichWeapon") : -1;
+        this.lichWeaponLevel = nbt.getInt("lichWeaponLevel");
+        this.lichWeaponType = nbt.getString("lichWeaponType");
         this.lichBirthBiome = nbt.getString("lichBirthBiome");
         this.lichBirthDim = nbt.getString("lichBirthDim");
         int[] attempts = nbt.getIntArray("lichAttempts");
@@ -1002,6 +1034,8 @@ public class RequiemCard {
         this.lichEncounterOpen = false;
         this.lichEncounters = 0;
         this.lichWeapon = -1;
+        this.lichWeaponLevel = 0;
+        this.lichWeaponType = "";
         this.lichBirthBiome = "";
         this.lichBirthDim = "";
         this.lichAttempts = new int[0];

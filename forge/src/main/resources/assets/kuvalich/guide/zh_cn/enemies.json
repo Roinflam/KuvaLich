@@ -17,11 +17,11 @@
         {
           "type": "comm",
           "who": "lotus",
-          "text": "Tenno，它手里攥着的，就是你未来宿敌的武器。了结它，它就会醒来。"
+          "text": "Tenno，打倒它，它就会亮出你未来宿敌的武器。了结它，它就会醒来。"
         },
         {
           "type": "p",
-          "text": "<hl>{lang:entity.kuvalich.kuva_larvling}</hl>是还没长成的玄骸。你还没有玄骸时，它会隔一阵出现在你附近，手里握着的就是将来那只玄骸的武器。了结它，属于你的{lang:entity.kuvalich.kuva_master}就此诞生，此后它只冲你一个人来。"
+          "text": "<hl>{lang:entity.kuvalich.kuva_larvling}</hl>是还没长成的玄骸。你还没有玄骸时，它会隔一阵出现在你附近。将来那只玄骸的武器在它出现时就定好了：哪一把、多少级、什么元素，把它打倒就会亮出来。了结它，属于你的{lang:entity.kuvalich.kuva_master}就此诞生，此后它只冲你一个人来。"
         },
         {
           "type": "entity",
@@ -52,7 +52,7 @@
           "if": "cfg:kuva_lich.mercyEnabled",
           "items": [
             "把它打倒：它只有 <t>70</t> 点生命，比奴仆好对付；受到致命一击时不死，而是<w>倒地</w> <t>{cfg:kuva_lich.larvlingDownedSeconds}</t> 秒",
-            "看它头顶：倒地后，将来那只玄骸的武器会亮在它头顶，你的玄骸拿的就是这一把，终结玄骸时你拿到的也是这一把",
+            "看它亮出的武器：倒地后，它会亮出将来那只玄骸的武器、等级和元素。你的玄骸拿的就是这一把，终结玄骸时你拿到的也是这一把，等级、元素都不变；看不上就放过它，等下一只",
             "走到 <t>{cfg:kuva_lich.mercyReach}</t> 格内看着它，出现「{lang:kuvalich.mercy.prompt.larvling}」时按<t>{lang:key.kuvalich.mercy}</t>键（默认 <t>X</t>）",
             "处决完成，它化作赤毒消散，你的{lang:entity.kuvalich.kuva_master}随之诞生，第一次开口和你打招呼"
           ]
@@ -60,7 +60,7 @@
         {
           "type": "p",
           "if": "!cfg:kuva_lich.mercyEnabled",
-          "text": "亲手打死它，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是它手里那把武器。最后一击必须是还没有玄骸的玩家打出的，被宠物、别的怪或岩浆收掉的什么都不给。"
+          "text": "亲手打死它，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是它出现时就定好的那把武器，等级、元素也一样。最后一击必须是还没有玄骸的玩家打出的，被宠物、别的怪或岩浆收掉的什么都不给。"
         },
         {
           "type": "tip",
@@ -117,7 +117,7 @@
         "entity/KuvaLarvlingEntity.java:194 hurt — 倒地时挨玩家或玩家宠物一下（不带 BYPASSES_INVULNERABILITY）→ beginExpire 就地消散；mercy/MercyServer.java:532 onDownedTimeout 超时 → beginExpire；都不给东西",
         "entity/KuvaLarvlingEntity.java:220 onKilled — 处决走完（怜悯之击关着时是被 Player 打死，宠物、环境不算）→ LichDirector.birthFromLarvling(击杀者, 种子, 武器)，击杀者已有玄骸时什么都不给；不掉落、不给解密进度；shouldBeSaved / removeWhenFarAway 均为 false",
         "nemesis/LichDirector.java:224 birthFromLarvling — 种子、武器都用幼体刷出时掷好的；名字重名时换名字不换武器；诞生通讯照旧",
-        "client/larvling/LarvlingOverhead.java — 倒地时头顶亮出武器；client/larvling/LarvlingWeaponLayer.java — 手里拿着同一把（DATA_WEAPON 同步）",
+        "client/larvling/LarvlingTag.java — 倒地时屏幕上的引线标注：武器、等级、元素、倒计时，处决提示并在里面（DATA_WEAPON / DATA_WEAPON_LEVEL / DATA_WEAPON_TYPE 同步）；幼体手上不拿武器，KuvaLarvlingRenderer 不挂武器层；平时头顶只有一行「赤毒幼体」、没有血条，字底离头顶 0.1 格，倒地时名牌收起（LichNameplates LARVLING_ABOVE_HEAD）",
         "entity/KuvaLarvlingEntity.java onAddedToWorld → ensureSeeded — 刷怪蛋、命令造的进世界时自己掷种子，同样能诞生玄骸（没有主人，资格人只能是打倒它的人）",
         "星际战甲小知识：原作 Kuva Larvling 出现在任务中，倒地后显示将来玄骸的武器、元素加成和幻纹，可以处决（Mercy）让它成为宿敌，也可以放着不管"
       ]
@@ -449,11 +449,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "打倒一只[[enemies/kuva_larvling|赤毒幼体]]并处决它，你的玄骸就此诞生，拿的就是幼体倒地时头顶亮出的那把武器"
+              "text": "打倒一只[[enemies/kuva_larvling|赤毒幼体]]并处决它，你的玄骸就此诞生，拿的就是幼体倒地时亮出的那把武器，等级、元素也一样"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "亲手打死一只[[enemies/kuva_larvling|赤毒幼体]]，你的玄骸就此诞生，拿的就是幼体手里那把武器"
+              "text": "亲手打死一只[[enemies/kuva_larvling|赤毒幼体]]，你的玄骸就此诞生，拿的就是幼体出现时就定好的那把武器"
             },
             {
               "if": [
@@ -860,7 +860,7 @@
           "rows": [
             [
               "[[weapons/kuva_weapons|赤毒武器]]",
-              "1 把，就是它手里那一把，元素随机，等级在你当前的武器等级范围内随机"
+              "1 把，就是它手里那一把，等级和元素就是幼体倒地时亮出的那些"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -910,7 +910,7 @@
           "items": [
             "<c:55FFFF>Prime</c> 和 <c:FF55FF>裂罅</c>是模组的两档高级品质，区别见[[modules/module_rarity]]",
             "武器等级范围的下限和上限各提高同一个随机值 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，下限最多提到 <t>{cfg:kuva_lich.minimumLevel}</t>，上限最多提到 <t>{cfg:kuva_lich.maximumLevel}</t>，见[[weapons/weapon_level]]",
-            "这次掉的赤毒武器按<em>提升前</em>的范围生成，新范围从下一次解密起才生效"
+            "这次掉的赤毒武器是幼体出现时按<em>提升前</em>的范围定下的，新范围从下一只幼体起才生效"
           ]
         },
         {
@@ -982,7 +982,7 @@
         "entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时按主人的卡判定，谁打出最后一击不重要；主人不在线、不在同一世界或离它超过 64 格（:178 RESOLVE_RANGE）→ KILLED_OTHER，不判定、不给进度",
         "capability/RequiemCard.java:259 isReadyCard / :416 correctPrefixLength — 三格全满才判定，前缀判定；卡没放满只给进度（:1170 giveDecryptionProgress，min/max × masterPotionMultiplier），按 KILLED_OTHER 结束遭遇（之后照常再来）",
         "entity/KuvaMasterEntity.java:921 directFailure / mercy/MercyServer.java:763 settleFailure — 判错 kuvaLevel + 1、给进度、按 MERCY_FAILED 离场（同一只，冷却后再来）",
-        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 成功：遗言、归还没收、消耗卡、武器 = KUVA_WEAPONS.get(card.getLichWeapon())（它诞生时定下的那把），元素随机、等级在当前范围内；玄骸之遗、裂罅碎块、赤毒、高级模组（:1119）、通牒概率、:1139 提升等级范围（在生成武器之后）；全部生成在它倒下的位置，不吃 itemDropMultiplier",
+        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 成功：遗言、归还没收、消耗卡、武器 = KUVA_WEAPONS.get(card.getLichWeapon())（它诞生时定下的那把），等级、元素用卡上 getLichWeaponLevel / getLichWeaponType（幼体出现时定的；老存档没定过才按当前范围随机）；玄骸之遗、裂罅碎块、赤毒、高级模组（:1119）、通牒概率、:1139 提升等级范围（在生成武器之后）；全部生成在它倒下的位置，不吃 itemDropMultiplier",
         "capability/RequiemCard.java:345 consumeCardsAndGetSurvivors — 卡耐久 +1，未坏的返还；:379 reset() 清空卡、线索、答案、进度、kuvaLevel 和玄骸（不清武器等级范围和没收列表）；下一只要再处决一只赤毒幼体才诞生",
         "奖励表「被没收的物品」行的条件与 requiem/confiscation 一致：confiscationChance 与 maxConfiscatedItems 都非 0 才有没收",
         "utils/KuvaPalette.java — Prime 55FFFF / 裂罅 FF55FF",

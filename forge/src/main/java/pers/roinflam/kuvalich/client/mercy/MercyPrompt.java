@@ -39,12 +39,14 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.client.KuvaKeyMappings;
 import pers.roinflam.kuvalich.client.fx.FxCurve;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.client.larvling.LarvlingTag;
 import pers.roinflam.kuvalich.client.lich.LichNameplates;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
@@ -72,6 +74,9 @@ import java.util.UUID;
  * 视线和锚点夹角不超过 30°（或者准星正指着它）时，画骨白底的「[键] 安魂 怜悯之击」（奴仆「密语」、幼体「诞生」）；
  * 别人的猎物在 8 格内看着它时画暗灰底的「某某 的猎物」。同时有好几只倒地时只给夹角最小的一只画，处决键也只对它发请求。
  * 字和线都按物理像素画，GUI 缩放大的时候不糊、不变粗。</p>
+ *
+ * <p><b>幼体例外</b>：倒地的幼体不画世界里的标记和这块小牌，改由 {@link LarvlingTag} 在屏幕上画一条引线标注
+ * （武器、等级、元素、倒计时，处决提示并在标注里）。选目标、处决键照旧走这里，标注用 {@link #promptAlpha} 跟着小牌的淡入淡出。</p>
  *
  * <p><b>处决键</b>：小牌显示着时按一下发一个 {@link MercyRequestPacket}，客户端每秒最多 4 个（按住不放的自动连发也算在内）；
  * 小牌没显示时按了什么都不做。能不能捅以服务端校验为准。</p>
@@ -482,7 +487,8 @@ public final class MercyPrompt {
         buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
         for (int i = 0, n = DOWNED.size(); i < n; i++) {
             AbstractKuva k = DOWNED.get(i);
-            if (k.isRemoved() || k.getMercyState() != MercyState.DOWNED) {
+            // 幼体的标记在屏幕标注里（LarvlingTag），世界里不画晶体、光束和圆环
+            if (k.isRemoved() || k.getMercyState() != MercyState.DOWNED || k instanceof KuvaLarvlingEntity) {
                 continue;
             }
             boolean own = isOwn(k, player);
@@ -742,6 +748,10 @@ public final class MercyPrompt {
             cardAlpha = 0.0F;
             return;
         }
+        if (k instanceof KuvaLarvlingEntity) {
+            // 幼体的提示行画在 LarvlingTag 的标注里，这里只算淡入淡出（promptAlpha）
+            return;
+        }
         String text = cardOwn ? (k instanceof KuvaMasterEntity ? lichText
                 : k instanceof KuvaLarvlingEntity ? larvlingText : thrallText) : otherText;
         if (!cardOwn && otherName == null) {
@@ -844,6 +854,60 @@ public final class MercyPrompt {
         g.pose().scale(p, p, 1.0F);
         g.drawString(font, s, 0, 0, argb, false);
         g.pose().popPose();
+    }
+
+    // ==================== 给幼体标注用 ====================
+
+    /** 倒地实体锚点（玄骸胸口、奴仆 / 幼体头的中心）此刻的世界坐标，写进 {@code out} */
+    public static void anchorOf(AbstractKuva k, float pt, double[] out) {
+        anchorWorld(k, pt, out);
+    }
+
+    /**
+     * 世界坐标投到屏幕：{@code out[0..1]} 是物理像素坐标，{@code out[2]} 是到相机的深度（裁剪空间 w）。
+     * 这一帧的矩阵在 {@code AFTER_PARTICLES} 记下；还没记过或者点在相机后面返回 false
+     */
+    public static boolean toScreen(double wx, double wy, double wz, float[] out) {
+        if (!matricesValid) {
+            return false;
+        }
+        TMP4.set((float) (wx - camX), (float) (wy - camY), (float) (wz - camZ), 1.0F);
+        VIEW.transform(TMP4);
+        PROJ.transform(TMP4);
+        if (TMP4.w() <= 0.05F) {
+            return false;
+        }
+        Window win = Minecraft.getInstance().getWindow();
+        out[0] = (TMP4.x() / TMP4.w() + 1.0F) * 0.5F * win.getWidth();
+        out[1] = (1.0F - TMP4.y() / TMP4.w()) * 0.5F * win.getHeight();
+        out[2] = TMP4.w();
+        return true;
+    }
+
+    /** 这只的提示行该多亮（0~1）：它是选中的那只时跟着小牌淡入淡出，否则 0 */
+    public static float promptAlpha(int entityId) {
+        return entityId == cardId ? cardAlpha : 0.0F;
+    }
+
+    /** 选中的这只本地玩家能不能处决（提示行画「[键] 诞生 怜悯之击」还是「某某 的猎物」） */
+    public static boolean promptOwn(int entityId) {
+        return entityId == cardId && cardOwn;
+    }
+
+    /** 处决键的显示名 */
+    public static String keyText() {
+        return keyText;
+    }
+
+    /** 资格人提示行的字（幼体「诞生 怜悯之击」） */
+    public static String larvlingText() {
+        return larvlingText;
+    }
+
+    /** 别人看到的「某某 的猎物」；资格人不在本客户端的视野里时为 null */
+    @Nullable
+    public static String otherText(AbstractKuva k) {
+        return claimantName(k) == null ? null : otherText;
     }
 
     /** 调试命令用：现在选中的那只（-1 = 没有）和本地玩家能不能处决它 */

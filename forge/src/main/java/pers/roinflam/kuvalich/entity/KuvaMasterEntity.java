@@ -473,7 +473,11 @@ public class KuvaMasterEntity extends AbstractKuva {
 
     @Override
     public float segmentCeil() {
-        return isSegmented() ? this.getMaxHealth() * (SEGMENTS - this.lichPhase) / SEGMENTS : this.getMaxHealth();
+        // 第一段的上沿就是最大生命：按 ×3÷3 算会有浮点误差（212.16 算回来是 212.15999），新玄骸就差一丝不算满血
+        if (!isSegmented() || this.lichPhase <= 0) {
+            return this.getMaxHealth();
+        }
+        return this.getMaxHealth() * (SEGMENTS - this.lichPhase) / SEGMENTS;
     }
 
     /** 这次处决捅几刀、验前几张卡：打空了几段就是第几次处决；不分段的一次三刀（演示用的按设的段数） */
@@ -1224,8 +1228,10 @@ public class KuvaMasterEntity extends AbstractKuva {
         byte[] riddles = {(byte) card.getOneRiddle(), (byte) card.getTwoRiddle(), (byte) card.getThreeRiddle()};
         String lichName = getLichName();
 
-        // 手里那把就是成功时掉的那把：结束这一轮会清掉武器下标，所以先取
+        // 手里那把就是成功时掉的那把：结束这一轮会清掉武器下标和它定下的等级、元素，所以先取
         int weaponIndex = card.getLichWeapon();
+        int weaponLevel = card.getLichWeaponLevel();
+        String weaponType = card.getLichWeaponType();
         Item weapon = weaponIndex >= 0 && weaponIndex < KuvaLichItems.KUVA_WEAPONS.size()
                 ? KuvaLichItems.KUVA_WEAPONS.get(weaponIndex)
                 : KuvaLichItems.KUVA_WEAPONS.get(RandomUtil.getInt(0, KuvaLichItems.KUVA_WEAPONS.size() - 1));
@@ -1253,11 +1259,10 @@ public class KuvaMasterEntity extends AbstractKuva {
             }
         }
 
-        drops.add(KuvaWeaponUtil.getItem(
-                weapon,
-                card.getMinimumLevelWeapon(),
-                card.getMaximumLevelWeapon()
-        ));
+        // 诞生时定下的等级和元素（幼体倒地时亮出来的就是这些）；老存档里没定过的照旧在武器等级范围里随机
+        drops.add(weaponLevel > 0 && !weaponType.isEmpty()
+                ? KuvaWeaponUtil.getItem(weapon, weaponType, weaponLevel)
+                : KuvaWeaponUtil.getItem(weapon, card.getMinimumLevelWeapon(), card.getMaximumLevelWeapon()));
 
         drops.add(new ItemStack(KuvaLichItems.LICH_RELIQUARY.get()));
 

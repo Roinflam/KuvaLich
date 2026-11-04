@@ -42,6 +42,7 @@ import pers.roinflam.kuvalich.nemesis.RageTier;
 import pers.roinflam.kuvalich.nemesis.WaitReason;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.ArrayList;
@@ -826,7 +827,12 @@ public class LichArchiveScreen extends Screen {
             addRow("kuvalich.archive.attr.weapon", d.weaponStack().getHoverName().getString());
             if (d.weaponLvMax() > 0) {
                 rowLabels.add("");
-                rowValues.add(I18n.get("kuvalich.archive.val.weapon_levels", d.weaponLvMin(), d.weaponLvMax()));
+                // 诞生时定下的那一把：服务端把上下限都填成它的等级，物品上带着元素
+                String type = KuvaWeaponUtil.getType(d.weaponStack());
+                rowValues.add(!type.isEmpty() && d.weaponLvMin() == d.weaponLvMax()
+                        ? I18n.get("kuvalich.archive.val.weapon_fixed", d.weaponLvMax(),
+                        I18n.get("kuvaweapon.type." + type))
+                        : I18n.get("kuvalich.archive.val.weapon_levels", d.weaponLvMin(), d.weaponLvMax()));
             }
         }
         if (!d.birthBiome().isEmpty() || !d.birthDim().isEmpty()) {

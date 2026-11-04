@@ -49,7 +49,7 @@
             "了结一只{lang:entity.kuvalich.kuva_larvling}，你的{lang:entity.kuvalich.kuva_master}随之诞生；再从{lang:entity.kuvalich.kuva_slave}身上积攒解密进度，一条条解开由三张安魂卡组成的答案，见[[requiem/decryption]]",
             "在{item:kuvalich:requiem_gate}里按正确顺序放好三张卡，见[[requiem/requiem_gate]]",
             "讨伐你的{lang:entity.kuvalich.kuva_master}，卡序全对才算成功，成功时掉落它手里那把赤毒武器，另有{item:kuvalich:lich_reliquary}等奖励",
-            "武器种类在幼体出现时就从 13 把里<em>等概率</em>定下，幼体手里拿的就是这一把，玄骸诞生后[[requiem/lich_archive|玄骸档案]]里也能看到；等级在你当前的个人等级范围里随机，掉落之后这个范围才上涨，见[[weapons/weapon_level]]"
+            "武器种类、等级和元素在幼体出现时就定下：种类从 13 把里<em>等概率</em>挑，等级在你当前的个人等级范围里取，元素是 7 种之一；幼体倒地时会亮出来，玄骸诞生后[[requiem/lich_archive|玄骸档案]]里也能看到。掉落之后这个范围才上涨，见[[weapons/weapon_level]]"
           ]
         },
         {
@@ -140,7 +140,7 @@
       "_src": [
         "init/KuvaLichItems.java:86-173 — 13 把武器注册并加入 KUVA_WEAPONS",
         "entity/KuvaMasterEntity.java:772-784,816-838 + mercy/MercyServer.java:759 — 无主的玄骸不判定、什么都不给；有主的按主人的卡判定：怜悯之击关着时死的那一刻卡放满且全对走 directSuccess（主人要在它 64 格内），开着时三刀全对才走 computeAndApplySuccess，两条路的奖励相同（正文写成「讨伐你的玄骸，卡序全对才算成功」，两种开关下都成立）",
-        "entity/KuvaMasterEntity.java:990-994,1019-1023 — 掉的是卡上记的玄骸武器下标 getLichWeapon（就是它手里那一把，client/lich/LichWeaponLayer.java 按同一个下标画在它手上），等级 getItem(min,max) 用玩家当前范围；nemesis/LichDirector.java:644-649 + nemesis/LichProfile.java:39-44 — 下标在玄骸诞生时按种子 nextInt(13) 取，13 把等概率",
+        "entity/KuvaMasterEntity.java:990-994,1019-1023 — 掉的是卡上记的玄骸武器下标 getLichWeapon（就是它手里那一把，client/lich/LichWeaponLayer.java 按同一个下标画在它手上），等级、元素用卡上 getLichWeaponLevel / getLichWeaponType（幼体出现时定的；老存档没定过才按当前范围随机）；nemesis/LichDirector.java:644-649 + nemesis/LichProfile.java:39-44 — 下标在玄骸诞生时按种子 nextInt(13) 取，13 把等概率",
         "entity/KuvaMasterEntity.java:1025 / :1049 — 同时掉玄骸之遗；upgradeWeaponLevelCap 在生成武器之后调用",
         "utils/KuvaWeaponUtil.java:22-24,30-32 — 元素从 fire/poison/ice/electricity/impact/magnetic/radiation 7 种里 getInt(0,6) 随机",
         "item/weapon/*.java getBaseAttribute — 95% 基础伤害 1.0，否则 getInt(80,120)/100；暴击/倍率/触发为每把写死常量",
@@ -156,7 +156,7 @@
         "nemesis/LichArchiveService.java:51-58 — 有玄骸时档案里列出它的武器；client/KuvaKeyMappings.java:35 — 档案键 key.kuvalich.lich_archive 默认 K，可改键",
         "entity/KuvaSlaveEntity.java:185-213 + mercy/MercyRules.java:31-36 — 奴仆给进度的条件：mercyEnabled 和 mercyThralls 都开着时只有处决走完的那次死亡给，关着时被玩家打死就给；正文写成「从奴仆身上积攒」，两种都对，细节在 requiem/decryption",
         "nemesis/LichDirector.java:224 birthFromLarvling → :685 birth → beginLich，处决赤毒幼体时玄骸诞生（名字、种子、武器下标、出生地，种子和武器沿用幼体的）；老存档已有线索、还没玄骸的，登录时补生（:453 onLogin）",
-        "entity/KuvaLarvlingEntity.java setup — 幼体刷出时掷种子，武器 = LichProfile.weaponIndex(种子, 13)（等概率），手里拿的就是它；nemesis/LichDirector.java:224 birthFromLarvling 诞生时沿用这把"
+        "entity/KuvaLarvlingEntity.java setup — 幼体刷出时掷种子，武器 = LichProfile.weaponIndex(种子, 13)（等概率），等级 = LichProfile.weaponLevel(种子, 主人卡上 min, max)，元素 = LichProfile.weaponElement(种子)（7 种之一）；幼体手上不拿武器，倒地时由 LarvlingTag 的屏幕标注亮出；nemesis/LichDirector.java birthFromLarvling 诞生时沿用这三项"
       ]
     },
     {
@@ -619,7 +619,7 @@
         },
         {
           "type": "p",
-          "text": "掉落武器的等级在你个人的<t>下限 ~ 上限</t>之间随机，这个范围记在你的角色身上，死了也不会丢，新角色从 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 起步。"
+          "text": "玄骸掉的那把武器，等级在幼体出现时就从你个人的<t>下限 ~ 上限</t>之间取好，幼体倒地时会亮出来。这个范围记在你的角色身上，死了也不会丢，新角色从 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t> 起步。"
         },
         {
           "type": "steps",

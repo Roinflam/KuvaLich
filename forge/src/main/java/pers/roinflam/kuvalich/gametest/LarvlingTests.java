@@ -27,6 +27,7 @@ import pers.roinflam.kuvalich.nemesis.LarvlingDirector;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.LichNames;
 import pers.roinflam.kuvalich.nemesis.LichProfile;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.nemesis.ThrallDirector;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -146,6 +147,14 @@ public final class LarvlingTests {
         int weapon = l.getWeaponIndex();
         h.assertTrue(weapon >= 0 && weapon == LichProfile.weaponIndex(seed, KuvaLichItems.KUVA_WEAPONS.size()),
                 "幼体的武器应当按种子定：" + weapon);
+        // 等级、元素出现时就定死：等级在主人的武器等级范围里按种子取，元素是赤毒武器那 7 种之一
+        int shownLevel = l.getWeaponLevel();
+        String shownType = l.getWeaponType();
+        h.assertTrue(shownLevel == LichProfile.weaponLevel(seed, card.getMinimumLevelWeapon(), card.getMaximumLevelWeapon())
+                        && shownLevel >= card.getMinimumLevelWeapon() && shownLevel <= card.getMaximumLevelWeapon(),
+                "幼体的武器等级应当在主人的范围里按种子定：" + shownLevel);
+        h.assertTrue(shownType.equals(LichProfile.weaponElement(seed)) && KuvaWeaponUtil.LICH_ELEMENTS.contains(shownType),
+                "幼体的武器元素应当按种子定：" + shownType);
         l.setHealth(1.0F);
         h.assertTrue(l.hurt(p.damageSources().playerAttack(p), 20.0F), "致命一击应当打得进去");
         h.assertTrue(l.getMercyState() == MercyState.DOWNED && l.isAlive(), "幼体应当倒地");
@@ -160,6 +169,9 @@ public final class LarvlingTests {
             h.assertTrue(card.getLichWeapon() == weapon, "玄骸的武器应当是幼体头顶那把：" + weapon + "，实际 "
                     + card.getLichWeapon());
             h.assertTrue(card.getLichSeed() == finalSeed, "种子应当是幼体刷出来时掷的那个");
+            h.assertTrue(card.getLichWeaponLevel() == shownLevel && shownType.equals(card.getLichWeaponType()),
+                    "玄骸那把武器的等级、元素应当是幼体倒地时亮的：" + shownLevel + " " + shownType + "，实际 "
+                            + card.getLichWeaponLevel() + " " + card.getLichWeaponType());
             h.assertTrue(!shownName.equalsIgnoreCase(card.getLichName()), "名字被占时应当换名：" + card.getLichName());
             h.assertTrue(LichDirector.stateOf(p) == LichState.STALKING, "刚诞生应当在跟踪：" + LichDirector.stateOf(p));
             double birth = ModConfig.KUVA_LICH.lichBirthRage.get();

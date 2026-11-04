@@ -9,6 +9,7 @@ import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
 
@@ -49,10 +50,15 @@ public final class LichArchiveService {
 
         ItemStack weapon = ItemStack.EMPTY;
         int weaponIndex = card.getLichWeapon();
+        // 诞生时定下了等级和元素：档案里给的就是打赢后会掉的那一把（带元素和等级），等级一栏只写这一个数
+        boolean fixed = hasLich && card.getLichWeaponLevel() > 0 && !card.getLichWeaponType().isEmpty();
         if (hasLich && weaponIndex >= 0 && weaponIndex < KuvaLichItems.KUVA_WEAPONS.size()) {
             Item item = KuvaLichItems.KUVA_WEAPONS.get(weaponIndex);
-            weapon = new ItemStack(item);
+            weapon = fixed ? KuvaWeaponUtil.getItem(item, card.getLichWeaponType(), card.getLichWeaponLevel())
+                    : new ItemStack(item);
         }
+        int lvMin = fixed ? card.getLichWeaponLevel() : card.getMinimumLevelWeapon();
+        int lvMax = fixed ? card.getLichWeaponLevel() : card.getMaximumLevelWeapon();
 
         int kuvaLevel = card.getKuvaLevel();
         int dealt = (int) Math.round(kuvaLevel * ModConfig.KUVA_LICH.reducedDamage.get() * 100.0D);
@@ -84,7 +90,7 @@ public final class LichArchiveService {
 
         return new LichArchivePacket.Data(state(player, card),
                 hasLich ? card.getLichBirthBiome() : "", hasLich ? card.getLichBirthDim() : "",
-                weapon, card.getMinimumLevelWeapon(), card.getMaximumLevelWeapon(),
+                weapon, lvMin, lvMax,
                 hasLich ? stats(player, card) : LichArchivePacket.Stats.NONE, dealt, taken, sources, hasLich ? card.getLichEncounters() : 0,
                 card.getUnlockedCardStatus(), card.getDecryptionProgress(), card.getPointsRequired(),
                 riddles, cards, card.getAttempts(),

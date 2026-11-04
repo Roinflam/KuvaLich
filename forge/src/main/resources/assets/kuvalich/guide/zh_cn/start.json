@@ -694,11 +694,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>等幼体</em>：还没有玄骸时，在线每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟会有一只{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上会提示「{lang:message.kuvalich.larvling.appeared}」。把它打倒，它头顶亮出的就是你将来那只玄骸的武器；走近按<t>{lang:key.kuvalich.mercy}</t>键处决，玄骸就此诞生。倒地后<b>别再打它</b>，补一下它就消散了，见[[enemies/kuva_larvling]]。"
+              "text": "<em>等幼体</em>：还没有玄骸时，在线每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟会有一只{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上会提示「{lang:message.kuvalich.larvling.appeared}」。把它打倒，它亮出的就是你将来那只玄骸的武器，连等级、元素都定好了；走近按<t>{lang:key.kuvalich.mercy}</t>键处决，玄骸就此诞生。倒地后<b>别再打它</b>，补一下它就消散了，见[[enemies/kuva_larvling]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "<em>等幼体</em>：还没有玄骸时，在线每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟会有一只{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上会提示「{lang:message.kuvalich.larvling.appeared}」。亲手打死它，你的玄骸就此诞生，拿的就是它手里那把武器，见[[enemies/kuva_larvling]]。"
+              "text": "<em>等幼体</em>：还没有玄骸时，在线每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟会有一只{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上会提示「{lang:message.kuvalich.larvling.appeared}」。亲手打死它，你的玄骸就此诞生，拿的就是它出现时就定好的那把武器，见[[enemies/kuva_larvling]]。"
             },
             {
               "if": "cfg:kuva_lich.thrallSquadEnabled",
@@ -1185,7 +1185,7 @@
           "rows": [
             [
               "赤毒武器",
-              "1 把，和玄骸手里握着的同一种，13 种之一"
+              "1 把，就是玄骸手里那一把（13 种之一），等级、元素在幼体倒地时就亮出来了"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -1349,7 +1349,7 @@
         }
       ],
       "_src": [
-        "entity/KuvaMasterEntity.java:979-1050 computeAndApplySuccess — 成功：赤毒武器和卡上 lichWeapon 同一种（玄骸手里握着的那种，下标越界才在 KUVA_WEAPONS 13 把里随机，:991-994；等级、元素掉落时按范围新掷，:1019-1023 KuvaWeaponUtil.getItem）、玄骸之遗 1、赤毒 / 裂罅碎块 min~max、高级模组、通牒概率、归还没收",
+        "entity/KuvaMasterEntity.java:979-1050 computeAndApplySuccess — 成功：赤毒武器和卡上 lichWeapon 同一种（玄骸手里握着的那种，下标越界才在 KUVA_WEAPONS 13 把里随机；等级、元素用卡上 getLichWeaponLevel / getLichWeaponType（幼体出现时定的；老存档没定过才按当前范围随机），KuvaWeaponUtil.getItem(item, type, level)）、玄骸之遗 1、赤毒 / 裂罅碎块 min~max、高级模组、通牒概率、归还没收",
         "entity/KuvaMasterEntity.java:1119-1130 rollAdvancedModule — masterPrimeModuleChance% Prime，否则裂罅",
         "entity/KuvaMasterEntity.java:1045 — requiemUltimatumDropChance（行级 if >0）；item/RequiemUltimatum.java:100-125 — 只召自己的玄骸，还没有玄骸时不消耗；成功时 capability/RequiemCard.java:569-585 endLichRound 清掉这只玄骸，下一只要再了结一只赤毒幼体才诞生（nemesis/LichDirector.java:224 birthFromLarvling），所以写「留着，下一只诞生后右键召它来」",
         "capability/RequiemCard.java consumeCardsAndGetSurvivors + base/item/AbstractRequiemCard.java:27-28 — 卡耐久 3，没坏的回背包（entity/KuvaMasterEntity.java:1004-1017）",

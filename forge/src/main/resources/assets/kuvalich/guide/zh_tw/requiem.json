@@ -25,11 +25,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>喚醒宿敵</em>：還沒有玄骸時，每隔一陣會有一隻{lang:entity.kuvalich.kuva_larvling}出現在你附近。把它打倒、用{lang:key.kuvalich.mercy}處決，你的{lang:entity.kuvalich.kuva_master}就誕生了，拿的就是幼體倒地時頭頂亮出的那把武器，見[[enemies/kuva_larvling]]。"
+              "text": "<em>喚醒宿敵</em>：還沒有玄骸時，每隔一陣會有一隻{lang:entity.kuvalich.kuva_larvling}出現在你附近。把它打倒、用{lang:key.kuvalich.mercy}處決，你的{lang:entity.kuvalich.kuva_master}就誕生了，拿的就是幼體倒地時亮出的那把武器，等級、元素也一樣，見[[enemies/kuva_larvling]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "<em>喚醒宿敵</em>：還沒有玄骸時，每隔一陣會有一隻{lang:entity.kuvalich.kuva_larvling}出現在你附近。親手打死它，你的{lang:entity.kuvalich.kuva_master}就誕生了，拿的就是幼體手裡那把武器，見[[enemies/kuva_larvling]]。"
+              "text": "<em>喚醒宿敵</em>：還沒有玄骸時，每隔一陣會有一隻{lang:entity.kuvalich.kuva_larvling}出現在你附近。親手打死它，你的{lang:entity.kuvalich.kuva_master}就誕生了，拿的就是幼體出現時就定好的那把武器，見[[enemies/kuva_larvling]]。"
             },
             {
               "if": [
@@ -316,14 +316,14 @@
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "屬性",
-                "生命和護甲、它砍你一刀大約多疼（按當前難度，算上玄骸等級讓你多受的傷害，不算交戰增幅）、弱點、抗性、適應、它手裡的武器和你的武器等級範圍、出生地、交戰增幅、你對它和它對你的傷害倍率、交手次數，只列它身上有的那幾行"
+                "生命和護甲、它砍你一刀大約多疼（按當前難度，算上玄骸等級讓你多受的傷害，不算交戰增幅）、弱點、抗性、適應、它手裡的武器和這把的等級、元素、出生地、交戰增幅、你對它和它對你的傷害倍率、交手次數，只列它身上有的那幾行"
               ]
             },
             {
               "if": "!cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "屬性",
-                "生命和護甲、它砍你一刀大約多疼（按當前難度，算上玄骸等級讓你多受的傷害）、弱點、抗性、適應、它手裡的武器和你的武器等級範圍、出生地、你對它和它對你的傷害倍率、交手次數，只列它身上有的那幾行"
+                "生命和護甲、它砍你一刀大約多疼（按當前難度，算上玄骸等級讓你多受的傷害）、弱點、抗性、適應、它手裡的武器和這把的等級、元素、出生地、你對它和它對你的傷害倍率、交手次數，只列它身上有的那幾行"
               ]
             },
             {
@@ -730,7 +730,7 @@
           "rows": [
             [
               "赤毒武器",
-              "1 把，就是它手裡那一把，元素隨機"
+              "1 把，就是它手裡那一把，等級和元素在幼體出現時就定了"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -765,7 +765,7 @@
           "type": "list",
           "items": [
             "<em>赤毒武器</em>只有討伐玄骸成功才拿得到，種類就是它誕生時拿的那一把，[[requiem/lich_archive]]裡能提前看到；等級在你的<t>武器等級範圍</t>內隨機，見[[weapons/kuva_weapons]]。",
-            "新角色的武器等級範圍是 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t>，第一次成功掉的武器就在這個範圍裡隨機，之後每成功一次，範圍上調一次，直到封頂，見[[weapons/weapon_level]]。",
+            "新角色的武器等級範圍是 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t>，第一隻幼體亮出的武器等級就在這個範圍裡取，之後每成功一次，範圍上調一次，直到封頂，見[[weapons/weapon_level]]。",
             "模組是裝在武器或你身上的強化卡，這裡掉的<em>高階模組</em>屬於最高的兩檔品質，有 <t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> 是 Prime，其餘是裂罅，見[[modules/module_rarity]]。",
             "其中 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模組，其餘是戰甲模組，這裡的「戰甲」就是你本人，戰甲模組裝在你身上。"
           ]
@@ -795,7 +795,7 @@
               "text": "處決按開始那一刻門裡的卡判，中途換卡、補卡都不算；空著的格子算錯。"
             },
             "每次成功後，武器等級範圍的上下限各提高<em>同一個</em>隨機數 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，分別以 <t>{cfg:kuva_lich.minimumLevel}</t> 和 <t>{cfg:kuva_lich.maximumLevel}</t> 封頂。",
-            "上下限提高的幅度相同，所以兩頭都沒到頂時，範圍的寬度不變，這次掉的武器按提升前的範圍生成。",
+            "上下限提高的幅度相同，所以兩頭都沒到頂時，範圍的寬度不變，這次掉的武器是按提升前的範圍定下的。",
             "創造模式下，至少揭示 1 條線索後，在滅骸之扉的介面裡按 <t>TAB</t>，正確答案會一次填好，原來的卡退回背包。"
           ]
         }

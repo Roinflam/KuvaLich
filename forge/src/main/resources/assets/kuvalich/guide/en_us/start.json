@@ -635,11 +635,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>Wait for a Larvling</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} finds you every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes online, with a notice reading “{lang:message.kuvalich.larvling.appeared}”. Knock it down: the weapon shown above its head is the one your future Lich will carry. Step in and press the <t>{lang:key.kuvalich.mercy}</t> key to execute it, and your Lich is born. <b>Don't hit it again</b> once it's down, or it dissolves; see [[enemies/kuva_larvling]]."
+              "text": "<em>Wait for a Larvling</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} finds you every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes online, with a notice reading “{lang:message.kuvalich.larvling.appeared}”. Knock it down: the weapon it reveals, level and element included, is the one your future Lich will carry. Step in and press the <t>{lang:key.kuvalich.mercy}</t> key to execute it, and your Lich is born. <b>Don't hit it again</b> once it's down, or it dissolves; see [[enemies/kuva_larvling]]."
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "<em>Wait for a Larvling</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} finds you every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes online, with a notice reading “{lang:message.kuvalich.larvling.appeared}”. Kill it yourself, and your Lich is born, carrying the weapon it held; see [[enemies/kuva_larvling]]."
+              "text": "<em>Wait for a Larvling</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} finds you every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes online, with a notice reading “{lang:message.kuvalich.larvling.appeared}”. Kill it yourself, and your Lich is born, carrying the weapon settled when it appeared; see [[enemies/kuva_larvling]]."
             },
             {
               "if": "cfg:kuva_lich.thrallSquadEnabled",
@@ -1071,7 +1071,7 @@
           "rows": [
             [
               "Kuva weapon",
-              "1, the same kind the Lich carried (one of 13)"
+              "1, the very weapon the Lich carried (one of 13), at the level and element the Larvling revealed"
             ],
             [
               "{item:kuvalich:lich_reliquary}",

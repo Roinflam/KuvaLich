@@ -17,11 +17,11 @@
         {
           "type": "comm",
           "who": "lotus",
-          "text": "Tenno，它手裏攥着的，就是你未來宿敵的武器。了結它，它就會醒來。"
+          "text": "Tenno，打倒它，它就會亮出你未來宿敵的武器。了結它，它就會醒來。"
         },
         {
           "type": "p",
-          "text": "<hl>{lang:entity.kuvalich.kuva_larvling}</hl>是還沒長成的玄骸。你還沒有玄骸時，它會隔一陣出現在你附近，手裏握着的就是將來那隻玄骸的武器。了結它，屬於你的{lang:entity.kuvalich.kuva_master}就此誕生，此後它只衝你一個人來。"
+          "text": "<hl>{lang:entity.kuvalich.kuva_larvling}</hl>是還沒長成的玄骸。你還沒有玄骸時，它會隔一陣出現在你附近。將來那隻玄骸的武器在它出現時就定好了：哪一把、多少級、什麼元素，把它打倒就會亮出來。了結它，屬於你的{lang:entity.kuvalich.kuva_master}就此誕生，此後它只衝你一個人來。"
         },
         {
           "type": "entity",
@@ -52,7 +52,7 @@
           "if": "cfg:kuva_lich.mercyEnabled",
           "items": [
             "把它打倒：它只有 <t>70</t> 點生命，比奴僕好對付；受到致命一擊時不死，而是<w>倒地</w> <t>{cfg:kuva_lich.larvlingDownedSeconds}</t> 秒",
-            "看它頭頂：倒地後，將來那隻玄骸的武器會亮在它頭頂，你的玄骸拿的就是這一把，終結玄骸時你拿到的也是這一把",
+            "看它亮出的武器：倒地後，它會亮出將來那隻玄骸的武器、等級和元素。你的玄骸拿的就是這一把，終結玄骸時你拿到的也是這一把，等級、元素都不變；看不上就放過它，等下一隻",
             "走到 <t>{cfg:kuva_lich.mercyReach}</t> 格內看着它，出現「{lang:kuvalich.mercy.prompt.larvling}」時按<t>{lang:key.kuvalich.mercy}</t>鍵（預設 <t>X</t>）",
             "處決完成，它化作赤毒消散，你的{lang:entity.kuvalich.kuva_master}隨之誕生，第一次開口和你打招呼"
           ]
@@ -60,7 +60,7 @@
         {
           "type": "p",
           "if": "!cfg:kuva_lich.mercyEnabled",
-          "text": "親手打死它，你的{lang:entity.kuvalich.kuva_master}就誕生了，拿的就是它手裏那把武器。最後一擊必須是還沒有玄骸的玩家打出的，被寵物、別的怪或巖漿收掉的什麼都不給。"
+          "text": "親手打死它，你的{lang:entity.kuvalich.kuva_master}就誕生了，拿的就是它出現時就定好的那把武器，等級、元素也一樣。最後一擊必須是還沒有玄骸的玩家打出的，被寵物、別的怪或巖漿收掉的什麼都不給。"
         },
         {
           "type": "tip",
@@ -413,11 +413,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "打倒一隻[[enemies/kuva_larvling|赤毒幼體]]並處決它，你的玄骸就此誕生，拿的就是幼體倒地時頭頂亮出的那把武器"
+              "text": "打倒一隻[[enemies/kuva_larvling|赤毒幼體]]並處決它，你的玄骸就此誕生，拿的就是幼體倒地時亮出的那把武器，等級、元素也一樣"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "親手打死一隻[[enemies/kuva_larvling|赤毒幼體]]，你的玄骸就此誕生，拿的就是幼體手裏那把武器"
+              "text": "親手打死一隻[[enemies/kuva_larvling|赤毒幼體]]，你的玄骸就此誕生，拿的就是幼體出現時就定好的那把武器"
             },
             {
               "if": [
@@ -824,7 +824,7 @@
           "rows": [
             [
               "[[weapons/kuva_weapons|赤毒武器]]",
-              "1 把，就是它手裏那一把，元素隨機，等級在你當前的武器等級範圍內隨機"
+              "1 把，就是它手裏那一把，等級和元素就是幼體倒地時亮出的那些"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -874,7 +874,7 @@
           "items": [
             "<c:55FFFF>Prime</c> 和 <c:FF55FF>裂罅</c>是模組的兩檔高級品質，區別見[[modules/module_rarity]]",
             "武器等級範圍的下限和上限各提高同一個隨機值 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，下限最多提到 <t>{cfg:kuva_lich.minimumLevel}</t>，上限最多提到 <t>{cfg:kuva_lich.maximumLevel}</t>，見[[weapons/weapon_level]]",
-            "這次掉的赤毒武器按<em>提升前</em>的範圍生成，新範圍從下一次解密起才生效"
+            "這次掉的赤毒武器是幼體出現時按<em>提升前</em>的範圍定下的，新範圍從下一隻幼體起才生效"
           ]
         },
         {

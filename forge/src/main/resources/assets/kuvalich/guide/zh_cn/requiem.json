@@ -25,11 +25,11 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>唤醒宿敌</em>：还没有玄骸时，每隔一阵会有一只{lang:entity.kuvalich.kuva_larvling}出现在你附近。把它打倒、用{lang:key.kuvalich.mercy}处决，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是幼体倒地时头顶亮出的那把武器，见[[enemies/kuva_larvling]]。"
+              "text": "<em>唤醒宿敌</em>：还没有玄骸时，每隔一阵会有一只{lang:entity.kuvalich.kuva_larvling}出现在你附近。把它打倒、用{lang:key.kuvalich.mercy}处决，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是幼体倒地时亮出的那把武器，等级、元素也一样，见[[enemies/kuva_larvling]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
-              "text": "<em>唤醒宿敌</em>：还没有玄骸时，每隔一阵会有一只{lang:entity.kuvalich.kuva_larvling}出现在你附近。亲手打死它，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是幼体手里那把武器，见[[enemies/kuva_larvling]]。"
+              "text": "<em>唤醒宿敌</em>：还没有玄骸时，每隔一阵会有一只{lang:entity.kuvalich.kuva_larvling}出现在你附近。亲手打死它，你的{lang:entity.kuvalich.kuva_master}就诞生了，拿的就是幼体出现时就定好的那把武器，见[[enemies/kuva_larvling]]。"
             },
             {
               "if": [
@@ -350,14 +350,14 @@
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "属性",
-                "生命和护甲、它砍你一刀大约多疼（按当前难度，算上玄骸等级让你多受的伤害，不算交战增幅）、弱点、抗性、适应、它手里的武器和你的武器等级范围、出生地、交战增幅、你对它和它对你的伤害倍率、交手次数，只列它身上有的那几行"
+                "生命和护甲、它砍你一刀大约多疼（按当前难度，算上玄骸等级让你多受的伤害，不算交战增幅）、弱点、抗性、适应、它手里的武器和这把的等级、元素、出生地、交战增幅、你对它和它对你的伤害倍率、交手次数，只列它身上有的那几行"
               ]
             },
             {
               "if": "!cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "属性",
-                "生命和护甲、它砍你一刀大约多疼（按当前难度，算上玄骸等级让你多受的伤害）、弱点、抗性、适应、它手里的武器和你的武器等级范围、出生地、你对它和它对你的伤害倍率、交手次数，只列它身上有的那几行"
+                "生命和护甲、它砍你一刀大约多疼（按当前难度，算上玄骸等级让你多受的伤害）、弱点、抗性、适应、它手里的武器和这把的等级、元素、出生地、你对它和它对你的伤害倍率、交手次数，只列它身上有的那几行"
               ]
             },
             {
@@ -798,7 +798,7 @@
           "rows": [
             [
               "赤毒武器",
-              "1 把，就是它手里那一把，元素随机"
+              "1 把，就是它手里那一把，等级和元素在幼体出现时就定了"
             ],
             [
               "{item:kuvalich:lich_reliquary}",
@@ -833,7 +833,7 @@
           "type": "list",
           "items": [
             "<em>赤毒武器</em>只有讨伐玄骸成功才拿得到，种类就是它诞生时拿的那一把，[[requiem/lich_archive]]里能提前看到；等级在你的<t>武器等级范围</t>内随机，见[[weapons/kuva_weapons]]。",
-            "新角色的武器等级范围是 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t>，第一次成功掉的武器就在这个范围里随机，之后每成功一次，范围上调一次，直到封顶，见[[weapons/weapon_level]]。",
+            "新角色的武器等级范围是 <t>{cfg:kuva_lich.baseMinimumLevel}~{cfg:kuva_lich.baseMaximumLevel}</t>，第一只幼体亮出的武器等级就在这个范围里取，之后每成功一次，范围上调一次，直到封顶，见[[weapons/weapon_level]]。",
             "模组是装在武器或你身上的强化卡，这里掉的<em>高级模组</em>属于最高的两档品质，有 <t>{cfg:kuva_lich.masterPrimeModuleChance|pctv}</t> 是 Prime，其余是裂罅，见[[modules/module_rarity]]。",
             "其中 <t>{cfg:kuva_lich.moduleWeaponRatio|pctv}</t> 是武器模组，其余是战甲模组，这里的「战甲」就是你本人，战甲模组装在你身上。"
           ]
@@ -863,7 +863,7 @@
               "text": "处决按开始那一刻门里的卡判，中途换卡、补卡都不算；空着的格子算错。"
             },
             "每次成功后，武器等级范围的上下限各提高<em>同一个</em>随机数 <t>{cfg:kuva_lich.minimumLevelCapIncrease}~{cfg:kuva_lich.maximumLevelCapIncrease}</t>，分别以 <t>{cfg:kuva_lich.minimumLevel}</t> 和 <t>{cfg:kuva_lich.maximumLevel}</t> 封顶。",
-            "上下限提高的幅度相同，所以两头都没到顶时，范围的宽度不变，这次掉的武器按提升前的范围生成。",
+            "上下限提高的幅度相同，所以两头都没到顶时，范围的宽度不变，这次掉的武器是按提升前的范围定下的。",
             "创造模式下，至少揭示 1 条线索后，在灭骸之扉的界面里按 <t>TAB</t>，正确答案会一次填好，原来的卡退回背包。"
           ]
         }
@@ -879,7 +879,7 @@
         "capability/RequiemCard.java correctPrefixLength — 从第 1 位起逐位比、遇错即停（空格算错、Oull 算对，见 fits），决定第几刀判错；isReadyCard 三格都非空",
         "entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时按主人的卡判定，主人要在线、同一世界、64 格内（:178 RESOLVE_RANGE），否则不判定、不给进度；卡没放满只给进度并按 KILLED_OTHER 结束遭遇（之后照常再来）；mercy/MercyServer.java buildPlan — 怜悯之击开着时按开始那一刻的卡定下整场结果，第 k 次处决捅 k 刀、验前 k 张，空格算判错",
         "entity/KuvaMasterEntity.java:921 directFailure / mercy/MercyServer.java:763 settleFailure — 判错 kuvaLevel+1、给进度、按 MERCY_FAILED 离场；聊天：直接判定发 firstCorrect / secondCorrect + failedToDecrypt，怜悯之击发 message.kuvalich.mercy.failed.1~3（第几刀判错）",
-        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 武器 = KUVA_WEAPONS.get(card.getLichWeapon())（诞生时定下的那把），元素随机、等级在当前范围内；玄骸之遗 ×1；裂罅碎块、赤毒、高级模组（:1119 rollAdvancedModule：masterPrimeModuleChance% Prime 否则裂罅，moduleWeaponRatio% 武器模组）；requiemUltimatumDropChance 通牒；奖励生成在它倒下的位置，幸存卡回背包、放不下也掉在那里",
+        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 武器 = KUVA_WEAPONS.get(card.getLichWeapon())（诞生时定下的那把），等级、元素用卡上 getLichWeaponLevel / getLichWeaponType（幼体出现时定的；老存档没定过才按当前范围随机）；玄骸之遗 ×1；裂罅碎块、赤毒、高级模组（:1119 rollAdvancedModule：masterPrimeModuleChance% Prime 否则裂罅，moduleWeaponRatio% 武器模组）；requiemUltimatumDropChance 通牒；奖励生成在它倒下的位置，幸存卡回背包、放不下也掉在那里",
         "entity/KuvaMasterEntity.java:1139 upgradeWeaponLevelCap — 上下限各加同一个 getInt(minimumLevelCapIncrease, maximumLevelCapIncrease)，分别封顶 minimumLevel / maximumLevel；在生成武器之后调用",
         "capability/RequiemCard.java 构造函数 — 新角色武器等级范围 baseMinimumLevel~baseMaximumLevel；旧存档补上基础值，只升不降；utils/RandomUtil.java min>=max 时返回 min，所以两头都没封顶时宽度不变",
         "modules 分类 module_rarity — Prime 与裂罅是最高两档；warframe 分类 warframe_table — 「战甲」指玩家本人",

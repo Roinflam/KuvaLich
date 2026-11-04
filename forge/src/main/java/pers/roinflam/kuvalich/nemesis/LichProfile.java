@@ -1,5 +1,8 @@
 package pers.roinflam.kuvalich.nemesis;
 
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
+
+import java.util.List;
 import java.util.SplittableRandom;
 
 /**
@@ -16,6 +19,8 @@ public final class LichProfile {
     public static final int VOICE_ACCENT_SIZE = 7;
 
     private static final long WEAPON = 0x57EAL;
+    private static final long WEAPON_ELEMENT = 0x57EBL;
+    private static final long WEAPON_LEVEL = 0x57ECL;
     private static final long VOICE_PITCH = 0x7011L;
     private static final long VOICE_ACCENT = 0x7012L;
     private static final long GLOW_PERIOD = 0x61F0L;
@@ -30,6 +35,18 @@ public final class LichProfile {
             return -1;
         }
         return new SplittableRandom(seed ^ WEAPON).nextInt(weaponCount);
+    }
+
+    /** 那把武器的元素：赤毒武器那 7 种之一（{@link KuvaWeaponUtil#LICH_ELEMENTS}） */
+    public static String weaponElement(long seed) {
+        List<String> all = KuvaWeaponUtil.LICH_ELEMENTS;
+        return all.get(new SplittableRandom(seed ^ WEAPON_ELEMENT).nextInt(all.size()));
+    }
+
+    /** 那把武器的等级：在 [min, max] 里按种子取一个（max 比 min 小时按 min） */
+    public static int weaponLevel(long seed, int min, int max) {
+        int hi = Math.max(min, max);
+        return min + new SplittableRandom(seed ^ WEAPON_LEVEL).nextInt(hi - min + 1);
     }
 
     /** 嘟囔的基础音高（播放 pitch），0.80~1.25 */

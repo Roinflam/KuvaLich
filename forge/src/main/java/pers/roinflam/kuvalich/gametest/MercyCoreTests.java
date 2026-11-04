@@ -58,6 +58,7 @@ import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.world.inventory.RequiemGateMenu;
 import pers.roinflam.kuvalich.world.inventory.RequiemMenuLogoutGuard;
 import pers.roinflam.kuvalich.world.inventory.RequiemWeaponTableMenu;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -174,7 +175,7 @@ public final class MercyCoreTests {
 
     // ==================== #7 前缀判定：tick 16 不写，tick 17 定案 ====================
 
-    @GameTest(template = "empty", batch = ISO_PREFIX, timeoutTicks = 200)
+    @GameTest(template = "empty", batch = ISO_PREFIX, timeoutTicks = 360)
     public static void prefixJudgement(GameTestHelper h) {
         ServerPlayer p = KuvaTestKit.player(h);
         RequiemCard card = card(p);
@@ -196,6 +197,9 @@ public final class MercyCoreTests {
             h.assertTrue(card.correctPrefixLength() == prefix, "前缀应当是 " + prefix + "，实际 " + card.correctPrefixLength());
             int level = card.getKuvaLevel();
             int attempts = card.getAttempts().length;
+            int weaponIndex = card.getLichWeapon();
+            int weaponLevel = card.getLichWeaponLevel();
+            String weaponType = card.getLichWeaponType();
             lich.forceDowned(p);
             String err = MercyServer.executeNow(p, lich);
             h.assertTrue(err == null, "应当能开始处决：" + err);
@@ -219,6 +223,25 @@ public final class MercyCoreTests {
                     RequiemCard.HistoryEntry last = card.getLastHistory();
                     h.assertTrue(last != null && last.fate() == RequiemCard.FATE_VANQUISHED, "成功：历史里应当记成被终结");
                     h.assertTrue(survivingCards(p) == 3, "成功：三张卡耐久 −1 后应当回到背包，实际 " + survivingCards(p));
+                    h.assertTrue(weaponLevel > 0 && !weaponType.isEmpty(), "诞生时应当定下武器的等级和元素");
+                    // 奖励要等处决演完（SUCCESS_REWARD_TICK）才落地：掉的那把应当就是诞生时定下的武器、等级、元素
+                    h.runAfterDelay(MercyServer.SUCCESS_REWARD_TICK - MercyServer.SETTLE_TICK + 5, () -> {
+                        ItemStack got = ItemStack.EMPTY;
+                        for (ItemEntity ie : h.getLevel().getEntitiesOfClass(ItemEntity.class,
+                                lich.getBoundingBox().inflate(8.0D))) {
+                            if (KuvaLichItems.KUVA_WEAPONS.contains(ie.getItem().getItem())) {
+                                got = ie.getItem();
+                            }
+                        }
+                        h.assertTrue(!got.isEmpty() && got.getItem() == KuvaLichItems.KUVA_WEAPONS.get(weaponIndex),
+                                "成功：应当掉下它手里那把武器，附近的掉落物：" + itemNames(h, lich.getBoundingBox().inflate(8.0D)));
+                        h.assertTrue(KuvaWeaponUtil.getNumber(got) == weaponLevel
+                                        && weaponType.equals(KuvaWeaponUtil.getType(got)),
+                                "成功：掉的武器应当是诞生时定下的 " + weaponLevel + " " + weaponType + "，实际 "
+                                        + KuvaWeaponUtil.getNumber(got) + " " + KuvaWeaponUtil.getType(got));
+                        next.run();
+                    });
+                    return;
                 }
                 next.run();
             });
