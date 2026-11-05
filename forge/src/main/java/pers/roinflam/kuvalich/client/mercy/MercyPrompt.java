@@ -15,6 +15,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.Util;
 import net.minecraft.client.Camera;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -27,17 +28,20 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFW;
 import org.joml.Vector4f;
 import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
@@ -80,6 +84,10 @@ import java.util.UUID;
  *
  * <p><b>处决键</b>：小牌显示着时按一下发一个 {@link MercyRequestPacket}，客户端每秒最多 4 个（按住不放的自动连发也算在内）；
  * 小牌没显示时按了什么都不做。能不能捅以服务端校验为准。</p>
+ *
+ * <p><b>和同键的别的按键</b>：处决键只在小牌亮着（或自己正在处决）时激活（{@link MercyKeyContext}），平时按 X 落不到这里。
+ * 激活时这一下会同时落到同键的别的映射上，所以在 Forge 的按键事件里（各映射刚分完点击，谁都还没读）当场把同键、同修饰键的
+ * 别的映射这一下的点击和按下状态清掉；按住不放时一直清到松开为止。同样监听按键事件、自己直接响应的模组拦不住。</p>
  */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
@@ -161,6 +169,8 @@ public final class MercyPrompt {
     private static int selectedId = -1;
     /** 选中的那只本地玩家能不能处决（能 = 资格人小牌；不能 = 「某某 的猎物」） */
     private static boolean selectedOwn;
+    /** 处决键收下过的那一下还按着没松开 */
+    private static boolean holdClaimed;
     /** 正在画（或淡出中）的小牌对应的实体 */
     private static int cardId = -1;
     private static boolean cardOwn;
@@ -200,6 +210,56 @@ public final class MercyPrompt {
     }
 
     // ==================== 选目标、处决键 ====================
+
+    /** 自己能处决的那只的小牌正亮着（处决键此时激活） */
+    static boolean offering() {
+        return selectedId >= 0 && selectedOwn;
+    }
+
+    /** 键盘：这个事件在各绑定刚分完这一下的点击之后触发，处决键收下的话当场把同键别的绑定的清掉 */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void claimMercyKeyboard(InputEvent.Key event) {
+        claimMercyInput(InputConstants.getKey(event.getKey(), event.getScanCode()), event.getAction());
+    }
+
+    /** 鼠标键（处决键改绑到鼠标侧键之类时）：同上，Post 在分点击之后触发 */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void claimMercyMouse(InputEvent.MouseButton.Post event) {
+        claimMercyInput(InputConstants.Type.MOUSE.getOrCreate(event.getButton()), event.getAction());
+    }
+
+    /**
+     * 处决键这一下归怜悯之击：同键、同修饰键的别的绑定这一下的点击和按下状态清掉
+     *
+     * <p>按下时看处决键这一下有没有收到（{@code KeyMapping.click} 只分给激活中的绑定，同一时刻再问一遍激活条件结果一样），
+     * 收到了就一直归它到松开：按住不放时原版每次自动连发都会再点一次同键的绑定，处决演完小牌没了、手还按着的话，
+     * 那些连发也不能落到别的按键上。处决键自己的点击留给 tick 末尾的 {@link #handleKey}。</p>
+     */
+    private static void claimMercyInput(InputConstants.Key key, int action) {
+        KeyMapping mercy = KuvaKeyMappings.MERCY;
+        if (!key.equals(mercy.getKey())) {
+            return;
+        }
+        if (action == GLFW.GLFW_RELEASE) {
+            holdClaimed = false;
+            return;
+        }
+        if (action == GLFW.GLFW_PRESS) {
+            holdClaimed = mercy.isActiveAndMatches(key);
+        }
+        if (!holdClaimed) {
+            return;
+        }
+        KeyModifier mod = mercy.getKeyModifier();
+        for (KeyMapping k : Minecraft.getInstance().options.keyMappings) {
+            if (k != mercy && key.equals(k.getKey()) && k.getKeyModifier() == mod) {
+                while (k.consumeClick()) {
+                    // 这一下是处决，不给同键的别的按键
+                }
+                k.setDown(false);
+            }
+        }
+    }
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {

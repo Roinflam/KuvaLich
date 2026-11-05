@@ -265,7 +265,7 @@
               "text": "受到致命傷時它不會死，而是<w>倒地</w>：不動、不打人、不回血"
             },
             "只有打倒它的人能處決它：你自己打倒的歸你，寵物或召喚物打倒的歸它們的主人，被你點着、推進巖漿這類延後傷害收掉的也歸你",
-            "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格內、看着它，出現「{lang:kuvalich.mercy.prompt.thrall}」時按{lang:key.kuvalich.mercy}鍵（預設 <t>X</t>，和原版創造模式的「載入快捷欄」同鍵，可在控制設定裏改），一次處決約 <t>2.2</t> 秒",
+            "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格內、看着它，出現「{lang:kuvalich.mercy.prompt.thrall}」時按{lang:key.kuvalich.mercy}鍵（預設 <t>X</t>；這時按 X 只算處決，不會同時觸發同鍵的別的按鍵），一次處決約 <t>2.2</t> 秒",
             "處決時你不會受傷，也不能做別的事，處決完可以接着處決下一隻",
             "別人打倒的奴僕你處決不了，走近只會看到「某某的獵物」",
             "<t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒內沒人處決，它就消散，什麼也不留；被別的怪打倒、沒人有資格處決的也是這樣",
@@ -721,7 +721,7 @@
           "items": [
             "它的血條分<t>三段</t>，每打空一段就<w>倒地</w>一次：不動、不打人，也不再受傷，Boss 條變灰，這一段血隨着倒地計時慢慢漲回來",
             "誰打出這一擊都一樣，幫你打的人也能把它打倒，但<em>只有你能處決它</em>，別人走近只會看到「某某的獵物」",
-            "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格內、看着它，出現「{lang:kuvalich.mercy.prompt.lich}」時按{lang:key.kuvalich.mercy}鍵（預設 <t>X</t>，和原版創造模式的「載入快捷欄」同鍵，可在控制設定裏改）",
+            "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格內、看着它，出現「{lang:kuvalich.mercy.prompt.lich}」時按{lang:key.kuvalich.mercy}鍵（預設 <t>X</t>；這時按 X 只算處決，不會同時觸發同鍵的別的按鍵）",
             "處決時你不會受傷，也不能做別的事。第 1 次倒地捅 <t>1</t> 刀、只核對第 1 張卡，第 2 次捅 <t>2</t> 刀、核對前 2 張，第 3 次捅 <t>3</t> 刀；都從第 1 位起逐張核對，刺錯一張就停",
             "前 1 次或前 2 次處決刀刀都對時，它掙開你站起來，下一段血回滿，接着打；第 3 次三刀全對才終結它",
             "倒地 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒內你沒動手，這一段血回滿，它站起來接着打；連着 <t>3</t> 次沒處決，它就逃走，什麼都不給",

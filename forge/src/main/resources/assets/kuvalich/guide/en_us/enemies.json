@@ -265,7 +265,7 @@
               "text": "A lethal hit does not kill it; it goes <w>down</w> instead: no moving, no attacking, no healing"
             },
             "Only whoever knocked it down can execute it: one you downed is yours, one a pet or summon downed belongs to its owner, and one finished by a fire or lava you caused is yours too",
-            "Get within <t>{cfg:kuva_lich.mercyReach}</t> blocks and look at it; when “{lang:kuvalich.mercy.prompt.thrall}” appears, press the {lang:key.kuvalich.mercy} key (default <t>X</t>, the same as vanilla Creative's “Load Hotbar Activator”; change it in Controls). An execution takes about <t>2.2</t> seconds",
+            "Get within <t>{cfg:kuva_lich.mercyReach}</t> blocks and look at it; when “{lang:kuvalich.mercy.prompt.thrall}” appears, press the {lang:key.kuvalich.mercy} key (default <t>X</t>; at that moment X counts only as Mercy and won't also trigger anything else bound to it). An execution takes about <t>2.2</t> seconds",
             "You cannot be hurt during an execution and cannot do anything else; once it ends you can move straight on to the next",
             "You cannot execute a Thrall someone else downed; up close you only see “someone's quarry”",
             "If nobody executes it within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> seconds, it fades away and leaves nothing; so does one downed by another mob, which nobody is entitled to execute",
@@ -721,7 +721,7 @@
           "items": [
             "Its health bar has <t>three segments</t>, and it goes <w>down</w> each time one empties: no moving, no attacking and no further damage, and its boss bar turns grey, while that segment slowly refills as the downed timer runs",
             "It does not matter who lands that hit; people helping you can knock it down too, but <em>only you can execute it</em>, and anyone else up close only sees “someone's quarry”",
-            "Get within <t>{cfg:kuva_lich.mercyReach}</t> blocks and look at it; when “{lang:kuvalich.mercy.prompt.lich}” appears, press the {lang:key.kuvalich.mercy} key (default <t>X</t>, the same as vanilla Creative's “Load Hotbar Activator”; change it in Controls)",
+            "Get within <t>{cfg:kuva_lich.mercyReach}</t> blocks and look at it; when “{lang:kuvalich.mercy.prompt.lich}” appears, press the {lang:key.kuvalich.mercy} key (default <t>X</t>; at that moment X counts only as Mercy and won't also trigger anything else bound to it)",
             "You cannot be hurt during the execution and cannot do anything else. The 1st down takes <t>1</t> stab checking card 1 only, the 2nd takes <t>2</t> checking the first two, and the 3rd takes <t>3</t>; stabs always check from position 1 on and stop at the first wrong one",
             "If every stab is right on the 1st or 2nd execution, it breaks loose and stands with the next segment full, and the fight goes on; only three right stabs on the 3rd end it",
             "If you do not act within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> seconds of it going down, the segment refills and it stands to fight on; after <t>3</t> unexecuted downs in a row it escapes, leaving nothing",

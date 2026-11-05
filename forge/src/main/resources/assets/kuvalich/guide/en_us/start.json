@@ -1015,7 +1015,7 @@
           "if": "cfg:kuva_lich.mercyEnabled",
           "style": "info",
           "title": "The execution key",
-          "text": "The <t>{lang:key.kuvalich.mercy}</t> key defaults to <t>X</t>, the same key as vanilla's “Load Hotbar Activator”, so Controls shows them in red. They don't get in each other's way, since loading a hotbar takes X plus a number key; to separate them, rebind one in Controls."
+          "text": "The <t>{lang:key.kuvalich.mercy}</t> key defaults to <t>X</t>, as in Warframe. X also does other things in vanilla (Creative's “Load Hotbar Activator”) and in many mods, so Controls shows it in red, but they don't clash: X only counts as Mercy while an execution prompt is showing or you're mid-execution, and that press won't also trigger anything else on X. The rest of the time X does what it always did, so there's no need to rebind."
         },
         {
           "type": "tip",
@@ -2141,7 +2141,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× Thinking the X key is broken because it shows red in Controls</b>: Mercy defaults to X, the same key as vanilla's Creative “Load Hotbar Activator”. The two don't interfere; to separate them, rebind one in Controls."
+              "text": "<b>× Thinking the X key is broken because it shows red in Controls</b>: Mercy defaults to X, which vanilla Creative's “Load Hotbar Activator” and some mods also use, hence the red. It still works: X only counts as Mercy while an execution prompt is showing; the rest of the time it does what it always did."
             },
             "<b>× Expecting this round's answer to carry over</b>: every success wipes progress and the answer and puts your Lich rank back to 1; the next round is rolled fresh, with a new Lich coming for you.",
             "<b>× Spamming one attack on the Lich</b>: each hit of the same damage type gives it +5% resistance, up to 30%. The more hits within 2 seconds, the less each does, down to 40%, and any part of a single hit above 15% of its max health is heavily reduced. Mix damage types; see [[enemies/lich_resistance]]. The Lich Profile key (default <t>K</t>) shows its weaknesses and resistances.",

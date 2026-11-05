@@ -511,9 +511,9 @@
         "entity/KuvaSlaveEntity.java:243-268 + entity/KuvaMasterEntity.java:1170-1205 — 进度来自奴仆和有主玄骸（无主玄骸 onKilled 直接 return，:772-775）；capability/RequiemCard.java:236-269 — 三段阈值，每满一段揭示一张",
         "mercy/MercyServer.java:700-745,763-787 — 怜悯之击：卡齐时三刀逐位判定，判错即失败；entity/KuvaMasterEntity.java:816-846 — 关着时击杀当场核对（两行按开关分版）",
         "entity/KuvaMasterEntity.java:964-968 applyFailure + capability/RequiemCard.java:467 — 显示等级 = kuvaLevel + 1（从 1 级起），失败 +1，成功 reset 清零",
-        "mercy/MercyRules.java:42-53 + base/entity/AbstractKuva.java:889-906 — 怜悯之击：致命伤拦下进倒地（有主玄骸；奴仆另看 mercyThralls，两行分版）；client/KuvaKeyMappings.java:37-39 — 处决键",
+        "mercy/MercyRules.java:42-53 + base/entity/AbstractKuva.java:889-906 — 怜悯之击：致命伤拦下进倒地（有主玄骸；奴仆另看 mercyThralls，两行分版）；client/KuvaKeyMappings.java:39-40 — 处决键",
         "nemesis/LichDirector.java:192-223,455-490 — 怒气：处决奴仆、进度、揭示、在线时间上涨，满了来找主人",
-        "client/KuvaKeyMappings.java:33-35 — 档案键默认 K；client/lich/LichArchiveScreen.java — 名字、等级、怒气、处决记录（:896-900）",
+        "client/KuvaKeyMappings.java:35-36 — 档案键默认 K；client/lich/LichArchiveScreen.java — 名字、等级、怒气、处决记录（:896-900）",
         "init/KuvaLichItems.java:86-175 — 13 把赤毒武器；utils/KuvaWeaponUtil.java:22-32 — 自带元素 7 选 1；base/item/AbstractKuvaWeapon.java:173-188 — 天生开光",
         "utils/KuvaWeaponUtil.java:219-233 — 武器等级影响攻击、攻速、被动倍率",
         "world/inventory/RequiemWeaponTableMenu.java:326-410 — 模组装卸无消耗；item/module/weapon/WeaponCommonModule.java:621-641 — 未揭示模组主手右键揭示",
@@ -812,7 +812,7 @@
         "nemesis/LichDirector.java:224 birthFromLarvling + :685 birth — 处决赤毒幼体时诞生玄骸（起名，种子和武器沿用幼体的，出生地）；进度不再触发诞生",
         "init/KuvaLichEntities.java:28-33 + 原版 NaturalSpawner noCollision — 1.5×2.9 需 3×3、3 格高空位，低矮洞穴少见",
         "mercy/MercyRules.java:31-53 + base/entity/AbstractKuva.java:889-906 — mercyEnabled 且 mercyThralls 时奴仆受致命伤拦下进倒地；base/entity/AbstractKuva.java:1053-1067 + mercy/MercyServer.java:470-483 — 倒地 mercyDownedSeconds 到点 beginExpire 消散",
-        "mercy/MercyRules.java:56-75 + mercy/MercyServer.java:333-366 — 处决要在 mercyReach（+1 容差）内、看得见、是资格人；client/mercy/MercyPrompt.java:325-334 — 提示「密语 怜悯之击」；client/KuvaKeyMappings.java:37-39 — 处决键默认 X",
+        "mercy/MercyRules.java:56-75 + mercy/MercyServer.java:333-366 — 处决要在 mercyReach（+1 容差）内、看得见、是资格人；client/mercy/MercyPrompt.java:385-394 — 提示「密语 怜悯之击」；client/KuvaKeyMappings.java:39-40 — 处决键默认 X",
         "entity/KuvaSlaveEntity.java:194-210 — reward = (mercyFinishing || !enabledFor) && !isDemo：开着时只有处决完成那次死亡给进度和掉落；关着时 source.getEntity() 是玩家就给（弓箭的 getEntity 是射手）；:243-268 — 进度 random(min,max)",
         "client/gui/hud/DecryptionHudOverlay.java:47,70-72,554-640 — 赤毒菱晶（外圈 + 液面 = 本段进度）、标签「安魂密语」、三颗小菱 = 已揭示数；entity/KuvaSlaveEntity.java:259-266 — 动作栏 getPoints 显示点数",
         "data/kuvalich/recipes/requiem_gate.json — 5 安魂宝石 + 4 黑曜石；world/inventory/RequiemGateMenu.java:106-121,133-150 — 界面显示进度与已揭示卡",
@@ -821,7 +821,7 @@
         "entity/KuvaSlaveEntity.java:277-305 dropLoot — 赤毒 / 裂罅碎块 / 安魂宝石独立判定；宝石 = base + looting × bonus（:296 抢夺取 player 主手；处决时 player = 处决者，mercy/MercyServer.java:800 playerAttack(executor)）",
         "entity/KuvaSlaveEntity.java:310-330 dropModule — 奴仆掉模组",
         "capability/RequiemCard.java:201-209 — isCorrectAnswer 只要求 unlockedCardStatus>0 → 第一张卡揭示后即可挑战；nemesis/LichDirector.java:455-490 — 玄骸怒气满了来找主人",
-        "client/lich/LichNameplates.java:199-205 — 观看者有玄骸时奴仆名牌「<名字> 奴仆」，没有时「赤毒奴仆」；client/KuvaKeyMappings.java:33-35 — 档案键默认 K；client/lich/LichArchiveScreen.java + lang kuvalich.archive.status.* — 名字、等级、怒气、当前状态",
+        "client/lich/LichNameplates.java:199-205 — 观看者有玄骸时奴仆名牌「<名字> 奴仆」，没有时「赤毒奴仆」；client/KuvaKeyMappings.java:35-36 — 档案键默认 K；client/lich/LichArchiveScreen.java + lang kuvalich.archive.status.* — 名字、等级、怒气、当前状态",
         "mercy/MercyServer.java:427-443 qualifiedFor — 奴仆资格人：伤害来自玩家 → 他；宠物 / 召唤物 → 主人；按这个顺序判，别的玩家补的最后一刀归他；只有致命一击不是玩家 / 宠物打出时才看 base/entity/AbstractKuva.java:777-779 recentPlayerAttacker（原版 lastHurtByPlayerTime = 100 tick = 5 秒）；都没有 → 无资格人，到点消散；虚空带 BYPASSES_INVULNERABILITY 不倒地、直接死、reward = false",
         "module/weapon/WeaponElementSystem.java:578,587-589,626,659,817,863 — 燃烧 inFire、毒素/毒气 magic()、电击 lightningBolt()、爆炸 explosion(null) 均无归属实体 → 怜悯之击关着时不结算；宠物、岩浆同理（关着时那一版陷阱框）",
         "event/ConfiscationHandler.java:48-56 — 只在 hasLich() 时按概率整组没收；entity/KuvaMasterEntity.java:984 computeAndApplySuccess — 成功终结时归还",
@@ -1098,7 +1098,7 @@
           "if": "cfg:kuva_lich.mercyEnabled",
           "style": "info",
           "title": "处决键",
-          "text": "<t>{lang:key.kuvalich.mercy}</t>键默认是 <t>X</t>，和原版的「加载快捷栏」是同一个键，「按键控制」里会标红。两边互不干扰，加载快捷栏要 X 加数字键才生效；想分开就在「按键控制」里改键。"
+          "text": "<t>{lang:key.kuvalich.mercy}</t>键默认是 <t>X</t>，和星际战甲一样。X 在原版（创造模式的「加载快捷栏」）和不少模组里另有用处，「按键控制」里会标红，但不会打架：只有出现处决提示、或者正在处决时按 X 才算怜悯之击，这一下不会同时触发同键的别的功能；别的时候 X 照旧是原来的用途，不用改键。"
         },
         {
           "type": "tip",
@@ -1128,7 +1128,7 @@
         "capability/RequiemCard.java:197-199 + entity/KuvaMasterEntity.java:830 — 结算要求三个槽都放了卡（玩家得真的持有这三种卡）",
         "world/inventory/RequiemRecastMenu.java:227-238 — 3 张任意卡 → 1 张随机卡；data/kuvalich/recipes/requiem_recast.json — 配方消耗 1 个灭骸之扉",
         "world/inventory/RequiemGateMenu.java:76,194,206-231 — 上排三槽 = 第 1/2/3 位；关界面存入玩家能力",
-        "mercy/MercyRules.java:42-53 + base/entity/AbstractKuva.java:889-906 — 有主玄骸致命伤拦下进倒地（mercyDownedSeconds）；mercy/MercyServer.java:427-430 — 资格人只有主人，别人打出致命一击照样倒地；:333-366 — 处决要 mercyReach 内、看得见；client/mercy/MercyPrompt.java:325 — 提示「安魂 怜悯之击」；client/KuvaKeyMappings.java:37-39 — 默认 X",
+        "mercy/MercyRules.java:42-53 + base/entity/AbstractKuva.java:889-906 — 有主玄骸致命伤拦下进倒地（mercyDownedSeconds）；mercy/MercyServer.java:427-430 — 资格人只有主人，别人打出致命一击照样倒地；:333-366 — 处决要 mercyReach 内、看得见；client/mercy/MercyPrompt.java:385 — 提示「安魂 怜悯之击」；client/KuvaKeyMappings.java:39-40 — 默认 X",
         "entity/KuvaMasterEntity.java:772-783,816-846 — 怜悯之击关着：死亡时主人在线、同一世界、64 格内（:178 RESOLVE_RANGE）才按主人的卡判定，谁打最后一击不论；否则 KILLED_OTHER 不判定",
         "mercy/MercyServer.java:592-593,700-745 — 卡齐算前缀 correctPrefixLength，三刀逐位；client/mercy/MercyHud.java — 底部三格随刀亮、判错格红符",
         "mercy/MercyServer.java buildPlan + capability/RequiemCard.java correctPrefixLength — 怜悯之击开着：第 k 次处决捅 k 刀、验前 k 张，从第 1 格逐格判，空格算这一格错（没装卡 = 第一刀错），走判错流程；entity/KuvaMasterEntity.java resolveForOwner — 关着时卡没放齐只给进度、KILLED_OTHER 结束遭遇",
@@ -1147,7 +1147,7 @@
         "entity/KuvaMasterEntity.java:725 — AOE inflate(AOE_RADIUS)，排除赤毒实体与主目标",
         "entity/KuvaMasterEntity.java:979 computeAndApplySuccess(pos = blockPosition) — 奖励落在玄骸倒地 / 死亡位置",
         "base/entity/AbstractKuva.java:283-286,1146 — 交战增幅：有目标时每秒增幅（行级 if >0）；client/mercy/KuvaFuryLayer.java — 交战越久赤毒纹路越亮",
-        "client/KuvaKeyMappings.java:37-39 — 处决键 X，KeyConflictContext.IN_GAME；原版 key.loadToolbarActivator 默认也是 X（创造模式，X + 数字键）",
+        "client/KuvaKeyMappings.java:39-40 — 处决键 X；client/mercy/MercyKeyContext.java — 只在小牌亮着或处决中激活；client/mercy/MercyPrompt.java claimMercyKeyboard / claimMercyMouse — 按下那一瞬间清掉同键别的映射这一下，按住时清到松开；原版 key.loadToolbarActivator 默认也是 X（UNIVERSAL，控制设置里照样标红）",
         "entity/KuvaMasterEntity.java:772-775 onKilled — 无主玄骸（刷怪蛋、命令）不判定、不给进度；:353 shouldEnterDowned = isOwned，不倒地；:798-800 shouldDropLoot 只给有主的",
         "nemesis/NemesisCommand.java:82-86 — 模组自己的 lich summon 指令走 LichDirector.summonNow，召来的是主人那只；陷阱框只说刷怪蛋和原版 /summon",
         "entity/KuvaMasterEntity.java:465 isSegmented / :480 mercyStabs；mercy/MercyServer.java:711 buildPlan — 第 k 次处决捅 k 刀、验前 k 张；:941 rise → advanceSegment 下一段满血站起"
@@ -2372,7 +2372,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× 看到控制设置里 X 键标红就以为坏了</b>：怜悯之击默认是 X，和原版创造模式的「加载快捷栏」同键，两边互不干扰，想分开就在控制设置里改。"
+              "text": "<b>× 看到控制设置里 X 键标红就以为坏了</b>：怜悯之击默认是 X，原版创造模式的「加载快捷栏」和一些模组也用 X，所以标红。不影响使用：只有出现处决提示时按 X 才算怜悯之击，别的时候 X 还是原来的用途。"
             },
             "<b>× 以为这一轮的答案下一轮还能用</b>：每次成功后进度和答案全部清空、玄骸等级回到 1 级，下一轮重新随机，来找你的也换成一只新的玄骸。",
             "<b>× 对着玄骸猛打同一招</b>：同一类伤害每命中一次，它对这一类的抗性 +5%，最多 30%。2 秒内出手越密，每一下的伤害越低，最低降到四成，单下超过它最大生命 15% 的部分还会被大幅削弱，换着伤害类型打，见[[enemies/lich_resistance]]。按玄骸档案键（默认 <t>K</t>）能查到它的弱点和抗性。",
@@ -2442,7 +2442,7 @@
         "world/inventory/RequiemEvolveMenu.java:241-254 — 融合元素取材料格那把",
         "module/level/ModuleLevelHelper.java:102-108 — 效果倍率 = 等级 / 最大等级",
         "worldgen/KuvaLichBiomeModifier.java:305-318 — 玄骸不进刷怪表；nemesis/NemesisSpawnRules.java:35-50 — 自然生成 / 刷怪笼一律拦下，刷怪蛋、命令按 lichWildAllowed 生成无主玄骸（:105，关掉就拒绝加入世界，所以那一条带 if）；entity/KuvaMasterEntity.java:772-784 onKilled — 无主玄骸什么都不给；nemesis/LichDirector.java:224 birthFromLarvling — 了结赤毒幼体时诞生自己的玄骸",
-        "client/KuvaKeyMappings.java:34-39 — 档案键默认 K、怜悯之击键默认 X（可改键）；原版 key.loadToolbarActivator 默认也是 X，要配数字键才生效，两边互不干扰",
+        "client/KuvaKeyMappings.java:35-40 — 档案键默认 K、怜悯之击键默认 X（可改键）；client/mercy/MercyKeyContext.java + MercyPrompt.java claimMercyKeyboard — 处决键只在小牌亮着或处决中激活，这一下不给同键的别的按键",
         "entity/KuvaLarvlingEntity.java:194 hurt — 幼体倒地挨玩家或宠物一下就消散，什么都不给；nemesis/LarvlingDirector.java 倒地过的重新掷完整间隔"
       ]
     },
