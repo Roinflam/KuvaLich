@@ -18,6 +18,8 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
@@ -33,6 +35,8 @@ import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.utils.Reference;
+
+import java.util.Arrays;
 
 /**
  * 玄骸和奴仆的头顶名牌
@@ -53,6 +57,10 @@ import pers.roinflam.kuvalich.utils.Reference;
  * <p>倒地、处决、挣脱离场时名牌照留，高度跟着姿势走：站姿身高减去脖子此刻比站着时低了多少（渲染器画本体时量的），
  * 倒下去、跪下、被按倒、再撑起来都贴着头顶；这一帧没量到（本体没画）时按倒地后的碰撞箱。客户端选项 {@code lich_nameplates} 关掉、按了 F1、处决运镜中都不画。
  * 视线检测每只实体 250 ms 做一次，名字的大写、拆字都缓存，渲染里不分配。</p>
+ *
+ * <p>名牌之间在屏幕上叠住、或者名牌躲在更近的实体身后时，后面那块淡到几乎看不见（{@link #crowdFade}）：
+ * 奴仆小队并排站时名字都一样，远处的名牌也会落进近处名牌那一行。谁清楚每帧统一排定一次，清楚着的那块占先，
+ * 横着走过一排奴仆时不会来回换（{@link #resolve}）。名牌照常近大远小，不设最小字号。</p>
  */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
@@ -64,15 +72,26 @@ public final class LichNameplates {
     private static final float THRALL_SCALE = 0.020F;
     /** 玄骸名牌离头顶多高（格） */
     private static final float ABOVE_HEAD = 0.5F;
-    /** 奴仆、幼体名牌只有一行字，字底离头顶多高（格）；远处放大时字底不动，往上长 */
-    private static final float THRALL_GAP = 0.1F;
+    /** 奴仆、幼体名牌的上沿离头顶多高（格）：只有一行字，字底离头顶 0.1 格 */
+    private static final float THRALL_ABOVE_HEAD = 0.1F + 9.0F * THRALL_SCALE;
+    /** 被更近的名牌、更近的实体身子在屏幕上挡住时淡到多少 */
+    private static final float CROWDED_ALPHA = 0.12F;
+    /** 变淡用多久（毫秒） */
+    private static final float CROWD_OUT_MS = 80.0F;
+    /** 复原前先等多久（毫秒）：换人的那一下等旧的先退下去，不和新的一起半透明叠成一团 */
+    private static final long CROWD_RISE_DELAY_MS = 60L;
+    /** 复原用多久（毫秒） */
+    private static final float CROWD_IN_MS = 140.0F;
     /**
-     * 名牌远处的下限：一个字体像素在屏幕上至少占这么多像素。中文一笔只有半个字体像素宽，
-     * 少于 2 像素时笔画开始被吃掉；再远就按距离放大，屏幕上的大小不再变小
+     * 正清楚着的名牌占的先：别的名牌要比它近出这么多（格；远处按距离的比例，取大的）才轮到别人。
+     * 横着走过一排差不多远的奴仆时，谁最近每走一两格就换一次，不让一下就整排跟着来回翻
      */
-    private static final float MIN_PX_PER_FONT_PX = 2.0F;
-    /** 离镜头 1 格处 1 格占多少屏幕像素，画名牌时按当时的投影记（{@link #notePerspective}）；0 = 还没记过 */
-    private static float pxPerBlockAt1;
+    private static final double CROWD_STICKY_MIN = 0.6D;
+    private static final double CROWD_STICKY_FRAC = 0.08D;
+    /** 实体身子要比名牌近出这么多（格）才算挡在前面：并排站的身子不挡旁边的名牌 */
+    private static final double BODY_DEPTH = 0.75D;
+    /** 两块名牌之间至少要空出这么多（字体像素，按后面那块的字号），贴着也算挡 */
+    private static final float CROWD_PAD = 2.0F;
     /**
      * 奴仆站着时模型头顶离脚底多高（格）：kuva_slave.geo.json 里 Head 骨骼最高到 40.75 像素。
      * 奴仆的碰撞箱有 2.9 格，比模型高出三分之一格，名牌按碰撞箱放会悬在头上
@@ -106,7 +125,46 @@ public final class LichNameplates {
         long losAtMs = Long.MIN_VALUE / 4;
         boolean los;
         long lastUseMs;
+        /** 被挡住变淡的透明度倍数（1 = 没被挡），按 {@link #CROWD_OUT_MS} / {@link #CROWD_IN_MS} 慢慢走 */
+        float crowd = 1.0F;
+        long crowdAtMs = Long.MIN_VALUE;
+        /** 不再被挡、开始等着复原的时刻（{@link Long#MIN_VALUE} = 没在等） */
+        long riseFromMs = Long.MIN_VALUE;
+        /** 最近一次排定时这块是不是清楚的那块（下一次排定时占先） */
+        boolean winner = true;
+        /** 最近一次排定是第几帧（{@link #frameNo}） */
+        long resolvedFrame = -1L;
     }
+
+    /** 一块名牌某一帧在屏幕上占的框（GUI 像素），下一帧开头拿来排定谁挡谁 */
+    private static final class Box {
+        int id;
+        double dist;
+        /** 排序用：离镜头的距离，上一次是清楚的再减去占先的那一截 */
+        double key;
+        /** 名牌本身 */
+        float x0, y0, x1, y1;
+        /** 实体的身子（头顶到脚底、碰撞箱那么宽），挡后面的名牌 */
+        float sx0, sy0, sx1, sy1;
+        /** 名牌之间要空出的间距（GUI 像素） */
+        float pad;
+        /** 淡到一半以下的（隔着墙、快出范围）不去挡别人的名牌 */
+        boolean blocking;
+        /** 排定的结果：清楚 */
+        boolean win;
+    }
+
+    /** 这一帧画名牌时记下的框；下一帧开头换成 {@link #lastBoxes} 统一排定。用上一帧的框，免得先排序再画 */
+    private static Box[] boxes = new Box[16];
+    private static int boxN;
+    private static Box[] lastBoxes = new Box[16];
+    private static int lastBoxN;
+    /** 排定时按 key 排好的顺序（复用，不分配） */
+    private static Box[] order = new Box[16];
+    /** 第几帧（每帧开头加一） */
+    private static long frameNo;
+    /** 这一帧主镜头的投影；光影的阴影那一遍也会画实体，投影对不上的那一遍不记框、不改透明度 */
+    private static final Matrix4f MAIN_PROJ = new Matrix4f();
 
     private static final Int2ObjectOpenHashMap<Plate> PLATES = new Int2ObjectOpenHashMap<>();
     private static long lastPruneMs;
@@ -145,7 +203,6 @@ public final class LichNameplates {
         if (player == null || mc.options.hideGui || MercyClient.isCinematic() || entity.isInvisibleTo(player)) {
             return false;
         }
-        notePerspective(mc);
         float fade = LichRenderState.alpha(entity, partialTick);
         if (fade <= 0.02F) {
             return false;
@@ -197,16 +254,20 @@ public final class LichNameplates {
         float w1 = SpacedText.width(font, p.line1, SPACING);
         // 有第二行时整块往上挪一行，第二行贴着原来的位置
         float y1 = p.line2.isEmpty() ? 0.0F : -9.0F;
-        float s = LICH_SCALE * farGrow(LICH_SCALE, dist);
-        float anchor = height + lichAnchorAboveHead(s);
-        a *= bossBarFade(ps, mc, anchor, s, w1 * 0.5F, -y1);
+        float anchor = height + ABOVE_HEAD;
+        if (project(ps, mc, anchor, LICH_SCALE)) {
+            a *= bossBarFade(mc, w1 * 0.5F, -y1);
+            // 第二行比第一行矮四分之一、往下错开一行，下沿和只有一行时差不多
+            a *= crowdFade(p, lich.getId(), dist, w1 * 0.5F, -y1, p.line2.isEmpty() ? 9.0F : 8.0F,
+                    lich.getBbWidth() * 0.5F / LICH_SCALE, screenY(ps, mc, height), screenY(ps, mc, 0.0F), a, now);
+        }
         if (a <= 0.02F) {
             return false;
         }
         ps.pushPose();
         ps.translate(0.0F, anchor, 0.0F);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-        ps.scale(-s, -s, s);
+        ps.scale(-LICH_SCALE, -LICH_SCALE, LICH_SCALE);
         shadowedLine(ps, buffer, font, p.line1, -w1 * 0.5F, y1, FxPalette.KUVA_PALE, 0.95F * a, Font.DisplayMode.NORMAL);
         if (!p.line2.isEmpty()) {
             ps.pushPose();
@@ -265,17 +326,20 @@ public final class LichNameplates {
         }
         Font.DisplayMode mode = visible ? Font.DisplayMode.NORMAL : Font.DisplayMode.SEE_THROUGH;
         Font font = mc.font;
-        float s = THRALL_SCALE * farGrow(THRALL_SCALE, dist);
-        float top = height + THRALL_GAP + 9.0F * s;
+        float top = height + THRALL_ABOVE_HEAD;
         float w = SpacedText.width(font, p.line1, SPACING);
-        a *= bossBarFade(ps, mc, top, s, w * 0.5F, 0.0F);
+        if (project(ps, mc, top, THRALL_SCALE)) {
+            a *= bossBarFade(mc, w * 0.5F, 0.0F);
+            a *= crowdFade(p, thrall.getId(), dist, w * 0.5F, 0.0F, 9.0F,
+                    thrall.getBbWidth() * 0.5F / THRALL_SCALE, screenY(ps, mc, height), screenY(ps, mc, 0.0F), a, now);
+        }
         if (a <= 0.02F) {
             return false;
         }
         ps.pushPose();
         ps.translate(0.0F, top, 0.0F);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-        ps.scale(-s, -s, s);
+        ps.scale(-THRALL_SCALE, -THRALL_SCALE, THRALL_SCALE);
         shadowedLine(ps, buffer, font, p.line1, -w * 0.5F, 0.0F, FxPalette.BONE, a, mode);
         ps.popPose();
         return true;
@@ -286,20 +350,18 @@ public final class LichNameplates {
     private static final Matrix4f PROJ_POSE = new Matrix4f();
     private static final Vector4f CLIP = new Vector4f();
 
+    /** {@link #project} 的结果：名牌锚点在屏幕上的位置（GUI 像素）、一个字体像素此刻占多少 GUI 像素 */
+    private static float projX, projY, projUnit;
+    /** 这次投影用的是不是主镜头的投影（光影的阴影那一遍不是） */
+    private static boolean projMain;
+
     /**
-     * 名牌投影到屏幕顶上 Boss 条那块时淡出：离奴仆很近、平视时，头顶的名牌会投到屏幕最上沿，和 Boss 条叠成一团。
-     * 名牌上沿叠进 Boss 条下沿越深越淡，叠进一行字高就完全不画；横向只算屏幕中间 Boss 条那一段，偏到两边的照常画。
-     * Boss 条的下沿取上一帧的（世界比 HUD 先画）。投影用此刻的投影矩阵乘名牌锚点（脚底往上 {@code lift} 格）的姿势矩阵
+     * 把名牌锚点（脚底往上 {@code lift} 格）投到屏幕上，结果放进 {@link #projX} / {@link #projY} / {@link #projUnit}。
+     * 用此刻的投影矩阵乘锚点的姿势矩阵；锚点在镜头后面时返回 false
      *
      * @param scale 名牌的字号（格 / 字体像素）
-     * @param halfW 名牌半宽（字体像素）
-     * @param up    名牌在锚点上方还伸出多少（字体像素；两行的玄骸名牌第一行在锚点上面）
      */
-    private static float bossBarFade(PoseStack ps, Minecraft mc, float lift, float scale, float halfW, float up) {
-        int bottom = BossBarTracker.recentBottomY();
-        if (bottom <= 0) {
-            return 1.0F;
-        }
+    private static boolean project(PoseStack ps, Minecraft mc, float lift, float scale) {
         ps.pushPose();
         ps.translate(0.0F, lift, 0.0F);
         Matrix4f proj = RenderSystem.getProjectionMatrix();
@@ -307,19 +369,224 @@ public final class LichNameplates {
         ps.popPose();
         CLIP.set(0.0F, 0.0F, 0.0F, 1.0F).mul(PROJ_POSE);
         if (CLIP.w <= 0.05F) {
-            return 1.0F;
+            return false;
         }
         float gw = mc.getWindow().getGuiScaledWidth();
         float gh = mc.getWindow().getGuiScaledHeight();
-        float sx = (CLIP.x / CLIP.w * 0.5F + 0.5F) * gw;
-        float sy = (0.5F - CLIP.y / CLIP.w * 0.5F) * gh;
-        // 一个字体像素此刻在屏幕上占多少 GUI 像素
-        float unit = scale * 0.5F * gh * proj.m11() / CLIP.w;
+        projX = (CLIP.x / CLIP.w * 0.5F + 0.5F) * gw;
+        projY = (0.5F - CLIP.y / CLIP.w * 0.5F) * gh;
+        projUnit = scale * 0.5F * gh * proj.m11() / CLIP.w;
+        // 只比视角和画幅：光影可能给主镜头的投影加一点抖动；阴影那一遍是正交投影（m33 = 1），一比就分得开
+        projMain = proj.m33() == 0.0F && Math.abs(proj.m11() - MAIN_PROJ.m11()) < 1.0E-3F
+                && Math.abs(proj.m00() - MAIN_PROJ.m00()) < 1.0E-3F;
+        return true;
+    }
+
+    /**
+     * 名牌投影到屏幕顶上 Boss 条那块时淡出：离奴仆很近、平视时，头顶的名牌会投到屏幕最上沿，和 Boss 条叠成一团。
+     * 名牌上沿叠进 Boss 条下沿越深越淡，叠进一行字高就完全不画；横向只算屏幕中间 Boss 条那一段，偏到两边的照常画。
+     * Boss 条的下沿取上一帧的（世界比 HUD 先画）。要先 {@link #project}
+     *
+     * @param halfW 名牌半宽（字体像素）
+     * @param up    名牌在锚点上方还伸出多少（字体像素；两行的玄骸名牌第一行在锚点上面）
+     */
+    private static float bossBarFade(Minecraft mc, float halfW, float up) {
+        int bottom = BossBarTracker.recentBottomY();
+        if (bottom <= 0) {
+            return 1.0F;
+        }
+        float gw = mc.getWindow().getGuiScaledWidth();
+        float unit = projUnit;
         float span = Math.max(BOSS_FADE_MIN_SPAN, 9.0F * unit);
         float band = Math.max(BOSS_BAND_MIN_HALF, BOSS_BAND_HALF_OF_WIDTH * gw);
-        float v = (bottom - (sy - up * unit)) / span;
-        float h = (band + halfW * unit - Math.abs(sx - gw * 0.5F)) / span;
+        float v = (bottom - (projY - up * unit)) / span;
+        float h = (band + halfW * unit - Math.abs(projX - gw * 0.5F)) / span;
         return 1.0F - Mth.clamp(v, 0.0F, 1.0F) * Mth.clamp(h, 0.0F, 1.0F);
+    }
+
+    private static final Vector4f CLIP_Y = new Vector4f();
+
+    /** 脚底往上 {@code lift} 格那一点投到屏幕上的 y（GUI 像素）；在镜头后面时当作屏幕最下沿 */
+    private static float screenY(PoseStack ps, Minecraft mc, float lift) {
+        CLIP_Y.set(0.0F, lift, 0.0F, 1.0F).mul(ps.last().pose()).mul(RenderSystem.getProjectionMatrix());
+        float gh = mc.getWindow().getGuiScaledHeight();
+        return CLIP_Y.w <= 0.05F ? gh : (0.5F - CLIP_Y.y / CLIP_Y.w * 0.5F) * gh;
+    }
+
+    /**
+     * 被挡住时淡下去：这块名牌在屏幕上和一块更靠前、清楚着的名牌叠上（或者只隔不到 {@link #CROWD_PAD} 个字体像素），
+     * 或者落在一只更近的实体身上（会被它的头、身子切掉一截），就淡到 {@link #CROWDED_ALPHA}，不挡了再慢慢回来。
+     * 奴仆小队并排站时名字都一样，只留一块；远处的名牌落进近处名牌那一行、躲在近处奴仆身后时让开。
+     *
+     * <p>谁清楚由每帧开头的 {@link #resolve} 拿上一帧所有的框统一排定（这里只按结果淡入淡出、记下这一帧的框）；
+     * 上一帧没画过的新名牌，就地和上一帧排定的结果比一次。要先 {@link #project}；不是主镜头那一遍（光影的阴影）
+     * 只读当前值，不记框。</p>
+     *
+     * @param halfW     名牌半宽（字体像素）
+     * @param up        名牌在锚点上方伸出多少（字体像素）
+     * @param down      名牌在锚点下方伸出多少（字体像素）
+     * @param bodyHalfW 实体身子的半宽（字体像素，按碰撞箱宽）
+     * @param bodyTop   实体头顶在屏幕上的 y（GUI 像素）
+     * @param bodyFeet  实体脚底在屏幕上的 y（GUI 像素）
+     * @param baseAlpha 算这一项之前的透明度
+     * @return 透明度倍数
+     */
+    private static float crowdFade(Plate p, int id, double dist, float halfW, float up, float down,
+                                   float bodyHalfW, float bodyTop, float bodyFeet, float baseAlpha, long now) {
+        if (!projMain) {
+            return p.crowd;
+        }
+        float u = projUnit;
+        float x0 = projX - halfW * u, x1 = projX + halfW * u;
+        float y0 = projY - up * u, y1 = projY + down * u;
+        float pad = CROWD_PAD * u;
+        boolean crowded;
+        if (p.resolvedFrame == frameNo) {
+            crowded = !p.winner;
+        } else {
+            crowded = blocked(id, dist, dist, x0, y0, x1, y1, pad, lastBoxes, lastBoxN);
+            p.winner = !crowded;
+            p.resolvedFrame = frameNo;
+        }
+        float target = crowded ? CROWDED_ALPHA : 1.0F;
+        long dt = now - p.crowdAtMs;
+        if (p.crowdAtMs == Long.MIN_VALUE || dt < 0L || dt > 1000L) {
+            // 刚进视野、或者好久没画过：直接到位，不从头淡一遍
+            p.crowd = target;
+            p.riseFromMs = Long.MIN_VALUE;
+        } else if (target > p.crowd) {
+            if (p.riseFromMs == Long.MIN_VALUE) {
+                p.riseFromMs = now + CROWD_RISE_DELAY_MS;
+            }
+            long rise = now - Math.max(p.crowdAtMs, p.riseFromMs);
+            if (rise > 0L) {
+                p.crowd = Math.min(target, p.crowd + rise / CROWD_IN_MS * (1.0F - CROWDED_ALPHA));
+            }
+        } else {
+            p.crowd = Math.max(target, p.crowd - dt / CROWD_OUT_MS * (1.0F - CROWDED_ALPHA));
+            p.riseFromMs = Long.MIN_VALUE;
+        }
+        p.crowdAtMs = now;
+        Box b = addBox(id);
+        b.dist = dist;
+        b.x0 = x0;
+        b.y0 = y0;
+        b.x1 = x1;
+        b.y1 = y1;
+        b.sx0 = projX - bodyHalfW * u;
+        b.sx1 = projX + bodyHalfW * u;
+        b.sy0 = Math.min(bodyTop, bodyFeet);
+        b.sy1 = Math.max(bodyTop, bodyFeet);
+        b.pad = pad;
+        b.blocking = baseAlpha >= 0.5F;
+        return p.crowd;
+    }
+
+    /**
+     * 一块名牌（框 x0..y1，离镜头 {@code dist}，排序值 {@code key}）在 {@code arr} 的前 {@code n} 块里有没有被挡住：
+     * 排在它前面（排序值更小，一样时编号小的在前）、清楚着、淡得不多的名牌和它叠上；或者有一只比它近出
+     * {@link #BODY_DEPTH} 的实体身子和它叠上（身子不管自己的名牌清不清楚，模型总是画的）
+     */
+    private static boolean blocked(int id, double dist, double key, float x0, float y0, float x1, float y1, float pad,
+                                   Box[] arr, int n) {
+        for (int i = 0; i < n; i++) {
+            Box o = arr[i];
+            if (o.id == id) {
+                continue;
+            }
+            boolean ahead = o.key < key || (o.key == key && o.id < id);
+            if (ahead && o.win && o.blocking
+                    && o.x0 < x1 + pad && x0 - pad < o.x1 && o.y0 < y1 + pad && y0 - pad < o.y1) {
+                return true;
+            }
+            if (o.dist < dist - BODY_DEPTH && o.sx0 < x1 && x0 < o.sx1 && o.sy0 < y1 && y0 < o.sy1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 拿上一帧所有名牌的框排定这一帧谁清楚：按离镜头的距离排，上一次清楚的那块减去占先的一截
+     * （{@link #CROWD_STICKY_MIN} / {@link #CROWD_STICKY_FRAC}），从前往后一块块看，没被前面清楚的挡住就清楚。
+     * 一次排完整组，一块让位时后面跟着变的也同一帧定下来，不会隔一帧翻一块
+     */
+    private static void resolve() {
+        int n = lastBoxN;
+        if (order.length < n) {
+            order = new Box[lastBoxes.length];
+        }
+        for (int i = 0; i < n; i++) {
+            Box b = lastBoxes[i];
+            Plate p = PLATES.get(b.id);
+            boolean wasWinner = p == null || p.winner;
+            b.key = wasWinner ? b.dist - Math.max(CROWD_STICKY_MIN, b.dist * CROWD_STICKY_FRAC) : b.dist;
+            b.win = false;
+            // 插入排序：一帧就几块到几十块，不分配
+            int j = i;
+            while (j > 0 && (order[j - 1].key > b.key || (order[j - 1].key == b.key && order[j - 1].id > b.id))) {
+                order[j] = order[j - 1];
+                j--;
+            }
+            order[j] = b;
+        }
+        for (int i = 0; i < n; i++) {
+            Box b = order[i];
+            // 排在前面的已经定了；身子不分先后，整组都看
+            b.win = !blocked(b.id, b.dist, b.key, b.x0, b.y0, b.x1, b.y1, b.pad, order, n);
+            Plate p = PLATES.get(b.id);
+            if (p != null) {
+                p.winner = b.win;
+                p.resolvedFrame = frameNo;
+            }
+        }
+    }
+
+    /** 这一帧这只实体的框（这一帧已经记过就覆盖：光影多画一遍等） */
+    private static Box addBox(int id) {
+        Box b = null;
+        for (int i = 0; i < boxN; i++) {
+            if (boxes[i].id == id) {
+                b = boxes[i];
+                break;
+            }
+        }
+        if (b == null) {
+            if (boxN == boxes.length) {
+                boxes = Arrays.copyOf(boxes, boxN * 2);
+            }
+            b = boxes[boxN];
+            if (b == null) {
+                b = new Box();
+                boxes[boxN] = b;
+            }
+            boxN++;
+        }
+        b.id = id;
+        return b;
+    }
+
+    /** 每帧开头把上一帧记的框换到 {@link #lastBoxes} 并排定谁清楚，这一帧从空的开始记 */
+    @SubscribeEvent
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase != TickEvent.Phase.START) {
+            return;
+        }
+        Box[] t = lastBoxes;
+        lastBoxes = boxes;
+        lastBoxN = boxN;
+        boxes = t;
+        boxN = 0;
+        frameNo++;
+        resolve();
+    }
+
+    /** 记下这一帧主镜头的投影（实体在实心方块之后画），用来认出光影阴影那一遍 */
+    @SubscribeEvent
+    public static void onRenderStage(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+            MAIN_PROJ.set(event.getProjectionMatrix());
+        }
     }
 
     /**
@@ -385,54 +652,16 @@ public final class LichNameplates {
                 || e.hasCustomName() || LichPuppet.isPuppet(e)) {
             return 0.0D;
         }
-        double dist = Math.sqrt(mc.getEntityRenderDispatcher().distanceToSqr(e));
         if (e instanceof KuvaMasterEntity lich) {
             if (!lich.isOwned()) {
                 return 0.0D;
             }
             // 别人的玄骸多一行「某某的玄骸」，整块往上挪一行
             boolean mine = lich.isOwner(player) && !ArchiveDevCommands.forceOtherView;
-            float s = LICH_SCALE * farGrow(LICH_SCALE, dist);
-            return lichAnchorAboveHead(s) + (mine ? 0.0F : 9.0F * s);
+            return ABOVE_HEAD + (mine ? 0.0F : 9.0F * LICH_SCALE);
         }
         // 幼体倒地后名牌不画（换成屏幕标注）
-        if (e instanceof KuvaSlaveEntity && !(e instanceof KuvaLarvlingEntity)) {
-            return THRALL_GAP + 9.0F * THRALL_SCALE * farGrow(THRALL_SCALE, dist);
-        }
-        return 0.0D;
-    }
-
-    /**
-     * 玄骸名牌的锚点（第一行的上沿，只有一行时就是名牌上沿）离头顶多高（格）：字号是 {@code s} 时。
-     * 字底（只有一行时第一行的底，有第二行时第二行的底，两种差一个字体像素左右）固定在原字号下的位置，放大时往上长
-     */
-    private static float lichAnchorAboveHead(float s) {
-        return ABOVE_HEAD + 8.0F * (s - LICH_SCALE);
-    }
-
-    /**
-     * 远处的放大倍数：一个字体像素在屏幕上够 {@link #MIN_PX_PER_FONT_PX} 像素时是 1，不够时补到够，
-     * 所以再远名牌在屏幕上的大小也不再变小。按直线距离算（不按景深），名牌在屏幕边上和正中一样大
-     *
-     * @param scale 名牌原本的字号（格 / 字体像素）
-     */
-    private static float farGrow(float scale, double dist) {
-        if (pxPerBlockAt1 <= 0.0F || dist <= 1.0E-3D) {
-            return 1.0F;
-        }
-        float px = scale * pxPerBlockAt1 / (float) dist;
-        return px >= MIN_PX_PER_FONT_PX ? 1.0F : MIN_PX_PER_FONT_PX / px;
-    }
-
-    /**
-     * 记下此刻的透视：离镜头 1 格处 1 格占多少屏幕像素（窗口高的一半 × 投影的 m11）。
-     * 只在透视投影下记（m33 为 0）：界面里画模型时是正交投影，那时的值不能用
-     */
-    private static void notePerspective(Minecraft mc) {
-        Matrix4f proj = RenderSystem.getProjectionMatrix();
-        if (proj.m33() == 0.0F && proj.m11() > 0.0F) {
-            pxPerBlockAt1 = 0.5F * mc.getWindow().getHeight() * proj.m11();
-        }
+        return e instanceof KuvaSlaveEntity && !(e instanceof KuvaLarvlingEntity) ? THRALL_ABOVE_HEAD : 0.0D;
     }
 
     /**
@@ -498,5 +727,7 @@ public final class LichNameplates {
         PLATES.clear();
         POSE_TOP.clear();
         POSE_TOP_AT.clear();
+        boxN = 0;
+        lastBoxN = 0;
     }
 }
