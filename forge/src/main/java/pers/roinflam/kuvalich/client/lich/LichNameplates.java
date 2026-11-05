@@ -64,8 +64,15 @@ public final class LichNameplates {
     private static final float THRALL_SCALE = 0.020F;
     /** 玄骸名牌离头顶多高（格） */
     private static final float ABOVE_HEAD = 0.5F;
-    /** 奴仆、幼体名牌的上沿离头顶多高（格）：只有一行字，字底离头顶 0.1 格 */
-    private static final float THRALL_ABOVE_HEAD = 0.1F + 9.0F * THRALL_SCALE;
+    /** 奴仆、幼体名牌只有一行字，字底离头顶多高（格）；远处放大时字底不动，往上长 */
+    private static final float THRALL_GAP = 0.1F;
+    /**
+     * 名牌远处的下限：一个字体像素在屏幕上至少占这么多像素。中文一笔只有半个字体像素宽，
+     * 少于 2 像素时笔画开始被吃掉；再远就按距离放大，屏幕上的大小不再变小
+     */
+    private static final float MIN_PX_PER_FONT_PX = 2.0F;
+    /** 离镜头 1 格处 1 格占多少屏幕像素，画名牌时按当时的投影记（{@link #notePerspective}）；0 = 还没记过 */
+    private static float pxPerBlockAt1;
     /**
      * 奴仆站着时模型头顶离脚底多高（格）：kuva_slave.geo.json 里 Head 骨骼最高到 40.75 像素。
      * 奴仆的碰撞箱有 2.9 格，比模型高出三分之一格，名牌按碰撞箱放会悬在头上
@@ -138,6 +145,7 @@ public final class LichNameplates {
         if (player == null || mc.options.hideGui || MercyClient.isCinematic() || entity.isInvisibleTo(player)) {
             return false;
         }
+        notePerspective(mc);
         float fade = LichRenderState.alpha(entity, partialTick);
         if (fade <= 0.02F) {
             return false;
@@ -189,14 +197,16 @@ public final class LichNameplates {
         float w1 = SpacedText.width(font, p.line1, SPACING);
         // 有第二行时整块往上挪一行，第二行贴着原来的位置
         float y1 = p.line2.isEmpty() ? 0.0F : -9.0F;
-        a *= bossBarFade(ps, mc, height + ABOVE_HEAD, LICH_SCALE, w1 * 0.5F, -y1);
+        float s = LICH_SCALE * farGrow(LICH_SCALE, dist);
+        float anchor = height + lichAnchorAboveHead(s);
+        a *= bossBarFade(ps, mc, anchor, s, w1 * 0.5F, -y1);
         if (a <= 0.02F) {
             return false;
         }
         ps.pushPose();
-        ps.translate(0.0F, height + ABOVE_HEAD, 0.0F);
+        ps.translate(0.0F, anchor, 0.0F);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-        ps.scale(-LICH_SCALE, -LICH_SCALE, LICH_SCALE);
+        ps.scale(-s, -s, s);
         shadowedLine(ps, buffer, font, p.line1, -w1 * 0.5F, y1, FxPalette.KUVA_PALE, 0.95F * a, Font.DisplayMode.NORMAL);
         if (!p.line2.isEmpty()) {
             ps.pushPose();
@@ -255,16 +265,17 @@ public final class LichNameplates {
         }
         Font.DisplayMode mode = visible ? Font.DisplayMode.NORMAL : Font.DisplayMode.SEE_THROUGH;
         Font font = mc.font;
-        float top = height + THRALL_ABOVE_HEAD;
+        float s = THRALL_SCALE * farGrow(THRALL_SCALE, dist);
+        float top = height + THRALL_GAP + 9.0F * s;
         float w = SpacedText.width(font, p.line1, SPACING);
-        a *= bossBarFade(ps, mc, top, THRALL_SCALE, w * 0.5F, 0.0F);
+        a *= bossBarFade(ps, mc, top, s, w * 0.5F, 0.0F);
         if (a <= 0.02F) {
             return false;
         }
         ps.pushPose();
         ps.translate(0.0F, top, 0.0F);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-        ps.scale(-THRALL_SCALE, -THRALL_SCALE, THRALL_SCALE);
+        ps.scale(-s, -s, s);
         shadowedLine(ps, buffer, font, p.line1, -w * 0.5F, 0.0F, FxPalette.BONE, a, mode);
         ps.popPose();
         return true;
@@ -374,16 +385,54 @@ public final class LichNameplates {
                 || e.hasCustomName() || LichPuppet.isPuppet(e)) {
             return 0.0D;
         }
+        double dist = Math.sqrt(mc.getEntityRenderDispatcher().distanceToSqr(e));
         if (e instanceof KuvaMasterEntity lich) {
             if (!lich.isOwned()) {
                 return 0.0D;
             }
             // 别人的玄骸多一行「某某的玄骸」，整块往上挪一行
             boolean mine = lich.isOwner(player) && !ArchiveDevCommands.forceOtherView;
-            return ABOVE_HEAD + (mine ? 0.0F : 9.0F * LICH_SCALE);
+            float s = LICH_SCALE * farGrow(LICH_SCALE, dist);
+            return lichAnchorAboveHead(s) + (mine ? 0.0F : 9.0F * s);
         }
         // 幼体倒地后名牌不画（换成屏幕标注）
-        return e instanceof KuvaSlaveEntity && !(e instanceof KuvaLarvlingEntity) ? THRALL_ABOVE_HEAD : 0.0D;
+        if (e instanceof KuvaSlaveEntity && !(e instanceof KuvaLarvlingEntity)) {
+            return THRALL_GAP + 9.0F * THRALL_SCALE * farGrow(THRALL_SCALE, dist);
+        }
+        return 0.0D;
+    }
+
+    /**
+     * 玄骸名牌的锚点（第一行的上沿，只有一行时就是名牌上沿）离头顶多高（格）：字号是 {@code s} 时。
+     * 字底（只有一行时第一行的底，有第二行时第二行的底，两种差一个字体像素左右）固定在原字号下的位置，放大时往上长
+     */
+    private static float lichAnchorAboveHead(float s) {
+        return ABOVE_HEAD + 8.0F * (s - LICH_SCALE);
+    }
+
+    /**
+     * 远处的放大倍数：一个字体像素在屏幕上够 {@link #MIN_PX_PER_FONT_PX} 像素时是 1，不够时补到够，
+     * 所以再远名牌在屏幕上的大小也不再变小。按直线距离算（不按景深），名牌在屏幕边上和正中一样大
+     *
+     * @param scale 名牌原本的字号（格 / 字体像素）
+     */
+    private static float farGrow(float scale, double dist) {
+        if (pxPerBlockAt1 <= 0.0F || dist <= 1.0E-3D) {
+            return 1.0F;
+        }
+        float px = scale * pxPerBlockAt1 / (float) dist;
+        return px >= MIN_PX_PER_FONT_PX ? 1.0F : MIN_PX_PER_FONT_PX / px;
+    }
+
+    /**
+     * 记下此刻的透视：离镜头 1 格处 1 格占多少屏幕像素（窗口高的一半 × 投影的 m11）。
+     * 只在透视投影下记（m33 为 0）：界面里画模型时是正交投影，那时的值不能用
+     */
+    private static void notePerspective(Minecraft mc) {
+        Matrix4f proj = RenderSystem.getProjectionMatrix();
+        if (proj.m33() == 0.0F && proj.m11() > 0.0F) {
+            pxPerBlockAt1 = 0.5F * mc.getWindow().getHeight() * proj.m11();
+        }
     }
 
     /**
