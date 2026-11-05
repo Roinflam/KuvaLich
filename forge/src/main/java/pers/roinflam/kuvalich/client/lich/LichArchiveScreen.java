@@ -39,10 +39,8 @@ import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.nemesis.LichTraits;
 import pers.roinflam.kuvalich.nemesis.RageTier;
-import pers.roinflam.kuvalich.nemesis.WaitReason;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
-import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.ArrayList;
@@ -54,9 +52,10 @@ import java.util.Map;
 /**
  * 玄骸档案（K 键）：只看不改的一整屏
  *
- * <p>左栏是这只玄骸本身：等级徽章、名字、第几只、能力、怒气条、属性表、被它拿走的东西；中间是它的全身像，
- * 能按住左键拖着转身，开档案时它会说一句；右栏是玩家这边：当前放着的安魂卡、处决记录、已揭示的密语。
- * 全屏不画外框，只有两条竖的分隔线。</p>
+ * <p>左栏是这只玄骸本身（{@link ArchiveDossier}，按物理像素排的「宿敌卷宗」）：等级徽记压着名字、第几只、状态，
+ * 怒气五段条，武器、体质、弱点 · 抗性、能力、交战几张卷宗卡；中间是它的全身像，能按住左键拖着转身，
+ * 开档案时它会说一句；右栏是玩家这边：当前放着的安魂卡、处决记录、已揭示的密语，最下面是被它拿走的东西。
+ * 全屏不画外框，中间和右栏之间一条竖的分隔线。</p>
  *
  * <p>打开动画：先压暗、铺墨烟（0~250 ms），标题、分隔线、右栏、状态行淡入（300~600 ms），
  * 左栏和模型最后出来（1500~1900 ms，模型从暗剪影里亮起来）。客户端选项 {@code archive_intro} 关掉、
@@ -112,18 +111,12 @@ public class LichArchiveScreen extends Screen {
     /** 松手后转回默认朝向用多久 */
     private static final int YAW_RETURN_MS = 1500;
 
-    private static final String[] CATEGORY_KEYS = {
-            "kuvalich.archive.cat.melee", "kuvalich.archive.cat.arrow",
-            "kuvalich.archive.cat.projectile", "kuvalich.archive.cat.magic"
-    };
     /** 能力图标的说明，下标和 {@link LichTraits} 的技能序号一致 */
     private static final String[] ABILITY_KEYS = {
             "kuvalich.archive.ability.adaptive", "kuvalich.archive.ability.fury",
             "kuvalich.archive.ability.regen", "kuvalich.archive.ability.quake",
             "kuvalich.archive.ability.lifesteal"
     };
-    /** 怒气档位的分界（和 {@link RageTier} 一致） */
-    private static final float[] RAGE_TICKS = {0.12F, 0.5F, 0.8F, 0.96F};
 
     /** 上次关档案的时刻（真实时钟），判断 10 秒内重开 */
     private static long lastCloseMs = Long.MIN_VALUE / 4;
@@ -166,15 +159,13 @@ public class LichArchiveScreen extends Screen {
     private ClientLichState.State stateSource;
     private LichStatePacket stateView = LichStatePacket.EMPTY;
     @Nullable
-    private LichArchivePacket.Data rowsFor;
-    private String rowsLang = "";
-    private final List<String> rowLabels = new ArrayList<>();
-    private final List<String> rowValues = new ArrayList<>();
-    @Nullable
     private LichPuppet.Pose pose;
 
-    // ---- 三角 ----
+    // ---- 左栏、三角 ----
+    private final ArchiveDossier dossier = new ArchiveDossier();
     private final ArchiveTriangles triangles = new ArchiveTriangles();
+    /** 右栏密语三角最低到哪（界面坐标，含互换时的弧线），「被它拿走的东西」从这下面排 */
+    private float murmurBottom;
 
     // ---- 这一帧的悬停 ----
     @Nullable
@@ -253,7 +244,7 @@ public class LichArchiveScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        if (button == 0 && !small() && mx > width * 0.29F && mx < width * 0.75F && my < height * 0.88F) {
+        if (button == 0 && !small() && mx > dossier.leftEdgeGui() && mx < width * 0.75F && my < height * 0.88F) {
             dragging = true;
             dragStartX = mx;
             dragStartYaw = yawNow;
@@ -369,6 +360,8 @@ public class LichArchiveScreen extends Screen {
         LichStatePacket st = state(data);
         boolean lich = hasLich(st);
         boolean small = small();
+        boolean known = demo != null || data != null || ClientLichState.get() != ClientLichState.NONE;
+        dossier.layout(Minecraft.getInstance(), small);
         g.pose().pushPose();
         g.pose().translate(0.0F, 0.0F, ARCHIVE_Z);
 
@@ -376,15 +369,11 @@ public class LichArchiveScreen extends Screen {
         g.fill(0, 0, w, h, GuiShapes.argb(0x000000, 0.85F * eDim));
         drawSmoke(g, w, h, now, 0.4F * eDim);
 
-        // ---- 列分隔 ----
+        // ---- 列分隔：左栏是一张张卷宗卡，自己分得开，只在中间和右栏之间画一条 ----
         GuiShapes.begin(g);
         int sep = GuiShapes.argb(FxPalette.KUVA_PALE, 0.12F * eFrame);
-        if (small) {
-            GuiShapes.hairline(g, w * 0.5F, h * 0.08F, w * 0.5F, h * 0.88F, lw, sep);
-        } else {
-            GuiShapes.hairline(g, w * 0.290F, h * 0.08F, w * 0.290F, h * 0.88F, lw, sep);
-            GuiShapes.hairline(g, w * 0.750F, h * 0.08F, w * 0.750F, h * 0.88F, lw, sep);
-        }
+        float sepX = small ? w * 0.5F : w * 0.750F;
+        GuiShapes.hairline(g, sepX, h * 0.08F, sepX, h * 0.88F, lw, sep);
         GuiShapes.end();
 
         // ---- 中间：背光、地面线、模型、微粒 ----
@@ -393,18 +382,23 @@ public class LichArchiveScreen extends Screen {
         }
 
         // ---- 左栏 ----
-        float lx0 = small ? w * 0.04F : w * 0.077F;
-        float lx1 = small ? w * 0.48F : w * 0.265F;
-        drawTitle(g, f, lx0, lx1, h, eFrame, lw);
-        drawLeft(g, f, mx, my, lx0, lx1, w, h, now, st, lich, data, eBody, small, lw);
+        dossier.drawLeft(g, f, mx, my, st, lich, known, data, now, eFrame, eBody);
+        takeHover();
 
         // ---- 右栏 ----
         float rx0 = small ? w * 0.52F : w * 0.775F;
         float rx1 = small ? w * 0.96F : w * 0.930F;
         drawRight(g, f, mx, my, rx0, rx1, w, h, now, st, data, eFrame, lw);
+        if (known) {
+            // 被它拿走的东西：密语三角下面空 3 个字像素，到关闭提示上面 3 个字像素为止
+            float gap = dossier.u / (float) Minecraft.getInstance().getWindow().getGuiScale();
+            dossier.drawTaken(g, f, mx, my, rx0, rx1, murmurBottom + 3.0F * gap, closeHintTop(h) - 3.0F * gap,
+                    data, eBody);
+            takeHover();
+        }
 
-        // ---- 状态行、上一只、关闭提示 ----
-        drawStatus(g, f, w, h, st, data, lich, small, eFrame, now);
+        // ---- 关闭提示 ----
+        drawStatus(g, f, w, h, eFrame);
 
         // ---- 字幕 ----
         if (!small) {
@@ -537,137 +531,10 @@ public class LichArchiveScreen extends Screen {
         return (x >>> 8) / 16777216.0F;
     }
 
-    // ---------- 左栏 ----------
-
-    private void drawTitle(GuiGraphics g, Font f, float x0, float x1, int h, float a, float lw) {
-        if (a <= 0.01F) {
-            return;
-        }
-        float ts = tsOf(h, 0.018F) * 1.2F;
-        text(g, f, title.getString(), x0, h * 0.060F, ts, FxPalette.TEXT_MID, a, 1.0F, -1);
-        GuiShapes.begin(g);
-        GuiShapes.hairline(g, x0, h * 0.087F, x1, h * 0.087F, lw, GuiShapes.argb(FxPalette.KUVA_PALE, 0.35F * a));
-        GuiShapes.end();
-    }
-
-    private void drawLeft(GuiGraphics g, Font f, int mx, int my, float x0, float x1, int w, int h, long now,
-                          LichStatePacket st, boolean lich, @Nullable LichArchivePacket.Data data, float a,
-                          boolean small, float lw) {
-        if (a <= 0.01F) {
-            return;
-        }
-        float cx = (x0 + x1) * 0.5F;
-        float colW = x1 - x0;
-        float tsS = tsOf(h, 0.016F);
-        float tsN = tsOf(h, 0.026F);
-        float tsR = tsOf(h, 0.032F);
-        boolean known = demo != null || data != null || ClientLichState.get() != ClientLichState.NONE;
-
-        // 等级徽章
-        float by = h * 0.195F;
-        float ba = h * 0.040F;
-        float bhw = ba * 0.75F;
-        GuiShapes.begin(g);
-        GuiShapes.diamondFill(g, cx, by, bhw, ba, GuiShapes.argb(FxPalette.KUVA_DEEP, 0.95F * a));
-        GuiShapes.diamondOutline(g, cx, by, bhw, ba, lw, GuiShapes.argb(FxPalette.KUVA_PALE, a));
-        int vein = GuiShapes.argb(FxPalette.KUVA_PALE, 0.35F * a);
-        GuiShapes.hairline(g, cx - bhw, by, cx - bhw * 0.6F, by, lw, vein);
-        GuiShapes.hairline(g, cx + bhw, by, cx + bhw * 0.6F, by, lw, vein);
-        GuiShapes.hairline(g, cx, by - ba, cx, by - ba * 0.5F, lw, vein);
-        GuiShapes.end();
-        String rank = !known ? unknown() : lich ? Integer.toString(st.rank) : "—";
-        float rs = rank.length() >= 3 ? tsR * 0.8F : tsR;
-        text(g, f, rank, cx, by - 3.5F * rs, rs, FxPalette.BONE, a, 0.0F, 0);
-        if (lich && inRect(mx, my, cx - bhw, by - ba, cx + bhw, by + ba)) {
-            hoverLines = rankTooltip(st.rank, data);
-        }
-
-        // 名字、第几只
-        float ny = h * 0.278F;
-        if (!known) {
-            text(g, f, unknown(), cx, ny - 3.5F * tsN, tsN, FxPalette.KUVA, a, 1.0F, 0);
-        } else if (lich) {
-            String name = upper(st.name);
-            float nw = SpacedText.width(f, name, 1.0F) * tsN;
-            float s = nw > colW ? tsN * colW / nw : tsN;
-            text(g, f, name, cx, ny - 3.5F * s, s, FxPalette.KUVA, a, 1.0F, 0);
-            LichPersona persona = LichPersona.of(st.seed);
-            String gen = I18n.get("kuvalich.archive.generation", Math.max(1, st.generation)) + " · "
-                    + I18n.get("kuvalich.archive.persona." + persona.id);
-            float gy = h * 0.305F - 3.5F * tsS;
-            float gw = text(g, f, gen, cx, gy, tsS, FxPalette.ASH, a, 0.0F, 0);
-            if (data != null && LichTraits.unpackVaried(data.stats().skills())
-                    && inRect(mx, my, cx - gw * 0.5F, gy - 1.0F, cx + gw * 0.5F, gy + 8.0F * tsS)) {
-                String key = "kuvalich.archive.persona." + persona.id + ".tooltip.";
-                hoverLines = List.of(Component.translatable(key + "0"), Component.translatable(key + "1"));
-            }
-        } else {
-            text(g, f, I18n.get("kuvalich.lich.state.unborn"), cx, ny - 3.5F * tsN, tsN, FxPalette.TEXT_MID, a, 1.0F, 0);
-        }
-
-        if (lich) {
-            // 能力图标
-            if (!small) {
-                drawAbilities(g, mx, my, cx, h * 0.345F, h, data, a, lw);
-            }
-            drawRage(g, f, mx, my, x0, x1, h, now, st, data, a, tsS, lw);
-            drawAttributes(g, f, x0, x1, h, data, a, tsS);
-        }
-        drawConfiscated(g, f, mx, my, x0, x1, h, data, known, a, tsS);
-    }
-
-    private void drawAbilities(GuiGraphics g, int mx, int my, float cx, float cy, int h,
-                               @Nullable LichArchivePacket.Data data, float a, float lw) {
-        LichArchivePacket.Stats stats = data != null ? data.stats() : null;
-        boolean fury = stats != null && stats.furyPermille() > 0;
-        boolean varied = stats != null && LichTraits.unpackVaried(stats.skills());
-        int count = fury ? LichTraits.SKILLS : LichTraits.SKILLS - 1;
-        float step = h * 0.045F;
-        float size = h * 0.030F;
-        float x = cx - step * (count - 1) * 0.5F;
-        GuiShapes.begin(g);
-        int base = GuiShapes.argb(FxPalette.KUVA_MIST, 0.6F * a);
-        int line = GuiShapes.argb(FxPalette.KUVA_PALE, 0.85F * a);
-        int sigFill = GuiShapes.argb(FxPalette.KUVA_DEEP, 0.95F * a);
-        int sigEdge = GuiShapes.argb(FxPalette.KUVA, a);
-        int pipOn = GuiShapes.argb(FxPalette.KUVA_PALE, 0.9F * a);
-        int pipOff = GuiShapes.argb(FxPalette.KUVA_MIST, 0.55F * a);
-        float pip = Math.max(lw, size * 0.07F);
-        int hovered = -1;
-        for (int i = 0; i < LichTraits.SKILLS; i++) {
-            if (i == LichTraits.FURY && !fury) {
-                continue;
-            }
-            float r = size * 0.5F;
-            int tier = stats != null ? LichTraits.unpackTier(stats.skills(), i) : LichTraits.NORMAL;
-            boolean sig = varied && tier == LichTraits.SIGNATURE;
-            GuiShapes.diamondFill(g, x, cy, r * 0.75F, r, sig ? sigFill : base);
-            if (sig) {
-                GuiShapes.diamondOutline(g, x, cy, r * 0.75F + lw, r + lw, lw, sigEdge);
-            }
-            ArchiveIcons.ability(g, i, x, cy, size * 0.62F, lw, line);
-            if (varied) {
-                // 档位：弱一点、中两点、强和专长三点
-                int lit = Math.min(3, tier + 1);
-                float py = cy + r + size * 0.16F;
-                for (int k = 0; k < 3; k++) {
-                    float px = x + (k - 1) * size * 0.26F;
-                    GuiShapes.rect(g, px - pip, py - pip, px + pip, py + pip, k < lit ? pipOn : pipOff);
-                }
-            }
-            if (inRect(mx, my, x - r, cy - r, x + r, cy + r + size * 0.3F)) {
-                hovered = i;
-            }
-            x += step;
-        }
-        GuiShapes.end();
-        if (hovered >= 0) {
-            hoverLines = abilityTooltip(hovered, stats, varied);
-        }
-    }
+    // ---------- 左栏用的悬停提示和数的写法（{@link ArchiveDossier} 调） ----------
 
     /** 能力图标的悬停：说明一句，再写这只的档位和具体数 */
-    private static List<Component> abilityTooltip(int skill, @Nullable LichArchivePacket.Stats stats, boolean varied) {
+    static List<Component> abilityTooltip(int skill, @Nullable LichArchivePacket.Stats stats, boolean varied) {
         List<Component> lines = new ArrayList<>();
         lines.add(Component.translatable(ABILITY_KEYS[skill]));
         if (stats == null) {
@@ -698,7 +565,7 @@ public class LichArchiveScreen extends Screen {
     }
 
     /** 等级徽章的悬停：等级怎么涨，下一级生命、护甲和你受到的伤害变成多少 */
-    private static List<Component> rankTooltip(int rank, @Nullable LichArchivePacket.Data data) {
+    static List<Component> rankTooltip(int rank, @Nullable LichArchivePacket.Data data) {
         List<Component> lines = new ArrayList<>();
         lines.add(Component.translatable("kuvalich.archive.rank.tooltip", rank));
         if (data == null) {
@@ -722,151 +589,8 @@ public class LichArchiveScreen extends Screen {
         return lines;
     }
 
-    private void drawRage(GuiGraphics g, Font f, int mx, int my, float x0, float x1, int h, long now,
-                          LichStatePacket st, @Nullable LichArchivePacket.Data data, float a, float tsS, float lw) {
-        float ly = h * 0.372F;
-        text(g, f, I18n.get("kuvalich.archive.rage"), x0, ly, tsS, FxPalette.ASH, a, 0.0F, -1);
-        int tier = Mth.clamp(st.tier, 0, RageTier.values().length - 1);
-        text(g, f, tier + " / " + (RageTier.values().length - 1), x1, ly, tsS, FxPalette.ASH, 0.6F * a, 0.0F, 1);
-
-        float y0 = h * 0.395F;
-        float y1 = h * 0.425F;
-        float rage = Mth.clamp(st.ragePermille / 1000.0F, 0.0F, 1.0F);
-        float fillA = 0.95F;
-        if (st.state == LichState.INCOMING) {
-            float k = 0.5F + 0.5F * Mth.sin((now % 1600L) / 1600.0F * Mth.TWO_PI);
-            fillA = 0.8F + 0.2F * k;
-        }
-        GuiShapes.begin(g);
-        GuiShapes.rect(g, x0, y0, x1, y1, GuiShapes.argb(FxPalette.KUVA_MIST, 0.5F * a));
-        if (rage > 0.0F) {
-            GuiShapes.rect(g, x0, y0, x0 + (x1 - x0) * rage, y1, GuiShapes.argb(FxPalette.KUVA_DEEP, fillA * a));
-        }
-        int tick = GuiShapes.argb(FxPalette.KUVA_PALE, 0.35F * a);
-        for (float rt : RAGE_TICKS) {
-            float x = x0 + (x1 - x0) * rt;
-            GuiShapes.hairline(g, x, y0, x, y1, lw, tick);
-        }
-        int frame = GuiShapes.argb(FxPalette.KUVA_PALE, 0.6F * a);
-        GuiShapes.hairline(g, x0, y0, x1, y0, lw, frame);
-        GuiShapes.hairline(g, x0, y1, x1, y1, lw, frame);
-        GuiShapes.hairline(g, x0, y0, x0, y1, lw, frame);
-        GuiShapes.hairline(g, x1, y0, x1, y1, lw, frame);
-        GuiShapes.end();
-        String word = I18n.get(RageTier.values()[tier].langKey());
-        text(g, f, word, (x0 + x1) * 0.5F, (y0 + y1) * 0.5F - 3.5F * tsS, tsS, FxPalette.BONE, a, 0.0F, 0);
-
-        if (inRect(mx, my, x0, y0 - h * 0.02F, x1, y1)) {
-            List<Component> lines = new ArrayList<>();
-            lines.add(Component.translatable("kuvalich.archive.rage.tooltip.head"));
-            int src = data != null ? data.rageSources() : 0;
-            if (src != 0) {
-                lines.add(Component.translatable("kuvalich.archive.rage.tooltip.sources"));
-                String[] keys = {"thrall", "progress", "reveal", "time"};
-                for (int i = 0; i < 4; i++) {
-                    if ((src & (1 << i)) != 0) {
-                        lines.add(Component.literal("· ").append(Component.translatable("kuvalich.archive.rage.src." + keys[i])));
-                    }
-                }
-            }
-            hoverLines = lines;
-        }
-    }
-
-    private void drawAttributes(GuiGraphics g, Font f, float x0, float x1, int h,
-                                @Nullable LichArchivePacket.Data data, float a, float tsS) {
-        float y = h * 0.448F;
-        if (data == null) {
-            text(g, f, unknown(), x0, y, tsS, FxPalette.ASH, a, 0.0F, -1);
-            return;
-        }
-        buildRows(data);
-        // 行多了（弱点、抗性逐类各占一行）就压行距，字也跟着缩，不能压到下面「被它拿走的东西」
-        int n = rowLabels.size();
-        float row = n == 0 ? h * 0.025F : Math.min(h * 0.025F, (h * 0.690F - y) / n);
-        float ts = Math.min(tsS, row / 8.0F);
-        float colW = x1 - x0;
-        for (int i = 0; i < n; i++) {
-            String label = rowLabels.get(i);
-            String value = rowValues.get(i);
-            float lwid = label.isEmpty() ? 0.0F : f.width(label) * ts + 4.0F;
-            text(g, f, label, x0, y, ts, FxPalette.ASH, a, 0.0F, -1);
-            float vw = f.width(value) * ts;
-            float room = colW - lwid;
-            float s = vw > room && vw > 0.0F ? ts * room / vw : ts;
-            text(g, f, value, x1, y + (ts - s) * 3.5F, s, FxPalette.TEXT_MID, a, 0.0F, 1);
-            y += row;
-        }
-    }
-
-    /** 属性表：只列它有的行；数据或语言变了才重算 */
-    private void buildRows(LichArchivePacket.Data d) {
-        String lang = Minecraft.getInstance().options.languageCode;
-        if (d == rowsFor && lang.equals(rowsLang)) {
-            return;
-        }
-        rowsFor = d;
-        rowsLang = lang;
-        rowLabels.clear();
-        rowValues.clear();
-        LichArchivePacket.Stats st = d.stats();
-        if (st.health() > 0) {
-            addRow("kuvalich.archive.attr.health",
-                    I18n.get("kuvalich.archive.val.health", st.health(), tenths(st.armorTenths())));
-        }
-        if (st.hitTenths() > 0) {
-            addRow("kuvalich.archive.attr.hit", I18n.get("kuvalich.archive.val.hit", tenths(st.hitTenths())));
-        }
-        addAffinityRows("kuvalich.archive.attr.weakness", st.affinityPct(), true);
-        addAffinityRows("kuvalich.archive.attr.resistance", st.affinityPct(), false);
-        if (st.adaptPct() > 0 && st.adaptStacks() > 0) {
-            addRow("kuvalich.archive.attr.adaptive",
-                    I18n.get("kuvalich.archive.val.adaptive", st.adaptPct(), st.adaptStacks()));
-        }
-        if (!d.weaponStack().isEmpty()) {
-            addRow("kuvalich.archive.attr.weapon", d.weaponStack().getHoverName().getString());
-            if (d.weaponLvMax() > 0) {
-                rowLabels.add("");
-                // 诞生时定下的那一把：服务端把上下限都填成它的等级，物品上带着元素
-                String type = KuvaWeaponUtil.getType(d.weaponStack());
-                rowValues.add(!type.isEmpty() && d.weaponLvMin() == d.weaponLvMax()
-                        ? I18n.get("kuvalich.archive.val.weapon_fixed", d.weaponLvMax(),
-                        I18n.get("kuvaweapon.type." + type))
-                        : I18n.get("kuvalich.archive.val.weapon_levels", d.weaponLvMin(), d.weaponLvMax()));
-            }
-        }
-        if (!d.birthBiome().isEmpty() || !d.birthDim().isEmpty()) {
-            addRow("kuvalich.archive.attr.birthplace",
-                    I18n.get("kuvalich.archive.val.birthplace", biomeName(d.birthBiome()), dimName(d.birthDim())));
-        }
-        if (st.furyPermille() > 0) {
-            addRow("kuvalich.archive.attr.fury", I18n.get("kuvalich.archive.val.fury", pct1(st.furyPermille())));
-        }
-        if (d.dealtPct() > 0) {
-            addRow("kuvalich.archive.attr.dealt", I18n.get("kuvalich.archive.val.minus", d.dealtPct()));
-        }
-        if (d.takenPct() > 0) {
-            addRow("kuvalich.archive.attr.taken", I18n.get("kuvalich.archive.val.plus", d.takenPct()));
-        }
-        addRow("kuvalich.archive.attr.encounters", I18n.get("kuvalich.archive.val.encounters", d.encounters()));
-    }
-
-    /** 弱点（倍率 > 1）或抗性（< 1）按「近战 / 弓箭 / 其他弹射物 / 魔法」的顺序逐类列一行，标签只写在第一行 */
-    private void addAffinityRows(String labelKey, int[] pct, boolean weak) {
-        boolean first = true;
-        for (int c = 0; c < CATEGORY_KEYS.length && c < pct.length; c++) {
-            if (weak ? pct[c] <= 100 : pct[c] >= 100) {
-                continue;
-            }
-            rowLabels.add(first ? I18n.get(labelKey) : "");
-            rowValues.add(I18n.get("kuvalich.archive.val.mult", I18n.get(CATEGORY_KEYS[c]),
-                    String.format(Locale.ROOT, "%.2f", pct[c] / 100.0D)));
-            first = false;
-        }
-    }
-
     /** ×10 存的数写成一位小数，整数不带小数（127 → 12.7，80 → 8） */
-    private static String tenths(int v) {
+    static String tenths(int v) {
         return v % 10 == 0 ? Integer.toString(v / 10) : String.format(Locale.ROOT, "%.1f", v / 10.0F);
     }
 
@@ -877,18 +601,13 @@ public class LichArchiveScreen extends Screen {
         return s.endsWith(".") ? s.substring(0, s.length() - 1) : s;
     }
 
-    private void addRow(String labelKey, String value) {
-        rowLabels.add(I18n.get(labelKey));
-        rowValues.add(value);
-    }
-
     /** 千分比写成百分比，整数不带小数（75 → 7.5，100 → 10） */
-    private static String pct1(int permille) {
+    static String pct1(int permille) {
         return permille % 10 == 0 ? Integer.toString(permille / 10)
                 : String.format(Locale.ROOT, "%.1f", permille / 10.0F);
     }
 
-    private static String biomeName(String id) {
+    static String biomeName(String id) {
         ResourceLocation rl = ResourceLocation.tryParse(id);
         if (rl == null) {
             return id;
@@ -897,7 +616,7 @@ public class LichArchiveScreen extends Screen {
         return I18n.exists(key) ? I18n.get(key) : rl.getPath();
     }
 
-    private static String dimName(String id) {
+    static String dimName(String id) {
         ResourceLocation rl = ResourceLocation.tryParse(id);
         if (rl == null) {
             return id;
@@ -906,61 +625,17 @@ public class LichArchiveScreen extends Screen {
         return I18n.exists(key) ? I18n.get(key) : rl.getPath();
     }
 
-    private void drawConfiscated(GuiGraphics g, Font f, int mx, int my, float x0, float x1, int h,
-                                 @Nullable LichArchivePacket.Data data, boolean known, float a, float tsS) {
-        float ly = h * 0.700F;
-        if (data == null) {
-            if (known) {
-                text(g, f, I18n.get("kuvalich.archive.confiscated", unknown()), x0, ly, tsS, FxPalette.ASH, a, 0.0F, -1);
-            }
-            return;
-        }
-        int total = data.confiscatedCount();
-        text(g, f, I18n.get("kuvalich.archive.confiscated", total), x0, ly, tsS, FxPalette.ASH, a, 0.0F, -1);
-        float y = h * 0.725F;
-        List<ItemStack> items = data.confiscated();
-        if (total <= 0 || items.isEmpty()) {
-            text(g, f, I18n.get("kuvalich.archive.confiscated.none"), x0, y, tsS, FxPalette.TEXT_MID, 0.7F * a, 0.0F, -1);
-            return;
-        }
-        if (a < 0.5F) {
-            // 物品图标没法跟着半透明，等左栏亮到一半再一起出来
-            return;
-        }
-        float cell = h * 0.044F;
-        int perRow = Math.max(1, (int) ((x1 - x0 + 1.0F) / (cell + 1.0F)));
-        int slots = perRow * 2;
-        int shown = Math.min(items.size(), total > slots ? slots - 1 : slots);
-        float scale = cell / 16.0F;
-        PoseStack ps = g.pose();
-        for (int i = 0; i < shown; i++) {
-            float cx = x0 + (i % perRow) * (cell + 1.0F);
-            float cy = y + (i / perRow) * (cell + 1.0F);
-            ps.pushPose();
-            ps.translate(cx, cy, 0.0F);
-            ps.scale(scale, scale, 1.0F);
-            g.renderItem(items.get(i), 0, 0);
-            ps.popPose();
-            if (inRect(mx, my, cx, cy, cx + cell, cy + cell)) {
-                hoverStack = items.get(i);
-            }
-        }
-        if (total > shown) {
-            float cx = x0 + (shown % perRow) * (cell + 1.0F);
-            float cy = y + (shown / perRow) * (cell + 1.0F);
-            String more = I18n.get("kuvalich.archive.confiscated.more", total - shown);
-            text(g, f, more, cx + cell * 0.5F, cy + cell * 0.5F - 3.5F * tsS, tsS, FxPalette.ASH, a, 0.0F, 0);
-        }
-    }
-
     // ---------- 右栏 ----------
 
     private void drawRight(GuiGraphics g, Font f, int mx, int my, float x0, float x1, int w, int h, long now,
                            LichStatePacket st, @Nullable LichArchivePacket.Data data, float a, float lw) {
+        float span = x1 - x0;
+        // 密语三角最低那枚的下尖，再加互换时弧线往下偏的四分之一个边长（边长同下面 size 的算法）
+        float murmurSize = small() ? Math.min(w * 0.035F * 1.4F, span * 0.2F) : w * 0.035F;
+        murmurBottom = h * 0.753F + murmurSize * 0.75F;
         if (a <= 0.01F) {
             return;
         }
-        float span = x1 - x0;
         // 原排版里右栏宽 0.155W，三列中心在 0.800 / 0.850 / 0.900W，折成栏内比例，小窗口时照样排
         float[] col = {x0 + span * 0.161F, x0 + span * 0.484F, x0 + span * 0.806F};
         float tsS = tsOf(h, 0.016F);
@@ -1185,45 +860,35 @@ public class LichArchiveScreen extends Screen {
         }
     }
 
-    // ---------- 状态行 ----------
+    // ---------- 关闭提示 ----------
 
-    private void drawStatus(GuiGraphics g, Font f, int w, int h, LichStatePacket st,
-                            @Nullable LichArchivePacket.Data data, boolean lich, boolean small, float a, long now) {
+    /** 右下角的关闭提示；状态行、上一只的结局都在左栏名字那一块里（{@link ArchiveDossier}） */
+    private void drawStatus(GuiGraphics g, Font f, int w, int h, float a) {
         if (a <= 0.01F) {
             return;
         }
-        float tsB = tsOf(h, 0.018F);
         float tsS = tsOf(h, 0.016F);
-        float cx = w * 0.5F;
-        float sy = (small ? h * 0.93F : h * 0.920F) - 3.5F * tsB;
-        boolean known = demo != null || data != null || ClientLichState.get() != ClientLichState.NONE;
-        if (!known) {
-            text(g, f, unknown(), cx, sy, tsB, FxPalette.TEXT_MID, a, 0.0F, 0);
-        } else if (st.state == LichState.UNBORN) {
-            text(g, f, I18n.get("kuvalich.archive.status.unborn"), cx, sy, tsB, FxPalette.TEXT_MID, a, 0.0F, 0);
-            text(g, f, I18n.get("kuvalich.archive.status.unborn.hint"), cx, sy + 9.0F * tsB + 1.0F, tsS,
-                    FxPalette.ASH, a, 0.0F, 0);
-            String lastName = data != null ? data.lastName() : "";
-            int fate = data != null ? data.lastFate() : 0;
-            if (!lastName.isEmpty() && fate > 0) {
-                String key = fate == 2 ? "kuvalich.archive.history.reset" : "kuvalich.archive.history.vanquished";
-                text(g, f, I18n.get(key, upper(lastName)), cx, h * 0.890F - 3.5F * tsS - (small ? h * 0.04F : 0.0F),
-                        tsS, FxPalette.ASH, a, 0.0F, 0);
-            }
-        } else {
-            String line = statusLine(st);
-            int col = switch (st.state) {
-                case INCOMING, ARRIVING, PRESENT, DOWNED -> FxPalette.KUVA;
-                default -> FxPalette.TEXT_MID;
-            };
-            text(g, f, line, cx, sy, tsB, col, a, 0.0F, 0);
-        }
-        // 关闭提示
         String close = I18n.get("kuvalich.archive.close", KuvaKeyMappings.ARCHIVE.getTranslatedKeyMessage().getString());
-        text(g, f, close, w * 0.930F, h * 0.955F - 3.5F * tsS, tsS, FxPalette.ASH, a, 0.0F, 1);
+        text(g, f, close, w * 0.930F, closeHintTop(h), tsS, FxPalette.ASH, a, 0.0F, 1);
     }
 
-    private String statusLine(LichStatePacket st) {
+    /** 关闭提示的字顶（界面坐标） */
+    private static float closeHintTop(int h) {
+        return h * 0.955F - 3.5F * tsOf(h, 0.016F);
+    }
+
+    /** 左栏、右栏最下面那张卡记下的悬停搬过来（物品优先，后画的盖先画的） */
+    private void takeHover() {
+        if (!dossier.hoverStack.isEmpty()) {
+            hoverStack = dossier.hoverStack;
+            hoverLines = null;
+        } else if (dossier.hoverLines != null) {
+            hoverLines = dossier.hoverLines;
+            hoverStack = ItemStack.EMPTY;
+        }
+    }
+
+    static String statusLine(LichStatePacket st) {
         String s = switch (st.state) {
             case STALKING, DEPARTING -> I18n.get("kuvalich.archive.status.stalking",
                     I18n.get(RageTier.values()[Mth.clamp(st.tier, 0, RageTier.values().length - 1)].langKey()));
@@ -1256,7 +921,10 @@ public class LichArchiveScreen extends Screen {
         }
         float ts = tsOf(h, 0.018F);
         if (subtitleLines == null) {
-            int maxW = Math.max(40, Math.round(w * 0.40F / ts));
+            // 最宽 0.4 屏宽，也不碰到左栏的右边线（中线两边对称，各留 8 字像素）
+            float gs = (float) Minecraft.getInstance().getWindow().getGuiScale();
+            float room = 2.0F * (w * 0.5F - dossier.leftEdgeGui()) - 16.0F * dossier.u / gs;
+            int maxW = Math.max(40, Math.round(Math.min(w * 0.40F, room) / ts));
             List<FormattedCharSequence> lines = CommText.wrap(f, pendingRaw, maxW, st.name);
             subtitleLines = lines.size() > 2 ? new ArrayList<>(lines.subList(0, 2)) : lines;
             subtitleWidth = 0;
@@ -1283,9 +951,9 @@ public class LichArchiveScreen extends Screen {
         CommText.drawWipe(g, f, subtitleLines, 0, 0, Math.round(lineH), GuiShapes.argb(CommText.SUBTITLE_RGB, alpha),
                 progress);
         ps.popPose();
-        // 字幕上方的全大写名牌，右对齐到字幕右缘
+        // 字幕上方的全大写名牌，和字幕同一条中线居中
         float tsS = tsOf(h, 0.016F);
-        text(g, f, upper(st.name), x + blockW, y - h * 0.022F, tsS, FxPalette.KUVA, alpha, 1.0F, 1);
+        text(g, f, upper(st.name), w * 0.5F, y - h * 0.022F, tsS, FxPalette.KUVA, alpha, 1.0F, 0);
     }
 
     // ==================== 小工具 ====================
@@ -1318,95 +986,12 @@ public class LichArchiveScreen extends Screen {
         return mx >= l && mx <= r && my >= t && my <= b;
     }
 
-    private static String unknown() {
+    static String unknown() {
         return I18n.get("kuvalich.archive.unknown");
     }
 
-    private static String upper(String s) {
+    static String upper(String s) {
         return s == null ? "" : s.toUpperCase(Locale.ROOT);
-    }
-
-    // ==================== 能力图标 ====================
-
-    /** 档案左栏五枚能力图标的线描；点存在一个复用的数组里，不分配 */
-    private static final class ArchiveIcons {
-
-        private static final float[] PTS = new float[64];
-
-        private ArchiveIcons() {
-        }
-
-        /**
-         * @param kind 0 适应（六边形）/ 1 交战增幅（两道向上的折线）/ 2 自愈（水滴）/ 3 震荡（三道同心短弧）
-         * @param size 图标大小
-         */
-        static void ability(GuiGraphics g, int kind, float cx, float cy, float size, float lw, int argb) {
-            float r = size * 0.5F;
-            switch (kind) {
-                case 0 -> {
-                    for (int i = 0; i < 6; i++) {
-                        double ang = Math.toRadians(90.0D + 60.0D * i);
-                        PTS[i * 2] = cx + (float) Math.cos(ang) * r;
-                        PTS[i * 2 + 1] = cy - (float) Math.sin(ang) * r;
-                    }
-                    GuiShapes.polyline(g, PTS, 6, true, lw, argb);
-                }
-                case 1 -> {
-                    for (int k = 0; k < 2; k++) {
-                        float y = cy - r * 0.2F + k * r * 0.55F;
-                        PTS[0] = cx - r * 0.75F;
-                        PTS[1] = y + r * 0.35F;
-                        PTS[2] = cx;
-                        PTS[3] = y - r * 0.35F;
-                        PTS[4] = cx + r * 0.75F;
-                        PTS[5] = y + r * 0.35F;
-                        GuiShapes.polyline(g, PTS, 3, false, lw, argb);
-                    }
-                }
-                case 2 -> {
-                    // 尖朝上的水滴：顶点 + 下半个圆
-                    float rr = r * 0.58F;
-                    float ccy = cy + r * 0.3F;
-                    int n = 0;
-                    PTS[n++] = cx;
-                    PTS[n++] = cy - r;
-                    int seg = 12;
-                    for (int i = 0; i <= seg; i++) {
-                        double ang = Math.toRadians(-30.0D - 240.0D * i / seg);
-                        PTS[n++] = cx + (float) Math.cos(ang) * rr;
-                        PTS[n++] = ccy - (float) Math.sin(ang) * rr;
-                    }
-                    GuiShapes.polyline(g, PTS, n / 2, true, lw, argb);
-                }
-                case 4 -> {
-                    // 两颗獠牙挂在一道横线下
-                    float top = cy - r * 0.45F;
-                    GuiShapes.hairline(g, cx - r * 0.8F, top, cx + r * 0.8F, top, lw, argb);
-                    for (int side = -1; side <= 1; side += 2) {
-                        PTS[0] = cx + side * r * 0.62F;
-                        PTS[1] = top;
-                        PTS[2] = cx + side * r * 0.32F;
-                        PTS[3] = cy + r * 0.75F;
-                        PTS[4] = cx + side * r * 0.08F;
-                        PTS[5] = top;
-                        GuiShapes.polyline(g, PTS, 3, false, lw, argb);
-                    }
-                }
-                default -> {
-                    float oy = cy + r * 0.65F;
-                    for (int k = 1; k <= 3; k++) {
-                        float rad = r * 0.42F * k;
-                        int n = 0;
-                        for (int i = 0; i <= 6; i++) {
-                            double ang = Math.toRadians(40.0D + 100.0D * i / 6.0D);
-                            PTS[n++] = cx + (float) Math.cos(ang) * rad;
-                            PTS[n++] = oy - (float) Math.sin(ang) * rad;
-                        }
-                        GuiShapes.polyline(g, PTS, n / 2, false, lw, argb);
-                    }
-                }
-            }
-        }
     }
 
     // ==================== 已揭示的密语（三角） ====================

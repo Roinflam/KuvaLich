@@ -117,7 +117,7 @@
         "entity/KuvaLarvlingEntity.java:194 hurt — 倒地时挨玩家或玩家宠物一下（不带 BYPASSES_INVULNERABILITY）→ beginExpire 就地消散；mercy/MercyServer.java:532 onDownedTimeout 超时 → beginExpire；都不给东西",
         "entity/KuvaLarvlingEntity.java:220 onKilled — 处决走完（怜悯之击关着时是被 Player 打死，宠物、环境不算）→ LichDirector.birthFromLarvling(击杀者, 种子, 武器)，击杀者已有玄骸时什么都不给；不掉落、不给解密进度；shouldBeSaved / removeWhenFarAway 均为 false",
         "nemesis/LichDirector.java:224 birthFromLarvling — 种子、武器都用幼体刷出时掷好的；名字重名时换名字不换武器；诞生通讯照旧",
-        "client/larvling/LarvlingTag.java — 倒地时屏幕上的引线标注：武器、等级、元素、倒计时，处决提示并在里面（DATA_WEAPON / DATA_WEAPON_LEVEL / DATA_WEAPON_TYPE 同步）；幼体手上不拿武器，KuvaLarvlingRenderer 不挂武器层；平时头顶只有一行「赤毒幼体」、没有血条，字底离头顶 0.1 格，倒地时名牌收起（LichNameplates LARVLING_ABOVE_HEAD）",
+        "client/larvling/LarvlingTag.java — 倒地时屏幕上的引线标注：武器、等级、元素、倒计时，处决提示并在里面（DATA_WEAPON / DATA_WEAPON_LEVEL / DATA_WEAPON_TYPE 同步）；幼体手上不拿武器，KuvaLarvlingRenderer 不挂武器层；平时头顶只有一行「赤毒幼体」、没有血条，字底离头顶 0.1 格，倒地时名牌收起（LichNameplates THRALL_ABOVE_HEAD）",
         "entity/KuvaLarvlingEntity.java onAddedToWorld → ensureSeeded — 刷怪蛋、命令造的进世界时自己掷种子，同样能诞生玄骸（没有主人，资格人只能是打倒它的人）",
         "星际战甲小知识：原作 Kuva Larvling 出现在任务中，倒地后显示将来玄骸的武器、元素加成和幻纹，可以处决（Mercy）让它成为宿敌，也可以放着不管"
       ]
@@ -247,7 +247,7 @@
             ],
             [
               "头顶名牌",
-              "<t>16</t> 格内显示：你有玄骸时写你那只玄骸的名字，后面跟着「奴仆」，还没有就写「{lang:entity.kuvalich.kuva_slave}」，下面一条细血条"
+              "<t>16</t> 格内显示：你有玄骸时写你那只玄骸的名字，后面跟着「奴仆」，还没有就写「{lang:entity.kuvalich.kuva_slave}」；只有名字，不挂血条"
             ]
           ]
         },
@@ -408,7 +408,7 @@
         "entity/KuvaSlaveEntity.java applyAdvancedResistance — 固定 ×0.75；base/entity/AbstractKuva.java 直接继承 Monster，aiStep 没有晒太阳着火",
         "entity/KuvaSlaveEntity.java doHurtTarget — 伤害 = 攻击力 × 难度 id(1/2/3) × 0.85；目标速度 ×3 / ×2，自身速度 = 目标速度 ×1.15；命中回血 攻击力 × 0.1 = 0.8；回血每 20 tick：有目标 max(1, 缺失×1%)，无目标 max(0.5, 缺失×0.5%)",
         "base/entity/AbstractKuva.java registerGoals — 反击 + 索敌玩家（mustSee，半径 = FOLLOW_RANGE 32）+ 索敌其他 Monster（排除 Creeper 与 AbstractKuva）；免疫 IS_FALL",
-        "client/lich/LichNameplates.java:20-35 — 奴仆名牌 16 格内满显示、16 → 20 格淡出；看的人有玄骸写「名字 奴仆」（lang kuvalich.nameplate.thrall），没有写「赤毒奴仆」；下面一条细血条",
+        "client/lich/LichNameplates.java:20-35 — 奴仆名牌 16 格内满显示、16 → 20 格淡出；看的人有玄骸写「名字 奴仆」（lang kuvalich.nameplate.thrall），没有写「赤毒奴仆」；只有这一行名字，字底离头顶 0.1 格（THRALL_ABOVE_HEAD），不挂血条和元素状态",
         "base/entity/AbstractKuva.java:1109 updateBattleTick — battleBoost 为 0 时没有战斗增幅，倒地项里「增幅停住」那半句分开写",
         "mercy/MercyRules.java:42 canDown — mercyEnabled 且 mercyThralls 时奴仆受致命伤（伤害源不带 BYPASSES_INVULNERABILITY）先倒地；base/entity/AbstractKuva.java:889 interceptLethal（:901 actuallyHurt / :913 die / :942 tickDeath 三处拦截）；倒地时 isImmobile，:1101 handleHealing / :1109 updateBattleTick 不走",
         "mercy/MercyServer.java:427 qualifiedFor — 资格人顺序：伤害来源是玩家 → 他；宠物 / 召唤物 → 主人；目标的 lastHurtByPlayer（燃烧、岩浆这类延后伤害）；都没有 → 没人能处决；:333 handleRequest 校验资格人、mercyReach、视线；:1070 onLivingAttack 处决者无敌；:470 onDownedTimeout 倒地 mercyDownedSeconds 后消散不给东西；奴仆处决时间轴约 2.2 秒",

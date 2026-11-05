@@ -49,6 +49,7 @@ import java.util.UUID;
  *       拳心位置（三种摆法共用）和这一种摆法绕拳心的转角（世界里、全身像、半身像），不带参数时打印当前值。</li>
  *   <li>{@code /kuvafxc archive heldweapon <下标>}：世界里的玄骸一律画成第几把武器（-1 还原；挨把看握没握住刀柄）。</li>
  *   <li>{@code /kuvafxc archive other on|off}：名牌和 Boss 条一律按「别人的玄骸」画（只有一个客户端时看第二行用）。</li>
+ *   <li>{@code /kuvafxc archive guiscale <0~8>}：现场改界面缩放（0 = 自动），截不同缩放下的档案不用重开客户端。</li>
  *   <li>{@code /kuvafxc archive bardemo on|off}：Boss 条的增幅、适应层数换成演示值；off 连下面几项一起清掉。
  *       {@code bardemo health|shield <0~100>}：生命、护盾按这个百分比画；
  *       {@code bardemo down <打空几段 0~2> <秒> [起点%]}：按倒地画，正在回满的那段从起点按「这么多秒回满一整段」涨，
@@ -140,6 +141,15 @@ public final class ArchiveDevCommands {
                         .then(Commands.literal("other")
                                 .then(Commands.literal("on").executes(ctx -> other(ctx.getSource(), true)))
                                 .then(Commands.literal("off").executes(ctx -> other(ctx.getSource(), false))))
+                        .then(Commands.literal("guiscale")
+                                .then(Commands.argument("scale", IntegerArgumentType.integer(0, 8)).executes(ctx -> {
+                                    Minecraft mc = Minecraft.getInstance();
+                                    mc.options.guiScale().set(IntegerArgumentType.getInteger(ctx, "scale"));
+                                    mc.resizeDisplay();
+                                    ctx.getSource().sendSuccess(() -> Component.literal("gui scale "
+                                            + mc.getWindow().getGuiScale()), false);
+                                    return 1;
+                                })))
                         .then(weaponCommand("weapon", LichWeaponLayer.WORLD))
                         .then(weaponCommand("weaponportrait", LichWeaponLayer.PORTRAIT))
                         .then(weaponCommand("weaponbust", LichWeaponLayer.BUST))

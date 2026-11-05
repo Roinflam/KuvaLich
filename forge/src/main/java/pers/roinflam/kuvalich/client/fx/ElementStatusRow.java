@@ -1,13 +1,11 @@
 package pers.roinflam.kuvalich.client.fx;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -16,7 +14,7 @@ import pers.roinflam.kuvalich.client.fx.script.ElementStatusFx;
 import pers.roinflam.kuvalich.network.packet.DamageInfo;
 
 /**
- * 一行「元素小图标 + 层数」的状态行：Boss 条下面和头顶名牌下面用
+ * 一行「元素小图标 + 层数」的状态行：玄骸 Boss 条下面用
  *
  * <p>图标和伤害数字后面跟的元素图标是同一套，白色小字；层数是元素等级 + 1，只有 1 层的不写数字
  * （电击、切割只看有没有）。元素按固定顺序排，一行里同一种元素只出现一次。</p>
@@ -28,8 +26,6 @@ public final class ElementStatusRow {
 
     /** 一行的颜色：白，带一点点冷 */
     private static final int TEXT_RGB = FxPalette.DMG_WHITE;
-    /** 世界里的字号（和奴仆名牌同一档） */
-    private static final float WORLD_SCALE = 0.02F;
     /** 层数最多记到 15（4 位） */
     private static final int MAX_STACKS = 15;
 
@@ -64,33 +60,6 @@ public final class ElementStatusRow {
         Font font = Minecraft.getInstance().font;
         g.drawString(font, row.text, cx - row.width / 2, y, (a << 24) | TEXT_RGB, true);
         return font.lineHeight + 1;
-    }
-
-    /**
-     * 在世界里画一行（名牌下面）
-     *
-     * <p>矩阵栈的原点放在实体的锚点（一般是脚底）、还没转向相机；{@code y} 是从原点往上的高度（格）。
-     * 这里自己转向相机、缩成名牌的字号，以 (0, y) 为中心画；被挡住时调用方把 {@code alpha} 降下来（例如 0.3）。</p>
-     */
-    public static void drawInWorld(PoseStack poseStack, MultiBufferSource buffer, LivingEntity entity, float y,
-                                   int packedLight, float alpha) {
-        Row row = rowOf(entity);
-        if (row == null) {
-            return;
-        }
-        int a = Mth.clamp((int) (alpha * 255.0F), 0, 255);
-        if (a < 8) {
-            return;
-        }
-        Minecraft mc = Minecraft.getInstance();
-        Font font = mc.font;
-        poseStack.pushPose();
-        poseStack.translate(0.0F, y, 0.0F);
-        poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-        poseStack.scale(-WORLD_SCALE, -WORLD_SCALE, WORLD_SCALE);
-        font.drawInBatch(row.text, -row.width / 2.0F, 0.0F, (a << 24) | TEXT_RGB, false,
-                poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, packedLight);
-        poseStack.popPose();
     }
 
     /** 这只实体此刻的状态行；没有任何元素状态时返回 null */

@@ -131,6 +131,12 @@ public final class LarvlingTag {
     private LarvlingTag() {
     }
 
+    /** 元素小图形（7 行，每行低 7 位、最高位是最左一格）；不认识的元素返回 null。玄骸档案的武器卡也用这一套 */
+    @Nullable
+    public static int[] elementGlyph(String type) {
+        return GLYPHS.get(type);
+    }
+
     private static void glyph(String type, String... rows) {
         int[] mask = new int[7];
         for (int j = 0; j < 7; j++) {

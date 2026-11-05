@@ -2,7 +2,6 @@ package pers.roinflam.kuvalich.client.lich;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
@@ -14,7 +13,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -25,7 +23,6 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
-import pers.roinflam.kuvalich.client.fx.ElementStatusRow;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
@@ -47,9 +44,10 @@ import pers.roinflam.kuvalich.utils.Reference;
  *   <li><b>有主玄骸</b>：32 格内、看得见才显示。第一行全大写名字（{@code KUVA_PALE}、字距 +1、带一层墨色底影）；
  *       不是主人在看时第二行写「某某的玄骸」（灰、小一号）。</li>
  *   <li><b>无主玄骸</b>：不显示。</li>
- *   <li><b>奴仆</b>：16 格内满显示、16 → 20 格淡出。看的人自己有玄骸写「DROKAG TUZZ 奴仆」（名字取他自己那只的），
- *       还没有就写「赤毒奴仆」；下面一条细血条和一行元素状态。被墙挡住时整块降到 α 0.3、透过墙照样画（同原版名牌）。</li>
- *   <li><b>幼体</b>：同奴仆的距离和遮挡规则，但只有一行「赤毒幼体」，字底离头顶 0.1 格；倒地起换成屏幕标注，名牌不画。</li>
+ *   <li><b>奴仆</b>：16 格内满显示、16 → 20 格淡出。只有一行名字，字底离头顶 0.1 格：看的人自己有玄骸写
+ *       「DROKAG TUZZ 奴仆」（名字取他自己那只的），还没有就写「赤毒奴仆」。不挂血条和元素状态：奴仆几刀就倒，
+ *       挂着只会把名字顶得离头老高。被墙挡住时降到 α 0.3、透过墙照样画（同原版名牌）。</li>
+ *   <li><b>幼体</b>：同奴仆，写「赤毒幼体」；倒地起换成屏幕标注，名牌不画。</li>
  * </ul>
  *
  * <p>倒地、处决、挣脱离场时名牌照留，高度跟着姿势走：站姿身高减去脖子此刻比站着时低了多少（渲染器画本体时量的），
@@ -64,10 +62,15 @@ public final class LichNameplates {
     private static final float LICH_SCALE = 0.025F * 0.9F;
     /** 奴仆名牌的字号（原版 0.025） */
     private static final float THRALL_SCALE = 0.020F;
-    /** 名牌离头顶多高（格） */
+    /** 玄骸名牌离头顶多高（格） */
     private static final float ABOVE_HEAD = 0.5F;
-    /** 幼体名牌的上沿离头顶多高（格）：只有一行字，字底离头顶 0.1 格 */
-    private static final float LARVLING_ABOVE_HEAD = 0.1F + 9.0F * THRALL_SCALE;
+    /** 奴仆、幼体名牌的上沿离头顶多高（格）：只有一行字，字底离头顶 0.1 格 */
+    private static final float THRALL_ABOVE_HEAD = 0.1F + 9.0F * THRALL_SCALE;
+    /**
+     * 奴仆站着时模型头顶离脚底多高（格）：kuva_slave.geo.json 里 Head 骨骼最高到 40.75 像素。
+     * 奴仆的碰撞箱有 2.9 格，比模型高出三分之一格，名牌按碰撞箱放会悬在头上
+     */
+    private static final float THRALL_HEAD_TOP = 40.75F / 16.0F;
     private static final double LICH_RANGE = 32.0D;
     /** 玄骸名牌在最后这 4 格里淡出，免得走到 32 格一下没了 */
     private static final double LICH_FADE_FROM = 28.0D;
@@ -77,9 +80,6 @@ public final class LichNameplates {
     private static final float OCCLUDED_ALPHA = 0.3F;
     /** 字距（字体像素） */
     private static final float SPACING = 1.0F;
-    /** 奴仆血条：宽、高（字体像素） */
-    private static final float BAR_W = 40.0F;
-    private static final float BAR_H = 2.0F;
     /** 多久重做一次视线检测 */
     private static final long LOS_INTERVAL_MS = 250L;
     private static final long FORGET_MS = 10_000L;
@@ -255,9 +255,9 @@ public final class LichNameplates {
         }
         Font.DisplayMode mode = visible ? Font.DisplayMode.NORMAL : Font.DisplayMode.SEE_THROUGH;
         Font font = mc.font;
-        float top = height + (larvling ? LARVLING_ABOVE_HEAD : ABOVE_HEAD);
+        float top = height + THRALL_ABOVE_HEAD;
         float w = SpacedText.width(font, p.line1, SPACING);
-        a *= bossBarFade(ps, mc, top, THRALL_SCALE, (larvling ? w : Math.max(w, BAR_W)) * 0.5F, 0.0F);
+        a *= bossBarFade(ps, mc, top, THRALL_SCALE, w * 0.5F, 0.0F);
         if (a <= 0.02F) {
             return false;
         }
@@ -266,29 +266,7 @@ public final class LichNameplates {
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
         ps.scale(-THRALL_SCALE, -THRALL_SCALE, THRALL_SCALE);
         shadowedLine(ps, buffer, font, p.line1, -w * 0.5F, 0.0F, FxPalette.BONE, a, mode);
-        if (larvling) {
-            // 幼体只有一行名字：一两刀就倒，血条和元素那行用不上，挂着反倒把名字顶得离头老高
-            ps.popPose();
-            return true;
-        }
-
-        // 细血条
-        float hp = Mth.clamp(thrall.getHealth() / Math.max(1.0F, thrall.getMaxHealth()), 0.0F, 1.0F);
-        VertexConsumer vc = buffer.getBuffer(visible ? RenderType.textBackground() : RenderType.textBackgroundSeeThrough());
-        Matrix4f m = ps.last().pose();
-        float bx = -BAR_W * 0.5F;
-        float by = 10.0F;
-        quad(vc, m, bx, by, bx + BAR_W, by + BAR_H, 0.0F, FxPalette.KUVA_MIST, 0.6F * a / 0.9F);
-        if (hp > 0.0F) {
-            quad(vc, m, bx, by, bx + BAR_W * hp, by + BAR_H, 0.01F, FxPalette.KUVA, a / 0.9F);
-        }
         ps.popPose();
-
-        // 元素状态：血条下面一行（被挡住时不画，元素那行只有正常深度的画法）
-        if (visible) {
-            float rowTop = top - (by + BAR_H + 1.0F) * THRALL_SCALE;
-            ElementStatusRow.drawInWorld(ps, buffer, thrall, rowTop, LightTexture.FULL_BRIGHT, a / 0.9F);
-        }
         return true;
     }
 
@@ -334,15 +312,24 @@ public final class LichNameplates {
     }
 
     /**
-     * 名牌底下那一点的高度（不含离头顶的空隙）：平时是碰撞箱高；倒地、处决、离场时是站姿身高减去脖子下降的量，
+     * 名牌底下那一点的高度（不含离头顶的空隙）：平时是站姿身高；倒地、处决、离场时是站姿身高减去脖子下降的量，
      * 量不到时退回倒地后的碰撞箱（它本来就是按倒地姿势的高度缩的）
      */
     private static float plateHeight(AbstractKuva e, float headDrop) {
-        if (!posed(e) || Float.isNaN(headDrop)) {
+        boolean posed = posed(e);
+        if (posed && Float.isNaN(headDrop)) {
             return e.getBbHeight();
         }
-        float standing = e.getType().getDimensions().height * e.getScale();
-        return Mth.clamp(standing - headDrop, 0.3F, standing + 0.5F);
+        float standing = standingTop(e);
+        return posed ? Mth.clamp(standing - headDrop, 0.3F, standing + 0.5F) : standing;
+    }
+
+    /** 站着时头顶离脚底多高（格）：奴仆按模型（见 {@link #THRALL_HEAD_TOP}），其余按碰撞箱 */
+    private static float standingTop(AbstractKuva e) {
+        if (e instanceof KuvaSlaveEntity && !(e instanceof KuvaLarvlingEntity)) {
+            return THRALL_HEAD_TOP * e.getScale();
+        }
+        return e.getType().getDimensions().height * e.getScale();
     }
 
     /**
@@ -396,31 +383,25 @@ public final class LichNameplates {
             return ABOVE_HEAD + (mine ? 0.0F : 9.0F * LICH_SCALE);
         }
         // 幼体倒地后名牌不画（换成屏幕标注）
-        return e instanceof KuvaSlaveEntity && !(e instanceof KuvaLarvlingEntity) ? ABOVE_HEAD : 0.0D;
+        return e instanceof KuvaSlaveEntity && !(e instanceof KuvaLarvlingEntity) ? THRALL_ABOVE_HEAD : 0.0D;
     }
 
-    /** 一行带墨色底影的字：先在 (+1, +1) 画 {@code INK} α 0.6 的影，再往前挪一点画正文（同原版带影文字的做法） */
+    /**
+     * 一行带墨色底影的字：先在 (+1, +1) 画 {@code INK} α 0.6 的影，再把正文往镜头那边挪一点画上去。
+     *
+     * <p>乘过镜头朝向以后 +z 是镜头看出去的方向（和界面里相反），所以往镜头挪是 −z；挪成 +z 时正文落到影子后面，
+     * 半透明文字按远近排序后影子压在笔画上，中文笔画密，一半笔画被压暗，看着发糊。
+     * 挪 0.25 个字体像素：32 格外深度缓冲也分得开，大小的变化看不出来。</p>
+     */
     private static void shadowedLine(PoseStack ps, MultiBufferSource buffer, Font font, String text, float x, float y,
                                      int rgb, float alpha, Font.DisplayMode mode) {
         SpacedText.drawInWorld(ps, buffer, font, text, x + 1.0F, y + 1.0F, SPACING,
                 GuiShapes.argb(FxPalette.INK, 0.6F * alpha), mode, LightTexture.FULL_BRIGHT);
         ps.pushPose();
-        ps.translate(0.0F, 0.0F, 0.03F);
+        ps.translate(0.0F, 0.0F, -0.25F);
         SpacedText.drawInWorld(ps, buffer, font, text, x, y, SPACING, GuiShapes.argb(rgb, alpha), mode,
                 LightTexture.FULL_BRIGHT);
         ps.popPose();
-    }
-
-    private static void quad(VertexConsumer vc, Matrix4f m, float x0, float y0, float x1, float y1, float z, int rgb,
-                             float alpha) {
-        int r = (rgb >> 16) & 0xFF;
-        int g = (rgb >> 8) & 0xFF;
-        int b = rgb & 0xFF;
-        int a = Mth.clamp(Math.round(alpha * 255.0F), 0, 255);
-        vc.vertex(m, x0, y0, z).color(r, g, b, a).uv2(LightTexture.FULL_BRIGHT).endVertex();
-        vc.vertex(m, x0, y1, z).color(r, g, b, a).uv2(LightTexture.FULL_BRIGHT).endVertex();
-        vc.vertex(m, x1, y1, z).color(r, g, b, a).uv2(LightTexture.FULL_BRIGHT).endVertex();
-        vc.vertex(m, x1, y0, z).color(r, g, b, a).uv2(LightTexture.FULL_BRIGHT).endVertex();
     }
 
     private static Plate plateOf(int id, long now) {

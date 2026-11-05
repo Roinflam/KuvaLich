@@ -233,7 +233,7 @@
             ],
             [
               "Nameplate",
-              "Shown within <t>16</t> blocks: once you have a Lich, it reads your Lich's name followed by “Thrall”; until then, “{lang:entity.kuvalich.kuva_slave}”. A thin health bar sits beneath it"
+              "Shown within <t>16</t> blocks: once you have a Lich, it reads your Lich's name followed by “Thrall”; until then, “{lang:entity.kuvalich.kuva_slave}”. Just the name, no health bar"
             ]
           ]
         },
