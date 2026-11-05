@@ -45,9 +45,11 @@ import java.util.UUID;
  *       空的那份是还没有玄骸、上一只已被终结。状态写 {@code LichState} 的名字（如 {@code incoming}），只对满的那份有用。</li>
  *   <li>{@code /kuvafxc archive open}：照常打开（和从灭骸之扉进去一样，只是不用先开扉）。</li>
  *   <li>{@code /kuvafxc archive demoweapon <下标>}：满的那份假档案换成第几把赤毒武器（看不同武器拿在手里的样子）。</li>
- *   <li>{@code /kuvafxc archive weapon|weaponportrait|weaponbust [ox oy oz rx ry rz scale]}：现场改玄骸手里武器的
- *       拳心位置（三种摆法共用）和这一种摆法绕拳心的转角（世界里、全身像、半身像），不带参数时打印当前值。</li>
- *   <li>{@code /kuvafxc archive heldweapon <下标>}：世界里的玄骸一律画成第几把武器（-1 还原；挨把看握没握住刀柄）。</li>
+ *   <li>{@code /kuvafxc archive weapon|weaponportrait|weaponbust [ox oy oz 手腕 前臂拧 绕刀柄 scale]}：现场改玄骸手里武器的
+ *       拳心位置（三种摆法共用）和这一种摆法的握法（世界里、全身像、半身像），不带参数时打印当前值。</li>
+ *   <li>{@code /kuvafxc archive weaponarm <上臂 x y z> <前臂 x y z>}：现场改立绘里拿武器那只胳膊叠的转角（动画文件的写法）。</li>
+ *   <li>{@code /kuvafxc archive heldweapon <下标>}：世界里的玄骸、手里有武器的立绘（档案、通讯窗）一律画成第几把武器
+ *       （-1 还原；挨把看握没握住刀柄）。</li>
  *   <li>{@code /kuvafxc archive other on|off}：名牌和 Boss 条一律按「别人的玄骸」画（只有一个客户端时看第二行用）。</li>
  *   <li>{@code /kuvafxc archive guiscale <0~8>}：现场改界面缩放（0 = 自动），截不同缩放下的档案不用重开客户端。</li>
  *   <li>{@code /kuvafxc archive bardemo on|off}：Boss 条的增幅、适应层数换成演示值；off 连下面几项一起清掉。
@@ -153,6 +155,25 @@ public final class ArchiveDevCommands {
                         .then(weaponCommand("weapon", LichWeaponLayer.WORLD))
                         .then(weaponCommand("weaponportrait", LichWeaponLayer.PORTRAIT))
                         .then(weaponCommand("weaponbust", LichWeaponLayer.BUST))
+                        .then(Commands.literal("weaponarm")
+                                .then(Commands.argument("ax", FloatArgumentType.floatArg())
+                                        .then(Commands.argument("ay", FloatArgumentType.floatArg())
+                                                .then(Commands.argument("az", FloatArgumentType.floatArg())
+                                                        .then(Commands.argument("fx", FloatArgumentType.floatArg())
+                                                                .then(Commands.argument("fy", FloatArgumentType.floatArg())
+                                                                        .then(Commands.argument("fz", FloatArgumentType.floatArg())
+                                                                                .executes(ctx -> {
+                                                                                    LichWeaponLayer.tuneArm(
+                                                                                            FloatArgumentType.getFloat(ctx, "ax"),
+                                                                                            FloatArgumentType.getFloat(ctx, "ay"),
+                                                                                            FloatArgumentType.getFloat(ctx, "az"),
+                                                                                            FloatArgumentType.getFloat(ctx, "fx"),
+                                                                                            FloatArgumentType.getFloat(ctx, "fy"),
+                                                                                            FloatArgumentType.getFloat(ctx, "fz"));
+                                                                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                                                                            LichWeaponLayer.describe(LichWeaponLayer.PORTRAIT)), false);
+                                                                                    return 1;
+                                                                                }))))))))
                         .then(Commands.literal("heldweapon")
                                 .then(Commands.argument("index", IntegerArgumentType.integer(-1, 63)).executes(ctx -> {
                                     LichWeaponLayer.forceWeapon = IntegerArgumentType.getInteger(ctx, "index");
@@ -222,7 +243,7 @@ public final class ArchiveDevCommands {
 
     /** 调玄骸手里的刀：weapon 调世界里的，weaponportrait 调档案、指南的全身像，weaponbust 调通讯窗的半身像 */
     private static LiteralArgumentBuilder<CommandSourceStack> weaponCommand(String literal, int mode) {
-        String[] names = {"ox", "oy", "oz", "rx", "ry", "rz", "scale"};
+        String[] names = {"ox", "oy", "oz", "wrist", "twist", "roll", "scale"};
         ArgumentBuilder<CommandSourceStack, ?> tail =
                 Commands.argument(names[6], FloatArgumentType.floatArg(0.1F, 5.0F)).executes(ctx -> {
                     float[] v = new float[names.length];

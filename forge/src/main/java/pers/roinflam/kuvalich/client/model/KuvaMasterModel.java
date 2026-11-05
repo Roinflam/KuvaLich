@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.lich.LichVoice;
+import pers.roinflam.kuvalich.client.lich.LichWeaponLayer;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.mercy.MercyAnimNames;
 import pers.roinflam.kuvalich.mercy.MercyAnimSelector;
@@ -110,6 +111,11 @@ public class KuvaMasterModel extends GeoModel<KuvaMasterEntity> {
     public void setCustomAnimations(KuvaMasterEntity animatable, long instanceId, AnimationState<KuvaMasterEntity> state) {
         super.setCustomAnimations(animatable, instanceId, state);
         KuvaPoseLayer.apply(this, animatable, state, true, this.poseAdded);
+        if (LichWeaponLayer.puppetHoldsWeapon(animatable)) {
+            // 立绘手里有武器：拿武器的胳膊抬起来，刀竖在身侧（为什么见 LichWeaponLayer）
+            raise(getAnimationProcessor().getBone("RArm"), LichWeaponLayer.PUPPET_ARM);
+            raise(getAnimationProcessor().getBone("RArmF"), LichWeaponLayer.PUPPET_FOREARM);
+        }
         float envelope = LichVoice.envelope(animatable, KuvaFxDirector.clockMs());
         if (envelope <= 0.0F) {
             return;
@@ -122,5 +128,12 @@ public class KuvaMasterModel extends GeoModel<KuvaMasterEntity> {
 
     private void nod(@Nullable CoreGeoBone bone, float fileDeg) {
         this.poseAdded.add(bone, KuvaPoseLayer.ROT_X, -fileDeg * DEG_TO_RAD);
+    }
+
+    /** 叠一组动画文件写法的转角（度）：存进骨骼时 x、y 取反，z 不变 */
+    private void raise(@Nullable CoreGeoBone bone, float[] fileDeg) {
+        this.poseAdded.add(bone, KuvaPoseLayer.ROT_X, -fileDeg[0] * DEG_TO_RAD);
+        this.poseAdded.add(bone, KuvaPoseLayer.ROT_Y, -fileDeg[1] * DEG_TO_RAD);
+        this.poseAdded.add(bone, KuvaPoseLayer.ROT_Z, fileDeg[2] * DEG_TO_RAD);
     }
 }

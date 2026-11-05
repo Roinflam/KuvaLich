@@ -41,7 +41,8 @@ import java.util.function.Function;
  *
  * <ul>
  *   <li>{@code /kuvafxc mercyanim <片段>}：准星指着的（没指着就取 16 格内最近的）赤毒实体从头播某一段，
- *       不管它现在是不是倒地 / 处决状态；片段名照动画文件，按 Tab 有提示。</li>
+ *       不管它现在是不是倒地 / 处决状态；片段名照动画文件，按 Tab 有提示。日常动画里的 stay / walk / run 和
+ *       起势、出手（{@code ready_*}、{@code attack_*}）也能放，冻帧看手里武器在挥刀各刻的朝向。</li>
  *   <li>{@code /kuvafxc mercyanim <片段> <毫秒>}：同上，但冻在这一刻，逐个关键帧截图用。</li>
  *   <li>{@code /kuvafxc mercyanim off}：全部放开，交还给原来的选片段逻辑。</li>
  * </ul>
@@ -121,7 +122,8 @@ public final class MercyAnimDevCommands {
             return 0;
         }
         String clip = StringArgumentType.getString(ctx, "clip");
-        if (!clip.startsWith("mercy.") && !"walk".equals(clip) && !"run".equals(clip) && !"stay".equals(clip)) {
+        if (!clip.startsWith("mercy.") && !"walk".equals(clip) && !"run".equals(clip) && !"stay".equals(clip)
+                && !clip.startsWith("attack_") && !clip.startsWith("ready_")) {
             reply(ctx, "unknown clip: " + clip);
             return 0;
         }

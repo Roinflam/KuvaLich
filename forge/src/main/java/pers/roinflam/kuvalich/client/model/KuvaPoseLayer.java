@@ -45,7 +45,10 @@ final class KuvaPoseLayer {
 
     private static final int X = 0;
     private static final int Y = 1;
+    private static final int Z = 2;
     static final int ROT_X = X;
+    static final int ROT_Y = Y;
+    static final int ROT_Z = Z;
 
     private KuvaPoseLayer() {
     }
@@ -68,7 +71,8 @@ final class KuvaPoseLayer {
      * （关键帧没重写），就减回叠加前，再重新叠。倒着撤，同一根骨骼同一轴叠过两次也能一层层还原
      */
     static final class Additive {
-        private static final int MAX = 8;
+        /** 转头 3 + 点头 2 + 立绘抬胳膊最多 6 */
+        private static final int MAX = 12;
         private final CoreGeoBone[] bone = new CoreGeoBone[MAX];
         private final int[] axis = new int[MAX];
         private final float[] written = new float[MAX];
