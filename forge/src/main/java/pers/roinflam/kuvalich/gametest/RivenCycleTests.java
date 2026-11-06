@@ -278,6 +278,56 @@ public final class RivenCycleTests {
         h.succeed();
     }
 
+    // ==================== 单张预览时物品格锁住；换上以后按新卡 + 现在的材料重新判断 ====================
+
+    @GameTest(template = "empty", batch = RIVEN)
+    public static void rivenPreviewLocksInput(GameTestHelper h) {
+        ServerPlayer p = fresh(h);
+        RequiemEvolveMenu menu = open(p, 1);
+        place(menu, p, IN, weaponRiven(3, 6));
+        place(menu, p, MAT, kuva(64));
+        menu.handleRivenRequest(p, RivenCyclePacket.ROLL, menu.rivenSerial(), 1);
+        h.assertTrue(menu.hasRivenPreview() && menu.isRivenInputLocked(), "有预览时物品格应当锁住");
+        ItemStack orig = menu.getSlot(IN).getItem().copy();
+        ItemStack preview = menu.getSlot(RES).getItem().copy();
+
+        // 左键拿、Shift、数字键换、丢出、拿着别的卡往里放：都不动
+        menu.clicked(IN, 0, ClickType.PICKUP, p);
+        menu.broadcastChanges();
+        h.assertTrue(menu.getCarried().isEmpty(), "预览时原卡拿不起来");
+        menu.clicked(IN, 0, ClickType.QUICK_MOVE, p);
+        p.getInventory().setItem(0, new ItemStack(Items.STONE));
+        menu.clicked(IN, 0, ClickType.SWAP, p);
+        menu.clicked(IN, 0, ClickType.THROW, p);
+        menu.broadcastChanges();
+        ItemStack other = weaponRiven(2, 1);
+        menu.setCarried(other.copy());
+        menu.clicked(IN, 0, ClickType.PICKUP, p);
+        menu.broadcastChanges();
+        h.assertTrue(ItemStack.matches(menu.getSlot(IN).getItem(), orig), "预览时原卡格不该被动到");
+        h.assertTrue(ItemStack.matches(menu.getSlot(RES).getItem(), preview), "预览还在");
+        h.assertTrue(ItemStack.matches(menu.getCarried(), other), "拿着的那张没放进去");
+        p.getInventory().add(menu.getCarried());
+        menu.setCarried(ItemStack.EMPTY);
+
+        // 材料格不锁：拿出赤毒、换成内融核心，预览照留
+        menu.clicked(MAT, 0, ClickType.QUICK_MOVE, p);
+        place(menu, p, MAT, new ItemStack(KuvaLichItems.ENDO.get(), 64));
+        menu.broadcastChanges();
+        h.assertTrue(menu.getSlot(MAT).getItem().is(KuvaLichItems.ENDO.get()), "预览时材料格还能换");
+        h.assertTrue(ItemStack.matches(menu.getSlot(RES).getItem(), preview), "换材料不动预览");
+
+        // 换上：物品格解锁，按新卡 + 内融核心重新判断，出升级预览
+        menu.handleRivenRequest(p, RivenCyclePacket.SWAP, menu.rivenSerial(), 0);
+        menu.broadcastChanges();
+        h.assertTrue(ItemStack.matches(menu.getSlot(IN).getItem(), preview), "换上以后物品格是新卡");
+        h.assertTrue(!menu.isRivenInputLocked(), "换上以后物品格解锁");
+        h.assertTrue(!menu.getSlot(RES).getItem().isEmpty(), "换上以后应当按内融核心出升级预览");
+        menu.removed(p);
+        h.assertTrue(countRivens(p, null) == 2, "关界面后两张裂罅都在（新卡 + 拿着的那张）：" + countRivens(p, null));
+        h.succeed();
+    }
+
     // ==================== 背包快满时关界面：材料格那组放不全的部分掉在脚下，不能凭空没了 ====================
 
     @GameTest(template = "empty", batch = RIVEN)

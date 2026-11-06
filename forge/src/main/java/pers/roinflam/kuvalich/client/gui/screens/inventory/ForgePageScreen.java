@@ -859,6 +859,23 @@ abstract class ForgePageScreen<M extends AbstractContainerMenu> extends ArchiveP
      * 排不下时先把段后的空都压成 1 格；还排不下就画到放得下的最后一行、截短补省略号，鼠标停在这一栏上看全文。
      * 以前排到底直接不画了，最后一句（往往是「不可撤销」这种提醒）没了也看不出来
      */
+    /** {@link #drawLines} 不挤不截时占多高（第一行顶到最后一行底） */
+    protected int linesHeight(List<Line> lines, float w) {
+        int n = 0;
+        int gaps = 0;
+        int lastGap = 0;
+        for (Line line : lines) {
+            int k = noLeadingDot(wrapEvenWithin(line.text(), w), w).size();
+            if (k == 0) {
+                continue;
+            }
+            n += k;
+            gaps += line.gap();
+            lastGap = line.gap();
+        }
+        return n == 0 ? 0 : 10 * (n - 1) + gaps - lastGap + 9;
+    }
+
     protected int drawLines(GuiGraphics g, List<Line> lines, int x, int y, float w, float alpha, int maxY) {
         List<String> rows = new ArrayList<>();
         List<Line> from = new ArrayList<>();

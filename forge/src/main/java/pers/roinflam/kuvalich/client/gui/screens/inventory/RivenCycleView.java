@@ -60,6 +60,10 @@ final class RivenCycleView {
     /** 自己的事件：这一次扣了多少赤毒（数量放在物品数里） */
     static final int EV_PAID = 303;
 
+    /** 右栏对照行：两行式一条高 20、条间 3；一行式一条高 9、条间 2 */
+    private static final int ROW_FULL = 20;
+    private static final int ROW_GAP = 3;
+    private static final int ROW_COMPACT_GAP = 2;
     private static final int DEAL_STEP = 60;
     private static final int DEAL_FLY = 240;
     private static final int DEAL_SETTLE = 300;
@@ -199,9 +203,12 @@ final class RivenCycleView {
         return !cands.isEmpty();
     }
 
-    /** 结果格里是一张付过赤毒的预览（裂罅 + 赤毒现在只有按「循环」才会出结果） */
+    /**
+     * 结果格里是一张付过赤毒的预览。看服务端同步来的标记，不能只看「两格都是裂罅」：
+     * 裂罅 + 内融核心的升级预览结果格里也是一张裂罅
+     */
     boolean preview() {
-        return !spread() && isRiven(res()) && isRiven(in());
+        return !spread() && !menu.isPickingRiven() && menu.isRivenInputLocked() && isRiven(res()) && isRiven(in());
     }
 
     /** 这一页现在按裂罅循环画 */
@@ -428,9 +435,14 @@ final class RivenCycleView {
         return true;
     }
 
-    /** 挑选中点物品格、材料格：不发点击，格子红一下 */
+    /** 挑选中点物品格、材料格，单张预览时点物品格：不发点击，格子红一下 */
     boolean blocks(@Nullable Slot slot) {
-        if (slot == null || !menu.isPickingRiven() || (slot.index != IN && slot.index != MAT)) {
+        if (slot == null) {
+            return false;
+        }
+        boolean locked = menu.isPickingRiven() ? slot.index == IN || slot.index == MAT
+                : slot.index == IN && menu.isRivenInputLocked();
+        if (!locked) {
             return false;
         }
         s.event(ArchivePageScreen.Ev.REJECT, slot.index, slot.getItem().copy(), 0L);
@@ -721,10 +733,12 @@ final class RivenCycleView {
     // ==================== 叠在物品上面的一层 ====================
 
     void drawOverlay(GuiGraphics g, long now) {
-        // 挑选中：物品格、材料格上一层斜纹，表示拿不动
+        // 挑选中：物品格、材料格上一层斜纹，表示拿不动；单张预览时只锁物品格（材料格还要能补赤毒再循环）
         if (menu.isPickingRiven() || spread()) {
             hatch(g, inX - 9, ocy - 9);
             hatch(g, matX - 9, ocy - 9);
+        } else if (menu.isRivenInputLocked()) {
+            hatch(g, inX - 9, ocy - 9);
         }
         ArchivePageScreen.Fx paid = s.last(ArchivePageScreen.Ev.CUSTOM, EV_PAID);
         if (paid != null) {
@@ -887,19 +901,48 @@ final class RivenCycleView {
         y += 13;
         // 宽屏下对照行不拉满整栏（涨跌离词条名太远就对不上了），最宽 150
         int cw = Math.min(w, 150);
+        // 预览末尾那两行（循环次数、赤毒不退）先把位置留出来，对照行只能画到它上面，界面大时也不会被挤掉
+        List<ForgePageScreen.Line> tail = !preview() ? List.of() : List.of(
+                new ForgePageScreen.Line(tr("kuvalich.evolve.riven.orig_cycles", RequiemEvolveMenu.rivenCycleOf(orig)),
+                        KuvaPalette.MUTED, 0.85F, 2),
+                new ForgePageScreen.Line(tr("kuvalich.evolve.riven.keep_warn"), FxPalette.KUVA, 0.9F, 0));
+        int limit = tail.isEmpty() ? maxY : maxY - s.linesHeight(tail, w) - 1;
+        // 两行式放不下全部对照行就折成一行一条（词条名 + 右端新值），还放不下才截
+        boolean compact = y + rows.size() * (ROW_FULL + ROW_GAP) - ROW_GAP > limit;
         for (int i = 0; i < rows.size(); i++) {
-            if (y + 18 > maxY) {
-                break;
+            long ra = age - i * 50L;
+            if (compact) {
+                if (y + 9 > limit) {
+                    break;
+                }
+                y = compactRow(g, rows.get(i), x, y, cw, eF, ra) + ROW_COMPACT_GAP;
+            } else {
+                y = compareRow(g, rows.get(i), x, y, cw, eF, ra) + ROW_GAP;
             }
-            y = compareRow(g, rows.get(i), x, y, cw, eF, age - i * 50L) + 3;
         }
-        if (preview()) {
-            List<ForgePageScreen.Line> lines = List.of(
-                    new ForgePageScreen.Line(tr("kuvalich.evolve.riven.orig_cycles", RequiemEvolveMenu.rivenCycleOf(orig)),
-                            KuvaPalette.MUTED, 0.85F, 2),
-                    new ForgePageScreen.Line(tr("kuvalich.evolve.riven.keep_warn"), FxPalette.KUVA, 0.9F, 0));
-            s.drawLines(g, lines, x, y + 1, w, eF, maxY);
+        if (!tail.isEmpty()) {
+            s.drawLines(g, tail, x, Math.min(y + 1, limit + 1), w, eF, maxY);
         }
+    }
+
+    /** 对照行一行式：词条名，右端新值（涨跌带三角，失去的写「失去」）。返回画完后的 y */
+    private int compactRow(GuiGraphics g, RivenCompare.Row r, int x, int y, int w, float a, long age) {
+        boolean lost = r.kind() == RivenCompare.LOST;
+        boolean ud = r.kind() == RivenCompare.UP || r.kind() == RivenCompare.DOWN;
+        String nv = lost ? tr("kuvalich.evolve.riven.lost")
+                : ArchivePageScreen.scramble(r.nw() == null ? "—" : RivenCompare.fmt(r.key(), r.nw()), age - 60, 30);
+        int col = lost ? FxPalette.ASH : RivenCompare.rgb(r);
+        int right = x + w;
+        int vw = ink(nv);
+        s.text(g, nv, right - vw, y, col, (lost ? 0.7F : 1.0F) * a);
+        int used = vw;
+        if (ud) {
+            tri(g, right - vw - 7, y + 2, r.kind() == RivenCompare.UP, col, a);
+            used += 7;
+        }
+        String nm = ArchivePageScreen.scramble(r.name(), age, 30);
+        s.text(g, s.fit(nm, w - used - 4), x, y, lost ? FxPalette.ASH : FxPalette.BONE, (lost ? 0.6F : 1.0F) * a);
+        return y + 9;
     }
 
     /** 小格上的色点说明 */

@@ -7,6 +7,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -126,6 +127,8 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
     public boolean clientHideInput;
     public boolean clientHideResult;
     public boolean clientHideInventory;
+    /** 服务端每次同步写进去：结果格里是不是付过赤毒的单张预览（客户端靠它锁物品格，客户端自己不知道 cycleMode） */
+    private final DataSlot rivenPreviewFlag = DataSlot.standalone();
 
     public RequiemEvolveMenu(int windowId, Inventory playerInventory, Level level, BlockPos pos) {
         super(KuvaLichMenuTypes.REQUIEM_EVOLVE.get(), windowId);
@@ -139,6 +142,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
         this.addSlot(new WeaponSlot(this, this.weaponHandler, 0, 31, 32));
         this.addSlot(new MaterialSlot(this, this.materialHandler, 0, 80, 32));
         this.addSlot(new ResultSlot(this, this.resultHandler, 0, 131, 32));
+        this.addDataSlot(rivenPreviewFlag);
 
         for (int i = 0; i < 9; i++) { this.addSlot(new InventorySlot(this, playerInventory, i, 8 + 18 * i, 171 - 10)); }
         for (int row = 0; row < 3; row++) {
@@ -157,6 +161,8 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
         // 挑选裂罅候选时物品格、材料格锁住：Shift 点进点出都不行（moveItemStackTo 只看 mayPlace，这里整个拦掉）
         if (isPickingRiven()) { return ItemStack.EMPTY; }
+        // 单张预览时物品格锁住：Shift 点物品格拿不出（放进去由 WeaponSlot#mayPlace 拦）
+        if (index == 0 && isRivenInputLocked()) { return ItemStack.EMPTY; }
         ItemStack itemstack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
         if (slot == null || !slot.hasItem()) { return itemstack; }
@@ -204,13 +210,13 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
 
     @Override
     public void broadcastChanges() {
-        if (!level.isClientSide) { checkAndProcessCrafting(); }
+        if (!level.isClientSide) { checkAndProcessCrafting(); rivenPreviewFlag.set(hasRivenPreview() ? 1 : 0); }
         super.broadcastChanges();
     }
 
     @Override
     public void broadcastFullState() {
-        if (!level.isClientSide) { checkAndProcessCrafting(); }
+        if (!level.isClientSide) { checkAndProcessCrafting(); rivenPreviewFlag.set(hasRivenPreview() ? 1 : 0); }
         super.broadcastFullState();
     }
 
@@ -386,6 +392,17 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
         return cycleMode && !resultHandler.getStackInSlot(0).isEmpty();
     }
 
+    /**
+     * 物品格锁住：挑多张候选时；或者结果格里是付过赤毒的单张预览——这时只能换上、拿走结果、再循环或关界面，
+     * 原卡拿不走也换不了（以前误动原卡会让预览作废、赤毒不退）。材料格只在挑选时锁：预览时还要能补赤毒再循环
+     */
+    public boolean isRivenInputLocked() {
+        if (isPickingRiven()) {
+            return true;
+        }
+        return level.isClientSide ? rivenPreviewFlag.get() != 0 : hasRivenPreview();
+    }
+
     public int clientRivenVersion() {
         return clientRivenVersion;
     }
@@ -527,7 +544,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
             return;
         }
         weaponHandler.setStackInSlot(0, chosen);
-        rememberInputs();
+        // 不记输入：换上的是新卡，接下来的同步按新的物品格和材料格重新判断一次（材料这时已换成内融核心就出升级预览）
         broadcastChanges();
         sendRivenState(sp, 0, 0, RIVEN_OK);
     }
@@ -567,7 +584,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
         cycleMode = false;
         rivenPreviewOf = ItemStack.EMPTY;
         rivenSerial++;
-        rememberInputs();
+        // 同上：不记输入，换上以后按新卡和现在的材料重新判断该出什么预览
         broadcastChanges();
         sendRivenState(sp, 0, 0, RIVEN_OK);
     }
@@ -822,7 +839,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
 
     // ============================== 内部槽位类 ==============================
 
-    /** 物品格。挑裂罅候选时锁住（放不进、拿不走）；客户端演出期间可以藏起来不画 */
+    /** 物品格。挑裂罅候选、有单张预览时锁住（放不进、拿不走）；客户端演出期间可以藏起来不画 */
     public static class WeaponSlot extends SlotItemHandler {
         private final RequiemEvolveMenu menu;
 
@@ -833,7 +850,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPickup(@NotNull Player player) {
-            return !menu.isPickingRiven() && super.mayPickup(player);
+            return !menu.isRivenInputLocked() && super.mayPickup(player);
         }
 
         @Override
@@ -843,7 +860,7 @@ public class RequiemEvolveMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            if (menu.isPickingRiven()) { return false; }
+            if (menu.isRivenInputLocked()) { return false; }
             if (KuvaWeaponUtil.hasType(stack)) { return super.mayPlace(stack); }
             if (stack.getItem() instanceof WeaponRivenModule || stack.getItem() instanceof WarframeRivenModule) { return super.mayPlace(stack); }
             if (!WeaponModuleHandler.hasBase(stack) && stack.getCount() == 1) { return super.mayPlace(stack); }
