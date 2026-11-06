@@ -146,7 +146,9 @@ public final class MercyTests {
             h.assertTrue(la.getMercyState() == MercyState.DOWNED && lb.getMercyState() == MercyState.DOWNED, "两只都应当先倒地");
             AABB area = new AABB(BlockPos.containing(mid)).inflate(14.0D);
             clearItems(h, area);
-            la.kill();
+            // 照真实情形来：/kill 走命令，虚空要真掉到世界底下 64 格以外（别的模组借这两种伤害源的真伤打不死倒地的）
+            KuvaTestKit.killCommand(h, la);
+            lb.teleportTo(lb.getX(), h.getLevel().getMinBuildHeight() - 70.0D, lb.getZ());
             lb.hurt(lb.damageSources().fellOutOfWorld(), 1000.0F);
             h.assertTrue(!la.isAlive() && DIED.contains(la.getUUID()), "/kill 应当直接打死倒地的玄骸：" + aliveDetail(la)
                     + "，护盾 " + la.getAbsorptionAmount() + "，死亡事件 " + DIED.contains(la.getUUID()));
@@ -443,7 +445,7 @@ public final class MercyTests {
         AABB area = new AABB(p.blockPosition()).inflate(12.0D);
         clearItems(h, area);
         KuvaSlaveEntity killed = spawnThrall(h, p.position().add(0.0D, 0.0D, 2.0D));
-        killed.kill();
+        KuvaTestKit.killCommand(h, killed);
         h.assertTrue(!killed.isAlive(), "/kill 应当直接打死奴仆");
         h.runAfterDelay(2, () -> {
             h.assertTrue(itemsIn(h, area) == 0, "/kill 不应当有掉落：" + itemNames(h, area));

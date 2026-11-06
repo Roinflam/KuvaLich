@@ -9,7 +9,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
@@ -653,7 +652,7 @@ public class KuvaMasterEntity extends AbstractKuva {
     }
 
     /**
-     * 开始显形：{@code ticks} 个 tick 内关 AI、不出手、不挨打（{@code BYPASSES_INVULNERABILITY} 的伤害除外）。
+     * 开始显形：{@code ticks} 个 tick 内关 AI、不出手、不挨打（/kill、真掉出世界除外，见 {@link #isHardDeath}）。
      * 狩猎到场、换位、三种立即召唤都走这一步
      */
     public void beginAppearGrace(int ticks) {
@@ -1579,9 +1578,8 @@ public class KuvaMasterEntity extends AbstractKuva {
 
     @Override
     public boolean hurt(@NotNull DamageSource source, float amount) {
-        // 显形、离场期间半透明，被打、被打退都很怪；只放过 /kill、虚空这类本来就无视无敌的
-        if ((this.appearGraceTicks > 0 || this.departTicks >= 0)
-                && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+        // 显形、离场期间半透明，被打、被打退都很怪；只放过 /kill、真掉出世界（别的模组借「绕过无敌」的真伤也挡）
+        if ((this.appearGraceTicks > 0 || this.departTicks >= 0) && !isHardDeath(source)) {
             return false;
         }
         return super.hurt(source, amount);

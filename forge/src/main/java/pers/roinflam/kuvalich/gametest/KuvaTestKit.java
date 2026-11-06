@@ -2,14 +2,19 @@ package pers.roinflam.kuvalich.gametest;
 
 import com.mojang.authlib.GameProfile;
 import io.netty.channel.embedded.EmbeddedChannel;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -198,6 +203,68 @@ public final class KuvaTestKit {
             CACHED_VALUE.setAccessible(true);
         } catch (NoSuchFieldException e) {
             throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    /**
+     * 照真实的 {@code /kill} 命令打一遍（走 KillCommand，不是直接调 {@code entity.kill()}：
+     * 赤毒实体只认命令调过来的那次是真死）。返回命令的结果数（打中几个）
+     */
+    public static int killCommand(GameTestHelper h, Entity target) {
+        MinecraftServer server = h.getLevel().getServer();
+        CommandSourceStack source = server.createCommandSourceStack().withSuppressedOutput().withPermission(4);
+        return server.getCommands().performPrefixedCommand(source, "kill " + target.getStringUUID());
+    }
+
+    /**
+     * 别的模组打致命一击的几种写法挨个来一遍，倒地保护要全部挡住（每种都照着真实写法，前面注明出处）。
+     * 最后一种把血量直接写成 0、不调 die，要等 1 tick 由死亡计时补回来，调用方隔 1 tick 再查
+     */
+    public static void assaultLikeOtherMods(LivingEntity t, ServerPlayer p) {
+        DamageSource hit = p.damageSources().playerAttack(p);
+        // 1. 卡利亚式附魔 EntityLivingUtil.kill（命定之死、死亡之刃的持续伤害致死一击）：
+        //    血量直接写成 0，写进去了就用攻击者的伤害源 die，没写进去就补一下 genericKill
+        t.setHealth(0.0F);
+        if (t.getHealth() <= 0.0F) {
+            t.die(hit);
+        } else {
+            t.hurt(t.damageSources().genericKill(), Float.MAX_VALUE);
+        }
+        // 2. 绕过 setHealth、直接改同步数据里的血量（真伤扣血找不到 setHealth 时的退路），再用绕过无敌的伤害源 die
+        writeRawHealth(t, 0.0F);
+        t.die(t.damageSources().genericKill());
+        // 3. 借 genericKill / fellOutOfWorld 当真伤（人在世界里面，没掉出去），每下之前清无敌帧
+        t.invulnerableTime = 0;
+        t.hurt(t.damageSources().genericKill(), Float.MAX_VALUE);
+        t.invulnerableTime = 0;
+        t.hurt(t.damageSources().fellOutOfWorld(), 1.0E6F);
+        // 4. 不是 /kill 命令、模组自己调的 kill()
+        t.kill();
+        // 5. 持续掉血：一 tick 一截直接扣
+        for (int i = 0; i < 5; i++) {
+            t.setHealth(t.getHealth() - 50.0F);
+        }
+        // 6. 战斗修正献祭法杖的强杀：先打一下大的，没死就 die 再把血写成 0
+        t.hurt(hit, t.getMaxHealth() * 100.0F);
+        if (t.isAlive()) {
+            t.die(hit);
+            t.setHealth(0.0F);
+        }
+        // 7. 没走死亡、直接按「被杀」移除
+        t.remove(Entity.RemovalReason.KILLED);
+        // 8. 直接改同步数据把血量写成 0、什么都不调（等它自己按 0 血死掉）
+        writeRawHealth(t, 0.0F);
+    }
+
+    /** 不走 setHealth，直接改同步数据里的血量（只在开发环境跑测试，按官方名找字段） */
+    @SuppressWarnings("unchecked")
+    private static void writeRawHealth(LivingEntity t, float health) {
+        try {
+            Field f = LivingEntity.class.getDeclaredField("DATA_HEALTH_ID");
+            f.setAccessible(true);
+            t.getEntityData().set((EntityDataAccessor<Float>) f.get(null), health);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("找不到血量的同步字段", e);
         }
     }
 

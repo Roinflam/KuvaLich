@@ -99,6 +99,7 @@ public final class MercyCoreTests {
     private static final String ISO_NATURAL = "kl_mercy_iso_naturalLeaveDissolves";
     private static final String ISO_DIRECT = "kl_mercy_iso_downedSurvivesDirectDamage";
     private static final String ISO_EXEC_STACKS = "kl_mercy_iso_executeStacksOnRealDeath";
+    private static final String ISO_MODDED = "kl_mercy_iso_moddedKillsCannotBypassDowned";
 
     /** 倒地后碰撞箱高度：玄骸 3.4 × 0.70、奴仆 2.9 × 0.65 */
     private static final float LICH_DOWNED_HEIGHT = 2.38F;
@@ -735,6 +736,66 @@ public final class MercyCoreTests {
 
     @AfterBatch(batch = ISO_DIRECT)
     public static void afterDirect(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    // ==================== 别的模组的真伤、斩杀：倒地期间打不死，没倒地的先倒地；/kill 命令、真掉出世界照常 ====================
+
+    @GameTest(template = "empty", batch = ISO_MODDED, timeoutTicks = 120)
+    public static void moddedKillsCannotBypassDowned(GameTestHelper h) {
+        listenDeaths();
+        ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = card(p);
+        bornByProgress(p, card);
+        KuvaMasterEntity lich = summonFront(h, p);
+        p.setGameMode(GameType.CREATIVE);
+        h.runAfterDelay(2, () -> {
+            lich.forceDowned(p);
+            h.assertTrue(lich.getMercyState() == MercyState.DOWNED, "强制倒地应当生效");
+            KuvaTestKit.assaultLikeOtherMods(lich, p);
+            // 没倒地的奴仆挨借 genericKill 的真伤、挨模组自己调的 kill()：先倒地，不直接死
+            KuvaSlaveEntity a = spawnThrall(h, p.position().add(2.0D, 0.0D, 2.0D));
+            a.hurt(a.damageSources().genericKill(), Float.MAX_VALUE);
+            KuvaSlaveEntity b = spawnThrall(h, p.position().add(-2.0D, 0.0D, 2.0D));
+            b.kill();
+            h.assertTrue(a.isAlive() && a.getMercyState() == MercyState.DOWNED,
+                    "借 genericKill 的真伤应当只打成倒地：" + a.getMercyState() + "，活着 " + a.isAlive());
+            h.assertTrue(b.isAlive() && b.getMercyState() == MercyState.DOWNED,
+                    "模组自己调 kill() 应当只打成倒地：" + b.getMercyState() + "，活着 " + b.isAlive());
+            KuvaTestKit.assaultLikeOtherMods(a, p);
+            // 隔 2 tick：最后一种把血量写成 0 的，要等死亡计时补回来
+            h.runAfterDelay(2, () -> {
+                assertStillDowned(h, lich, "别的模组的几种强杀之后（玄骸）");
+                assertStillDowned(h, a, "别的模组的几种强杀之后（奴仆）");
+                h.assertTrue(!DIED.contains(lich.getUUID()) && !DIED.contains(a.getUUID()) && !DIED.contains(b.getUUID()),
+                        "倒地期间不该有死亡事件");
+                h.assertTrue(card.hasLich() && LichDirector.stateOf(p) == LichState.DOWNED,
+                        "遭遇不该被这些伤害结束：" + LichDirector.stateOf(p));
+                // 处决走完照样打得死：收尾那下的 setHealth(0) 不受倒地血量下限影响
+                h.assertTrue(MercyServer.executeNow(p, a) == null, "之后应当照常能处决奴仆");
+                // /kill 命令照常真死
+                lich.invulnerableTime = 0;
+                h.assertTrue(KuvaTestKit.killCommand(h, lich) == 1, "/kill 应当打中玄骸");
+                h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()), "/kill 命令应当直接打死倒地的玄骸：" + aliveDetail(lich));
+                // 真掉出世界（脚底低于世界底 64 格）照常真死
+                b.teleportTo(b.getX(), h.getLevel().getMinBuildHeight() - 70.0D, b.getZ());
+                b.invulnerableTime = 0;
+                b.hurt(b.damageSources().fellOutOfWorld(), 1000.0F);
+                h.assertTrue(!b.isAlive() && DIED.contains(b.getUUID()), "真掉出世界应当直接打死倒地的奴仆：" + aliveDetail(b));
+                h.runAfterDelay(30, () -> {
+                    h.assertTrue(!a.isAlive() && DIED.contains(a.getUUID()), "tick 30 处决应当打死奴仆：" + aliveDetail(a));
+                    h.succeed();
+                });
+            });
+        });
+    }
+
+    private static String aliveDetail(AbstractKuva t) {
+        return "状态 " + t.getMercyState() + "，活着 " + t.isAlive() + "，移除 " + t.getRemovalReason() + "，血 " + t.getHealth();
+    }
+
+    @AfterBatch(batch = ISO_MODDED)
+    public static void afterModded(ServerLevel level) {
         KuvaTestKit.afterBatch(level);
     }
 

@@ -275,6 +275,17 @@ public final class LarvlingTests {
         h.assertTrue(l.isAlive() && l.getMercyState() == MercyState.DOWNED,
                 "倒地时挨打应当还倒着，不消散：" + l.getMercyState());
         h.assertTrue(l.getHealth() == downedHealth, "倒地时挨打不掉血：" + l.getHealth());
+        // 别的模组的真伤、斩杀（命定之死的致死一击、借 genericKill 的真伤、直接写血量……）同样打不死
+        KuvaTestKit.assaultLikeOtherMods(l, p);
+        h.runAfterDelay(2, () -> {
+            h.assertTrue(l.isAlive() && !l.isRemoved() && l.getMercyState() == MercyState.DOWNED,
+                    "别的模组的几种强杀之后应当还倒着：" + l.getMercyState() + "，活着 " + l.isAlive() + "，血 " + l.getHealth());
+            h.assertTrue(l.getHealth() == downedHealth, "别的模组的几种强杀之后血量应当补回倒地时的值：" + l.getHealth());
+            executeAfterHits(h, p, l, card);
+        });
+    }
+
+    private static void executeAfterHits(GameTestHelper h, ServerPlayer p, KuvaLarvlingEntity l, RequiemCard card) {
         h.assertTrue(p.getUUID().equals(l.getMercyQualified()), "资格人还是打倒它的人");
         h.assertTrue(MercyServer.executeNow(p, l) == null, "挨过打照样能处决");
         h.runAfterDelay(30, () -> {

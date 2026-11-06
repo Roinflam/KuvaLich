@@ -12,6 +12,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -167,6 +168,8 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     private UUID mercyQualified;
     /** 处决走完的那次死亡：怜悯之击开着时只有它给奖励。服务端 */
     private boolean mercyFinishing;
+    /** 正在结算 /kill 命令或真掉出世界的那一下（见 {@link #isHardDeath}）：倒地保护和血量下限这时都让开。服务端 */
+    private boolean hardDeathBlow;
     /** 死亡后至少留多少 tick（给离场演出），取各方要求的最大值 */
     private int deathHoldTicks = DEFAULT_DEATH_HOLD_TICKS;
     /** 只在 checkDespawn 执行的那一刻为真，用来认出原版自然消失发出的移除 */
@@ -980,7 +983,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     /** 分段的：这一下（已经扣过护盾和血）把这一段打空了 */
     private boolean reachedSegmentFloor(DamageSource source) {
         if (this.level().isClientSide || this.dead || this.isRemoved() || getMercyState() != MercyState.NONE
-                || !isSegmented() || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || !MercyRules.canDown(this)) {
+                || !isSegmented() || isHardDeath(source) || !MercyRules.canDown(this)) {
             return false;
         }
         float floor = segmentFloor();
@@ -1039,13 +1042,54 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     // ==================== 致命伤先倒地 ====================
 
+    /** /kill 命令的类：运行时类名就是这个（Forge 1.17 起类名不混淆，只有方法、字段是 SRG 名） */
+    private static final String KILL_COMMAND_CLASS = "net.minecraft.server.commands.KillCommand";
+
+    /**
+     * 能真打死它、不先倒地也不受倒地保护的只有两种：{@code /kill} 命令（见 {@link #kill()}），
+     * 和真的掉出了世界（脚底低于世界底 64 格，原版每 tick 扣 4 点的那个）。
+     * <p>
+     * 不按「绕过无敌」的标签认：别的模组的真伤、斩杀、持续伤害的致死一击常借 {@code genericKill}、
+     * {@code fellOutOfWorld} 或者自己挂这个标签的伤害类型（卡利亚式附魔的命定之死、处决类附魔扣不动血量时
+     * 就补一下 {@code genericKill}），按标签放行的话倒地的玄骸、奴仆、幼体会被它们直接打死，怜悯之击就白打了
+     */
+    protected boolean isHardDeath(DamageSource source) {
+        return this.hardDeathBlow
+                || source.is(DamageTypes.FELL_OUT_OF_WORLD) && this.getY() < this.level().getMinBuildHeight() - 64;
+    }
+
+    /**
+     * 原版 {@code LivingEntity.kill()} 就是一下 {@code hurt(genericKill, Float.MAX_VALUE)}。
+     * 只有 {@code /kill} 命令调过来的那次按真死结算；别的模组拿它当斩杀用的，照普通致命伤处理：
+     * 没倒地的先倒地，倒地、处决、消散期间打不动
+     */
+    @Override
+    public void kill() {
+        if (this.level().isClientSide || this.hardDeathBlow || !calledFromKillCommand()) {
+            super.kill();
+            return;
+        }
+        this.hardDeathBlow = true;
+        try {
+            super.kill();
+        } finally {
+            this.hardDeathBlow = false;
+        }
+    }
+
+    /** 调用栈前几层里有没有 /kill 命令（kill() 很少调，看一眼栈不费事） */
+    private static boolean calledFromKillCommand() {
+        return StackWalker.getInstance().walk(frames -> frames.limit(16)
+                .anyMatch(f -> KILL_COMMAND_CLASS.equals(f.getClassName())));
+    }
+
     /**
      * 致命伤先倒地：满足条件就把血量压回这一段的底（最后一段留 1）、进倒地，返回 true，调用方不要再往下走。
-     * 绕过无敌的伤害（{@code /kill}、虚空）照常真死
+     * 只有 {@link #isHardDeath} 认的（{@code /kill}、真掉出世界）照常真死
      */
     private boolean interceptLethal(DamageSource source) {
         if (this.level().isClientSide || this.dead || this.isRemoved() || getMercyState() != MercyState.NONE
-                || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || !MercyRules.canDown(this)) {
+                || isHardDeath(source) || !MercyRules.canDown(this)) {
             return false;
         }
         this.setHealth(downedHealth());
@@ -1054,12 +1098,30 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     }
 
     /**
-     * 倒地、处决、消散、自然离开期间不吃「不经 hurt、直接写血量」的伤害（这时 hurt 已经全部挡掉，这几条是漏网的）：
-     * 真实子弹 1 tick 后的真伤、处决词条的强杀、流血 / 毒素持续伤害、武器自带斩杀。
-     * 处决走完的那一下（{@link #isMercyFinishing()}）和 /kill、虚空这类绕过无敌的照常
+     * 倒地、处决、起身、消散、自然离开期间不吃「不经 hurt、直接写血量」的伤害（这时 hurt 已经全部挡掉，这几条是漏网的）：
+     * 真实子弹 1 tick 后的真伤、处决词条的强杀、流血 / 毒素持续伤害、武器自带斩杀，以及别的模组的真伤、持续伤害。
+     * 处决走完的那一下（{@link #isMercyFinishing()}）和 {@link #isHardDeath} 认的（{@code /kill}、真掉出世界）照常
      */
     public boolean isDamageProtected() {
-        return !this.mercyFinishing && (getMercyState() != MercyState.NONE || this.leaveTicks >= 0);
+        return !this.mercyFinishing && !this.hardDeathBlow
+                && (getMercyState() != MercyState.NONE || this.leaveTicks >= 0);
+    }
+
+    /**
+     * 受保护期间血量不许压到受保护的值以下（倒地时的值，起身中是这一段满血）：别的模组的真伤、持续掉血、斩杀
+     * 多半直接写血量，写完再调 {@code die}、或者看血量没归零就补一下 {@code genericKill}，写不下去就都落空。
+     * 只拦往下压的；往上回血（倒地期间这一段跟着计时回涨）照常
+     */
+    @Override
+    public void setHealth(float health) {
+        // 先比大小：构造期间 LivingEntity 设满血时子类字段还没初始化，往上设的不往下看
+        if (health < this.getHealth() && !this.level().isClientSide && isDamageProtected()) {
+            float keep = protectedHealth();
+            if (health < keep) {
+                health = Math.min(this.getHealth(), keep);
+            }
+        }
+        super.setHealth(health);
     }
 
     /**
@@ -1068,7 +1130,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
      */
     private boolean keepAliveWhileProtected(DamageSource source) {
         if (this.level().isClientSide || this.dead || this.isRemoved() || !isDamageProtected()
-                || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+                || isHardDeath(source)) {
             return false;
         }
         float keep = protectedHealth();
@@ -1187,6 +1249,11 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     public void remove(@NotNull RemovalReason reason) {
         if (this.inDespawnCheck && reason == RemovalReason.DISCARDED && !this.level().isClientSide
                 && beginNaturalLeave()) {
+            return;
+        }
+        // 受保护期间没死就被按「被杀」直接移除（别的模组的抹杀，不走死亡）：不认，留在原状态。
+        // 自己死后的移除（tickDeath）这时已经 dead；消散、离开到时走的是 discard
+        if (reason == RemovalReason.KILLED && !this.dead && !this.level().isClientSide && isDamageProtected()) {
             return;
         }
         super.remove(reason);
@@ -1395,12 +1462,21 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         if (source.is(DamageTypeTags.IS_FALL)) {
             return false;
         }
-        // 倒地、处决、起身、消散、自然离开期间不受伤；/kill、虚空这类绕过无敌的照常
-        if ((getMercyState() != MercyState.NONE || this.leaveTicks >= 0)
-                && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+        // 倒地、处决、起身、消散、自然离开期间不受伤；只有 /kill、真掉出世界照常（别的模组借「绕过无敌」的真伤也挡）
+        boolean hard = isHardDeath(source);
+        if ((getMercyState() != MercyState.NONE || this.leaveTicks >= 0) && !hard) {
             return false;
         }
-        return super.hurt(source, amount);
+        if (!hard || this.hardDeathBlow) {
+            return super.hurt(source, amount);
+        }
+        // 真掉出世界的这一下：结算期间血量下限、死亡兜底都让开（/kill 在 kill() 里已经标上了）
+        this.hardDeathBlow = true;
+        try {
+            return super.hurt(source, amount);
+        } finally {
+            this.hardDeathBlow = false;
+        }
     }
 
     // ==================== 音效 ====================

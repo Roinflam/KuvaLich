@@ -822,7 +822,7 @@
         "entity/KuvaSlaveEntity.java:310-330 dropModule — 奴仆掉模组",
         "capability/RequiemCard.java:201-209 — isCorrectAnswer 只要求 unlockedCardStatus>0 → 第一张卡揭示后即可挑战；nemesis/LichDirector.java:455-490 — 玄骸怒气满了来找主人",
         "client/lich/LichNameplates.java:199-205 — 观看者有玄骸时奴仆名牌「<名字> 奴仆」，没有时「赤毒奴仆」；client/KuvaKeyMappings.java:35-36 — 档案键默认 K；client/lich/LichArchiveScreen.java + lang kuvalich.archive.status.* — 名字、等级、怒气、当前状态",
-        "mercy/MercyServer.java:427-443 qualifiedFor — 奴仆资格人：伤害来自玩家 → 他；宠物 / 召唤物 → 主人；按这个顺序判，别的玩家补的最后一刀归他；只有致命一击不是玩家 / 宠物打出时才看 base/entity/AbstractKuva.java:777-779 recentPlayerAttacker（原版 lastHurtByPlayerTime = 100 tick = 5 秒）；都没有 → 无资格人，到点消散；虚空带 BYPASSES_INVULNERABILITY 不倒地、直接死、reward = false",
+        "mercy/MercyServer.java:427-443 qualifiedFor — 奴仆资格人：伤害来自玩家 → 他；宠物 / 召唤物 → 主人；按这个顺序判，别的玩家补的最后一刀归他；只有致命一击不是玩家 / 宠物打出时才看 base/entity/AbstractKuva.java:777-779 recentPlayerAttacker（原版 lastHurtByPlayerTime = 100 tick = 5 秒）；都没有 → 无资格人，到点消散；真掉出世界（AbstractKuva.isHardDeath）不倒地、直接死、reward = false",
         "module/weapon/WeaponElementSystem.java:578,587-589,626,659,817,863 — 燃烧 inFire、毒素/毒气 magic()、电击 lightningBolt()、爆炸 explosion(null) 均无归属实体 → 怜悯之击关着时不结算；宠物、岩浆同理（关着时那一版陷阱框）",
         "event/ConfiscationHandler.java:48-56 — 只在 hasLich() 时按概率整组没收；entity/KuvaMasterEntity.java:984 computeAndApplySuccess — 成功终结时归还",
         "nemesis/ThrallDirector.java — thrallSquadEnabled 关掉时奴仆不来（两条提示的 if）；entity/KuvaMasterEntity.java:1170-1176 — 玄骸进度 = 奴仆区间 × masterPotionMultiplier；:840-845 — 卡没放齐时只给进度；entity/KuvaSlaveEntity.java:223 — 没有玄骸的人拿不到进度；mercy/MercyServer.java:743,825-833 failureProgress + entity/KuvaMasterEntity.java:934 directFailure — 判错（两种开关下）也按同一倍率给进度",
