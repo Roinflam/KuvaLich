@@ -20,6 +20,7 @@ import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL11;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.client.KuvaKeyMappings;
 import pers.roinflam.kuvalich.client.comm.CommText;
@@ -402,6 +403,11 @@ public class LichArchiveScreen extends Screen {
 
         // ---- 字幕 ----
         if (!small) {
+            // 立绘是立体模型，朝镜头凸出的部分（整页抬 ARCHIVE_Z 之后再加模型自己的 50 + 1.3 × 缩放）比字的 z 靠前，
+            // 字幕压在它腿上时被深度测试吃掉。先把排着的都画掉、清一次深度，字幕、名牌连同擦出动画一律压在模型上面；
+            // 悬停提示框在这之后画，照样在最上层。跟模型多大、朝哪转都无关，不用去凑一个够高的 z
+            g.flush();
+            RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
             drawSubtitle(g, f, w, h, now, st);
         }
         g.flush();
