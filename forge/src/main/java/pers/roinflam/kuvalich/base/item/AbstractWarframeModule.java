@@ -144,7 +144,7 @@ public abstract class AbstractWarframeModule extends AbstractModule {
                 .withStyle(KuvaPalette.style(KuvaPalette.VALUE)));
     }
 
-    private static int getMaxStacksForAttribute(String attributeKey) {
+    public static int getMaxStacksForAttribute(String attributeKey) {
         switch (attributeKey) {
             case "killStackHealth": return ModConfig.KUVA_LICH.maxStacksHealth.get();
             case "killStackShield": return ModConfig.KUVA_LICH.maxStacksShield.get();

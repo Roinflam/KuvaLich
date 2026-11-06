@@ -799,7 +799,11 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
 
     /** 背包：墨底 + 细线方格，开场一行一行淡入；物品由原版画在上面，淡入到一半才放出来（{@link #hideSlotsDuringIntro}） */
     private void drawInventory(GuiGraphics g, int mx, int my, long t) {
-        float eLine = phase(t, T_INV_IN, T_INV_IN + 320);
+        float inv = inventoryAlpha(KuvaFxDirector.clockMs());
+        if (inv <= 0.004F) {
+            return;
+        }
+        float eLine = phase(t, T_INV_IN, T_INV_IN + 320) * inv;
         GuiShapes.begin(g);
         int lineA = GuiShapes.argb(FxPalette.KUVA_PALE, 0.22F * eLine);
         int clear = lineA & 0x00FFFFFF;
@@ -810,13 +814,13 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
             if (row < 0) {
                 continue;
             }
-            float e = rowPhase(t, row);
+            float e = rowPhase(t, row) * inv;
             if (e <= 0.0F) {
                 continue;
             }
             int x = inventoryX(s);
             int y = inventoryY(s);
-            boolean hv = isHovering(x, y, 16, 16, mx, my);
+            boolean hv = inv >= 0.5F && isHovering(x, y, 16, 16, mx, my);
             fill(g, x - 1, y - 1, x + 17, y + 17, INK, 0.6F * e);
             if (hv) {
                 fill(g, x - 1, y - 1, x + 17, y + 17, FxPalette.KUVA_PALE, 0.1F);
@@ -825,6 +829,14 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
                     GuiShapes.argb(FxPalette.KUVA_PALE, (hv ? 0.55F : 0.1F) * e));
         }
         GuiShapes.end();
+    }
+
+    /**
+     * 背包方格整体的透明度（1 = 照常）。页面要让出背包那块地方时覆写：方格跟着淡出，
+     * 物品图标不能半透明，由页面自己在透明度过半时让那些格子不画（{@code Slot#isActive}）
+     */
+    protected float inventoryAlpha(long now) {
+        return 1.0F;
     }
 
     private float rowPhase(long t, int row) {

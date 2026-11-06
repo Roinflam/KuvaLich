@@ -83,11 +83,15 @@ public final class InventoryUtil {
         if (stack == null || stack.isEmpty()) {
             return true;
         }
-        if (hasRoomFor(player, stack)) {
-            player.getInventory().add(stack);
-            return true;
+        // 死了的玩家背包已经掉过一遍、重生时（没开死亡不掉落）也不会抄过去，塞进去就没了：和原版
+        // AbstractContainerMenu#clearContainer 一样直接掉在原地
+        if (!player.isAlive()) {
+            player.drop(stack, false);
+            return false;
         }
-        player.drop(stack, false);
-        return false;
+        // 不用 add：一整组放不全时 add 把剩下的留在 stack 里（创造模式直接清零），调用方接着清空格子，剩下的就没了。
+        // placeItemBackInInventory 按每格剩余空间一份份放，放不下的那部分掉在脚下，创造模式也不吞
+        player.getInventory().placeItemBackInInventory(stack);
+        return stack.isEmpty();
     }
 }

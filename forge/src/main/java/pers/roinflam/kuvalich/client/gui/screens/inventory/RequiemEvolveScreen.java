@@ -16,6 +16,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
+import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.fx.gui.ForgeOpClassifier;
 import pers.roinflam.kuvalich.client.fx.gui.ForgeOpClassifier.Op;
 import pers.roinflam.kuvalich.client.fx.gui.GuiFx;
@@ -53,7 +54,9 @@ import java.util.List;
  *       预览类（融合、裂罅循环、模组升级，拿走才算数）的炉膛是虚线框，当场处理类是实线框。下部是背包；</li>
  *   <li>右栏「结果」：有结果时写这是哪种操作、等级怎么变、材料什么时候扣、有什么要当心的；
  *       只放了一边时列另一边能放什么；两边都放了却没有结果时写为什么。栏底是三步「流程」；</li>
- *   <li>取走结果时按这次是哪种操作放演出和声音（{@link GuiFx}），全部只在本人客户端。</li>
+ *   <li>取走结果时按这次是哪种操作放演出和声音（{@link GuiFx}），全部只在本人客户端；</li>
+ *   <li>物品格里是已揭示的裂罅、材料是赤毒（或者正在挑多张洗的候选）时，状态行、右栏、流程换成裂罅循环的那一套，
+ *       见 {@link RivenCycleView}。</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)
@@ -117,8 +120,12 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
     private ItemStack prevMat = ItemStack.EMPTY;
     private long comboAt;
 
+    /** 裂罅循环（洗紫卡）的控件、候选和对照 */
+    private final RivenCycleView riven;
+
     public RequiemEvolveScreen(RequiemEvolveMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
+        this.riven = new RivenCycleView(this, menu);
     }
 
     @Override
@@ -201,6 +208,7 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
         int[] ids = registerFxPaths(topPath, bottomPath);
         pathFromInput = ids[0];
         pathFromMaterial = ids[1];
+        riven.layout(inX, matX, outX, ocy, statusY, arc);
     }
 
     // ==================== 锻造演出（取走结果时） ====================
@@ -228,6 +236,10 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
 
     @Override
     protected void slotClicked(@Nullable Slot slot, int slotId, int button, ClickType type) {
+        // 挑裂罅候选时物品格、材料格锁着：点了不发包，格子红一下
+        if (riven.blocks(slot)) {
+            return;
+        }
         observe();
         Op op = Op.NONE;
         int level = 0;
@@ -265,6 +277,29 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
             default -> {
             }
         }
+    }
+
+    /** 按「循环」洗出了一张预览：等光流进炉膛、结果揭示时紫框跳一下、放声音 */
+    void rivenRolled() {
+        fx.rivenCycle(menu.getSlot(RES), FLOW_MS);
+    }
+
+    @Override
+    protected boolean scrollPage(double mx, double my, double delta) {
+        return riven.scroll(mx, my, delta, KuvaFxDirector.clockMs());
+    }
+
+    @Override
+    protected float inventoryAlpha(long now) {
+        return riven.inventoryAlpha(now);
+    }
+
+    /** 赤毒是裂罅循环扣的：扣完从背包补满，材料格的数量变化不等于扣了多少，「−N」改由状态包里的实扣数画 */
+    @Override
+    @Nullable
+    protected Fx lastSpend(int id) {
+        Fx f = super.lastSpend(id);
+        return f != null && id == MAT && f.stack().getItem() instanceof Kuva ? null : f;
     }
 
     // ==================== 结果出现 ====================
@@ -312,6 +347,8 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
 
     @Override
     protected void drawPage(GuiGraphics g, int mx, int my, long now, long t, float eF) {
+        riven.frame(now);
+        boolean rv = riven.active(now);
         float eT = phase(t, T_TEXT_IN, T_TEXT_DONE);
         ItemStack in = menu.getSlot(IN).getItem();
         ItemStack mat = menu.getSlot(MAT).getItem();
@@ -321,7 +358,7 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
             comboAt = now;
         }
         boolean shown = resultShown();
-        boolean stuck = !in.isEmpty() && !mat.isEmpty() && !resultSlot.hasItem() && now - comboAt > STUCK_GRACE_MS;
+        boolean stuck = !rv && !in.isEmpty() && !mat.isEmpty() && !resultSlot.hasItem() && now - comboAt > STUCK_GRACE_MS;
 
         // ---- 左栏：配方表、持有材料 ----
         int y = drawLeftHead(g, Component.translatable("kuvalich.evolve.recipes"), eF, eT);
@@ -339,13 +376,22 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
         drawCell(g, menu.getSlot(IN), mx, my, phase(t, 650, 1050), now);
         drawCell(g, menu.getSlot(MAT), mx, my, phase(t, 770, 1170), now);
         drawCaptions(g, eT);
-        drawStatus(g, in, mat, shown, stuck, eF);
+        if (rv) {
+            riven.drawMiddle(g, mx, my, now, eF);
+        } else {
+            drawStatus(g, in, mat, shown, stuck, eF);
+        }
         drawDrift(g, cx, pTop + 6, 150, 92, now, eF);
 
         // ---- 右栏：结果、流程 ----
         drawRightHead(g, Component.translatable("kuvalich.evolve.output"), eF);
-        int stepTop = drawSteps(g, steps(in, mat, shown, stuck), eF, now);
-        drawLines(g, detail(in, mat, shown, stuck), rx0, hairY + 8, rx1 - rx0, eF, stepTop - 6);
+        if (rv) {
+            int stepTop = drawSteps(g, riven.steps(), eF, now);
+            riven.drawRight(g, now, eF, stepTop - 6);
+        } else {
+            int stepTop = drawSteps(g, steps(in, mat, shown, stuck), eF, now);
+            drawLines(g, detail(in, mat, shown, stuck), rx0, hairY + 8, rx1 - rx0, eF, stepTop - 6);
+        }
     }
 
     /** 流程三步：放物品、放材料、取结果；两边都放了却凑不成时第三步是红叉 */
@@ -370,6 +416,7 @@ public class RequiemEvolveScreen extends ForgePageScreen<RequiemEvolveMenu> {
         drawCellOverlay(g, menu.getSlot(MAT), t, 920, 1220);
         drawChamberOverlay(g, t, 750, 1050);
         drawStockOverlay(g, now, t);
+        riven.drawOverlay(g, now);
     }
 
     /** 两条线常亮一层淡底；格子里有东西的那条亮起来；左格和中格之间一个「+」，线进炉膛前各一个箭头 */

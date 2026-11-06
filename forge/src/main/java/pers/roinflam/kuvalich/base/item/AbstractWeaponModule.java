@@ -167,7 +167,7 @@ public abstract class AbstractWeaponModule extends AbstractModule {
                 .withStyle(KuvaPalette.style(KuvaPalette.VALUE)));
     }
 
-    private static int getMaxStacksForAttribute(String attributeKey) {
+    public static int getMaxStacksForAttribute(String attributeKey) {
         switch (attributeKey) {
             case "killStackBaseDamage": return ModConfig.KUVA_LICH.maxStacksBaseDamage.get();
             case "killStackMultishot": return ModConfig.KUVA_LICH.maxStacksMultishot.get();

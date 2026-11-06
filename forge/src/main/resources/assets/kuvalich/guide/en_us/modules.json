@@ -198,11 +198,11 @@
             },
             {
               "if": "!module:riven_weapon_module",
-              "text": "Weapon Rivens are among them. Unrevealed weapon Rivens can't be revealed, and cycling one you already have <b>wastes the Kuva</b>."
+              "text": "Weapon Rivens are among them. Unrevealed weapon Rivens can't be revealed, and the ones you already have <b>can't be cycled</b> (no Kuva is taken)."
             },
             {
               "if": "!module:riven_warframe_module",
-              "text": "Warframe Rivens are among them. Unrevealed Warframe Rivens can't be revealed, and cycling one you already have <b>wastes the Kuva</b>."
+              "text": "Warframe Rivens are among them. Unrevealed Warframe Rivens can't be revealed, and the ones you already have <b>can't be cycled</b> (no Kuva is taken)."
             }
           ]
         },
@@ -1034,17 +1034,18 @@
         {
           "type": "steps",
           "items": [
-            "Put a revealed Riven in the left slot of the {item:kuvalich:requiem_evolve} and enough {item:kuvalich:kuva} in the material slot. Where to get Kuva: [[start/materials]].",
-            "A card with new stats appears on the right at once. <w>This is when you pay for this cycle</w>, and the original card's cycle count goes up by 1.",
-            "To keep the new stats, take the right-hand card; the original disappears.",
-            "To keep the old stats, take the original back out of the left slot or close the screen. The new card is discarded, and the Kuva already paid is not refunded."
+            "Put a revealed Riven in the left slot of the {item:kuvalich:requiem_evolve} and {item:kuvalich:kuva} in the material slot. Where to get Kuva: [[start/materials]].",
+            "Under the chamber, set how many to roll at once with <t>[−] ×1 [+]</t> (1-10, the scroll wheel works too) and press <t>Cycle</t>. <w>This is when you pay</w>: once per card rolled, and the original card's cycle count goes up by the same number.",
+            "Rolling 1: the new card appears on the right, and the right column lists every stat and whether it went up or down. If you like it, press <t>Equip</t> to swap it onto the table and keep cycling, or simply take it out of the right slot; the original disappears. If not, press <t>Recycle</t>: this card is discarded and you pay again.",
+            "Rolling several: the options are laid out one by one. The dots under each are <g>green</g> for better than the original, <b>red</b> for worse or negative, and purple for a stat the original doesn't have. Hover one to compare it in the right column, click to select it, then press <t>Take #N</t>; the rest are discarded.",
+            "If you want none of them, press <t>Keep old</t>, take the original back out of the left slot, or just close the screen. The original stays, and the Kuva already paid is not refunded."
           ]
         },
         {
           "type": "tip",
           "style": "info",
-          "title": "Every preview costs Kuva",
-          "text": "Each preview is paid for once. If you add Kuva to the material slot or take some out after a preview, and what's left can still pay, it previews again with the new amount and charges again. You pay once per reroll. Once a preview is up, leave the material slot alone unless you mean to roll again."
+          "title": "How Kuva is paid",
+          "text": "Kuva comes out of the material slot first, the rest from your inventory, and afterwards the material slot is topped up from your inventory, so Kuva in your inventory counts too and you don't have to feed it in stack by stack. Rolling several at once costs the same as rolling them one after another: each card is priced at the cycle count at that moment. While you pick, the left slot and the material slot are locked until you take one or keep the old card. Once a single preview is up, adding or removing Kuva doesn't touch it."
         },
         {
           "type": "h",
@@ -1108,14 +1109,14 @@
           "style": "bad",
           "if": "!module:riven_weapon_module",
           "title": "Weapon Rivens can't be revealed",
-          "text": "Kuva Liches can still drop unrevealed weapon Rivens, but right-clicking won't reveal them. <b>Don't cycle</b> the weapon Rivens you already have; the Kuva is taken and no new card comes out. Dismantle unwanted ones at the [[weapons/requiem_recast|Requiem Recast]]."
+          "text": "Kuva Liches can still drop unrevealed weapon Rivens, but right-clicking won't reveal them. The weapon Rivens you already have can't be cycled either: pressing <t>Cycle</t> takes no Kuva and gives nothing. Dismantle unwanted ones at the [[weapons/requiem_recast|Requiem Recast]]."
         },
         {
           "type": "tip",
           "style": "bad",
           "if": "!module:riven_warframe_module",
           "title": "Warframe Rivens can't be revealed",
-          "text": "Kuva Liches can still drop unrevealed Warframe Rivens, but right-clicking won't reveal them. <b>Don't cycle</b> the Warframe Rivens you already have; the Kuva is taken and no new card comes out. Dismantle unwanted ones at the [[weapons/requiem_recast|Requiem Recast]]."
+          "text": "Kuva Liches can still drop unrevealed Warframe Rivens, but right-clicking won't reveal them. The Warframe Rivens you already have can't be cycled either: pressing <t>Cycle</t> takes no Kuva and gives nothing. Dismantle unwanted ones at the [[weapons/requiem_recast|Requiem Recast]]."
         },
         {
           "type": "h",

@@ -979,9 +979,18 @@ public final class GuiFx {
 
     /** 紫卡循环：结果格的紫色描边左右乱跳三下（带色差），400 ms 定格时外扩一圈紫框 */
     public void rivenCycle(Slot result) {
-        sound(KuvaLichSounds.FORGE_RIVEN_CYCLE.get(), 0.9F, 1.0F);
-        frame(0, result, 400, RIVEN, 0.75F, FRAME_STEADY, 0.0F, 0.0F, 3);
-        ring(400, result, 0.0F, 8.0F, 320, RIVEN, 1.0F);
+        rivenCycle(result, 0);
+    }
+
+    /** 同上，晚 {@code delayMs} 才开始（按「循环」洗出预览时，等光沿连线流进炉膛、结果揭示那一刻再跳） */
+    public void rivenCycle(Slot result, int delayMs) {
+        if (delayMs <= 0) {
+            sound(KuvaLichSounds.FORGE_RIVEN_CYCLE.get(), 0.9F, 1.0F);
+        } else {
+            soundLater(KuvaLichSounds.FORGE_RIVEN_CYCLE.get(), 0.9F, 1.0F, delayMs);
+        }
+        frame(delayMs, result, 400, RIVEN, 0.75F, FRAME_STEADY, 0.0F, 0.0F, 3);
+        ring(delayMs + 400, result, 0.0F, 8.0F, 320, RIVEN, 1.0F);
     }
 
     /**

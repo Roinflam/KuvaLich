@@ -770,7 +770,7 @@
           "type": "steps",
           "items": [
             "Right-click to open it; the <t>left slot</t> takes what you are working on and the <t>middle slot</t> the material",
-            "With the right combination, the result appears in the <t>right slot</t> on its own; there is no button",
+            "With the right combination, the result appears in the <t>right slot</t> on its own, no button needed; only Riven cycling waits for the <t>Cycle</t> button under the chamber",
             "Take the result out of the right slot and you are done"
           ]
         },
@@ -805,7 +805,7 @@
             [
               "Revealed Riven mod + {item:kuvalich:kuva}",
               "Rerolls the Riven's stats; see [[modules/riven_module]]",
-              "<w>Every time a preview appears</w>"
+              "<w>When you press Cycle, once per card</w>"
             ],
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
@@ -831,7 +831,7 @@
         {
           "type": "tip",
           "style": "info",
-          "text": "Riven rerolls are paid per preview. Each preview costs its Kuva and adds 1 to that Riven's cycle count, and changing the material slot after a preview previews again and charges again. Close the screen or pull the material out without taking the result, and the Kuva already paid is not refunded."
+          "text": "Riven cycling is paid when you press Cycle, once per card rolled, and the Riven's cycle count goes up by the same number. Touching the material slot after a preview doesn't roll again. Close the screen or take the original out without equipping, and the Kuva already paid is not refunded."
         },
         {
           "type": "h",

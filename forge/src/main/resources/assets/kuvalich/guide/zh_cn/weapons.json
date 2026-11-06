@@ -853,7 +853,7 @@
           "type": "steps",
           "items": [
             "右键打开，<t>左格</t>放要处理的物品，<t>中格</t>放材料",
-            "组合放对了，<t>右格</t>自动出现结果，不用按按钮",
+            "组合放对了，<t>右格</t>自动出现结果，不用按按钮；只有裂罅循环要按炉膛下面的<t>循环</t>",
             "拿走右格的结果就完成了"
           ]
         },
@@ -888,7 +888,7 @@
             [
               "已揭示的裂罅模组 + {item:kuvalich:kuva}",
               "重随裂罅的词条，见[[modules/riven_module]]",
-              "<w>每出一次预览扣一次</w>"
+              "<w>按「循环」时，洗几张扣几次</w>"
             ],
             {
               "if": "cfg:kuva_lich.enableModuleLevelSystem",
@@ -914,7 +914,7 @@
         {
           "type": "tip",
           "style": "info",
-          "text": "重随裂罅按次付费，每出一次预览就付一次赤毒，那张裂罅的循环次数也 +1。预览出来后再动材料格，会重新预览、再付一次，不拿结果就关界面或拿走材料，已付的赤毒也不退。"
+          "text": "裂罅循环按「循环」才付费，一次洗几张付几张的钱，那张裂罅的循环次数也加几。预览出来以后再动材料格不会重洗；不换上就关界面或拿走原卡，已付的赤毒不退。"
         },
         {
           "type": "h",
@@ -979,12 +979,12 @@
       ],
       "_src": [
         "world/inventory/RequiemEvolveMenu.java:81-83 — 武器槽 x=31（左）、材料槽 x=80（中）、结果槽 x=131（右）",
-        "world/inventory/RequiemEvolveMenu.java:145-199 — broadcastChanges 时自动检测组合，无按钮",
-        "world/inventory/RequiemEvolveMenu.java:201-237 — 分支顺序：融合 → 武器裂罅循环 → 战甲裂罅循环 → 暗影塑形块 → 塑形块 → 开光 → TACZ 强化 → 模组升级",
+        "world/inventory/RequiemEvolveMenu.java checkAndProcessCrafting — broadcastChanges 时自动检测组合，无按钮（裂罅循环除外：handleRivenRequest，界面按钮发 RivenCyclePacket）",
+        "world/inventory/RequiemEvolveMenu.java processCrafting — 分支顺序：融合 → 裂罅 + 赤毒（不处理，等按钮）→ 暗影塑形块 → 塑形块 → 开光 → TACZ 强化 → 模组升级",
         "world/inventory/RequiemEvolveMenu.java:241-254 — 融合：复制左格，等级 (int)(max×(1+upgradeMultiplier))，min upgradeLimit，元素取中格",
         "world/inventory/RequiemEvolveMenu.java:391-396 — 取走融合结果时清空左、中两格",
         "world/inventory/RequiemEvolveMenu.java:432-450 — 关界面：左、中返还，预览型结果（融合/循环/升级）作废",
-        "world/inventory/RequiemEvolveMenu.java:256-278 processItemRivenCycle — 武器裂罅循环：未揭示不处理；预览生成时立即写回扣掉赤毒的材料栈，并对左格原裂罅 setCycle(+1)；:280-301 processWarframeRivenCycle 战甲同理；:168-199 checkAndProcessCrafting — 材料格一变就清掉预览重新循环，再付一次（设计如此：每次洗词条都付费）",
+        "world/inventory/RequiemEvolveMenu.java rollRiven — 裂罅循环：未揭示不处理；按「循环」才洗，先生成再扣连洗 N 次的总价，原卡 setCycle(+N)；1 张进结果格当预览，多张留在菜单里挑（pickRiven / dismissRiven），关界面作废、不退",
         "world/inventory/RequiemEvolveMenu.java:340-353 — 开光：!hasBase 且数量 1，扣 1 个裂罅碎块，立即出结果",
         "world/inventory/RequiemEvolveMenu.java:471-494 — 左格接受任何数量为 1 的物品（未开光即可开光）",
         "world/inventory/RequiemEvolveMenu.java:303-338 — 塑形块/暗影塑形块立刻扣 1",

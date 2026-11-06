@@ -219,11 +219,11 @@
             },
             {
               "if": "!module:riven_weapon_module",
-              "text": "武器裂罅也在其中，未揭示的武器裂罅无法揭示，已有的拿去循环只会<b>白白扣掉赤毒</b>。"
+              "text": "武器裂罅也在其中，未揭示的武器裂罅无法揭示，已有的也<b>循环不了</b>（不扣赤毒）。"
             },
             {
               "if": "!module:riven_warframe_module",
-              "text": "战甲裂罅也在其中，未揭示的战甲裂罅无法揭示，已有的拿去循环只会<b>白白扣掉赤毒</b>。"
+              "text": "战甲裂罅也在其中，未揭示的战甲裂罅无法揭示，已有的也<b>循环不了</b>（不扣赤毒）。"
             }
           ]
         },
@@ -531,7 +531,7 @@
         "module/weapon/WeaponModuleHandler.java:161-183 与 module/ModulePlacementValidator.java:83-104 — 运行时与安装都不检查禁用，已有的照常生效",
         "world/inventory/RequiemEvolveMenu.java:228-236 — 升级不检查禁用（「能升级」只在等级系统开启时写）",
         "item/module/weapon/WeaponRivenModule.java:134-136,265-268,596-599 — 裂罅禁用：揭示失败、cycleModule 返回空",
-        "world/inventory/RequiemEvolveMenu.java:262-274,286-297 — 循环先扣赤毒再生成，生成为空也不退",
+        "world/inventory/RequiemEvolveMenu.java rollRiven — 先生成再扣赤毒，裂罅禁用时 cycleModule 为空，直接回 RIVEN_DISABLED、不扣",
         "config/ModuleConfig.java:149-188,272-285 — attributeValueRanges 格式 名:min:max，clamp 到边界",
         "module/weapon/WeaponModuleHandler.java:170-173 与 module/warframe/WarframeModuleHandler.java:234-236 — 先 clamp 原值再乘等级倍率（等级系统关闭时倍率恒为 1，ModuleLevelHelper.java:102-108）",
         "base/item/AbstractWeaponModule.java:120-121 — 卡面显示不经过 clamp",
@@ -886,7 +886,7 @@
         "item/module/weapon/WeaponPrimeModule.java:108,222 — 狂暴 Prime 与镀层 狂暴同 type fury 同品质档",
         "module/level/ModuleLevelHelper.java:280-313 — 揭示时按精通赋等级；关闭 enableMasteryOnReveal 时一律 1 级",
         "capability/RequiemCard.java:398-406 — 精通只记最高值",
-        "world/inventory/RequiemEvolveMenu.java:266-270,290-294 — 裂罅循环保留原等级",
+        "world/inventory/RequiemEvolveMenu.java rollRiven — 裂罅循环的候选保留原卡等级",
         "模组等级关闭时用正面描述，不写「已关闭 / 不适用」；精通继承关闭时不单写替代块（新揭示通常 1 级已在正文和 module_overview 里写明）"
       ]
     },
@@ -1141,17 +1141,18 @@
         {
           "type": "steps",
           "items": [
-            "把揭示好的裂罅放进{item:kuvalich:requiem_evolve}的左格，材料格放足量的{item:kuvalich:kuva}，赤毒的来源见[[start/materials]]。",
-            "右格立刻出现一张新词条的卡，<w>这一次的赤毒这时就已付掉</w>，原卡的循环次数 +1。",
-            "想要新词条，就取走右格的卡，原卡随之消失。",
-            "想留旧词条，就把左格的原卡拿回来，或者直接关掉界面，新卡随之作废，付掉的赤毒不退。"
+            "把揭示好的裂罅放进{item:kuvalich:requiem_evolve}的左格，材料格放上{item:kuvalich:kuva}，赤毒的来源见[[start/materials]]。",
+            "在炉膛下面的 <t>[−] ×1 [+]</t> 调好一次洗几张（1～10，滚轮也能调），按<t>循环</t>。<w>这时才付赤毒</w>，洗几张付几张的钱，原卡的循环次数也加几。",
+            "洗 1 张：右格出现新卡，右栏逐条写着每条词条涨了还是跌了。满意就按<t>换上</t>，新卡留在台上还能接着洗，直接取走右格的卡也行，原卡随之消失；不满意就按<t>再循环</t>，这张作废，再付一次。",
+            "洗多张：候选一张张摆出来，每张底下的色点<g>绿</g>是比原卡好、<b>红</b>是变差或负面、紫是原卡没有的新词条。鼠标停在哪张，右栏就对照哪张，点一下选中，再按<t>换上第 N 张</t>，其余几张作废。",
+            "一张都不想要，就按<t>都不要</t>、把左格的原卡拿回来，或者直接关掉界面，原卡留着，付掉的赤毒不退。"
           ]
         },
         {
           "type": "tip",
           "style": "info",
-          "title": "每次预览都要付费",
-          "text": "每出一次预览就付一次赤毒。预览出来后再往材料格里添赤毒或取出一些，只要剩下的够付，就会按新数量重新预览，再付一次，洗几次付几次。预览一出来，材料格就别碰了，除非你打算再洗一次。"
+          "title": "赤毒怎么扣",
+          "text": "材料格里的赤毒先扣，不够的从背包里扣，扣完再从背包把材料格补满，所以背包里的赤毒也算数，不用一组组往里放。一次洗几张的价格是一张张连着洗的总价，每张按当时的循环次数算，和分开洗一样贵。挑候选的时候左格和材料格锁着，选好或者都不要以后才能动；单张的预览出来以后，往材料格添赤毒、取赤毒都不会动那张预览。"
         },
         {
           "type": "h",
@@ -1215,14 +1216,14 @@
           "style": "bad",
           "if": "!module:riven_weapon_module",
           "title": "武器裂罅揭示不了",
-          "text": "赤毒玄骸仍可能掉未揭示的武器裂罅，只是右键揭示不了。<b>别拿已有的武器裂罅去循环</b>，赤毒照扣，新卡却出不来，用不上的拿去[[weapons/requiem_recast|安魂之铸]]分解。"
+          "text": "赤毒玄骸仍可能掉未揭示的武器裂罅，只是右键揭示不了。已有的武器裂罅也循环不了，按了<t>循环</t>不扣赤毒、什么也不出，用不上的拿去[[weapons/requiem_recast|安魂之铸]]分解。"
         },
         {
           "type": "tip",
           "style": "bad",
           "if": "!module:riven_warframe_module",
           "title": "战甲裂罅揭示不了",
-          "text": "赤毒玄骸仍可能掉未揭示的战甲裂罅，只是右键揭示不了。<b>别拿已有的战甲裂罅去循环</b>，赤毒照扣，新卡却出不来，用不上的拿去[[weapons/requiem_recast|安魂之铸]]分解。"
+          "text": "赤毒玄骸仍可能掉未揭示的战甲裂罅，只是右键揭示不了。已有的战甲裂罅也循环不了，按了<t>循环</t>不扣赤毒、什么也不出，用不上的拿去[[weapons/requiem_recast|安魂之铸]]分解。"
         },
         {
           "type": "h",
@@ -1254,7 +1255,7 @@
         "item/module/weapon/WeaponRivenModule.java:247-256,271 — 卡名前缀 MeleeRiven / RemoteRiven / OmniRiven",
         "item/module/warframe/WarframeRivenModule.java:115 — 战甲裂罅卡名 Warframe 开头",
         "item/module/weapon/WeaponRivenModule.java:146-152 — 倾向：2.5% 为 5；否则 5% 为 4；其余 1~3 均分",
-        "world/inventory/RequiemEvolveMenu.java:256-278 — 循环沿用 trend 与 mode，并保留等级",
+        "world/inventory/RequiemEvolveMenu.java rollRiven — 候选沿用原卡的 trend 与 mode，并保留等级",
         "item/module/weapon/WeaponRivenModule.java:285-315 — 布局 getInt(0,3) 四选一及系数；倾向正/负系数",
         "item/module/weapon/WeaponRivenModule.java:345-350,395-399 — 正面浮动 0.9~1.1、负面 0.8~1.2，乘 moduleAttributeMultiplier（倍率为 1 时公式里省略，≠1 时单独一句补上）",
         "item/module/weapon/WeaponRivenModule.java:410-411 — 近战/远程伤害基准 1.65",
@@ -1264,10 +1265,10 @@
         "item/module/weapon/WeaponRivenModule.java:193-245 — 近战/远程模式过滤对方专属词条",
         "item/module/warframe/WarframeRivenModule.java:161-164,195 — 战甲裂罅去掉固定值词条；负面排除 killStack",
         "module/ModulePlacementValidator.java:95-98,145-148 — 每件只能 1 张裂罅",
-        "world/inventory/RequiemEvolveMenu.java:205-210 — 裂罅 + 赤毒 → 循环",
-        "world/inventory/RequiemEvolveMenu.java:262-274,286-297 — 预览时立即扣赤毒并给原卡循环次数 +1",
-        "world/inventory/RequiemEvolveMenu.java:163-190,397-400,432-450 — 取走结果时原卡清空；拿走原卡或关界面则结果作废，材料不退",
-        "world/inventory/RequiemEvolveMenu.java:168-199 checkAndProcessCrafting — 预览中材料格数量一变：inputChanged → 清掉预览 → 立即 processCrafting 重新循环、再付一次（原卡循环次数再 +1）；材料拿空则只清预览。这是设计（每次洗词条都付费），按规则写，不写成警告",
+        "world/inventory/RequiemEvolveMenu.java processCrafting — 裂罅 + 赤毒不自动洗；handleRivenRequest — 界面按「循环」才洗（1~10 张）",
+        "world/inventory/RequiemEvolveMenu.java rollRiven / rivenCyclePrice — 先生成 N 张、再扣连洗 N 次的总价（每次按当时次数），原卡循环次数 +N，候选都记成洗完后的次数；payKuva — 先扣材料格再扣背包 36 格，扣完从背包补满材料格",
+        "world/inventory/RequiemEvolveMenu.java onResultTaken / swapRivenPreview / pickRiven / dismissRiven / removed — 取走预览或换上时原卡销毁；多张挑一张换进物品格；都不要、拿走原卡或关界面则新卡作废，赤毒不退",
+        "world/inventory/RequiemEvolveMenu.java checkAndProcessCrafting — 有裂罅预览时只要原卡还在就保留预览（动材料格不重洗）；挑选中 WeaponSlot / MaterialSlot 的 mayPickup、mayPlace 和 quickMoveStack 都拦",
         "entity/KuvaMasterEntity.java:1127-1129 与 item/module/weapon/WeaponRivenModule.java:116-132 — 玄骸掉的未揭示裂罅不检查禁用；world/inventory/RequiemRecastMenu.java:397-420,463-505 — 分解不检查禁用",
         "item/module/weapon/WeaponUncommonModule.java:328 — 白银档也有一张带腐蚀的卡，所以写「复合元素主要在黄金 / Prime」",
         "item/module/warframe/WarframeRivenModule.java:186-207 — 战甲裂罅负面只排除 killStack（战甲没有元素词条）",
