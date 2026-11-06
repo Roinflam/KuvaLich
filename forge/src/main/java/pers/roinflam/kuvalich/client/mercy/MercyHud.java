@@ -111,9 +111,13 @@ public final class MercyHud {
     public static final float CELL_DX = 0.111F;
     public static final float CELL_SIZE = 0.070F;
     public static final float CELL_RING_D = 0.056F;
+    /**
+     * 格下小点：直径 0.013H（1080p 约 14 像素，早先 0.0085H 只有 9 像素、看不清是几颗）。点加光晕、加斜杠
+     * 上下都夹在格子底（0.870H）和托架板底那道线（0.906H）之间；横向最外一颗离中线 0.144H，碰不到折下来的上沿亮线（0.178H 起）
+     */
     public static final float DOT_Y = 0.887F;
-    public static final float DOT_DX = 0.0222F;
-    public static final float DOT_D = 0.0085F;
+    public static final float DOT_DX = 0.026F;
+    public static final float DOT_D = 0.013F;
 
     private static final float PLATE_HW = 0.178F;
     private static final float PLATE_TOP = 0.795F;

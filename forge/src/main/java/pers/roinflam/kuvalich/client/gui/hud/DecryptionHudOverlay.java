@@ -24,6 +24,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import pers.roinflam.kuvalich.client.ClientPacketHandlers;
+import pers.roinflam.kuvalich.client.fx.FxCurve;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
@@ -51,6 +52,10 @@ import java.util.Locale;
  * <p>揭示一条密语时：菱晶先走满，菱内的东西淡掉、只留一圈淡外框慢慢放大，这张卡自己的符号在原位 750 ms 淡入，
  * 下面换成卡名；揭示第三条时换成三枚并排；破解（成功终结玄骸）时三枚并排、菱框灌满赤毒，名字行写刚终结的那只。
  * 这三种都有自己的声音，进度增长本身不出声。</p>
+ *
+ * <p>破解那一排比「全部揭示」的大一半（1080p 下菱框约 68 像素高），每枚下面三颗次数点是顶这一枚的那张卡还剩几次：
+ * 还剩的亮粉、这次用掉的那颗 {@link #BROKEN_SLASH_MS} 起变猩红并划一道斜杠、早就用掉的暗灰（和处决时三格下面的小点同一套画法），
+ * 没有对应卡的那枚不画点。「密语已破解」和名字行跟着往下让，墨烟也跟着加长。</p>
  *
  * <p>位置：中心固定在屏幕高 0.143 处，屏幕上方有 Boss 条（原版的、别的模组的都算）时往下让到最下面那条之下 14 个单位，
  * 显示中 Boss 条出现、消失时 250 ms 缓过去。界面隐藏（F1）、怜悯之击运镜中、开着玄骸档案时不画。</p>
@@ -97,6 +102,13 @@ public final class DecryptionHudOverlay {
     /** 三枚并排：菱框半高（× a）、间距（× W）；符号高和菱框高之比跟单枚揭示时一样（0.075H : 2.8a） */
     private static final float ROW_HALF = 0.7F, ROW_STEP = 0.05F;
     private static final float ROW_SIGIL = SIGIL_H / (2.8F * HALF_H) * 2.0F * ROW_HALF;
+    /** 破解那一排：菱框半高（× a）、间距（× W）、符号高，都是全部揭示那一排的 1.5 倍 */
+    private static final float BROKEN_ROW_HALF = ROW_HALF * 1.5F, BROKEN_ROW_STEP = ROW_STEP * 1.5F;
+    private static final float BROKEN_ROW_SIGIL = ROW_SIGIL * 1.5F;
+    /** 破解的次数点：点心在菱框下角之下多远、直径、点距（× H）；斜杠半长是半径的几倍 */
+    private static final float BROKEN_DOT_GAP = 0.016F, BROKEN_DOT_D = 0.013F, BROKEN_DOT_DX = 0.022F, BROKEN_SLASH = 1.7F;
+    /** 破解时的标签顶（× H），比 {@link #LABEL_DY} 低出来的一截是给放大的菱框和次数点让的 */
+    private static final float BROKEN_LABEL_DY = 0.068F;
 
     // ==================== 节奏（毫秒） ====================
 
@@ -109,6 +121,8 @@ public final class DecryptionHudOverlay {
     private static final long REVEAL_FILL_END = 600L, REVEAL_BODY_END = 900L, REVEAL_SIGIL_MS = 750L, REVEAL_HOLD_MS = 3000L;
     /** 破解：一起淡入、停留 */
     private static final long BROKEN_IN_MS = 750L, BROKEN_HOLD_MS = 3000L;
+    /** 破解：这次用掉的那颗次数点从这一刻起变红、划斜杠，划完用多久（淡入走完再停一下才划，看得清是哪一颗） */
+    private static final long BROKEN_SLASH_MS = 950L, BROKEN_SLASH_DRAW = 160L;
     /** 被新内容顶掉的那一版淡出 */
     private static final long RETIRE_MS = 250L;
     /** Boss 条变化时位置缓过去 */
@@ -148,6 +162,8 @@ public final class DecryptionHudOverlay {
         int stage;
         int revealedCard = -1;
         final int[] riddles = {-1, -1, -1};
+        /** 破解时三枚各自那张卡扣完剩几次（0 = 这次用完，−1 = 没有卡） */
+        final int[] usesAfter = {-1, -1, -1};
         /** 破解时的名字（已转大写） */
         String brokenName = "";
 
@@ -168,6 +184,7 @@ public final class DecryptionHudOverlay {
             stage = o.stage;
             revealedCard = o.revealedCard;
             System.arraycopy(o.riddles, 0, riddles, 0, 3);
+            System.arraycopy(o.usesAfter, 0, usesAfter, 0, 3);
             brokenName = o.brokenName;
         }
 
@@ -260,13 +277,15 @@ public final class DecryptionHudOverlay {
         DecryptionHudPacket full = ClientPacketHandlers.currentDecryption();
         int revealed = -1;
         int[] riddles = null;
+        int[] uses = null;
         String name = "";
         if (full != null) {
             revealed = full.revealedCard();
             riddles = full.riddles();
+            uses = full.usesAfter();
             name = full.lichName();
         }
-        show(eventType, level, progress, threshold, added, revealed, riddles, name);
+        show(eventType, level, progress, threshold, added, revealed, riddles, name, uses);
     }
 
     /**
@@ -275,9 +294,10 @@ public final class DecryptionHudOverlay {
      * @param revealedCard 这次新揭示的卡 id，没有为 −1
      * @param riddles      三枚密语（卡 id，−1 为未揭示），可以为 {@code null}
      * @param lichName     破解时刚终结的玄骸名字
+     * @param usesAfter    破解时三枚各自那张卡扣完剩几次（0 = 这次用完，−1 = 没有卡），可以为 {@code null}
      */
     public static void show(int eventType, int level, int progress, int threshold, int added,
-                            int revealedCard, int[] riddles, String lichName) {
+                            int revealedCard, int[] riddles, String lichName, int[] usesAfter) {
         long now = clock();
         float p = threshold > 0 ? Mth.clamp(progress / (float) threshold, 0.0F, 1.0F) : (level >= 3 ? 1.0F : 0.0F);
         int stage = Mth.clamp(level, 0, 3);
@@ -285,6 +305,7 @@ public final class DecryptionHudOverlay {
         if (eventType == DecryptionHudPacket.EVENT_COMPLETE) {
             Panel n = begin(now, MODE_BROKEN, 3);
             copyRiddles(riddles, n.riddles);
+            copyRiddles(usesAfter, n.usesAfter);
             n.brokenName = lichName == null ? "" : lichName.toUpperCase(Locale.ROOT);
             n.fadeInAt = now;
             n.fadeInFrom = 0.0F;
@@ -415,6 +436,7 @@ public final class DecryptionHudOverlay {
         n.progTo = 0.0F;
         n.progAt = now;
         n.riddles[0] = n.riddles[1] = n.riddles[2] = -1;
+        n.usesAfter[0] = n.usesAfter[1] = n.usesAfter[2] = -1;
     }
 
     private static boolean isShowcase(int mode) {
@@ -489,7 +511,9 @@ public final class DecryptionHudOverlay {
 
         float a = Math.max(3.0F, Math.round(HALF_H * height));
         float cx = width * 0.5F;
-        float cy = centerY(now, height, a);
+        // 给 Boss 条让位按画得最高的那一版算：破解那一排的菱框比单枚菱晶高一点
+        boolean broken = (CUR.live && CUR.mode == MODE_BROKEN) || (OLD.live && OLD.mode == MODE_BROKEN);
+        float cy = centerY(now, height, broken ? Math.max(a, BROKEN_ROW_HALF * a) : a);
         float lw = GuiShapes.pixels(g, GuiShapes.lineWidthPx());
 
         if (OLD.live) {
@@ -503,10 +527,14 @@ public final class DecryptionHudOverlay {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    /** 中心高度：固定在 0.143H，有 Boss 条时让到它下面；显示中目标变了 250 ms 缓过去 */
-    private static float centerY(long now, int height, float a) {
+    /**
+     * 中心高度：固定在 0.143H，有 Boss 条时让到它下面；显示中目标变了 250 ms 缓过去
+     *
+     * @param top 从中心往上画到多高（菱晶半高；破解那一排是放大后菱框的半高）
+     */
+    private static float centerY(long now, int height, float top) {
         int bottom = Math.max(BossBarTracker.bottomY(), debugBossBottom);
-        float target = Math.max(Math.round(CY * height), bottom > 0 ? bottom + BOSS_GAP + a : 0.0F);
+        float target = Math.max(Math.round(CY * height), bottom > 0 ? bottom + BOSS_GAP + top : 0.0F);
         if (cyFrom < 0.0F || cyTo < 0.0F) {
             cyFrom = cyTo = target;
             cyAt = now;
@@ -537,12 +565,21 @@ public final class DecryptionHudOverlay {
         float grow = 0.0F;
         if (pn.mode == MODE_REVEAL || pn.mode == MODE_REVEAL_ALL) {
             grow = MurmurTriangle.easeInOutSine((t - REVEAL_BODY_END) / (float) REVEAL_SIGIL_MS);
-        } else if (pn.mode == MODE_ALL || (pn.mode == MODE_BROKEN ? !pn.brokenName.isEmpty() : ClientLichState.hasLich())) {
+        } else if (pn.mode == MODE_ALL || pn.mode == MODE_BROKEN || ClientLichState.hasLich()) {
             grow = 1.0F;
         }
         float sw = width * Mth.lerp(grow, SMOKE_W, SMOKE_W_REVEAL);
         float sh = height * Mth.lerp(grow, SMOKE_H, SMOKE_H_REVEAL);
         float sy = cy + height * Mth.lerp(grow, SMOKE_DY, SMOKE_DY_REVEAL);
+        if (pn.mode == MODE_BROKEN) {
+            // 破解那一排更宽更高、标签往下让了一截：墨烟加宽，下沿跟着标签往下让，上沿按菱框多出来的高度往上长，
+            // 不然放大的符号上半截露在烟外，亮天上看不清
+            float shift = (BROKEN_LABEL_DY - LABEL_DY) * height;
+            float up = 2.0F * (BROKEN_ROW_HALF - ROW_HALF) * a;
+            sw = Math.max(sw, width * (2.0F * BROKEN_ROW_STEP + 0.12F));
+            sh += shift + up;
+            sy += (shift - up) * 0.5F;
+        }
         texQuad(g, SMOKE, cx - sw * 0.5F, sy - sh * 0.5F, cx + sw * 0.5F, sy + sh * 0.5F, 0xFFFFFF, alpha);
         float gs = width * GLOW_SIZE * 0.5F;
         texQuad(g, GLOW, cx - gs, cy - gs, cx + gs, cy + gs, FxPalette.KUVA_DEEP, GLOW_ALPHA * alpha);
@@ -564,8 +601,8 @@ public final class DecryptionHudOverlay {
                 drawLichName(g, font, cx, labelTop, ts, height, alpha);
             }
             case MODE_BROKEN -> {
-                drawRow(g, pn.riddles, true, cx, cy, a, width, lw, alpha);
-                float labelTop = cy + LABEL_DY * height;
+                drawBrokenRow(g, pn, t, cx, cy, a, width, height, lw, alpha);
+                float labelTop = cy + BROKEN_LABEL_DY * height;
                 drawText(g, font, label(KEY_BROKEN), cx, labelTop, ts, FxPalette.TEXT_MID, alpha, true, 0.0F);
                 if (!pn.brokenName.isEmpty()) {
                     drawText(g, font, pn.brokenName, cx, labelTop + 9.0F * ts + NAME_GAP * height, ts,
@@ -620,13 +657,64 @@ public final class DecryptionHudOverlay {
         drawText(g, font, label(KEY_LABEL), cx, cy + CARD_SUB_DY * height, ts, FxPalette.TEXT_MID, in * alpha, true, 0.0F);
     }
 
-    /** 三枚并排：破解时菱框灌满赤毒、符号只描浅粉白线；全部揭示时菱框是空的、符号是卡面的样子 */
+    /**
+     * 破解那一排：放大的三枚 + 每枚下面的次数点
+     *
+     * @param t 收到包后多少毫秒
+     */
+    private static void drawBrokenRow(GuiGraphics g, Panel pn, long t, float cx, float cy, float a, int width, int height,
+                                      float lw, float alpha) {
+        float hh = BROKEN_ROW_HALF * a;
+        float step = BROKEN_ROW_STEP * width;
+        drawRow(g, pn.riddles, true, cx, cy, hh, step, BROKEN_ROW_SIGIL * a, lw, alpha);
+
+        float y = cy + hh + BROKEN_DOT_GAP * height;
+        float r = BROKEN_DOT_D * height * 0.5F;
+        float dx = BROKEN_DOT_DX * height;
+        float slash = Mth.clamp((t - BROKEN_SLASH_MS) / (float) BROKEN_SLASH_DRAW, 0.0F, 1.0F);
+        GuiShapes.begin(g);
+        for (int i = 0; i < 3; i++) {
+            int left = pn.usesAfter[i];
+            if (left < 0) {
+                continue;
+            }
+            // 和上面的菱框共用同一个横坐标
+            float x0 = cx + (i - 1) * step;
+            for (int j = 0; j < 3; j++) {
+                float x = x0 + (j - 1) * dx;
+                if (j == left && slash > 0.0F) {
+                    // 这次用掉的那颗：划斜杠的同时由亮粉变猩红；划之前照还剩的画
+                    GuiShapes.disc(g, x, y, r, GuiShapes.argb(FxCurve.lerpColor(FxPalette.KUVA_PALE, FxPalette.KUVA, slash), alpha));
+                    float s = r * BROKEN_SLASH;
+                    GuiShapes.hairline(g, x - s, y + s, x - s + 2.0F * s * slash, y + s - 2.0F * s * slash, lw,
+                            GuiShapes.argb(FxPalette.KUVA_PALE, alpha));
+                } else if (j <= left) {
+                    GuiShapes.disc(g, x, y, r + lw, GuiShapes.argb(FxPalette.KUVA, 0.45F * alpha));
+                    GuiShapes.disc(g, x, y, r, GuiShapes.argb(FxPalette.KUVA_PALE, alpha));
+                } else {
+                    GuiShapes.disc(g, x, y, r, GuiShapes.argb(FxPalette.ASH, 0.35F * alpha));
+                }
+            }
+        }
+        GuiShapes.end();
+    }
+
+    /** 三枚并排（全部揭示那一排的尺寸） */
     private static void drawRow(GuiGraphics g, int[] riddles, boolean broken, float cx, float cy, float a, int width,
                                 float lw, float alpha) {
-        float hh = ROW_HALF * a;
+        drawRow(g, riddles, broken, cx, cy, ROW_HALF * a, ROW_STEP * width, ROW_SIGIL * a, lw, alpha);
+    }
+
+    /**
+     * 三枚并排：破解时菱框灌满赤毒、符号只描浅粉白线；全部揭示时菱框是空的、符号是卡面的样子
+     *
+     * @param hh    菱框半高
+     * @param step  相邻两枚的间距
+     * @param sigil 符号高
+     */
+    private static void drawRow(GuiGraphics g, int[] riddles, boolean broken, float cx, float cy, float hh, float step,
+                                float sigil, float lw, float alpha) {
         float hw = hh * GuiShapes.DIAMOND_ASPECT;
-        float step = ROW_STEP * width;
-        float sigil = ROW_SIGIL * a;
         GuiShapes.begin(g);
         for (int i = 0; i < 3; i++) {
             float x = cx + (i - 1) * step;

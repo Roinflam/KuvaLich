@@ -175,7 +175,7 @@ public final class SmokeTests {
 
         // ---- 解密进度（老签名的构造和新增字段）
         DecryptionHudPacket reveal = new DecryptionHudPacket(DecryptionHudPacket.EVENT_REVEAL, 2, 5, 90, 12,
-                5, new int[]{3, -1, 6}, "");
+                5, new int[]{3, -1, 6}, "", null);
         buf = newBuf();
         DecryptionHudPacket.encode(reveal, buf);
         DecryptionHudPacket r2 = DecryptionHudPacket.decode(buf);
@@ -184,18 +184,20 @@ public final class SmokeTests {
         h.assertTrue(r2.revealedCard() == 5 && Arrays.equals(r2.riddles(), new int[]{3, -1, 6}) && r2.lichName().isEmpty(),
                 "解密进度：揭示卡号和密语");
         DecryptionHudPacket done = new DecryptionHudPacket(DecryptionHudPacket.EVENT_COMPLETE, 0, 0, 60, 0,
-                -1, new int[]{3, 1, 6}, "Drokag Tuzz");
+                -1, new int[]{3, 1, 6}, "Drokag Tuzz", new int[]{2, 0, -1});
         buf = newBuf();
         DecryptionHudPacket.encode(done, buf);
         DecryptionHudPacket done2 = DecryptionHudPacket.decode(buf);
         h.assertTrue("Drokag Tuzz".equals(done2.lichName()) && Arrays.equals(done2.riddles(), new int[]{3, 1, 6}),
                 "解密进度：完成时带玄骸名字");
+        h.assertTrue(Arrays.equals(done2.usesAfter(), new int[]{2, 0, -1}), "解密进度：完成时带每张卡剩几次（0 = 用完，-1 = 没卡）");
         h.assertTrue(buf.readableBytes() == 0, "解密进度：解码应当读完所有字节");
         DecryptionHudPacket legacy = new DecryptionHudPacket(DecryptionHudPacket.EVENT_PROGRESS, 1, 3, 40, 2);
         buf = newBuf();
         DecryptionHudPacket.encode(legacy, buf);
         DecryptionHudPacket legacy2 = DecryptionHudPacket.decode(buf);
-        h.assertTrue(legacy2.revealedCard() == -1 && Arrays.equals(legacy2.riddles(), new int[]{-1, -1, -1}),
+        h.assertTrue(legacy2.revealedCard() == -1 && Arrays.equals(legacy2.riddles(), new int[]{-1, -1, -1})
+                        && Arrays.equals(legacy2.usesAfter(), new int[]{-1, -1, -1}),
                 "解密进度：旧构造的揭示信息应当是「没有」");
         h.succeed();
     }

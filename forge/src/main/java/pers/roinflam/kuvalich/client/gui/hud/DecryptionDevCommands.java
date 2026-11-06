@@ -23,7 +23,8 @@ import pers.roinflam.kuvalich.utils.Reference;
  * <ul>
  *   <li>{@code /kuvafxc decrypt <进度 0~1> <已揭示 0~3>}：按收到一个普通进度包的样子弹一次（已揭示 3 是三枚并排）；</li>
  *   <li>{@code /kuvafxc decrypt reveal <卡 id> [阶段 1~3]}：揭示一枚（阶段 3 是揭示第三枚、换成三枚并排）；</li>
- *   <li>{@code /kuvafxc decrypt broken [名字]}：破解；</li>
+ *   <li>{@code /kuvafxc decrypt broken [名字]}：破解（三张卡扣完剩 2、1、0 次）；
+ *       {@code /kuvafxc decrypt broken uses <剩几次> <剩几次> <剩几次>}：指定三枚各自那张卡扣完剩几次（−1 = 没有卡）；</li>
  *   <li>{@code /kuvafxc decrypt freeze <毫秒>|off}：把画面定在这一版收到包后的第几毫秒，逐帧截图对淡入曲线；</li>
  *   <li>{@code /kuvafxc decrypt hold on|off}：一直停着不淡出；</li>
  *   <li>{@code /kuvafxc decrypt boss <底 y>|off}：假装屏幕上方有 Boss 条、底在这里（GUI 坐标），看 HUD 往下让；</li>
@@ -39,6 +40,8 @@ public final class DecryptionDevCommands {
 
     private static final int[] DEMO = {6, 2, 4};
     private static final int THRESHOLD = 100;
+    /** 破解演示的三张卡扣完剩几次：一张还剩 2、一张剩 1、一张这次用完 */
+    private static final int[] DEMO_USES = {2, 1, 0};
 
     private DecryptionDevCommands() {
     }
@@ -63,9 +66,17 @@ public final class DecryptionDevCommands {
                                         IntegerArgumentType.getInteger(ctx, "card"),
                                         IntegerArgumentType.getInteger(ctx, "stage"))))))
                 .then(Commands.literal("broken")
-                        .executes(ctx -> broken(ctx.getSource(), "Drokag Tuzz"))
+                        .executes(ctx -> broken(ctx.getSource(), "Drokag Tuzz", DEMO_USES))
+                        .then(Commands.literal("uses")
+                                .then(Commands.argument("u1", IntegerArgumentType.integer(-1, 3))
+                                        .then(Commands.argument("u2", IntegerArgumentType.integer(-1, 3))
+                                                .then(Commands.argument("u3", IntegerArgumentType.integer(-1, 3))
+                                                        .executes(ctx -> broken(ctx.getSource(), "Drokag Tuzz", new int[]{
+                                                                IntegerArgumentType.getInteger(ctx, "u1"),
+                                                                IntegerArgumentType.getInteger(ctx, "u2"),
+                                                                IntegerArgumentType.getInteger(ctx, "u3")}))))))
                         .then(Commands.argument("name", StringArgumentType.greedyString())
-                                .executes(ctx -> broken(ctx.getSource(), StringArgumentType.getString(ctx, "name")))))
+                                .executes(ctx -> broken(ctx.getSource(), StringArgumentType.getString(ctx, "name"), DEMO_USES))))
                 .then(Commands.literal("freeze")
                         .then(Commands.literal("off").executes(ctx -> freeze(ctx.getSource(), -1L)))
                         .then(Commands.argument("ms", IntegerArgumentType.integer(0, 60000))
@@ -108,20 +119,20 @@ public final class DecryptionDevCommands {
     private static int progress(CommandSourceStack src, float p, int revealed) {
         int amount = Math.round(p * THRESHOLD);
         DecryptionHudOverlay.show(DecryptionHudPacket.EVENT_PROGRESS, revealed, amount,
-                revealed >= 3 ? -1 : THRESHOLD, 1, -1, demo(revealed), "");
+                revealed >= 3 ? -1 : THRESHOLD, 1, -1, demo(revealed), "", null);
         return ok(src, "decrypt progress " + p + " revealed " + revealed);
     }
 
     private static int reveal(CommandSourceStack src, int card, int stage) {
         int[] r = demo(stage);
         r[stage - 1] = card;
-        DecryptionHudOverlay.show(DecryptionHudPacket.EVENT_REVEAL, stage, 0, stage >= 3 ? -1 : THRESHOLD, 1, card, r, "");
+        DecryptionHudOverlay.show(DecryptionHudPacket.EVENT_REVEAL, stage, 0, stage >= 3 ? -1 : THRESHOLD, 1, card, r, "", null);
         return ok(src, "decrypt reveal card " + card + " stage " + stage);
     }
 
-    private static int broken(CommandSourceStack src, String name) {
-        DecryptionHudOverlay.show(DecryptionHudPacket.EVENT_COMPLETE, 0, 0, THRESHOLD, 0, -1, demo(3), name);
-        return ok(src, "decrypt broken " + name);
+    private static int broken(CommandSourceStack src, String name, int[] uses) {
+        DecryptionHudOverlay.show(DecryptionHudPacket.EVENT_COMPLETE, 0, 0, THRESHOLD, 0, -1, demo(3), name, uses);
+        return ok(src, "decrypt broken " + name + " uses " + uses[0] + " " + uses[1] + " " + uses[2]);
     }
 
     private static int freeze(CommandSourceStack src, long ms) {

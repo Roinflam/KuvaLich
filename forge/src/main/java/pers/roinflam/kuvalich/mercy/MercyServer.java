@@ -1000,7 +1000,7 @@ public final class MercyServer {
 
     private static void successComplete(Exec e) {
         if (e.success != null && !e.executor.hasDisconnected()) {
-            DecryptionHudPacket.sendComplete(e.executor, e.success.riddles(), e.success.lichName());
+            DecryptionHudPacket.sendComplete(e.executor, e.success.riddles(), e.success.usesAfter(), e.success.lichName());
         }
     }
 

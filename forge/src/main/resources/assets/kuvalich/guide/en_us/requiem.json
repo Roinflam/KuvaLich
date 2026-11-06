@@ -490,7 +490,7 @@
           "items": [
             "Each <g>successful decryption</g> takes 1 use from each of the three cards in the Gate. One set lasts at most <t>3</t> successes.",
             "<g>A failed decryption costs no durability</g>. Inserting, removing or reordering cards costs nothing either, so testing orders is free.",
-            "After a success, cards with uses left go back to your inventory; if it is full, they drop where the [[enemies/kuva_master|Lich]] died.",
+            "After a success, cards with uses left <g>stay in their slots in the Requiem Gate</g>, ready for the next [[enemies/kuva_master|Lich]] without setting them up again; a card that runs out simply vanishes. The next answer is rolled anew, so the cards left there may no longer be right; rearrange them by the new clues.",
             "Requiem Cards don't stack; one per slot."
           ]
         },
@@ -757,7 +757,7 @@
             },
             [
               "Unspent Requiem Cards",
-              "Back to your inventory"
+              "Stay in the Requiem Gate for the next one"
             ]
           ]
         },
@@ -774,7 +774,7 @@
           "type": "tip",
           "style": "warn",
           "title": "Rewards drop where it falls",
-          "text": "<w>Don't finish it near lava, the void or deep water</w>. Apart from the cards that return to your inventory, every reward drops where the Lich falls."
+          "text": "<w>Don't finish it near lava, the void or deep water</w>. Every reward drops where the Lich falls."
         },
         {
           "type": "h",
@@ -789,7 +789,7 @@
               "if": "!cfg:kuva_lich.mercyEnabled",
               "text": "To get progress from your Lich without risking a failure, take one card out of the Gate first."
             },
-            "If your inventory is full, unspent Requiem Cards drop where the Lich falls.",
+            "After a successful decryption, unspent cards stay in the Gate and take no inventory space.",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
               "text": "An execution is judged by the cards in the Gate when it starts; swapping or adding cards partway through doesn't count, and an empty slot counts as wrong."

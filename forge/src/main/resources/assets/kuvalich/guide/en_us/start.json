@@ -1098,7 +1098,7 @@
             },
             [
               "Unbroken Requiem cards",
-              "Back to your inventory; each card lasts 3 successes"
+              "Stay in the Requiem Gate; each card lasts 3 successes"
             ],
             {
               "if": [
@@ -1114,7 +1114,7 @@
         },
         {
           "type": "p",
-          "text": "Apart from the cards that return to your inventory, rewards <w>drop where the Lich fell</w>. Pick up every last one, and quickly."
+          "text": "Rewards <w>drop where the Lich fell</w>. Pick up every last one, and quickly."
         },
         {
           "type": "h",

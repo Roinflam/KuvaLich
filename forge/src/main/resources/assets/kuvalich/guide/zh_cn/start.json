@@ -1212,7 +1212,7 @@
             },
             [
               "没用坏的安魂卡",
-              "回到背包，每张卡能撑过 3 次成功"
+              "留在灭骸之扉上接着用，每张卡能撑过 3 次成功"
             ],
             {
               "if": [
@@ -1228,7 +1228,7 @@
         },
         {
           "type": "p",
-          "text": "除了回到背包的安魂卡，其余奖励都<w>掉在玄骸倒下的地方</w>，尽快一件不落地捡回来。"
+          "text": "奖励都<w>掉在玄骸倒下的地方</w>，尽快一件不落地捡回来。"
         },
         {
           "type": "h",
@@ -1352,7 +1352,7 @@
         "entity/KuvaMasterEntity.java:979-1050 computeAndApplySuccess — 成功：赤毒武器和卡上 lichWeapon 同一种（玄骸手里握着的那种，下标越界才在 KUVA_WEAPONS 13 把里随机；等级、元素用卡上 getLichWeaponLevel / getLichWeaponType（幼体出现时定的；老存档没定过才按当前范围随机），KuvaWeaponUtil.getItem(item, type, level)）、玄骸之遗 1、赤毒 / 裂罅碎块 min~max、高级模组、通牒概率、归还没收",
         "entity/KuvaMasterEntity.java:1119-1130 rollAdvancedModule — masterPrimeModuleChance% Prime，否则裂罅",
         "entity/KuvaMasterEntity.java:1045 — requiemUltimatumDropChance（行级 if >0）；item/RequiemUltimatum.java:100-125 — 只召自己的玄骸，还没有玄骸时不消耗；成功时 capability/RequiemCard.java:569-585 endLichRound 清掉这只玄骸，下一只要再了结一只赤毒幼体才诞生（nemesis/LichDirector.java:224 birthFromLarvling），所以写「留着，下一只诞生后右键召它来」",
-        "capability/RequiemCard.java consumeCardsAndGetSurvivors + base/item/AbstractRequiemCard.java:27-28 — 卡耐久 3，没坏的回背包（entity/KuvaMasterEntity.java:1004-1017）",
+        "capability/RequiemCard.java wearPlacedCards + base/item/AbstractRequiemCard.java:27-28 — 卡耐久 3，没坏的原地扣 1 次留在扉上（entity/KuvaMasterEntity.java computeAndApplySuccess）",
         "entity/KuvaMasterEntity.java:997-1001 — 没收物品在成功时归还（行级 if 同没收开关）",
         "entity/KuvaMasterEntity.java:1064-1076 SuccessResult.deliver — 除幸存卡外奖励都 spawnItem 在死亡点（怜悯之击开着时，坐标在定案那一刻记下，就是它倒地的位置；处决只推迟掉落的时刻）",
         "item/module/weapon/WeaponCommonModule.java:62-67,621-641 — 掉落的是未揭示模组，主手右键揭示，新模组掉在脚下",
@@ -2428,7 +2428,7 @@
         "world/inventory/RequiemGateMenu.java:106-121,206-231 — 卡片读写都在玩家能力上，与方块无关",
         "capability/RequiemCard.java:291-304 + base/item/AbstractRequiemCard.java:27-28 — 仅成功时每张卡损耗 +1，耐久 3",
         "capability/RequiemCard.java:333-347 — 揭示的卡随机落位；item/RequiemRiddle.java:69 — 谜语给出顺序",
-        "entity/KuvaMasterEntity.java:816-850 resolveForOwner — 怜悯之击关着：死时按主人的卡判定（谁打最后一击不重要），主人不在线 / 不在同一世界 / 超过 RESOLVE_RANGE（:178，64 格）→ KILLED_OTHER 什么都不算；卡没放齐只给进度。mercy/MercyServer.java buildPlan — 怜悯之击开着：第 k 次处决捅 k 刀，空格算判错；判错 applyFailure kuvaLevel +1（entity/KuvaMasterEntity.java:964-968），玄骸逃走（MERCY_FAILED）。不再写「第一段还没解开就放满必定失败」：玄骸只在揭开第一条线索时诞生（nemesis/LichDirector.java:192-199），阶段 0 时没有自己的玄骸可打",
+        "entity/KuvaMasterEntity.java:816-850 resolveForOwner — 怜悯之击关着：死时按主人的卡判定（谁打最后一击不重要），主人不在线 / 不在同一世界 / 超过 RESOLVE_RANGE（:178，64 格）→ KILLED_OTHER 什么都不算；卡没放齐只给进度。mercy/MercyServer.java buildPlan — 怜悯之击开着：第 k 次处决捅 k 刀，空格算判错；判错 applyFailure kuvaLevel +1（entity/KuvaMasterEntity.java:964-968），玄骸逃走（MERCY_FAILED）。不写「第一段还没解开就放满必定失败」：关着时一条线索都没揭示（阶段 0）不判定、只给进度（resolveForOwner 的 getUnlockedCardStatus() > 0）",
         "entity/KuvaSlaveEntity.java:194-209 onKilled — 奴仆：怜悯之击 + mercyThralls 开着时只有处决收尾的死亡给进度和掉落，关着时 source.getEntity() 是玩家才给（弹射物 getEntity 是射手）；mercy/MercyServer.java:427-442 qualifiedFor — 奴仆资格人：直接打的玩家 → 宠物 / 召唤物（OwnableEntity）的主人 → 最近 5 秒打过它的任一玩家（recentPlayerAttacker，火烧、岩浆这类没有来源实体的伤害走这一步；赤毒敌人免疫摔落，base/entity/AbstractKuva.java hurt），都没有就谁也捅不了；:381-407 enterDowned 倒地 mercyDownedSeconds；:470-482 onDownedTimeout — 分段玄骸回满这一段起身、连着 3 次没人处决才 UNCLAIMED 逃走、奴仆 beginExpire 消散，都不给（不判定、不加等级）；玄骸资格人永远是主人（:428-430）",
         "capability/RequiemCard.java:379-393 reset + :569-585 endLichRound — 成功后答案、进度、玄骸等级清零，这只玄骸清掉，下一轮诞生新的",
         "entity/KuvaMasterEntity.java:81-105,211-283 — 适应抗性每层 5%、6 层封顶；2 秒窗口每命中 -5%、最低 0.4；单次超过最大生命 15% 的部分对数衰减",

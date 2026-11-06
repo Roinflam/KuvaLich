@@ -66,7 +66,6 @@ import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.RandomUtil;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
-import pers.roinflam.kuvalich.utils.InventoryUtil;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.world.inventory.RequiemGateMenu;
 
@@ -1052,7 +1051,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      * 玄骸死了：按<b>主人</b>的卡判定，谁打出最后一击不重要（帮打的人不吃亏，主人也不会被别人「代捅」掉三张卡）。
      *
      * <p>主人不在线、不在同一个世界、或离它超过 64 格：这次遭遇按「被别的东西打死」结束，不判定、不给进度。
-     * 三张卡放齐了就判定并记一行处决记录（直接判定，不是怜悯之击）；没放齐只给主人解密进度。</p>
+     * 三张卡放齐、且至少揭示了一条线索就判定并记一行处决记录（直接判定，不是怜悯之击）；没放齐、或一条都没揭示只给主人解密进度。</p>
      *
      * @param killer 打出最后一击的实体（效果包里的朝向用），不知道为 null
      */
@@ -1070,7 +1069,9 @@ public class KuvaMasterEntity extends AbstractKuva {
         }
 
         int requiemArg = (killer instanceof Player ? killer : owner).getId() + 1;
-        if (card.isReadyCard() && !isMercyFinishing()) {
+        // 一条线索都没揭示时判定必错（isCorrectAnswer 要求阶段 > 0），不判、只给进度：安魂成功后没用完的卡留在扉上、
+        // 阶段归 0，幼体诞生玄骸又不看阶段，不加这一条，新的一只在揭示第一条线索之前被打死会白白判错升一级
+        if (card.isReadyCard() && card.getUnlockedCardStatus() > 0 && !isMercyFinishing()) {
             int prefix = card.correctPrefixLength();
             LichDirector.onMercyResult(owner, this, packDirectAttempt(card, prefix), prefix >= 3);
             if (card.isCorrectAnswer()) {
@@ -1148,7 +1149,7 @@ public class KuvaMasterEntity extends AbstractKuva {
         ServerFxQueue.schedule(REWARD_DELAY_TICKS, owner, () -> result.deliver(owner));
         ServerFxQueue.schedule(COMPLETE_DELAY_TICKS, owner, () -> {
             if (!owner.hasDisconnected()) {
-                DecryptionHudPacket.sendComplete(owner, result.riddles(), result.lichName());
+                DecryptionHudPacket.sendComplete(owner, result.riddles(), result.usesAfter(), result.lichName());
             }
         });
     }
@@ -1212,7 +1213,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      * 调用前调用方已经记过那一行处决记录（这一轮结束会清掉记录）。
      *
      * @param player 主人
-     * @param card   主人的卡（判定完会被重置）
+     * @param card   主人的卡（判定完开始新一轮，扉上的卡扣过一次留着）
      * @param pos    掉落位置
      */
     public SuccessResult computeAndApplySuccess(ServerPlayer player, RequiemCard card, BlockPos pos) {
@@ -1244,20 +1245,14 @@ public class KuvaMasterEntity extends AbstractKuva {
             drops.addAll(card.clearAndGetConfiscatedItems());
         }
 
-        List<ItemStack> survivingCards = card.consumeCardsAndGetSurvivors();
-        // 这一轮结束要在 reset 之前：历史里记的等级来自 kuvaLevel，reset 会把它清零
+        // 卡原地扣一次、留在扉上原来那一格，用完的消失；不再退回背包。完成提示要按密语的显示顺序画每张卡剩几次，
+        // 答案马上要随 resetKeepingCards 清掉，先按「这一格的答案是哪枚密语」对好
+        int[] answers = {card.getOneAnswer(), card.getTwoAnswer(), card.getThreeAnswer()};
+        int[] usesByGate = card.wearPlacedCards();
+        byte[] usesAfter = usesByRiddle(riddles, answers, usesByGate);
+        // 这一轮结束要在 resetKeepingCards 之前：历史里记的等级来自 kuvaLevel，它会把它清零
         LichDirector.onVanquished(player, this);
-        card.reset();
-
-        for (ItemStack survivingCard : survivingCards) {
-            // 掉落方式和别处不同（用 spawnItem 落在死亡点而不是玩家脚下），
-            // 所以只借用空间判断，不用 giveOrDrop
-            if (InventoryUtil.hasRoomFor(player, survivingCard)) {
-                player.getInventory().add(survivingCard);
-            } else {
-                drops.add(survivingCard);
-            }
-        }
+        card.resetKeepingCards();
 
         // 诞生时定下的等级和元素（幼体倒地时亮出来的就是这些）；老存档里没定过的照旧在武器等级范围里随机
         drops.add(weaponLevel > 0 && !weaponType.isEmpty()
@@ -1290,7 +1285,25 @@ public class KuvaMasterEntity extends AbstractKuva {
 
         upgradeWeaponLevelCap(player, card, chats);
 
-        return new SuccessResult(chats, drops, level(), pos, riddles, lichName, returnCount, wornOut);
+        return new SuccessResult(chats, drops, level(), pos, riddles, usesAfter, lichName, returnCount, wornOut);
+    }
+
+    /**
+     * 把按扉上位置排的「扣完剩几次」换成按密语显示顺序排：显示第 i 枚的密语是第 j 格的答案，就取第 j 格的卡
+     * （放的是 Oull 也一样，那张 Oull 就是顶这一枚的卡）。对不上的记 {@link RequiemCard#USES_NO_CARD}
+     */
+    private static byte[] usesByRiddle(byte[] riddles, int[] answers, int[] usesByGate) {
+        byte[] out = new byte[3];
+        for (int i = 0; i < 3; i++) {
+            out[i] = (byte) RequiemCard.USES_NO_CARD;
+            for (int j = 0; j < 3; j++) {
+                if (riddles[i] >= 0 && answers[j] == riddles[i]) {
+                    out[i] = (byte) usesByGate[j];
+                    break;
+                }
+            }
+        }
+        return out;
     }
 
     /**
@@ -1300,12 +1313,14 @@ public class KuvaMasterEntity extends AbstractKuva {
      * @param drops        掉在 {@code pos} 的物品
      * @param level        掉落的世界（发的时候实体可能已经没了）
      * @param riddles      三枚密语的快照，完成提示用
+     * @param usesAfter    三枚密语（同 {@code riddles} 的顺序）各自那张卡扣完以后剩几次，0 = 用完消失，
+     *                     {@link RequiemCard#USES_NO_CARD} = 没有对应的卡
      * @param lichName     玄骸名字的快照
      * @param returnCount  归还的没收物品件数
      * @param cardsWornOut 用完消失的安魂卡张数
      */
     public record SuccessResult(List<Runnable> chats, List<ItemStack> drops, Level level, BlockPos pos,
-                                byte[] riddles, String lichName, int returnCount, int cardsWornOut) {
+                                byte[] riddles, byte[] usesAfter, String lichName, int returnCount, int cardsWornOut) {
 
         /** 发出去：主人在线才发聊天，掉落照样落在原世界的死亡点 */
         public void deliver(@Nullable ServerPlayer owner) {
@@ -1324,7 +1339,7 @@ public class KuvaMasterEntity extends AbstractKuva {
     private static final int COMPLETE_DELAY_TICKS = 18;
 
     /**
-     * 这次判定会用完消失几张安魂卡（只读，和 {@link RequiemCard#consumeCardsAndGetSurvivors} 的判据一致：
+     * 这次判定会用完消失几张安魂卡（只读，和 {@link RequiemCard#wearPlacedCards} 的判据一致：
      * 不可损耗的卡用一次就没，可损耗的再磨一点就到上限的也没）
      */
     private static int countCardsWornOut(RequiemCard requiemCard) {

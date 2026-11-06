@@ -861,7 +861,7 @@
             },
             [
               "Your three cards",
-              "Each loses 1 durability; survivors return to your inventory, see [[requiem/requiem_cards]]"
+              "Each loses 1 durability and stays in the Requiem Gate for the next Lich; used-up cards vanish, see [[requiem/requiem_cards]]"
             ],
             [
               "Weapon level range",
@@ -880,7 +880,7 @@
         {
           "type": "tip",
           "style": "warn",
-          "text": "<w>Don't finish it next to lava or the void</w>. Except for the Requiem cards that go back to your inventory, every reward drops where the Lich fell, and so do cards that don't fit in your inventory."
+          "text": "<w>Don't finish it next to lava or the void</w>. Every reward drops where the Lich fell."
         },
         {
           "type": "tip",

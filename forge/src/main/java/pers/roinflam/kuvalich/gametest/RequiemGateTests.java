@@ -311,7 +311,7 @@ public final class RequiemGateTests {
         h.succeed();
     }
 
-    // ==================== 开着扉时安魂成功：扣掉的卡不被卡槽写回来 ====================
+    // ==================== 开着扉时安魂成功：卡原地扣一次留在扉上，不被卡槽写回扣之前的，也不进背包 ====================
 
     @GameTest(template = "empty", batch = ISO_CONSUME, timeoutTicks = 120)
     public static void gateOpenWhenCardsConsumed(GameTestHelper h) {
@@ -324,7 +324,9 @@ public final class RequiemGateTests {
             card.setTwoAnswer(JAHU);
             card.setThreeAnswer(NETRA);
             card.setOneCard(new ItemStack(cardItem(KHRA)));
-            card.setTwoCard(new ItemStack(cardItem(JAHU)));
+            ItemStack lastUse = new ItemStack(cardItem(JAHU));
+            lastUse.setDamageValue(lastUse.getMaxDamage() - 1);
+            card.setTwoCard(lastUse);
             card.setThreeCard(new ItemStack(cardItem(NETRA)));
             p.getInventory().clearContent();
             RequiemGateMenu menu = open(p, 7);
@@ -335,25 +337,28 @@ public final class RequiemGateTests {
             menu.broadcastChanges();
             p.containerMenu.broadcastChanges();
 
-            h.assertTrue(card.getOneCard().isEmpty() && card.getTwoCard().isEmpty() && card.getThreeCard().isEmpty(),
-                    "扣掉的卡不该被卡槽写回玩家数据：" + savedNames(card));
             if (p.containerMenu == menu) {
-                // 扉还开着：卡槽里不该留着扣掉的卡
-                for (int i = 0; i < 3; i++) {
-                    h.assertTrue(menu.getSlot(i).getItem().isEmpty(), "扉里第 " + (i + 1) + " 格不该还留着扣掉的卡");
-                }
                 menu.removed(p);
                 p.containerMenu = p.inventoryMenu;
             }
-            h.assertTrue(countSaved(card) == 0, "关界面后玩家数据里也没有卡：" + savedNames(card));
-            int worn = 0;
-            for (ItemStack s : p.getInventory().items) {
-                if (s.getItem() instanceof AbstractRequiemCard) {
-                    h.assertTrue(s.getDamageValue() == 1, "背包里的卡都该是扣过一次的：" + s.getDescriptionId() + " 损耗 " + s.getDamageValue());
-                    worn++;
-                }
-            }
-            h.assertTrue(worn == 3, "三张卡各扣一次回到背包，不多不少：" + worn);
+            // 第 1、3 格扣一次留在原位，第 2 格最后一次用完消失；顺序、位置都不变
+            h.assertTrue(card.getOneCard().is(cardItem(KHRA)) && card.getOneCard().getDamageValue() == 1,
+                    "第 1 格应当扣一次留在扉上：" + savedNames(card));
+            h.assertTrue(card.getTwoCard().isEmpty(), "第 2 格最后一次用完应当消失：" + savedNames(card));
+            h.assertTrue(card.getThreeCard().is(cardItem(NETRA)) && card.getThreeCard().getDamageValue() == 1,
+                    "第 3 格应当扣一次留在扉上：" + savedNames(card));
+            h.assertTrue(countCards(p) == 0, "背包里不该多出卡：" + countCards(p));
+            h.assertTrue(card.getUnlockedCardStatus() == 0 && card.getOneAnswer() == -1, "新一轮的解密从头来");
+            // 再开扉：卡槽里就是扣过的那两张
+            RequiemGateMenu again = open(p, 8);
+            p.containerMenu = again;
+            h.assertTrue(again.getSlot(0).getItem().is(cardItem(KHRA)) && again.getSlot(0).getItem().getDamageValue() == 1
+                            && again.getSlot(1).getItem().isEmpty()
+                            && again.getSlot(2).getItem().is(cardItem(NETRA)) && again.getSlot(2).getItem().getDamageValue() == 1,
+                    "再开扉看到的是扣过的卡：" + describe(again));
+            again.removed(p);
+            p.containerMenu = p.inventoryMenu;
+            h.assertTrue(countSaved(card) == 2 && countCards(p) == 0, "关界面后还是扉上 2 张、背包 0 张：" + savedNames(card));
             lich.discard();
             h.succeed();
         });

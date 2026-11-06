@@ -395,27 +395,48 @@ public class RequiemCard {
         this.threeAnswer = three;
     }
 
-    public List<ItemStack> consumeCardsAndGetSurvivors() {
-        List<ItemStack> survivors = new ArrayList<>();
-        oneCard = processCardConsumption(oneCard, survivors);
-        twoCard = processCardConsumption(twoCard, survivors);
-        threeCard = processCardConsumption(threeCard, survivors);
-        return survivors;
+    /** {@link #wearPlacedCards()} 返回值里「这一格没放卡」 */
+    public static final int USES_NO_CARD = -1;
+
+    /**
+     * 安魂成功扣卡：三格里的卡各用掉一次，<b>原地扣、留在原来那一格</b>，用完的那格清空。
+     * 不可损耗的卡用一次就没；可损耗的再磨一点就到上限的也没（判据和 {@code KuvaMasterEntity#countCardsWornOut} 一致）。
+     *
+     * <p>以前成功后三格清空、还有次数的退回背包，玩家每杀一只都要重新摆一遍；现在卡一直待在扉上，
+     * 下一只照样用（新一轮的答案还是重新随机，摆着的卡不一定对）。只改玩家数据里这一份，
+     * 调用前要先关掉这个玩家开着的扉（{@code RequiemGateMenu#closeBeforeCardsChange}），不然卡槽会把扣之前的写回来。</p>
+     *
+     * @return 三格（按扉上的位置）扣完以后各剩几次：0 = 这次用完消失，{@link #USES_NO_CARD} = 这一格没放卡
+     */
+    public int[] wearPlacedCards() {
+        int[] after = new int[3];
+        ItemStack[] placed = {oneCard, twoCard, threeCard};
+        for (int i = 0; i < 3; i++) {
+            after[i] = wearInPlace(placed[i]);
+            if (after[i] == 0) {
+                placed[i] = ItemStack.EMPTY;
+            }
+        }
+        oneCard = placed[0];
+        twoCard = placed[1];
+        threeCard = placed[2];
+        return after;
     }
 
-    private ItemStack processCardConsumption(ItemStack card, List<ItemStack> survivors) {
+    /** 一张卡原地用掉一次，返回之后还剩几次（不可损耗的、磨到上限的为 0，空格为 {@link #USES_NO_CARD}） */
+    private static int wearInPlace(@Nullable ItemStack card) {
         if (card == null || card.isEmpty()) {
-            return ItemStack.EMPTY;
+            return USES_NO_CARD;
         }
         if (!card.isDamageableItem()) {
-            return ItemStack.EMPTY;
+            return 0;
         }
         int newDamage = card.getDamageValue() + 1;
-        if (newDamage < card.getMaxDamage()) {
-            card.setDamageValue(newDamage);
-            survivors.add(card.copy());
+        if (newDamage >= card.getMaxDamage()) {
+            return 0;
         }
-        return ItemStack.EMPTY;
+        card.setDamageValue(newDamage);
+        return card.getMaxDamage() - newDamage;
     }
 
     /**
@@ -429,10 +450,19 @@ public class RequiemCard {
         }
     }
 
+    /** 整套清零，连扉上的三张卡一起清掉（卡就此没了，调用方要先自己处理那几张卡） */
     public void reset() {
         this.oneCard = ItemStack.EMPTY;
         this.twoCard = ItemStack.EMPTY;
         this.threeCard = ItemStack.EMPTY;
+        resetKeepingCards();
+    }
+
+    /**
+     * 开始新一轮解密：密语、答案、阶段、进度、玄骸等级清零，扉上的三张卡原样留着（安魂成功走这条，
+     * 卡已经由 {@link #wearPlacedCards()} 扣过一次）。没收物品、精通记录和发现记录都不动
+     */
+    public void resetKeepingCards() {
         this.oneRiddle = -1;
         this.twoRiddle = -1;
         this.threeRiddle = -1;
@@ -644,7 +674,7 @@ public class RequiemCard {
      * 结束这一轮玄骸：把它的名字、代数、等级和结局记进前几只的历史（最多留 {@link #MAX_HISTORY} 条），
      * 再清空名字、种子、武器、出生地、怒气、冷却、处决记录、交手次数和「遭遇进行中」记号
      * （没有玄骸就不可能还有一场没结束的遭遇，留着它下次登录会被当成掉线补算一次）。
-     * 成功终结时的顺序是先调它、再 {@link #reset()}：等级要在 reset 清掉 kuvaLevel 之前取
+     * 成功终结时的顺序是先调它、再 {@link #resetKeepingCards()}：等级要在它清掉 kuvaLevel 之前取
      *
      * @param fate {@link #FATE_VANQUISHED} 或 {@link #FATE_ADMIN}
      */

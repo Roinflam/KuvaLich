@@ -32,6 +32,10 @@ import java.util.function.Supplier;
  * {@code riddles}（三枚已揭示的密语，按显示顺序，-1 为未揭示）、{@code lichName}（只在
  * {@link #EVENT_COMPLETE} 里带：刚终结的那只玄骸的名字）。包到达时客户端缓存的玄骸状态已经清空，
  * 所以破解完成的名字行读这里的 {@code lichName}，不读客户端缓存。</p>
+ *
+ * <p>协议 15 起 {@link #EVENT_COMPLETE} 在名字后面再带三个字节 {@code usesAfter}：三枚密语（和 {@code riddles}
+ * 同一顺序）各自那张卡这次扣完以后还剩几次，0 = 这次用完消失，-1 = 没有对应的卡。破解提示在每枚下面画次数点，
+ * 这次用掉的那颗打斜杠。</p>
  */
 public class DecryptionHudPacket {
 
@@ -58,6 +62,8 @@ public class DecryptionHudPacket {
     private final int[] riddles;
     /** 刚终结的玄骸的名字（首字母大写）；只在 EVENT_COMPLETE 里有，其余为空串 */
     private final String lichName;
+    /** 三枚密语各自那张卡扣完以后剩几次（0~3，-1 为没有卡）；只在 EVENT_COMPLETE 里有，其余全是 -1 */
+    private final int[] usesAfter;
 
     /** 名字的长度上限 */
     public static final int MAX_LICH_NAME = 32;
@@ -72,7 +78,7 @@ public class DecryptionHudPacket {
      * @param added     本次增加量
      */
     public DecryptionHudPacket(int eventType, int level, int progress, int threshold, int added) {
-        this(eventType, level, progress, threshold, added, -1, new int[]{-1, -1, -1}, "");
+        this(eventType, level, progress, threshold, added, -1, new int[]{-1, -1, -1}, "", null);
     }
 
     /**
@@ -81,9 +87,10 @@ public class DecryptionHudPacket {
      * @param revealedCard 本次新揭示的卡 id，没有为 -1
      * @param riddles      三枚已揭示的密语，长度不足 3 的补 -1
      * @param lichName     刚终结的玄骸名字，只在 EVENT_COMPLETE 里填
+     * @param usesAfter    三枚密语各自那张卡扣完以后剩几次，只在 EVENT_COMPLETE 里填；{@code null} 或不足 3 的补 -1
      */
     public DecryptionHudPacket(int eventType, int level, int progress, int threshold, int added,
-                               int revealedCard, int[] riddles, String lichName) {
+                               int revealedCard, int[] riddles, String lichName, int[] usesAfter) {
         this.eventType = eventType;
         this.level = level;
         this.progress = progress;
@@ -96,6 +103,13 @@ public class DecryptionHudPacket {
         }
         this.riddles = three;
         this.lichName = lichName == null ? "" : lichName;
+        int[] uses = {-1, -1, -1};
+        if (usesAfter != null) {
+            for (int i = 0; i < 3 && i < usesAfter.length; i++) {
+                uses[i] = usesAfter[i] < 0 ? -1 : Math.min(3, usesAfter[i]);
+            }
+        }
+        this.usesAfter = uses;
     }
 
     // ==================== 只读访问 / Accessors ====================
@@ -133,6 +147,11 @@ public class DecryptionHudPacket {
         return lichName;
     }
 
+    /** 副本 */
+    public int[] usesAfter() {
+        return usesAfter.clone();
+    }
+
     // ==================== 编解码 / Encode & Decode ====================
 
     /**
@@ -156,6 +175,10 @@ public class DecryptionHudPacket {
         if (msg.eventType == EVENT_COMPLETE) {
             String name = msg.lichName.length() > MAX_LICH_NAME ? msg.lichName.substring(0, MAX_LICH_NAME) : msg.lichName;
             buf.writeUtf(name, MAX_LICH_NAME);
+            // 协议 15 追加
+            for (int i = 0; i < 3; i++) {
+                buf.writeByte(msg.usesAfter[i]);
+            }
         }
     }
 
@@ -176,8 +199,16 @@ public class DecryptionHudPacket {
         for (int i = 0; i < 3; i++) {
             riddles[i] = buf.readByte();
         }
-        String lichName = eventType == EVENT_COMPLETE ? buf.readUtf(MAX_LICH_NAME) : "";
-        return new DecryptionHudPacket(eventType, level, progress, threshold, added, revealedCard, riddles, lichName);
+        String lichName = "";
+        int[] usesAfter = null;
+        if (eventType == EVENT_COMPLETE) {
+            lichName = buf.readUtf(MAX_LICH_NAME);
+            usesAfter = new int[3];
+            for (int i = 0; i < 3; i++) {
+                usesAfter[i] = buf.readByte();
+            }
+        }
+        return new DecryptionHudPacket(eventType, level, progress, threshold, added, revealedCard, riddles, lichName, usesAfter);
     }
 
     /**
@@ -223,7 +254,7 @@ public class DecryptionHudPacket {
         int revealed = (level > levelBefore) ? requiemCard.getLockCard(level) : -1;
         int[] riddles = {requiemCard.getOneRiddle(), requiemCard.getTwoRiddle(), requiemCard.getThreeRiddle()};
         send(serverPlayer, new DecryptionHudPacket(eventType, level, progress, threshold, added,
-                revealed, riddles, ""));
+                revealed, riddles, "", null));
     }
 
     /**
@@ -233,10 +264,11 @@ public class DecryptionHudPacket {
      * 是刚终结的那只玄骸的名字。包在延时任务里发出时卡已经重置，所以阶段和进度按重置后的初始值写。</p>
      *
      * @param player   目标玩家
-     * @param riddles  三枚密语（卡 id，-1 为没有），长度不足 3 的补 -1
-     * @param lichName 刚终结的玄骸名字
+     * @param riddles   三枚密语（卡 id，-1 为没有），长度不足 3 的补 -1
+     * @param usesAfter 三枚密语各自那张卡扣完以后剩几次（同 {@code riddles} 的顺序，-1 为没有卡）
+     * @param lichName  刚终结的玄骸名字
      */
-    public static void sendComplete(ServerPlayer player, byte[] riddles, String lichName) {
+    public static void sendComplete(ServerPlayer player, byte[] riddles, byte[] usesAfter, String lichName) {
         if (player == null) {
             return;
         }
@@ -248,7 +280,13 @@ public class DecryptionHudPacket {
         }
         // 重置之后回到第 0 阶段，阈值就是第一阶段的配置值
         int threshold = ModConfig.KUVA_LICH.firstStage.get();
-        send(player, new DecryptionHudPacket(EVENT_COMPLETE, 0, 0, threshold, 0, -1, ids, lichName));
+        int[] uses = {-1, -1, -1};
+        if (usesAfter != null) {
+            for (int i = 0; i < 3 && i < usesAfter.length; i++) {
+                uses[i] = usesAfter[i];
+            }
+        }
+        send(player, new DecryptionHudPacket(EVENT_COMPLETE, 0, 0, threshold, 0, -1, ids, lichName, uses));
     }
 
     /**

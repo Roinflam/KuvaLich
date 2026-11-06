@@ -537,7 +537,7 @@
           "items": [
             "每次<g>解密成功</g>，门里的三张卡各扣 1 次耐久，一套卡最多撑 <t>3</t> 次成功。",
             "<g>解密失败不扣耐久</g>，放进、取出、调换位置也不扣，试顺序不耗卡。",
-            "成功后还有剩余次数的卡自动回到背包，背包满了就掉在[[enemies/kuva_master|玄骸]]死亡的位置。",
+            "成功后还有剩余次数的卡<g>留在灭骸之扉原来那一格</g>，下一只[[enemies/kuva_master|玄骸]]接着用，不用重新摆；用完的那张直接消失。新一轮的答案会重新随机，摆着的卡不一定还对，照新线索调换就行。",
             "安魂卡不能堆叠，每格只放 1 张。"
           ]
         },
@@ -646,7 +646,7 @@
         "base/item/AbstractRequiemCard.java:67 — 稀有度随损耗：0=EPIC(淡紫 FF55FF)、1=RARE(青 55FFFF)、2=UNCOMMON(黄 FFFF55)",
         "capability/RequiemCard.java:271 — 答案 = 0~7 中三个互不相同的 id，8×7×6=336 种",
         "capability/RequiemCard.java:283 — 成功时每张卡损耗+1，损耗 < 3 的作为幸存卡返回，否则销毁",
-        "entity/KuvaMasterEntity.java:445 — 幸存卡有空间进背包，否则 spawnItem 到玄骸死亡位置",
+        "entity/KuvaMasterEntity.java computeAndApplySuccess + capability/RequiemCard.java wearPlacedCards — 卡原地扣 1 次、留在扉上原来那一格，用完的那格清空；resetKeepingCards 开新一轮不动卡",
         "entity/KuvaMasterEntity.java:588 — 失败分支不动卡片",
         "world/inventory/RequiemGateMenu.java:194 — 放入/取出只是存进玩家能力，不改耐久",
         "enchantment/RequiemDestroyedEnchantment.java:148 — 空手 return；:152 精准采集 return（都在掷概率之前，与是否带灭骸无关）",
@@ -825,7 +825,7 @@
             },
             [
               "没用完的安魂卡",
-              "回到背包"
+              "留在灭骸之扉上，下一只接着用"
             ]
           ]
         },
@@ -842,7 +842,7 @@
           "type": "tip",
           "style": "warn",
           "title": "奖励掉在它倒下的地方",
-          "text": "收尾时<w>避开岩浆、虚空和深水</w>，除了回到背包的安魂卡，其余奖励都掉在玄骸倒下的位置。"
+          "text": "收尾时<w>避开岩浆、虚空和深水</w>，奖励都掉在玄骸倒下的位置。"
         },
         {
           "type": "h",
@@ -857,7 +857,7 @@
               "if": "!cfg:kuva_lich.mercyEnabled",
               "text": "只想靠它积攒进度、不想冒失败的风险时，先从门里取出一张卡。"
             },
-            "背包满时，没用完的安魂卡会掉在玄骸倒下的位置。",
+            "解密成功后，没用完的卡留在门里，不占背包。",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
               "text": "处决按开始那一刻门里的卡判，中途换卡、补卡都不算；空着的格子算错。"
@@ -879,7 +879,7 @@
         "capability/RequiemCard.java correctPrefixLength — 从第 1 位起逐位比、遇错即停（空格算错、Oull 算对，见 fits），决定第几刀判错；isReadyCard 三格都非空",
         "entity/KuvaMasterEntity.java:816 resolveForOwner — 关掉怜悯之击时按主人的卡判定，主人要在线、同一世界、64 格内（:178 RESOLVE_RANGE），否则不判定、不给进度；卡没放满只给进度并按 KILLED_OTHER 结束遭遇（之后照常再来）；mercy/MercyServer.java buildPlan — 怜悯之击开着时按开始那一刻的卡定下整场结果，第 k 次处决捅 k 刀、验前 k 张，空格算判错",
         "entity/KuvaMasterEntity.java:921 directFailure / mercy/MercyServer.java:763 settleFailure — 判错 kuvaLevel+1、给进度、按 MERCY_FAILED 离场；聊天：直接判定发 firstCorrect / secondCorrect + failedToDecrypt，怜悯之击发 message.kuvalich.mercy.failed.1~3（第几刀判错）",
-        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 武器 = KUVA_WEAPONS.get(card.getLichWeapon())（诞生时定下的那把），等级、元素用卡上 getLichWeaponLevel / getLichWeaponType（幼体出现时定的；老存档没定过才按当前范围随机）；玄骸之遗 ×1；裂罅碎块、赤毒、高级模组（:1119 rollAdvancedModule：masterPrimeModuleChance% Prime 否则裂罅，moduleWeaponRatio% 武器模组）；requiemUltimatumDropChance 通牒；奖励生成在它倒下的位置，幸存卡回背包、放不下也掉在那里",
+        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 武器 = KUVA_WEAPONS.get(card.getLichWeapon())（诞生时定下的那把），等级、元素用卡上 getLichWeaponLevel / getLichWeaponType（幼体出现时定的；老存档没定过才按当前范围随机）；玄骸之遗 ×1；裂罅碎块、赤毒、高级模组（:1119 rollAdvancedModule：masterPrimeModuleChance% Prime 否则裂罅，moduleWeaponRatio% 武器模组）；requiemUltimatumDropChance 通牒；奖励生成在它倒下的位置；卡由 RequiemCard.wearPlacedCards 原地扣 1 次留在扉上",
         "entity/KuvaMasterEntity.java:1139 upgradeWeaponLevelCap — 上下限各加同一个 getInt(minimumLevelCapIncrease, maximumLevelCapIncrease)，分别封顶 minimumLevel / maximumLevel；在生成武器之后调用",
         "capability/RequiemCard.java 构造函数 — 新角色武器等级范围 baseMinimumLevel~baseMaximumLevel；旧存档补上基础值，只升不降；utils/RandomUtil.java min>=max 时返回 min，所以两头都没封顶时宽度不变",
         "modules 分类 module_rarity — Prime 与裂罅是最高两档；warframe 分类 warframe_table — 「战甲」指玩家本人",

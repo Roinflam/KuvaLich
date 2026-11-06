@@ -257,7 +257,8 @@ public final class MercySegmentTests {
                 h.assertTrue(plan.stabs() == 3 && plan.prefix() == 3 && plan.success(),
                         "第三次三刀全对：刀数 " + plan.stabs() + "，前缀 " + plan.prefix());
                 h.runAfterDelay(MercyServer.SETTLE_TICK + 1, () -> {
-                    h.assertTrue(!card.isReadyCard() && !card.hasLich(), "第三次全对：卡扣掉、这一轮结束");
+                    h.assertTrue(card.isReadyCard() && card.getOneCard().getDamageValue() == 1 && !card.hasLich(),
+                            "第三次全对：卡各扣一次留在扉上、这一轮结束");
                     RequiemCard.HistoryEntry last = card.getLastHistory();
                     h.assertTrue(last != null && last.fate() == RequiemCard.FATE_VANQUISHED, "历史里应当记成被终结");
                     h.succeed();

@@ -218,11 +218,13 @@ public final class MercyCoreTests {
                     MercyServer.resetAround(h.getLevel(), lich.position(), 4.0D);
                     h.assertTrue(lich.getMercyState() == MercyState.NONE, "复位后应当回到正常");
                 } else {
-                    h.assertTrue(!card.isReadyCard(), "成功：三张卡应当扣掉（耐久 −1 后回到背包或掉落）");
+                    h.assertTrue(card.isReadyCard() && card.getOneCard().getDamageValue() == 1
+                                    && card.getTwoCard().getDamageValue() == 1 && card.getThreeCard().getDamageValue() == 1,
+                            "成功：三张卡应当各扣一次、留在扉上");
                     h.assertTrue(card.getKuvaLevel() == 0 && !card.hasLich(), "成功：这一轮应当重置过");
                     RequiemCard.HistoryEntry last = card.getLastHistory();
                     h.assertTrue(last != null && last.fate() == RequiemCard.FATE_VANQUISHED, "成功：历史里应当记成被终结");
-                    h.assertTrue(survivingCards(p) == 3, "成功：三张卡耐久 −1 后应当回到背包，实际 " + survivingCards(p));
+                    h.assertTrue(survivingCards(p) == 0, "成功：卡留在扉上，背包里不该多出卡，实际 " + survivingCards(p));
                     h.assertTrue(weaponLevel > 0 && !weaponType.isEmpty(), "诞生时应当定下武器的等级和元素");
                     // 奖励要等处决演完（SUCCESS_REWARD_TICK）才落地：掉的那把应当就是诞生时定下的武器、等级、元素
                     h.runAfterDelay(MercyServer.SUCCESS_REWARD_TICK - MercyServer.SETTLE_TICK + 5, () -> {
@@ -541,15 +543,11 @@ public final class MercyCoreTests {
             MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
             h.assertTrue(plan.prefix() == 3 && plan.cardIds()[1] == OULL.ID, "计划位：成功、第二格是 Oull");
             h.runAfterDelay(17, () -> {
-                h.assertTrue(!card.isReadyCard() && !card.hasLich(), "成功：卡扣掉、这一轮结束");
-                ItemStack back = ItemStack.EMPTY;
-                for (ItemStack s : p.getInventory().items) {
-                    if (OULL.is(s)) {
-                        back = s;
-                    }
-                }
-                h.assertTrue(!back.isEmpty() && back.getDamageValue() == 1, "Oull 应当扣一次后回到背包，耐久损耗 "
-                        + (back.isEmpty() ? "（没找到）" : back.getDamageValue()));
+                h.assertTrue(!card.hasLich(), "成功：这一轮结束");
+                ItemStack kept = card.getTwoCard();
+                h.assertTrue(OULL.is(kept) && kept.getDamageValue() == 1, "Oull 应当扣一次后留在扉上第 2 格，耐久损耗 "
+                        + (OULL.is(kept) ? kept.getDamageValue() : "（不在）"));
+                h.assertTrue(survivingCards(p) == 0, "背包里不该多出卡");
                 h.succeed();
             });
         });
