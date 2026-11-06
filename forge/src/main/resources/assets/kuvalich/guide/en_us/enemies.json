@@ -66,8 +66,8 @@
           "type": "tip",
           "style": "warn",
           "if": "cfg:kuva_lich.mercyEnabled",
-          "title": "Don't hit it again",
-          "text": "Once a Larvling is down, <b>a single hit from any player or pet</b> makes it dissolve on the spot, and so does letting the downed timer run out. A dissolved Larvling gives nothing, and the next one is <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes away."
+          "title": "Execute it in time",
+          "text": "Once a Larvling is down, <b>nothing can hurt it</b>: more gunfire or blows do nothing, and only a Mercy finishes it. If no one executes it within <t>{cfg:kuva_lich.larvlingDownedSeconds}</t> seconds, it dissolves on the spot. A dissolved Larvling gives nothing, and the next one is <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes away."
         },
         {
           "type": "h",
@@ -101,7 +101,7 @@
             "It is never saved: when the world is closed or its chunk unloads before it is downed, it simply leaves, and another comes <t>2</t> minutes later",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "Once a Larvling has been down, however it ends (a Lich born, hit again, or timed out), the next one takes a full wait"
+              "text": "Once a Larvling has been down, however it ends (a Lich born or timed out), the next one takes a full wait"
             },
             "Larvlings from spawn eggs work too: finish one while you have no Lich and you get a Lich all the same"
           ]

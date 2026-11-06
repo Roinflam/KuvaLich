@@ -66,8 +66,8 @@
           "type": "tip",
           "style": "warn",
           "if": "cfg:kuva_lich.mercyEnabled",
-          "title": "别补刀",
-          "text": "幼体倒地以后，<b>任何玩家或宠物再打它一下</b>，它就当场消散；倒地时间到了没人处决，也一样。消散的幼体什么都不给，下一只要再等 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟。"
+          "title": "抓紧处决",
+          "text": "幼体倒地以后<b>谁也伤不到它</b>，接着开枪、补刀都没用，只能走近处决；<t>{cfg:kuva_lich.larvlingDownedSeconds}</t> 秒内没人处决，它就当场消散。消散的幼体什么都不给，下一只要再等 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟。"
         },
         {
           "type": "h",
@@ -101,7 +101,7 @@
             "它不进存档：退出存档、区块卸载时还没倒地的幼体直接离开，<t>2</t> 分钟后再来一只",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "倒地过的幼体不管结局如何（诞生了玄骸、被补刀、超时消散），下一只都要重新等一整轮"
+              "text": "倒地过的幼体不管结局如何（诞生了玄骸、超时消散），下一只都要重新等一整轮"
             },
             "刷怪蛋放出来的幼体同样有效，还没有玄骸的人了结它，一样得到玄骸"
           ]
@@ -114,7 +114,7 @@
         "nemesis/LarvlingDirector.java:179 shouldDismiss — 主人下线、死亡、换世界、离它超过 LEASH 96 格、已有玄骸时，没倒地的就地消散；没倒地就没了的 RETRY_AFTER_LOST 2 分钟后补，倒地过的重新掷完整间隔；刷出时计时先记成 2 分钟（关服丢了也是 2 分钟后补）",
         "mercy/MercyRules.java:32 enabledFor / :46 canDown — 幼体只看 mercyEnabled，不看 mercyThralls；entity/KuvaLarvlingEntity.java downedSeconds = larvlingDownedSeconds；mercy/MercyRules.java reach = mercyReach",
         "entity/KuvaLarvlingEntity.java:164 pickClaimant — 倒地那一刻定资格人：打倒它的人（MercyServer.qualifiedFor 的规矩，含宠物、延后伤害）还没有玄骸 → 他；否则主人（在线、同一个世界、没有玄骸）；都不行 → 没人能处决；:151 canReceiveLich；mercy/MercyServer.java:398 倒地后又有了玄骸的处决请求被拒（has_lich）",
-        "entity/KuvaLarvlingEntity.java:194 hurt — 倒地时挨玩家或玩家宠物一下（不带 BYPASSES_INVULNERABILITY）→ beginExpire 就地消散；mercy/MercyServer.java:532 onDownedTimeout 超时 → beginExpire；都不给东西",
+        "entity/KuvaLarvlingEntity.java 不覆写 hurt — 倒地期间照 base/entity/AbstractKuva.java hurt 全挡（只放行 BYPASSES_INVULNERABILITY），挨打不消散；mercy/MercyServer.java:532 onDownedTimeout 超时 → beginExpire 就地消散，不给东西",
         "entity/KuvaLarvlingEntity.java:220 onKilled — 处决走完（怜悯之击关着时是被 Player 打死，宠物、环境不算）→ LichDirector.birthFromLarvling(击杀者, 种子, 武器)，击杀者已有玄骸时什么都不给；不掉落、不给解密进度；shouldBeSaved / removeWhenFarAway 均为 false",
         "nemesis/LichDirector.java:224 birthFromLarvling — 种子、武器都用幼体刷出时掷好的；名字重名时换名字不换武器；诞生通讯照旧",
         "client/larvling/LarvlingTag.java — 倒地时屏幕上的引线标注：武器、等级、元素、倒计时，处决提示并在里面（DATA_WEAPON / DATA_WEAPON_LEVEL / DATA_WEAPON_TYPE 同步）；幼体手上不拿武器，KuvaLarvlingRenderer 不挂武器层；平时头顶只有一行「赤毒幼体」、没有血条，字底离头顶 0.1 格，倒地时名牌收起（LichNameplates THRALL_ABOVE_HEAD）",

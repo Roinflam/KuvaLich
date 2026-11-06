@@ -253,21 +253,33 @@ public final class LarvlingTests {
         KuvaTestKit.afterBatch(level);
     }
 
-    // ==================== 倒地时又挨一下：就地消散 ====================
+    // ==================== 倒地时接着挨打：无敌，照样能处决 ====================
 
     @GameTest(template = "empty", batch = ISO_HIT, timeoutTicks = 120)
     public static void larvlingHitWhileDown(GameTestHelper h) {
         clearAround(h);
         ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = cardOf(p);
         KuvaLarvlingEntity l = spawnLarvling(h, p.getUUID(), 0x55L, p.position().add(0.0D, 0.0D, 2.0D));
         l.setHealth(1.0F);
         h.assertTrue(l.hurt(p.damageSources().playerAttack(p), 20.0F), "致命一击应当打得进去");
         h.assertTrue(l.getMercyState() == MercyState.DOWNED, "幼体应当倒地");
-        h.assertTrue(!l.hurt(p.damageSources().playerAttack(p), 2.0F), "倒地时挨打不算伤害");
-        h.assertTrue(l.getMercyState() == MercyState.LEAVING, "倒地时挨打应当就地消散：" + l.getMercyState());
-        h.assertTrue(MercyServer.executeNow(p, l) != null, "消散中不能处决");
-        h.runAfterDelay(80, () -> {
-            h.assertTrue(!cardOf(p).hasLich(), "打散的幼体不给玄骸");
+        float downedHealth = l.getHealth();
+        // 同一梭子后面的子弹：近战、弹射物各来几下，每下之前清无敌帧（枪械模组就是这么连着打的）
+        for (int i = 0; i < 8; i++) {
+            l.invulnerableTime = 0;
+            h.assertTrue(!l.hurt(p.damageSources().playerAttack(p), 20.0F), "倒地时近战不算伤害");
+            l.invulnerableTime = 0;
+            h.assertTrue(!l.hurt(p.damageSources().mobProjectile(p, p), 20.0F), "倒地时弹射物不算伤害");
+        }
+        h.assertTrue(l.isAlive() && l.getMercyState() == MercyState.DOWNED,
+                "倒地时挨打应当还倒着，不消散：" + l.getMercyState());
+        h.assertTrue(l.getHealth() == downedHealth, "倒地时挨打不掉血：" + l.getHealth());
+        h.assertTrue(p.getUUID().equals(l.getMercyQualified()), "资格人还是打倒它的人");
+        h.assertTrue(MercyServer.executeNow(p, l) == null, "挨过打照样能处决");
+        h.runAfterDelay(30, () -> {
+            h.assertTrue(!l.isAlive(), "tick 30 应当死了");
+            h.assertTrue(card.hasLich(), "倒地挨过打再处决，照样诞生玄骸");
             h.succeed();
         });
     }

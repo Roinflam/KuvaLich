@@ -635,7 +635,7 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>Wait for a Larvling</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} finds you every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes online, with a notice reading “{lang:message.kuvalich.larvling.appeared}”. Knock it down: the weapon it reveals, level and element included, is the one your future Lich will carry. Step in and press the <t>{lang:key.kuvalich.mercy}</t> key to execute it, and your Lich is born. <b>Don't hit it again</b> once it's down, or it dissolves; see [[enemies/kuva_larvling]]."
+              "text": "<em>Wait for a Larvling</em>: while you have no Lich, a {lang:entity.kuvalich.kuva_larvling} finds you every <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}-{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> minutes online, with a notice reading “{lang:message.kuvalich.larvling.appeared}”. Knock it down: the weapon it reveals, level and element included, is the one your future Lich will carry. Step in and press the <t>{lang:key.kuvalich.mercy}</t> key to execute it, and your Lich is born. Once it's down nothing can hurt it, so <b>execute it quickly</b>: when its timer runs out it dissolves; see [[enemies/kuva_larvling]]."
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -2137,7 +2137,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× Hitting a downed Larvling</b>: once a {lang:entity.kuvalich.kuva_larvling} is down, one more hit from anyone makes it dissolve on the spot, giving nothing, and the next one is a full wait away. Once it's down, stop attacking and go execute it."
+              "text": "<b>× Leaving a downed Larvling alone</b>: once a {lang:entity.kuvalich.kuva_larvling} is down nothing can hurt it, and only a Mercy finishes it; if no one executes it within <t>{cfg:kuva_lich.larvlingDownedSeconds}</t> s, it dissolves on the spot, giving nothing, and the next one is a full wait away. Once it's down, go execute it."
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",

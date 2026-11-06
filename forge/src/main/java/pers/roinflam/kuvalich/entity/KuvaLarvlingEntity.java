@@ -6,11 +6,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
@@ -43,7 +40,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * <ul>
  *   <li>刷出来就掷好将来那只玄骸的种子和武器，手里拿的、倒地时头顶亮出来的就是这把，诞生后玄骸拿的也是这把；</li>
  *   <li>倒地等 {@code larvlingDownedSeconds} 秒（默认 30），不是奴仆的那个时长；</li>
- *   <li>倒地时被玩家打一下、或者时间到了没人处决，就地消散，什么都不给；</li>
+ *   <li>倒地期间无敌、只能处决，时间到了没人处决就就地消散，什么都不给；</li>
  *   <li>被处决（怜悯之击关着时是被玩家打死）才诞生玄骸，给处决的人；不给解密进度、不掉东西、不加怒气；</li>
  *   <li>不存盘，不会自然消失（由幼体导演管它什么时候走）。</li>
  * </ul>
@@ -77,7 +74,7 @@ public class KuvaLarvlingEntity extends KuvaSlaveEntity {
     /** 将来那只玄骸的种子。服务端 */
     private long seed;
     private boolean seeded;
-    /** 进过倒地（之后不管处决、消散还是被打，都算这一只「打过了」）。服务端 */
+    /** 进过倒地（之后不管处决还是消散，都算这一只「打过了」）。服务端 */
     private boolean everDowned;
     /** 已经诞生过玄骸（同一只不会给两次）。服务端 */
     private boolean birthGiven;
@@ -252,28 +249,8 @@ public class KuvaLarvlingEntity extends KuvaSlaveEntity {
         }
     }
 
-    /**
-     * 倒地时挨了玩家（或玩家的宠物、弹射物）一下：就地消散，什么都不给，等于放过了这只。
-     * 处决中、起身、消散的不管；/kill、虚空照常
-     */
-    @Override
-    public boolean hurt(@NotNull DamageSource source, float amount) {
-        if (!this.level().isClientSide && getMercyState() == MercyState.DOWNED && !isLeaving()
-                && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) && byPlayer(source)) {
-            this.everDowned = true;
-            beginExpire();
-            return false;
-        }
-        return super.hurt(source, amount);
-    }
-
-    private static boolean byPlayer(DamageSource source) {
-        Entity e = source.getEntity();
-        if (e instanceof Player p) {
-            return !p.isSpectator();
-        }
-        return e instanceof OwnableEntity pet && pet.getOwner() instanceof Player;
-    }
+    // 倒地期间不另做受伤判定：照基类，什么伤害都不吃（/kill、虚空除外），只能处决，没人处决就等时间到了消散。
+    // 以前倒地后再挨玩家一下就当场消散，连发枪、霰弹枪打倒它的同一梭子后面几发必定把它打散，根本来不及处决
 
     // ==================== 死亡 ====================
 

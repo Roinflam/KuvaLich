@@ -694,7 +694,7 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>等幼体</em>：还没有玄骸时，在线每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟会有一只{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上会提示「{lang:message.kuvalich.larvling.appeared}」。把它打倒，它亮出的就是你将来那只玄骸的武器，连等级、元素都定好了；走近按<t>{lang:key.kuvalich.mercy}</t>键处决，玄骸就此诞生。倒地后<b>别再打它</b>，补一下它就消散了，见[[enemies/kuva_larvling]]。"
+              "text": "<em>等幼体</em>：还没有玄骸时，在线每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分钟会有一只{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上会提示「{lang:message.kuvalich.larvling.appeared}」。把它打倒，它亮出的就是你将来那只玄骸的武器，连等级、元素都定好了；走近按<t>{lang:key.kuvalich.mercy}</t>键处决，玄骸就此诞生。倒地后谁也伤不到它，<b>抓紧处决</b>，时间一过它就消散了，见[[enemies/kuva_larvling]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -827,7 +827,7 @@
         "event/ConfiscationHandler.java:48-56 — 只在 hasLich() 时按概率整组没收；entity/KuvaMasterEntity.java:984 computeAndApplySuccess — 成功终结时归还",
         "nemesis/ThrallDirector.java — thrallSquadEnabled 关掉时奴仆不来（两条提示的 if）；entity/KuvaMasterEntity.java:1170-1176 — 玄骸进度 = 奴仆区间 × masterPotionMultiplier；:840-845 — 卡没放齐时只给进度；entity/KuvaSlaveEntity.java:223 — 没有玄骸的人拿不到进度；mercy/MercyServer.java:743,825-833 failureProgress + entity/KuvaMasterEntity.java:934 directFailure — 判错（两种开关下）也按同一倍率给进度",
         "wf 小知识（原作设定）：Warframe 中 Kuva Thrall 为 Lich 麾下士兵，击杀它们积累线索、揭示 Requiem 模组",
-        "nemesis/LarvlingDirector.java:135 tick / :211 spawn — 没有玄骸时在线每 larvlingIntervalMin~MaxMinutes 分钟放一只幼体，动作栏 message.kuvalich.larvling.appeared；entity/KuvaLarvlingEntity.java:194 hurt 倒地挨一下就消散；:220 onKilled 处决诞生玄骸",
+        "nemesis/LarvlingDirector.java:135 tick / :211 spawn — 没有玄骸时在线每 larvlingIntervalMin~MaxMinutes 分钟放一只幼体，动作栏 message.kuvalich.larvling.appeared；倒地期间照 AbstractKuva.hurt 无敌，MercyServer.onDownedTimeout 超时才消散；:220 onKilled 处决诞生玄骸",
         "nemesis/ThrallDirector.java:109 tick — 有玄骸的人每 thrallSquadIntervalMin~MaxSeconds 秒来一队，看不见的落点；奴仆不再自然生成",
         "entity/KuvaSlaveEntity.java:223 progressRecipients — thrallProgressShareRange 格内有玄骸的人同样多；怒气、掉落只归击杀者"
       ]
@@ -2368,7 +2368,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× 对倒地的幼体补刀</b>：{lang:entity.kuvalich.kuva_larvling}倒地后，谁再打它一下它就当场消散，什么都不给，下一只要再等一整轮。打倒以后就停手，走近处决。"
+              "text": "<b>× 打倒幼体就不管了</b>：{lang:entity.kuvalich.kuva_larvling}倒地后谁也伤不到它，只能处决；<t>{cfg:kuva_lich.larvlingDownedSeconds}</t> 秒内没人处决，它就当场消散，什么都不给，下一只要再等一整轮。打倒以后就走近处决。"
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",

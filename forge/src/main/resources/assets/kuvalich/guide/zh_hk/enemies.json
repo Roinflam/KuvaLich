@@ -66,8 +66,8 @@
           "type": "tip",
           "style": "warn",
           "if": "cfg:kuva_lich.mercyEnabled",
-          "title": "別補刀",
-          "text": "幼體倒地以後，<b>任何玩家或寵物再打它一下</b>，它就當場消散；倒地時間到了沒人處決，也一樣。消散的幼體什麼都不給，下一隻要再等 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分鐘。"
+          "title": "抓緊處決",
+          "text": "幼體倒地以後<b>誰也傷不到它</b>，接着開槍、補刀都沒用，只能走近處決；<t>{cfg:kuva_lich.larvlingDownedSeconds}</t> 秒內沒人處決，它就當場消散。消散的幼體什麼都不給，下一隻要再等 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分鐘。"
         },
         {
           "type": "h",
@@ -101,7 +101,7 @@
             "它不進存檔：退出存檔、區塊卸載時還沒倒地的幼體直接離開，<t>2</t> 分鐘後再來一隻",
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "倒地過的幼體不管結局如何（誕生了玄骸、被補刀、超時消散），下一隻都要重新等一整輪"
+              "text": "倒地過的幼體不管結局如何（誕生了玄骸、超時消散），下一隻都要重新等一整輪"
             },
             "生成蛋放出來的幼體同樣有效，還沒有玄骸的人了結它，一樣得到玄骸"
           ]

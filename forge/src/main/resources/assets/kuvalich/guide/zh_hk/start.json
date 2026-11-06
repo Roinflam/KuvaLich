@@ -635,7 +635,7 @@
           "items": [
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<em>等幼體</em>：還沒有玄骸時，在線每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分鐘會有一隻{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上會提示「{lang:message.kuvalich.larvling.appeared}」。把它打倒，它亮出的就是你將來那隻玄骸的武器，連等級、元素都定好了；走近按<t>{lang:key.kuvalich.mercy}</t>鍵處決，玄骸就此誕生。倒地後<b>別再打它</b>，補一下它就消散了，見[[enemies/kuva_larvling]]。"
+              "text": "<em>等幼體</em>：還沒有玄骸時，在線每 <t>{cfg:kuva_lich.larvlingIntervalMinMinutes}~{cfg:kuva_lich.larvlingIntervalMaxMinutes}</t> 分鐘會有一隻{lang:entity.kuvalich.kuva_larvling}找到你，屏幕上會提示「{lang:message.kuvalich.larvling.appeared}」。把它打倒，它亮出的就是你將來那隻玄骸的武器，連等級、元素都定好了；走近按<t>{lang:key.kuvalich.mercy}</t>鍵處決，玄骸就此誕生。倒地後誰也傷不到它，<b>抓緊處決</b>，時間一過它就消散了，見[[enemies/kuva_larvling]]。"
             },
             {
               "if": "!cfg:kuva_lich.mercyEnabled",
@@ -2137,7 +2137,7 @@
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
-              "text": "<b>× 對倒地的幼體補刀</b>：{lang:entity.kuvalich.kuva_larvling}倒地後，誰再打它一下它就當場消散，什麼都不給，下一隻要再等一整輪。打倒以後就停手，走近處決。"
+              "text": "<b>× 打倒幼體就不管了</b>：{lang:entity.kuvalich.kuva_larvling}倒地後誰也傷不到它，只能處決；<t>{cfg:kuva_lich.larvlingDownedSeconds}</t> 秒內沒人處決，它就當場消散，什麼都不給，下一隻要再等一整輪。打倒以後就走近處決。"
             },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
