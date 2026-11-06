@@ -1051,7 +1051,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      * 玄骸死了：按<b>主人</b>的卡判定，谁打出最后一击不重要（帮打的人不吃亏，主人也不会被别人「代捅」掉三张卡）。
      *
      * <p>主人不在线、不在同一个世界、或离它超过 64 格：这次遭遇按「被别的东西打死」结束，不判定、不给进度。
-     * 三张卡放齐、且至少揭示了一条线索就判定并记一行处决记录（直接判定，不是怜悯之击）；没放齐、或一条都没揭示只给主人解密进度。</p>
+     * 三张卡放齐了就判定并记一行处决记录（直接判定，不是怜悯之击）；没放齐只给主人解密进度。</p>
      *
      * @param killer 打出最后一击的实体（效果包里的朝向用），不知道为 null
      */
@@ -1069,9 +1069,7 @@ public class KuvaMasterEntity extends AbstractKuva {
         }
 
         int requiemArg = (killer instanceof Player ? killer : owner).getId() + 1;
-        // 一条线索都没揭示时判定必错（isCorrectAnswer 要求阶段 > 0），不判、只给进度：安魂成功后没用完的卡留在扉上、
-        // 阶段归 0，幼体诞生玄骸又不看阶段，不加这一条，新的一只在揭示第一条线索之前被打死会白白判错升一级
-        if (card.isReadyCard() && card.getUnlockedCardStatus() > 0 && !isMercyFinishing()) {
+        if (card.isReadyCard() && !isMercyFinishing()) {
             int prefix = card.correctPrefixLength();
             LichDirector.onMercyResult(owner, this, packDirectAttempt(card, prefix), prefix >= 3);
             if (card.isCorrectAnswer()) {
