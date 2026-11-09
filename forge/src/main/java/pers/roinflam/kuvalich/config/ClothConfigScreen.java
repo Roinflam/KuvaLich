@@ -408,6 +408,8 @@ public class ClothConfigScreen {
         spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadRadius", sk.thrallSquadRadius, 48, 16, 128));
         spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadMaxPerHour", sk.thrallSquadMaxPerHour, 20, 0, 1000));
         spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadSpawnSafeRadius", sk.thrallSquadSpawnSafeRadius, 200, 0, 100000));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadResumeDelaySeconds", sk.thrallSquadResumeDelaySeconds, 30, 0, 3600));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadRetrySeconds", sk.thrallSquadRetrySeconds, 15, 1, 600));
         spawnCategory.addEntry(dimensions(entryBuilder, "thrallSquadDimensions", sk.thrallSquadDimensions));
         spawnCategory.addEntry(intIn(entryBuilder, "thrallProgressShareRange", sk.thrallProgressShareRange, 48, 0, 256));
 

@@ -148,10 +148,20 @@
               "找誰",
               "只找<em>已經有玄骸</em>的人，還沒有的先去了結一隻[[enemies/kuva_larvling|赤毒幼體]]"
             ],
-            [
-              "多久一隊",
-              "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸剛誕生、你剛上線時從頭計時；在它們不來的地方計時停著，回來後至少再等半分鐘"
-            ],
+            {
+              "if": "cfg:kuva_lich.thrallSquadResumeDelaySeconds!=0",
+              "cells": [
+                "多久一隊",
+                "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸剛誕生、你剛上線時從頭計時；在它們不來的地方計時停著，回來後至少再等 <t>{cfg:kuva_lich.thrallSquadResumeDelaySeconds}</t> 秒"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.thrallSquadResumeDelaySeconds==0",
+              "cells": [
+                "多久一隊",
+                "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸剛誕生、你剛上線時從頭計時；在它們不來的地方計時停著，回來後接著往下數"
+              ]
+            },
             [
               "落點",
               "你身邊 <t>16~28</t> 格外、你看不見的地方，幾隻挨在一起，一落地就衝你來"

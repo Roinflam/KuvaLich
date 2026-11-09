@@ -54,6 +54,7 @@ public final class LarvlingTests {
     private static final String CFG_SQUAD_SPAWN = "kl_cfg_thrallSpawnSafe";
     private static final String CFG_SQUAD_HOUR = "kl_cfg_thrallHourly";
     private static final String CFG_SQUAD_PAIR = "kl_cfg_thrallPair";
+    private static final String CFG_SQUAD_RESUME = "kl_cfg_thrallResumeDelay";
 
     private LarvlingTests() {
     }
@@ -395,8 +396,10 @@ public final class LarvlingTests {
         ThrallDirector.tick(p, now + 400L);
         h.assertTrue(ThrallDirector.nearby(p) == 0, "刚回来不应当马上放");
         long left = ThrallDirector.view(p).nextInTicks();
-        h.assertTrue(left == ThrallDirector.RESUME_MIN - 20, "回来后应当至少再等 30 秒，实际剩 " + left);
-        for (int i = 1; i <= (ThrallDirector.RESUME_MIN - 20) / 20; i++) {
+        int resume = ModConfig.KUVA_LICH.thrallSquadResumeDelaySeconds.get() * 20;
+        h.assertTrue(resume == 30 * 20, "默认应当补到 30 秒，配置读出来是 " + resume + " tick");
+        h.assertTrue(left == resume - 20, "回来后应当至少再等 30 秒，实际剩 " + left);
+        for (int i = 1; i <= (resume - 20) / 20; i++) {
             ThrallDirector.tick(p, now + 400L + i * 20L);
         }
         h.assertTrue(ThrallDirector.nearby(p) >= 1, "等够 30 秒应当来一队");
@@ -406,6 +409,49 @@ public final class LarvlingTests {
 
     @AfterBatch(batch = CFG_SQUAD_RETURN)
     public static void afterSquadReturn(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    /** 回来后补的等待跟着 thrallSquadResumeDelaySeconds 走：0 = 不补，接着剩下的数；改成 10 秒就补到 10 秒 */
+    @GameTest(template = "empty", batch = CFG_SQUAD_RESUME, timeoutTicks = 100)
+    public static void thrallSquadResumeDelayFollowsConfig(GameTestHelper h) {
+        openBig(h);
+        long now = now(h);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSpawnSafeRadius, 0);
+        ServerPlayer p = KuvaTestKit.player(h);
+        giveLich(p, 0x86L);
+
+        // 0：倒数早就数完了，一回来当场就来
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadResumeDelaySeconds, 0);
+        ThrallDirector.setNext(p, 0);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadDimensions, List.of("minecraft:the_nether"));
+        ThrallDirector.tick(p, now);
+        h.assertTrue("dimension".equals(ThrallDirector.blocker(p)), "应当报 dimension，实际 " + ThrallDirector.blocker(p));
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadDimensions, List.of("minecraft:overworld"));
+        ThrallDirector.tick(p, now + 20L);
+        h.assertTrue(ThrallDirector.nearby(p) >= 1, "不补等待时回来就该来一队，实际 " + ThrallDirector.nearby(p));
+        discardThralls(h, p);
+
+        // 10 秒：回来后剩 10 秒（这一次已经走掉 1 秒）
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadResumeDelaySeconds, 10);
+        ThrallDirector.setNext(p, 0);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadDimensions, List.of("minecraft:the_nether"));
+        ThrallDirector.tick(p, now + 40L);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadDimensions, List.of("minecraft:overworld"));
+        ThrallDirector.tick(p, now + 60L);
+        long left = ThrallDirector.view(p).nextInTicks();
+        h.assertTrue(ThrallDirector.nearby(p) == 0, "补 10 秒时回来不应当马上来");
+        h.assertTrue(left == 10 * 20 - 20, "回来后应当剩 9 秒（180 tick），实际剩 " + left);
+        for (int i = 1; i <= 9; i++) {
+            ThrallDirector.tick(p, now + 60L + i * 20L);
+        }
+        h.assertTrue(ThrallDirector.nearby(p) >= 1, "等够 10 秒应当来一队");
+        discardThralls(h, p);
+        h.succeed();
+    }
+
+    @AfterBatch(batch = CFG_SQUAD_RESUME)
+    public static void afterSquadResume(ServerLevel level) {
         KuvaTestKit.afterBatch(level);
     }
 

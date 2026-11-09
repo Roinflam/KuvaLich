@@ -43,10 +43,10 @@ import java.util.function.Predicate;
  *
  * <p>能放的条件：有玄骸、在 {@code thrallSquadDimensions} 里、难度不是和平、不是创造 / 旁观、活着、没在处决、
  * 玄骸没被管理员暂停、离该世界出生点（水平距离）不少于 {@code thrallSquadSpawnSafeRadius}。
- * <b>倒数只在能放的时候往下走</b>：在别的维度、出生点附近、创造模式里待多久都不攒，从不能放变成能放时剩余至少补到 30 秒
+ * <b>倒数只在能放的时候往下走</b>：在别的维度、出生点附近、创造模式里待多久都不攒，从不能放变成能放时剩余至少补到 {@code thrallSquadResumeDelaySeconds}（默认 30 秒）
  * （以前记的是绝对时刻，在主城待够一个间隔，一回资源世界一秒内就来一队）。
  * 数完了身边已经够数就重掷一个间隔，快够数、小时额度快满就少放几只，额度满了就等最早那批滑出一小时窗口。
- * 找不到落点（窝在洞里、林子里）隔 15 秒再试，不每秒试，免得一走到空地马上来。</p>
+ * 找不到落点（窝在洞里、林子里）隔 {@code thrallSquadRetrySeconds}（默认 15 秒）再试，不每秒试，免得一走到空地马上来。</p>
  *
  * <p>几个人站一起只按一个节奏：给一个人放出一队时，他 {@code thrallSquadRadius} 格内其他有玄骸的玩家的倒数也至少
  * 重置成一整个间隔，这一队也记进他们的小时额度（以前每人各数各的，三个人站一起来得是三倍）。</p>
@@ -66,10 +66,6 @@ public final class ThrallDirector {
     private static final int TRIES = 24;
     /** 同一队里其余几只离第一只多远以内找落点 */
     private static final int SPREAD = 3;
-    /** 找不到落点时隔多久再试 */
-    public static final int RETRY_AFTER_FAIL = 15 * 20;
-    /** 从不能放变成能放时，剩余等待至少补到这么多 */
-    public static final int RESUME_MIN = 30 * 20;
     /** 小时额度的窗口 */
     private static final long HOUR = 60L * 60L * 20L;
     private static final double HALF_WIDTH = 1.5D / 2.0D;
@@ -147,9 +143,9 @@ public final class ThrallDirector {
             return;
         }
         if (s.blocked) {
-            // 刚回到能放的地方：不管之前攒了多久，至少再等 30 秒
+            // 刚回到能放的地方：不管之前攒了多久，至少再等 thrallSquadResumeDelaySeconds（默认 30 秒，0 = 不补）
             s.blocked = false;
-            s.wait = Math.max(s.wait, RESUME_MIN);
+            s.wait = Math.max(s.wait, ModConfig.KUVA_LICH.thrallSquadResumeDelaySeconds.get() * 20);
         }
         s.wait = Math.max(0, s.wait - PERIOD);
         if (s.wait > 0) {
@@ -170,7 +166,8 @@ public final class ThrallDirector {
         int size = Math.min(Math.min(room, quota), min + player.getRandom().nextInt(max - min + 1));
         List<KuvaSlaveEntity> squad = spawnSquad(player, size, true);
         if (squad.isEmpty()) {
-            s.wait = RETRY_AFTER_FAIL;
+            // 找不到落点：隔 thrallSquadRetrySeconds（默认 15 秒）再试
+            s.wait = ModConfig.KUVA_LICH.thrallSquadRetrySeconds.get() * 20;
             return;
         }
         s.wait = rollInterval(player);
@@ -355,7 +352,7 @@ public final class ThrallDirector {
         return new View(next, nearby(player), blocker(player), lastHour(player.getUUID(), now(player.server)), dist);
     }
 
-    /** 把下一队拨到 {@code ticks} 之后（管理命令；不补「刚回来至少 30 秒」） */
+    /** 把下一队拨到 {@code ticks} 之后（管理命令；不补「刚回来至少等 thrallSquadResumeDelaySeconds」） */
     public static void setNext(ServerPlayer player, int ticks) {
         Squad s = SQUADS.computeIfAbsent(player.getUUID(), id -> new Squad());
         s.wait = Math.max(0, ticks);

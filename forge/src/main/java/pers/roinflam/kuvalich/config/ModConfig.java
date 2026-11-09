@@ -316,6 +316,8 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue thrallSquadRadius;
         public final ForgeConfigSpec.IntValue thrallSquadMaxPerHour;
         public final ForgeConfigSpec.IntValue thrallSquadSpawnSafeRadius;
+        public final ForgeConfigSpec.IntValue thrallSquadResumeDelaySeconds;
+        public final ForgeConfigSpec.IntValue thrallSquadRetrySeconds;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> thrallSquadDimensions;
         public final ForgeConfigSpec.IntValue thrallProgressShareRange;
 
@@ -1481,6 +1483,16 @@ public final class ModConfig {
                     .comment("No squads within this many blocks (horizontal) of the world spawn, and none land there; 0 = off")
                     .comment("世界出生点这么多格内（水平距离）不放奴仆小队，落点也不在这个范围里；0 = 关")
                     .defineInRange("thrallSquadSpawnSafeRadius", 200, 0, 100000);
+
+            thrallSquadResumeDelaySeconds = builder
+                    .comment("When a player gets back to where squads can come (dimension, difficulty, game mode, spawn area...), the countdown is topped up to at least this many seconds; 0 = carry on with what was left")
+                    .comment("从放不了的地方（维度、难度、游戏模式、出生点附近等）回到能放的地方时，剩余等待至少补到这么多秒；0 = 不补，接着剩下的数")
+                    .defineInRange("thrallSquadResumeDelaySeconds", 30, 0, 3600);
+
+            thrallSquadRetrySeconds = builder
+                    .comment("Seconds to wait before trying again when no spot for a squad can be found")
+                    .comment("找不到落点时隔多少秒再试")
+                    .defineInRange("thrallSquadRetrySeconds", 15, 1, 600);
 
             thrallSquadDimensions = builder
                     .comment("Dimensions where Thrall squads are sent")

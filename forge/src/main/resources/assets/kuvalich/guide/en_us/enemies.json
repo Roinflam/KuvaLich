@@ -148,10 +148,20 @@
               "Who",
               "Only players who <em>already have a Lich</em>; without one, first finish off a [[enemies/kuva_larvling|Kuva Larvling]]"
             ],
-            [
-              "How often",
-              "A squad every <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}-{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> s, <t>{cfg:kuva_lich.thrallSquadSizeMin}-{cfg:kuva_lich.thrallSquadSizeMax}</t> Thralls each; the timer starts over when your Lich is born and when you log in, stands still while you are somewhere they don't come, and gives you at least half a minute after you come back"
-            ],
+            {
+              "if": "cfg:kuva_lich.thrallSquadResumeDelaySeconds!=0",
+              "cells": [
+                "How often",
+                "A squad every <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}-{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> s, <t>{cfg:kuva_lich.thrallSquadSizeMin}-{cfg:kuva_lich.thrallSquadSizeMax}</t> Thralls each; the timer starts over when your Lich is born and when you log in, stands still while you are somewhere they don't come, and gives you at least <t>{cfg:kuva_lich.thrallSquadResumeDelaySeconds}</t> s after you come back"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.thrallSquadResumeDelaySeconds==0",
+              "cells": [
+                "How often",
+                "A squad every <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}-{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> s, <t>{cfg:kuva_lich.thrallSquadSizeMin}-{cfg:kuva_lich.thrallSquadSizeMax}</t> Thralls each; the timer starts over when your Lich is born and when you log in, stands still while you are somewhere they don't come, and picks up where it left off when you come back"
+              ]
+            },
             [
               "Where",
               "<t>16-28</t> blocks from you, out of sight, close together, and they charge you as soon as they land"
