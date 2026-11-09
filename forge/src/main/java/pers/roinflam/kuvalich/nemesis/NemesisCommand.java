@@ -570,11 +570,16 @@ public final class NemesisCommand {
             sb.append(", no squads (no lich)");
         } else {
             sb.append(", next squad in ").append(tv.nextInTicks() < 0 ? "?" : String.valueOf((tv.nextInTicks() + 19) / 20))
-                    .append('s');
+                    .append("s of unblocked time");
             if (!tv.blocker().isEmpty()) {
                 sb.append(", blocked: ").append(tv.blocker());
             }
         }
+        int perHour = ModConfig.KUVA_LICH.thrallSquadMaxPerHour.get();
+        sb.append(", last hour ").append(tv.lastHour()).append('/').append(perHour <= 0 ? "unlimited" : String.valueOf(perHour));
+        int safe = ModConfig.KUVA_LICH.thrallSquadSpawnSafeRadius.get();
+        sb.append(", spawn safe ").append(safe <= 0 ? "off" : safe + " blocks").append(" (")
+                .append(tv.spawnDistance()).append(" from spawn)");
         return ok(ctx, sb.toString());
     }
 

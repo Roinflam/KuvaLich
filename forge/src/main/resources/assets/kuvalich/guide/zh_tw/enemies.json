@@ -150,7 +150,7 @@
             ],
             [
               "多久一隊",
-              "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸剛誕生、你剛上線時從頭計時"
+              "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸剛誕生、你剛上線時從頭計時；在它們不來的地方計時停著，回來後至少再等半分鐘"
             ],
             [
               "落點",
@@ -160,6 +160,20 @@
               "上限",
               "你身邊 <t>{cfg:kuva_lich.thrallSquadRadius}</t> 格內已經有 <t>{cfg:kuva_lich.thrallSquadMaxNearby}</t> 只奴僕時這一隊不來，快夠數時少來幾隻"
             ],
+            {
+              "if": "cfg:kuva_lich.thrallSquadMaxPerHour!=0",
+              "cells": [
+                "每小時",
+                "一小時內最多來 <t>{cfg:kuva_lich.thrallSquadMaxPerHour}</t> 只，滿了要等最早那一隊過去一小時；幾個人站在一起只按一個節奏來，這一隊每個人都算上"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.thrallSquadSpawnSafeRadius!=0",
+              "cells": [
+                "出生點附近",
+                "離世界出生點 <t>{cfg:kuva_lich.thrallSquadSpawnSafeRadius}</t> 格以內不來，也不會落在這個範圍裡"
+              ]
+            },
             [
               "不來的時候",
               "你在它們不去的維度、和平難度、創造或旁觀模式下，或者正在處決"

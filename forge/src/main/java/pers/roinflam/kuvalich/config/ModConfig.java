@@ -314,6 +314,8 @@ public final class ModConfig {
         public final ForgeConfigSpec.IntValue thrallSquadSizeMax;
         public final ForgeConfigSpec.IntValue thrallSquadMaxNearby;
         public final ForgeConfigSpec.IntValue thrallSquadRadius;
+        public final ForgeConfigSpec.IntValue thrallSquadMaxPerHour;
+        public final ForgeConfigSpec.IntValue thrallSquadSpawnSafeRadius;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> thrallSquadDimensions;
         public final ForgeConfigSpec.IntValue thrallProgressShareRange;
 
@@ -1443,12 +1445,12 @@ public final class ModConfig {
             thrallSquadIntervalMinSeconds = builder
                     .comment("Shortest time (seconds) between two squads for the same player")
                     .comment("同一个玩家两队之间至少隔多少秒")
-                    .defineInRange("thrallSquadIntervalMinSeconds", 60, 5, 3600);
+                    .defineInRange("thrallSquadIntervalMinSeconds", 180, 5, 3600);
 
             thrallSquadIntervalMaxSeconds = builder
                     .comment("Longest time (seconds) between two squads; each wait is rolled between the two")
                     .comment("两队之间最多隔多少秒；每次在两者之间随机")
-                    .defineInRange("thrallSquadIntervalMaxSeconds", 120, 5, 3600);
+                    .defineInRange("thrallSquadIntervalMaxSeconds", 300, 5, 3600);
 
             thrallSquadSizeMin = builder
                     .comment("Fewest Thralls in a squad")
@@ -1458,17 +1460,27 @@ public final class ModConfig {
             thrallSquadSizeMax = builder
                     .comment("Most Thralls in a squad")
                     .comment("一队最多几只")
-                    .defineInRange("thrallSquadSizeMax", 3, 1, 8);
+                    .defineInRange("thrallSquadSizeMax", 2, 1, 8);
 
             thrallSquadMaxNearby = builder
                     .comment("No new squad while this many Thralls are already within the radius below; a squad that would go over is trimmed")
                     .comment("身边下面这个半径内已经有这么多只奴仆时不再放；放一队会超的话少放几只")
-                    .defineInRange("thrallSquadMaxNearby", 6, 1, 32);
+                    .defineInRange("thrallSquadMaxNearby", 4, 1, 32);
 
             thrallSquadRadius = builder
                     .comment("Radius (blocks) used for the count above")
                     .comment("上面那个数按多大半径数（格）")
                     .defineInRange("thrallSquadRadius", 48, 16, 128);
+
+            thrallSquadMaxPerHour = builder
+                    .comment("Most Thralls sent to one player in any 60 minutes (players standing together share each squad); 0 = no limit")
+                    .comment("每个玩家任意 60 分钟内最多来几只奴仆（站在一起的人每队都算上）；0 = 不限")
+                    .defineInRange("thrallSquadMaxPerHour", 20, 0, 1000);
+
+            thrallSquadSpawnSafeRadius = builder
+                    .comment("No squads within this many blocks (horizontal) of the world spawn, and none land there; 0 = off")
+                    .comment("世界出生点这么多格内（水平距离）不放奴仆小队，落点也不在这个范围里；0 = 关")
+                    .defineInRange("thrallSquadSpawnSafeRadius", 200, 0, 100000);
 
             thrallSquadDimensions = builder
                     .comment("Dimensions where Thrall squads are sent")

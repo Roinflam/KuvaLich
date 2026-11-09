@@ -400,12 +400,14 @@ public class ClothConfigScreen {
         spawnCategory.addEntry(intIn(entryBuilder, "larvlingDownedSeconds", sk.larvlingDownedSeconds, 30, 10, 600));
         spawnCategory.addEntry(dimensions(entryBuilder, "larvlingDimensions", sk.larvlingDimensions));
         spawnCategory.addEntry(bool(entryBuilder, "thrallSquadEnabled", sk.thrallSquadEnabled, true));
-        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadIntervalMinSeconds", sk.thrallSquadIntervalMinSeconds, 60, 5, 3600));
-        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadIntervalMaxSeconds", sk.thrallSquadIntervalMaxSeconds, 120, 5, 3600));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadIntervalMinSeconds", sk.thrallSquadIntervalMinSeconds, 180, 5, 3600));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadIntervalMaxSeconds", sk.thrallSquadIntervalMaxSeconds, 300, 5, 3600));
         spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadSizeMin", sk.thrallSquadSizeMin, 1, 1, 8));
-        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadSizeMax", sk.thrallSquadSizeMax, 3, 1, 8));
-        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadMaxNearby", sk.thrallSquadMaxNearby, 6, 1, 32));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadSizeMax", sk.thrallSquadSizeMax, 2, 1, 8));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadMaxNearby", sk.thrallSquadMaxNearby, 4, 1, 32));
         spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadRadius", sk.thrallSquadRadius, 48, 16, 128));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadMaxPerHour", sk.thrallSquadMaxPerHour, 20, 0, 1000));
+        spawnCategory.addEntry(intIn(entryBuilder, "thrallSquadSpawnSafeRadius", sk.thrallSquadSpawnSafeRadius, 200, 0, 100000));
         spawnCategory.addEntry(dimensions(entryBuilder, "thrallSquadDimensions", sk.thrallSquadDimensions));
         spawnCategory.addEntry(intIn(entryBuilder, "thrallProgressShareRange", sk.thrallProgressShareRange, 48, 0, 256));
 

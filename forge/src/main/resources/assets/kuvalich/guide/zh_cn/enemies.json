@@ -164,7 +164,7 @@
             ],
             [
               "多久一队",
-              "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一队，一队 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸刚诞生、你刚上线时从头计时"
+              "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一队，一队 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸刚诞生、你刚上线时从头计时；在它们不来的地方计时停着，回来后至少再等半分钟"
             ],
             [
               "落点",
@@ -174,6 +174,20 @@
               "上限",
               "你身边 <t>{cfg:kuva_lich.thrallSquadRadius}</t> 格内已经有 <t>{cfg:kuva_lich.thrallSquadMaxNearby}</t> 只奴仆时这一队不来，快够数时少来几只"
             ],
+            {
+              "if": "cfg:kuva_lich.thrallSquadMaxPerHour!=0",
+              "cells": [
+                "每小时",
+                "一小时内最多来 <t>{cfg:kuva_lich.thrallSquadMaxPerHour}</t> 只，满了要等最早那一队过去一小时；几个人站在一起只按一个节奏来，这一队每个人都算上"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.thrallSquadSpawnSafeRadius!=0",
+              "cells": [
+                "出生点附近",
+                "离世界出生点 <t>{cfg:kuva_lich.thrallSquadSpawnSafeRadius}</t> 格以内不来，也不会落在这个范围里"
+              ]
+            },
             [
               "不来的时候",
               "你在它们不去的维度、和平难度、创造或旁观模式下，或者正在处决"
@@ -401,7 +415,7 @@
       ],
       "_src": [
         "entity/KuvaSlaveEntity.java — 继承 AbstractKuva；AbstractKuva 生物类型 UNDEAD",
-        "nemesis/ThrallDirector.java:109 tick — 奴仆不再自然生成（worldgen/KuvaLichBiomeModifier.java 不再加刷怪），只给有玄骸的人按 thrallSquadIntervalMin~MaxSeconds 放一队 thrallSquadSizeMin~Max 只；:144 blocker — 不在 thrallSquadDimensions、和平、创造 / 旁观、死了、处决中不放；:162 nearby — thrallSquadRadius 内已有 thrallSquadMaxNearby 只跳过、快够数少放；:171 spawnSquad — 16~28 格外看不见的落点（找不到放宽到 12 格），其余挨着放，setTarget(玩家)；计时只在内存，下线删掉、上线和刚诞生玄骸时从头计一整个间隔；不 setPersistenceRequired，走远照原版消失",
+        "nemesis/ThrallDirector.java:109 tick — 奴仆不再自然生成（worldgen/KuvaLichBiomeModifier.java 不再加刷怪），只给有玄骸的人按 thrallSquadIntervalMin~MaxSeconds 放一队 thrallSquadSizeMin~Max 只；:144 blocker — 不在 thrallSquadDimensions、和平、创造 / 旁观、死了、处决中不放；:162 nearby — thrallSquadRadius 内已有 thrallSquadMaxNearby 只跳过、快够数少放；:171 spawnSquad — 16~28 格外看不见的落点（找不到放宽到 12 格），其余挨着放，setTarget(玩家)；倒数只在能放时走（blocker 不为空时停，回到能放至少补到 RESUME_MIN 30 秒），只在内存，下线删掉、上线和刚诞生玄骸时从头计一整个间隔；blocker 还有 paused（玄骸暂停）和 spawn（离 getSharedSpawnPos 水平距离小于 thrallSquadSpawnSafeRadius），spawnSquad 的落点也避开这个半径；quotaLeft — thrallSquadMaxPerHour 按每人滚动 60 分钟窗口数只数（下线不删、关服清），满了等最早那批滑出窗口，一队会超就少放；shareWithNeighbours — 放出一队时 thrallSquadRadius 内其他有玄骸的人倒数至少重置成一整个间隔、也记进他们的额度；找不到落点隔 RETRY_AFTER_FAIL 15 秒再试；不 setPersistenceRequired，走远照原版消失",
         "init/KuvaLichEntities.java + 原版 NaturalSpawner noCollision(getAABB) — 宽 1.5 的碰撞箱占 3×3 格，高 2.9 占 3 格",
         "entity/KuvaSlaveEntity.java:98 createAttributes — 生命 100 / 攻击 8 / 击退抗性 0.4 / 移速 0.35 / 追踪 32 / 护甲 4；原版 Zombie 移速 0.23；尺寸 1.5 × 2.9",
         "原版 DamageEnchantment（亡灵杀手）、LivingEntity.isInvertedHealAndHarm；module/weapon/WeaponCombatHandler.java bane_of_undead 对 UNDEAD 生效",

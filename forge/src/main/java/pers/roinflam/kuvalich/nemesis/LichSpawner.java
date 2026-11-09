@@ -15,6 +15,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Predicate;
+
 /**
  * 专属玄骸的落点（纯服务端）
  *
@@ -61,6 +63,13 @@ public final class LichSpawner {
     @Nullable
     public static Vec3 findHidden(ServerPlayer owner, int minDist, int maxDist, int tries, boolean relaxed,
                                   double halfWidth, double height) {
+        return findHidden(owner, minDist, maxDist, tries, relaxed, halfWidth, height, null);
+    }
+
+    /** 同上，{@code accept} 不为空时只要它认可的落点（比如奴仆小队不落在世界出生点附近） */
+    @Nullable
+    public static Vec3 findHidden(ServerPlayer owner, int minDist, int maxDist, int tries, boolean relaxed,
+                                  double halfWidth, double height, @Nullable Predicate<Vec3> accept) {
         ServerLevel level = owner.serverLevel();
         RandomSource random = owner.getRandom();
         Vec3 fallback = null;
@@ -70,7 +79,7 @@ public final class LichSpawner {
             double x = owner.getX() + Math.cos(angle) * dist;
             double z = owner.getZ() + Math.sin(angle) * dist;
             Vec3 feet = findStanding(level, x, z, Mth.floor(owner.getY()), halfWidth, height);
-            if (feet == null) {
+            if (feet == null || accept != null && !accept.test(feet)) {
                 continue;
             }
             boolean behind = isBehind(owner, feet);

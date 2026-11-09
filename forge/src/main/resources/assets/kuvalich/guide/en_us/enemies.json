@@ -150,7 +150,7 @@
             ],
             [
               "How often",
-              "A squad every <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}-{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> s, <t>{cfg:kuva_lich.thrallSquadSizeMin}-{cfg:kuva_lich.thrallSquadSizeMax}</t> Thralls each; the timer starts over when your Lich is born and when you log in"
+              "A squad every <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}-{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> s, <t>{cfg:kuva_lich.thrallSquadSizeMin}-{cfg:kuva_lich.thrallSquadSizeMax}</t> Thralls each; the timer starts over when your Lich is born and when you log in, stands still while you are somewhere they don't come, and gives you at least half a minute after you come back"
             ],
             [
               "Where",
@@ -160,6 +160,20 @@
               "Cap",
               "No squad comes while <t>{cfg:kuva_lich.thrallSquadMaxNearby}</t> Thralls are already within <t>{cfg:kuva_lich.thrallSquadRadius}</t> blocks of you; near the cap, fewer come"
             ],
+            {
+              "if": "cfg:kuva_lich.thrallSquadMaxPerHour!=0",
+              "cells": [
+                "Per hour",
+                "At most <t>{cfg:kuva_lich.thrallSquadMaxPerHour}</t> Thralls in any hour; once that is reached, the next squad waits until the oldest one is an hour old. Players standing together share one rhythm, and each squad counts for all of them"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.thrallSquadSpawnSafeRadius!=0",
+              "cells": [
+                "Near spawn",
+                "None come within <t>{cfg:kuva_lich.thrallSquadSpawnSafeRadius}</t> blocks of the world spawn, and none land there"
+              ]
+            },
             [
               "When they don't",
               "While you are in a dimension they don't go to, on Peaceful, in Creative or Spectator, or in the middle of an execution"

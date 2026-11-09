@@ -50,6 +50,10 @@ public final class LarvlingTests {
     private static final String ISO_HIT = "kl_larvling_iso_hitWhileDown";
     private static final String CFG_SQUAD = "kl_cfg_thrallSquad";
     private static final String ISO_SHARE = "kl_larvling_iso_shareProgress";
+    private static final String CFG_SQUAD_RETURN = "kl_cfg_thrallReturn";
+    private static final String CFG_SQUAD_SPAWN = "kl_cfg_thrallSpawnSafe";
+    private static final String CFG_SQUAD_HOUR = "kl_cfg_thrallHourly";
+    private static final String CFG_SQUAD_PAIR = "kl_cfg_thrallPair";
 
     private LarvlingTests() {
     }
@@ -309,6 +313,7 @@ public final class LarvlingTests {
         KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSizeMin, 3);
         KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSizeMax, 3);
         KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadMaxNearby, 4);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSpawnSafeRadius, 0);
 
         // 没有玄骸：到点也不放，也不留计时
         ServerPlayer none = KuvaTestKit.player(h);
@@ -324,6 +329,17 @@ public final class LarvlingTests {
         ThrallDirector.setNext(creative, 0);
         ThrallDirector.tick(creative, now);
         h.assertTrue(ThrallDirector.nearby(creative) == 0, "创造模式不应当放奴仆");
+
+        // 玄骸被管理员暂停：奴仆也不来
+        ServerPlayer paused = KuvaTestKit.player(h);
+        giveLich(paused, 0x55L);
+        cardOf(paused).setLichPaused(true);
+        ThrallDirector.setNext(paused, 0);
+        ThrallDirector.tick(paused, now);
+        h.assertTrue(ThrallDirector.nearby(paused) == 0, "玄骸暂停时不应当放奴仆");
+        h.assertTrue("paused".equals(ThrallDirector.blocker(paused)), "暂停应当报 paused，实际 " + ThrallDirector.blocker(paused));
+        cardOf(paused).setLichPaused(false);
+        h.assertTrue(ThrallDirector.blocker(paused).isEmpty(), "取消暂停后应当能放");
 
         // 有玄骸：到点放一队（一队 3 只）
         ServerPlayer owner = KuvaTestKit.player(h);
@@ -355,6 +371,169 @@ public final class LarvlingTests {
     @AfterBatch(batch = CFG_SQUAD)
     public static void afterSquad(ServerLevel level) {
         KuvaTestKit.afterBatch(level);
+    }
+
+    // ==================== 奴仆小队：倒数只在能放时走、出生点保护、小时上限、几个人只按一个节奏 ====================
+
+    /** 在别的维度待够一个间隔再回来，不会一回来就来一队：倒数停着，回来至少补到 30 秒 */
+    @GameTest(template = "empty", batch = CFG_SQUAD_RETURN, timeoutTicks = 100)
+    public static void thrallSquadWaitsAfterReturning(GameTestHelper h) {
+        openBig(h);
+        long now = now(h);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSpawnSafeRadius, 0);
+        ServerPlayer p = KuvaTestKit.player(h);
+        giveLich(p, 0x81L);
+        ThrallDirector.setNext(p, 0);
+        // 「主世界不在名单里」= 人在别的维度，走的是同一个判断
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadDimensions, List.of("minecraft:the_nether"));
+        for (int i = 0; i < 20; i++) {
+            ThrallDirector.tick(p, now + i * 20L);
+        }
+        h.assertTrue("dimension".equals(ThrallDirector.blocker(p)), "应当报 dimension，实际 " + ThrallDirector.blocker(p));
+        h.assertTrue(ThrallDirector.nearby(p) == 0, "不在名单里的维度不应当放");
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadDimensions, List.of("minecraft:overworld"));
+        ThrallDirector.tick(p, now + 400L);
+        h.assertTrue(ThrallDirector.nearby(p) == 0, "刚回来不应当马上放");
+        long left = ThrallDirector.view(p).nextInTicks();
+        h.assertTrue(left == ThrallDirector.RESUME_MIN - 20, "回来后应当至少再等 30 秒，实际剩 " + left);
+        for (int i = 1; i <= (ThrallDirector.RESUME_MIN - 20) / 20; i++) {
+            ThrallDirector.tick(p, now + 400L + i * 20L);
+        }
+        h.assertTrue(ThrallDirector.nearby(p) >= 1, "等够 30 秒应当来一队");
+        discardThralls(h, p);
+        h.succeed();
+    }
+
+    @AfterBatch(batch = CFG_SQUAD_RETURN)
+    public static void afterSquadReturn(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    /** 出生点半径内的人不来，半径外的人落点也不落进半径 */
+    @GameTest(template = "empty", batch = CFG_SQUAD_SPAWN, timeoutTicks = 100)
+    public static void thrallSquadKeepsOffWorldSpawn(GameTestHelper h) {
+        openBig(h);
+        long now = now(h);
+        ServerLevel level = h.getLevel();
+        BlockPos oldSpawn = level.getSharedSpawnPos();
+        float oldAngle = level.getSharedSpawnAngle();
+        try {
+            KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSizeMin, 1);
+            KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSizeMax, 1);
+            KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadMaxNearby, 32);
+            ServerPlayer p = KuvaTestKit.player(h);
+            giveLich(p, 0x82L);
+            // 出生点挪到他东边 30 格
+            level.setDefaultSpawnPos(BlockPos.containing(p.getX() + 30.0D, p.getY(), p.getZ()), 0.0F);
+
+            KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSpawnSafeRadius, 100);
+            ThrallDirector.setNext(p, 0);
+            ThrallDirector.tick(p, now);
+            h.assertTrue("spawn".equals(ThrallDirector.blocker(p)), "出生点半径内应当报 spawn，实际 " + ThrallDirector.blocker(p));
+            h.assertTrue(ThrallDirector.nearby(p) == 0, "出生点半径内不应当放");
+
+            // 半径 24：他在 30 格外能放，但东边一大片落点在半径里
+            KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSpawnSafeRadius, 24);
+            h.assertTrue(ThrallDirector.blocker(p).isEmpty(), "出生点半径外应当能放，实际 " + ThrallDirector.blocker(p));
+            for (int i = 0; i < 8; i++) {
+                ThrallDirector.setNext(p, 0);
+                ThrallDirector.tick(p, now + i * 20L);
+            }
+            List<KuvaSlaveEntity> placed = thralls(h, p);
+            h.assertTrue(!placed.isEmpty(), "出生点半径外应当放得出来");
+            for (KuvaSlaveEntity t : placed) {
+                h.assertTrue(!ThrallDirector.nearSpawn(level, t.getX(), t.getZ()),
+                        "落点不应当在出生点半径内：" + t.blockPosition().toShortString());
+            }
+            discardThralls(h, p);
+        } finally {
+            level.setDefaultSpawnPos(oldSpawn, oldAngle);
+        }
+        h.succeed();
+    }
+
+    @AfterBatch(batch = CFG_SQUAD_SPAWN)
+    public static void afterSquadSpawn(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    /** 一小时满 20 只就不来，最早那批滑出一小时后才再来 */
+    @GameTest(template = "empty", batch = CFG_SQUAD_HOUR, timeoutTicks = 100)
+    public static void thrallSquadHourlyCap(GameTestHelper h) {
+        openBig(h);
+        long now = now(h);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSpawnSafeRadius, 0);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadMaxPerHour, 20);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSizeMin, 3);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSizeMax, 3);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadMaxNearby, 32);
+        ServerPlayer p = KuvaTestKit.player(h);
+        giveLich(p, 0x83L);
+        for (int i = 0; i < 40 && ThrallDirector.view(p).lastHour() < 20; i++) {
+            ThrallDirector.setNext(p, 0);
+            ThrallDirector.tick(p, now);
+        }
+        // 一队会超就少放：正好停在 20
+        h.assertTrue(ThrallDirector.view(p).lastHour() == 20, "一小时应当正好放满 20 只，实际 " + ThrallDirector.view(p).lastHour());
+        h.assertTrue(ThrallDirector.nearby(p) == 20, "身边应当正好 20 只，实际 " + ThrallDirector.nearby(p));
+        ThrallDirector.setNext(p, 0);
+        ThrallDirector.tick(p, now + 20L);
+        h.assertTrue(ThrallDirector.nearby(p) == 20, "满 20 只后不应当再放，实际 " + ThrallDirector.nearby(p));
+        h.assertTrue(ThrallDirector.view(p).nextInTicks() > 60L * 60L * 20L - 100L,
+                "满了应当等到最早那批滑出窗口，实际剩 " + ThrallDirector.view(p).nextInTicks());
+        // 过了一小时：额度空出来
+        ThrallDirector.setNext(p, 0);
+        ThrallDirector.tick(p, now + 60L * 60L * 20L + 20L);
+        h.assertTrue(ThrallDirector.nearby(p) > 20, "过了一小时应当又能来，实际 " + ThrallDirector.nearby(p));
+        discardThralls(h, p);
+        h.succeed();
+    }
+
+    @AfterBatch(batch = CFG_SQUAD_HOUR)
+    public static void afterSquadHour(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    /** 两个有玄骸的人站一起：给一个放了，另一个的倒数也重来、小时额度也记上，不会两倍地来 */
+    @GameTest(template = "empty", batch = CFG_SQUAD_PAIR, timeoutTicks = 100)
+    public static void thrallSquadSharedRhythm(GameTestHelper h) {
+        openBig(h);
+        long now = now(h);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSpawnSafeRadius, 0);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSizeMin, 1);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.thrallSquadSizeMax, 1);
+        ServerPlayer a = KuvaTestKit.player(h);
+        ServerPlayer b = KuvaTestKit.player(h);
+        giveLich(a, 0x84L);
+        giveLich(b, 0x85L);
+        ThrallDirector.setNext(a, 0);
+        ThrallDirector.setNext(b, 0);
+        ThrallDirector.tick(a, now);
+        h.assertTrue(ThrallDirector.nearby(a) == 1, "应当给 a 放一只，实际 " + ThrallDirector.nearby(a));
+        ThrallDirector.tick(b, now);
+        h.assertTrue(ThrallDirector.nearby(b) == 1, "b 和 a 站一起，不应当再单独来一队，实际 " + ThrallDirector.nearby(b));
+        long minWait = ModConfig.KUVA_LICH.thrallSquadIntervalMinSeconds.get() * 20L - 20L;
+        h.assertTrue(ThrallDirector.view(b).nextInTicks() >= minWait,
+                "b 的倒数应当重置成一整个间隔，实际剩 " + ThrallDirector.view(b).nextInTicks());
+        h.assertTrue(ThrallDirector.view(b).lastHour() == 1, "这一队应当也记进 b 的小时额度，实际 " + ThrallDirector.view(b).lastHour());
+        discardThralls(h, a);
+        h.succeed();
+    }
+
+    @AfterBatch(batch = CFG_SQUAD_PAIR)
+    public static void afterSquadPair(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    private static List<KuvaSlaveEntity> thralls(GameTestHelper h, ServerPlayer p) {
+        return h.getLevel().getEntitiesOfClass(KuvaSlaveEntity.class, p.getBoundingBox().inflate(64.0D),
+                e -> e.getType() == KuvaLichEntities.KUVA_SLAVE.get());
+    }
+
+    private static void discardThralls(GameTestHelper h, ServerPlayer p) {
+        for (KuvaSlaveEntity t : thralls(h, p)) {
+            t.discard();
+        }
     }
 
     // ==================== 奴仆进度分给 48 格内所有有玄骸的人 ====================
