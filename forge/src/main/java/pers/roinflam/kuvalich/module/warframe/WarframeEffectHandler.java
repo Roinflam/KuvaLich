@@ -100,6 +100,12 @@ public class WarframeEffectHandler {
      */
     private static final String CUSTOM_NPC_NAMESPACE = "customnpcs";
 
+    /**
+     * 掉落归属玩家标记的键名（死者 {@code getPersistentData()} 里，值为玩家 UUID），见 {@link #lootOwner}。
+     * 写标记的一方写死同一个字符串，改名要一起改。
+     */
+    private static final String LOOT_OWNER_KEY = "LootOwner";
+
     // ========== 实体加入世界 / Entity Join Level ==========
 
     @SubscribeEvent
@@ -289,129 +295,206 @@ public class WarframeEffectHandler {
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDrops(LivingDropsEvent evt) {
-        if (!evt.getEntity().level().isClientSide() && evt.getSource().getEntity() instanceof Player) {
-            if (evt.getEntity() instanceof Animal || evt.getEntity() instanceof Monster || isCustomNpc(evt.getEntity())) {
-                Player player = (Player) evt.getSource().getEntity();
+        if (evt.getEntity().level().isClientSide()) {
+            return;
+        }
+        if (!(evt.getEntity() instanceof Animal || evt.getEntity() instanceof Monster || isCustomNpc(evt.getEntity()))) {
+            return;
+        }
+        Entity lastHit = evt.getSource().getEntity();
+        Player player;
+        if (evt.getEntity().getPersistentData().hasUUID(LOOT_OWNER_KEY)) {
+            // 掉落归属玩家：按他的词条算，不看最后一击是谁；他不在线就不乘
+            player = lootOwner(evt.getEntity());
+            if (player == null) {
+                return;
+            }
+        } else if (lastHit instanceof Player killer) {
+            player = killer;
+        } else {
+            return;
+        }
 
-                HashMap<String, Double> attributes = WarframeModuleHandler.getCachedAttributes(player);
-                WarframeModuleHandler.applyWarframeKillStackEffects(player, attributes);
+        HashMap<String, Double> attributes = WarframeModuleHandler.getCachedAttributes(player);
+        WarframeModuleHandler.applyWarframeKillStackEffects(player, attributes);
 
-                // 从模组获取原始 itemDropMultiplier 值
-                double rawModuleValue = attributes.getOrDefault("itemDropMultiplier", 0.0);
+        // 从模组获取原始 itemDropMultiplier 值
+        double rawModuleValue = attributes.getOrDefault("itemDropMultiplier", 0.0);
 
-                // 枪械战利品掉落：仅 TACZ 枪械击杀时叠加武器词条 gun_loot_drop（加法合并，与战甲共享配置倍率）
-                rawModuleValue += getGunLootDropValue(evt.getSource(), player);
+        // 枪械战利品掉落：仅 TACZ 枪械击杀时叠加武器词条 gun_loot_drop（加法合并，与战甲共享配置倍率）。
+        // 只认这次伤害来源的玩家自己的枪：掉落归属给了别人时（别人补的刀），只算归属玩家的战甲词条
+        // 按 UUID 比：重生、重连后伤害来源上挂的可能还是旧的玩家对象
+        if (lastHit != null && lastHit.getUUID().equals(player.getUUID())) {
+            rawModuleValue += getGunLootDropValue(evt.getSource(), player);
+        }
 
-                // 应用配置中的生效倍率百分比
-                double effectPercent = ModConfig.KUVA_LICH.itemDropEffectMultiplier.get() / 100.0;
-                double scaledModuleValue = rawModuleValue * effectPercent;
+        // 应用配置中的生效倍率百分比
+        double effectPercent = ModConfig.KUVA_LICH.itemDropEffectMultiplier.get() / 100.0;
+        double scaledModuleValue = rawModuleValue * effectPercent;
 
-                // 最终掉落倍率 = 1 + 缩放后的模组值
-                double itemDropMultiplier = 1.0 + scaledModuleValue;
+        // 最终掉落倍率 = 1 + 缩放后的模组值
+        double itemDropMultiplier = 1.0 + scaledModuleValue;
 
-                Collection<ItemEntity> drops = evt.getDrops();
+        Collection<ItemEntity> drops = evt.getDrops();
 
-                // 倍率 <= 0 时：清除所有非装备掉落物（装备、武器、工具原样保留）
-                if (itemDropMultiplier <= 0) {
-                    drops.removeIf(drop -> !isEquipment(drop.getItem()));
-                    return;
-                }
+        // 倍率 <= 0 时：清除所有非装备掉落物（装备、武器、工具原样保留）
+        if (itemDropMultiplier <= 0) {
+            drops.removeIf(drop -> !isEquipment(drop.getItem()));
+            return;
+        }
 
-                // 倍率 > 0 时：缩放掉落物数量（装备、武器、工具不参与缩放）
-                //
-                // 不再设任何上界 —— 词条堆到多少就掉多少，
-                //    超出堆叠上限的部分另起 ItemEntity 掉成好几堆（见下面的溢出分堆）。
-                //    自定义NPC 曾经钳到 max(介入前总量, 堆叠上限)，现在跟普通生物走同一条路：
-                //    两边都能超过一组。
-                //    代价是装了别的掉落倍率时几套倍率会连乘：杀一只僵尸掉 10 腐肉，
-                //    别家 ×5 变 50，战甲再 ×10 就是 500，也就是 8 堆。
-                //    要收紧只能调配置里的 itemDropEffectMultiplier。
-                //
-                //    总量只能按「物品种类」汇总来算：先跑的模组
-                //    会把超堆叠的量拆成好几个 ItemEntity 再塞回列表，
-                //    只看单个实体的 count 根本看不出总量。
+        // 倍率 > 0 时：缩放掉落物数量（装备、武器、工具不参与缩放）
+        //
+        // 不再设任何上界 —— 词条堆到多少就掉多少，
+        //    超出堆叠上限的部分另起 ItemEntity 掉成好几堆（见下面的溢出分堆）。
+        //    自定义NPC 曾经钳到 max(介入前总量, 堆叠上限)，现在跟普通生物走同一条路：
+        //    两边都能超过一组。
+        //    代价是装了别的掉落倍率时几套倍率会连乘：杀一只僵尸掉 10 腐肉，
+        //    别家 ×5 变 50，战甲再 ×10 就是 500，也就是 8 堆。
+        //    要收紧只能调配置里的 itemDropEffectMultiplier。
+        //
+        //    总量只能按「同一种物品」汇总来算：先跑的模组
+        //    会把超堆叠的量拆成好几个 ItemEntity 再塞回列表，
+        //    只看单个实体的 count 根本看不出总量。
+        //
+        //    「同一种」按物品 + NBT 认（ItemStack#isSameItemSameTags，和能不能叠成一堆是同一个口径）：
+        //    只按物品种类合并时，同一种物品 NBT 不同的几组（不同口径的弹药、不同药水、不同附魔书）会被加成一个总数，
+        //    再按列表顺序整份分回去 —— 前面那组拿走了后面那组的数量，后面那组变成 0，倍率是 1 也一样。
 
-                Map<Item, Integer> beforeTotals = new HashMap<>();
-                for (ItemEntity drop : drops) {
-                    ItemStack dropStack = drop.getItem();
-                    if (!isEquipment(dropStack)) {
-                        beforeTotals.merge(dropStack.getItem(), dropStack.getCount(), Integer::sum);
-                    }
-                }
+        List<DropGroup> groups = new ArrayList<>();
+        for (ItemEntity drop : drops) {
+            ItemStack dropStack = drop.getItem();
+            if (isEquipment(dropStack)) {
+                continue;
+            }
+            DropGroup group = DropGroup.find(groups, dropStack);
+            if (group == null) {
+                group = new DropGroup(dropStack.copy());
+                groups.add(group);
+            }
+            group.before += dropStack.getCount();
+        }
 
-                Map<Item, Integer> remaining = new HashMap<>();
-                for (Map.Entry<Item, Integer> e : beforeTotals.entrySet()) {
-                    int before = e.getValue();
-                    double scaled = before * itemDropMultiplier;
-                    int scaledCount = (int) scaled;
-                    if (Math.random() < scaled - scaledCount) {
-                        scaledCount++;
-                    }
-                    remaining.put(e.getKey(), Math.max(0, scaledCount));
-                }
+        for (DropGroup group : groups) {
+            double scaled = group.before * itemDropMultiplier;
+            int scaledCount = (int) scaled;
+            if (Math.random() < scaled - scaledCount) {
+                scaledCount++;
+            }
+            group.remaining = Math.max(0, scaledCount);
+        }
 
-                // 把总量按原有实体逐个分配回去
-                //
-                // 收尾必须<b>按物品种类各记各的</b>最后一个实体。
-                //    这里原先只用了一个 lastOf 变量，循环里被逐个覆盖，结束时它代表的是
-                //    「整批掉落里最后一个非装备实体」而不是「某一种物品的最后一个实体」。
-                //    一次掉出两种以上物品、而需要补余量的那种恰好不是最后遍历到的那种时，
-                //    多出来的数量会被静默丢弃 —— 玩家只会看到掉落莫名偏少，没有任何报错。
-                Map<Item, ItemEntity> lastEntityOf = new HashMap<>();
-                Map<Item, ItemStack> lastStackOf = new HashMap<>();
-                for (ItemEntity drop : drops) {
-                    ItemStack dropStack = drop.getItem();
-                    if (isEquipment(dropStack)) {
-                        continue;
-                    }
-                    Item item = dropStack.getItem();
-                    int left = remaining.getOrDefault(item, 0);
-                    int give = Math.min(left, dropStack.getMaxStackSize());
-                    lastEntityOf.put(item, drop);
-                    // 复制必须在 setCount 之前：这份原型要拿去做溢出分堆，
-                    //    改完 count 再复制就只能得到被截断后的数量，而且附魔/自定义名等 NBT 也要跟着走。
-                    lastStackOf.put(item, dropStack.copy());
-                    dropStack.setCount(give);
-                    remaining.put(item, left - give);
-                }
+        // 把总量按原有实体逐个分配回去
+        //
+        // 收尾必须<b>按组各记各的</b>最后一个实体。
+        //    这里原先只用了一个 lastOf 变量，循环里被逐个覆盖，结束时它代表的是
+        //    「整批掉落里最后一个非装备实体」而不是「某一组物品的最后一个实体」。
+        //    一次掉出两种以上物品、而需要补余量的那种恰好不是最后遍历到的那种时，
+        //    多出来的数量会被静默丢弃 —— 玩家只会看到掉落莫名偏少，没有任何报错。
+        for (ItemEntity drop : drops) {
+            ItemStack dropStack = drop.getItem();
+            if (isEquipment(dropStack)) {
+                continue;
+            }
+            // 找组要在 setCount 之前：数量改成 0 的物品是空的，就认不出是哪一组了
+            DropGroup group = DropGroup.find(groups, dropStack);
+            if (group == null) {
+                // 同一份物品在列表里出现两次、前一次已经分成 0 了
+                continue;
+            }
+            int left = group.remaining;
+            int give = Math.min(left, dropStack.getMaxStackSize());
+            group.lastEntity = drop;
+            // 复制必须在 setCount 之前：这份原型要拿去做溢出分堆，
+            //    改完 count 再复制就只能得到被截断后的数量，而且附魔/自定义名等 NBT 也要跟着走。
+            group.lastStack = dropStack.copy();
+            dropStack.setCount(give);
+            group.remaining = left - give;
+        }
 
-                // 溢出分堆：现有实体按各自堆叠上限装不下的余量，另起新的 ItemEntity 掉出来，
-                //    每堆都不超过该物品的堆叠上限。
-                //
-                //    原先是把余量全加到该物品最后一个实体上、让它的 count 超过堆叠上限
-                //    （原版 ItemEntity 容得下，玩家捡起时 Inventory#add 会自动分摊到多个格子）。
-                //    改成分堆有两个理由：
-                //    · 要的就是「不止一组」—— 地上看得见好几堆才是这个意思，
-                //      一个 count=500 的实体在地上仍然只是一小堆。
-                //    · count 超堆叠上限的 ItemEntity 在 Mohist 这类混合端上要过一遍
-                //      CraftItemStack 转换，超量部分不保证能活着回来。
-                List<ItemEntity> spilled = new ArrayList<>();
-                for (Map.Entry<Item, Integer> e : remaining.entrySet()) {
-                    int left = e.getValue();
-                    ItemStack proto = lastStackOf.get(e.getKey());
-                    ItemEntity template = lastEntityOf.get(e.getKey());
-                    if (left <= 0 || proto == null || proto.isEmpty() || template == null) {
-                        continue;
-                    }
-                    int perStack = Math.max(1, proto.getMaxStackSize());
-                    while (left > 0) {
-                        int give = Math.min(left, perStack);
-                        ItemStack piece = proto.copy();
-                        piece.setCount(give);
-                        ItemEntity extra = new ItemEntity(template.level(),
-                                template.getX(), template.getY(), template.getZ(), piece);
-                        extra.setDefaultPickUpDelay();
-                        spilled.add(extra);
-                        left -= give;
-                    }
-                }
-
-                // Forge 在事件返回 false 之后会 drops.forEach(level::addFreshEntity)，
-                // 所以加进这个集合的新实体照常生成，不需要自己 addFreshEntity。
-                drops.addAll(spilled);
-                drops.removeIf(drop -> drop.getItem().isEmpty());
+        // 溢出分堆：现有实体按各自堆叠上限装不下的余量，另起新的 ItemEntity 掉出来，
+        //    每堆都不超过该物品的堆叠上限。
+        //
+        //    原先是把余量全加到该物品最后一个实体上、让它的 count 超过堆叠上限
+        //    （原版 ItemEntity 容得下，玩家捡起时 Inventory#add 会自动分摊到多个格子）。
+        //    改成分堆有两个理由：
+        //    · 要的就是「不止一组」—— 地上看得见好几堆才是这个意思，
+        //      一个 count=500 的实体在地上仍然只是一小堆。
+        //    · count 超堆叠上限的 ItemEntity 在 Mohist 这类混合端上要过一遍
+        //      CraftItemStack 转换，超量部分不保证能活着回来。
+        List<ItemEntity> spilled = new ArrayList<>();
+        for (DropGroup group : groups) {
+            int left = group.remaining;
+            ItemStack proto = group.lastStack;
+            ItemEntity template = group.lastEntity;
+            if (left <= 0 || proto == null || proto.isEmpty() || template == null) {
+                continue;
+            }
+            int perStack = Math.max(1, proto.getMaxStackSize());
+            while (left > 0) {
+                int give = Math.min(left, perStack);
+                ItemStack piece = proto.copy();
+                piece.setCount(give);
+                ItemEntity extra = new ItemEntity(template.level(),
+                        template.getX(), template.getY(), template.getZ(), piece);
+                extra.setDefaultPickUpDelay();
+                spilled.add(extra);
+                left -= give;
             }
         }
+
+        // Forge 在事件返回 false 之后会 drops.forEach(level::addFreshEntity)，
+        // 所以加进这个集合的新实体照常生成，不需要自己 addFreshEntity。
+        drops.addAll(spilled);
+        drops.removeIf(drop -> drop.getItem().isEmpty());
+    }
+
+    /**
+     * 掉落倍率里的一组：物品和 NBT 都相同（{@link ItemStack#isSameItemSameTags}）的掉落合在一起算总数。
+     */
+    private static final class DropGroup {
+        /** 认组用的样本（第一次见到时的副本，之后不改） */
+        final ItemStack key;
+        /** 乘倍率之前这一组的总数 */
+        int before;
+        /** 乘完还没分出去的数量 */
+        int remaining;
+        /** 这一组最后一个实体和它改数量之前的副本，溢出分堆照它的位置和 NBT 生成 */
+        ItemEntity lastEntity;
+        ItemStack lastStack;
+
+        DropGroup(ItemStack key) {
+            this.key = key;
+        }
+
+        /** 一次掉落里的组数很少，线性找就够 */
+        static DropGroup find(List<DropGroup> groups, ItemStack stack) {
+            if (stack.isEmpty()) {
+                return null;
+            }
+            for (DropGroup group : groups) {
+                if (ItemStack.isSameItemSameTags(group.key, stack)) {
+                    return group;
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 掉落归属玩家：死者 {@code getPersistentData()} 里 {@link #LOOT_OWNER_KEY} 记的玩家 UUID，取这个玩家（要在线）。
+     *
+     * <p>有的玩法里战利品不归最后一击的人（例如整份归伤害最高的人），这时由那个玩法在掉落事件更早的优先级写上这个标记，
+     * 掉落倍率就按标记上的人的战甲词条算。本模组只读不写；没有标记时照旧按最后一击的玩家。
+     *
+     * @return 在线的那个玩家；不在线返回 null
+     */
+    private static Player lootOwner(Entity victim) {
+        UUID owner = victim.getPersistentData().getUUID(LOOT_OWNER_KEY);
+        if (victim.getServer() == null) {
+            return null;
+        }
+        return victim.getServer().getPlayerList().getPlayer(owner);
     }
 
     /**
