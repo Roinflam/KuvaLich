@@ -27,6 +27,7 @@ import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -842,6 +843,11 @@ public class WarframeEffectHandler {
     }
 
     // ========== 玩家退出清理 / Player Logout Cleanup ==========
+
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent evt) {
+        WarframeModuleHandler.clearServerCache();
+    }
 
     @SubscribeEvent
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent evt) {

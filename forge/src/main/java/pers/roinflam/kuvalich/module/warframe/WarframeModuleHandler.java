@@ -2,6 +2,7 @@ package pers.roinflam.kuvalich.module.warframe;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.util.FakePlayer;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.WarframeModules;
@@ -28,7 +29,7 @@ import java.util.function.ToIntFunction;
  * （{@code cleanupCache} 在玩家退出事件中调用）。
  * 原实现在 Mohist 这类混合端上一旦被插件线程触碰，
  * 可能在扩容时形成链表环，表现为主线程 CPU 100% 且不抛任何异常。
- * 同时 {@code attributeCacheTick} 加上 {@code volatile}，保证 tick 翻转跨线程可见。</p>
+ * 11-12 起缓存不再按 tick 换代，改成依据没变就复用，见 {@code ATTRIBUTE_CACHE} 的说明。</p>
  */
 public class WarframeModuleHandler {
 
@@ -68,16 +69,82 @@ public class WarframeModuleHandler {
     // ==================== 服务端属性缓存 ====================
 
     /**
-     * 服务端每tick属性缓存（UUID → 基础属性Map）
-     * <p>必须使用并发容器：static 跨线程共享，且存在 computeIfAbsent / clear / remove 的并发组合。</p>
+     * 服务端属性缓存（UUID → 上次算出的基础属性和当时的依据）
+     * <p>必须使用并发容器：static 跨线程共享，且存在 get / put / remove 的并发组合。条目创建后不再修改。</p>
+     *
+     * <h3>问题</h3>
+     * <p>
+     * 以前是「每 tick 一份」：按 {@code player.level().getGameTime()} 判断换没换 tick，换了就整张表清空。
+     * 但各世界的 gameTime 不一样，玩家 tick 是按连接顺序轮的、不按世界分组，相邻两名玩家在不同世界时表就被清一次，
+     * 实际几乎命中不了；每 5 tick 的属性效果、挖掘速度（挖方块时每 tick 一次）、治疗倍率每次都把 8 张卡的 NBT 重新解析一遍。
+     * 人多的服务器上这一项约 0.23 ms/tick（{@code onPlayerTick} 0.17 + {@code onBreakSpeed} 0.05 + 其余）。
+     * </p>
+     *
+     * <h3>为什么这么改</h3>
+     * <p>
+     * 基础属性只由这几样决定：8 个槽里的模组（物品 NBT 里的词条和等级）、模组配置的截断表、模组等级系统的两项配置。
+     * 槽位换东西一律走 {@link WarframeModules} 的 setter，setter 换对象、内容不同时版本号加一（同步包本来就靠它判断要不要重发）；
+     * 本模组没有原地改槽位里模组 NBT 的代码（升级、揭示、开发命令改的都是手上 / 背包里的物品，放进槽位时是 setter 换对象）。
+     * 所以记下能力对象、版本号、8 个物品对象和它们当时空不空、配置版本号，全都没变就直接用上次的结果，
+     * 跟以前现算出来的完全一样。不看 NBT 哈希（见项目说明「性能约定」：那种缓存比直接解析还贵）。
+     * </p>
+     * <p>
+     * <b>以后谁要原地改槽位里模组的 NBT，必须改完再调一次对应的 setter 换成新对象，或者调 {@link #cleanupCache}，否则这里看不到。</b>
+     * </p>
      */
-    private static final Map<UUID, HashMap<String, Double>> ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
+    private static final Map<UUID, ServerAttributeCache> ATTRIBUTE_CACHE = new ConcurrentHashMap<>();
 
-    /**
-     * 缓存对应的tick
-     * <p>volatile：保证 tick 翻转后的清空动作对其他线程立即可见。</p>
-     */
-    private static volatile long attributeCacheTick = -1;
+    private static final class ServerAttributeCache {
+        final WarframeModules owner;
+        final int version;
+        final ItemStack[] slots;
+        final long emptyMask;
+        final int configEpoch;
+        final boolean levelSystem;
+        final int maxLevel;
+        final HashMap<String, Double> base;
+
+        ServerAttributeCache(WarframeModules owner, int version, ItemStack[] slots, long emptyMask,
+                             int configEpoch, boolean levelSystem, int maxLevel, HashMap<String, Double> base) {
+            this.owner = owner;
+            this.version = version;
+            this.slots = slots;
+            this.emptyMask = emptyMask;
+            this.configEpoch = configEpoch;
+            this.levelSystem = levelSystem;
+            this.maxLevel = maxLevel;
+            this.base = base;
+        }
+
+        boolean stillValid(WarframeModules now, ItemStack[] current, long mask, int epoch, boolean level, int max) {
+            if (owner != now || version != now.getVersion() || emptyMask != mask
+                    || configEpoch != epoch || levelSystem != level || maxLevel != max) {
+                return false;
+            }
+            for (int i = 0; i < slots.length; i++) {
+                if (slots[i] != current[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    private static ItemStack[] slotsOf(WarframeModules wm) {
+        return new ItemStack[]{wm.getOne(), wm.getTwo(), wm.getThree(), wm.getFour(),
+                wm.getFive(), wm.getSix(), wm.getSeven(), wm.getEight()};
+    }
+
+    /** 第 i 位为 1 = 第 i 个槽当前算「没有模组」（与 {@link #addIfValid} 的判断一致） */
+    private static long emptyMaskOf(ItemStack[] slots) {
+        long mask = 0L;
+        for (int i = 0; i < slots.length; i++) {
+            if (slots[i] == null || slots[i].isEmpty()) {
+                mask |= 1L << i;
+            }
+        }
+        return mask;
+    }
 
     // ==================== 客户端同步缓存 ====================
 
@@ -137,7 +204,7 @@ public class WarframeModuleHandler {
 
     /**
      * 获取玩家战甲基础属性（不含击杀叠层）
-     * 服务端：从 Capability 实时计算 + 每tick缓存
+     * 服务端：从 Capability 计算，模组和配置没变就复用上次结果
      * 客户端：从同步包缓存的模组数据计算 + 惰性缓存
      *
      * 调用方无需区分客户端/服务端，接口完全一致
@@ -157,14 +224,34 @@ public class WarframeModuleHandler {
             return new HashMap<>(computed);
         }
 
-        // 服务端：每tick缓存
-        long currentTick = player.level().getGameTime();
-        if (currentTick != attributeCacheTick) {
-            ATTRIBUTE_CACHE.clear();
-            attributeCacheTick = currentTick;
+        // 服务端：依据没变就用上次的结果（见 ATTRIBUTE_CACHE 的说明）
+        WarframeModules wm = player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).orElse(null);
+        if (wm == null) {
+            return computeAttributes(Collections.emptyList());
         }
-        HashMap<String, Double> base = ATTRIBUTE_CACHE.computeIfAbsent(
-                player.getUUID(), uuid -> computeAttributes(getModules(player)));
+        // 版本号先于槽位读：读完槽位后又被改了，版本号对不上，下次自然重算
+        int version = wm.getVersion();
+        ItemStack[] slots = slotsOf(wm);
+        long mask = emptyMaskOf(slots);
+        int epoch = ModuleConfig.cacheEpoch();
+        boolean levelSystem = ModuleLevelHelper.isLevelSystemEnabled();
+        int maxLevel = ModuleLevelHelper.getMaxLevel();
+        UUID uuid = player.getUUID();
+        ServerAttributeCache cached = player instanceof FakePlayer ? null : ATTRIBUTE_CACHE.get(uuid);
+        if (cached != null && cached.stillValid(wm, slots, mask, epoch, levelSystem, maxLevel)) {
+            return new HashMap<>(cached.base);
+        }
+        List<ItemStack> modules = new ArrayList<>();
+        for (ItemStack stack : slots) {
+            addIfValid(modules, stack);
+        }
+        HashMap<String, Double> base = computeAttributes(modules);
+        if (player instanceof FakePlayer) {
+            // 别的模组的假玩家从不登出、表项删不掉，有的还借放置者的 UUID，一律现算不存
+            return base;
+        }
+        ATTRIBUTE_CACHE.put(uuid, new ServerAttributeCache(wm, version, slots, mask,
+                ModuleConfig.cacheEpoch() == epoch ? epoch : -1, levelSystem, maxLevel, base));
         return new HashMap<>(base);
     }
 
@@ -173,6 +260,13 @@ public class WarframeModuleHandler {
      */
     static void cleanupCache(UUID uuid) {
         ATTRIBUTE_CACHE.remove(uuid);
+    }
+
+    /**
+     * 关服时整表清空（登出事件之后还有掉落、存档阶段的调用会把表项写回去）
+     */
+    static void clearServerCache() {
+        ATTRIBUTE_CACHE.clear();
     }
 
     // ==================== 模组获取 ====================

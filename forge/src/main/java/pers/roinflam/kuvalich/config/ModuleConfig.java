@@ -8,6 +8,7 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 模组配置类
@@ -100,6 +101,16 @@ public class ModuleConfig {
      * key=词条名, value=[min, max]
      */
     private static Map<String, double[]> attributeRangeCache = null;
+
+    /**
+     * 截断表的版本号，{@link #rebuildCache()} 每调一次、三张表都换完后加一。
+     * <p>战甲属性的服务端缓存（{@code WarframeModuleHandler#getCachedAttributes}）拿它判断配置重载过没有。</p>
+     */
+    private static final AtomicInteger CACHE_EPOCH = new AtomicInteger();
+
+    public static int cacheEpoch() {
+        return CACHE_EPOCH.get();
+    }
 
     /**
      * 词条总值上限缓存
@@ -449,6 +460,11 @@ public class ModuleConfig {
             disabledTypesCache     = new HashSet<>();
             attributeRangeCache    = new HashMap<>();
             attributeTotalCapCache = new HashMap<>();
+        } finally {
+            // 三张表都换完才递增：重建可能在配置监视线程上跑，和服务端线程并发。
+            // 先递增的话，服务端线程会用「新范围表 + 旧上限表」算出结果、又核对到版本号没变，把混算的结果当有效的存下。
+            // 读的一方在计算前后各读一次版本号，前后不一致就不存。
+            CACHE_EPOCH.incrementAndGet();
         }
     }
 
