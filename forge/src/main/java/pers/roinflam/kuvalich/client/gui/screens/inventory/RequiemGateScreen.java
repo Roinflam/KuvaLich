@@ -465,6 +465,17 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
         }
     }
 
+    /** 三个卡槽下面已经有次数点，槽里的卡不再画物品自带的耐久条（背包里的卡照常画） */
+    @Override
+    protected void renderPage(GuiGraphics g, int mx, int my, float partialTick) {
+        AbstractRequiemCard.hideBarFor(menu.getSlot(0).getItem(), menu.getSlot(1).getItem(), menu.getSlot(2).getItem());
+        try {
+            super.renderPage(g, mx, my, partialTick);
+        } finally {
+            AbstractRequiemCard.hideBarFor();
+        }
+    }
+
     /** 压在物品上面：放进去那一下的白闪、开场时卡槽里卡片的盖板、补全时还没轮到的格子 */
     @Override
     protected void drawOverlay(GuiGraphics g, int mx, int my, long now, long t) {

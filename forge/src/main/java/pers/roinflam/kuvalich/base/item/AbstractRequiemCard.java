@@ -77,6 +77,27 @@ public abstract class AbstractRequiemCard extends Item {
     }
 
     /**
+     * 这几张卡暂时不画物品自带的耐久条：界面已经在格子旁边另画了剩余次数时，自带的那条是重复的。
+     * 按对象比较，所以同一个界面里背包那几格的卡照常有条
+     */
+    private static volatile ItemStack[] barHidden = new ItemStack[0];
+
+    /** 画格子前传入要藏条的卡，画完不带参数再调一次还原 */
+    public static void hideBarFor(ItemStack... stacks) {
+        barHidden = stacks;
+    }
+
+    @Override
+    public boolean isBarVisible(@Nonnull ItemStack stack) {
+        for (ItemStack hidden : barHidden) {
+            if (hidden == stack) {
+                return false;
+            }
+        }
+        return super.isBarVisible(stack);
+    }
+
+    /**
      * 获取卡片ID（需要在子类中实现）
      * Get card ID (must be implemented in subclass)
      */
