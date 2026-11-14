@@ -48,6 +48,7 @@ import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
+import pers.roinflam.kuvalich.nemesis.PlayerLedger;
 import pers.roinflam.kuvalich.nemesis.LichTraits;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.nemesis.SummonMode;
@@ -62,9 +63,11 @@ import pers.roinflam.kuvalich.world.inventory.RequiemWeaponTableMenu;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -228,18 +231,19 @@ public final class MercyCoreTests {
                     h.assertTrue(last != null && last.fate() == RequiemCard.FATE_VANQUISHED, "成功：历史里应当记成被终结");
                     h.assertTrue(survivingCards(p) == 0, "成功：卡留在扉上，背包里不该多出卡，实际 " + survivingCards(p));
                     h.assertTrue(weaponLevel > 0 && !weaponType.isEmpty(), "诞生时应当定下武器的等级和元素");
-                    // 奖励要等处决演完（发奖那一拍）才落地：掉的那把应当就是诞生时定下的武器、等级、元素
+                    // 奖励要等处决演完（发奖那一拍）才落定：给的那把应当就是诞生时定下的武器、等级、元素
                     MercyBeats.Lich b = MercyBeats.lich(plan.variant());
                     h.runAfterDelay(b.successRewardTick - b.settleTick + 5, () -> {
                         ItemStack got = ItemStack.EMPTY;
-                        for (ItemEntity ie : h.getLevel().getEntitiesOfClass(ItemEntity.class,
-                                lich.getBoundingBox().inflate(8.0D))) {
-                            if (KuvaLichItems.KUVA_WEAPONS.contains(ie.getItem().getItem())) {
-                                got = ie.getItem();
+                        List<ItemStack> owned = new ArrayList<>(p.getInventory().items);
+                        owned.addAll(PlayerLedger.getInbox(p));
+                        for (ItemStack s : owned) {
+                            if (KuvaLichItems.KUVA_WEAPONS.contains(s.getItem())) {
+                                got = s;
                             }
                         }
                         h.assertTrue(!got.isEmpty() && got.getItem() == KuvaLichItems.KUVA_WEAPONS.get(weaponIndex),
-                                "成功：应当掉下它手里那把武器，附近的掉落物：" + itemNames(h, lich.getBoundingBox().inflate(8.0D)));
+                                "成功：应当拿到它手里那把武器：" + owned);
                         h.assertTrue(KuvaWeaponUtil.getNumber(got) == weaponLevel
                                         && weaponType.equals(KuvaWeaponUtil.getType(got)),
                                 "成功：掉的武器应当是诞生时定下的 " + weaponLevel + " " + weaponType + "，实际 "
@@ -318,12 +322,16 @@ public final class MercyCoreTests {
             h.runAfterDelay(150, () -> {
                 h.assertTrue(lich.isAlive(), "tick 150 还活着");
                 h.assertTrue(itemsIn(h, area) == 0, "tick 150 还不该有掉落物：" + itemNames(h, area));
+                h.assertTrue(reliquaries(p) == 0 && PlayerLedger.hasFinale(p), "tick 150 奖励还在账上、没发");
             });
             h.runAfterDelay(151, () -> {
                 h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()), "tick 151 应当死了（走原版死亡流程）");
                 h.assertTrue(MercyServer.isBusy(p), "tick 151 处决者还锁着");
             });
-            h.runAfterDelay(155, () -> h.assertTrue(itemsIn(h, area) > 0, "tick 155 应当有掉落物"));
+            h.runAfterDelay(155, () -> {
+                h.assertTrue(reliquaries(p) == 1 && !PlayerLedger.hasFinale(p), "tick 155 奖励应当落定、进了背包");
+                h.assertTrue(itemsIn(h, area) == 0, "奖励不该掉在地上：" + itemNames(h, area));
+            });
             h.runAfterDelay(180, () -> h.assertTrue(!lich.isRemoved(), "死后 32 tick 内实体还在（留给消散演出）"));
             h.runAfterDelay(185, () -> {
                 h.assertTrue(lich.isRemoved(), "死后 32 tick 应当已经移除");
@@ -729,7 +737,7 @@ public final class MercyCoreTests {
                 h.runAfterDelay(151, () -> h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()),
                         "tick 151 应当处决致死（走原版死亡流程）"));
                 h.runAfterDelay(155, () -> {
-                    h.assertTrue(itemsIn(h, area) > 0, "tick 155 应当有安魂成功的掉落");
+                    h.assertTrue(reliquaries(p) == 1, "tick 155 应当收到安魂成功的奖励");
                     h.succeed();
                 });
             });
@@ -1091,7 +1099,7 @@ public final class MercyCoreTests {
 
     // ==================== 工具 ====================
 
-    private static void listenDeaths() {
+    static void listenDeaths() {
         if (listening) {
             return;
         }
@@ -1152,7 +1160,7 @@ public final class MercyCoreTests {
     }
 
     /** 走正常的进度流程揭开第一条密语，再让玄骸诞生（平常要处决一只幼体，这里直接生） */
-    private static void bornByProgress(ServerPlayer p, RequiemCard card) {
+    static void bornByProgress(ServerPlayer p, RequiemCard card) {
         int threshold = ModConfig.KUVA_LICH.firstStage.get();
         card.setDecryptionProgress(Math.max(0, threshold - 1));
         int levelBefore = card.getUnlockedCardStatus();
@@ -1165,7 +1173,7 @@ public final class MercyCoreTests {
      * 摆三张卡，让前缀长度正好是 {@code prefix}：答案定为 0 / 1 / 2，前 prefix 张放对的，第 prefix + 1 张放错的，
      * 之后的放对的（判错之后不看）。卡都是新的（耐久满）
      */
-    private static void setCards(RequiemCard card, int prefix) {
+    static void setCards(RequiemCard card, int prefix) {
         card.setOneAnswer(0);
         card.setTwoAnswer(1);
         card.setThreeAnswer(2);
@@ -1193,7 +1201,7 @@ public final class MercyCoreTests {
     }
 
     /** 立即召到面前并返回那只：摆到最后一段（下次处决三刀）、打掉护盾且不再恢复 */
-    private static KuvaMasterEntity summonFront(GameTestHelper h, ServerPlayer p) {
+    static KuvaMasterEntity summonFront(GameTestHelper h, ServerPlayer p) {
         loadTestChunks(h);
         BlockPos c = KuvaTestKit.center(h);
         openArena(h, c.getX() - 6, c.getX() + 6, c.getZ() - 3, c.getZ() + 11);
@@ -1232,6 +1240,17 @@ public final class MercyCoreTests {
      */
     private static int itemsIn(GameTestHelper h, AABB area) {
         return h.getLevel().getEntitiesOfClass(ItemEntity.class, area, MercyCoreTests::isOurDrop).size();
+    }
+
+    /** 终结奖励里固定有一个圣骸匣：背包里和收件箱里的加起来 */
+    static int reliquaries(ServerPlayer p) {
+        int n = p.getInventory().countItem(KuvaLichItems.LICH_RELIQUARY.get());
+        for (ItemStack s : PlayerLedger.getInbox(p)) {
+            if (s.is(KuvaLichItems.LICH_RELIQUARY.get())) {
+                n += s.getCount();
+            }
+        }
+        return n;
     }
 
     private static boolean isOurDrop(ItemEntity e) {

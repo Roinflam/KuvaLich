@@ -50,7 +50,10 @@ import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
 import pers.roinflam.kuvalich.nemesis.EncounterEnd;
 import pers.roinflam.kuvalich.nemesis.LichComms;
+import pers.roinflam.kuvalich.nemesis.Finale;
+import pers.roinflam.kuvalich.nemesis.FinaleSettlement;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
+import pers.roinflam.kuvalich.nemesis.PlayerLedger;
 import pers.roinflam.kuvalich.nemesis.LichLine;
 import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichTraits;
@@ -1126,9 +1129,9 @@ public class KuvaMasterEntity extends AbstractKuva {
     }
 
     /**
-     * 直接判定成功：演出先行，效果包一开头就发，客户端 420 ms 时晶核碎裂。判定、扣卡、记账照旧当场做，
-     * 但聊天和掉落放到碎裂之后（+12 tick），HUD 的完成提示再晚一点（+18 tick），
-     * 免得东西先蹦出来、聊天栏先刷四五行，然后才是碎裂那一声
+     * 直接判定成功：演出先行，效果包一开头就发，客户端 420 ms 时晶核碎裂。定案和落定都当场做（没有演出就没有选择，
+     * 一律按消灭），聊天和投递放到碎裂之后（+12 tick），HUD 的完成提示再晚一点（+18 tick），
+     * 免得东西先进背包、聊天栏先刷四五行，然后才是碎裂那一声
      */
     private void directSuccess(ServerPlayer owner, RequiemCard card, int requiemArg) {
         int fxFlags = 0;
@@ -1143,8 +1146,27 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.deathFxSent = true;
         holdDeathTicks(SUCCESS_HOLD_TICKS);
 
-        SuccessResult result = computeAndApplySuccess(owner, card, this.blockPosition());
-        ServerFxQueue.schedule(REWARD_DELAY_TICKS, owner, () -> result.deliver(owner));
+        SuccessResult result;
+        try {
+            result = computeAndApplySuccess(owner, card, this.blockPosition());
+        } catch (RuntimeException e) {
+            // 定案先算后改，抛在这里卡上什么都没动，玄骸下次还会来
+            LogUtil.error("直接判定成功时定案出错", e);
+            return;
+        }
+        FinaleSettlement.Settled settled = null;
+        try {
+            settled = FinaleSettlement.resolve(owner, result.generation(), FinaleSettlement.Choice.VANQUISH);
+        } catch (RuntimeException e) {
+            LogUtil.error("直接判定成功时落定出错，账留着等巡检或登录时补", e);
+        }
+        FinaleSettlement.Settled announce = settled;
+        ServerFxQueue.schedule(REWARD_DELAY_TICKS, owner, () -> {
+            result.sayLastWords(owner);
+            if (announce != null) {
+                announce.announce(owner);
+            }
+        });
         ServerFxQueue.schedule(COMPLETE_DELAY_TICKS, owner, () -> {
             if (!owner.hasDisconnected()) {
                 DecryptionHudPacket.sendComplete(owner, result.riddles(), result.usesAfter(), result.lichName());
@@ -1206,26 +1228,35 @@ public class KuvaMasterEntity extends AbstractKuva {
     }
 
     /**
-     * 三刀全对的结算：扣卡、终结这一轮、提升武器等级上限，并把要给玩家的聊天和掉落算好装进结果里
-     * （调用方决定什么时候 {@link SuccessResult#deliver} 发出去）。直接判定和怜悯之击都走这里。
+     * 三刀全对的定案：算好全部掉落、扣卡、终结这一轮，把要给玩家的东西整份记进玩家账本（{@link PlayerLedger}），
+     * 什么都不发。东西由 {@link FinaleSettlement#resolve} 落定后才进收件箱。直接判定和怜悯之击都走这里。
      * 调用前调用方已经记过那一行处决记录（这一轮结束会清掉记录）。
+     *
+     * <p>先算后改：会抛的（补掷幻纹、造掉落、落定旧账）都在动卡之前，抛出去时卡上什么都没变，玄骸还在。</p>
      *
      * @param player 主人
      * @param card   主人的卡（判定完开始新一轮，扉上的卡扣过一次留着）
-     * @param pos    掉落位置
+     * @param pos    玄骸倒下的位置（记进账里）
      */
     public SuccessResult computeAndApplySuccess(ServerPlayer player, RequiemCard card, BlockPos pos) {
-        // 主人开着灭骸之扉（玄骸被同伴 / 别的东西打死时可能开着）：先关，不然卡槽会把扣掉的卡写回去
-        RequiemGateMenu.closeBeforeCardsChange(player);
-        this.mercySuccessApplied = true;
-        List<Runnable> chats = new ArrayList<>();
-        List<ItemStack> drops = new ArrayList<>();
+        Finale stale = PlayerLedger.getFinale(player);
+        if (stale != null) {
+            FinaleSettlement.resolveNow(player, stale.generation(), FinaleSettlement.Choice.VANQUISH);
+            if (PlayerLedger.hasFinale(player)) {
+                throw new IllegalStateException(player.getGameProfile().getName() + " 的旧账落定不了，这次不定案");
+            }
+        }
 
-        int returnCount = card.hasConfiscatedItems() ? card.getConfiscatedItemCount() : 0;
         int wornOut = countCardsWornOut(card);
         // 完成提示要显示三枚密语和名字，卡马上要重置，先取快照
         byte[] riddles = {(byte) card.getOneRiddle(), (byte) card.getTwoRiddle(), (byte) card.getThreeRiddle()};
         String lichName = getLichName();
+        int generation = card.getLichGeneration();
+        long seed = card.getLichSeed();
+        int rank = card.getLichRank();
+        // 结束这一轮会清掉幻纹，快照要在那之前取；幻纹出现之前诞生、还没补掷过的这里补
+        card.ensureEphemeraRolled();
+        String ephemera = card.getLichEphemera();
 
         // 手里那把就是成功时掉的那把：结束这一轮会清掉武器下标和它定下的等级、元素，所以先取
         int weaponIndex = card.getLichWeapon();
@@ -1235,23 +1266,7 @@ public class KuvaMasterEntity extends AbstractKuva {
                 ? KuvaLichItems.KUVA_WEAPONS.get(weaponIndex)
                 : KuvaLichItems.KUVA_WEAPONS.get(RandomUtil.getInt(0, KuvaLichItems.KUVA_WEAPONS.size() - 1));
 
-        chats.add(() -> sendDeathMessage(player));
-
-        if (card.hasConfiscatedItems()) {
-            // 物品被还回来了是好消息，不该和玄骸的嘲讽同色
-            chats.add(() -> PlayerFeedback.chat(player, KuvaPalette.SUCCESS, "message.kuvalich.confiscation.return", returnCount));
-            drops.addAll(card.clearAndGetConfiscatedItems());
-        }
-
-        // 卡原地扣一次、留在扉上原来那一格，用完的消失；不再退回背包。完成提示要按密语的显示顺序画每张卡剩几次，
-        // 答案马上要随 resetKeepingCards 清掉，先按「这一格的答案是哪枚密语」对好
-        int[] answers = {card.getOneAnswer(), card.getTwoAnswer(), card.getThreeAnswer()};
-        int[] usesByGate = card.wearPlacedCards();
-        byte[] usesAfter = usesByRiddle(riddles, answers, usesByGate);
-        // 这一轮结束要在 resetKeepingCards 之前：历史里记的等级来自 kuvaLevel，它会把它清零
-        LichDirector.onVanquished(player, this);
-        card.resetKeepingCards();
-
+        List<ItemStack> drops = new ArrayList<>();
         // 诞生时定下的等级和元素（幼体倒地时亮出来的就是这些）；老存档里没定过的照旧在武器等级范围里随机
         drops.add(weaponLevel > 0 && !weaponType.isEmpty()
                 ? KuvaWeaponUtil.getItem(weapon, weaponType, weaponLevel)
@@ -1281,9 +1296,25 @@ public class KuvaMasterEntity extends AbstractKuva {
             drops.add(new ItemStack(KuvaLichItems.REQUIEM_ULTIMATUM.get(), 1));
         }
 
-        upgradeWeaponLevelCap(player, card, chats);
+        String dim = level().dimension().location().toString();
 
-        return new SuccessResult(chats, drops, level(), pos, riddles, usesAfter, lichName, returnCount, wornOut);
+        // 以下只剩改卡和写账，不会抛
+        // 主人开着灭骸之扉（玄骸被同伴 / 别的东西打死时可能开着）：先关，不然卡槽会把扣掉的卡写回去
+        RequiemGateMenu.closeBeforeCardsChange(player);
+        this.mercySuccessApplied = true;
+        // 卡原地扣一次、留在扉上原来那一格，用完的消失；不再退回背包。完成提示要按密语的显示顺序画每张卡剩几次，
+        // 答案马上要随 resetKeepingCards 清掉，先按「这一格的答案是哪枚密语」对好
+        int[] answers = {card.getOneAnswer(), card.getTwoAnswer(), card.getThreeAnswer()};
+        int[] usesByGate = card.wearPlacedCards();
+        byte[] usesAfter = usesByRiddle(riddles, answers, usesByGate);
+        List<ItemStack> returns = card.clearAndGetConfiscatedItems();
+        // 这一轮结束要在 resetKeepingCards 之前：历史里记的等级来自 kuvaLevel，它会把它清零
+        LichDirector.onVanquished(player, this);
+        card.resetKeepingCards();
+        PlayerLedger.setFinale(player, new Finale(generation, seed, lichName, rank, KuvaLichItems.KUVA_WEAPONS.indexOf(weapon),
+                weaponLevel, weaponType, ephemera, drops, returns, dim, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D));
+
+        return new SuccessResult(generation, this, riddles, usesAfter, lichName, returns.size(), wornOut);
     }
 
     /**
@@ -1305,11 +1336,10 @@ public class KuvaMasterEntity extends AbstractKuva {
     }
 
     /**
-     * 三刀全对算好、还没发出去的东西
+     * 定案之后的演出要用的快照；要发的东西在账上，不在这里
      *
-     * @param chats        给主人的聊天（含遗言）
-     * @param drops        掉在 {@code pos} 的物品
-     * @param level        掉落的世界（发的时候实体可能已经没了）
+     * @param generation   这只的代数，落定时核账用
+     * @param lich         说遗言的那只实体（这时主人卡上的这一轮已经结束、名字清空了）
      * @param riddles      三枚密语的快照，完成提示用
      * @param usesAfter    三枚密语（同 {@code riddles} 的顺序）各自那张卡扣完以后剩几次，0 = 用完消失，
      *                     {@link RequiemCard#USES_NO_CARD} = 没有对应的卡
@@ -1317,16 +1347,13 @@ public class KuvaMasterEntity extends AbstractKuva {
      * @param returnCount  归还的没收物品件数
      * @param cardsWornOut 用完消失的安魂卡张数
      */
-    public record SuccessResult(List<Runnable> chats, List<ItemStack> drops, Level level, BlockPos pos,
-                                byte[] riddles, byte[] usesAfter, String lichName, int returnCount, int cardsWornOut) {
+    public record SuccessResult(int generation, KuvaMasterEntity lich, byte[] riddles, byte[] usesAfter, String lichName,
+                                int returnCount, int cardsWornOut) {
 
-        /** 发出去：主人在线才发聊天，掉落照样落在原世界的死亡点 */
-        public void deliver(@Nullable ServerPlayer owner) {
-            if (owner == null || !owner.hasDisconnected()) {
-                chats.forEach(Runnable::run);
-            }
-            for (ItemStack stack : drops) {
-                spawnItem(level, pos, stack);
+        /** 遗言：主人在线才说 */
+        public void sayLastWords(@Nullable ServerPlayer owner) {
+            if (owner != null && !owner.hasDisconnected()) {
+                lich.sendDeathMessage(owner);
             }
         }
     }
@@ -1383,38 +1410,6 @@ public class KuvaMasterEntity extends AbstractKuva {
         return RandomUtil.percentageChance(weaponRatio)
                 ? WeaponRivenModule.getRandomModule()
                 : WarframeRivenModule.getRandomModule();
-    }
-
-    /**
-     * 提升武器等级上限（数值当场改，提示聊天放进 {@code chats} 随奖励一起延后发）
-     *
-     * @param player 玩家
-     * @param requiemCard 安魂卡片
-     * @param chats 延后发送的聊天
-     */
-    private void upgradeWeaponLevelCap(Player player, RequiemCard requiemCard, List<Runnable> chats) {
-        int randomNum = RandomUtil.getInt(
-                ModConfig.KUVA_LICH.minimumLevelCapIncrease.get(),
-                ModConfig.KUVA_LICH.maximumLevelCapIncrease.get()
-        );
-
-        if (requiemCard.getMinimumLevelWeapon() < ModConfig.KUVA_LICH.minimumLevel.get()) {
-            requiemCard.setMinimumLevelWeapon(
-                    Math.min(ModConfig.KUVA_LICH.minimumLevel.get(),
-                            requiemCard.getMinimumLevelWeapon() + randomNum)
-            );
-            int newMin = requiemCard.getMinimumLevelWeapon();
-            chats.add(() -> PlayerFeedback.chat(player, KuvaPalette.SUCCESS, "message.kuvalich.minimumLevelWeapon", newMin));
-        }
-
-        if (requiemCard.getMaximumLevelWeapon() < ModConfig.KUVA_LICH.maximumLevel.get()) {
-            requiemCard.setMaximumLevelWeapon(
-                    Math.min(ModConfig.KUVA_LICH.maximumLevel.get(),
-                            requiemCard.getMaximumLevelWeapon() + randomNum)
-            );
-            int newMax = requiemCard.getMaximumLevelWeapon();
-            chats.add(() -> PlayerFeedback.chat(player, KuvaPalette.SUCCESS, "message.kuvalich.maximumLevelWeapon", newMax));
-        }
     }
 
     /**
@@ -1485,28 +1480,6 @@ public class KuvaMasterEntity extends AbstractKuva {
     @Override
     protected float getSoundVolume() {
         return 1.5F;
-    }
-
-    // ==================== 工具方法 ====================
-
-    /**
-     * 在指定位置生成掉落物实体
-     *
-     * @param pos 位置
-     * @param itemStack 物品
-     */
-    private void spawnItem(BlockPos pos, ItemStack itemStack) {
-        spawnItem(level(), pos, itemStack);
-    }
-
-    /** 同上，但世界由调用方给（延时任务执行时实体已经死了、可能已被移除） */
-    private static void spawnItem(Level level, BlockPos pos, ItemStack itemStack) {
-        if (itemStack == null || itemStack.isEmpty()) {
-            return;
-        }
-
-        ItemEntity entityItem = new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), itemStack);
-        level.addFreshEntity(entityItem);
     }
 
     // ==================== NBT存档 ====================

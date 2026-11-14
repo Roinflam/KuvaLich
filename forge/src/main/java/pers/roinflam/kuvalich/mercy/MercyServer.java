@@ -48,6 +48,7 @@ import pers.roinflam.kuvalich.fx.ServerFxQueue;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.item.card.OULL;
 import pers.roinflam.kuvalich.nemesis.EncounterEnd;
+import pers.roinflam.kuvalich.nemesis.FinaleSettlement;
 import pers.roinflam.kuvalich.nemesis.LichComms;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.LichLine;
@@ -872,20 +873,25 @@ public final class MercyServer {
         e.add(g + b.failProgressTicks, StepKind.PLAYER, () -> failureProgress(e, lich));
     }
 
-    /** 三刀全对，定案：记一行尝试、扣卡、终结这一轮、算好奖励（聊天和掉落等到 tick 155） */
+    /**
+     * 三刀全对，定案：记一行尝试、扣卡、终结这一轮、把奖励记进账（发奖那一拍才落定）。
+     * 定案抛出时 {@code settled} 还是假，推进出错的兜底按「定案前」处理，目标回到倒地
+     */
     private static void settleSuccess(Exec e, KuvaMasterEntity lich) {
-        e.settled = true;
         if (e.demo) {
+            e.settled = true;
             return;
         }
         ServerPlayer owner = e.executor;
         RequiemCard card = card(owner);
         if (card == null) {
+            e.settled = true;
             return;
         }
         LichDirector.onMercyResult(owner, lich, RequiemCard.packAttempt(e.plan.cardIds(),
                 new byte[]{RequiemCard.ATTEMPT_RIGHT, RequiemCard.ATTEMPT_RIGHT, RequiemCard.ATTEMPT_RIGHT}, true), true);
         e.success = lich.computeAndApplySuccess(owner, card, lich.blockPosition());
+        e.settled = true;
     }
 
     /**
@@ -959,9 +965,22 @@ public final class MercyServer {
         t.die(t.damageSources().playerAttack(e.executor));
     }
 
+    /**
+     * 发奖那一拍：遗言，然后按消灭落定。按时走到、快进、关服补跑、宿敌离场拦截都经过这一步，
+     * 落定出错只记日志，账留着等巡检或登录时补
+     */
     private static void successRewards(Exec e) {
         if (e.success != null) {
-            e.success.deliver(e.executor);
+            try {
+                e.success.sayLastWords(e.executor);
+            } catch (RuntimeException ex) {
+                LogUtil.error("怜悯之击成功收尾时说遗言出错", ex);
+            }
+            try {
+                FinaleSettlement.resolveNow(e.executor, e.success.generation(), FinaleSettlement.Choice.VANQUISH);
+            } catch (RuntimeException ex) {
+                LogUtil.error("怜悯之击成功收尾时落定出错，账留着等巡检或登录时补", ex);
+            }
         } else if (e.demo && e.target instanceof KuvaMasterEntity lich) {
             // 演示目标什么都不给，遗言照说（录通讯窗用）
             sayAs(lich, LichLine.VANQUISHED, e.executor);
@@ -1055,9 +1074,49 @@ public final class MercyServer {
                 tickExec(e);
             } catch (RuntimeException ex) {
                 LogUtil.error("推进怜悯之击时出错", ex);
-                finish(e);
-                unlock(e);
+                recoverFromError(e);
             }
+        }
+    }
+
+    /**
+     * 推进抛异常后的收尾：只停掉这一场不够，目标会一直停在处决中（不动、打不了、谁也处决不了）。
+     * 没定案的回到倒地；定案成功的账还在就重试一次落定，目标走离场；判错 / 挣开的直接离场
+     */
+    private static void recoverFromError(Exec e) {
+        try {
+            if (!e.settled) {
+                cancelToDowned(e);
+                return;
+            }
+            finish(e);
+            unlock(e);
+            if (e.success != null) {
+                try {
+                    FinaleSettlement.resolveNow(e.executor, e.success.generation(), FinaleSettlement.Choice.VANQUISH);
+                } catch (RuntimeException ex) {
+                    LogUtil.error("出错后重试落定也失败了，账留着等巡检或登录时补", ex);
+                }
+            }
+            AbstractKuva t = e.target;
+            if (!t.isAlive() || t.isRemoved()) {
+                return;
+            }
+            if (!(t instanceof KuvaMasterEntity lich)) {
+                t.beginExpire();
+                return;
+            }
+            if (e.failure() || e.advance()) {
+                escape(e, lich, true);
+                return;
+            }
+            lich.setMercyState(MercyState.LEAVING);
+            downedChanged(lich, false);
+            lich.departNow(EncounterEnd.VANQUISHED.ordinal());
+        } catch (RuntimeException ex) {
+            LogUtil.error("怜悯之击出错后的收尾也出错了", ex);
+            finish(e);
+            unlock(e);
         }
     }
 
@@ -1229,6 +1288,21 @@ public final class MercyServer {
         return null;
     }
 
+    /** 真玄骸、三刀全对、已经写了账的一场 */
+    private static boolean settledSuccess(Exec e) {
+        return e.settled && e.success != null;
+    }
+
+    /** 这个玩家有没有还没走完的处决（定案后、发奖前账上会有一条，巡检看到这个就不去动它） */
+    public static boolean hasActiveExec(UUID executorId) {
+        for (Exec e : ACTIVE) {
+            if (!e.finished && e.executorId.equals(executorId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean inGrace(UUID id) {
         Long until = GRACE.get(id);
         return until != null && until >= serverTicks;
@@ -1364,7 +1438,7 @@ public final class MercyServer {
         }
     }
 
-    /** 关服：已经定案的把给玩家的那部分做完（掉落、进度），其余全部清掉 */
+    /** 关服：已经定案的把给玩家的那部分做完（按消灭落定、进度），其余全部清掉。落定的东西随玩家数据一起存盘 */
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
         for (Exec e : new ArrayList<>(ACTIVE)) {
@@ -1501,6 +1575,17 @@ public final class MercyServer {
                 k -> k.isAlive() && (k.getMercyState() == MercyState.DOWNED || k.getMercyState() == MercyState.EXECUTING
                         || k.getMercyState() == MercyState.RISING))) {
             Exec e = execFor(t);
+            if (e != null && settledSuccess(e)) {
+                // 已经定案成功的回不去（卡已经扣了、这一轮已经结束）：快进到死、按消灭落定
+                try {
+                    fastForward(e, true);
+                } catch (RuntimeException ex) {
+                    LogUtil.error("复位时快进已定案的处决出错", ex);
+                    recoverFromError(e);
+                }
+                n++;
+                continue;
+            }
             if (e != null) {
                 finish(e);
                 unlock(e);
@@ -1530,6 +1615,16 @@ public final class MercyServer {
         }
         if (found == null) {
             return "you are not executing anything";
+        }
+        if (settledSuccess(found)) {
+            // 定案成功的回不去，只能提前收尾：快进到死、按消灭落定
+            try {
+                fastForward(found, true);
+            } catch (RuntimeException ex) {
+                LogUtil.error("中止时快进已定案的处决出错", ex);
+                recoverFromError(found);
+            }
+            return null;
         }
         if (found.settled && !found.demo) {
             return "the result is already settled";

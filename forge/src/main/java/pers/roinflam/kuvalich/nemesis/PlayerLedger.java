@@ -83,13 +83,64 @@ public final class PlayerLedger {
         write(player, root);
     }
 
+    // 原样接在后面，不把已有条目读出来再写回：读不出来的（比如所属模组暂时卸了）会在重写时丢掉
     public static void addToInbox(Player player, Collection<ItemStack> items) {
-        if (items.isEmpty()) {
+        ListTag add = writeItems(items);
+        if (add.isEmpty()) {
             return;
         }
-        List<ItemStack> all = getInbox(player);
-        all.addAll(items);
-        setInbox(player, all);
+        CompoundTag root = read(player);
+        ListTag inbox = root.getList(INBOX, Tag.TAG_COMPOUND).copy();
+        inbox.addAll(add);
+        root.put(INBOX, inbox);
+        write(player, root);
+    }
+
+    public static boolean hasInbox(Player player) {
+        return !read(player).getList(INBOX, Tag.TAG_COMPOUND).isEmpty();
+    }
+
+    /** 收件箱里还有几件（按数量加总，读不出来的条目不算） */
+    public static int inboxCount(Player player) {
+        int n = 0;
+        ListTag list = read(player).getList(INBOX, Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            ItemStack stack = ItemStack.of(list.getCompound(i));
+            n += stack.isEmpty() ? 0 : stack.getCount();
+        }
+        return n;
+    }
+
+    /** 收件箱原样的条目（副本），投递用 */
+    static ListTag inboxTag(Player player) {
+        return read(player).getList(INBOX, Tag.TAG_COMPOUND).copy();
+    }
+
+    static void putInboxTag(Player player, ListTag list) {
+        CompoundTag root = read(player);
+        if (list.isEmpty()) {
+            root.remove(INBOX);
+        } else {
+            root.put(INBOX, list);
+        }
+        write(player, root);
+    }
+
+    /**
+     * 清账：东西接进收件箱、账清掉，同一次写进去。物品先在外面序列化好，写的这一步不会半途抛出
+     */
+    static void settleFinale(Player player, Collection<ItemStack> items) {
+        ListTag add = writeItems(items);
+        CompoundTag root = read(player);
+        ListTag inbox = root.getList(INBOX, Tag.TAG_COMPOUND).copy();
+        inbox.addAll(add);
+        if (inbox.isEmpty()) {
+            root.remove(INBOX);
+        } else {
+            root.put(INBOX, inbox);
+        }
+        root.remove(FINALE);
+        write(player, root);
     }
 
     // ==================== 盟友名册（条目格式由盟友那一批定，这里只原样存取） ====================

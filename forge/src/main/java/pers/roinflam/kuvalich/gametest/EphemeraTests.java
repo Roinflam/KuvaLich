@@ -273,7 +273,14 @@ public final class EphemeraTests {
         LichDirector.onLogin(p);
         h.assertTrue(card.isLichEphemeraRolled() && before.equals(card.getLichEphemera()),
                 "再升级登录后应当补掷回同一个结果：" + before + " / " + card.getLichEphemera());
-        checkAll(h, p, "回退再升级");
+        // 登录时账上那条按消灭补落定了：40 个赤毒进了收件箱（登录后 10 秒内不投），其余照旧
+        List<ItemStack> inbox = PlayerLedger.getInbox(p);
+        h.assertTrue(!PlayerLedger.hasFinale(p)
+                        && inbox.stream().filter(s -> s.is(KuvaLichItems.KUVA.get())).mapToInt(ItemStack::getCount).sum() == 240
+                        && inbox.stream().filter(s -> s.is(KuvaLichItems.EPHEMERA.get())).count() == 1,
+                "回退再升级：登录时应当补落定（赤毒 200 + 40，账上的幻纹 1）：" + inbox);
+        h.assertTrue(PlayerLedger.getAllies(p).size() == 1 && PlayerLedger.getActiveAlly(p) == 1
+                && PlayerLedger.getAllyCooldownUntil(p) == 123456L, "回退再升级：名册和冷却");
         h.succeed();
     }
 

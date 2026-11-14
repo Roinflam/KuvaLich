@@ -198,7 +198,7 @@ public final class MercyCommand {
         mercy.then(Commands.literal("reset").executes(MercyCommand::reset));
         mercy.then(Commands.literal("stop").executes(MercyCommand::stop));
 
-        d.register(Commands.literal(Reference.MOD_ID).requires(s -> s.hasPermission(2)).then(mercy));
+        d.register(Commands.literal(Reference.MOD_ID).then(mercy.requires(s -> s.hasPermission(2))));
     }
 
     // ==================== spawn ====================

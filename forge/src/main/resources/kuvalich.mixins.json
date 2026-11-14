@@ -6,7 +6,8 @@
   "mixins": [
     "MixinForgeHooksFinalDamage",
     "MixinPlayerAttackStrength",
-    "MixinPlayerSweep"
+    "MixinPlayerSweep",
+    "PlayerListSaveInvoker"
   ],
   "client": [
     "client.MixinSoundEngineMixer",

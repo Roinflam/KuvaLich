@@ -32,6 +32,8 @@ import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.fx.ServerFxQueue;
 import pers.roinflam.kuvalich.mercy.MercyState;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Arrays;
@@ -173,8 +175,41 @@ public final class NemesisCommand {
         LiteralArgumentBuilder<CommandSourceStack> director = Commands.literal("director");
         director.then(target().executes(NemesisCommand::director));
 
-        d.register(Commands.literal(Reference.MOD_ID).requires(s -> s.hasPermission(2))
-                .then(lich).then(larvling).then(thrall).then(ephemera).then(director));
+        // 权限挂在各个子命令上，不挂在根上：inbox 人人能用，而同名的根节点只认第一次注册时的权限
+        d.register(Commands.literal(Reference.MOD_ID)
+                .then(lich.requires(NemesisCommand::admin))
+                .then(larvling.requires(NemesisCommand::admin))
+                .then(thrall.requires(NemesisCommand::admin))
+                .then(ephemera.requires(NemesisCommand::admin))
+                .then(director.requires(NemesisCommand::admin))
+                .then(Commands.literal("inbox").executes(NemesisCommand::inbox)));
+    }
+
+    public static boolean admin(CommandSourceStack source) {
+        return source.hasPermission(2);
+    }
+
+    /** 玩家自己查收件箱：报还有几件，并且马上试投一次（不等登录后的那 10 秒） */
+    private static int inbox(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer p = ctx.getSource().getPlayerOrException();
+        if (PlayerLedger.inboxCount(p) == 0) {
+            PlayerFeedback.chat(p, KuvaPalette.INFO, "message.kuvalich.inbox.empty");
+            return 0;
+        }
+        if (!Inbox.canReceive(p)) {
+            PlayerFeedback.chat(p, KuvaPalette.WARN, "message.kuvalich.inbox.waiting", PlayerLedger.inboxCount(p));
+            return 0;
+        }
+        int moved = Inbox.deliver(p, true, false);
+        int left = PlayerLedger.inboxCount(p);
+        if (left == 0) {
+            PlayerFeedback.chat(p, KuvaPalette.SUCCESS, "message.kuvalich.inbox.done", moved);
+        } else if (moved == 0) {
+            PlayerFeedback.chat(p, KuvaPalette.WARN, "message.kuvalich.inbox.full", left);
+        } else {
+            PlayerFeedback.chat(p, KuvaPalette.WARN, "message.kuvalich.inbox.partial", moved, left);
+        }
+        return moved;
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, ?> target() {

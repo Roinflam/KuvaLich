@@ -50,6 +50,7 @@ import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.nemesis.EncounterEnd;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
+import pers.roinflam.kuvalich.nemesis.PlayerLedger;
 import pers.roinflam.kuvalich.nemesis.SummonMode;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -455,7 +456,8 @@ public final class MercyTests {
                 h.assertTrue(!card.hasLich(), "tick 17 已经定案、这一轮已经结束");
                 MercyServer.onExecutorGone(p, MercyServer.Gone.LOGOUT);
                 h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()), "成功定案后下线：玄骸当 tick 死亡");
-                h.assertTrue(itemsIn(h, area) > 0, "成功定案后下线：掉落当 tick 出现");
+                h.assertTrue(MercyCoreTests.reliquaries(p) == 1 && !PlayerLedger.hasFinale(p), "成功定案后下线：当 tick 落定");
+                h.assertTrue(itemsIn(h, area) == 0, "奖励不该掉在地上：" + itemNames(h, area));
                 h.succeed();
             });
         });
@@ -820,7 +822,8 @@ public final class MercyTests {
                 lich.beginDeparture(EncounterEnd.OWNER_FAR);
                 h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()), "定案后：快进到死");
                 h.assertTrue(!lich.isDeparting(), "定案后：不应当再放离场");
-                h.assertTrue(itemsIn(h, area) > 0, "定案后：掉落立刻出现");
+                h.assertTrue(MercyCoreTests.reliquaries(p) == 1 && !PlayerLedger.hasFinale(p), "定案后：当场落定");
+                h.assertTrue(itemsIn(h, area) == 0, "奖励不该掉在地上：" + itemNames(h, area));
                 h.succeed();
             });
         });

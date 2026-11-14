@@ -138,6 +138,8 @@ public final class KuvaTestKit {
         GameProfile profile = new GameProfile(UUID.randomUUID(), "kl_test_" + (++counter));
         ServerPlayer player = new ServerPlayer(server, level, profile);
         server.getPlayerList().placeNewPlayer(connection, player);
+        // 测试一造出来就要能收东西，不等登录后的 10 秒
+        pers.roinflam.kuvalich.nemesis.Inbox.skipLoginDelay(player);
         player.setGameMode(GameType.SURVIVAL);
         BlockPos size = size(h);
         Vec3 at = h.absoluteVec(new Vec3(size.getX() / 2.0D, 1.0D, size.getZ() / 2.0D));

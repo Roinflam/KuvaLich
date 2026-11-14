@@ -460,6 +460,15 @@ public final class LichDirector {
         h.loginAt = now;
         h.lastTauntRollAt = now;
         h.forceStateAt = now + LOGIN_STATE_DELAY;
+        Inbox.onLogin(player);
+        try {
+            // 上次定案存上了、落定没存上（定案后崩服）：按消灭补落定
+            if (FinaleSettlement.resolvePending(player)) {
+                debug(player, "登录时补落定了上次的终结");
+            }
+        } catch (RuntimeException e) {
+            LogUtil.error("登录时补落定 " + player.getGameProfile().getName() + " 的终结出错，账留着等巡检", e);
+        }
         RequiemCard card = card(player);
         if (card == null) {
             return;
