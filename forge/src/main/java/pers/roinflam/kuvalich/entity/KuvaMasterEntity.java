@@ -426,6 +426,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      * 寻路的节点上限是构造时按 64 格追踪距离算死的，追踪距离加到 96 格后要同时放大它，否则远处寻不到路。</p>
      */
     public void bindOwner(ServerPlayer owner, RequiemCard card) {
+        card.ensureEphemeraRolled();
         this.entityData.set(OWNER, Optional.of(owner.getUUID()));
         this.entityData.set(OWNER_NAME, owner.getGameProfile().getName());
         this.entityData.set(LICH_NAME, card.getLichName());

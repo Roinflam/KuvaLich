@@ -248,6 +248,8 @@ public class ClothConfigScreen {
         lichCategory.addEntry(dblIn(entryBuilder, "lichRankHealthStep", k.lichRankHealthStep, 0.15, 0.0, 1.0));
         lichCategory.addEntry(bool(entryBuilder, "lichWildAllowed", k.lichWildAllowed, true));
         lichCategory.addEntry(bool(entryBuilder, "lichPurgeLegacy", k.lichPurgeLegacy, true));
+        lichCategory.addEntry(dblIn(entryBuilder, "lichEphemeraChance", k.lichEphemeraChance, 0.2, 0.0, 1.0));
+        lichCategory.addEntry(bool(entryBuilder, "lichEphemeraBackfill", k.lichEphemeraBackfill, true));
 
         // ═══════════════════════════════════════════════════════════════
         // 伤害系统

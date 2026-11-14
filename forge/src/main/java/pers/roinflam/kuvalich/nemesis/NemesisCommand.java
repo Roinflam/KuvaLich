@@ -73,6 +73,10 @@ public final class NemesisCommand {
     private static final SuggestionProvider<CommandSourceStack> RESULTS =
             (ctx, b) -> SharedSuggestionProvider.suggest(new String[]{"correct", "wrong", "none"}, b);
 
+    private static final SuggestionProvider<CommandSourceStack> EPHEMERA_TYPES = (ctx, b) ->
+            SharedSuggestionProvider.suggest(pers.roinflam.kuvalich.ephemera.EphemeraType.all().stream()
+                    .map(pers.roinflam.kuvalich.ephemera.EphemeraType::id), b);
+
     private NemesisCommand() {
     }
 
@@ -154,11 +158,23 @@ public final class NemesisCommand {
                 .then(Commands.argument("seconds", IntegerArgumentType.integer(0, 36000))
                         .executes(ctx -> thrallDue(ctx, IntegerArgumentType.getInteger(ctx, "seconds"))))));
 
+        LiteralArgumentBuilder<CommandSourceStack> ephemera = Commands.literal("ephemera");
+        ephemera.then(Commands.literal("give").then(target()
+                .then(Commands.argument("type", StringArgumentType.word()).suggests(EPHEMERA_TYPES)
+                        .executes(ctx -> ephemeraGive(ctx, ""))
+                        .then(Commands.argument("origin", StringArgumentType.greedyString())
+                                .executes(ctx -> ephemeraGive(ctx, StringArgumentType.getString(ctx, "origin")))))));
+        // roll：按种子和当前概率重掷现役玄骸的幻纹；带款式（或 none）就直接指定
+        ephemera.then(Commands.literal("roll").then(target()
+                .executes(ctx -> ephemeraRoll(ctx, null))
+                .then(Commands.argument("type", StringArgumentType.word()).suggests(EPHEMERA_TYPES)
+                        .executes(ctx -> ephemeraRoll(ctx, StringArgumentType.getString(ctx, "type"))))));
+
         LiteralArgumentBuilder<CommandSourceStack> director = Commands.literal("director");
         director.then(target().executes(NemesisCommand::director));
 
         d.register(Commands.literal(Reference.MOD_ID).requires(s -> s.hasPermission(2))
-                .then(lich).then(larvling).then(thrall).then(director));
+                .then(lich).then(larvling).then(thrall).then(ephemera).then(director));
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, ?> target() {
@@ -620,6 +636,38 @@ public final class NemesisCommand {
                     .append(r == RequiemCard.ATTEMPT_RIGHT ? "+" : r == RequiemCard.ATTEMPT_WRONG ? "x" : "?");
         }
         return sb.toString();
+    }
+
+    private static int ephemeraGive(CommandContext<CommandSourceStack> ctx, String origin) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        String id = StringArgumentType.getString(ctx, "type");
+        pers.roinflam.kuvalich.ephemera.EphemeraType type = pers.roinflam.kuvalich.ephemera.EphemeraType.byId(id);
+        if (type == null) {
+            return fail(ctx, "unknown ephemera: " + id);
+        }
+        pers.roinflam.kuvalich.utils.InventoryUtil.giveOrDrop(p,
+                pers.roinflam.kuvalich.ephemera.EphemeraItem.create(type, origin.strip()));
+        return ok(ctx, "gave ephemera " + id + " to " + p.getGameProfile().getName());
+    }
+
+    private static int ephemeraRoll(CommandContext<CommandSourceStack> ctx, @Nullable String id)
+            throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        RequiemCard card = card(p);
+        if (card == null || !card.hasLich()) {
+            return fail(ctx, p.getGameProfile().getName() + " has no lich");
+        }
+        if (id == null) {
+            card.rollEphemera(ModConfig.KUVA_LICH.lichEphemeraChance.get());
+        } else if ("none".equals(id)) {
+            card.setLichEphemera("");
+        } else if (pers.roinflam.kuvalich.ephemera.EphemeraType.byId(id) == null) {
+            return fail(ctx, "unknown ephemera: " + id);
+        } else {
+            card.setLichEphemera(id);
+        }
+        String now = card.getLichEphemera();
+        return ok(ctx, card.getLichName() + " ephemera: " + (now.isEmpty() ? "none" : now));
     }
 
     private static int ok(CommandContext<CommandSourceStack> ctx, String detail) {

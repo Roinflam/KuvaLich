@@ -298,6 +298,8 @@ public final class ModConfig {
         public final ForgeConfigSpec.DoubleValue lichRankHealthStep;
         public final ForgeConfigSpec.BooleanValue lichWildAllowed;
         public final ForgeConfigSpec.BooleanValue lichPurgeLegacy;
+        public final ForgeConfigSpec.DoubleValue lichEphemeraChance;
+        public final ForgeConfigSpec.BooleanValue lichEphemeraBackfill;
 
         // ===== 赤毒幼体 / Kuva Larvling =====
         public final ForgeConfigSpec.BooleanValue larvlingEnabled;
@@ -1403,6 +1405,18 @@ public final class ModConfig {
                     .comment("Remove naturally spawned Liches saved in old worlds")
                     .comment("读档时清掉以前自然生成、存在世界里的玄骸")
                     .define("lichPurgeLegacy", true);
+
+            lichEphemeraChance = builder
+                    .comment("Chance that a newly born personal Lich carries an Ephemera. Decided once at birth from the Lich's seed;")
+                    .comment("changing this value does not affect Liches that already exist")
+                    .comment("新诞生的专属玄骸带幻纹的概率。诞生时按种子定下，之后不再重算；改这一项不影响已经存在的玄骸")
+                    .defineInRange("lichEphemeraChance", 0.2, 0.0, 1.0);
+
+            lichEphemeraBackfill = builder
+                    .comment("Personal Liches born before Ephemera existed roll once (same seed, same result) when their owner logs in;")
+                    .comment("off = such Liches never carry an Ephemera")
+                    .comment("幻纹加入之前就已诞生的专属玄骸，在主人登录时补掷一次（同一种子结果相同）；关闭后这些玄骸一律不带幻纹")
+                    .define("lichEphemeraBackfill", true);
 
             builder.comment("")
                     .comment("═══ Kuva Larvling / 赤毒幼体 ═══")

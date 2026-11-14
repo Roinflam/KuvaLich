@@ -469,6 +469,9 @@ public final class LichDirector {
             birth(player, card, randomSeed(player), -1, 0, "", ModConfig.KUVA_LICH.lichMigrationRage.get().floatValue(),
                     MIGRATION_COMM_DELAY, now);
         }
+        if (card.ensureEphemeraRolled()) {
+            debug(player, "现役玄骸补掷幻纹：" + (card.getLichEphemera().isEmpty() ? "不带" : card.getLichEphemera()));
+        }
         if (card.isLichEncounterOpen()) {
             card.setLichRage(0.0F);
             card.setLichEncounterOpen(false);

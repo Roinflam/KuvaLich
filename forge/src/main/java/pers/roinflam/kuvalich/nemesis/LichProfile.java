@@ -25,6 +25,8 @@ public final class LichProfile {
     private static final long VOICE_ACCENT = 0x7012L;
     private static final long GLOW_PERIOD = 0x61F0L;
     private static final long HEAD_TILT = 0x1D1EL;
+    private static final long EPHEMERA_ROLL = 0xE9E1L;
+    private static final long EPHEMERA_PICK = 0xE9E2L;
 
     private LichProfile() {
     }
@@ -84,5 +86,18 @@ public final class LichProfile {
     /** 待机时头偏的角度，-4°~+4° */
     public static float headTiltDegrees(long seed) {
         return (float) (-4.0D + 8.0D * new SplittableRandom(seed ^ HEAD_TILT).nextDouble());
+    }
+
+    /** 带不带幻纹：chance 取 0 必不带、取 1 必带 */
+    public static boolean ephemeraRolls(long seed, double chance) {
+        return new SplittableRandom(seed ^ EPHEMERA_ROLL).nextDouble() < chance;
+    }
+
+    /** 一个元素对应好几款幻纹时挑哪一款（下标） */
+    public static int ephemeraPick(long seed, int count) {
+        if (count <= 1) {
+            return 0;
+        }
+        return new SplittableRandom(seed ^ EPHEMERA_PICK).nextInt(count);
     }
 }

@@ -289,4 +289,8 @@ public class KuvaLichItems {
     // 冒险指南：右键打开自带指南界面（取代帕秋莉教程书；注册名沿用旧书的模型/贴图名 kuvalich_guide）
     public static final RegistryObject<Item> KUVALICH_GUIDE = ITEMS.register("kuvalich_guide",
             () -> new pers.roinflam.kuvalich.item.GuideBook(new Item.Properties()));
+
+    // 幻纹：款式在 NBT 里，没有配方
+    public static final RegistryObject<Item> EPHEMERA = ITEMS.register("ephemera",
+            () -> new pers.roinflam.kuvalich.ephemera.EphemeraItem(new Item.Properties()));
 }

@@ -120,6 +120,10 @@ public class RequiemCard {
     private String lichWeaponType = "";
     private String lichBirthBiome = "";
     private String lichBirthDim = "";
+    /** 这只玄骸带的幻纹款式 id，空 = 不带 */
+    private String lichEphemera = "";
+    /** 幻纹掷过了；回退旧 jar 后这两个键会丢，再升级时按种子补掷回同一个结果 */
+    private boolean lichEphemeraRolled;
     /** 处决记录，最新在前，最多 {@link #MAX_ATTEMPTS} 个，编码见 {@link #packAttempt} */
     private int[] lichAttempts = new int[0];
     /** 前几只的结局，最新在前，最多 {@link #MAX_HISTORY} 条 */
@@ -205,6 +209,8 @@ public class RequiemCard {
         this.lichWeaponType = requiemCard.lichWeaponType;
         this.lichBirthBiome = requiemCard.lichBirthBiome;
         this.lichBirthDim = requiemCard.lichBirthDim;
+        this.lichEphemera = requiemCard.lichEphemera;
+        this.lichEphemeraRolled = requiemCard.lichEphemeraRolled;
         this.lichAttempts = requiemCard.lichAttempts.clone();
         this.lichHistory = new ArrayList<>(requiemCard.lichHistory);
         this.lichPaused = requiemCard.lichPaused;
@@ -450,6 +456,22 @@ public class RequiemCard {
         }
     }
 
+    private static double configDouble(java.util.function.DoubleSupplier getter, double fallback) {
+        try {
+            return getter.getAsDouble();
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
+    private static boolean configBool(java.util.function.BooleanSupplier getter, boolean fallback) {
+        try {
+            return getter.getAsBoolean();
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
     /** 整套清零，连扉上的三张卡一起清掉（卡就此没了，调用方要先自己处理那几张卡） */
     public void reset() {
         this.oneCard = ItemStack.EMPTY;
@@ -472,7 +494,7 @@ public class RequiemCard {
         this.unlockedCardStatus = 0;
         this.decryptionProgress = 0;
         this.kuvaLevel = 0;
-        // 注意：reset时不清空没收物品、精通记录和发现记录
+        // 没收物品、精通记录、发现记录留着；账、收件箱、盟友名册在 PlayerLedger 里，也不归这里管
     }
 
     public void addCard(int level) {
@@ -604,6 +626,49 @@ public class RequiemCard {
         return lichWeaponType;
     }
 
+    /** 幻纹款式 id，空 = 不带 */
+    public String getLichEphemera() {
+        return lichEphemera;
+    }
+
+    public boolean isLichEphemeraRolled() {
+        return lichEphemeraRolled;
+    }
+
+    /** 管理命令直接指定；空串 = 不带 */
+    public void setLichEphemera(String id) {
+        this.lichEphemera = id == null ? "" : id;
+        this.lichEphemeraRolled = true;
+    }
+
+    /** 按种子和给定概率掷一次幻纹，结果写死在卡上；没有玄骸时什么都不做 */
+    public void rollEphemera(double chance) {
+        if (!hasLich()) {
+            return;
+        }
+        this.lichEphemera = pers.roinflam.kuvalich.ephemera.EphemeraType.roll(lichSeed, lichWeaponType, chance);
+        this.lichEphemeraRolled = true;
+    }
+
+    /**
+     * 已经诞生、还没掷过幻纹的玄骸补掷一次（登录、绑定主人、定案时都调，只有第一次生效）。
+     * 补掷开关关着就只置标记、一律不带
+     *
+     * @return 这次是否真的补了
+     */
+    public boolean ensureEphemeraRolled() {
+        if (!hasLich() || lichEphemeraRolled) {
+            return false;
+        }
+        if (configBool(() -> ModConfig.KUVA_LICH.lichEphemeraBackfill.get(), true)) {
+            rollEphemera(configDouble(() -> ModConfig.KUVA_LICH.lichEphemeraChance.get(), 0.0D));
+        } else {
+            this.lichEphemera = "";
+            this.lichEphemeraRolled = true;
+        }
+        return true;
+    }
+
     public String getLichBirthBiome() {
         return lichBirthBiome;
     }
@@ -668,6 +733,7 @@ public class RequiemCard {
         this.lichEncounterOpen = false;
         this.lichEncounters = 0;
         this.lichAttempts = new int[0];
+        rollEphemera(configDouble(() -> ModConfig.KUVA_LICH.lichEphemeraChance.get(), 0.0D));
     }
 
     /**
@@ -692,11 +758,14 @@ public class RequiemCard {
         this.lichWeaponType = "";
         this.lichBirthBiome = "";
         this.lichBirthDim = "";
+        this.lichEphemera = "";
+        this.lichEphemeraRolled = false;
         this.lichRage = 0.0F;
         this.lichCooldownUntil = 0L;
         this.lichAttempts = new int[0];
         this.lichEncounters = 0;
         this.lichEncounterOpen = false;
+        // 账、收件箱、盟友名册在 PlayerLedger 里，这里不碰
     }
 
     /** 上一只玄骸的结局；还没有结束过任何一只返回 {@code null} */
@@ -930,6 +999,8 @@ public class RequiemCard {
         nbt.putString("lichWeaponType", lichWeaponType);
         nbt.putString("lichBirthBiome", lichBirthBiome);
         nbt.putString("lichBirthDim", lichBirthDim);
+        nbt.putString("lichEphemera", lichEphemera);
+        nbt.putBoolean("lichEphemeraRolled", lichEphemeraRolled);
         nbt.putIntArray("lichAttempts", lichAttempts);
         ListTag historyList = new ListTag();
         for (HistoryEntry entry : lichHistory) {
@@ -1043,6 +1114,9 @@ public class RequiemCard {
         this.lichWeaponType = nbt.getString("lichWeaponType");
         this.lichBirthBiome = nbt.getString("lichBirthBiome");
         this.lichBirthDim = nbt.getString("lichBirthDim");
+        // 这两个键后加的，不升 lichDataVersion：缺键就是没掷过，登录时补掷
+        this.lichEphemera = nbt.getString("lichEphemera");
+        this.lichEphemeraRolled = nbt.getBoolean("lichEphemeraRolled");
         int[] attempts = nbt.getIntArray("lichAttempts");
         this.lichAttempts = attempts.length > MAX_ATTEMPTS ? Arrays.copyOf(attempts, MAX_ATTEMPTS) : attempts;
         ListTag historyList = nbt.getList("lichHistory", Tag.TAG_COMPOUND);
@@ -1068,9 +1142,12 @@ public class RequiemCard {
         this.lichWeaponType = "";
         this.lichBirthBiome = "";
         this.lichBirthDim = "";
+        this.lichEphemera = "";
+        this.lichEphemeraRolled = false;
         this.lichAttempts = new int[0];
         this.lichHistory = new ArrayList<>();
         this.lichPaused = false;
+        // 账、收件箱、盟友名册在 PlayerLedger 里，这里不碰
     }
 
     // ==================== Provider内部类 / Provider Inner Class ====================

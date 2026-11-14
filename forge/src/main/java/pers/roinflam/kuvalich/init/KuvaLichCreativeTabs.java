@@ -60,6 +60,10 @@ public class KuvaLichCreativeTabs {
                         output.accept(KuvaLichItems.LICH_RELIQUARY.get());
                         output.accept(KuvaLichItems.RIVEN_SLIVER.get());
                         output.accept(KuvaLichItems.ENDO.get());
+                        for (pers.roinflam.kuvalich.ephemera.EphemeraType type
+                                : pers.roinflam.kuvalich.ephemera.EphemeraType.all()) {
+                            output.accept(pers.roinflam.kuvalich.ephemera.EphemeraItem.create(type, ""));
+                        }
 
                         // ========== 赤毒武器 / Kuva Weapons ==========
                         // 使用KuvaWeapon.getItem生成带属性的武器实例
