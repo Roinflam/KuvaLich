@@ -2,6 +2,7 @@ package pers.roinflam.kuvalich.client.lich;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,6 +26,7 @@ import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -141,10 +143,48 @@ final class ArchiveDossier {
     private int cw;
     private final int[] kinds = new int[CARD_KINDS];
 
+    // ---- 「被它拿走的东西」能点开的地方（物理像素，每帧重算；宽 0 = 这一帧没有） ----
+    private int moreX;
+    private int moreY;
+    private int moreW;
+    private int moreH;
+    /** 卡里画出了几件（卡名上的悬停也写「还有几件」） */
+    private int moreShown;
+    private int legX;
+    private int legY;
+    private int legW;
+    private int legH;
+
+    // ---- 「查看全部」面板 ----
+    /** 面板开着没有 */
+    boolean takenOpen;
+    private long takenOpenMs;
+    /** 最上面露出的是第几行；窗口改了大小、列数变了时按 {@link #takenFirst} 重新换算 */
+    private int takenScroll;
+    /** 最上面一行第一件的下标（滚动位置按物品记，列数变了也停在同一批物品上） */
+    private int takenFirst;
+    /** 上一帧面板的外框（含卡名那一行）、关闭键、滚动条（物理像素）；面板没画出来时宽 0 */
+    private int panX;
+    private int panY;
+    private int panW;
+    private int panH;
+    private int closeX;
+    private int closeY;
+    private int closeS;
+    private int barX;
+    private int barY;
+    private int barH;
+    private int thumbH;
+    /** 滚动条能滚几行（0 = 不用滚） */
+    private int maxScroll;
+    private boolean barDrag;
+
     /** 这一次调用里鼠标停在哪：提示行、或者一件物品（物品优先） */
     @Nullable
     List<Component> hoverLines;
     ItemStack hoverStack = ItemStack.EMPTY;
+    /** 悬停的那件被没收物品在包里去掉过 NBT（提示框末尾补一行说明） */
+    boolean hoverSlim;
 
     // ==================== 随档案和语言变的字 ====================
 
@@ -195,6 +235,8 @@ final class ArchiveDossier {
         }
         u = p;
         lw = GuiShapes.lineWidthPx();
+        moreW = 0;
+        legW = 0;
         top = Math.max(10 * u, snap(screenH * 0.035F));
         bottom = screenH - top;
         if (small) {
@@ -459,13 +501,27 @@ final class ArchiveDossier {
      */
     private void cardFrame(int x, int y, int w, int contentH, float a, String s0, int c0,
                            @Nullable String s1, int c1, @Nullable String s2, int c2) {
+        cardFrame(x, y, w, contentH, a, s0, c0, s1, c1, s2, c2, 0);
+    }
+
+    /**
+     * 同上；{@code gapR} 大于 0 时上框线右端空出这么宽的一个缺口（离右边 6 字像素，和左边卡名一样两头各空 2 字像素），
+     * 给面板的关闭键
+     */
+    private void cardFrame(int x, int y, int w, int contentH, float a, String s0, int c0,
+                           @Nullable String s1, int c1, @Nullable String s2, int c2, int gapR) {
         int lineY = y + 4 * u;
         int legW = inkW(s0) * u + (s1 != null ? 4 * u + inkW(s1) * u : 0) + (s2 != null ? 4 * u + inkW(s2) * u : 0);
         int fh = 16 * u + contentH - 4 * u;
         int edge = FxPalette.KUVA_PALE;
         rect(x, lineY, w, fh, FxPalette.INK, 0.3F * a);
         hline(x, x + 4 * u, lineY, edge, 0.09F * a);
-        hline(x + 8 * u + legW, x + w, lineY, edge, 0.09F * a);
+        if (gapR > 0) {
+            hline(x + 8 * u + legW, x + w - 8 * u - gapR, lineY, edge, 0.09F * a);
+            hline(x + w - 4 * u, x + w, lineY, edge, 0.09F * a);
+        } else {
+            hline(x + 8 * u + legW, x + w, lineY, edge, 0.09F * a);
+        }
         hline(x, x + w, lineY + fh - lw, edge, 0.09F * a);
         vline(x, lineY + lw, lineY + fh - lw, edge, 0.09F * a);
         vline(x + w - lw, lineY + lw, lineY + fh - lw, edge, 0.09F * a);
@@ -640,8 +696,8 @@ final class ArchiveDossier {
     /**
      * 被它拿走的东西：一张同样的卷宗卡，里面是原版式的物品格（18 字像素见方，格挨格），物品图标按字号整数倍、
      * 照原版写数量。行数按件数、最多三行，放不下就少排一行（至少一行）；装不下时最后一格画三颗点，
-     * 剩下的件数照原版数量的写法贴在右下角（超过两位只留三颗点，总数在卡名里，悬停写「+N」）。
-     * 坐标是界面坐标（右列的左右边、能用的上下边）
+     * 剩下的件数照原版数量的写法贴在右下角（超过两位只留三颗点，总数在卡名里）。装不下时这一格和卡名都能点，
+     * 点开「查看全部」面板（{@link #drawTakenPanel}）。坐标是界面坐标（右列的左右边、能用的上下边）
      */
     void drawTaken(GuiGraphics graphics, Font f, int mx, int my, float x0, float x1, float y0, float y1,
                    @Nullable LichArchivePacket.Data data, float a) {
@@ -674,25 +730,58 @@ final class ArchiveDossier {
             while (rows > 1 && y + 16 * u + rows * s > maxY) {
                 rows--;
             }
-            cardFrame(x, y, w, rows * s, a, legend, FxPalette.ASH, null, 0, null, 0);
-            itemGrid(hmid(cx, cw, cols * s), cy, cols, rows, items, total, a);
+            String shownLegend = fitLegend(legend, total, (w - 12 * u) / u);
+            cardFrame(x, y, w, rows * s, a, shownLegend, FxPalette.ASH, null, 0, null, 0);
+            int lx = cx;
+            int lwid = inkW(shownLegend) * u;
+            itemGrid(hmid(cx, cw, cols * s), cy, cols, rows, items, data.confiscatedSlim(), total, a);
+            if (moreW > 0) {
+                // 卡名一行也能点：和卡名的字墨同宽、同高
+                legX = lx;
+                legY = y;
+                legW = lwid;
+                legH = 8 * u;
+                if (in(legX, legY, legW, legH)) {
+                    hoverLines = List.of(Component.translatable("kuvalich.archive.confiscated.more", total - moreShown));
+                }
+            } else if (shownLegend != legend && in(lx, y, lwid, 8 * u)) {
+                hoverLines = List.of(Component.literal(legend));
+            }
         } finally {
             finish();
         }
     }
 
-    private void itemGrid(int x, int y, int cols, int rows, List<ItemStack> items, int total, float a) {
+    /**
+     * 卡名放不下时截掉前面的说明、留住括号和里面的件数（「被它拿走的…（128）」）；找不到件数就照常从末尾截。
+     * 没截断时原样返回同一个对象
+     */
+    private String fitLegend(String legend, int total, int maxW) {
+        if (inkW(legend) <= maxW) {
+            return legend;
+        }
+        String num = Integer.toString(total);
+        int at = legend.lastIndexOf(num);
+        if (at > 0) {
+            int open = Math.max(legend.lastIndexOf('（', at), legend.lastIndexOf('(', at));
+            int cut = open >= 0 && at - open <= 2 ? open : at;
+            String tail = legend.substring(cut);
+            String head = legend.substring(0, cut).stripTrailing();
+            String gap = cut < legend.length() && legend.charAt(cut) == '(' ? " " : "";
+            int room = maxW - inkW(tail) - font.width(gap);
+            if (room > 0 && !head.isEmpty()) {
+                return fit(head, room) + gap + tail;
+            }
+        }
+        return fit(legend, maxW);
+    }
+
+    private void itemGrid(int x, int y, int cols, int rows, List<ItemStack> items, BitSet slim, int total, float a) {
         int s = 18 * u;
         int slots = cols * rows;
         int shown = Math.min(items.size(), total > slots ? slots - 1 : slots);
         for (int i = 0; i < slots; i++) {
-            int sx = x + (i % cols) * s;
-            int sy = y + (i / cols) * s;
-            rect(sx, sy, s, s, SLOT_INNER, a);
-            rect(sx, sy, s - u, u, SLOT_DARK, a);
-            rect(sx, sy, u, s - u, SLOT_DARK, a);
-            rect(sx + u, sy + s - u, s - u, u, SLOT_LIGHT, a);
-            rect(sx + s - u, sy + u, u, s - u, SLOT_LIGHT, a);
+            slot(x + (i % cols) * s, y + (i / cols) * s, a);
         }
         for (int i = 0; i < shown; i++) {
             int sx = x + (i % cols) * s;
@@ -701,6 +790,7 @@ final class ArchiveDossier {
             item(st, sx + u, sy + u, 16 * u, true, a);
             if (in(sx, sy, s, s)) {
                 hoverStack = st;
+                hoverSlim = slim.get(i);
             }
         }
         if (total > shown) {
@@ -717,10 +807,250 @@ final class ArchiveDossier {
                 // 和原版物品数量同一个位置：右缘贴格子内右缘、底贴物品底，带阴影
                 shadowText(cnt, sx + 17 * u - font.width(cnt) * u, sy + 9 * u, FxPalette.BONE, a);
             }
+            if (a >= 0.5F) {
+                moreX = sx;
+                moreY = sy;
+                moreW = s;
+                moreH = s;
+                moreShown = shown;
+            }
             if (in(sx, sy, s, s)) {
                 hoverLines = List.of(Component.translatable("kuvalich.archive.confiscated.more", n));
             }
         }
+    }
+
+    /** 一个物品格（18 字像素见方）：底色、左上暗边、右下亮边 */
+    private void slot(int sx, int sy, float a) {
+        int s = 18 * u;
+        rect(sx, sy, s, s, SLOT_INNER, a);
+        rect(sx, sy, s - u, u, SLOT_DARK, a);
+        rect(sx, sy, u, s - u, SLOT_DARK, a);
+        rect(sx + u, sy + s - u, s - u, u, SLOT_LIGHT, a);
+        rect(sx + s - u, sy + u, u, s - u, SLOT_LIGHT, a);
+    }
+
+    // ==================== 「查看全部」面板 ====================
+
+    /** 面板最多几列、最多露几行（行多了滚动） */
+    private static final int PANEL_COLS = 12;
+    private static final int PANEL_ROWS = 8;
+    /** 面板淡入用多久（ms） */
+    private static final int PANEL_FADE_MS = 120;
+    /** 关闭键：7×7 的叉 */
+    private static final Glyph CLOSE = glyph("#.....#", ".#...#.", "..#.#..", "...#...", "..#.#..", ".#...#.",
+            "#.....#");
+
+    /** 滚轮攒下的零头（触控板一次只给零点几） */
+    private double scrollAcc;
+    /** 上一帧面板的列数（滚动时把行换算成物品下标） */
+    private int lastCols = 1;
+
+    /** 鼠标（界面坐标）落在卡上能点开面板的地方就打开，返回打开了没有 */
+    boolean clickTaken(double mx, double my) {
+        int px = phys(mx);
+        int py = phys(my);
+        if (moreW <= 0 || !(inRect(px, py, moreX, moreY, moreW, moreH) || inRect(px, py, legX, legY, legW, legH))) {
+            return false;
+        }
+        takenOpen = true;
+        takenOpenMs = Util.getMillis();
+        takenScroll = 0;
+        takenFirst = 0;
+        scrollAcc = 0.0D;
+        barDrag = false;
+        panW = 0;
+        return true;
+    }
+
+    void closeTaken() {
+        takenOpen = false;
+        barDrag = false;
+        panW = 0;
+    }
+
+    /**
+     * 面板开着时的点击：点关闭键或面板外面就关上，在滚动条上按下开始拖，面板里其余地方不做事。
+     * 不管点在哪都由面板吃掉，不落到底下的档案
+     */
+    void panelClick(double mx, double my, int button) {
+        if (panW <= 0) {
+            return;
+        }
+        int px = phys(mx);
+        int py = phys(my);
+        if (button == 0 && inRect(px, py, closeX, closeY, closeS, closeS)) {
+            closeTaken();
+            return;
+        }
+        if (!inRect(px, py, panX, panY, panW, panH)) {
+            closeTaken();
+            return;
+        }
+        if (button == 0 && maxScroll > 0 && inRect(px, py, barX - 2 * u, barY, 6 * u, barH)) {
+            barDrag = true;
+            dragTo(py);
+        }
+    }
+
+    void panelDrag(double my) {
+        if (barDrag) {
+            dragTo(phys(my));
+        }
+    }
+
+    void panelRelease() {
+        barDrag = false;
+    }
+
+    /** 滚轮：一格一行，往上滚看前面的 */
+    void panelScroll(double delta) {
+        if (maxScroll <= 0) {
+            scrollAcc = 0.0D;
+            return;
+        }
+        scrollAcc += delta;
+        int steps = (int) scrollAcc;
+        if (steps != 0) {
+            scrollAcc -= steps;
+            takenScroll = Mth.clamp(takenScroll - steps, 0, maxScroll);
+            takenFirst = takenScroll * lastCols;
+        }
+    }
+
+    /** 拖滚动条：滑块中心跟着鼠标，换算成整行 */
+    private void dragTo(int py) {
+        int range = barH - thumbH;
+        if (range <= 0 || maxScroll <= 0) {
+            return;
+        }
+        float t = (py - barY - thumbH / 2.0F) / range;
+        takenScroll = Mth.clamp(Math.round(t * maxScroll), 0, maxScroll);
+        takenFirst = takenScroll * lastCols;
+    }
+
+    /**
+     * 「查看全部」面板：先压暗整个档案，正中盖一张和卷宗卡一个样子的卡（卡名压在上框线上），右上角一个关闭键。
+     * 里面是和卡里一样的物品格，列数按窗口宽度算（最多 {@link #PANEL_COLS} 列，件数少就按件数），
+     * 最多露 {@link #PANEL_ROWS} 行，多了用滚轮或右边的滚动条一行一行翻。包里没写全（总数比列表多）时底下写
+     * 「另有 N 件未列出」。档案刷新后没有东西了（玄骸被终结、东西还回来）就自己关上
+     */
+    void drawTakenPanel(GuiGraphics graphics, Font f, int mx, int my, @Nullable LichArchivePacket.Data data) {
+        if (!takenOpen) {
+            return;
+        }
+        if (data == null || data.confiscatedCount() <= 0 || data.confiscated().isEmpty()) {
+            closeTaken();
+            return;
+        }
+        begin(graphics, f, mx, my, data);
+        try {
+            float a = Mth.clamp((Util.getMillis() - takenOpenMs) / (float) PANEL_FADE_MS, 0.0F, 1.0F);
+            List<ItemStack> items = data.confiscated();
+            int n = items.size();
+            int total = data.confiscatedCount();
+            int s = 18 * u;
+            int margin = 16 * u;
+            int maxW = screenW - 2 * margin;
+            String foot = total > n ? I18n.get("kuvalich.archive.confiscated.omitted", total - n) : null;
+            int footH = foot != null ? 12 * u : 0;
+
+            int cols = Math.min(n, Mth.clamp((maxW - 12 * u) / s, 1, PANEL_COLS));
+            int rowsAll = (n + cols - 1) / cols;
+            int rows = Math.min(rowsAll, Mth.clamp((screenH - 2 * margin - 16 * u - footH) / s, 1, PANEL_ROWS));
+            maxScroll = rowsAll - rows;
+            lastCols = cols;
+            takenScroll = Mth.clamp(takenFirst / cols, 0, maxScroll);
+
+            // 宽：放得下网格、卡名加关闭键（两边各留一段框线）、底下那行字，三者取最宽，不超出窗口
+            int legInk = inkW(taken) * u;
+            int footInk = foot != null ? inkW(foot) * u : 0;
+            int w = Math.min(maxW, Math.max(cols * s + 12 * u, Math.max(legInk + 27 * u, footInk + 12 * u)));
+            // 卡名或底下那行字撑宽时宽度可能和窗口宽一奇一偶，补 1 像素让左右留白相等，网格在卡里也就正好居中
+            if (((screenW - w) & 1) != 0 && w < maxW) {
+                w++;
+            }
+            int h = 16 * u + rows * s + footH;
+            int x = hmid(0, screenW, w);
+            // 看得见的框从卡名中线（y + 4 字像素）开始，按框居中，卡名伸在框线上面
+            int y = vmid(0, screenH, h - 4 * u) - 4 * u;
+            panX = x;
+            panY = y;
+            panW = w;
+            panH = h;
+
+            // 压暗底下的档案，再垫一层实底（卡片自己的底色是半透明的）
+            rect(0, 0, screenW, screenH, 0x000000, 0.6F * a);
+            rect(x, y + 4 * u, w, h - 4 * u, FxPalette.INK, 0.94F * a);
+            String legend = fit(taken, Math.max(1, (w - 27 * u) / u));
+            cardFrame(x, y, w, rows * s + footH, a, legend, FxPalette.ASH, null, 0, null, 0, 7 * u);
+
+            // 关闭键：压在上框线右端留出的缺口里，和卡名同一行竖直居中
+            int kx = x + w - 13 * u;
+            int ky = vmid(y, 8 * u, 7 * u);
+            closeS = 11 * u;
+            closeX = kx - 2 * u;
+            closeY = ky - 2 * u;
+            boolean overClose = in(closeX, closeY, closeS, closeS);
+            glyph(CLOSE, kx, ky, overClose ? FxPalette.KUVA : FxPalette.ASH, a);
+            if (overClose) {
+                hoverLines = List.of(Component.translatable("kuvalich.archive.confiscated.close"));
+            }
+
+            int gw = cols * s;
+            int gx = hmid(cx, cw, gw);
+            int gy = cy;
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    slot(gx + c * s, gy + r * s, a);
+                }
+            }
+            int first = takenScroll * cols;
+            int last = Math.min(n, first + rows * cols);
+            for (int i = first; i < last; i++) {
+                int sx = gx + ((i - first) % cols) * s;
+                int sy = gy + ((i - first) / cols) * s;
+                ItemStack st = items.get(i);
+                item(st, sx + u, sy + u, 16 * u, true, a);
+                if (in(sx, sy, s, s)) {
+                    hoverStack = st;
+                    hoverSlim = data.confiscatedSlim().get(i);
+                }
+            }
+
+            // 滚动条：贴在网格右边，空 2 字像素，落在卡的右内边距里
+            if (maxScroll > 0) {
+                barX = gx + gw + 2 * u;
+                barY = gy;
+                barH = rows * s;
+                thumbH = Math.max(6 * u, Math.round(barH * rows / (float) rowsAll));
+                int thumbY = barY + Math.round((barH - thumbH) * takenScroll / (float) maxScroll);
+                boolean hot = barDrag || in(barX - 2 * u, barY, 6 * u, barH);
+                rect(barX, barY, 2 * u, barH, FxPalette.KUVA_MIST, 0.8F * a);
+                rect(barX, thumbY, 2 * u, thumbH, hot ? FxPalette.KUVA : FxPalette.KUVA_PALE, (hot ? 0.9F : 0.5F) * a);
+            } else {
+                barH = 0;
+            }
+
+            if (foot != null) {
+                String fs = fit(foot, cw / u);
+                text(fs, hmid(cx, cw, inkW(fs) * u), gy + rows * s + 4 * u, u, FxPalette.TEXT_MID, 0.8F * a);
+            }
+        } finally {
+            finish();
+        }
+    }
+
+    /**
+     * 点击给的界面坐标换成物理像素：先取整成界面整数坐标再乘缩放，和画面时悬停用的坐标（render 拿到的是整数）
+     * 同一个算法，提示框出现的地方就一定点得中
+     */
+    private int phys(double guiCoord) {
+        return (int) Math.floor((int) guiCoord * gs);
+    }
+
+    private static boolean inRect(int px, int py, int x, int y, int w, int h) {
+        return px >= x && px < x + w && py >= y && py < y + h;
     }
 
     // ==================== 字的缓存 ====================
@@ -852,6 +1182,7 @@ final class ArchiveDossier {
         myp = (int) Math.floor(my * gs);
         hoverLines = null;
         hoverStack = ItemStack.EMPTY;
+        hoverSlim = false;
         if (data != null) {
             ensureTexts(data);
         }

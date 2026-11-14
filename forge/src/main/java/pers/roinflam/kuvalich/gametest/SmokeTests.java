@@ -30,6 +30,7 @@ import pers.roinflam.kuvalich.network.packet.LichStatePacket;
 import pers.roinflam.kuvalich.network.packet.MercyRequestPacket;
 import pers.roinflam.kuvalich.utils.Reference;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -142,6 +143,8 @@ public final class SmokeTests {
                 && d2.confiscated().get(1).getTag().getInt("k") == 7, "档案：小 NBT 应当原样保留");
         h.assertTrue(d2.confiscated().get(2).is(Items.GOLDEN_APPLE) && d2.confiscated().get(2).getCount() == 3,
                 "档案：物品个数");
+        h.assertTrue(d2.confiscatedSlim().get(0) && !d2.confiscatedSlim().get(1) && !d2.confiscatedSlim().get(2),
+                "档案：去掉过 NBT 的那件要标出来，其余不标");
         h.assertTrue("Old Name".equals(d2.lastName()) && d2.lastFate() == 1, "档案：上一只");
         buf = newBuf();
         LichArchivePacket.encode(new LichArchivePacket(d2), buf);
@@ -200,6 +203,86 @@ public final class SmokeTests {
                         && Arrays.equals(legacy2.usesAfter(), new int[]{-1, -1, -1}),
                 "解密进度：旧构造的揭示信息应当是「没有」");
         h.succeed();
+    }
+
+    /**
+     * 档案包的没收物品整份都带：塞满上限、每件都带接近 2 KB 的 NBT 时整段不超过字节预算，件数一件不少
+     * （放不下 NBT 的后几件只剩物品本身），顺序和数量照旧；列表比上限还长时只写上限那么多，总数照原样
+     */
+    @GameTest(template = "empty")
+    public static void archiveConfiscatedRoundTrip(GameTestHelper h) {
+        LichStatePacket state = new LichStatePacket(LichState.STALKING, WaitReason.NONE, "Drokag Tuzz", 42, 0, 4, 500,
+                2, 1, 0, 1, false);
+        int max = LichArchivePacket.MAX_CONFISCATED;
+        List<ItemStack> full = new ArrayList<>();
+        for (int i = 0; i < max + 76; i++) {
+            ItemStack st = new ItemStack(i % 2 == 0 ? Items.DIAMOND : Items.EMERALD, i % 64 + 1);
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("i", i);
+            tag.putString("pad", "x".repeat(1900));
+            st.setTag(tag);
+            full.add(st);
+        }
+        LichArchivePacket.Data data = archiveWith(state, full.size(), full);
+        FriendlyByteBuf buf = encoded(data);
+        int size = buf.readableBytes();
+        h.assertTrue(size < LichArchivePacket.MAX_CONFISCATED_BYTES + 4096, "没收物品：整包应当在字节预算以内，实际 " + size);
+        LichArchivePacket.Data d2 = LichArchivePacket.decode(buf).data();
+        h.assertTrue(d2.confiscatedCount() == max + 76, "没收物品：总数照原样，实际 " + d2.confiscatedCount());
+        h.assertTrue(d2.confiscated().size() == max, "没收物品：应当写满上限 " + max + " 件，实际 " + d2.confiscated().size());
+        int tagged = 0;
+        int firstBare = -1;
+        boolean ordered = true;
+        boolean tagsMatch = true;
+        for (int i = 0; i < d2.confiscated().size(); i++) {
+            ItemStack st = d2.confiscated().get(i);
+            if (!st.is(i % 2 == 0 ? Items.DIAMOND : Items.EMERALD) || st.getCount() != i % 64 + 1) {
+                ordered = false;
+            }
+            boolean has = st.getTag() != null && st.getTag().contains("pad");
+            tagsMatch &= has != d2.confiscatedSlim().get(i);
+            if (has) {
+                tagsMatch &= st.getTag().getInt("i") == i;
+                tagged++;
+            } else if (firstBare < 0) {
+                firstBare = i;
+            }
+        }
+        h.assertTrue(ordered, "没收物品：物品和数量要按原来的顺序");
+        // 预算按「后面每件留一件光秃秃物品的位置」算，后面的预留变少以后还能再放进几件带 NBT 的，所以只要求
+        // 开头一段连着保留、中间开始有去掉的，带回来的 NBT 都是自己那一件的
+        h.assertTrue(tagsMatch && firstBare >= 50 && tagged < max,
+                "没收物品：前面的保留 NBT，超出预算的去掉 NBT，实际保留 " + tagged + " 件、第一件去掉的是 " + firstBare);
+        sameBytes(h, "没收物品", bytes(encoded(d2)), bytes(encoded(data)));
+
+        // 上限以内、NBT 小的一份：一件不少、NBT 原样
+        List<ItemStack> small = new ArrayList<>();
+        for (int i = 0; i < 128; i++) {
+            ItemStack st = new ItemStack(Items.IRON_SWORD);
+            st.getOrCreateTag().putInt("i", i);
+            small.add(st);
+        }
+        LichArchivePacket.Data d3 = LichArchivePacket.decode(encoded(archiveWith(state, 128, small))).data();
+        boolean intact = d3.confiscated().size() == 128;
+        for (int i = 0; intact && i < 128; i++) {
+            intact = d3.confiscated().get(i).getTag() != null && d3.confiscated().get(i).getTag().getInt("i") == i;
+        }
+        h.assertTrue(intact && d3.confiscatedCount() == 128, "没收物品：128 件小 NBT 应当原样读回");
+
+        // 一件都没有
+        LichArchivePacket.Data d4 = LichArchivePacket.decode(encoded(archiveWith(state, 0, List.of()))).data();
+        h.assertTrue(d4.confiscatedCount() == 0 && d4.confiscated().isEmpty() && "Old".equals(d4.lastName()),
+                "没收物品：零件时后面的字段不错位");
+        h.succeed();
+    }
+
+    private static LichArchivePacket.Data archiveWith(LichStatePacket state, int count, List<ItemStack> items) {
+        return new LichArchivePacket.Data(state, "minecraft:plains", "minecraft:overworld",
+                ItemStack.EMPTY, 0, 0, LichArchivePacket.Stats.NONE, 0, 0, 0, 0,
+                0, 0, 1, new int[]{-1, -1, -1},
+                new LichArchivePacket.Card[]{LichArchivePacket.Card.EMPTY, LichArchivePacket.Card.EMPTY,
+                        LichArchivePacket.Card.EMPTY},
+                new int[0], count, items, "Old", 1);
     }
 
     /** 计划位、状态特效参数、处决记录的编码来回一遍 */

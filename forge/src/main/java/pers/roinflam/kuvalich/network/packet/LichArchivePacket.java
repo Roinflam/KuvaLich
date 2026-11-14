@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.network.packet;
 
+import io.netty.buffer.Unpooled;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -8,6 +9,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.client.ClientPacketHandlers;
 
@@ -15,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -24,13 +27,25 @@ import java.util.function.Supplier;
  * <p>只在玩家打开档案时按请求发（见 {@link LichArchiveRequestPacket}），只含请求者自己的数据。
  * 内容分三块：和状态包一样的那一套（名字、等级、怒气、状态行）、玄骸本身的属性、玩家这边的解密进度和处决记录。</p>
  *
- * <p>没收物品最多带 {@link #MAX_CONFISCATED} 个，单个物品的 NBT 超过 {@link #MAX_STACK_NBT} 字节时
- * 编码时去掉 NBT 只留物品本身，免得一件塞满数据的物品把整包撑过上限。解码时所有数量都按上限截断。</p>
+ * <p>没收物品整份都带（档案里「查看全部」要列出每一件），个数上限 {@link #MAX_CONFISCATED} 和配置
+ * {@code maxConfiscatedItems} 能填的最大值一致。单个物品的 NBT 超过 {@link #MAX_STACK_NBT} 字节时编码时去掉 NBT
+ * 只留物品本身，免得一件塞满数据的物品把整包撑过上限；所有物品合起来要超过 {@link #MAX_CONFISCATED_BYTES} 字节时，
+ * 放不下的那几件也去掉 NBT（见 {@link #writeConfiscated}），连光秃秃的物品都放不下才不再往下写。
+ * 去掉过 NBT 的是哪几件随包带一个位图（{@link Data#confiscatedSlim()}），档案里悬停时说明详情没能显示；
+ * 没写进包的件数由客户端用总数减去列表长度得出。解码时所有数量都按上限截断。</p>
  */
 public class LichArchivePacket {
 
-    public static final int MAX_CONFISCATED = 54;
+    /** 没收物品最多带几件，和配置 {@code maxConfiscatedItems} 的上限一致 */
+    public static final int MAX_CONFISCATED = 1024;
     public static final int MAX_STACK_NBT = 2048;
+    /**
+     * 没收物品一段最多占多少字节。原版自定义数据包上限 1 MiB，这里只用一小部分：塞满 1024 件、每件 2 KB 的 NBT
+     * 也不会把包撑破，开着档案每 5 秒刷新一次也不至于太重
+     */
+    public static final int MAX_CONFISCATED_BYTES = 192 * 1024;
+    /** 一件不带 NBT 的物品编码后最多几个字节：有无物品 1、注册号变长整数至多 5、数量 1、空 NBT 1 */
+    private static final int BARE_ITEM_BYTES = 8;
     /** 处决记录最多留几条（卡里最多存 5 条，这里留余量） */
     public static final int MAX_ATTEMPTS = 16;
     private static final int MAX_ID_LEN = 128;
@@ -105,7 +120,8 @@ public class LichArchivePacket {
      * @param cards            当前放着的三张安魂卡
      * @param attempts         处决记录（打包过的 int，最新在前）
      * @param confiscatedCount 被没收的物品总数
-     * @param confiscated      被没收物品的图标（最多前 54 个）
+     * @param confiscated      被没收的物品，按没收先后（编码时按字节预算可能少写后面几件，见类注释）
+     * @param confiscatedSlim  {@code confiscated} 里哪几件（按下标）去掉过 NBT，只剩物品种类和数量
      * @param lastName         上一只玄骸的名字，没有为空
      * @param lastFate         上一只的结局：0 无 / 1 终结 / 2 管理命令解除
      */
@@ -115,8 +131,22 @@ public class LichArchivePacket {
                        int rageSources, int encounters,
                        int stage, int progress, int threshold,
                        int[] riddles, Card[] cards, int[] attempts,
-                       int confiscatedCount, List<ItemStack> confiscated,
+                       int confiscatedCount, List<ItemStack> confiscated, BitSet confiscatedSlim,
                        String lastName, int lastFate) {
+
+        /** 服务端组数据时用：哪几件要去掉 NBT 由编码时决定 */
+        public Data(LichStatePacket state, String birthBiome, String birthDim,
+                    ItemStack weaponStack, int weaponLvMin, int weaponLvMax,
+                    Stats stats, int dealtPct, int takenPct,
+                    int rageSources, int encounters,
+                    int stage, int progress, int threshold,
+                    int[] riddles, Card[] cards, int[] attempts,
+                    int confiscatedCount, List<ItemStack> confiscated,
+                    String lastName, int lastFate) {
+            this(state, birthBiome, birthDim, weaponStack, weaponLvMin, weaponLvMax, stats, dealtPct, takenPct,
+                    rageSources, encounters, stage, progress, threshold, riddles, cards, attempts,
+                    confiscatedCount, confiscated, new BitSet(), lastName, lastFate);
+        }
     }
 
     private final Data data;
@@ -163,11 +193,7 @@ public class LichArchivePacket {
             buf.writeInt(d.attempts()[i]);
         }
         buf.writeVarInt(Math.max(0, d.confiscatedCount()));
-        int stackCount = Math.min(MAX_CONFISCATED, d.confiscated().size());
-        buf.writeVarInt(stackCount);
-        for (int i = 0; i < stackCount; i++) {
-            buf.writeItem(slim(d.confiscated().get(i)));
-        }
+        writeConfiscated(d.confiscated(), d.confiscatedSlim(), buf);
         buf.writeUtf(cut(d.lastName(), LichStatePacket.MAX_NAME), LichStatePacket.MAX_NAME);
         buf.writeByte(d.lastFate());
     }
@@ -206,11 +232,15 @@ public class LichArchivePacket {
         for (int i = 0; i < stackCount; i++) {
             confiscated.add(buf.readItem());
         }
+        BitSet slim = buf.readBitSet();
+        if (slim.length() > stackCount) {
+            slim.clear(stackCount, slim.length());
+        }
         String lastName = buf.readUtf(LichStatePacket.MAX_NAME);
         int lastFate = buf.readByte();
         return new LichArchivePacket(new Data(state, birthBiome, birthDim, weaponStack, weaponLvMin, weaponLvMax,
                 stats, dealtPct, takenPct, rageSources, encounters,
-                stage, progress, threshold, riddles, cards, attempts, confiscatedCount, confiscated,
+                stage, progress, threshold, riddles, cards, attempts, confiscatedCount, confiscated, slim,
                 lastName, lastFate));
     }
 
@@ -235,6 +265,57 @@ public class LichArchivePacket {
 
     // ==================== 小工具 ====================
 
+    /**
+     * 写没收物品：先写进一块临时缓冲，按字节预算挑出能放下的，再连同件数、去掉过 NBT 的位图一起抄进包里。
+     * 每写一件都给后面的每一件留出一件光秃秃物品的位置（{@link #BARE_ITEM_BYTES}），按实际写进去的字节数判断，
+     * 超了就去掉这件的 NBT 再放，所以前面带 NBT 的物品不会把预算吃光、让后面的物品一件都列不出来。
+     * 后面的预留随件数减少，中途去掉过 NBT 之后，再往后的小件仍可能带着 NBT 放进去。
+     * 去掉 NBT 以后还超出总预算（有的物品没有 NBT 也要写一份共享数据）才到此为止
+     *
+     * @param prevSlim 列表里已经去掉过 NBT 的下标（档案包解码后再编码时原样带上）
+     */
+    private static void writeConfiscated(List<ItemStack> items, @Nullable BitSet prevSlim, FriendlyByteBuf buf) {
+        int limit = Math.min(MAX_CONFISCATED, items.size());
+        FriendlyByteBuf tmp = new FriendlyByteBuf(Unpooled.buffer());
+        BitSet slimmed = new BitSet();
+        try {
+            int written = 0;
+            for (int i = 0; i < limit; i++) {
+                ItemStack original = items.get(i);
+                ItemStack stack = slim(original);
+                boolean stripped = (stack != original && !stack.isEmpty()) || (prevSlim != null && prevSlim.get(i));
+                int budget = MAX_CONFISCATED_BYTES - (limit - i - 1) * BARE_ITEM_BYTES;
+                int mark = tmp.writerIndex();
+                tmp.writeItem(stack);
+                if (tmp.writerIndex() > budget && stack.getTag() != null) {
+                    tmp.writerIndex(mark);
+                    stack = bare(stack);
+                    stripped = true;
+                    tmp.writeItem(stack);
+                }
+                if (tmp.writerIndex() > MAX_CONFISCATED_BYTES) {
+                    tmp.writerIndex(mark);
+                    break;
+                }
+                if (stripped) {
+                    slimmed.set(written);
+                }
+                written++;
+            }
+            buf.writeVarInt(written);
+            buf.writeBytes(tmp);
+            buf.writeBitSet(slimmed);
+        } finally {
+            tmp.release();
+        }
+    }
+
+    private static ItemStack bare(ItemStack stack) {
+        ItemStack copy = stack.copy();
+        copy.setTag(null);
+        return copy;
+    }
+
     private static String cut(String s, int max) {
         if (s == null) {
             return "";
@@ -251,9 +332,7 @@ public class LichArchivePacket {
         if (tag == null || nbtSize(tag) <= MAX_STACK_NBT) {
             return stack;
         }
-        ItemStack copy = stack.copy();
-        copy.setTag(null);
-        return copy;
+        return bare(stack);
     }
 
     private static int nbtSize(CompoundTag tag) {

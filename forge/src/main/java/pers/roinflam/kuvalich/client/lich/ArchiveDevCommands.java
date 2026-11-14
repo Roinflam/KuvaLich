@@ -14,6 +14,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
@@ -45,6 +46,8 @@ import java.util.UUID;
  *       空的那份是还没有玄骸、上一只已被终结。状态写 {@code LichState} 的名字（如 {@code incoming}），只对满的那份有用。</li>
  *   <li>{@code /kuvafxc archive open}：照常打开（和从灭骸之扉进去一样，只是不用先开扉）。</li>
  *   <li>{@code /kuvafxc archive demoweapon <下标>}：满的那份假档案换成第几把赤毒武器（看不同武器拿在手里的样子）。</li>
+ *   <li>{@code /kuvafxc archive demotaken <件数> [总数]}：满的那份假档案里被拿走的东西换成这么多件（轮流取一组常见物品，
+ *       每隔几件带附魔），总数不写就和件数相同，写得比件数大就是「包里没写全」的样子；件数写 -1 还原默认的那份。</li>
  *   <li>{@code /kuvafxc archive weapon|weaponportrait|weaponbust [ox oy oz 手腕 前臂拧 绕刀柄 scale]}：现场改玄骸手里武器的
  *       拳心位置（三种摆法共用）和这一种摆法的握法（世界里、全身像、半身像），不带参数时打印当前值。</li>
  *   <li>{@code /kuvafxc archive weaponarm <上臂 x y z> <前臂 x y z>}：现场改立绘里拿武器那只胳膊叠的转角（动画文件的写法）。</li>
@@ -69,6 +72,9 @@ public final class ArchiveDevCommands {
 
     /** 满的那份假档案用第几把赤毒武器 */
     private static int demoWeapon;
+    /** 满的那份假档案里被拿走的东西有几件、总数写几（件数 -1 = 默认那份） */
+    private static int demoTaken = -1;
+    private static int demoTakenTotal;
 
     private static LichArchivePacket.Data pending;
     private static boolean pendingOpen;
@@ -109,6 +115,13 @@ public final class ArchiveDevCommands {
                                             + (n == 0 ? "-" : Integer.toString(demoWeapon % n)) + " / " + n), false);
                                     return 1;
                                 })))
+                        .then(Commands.literal("demotaken")
+                                .then(Commands.argument("count", IntegerArgumentType.integer(-1, LichArchivePacket.MAX_CONFISCATED))
+                                        .executes(ctx -> demoTaken(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "count"), -1))
+                                        .then(Commands.argument("total", IntegerArgumentType.integer(0))
+                                                .executes(ctx -> demoTaken(ctx.getSource(),
+                                                        IntegerArgumentType.getInteger(ctx, "count"),
+                                                        IntegerArgumentType.getInteger(ctx, "total"))))))
                         .then(Commands.literal("bardemo")
                                 .then(Commands.literal("on").executes(ctx -> barDemo(ctx.getSource(), true)))
                                 .then(Commands.literal("off").executes(ctx -> barDemo(ctx.getSource(), false)))
@@ -286,6 +299,14 @@ public final class ArchiveDevCommands {
         return 1;
     }
 
+    private static int demoTaken(CommandSourceStack src, int count, int total) {
+        demoTaken = count;
+        demoTakenTotal = Math.max(count, total);
+        src.sendSuccess(() -> Component.literal(count < 0 ? "demo taken: default"
+                : "demo taken " + count + " / " + demoTakenTotal), false);
+        return 1;
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !pendingOpen) {
@@ -327,8 +348,21 @@ public final class ArchiveDevCommands {
                 new ItemStack(Items.EXPERIENCE_BOTTLE, 6), new ItemStack(Items.NAME_TAG), new ItemStack(Items.SADDLE),
                 new ItemStack(Items.TOTEM_OF_UNDYING), new ItemStack(Items.ELYTRA)
         };
-        for (ItemStack s : pool) {
-            taken.add(s);
+        int takenTotal;
+        if (demoTaken < 0) {
+            for (ItemStack s : pool) {
+                taken.add(s);
+            }
+            takenTotal = taken.size() + 9;
+        } else {
+            for (int i = 0; i < demoTaken; i++) {
+                ItemStack s = pool[i % pool.length].copy();
+                if (i % 5 == 1 && s.isEnchantable()) {
+                    s.enchant(Enchantments.UNBREAKING, 3);
+                }
+                taken.add(s);
+            }
+            takenTotal = demoTakenTotal;
         }
         return new LichArchivePacket.Data(st, "minecraft:dark_forest", "minecraft:overworld", weaponStack, 3, 7,
                 // 档位：适应强、增幅中、自愈专长、震荡中、吸血弱，按种子抽的
@@ -338,7 +372,7 @@ public final class ArchiveDevCommands {
                 new LichArchivePacket.Card[]{
                         new LichArchivePacket.Card(3, 1, 3), new LichArchivePacket.Card(6, 0, 3),
                         new LichArchivePacket.Card(1, 2, 3)},
-                attempts, taken.size() + 9, taken, "", 0);
+                attempts, takenTotal, taken, "", 0);
     }
 
     private static LichArchivePacket.Data emptyDemo() {

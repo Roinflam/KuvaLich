@@ -2,6 +2,7 @@ package pers.roinflam.kuvalich.client.lich;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -20,6 +21,7 @@ import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.client.KuvaKeyMappings;
@@ -172,6 +174,8 @@ public class LichArchiveScreen extends Screen {
     @Nullable
     private List<Component> hoverLines;
     private ItemStack hoverStack = ItemStack.EMPTY;
+    /** 悬停的是一件去掉过 NBT 的被没收物品 */
+    private boolean hoverSlim;
 
     public LichArchiveScreen() {
         this(null);
@@ -236,6 +240,12 @@ public class LichArchiveScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // 「查看全部」开着时 Esc、档案键都只关它，档案留着
+        if (dossier.takenOpen && (keyCode == GLFW.GLFW_KEY_ESCAPE || KuvaKeyMappings.ARCHIVE.matches(keyCode, scanCode))) {
+            dossier.closeTaken();
+            click();
+            return true;
+        }
         if (KuvaKeyMappings.ARCHIVE.matches(keyCode, scanCode)) {
             onClose();
             return true;
@@ -245,6 +255,17 @@ public class LichArchiveScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
+        if (dossier.takenOpen) {
+            dossier.panelClick(mx, my, button);
+            if (!dossier.takenOpen) {
+                click();
+            }
+            return true;
+        }
+        if (button == 0 && dossier.clickTaken(mx, my)) {
+            click();
+            return true;
+        }
         if (button == 0 && !small() && mx > dossier.leftEdgeGui() && mx < width * 0.75F && my < height * 0.88F) {
             dragging = true;
             dragStartX = mx;
@@ -256,6 +277,12 @@ public class LichArchiveScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        if (dossier.takenOpen) {
+            if (button == 0) {
+                dossier.panelDrag(my);
+            }
+            return true;
+        }
         if (dragging && button == 0) {
             yawNow = dragStartYaw - (float) (mx - dragStartX);
             return true;
@@ -265,6 +292,10 @@ public class LichArchiveScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mx, double my, int button) {
+        if (dossier.takenOpen && button == 0) {
+            dossier.panelRelease();
+            return true;
+        }
         if (dragging && button == 0) {
             dragging = false;
             returnFromYaw = yawNow;
@@ -272,6 +303,20 @@ public class LichArchiveScreen extends Screen {
             return true;
         }
         return super.mouseReleased(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double delta) {
+        if (dossier.takenOpen) {
+            dossier.panelScroll(delta);
+            return true;
+        }
+        return super.mouseScrolled(mx, my, delta);
+    }
+
+    /** 开、关「查看全部」的轻响，和冒险指南点按的那一声相同 */
+    private static void click() {
+        KuvaSoundPlayer.play(KuvaSoundPlayer.ui(KuvaLichSounds.UI_GUIDE_CLICK.get(), 1.0F, 1.0F));
     }
 
     // ==================== 数据 ====================
@@ -346,6 +391,14 @@ public class LichArchiveScreen extends Screen {
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
         hoverLines = null;
         hoverStack = ItemStack.EMPTY;
+        hoverSlim = false;
+        // 「查看全部」开着时底下的档案不响应悬停：鼠标挪到窗口外面再画
+        int pmx = mx;
+        int pmy = my;
+        if (dossier.takenOpen) {
+            mx = -10000;
+            my = -10000;
+        }
         long now = KuvaFxDirector.clockMs();
         long t = now - openClock;
         int w = width;
@@ -412,8 +465,26 @@ public class LichArchiveScreen extends Screen {
         }
         g.flush();
 
+        // ---- 「查看全部」：盖在最上面，同样先清深度，模型、字幕都压不过它 ----
+        if (dossier.takenOpen) {
+            RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
+            hoverLines = null;
+            hoverStack = ItemStack.EMPTY;
+            hoverSlim = false;
+            mx = pmx;
+            my = pmy;
+            dossier.drawTakenPanel(g, f, mx, my, data);
+            takeHover();
+            g.flush();
+        }
+
         // ---- 悬停提示 ----
-        if (!hoverStack.isEmpty()) {
+        if (!hoverStack.isEmpty() && hoverSlim) {
+            // 包里去掉了这件的 NBT，原版提示框只剩种类和数量（附魔、内容物都没有），末尾说明一句，免得以为东西变了
+            List<Component> lines = new ArrayList<>(getTooltipFromItem(Minecraft.getInstance(), hoverStack));
+            lines.add(Component.translatable("kuvalich.archive.confiscated.slim").withStyle(ChatFormatting.GRAY));
+            g.renderTooltip(f, lines, hoverStack.getTooltipImage(), hoverStack, mx, my);
+        } else if (!hoverStack.isEmpty()) {
             g.renderTooltip(f, hoverStack, mx, my);
         } else if (hoverLines != null) {
             g.renderComponentTooltip(f, hoverLines, mx, my);
@@ -887,10 +958,12 @@ public class LichArchiveScreen extends Screen {
     private void takeHover() {
         if (!dossier.hoverStack.isEmpty()) {
             hoverStack = dossier.hoverStack;
+            hoverSlim = dossier.hoverSlim;
             hoverLines = null;
         } else if (dossier.hoverLines != null) {
             hoverLines = dossier.hoverLines;
             hoverStack = ItemStack.EMPTY;
+            hoverSlim = false;
         }
     }
 
