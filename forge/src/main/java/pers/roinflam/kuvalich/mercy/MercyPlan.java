@@ -18,12 +18,18 @@ package pers.roinflam.kuvalich.mercy;
  *  bit 27~28  这次会用完消失的卡张数（0~3）
  *  bit 29     演示（开发命令摆出来的）
  *  bit 30     绕背的方向反过来（往目标的右手边绕）
- *  bit 31     保留，写 0
+ *  bit 31     这一场带感化 / 消灭的选择窗口（终结、开着感化时）。不进 {@link Plan}，用 {@link #CHOICE_WINDOW} 单独读写
  * </pre>
  */
 public final class MercyPlan {
 
+    public static final int CHOICE_WINDOW = 1 << 31;
+
     private MercyPlan() {
+    }
+
+    public static boolean hasChoiceWindow(int bits) {
+        return (bits & CHOICE_WINDOW) != 0;
     }
 
     /**

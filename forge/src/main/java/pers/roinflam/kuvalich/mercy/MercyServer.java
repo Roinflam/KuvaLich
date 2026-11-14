@@ -47,12 +47,16 @@ import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.fx.ServerFxQueue;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.item.card.OULL;
+import pers.roinflam.kuvalich.nemesis.AllyRoster;
 import pers.roinflam.kuvalich.nemesis.EncounterEnd;
 import pers.roinflam.kuvalich.nemesis.FinaleSettlement;
 import pers.roinflam.kuvalich.nemesis.LichComms;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.LichLine;
+import pers.roinflam.kuvalich.nemesis.PlayerLedger;
 import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
+import pers.roinflam.kuvalich.network.packet.MercyChoiceOpenPacket;
+import pers.roinflam.kuvalich.network.packet.MercyChoicePacket;
 import pers.roinflam.kuvalich.utils.InventoryUtil;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.LogUtil;
@@ -135,6 +139,8 @@ public final class MercyServer {
     static final double THRALL_BEGIN_RANGE = 32.0D;
     /** 倒地包续上位 */
     static final int DOWNED_RESUMED = 1 << 16;
+    /** 选择截止后再收这么多 tick 的选择包（客户端倒计时走完那一下按的、路上的包） */
+    static final int CHOICE_GRACE_TICKS = 10;
 
     // ==================== 状态 ====================
 
@@ -159,6 +165,9 @@ public final class MercyServer {
     private static final Set<ResourceKey<Level>> FROZEN = new HashSet<>();
     /** 自己数的服务端 tick */
     private static long serverTicks;
+    /** GameTest 用：不为 null 时每场处决每 tick 推进前调一下，在里面抛异常就是「推进出错」 */
+    @Nullable
+    public static volatile Runnable faultOnTick;
 
     private MercyServer() {
     }
@@ -198,6 +207,10 @@ public final class MercyServer {
         RISE,
         /** 给玩家的东西：聊天、掉落、进度、完成提示 */
         PLAYER,
+        /** 终结：开感化 / 消灭的选择窗口，处决钟停在这里等结果 */
+        CHOICE_OPEN,
+        /** 感化：玄骸化雾离场 */
+        CONVERT_LEAVE,
         /** 目标死亡 */
         KILL,
         /** 失败：移除玄骸、结算遭遇 */
@@ -244,14 +257,29 @@ public final class MercyServer {
         int rankAfter;
         /** 失败：定案时掷过的「给一张 Oull」 */
         boolean oullDrop;
+        /** 计划位 bit 31：成功后开选择窗口 */
+        final boolean choiceWindow;
+        /** 窗口开着、还没定：这期间处决钟不走，这一场也不 finish（巡检靠它判断账有没有人管） */
+        boolean awaiting;
+        /** 开窗那一刻的 convertEnabled，窗口里热改配置不影响这一场 */
+        boolean allowConvert;
+        /** 截止（{@link #serverTicks}），之后再收 {@link #CHOICE_GRACE_TICKS} 的包 */
+        long choiceDeadline;
+        /** {@link AbstractKuva#CHOICE_VANQUISH} / {@link AbstractKuva#CHOICE_CONVERT}，0 = 还没定 */
+        byte choice;
+        /** 选择那一刻落定的结果，发奖那一拍拿它发聊天、投递 */
+        @Nullable
+        FinaleSettlement.Settled settledResult;
+        boolean announced;
 
         Exec(AbstractKuva target, ServerPlayer executor, MercyPlan.Plan plan, MercyVariant variant,
-             Vec3 pl, Vec3 f, Vec3 pe) {
+             Vec3 pl, Vec3 f, Vec3 pe, boolean choiceWindow) {
             this.target = target;
             this.executor = executor;
             this.executorId = executor.getUUID();
             this.plan = plan;
-            this.planBits = MercyPlan.encode(plan);
+            this.choiceWindow = choiceWindow;
+            this.planBits = MercyPlan.encode(plan) | (choiceWindow ? MercyPlan.CHOICE_WINDOW : 0);
             this.variant = variant;
             this.lich = target instanceof KuvaMasterEntity;
             this.demo = plan.demo();
@@ -326,6 +354,10 @@ public final class MercyServer {
                 lich.setMercyState(MercyState.LEAVING);
                 downedChanged(lich, false);
             }
+            return false;
+        }
+        if (e.choice == AbstractKuva.CHOICE_CONVERT) {
+            // 感化的后段自己直接 departNow；别的路径要它离场也照常放行，不当成「成功快进」拦下
             return false;
         }
         if (e.failure() || e.advance()) {
@@ -425,6 +457,7 @@ public final class MercyServer {
         target.setMercyRemaining(target.downedSeconds() * 20);
         target.setMercyActorId(resolveQualifiedId(target));
         target.setMercyPlanBits(0);
+        target.setMercyChoice(AbstractKuva.CHOICE_NONE);
         target.setMercyState(MercyState.DOWNED);
         sendDowned(target, false);
 
@@ -557,7 +590,8 @@ public final class MercyServer {
         MercyPlan.Plan plan = buildPlan(player, target, variant, mirror);
 
         Vec3 pe = standPosition(level, player, pl, f, variant.standDist);
-        Exec e = new Exec(target, player, plan, variant, pl, f, pe);
+        boolean choiceWindow = target instanceof KuvaMasterEntity && plan.success() && convertEnabled();
+        Exec e = new Exec(target, player, plan, variant, pl, f, pe, choiceWindow);
         e.targetYaw = facingYaw(f, variant.facing);
         if (variant.relocates()) {
             e.roaming = true;
@@ -568,6 +602,7 @@ public final class MercyServer {
         target.getNavigation().stop();
         target.setMercyActorId(player.getId());
         target.setMercyPlanBits(e.planBits);
+        target.setMercyChoice(AbstractKuva.CHOICE_NONE);
         target.setMercyState(MercyState.EXECUTING);
         lockTarget(e);
         if (placeNow) {
@@ -847,6 +882,11 @@ public final class MercyServer {
             if (e.variant.facing == MercyVariant.Facing.AWAY) {
                 e.add(b.closeupTurnTick, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
             }
+            if (e.choiceWindow) {
+                // 后段等选完再排（choose）
+                e.add(b.choiceOpenTick, StepKind.CHOICE_OPEN, () -> openChoice(e, lich));
+                return;
+            }
             e.add(b.successDeathTick, StepKind.KILL, () -> kill(e));
             e.add(b.successRewardTick, StepKind.PLAYER, () -> successRewards(e));
             e.add(b.successRewardTick, StepKind.UNLOCK, () -> unlock(e));
@@ -976,6 +1016,10 @@ public final class MercyServer {
             } catch (RuntimeException ex) {
                 LogUtil.error("怜悯之击成功收尾时说遗言出错", ex);
             }
+            if (e.choiceWindow) {
+                announce(e);
+                return;
+            }
             try {
                 FinaleSettlement.resolveNow(e.executor, e.success.generation(), FinaleSettlement.Choice.VANQUISH);
             } catch (RuntimeException ex) {
@@ -984,6 +1028,151 @@ public final class MercyServer {
         } else if (e.demo && e.target instanceof KuvaMasterEntity lich) {
             // 演示目标什么都不给，遗言照说（录通讯窗用）
             sayAs(lich, LichLine.VANQUISHED, e.executor);
+        }
+    }
+
+    // ==================== 选择窗口 ====================
+
+    private static boolean convertEnabled() {
+        try {
+            return ModConfig.KUVA_LICH.convertEnabled.get();
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
+    private static int choiceTicks() {
+        try {
+            return ModConfig.KUVA_LICH.convertChoiceSeconds.get() * 20;
+        } catch (RuntimeException ex) {
+            return 200;
+        }
+    }
+
+    /**
+     * 选择窗口那一拍：账上真有这一场的东西才开窗（定案时卡为空会跳过记账），没有就直接按消灭排后段。
+     * 演示目标没有账也开窗，录像、看界面用
+     */
+    private static void openChoice(Exec e, KuvaMasterEntity lich) {
+        if (e.choice != 0) {
+            return;
+        }
+        boolean ledger = e.success != null && PlayerLedger.hasFinale(e.executor);
+        if (!ledger && !e.demo) {
+            choose(e, false);
+            return;
+        }
+        int ticks = choiceTicks();
+        e.awaiting = true;
+        e.allowConvert = convertEnabled();
+        e.choiceDeadline = serverTicks + ticks;
+        lich.setMercyChoice(AbstractKuva.CHOICE_WAITING);
+        String release = ledger && e.allowConvert ? AllyRoster.wouldRelease(e.executor) : "";
+        MercyChoiceOpenPacket.send(e.executor, new MercyChoiceOpenPacket(lich.getId(), e.allowConvert, ticks, release));
+    }
+
+    /**
+     * 落定（收到选择、到了截止、或者被快进 / 打断 / 关服时按消灭）：写同步数据、当场落定进收件箱并存盘，
+     * 再接着排后段。后段第一步至少晚两 tick：截止落定发生在 tick 末尾，同步数据下一 tick 才发出去，效果包不能抢在结果前面。
+     * 落定抛出只记日志，账留着，发奖那一拍再试一次，再不行由巡检按消灭补
+     */
+    private static void choose(Exec e, boolean convert) {
+        if (e.choice != 0) {
+            return;
+        }
+        e.awaiting = false;
+        e.choice = convert ? AbstractKuva.CHOICE_CONVERT : AbstractKuva.CHOICE_VANQUISH;
+        KuvaMasterEntity lich = (KuvaMasterEntity) e.target;
+        lich.setMercyChoice(e.choice);
+        if (e.success != null) {
+            if (convert) {
+                PlayerLedger.markFinaleConvert(e.executor, e.success.generation());
+            }
+            try {
+                e.settledResult = FinaleSettlement.resolve(e.executor, e.success.generation(), choiceOf(e));
+            } catch (RuntimeException ex) {
+                LogUtil.error("终结选择落定时出错，账留着，发奖那一拍再试", ex);
+            }
+        }
+        MercyBeats.Lich b = MercyBeats.lich(e.variant);
+        // 窗口开着时 age 停在开窗那一 tick；开窗之前就被快进的，后段整体往后挪，保证排在已有步骤之后
+        int base = Math.max(e.age, b.choiceOpenTick);
+        int shift = base - b.choiceOpenTick;
+        int first = base + 2;
+        if (convert) {
+            int end = Math.max(first, b.convertEndTick + shift);
+            e.add(Math.max(first, b.convertLeaveTick + shift), StepKind.CONVERT_LEAVE, () -> convertLeave(e, lich));
+            e.add(end, StepKind.PLAYER, () -> announce(e));
+            e.add(end, StepKind.UNLOCK, () -> unlock(e));
+            e.add(end, StepKind.PLAYER, () -> successComplete(e));
+            return;
+        }
+        int reward = Math.max(first, b.successRewardTick + shift);
+        e.add(Math.max(first, b.successDeathTick + shift), StepKind.KILL, () -> kill(e));
+        e.add(reward, StepKind.PLAYER, () -> successRewards(e));
+        e.add(reward, StepKind.UNLOCK, () -> unlock(e));
+        e.add(Math.max(reward, b.successCompleteTick + shift), StepKind.PLAYER, () -> successComplete(e));
+    }
+
+    private static FinaleSettlement.Choice choiceOf(Exec e) {
+        return e.choice == AbstractKuva.CHOICE_CONVERT ? FinaleSettlement.Choice.CONVERT : FinaleSettlement.Choice.VANQUISH;
+    }
+
+    /** 选择那一刻落定的结果发聊天、投递；那一刻落定失败的这里再试一次 */
+    private static void announce(Exec e) {
+        if (e.announced || e.success == null) {
+            return;
+        }
+        e.announced = true;
+        if (e.settledResult == null) {
+            try {
+                e.settledResult = FinaleSettlement.resolve(e.executor, e.success.generation(), choiceOf(e));
+            } catch (RuntimeException ex) {
+                LogUtil.error("终结重试落定也失败了，账留着等巡检或登录时按消灭补", ex);
+                return;
+            }
+        }
+        if (e.settledResult != null) {
+            e.settledResult.announce(e.executor);
+        }
+    }
+
+    /** 感化：玄骸化雾离场。不走 beginDeparture，那里会先问 interceptDeparture，这一场还活着会被当成快进拦下 */
+    private static void convertLeave(Exec e, KuvaMasterEntity lich) {
+        if (!lich.isAlive() || lich.isRemoved()) {
+            return;
+        }
+        e.expectRemoval = true;
+        lich.setMercyState(MercyState.LEAVING);
+        downedChanged(lich, false);
+        lich.departNow(EncounterEnd.VANQUISHED.ordinal());
+    }
+
+    /**
+     * 处决者发来的选择。只认：他自己那一场、窗口开着且还没定、截止加宽限之内、值是 0 或 1、
+     * 选感化时开窗那一刻允许感化；之后再来的一律丢掉
+     */
+    public static void handleChoice(ServerPlayer player, byte value) {
+        Exec e = LOCKED.get(player.getUUID());
+        if (e == null || e.finished || !e.awaiting || e.choice != 0) {
+            return;
+        }
+        if (value != MercyChoicePacket.CONVERT && value != MercyChoicePacket.VANQUISH) {
+            return;
+        }
+        if (serverTicks > e.choiceDeadline + CHOICE_GRACE_TICKS) {
+            return;
+        }
+        boolean convert = value == MercyChoicePacket.CONVERT;
+        if (convert && !e.allowConvert) {
+            return;
+        }
+        // 这条路不在 tick 的兜底里，出错自己收，不然处决者会一直锁着
+        try {
+            choose(e, convert);
+        } catch (RuntimeException | LinkageError ex) {
+            LogUtil.error("处理终结选择时出错", ex);
+            recoverFromError(e);
         }
     }
 
@@ -1091,9 +1280,16 @@ public final class MercyServer {
             }
             finish(e);
             unlock(e);
+            if (e.choiceWindow && e.choice == 0) {
+                choose(e, false);
+            }
             if (e.success != null) {
                 try {
-                    FinaleSettlement.resolveNow(e.executor, e.success.generation(), FinaleSettlement.Choice.VANQUISH);
+                    if (e.choiceWindow) {
+                        announce(e);
+                    } else {
+                        FinaleSettlement.resolveNow(e.executor, e.success.generation(), FinaleSettlement.Choice.VANQUISH);
+                    }
                 } catch (RuntimeException ex) {
                     LogUtil.error("出错后重试落定也失败了，账留着等巡检或登录时补", ex);
                 }
@@ -1121,13 +1317,22 @@ public final class MercyServer {
     }
 
     private static void tickExec(Exec e) {
-        e.age++;
-        while (!e.finished && e.next < e.steps.size() && e.steps.get(e.next).tick() <= e.age) {
-            Step s = e.steps.get(e.next++);
-            s.action().run();
+        if (faultOnTick != null) {
+            faultOnTick.run();
         }
-        if (e.next >= e.steps.size()) {
-            finish(e);
+        if (e.awaiting && serverTicks > e.choiceDeadline + CHOICE_GRACE_TICKS) {
+            choose(e, false);
+        }
+        if (!e.awaiting) {
+            e.age++;
+            while (!e.finished && !e.awaiting && e.next < e.steps.size() && e.steps.get(e.next).tick() <= e.age) {
+                Step s = e.steps.get(e.next++);
+                s.action().run();
+            }
+            if (!e.awaiting && e.next >= e.steps.size()) {
+                finish(e);
+                unlock(e);
+            }
         }
         if (e.target.isRemoved()) {
             if (!e.finished && !e.expectRemoval) {
@@ -1229,6 +1434,7 @@ public final class MercyServer {
         int floor = ModConfig.KUVA_LICH.mercyResumeFloorSeconds.get() * 20;
         t.setMercyRemaining(Math.max(t.getMercyRemainingServer(), floor));
         t.setMercyActorId(resolveQualifiedId(t));
+        t.setMercyChoice(AbstractKuva.CHOICE_NONE);
         t.setMercyState(MercyState.DOWNED);
         sendDowned(t, true);
     }
@@ -1241,11 +1447,16 @@ public final class MercyServer {
      */
     private static void fastForward(Exec e, boolean escapeWithFx) {
         finish(e);
+        if (e.awaiting) {
+            choose(e, false);
+        }
+        // 循环读 steps.size() 的实时值：碰到开窗按消灭落定，后段接在后面一起跑完
         while (e.next < e.steps.size()) {
             Step s = e.steps.get(e.next++);
             switch (s.kind()) {
                 case COMM, TAUNT, PUSH, TURN, LAND -> {
                 }
+                case CHOICE_OPEN -> choose(e, false);
                 case LEAVE -> {
                     if (escapeWithFx) {
                         s.action().run();
@@ -1446,11 +1657,22 @@ public final class MercyServer {
                 continue;
             }
             finish(e);
+            try {
+                if (e.awaiting) {
+                    choose(e, false);
+                }
+            } catch (RuntimeException ex) {
+                LogUtil.error("关服时按消灭落定选择窗口出错", ex);
+            }
             while (e.next < e.steps.size()) {
                 Step s = e.steps.get(e.next++);
-                if (s.kind() == StepKind.PLAYER) {
+                if (s.kind() == StepKind.PLAYER || s.kind() == StepKind.CHOICE_OPEN) {
                     try {
-                        s.action().run();
+                        if (s.kind() == StepKind.CHOICE_OPEN) {
+                            choose(e, false);
+                        } else {
+                            s.action().run();
+                        }
                     } catch (RuntimeException ex) {
                         LogUtil.error("关服时补发怜悯之击的奖励出错", ex);
                     }
@@ -1652,7 +1874,8 @@ public final class MercyServer {
         }
         ServerPlayer owner = lich.getOwnerPlayer();
         if (owner != null) {
-            LichComms.say(owner, line);
+            // 传实体：定案时这一轮已经结束、卡上没有名字，不传的话定案之后的台词一句也发不出去
+            LichComms.say(owner, line, lich);
         }
     }
 

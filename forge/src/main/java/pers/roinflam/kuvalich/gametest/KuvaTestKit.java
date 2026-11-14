@@ -141,6 +141,8 @@ public final class KuvaTestKit {
         // 测试一造出来就要能收东西，不等登录后的 10 秒
         pers.roinflam.kuvalich.nemesis.Inbox.skipLoginDelay(player);
         player.setGameMode(GameType.SURVIVAL);
+        // 老测试按没有选择窗口的时间轴写；测选择窗口的自己再打开
+        override(pers.roinflam.kuvalich.config.ModConfig.KUVA_LICH.convertEnabled, false);
         BlockPos size = size(h);
         Vec3 at = h.absoluteVec(new Vec3(size.getX() / 2.0D, 1.0D, size.getZ() / 2.0D));
         player.teleportTo(level, at.x, at.y, at.z, 0.0F, 0.0F);

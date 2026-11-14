@@ -46,6 +46,9 @@ public final class MercyBeats {
     private static final int RETURN_LIGHT = 5060;
     /** 交还控制；服务端同一刻发解密界面的完成提示 */
     private static final int SUCCESS_END = 5560;
+    /** 感化后段（相对第三刀，和上面同一个钟，挂起的时长不算）：起身化雾，服务端同一刻开始离场；交还，同一刻解锁、投递 */
+    private static final int CONVERT_LEAVE = CLOSEUP + 1200;
+    private static final int CONVERT_END = CLOSEUP + 2200;
 
     // 界面，相对第三格填满
     /** 格下小点出现 */
@@ -169,6 +172,7 @@ public final class MercyBeats {
                 successEnd;
         /** 选择窗口开（先等于跪地特写） */
         public final int choiceOpen;
+        public final int convertLeave, convertEnd;
         public final int hudDots, hudDotSlash;
         /** 踏背下刺的化光、现身；别的套路是 −1 */
         public final int blink, appear;
@@ -187,6 +191,11 @@ public final class MercyBeats {
         /** 背对处决者的套路成功时，切特写那一刻把它转过来 */
         public final int closeupTurnTick;
         public final int successDeathTick, successRewardTick, successCompleteTick;
+        /**
+         * 开窗向上取整，排在特写转身之后。窗口开着时服务端的处决钟停在这一 tick，落定后从这里接着走，
+         * 所以后段（消灭的死亡 / 发奖 / 完成，感化的离场 / 交还）照旧用从处决开始算的 tick
+         */
+        public final int choiceOpenTick, convertLeaveTick, convertEndTick;
         public final int failPushTicks, failTauntLineTicks, failLeaveTicks, failUnlockTicks, failRemoveTicks,
                 failChatTicks, failProgressTicks;
         /** 挣开：推人和起身同一拍；转身向上取整，落在客户端转完之后，免得交还时又拧回去 */
@@ -204,6 +213,8 @@ public final class MercyBeats {
             commDismiss = s3 + COMM_DISMISS;
             closeup = s3 + CLOSEUP;
             choiceOpen = closeup;
+            convertLeave = s3 + CONVERT_LEAVE;
+            convertEnd = s3 + CONVERT_END;
             hudSuccessFade = s3 + HUD_SUCCESS_FADE;
             third = s3 + THIRD;
             drawOut = s3 + DRAW_OUT;
@@ -226,6 +237,9 @@ public final class MercyBeats {
             successDeathTick = roundTicks(death);
             successRewardTick = roundTicks(returnLight);
             successCompleteTick = roundTicks(successEnd);
+            choiceOpenTick = ceilTicks(choiceOpen);
+            convertLeaveTick = roundTicks(convertLeave);
+            convertEndTick = roundTicks(convertEnd);
             failPushTicks = roundTicks(FAIL_BREAKFREE);
             failTauntLineTicks = FAIL_TAUNT_LINE_TICKS;
             failLeaveTicks = roundTicks(FAIL_ESCAPE);

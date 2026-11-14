@@ -15,6 +15,8 @@ import pers.roinflam.kuvalich.network.packet.KuvaFxPacket;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichArchiveRequestPacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
+import pers.roinflam.kuvalich.network.packet.MercyChoiceOpenPacket;
+import pers.roinflam.kuvalich.network.packet.MercyChoicePacket;
 import pers.roinflam.kuvalich.network.packet.MercyRequestPacket;
 import pers.roinflam.kuvalich.network.packet.ModuleDiscoveryPacket;
 import pers.roinflam.kuvalich.network.packet.NoticePacket;
@@ -78,7 +80,8 @@ public class NetworkRegistryHandler {
      * "17"：LichArchivePacket 的没收物品从最多 54 件改成整份（最多 1024 件，另有字节预算），档案里能查看全部。
      *         旧客户端解码时按 54 截断，多出来的物品会被当成后面的字段读，整包错位，所以提版本
      * "17-dev"：开发中的版本，发布时改回正式的号。处决、感化这一批会给实体加同步数据，开发中途的 jar 混用时
-     *         数据序号会错位而握手照过，用单独的串让握手直接拦下
+     *         数据序号会错位而握手照过，用单独的串让握手直接拦下。
+     *         这一段新增：AbstractKuva 的 DATA_MERCY_CHOICE、计划位 bit 31、MercyChoicePacket、MercyChoiceOpenPacket
      */
     private static final String PROTOCOL_VERSION = "17-dev";
 
@@ -296,6 +299,26 @@ public class NetworkRegistryHandler {
                 RivenCycleStatePacket::encode,
                 RivenCycleStatePacket::decode,
                 RivenCycleStatePacket::handle,
+                TO_CLIENT
+        );
+
+        // 终结的感化 / 消灭选择（客户端 → 服务器，一个字节）
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                MercyChoicePacket.class,
+                MercyChoicePacket::encode,
+                MercyChoicePacket::decode,
+                MercyChoicePacket::handle,
+                TO_SERVER
+        );
+
+        // 选择窗口开了：能不能感化、剩余 tick、会被挤出名册的那只（服务器 → 处决者）
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                MercyChoiceOpenPacket.class,
+                MercyChoiceOpenPacket::encode,
+                MercyChoiceOpenPacket::decode,
+                MercyChoiceOpenPacket::handle,
                 TO_CLIENT
         );
     }

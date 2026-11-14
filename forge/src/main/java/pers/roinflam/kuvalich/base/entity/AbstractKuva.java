@@ -112,6 +112,9 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
     /** 处决时是开始处决那个效果包的计划位（见 MercyPlan），给晚进视野的客户端选姿势用 */
     private static final EntityDataAccessor<Integer> DATA_MERCY_PLAN =
             SynchedEntityData.defineId(AbstractKuva.class, EntityDataSerializers.INT);
+    /** 终结的选择窗口：0 没有 / 1 等待中 / 2 消灭 / 3 感化。放同步数据而不是效果包，晚进视野的人也拿得到 */
+    private static final EntityDataAccessor<Byte> DATA_MERCY_CHOICE =
+            SynchedEntityData.defineId(AbstractKuva.class, EntityDataSerializers.BYTE);
     /** 适应性抗性层数：5 类伤害 × 每类 3 位，按 {@link DamageCategory} 的序号 × 3 排 */
     private static final EntityDataAccessor<Integer> ADAPT_PACKED =
             SynchedEntityData.defineId(AbstractKuva.class, EntityDataSerializers.INT);
@@ -614,6 +617,7 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         this.entityData.define(DATA_MERCY_ACTOR, -1);
         this.entityData.define(DATA_MERCY_TIMER, 0);
         this.entityData.define(DATA_MERCY_PLAN, 0);
+        this.entityData.define(DATA_MERCY_CHOICE, (byte) 0);
         this.entityData.define(ADAPT_PACKED, 0);
         this.entityData.define(FURY_PERMILLE, 0);
         this.entityData.define(STRIKE_READY, false);
@@ -752,6 +756,16 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     public void setMercyPlanBits(int bits) {
         this.entityData.set(DATA_MERCY_PLAN, bits);
+    }
+
+    public static final byte CHOICE_NONE = 0, CHOICE_WAITING = 1, CHOICE_VANQUISH = 2, CHOICE_CONVERT = 3;
+
+    public byte getMercyChoice() {
+        return this.entityData.get(DATA_MERCY_CHOICE);
+    }
+
+    public void setMercyChoice(byte choice) {
+        this.entityData.set(DATA_MERCY_CHOICE, choice);
     }
 
     // ==================== 适应层数与交战增幅：同步数据 ====================
@@ -930,6 +944,8 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
         setMercyActorId(-1);
         setMercyTimerBits(0);
         setMercyPlanBits(0);
+        // 演示目标会被反复处决，残留的 2 / 3 会让下一场的客户端以为已经落定
+        setMercyChoice(CHOICE_NONE);
         setMercyState(MercyState.NONE);
         this.setHealth(segmentCeil());
     }

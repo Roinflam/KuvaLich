@@ -14,6 +14,7 @@ import pers.roinflam.kuvalich.network.packet.DecryptionHudPacket;
 import pers.roinflam.kuvalich.network.packet.KuvaCommPacket;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
+import pers.roinflam.kuvalich.network.packet.MercyChoiceOpenPacket;
 import pers.roinflam.kuvalich.network.packet.NoticePacket;
 
 /**
@@ -45,6 +46,12 @@ public final class ClientPacketHandlers {
     /** 玄骸状态到了 */
     public static void onLichState(LichStatePacket msg) {
         ClientLichState.accept(msg);
+    }
+
+    /** 终结的选择窗口开了 */
+    public static void onMercyChoiceOpen(MercyChoiceOpenPacket msg) {
+        net.minecraft.client.multiplayer.ClientLevel level = net.minecraft.client.Minecraft.getInstance().level;
+        pers.roinflam.kuvalich.client.mercy.MercyChoiceClient.accept(msg, level == null ? 0L : level.getGameTime());
     }
 
     /** 档案数据到了 */

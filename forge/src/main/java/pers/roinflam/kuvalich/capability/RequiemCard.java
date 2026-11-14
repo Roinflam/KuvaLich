@@ -88,6 +88,8 @@ public class RequiemCard {
     public static final byte FATE_VANQUISHED = 1;
     /** 一轮玄骸的结局：被管理命令解除 */
     public static final byte FATE_ADMIN = 2;
+    /** 一轮玄骸的结局：被感化。定案时照常记成被终结，选了感化再由 {@link #markLastConverted} 改 */
+    public static final byte FATE_CONVERTED = 3;
     /** 处决记录最多留几条 */
     public static final int MAX_ATTEMPTS = 5;
     /** 前几只的结局最多留几条 */
@@ -766,6 +768,16 @@ public class RequiemCard {
         this.lichEncounters = 0;
         this.lichEncounterOpen = false;
         // 账、收件箱、盟友名册在 PlayerLedger 里，这里不碰
+    }
+
+    /** 历史首条是第 {@code generation} 代时，结局改成被感化；对不上返回 false */
+    public boolean markLastConverted(int generation) {
+        if (lichHistory.isEmpty() || lichHistory.get(0).generation() != generation) {
+            return false;
+        }
+        HistoryEntry e = lichHistory.get(0);
+        lichHistory.set(0, new HistoryEntry(e.name(), e.generation(), e.rank(), FATE_CONVERTED));
+        return true;
     }
 
     /** 上一只玄骸的结局；还没有结束过任何一只返回 {@code null} */

@@ -250,6 +250,9 @@ public class ClothConfigScreen {
         lichCategory.addEntry(bool(entryBuilder, "lichPurgeLegacy", k.lichPurgeLegacy, true));
         lichCategory.addEntry(dblIn(entryBuilder, "lichEphemeraChance", k.lichEphemeraChance, 0.2, 0.0, 1.0));
         lichCategory.addEntry(bool(entryBuilder, "lichEphemeraBackfill", k.lichEphemeraBackfill, true));
+        lichCategory.addEntry(bool(entryBuilder, "convertEnabled", k.convertEnabled, true));
+        lichCategory.addEntry(intIn(entryBuilder, "convertChoiceSeconds", k.convertChoiceSeconds, 10, 3, 30));
+        lichCategory.addEntry(intIn(entryBuilder, "allyRosterSize", k.allyRosterSize, 3, 1, 8));
 
         // ═══════════════════════════════════════════════════════════════
         // 伤害系统

@@ -300,6 +300,9 @@ public final class ModConfig {
         public final ForgeConfigSpec.BooleanValue lichPurgeLegacy;
         public final ForgeConfigSpec.DoubleValue lichEphemeraChance;
         public final ForgeConfigSpec.BooleanValue lichEphemeraBackfill;
+        public final ForgeConfigSpec.BooleanValue convertEnabled;
+        public final ForgeConfigSpec.IntValue convertChoiceSeconds;
+        public final ForgeConfigSpec.IntValue allyRosterSize;
 
         // ===== 赤毒幼体 / Kuva Larvling =====
         public final ForgeConfigSpec.BooleanValue larvlingEnabled;
@@ -1417,6 +1420,22 @@ public final class ModConfig {
                     .comment("off = such Liches never carry an Ephemera")
                     .comment("幻纹加入之前就已诞生的专属玄骸，在主人登录时补掷一次（同一种子结果相同）；关闭后这些玄骸一律不带幻纹")
                     .define("lichEphemeraBackfill", true);
+
+            convertEnabled = builder
+                    .comment("When a Lich is finished off by Mercy, the player chooses between Convert (it becomes an ally, no weapon or rewards) and Vanquish;")
+                    .comment("off = always Vanquish. Changing it during an open choice does not affect that execution")
+                    .comment("用怜悯之击终结玄骸时，可以在「感化」（收为盟友，不得武器和奖励）与「消灭」之间选择；关闭后一律消灭。选择进行中修改不影响这一次")
+                    .define("convertEnabled", true);
+
+            convertChoiceSeconds = builder
+                    .comment("Seconds the player has to choose; when time runs out the Lich is vanquished")
+                    .comment("选择的时限（秒），到时未选按消灭处理")
+                    .defineInRange("convertChoiceSeconds", 10, 3, 30);
+
+            allyRosterSize = builder
+                    .comment("How many converted Liches the ally roster keeps; when full, converting another releases the earliest one")
+                    .comment("盟友名册最多容纳几只感化的玄骸；已满时再感化，最早感化的那只离去")
+                    .defineInRange("allyRosterSize", 3, 1, 8);
 
             builder.comment("")
                     .comment("═══ Kuva Larvling / 赤毒幼体 ═══")

@@ -1241,7 +1241,7 @@ public class KuvaMasterEntity extends AbstractKuva {
     public SuccessResult computeAndApplySuccess(ServerPlayer player, RequiemCard card, BlockPos pos) {
         Finale stale = PlayerLedger.getFinale(player);
         if (stale != null) {
-            FinaleSettlement.resolveNow(player, stale.generation(), FinaleSettlement.Choice.VANQUISH);
+            FinaleSettlement.resolveNow(player, stale.generation(), FinaleSettlement.pendingChoice(player));
             if (PlayerLedger.hasFinale(player)) {
                 throw new IllegalStateException(player.getGameProfile().getName() + " 的旧账落定不了，这次不定案");
             }

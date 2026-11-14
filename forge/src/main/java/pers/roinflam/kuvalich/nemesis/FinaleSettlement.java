@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.nemesis;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,7 +42,7 @@ import java.util.UUID;
 public final class FinaleSettlement {
 
     public enum Choice {
-        VANQUISH
+        VANQUISH, CONVERT
     }
 
     private static final int PATROL_PERIOD = 20;
@@ -61,8 +62,10 @@ public final class FinaleSettlement {
      * 落定之后要告诉玩家的事
      *
      * @param newMinLevel 提过之后的武器等级下限，-1 = 这次没提
+     * @param converted   感化进名册的玄骸名字，消灭时为空
+     * @param released    名册满了被挤掉的那只，没有为空
      */
-    public record Settled(int returned, int newMinLevel, int newMaxLevel) {
+    public record Settled(int returned, int newMinLevel, int newMaxLevel, String converted, String released) {
 
         /** 发聊天、试投一次收件箱；各自出错只记日志 */
         public void announce(ServerPlayer player) {
@@ -77,6 +80,12 @@ public final class FinaleSettlement {
                     }
                     if (newMaxLevel >= 0) {
                         PlayerFeedback.chat(p, KuvaPalette.SUCCESS, "message.kuvalich.maximumLevelWeapon", newMaxLevel);
+                    }
+                    if (!converted.isEmpty()) {
+                        PlayerFeedback.chat(p, KuvaPalette.SUCCESS, "message.kuvalich.convert.done", converted);
+                    }
+                    if (!released.isEmpty()) {
+                        PlayerFeedback.chat(p, KuvaPalette.ACCENT, "message.kuvalich.convert.released", released);
                     }
                 } catch (RuntimeException e) {
                     LogUtil.error("终结落定后发聊天出错", e);
@@ -113,10 +122,14 @@ public final class FinaleSettlement {
                 LogUtil.error("终结账里的幻纹款式 " + f.ephemera() + " 已不存在，这一件不发：" + p.getGameProfile().getName());
             }
         }
+        boolean convert = choice == Choice.CONVERT;
         // 击杀奖励也走收件箱，不掉在地上。要改回掉地上只动这一行（登录补落定时不能补这部分，否则崩服会多一份）
-        give.addAll(f.drops());
-        // 所属模组暂时没装、读不出来的条目照收件箱的规矩原样留着，不随清账丢掉
-        ListTag unreadable = PlayerLedger.unreadableFinaleItems(p);
+        // 感化不给击杀奖励，只还被没收的东西和幻纹
+        if (!convert) {
+            give.addAll(f.drops());
+        }
+        // 所属模组暂时没装、读不出来的条目照收件箱的规矩原样留着，不随清账丢掉；感化时读不出来的掉落同样不给
+        ListTag unreadable = PlayerLedger.unreadableFinaleItems(p, !convert);
         if (!unreadable.isEmpty()) {
             LogUtil.warn(p.getGameProfile().getName() + " 的终结账里有 " + unreadable.size() + " 条读不出来的物品，原样放进收件箱");
         }
@@ -124,7 +137,7 @@ public final class FinaleSettlement {
         RequiemCard card = p.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).orElse(null);
         int newMin = -1;
         int newMax = -1;
-        if (card != null) {
+        if (card != null && !convert) {
             int inc = RandomUtil.getInt(ModConfig.KUVA_LICH.minimumLevelCapIncrease.get(),
                     ModConfig.KUVA_LICH.maximumLevelCapIncrease.get());
             int capMin = ModConfig.KUVA_LICH.minimumLevel.get();
@@ -135,9 +148,10 @@ public final class FinaleSettlement {
             if (card.getMaximumLevelWeapon() < capMax) {
                 newMax = Math.min(capMax, card.getMaximumLevelWeapon() + inc);
             }
-        } else {
+        } else if (card == null) {
             LogUtil.error("落定终结时 " + p.getGameProfile().getName() + " 没有安魂能力，武器等级上下限这次不提");
         }
+        CompoundTag ally = convert ? AllyRoster.entryOf(f, p.server.overworld().getGameTime()) : null;
 
         if (faultBeforeCommit != null) {
             faultBeforeCommit.run();
@@ -151,11 +165,27 @@ public final class FinaleSettlement {
             card.setMaximumLevelWeapon(newMax);
         }
         ORPHAN_SINCE.remove(p.getUUID());
+        String released = "";
+        if (ally != null) {
+            // 账已经清了，这两样出错只记日志：东西已经在收件箱里，不能再回头按消灭重来
+            try {
+                if (card != null && !card.markLastConverted(generation)) {
+                    LogUtil.warn(p.getGameProfile().getName() + " 的历史首条不是第 " + generation + " 代，结局没改成感化");
+                }
+            } catch (RuntimeException e) {
+                LogUtil.error("感化后改历史结局出错", e);
+            }
+            try {
+                released = AllyRoster.add(p, ally);
+            } catch (RuntimeException e) {
+                LogUtil.error("感化后写盟友名册出错：" + p.getGameProfile().getName() + " 第 " + generation + " 代", e);
+            }
+        }
         LogUtil.debug("终结落定：" + p.getGameProfile().getName() + " 第 " + generation + " 代 " + f.name() + "，" + choice
                 + "，进收件箱 " + give.size() + " 堆");
 
         saveNow(p);
-        return new Settled(f.returns().size(), newMin, newMax);
+        return new Settled(f.returns().size(), newMin, newMax, convert ? f.name() : "", released);
     }
 
     /** 落定并当场发聊天、试投。落定本身抛出的异常照样抛给调用方 */
@@ -168,10 +198,15 @@ public final class FinaleSettlement {
         return true;
     }
 
-    /** 账上有就按消灭落定（登录补落定、管理命令用），没有返回 false */
+    /** 账上有就落定（登录补落定、管理命令用）：账上记了感化按感化，否则按消灭。没有返回 false */
     public static boolean resolvePending(ServerPlayer player) {
-        Finale f = PlayerLedger.getFinale(current(player));
-        return f != null && resolveNow(player, f.generation(), Choice.VANQUISH);
+        ServerPlayer p = current(player);
+        Finale f = PlayerLedger.getFinale(p);
+        return f != null && resolveNow(player, f.generation(), pendingChoice(p));
+    }
+
+    public static Choice pendingChoice(ServerPlayer player) {
+        return PlayerLedger.finaleMarkedConvert(current(player)) ? Choice.CONVERT : Choice.VANQUISH;
     }
 
     /** 重生后旧玩家对象作废，账要记在玩家列表里现在那个对象上 */
@@ -224,8 +259,9 @@ public final class FinaleSettlement {
             int since = ORPHAN_SINCE.computeIfAbsent(id, k -> now);
             if (now - since >= ORPHAN_GRACE_TICKS) {
                 ORPHAN_SINCE.remove(id);
-                LogUtil.warn(p.getGameProfile().getName() + " 的终结账没人处理，按消灭落定");
-                resolveNow(p, f.generation(), Choice.VANQUISH);
+                Choice c = pendingChoice(p);
+                LogUtil.warn(p.getGameProfile().getName() + " 的终结账没人处理，按" + (c == Choice.CONVERT ? "感化" : "消灭") + "落定");
+                resolveNow(p, f.generation(), c);
             }
         }
         if (PlayerLedger.hasInbox(p)) {

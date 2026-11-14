@@ -66,6 +66,28 @@ public final class PlayerLedger {
         write(player, root);
     }
 
+    /**
+     * 选了感化：落定之前先在账上记一笔。落定出错留下的账，巡检和登录补落定都按这里记的选择来，
+     * 不会把选了感化的按消灭补发。只写 NBT，代数对不上不记
+     */
+    public static void markFinaleConvert(Player player, int generation) {
+        CompoundTag root = read(player);
+        if (!root.contains(FINALE, Tag.TAG_COMPOUND)) {
+            return;
+        }
+        CompoundTag f = root.getCompound(FINALE);
+        if (f.getInt("gen") != generation) {
+            return;
+        }
+        f.putBoolean("convert", true);
+        root.put(FINALE, f);
+        write(player, root);
+    }
+
+    public static boolean finaleMarkedConvert(Player player) {
+        return read(player).getCompound(FINALE).getBoolean("convert");
+    }
+
     /** 放进已经序列化好的账（{@link Finale#save} 的结果），只写 NBT，不会抛 */
     public static void putFinaleTag(Player player, CompoundTag finale) {
         CompoundTag root = read(player);
@@ -73,11 +95,15 @@ public final class PlayerLedger {
         write(player, root);
     }
 
-    /** 账里 drops / returns 中读不出物品的原始条目（副本），落定时原样接进收件箱；数量 ≤ 0 的本来就是空的，不要 */
-    static ListTag unreadableFinaleItems(Player player) {
+    /**
+     * 账里 drops / returns 中读不出物品的原始条目（副本），落定时原样接进收件箱；数量 ≤ 0 的本来就是空的，不要
+     *
+     * @param withDrops false = 只取 returns（感化不给掉落）
+     */
+    static ListTag unreadableFinaleItems(Player player, boolean withDrops) {
         CompoundTag f = read(player).getCompound(FINALE);
         ListTag out = new ListTag();
-        for (String key : new String[]{"drops", "returns"}) {
+        for (String key : withDrops ? new String[]{"drops", "returns"} : new String[]{"returns"}) {
             ListTag list = f.getList(key, Tag.TAG_COMPOUND);
             for (int i = 0; i < list.size(); i++) {
                 CompoundTag tag = list.getCompound(i);
