@@ -189,7 +189,7 @@ public final class NemesisCommand {
         return source.hasPermission(2);
     }
 
-    /** 玩家自己查收件箱：报还有几件，并且马上试投一次（不等登录后的那 10 秒） */
+    /** 玩家自己查收件箱：报还有几件，并且马上试投一次。登录后的 10 秒等待照样要等，那是留给同步背包的插件的 */
     private static int inbox(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer p = ctx.getSource().getPlayerOrException();
         if (PlayerLedger.inboxCount(p) == 0) {
@@ -200,7 +200,11 @@ public final class NemesisCommand {
             PlayerFeedback.chat(p, KuvaPalette.WARN, "message.kuvalich.inbox.waiting", PlayerLedger.inboxCount(p));
             return 0;
         }
-        int moved = Inbox.deliver(p, true, false);
+        if (Inbox.inLoginDelay(p)) {
+            PlayerFeedback.chat(p, KuvaPalette.WARN, "message.kuvalich.inbox.loginDelay", PlayerLedger.inboxCount(p));
+            return 0;
+        }
+        int moved = Inbox.deliver(p, false);
         int left = PlayerLedger.inboxCount(p);
         if (left == 0) {
             PlayerFeedback.chat(p, KuvaPalette.SUCCESS, "message.kuvalich.inbox.done", moved);

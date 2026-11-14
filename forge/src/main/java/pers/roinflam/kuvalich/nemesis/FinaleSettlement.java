@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.nemesis;
 
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -82,7 +83,7 @@ public final class FinaleSettlement {
                 }
             }
             try {
-                Inbox.deliver(p, false, true);
+                Inbox.deliver(p, true);
             } catch (RuntimeException e) {
                 LogUtil.error("终结落定后投递收件箱出错，东西还在收件箱里", e);
             }
@@ -114,6 +115,11 @@ public final class FinaleSettlement {
         }
         // 击杀奖励也走收件箱，不掉在地上。要改回掉地上只动这一行（登录补落定时不能补这部分，否则崩服会多一份）
         give.addAll(f.drops());
+        // 所属模组暂时没装、读不出来的条目照收件箱的规矩原样留着，不随清账丢掉
+        ListTag unreadable = PlayerLedger.unreadableFinaleItems(p);
+        if (!unreadable.isEmpty()) {
+            LogUtil.warn(p.getGameProfile().getName() + " 的终结账里有 " + unreadable.size() + " 条读不出来的物品，原样放进收件箱");
+        }
 
         RequiemCard card = p.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).orElse(null);
         int newMin = -1;
@@ -137,7 +143,7 @@ public final class FinaleSettlement {
             faultBeforeCommit.run();
         }
         // 清账：收件箱、清掉账、上下限一起写，重试碰到的已经是空账，不会提两次
-        PlayerLedger.settleFinale(p, give);
+        PlayerLedger.settleFinale(p, give, unreadable);
         if (newMin >= 0) {
             card.setMinimumLevelWeapon(newMin);
         }
@@ -223,7 +229,7 @@ public final class FinaleSettlement {
             }
         }
         if (PlayerLedger.hasInbox(p)) {
-            Inbox.deliver(p, false, true);
+            Inbox.deliver(p, true);
         }
     }
 
@@ -231,7 +237,7 @@ public final class FinaleSettlement {
     public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof ServerPlayer p) {
             try {
-                Inbox.deliver(p, false, true);
+                Inbox.deliver(p, true);
             } catch (RuntimeException e) {
                 LogUtil.error("重生后投递收件箱出错", e);
             }

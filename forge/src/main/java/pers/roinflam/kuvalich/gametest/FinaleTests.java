@@ -4,6 +4,8 @@ import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -44,6 +46,7 @@ public final class FinaleTests {
     private static final String FAULT = "kl_finale_fault";
     private static final String TABLE = "kl_finale_table";
     private static final String SETTLE_FAULT = "kl_finale_settle_fault";
+    private static final String BUILD_FAULT = "kl_finale_build_fault";
     private static final String RESET = "kl_finale_reset";
     private static final String STOP = "kl_finale_stop";
     private static final String DEATH = "kl_finale_death";
@@ -122,11 +125,11 @@ public final class FinaleTests {
             p.getInventory().setItem(i, new ItemStack(Items.DIRT, 64));
         }
         PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 30)));
-        Inbox.deliver(p, false, false);
+        Inbox.deliver(p, false);
         h.assertTrue(p.getInventory().countItem(KuvaLichItems.KUVA.get()) == 30 && !PlayerLedger.hasInbox(p),
                 "创造模式只剩 1 格：30 个都该放进去");
         PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 100)));
-        Inbox.deliver(p, false, false);
+        Inbox.deliver(p, false);
         int inInv = p.getInventory().countItem(KuvaLichItems.KUVA.get());
         h.assertTrue(inInv == 64 && inboxTotal(p) == 66, "再来 100 个：凑满那一格，其余留在收件箱：" + inInv + " + " + inboxTotal(p));
         h.succeed();
@@ -157,18 +160,47 @@ public final class FinaleTests {
     }
 
     @GameTest(template = "empty", batch = LEDGER)
-    public static void loginWaitsButCommandDoesNot(GameTestHelper h) {
+    public static void loginWaitAppliesToCommandToo(GameTestHelper h) {
         ServerPlayer p = KuvaTestKit.player(h);
         PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 12)));
         LichDirector.onLogin(p);
         FinaleSettlement.patrol(p, p.server.getTickCount());
         h.assertTrue(inboxTotal(p) == 12, "登录 10 秒内巡检不投");
+        int early = p.server.getCommands().performPrefixedCommand(p.createCommandSourceStack(), "kuvalich inbox");
+        h.assertTrue(early == 0 && inboxTotal(p) == 12 && p.getInventory().countItem(KuvaLichItems.KUVA.get()) == 0,
+                "登录 10 秒内 /kuvalich inbox 也不投：" + early);
+        Inbox.skipLoginDelay(p);
         int rc = p.server.getCommands().performPrefixedCommand(p.createCommandSourceStack(), "kuvalich inbox");
         h.assertTrue(rc == 12 && !PlayerLedger.hasInbox(p) && p.getInventory().countItem(KuvaLichItems.KUVA.get()) == 12,
-                "普通玩家用 /kuvalich inbox 应当马上收到：" + rc);
+                "等待过后普通玩家用 /kuvalich inbox 应当马上收到：" + rc);
         int denied = p.server.getCommands().performPrefixedCommand(p.createCommandSourceStack(), "kuvalich lich info " + p.getGameProfile().getName());
         h.assertTrue(denied == 0, "管理子命令对普通玩家仍然不可用");
-        Inbox.skipLoginDelay(p);
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = LEDGER)
+    public static void unreadableFinaleItemsKeptInInbox(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        CompoundTag f = sample(6).save();
+        CompoundTag ghost = new CompoundTag();
+        ghost.putString("id", "klmissingmod:relic");
+        ghost.putByte("Count", (byte) 1);
+        f.getList("returns", Tag.TAG_COMPOUND).add(ghost.copy());
+        f.getList("drops", Tag.TAG_COMPOUND).add(ghost.copy());
+        PlayerLedger.putFinaleTag(p, f);
+
+        h.assertTrue(FinaleSettlement.resolveNow(p, 6, FinaleSettlement.Choice.VANQUISH), "应当落定");
+        h.assertTrue(!PlayerLedger.hasFinale(p) && p.getInventory().countItem(KuvaLichItems.KUVA.get()) == 30
+                && p.getInventory().countItem(Items.DIAMOND) == 2, "读得出的照常到手");
+        ListTag inbox = p.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG).getCompound(PlayerLedger.ROOT)
+                .getList("inbox", Tag.TAG_COMPOUND);
+        int ghosts = 0;
+        for (int i = 0; i < inbox.size(); i++) {
+            if ("klmissingmod:relic".equals(inbox.getCompound(i).getString("id"))) {
+                ghosts++;
+            }
+        }
+        h.assertTrue(ghosts == 2 && inbox.size() == 2, "读不出来的两条原样留在收件箱：" + inbox);
         h.succeed();
     }
 
@@ -337,6 +369,46 @@ public final class FinaleTests {
             lich.discard();
             h.succeed();
         });
+    }
+
+    @GameTest(template = "empty", batch = BUILD_FAULT, timeoutTicks = 100)
+    public static void finaleBuildFaultTouchesNothing(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        RequiemCard card = card(p);
+        MercyCoreTests.bornByProgress(p, card);
+        KuvaMasterEntity lich = MercyCoreTests.summonFront(h, p);
+        h.runAfterDelay(2, () -> {
+            MercyCoreTests.setCards(card, 3);
+            card.addConfiscatedItem(new ItemStack(Items.DIAMOND, 4));
+            int gen = card.getLichGeneration();
+            Finale.faultOnSave = () -> {
+                throw new IllegalStateException("测试注入");
+            };
+            boolean threw = false;
+            try {
+                lich.computeAndApplySuccess(p, card, lich.blockPosition());
+            } catch (IllegalStateException e) {
+                threw = true;
+            } finally {
+                Finale.faultOnSave = null;
+            }
+            h.assertTrue(threw && card.hasLich() && card.getLichGeneration() == gen && card.hasConfiscatedItems()
+                            && card.getOneCard().getDamageValue() == 0 && lich.isAlive() && !PlayerLedger.hasFinale(p),
+                    "造账抛出：这一轮没结束、卡没扣、没收的东西还在卡上、账上没有");
+
+            lich.computeAndApplySuccess(p, card, lich.blockPosition());
+            Finale f = PlayerLedger.getFinale(p);
+            h.assertTrue(f != null && f.generation() == gen && !card.hasLich() && !card.hasConfiscatedItems()
+                    && f.returns().size() == 1 && f.returns().get(0).getCount() == 4, "再来一次：没收的东西进了账");
+            lich.discard();
+            h.succeed();
+        });
+    }
+
+    @AfterBatch(batch = BUILD_FAULT)
+    public static void afterBuildFault(ServerLevel level) {
+        Finale.faultOnSave = null;
+        KuvaTestKit.afterBatch(level);
     }
 
     @AfterBatch(batch = SETTLE_FAULT)

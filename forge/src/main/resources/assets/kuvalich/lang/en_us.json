@@ -843,6 +843,7 @@
   "message.kuvalich.inbox.full": "Inventory full. The remaining %s items will be added once space is free",
   "message.kuvalich.inbox.empty": "No items are waiting to be collected",
   "message.kuvalich.inbox.waiting": "%s items are waiting. They will be added after the current screen is closed",
+  "message.kuvalich.inbox.loginDelay": "%s items are waiting. Items are not handed out during the first few seconds after joining. Please try again shortly",
   "message.kuvalich.inbox.done": "All %s items have been added to the inventory",
   "message.kuvalich.inbox.partial": "%s items added to the inventory. The remaining %s will be added once space is free",
   "message.kuvalich.confiscation.stolen": "%1$s took your %2$s. End it to get everything back",

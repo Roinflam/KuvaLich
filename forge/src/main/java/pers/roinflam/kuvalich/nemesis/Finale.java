@@ -3,6 +3,7 @@ package pers.roinflam.kuvalich.nemesis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -25,7 +26,14 @@ public record Finale(int generation, long seed, String name, int rank, int weapo
         returns = PlayerLedger.splitStacks(returns == null ? List.of() : returns);
     }
 
+    /** GameTest 用：不为 null 时在 save 开头调一下，在里面抛异常就是「物品序列化出错」 */
+    @Nullable
+    public static volatile Runnable faultOnSave;
+
     public CompoundTag save() {
+        if (faultOnSave != null) {
+            faultOnSave.run();
+        }
         CompoundTag tag = new CompoundTag();
         tag.putInt("gen", generation);
         tag.putLong("seed", seed);

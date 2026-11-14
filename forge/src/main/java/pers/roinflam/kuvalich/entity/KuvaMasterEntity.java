@@ -1232,7 +1232,7 @@ public class KuvaMasterEntity extends AbstractKuva {
      * 什么都不发。东西由 {@link FinaleSettlement#resolve} 落定后才进收件箱。直接判定和怜悯之击都走这里。
      * 调用前调用方已经记过那一行处决记录（这一轮结束会清掉记录）。
      *
-     * <p>先算后改：会抛的（补掷幻纹、造掉落、落定旧账）都在动卡之前，抛出去时卡上什么都没变，玄骸还在。</p>
+     * <p>先算后改：会抛的（补掷幻纹、造掉落、落定旧账、造账并序列化）都在动卡之前，抛出去时卡上什么都没变，玄骸还在。</p>
      *
      * @param player 主人
      * @param card   主人的卡（判定完开始新一轮，扉上的卡扣过一次留着）
@@ -1298,7 +1298,13 @@ public class KuvaMasterEntity extends AbstractKuva {
 
         String dim = level().dimension().location().toString();
 
-        // 以下只剩改卡和写账，不会抛
+        // 拆堆和存 NBT 会跑到别的模组的物品代码，账要在动卡之前整份造好
+        List<ItemStack> returns = card.getConfiscatedItems();
+        CompoundTag finale = new Finale(generation, seed, lichName, rank, KuvaLichItems.KUVA_WEAPONS.indexOf(weapon),
+                weaponLevel, weaponType, ephemera, drops, returns, dim, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D)
+                .save();
+
+        // 以下只剩改卡和写账，不能再加会抛的调用
         // 主人开着灭骸之扉（玄骸被同伴 / 别的东西打死时可能开着）：先关，不然卡槽会把扣掉的卡写回去
         RequiemGateMenu.closeBeforeCardsChange(player);
         this.mercySuccessApplied = true;
@@ -1307,12 +1313,11 @@ public class KuvaMasterEntity extends AbstractKuva {
         int[] answers = {card.getOneAnswer(), card.getTwoAnswer(), card.getThreeAnswer()};
         int[] usesByGate = card.wearPlacedCards();
         byte[] usesAfter = usesByRiddle(riddles, answers, usesByGate);
-        List<ItemStack> returns = card.clearAndGetConfiscatedItems();
+        card.clearAndGetConfiscatedItems();
         // 这一轮结束要在 resetKeepingCards 之前：历史里记的等级来自 kuvaLevel，它会把它清零
         LichDirector.onVanquished(player, this);
         card.resetKeepingCards();
-        PlayerLedger.setFinale(player, new Finale(generation, seed, lichName, rank, KuvaLichItems.KUVA_WEAPONS.indexOf(weapon),
-                weaponLevel, weaponType, ephemera, drops, returns, dim, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D));
+        PlayerLedger.putFinaleTag(player, finale);
 
         return new SuccessResult(generation, this, riddles, usesAfter, lichName, returns.size(), wornOut);
     }

@@ -66,6 +66,29 @@ public final class PlayerLedger {
         write(player, root);
     }
 
+    /** 放进已经序列化好的账（{@link Finale#save} 的结果），只写 NBT，不会抛 */
+    public static void putFinaleTag(Player player, CompoundTag finale) {
+        CompoundTag root = read(player);
+        root.put(FINALE, finale);
+        write(player, root);
+    }
+
+    /** 账里 drops / returns 中读不出物品的原始条目（副本），落定时原样接进收件箱；数量 ≤ 0 的本来就是空的，不要 */
+    static ListTag unreadableFinaleItems(Player player) {
+        CompoundTag f = read(player).getCompound(FINALE);
+        ListTag out = new ListTag();
+        for (String key : new String[]{"drops", "returns"}) {
+            ListTag list = f.getList(key, Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag tag = list.getCompound(i);
+                if (tag.getByte("Count") > 0 && ItemStack.of(tag).isEmpty()) {
+                    out.add(tag.copy());
+                }
+            }
+        }
+        return out;
+    }
+
     // ==================== 收件箱 ====================
 
     public static List<ItemStack> getInbox(Player player) {
@@ -128,12 +151,15 @@ public final class PlayerLedger {
 
     /**
      * 清账：东西接进收件箱、账清掉，同一次写进去。物品先在外面序列化好，写的这一步不会半途抛出
+     *
+     * @param raw 账里读不出来的原始条目，原样接在后面
      */
-    static void settleFinale(Player player, Collection<ItemStack> items) {
+    static void settleFinale(Player player, Collection<ItemStack> items, ListTag raw) {
         ListTag add = writeItems(items);
         CompoundTag root = read(player);
         ListTag inbox = root.getList(INBOX, Tag.TAG_COMPOUND).copy();
         inbox.addAll(add);
+        inbox.addAll(raw);
         if (inbox.isEmpty()) {
             root.remove(INBOX);
         } else {

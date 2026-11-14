@@ -62,14 +62,13 @@ public final class Inbox {
     }
 
     /**
-     * 试投一次。
+     * 试投一次。登录后的等待期内什么都不做，命令领取也一样。
      *
-     * @param force  true = 不管登录后的等待（玩家自己用命令要的）
      * @param notify 放不下时提示一句（同一人 60 秒最多一次）
      * @return 这次放进背包的件数
      */
-    public static int deliver(ServerPlayer player, boolean force, boolean notify) {
-        if (!PlayerLedger.hasInbox(player) || !canReceive(player) || (!force && inLoginDelay(player))) {
+    public static int deliver(ServerPlayer player, boolean notify) {
+        if (!PlayerLedger.hasInbox(player) || !canReceive(player) || inLoginDelay(player)) {
             return 0;
         }
         Inventory inv = player.getInventory();
@@ -96,22 +95,28 @@ public final class Inbox {
                 if (n <= 0) {
                     break;
                 }
-                if (there.isEmpty()) {
-                    ItemStack piece = stack.copyWithCount(n);
+                // 复制和序列化会跑到别的模组的物品代码，都在动背包之前做完；
+                // 从放进背包到写回收件箱之间不能再有会抛的调用，不然背包多了、箱里没少，下次再发一份
+                int left = stack.getCount() - n;
+                ItemStack rest = left > 0 ? stack.copyWithCount(left) : ItemStack.EMPTY;
+                CompoundTag restTag = left > 0 ? rest.save(new CompoundTag()) : null;
+                ItemStack piece = there.isEmpty() ? stack.copyWithCount(n) : null;
+
+                if (piece != null) {
                     piece.setPopTime(5);
                     inv.setItem(slot, piece);
                 } else {
                     there.grow(n);
                 }
-                stack.shrink(n);
                 moved += n;
-                if (stack.isEmpty()) {
+                if (restTag == null) {
                     list.remove(i);
                     i--;
                 } else {
-                    list.set(i, stack.save(new CompoundTag()));
+                    list.set(i, restTag);
                 }
                 PlayerLedger.putInboxTag(player, list);
+                stack = rest;
             }
         }
         if (moved > 0) {
