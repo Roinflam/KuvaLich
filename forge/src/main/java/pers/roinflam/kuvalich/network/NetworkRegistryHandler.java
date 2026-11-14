@@ -77,8 +77,10 @@ public class NetworkRegistryHandler {
      *         服务端不再在放进裂罅 + 赤毒时自动洗卡，旧客户端没有「循环」按钮、也不认识候选包，洗不了卡，所以提版本
      * "17"：LichArchivePacket 的没收物品从最多 54 件改成整份（最多 1024 件，另有字节预算），档案里能查看全部。
      *         旧客户端解码时按 54 截断，多出来的物品会被当成后面的字段读，整包错位，所以提版本
+     * "17-dev"：开发中的版本，发布时改回正式的号。处决、感化这一批会给实体加同步数据，开发中途的 jar 混用时
+     *         数据序号会错位而握手照过，用单独的串让握手直接拦下
      */
-    private static final String PROTOCOL_VERSION = "17";
+    private static final String PROTOCOL_VERSION = "17-dev";
 
     /** 消息ID计数器 / Message ID counter */
     private static int messageId = 0;

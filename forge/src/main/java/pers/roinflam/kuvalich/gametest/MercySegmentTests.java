@@ -21,6 +21,7 @@ import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributeManager;
 import pers.roinflam.kuvalich.dynamicattribute.DynamicAttributes;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.mercy.MercyState;
@@ -51,13 +52,6 @@ public final class MercySegmentTests {
     private static final String ISO_REGEN = "kl_seg_iso_shieldRegens";
     private static final String ISO_MAGNETIC = "kl_seg_iso_magneticOnShield";
 
-    /** 第 1 / 2 / 3 格填满的 tick */
-    private static final int[] FILL = {17, 34, 53};
-    /** 挣开站起：推开处决者、进起身 / 回到能打的状态，相对最后那一格 */
-    private static final int ADV_RISE = 14;
-    private static final int ADV_STAND = 46;
-    /** 判错：进离场，相对判错那一格 */
-    private static final int FAIL_LEAVE = 48;
     /** 测试期间护盾不恢复 */
     private static final int SHIELD_HOLD = 1_000_000;
     private static final float EPS = 1.0E-3F;
@@ -184,7 +178,6 @@ public final class MercySegmentTests {
         KuvaMasterEntity lich = summonFront(h, p);
         p.setGameMode(GameType.CREATIVE);
         int k = phase + 1;
-        int g = FILL[k - 1];
         h.runAfterDelay(2, () -> {
             setCards(card, 3);
             int level = card.getKuvaLevel();
@@ -196,7 +189,9 @@ public final class MercySegmentTests {
             MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
             h.assertTrue(plan.stabs() == k && plan.prefix() == k && plan.advance(),
                     "第 " + k + " 次处决只验前 " + k + " 张：刀数 " + plan.stabs() + "，前缀 " + plan.prefix());
-            h.runAfterDelay(MercyServer.SETTLE_TICK, () -> {
+            MercyBeats.Lich b = MercyBeats.lich(plan.variant());
+            int g = b.fillTick(k);
+            h.runAfterDelay(b.settleTick, () -> {
                 h.assertTrue(card.getKuvaLevel() == level && card.hasLich() && card.isReadyCard(),
                         "挣开站起：不升级、这一轮还在、卡不扣");
                 int row = card.getAttempts()[0];
@@ -207,12 +202,12 @@ public final class MercySegmentTests {
                 }
             });
             double[] before = new double[1];
-            h.runAfterDelay(g + ADV_RISE - 1, () -> {
+            h.runAfterDelay(g + b.advanceRiseTicks - 1, () -> {
                 h.assertTrue(lich.getMercyState() == MercyState.EXECUTING && lich.getLichPhase() == phase,
                         "挣开之前还在处决中、段数不变：" + lich.getMercyState() + " / " + lich.getLichPhase());
                 before[0] = horizontal(p.position(), lich.position());
             });
-            h.runAfterDelay(g + ADV_RISE + 1, () -> {
+            h.runAfterDelay(g + b.advanceRiseTicks + 1, () -> {
                 h.assertTrue(lich.getMercyState() == MercyState.RISING, "挣开：应当进起身，实际 " + lich.getMercyState());
                 h.assertTrue(lich.getLichPhase() == phase + 1 && lich.mercyStabs() == k + 1,
                         "进下一段：段 " + lich.getLichPhase() + "，下次刀数 " + lich.mercyStabs());
@@ -222,13 +217,13 @@ public final class MercySegmentTests {
                 h.assertTrue(Math.abs(lich.getShield() - lich.shieldCap()) < EPS && lich.shieldCap() > 0.0F,
                         "护盾回满：" + lich.getShield() + " / " + lich.shieldCap());
             });
-            h.runAfterDelay(g + ADV_STAND + 1, () -> {
+            h.runAfterDelay(g + b.advanceStandTicks + 1, () -> {
                 h.assertTrue(lich.getMercyState() == MercyState.NONE && lich.isAlive(),
                         "起身演完回到能打的状态：" + lich.getMercyState());
                 double pushed = horizontal(p.position(), lich.position()) - before[0];
                 h.assertTrue(pushed > 0.7D && pushed < 1.3D, "处决者应当被推开约 1 格，实际 " + pushed);
             });
-            h.runAfterDelay(g + ADV_STAND + MercyServer.GRACE_TICKS + 2, () -> {
+            h.runAfterDelay(g + b.advanceStandTicks + MercyServer.GRACE_TICKS + 2, () -> {
                 h.assertTrue(!MercyServer.isBusy(p), "处决者应当已经解锁、过了无敌余量");
                 h.assertTrue(card.getDecryptionProgress() == progress && card.getKuvaLevel() == level,
                         "挣开站起不给进度、不升级");
@@ -256,7 +251,7 @@ public final class MercySegmentTests {
                 MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
                 h.assertTrue(plan.stabs() == 3 && plan.prefix() == 3 && plan.success(),
                         "第三次三刀全对：刀数 " + plan.stabs() + "，前缀 " + plan.prefix());
-                h.runAfterDelay(MercyServer.SETTLE_TICK + 1, () -> {
+                h.runAfterDelay(MercyBeats.lich(plan.variant()).settleTick + 1, () -> {
                     h.assertTrue(card.isReadyCard() && card.getOneCard().getDamageValue() == 1 && !card.hasLich(),
                             "第三次全对：卡各扣一次留在扉上、这一轮结束");
                     RequiemCard.HistoryEntry last = card.getLastHistory();
@@ -274,7 +269,8 @@ public final class MercySegmentTests {
         h.assertTrue(MercyServer.executeNow(p, lich) == null, "第 " + k + " 次应当能开始处决");
         MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
         h.assertTrue(plan.stabs() == k && plan.advance(), "第 " + k + " 次：刀数 " + plan.stabs() + "，前缀 " + plan.prefix());
-        h.runAfterDelay(FILL[k - 1] + ADV_STAND + 2, () -> {
+        MercyBeats.Lich b = MercyBeats.lich(plan.variant());
+        h.runAfterDelay(b.fillTick(k) + b.advanceStandTicks + 2, () -> {
             h.assertTrue(lich.getMercyState() == MercyState.NONE && lich.getLichPhase() == k,
                     "第 " + k + " 次挣开站起后：状态 " + lich.getMercyState() + "，段 " + lich.getLichPhase());
             next.run();
@@ -305,7 +301,8 @@ public final class MercySegmentTests {
             MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
             h.assertTrue(plan.stabs() == 2 && plan.prefix() == 1 && plan.failure(),
                     "第二次处决、第二张错：刀数 " + plan.stabs() + "，前缀 " + plan.prefix());
-            h.runAfterDelay(MercyServer.SETTLE_TICK, () -> {
+            MercyBeats.Lich b = MercyBeats.lich(plan.variant());
+            h.runAfterDelay(b.settleTick, () -> {
                 h.assertTrue(card.getKuvaLevel() == level + 1, "判错：玄骸升一级");
                 int row = card.getAttempts()[0];
                 h.assertTrue(RequiemCard.attemptResult(row, 0) == RequiemCard.ATTEMPT_RIGHT
@@ -313,10 +310,10 @@ public final class MercySegmentTests {
                                 && RequiemCard.attemptResult(row, 2) == RequiemCard.ATTEMPT_UNJUDGED,
                         "记录：第一位对、第二位错、第三位没判到");
             });
-            int g = FILL[1];
-            h.runAfterDelay(g + FAIL_LEAVE - 1, () -> h.assertTrue(lich.getMercyState() == MercyState.EXECUTING,
+            int g = b.fillTick(2);
+            h.runAfterDelay(g + b.failLeaveTicks - 1, () -> h.assertTrue(lich.getMercyState() == MercyState.EXECUTING,
                     "离场之前还在处决中：" + lich.getMercyState()));
-            h.runAfterDelay(g + FAIL_LEAVE + 1, () -> {
+            h.runAfterDelay(g + b.failLeaveTicks + 1, () -> {
                 h.assertTrue(lich.getMercyState() == MercyState.LEAVING || lich.isRemoved(),
                         "判错后照常挣脱逃走：" + lich.getMercyState());
                 h.assertTrue(card.hasLich(), "逃走不结束这一轮");

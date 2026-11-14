@@ -39,6 +39,8 @@ import java.util.Locale;
  *       起一场处决，只演客户端这一半（服务端不锁目标、不结算）。结果是第三次处决的 {@code success / fail1 / fail2 / fail3}，
  *       第一、二次处决全对的 {@code adv1 / adv2}（挣开站起），第一、二次处决判错的 {@code k1fail1 / k2fail1 / k2fail2}；
  *       奴仆套路忽略结果。配合 {@code mercyat} 可以不等真打倒一只就看任意一刻。</li>
+ *   <li>{@code /kuvafxc mercybeats}：把每套每个结果按 10 ms 导成文本（{@link MercyBeatsDump}），写到游戏目录的
+ *       {@code mercy-beats.txt}，改节拍前后对比用。</li>
  *   <li>{@code /kuvafxc mercyorbit <角度> <距离> <高度>}：处决期间镜头换到绕目标的固定机位，平视（角度 0 在处决者那一侧，
  *       90 是侧面），要先切第三人称才画得出处决者；奴仆处决不切镜头、视角锁着，核对刀口靠它。{@code off} 关掉。</li>
  * </ul>
@@ -72,6 +74,17 @@ public final class MercyDevClientCommands {
                             reply(ctx, ok ? "mercy timeline frozen at " + ms + " ms" : "no execution in progress");
                             return ok ? 1 : 0;
                         })))
+                .then(Commands.literal("mercybeats").executes(ctx -> {
+                    java.nio.file.Path file = Minecraft.getInstance().gameDirectory.toPath().resolve("mercy-beats.txt");
+                    try {
+                        MercyBeatsDump.write(file);
+                    } catch (java.io.IOException ex) {
+                        reply(ctx, "mercy beats: " + ex.getMessage());
+                        return 0;
+                    }
+                    reply(ctx, "mercy beats -> " + file);
+                    return 1;
+                }))
                 .then(Commands.literal("mercyorbit")
                         .then(Commands.literal("off").executes(ctx -> {
                             MercyCamera.devOrbitDist = 0.0F;

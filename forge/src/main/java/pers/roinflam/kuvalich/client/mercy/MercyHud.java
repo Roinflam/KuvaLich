@@ -20,6 +20,7 @@ import pers.roinflam.kuvalich.client.gui.requiem.RequiemSigils;
 import pers.roinflam.kuvalich.client.gui.requiem.RequiemSigils.SigilLook;
 import pers.roinflam.kuvalich.comm.CommSpeaker;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -65,8 +66,6 @@ public final class MercyHud {
 
     // ==================== 时间（毫秒，从处决开始算） ====================
 
-    /** 硬切进三刀机位，托架和空圈出现 */
-    public static final int CUT_MS = 400;
     private static final int PLATE_FADE_IN = 100;
     /** 中央外框比填满早多少 */
     public static final int CENTER_LEAD = 130;
@@ -82,20 +81,8 @@ public final class MercyHud {
     private static final int WRONG_FADE = 320;
     private static final int CELL_PEAK_HOLD = 400;
     private static final int CELL_SETTLE = 250;
-    /** 格下小点出现（和第三格外框同一帧） */
-    public static final int DOTS_MS = 2540;
-    /** 这次用掉的那颗小点开始画斜杠 */
-    public static final int DOT_SLASH_MS = 2770;
     private static final int DOT_SLASH_DRAW = 120;
-    /** 成功：整组开始淡出 */
-    public static final int SUCCESS_FADE_MS = 5400;
     private static final int GROUP_FADE = 200;
-    /** 失败：从判错那一刻起多久切宽镜头 */
-    public static final int FAIL_WIDE_AFTER = 2000;
-    /** 失败且没开电影镜头：从判错那一刻起多久开始淡出 */
-    public static final int FAIL_FADE_AFTER = 2750;
-    /** 成功分支收玄骸的通讯窗 */
-    public static final int DISMISS_COMM_MS = 3670;
 
     // ==================== 位置（屏幕高 H 的比例；横向从中线量） ====================
 
@@ -221,8 +208,18 @@ public final class MercyHud {
     }
 
     /** 第 k 刀（1~3）填满发光的时刻 */
-    public static int fillMs(int k) {
-        return MercyVariant.LICH_FILL_MS[Math.max(1, Math.min(3, k)) - 1];
+    public static int fillMs(MercyPlan.Plan plan, int k) {
+        return MercyBeats.lich(plan.variant()).fill(k);
+    }
+
+    /** 本地玩家正在处决的这只目标的计划（调试摆出来的假处决也算）；没有返回 null */
+    @Nullable
+    public static MercyPlan.Plan planFor(int targetId) {
+        if (devPlan != null && targetId == DEV_TARGET) {
+            return devPlan;
+        }
+        MercyClient.View v = MercyClient.view();
+        return v != null && v.targetId() == targetId ? v.plan() : null;
     }
 
     // ==================== 画 ====================
@@ -264,7 +261,8 @@ public final class MercyHud {
      */
     static void draw(GuiGraphics g, MercyPlan.Plan plan, long elapsed, int w, int h) {
         float t = elapsed;
-        if (t < CUT_MS) {
+        MercyBeats.Lich b = MercyBeats.lich(plan.variant());
+        if (t < b.cutIn) {
             return;
         }
         int k = wrongStab(plan);
@@ -277,9 +275,9 @@ public final class MercyHud {
 
         float group = groupAlpha(plan, t);
         if (group > 0.002F) {
-            drawPlate(g, cx, H, lw, group, t, judged);
+            drawPlate(g, b, cx, H, lw, group, t, judged);
             drawCells(g, plan, t, k, judged, cx, H, lw, lwPx, group);
-            if (t >= DOTS_MS && (success || k == 3)) {
+            if (t >= b.hudDots && (success || k == 3)) {
                 drawDots(g, plan, t, success, cx, H, lw, group);
             }
         }
@@ -288,24 +286,30 @@ public final class MercyHud {
 
     /** 托架、三格、小点这一组的整体透明度 */
     static float groupAlpha(MercyPlan.Plan plan, float t) {
-        if (t < CUT_MS) {
+        return groupAlpha(plan, t, EffectsDisplayConfig.mercyCamera());
+    }
+
+    static float groupAlpha(MercyPlan.Plan plan, float t, boolean camera) {
+        MercyBeats.Lich b = MercyBeats.lich(plan.variant());
+        if (t < b.cutIn) {
             return 0.0F;
         }
-        float a = FxCurve.clamp01((t - CUT_MS) / PLATE_FADE_IN);
+        float a = FxCurve.clamp01((t - b.cutIn) / PLATE_FADE_IN);
         if (succeeds(plan)) {
-            if (t >= SUCCESS_FADE_MS) {
-                a *= 1.0F - FxCurve.clamp01((t - SUCCESS_FADE_MS) / GROUP_FADE);
+            if (t >= b.hudSuccessFade) {
+                a *= 1.0F - FxCurve.clamp01((t - b.hudSuccessFade) / GROUP_FADE);
             }
             return a;
         }
         int k = wrongStab(plan);
         boolean advance = k == 0;
-        float gk = fillMs(advance ? plan.stabs() : k);
-        if (EffectsDisplayConfig.mercyCamera()) {
+        float gk = b.fill(advance ? plan.stabs() : k);
+        if (camera) {
             // 开着电影镜头时这一刻硬切宽镜头，界面跟着镜头一起切掉
-            return t >= gk + (advance ? MercyTimeline.ADVANCE_WIDE : FAIL_WIDE_AFTER) ? 0.0F : a;
+            return t >= gk + (advance ? b.advanceWide : b.failWide) ? 0.0F : a;
         }
-        float fadeAt = gk + (advance ? MercyTimeline.ADVANCE_END - GROUP_FADE : FAIL_FADE_AFTER);
+        // 没开电影镜头：挣开站起在交还前淡完，判错从交还那一刻开始淡
+        float fadeAt = gk + (advance ? b.advanceEnd - GROUP_FADE : b.failEnd);
         if (t >= fadeAt) {
             a *= 1.0F - FxCurve.clamp01((t - fadeAt) / GROUP_FADE);
         }
@@ -313,7 +317,8 @@ public final class MercyHud {
     }
 
     /** 托架：暗底板、上沿亮线（外段淡出、内侧 45° 折下去接到底板两角）、中点菱形、淡平行线、板底细线、外侧短线 */
-    private static void drawPlate(GuiGraphics g, float cx, float H, float lw, float alpha, float t, int judged) {
+    private static void drawPlate(GuiGraphics g, MercyBeats.Lich b, float cx, float H, float lw, float alpha, float t,
+                                  int judged) {
         float hw = PLATE_HW * H, top = PLATE_TOP * H, bot = PLATE_BOTTOM * H, c = PLATE_CUT * H;
         float x0 = cx - hw, x1 = cx + hw;
         PLATE[0] = x0 + c;
@@ -360,7 +365,7 @@ public final class MercyHud {
         GuiShapes.hairline(g, x0, FLOOR_Y1 * H, x1, FLOOR_Y1 * H, lw, GuiShapes.argb(pale, 0.45F * alpha));
         GuiShapes.hairline(g, x0, FLOOR_Y2 * H, x1, FLOOR_Y2 * H, lw, GuiShapes.argb(pale, 0.25F * alpha));
         // 中点菱形落在中间那一格里：格子还是空圈时它是圈心的一点，符号出来以后就不画，免得从笔画的空隙里透出来
-        if (judged < 2 || t < fillMs(2) - CELL_LEAD) {
+        if (judged < 2 || t < b.fill(2) - CELL_LEAD) {
             float d = MID_DIAMOND * H * 0.5F;
             GuiShapes.diamondOutline(g, cx, RAIL_Y * H, d, d, lw, GuiShapes.argb(pale, 0.7F * alpha));
         }
@@ -379,7 +384,7 @@ public final class MercyHud {
         for (int i = 0; i < 3; i++) {
             float x = cx + (i - 1) * CELL_DX * H;
             int card = plan.cardIds()[i];
-            float gi = MercyVariant.LICH_FILL_MS[i];
+            float gi = MercyBeats.lich(plan.variant()).fill(i + 1);
             if (i >= plan.stabs()) {
                 GuiShapes.ring(g, x, y, ringR, lw, GuiShapes.argb(FxPalette.ASH, 0.3F * alpha), 1.0F);
             } else if (i >= judged || t < gi - CELL_LEAD || (card < 0 && t < gi)) {
@@ -424,7 +429,7 @@ public final class MercyHud {
                                  float lw, float alpha) {
         float y = DOT_Y * H;
         float r = DOT_D * H * 0.5F;
-        float slash = FxCurve.clamp01((t - DOT_SLASH_MS) / DOT_SLASH_DRAW);
+        float slash = FxCurve.clamp01((t - MercyBeats.lich(plan.variant()).hudDotSlash) / DOT_SLASH_DRAW);
         GuiShapes.begin(g);
         for (int i = 0; i < 3; i++) {
             if (plan.cardIds()[i] < 0) {
@@ -463,7 +468,7 @@ public final class MercyHud {
         float size = (shoulder ? CENTER_SIZE * SHOULDER_CENTER_SCALE : CENTER_SIZE) * H;
         float lw = lwPx * 1.5F;
         for (int i = 0; i < judged; i++) {
-            float gi = MercyVariant.LICH_FILL_MS[i];
+            float gi = MercyBeats.lich(plan.variant()).fill(i + 1);
             if (t < gi - CENTER_LEAD) {
                 continue;
             }
@@ -539,7 +544,7 @@ public final class MercyHud {
                 }
                 return;
             }
-            if (v.elapsedMs() >= DISMISS_COMM_MS && dismissedFor != v.targetId()) {
+            if (v.elapsedMs() >= MercyBeats.lich(v.plan().variant()).commDismiss && dismissedFor != v.targetId()) {
                 dismissedFor = v.targetId();
                 CommHud.dismiss(CommSpeaker.LICH);
             }

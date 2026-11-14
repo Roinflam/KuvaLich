@@ -26,6 +26,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
+import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -213,20 +215,28 @@ public final class MercyCamera {
     }
 
     private static Shot plannedShot(MercyClient.Exec e, long t) {
-        if (!takesOver(e) || t < MercyTimeline.CUT_IN_MS || t >= e.handbackMs) {
+        return takesOver(e) ? plannedShot(e.plan, e.handbackMs, t) : Shot.GAME;
+    }
+
+    /** 照计划这一刻该用哪个机位（不看地形放不放得下） */
+    static Shot plannedShot(MercyPlan.Plan plan, int handbackMs, long t) {
+        if (plan.variant().thrall) {
             return Shot.GAME;
         }
-        Shot own = switch (e.variant.camera) {
+        MercyBeats.Lich b = MercyBeats.lich(plan.variant());
+        if (t < b.cutIn || t >= handbackMs) {
+            return Shot.GAME;
+        }
+        Shot own = switch (plan.variant().camera) {
             case 1 -> Shot.B;
             case 2 -> Shot.C;
             case 3 -> Shot.D;
             case 4 -> Shot.E;
             default -> Shot.A;
         };
-        return switch (MercyTimeline.outcome(e.plan)) {
-            case SUCCESS -> t < MercyTimeline.CLOSEUP_MS ? own
-                    : t < MercyTimeline.THIRD_MS ? Shot.CLOSEUP : Shot.THIRD;
-            case ADVANCE, FAIL -> t < MercyTimeline.wideFromMs(e.plan) ? own : Shot.WIDE;
+        return switch (MercyTimeline.outcome(plan)) {
+            case SUCCESS -> t < b.closeup ? own : t < b.third ? Shot.CLOSEUP : Shot.THIRD;
+            case ADVANCE, FAIL -> t < MercyTimeline.wideFromMs(plan) ? own : Shot.WIDE;
             case THRALL -> Shot.GAME;
         };
     }
@@ -516,7 +526,8 @@ public final class MercyCamera {
         Vec3 pos = p.pos;
         if (s == Shot.CLOSEUP) {
             // 整段沿视线往前推 0.08 格
-            float u = (t - MercyTimeline.CLOSEUP_MS) / (float) (MercyTimeline.THIRD_MS - MercyTimeline.CLOSEUP_MS);
+            MercyBeats.Lich b = MercyBeats.lich(e.variant);
+            float u = (t - b.closeup) / (float) (b.third - b.closeup);
             pos = pos.add(n.scale(0.08D * sine(u)));
         } else if (s == Shot.WIDE) {
             // 沿视线反方向匀速后拉 0.2 格 / 秒
@@ -572,7 +583,7 @@ public final class MercyCamera {
 
     /** 奴仆处决的轻推近（选项开着才有）：200 ms 进 200 ms 出 */
     private static float thrallPush(MercyClient.Exec e, long t) {
-        long d = t - e.variant.stabMs(0);
+        long d = t - MercyBeats.thrall(e.variant).stab;
         if (d < 0L || d >= 400L) {
             return 1.0F;
         }
@@ -635,7 +646,7 @@ public final class MercyCamera {
             if (EffectsDisplayConfig.thrallPushIn()) {
                 event.setFOV(event.getFOV() * thrallPush(e, t));
             }
-        } else if (t >= MercyTimeline.CUT_IN_MS) {
+        } else if (t >= MercyBeats.lich(e.variant).cutIn) {
             event.setFOV(event.getFOV() * push(e, t));
         }
     }

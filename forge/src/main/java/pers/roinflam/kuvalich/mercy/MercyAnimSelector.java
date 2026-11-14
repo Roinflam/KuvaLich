@@ -65,12 +65,6 @@ public final class MercyAnimSelector {
     /** 倒地进入片段的长度，过了这么久就算已经倒稳 */
     private static final int LICH_ENTER_MS = 600;
     private static final int THRALL_ENTER_MS = 500;
-    /** 成功：切跪地特写的那一刻换跪姿 */
-    private static final int SUCCESS_KNEEL_MS = 4670;
-    /** 成功：抽刀、瘫倒 */
-    private static final int SUCCESS_SLUMP_MS = 7530;
-    /** 判错之后多久挣脱；这次验的几刀全对、还没到第三刀时，最后一刀之后多久挣开站起，也是这么久 */
-    private static final int FAIL_BREAKFREE_AFTER_MS = 700;
     /** 倒地到时站起来：从倒地循环切过来时淡多少 tick */
     public static final int RISE_BLEND_TICKS = 3;
     /** 刚出现在这个客户端的实体，前几 tick 看到的倒地算「早就倒了」，不补倒下去那一下 */
@@ -231,33 +225,37 @@ public final class MercyAnimSelector {
             return SHOW.contains(current) ? current : thrall ? T_DOWNED : L_DOWNED;
         }
 
-        int bits = planBits.applyAsInt(entity);
+        return executing(planBits.applyAsInt(entity), thrall, t);
+    }
+
+    /** 处决演到 {@code t} 毫秒时该放哪一段（只看计划位和时刻） */
+    public static RawAnimation executing(int bits, boolean thrall, long t) {
         int variantId = (bits >> 4) & 0xF;
         if (thrall) {
             int i = variantId - MercyVariant.THRALL_1.id;
             return T_EXECUTE[i >= 0 && i < THRALL_N ? i : 0];
         }
         int v = variantId >= 0 && variantId < LICH_N ? variantId : 0;
-        MercyVariant variant = LICH_VARIANTS[v];
+        MercyBeats.Lich b = MercyBeats.lich(LICH_VARIANTS[v]);
         int stabs = stabsOf(bits);
         int prefix = Math.min((bits >> 2) & 3, stabs);
 
         if (prefix >= stabs && stabs >= 3) {
-            if (t >= SUCCESS_SLUMP_MS) {
+            if (t >= b.drawOut) {
                 return L_SLUMP;
             }
-            if (t >= SUCCESS_KNEEL_MS) {
+            if (t >= b.closeup) {
                 return L_KNEEL;
             }
         } else if (prefix >= stabs) {
-            // 这次验的几刀全对、还没到第三刀：最后一刀照常刺入，700 ms 后挣开站起来
-            if (t >= variant.stabMs(stabs - 1) + FAIL_BREAKFREE_AFTER_MS) {
+            // 这次验的几刀全对、还没到第三刀：最后一刀照常刺入，那一格填满后挣开站起来（和服务端推人同一拍）
+            if (t >= b.fill(stabs) + b.advanceBreakFree) {
                 return L_RISE_AT[v][stabs - 1];
             }
         } else {
-            // 判错在第 prefix + 1 刀：这一刀照常刺入，之后不再有刀，700 ms 后挣脱
-            int wrongAt = variant.stabMs(prefix);
-            if (t >= wrongAt + FAIL_BREAKFREE_AFTER_MS) {
+            // 判错在第 prefix + 1 刀：这一刀照常刺入，之后不再有刀，那一格填满后挣脱（和服务端推人同一拍）
+            int wrongAt = b.stab(prefix);
+            if (t >= b.fill(prefix + 1) + b.failBreakFree) {
                 return L_BREAKFREE_AT[v][prefix];
             }
             if (t >= wrongAt) {
@@ -265,7 +263,7 @@ public final class MercyAnimSelector {
             }
         }
         for (int k = stabs - 1; k >= 0; k--) {
-            if (t >= variant.stabMs(k)) {
+            if (t >= b.stab(k)) {
                 return L_HIT[v][k];
             }
         }

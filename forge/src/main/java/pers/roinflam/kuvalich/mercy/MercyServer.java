@@ -93,50 +93,17 @@ public final class MercyServer {
     public static final int GRACE_TICKS = 10;
     /** 从这一 tick 起服务端才强制处决者站位（之前由处决者自己的客户端缓入） */
     static final int ENFORCE_FROM = 6;
-    /** 定案：第一格填满发光那一刻 */
-    public static final int SETTLE_TICK = 17;
-    /** 第一刀之后玄骸在通讯窗里说一句 */
-    static final int STAB_COMM_TICK = 20;
-    /** 背后锁颈成功时，切特写那一刻把玄骸转过来面向处决者 */
-    static final int LICH_B_TURN_TICK = 93;
-    /** 三刀成功：玄骸死亡 / 奖励与解锁 / 解密界面的完成提示 */
-    public static final int SUCCESS_DEATH_TICK = 151;
-    public static final int SUCCESS_REWARD_TICK = 155;
-    public static final int SUCCESS_COMPLETE_TICK = 165;
     /** 三刀成功后实体留多久：REQUIEM 消散 1.5 秒 + 100 毫秒 */
     public static final int SUCCESS_HOLD_TICKS = 32;
-    /** 第 1 / 2 / 3 格填满发光的 tick（830 / 1680 / 2670 毫秒） */
-    static final int[] FILL_TICKS = {17, 34, 53};
-    /** 判错之后各件事相对那一格的 tick 偏移：推开、嘲讽、离场开始、解锁、移除、Oull、进度 */
-    static final int FAIL_PUSH = 14;
-    static final int FAIL_TAUNT = 26;
-    static final int FAIL_LEAVE = 48;
-    static final int FAIL_UNLOCK = 55;
-    static final int FAIL_REMOVE = 58;
-    static final int FAIL_CHAT = 60;
-    static final int FAIL_PROGRESS = 70;
-    /**
-     * 这次验的几刀全对、还没到第三刀：相对最后一格的偏移。挣开（客户端 700 毫秒）那一刻推开处决者、进起身，
-     * 起身演完（2300 毫秒）回到能打的状态、处决者解锁
-     */
-    static final int ADVANCE_RISE = 14;
-    /** 背对处决者的套路站起时转过来面向他（客户端 1320 毫秒转完） */
-    static final int ADVANCE_TURN = 27;
-    static final int ADVANCE_STAND = 46;
     /** 挣开时处决者被推开多远（比判错那一下轻） */
     static final double ADVANCE_PUSH_DISTANCE = 1.0D;
     /** 倒地到时没人处决：站起来要多久（这段时间不动、不挨打） */
     public static final int RISE_TICKS = 32;
     /** 连着这么多次倒地都没人处决，玄骸就逃走 */
     public static final int UNCLAIMED_LIMIT = 3;
-    /** 奴仆：死亡、解锁（刺入那一 tick 定案，看套路） */
-    public static final int THRALL_DEATH_TICK = 30;
-    /** 奴仆绕到身后的两套：人落地、站位换到身后（客户端 1600 ms 前走完路线） */
-    static final int THRALL_LAND_TICK = 33;
     /** 踏背下刺：蹲上后背的高度、闪到正面后比原站距多站开多少（那时它已经直起身跪着，大腿往前伸，比正面直刺站开一点） */
     static final double VAULT_BACK_UP = 1.75D;
     static final double VAULT_FRONT_GAP = 0.35D;
-    static final int THRALL_UNLOCK_TICK = 44;
     /** 倒地后多久玄骸说一句 */
     static final int DOWNED_COMM_DELAY = 12;
 
@@ -843,64 +810,66 @@ public final class MercyServer {
 
     // ==================== 时间轴 ====================
 
+    /** 服务端各步骤的时刻都从 {@link MercyBeats} 取，和客户端演出共用一份 */
     private static void buildSteps(Exec e) {
         if (!e.lich) {
-            int stab = Math.max(1, Math.round(e.variant.stabMs(0) / 50.0F));
-            e.add(stab, StepKind.SETTLE, () -> e.settled = true);
-            e.add(THRALL_DEATH_TICK, StepKind.KILL, () -> kill(e));
+            MercyBeats.Thrall tb = MercyBeats.thrall(e.variant);
+            e.add(tb.settleTick, StepKind.SETTLE, () -> e.settled = true);
+            e.add(tb.deathTick, StepKind.KILL, () -> kill(e));
             if (e.roaming) {
-                e.add(THRALL_LAND_TICK, StepKind.LAND, () -> {
+                e.add(tb.landTick, StepKind.LAND, () -> {
                     e.roaming = false;
                     e.lockPos = e.landing;
                 });
             }
-            e.add(THRALL_UNLOCK_TICK, StepKind.UNLOCK, () -> unlock(e));
+            e.add(tb.unlockTick, StepKind.UNLOCK, () -> unlock(e));
             return;
         }
         KuvaMasterEntity lich = (KuvaMasterEntity) e.target;
+        MercyBeats.Lich b = MercyBeats.lich(e.variant);
         if (e.advance()) {
-            int g = FILL_TICKS[e.plan.stabs() - 1];
-            e.add(SETTLE_TICK, StepKind.SETTLE, () -> settleAdvance(e, lich));
-            e.add(STAB_COMM_TICK, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
-            e.add(g + ADVANCE_RISE, StepKind.PUSH, () -> e.pushLeft = (int) Math.round(ADVANCE_PUSH_DISTANCE / PUSH_STEP));
-            e.add(g + ADVANCE_RISE, StepKind.RISE, () -> rise(e, lich));
+            int g = b.fillTick(e.plan.stabs());
+            e.add(b.settleTick, StepKind.SETTLE, () -> settleAdvance(e, lich));
+            e.add(b.stabCommTick, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
+            e.add(g + b.advanceRiseTicks, StepKind.PUSH, () -> e.pushLeft = (int) Math.round(ADVANCE_PUSH_DISTANCE / PUSH_STEP));
+            e.add(g + b.advanceRiseTicks, StepKind.RISE, () -> rise(e, lich));
             if (e.variant.facing == MercyVariant.Facing.AWAY) {
-                // 背对处决者的套路：客户端在挣开后 820~1320 毫秒让它边站边转过来，这边转完再跟上，免得交还时又拧回去
-                e.add(g + ADVANCE_TURN, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
+                // 背对处决者的套路：客户端在挣开后边站边转过来，这边转完再跟上，免得交还时又拧回去
+                e.add(g + b.advanceTurnTicks, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
             }
-            e.add(g + ADVANCE_STAND, StepKind.UNLOCK, () -> unlock(e));
+            e.add(g + b.advanceStandTicks, StepKind.UNLOCK, () -> unlock(e));
             return;
         }
         if (!e.failure()) {
-            e.add(SETTLE_TICK, StepKind.SETTLE, () -> settleSuccess(e, lich));
-            e.add(STAB_COMM_TICK, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
+            e.add(b.settleTick, StepKind.SETTLE, () -> settleSuccess(e, lich));
+            e.add(b.stabCommTick, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
             if (e.variant.facing == MercyVariant.Facing.AWAY) {
-                e.add(LICH_B_TURN_TICK, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
+                e.add(b.closeupTurnTick, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
             }
-            e.add(SUCCESS_DEATH_TICK, StepKind.KILL, () -> kill(e));
-            e.add(SUCCESS_REWARD_TICK, StepKind.PLAYER, () -> successRewards(e));
-            e.add(SUCCESS_REWARD_TICK, StepKind.UNLOCK, () -> unlock(e));
-            e.add(SUCCESS_COMPLETE_TICK, StepKind.PLAYER, () -> successComplete(e));
+            e.add(b.successDeathTick, StepKind.KILL, () -> kill(e));
+            e.add(b.successRewardTick, StepKind.PLAYER, () -> successRewards(e));
+            e.add(b.successRewardTick, StepKind.UNLOCK, () -> unlock(e));
+            e.add(b.successCompleteTick, StepKind.PLAYER, () -> successComplete(e));
             return;
         }
         int k = e.plan.prefix() + 1;
-        int g = FILL_TICKS[k - 1];
-        e.add(SETTLE_TICK, StepKind.SETTLE, () -> settleFailure(e, lich, k));
+        int g = b.fillTick(k);
+        e.add(b.settleTick, StepKind.SETTLE, () -> settleFailure(e, lich, k));
         if (k >= 2) {
             // 第一刀对了才有「第一刀之后」的那句；第一刀就错的，这一刻已经在判错之后
-            e.add(STAB_COMM_TICK, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
+            e.add(b.stabCommTick, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
         }
-        e.add(g + FAIL_PUSH, StepKind.PUSH, () -> e.pushLeft = (int) Math.round(PUSH_DISTANCE / PUSH_STEP));
-        e.add(g + FAIL_TAUNT, StepKind.TAUNT, () -> sayAs(lich, LichLine.FAIL, e.executor));
-        e.add(g + FAIL_LEAVE, StepKind.LEAVE, () -> {
+        e.add(g + b.failPushTicks, StepKind.PUSH, () -> e.pushLeft = (int) Math.round(PUSH_DISTANCE / PUSH_STEP));
+        e.add(g + b.failTauntLineTicks, StepKind.TAUNT, () -> sayAs(lich, LichLine.FAIL, e.executor));
+        e.add(g + b.failLeaveTicks, StepKind.LEAVE, () -> {
             if (lich.isAlive()) {
                 lich.setMercyState(MercyState.LEAVING);
             }
         });
-        e.add(g + FAIL_UNLOCK, StepKind.UNLOCK, () -> unlock(e));
-        e.add(g + FAIL_REMOVE, StepKind.ESCAPE, () -> escape(e, lich, false));
-        e.add(g + FAIL_CHAT, StepKind.PLAYER, () -> giveOull(e));
-        e.add(g + FAIL_PROGRESS, StepKind.PLAYER, () -> failureProgress(e, lich));
+        e.add(g + b.failUnlockTicks, StepKind.UNLOCK, () -> unlock(e));
+        e.add(g + b.failRemoveTicks, StepKind.ESCAPE, () -> escape(e, lich, false));
+        e.add(g + b.failChatTicks, StepKind.PLAYER, () -> giveOull(e));
+        e.add(g + b.failProgressTicks, StepKind.PLAYER, () -> failureProgress(e, lich));
     }
 
     /** 三刀全对，定案：记一行尝试、扣卡、终结这一轮、算好奖励（聊天和掉落等到 tick 155） */
@@ -943,7 +912,8 @@ public final class MercyServer {
             return;
         }
         lich.advanceSegment();
-        lich.beginRise(ADVANCE_STAND - ADVANCE_RISE);
+        MercyBeats.Lich b = MercyBeats.lich(e.variant);
+        lich.beginRise(b.advanceStandTicks - b.advanceRiseTicks);
         downedChanged(lich, false);
     }
 

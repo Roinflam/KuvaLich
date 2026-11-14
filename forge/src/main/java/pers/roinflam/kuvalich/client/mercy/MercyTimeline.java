@@ -22,6 +22,7 @@ import pers.roinflam.kuvalich.comm.CommSpeaker;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.utils.LogUtil;
@@ -49,71 +50,18 @@ import java.util.function.Consumer;
 @OnlyIn(Dist.CLIENT)
 public final class MercyTimeline {
 
-    // ==================== 共用时刻（毫秒） ====================
+    // 各拍的时刻在 MercyBeats，按套路取；这里只留动作本身的长短和距离
 
-    /** 起手抓住之后硬切进本套机位 */
-    public static final int CUT_IN_MS = 400;
     /** 刀模伸出用多久 */
     public static final int BLADE_GROW_MS = 150;
     /** 交还前刀模缩回用多久 */
     public static final int BLADE_RETRACT_MS = 150;
-
-    /** 成功：第三刀后的不和谐垫音和压混音 */
-    public static final int VERDICT_MS = 3220;
-    /** 成功：第三刀后的刀口小火花 */
-    public static final int LAST_SPARK_MS = 3240;
-    /** 成功：收起玄骸的通讯窗 */
-    public static final int COMM_DISMISS_MS = 3670;
-    /** 成功：切跪地特写 */
-    public static final int CLOSEUP_MS = 4670;
-    /** 成功：切膝盖高度的第三人称 */
-    public static final int THIRD_MS = 7320;
-    /** 成功：抽刀，开始消散 */
-    public static final int DRAW_OUT_MS = 7530;
-    /** 成功：目标在服务端死亡（之后实体消失是正常的） */
-    public static final int SUCCESS_DEATH_MS = 7550;
-    /** 成功：归还没收物品的光点 */
-    public static final int RETURN_MS = 7730;
-    /** 成功：交还控制 */
-    public static final int SUCCESS_END_MS = 8230;
-
-    /** 踏背下刺：在它背上拔刀后化作一道红光（人不画），在它正面现身 */
-    public static final int E_BLINK_MS = 2150;
-    public static final int E_APPEAR_MS = 2470;
-
-    /** 失败（从判错那一格填满的时刻 g 算）：挣脱的隆隆声 */
-    public static final int FAIL_TAUNT = 300;
-    /** 失败：玄骸挣脱、处决者被推开 */
-    public static final int FAIL_BREAKFREE = 700;
-    /** 失败：切宽镜头 */
-    public static final int FAIL_WIDE = 2000;
-    /** 失败：暖色冲击，玄骸化雾 */
-    public static final int FAIL_ESCAPE = 2400;
-    /** 失败：交还 */
-    public static final int FAIL_END = 2750;
-    /** 失败：原 HUD 回来（比交还晚，横幅出来以后才回来） */
-    public static final int FAIL_HUD = 3400;
     /** 失败：处决者被甩开多远（格，和服务端推的一样） */
     public static final double FAIL_PUSH = 1.5D;
-
-    /** 挣开站起（从最后那一格填满的时刻 g 算，和服务端 g + 14 / g + 46 tick 对齐）：低吼 */
-    public static final int ADVANCE_TAUNT = 300;
-    /** 挣开站起：玄骸挣开、处决者被推开，玄骸开始站起来 */
-    public static final int ADVANCE_BREAKFREE = 700;
-    /** 挣开站起：背对处决者的几套，玄骸转过身来面向他（实体朝向，对着起身动作的 0.12~0.62 秒） */
-    public static final int ADVANCE_TURN_FROM = 820;
-    public static final int ADVANCE_TURN_TO = 1320;
-    /** 挣开站起：切宽镜头 */
-    public static final int ADVANCE_WIDE = 1200;
-    /** 挣开站起：玄骸站稳，交还（服务端同一刻回到能打的状态、处决者解锁） */
-    public static final int ADVANCE_END = 2300;
     /** 挣开站起：处决者被推开多远（格，比判错那一下轻，和服务端推的一样） */
     public static final double ADVANCE_PUSH = 1.0D;
-
-    /** 奴仆：交还 */
-    public static final int THRALL_END_MS = 2200;
-    /** 奴仆：目标在服务端死亡 */
-    public static final int THRALL_DEATH_MS = 1500;
+    /** 短版收尾：交还后处决者的姿态再用多久回到站姿 */
+    private static final int SHORT_OUTRO_SETTLE_MS = 400;
 
     /** 失败冲击的颜色（暖色） */
     public static final int ESCAPE_RGB = 0xFFB060;
@@ -164,7 +112,12 @@ public final class MercyTimeline {
     /** 失败时判错那一格「本该填满发光」的时刻 g_k；不是失败返回 -1 */
     public static int failFillMs(MercyPlan.Plan p) {
         int k = failK(p);
-        return k == 0 ? -1 : MercyVariant.LICH_FILL_MS[k - 1];
+        return k == 0 ? -1 : lich(p).fill(k);
+    }
+
+    /** 玄骸这一套的节拍；奴仆会抛异常 */
+    public static MercyBeats.Lich lich(MercyPlan.Plan p) {
+        return MercyBeats.lich(p.variant());
     }
 
     /** 这一场实际捅几刀：成功三刀，挣开站起是这次验的刀数，失败捅到判错那一刀为止，奴仆一刀 */
@@ -180,7 +133,7 @@ public final class MercyTimeline {
     /** 失败、挣开站起：最后那一格填满的时刻 g（之后的挣脱、推开、宽镜头都从它算）；别的返回 -1 */
     public static int verdictFillMs(MercyPlan.Plan p) {
         Outcome oc = outcome(p);
-        return oc == Outcome.FAIL || oc == Outcome.ADVANCE ? MercyVariant.LICH_FILL_MS[lastStab(p) - 1] : -1;
+        return oc == Outcome.FAIL || oc == Outcome.ADVANCE ? lich(p).fill(lastStab(p)) : -1;
     }
 
     /** 失败、挣开站起：玄骸挣开、处决者被推开的时刻；别的返回 -1 */
@@ -189,7 +142,8 @@ public final class MercyTimeline {
         if (g < 0) {
             return -1;
         }
-        return g + (outcome(p) == Outcome.ADVANCE ? ADVANCE_BREAKFREE : FAIL_BREAKFREE);
+        MercyBeats.Lich b = lich(p);
+        return g + (outcome(p) == Outcome.ADVANCE ? b.advanceBreakFree : b.failBreakFree);
     }
 
     /** 失败、挣开站起：切宽镜头的时刻；别的返回 -1 */
@@ -198,7 +152,8 @@ public final class MercyTimeline {
         if (g < 0) {
             return -1;
         }
-        return g + (outcome(p) == Outcome.ADVANCE ? ADVANCE_WIDE : FAIL_WIDE);
+        MercyBeats.Lich b = lich(p);
+        return g + (outcome(p) == Outcome.ADVANCE ? b.advanceWide : b.failWide);
     }
 
     /** 处决者被推开多远（格）：失败 1.5，挣开站起 1.0，别的 0 */
@@ -213,10 +168,10 @@ public final class MercyTimeline {
     /** 交还控制的时刻（镜头、视角类型改回来，刀模已经缩完） */
     public static int handbackMs(MercyPlan.Plan p, boolean shortOutro) {
         return switch (outcome(p)) {
-            case SUCCESS -> shortOutro ? THIRD_MS : SUCCESS_END_MS;
-            case ADVANCE -> verdictFillMs(p) + ADVANCE_END;
-            case FAIL -> failFillMs(p) + FAIL_END;
-            case THRALL -> THRALL_END_MS;
+            case SUCCESS -> shortOutro ? lich(p).third : lich(p).successEnd;
+            case ADVANCE -> verdictFillMs(p) + lich(p).advanceEnd;
+            case FAIL -> failFillMs(p) + lich(p).failEnd;
+            case THRALL -> MercyBeats.thrall(p.variant()).end;
         };
     }
 
@@ -224,7 +179,7 @@ public final class MercyTimeline {
     public static int hudUntilMs(MercyPlan.Plan p, boolean shortOutro) {
         return switch (outcome(p)) {
             case SUCCESS, ADVANCE -> handbackMs(p, shortOutro);
-            case FAIL -> failFillMs(p) + FAIL_HUD;
+            case FAIL -> failFillMs(p) + lich(p).failHud;
             case THRALL -> 0;
         };
     }
@@ -233,8 +188,8 @@ public final class MercyTimeline {
     public static int endMs(MercyPlan.Plan p, boolean shortOutro) {
         int end = Math.max(handbackMs(p, shortOutro), hudUntilMs(p, shortOutro));
         if (shortOutro && outcome(p) == Outcome.SUCCESS) {
-            // 短版在 7320 交还，处决者的姿态再用 400 ms 回到站姿
-            end = Math.max(end, THIRD_MS + 400);
+            // 短版在切第三人称那一刻交还，处决者的姿态再用 400 ms 回到站姿
+            end = Math.max(end, lich(p).third + SHORT_OUTRO_SETTLE_MS);
         }
         return end;
     }
@@ -242,10 +197,10 @@ public final class MercyTimeline {
     /** 到了这一刻，目标实体消失是正常的（服务端已经让它死了或离场了），不当成中断；挣开站起的目标不会消失 */
     public static boolean targetMayVanish(MercyPlan.Plan p, long t) {
         return switch (outcome(p)) {
-            case SUCCESS -> t >= SUCCESS_DEATH_MS;
+            case SUCCESS -> t >= lich(p).death;
             case ADVANCE -> false;
-            case FAIL -> t >= failFillMs(p) + FAIL_ESCAPE;
-            case THRALL -> t >= THRALL_DEATH_MS;
+            case FAIL -> t >= failFillMs(p) + lich(p).failEscape;
+            case THRALL -> t >= MercyBeats.thrall(p.variant()).death;
         };
     }
 
@@ -273,15 +228,15 @@ public final class MercyTimeline {
      * 刀模此刻伸出了多少（0 = 收着，1 = 全长）。玄骸 400 ms 起用 150 ms 伸出，奴仆一开始就伸；交还前 150 ms 缩回
      */
     public static float bladeExtension(MercyPlan.Plan p, long t, boolean shortOutro) {
-        int growAt = p.variant().thrall ? 0 : CUT_IN_MS;
+        int growAt = p.variant().thrall ? 0 : lich(p).cutIn;
         int end = handbackMs(p, shortOutro);
         if (outcome(p) == Outcome.SUCCESS && !shortOutro) {
             // 成功收尾抽刀以后刀还在手上，到交还前才缩
-            end = SUCCESS_END_MS;
+            end = lich(p).successEnd;
         }
         if (p.variant().thrall) {
             // 奴仆收势时就先缩回，免得推开以后刀还亮着
-            end = 2050;
+            end = MercyBeats.thrall(p.variant()).bladeGone;
         }
         float grow = clamp01((t - growAt) / (float) BLADE_GROW_MS);
         float shrink = clamp01((end - t) / (float) BLADE_RETRACT_MS);
@@ -300,9 +255,8 @@ public final class MercyTimeline {
     // ==================== 排时间轴 ====================
 
     /** 按计划位排好整条时间轴 */
-    static MercyTimeline build(MercyClient.Exec e) {
+    static MercyTimeline build(MercyPlan.Plan p) {
         MercyTimeline tl = new MercyTimeline();
-        MercyPlan.Plan p = e.plan;
         Outcome oc = outcome(p);
 
         // 0：倒地低鸣收掉（处决开始）
@@ -325,72 +279,73 @@ public final class MercyTimeline {
         }
 
         // 400：硬切进机位、刀模伸出、抽刀声和手前一道短光
-        tl.at(CUT_IN_MS, x -> {
+        MercyBeats.Lich b = lich(p);
+        tl.at(b.cutIn, x -> {
             world(KuvaLichSounds.MERCY_DRAW.get(), x.handPos(), 1.0F, 1.0F);
             drawFlare(x);
         });
 
-        int[] stab = p.variant().stabMs();
-        int[] fill = MercyVariant.LICH_FILL_MS;
+        int[] stab = b.stabMs();
         int k = failK(p);
         int last = lastStab(p);
         for (int i = 0; i < last; i++) {
             final int n = i + 1;
             final boolean result = n == last;
             // 定生死的那一刀（成功第三刀、判错那一刀）用重的那一声；挣开站起的最后一刀还是普通的一刀，只是放足音量
-            SoundEvent ev = result && oc != Outcome.ADVANCE ? KuvaLichSounds.MERCY_STAB_FINAL.get()
-                    : (n == 1 ? KuvaLichSounds.MERCY_STAB_1.get() : KuvaLichSounds.MERCY_STAB_2.get());
+            final boolean heavy = result && oc != Outcome.ADVANCE;
             final float vol = (n == 1 && !result) ? 0.7F : 1.0F;
             tl.at(stab[i], x -> {
                 Entity t = x.target();
                 if (t == null) {
                     return;
                 }
+                SoundEvent ev = heavy ? KuvaLichSounds.MERCY_STAB_FINAL.get()
+                        : (n == 1 ? KuvaLichSounds.MERCY_STAB_1.get() : KuvaLichSounds.MERCY_STAB_2.get());
                 world(ev, chest(t), vol, KuvaSoundPlayer.jitter(1.0F, 0.02F));
                 RequiemFx.bladeSpark(t, n, false);
             });
             // 格子填满（锁扣声）；判错那一格换成碎裂声
             final boolean wrong = oc == Outcome.FAIL && n == k;
-            tl.at(fill[i], x -> ui(x, wrong ? KuvaLichSounds.REQUIEM_GLYPH_REJECT_MERCY.get()
+            tl.at(b.fill(n), x -> ui(x, wrong ? KuvaLichSounds.REQUIEM_GLYPH_REJECT_MERCY.get()
                     : KuvaLichSounds.REQUIEM_GLYPH_LOCK_MERCY.get(), wrong ? 1.0F : 0.8F));
         }
 
         // 踏背下刺捅到第三刀（成功、第三刀判错）才有闪到正面那一下
         if (p.variant() == MercyVariant.LICH_E && last == 3) {
-            tl.at(E_BLINK_MS, MercyTimeline::blinkOut);
-            tl.at(E_APPEAR_MS, MercyTimeline::blinkIn);
+            tl.at(b.blink, MercyTimeline::blinkOut);
+            tl.at(b.appear, MercyTimeline::blinkIn);
         }
 
         if (oc == Outcome.SUCCESS) {
-            tl.at(VERDICT_MS, x -> {
+            tl.at(b.verdict, x -> {
                 ui(x, KuvaLichSounds.MERCY_VERDICT.get(), 1.0F);
                 if (x.cinematic) {
                     KuvaMixer.duck(MercyClient.DUCK_KEY, -12.0F, 300);
                 }
             });
-            tl.at(LAST_SPARK_MS, x -> {
+            tl.at(b.lastSpark, x -> {
                 Entity t = x.target();
                 if (t != null) {
                     RequiemFx.bladeSpark(t, 3, true);
                     KuvaGlow.boost(x.targetId, 1.6F, 200);
                 }
             });
-            tl.at(COMM_DISMISS_MS, x -> {
+            tl.at(b.commDismiss, x -> {
                 if (x.cinematic) {
                     CommHud.dismiss(CommSpeaker.LICH);
                 }
             });
-            tl.at(CLOSEUP_MS, x -> {
+            tl.at(b.closeup, x -> {
                 if (!x.cinematic || !MercyCamera.takesOver(x)) {
                     return;
                 }
-                KuvaGlow.boost(x.targetId, 1.6F, THIRD_MS - CLOSEUP_MS);
+                KuvaGlow.boost(x.targetId, 1.6F, b.third - b.closeup);
                 Entity t = x.target();
                 if (t != null) {
                     closeupMist(t);
                 }
             });
-            tl.at(THIRD_MS, x -> {
+            tl.at(b.third, x -> {
                 if (!x.cinematic) {
                     return;
                 }
@@ -400,16 +355,16 @@ public final class MercyTimeline {
                     KuvaMixer.duck(MercyClient.DUCK_KEY, -4.0F, 150);
                 }
             });
-            tl.at(DRAW_OUT_MS, x -> {
+            tl.at(b.drawOut, x -> {
                 Entity t = x.target();
                 if (t != null) {
                     LichFx.dissolve(t, LichFx.Kind.REQUIEM);
                 }
             });
             if (p.returnsItems()) {
-                tl.at(RETURN_MS, MercyTimeline::returnLight);
+                tl.at(b.returnLight, MercyTimeline::returnLight);
             }
-            tl.at(SUCCESS_END_MS, x -> {
+            tl.at(b.successEnd, x -> {
                 if (x.cinematic) {
                     KuvaMixer.release(MercyClient.DUCK_KEY, 300);
                 }
@@ -419,15 +374,15 @@ public final class MercyTimeline {
 
         if (oc == Outcome.ADVANCE) {
             // 挣开站起（g = 最后那一格填满的时刻）：低吼、刀被挣出来那一下的火花；不化雾，它站起来接着打
-            int g = fill[last - 1];
-            tl.at(g + ADVANCE_TAUNT, x -> {
+            int g = b.fill(last);
+            tl.at(g + b.advanceGrowl, x -> {
                 Entity t = x.target();
                 if (t != null) {
                     KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.REQUIEM_TAUNT.get(), SoundSource.HOSTILE,
                             chest(t), 1.0F, 1.0F).follow(t).tier(FxTier.S));
                 }
             });
-            tl.at(g + ADVANCE_BREAKFREE, x -> {
+            tl.at(g + b.advanceBreakFree, x -> {
                 Entity t = x.target();
                 if (t != null) {
                     RequiemFx.bladeSpark(t, last, false);
@@ -437,8 +392,8 @@ public final class MercyTimeline {
         }
 
         // 失败（判错第 k 刀，g = 那一格本该填满的时刻）
-        int g = fill[k - 1];
-        tl.at(g + FAIL_TAUNT, x -> {
+        int g = b.fill(k);
+        tl.at(g + b.failGrowl, x -> {
             Entity t = x.target();
             if (t != null) {
                 KuvaSoundPlayer.play(KuvaSoundPlayer.at(KuvaLichSounds.REQUIEM_TAUNT.get(), SoundSource.HOSTILE,
@@ -446,14 +401,14 @@ public final class MercyTimeline {
             }
         });
         final int kk = k;
-        tl.at(g + FAIL_BREAKFREE, x -> {
+        tl.at(g + b.failBreakFree, x -> {
             Entity t = x.target();
             if (t != null) {
                 // 刀被挣出来那一下
                 RequiemFx.bladeSpark(t, kk, false);
             }
         });
-        tl.at(g + FAIL_ESCAPE, x -> {
+        tl.at(g + b.failEscape, x -> {
             Entity t = x.target();
             if (t != null) {
                 RequiemFx.escape(t, ESCAPE_RGB);
@@ -465,6 +420,15 @@ public final class MercyTimeline {
             }
         });
         return tl.done();
+    }
+
+    /** 各阶段的时刻（排好序），对比节拍用 */
+    int[] stageTimes() {
+        int[] out = new int[stages.size()];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = stages.get(i).ms;
+        }
+        return out;
     }
 
     private MercyTimeline at(int ms, Consumer<MercyClient.Exec> action) {
@@ -514,9 +478,10 @@ public final class MercyTimeline {
             KuvaMixer.release(MercyClient.DUCK_KEY, 0);
             return;
         }
-        if (t >= VERDICT_MS && t < THIRD_MS) {
+        MercyBeats.Lich b = lich(e.plan);
+        if (t >= b.verdict && t < b.third) {
             KuvaMixer.duck(MercyClient.DUCK_KEY, -12.0F, 0);
-        } else if (t >= THIRD_MS && t < SUCCESS_END_MS && !e.shortOutro) {
+        } else if (t >= b.third && t < b.successEnd && !e.shortOutro) {
             KuvaMixer.duck(MercyClient.DUCK_KEY, -4.0F, 0);
         } else {
             KuvaMixer.release(MercyClient.DUCK_KEY, 0);
@@ -585,8 +550,9 @@ public final class MercyTimeline {
         if (t == null) {
             return;
         }
-        Vec3 from = bodyChest(e, E_BLINK_MS);
-        Vec3 to = bodyChest(e, E_APPEAR_MS);
+        MercyBeats.Lich beats = lich(e.plan);
+        Vec3 from = bodyChest(e, beats.blink);
+        Vec3 to = bodyChest(e, beats.appear);
         world(KuvaLichSounds.WEAPON_DASH.get(), from, 0.9F, KuvaSoundPlayer.jitter(1.1F, 0.03F));
         KuvaParticles.flare(from.x, from.y, from.z).size(1.3F, 1.3F).color(FxPalette.KUVA_PALE).alpha(0.9F).life(3)
                 .tier(FxTier.S).spawn();
@@ -631,7 +597,7 @@ public final class MercyTimeline {
 
     /** 在它正面现身：火星从四周收拢，一下闪光 */
     private static void blinkIn(MercyClient.Exec e) {
-        Vec3 at = bodyChest(e, E_APPEAR_MS);
+        Vec3 at = bodyChest(e, lich(e.plan).appear);
         world(KuvaLichSounds.WEAPON_DASH_HIT.get(), at, 0.55F, KuvaSoundPlayer.jitter(1.2F, 0.03F));
         KuvaParticles.flare(at.x, at.y, at.z).size(1.0F, 1.0F).color(FxPalette.KUVA_PALE).alpha(0.8F).life(2)
                 .tier(FxTier.S).spawn();

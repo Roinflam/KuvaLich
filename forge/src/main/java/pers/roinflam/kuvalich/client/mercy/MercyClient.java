@@ -35,6 +35,7 @@ import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.sound.KuvaMixer;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.mercy.MercyAnimSelector;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
@@ -164,7 +165,7 @@ public final class MercyClient {
             this.endMs = MercyTimeline.endMs(plan, shortOutro);
             this.stabs = MercyTimeline.stabTimes(plan);
             this.startMs = KuvaFxDirector.clockMs();
-            this.timeline = MercyTimeline.build(this);
+            this.timeline = MercyTimeline.build(plan);
             this.pose = MercyPose.track(plan, shortOutro,
                     target instanceof AbstractKuva k ? k.mercyBodyScale() : 1.0F);
             FxTimeline h = KuvaFxDirector.start("mercy", MercyTimeline.chest(target), FxTier.S);
@@ -203,12 +204,7 @@ public final class MercyClient {
 
         /** 目标这一刻该朝哪（度） */
         float targetYaw(long t) {
-            MercyVariant.Facing facing = variant.facing;
-            if (!variant.thrall && facing == MercyVariant.Facing.AWAY
-                    && MercyTimeline.outcome(plan) == MercyTimeline.Outcome.SUCCESS && t >= MercyTimeline.CLOSEUP_MS) {
-                // 背对处决者的套路成功：切特写那一刻转成面向处决者跪着
-                facing = MercyVariant.Facing.TOWARD;
-            }
+            MercyVariant.Facing facing = facingAt(plan, t);
             float turn = turnProgress(t);
             if (turn > 0.0F) {
                 // 背对处决者的套路挣开站起：一边站起来一边转半圈面向他
@@ -226,15 +222,32 @@ public final class MercyClient {
 
         /** 背对处决者的套路挣开站起时转身转到几成（0~1，easeInOutSine）；别的情况恒为 0 */
         float turnProgress(long t) {
-            if (variant.thrall || variant.facing != MercyVariant.Facing.AWAY
-                    || MercyTimeline.outcome(plan) != MercyTimeline.Outcome.ADVANCE) {
-                return 0.0F;
-            }
-            int g = MercyTimeline.verdictFillMs(plan);
-            float u = Mth.clamp((t - g - MercyTimeline.ADVANCE_TURN_FROM)
-                    / (float) (MercyTimeline.ADVANCE_TURN_TO - MercyTimeline.ADVANCE_TURN_FROM), 0.0F, 1.0F);
-            return (float) (0.5D - 0.5D * Math.cos(Math.PI * u));
+            return MercyClient.turnProgress(plan, t);
         }
+    }
+
+    /** 目标这一刻按哪种朝向摆（挣开站起时的转身另算） */
+    static MercyVariant.Facing facingAt(MercyPlan.Plan plan, long t) {
+        MercyVariant variant = plan.variant();
+        if (!variant.thrall && variant.facing == MercyVariant.Facing.AWAY
+                && MercyTimeline.outcome(plan) == MercyTimeline.Outcome.SUCCESS && t >= MercyTimeline.lich(plan).closeup) {
+            // 背对处决者的套路成功：切特写那一刻转成面向处决者跪着
+            return MercyVariant.Facing.TOWARD;
+        }
+        return variant.facing;
+    }
+
+    /** 背对处决者的套路挣开站起时转身转到几成（0~1，easeInOutSine）；别的情况恒为 0 */
+    static float turnProgress(MercyPlan.Plan plan, long t) {
+        MercyVariant variant = plan.variant();
+        if (variant.thrall || variant.facing != MercyVariant.Facing.AWAY
+                || MercyTimeline.outcome(plan) != MercyTimeline.Outcome.ADVANCE) {
+            return 0.0F;
+        }
+        int g = MercyTimeline.verdictFillMs(plan);
+        MercyBeats.Lich b = MercyTimeline.lich(plan);
+        float u = Mth.clamp((t - g - b.advanceTurnFrom) / (float) (b.advanceTurnTo - b.advanceTurnFrom), 0.0F, 1.0F);
+        return (float) (0.5D - 0.5D * Math.cos(Math.PI * u));
     }
 
     private static final Int2ObjectOpenHashMap<Exec> BY_TARGET = new Int2ObjectOpenHashMap<>();

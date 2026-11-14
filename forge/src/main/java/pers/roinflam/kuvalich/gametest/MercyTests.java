@@ -43,6 +43,7 @@ import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.mercy.KuvaStateKind;
 import pers.roinflam.kuvalich.mercy.KuvaStateServer;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.mercy.MercyState;
@@ -97,12 +98,13 @@ public final class MercyTests {
     private static final String ISO_STATE = "kl_mercy_iso_stateFxRateLimit";
     private static final String ISO_COMMANDS = "kl_mercy_iso_commandsSmoke";
 
-    /** 定案的那一 tick（三刀和单刀都是 17） */
-    private static final int SETTLE = MercyServer.SETTLE_TICK;
-    /** 奴仆处决：tick 30 死、tick 44 处决者解锁 */
-    private static final int THRALL_UNLOCK = 44;
-    /** 第二刀判错的失败：第二格亮在 tick 34，+70 tick 给进度 */
-    private static final int FAIL2_PROGRESS_TICK = 34 + 70;
+    /** 定案的那一 tick；五套玄骸的节拍现在一样，按正面直刺取 */
+    private static final int SETTLE = MercyBeats.lich(MercyVariant.LICH_A).settleTick;
+    /** 奴仆处决：处决者解锁的那一 tick（几套都一样） */
+    private static final int THRALL_UNLOCK = MercyBeats.thrall(MercyVariant.THRALL_1).unlockTick;
+    /** 第二刀判错的失败：第二格亮的那一 tick 之后给进度 */
+    private static final int FAIL2_PROGRESS_TICK = MercyBeats.lich(MercyVariant.LICH_A).fillTick(2)
+            + MercyBeats.lich(MercyVariant.LICH_A).failProgressTicks;
 
     /** 收到过死亡事件的实体（只增不减，按 UUID 查） */
     private static final Set<UUID> DIED = Collections.synchronizedSet(new HashSet<>());
@@ -112,6 +114,111 @@ public final class MercyTests {
     private static Difficulty savedDifficulty;
 
     private MercyTests() {
+    }
+
+    // ==================== 节拍表 ====================
+
+    /**
+     * 服务端的 tick 和客户端的毫秒对得上：同时发生的拍相差不到半 tick，必须在客户端之后的拍（挣开转身、奴仆落地）
+     * 不早于客户端
+     */
+    @GameTest(template = "empty")
+    public static void beatsServerMatchesClient(GameTestHelper h) {
+        int tick = MercyBeats.TICK_MS;
+        for (MercyVariant v : MercyVariant.values()) {
+            if (v.thrall) {
+                MercyBeats.Thrall b = MercyBeats.thrall(v);
+                near(h, v + " 奴仆定案", b.settleTick, b.stab);
+                near(h, v + " 奴仆死亡", b.deathTick, b.death);
+                near(h, v + " 奴仆解锁", b.unlockTick, b.end);
+                h.assertTrue(v.relocates() == (b.land >= 0), v + " 换站位的套路才有落地时刻");
+                continue;
+            }
+            MercyBeats.Lich b = MercyBeats.lich(v);
+            for (int k = 1; k <= 3; k++) {
+                near(h, v + " 第 " + k + " 格", b.fillTick(k), b.fill(k));
+            }
+            h.assertTrue(b.settleTick == b.fillTick(1), v + " 定案就是第一格填满");
+            near(h, v + " 背对的转过来", b.closeupTurnTick, b.closeup);
+            near(h, v + " 成功死亡", b.successDeathTick, b.death);
+            near(h, v + " 成功发奖", b.successRewardTick, b.returnLight);
+            near(h, v + " 成功完成", b.successCompleteTick, b.successEnd);
+            near(h, v + " 判错推开", b.failPushTicks, b.failBreakFree);
+            near(h, v + " 判错离场", b.failLeaveTicks, b.failEscape);
+            near(h, v + " 判错解锁", b.failUnlockTicks, b.failEnd);
+            near(h, v + " 挣开推开", b.advanceRiseTicks, b.advanceBreakFree);
+            near(h, v + " 挣开站稳", b.advanceStandTicks, b.advanceEnd);
+            h.assertTrue(b.choiceOpen == b.closeup, v + " 选择窗口先等于跪地特写");
+            h.assertTrue(b.closeupTurnTick * tick <= b.closeup + tick / 2, v + " 转身不该晚于特写");
+        }
+        h.succeed();
+    }
+
+    /** 各拍的先后：换站位在轨道走完之后、转身在客户端转完之后、通讯在第一格之后、刀间隔不小于下限，三条分支的步骤顺序 */
+    @GameTest(template = "empty")
+    public static void beatsOrder(GameTestHelper h) {
+        int tick = MercyBeats.TICK_MS;
+        for (MercyVariant v : MercyVariant.values()) {
+            if (v.thrall) {
+                MercyBeats.Thrall b = MercyBeats.thrall(v);
+                if (b.land >= 0) {
+                    h.assertTrue(b.landTick * tick >= b.land, v + " 换站位 " + b.landTick * tick + " 早于轨道终点 " + b.land);
+                    h.assertTrue(b.landTick < b.unlockTick, v + " 落地要在解锁之前");
+                }
+                h.assertTrue(b.settleTick < b.deathTick && b.deathTick < b.unlockTick, v + " 奴仆：定案 < 死亡 < 解锁");
+                h.assertTrue(b.bladeGone < b.end, v + " 刀模在交还前缩完");
+                continue;
+            }
+            MercyBeats.Lich b = MercyBeats.lich(v);
+            for (int i = 0; i < 3; i++) {
+                h.assertTrue(b.fill(i + 1) >= b.stab(i), v + " 第 " + (i + 1) + " 格不能早于刺入");
+            }
+            for (int i = 0; i < 2; i++) {
+                int gap = b.stab(i + 1) - b.stab(i);
+                h.assertTrue(gap >= b.minGap(i), v + " 第 " + (i + 1) + "、" + (i + 2) + " 刀间隔 " + gap + " 小于下限 " + b.minGap(i));
+            }
+            h.assertTrue(b.stabCommTick > b.settleTick && b.stabCommTick * tick > b.fill(1), v + " 通讯要在第一格填满之后");
+            for (int k = 1; k <= 2; k++) {
+                int serverTurn = (b.fillTick(k) + b.advanceTurnTicks) * tick;
+                int clientTurn = b.fill(k) + b.advanceTurnTo;
+                h.assertTrue(serverTurn >= clientTurn, v + " 第 " + k + " 次挣开：服务端转身 " + serverTurn + " 早于客户端转完 " + clientTurn);
+            }
+            if (v == MercyVariant.LICH_E) {
+                h.assertTrue(b.stab(1) < b.blink && b.blink < b.appear && b.appear < b.stab(2), "踏背：第二刀 < 化光 < 现身 < 第三刀");
+            } else {
+                h.assertTrue(b.blink < 0 && b.appear < 0, v + " 只有踏背下刺有化光、现身");
+            }
+            // 成功
+            ascending(h, v + " 成功", b.settleTick, b.stabCommTick, b.closeupTurnTick, b.successDeathTick, b.successRewardTick,
+                    b.successCompleteTick);
+            ascending(h, v + " 成功（客户端）", b.stab(2), b.verdict, b.lastSpark, b.commDismiss, b.closeup, b.hudSuccessFade,
+                    b.third, b.drawOut, b.death, b.returnLight, b.successEnd);
+            // 判错（g 之后的相对 tick）
+            ascending(h, v + " 判错", b.failPushTicks, b.failTauntLineTicks, b.failLeaveTicks, b.failUnlockTicks,
+                    b.failRemoveTicks, b.failChatTicks, b.failProgressTicks);
+            ascending(h, v + " 判错（客户端）", b.failGrowl, b.failBreakFree, b.failWide, b.failEscape, b.failEnd, b.failBanner,
+                    b.failHud);
+            // 挣开
+            ascending(h, v + " 挣开", b.advanceRiseTicks, b.advanceTurnTicks, b.advanceStandTicks);
+            ascending(h, v + " 挣开（客户端）", b.advanceGrowl, b.advanceBreakFree, b.advanceTurnFrom, b.advanceTurnTo,
+                    b.advanceEnd);
+            h.assertTrue(b.fillTick(1) + b.failPushTicks > b.settleTick, v + " 第一刀判错：推开在定案之后");
+            int[] seen = b.serverVisibleMs(3, 3);
+            h.assertTrue(seen[0] == b.settleTick * tick && seen[seen.length - 1] == b.successCompleteTick * tick,
+                    v + " 服务端可见时刻从定案到完成：" + java.util.Arrays.toString(seen));
+        }
+        h.succeed();
+    }
+
+    private static void near(GameTestHelper h, String what, int ticks, int ms) {
+        int d = ticks * MercyBeats.TICK_MS - ms;
+        h.assertTrue(Math.abs(d) <= MercyBeats.TICK_MS / 2, what + "：服务端 " + ticks + " tick，客户端 " + ms + " ms");
+    }
+
+    private static void ascending(GameTestHelper h, String what, int... t) {
+        for (int i = 1; i < t.length; i++) {
+            h.assertTrue(t[i] > t[i - 1], what + "：第 " + i + " 拍 " + t[i] + " 不晚于前一拍 " + t[i - 1]);
+        }
     }
 
     // ==================== #3 /kill、虚空：绕过倒地直接死 ====================

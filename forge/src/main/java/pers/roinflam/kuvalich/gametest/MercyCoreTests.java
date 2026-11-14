@@ -43,6 +43,7 @@ import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.item.card.OULL;
 import pers.roinflam.kuvalich.mercy.KuvaStateKind;
 import pers.roinflam.kuvalich.mercy.KuvaStateServer;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.mercy.MercyState;
@@ -227,8 +228,9 @@ public final class MercyCoreTests {
                     h.assertTrue(last != null && last.fate() == RequiemCard.FATE_VANQUISHED, "成功：历史里应当记成被终结");
                     h.assertTrue(survivingCards(p) == 0, "成功：卡留在扉上，背包里不该多出卡，实际 " + survivingCards(p));
                     h.assertTrue(weaponLevel > 0 && !weaponType.isEmpty(), "诞生时应当定下武器的等级和元素");
-                    // 奖励要等处决演完（SUCCESS_REWARD_TICK）才落地：掉的那把应当就是诞生时定下的武器、等级、元素
-                    h.runAfterDelay(MercyServer.SUCCESS_REWARD_TICK - MercyServer.SETTLE_TICK + 5, () -> {
+                    // 奖励要等处决演完（发奖那一拍）才落地：掉的那把应当就是诞生时定下的武器、等级、元素
+                    MercyBeats.Lich b = MercyBeats.lich(plan.variant());
+                    h.runAfterDelay(b.successRewardTick - b.settleTick + 5, () -> {
                         ItemStack got = ItemStack.EMPTY;
                         for (ItemEntity ie : h.getLevel().getEntitiesOfClass(ItemEntity.class,
                                 lich.getBoundingBox().inflate(8.0D))) {

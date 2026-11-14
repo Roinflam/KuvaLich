@@ -29,6 +29,9 @@ import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
+import pers.roinflam.kuvalich.mercy.MercyPlan;
+import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.network.packet.KuvaFxPacket;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -64,10 +67,6 @@ public final class RankUpBanner {
     /** 整个横幅往屏幕外抬多少：原版聊天行画在 z = 50，要比它高 */
     private static final float ABOVE_CHAT_Z = 200.0F;
 
-    /** 怜悯之击判错：横幅在判错那一刀填满时刻之后多久出来 */
-    public static final int AFTER_WRONG_MS = 2900;
-    /** 定案（发包）大约在处决第几毫秒 */
-    private static final int VERDICT_MS = 850;
     /** 直接判定：收到包之后多久出来 */
     public static final int DIRECT_DELAY_MS = 600;
 
@@ -153,6 +152,8 @@ public final class RankUpBanner {
     private static boolean fromMercy;
     private static int targetId = -1;
     private static int wrongStab = 1;
+    /** 这条横幅跟的那一场处决的节拍 */
+    private static MercyBeats.Lich beats = MercyBeats.lich(MercyVariant.LICH_A);
     /** t = 0（Tb）那一刻的演出钟 */
     private static long zeroClock;
     /** 调试用：冻在横幅的这一毫秒；小于 0 = 照常走 */
@@ -216,9 +217,12 @@ public final class RankUpBanner {
             zeroClock = now + DIRECT_DELAY_MS;
             return;
         }
-        int at = MercyHud.fillMs(wrongStab) + AFTER_WRONG_MS;
+        // 怜悯之击判错：横幅在判错那一格填满之后出来。不是本地玩家在处决时没有时间轴可对，按定案包到的那一刻倒推
+        MercyPlan.Plan plan = MercyHud.planFor(target);
+        beats = MercyBeats.lich(plan != null && !plan.variant().thrall ? plan.variant() : MercyVariant.LICH_A);
+        int at = beats.fill(wrongStab) + beats.failBanner;
         long e = MercyHud.elapsedFor(target);
-        zeroClock = e >= 0L ? now - e + at : now + at - VERDICT_MS;
+        zeroClock = e >= 0L ? now - e + at : now + at - beats.settleTick * MercyBeats.TICK_MS;
     }
 
     /** 撤掉当前的横幅 */
@@ -262,7 +266,7 @@ public final class RankUpBanner {
         if (fromMercy) {
             long e = MercyHud.elapsedFor(targetId);
             if (e >= 0L) {
-                zeroClock = now - e + MercyHud.fillMs(wrongStab) + AFTER_WRONG_MS;
+                zeroClock = now - e + beats.fill(wrongStab) + beats.failBanner;
             }
         }
         return now - zeroClock;
