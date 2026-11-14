@@ -166,6 +166,9 @@ public final class MercyBeats {
         private final int[] fill;
         private final int[] minGap;
         private final int[] fillTick;
+        /** 按 刀数 × 4 + 前缀 存每种结果的顿帧 */
+        private final int[][] hitstop = new int[16][];
+        private boolean hitstopShortened;
 
         public final int cutIn;
         public final int verdict, lastSpark, commDismiss, closeup, hudSuccessFade, third, drawOut, death, returnLight,
@@ -250,6 +253,81 @@ public final class MercyBeats {
             advanceRiseTicks = roundTicks(ADVANCE_BREAKFREE);
             advanceTurnTicks = ceilTicks(ADVANCE_TURN_TO);
             advanceStandTicks = roundTicks(ADVANCE_END);
+
+            for (int s = 1; s <= 3; s++) {
+                for (int p = 0; p <= s; p++) {
+                    hitstop[s * 4 + p] = fitHitstop(s, p);
+                }
+            }
+        }
+
+        /** 每刀先按 {@link MercyHitstop#desired} 停，哪条校验不过就把惹事的那一刀每次缩 5 ms，直到全过 */
+        private int[] fitHitstop(int stabs, int prefix) {
+            int n = MercyHitstop.stabCount(stabs, prefix);
+            int[] s = Arrays.copyOf(stab, n);
+            int[] h = new int[n];
+            for (int i = 0; i < n; i++) {
+                h[i] = MercyHitstop.desired(i, n);
+            }
+            int[] visible = serverVisibleMs(stabs, prefix);
+            boolean success = stabs >= 3 && prefix >= 3;
+            for (int bad = hitstopViolation(s, h, visible, success); bad >= 0; bad = hitstopViolation(s, h, visible, success)) {
+                h[bad] = Math.max(0, h[bad] - 5);
+                hitstopShortened = true;
+            }
+            return h;
+        }
+
+        /** 不满足的话返回该缩的那一刀，全过返回 −1 */
+        private int hitstopViolation(int[] s, int[] h, int[] visible, boolean success) {
+            for (int i = 0; i + 1 < s.length; i++) {
+                if (s[i] + MercyHitstop.span(h[i]) > s[i + 1]) {
+                    return i;
+                }
+            }
+            for (int t : visible) {
+                if (MercyHitstop.lag(s, h, t) > MercyHitstop.MAX_SERVER_LAG_MS) {
+                    return worstStab(s, h, t);
+                }
+            }
+            if (success) {
+                // 停在选择那一拍时演出钟得已经追平（挂起按演出钟到没到 choiceOpen 判）；抽刀不能晚于服务端让它死
+                int deathMs = successDeathTick * TICK_MS;
+                if (MercyHitstop.lag(s, h, choiceOpen) > 0.0D) {
+                    return worstStab(s, h, choiceOpen);
+                }
+                if (deathMs - MercyHitstop.lag(s, h, deathMs) < drawOut) {
+                    return worstStab(s, h, deathMs);
+                }
+            }
+            return -1;
+        }
+
+        private static int worstStab(int[] s, int[] h, int t) {
+            int worst = 0;
+            double max = -1.0D;
+            for (int i = 0; i < s.length; i++) {
+                double lag = MercyHitstop.lagOf(s[i], h[i], t);
+                if (lag > max) {
+                    max = lag;
+                    worst = i;
+                }
+            }
+            return worst;
+        }
+
+        /**
+         * 这一场每一刀的顿帧（毫秒），按实际捅的刀数给（{@link MercyHitstop#stabCount}），已经按服务端可见时刻校验过
+         */
+        public int[] hitstopMs(int stabs, int prefix) {
+            int s = Math.max(1, Math.min(3, stabs));
+            int p = Math.max(0, Math.min(s, prefix));
+            return hitstop[s * 4 + p].clone();
+        }
+
+        /** 建表时有没有哪一刀因为校验不过被缩短（GameTest 查，正常的表不该缩） */
+        public boolean hitstopShortened() {
+            return hitstopShortened;
         }
 
         public int[] stabMs() {

@@ -43,6 +43,39 @@ public final class MercyAnimSelector {
      */
     public static ToIntFunction<AbstractKuva> planBits = AbstractKuva::getMercyPlan;
 
+    /** 同 {@link #elapsedMs}，但不受顿帧影响（真实钟）；片段开播时记下，算片段速度用 */
+    public static ToLongFunction<AbstractKuva> rawElapsedMs = e -> -1L;
+
+    /** 片段从真实时刻 t0 开播、现在该用的速度；客户端换成按顿帧算的比值 */
+    public static ClipSpeed clipSpeed = (e, t0) -> 1.0D;
+
+    @FunctionalInterface
+    public interface ClipSpeed {
+        double at(AbstractKuva entity, long clipStartRaw);
+    }
+
+    private static final Double NORMAL = 1.0D;
+
+    /**
+     * 主控制器的速度，注册控制器时装一次。只在播怜悯之击片段时跟着顿帧走，别的时候是 1，
+     * 免得上一场的速度留到倒地循环、离场片段上
+     */
+    public static Double speed(AbstractKuva entity) {
+        if (entity.mercyClip == null || entity.mercyClipRaw < 0L) {
+            return NORMAL;
+        }
+        double s = clipSpeed.at(entity, entity.mercyClipRaw);
+        return s == 1.0D ? NORMAL : Double.valueOf(s);
+    }
+
+    /** 控制器每帧选完片段后调：换了片段就记下这一刻的真实钟 */
+    public static void track(AbstractKuva entity, @Nullable RawAnimation clip) {
+        if (clip != entity.mercyClip) {
+            entity.mercyClip = clip;
+            entity.mercyClipRaw = clip == null ? -1L : rawElapsedMs.applyAsLong(entity);
+        }
+    }
+
     /**
      * 开发命令强制播的片段：返回非 {@code null} 时不管怜悯之击状态，直接播它（准星指着的实体播某一段、冻帧）。
      * 正式版里保持默认，永远是 {@code null}

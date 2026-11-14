@@ -86,6 +86,13 @@ public final class MercyCamera {
 
     private static final Shot[] SHOTS = Shot.values();
 
+    private static final int SHAKE_MS = 260;
+    private static final int SHAKE_HEAVY_MS = 360;
+    /** 震动正弦的基础角频率：照 2.1 弧度 / tick，几路乘 1.7~3.9 后落在 11~26 Hz */
+    private static final float SHAKE_RAD_PER_MS = 2.1F / 50.0F;
+    private static final int FOV_IN_MS = 60;
+    private static final int FOV_OUT_MS = 220;
+
     /** 一个机位：位置、注视点、FOV；{@code ok} 为假时这一段退回玩家镜头 */
     record ShotPose(Vec3 pos, Vec3 look, float fov, boolean ok) {
     }
@@ -537,7 +544,7 @@ public final class MercyCamera {
             pos = pos.subtract(n.scale(0.2D * Math.max(0L, since) / 1000.0D));
         }
         if (EffectsDisplayConfig.screenEffects()) {
-            pos = pos.add(shakeOffset(e, t));
+            pos = pos.add(shakeOffset(e, e.rawElapsed()));
         }
         outX = pos.x;
         outY = pos.y;
@@ -569,18 +576,25 @@ public final class MercyCamera {
 
     // ==================== 推镜、震动、甩镜 ====================
 
-    /** 每一刀刺入：FOV × 0.97，40 ms 收进去、120 ms {@code easeOutCubic} 回来 */
-    private static float push(MercyClient.Exec e, long t) {
-        float k = 1.0F;
-        for (int ts : e.stabs) {
-            long d = t - ts;
-            if (d < 0L || d >= 160L) {
+    /**
+     * 每一刀刺入的 FOV 冲击：60 ms 推近、220 ms 缓回，普通 6%、出结果那一刀 9%。读真实钟，顿帧时照样打出来；
+     * 强度跟着 mercy_shake 走，但最多到 1 倍
+     */
+    private static float fovKick(MercyClient.Exec e, long raw) {
+        float k = Math.min(1.0F, EffectsDisplayConfig.mercyShake());
+        if (k <= 0.0F) {
+            return 1.0F;
+        }
+        float m = 1.0F;
+        for (int i = 0; i < e.stabs.length; i++) {
+            long d = raw - e.stabs[i];
+            if (d < 0L || d >= FOV_IN_MS + FOV_OUT_MS) {
                 continue;
             }
-            float env = d < 40L ? d / 40.0F : 1.0F - outCubic((d - 40L) / 120.0F);
-            k *= 1.0F - 0.03F * env;
+            float env = d < FOV_IN_MS ? outCubic(d / (float) FOV_IN_MS) : 1.0F - sine((d - FOV_IN_MS) / (float) FOV_OUT_MS);
+            m *= 1.0F - (MercyTimeline.isHeavyStab(e.plan, i) ? 0.09F : 0.06F) * env * k;
         }
-        return k;
+        return m;
     }
 
     /** 奴仆处决的轻推近（选项开着才有）：200 ms 进 200 ms 出 */
@@ -597,21 +611,45 @@ public final class MercyCamera {
         return e.stabs;
     }
 
-    /** 每一刀刺入时镜头位置沿随机方向偏 0.02 格，150 ms 内按 (1 − u)² 衰减；出结果那一刀 × 1.6 */
-    private static Vec3 shakeOffset(MercyClient.Exec e, long t) {
+    /**
+     * 每一刀刺入的位置冲量：主要沿刺入方向往前顶，侧向、上下再叠几路不同频率的正弦（平滑、不抽搐）。
+     * 普通 0.06 格、出结果那一刀 × 1.6，乘 mercy_shake
+     */
+    private static Vec3 shakeOffset(MercyClient.Exec e, long raw) {
+        float k = EffectsDisplayConfig.mercyShake();
+        if (k <= 0.0F) {
+            return Vec3.ZERO;
+        }
         int[] stabs = stabTimes(e);
         double x = 0.0D, y = 0.0D, z = 0.0D;
         for (int i = 0; i < stabs.length; i++) {
-            float amp = shakeEnvelope(t - stabs[i], 150) * (MercyTimeline.isHeavyStab(e.plan, i) ? 1.6F : 1.0F);
-            if (amp <= 0.0F) {
+            boolean heavy = MercyTimeline.isHeavyStab(e.plan, i);
+            long d = raw - stabs[i];
+            float env = impactEnvelope(d, heavy ? SHAKE_HEAVY_MS : SHAKE_MS);
+            if (env <= 0.0F) {
                 continue;
             }
-            int seed = e.targetId * 31 + i * 7;
-            x += hash(seed) * 0.02D * amp;
-            y += hash(seed + 1) * 0.02D * amp;
-            z += hash(seed + 2) * 0.02D * amp;
+            double amp = 0.06D * (heavy ? 1.6D : 1.0D) * env * k;
+            float ph = hash(e.targetId * 31 + i * 7) * Mth.PI;
+            float w = d * SHAKE_RAD_PER_MS;
+            double along = amp * (0.7D + 0.3D * Mth.sin(2.7F * w + ph));
+            double side = amp * 0.45D * (0.6F * Mth.sin(1.9F * w + ph) + 0.4F * Mth.sin(3.3F * w + 2.0F * ph));
+            double up = amp * 0.35D * (0.6F * Mth.sin(2.3F * w + 3.0F * ph) + 0.4F * Mth.sin(3.7F * w + ph));
+            // f 从目标指向处决者，刀往反方向走
+            x += -e.f.x * along + e.s.x * side;
+            y += up;
+            z += -e.f.z * along + e.s.z * side;
         }
         return new Vec3(x, y, z);
+    }
+
+    /** 冲量包络：前 1/8 冲到顶，之后按平方衰减 */
+    private static float impactEnvelope(long d, int ms) {
+        if (d < 0L || d >= ms) {
+            return 0.0F;
+        }
+        float u = d / (float) ms;
+        return Math.min(1.0F, u * 8.0F) * (1.0F - u) * (1.0F - u);
     }
 
     private static float shakeEnvelope(long d, int ms) {
@@ -641,15 +679,16 @@ public final class MercyCamera {
             return;
         }
         long t = e.elapsed();
+        long raw = e.rawElapsed();
         Shot s = shotAt(e, t);
         if (s != Shot.GAME) {
-            event.setFOV(pose(e, s).fov * push(e, t));
+            event.setFOV(pose(e, s).fov * fovKick(e, raw));
         } else if (e.variant.thrall) {
             if (EffectsDisplayConfig.thrallPushIn()) {
                 event.setFOV(event.getFOV() * thrallPush(e, t));
             }
         } else if (t >= MercyBeats.lich(e.variant).cutIn) {
-            event.setFOV(event.getFOV() * push(e, t));
+            event.setFOV(event.getFOV() * fovKick(e, raw));
         }
     }
 
@@ -661,21 +700,30 @@ public final class MercyCamera {
             return;
         }
         long t = e.elapsed();
+        long raw = e.rawElapsed();
         Shot s = shotAt(e, t);
         int[] stabs = stabTimes(e);
+        float k = EffectsDisplayConfig.mercyShake();
         float yaw = 0.0F, pitch = 0.0F, roll = 0.0F;
         boolean firstPerson = Minecraft.getInstance().options.getCameraType().isFirstPerson();
         for (int i = 0; i < stabs.length; i++) {
-            long d = t - stabs[i];
+            long d = raw - stabs[i];
             int seed = e.targetId * 31 + i * 7 + 11;
             if (s != Shot.GAME || !e.variant.thrall) {
-                // 运镜里（以及关了电影镜头的第三人称）：俯仰 / 偏航各 ±0.5°，150 ms
-                float amp = shakeEnvelope(d, 150) * (MercyTimeline.isHeavyStab(e.plan, i) ? 1.6F : 1.0F);
-                pitch += hash(seed) * 0.5F * amp;
-                yaw += hash(seed + 1) * 0.5F * amp;
+                // 运镜里（以及关了电影镜头的第三人称）：几路正弦叠加乘冲量包络，1.2°、出结果那一刀 × 1.6
+                boolean heavy = MercyTimeline.isHeavyStab(e.plan, i);
+                float env = impactEnvelope(d, heavy ? SHAKE_HEAVY_MS : SHAKE_MS);
+                if (env > 0.0F && k > 0.0F) {
+                    float a = 1.2F * (heavy ? 1.6F : 1.0F) * env * k;
+                    float ph = hash(seed) * Mth.PI;
+                    float w = d * SHAKE_RAD_PER_MS;
+                    yaw += a * (0.6F * Mth.sin(1.9F * w + ph) + 0.4F * Mth.sin(3.3F * w + 2.0F * ph));
+                    pitch += a * (0.6F * Mth.sin(2.3F * w + 3.0F * ph) + 0.4F * Mth.sin(3.9F * w + 4.0F * ph));
+                    roll += 0.5F * a * Mth.sin(1.7F * w + 5.0F * ph);
+                }
             } else if (firstPerson) {
                 // 奴仆第一人称：轻震，俯仰 ±0.4°、偏航 ±0.3°，100 ms
-                float amp = shakeEnvelope(d, 100);
+                float amp = shakeEnvelope(d, 100) * k;
                 pitch += hash(seed) * 0.4F * amp;
                 yaw += hash(seed + 1) * 0.3F * amp;
             }

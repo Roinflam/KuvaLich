@@ -4,6 +4,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import pers.roinflam.kuvalich.mercy.MercyAnimSelector;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
+import pers.roinflam.kuvalich.mercy.MercyHitstop;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 import software.bernie.geckolib.core.animation.RawAnimation;
@@ -81,6 +82,14 @@ public final class MercyBeatsDump {
                 fill[k] = MercyHud.fillMs(p, k);
             }
             banner = wrong == 0 ? -1 : b.fill(wrong) + b.failBanner;
+            int[] st = MercyTimeline.stabTimes(p);
+            int[] hs = b.hitstopMs(p.stabs(), p.prefix());
+            double maxLag = 0.0D;
+            for (int ms : b.serverVisibleMs(p.stabs(), p.prefix())) {
+                maxLag = Math.max(maxLag, MercyHitstop.lag(st, hs, ms));
+            }
+            out.append("hitstop ").append(Arrays.toString(hs)).append(" serverLagMax ")
+                    .append(Math.round(maxLag)).append('\n');
         } else {
             // 奴仆没有三格；改之前这里打的是全局那份
             fill = new int[]{0, 830, 1680, 2670};

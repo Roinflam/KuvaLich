@@ -36,6 +36,7 @@ import pers.roinflam.kuvalich.client.sound.KuvaMixer;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.mercy.MercyAnimSelector;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
+import pers.roinflam.kuvalich.mercy.MercyHitstop;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
@@ -131,6 +132,9 @@ public final class MercyClient {
         int endMs;
         /** 这一场每一刀刺入的时刻（开始时算好，镜头和刀模每帧读，不再分配） */
         final int[] stabs;
+        /** 每一刀的顿帧（毫秒，和 {@link #stabs} 对齐）；奴仆、关了顿帧的是 {@code null}，开场定下，中途改设置不跳 */
+        @Nullable
+        final int[] hitstop;
         MercyTimeline timeline;
         MercyPose.Track pose;
         final float bodyScale;
@@ -178,6 +182,8 @@ public final class MercyClient {
             this.hudUntilMs = cinematic ? MercyTimeline.hudUntilMs(plan, shortOutro) : 0;
             this.endMs = MercyTimeline.endMs(plan, shortOutro);
             this.stabs = MercyTimeline.stabTimes(plan);
+            this.hitstop = !variant.thrall && EffectsDisplayConfig.mercyHitstop()
+                    ? MercyBeats.lich(variant).hitstopMs(plan.stabs(), plan.prefix()) : null;
             this.startMs = KuvaFxDirector.clockMs();
             this.timeline = MercyTimeline.build(plan);
             this.bodyScale = target instanceof AbstractKuva k ? k.mercyBodyScale() : 1.0F;
@@ -189,8 +195,17 @@ public final class MercyClient {
             this.hero = h.follow(target).until(holding ? (int) (endMs + HOLD_MAX_MS) : endMs);
         }
 
-        /** 已过毫秒（演出钟；冻帧时停在冻住的那一刻，等选择时停在挂起点） */
+        /** 演出钟：真实钟套上顿帧。姿态、刀、玄骸片段、界面填格、时间轴阶段读它 */
         long elapsed() {
+            long t = rawElapsed();
+            return hitstop == null ? t : MercyHitstop.warp(stabs, hitstop, t);
+        }
+
+        /**
+         * 不受顿帧影响的已过毫秒（冻帧时停在冻住的那一刻，等选择时停在挂起点）。震动、FOV、冲击环、屏幕脉冲读它，
+         * 不然顿帧那一下画面全停、冲量要等追回才放出来
+         */
+        long rawElapsed() {
             if (frozenAt >= 0L) {
                 return frozenAt;
             }
@@ -338,6 +353,21 @@ public final class MercyClient {
             e = BY_EXECUTOR.get(entityId);
         }
         return e == null ? -1L : e.elapsed();
+    }
+
+    /** 同 {@link #elapsedMs}，但不受顿帧影响 */
+    public static long rawElapsedMs(int entityId) {
+        Exec e = BY_TARGET.get(entityId);
+        return e == null ? -1L : e.rawElapsed();
+    }
+
+    /** 玄骸片段从真实时刻 {@code clipStartRaw} 开播，现在该用的速度（见 {@link MercyHitstop#clipSpeed}） */
+    static double clipSpeed(AbstractKuva k, long clipStartRaw) {
+        Exec e = BY_TARGET.get(k.getId());
+        if (e == null || e.hitstop == null || clipStartRaw < 0L) {
+            return 1.0D;
+        }
+        return MercyHitstop.clipSpeed(e.stabs, e.hitstop, clipStartRaw, e.rawElapsed());
     }
 
     /** 本地玩家当前参与的那场处决；没有为 {@code null} */
@@ -490,7 +520,7 @@ public final class MercyClient {
             return false;
         }
         e.frozenAt = Math.max(0L, ms);
-        e.timeline.seek(e, e.frozenAt);
+        e.timeline.seek(e, e.elapsed());
         return true;
     }
 
@@ -862,6 +892,8 @@ public final class MercyClient {
             event.enqueueWork(() -> {
                 MercyAnimSelector.elapsedMs = e -> MercyClient.elapsedMs(e.getId());
                 MercyAnimSelector.planBits = MercyClient::planBits;
+                MercyAnimSelector.rawElapsedMs = e -> MercyClient.rawElapsedMs(e.getId());
+                MercyAnimSelector.clipSpeed = MercyClient::clipSpeed;
             });
         }
     }

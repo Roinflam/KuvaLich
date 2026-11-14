@@ -216,6 +216,10 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     /** 客户端字段：进入倒地时动画计时器的时刻，没有为 NaN；选倒地进入片段时记 */
     public double downedEnterTick = Double.NaN;
+    /** 主控制器眼下在播的怜悯之击片段，和它开播时处决的真实钟（毫秒）；不在播是 null / −1。客户端顿帧算速度用 */
+    @Nullable
+    public RawAnimation mercyClip;
+    public long mercyClipRaw = -1L;
 
     /** 客户端字段：倒地剩余时间那份同步数据最近一次到达时的 {@link #tickCount} */
     private int mercyTimerSyncTick;
@@ -475,18 +479,22 @@ public abstract class AbstractKuva extends Monster implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "controller", 0, state -> {
+        AnimationController<AbstractKuva> main = new AnimationController<>(this, "controller", 0, state -> {
             // 怜悯之击的片段之间不插值；走、跑、待机的过渡在 locomotion 里另设
             state.getController().transitionLength(0);
             // 倒地、处决、消散期间由怜悯之击挑片段；不在这些状态时返回 null，照原来的走路 / 待机
             RawAnimation mercy = MercyAnimSelector.pick(this, state);
+            MercyAnimSelector.track(this, mercy);
             if (mercy != null) {
                 // 只有从倒地循环站起来那一段要淡进来（循环停在哪一帧不一定）
                 state.getController().transitionLength(MercyAnimSelector.blendTicks(mercy));
                 return state.setAndContinue(mercy);
             }
             return this.bodyAnim.locomotion(state, this.entityData.get(HAS_TARGET));
-        }));
+        });
+        // 顿帧时玄骸跟着停：速度按比值给（见 MercyHitstop.clipSpeed），不在处决里是 1
+        main.setAnimationSpeedHandler(MercyAnimSelector::speed);
+        controllers.add(main);
         // 说话：后注册的控制器盖住同一根骨骼，说话时头部不再跟着走路 / 跑步摆。
         // 计时用客户端演出钟（静态钩子），不用 tickCount：服务端节流时 tickCount 会和声音对不上。
         // 奴仆的 talkUntilMs 永远是 0，等于不播

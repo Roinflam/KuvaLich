@@ -60,6 +60,8 @@ public final class EffectsDisplayConfig {
     private static ForgeConfigSpec.BooleanValue thrallThirdPerson;
     private static ForgeConfigSpec.BooleanValue thrallPushIn;
     private static ForgeConfigSpec.BooleanValue mercyShortOutro;
+    private static ForgeConfigSpec.BooleanValue mercyHitstop;
+    private static ForgeConfigSpec.DoubleValue mercyShake;
     private static ForgeConfigSpec.BooleanValue mercyRankupSound;
     private static ForgeConfigSpec.BooleanValue kuvaStateFx;
     private static ForgeConfigSpec.BooleanValue hudNotices;
@@ -87,6 +89,8 @@ public final class EffectsDisplayConfig {
     private static volatile boolean cachedThrallThirdPerson = false;
     private static volatile boolean cachedThrallPushIn = false;
     private static volatile boolean cachedMercyShortOutro = false;
+    private static volatile boolean cachedMercyHitstop = true;
+    private static volatile float cachedMercyShake = 1.0F;
     private static volatile boolean cachedMercyRankupSound = false;
     private static volatile boolean cachedKuvaStateFx = true;
     private static volatile boolean cachedHudNotices = true;
@@ -192,6 +196,14 @@ public final class EffectsDisplayConfig {
                         "After a successful Mercy, skip the last third-person shot and take control back right after the close-up",
                         "怜悯之击成功后跳过最后的第三人称镜头，特写完就交还操作")
                 .define("mercy_short_outro", false);
+        mercyHitstop = builder.comment(
+                        "Brief hit-stop on each stab during a Mercy: the motion pauses for a moment, then catches up",
+                        "怜悯之击每一刀刺入时动作短暂停顿，随后追回")
+                .define("mercy_hitstop", true);
+        mercyShake = builder.comment(
+                        "Strength of camera shake and zoom impact on each stab during a Mercy. 0 turns them off, 2 doubles the shake",
+                        "怜悯之击每一刀刺入时镜头震动和推近冲击的强度；0 为关闭，2 为震动加倍")
+                .defineInRange("mercy_shake", 1.0D, 0.0D, 2.0D);
         mercyRankupSound = builder.comment(
                         "Play the rank-up sound when the Lich rank-up banner appears",
                         "玄骸升级横幅出现时放升级音")
@@ -322,6 +334,16 @@ public final class EffectsDisplayConfig {
         return cachedMercyShortOutro;
     }
 
+    /** 怜悯之击每刀刺入的顿帧 */
+    public static boolean mercyHitstop() {
+        return cachedMercyHitstop;
+    }
+
+    /** 怜悯之击刺入时镜头震动和推近冲击的强度（0~2） */
+    public static float mercyShake() {
+        return cachedMercyShake;
+    }
+
     /** 升级横幅出现时放一声低音 */
     public static boolean mercyRankupSound() {
         return cachedMercyRankupSound;
@@ -362,6 +384,8 @@ public final class EffectsDisplayConfig {
             cachedThrallThirdPerson = thrallThirdPerson.get();
             cachedThrallPushIn = thrallPushIn.get();
             cachedMercyShortOutro = mercyShortOutro.get();
+            cachedMercyHitstop = mercyHitstop.get();
+            cachedMercyShake = mercyShake.get().floatValue();
             cachedMercyRankupSound = mercyRankupSound.get();
             cachedKuvaStateFx = kuvaStateFx.get();
             cachedHudNotices = hudNotices.get();

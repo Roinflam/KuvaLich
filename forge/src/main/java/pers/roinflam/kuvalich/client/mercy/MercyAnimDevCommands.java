@@ -57,7 +57,8 @@ public final class MercyAnimDevCommands {
     /** 实体 id → 强制播的片段 */
     private static final Int2ObjectMap<Forced> FORCED = new Int2ObjectOpenHashMap<>();
 
-    private static final Function<AbstractKuva, Double> NORMAL_SPEED = e -> 1.0D;
+    /** 放开时换回注册控制器时装的那个（顿帧要用） */
+    private static final Function<AbstractKuva, Double> NORMAL_SPEED = MercyAnimSelector::speed;
 
     private MercyAnimDevCommands() {
     }

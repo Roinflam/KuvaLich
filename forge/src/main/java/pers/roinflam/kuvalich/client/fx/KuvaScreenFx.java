@@ -38,6 +38,8 @@ public final class KuvaScreenFx {
     private static final Effect VIG = new Effect();
     private static final Effect FLASH = new Effect();
     private static final Effect BRACKETS = new Effect();
+    /** 处决刺入的边缘脉冲：和暗角分开，三刀间隔不到暗角的冷却 */
+    private static final Effect PULSE = new Effect();
 
     private KuvaScreenFx() {
     }
@@ -115,6 +117,14 @@ public final class KuvaScreenFx {
         VIG.fire(now, rgb, Math.min(VIGNETTE_MAX, peak), inMs, holdMs, outMs, tier);
     }
 
+    /** 边缘一圈脉冲，没有冷却，后一次直接盖掉前一次；只给自己的处决演出用 */
+    public static void edgePulse(int rgb, float peak, int inMs, int outMs) {
+        if (!EffectsDisplayConfig.screenEffects()) {
+            return;
+        }
+        PULSE.fire(KuvaFxDirector.clockMs(), rgb, Math.min(VIGNETTE_MAX, peak), inMs, 0, outMs, FxTier.S);
+    }
+
     /** 整屏闪一下，{@code peak} 是起始不透明度，随后按淡出曲线消失；关掉闪白时改成同色暗角 */
     public static void flash(int rgb, float peak, int ms, FxTier tier) {
         if (!EffectsDisplayConfig.screenFlash()) {
@@ -147,18 +157,8 @@ public final class KuvaScreenFx {
 
     private static void render(ForgeGui gui, GuiGraphics g, float partialTick, int width, int height) {
         long now = KuvaFxDirector.clockMs();
-        float v = VIG.value(now);
-        if (v > 0.002F) {
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            g.setColor(((VIG.rgb >> 16) & 0xFF) / 255.0F, ((VIG.rgb >> 8) & 0xFF) / 255.0F, (VIG.rgb & 0xFF) / 255.0F, v);
-            try {
-                g.blit(VIGNETTE, 0, 0, width, height, 0.0F, 0.0F, 256, 256, 256, 256);
-            } finally {
-                g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-                RenderSystem.disableBlend();
-            }
-        }
+        drawVignette(g, VIG, VIG.value(now), width, height);
+        drawVignette(g, PULSE, PULSE.value(now), width, height);
         float f = FLASH.value(now);
         if (f > 0.002F) {
             int a = Math.round(f * 255.0F);
@@ -172,6 +172,21 @@ public final class KuvaScreenFx {
             if (b > 0.01F) {
                 drawBrackets(g, width, height, ((int) (b * 220.0F) << 24) | BRACKETS.rgb);
             }
+        }
+    }
+
+    private static void drawVignette(GuiGraphics g, Effect fx, float v, int width, int height) {
+        if (v <= 0.002F) {
+            return;
+        }
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        g.setColor(((fx.rgb >> 16) & 0xFF) / 255.0F, ((fx.rgb >> 8) & 0xFF) / 255.0F, (fx.rgb & 0xFF) / 255.0F, v);
+        try {
+            g.blit(VIGNETTE, 0, 0, width, height, 0.0F, 0.0F, 256, 256, 256, 256);
+        } finally {
+            g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.disableBlend();
         }
     }
 

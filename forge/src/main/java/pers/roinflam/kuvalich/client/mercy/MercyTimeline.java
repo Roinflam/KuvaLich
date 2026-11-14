@@ -318,6 +318,7 @@ public final class MercyTimeline {
                         : (n == 1 ? KuvaLichSounds.MERCY_STAB_1.get() : KuvaLichSounds.MERCY_STAB_2.get());
                 world(ev, chest(t), vol, KuvaSoundPlayer.jitter(1.0F, 0.02F));
                 RequiemFx.bladeSpark(t, n, false);
+                MercyImpactFx.stab(x, n, result);
             });
             // 格子填满（锁扣声）；判错那一格换成碎裂声
             final boolean wrong = oc == Outcome.FAIL && n == k;
