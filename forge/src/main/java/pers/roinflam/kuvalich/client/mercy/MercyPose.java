@@ -9,9 +9,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
+import pers.roinflam.kuvalich.mercy.MercyCurve;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 
@@ -43,7 +45,9 @@ import java.util.WeakHashMap;
  * <p>抓握点、刀口按套路各一组，写在模型坐标里（像素，原点在脖子根，x 往左、y 往下、z 往后，和人形模型一样），
  * 是按目标倒地 / 被抓时的样子量的。头一律看向目标胸口。关键帧之间默认 {@code easeInOutSine}；出刀的帧用
  * {@code easeOutCubic}、从上一帧起 110 ms 内到位；拔刀用 {@code easeInQuad}（越拔越快）；抓上去那一下用 {@code easeOutBack}
- * 冲过一点再回来；切镜时直接摆好的帧不插值。手臂按「先定指向、再绕自己转」算成四元数，再拆回模型要的 ZYX 欧拉角。</p>
+ * 冲过一点再回来；切镜时直接摆好的帧不插值。手臂按「先定指向、再绕自己转」算成四元数，再拆回模型要的 ZYX 欧拉角。
+ * 上面是旧写法。正面直刺已经换成新写法（{@link MercyCurve}）：帧间速度连续、出刀有预备、拔刀有过冲、各部位错峰起步、
+ * 迈步单独一层、头有滞后、首尾和原版姿态混合；别的套路铺过来之前照旧，逐帧不变。</p>
  *
  * <p><b>整身轨道</b>：上面这些只动身上的部件，人钉在站位上，再怎么摆也是站桩。每一套另有一条整身轨道管整个人在哪、
  * 朝哪、翻到什么角度：「绕」= 绕目标转了多少度（0 是开始的站位，180 是目标身后）、「距」= 比站位离目标远多少格、
@@ -72,9 +76,33 @@ public final class MercyPose {
     /** 整身偏移在开头和结尾怎么和真实位置接上：这么多毫秒内渐变 */
     private static final int BODY_BLEND_MS = 200;
 
-    private static final int SINE = 0, OUT = 1, SNAP = 2, IN = 3, BACK = 4;
-    /** 出刀帧从上一帧起多久到位 */
-    private static final int OUT_MS = 110;
+    private static final int SINE = MercyCurve.SINE, OUT = MercyCurve.OUT, SNAP = MercyCurve.SNAP, IN = MercyCurve.IN,
+            BACK = MercyCurve.BACK;
+    // 新写法（正面直刺）才用的几种，见 MercyCurve
+    private static final int CURVE = MercyCurve.CURVE, ANTIC = MercyCurve.ANTIC, OVER = MercyCurve.OVER,
+            DECEL = MercyCurve.DECEL;
+    private static final int OUT_MS = MercyCurve.OUT_MS;
+    /**
+     * 新写法各通道的起步延迟（毫秒，负的是提前）：胯和扭身比手臂早 45、躯干早 25、头早 75，手腕的拧晚 25。
+     * 以手臂为 0，刀落下去的那一刻还是关键帧写的时刻；腿另由迈步那层管，也按 0
+     */
+    private static final int[] STAGGER = new int[N];
+
+    static {
+        STAGGER[TWIST] = -45;
+        STAGGER[SQUAT] = -45;
+        STAGGER[SHIFT] = -45;
+        STAGGER[LEAN] = -25;
+        STAGGER[R_ROLL] = 25;
+        STAGGER[L_ROLL] = 25;
+        STAGGER[NOD] = -75;
+        STAGGER[TILT] = -75;
+    }
+
+    /** 新写法交还前这么久把姿态的权重淡到 0，和原版的站立 / 走路姿态混；开头同理从原版淡入 */
+    private static final int BLEND_OUT_MS = 250, BLEND_IN_MS = 150;
+    /** 头看向目标的一阶滞后 */
+    private static final double HEAD_LAG_MS = 80.0D;
     private static final float NA = Float.NaN;
     private static final float DEG = (float) Math.PI / 180.0F;
     private static final double RAD_TO_DEG = 180.0D / Math.PI;
@@ -110,6 +138,16 @@ public final class MercyPose {
         private final int strainFrom, strainTo;
         /** 过了这一刻不再覆盖（交还后让原版的走路摆臂接手） */
         private final int endT;
+        /** 按新写法排的（现在只有正面直刺）：曲线、错峰、迈步、头的滞后、和原版混合都只对它生效，别的套路逐帧照旧 */
+        private boolean v2;
+        private MercyCurve.Keys curve, bodyCurve;
+        /** 迈步那层：叠在两条腿上的摆角；没有为 null */
+        @Nullable
+        private MercyCurve.Keys feet;
+        /** 这一场抖动的幅度和相位（按场次种子） */
+        private float shakeAmp = 1.0F, phaseA, phaseB;
+        private long headT = Long.MIN_VALUE;
+        private float headYaw, headPitch;
 
         private Track(Key[] keys, Key[] fpRight, Key[] fpLeft, Key[] body, int[] stabs, float[] weight, Anchors anchors,
                       int strainFrom, int strainTo) {
@@ -390,11 +428,62 @@ public final class MercyPose {
                 k(s3 + 90, SINE, p().tw(30).ln(33).sq(0.3F).sh(4.5F).hd(10, 0))));
     }
 
-    private static List<Key> lichAFull(MercyBeats.Lich b) {
-        int s3 = b.stab(2);
-        List<Key> table = lichA(b);
-        table.addAll(kickOff(s3));
-        return table;
+    /**
+     * 正面直刺按新写法排：姿势和旧表差不多，节奏重排。第一刀快而狠，只蓄 90 ms；第二刀迈一步、拧得久；第三刀
+     * 举过头蓄 280 ms 再扎。出刀先往回收一点再甩出去，拔刀越拔越快、顺势带过头再落回下一刀的蓄力位。
+     * 翻滚绕背的前两刀还复用旧的 {@link #lichA}，那张表别动
+     */
+    private static List<Key> lichA2(MercyBeats.Lich b) {
+        int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
+        List<Key> t = new ArrayList<>(List.of(
+                k(0, CURVE, start()),
+                k(130, CURVE, gather()),
+                k(310, OVER, p().tw(-10).ln(15).sq(0.1F).sh(1.5F).r(30, -30, 0).l(110, 20, 0).grip(1)
+                        .legs(-16, 18).hd(0, 0)),
+                k(420, CURVE, p().tw(-8).ln(11).sq(0.05F).sh(0.8F).r(36, -28, 0).hd(-2, 0)),
+                k(s1 - 220, CURVE, p().tw(-24).ln(9).sq(0.15F).sh(-0.3F).r(80, -6, -15).aim(0.7F).pull(3.5F).hd(0, -3)),
+                k(s1 - 90, CURVE, p().tw(-30).ln(7).sq(0.2F).sh(-0.6F).r(80, -8, -20).pull(4.5F).legs(-18, 20)),
+                k(s1, ANTIC, p().tw(16).ln(17).sq(0.05F).sh(2.5F).r(85, 5, 0).aim(1).pull(-1.5F).legs(-20, 20).hd(3, 0)),
+                k(s1 + 80, CURVE, p().tw(20).ln(19).sh(3).hd(5, 2)),
+                k(s1 + 240, CURVE, p().tw(22).ln(18).sq(0.15F).r(NA, NA, 40).hd(4, 4)),
+                k(s1 + 380, CURVE, p().tw(20).ln(17).sq(0.1F).r(NA, NA, 32)),
+                k(s1 + 520, IN, p().tw(-16).ln(10).sq(0.1F).sh(0.6F).r(80, -8, -12).aim(0.6F).pull(3.4F).hd(0, -2)),
+                k(s2 - 130, OVER, p().tw(-30).ln(7).sq(0.2F).sh(-0.3F).r(80, -10, -22).aim(0.7F).pull(4.5F)
+                        .legs(-20, 22)),
+                // 第二刀：迈步那层另算（见 feet），这里只管上身
+                k(s2, ANTIC, p().tw(20).ln(21).sq(0.05F).sh(3.2F).r(88, 6, 0).aim(1).pull(-2).reach(2).legs(-22, 24)
+                        .hd(4, 0)),
+                k(s2 + 80, CURVE, p().tw(24).ln(23).sh(3.6F).hd(6, -2)),
+                k(s2 + 240, CURVE, p().tw(26).ln(22).sq(0.15F).r(NA, NA, -40).hd(5, -4)),
+                k(s2 + 400, CURVE, p().tw(28).ln(23).sq(0.2F).r(NA, NA, -48).hd(6, -5)),
+                k(s2 + 500, CURVE, p().tw(25).ln(21).r(NA, NA, -36)),
+                k(s2 + 580, IN, p().tw(-14).ln(8).sq(0.15F).sh(0.5F).r(100, -18, 0).aim(0.3F).pull(3).reach(4).hd(-2, 0)),
+                // 第三刀：甩上头顶，顶在那儿再往后拉，猛扎下去
+                k(s3 - 280, OVER, p().tw(-32).ln(1).sq(0.3F).sh(-1).r(152, -12, 0).aim(0).pull(1).hd(-6, 0)),
+                k(s3, ANTIC, p().tw(26).ln(30).sq(0.15F).sh(4).r(80, 8, 0).aim(1).pull(-1).reach(7).legs(-26, 28)
+                        .hd(8, 0)),
+                k(s3 + 90, CURVE, p().tw(30).ln(33).sq(0.3F).sh(4.5F).hd(10, 0))));
+        t.add(k(s3 + 170, CURVE, p().tw(10).ln(22).sq(0.7F).sh(1).r(70, 6, 0).aim(0.3F).pull(0).l(60, 10, 0).grip(0)
+                .legs(34, 58).hd(0, 0)));
+        t.add(k(s3 + 260, OVER, p().tw(0).ln(-26).sq(0).sh(0).r(125, -18, 0).aim(0).l(125, -18, 0).legs(70, 78)
+                .hd(-14, 0)));
+        t.add(k(s3 + 520, CURVE, tucked()));
+        t.add(k(s3 + 700, IN, landed()));
+        // 落地往下一沉卸力
+        t.add(k(s3 + 790, CURVE, landed().ln(32).hd(7, 0)));
+        t.add(k(s3 + 980, OUT, flick()));
+        t.add(k(s3 + 1250, CURVE, ready()));
+        return t;
+    }
+
+    /** 第二刀的迈步：前腿（左）在刺入前 160 ms 抬、前 20 ms 落，后腿蹬一下；只叠在腿上 */
+    private static List<Key> stepA2(int s2) {
+        return List.of(
+                k(0, CURVE, p().legs(0, 0)),
+                k(s2 - 160, CURVE, p().legs(0, 0)),
+                k(s2 - 90, CURVE, p().legs(-6, 18)),
+                k(s2 - 20, IN, p().legs(0, 0)),
+                k(s2 + 200, CURVE, p().legs(0, 0)));
     }
 
     /** 背后锁颈：左臂从后面扣住它的脖子；第二刀把它的头往后扳着捅，拔刀后原地拧身转满一圈，借着转势捅第三刀 */
@@ -718,7 +807,7 @@ public final class MercyPose {
 
     private static List<Key> tableOf(MercyVariant v) {
         return switch (v) {
-            case LICH_A -> lichAFull(MercyBeats.lich(v));
+            case LICH_A -> lichA2(MercyBeats.lich(v));
             case LICH_B -> lichB(MercyBeats.lich(v));
             case LICH_C -> lichCFull(MercyBeats.lich(v));
             case LICH_D -> lichD(MercyBeats.lich(v));
@@ -763,14 +852,24 @@ public final class MercyPose {
         return b;
     }
 
-    private static List<Key> bodyA(MercyBeats.Lich beats) {
+    /**
+     * 正面直刺新写法的脚下。往前送超过 0.25 格必须迈步，不够的只压重心不挪人：第一刀不挪；第二刀迈一步送 0.36 格，
+     * 人跟着落脚走、先快后慢，之后就站在前面不退回去（退回去又得迈一步）；第三刀只再压 0.15 格
+     */
+    private static List<Key> bodyA2(MercyBeats.Lich beats) {
         int s1 = beats.stab(0), s2 = beats.stab(1), s3 = beats.stab(2);
         List<Key> b = startedBody();
-        lunge(b, s1, 0.22F);
-        lunge(b, s2, 0.32F);
-        b.add(k(s3 - 115, SINE, m().dist(0.2F)));
-        b.add(k(s3, OUT, m().dist(-0.45F).up(-0.06F)));
-        b.add(k(s3 + 90, SINE, m().dist(-0.5F)));
+        b.add(k(s1 - 90, CURVE, m().dist(0.04F).up(-0.01F)));
+        b.add(k(s1, ANTIC, m().dist(-0.08F).up(-0.06F)));
+        b.add(k(s1 + 300, CURVE, m().dist(-0.06F).up(-0.03F)));
+        b.add(k(s1 + 520, CURVE, m().dist(0.02F).up(0)));
+        b.add(k(s2 - 160, CURVE, m().dist(0.06F).up(0)));
+        b.add(k(s2 - 20, DECEL, m().dist(-0.3F).up(-0.04F)));
+        b.add(k(s2, CURVE, m().dist(-0.34F).up(-0.06F)));
+        b.add(k(s2 + 400, CURVE, m().dist(-0.33F).up(-0.03F)));
+        b.add(k(s3 - 120, CURVE, m().dist(-0.29F).up(0)));
+        b.add(k(s3, IN, m().dist(-0.45F).up(-0.06F)));
+        b.add(k(s3 + 90, CURVE, m().dist(-0.5F)));
         hop(b, s3, -0.5F, 0.0F, 1.5F);
         return b;
     }
@@ -901,7 +1000,7 @@ public final class MercyPose {
 
     private static List<Key> bodyOf(MercyVariant v, float scale) {
         return switch (v) {
-            case LICH_A -> bodyA(MercyBeats.lich(v));
+            case LICH_A -> bodyA2(MercyBeats.lich(v));
             case LICH_B -> bodyB(MercyBeats.lich(v));
             case LICH_C -> bodyC(MercyBeats.lich(v));
             case LICH_D -> bodyD(MercyBeats.lich(v));
@@ -968,6 +1067,11 @@ public final class MercyPose {
      * @param scale 目标身材相对动作原本按的那只（{@link AbstractKuva#mercyBodyScale}），奴仆几套的刀口、抓握点和跳起的高度按它缩
      */
     static Track track(MercyPlan.Plan p, boolean shortOutro, float scale) {
+        return track(p, shortOutro, scale, 0);
+    }
+
+    /** @param seed 这一场的种子，只管抖动的幅度和相位 */
+    static Track track(MercyPlan.Plan p, boolean shortOutro, float scale, int seed) {
         MercyTimeline.Outcome oc = MercyTimeline.outcome(p);
         MercyVariant v = p.variant();
         List<Key> table = tableOf(v);
@@ -1077,11 +1181,29 @@ public final class MercyPose {
                 body.add(k(MercyBeats.thrall(v).end, SINE, m()));
             }
         }
+        boolean v2 = v == MercyVariant.LICH_A;
+        if (v2) {
+            // 不再回零硬交：最后一帧停在前一帧的姿势上，交还前那 250 ms 由 apply 和原版姿态混过去
+            out.set(out.size() - 1, k(out.get(out.size() - 1).t, CURVE, p()));
+        }
         Key[] keys = resolve(out);
         Key[][] fp = v.thrall ? thrallFirstPerson(v) : lichFirstPerson(p, stabs);
         Anchors anchors = v.thrall ? scaled(anchorsOf(v), v, scale) : anchorsOf(v);
-        Track tr = new Track(keys, resolve(Arrays.asList(fp[0])), resolve(Arrays.asList(fp[1])), resolve(body), stabs,
+        Key[] bodyKeys = resolve(body);
+        Track tr = new Track(keys, resolve(Arrays.asList(fp[0])), resolve(Arrays.asList(fp[1])), bodyKeys, stabs,
                 weight, anchors, strainFrom, strainTo);
+        if (v2) {
+            tr.v2 = true;
+            tr.curve = curveOf(keys, N);
+            tr.bodyCurve = curveOf(bodyKeys, BN);
+            if (stabs.length >= 2) {
+                tr.feet = curveOf(resolve(stepA2(stabs[1])), N);
+            }
+            int h = seed * 0x9E3779B1;
+            tr.shakeAmp = 0.8F + 0.45F * ((h >>> 8) & 0xFF) / 255.0F;
+            tr.phaseA = ((h >>> 16) & 0xFF) / 255.0F * (float) (Math.PI * 2.0D);
+            tr.phaseB = ((h >>> 24) & 0xFF) / 255.0F * (float) (Math.PI * 2.0D);
+        }
         if (v == MercyVariant.LICH_E) {
             tr.alt = ANCHOR_E;
             MercyBeats.Lich lb = MercyBeats.lich(v);
@@ -1101,11 +1223,10 @@ public final class MercyPose {
         float[] fl = new float[FN];
         float[] b = new float[BN];
         for (int t = 0; t <= end; t += step) {
-            sample(tr.keys, t, v);
-            addLife(tr, t, v);
+            pose(tr, t, v);
             sample(tr.fpRight, t, fr);
             sample(tr.fpLeft, t, fl);
-            sample(tr.body, t, b);
+            sampleBody(tr, t, b);
             out.append(t).append(" P");
             for (float x : v) {
                 out.append(' ').append(x);
@@ -1143,7 +1264,7 @@ public final class MercyPose {
         if (t >= end) {
             return false;
         }
-        sample(keys, t, MOVE);
+        sampleBody(e.pose, t, MOVE);
         float a = MOVE[B_ANG] * e.side * DEG;
         double cos = Mth.cos(a);
         double sin = Mth.sin(a);
@@ -1160,6 +1281,45 @@ public final class MercyPose {
         out.blend = Mth.clamp(Math.min(t, end - t) / (float) BODY_BLEND_MS, 0.0F, 1.0F);
         out.hidden = MOVE[B_HIDE] > 0.5F;
         return true;
+    }
+
+    private static MercyCurve.Keys curveOf(Key[] keys, int width) {
+        int n = keys.length;
+        int[] t = new int[n];
+        int[] start = new int[n];
+        int[] mode = new int[n];
+        float[][] v = new float[n][];
+        for (int i = 0; i < n; i++) {
+            t[i] = keys[i].t;
+            start[i] = keys[i].start;
+            mode[i] = keys[i].mode;
+            v[i] = keys[i].v.length == width ? keys[i].v : Arrays.copyOf(keys[i].v, width);
+        }
+        return new MercyCurve.Keys(t, start, mode, v);
+    }
+
+    /** 这一刻上身各通道的值（含叠上去的顿挫、抖、喘） */
+    private static void pose(Track tr, long t, float[] v) {
+        if (tr.v2) {
+            tr.curve.sampleStaggered(t, STAGGER, v);
+            if (tr.feet != null) {
+                v[R_LEG] += tr.feet.sample(R_LEG, t);
+                v[L_LEG] += tr.feet.sample(L_LEG, t);
+            }
+        } else {
+            sample(tr.keys, t, v);
+        }
+        addLife(tr, t, v);
+    }
+
+    private static void sampleBody(Track tr, long t, float[] dst) {
+        if (tr.v2) {
+            for (int c = 0; c < BN; c++) {
+                dst[c] = tr.bodyCurve.sample(c, t);
+            }
+        } else {
+            sample(tr.body, t, dst);
+        }
     }
 
     /** 表里空着的值沿用上一行（各行都是这一场自己的副本，改了不影响别的场） */
@@ -1215,19 +1375,7 @@ public final class MercyPose {
     }
 
     private static float ease(int mode, float x) {
-        return switch (mode) {
-            case OUT -> {
-                float k = 1.0F - x;
-                yield 1.0F - k * k * k;
-            }
-            case IN -> x * x;
-            case BACK -> {
-                // easeOutBack：冲过头 10% 左右再回来
-                float k = x - 1.0F;
-                yield 1.0F + 2.70158F * k * k * k + 1.70158F * k * k;
-            }
-            default -> (float) (0.5D - 0.5D * Math.cos(Math.PI * x));
-        };
+        return MercyCurve.ease(mode, x);
     }
 
     // ==================== 叠在关键帧上的 ====================
@@ -1258,6 +1406,25 @@ public final class MercyPose {
         return (0.5F + 2.5F * u) * (float) Math.sin(Math.PI * 2.0D * t / 75.0D);
     }
 
+    // 新写法的两种抖：两路周期不成倍数的正弦叠起来，幅度和相位按场次变，不再像马达
+    private static float tremor2(Track tr, long dt) {
+        if (dt < 100L || dt > 420L) {
+            return 0.0F;
+        }
+        float env = (float) Math.sin(Math.PI * (dt - 100L) / 320.0D);
+        return env * tr.shakeAmp * (0.65F * (float) Math.sin(Math.PI * 2.0D * dt / 83.0D + tr.phaseA)
+                + 0.45F * (float) Math.sin(Math.PI * 2.0D * dt / 131.0D + tr.phaseB));
+    }
+
+    private static float strain2(Track tr, long t) {
+        if (tr.strainFrom < 0 || t < tr.strainFrom || t >= tr.strainTo) {
+            return 0.0F;
+        }
+        float u = (t - tr.strainFrom) / (float) (tr.strainTo - tr.strainFrom);
+        return (0.5F + 2.5F * u) * tr.shakeAmp * (0.65F * (float) Math.sin(Math.PI * 2.0D * t / 71.0D + tr.phaseA)
+                + 0.45F * (float) Math.sin(Math.PI * 2.0D * t / 113.0D + tr.phaseB));
+    }
+
     /** 喘气，每捅一刀喘得重一点；交还前 300 ms 收掉，免得最后一帧跳一下 */
     private static float breath(Track tr, long t, int done, float phase) {
         float fade = Mth.clamp((tr.endT - t) / 300.0F, 0.0F, 1.0F);
@@ -1284,14 +1451,19 @@ public final class MercyPose {
                 v[NOD] += 7.0F * w * j;
                 v[L_RAISE] -= 2.5F * w * j;
             }
-            float tr2 = tremor(dt);
+            if (tr.v2 && dt < 300L) {
+                // 刺中那一下头往下一点：先于顿挫到顶
+                float kick = dt / 35.0F;
+                v[NOD] += 4.0F * w * kick * (float) Math.exp(1.0D - kick);
+            }
+            float tr2 = tr.v2 ? tremor2(tr, dt) : tremor(dt);
             if (tr2 != 0.0F) {
                 v[R_RAISE] += 1.2F * w * tr2;
                 v[TWIST] += 0.8F * tr2;
                 v[R_ROLL] += 2.0F * tr2;
             }
         }
-        float s = strain(tr, t);
+        float s = tr.v2 ? strain2(tr, t) : strain(tr, t);
         if (s != 0.0F) {
             v[R_RAISE] += s;
             v[TWIST] += 0.6F * s;
@@ -1311,6 +1483,7 @@ public final class MercyPose {
     private static final float[] SCRATCH = new float[N];
     private static final Body BODY = new Body();
     private static final Quaternionf Q = new Quaternionf();
+    private static final Quaternionf Q_AIM = new Quaternionf();
     /** 原版两条腿的左右位置（建模型时定下，之后原版不再动它） */
     private static final float LEG_X = 1.9F;
     /** 身子、头的 z、头的 zRot 和腿的左右位置被挪过的模型（原版不复位这几样，用完要放回去） */
@@ -1345,8 +1518,11 @@ public final class MercyPose {
         }
         Track tr = e.pose;
         float[] v = SCRATCH;
-        sample(tr.keys, t, v);
-        addLife(tr, t, v);
+        pose(tr, t, v);
+        float mix = tr.v2 ? vanillaMix(tr, t) : 1.0F;
+        if (mix < 1.0F) {
+            storeVanilla(model);
+        }
 
         // 身体：扭、前倾，前倾和蹲按原版下蹲那组偏移挪位置；「送」把上身和胯一起往前挪
         float bodyY = -v[TWIST] * DEG;
@@ -1387,8 +1563,8 @@ public final class MercyPose {
 
         Anchors a = tr.anchorsAt(t);
         float reach = v[REACH];
-        poseArm(model.rightArm, true, v[R_RAISE], v[R_YAW], v[R_ROLL], v[R_AIM], a.sx, a.sy, a.sz - reach, bodyY);
-        poseArm(model.leftArm, false, v[L_RAISE], v[L_YAW], v[L_ROLL], v[L_GRIP], a.gx, a.gy, a.gz - reach, bodyY);
+        poseArm(model.rightArm, true, v[R_RAISE], v[R_YAW], v[R_ROLL], v[R_AIM], a.sx, a.sy, a.sz - reach, bodyY, tr.v2);
+        poseArm(model.leftArm, false, v[L_RAISE], v[L_YAW], v[L_ROLL], v[L_GRIP], a.gx, a.gy, a.gz - reach, bodyY, tr.v2);
 
         // 腿：往前送的时候后脚不动，落在后面的那条腿斜过去补上
         float comp = (float) (Math.atan2(v[SHIFT], 12.0D) * RAD_TO_DEG);
@@ -1420,11 +1596,88 @@ public final class MercyPose {
         float lookPitch = (float) (-Mth.atan2(dy, Math.sqrt(dx * dx + ddz * ddz)) * RAD_TO_DEG);
         float yaw = Mth.wrapDegrees(lookYaw - (moved ? BODY.yaw : entity.yBodyRot));
         float look = moved ? Mth.clamp(Mth.cos(BODY.flip * DEG), 0.0F, 1.0F) : 1.0F;
-        model.head.yRot = Mth.clamp(yaw, -75.0F, 75.0F) * look * DEG;
-        model.head.xRot = Mth.clamp(lookPitch * look + v[NOD], -60.0F, 60.0F) * DEG;
+        float headYaw = Mth.clamp(yaw, -75.0F, 75.0F) * look;
+        float headPitch = lookPitch * look;
+        if (tr.v2) {
+            // 头有惯性：一阶滞后跟过去。按演出钟算，顿帧时跟着停；同一帧画两遍（阴影之类）不会多跟一步
+            long dt = t - tr.headT;
+            if (tr.headT == Long.MIN_VALUE || dt < 0L || dt > 250L) {
+                tr.headYaw = headYaw;
+                tr.headPitch = headPitch;
+            } else if (dt > 0L) {
+                float k = 1.0F - (float) Math.exp(-dt / HEAD_LAG_MS);
+                tr.headYaw += (headYaw - tr.headYaw) * k;
+                tr.headPitch += (headPitch - tr.headPitch) * k;
+            }
+            tr.headT = t;
+            headYaw = tr.headYaw;
+            headPitch = tr.headPitch;
+        }
+        model.head.yRot = headYaw * DEG;
+        model.head.xRot = Mth.clamp(headPitch + v[NOD], -60.0F, 60.0F) * DEG;
         model.head.zRot = v[TILT] * DEG;
+        if (mix < 1.0F) {
+            mixVanilla(model, mix);
+        }
         model.hat.copyFrom(model.head);
         SHIFTED.add(model);
+    }
+
+    /** 处决姿态此刻占几成：开头从原版淡入、交还前淡回原版 */
+    private static float vanillaMix(Track tr, long t) {
+        int end = tr.keys[tr.keys.length - 1].t;
+        float u = Mth.clamp(Math.min(t / (float) BLEND_IN_MS, (end - t) / (float) BLEND_OUT_MS), 0.0F, 1.0F);
+        return u * u * (3.0F - 2.0F * u);
+    }
+
+    private static final float[] VANILLA = new float[36];
+
+    /**
+     * 原版这一帧摆出来的姿态，在覆盖之前记下。身子和头的 z、头的 zRot、腿的左右位置原版每帧不复位
+     * （这时候还是上一帧处决留下的），按原版的默认值记
+     */
+    private static void storeVanilla(HumanoidModel<?> model) {
+        ModelPart[] parts = {model.body, model.head, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
+        for (int i = 0; i < parts.length; i++) {
+            ModelPart m = parts[i];
+            int o = i * 6;
+            VANILLA[o] = m.x;
+            VANILLA[o + 1] = m.y;
+            VANILLA[o + 2] = m.z;
+            VANILLA[o + 3] = m.xRot;
+            VANILLA[o + 4] = m.yRot;
+            VANILLA[o + 5] = m.zRot;
+        }
+        VANILLA[2] = 0.0F;
+        VANILLA[8] = 0.0F;
+        VANILLA[11] = 0.0F;
+        VANILLA[24] = -LEG_X;
+        VANILLA[30] = LEG_X;
+    }
+
+    private static void mixVanilla(HumanoidModel<?> model, float w) {
+        ModelPart[] parts = {model.body, model.head, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
+        for (int i = 0; i < parts.length; i++) {
+            ModelPart m = parts[i];
+            int o = i * 6;
+            m.x = Mth.lerp(w, VANILLA[o], m.x);
+            m.y = Mth.lerp(w, VANILLA[o + 1], m.y);
+            m.z = Mth.lerp(w, VANILLA[o + 2], m.z);
+            m.xRot = lerpAngle(w, VANILLA[o + 3], m.xRot);
+            m.yRot = lerpAngle(w, VANILLA[o + 4], m.yRot);
+            m.zRot = lerpAngle(w, VANILLA[o + 5], m.zRot);
+        }
+    }
+
+    // 拆出来的欧拉角可能和原版差一整圈，按最短的方向混
+    private static float lerpAngle(float w, float from, float to) {
+        float d = (to - from) % Mth.TWO_PI;
+        if (d > Mth.PI) {
+            d -= Mth.TWO_PI;
+        } else if (d < -Mth.PI) {
+            d += Mth.TWO_PI;
+        }
+        return from + d * w;
     }
 
     /**
@@ -1432,9 +1685,10 @@ public final class MercyPose {
      * 合成一个四元数，拆回模型要的 ZYX 欧拉角（平举时直接改 zRot 是绕身体前后轴转，不是拧胳膊）
      */
     private static void poseArm(ModelPart arm, boolean right, float raise, float yaw, float roll, float aim,
-                                float ax, float ay, float az, float bodyY) {
+                                float ax, float ay, float az, float bodyY, boolean slerp) {
         float yRot = (right ? -yaw : yaw) * DEG + bodyY;
         float xRot = -raise * DEG;
+        boolean aimed = false;
         if (aim > 0.001F) {
             float dx = ax - arm.x;
             float dy = ay - arm.y;
@@ -1443,10 +1697,20 @@ public final class MercyPose {
             float aimX = -(float) Mth.atan2(h, dy);
             float aimY = (float) Mth.atan2(-dx, -dz);
             float w = Math.min(aim, 1.0F);
-            xRot = Mth.lerp(w, xRot, aimX);
-            yRot = Mth.lerp(w, yRot, aimY);
+            if (slerp) {
+                // 欧拉角线性插值在瞄到七八成时会拽一下、拧的方向还可能绕远，新写法改成球面插值
+                Q.rotationY(yRot).rotateX(xRot).slerp(Q_AIM.rotationY(aimY).rotateX(aimX), w);
+                aimed = true;
+            } else {
+                xRot = Mth.lerp(w, xRot, aimX);
+                yRot = Mth.lerp(w, yRot, aimY);
+            }
         }
-        Q.rotationY(yRot).rotateX(xRot).rotateY((right ? roll : -roll) * DEG);
+        if (aimed) {
+            Q.rotateY((right ? roll : -roll) * DEG);
+        } else {
+            Q.rotationY(yRot).rotateX(xRot).rotateY((right ? roll : -roll) * DEG);
+        }
         // 拆成 Rz·Ry·Rx（ModelPart 的顺序）。JOML 自带的 getEulerAnglesZYX 和 rotationZYX 对不上，自己从矩阵算
         float qx = Q.x, qy = Q.y, qz = Q.z, qw = Q.w;
         float m00 = 1.0F - 2.0F * (qy * qy + qz * qz);

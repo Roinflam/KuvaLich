@@ -187,12 +187,17 @@ public final class MercyClient {
             this.startMs = KuvaFxDirector.clockMs();
             this.timeline = MercyTimeline.build(plan);
             this.bodyScale = target instanceof AbstractKuva k ? k.mercyBodyScale() : 1.0F;
-            this.pose = MercyPose.track(plan, shortOutro, bodyScale);
+            this.pose = MercyPose.track(plan, shortOutro, bodyScale, poseSeed());
             this.holding = plan.success() && MercyPlan.hasChoiceWindow(planBits);
             this.holdMs = plan.success() ? MercyTimeline.lich(plan).choiceOpen : 0;
             FxTimeline h = KuvaFxDirector.start("mercy", MercyTimeline.chest(target), FxTier.S);
             // hero 走真实钟，挂起多久它就得多活多久；收场时会 cancel，放宽到最长的挂起也无妨
             this.hero = h.follow(target).until(holding ? (int) (endMs + HOLD_MAX_MS) : endMs);
+        }
+
+        // 同一场在每个客户端上抖得一样
+        private int poseSeed() {
+            return targetId * 31 + executorId;
         }
 
         /** 演出钟：真实钟套上顿帧。姿态、刀、玄骸片段、界面填格、时间轴阶段读它 */
@@ -227,7 +232,7 @@ public final class MercyClient {
             endMs = MercyTimeline.endMs(plan, shortOutro);
             timeline = MercyTimeline.build(plan);
             timeline.skipTo(t);
-            pose = MercyPose.track(plan, shortOutro, bodyScale);
+            pose = MercyPose.track(plan, shortOutro, bodyScale, poseSeed());
         }
 
         /** 本地最多挂起多久：处决者按开窗包的剩余时间，旁观者没有包，按配置能设的最长时限 */
