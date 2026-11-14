@@ -69,6 +69,10 @@ public final class MercyTimeline {
 
     /** 冻帧跳到某一刻时，往前这么多毫秒以内的一次性阶段补放一遍（截图时看得到刚放的火花） */
     private static final int SEEK_REPLAY_MS = 250;
+    /** 感化：起身以后刀再留多久才缩完 */
+    private static final int CONVERT_BLADE_MS = 300;
+    /** 感化：归还光点比交还早多少（服务端交还那一刻投递） */
+    private static final int CONVERT_RETURN_LEAD_MS = 300;
 
     /** 这一场的结果分支 */
     public enum Outcome {
@@ -79,7 +83,9 @@ public final class MercyTimeline {
         /** 玄骸第 k 刀判错 */
         FAIL,
         /** 奴仆 */
-        THRALL
+        THRALL,
+        /** 玄骸三刀全对，选择窗口里选了感化 */
+        CONVERT
     }
 
     private record Stage(int ms, Consumer<MercyClient.Exec> action) {
@@ -99,7 +105,10 @@ public final class MercyTimeline {
             return Outcome.THRALL;
         }
         if (p.prefix() >= p.stabs()) {
-            return p.stabs() >= 3 ? Outcome.SUCCESS : Outcome.ADVANCE;
+            if (p.stabs() < 3) {
+                return Outcome.ADVANCE;
+            }
+            return p.convert() ? Outcome.CONVERT : Outcome.SUCCESS;
         }
         return Outcome.FAIL;
     }
@@ -123,7 +132,7 @@ public final class MercyTimeline {
     /** 这一场实际捅几刀：成功三刀，挣开站起是这次验的刀数，失败捅到判错那一刀为止，奴仆一刀 */
     public static int lastStab(MercyPlan.Plan p) {
         return switch (outcome(p)) {
-            case SUCCESS -> 3;
+            case SUCCESS, CONVERT -> 3;
             case ADVANCE -> p.stabs();
             case FAIL -> failK(p);
             case THRALL -> 1;
@@ -169,6 +178,7 @@ public final class MercyTimeline {
     public static int handbackMs(MercyPlan.Plan p, boolean shortOutro) {
         return switch (outcome(p)) {
             case SUCCESS -> shortOutro ? lich(p).third : lich(p).successEnd;
+            case CONVERT -> lich(p).convertEnd;
             case ADVANCE -> verdictFillMs(p) + lich(p).advanceEnd;
             case FAIL -> failFillMs(p) + lich(p).failEnd;
             case THRALL -> MercyBeats.thrall(p.variant()).end;
@@ -178,7 +188,7 @@ public final class MercyTimeline {
     /** 原 HUD 藏到什么时候；奴仆不藏，返回 0。挣开站起没有横幅，交还时就回来 */
     public static int hudUntilMs(MercyPlan.Plan p, boolean shortOutro) {
         return switch (outcome(p)) {
-            case SUCCESS, ADVANCE -> handbackMs(p, shortOutro);
+            case SUCCESS, ADVANCE, CONVERT -> handbackMs(p, shortOutro);
             case FAIL -> failFillMs(p) + lich(p).failHud;
             case THRALL -> 0;
         };
@@ -198,6 +208,7 @@ public final class MercyTimeline {
     public static boolean targetMayVanish(MercyPlan.Plan p, long t) {
         return switch (outcome(p)) {
             case SUCCESS -> t >= lich(p).death;
+            case CONVERT -> t >= lich(p).convertLeave;
             case ADVANCE -> false;
             case FAIL -> t >= failFillMs(p) + lich(p).failEscape;
             case THRALL -> t >= MercyBeats.thrall(p.variant()).death;
@@ -233,6 +244,10 @@ public final class MercyTimeline {
         if (outcome(p) == Outcome.SUCCESS && !shortOutro) {
             // 成功收尾抽刀以后刀还在手上，到交还前才缩
             end = lich(p).successEnd;
+        }
+        if (outcome(p) == Outcome.CONVERT) {
+            // 感化：起身那一刻刀跟着抽出来缩掉，不等交还
+            end = lich(p).convertLeave + CONVERT_BLADE_MS;
         }
         if (p.variant().thrall) {
             // 奴仆收势时就先缩回，免得推开以后刀还亮着
@@ -316,7 +331,7 @@ public final class MercyTimeline {
             tl.at(b.appear, MercyTimeline::blinkIn);
         }
 
-        if (oc == Outcome.SUCCESS) {
+        if (oc == Outcome.SUCCESS || oc == Outcome.CONVERT) {
             tl.at(b.verdict, x -> {
                 ui(x, KuvaLichSounds.MERCY_VERDICT.get(), 1.0F);
                 if (x.cinematic) {
@@ -345,6 +360,18 @@ public final class MercyTimeline {
                     closeupMist(t);
                 }
             });
+            if (oc == Outcome.CONVERT) {
+                // 感化的后段是从挂起点换上来的：起身化雾由服务端的离场包演，这里只管还东西和放开混音
+                if (p.returnsItems()) {
+                    tl.at(b.convertEnd - CONVERT_RETURN_LEAD_MS, MercyTimeline::returnLight);
+                }
+                tl.at(b.convertEnd, x -> {
+                    if (x.cinematic) {
+                        KuvaMixer.release(MercyClient.DUCK_KEY, 300);
+                    }
+                });
+                return tl.done();
+            }
             tl.at(b.third, x -> {
                 if (!x.cinematic) {
                     return;
@@ -449,6 +476,15 @@ public final class MercyTimeline {
 
     // ==================== 推进 ====================
 
+    /** 换成另一条时间轴接着走时用：{@code t} 以前（含）的阶段算已经放过 */
+    void skipTo(long t) {
+        int i = 0;
+        while (i < stages.size() && stages.get(i).ms <= t) {
+            i++;
+        }
+        cursor = i;
+    }
+
     /** 执行所有到点（{@code ms ≤ t}）还没执行的阶段 */
     void advance(MercyClient.Exec e, long t) {
         while (cursor < stages.size() && stages.get(cursor).ms <= t) {
@@ -474,11 +510,20 @@ public final class MercyTimeline {
         if (!e.cinematic) {
             return;
         }
-        if (outcome(e.plan) != Outcome.SUCCESS) {
+        Outcome oc = outcome(e.plan);
+        if (oc != Outcome.SUCCESS && oc != Outcome.CONVERT) {
             KuvaMixer.release(MercyClient.DUCK_KEY, 0);
             return;
         }
         MercyBeats.Lich b = lich(e.plan);
+        if (oc == Outcome.CONVERT) {
+            if (t >= b.verdict && t < b.convertEnd) {
+                KuvaMixer.duck(MercyClient.DUCK_KEY, -12.0F, 0);
+            } else {
+                KuvaMixer.release(MercyClient.DUCK_KEY, 0);
+            }
+            return;
+        }
         if (t >= b.verdict && t < b.third) {
             KuvaMixer.duck(MercyClient.DUCK_KEY, -12.0F, 0);
         } else if (t >= b.third && t < b.successEnd && !e.shortOutro) {

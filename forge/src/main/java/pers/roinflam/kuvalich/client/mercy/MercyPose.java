@@ -981,8 +981,9 @@ public final class MercyPose {
         int strainFrom = -1, strainTo = -1;
         List<Key> out = new ArrayList<>();
         switch (oc) {
-            case SUCCESS -> {
+            case SUCCESS, CONVERT -> {
                 MercyBeats.Lich lb = MercyBeats.lich(v);
+                boolean convert = oc == MercyTimeline.Outcome.CONVERT;
                 out.addAll(table);
                 // 特写和收尾按站位摆，切镜头那一刻人回到站位，到交还都不再动
                 body.addAll(moves);
@@ -995,10 +996,11 @@ public final class MercyPose {
                 pressed.v[R_RAISE] += 2.0F;
                 pressed.v[TWIST] += 2.0F;
                 pressed.v[L_RAISE] -= 2.0F;
-                if (shortOutro) {
-                    // 特写完直接交还：保持到 7320，再 400 ms 回 0（刀跟着抽出来）
-                    out.add(k(lb.third - 1, SINE, pressed));
-                    out.add(k(lb.third + 400, lb.third, SINE, zero()));
+                if (shortOutro || convert) {
+                    // 特写完直接交还：保持到切镜那一刻（感化是起身化雾那一刻），再 400 ms 回 0（刀跟着抽出来）
+                    int from = convert ? lb.convertLeave : lb.third;
+                    out.add(k(from - 1, SINE, pressed));
+                    out.add(k(from + 400, from, SINE, zero()));
                 } else {
                     out.add(k(lb.third - 1, SINE, pressed));
                     // 切第三人称那一刻刀已整根没入，压着等抽刀
@@ -1602,7 +1604,7 @@ public final class MercyPose {
                 r.add(f(s + 620, IN, 0.45F, -0.42F, 0.45F, -6, -15));
             }
         }
-        if (oc == MercyTimeline.Outcome.SUCCESS) {
+        if (oc == MercyTimeline.Outcome.SUCCESS || oc == MercyTimeline.Outcome.CONVERT) {
             int end = stabs[stabs.length - 1];
             l.add(f(end + 330, SINE, -0.45F, -0.70F, 0.60F, 0, 0));
             r.add(f(end + 900, OUT, 0.60F, -0.72F, 0.55F, 10, 30));

@@ -40,6 +40,8 @@ import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.network.packet.KuvaFxPacket;
+import pers.roinflam.kuvalich.network.packet.MercyChoiceOpenPacket;
+import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Set;
@@ -74,6 +76,7 @@ public final class MercyClient {
             new ResourceLocation(Reference.MOD_ID, "kuva_screen_fx"),
             new ResourceLocation(Reference.MOD_ID, "mercy_prompt"),
             MercyCamera.SHADE_ID,
+            MercyChoiceHud.OVERLAY_ID,
             CommHud.OVERLAY_ID);
 
     /** 站位缓入用多久 */
@@ -82,6 +85,10 @@ public final class MercyClient {
     private static final int RELEASE_TIMEOUT_MS = 3000;
     /** 判断「目标本来就该消失了」时放宽的余量（网络和两端时钟差） */
     private static final int VANISH_SLACK_MS = 300;
+    /** 服务端时限过了还这么久没等到结果，本地自己收场 */
+    static final long HOLD_SLACK_MS = 5000L;
+    /** 旁观者挂起的上限：选择时限最长 30 秒 + 0.5 秒宽限 + 余量 */
+    static final long HOLD_MAX_MS = 30500L + HOLD_SLACK_MS;
 
     /**
      * 本地玩家看到的这一场处决
@@ -96,7 +103,8 @@ public final class MercyClient {
     static final class Exec {
         final int targetId;
         final int executorId;
-        final MercyPlan.Plan plan;
+        /** 选了感化以后换成带感化标记的那份，下面几项跟着重算 */
+        MercyPlan.Plan plan;
         /** 开始时收到的原始计划位（目标的动画按它选片段） */
         final int planBits;
         final MercyVariant variant;
@@ -118,13 +126,19 @@ public final class MercyClient {
         final boolean cinematic;
         /** 开始那一刻的「成功后跳过第三人称」选项 */
         final boolean shortOutro;
-        final int handbackMs;
-        final int hudUntilMs;
-        final int endMs;
+        int handbackMs;
+        int hudUntilMs;
+        int endMs;
         /** 这一场每一刀刺入的时刻（开始时算好，镜头和刀模每帧读，不再分配） */
         final int[] stabs;
-        final MercyTimeline timeline;
-        final MercyPose.Track pose;
+        MercyTimeline timeline;
+        MercyPose.Track pose;
+        final float bodyScale;
+        /** 停在选择窗口那一拍等结果；false = 这场没有窗口或者结果已经到了 */
+        boolean holding;
+        final int holdMs;
+        /** 本地钟走到挂起点的那一刻；小于 0 = 还没走到 */
+        long holdSince = -1L;
         @Nullable
         final FxTimeline hero;
 
@@ -166,15 +180,46 @@ public final class MercyClient {
             this.stabs = MercyTimeline.stabTimes(plan);
             this.startMs = KuvaFxDirector.clockMs();
             this.timeline = MercyTimeline.build(plan);
-            this.pose = MercyPose.track(plan, shortOutro,
-                    target instanceof AbstractKuva k ? k.mercyBodyScale() : 1.0F);
+            this.bodyScale = target instanceof AbstractKuva k ? k.mercyBodyScale() : 1.0F;
+            this.pose = MercyPose.track(plan, shortOutro, bodyScale);
+            this.holding = plan.success() && MercyPlan.hasChoiceWindow(planBits);
+            this.holdMs = plan.success() ? MercyTimeline.lich(plan).choiceOpen : 0;
             FxTimeline h = KuvaFxDirector.start("mercy", MercyTimeline.chest(target), FxTier.S);
-            this.hero = h.follow(target).until(endMs);
+            // hero 走真实钟，挂起多久它就得多活多久；收场时会 cancel，放宽到最长的挂起也无妨
+            this.hero = h.follow(target).until(holding ? (int) (endMs + HOLD_MAX_MS) : endMs);
         }
 
-        /** 已过毫秒（演出钟；冻帧时停在冻住的那一刻） */
+        /** 已过毫秒（演出钟；冻帧时停在冻住的那一刻，等选择时停在挂起点） */
         long elapsed() {
-            return frozenAt >= 0L ? frozenAt : KuvaFxDirector.clockMs() - startMs;
+            if (frozenAt >= 0L) {
+                return frozenAt;
+            }
+            long now = KuvaFxDirector.clockMs();
+            long t = now - startMs;
+            if (holding && t > holdMs) {
+                // 把开始时刻往后推，结果到了以后自然从挂起点接着走
+                startMs = now - holdMs;
+                t = holdMs;
+            }
+            return t;
+        }
+
+        /** 选了感化：换上感化的时间轴和姿态，已经放过的阶段不再放 */
+        void switchToConvert(long t) {
+            plan = plan.withConvert();
+            handbackMs = MercyTimeline.handbackMs(plan, shortOutro);
+            hudUntilMs = cinematic ? MercyTimeline.hudUntilMs(plan, shortOutro) : 0;
+            endMs = MercyTimeline.endMs(plan, shortOutro);
+            timeline = MercyTimeline.build(plan);
+            timeline.skipTo(t);
+            pose = MercyPose.track(plan, shortOutro, bodyScale);
+        }
+
+        /** 本地最多挂起多久：处决者按开窗包的剩余时间，旁观者没有包，按配置能设的最长时限 */
+        long holdLimitMs() {
+            MercyChoiceOpenPacket open = local ? MercyChoiceClient.forEntity(targetId) : null;
+            long base = open != null ? open.remainingTicks * 50L + 500L : HOLD_MAX_MS - HOLD_SLACK_MS;
+            return base + HOLD_SLACK_MS;
         }
 
         @Nullable
@@ -230,7 +275,7 @@ public final class MercyClient {
     static MercyVariant.Facing facingAt(MercyPlan.Plan plan, long t) {
         MercyVariant variant = plan.variant();
         if (!variant.thrall && variant.facing == MercyVariant.Facing.AWAY
-                && MercyTimeline.outcome(plan) == MercyTimeline.Outcome.SUCCESS && t >= MercyTimeline.lich(plan).closeup) {
+                && plan.success() && t >= MercyTimeline.lich(plan).closeup) {
             // 背对处决者的套路成功：切特写那一刻转成面向处决者跪着
             return MercyVariant.Facing.TOWARD;
         }
@@ -269,6 +314,15 @@ public final class MercyClient {
     public static boolean hidesHud() {
         Exec e = localExec;
         return e != null && e.cinematic && e.elapsed() < e.hudUntilMs;
+    }
+
+    /** 本地处决者正停在选择那一拍、目标还在等选择：返回目标实体 id，否则 -1 */
+    public static int choiceTargetId() {
+        Exec e = localExec;
+        if (e == null || !e.cinematic || !e.holding) {
+            return -1;
+        }
+        return e.target() instanceof AbstractKuva k && k.getMercyChoice() == AbstractKuva.CHOICE_WAITING ? e.targetId : -1;
     }
 
     /** 本地玩家是一场玄骸处决的处决者、演出还没交还 */
@@ -416,6 +470,7 @@ public final class MercyClient {
         if (e == localExec) {
             MercyCamera.restore(e);
             KuvaMixer.release(DUCK_KEY, 150);
+            MercyChoiceClient.clear();
             localExec = null;
         }
     }
@@ -570,6 +625,9 @@ public final class MercyClient {
     }
 
     private static void tickExec(Exec e) {
+        if (e.holding && !updateChoice(e)) {
+            return;
+        }
         long t = e.elapsed();
         Entity target = e.target();
         boolean mayVanish = MercyTimeline.targetMayVanish(e.plan, t + VANISH_SLACK_MS);
@@ -607,6 +665,34 @@ public final class MercyClient {
         if (e.released && t >= e.endMs) {
             end(e);
         }
+    }
+
+    /**
+     * 等选择结果：按目标同步数据的当前值认，2 / 3 就接着往下演（走到挂起点之前就到了也一样）。
+     * 挂起超过上限还没结果就本地收场，只收演出、不发包。收场了返回 false
+     */
+    private static boolean updateChoice(Exec e) {
+        byte c = e.target() instanceof AbstractKuva k ? k.getMercyChoice() : AbstractKuva.CHOICE_NONE;
+        long t = e.elapsed();
+        if (c == AbstractKuva.CHOICE_VANQUISH || c == AbstractKuva.CHOICE_CONVERT) {
+            e.holding = false;
+            if (c == AbstractKuva.CHOICE_CONVERT) {
+                e.switchToConvert(t);
+            }
+            return true;
+        }
+        if (t < e.holdMs || e.frozenAt >= 0L) {
+            return true;
+        }
+        long now = KuvaFxDirector.clockMs();
+        if (e.holdSince < 0L) {
+            e.holdSince = now;
+        } else if (now - e.holdSince > e.holdLimitMs()) {
+            LogUtil.warn("处决选择等了 " + (now - e.holdSince) + " ms 还没有结果，本地收场");
+            end(e);
+            return false;
+        }
+        return true;
     }
 
     /**

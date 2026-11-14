@@ -236,6 +236,8 @@ public final class MercyCamera {
         };
         return switch (MercyTimeline.outcome(plan)) {
             case SUCCESS -> t < b.closeup ? own : t < b.third ? Shot.CLOSEUP : Shot.THIRD;
+            // 感化不切第三人称，特写一直到交还
+            case CONVERT -> t < b.closeup ? own : Shot.CLOSEUP;
             case ADVANCE, FAIL -> t < MercyTimeline.wideFromMs(plan) ? own : Shot.WIDE;
             case THRALL -> Shot.GAME;
         };

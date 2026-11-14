@@ -37,7 +37,7 @@ public final class MercyBeatsDump {
         StringBuilder out = new StringBuilder(1 << 24);
         for (MercyVariant v : MercyVariant.values()) {
             if (v.thrall) {
-                plan(out, v.name(), new MercyPlan.Plan(1, 1, v, new int[]{-1, -1, -1}, new int[3], false, 0, false, false),
+                plan(out, v.name(), new MercyPlan.Plan(1, 1, v, new int[]{-1, -1, -1}, new int[3], false, 0, false, false, false),
                         false);
                 continue;
             }
@@ -45,7 +45,7 @@ public final class MercyBeatsDump {
                 int stabs = LICH_CASES[i][0], prefix = LICH_CASES[i][1];
                 boolean success = stabs == 3 && prefix == 3;
                 MercyPlan.Plan p = new MercyPlan.Plan(stabs, prefix, v, new int[]{0, 1, 2}, new int[]{3, 3, 3}, success,
-                        1, false, false);
+                        1, false, false, false);
                 plan(out, v.name() + " " + LICH_NAMES[i], p, false);
                 if (success) {
                     plan(out, v.name() + " " + LICH_NAMES[i] + " short", p, true);

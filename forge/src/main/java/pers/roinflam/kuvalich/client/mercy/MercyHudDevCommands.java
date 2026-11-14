@@ -48,7 +48,9 @@ import java.lang.reflect.Field;
  *       按第一刀判错排时间），给了毫秒就冻在横幅的这一刻；{@code /kuvafxc banner off} 撤掉；</li>
  *   <li>{@code /kuvafxc mercydown [own|other|none] [秒]}：把准星指着的（或者最近的）赤毒实体在本客户端上摆成倒地
  *       （只改本地的同步数据，服务端不知道），{@code own} = 自己能处决、{@code other} = 资格人写成它自己、
- *       {@code none} = 没有资格人；{@code /kuvafxc mercydown clear} 恢复。看倒地提示、试处决键用。</li>
+ *       {@code none} = 没有资格人；{@code /kuvafxc mercydown clear} 恢复。看倒地提示、试处决键用；</li>
+ *   <li>{@code /kuvafxc mercychoice <open|full|disabled|judging|off>}：摆一组假的感化 / 消灭选择牌（10 秒倒计时，
+ *       {@code full} 带名册已满那一行，{@code judging} 直接是倒计时走完的样子），按住左右移动键看进度，不发包。</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)
@@ -87,6 +89,9 @@ public final class MercyHudDevCommands {
                                         .then(withCards(Commands.literal("play"), true))
                                         .then(withCards(Commands.argument("ms", IntegerArgumentType.integer(0, 20000)),
                                                 false)))))
+                .then(Commands.literal("mercychoice")
+                        .then(Commands.argument("mode", StringArgumentType.word())
+                                .executes(ctx -> choice(ctx.getSource(), StringArgumentType.getString(ctx, "mode")))))
                 .then(Commands.literal("banner")
                         .then(Commands.literal("off").executes(ctx -> {
                             RankUpBanner.clear();
@@ -132,6 +137,23 @@ public final class MercyHudDevCommands {
                         .then(Commands.argument("c2", IntegerArgumentType.integer(-1, 15))
                                 .then(Commands.argument("c3", IntegerArgumentType.integer(-1, 15))
                                         .executes(ctx -> hud(ctx, play, true)))));
+    }
+
+    /** {@code open / full / disabled / judging / off}：本地摆一组假的选择牌（不发包），量位置、试按住进度用 */
+    private static int choice(CommandSourceStack src, String mode) {
+        switch (mode) {
+            case "off" -> MercyChoiceHud.clearDev();
+            case "open" -> MercyChoiceHud.setDev(true, "", false);
+            case "full" -> MercyChoiceHud.setDev(true, "Vor Tekalu", false);
+            case "disabled" -> MercyChoiceHud.setDev(false, "", false);
+            case "judging" -> MercyChoiceHud.setDev(true, "Vor Tekalu", true);
+            default -> {
+                src.sendFailure(Component.literal("mercychoice <open|full|disabled|judging|off>"));
+                return 0;
+            }
+        }
+        src.sendSuccess(() -> Component.literal("mercychoice " + mode), false);
+        return 1;
     }
 
     private static int grid(CommandSourceStack src, boolean on) {

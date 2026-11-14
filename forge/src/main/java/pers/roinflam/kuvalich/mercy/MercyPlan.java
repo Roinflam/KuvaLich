@@ -45,9 +45,19 @@ public final class MercyPlan {
      * @param consumed     这次会用完消失的卡张数
      * @param demo         演示模式
      * @param mirror       绕背往目标的右手边走（左手边有方块挡着时）
+     * @param convert      选择窗口里选了感化（只在客户端落定后换上，不进计划位）
      */
     public record Plan(int stabs, int prefix, MercyVariant variant, int[] cardIds, int[] remaining,
-                       boolean returnsItems, int consumed, boolean demo, boolean mirror) {
+                       boolean returnsItems, int consumed, boolean demo, boolean mirror, boolean convert) {
+
+        public Plan(int stabs, int prefix, MercyVariant variant, int[] cardIds, int[] remaining,
+                    boolean returnsItems, int consumed, boolean demo, boolean mirror) {
+            this(stabs, prefix, variant, cardIds, remaining, returnsItems, consumed, demo, mirror, false);
+        }
+
+        public Plan withConvert() {
+            return new Plan(stabs, prefix, variant, cardIds, remaining, returnsItems, consumed, demo, mirror, true);
+        }
 
         private boolean lich() {
             return variant == null || !variant.thrall;
@@ -115,7 +125,7 @@ public final class MercyPlan {
         int consumed = (bits >> 27) & 3;
         boolean demo = ((bits >> 29) & 1) != 0;
         boolean mirror = ((bits >> 30) & 1) != 0;
-        return new Plan(stabs, prefix, variant, cardIds, remaining, returnsItems, consumed, demo, mirror);
+        return new Plan(stabs, prefix, variant, cardIds, remaining, returnsItems, consumed, demo, mirror, false);
     }
 
     private static int clamp(int v, int lo, int hi) {
