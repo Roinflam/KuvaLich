@@ -232,8 +232,12 @@ public final class MercyTests {
         MercyBeats.Lich bc = MercyBeats.lich(MercyVariant.LICH_C);
         int c1 = bc.stab(1) - bc.stab(0), c2 = bc.stab(2) - bc.stab(1);
         h.assertTrue(c1 == c2 && c1 < Math.min(gap1, b2) + 20, "贴身上挑应当三刀等距连着挑：" + c1 + " / " + c2);
-        int[][] gaps = {{gap1, gap2}, {b1, b2}, {c1, c2}};
-        String[] keys = {"a", "b", "c"};
+        MercyBeats.Lich bd = MercyBeats.lich(MercyVariant.LICH_D);
+        int d1 = bd.stab(1) - bd.stab(0), d2 = bd.stab(2) - bd.stab(1);
+        h.assertTrue(d1 > gap1 + 100 && d2 > d1 + 200 && d2 > gap2,
+                "翻滚绕背应当两次都长、第三刀前留够翻滚：" + d1 + " / " + d2);
+        int[][] gaps = {{gap1, gap2}, {b1, b2}, {c1, c2}, {d1, d2}};
+        String[] keys = {"a", "b", "c", "d"};
         for (int v = 0; v < keys.length; v++) {
             for (int k = 1; k <= 2; k++) {
                 String name = "mercy.lich." + keys[v] + ".hit" + k;

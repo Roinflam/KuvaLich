@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
  * 里从上一段的末值冲到这一段，顿帧时照样推过去。段内各通道按 {@link MercyCurve.Keys} 的单调三次走，
  * 每段最后一帧放在切点之后，切的那一刻镜头还在动。</p>
  *
- * <p>只有排过轨迹的套路有这一层（现在是正面直刺、背后锁颈、贴身上挑），别的套路照旧是固定机位。</p>
+ * <p>只有排过轨迹的套路有这一层（现在是正面直刺、背后锁颈、贴身上挑、翻滚绕背），别的套路照旧是固定机位。</p>
  */
 public final class MercyCameraPath {
 
@@ -60,6 +60,7 @@ public final class MercyCameraPath {
         PATHS[MercyVariant.LICH_A.ordinal()] = lichA();
         PATHS[MercyVariant.LICH_B.ordinal()] = lichB();
         PATHS[MercyVariant.LICH_C.ordinal()] = lichC();
+        PATHS[MercyVariant.LICH_D.ordinal()] = lichD();
     }
 
     private MercyCameraPath() {
@@ -154,6 +155,40 @@ public final class MercyCameraPath {
                         k(s3 + 200, 0.20F, -23.5F, -0.12F, 0.0F, 0.45F),
                         k(s3 + 700, -0.10F, -22.0F, 0.25F, 0.0F, 0.45F),
                         k(end + 300, -0.15F, -22.0F, 0.30F, 0.0F, 0.45F))
+        };
+    }
+
+    /**
+     * 翻滚绕背，本套机位在绕背那一侧、离得远，好把整段翻滚放进画里。前两刀在正面：正侧面看刀口被它的左肩甲和垂着的左臂挡住，
+     * 所以往处决者那一侧绕 15° 上下、压低 0.3 格从胳膊底下看，推近两成拍成中近景；第二刀同正面直刺，切到同一侧的
+     * 斜后方低机位往上拍，画面歪 1.5°；拔刀翻滚时边拉开边升高，处决者从镜头和它之间滚过去，落到它身后时整个人都在画里；第三刀刺入猛推，再往它背后绕一点、
+     * 稍抬高，越过处决者的左肩看刀扎进后背（处决者背对着画面那一侧握刀，侧面拍不到刀口），之后跟着它往前扑倒退出来
+     */
+    private static Seg[] lichD() {
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_D);
+        int in = b.cutIn;
+        int s1 = b.stab(0);
+        int s2 = b.stab(1);
+        int s3 = b.stab(2);
+        int end = b.closeup;
+        return new Seg[]{
+                seg(in, false,
+                        k(in, 0.02F, 14.0F, -0.10F, 0.0F, 0.45F),
+                        k(s1 - 120, 0.18F, 16.0F, -0.28F, 0.0F, 0.45F),
+                        k(s1 + 300, 0.21F, 17.0F, -0.30F, 0.0F, 0.45F),
+                        k(s2 + 200, 0.26F, 19.0F, -0.32F, 0.0F, 0.45F)),
+                seg(s2, false,
+                        k(s2, 0.26F, -24.0F, -0.55F, -1.5F, 0.3F),
+                        k(s2 + 300, 0.27F, -22.0F, -0.52F, -1.5F, 0.3F),
+                        k(s2 + 560, 0.10F, -12.0F, -0.05F, -0.5F, 0.3F),
+                        k(s2 + 900, -0.04F, -8.0F, 0.28F, 0.0F, 0.3F),
+                        k(s3 - 120, -0.02F, -14.0F, 0.26F, 0.0F, 0.3F),
+                        k(s3 + 200, -0.03F, -15.0F, 0.26F, 0.0F, 0.3F)),
+                seg(s3, true,
+                        k(s3, 0.22F, -28.0F, 0.20F, 1.5F, 0.3F),
+                        k(s3 + 250, 0.20F, -27.5F, 0.22F, 1.5F, 0.3F),
+                        k(s3 + 1000, 0.0F, -22.0F, 0.30F, 0.0F, 0.3F),
+                        k(end + 300, -0.05F, -20.0F, 0.32F, 0.0F, 0.3F))
         };
     }
 

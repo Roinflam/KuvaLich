@@ -22,7 +22,8 @@ public final class MercyCameraPathTests {
     private static final MercyVariant A = MercyVariant.LICH_A;
     private static final MercyVariant B = MercyVariant.LICH_B;
     private static final MercyVariant C = MercyVariant.LICH_C;
-    private static final MercyVariant[] PLANNED = {A, B, C};
+    private static final MercyVariant D = MercyVariant.LICH_D;
+    private static final MercyVariant[] PLANNED = {A, B, C, D};
 
     private MercyCameraPathTests() {
     }
@@ -48,7 +49,7 @@ public final class MercyCameraPathTests {
         return at(v, last, m, t, t + 10_000L);
     }
 
-    /** 静态档一律没有这一层；没排轨迹的套路（现在除了正面直刺、背后锁颈、贴身上挑都是）各档都没有 */
+    /** 静态档一律没有这一层；没排轨迹的套路（现在除了正面直刺、背后锁颈、贴身上挑、翻滚绕背都是）各档都没有 */
     @GameTest(template = "empty")
     public static void staticAndUnplannedHaveNoPath(GameTestHelper h) {
         float[] out = new float[MercyCameraPath.CHANNELS];
@@ -59,7 +60,7 @@ public final class MercyCameraPathTests {
             h.assertTrue(MercyCameraPath.has(v), v + " 应当排了轨迹");
         }
         for (MercyVariant v : MercyVariant.values()) {
-            if (v == A || v == B || v == C) {
+            if (v == A || v == B || v == C || v == D) {
                 continue;
             }
             h.assertFalse(MercyCameraPath.has(v), v + " 还没排轨迹");
@@ -188,6 +189,31 @@ public final class MercyCameraPathTests {
         }
         h.assertTrue(MercyCameraPath.lookDrop(C) > 0.0F && MercyCameraPath.lookDrop(A) == 0.0F
                 && MercyCameraPath.lookDrop(B) == 0.0F, "只有贴身上挑挪注视点");
+        h.succeed();
+    }
+
+    /**
+     * 翻滚绕背：前两刀往处决者那一侧绕、推近成中近景；第二刀硬切到斜后方压低；翻滚时拉开升高；
+     * 第三刀刺入猛推、往它背后再绕一点
+     */
+    @GameTest(template = "empty")
+    public static void lichDThreeFramings(GameTestHelper h) {
+        MercyBeats.Lich b = MercyBeats.lich(D);
+        int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
+        int d = MercyCameraPath.DOLLY, o = MercyCameraPath.ORBIT, r = MercyCameraPath.RISE;
+        float[] first = at(D, 3, Motion.FULL, s1);
+        float[] beforeCut = at(D, 3, Motion.FULL, s2 - 1);
+        float[] second = at(D, 3, Motion.FULL, s2);
+        float[] roll = at(D, 3, Motion.FULL, s2 + 900);
+        float[] third = at(D, 3, Motion.FULL, s3 + 100);
+        h.assertTrue(first[d] > 0.15F, "本套机位离得远，前两刀应当推近：" + first[d]);
+        h.assertTrue(beforeCut[o] - second[o] > 20.0F, "第二刀应当切到斜后方：" + beforeCut[o] + " → " + second[o]);
+        h.assertTrue(second[r] < -0.4F, "第二刀应当是低机位往上拍：" + second[r]);
+        h.assertTrue(roll[d] < second[d] - 0.25F && roll[r] > 0.2F, "翻滚时应当拉开升高：" + roll[d] + " / " + roll[r]);
+        h.assertTrue(third[d] - roll[d] > 0.2F, "第三刀刺入后应当猛推近：" + roll[d] + " → " + third[d]);
+        h.assertTrue(first[o] > 10.0F && first[r] < -0.2F, "前两刀应当往处决者那一侧绕、压低，不被它的左肩甲挡住：" + first[o] + " / " + first[r]);
+        h.assertTrue(third[o] < roll[o] - 10.0F, "第三刀应当往它背后再绕一点：" + roll[o] + " → " + third[o]);
+        h.assertTrue(MercyCameraPath.lookDrop(D) == 0.0F, "翻滚绕背不挪注视点");
         h.succeed();
     }
 
