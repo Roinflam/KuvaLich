@@ -251,7 +251,17 @@ public final class MercyCamera {
      */
     public static boolean hidesTargetWeapon(int entityId) {
         MercyClient.Exec e = MercyClient.local();
-        return e != null && e.targetId == entityId && !e.handedBack && shotAt(e, e.elapsed()) == Shot.CLOSEUP;
+        if (e != null && e.targetId == entityId && !e.handedBack && shotAt(e, e.elapsed()) == Shot.CLOSEUP) {
+            return true;
+        }
+        // 折翼整场攥着它拿武器的那只手腕，武器跟着胳膊甩会横穿处决者；判错、挣开藏到切宽镜头，成功藏到交还（旁观者也一样）
+        MercyClient.Exec f = MercyClient.byTarget(entityId);
+        if (f == null || f.variant != MercyVariant.LICH_F || f.handedBack) {
+            return false;
+        }
+        MercyTimeline.Outcome oc = MercyTimeline.outcome(f.plan);
+        boolean freed = oc == MercyTimeline.Outcome.FAIL || oc == MercyTimeline.Outcome.ADVANCE;
+        return f.elapsed() < (freed ? MercyTimeline.wideFromMs(f.plan) : f.handbackMs);
     }
 
     static Shot shotAt(MercyClient.Exec e, long t) {
@@ -583,7 +593,8 @@ public final class MercyCamera {
      */
     private static float escapePull(MercyClient.Exec e, Shot s, ShotPose base, long t) {
         int from = MercyTimeline.breakFreeMs(e.plan);
-        if (from < 0 || t <= from) {
+        // 折翼挣开后 100 ms 就切宽镜头，这么短拉开只会顿一下
+        if (from < 0 || t <= from || e.variant == MercyVariant.LICH_F) {
             return 0.0F;
         }
         if (e.shots.escapeState == 0) {

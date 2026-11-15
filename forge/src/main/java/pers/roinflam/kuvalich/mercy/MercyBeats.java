@@ -87,6 +87,8 @@ public final class MercyBeats {
     /** 背对处决者的套路边站边转过来（对着起身动作的 0.12~0.62 秒）；服务端在转完之后才跟上 */
     private static final int ADVANCE_TURN_FROM = 820, ADVANCE_TURN_TO = 1320;
     private static final int ADVANCE_WIDE = 1200;
+    /** 折翼：挣开后多久切宽镜头 */
+    private static final int F_WIDE_AFTER = 100;
     /** 站稳、交还；服务端同一刻回到能打的状态、解锁 */
     private static final int ADVANCE_END = 2300;
 
@@ -123,8 +125,9 @@ public final class MercyBeats {
         lich(MercyVariant.LICH_C, stabs(790, 1660, 2530), fills(830, 1660, 2530), gaps(850, 850));
         lich(MercyVariant.LICH_D, stabs(790, 1790, 3140), fills(830, 1790, 3140), gaps(950, 1300));
         lich(MercyVariant.LICH_E, stabs(790, 1890, 2990), fills(830, 1890, 2990), gaps(1050, 1050));
-        // 折翼 250 ms 就蹬地荡起来（蹬地声 130 起播），切镜提前到 120，免得荡身前半段落在第一人称里
-        lich(MercyVariant.LICH_F, stabs(910, 2490, 3810), fills(950, 2490, 3810), gaps(1450, 1250), 120);
+        // 折翼 250 ms 就蹬地荡起来，开场一下就切进机位：画出来的人站在 2 格外，第一人称的眼睛却在 1.25 格的真实站位上，
+        // 正好在它挥过来的右臂里，留着第一人称只会糊一屏肩甲
+        lich(MercyVariant.LICH_F, stabs(910, 2490, 3810), fills(950, 2490, 3810), gaps(1450, 1250), 0);
 
         // 落地：绕到身后的两套整身轨道走到头的时刻，服务端这之后才把站位换过去
         //      套路                     刺入  落地
@@ -191,10 +194,10 @@ public final class MercyBeats {
         /** 踏背下刺的化光、现身；别的套路是 −1 */
         public final int blink, appear;
 
-        public final int failGrowl = FAIL_GROWL, failBreakFree = FAIL_BREAKFREE, failWide = FAIL_WIDE,
+        public final int failGrowl = FAIL_GROWL, failBreakFree = FAIL_BREAKFREE, failWide,
                 failEscape = FAIL_ESCAPE, failEnd = FAIL_END, failBanner = FAIL_BANNER, failHud = FAIL_HUD;
         public final int advanceGrowl = ADVANCE_GROWL, advanceBreakFree = ADVANCE_BREAKFREE,
-                advanceTurnFrom = ADVANCE_TURN_FROM, advanceTurnTo = ADVANCE_TURN_TO, advanceWide = ADVANCE_WIDE,
+                advanceTurnFrom = ADVANCE_TURN_FROM, advanceTurnTo = ADVANCE_TURN_TO, advanceWide,
                 advanceEnd = ADVANCE_END;
 
         // 服务端（tick，从处决开始算；判错、挣开的相对 g 那一 tick）
@@ -240,6 +243,10 @@ public final class MercyBeats {
             boolean e = variant == MercyVariant.LICH_E;
             blink = e ? stab[1] + E_BLINK : -1;
             appear = e ? stab[1] + E_APPEAR : -1;
+            // 折翼被甩开时空翻落回站位外，落点正好在本套机位跟前；空翻一起就切宽镜头，别让他落在镜头脸上
+            boolean f = variant == MercyVariant.LICH_F;
+            failWide = f ? FAIL_BREAKFREE + F_WIDE_AFTER : FAIL_WIDE;
+            advanceWide = f ? ADVANCE_BREAKFREE + F_WIDE_AFTER : ADVANCE_WIDE;
 
             fillTick = new int[3];
             for (int i = 0; i < 3; i++) {

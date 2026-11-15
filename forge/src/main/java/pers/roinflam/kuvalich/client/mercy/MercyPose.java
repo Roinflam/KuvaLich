@@ -1307,9 +1307,10 @@ public final class MercyPose {
             body.add(k(t0 + 480, IN, m().dist(across).up(0).yaw(180).flip(360)));
         } else if (v == MercyVariant.LICH_F) {
             // 人在它右后方 / 右手边：被它一甩，从它右手边外侧往后空翻一圈，落回站位外
+            // 两帧都走单调三次，一圈翻下来中间不停；用 OUT / IN 会在倒立那一下停住一百多毫秒
             float a = lastK == 3 ? -45.0F : -70.0F;
-            body.add(k(t0 + 180, OUT, m().ang(a).dist(lastK == 3 ? 1.0F : 1.1F).up(0.85F).yaw(-35).flip(-170)));
-            body.add(k(t0 + 460, IN, m().ang(0).dist(push).up(0).yaw(0).flip(-360)));
+            body.add(k(t0 + 180, CURVE, m().ang(a).dist(lastK == 3 ? 1.0F : 1.1F).up(0.85F).yaw(-35).flip(-170)));
+            body.add(k(t0 + 460, CURVE, m().ang(0).dist(push).up(0).yaw(0).flip(-360)));
         } else if (v == MercyVariant.LICH_D && lastK == 3) {
             // 从它背后往镜头另一侧甩回去（ang 走 180 → 360），走镜头这一侧会擦着镜头飞过去
             body.add(k(t0 + 200, OUT, m().ang(265).dist(0.6F).up(1.1F).yaw(-170).flip(150)));
