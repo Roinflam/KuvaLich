@@ -2,6 +2,7 @@ package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -9,12 +10,14 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.ephemera.EphemeraItem;
 import pers.roinflam.kuvalich.module.ModulePlacementValidator;
 import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
 
@@ -46,6 +49,9 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
     private int feetY;
     private int chestY;
     private int nodeX;
+    /** 幻纹格的卡心：卡的左边贴左栏左边线（和栏标题对齐），和人像头部同高 */
+    private int ephX;
+    private int ephY;
     /** 人像渲染出过错就不再画了，免得每帧刷一遍异常 */
     private boolean figureFailed;
 
@@ -60,6 +66,37 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         feetY = hairY + 12 + figScale * 2;
         chestY = feetY - Math.round(figScale * 1.3F);
         nodeX = lx1 - 4;
+        ephX = lx0 + CELL;
+        // 和头部同高：放在胸口高度会被人像手里拿的东西压住（缩放 4 时卡右边离手只剩一两格）。
+        // 1.64 = 头部中心离脚底的格数（模型 28 像素 × 0.9375 / 16）
+        ephY = feetY - Math.round(figScale * 1.64F);
+        // 图标在卡里的位置和模组卡一样
+        place(menu.getSlot(RequiemWarframeTableMenu.EPHEMERA_SLOT), ephX - 8, ephY - 10);
+    }
+
+    @Override
+    protected int[] extraTracked() {
+        return new int[]{RequiemWarframeTableMenu.EPHEMERA_SLOT};
+    }
+
+    @Override
+    protected Component otherReject(Slot slot, ItemStack carried) {
+        return slot.index == RequiemWarframeTableMenu.EPHEMERA_SLOT
+                ? Component.translatable("kuvalich.warframe_table.only_ephemera") : Component.empty();
+    }
+
+    /** 空的幻纹格悬停时说明这一格是做什么的；有东西时原版照常出物品说明 */
+    @Override
+    protected void renderPage(GuiGraphics g, int mx, int my, float partialTick) {
+        super.renderPage(g, mx, my, partialTick);
+        Slot hs = this.hoveredSlot;
+        if (hs != null && hs.index == RequiemWarframeTableMenu.EPHEMERA_SLOT && !hs.hasItem()
+                && menu.getCarried().isEmpty()) {
+            g.renderComponentTooltip(this.font, List.of(
+                    Component.translatable("kuvalich.warframe_table.ephemera_slot"),
+                    Component.translatable("kuvalich.warframe_table.ephemera_slot.desc").withStyle(ChatFormatting.GRAY)),
+                    mx, my);
+        }
     }
 
     /**
@@ -140,7 +177,13 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
             GuiShapes.hairline(g, x, chestY, Math.min(x + 2.0F, nodeX - 4), chestY, lineW, dash);
         }
         GuiShapes.diamondOutline(g, nodeX, chestY, 3.0F, 3.5F, lineW, GuiShapes.argb(FxPalette.KUVA_PALE, 0.5F * eT));
+        // 幻纹格连到人像头部左边的虚线
+        float beamX1 = lcx - figScale * 0.3F;
+        for (float x = ephX + CELL + 3; x < beamX1; x += 4.0F) {
+            GuiShapes.hairline(g, x, ephY, Math.min(x + 2.0F, beamX1), ephY, lineW, dash);
+        }
         GuiShapes.end();
+        drawEphemeraCard(g, mx, my, t);
         // 底座上一颗光点绕着走（拖一小截尾巴）
         float orbit = (now % 3200L) / 3200.0F * Mth.TWO_PI;
         GuiShapes.additive(g, true);
@@ -206,6 +249,15 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         float a = 1.0F - eS * 0.5F;
         hl(g, lcx - 22, lcx + 22, cy, FxPalette.KUVA_PALE, 0.9F * a);
         additive(g, () -> GuiShapes.hline(g, lcx - 26, lcx + 26, cy, lw() * 3, GuiShapes.argb(FxPalette.KUVA, 0.5F * a)));
+    }
+
+    private void drawEphemeraCard(GuiGraphics g, int mx, int my, long t) {
+        ItemStack st = menu.getSlot(RequiemWarframeTableMenu.EPHEMERA_SLOT).getItem();
+        int col = st.getItem() instanceof EphemeraItem ? EphemeraItem.getColor1(st) : FxPalette.KUVA_PALE;
+        boolean hv = Math.abs(mx - ephX) <= CELL && Math.abs(my - ephY) <= CELL_HH;
+        // 排在八张模组卡后面出场
+        float e = phase(t, 600 + 50 * MODULES, 900 + 50 * MODULES);
+        drawSingleCard(g, ephX, ephY, RequiemWarframeTableMenu.EPHEMERA_SLOT, st, col, hv, e);
     }
 
     private int figureTop(LocalPlayer p) {

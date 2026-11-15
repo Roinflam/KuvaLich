@@ -45,7 +45,7 @@ public final class ArchiveRosterTests {
         t.putInt(AllyRoster.WEAPON, 0);
         t.putInt(AllyRoster.WEAPON_LEVEL, 10);
         t.putString(AllyRoster.WEAPON_TYPE, "fire");
-        t.putString(AllyRoster.EPHEMERA, gen == 7 ? "fire" : "");
+        t.putString(AllyRoster.EPHEMERA, gen == 7 ? "plume" : "");
         t.putLong(AllyRoster.CONVERTED_AT, 0L);
         return t;
     }
@@ -135,7 +135,7 @@ public final class ArchiveRosterTests {
         h.assertTrue(d.inboxCount() == 23, "待领取按件数算，实际 " + d.inboxCount());
         h.assertTrue(!d.roster().get(0).active() && !d.roster().get(1).active() && d.roster().get(2).active(),
                 "没指定出战时出战的是最新感化的那只");
-        h.assertTrue("fire".equals(d.roster().get(1).ephemera()) && "fire".equals(d.roster().get(1).element()),
+        h.assertTrue("plume".equals(d.roster().get(1).ephemera()) && "fire".equals(d.roster().get(1).element()),
                 "幻纹、元素照名册");
         PlayerLedger.setActiveAlly(p, 4);
         d = LichArchiveService.build(p);

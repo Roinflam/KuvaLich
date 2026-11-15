@@ -992,19 +992,15 @@ final class ArchiveDossier {
         return lines;
     }
 
-    /** 幻纹款名；款式表还没有名字的按元素名顶上 */
     static String ephemeraName(String id) {
-        String key = "kuvalich.ephemera.name." + id;
-        if (I18n.exists(key)) {
-            return I18n.get(key);
-        }
         EphemeraType t = EphemeraType.byId(id);
-        return t != null ? I18n.get("kuvaweapon.type." + t.element()) : id;
+        return t != null && I18n.exists(t.nameKey()) ? I18n.get(t.nameKey()) : id;
     }
 
-    private static int ephemeraRgb(String id) {
-        EphemeraType t = EphemeraType.byId(id);
-        return t != null ? t.defaultColor() : FxPalette.ACCENT;
+    /** 颜色跟武器元素走；元素没定的老玄骸用强调色 */
+    private static int ephemeraRgb(String id, String element) {
+        return EphemeraType.byId(id) != null && EphemeraType.isElement(element)
+                ? EphemeraType.defaultColor(element) : FxPalette.ACCENT;
     }
 
     /** 鼠标（界面坐标）落在名册入口或名册的行上就处理，返回处理了没有 */
@@ -1566,7 +1562,7 @@ final class ArchiveDossier {
 
         String eph = d.state().ephemera;
         wEphemera = eph.isEmpty() ? "" : I18n.get("kuvalich.archive.ephemera", ephemeraName(eph));
-        wEphemeraRgb = ephemeraRgb(eph);
+        wEphemeraRgb = ephemeraRgb(eph, type);
 
         LichArchivePacket.Stats st = d.stats();
         vitalValue[0] = st.health() > 0 ? Integer.toString(st.health()) : "—";

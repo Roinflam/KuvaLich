@@ -49,8 +49,10 @@ public final class EphemeraTests {
     public static void birthRollIsSeededAndFrozen(GameTestHelper h) {
         KuvaTestKit.override(ModConfig.KUVA_LICH.lichEphemeraChance, 1.0D);
         RequiemCard always = born(77L, "fire");
-        h.assertTrue(always.isLichEphemeraRolled() && "fire".equals(always.getLichEphemera()),
-                "概率 1：必带，款式跟着定下的元素：" + always.getLichEphemera());
+        String want = always.getLichEphemera();
+        h.assertTrue(always.isLichEphemeraRolled() && EphemeraType.byId(want) != null
+                        && want.equals(born(77L, "ice").getLichEphemera()),
+                "概率 1：必带，款式只看种子、不看元素：" + want);
 
         KuvaTestKit.override(ModConfig.KUVA_LICH.lichEphemeraChance, 0.0D);
         RequiemCard never = born(77L, "fire");
@@ -59,36 +61,92 @@ public final class EphemeraTests {
         // 同种子同结果：一半概率下挑 200 个种子，各诞生两次比
         KuvaTestKit.override(ModConfig.KUVA_LICH.lichEphemeraChance, 0.5D);
         int carried = 0;
+        java.util.Set<String> seen = new java.util.HashSet<>();
         for (long seed = 1000L; seed < 1200L; seed++) {
             String a = born(seed, "").getLichEphemera();
             String b = born(seed, "").getLichEphemera();
             h.assertTrue(a.equals(b), "同种子两次诞生结果应当相同：" + seed);
             if (!a.isEmpty()) {
                 carried++;
-                // 元素为空的老玄骸按种子取元素定款式
-                h.assertTrue(a.equals(LichProfile.weaponElement(seed)), "元素为空时款式应当按种子的元素：" + seed);
+                h.assertTrue(EphemeraType.byId(a) != null, "掷出来的应当是表里的款式：" + a);
+                seen.add(a);
             }
         }
         h.assertTrue(carried > 60 && carried < 140, "一半概率下 200 只应当有一半上下带幻纹：" + carried);
+        h.assertTrue(seen.size() == EphemeraType.all().size(), "六款都掷得到：" + seen);
 
         // 改配置后已有玄骸不变，存读也不变
         KuvaTestKit.override(ModConfig.KUVA_LICH.lichEphemeraChance, 0.0D);
         RequiemCard loaded = new RequiemCard();
         loaded.deserializeNBT(always.serializeNBT());
-        h.assertTrue("fire".equals(loaded.getLichEphemera()) && loaded.isLichEphemeraRolled(), "存读后幻纹应当还在");
-        h.assertTrue(!loaded.ensureEphemeraRolled() && "fire".equals(loaded.getLichEphemera()),
+        h.assertTrue(want.equals(loaded.getLichEphemera()) && loaded.isLichEphemeraRolled(), "存读后幻纹应当还在");
+        h.assertTrue(!loaded.ensureEphemeraRolled() && want.equals(loaded.getLichEphemera()),
                 "改了概率，已有玄骸不应当重掷");
         RequiemCard cloned = new RequiemCard();
         cloned.clone(loaded);
-        h.assertTrue("fire".equals(cloned.getLichEphemera()) && cloned.isLichEphemeraRolled(), "克隆应当带上幻纹");
+        h.assertTrue(want.equals(cloned.getLichEphemera()) && cloned.isLichEphemeraRolled(), "克隆应当带上幻纹");
 
         // 结束这一轮清掉
         loaded.endLichRound(RequiemCard.FATE_VANQUISHED);
         h.assertTrue(loaded.getLichEphemera().isEmpty() && !loaded.isLichEphemeraRolled(), "结束一轮应当清掉幻纹");
 
-        // 查不到款式的元素按不带，不抛
-        h.assertTrue(EphemeraType.roll(5L, "slash", 1.0D).isEmpty(), "没有对应款式的元素应当按不带");
-        h.assertTrue(EphemeraType.all().size() == KuvaWeaponUtil.LICH_ELEMENTS.size(), "首批一个元素一款");
+        h.assertTrue(EphemeraType.all().size() == 6, "首批六款造型");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = BATCH)
+    public static void typeTableAndElements(GameTestHelper h) {
+        List<String> ids = EphemeraType.all().stream().map(EphemeraType::id).toList();
+        h.assertTrue(ids.equals(List.of("surge", "orbit", "plume", "wing", "coil", "vortex")), "款式表的顺序和 id：" + ids);
+        for (EphemeraType t : EphemeraType.all()) {
+            h.assertTrue(EphemeraType.byId(t.id()) == t, "按 id 查得回：" + t.id());
+        }
+        // 改版前按元素名的开发档 id、空串、null 都查不到，按不带
+        h.assertTrue(EphemeraType.byId("fire") == null && EphemeraType.byId("") == null && EphemeraType.byId(null) == null,
+                "旧 id 查不到");
+        h.assertTrue(EphemeraType.normalizeElement("slash").equals(EphemeraType.DEFAULT_ELEMENT)
+                && EphemeraType.normalizeElement(null).equals(EphemeraType.DEFAULT_ELEMENT)
+                && "ice".equals(EphemeraType.normalizeElement("ice")), "不是赤毒武器的元素按默认");
+        for (long seed = 0L; seed < 50L; seed++) {
+            h.assertTrue(EphemeraType.elementFor(seed, "").equals(LichProfile.weaponElement(seed)),
+                    "元素没定的老玄骸按种子取元素：" + seed);
+            h.assertTrue("magnetic".equals(EphemeraType.elementFor(seed, "magnetic")), "定了元素就用定下的");
+        }
+        for (String el : KuvaWeaponUtil.LICH_ELEMENTS) {
+            h.assertTrue(EphemeraType.defaultColor(el) == KuvaPalette.element(el), "默认颜色 = 元素色：" + el);
+        }
+
+        // 卡上存着旧 id：读出来按不带，不崩
+        RequiemCard card = born(77L, "fire");
+        CompoundTag tag = card.serializeNBT();
+        tag.putString("lichEphemera", "fire");
+        RequiemCard old = new RequiemCard();
+        old.deserializeNBT(tag);
+        h.assertTrue(old.hasLich() && old.getLichEphemera().isEmpty(), "卡上旧 id 按不带");
+        CompoundTag entry = new CompoundTag();
+        entry.putString(pers.roinflam.kuvalich.nemesis.AllyRoster.EPHEMERA, "poison");
+        h.assertTrue(pers.roinflam.kuvalich.nemesis.AllyRoster.ephemeraOf(entry).isEmpty(), "名册里旧 id 按不带");
+        entry.putString(pers.roinflam.kuvalich.nemesis.AllyRoster.EPHEMERA, "coil");
+        h.assertTrue("coil".equals(pers.roinflam.kuvalich.nemesis.AllyRoster.ephemeraOf(entry)), "名册里新 id 照读");
+
+        // 物品上的旧 id：款式查不到、tooltip 只写一行，不崩
+        ItemStack legacy = new ItemStack(KuvaLichItems.EPHEMERA.get());
+        legacy.getOrCreateTag().putString(EphemeraItem.TAG_TYPE, "fire");
+        h.assertTrue(EphemeraItem.getType(legacy) == null && EphemeraItem.tooltipLines(legacy).size() == 1, "物品上旧 id");
+
+        // 元素 NBT 往返；坏元素按默认
+        ItemStack stack = EphemeraItem.create(EphemeraType.VORTEX, "electricity", "Vesk Arru");
+        ItemStack back = ItemStack.of(stack.save(new CompoundTag()));
+        h.assertTrue(EphemeraItem.getType(back) == EphemeraType.VORTEX && "electricity".equals(EphemeraItem.getElement(back))
+                && "Vesk Arru".equals(EphemeraItem.getOrigin(back)), "款式、元素、来历存读");
+        h.assertTrue(ItemStack.matches(stack, back), "存读前后一致");
+        h.assertTrue(EphemeraItem.getColor1(back) == KuvaPalette.element("electricity"), "缺省颜色跟元素");
+        ItemStack bad = EphemeraItem.create(EphemeraType.SURGE, "slash", "");
+        h.assertTrue(EphemeraType.DEFAULT_ELEMENT.equals(bad.getTag().getString(EphemeraItem.TAG_ELEMENT)), "造的时候坏元素按默认写");
+        back.getOrCreateTag().putString(EphemeraItem.TAG_ELEMENT, "nonsense");
+        h.assertTrue(EphemeraType.DEFAULT_ELEMENT.equals(EphemeraItem.getElement(back)), "读的时候坏元素按默认");
+        back.getTag().remove(EphemeraItem.TAG_ELEMENT);
+        h.assertTrue(EphemeraType.DEFAULT_ELEMENT.equals(EphemeraItem.getElement(back)), "缺元素键按默认");
         h.succeed();
     }
 
@@ -103,9 +161,10 @@ public final class EphemeraTests {
         legacy.deserializeNBT(old);
         h.assertTrue(legacy.hasLich() && !legacy.isLichEphemeraRolled() && legacy.getLichEphemera().isEmpty(),
                 "老存档读进来：玄骸在、还没掷过");
-        h.assertTrue(legacy.ensureEphemeraRolled() && "ice".equals(legacy.getLichEphemera()), "第一次补掷应当生效");
+        String want = EphemeraType.roll(4242L, 1.0D);
+        h.assertTrue(legacy.ensureEphemeraRolled() && want.equals(legacy.getLichEphemera()), "第一次补掷应当生效");
         KuvaTestKit.override(ModConfig.KUVA_LICH.lichEphemeraChance, 0.0D);
-        h.assertTrue(!legacy.ensureEphemeraRolled() && "ice".equals(legacy.getLichEphemera()), "补掷只发生一次");
+        h.assertTrue(!legacy.ensureEphemeraRolled() && want.equals(legacy.getLichEphemera()), "补掷只发生一次");
 
         KuvaTestKit.override(ModConfig.KUVA_LICH.lichEphemeraChance, 1.0D);
         KuvaTestKit.override(ModConfig.KUVA_LICH.lichEphemeraBackfill, false);
@@ -121,11 +180,12 @@ public final class EphemeraTests {
 
     @GameTest(template = "empty", batch = BATCH)
     public static void itemLookFieldsClamp(GameTestHelper h) {
-        EphemeraType ice = EphemeraType.byId("ice");
-        h.assertTrue(ice != null, "应当有冰冻款");
-        ItemStack stack = EphemeraItem.create(ice, "Vesk Arru");
+        EphemeraType ice = EphemeraType.byId("plume");
+        h.assertTrue(ice != null, "应当有曳翎款");
+        ItemStack stack = EphemeraItem.create(ice, "ice", "Vesk Arru");
         h.assertTrue(stack.getMaxStackSize() == 1, "幻纹不能叠");
-        h.assertTrue(EphemeraItem.getType(stack) == ice && "Vesk Arru".equals(EphemeraItem.getOrigin(stack)), "款式和来历");
+        h.assertTrue(EphemeraItem.getType(stack) == ice && "ice".equals(EphemeraItem.getElement(stack))
+                && "Vesk Arru".equals(EphemeraItem.getOrigin(stack)), "款式、元素和来历");
         int iceColor = KuvaPalette.element("ice");
         h.assertTrue(EphemeraItem.getColor1(stack) == iceColor && EphemeraItem.getColor2(stack) == iceColor,
                 "缺省颜色 = 元素色");
@@ -170,26 +230,33 @@ public final class EphemeraTests {
 
     @GameTest(template = "empty", batch = BATCH)
     public static void tooltipLines(GameTestHelper h) {
-        ItemStack stack = EphemeraItem.create(EphemeraType.byId("radiation"), "Vesk Arru");
+        ItemStack stack = EphemeraItem.create(EphemeraType.ORBIT, "radiation", "Vesk Arru");
         EphemeraItem.setColors(stack, 0xAA3300, 0x22CCFF);
         List<Component> lines = EphemeraItem.tooltipLines(stack);
-        h.assertTrue(lines.size() == 3, "款式、来历、配色三行：" + lines.size());
+        h.assertTrue(lines.size() == 4, "款式、元素、来历、配色四行：" + lines.size());
+        TextColor radiation = TextColor.fromRgb(KuvaPalette.element("radiation"));
 
         TranslatableContents style = translatable(h, lines.get(0), "item.kuvalich.ephemera.style");
-        Component element = (Component) style.getArgs()[0];
-        h.assertTrue(element.getContents() instanceof TranslatableContents t && "kuvaweapon.type.radiation".equals(t.getKey()),
-                "款式名用元素译名");
-        h.assertTrue(TextColor.fromRgb(KuvaPalette.element("radiation")).equals(element.getStyle().getColor()), "款式名按元素色");
+        Component name = (Component) style.getArgs()[0];
+        h.assertTrue(name.getContents() instanceof TranslatableContents t && "kuvalich.ephemera.name.orbit".equals(t.getKey()),
+                "款式行写款名");
+        h.assertTrue(radiation.equals(name.getStyle().getColor()), "款名按元素色");
 
-        TranslatableContents origin = translatable(h, lines.get(1), "item.kuvalich.ephemera.origin");
+        TranslatableContents elementLine = translatable(h, lines.get(1), "item.kuvalich.ephemera.element");
+        Component element = (Component) elementLine.getArgs()[0];
+        h.assertTrue(element.getContents() instanceof TranslatableContents t && "kuvaweapon.type.radiation".equals(t.getKey()),
+                "元素行用元素译名");
+        h.assertTrue(radiation.equals(element.getStyle().getColor()), "元素名按元素色");
+
+        TranslatableContents origin = translatable(h, lines.get(2), "item.kuvalich.ephemera.origin");
         h.assertTrue("Vesk Arru".equals(((Component) origin.getArgs()[0]).getString()), "源自那只玄骸的名字");
 
-        TranslatableContents colors = translatable(h, lines.get(2), "item.kuvalich.ephemera.colors");
+        TranslatableContents colors = translatable(h, lines.get(3), "item.kuvalich.ephemera.colors");
         swatch(h, (Component) colors.getArgs()[0], 0xAA3300);
         swatch(h, (Component) colors.getArgs()[1], 0x22CCFF);
 
-        List<Component> noOrigin = EphemeraItem.tooltipLines(EphemeraItem.create(EphemeraType.byId("fire"), ""));
-        h.assertTrue(noOrigin.size() == 2, "没有来历（创造栏）就不写源自那行");
+        List<Component> noOrigin = EphemeraItem.tooltipLines(EphemeraItem.create(EphemeraType.SURGE, "fire", ""));
+        h.assertTrue(noOrigin.size() == 3, "没有来历（创造栏）就不写源自那行");
         List<Component> unknown = EphemeraItem.tooltipLines(new ItemStack(KuvaLichItems.EPHEMERA.get()));
         h.assertTrue(unknown.size() == 1, "款式认不出时只写一行");
         h.succeed();
@@ -223,12 +290,12 @@ public final class EphemeraTests {
         h.assertTrue(PlayerLedger.getInbox(again).stream().mapToInt(ItemStack::getCount).sum() == 200,
                 "存读后收件箱里的赤毒数量不变");
 
-        Finale f = new Finale(3, 99L, "Vesk Arru", 4, 2, 30, "fire", "fire",
+        Finale f = new Finale(3, 99L, "Vesk Arru", 4, 2, 30, "fire", "surge",
                 List.of(new ItemStack(KuvaLichItems.KUVA.get(), 200)), List.of(new ItemStack(KuvaLichItems.ENDO.get(), 130)),
                 "minecraft:overworld", 1.5D, 64.0D, -2.5D);
         PlayerLedger.setFinale(p, f);
         Finale read = PlayerLedger.getFinale(p);
-        h.assertTrue(read != null && read.generation() == 3 && read.seed() == 99L && "fire".equals(read.ephemera())
+        h.assertTrue(read != null && read.generation() == 3 && read.seed() == 99L && "surge".equals(read.ephemera())
                 && read.drops().stream().mapToInt(ItemStack::getCount).sum() == 200
                 && read.returns().stream().mapToInt(ItemStack::getCount).sum() == 130, "账的存读");
         PlayerLedger.setFinale(p, null);
@@ -286,7 +353,7 @@ public final class EphemeraTests {
 
     private static void fillLedger(ServerPlayer p) {
         PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 200)));
-        PlayerLedger.setFinale(p, new Finale(1, 515L, "Vesk Arru", 2, 0, 10, "poison", "poison",
+        PlayerLedger.setFinale(p, new Finale(1, 515L, "Vesk Arru", 2, 0, 10, "poison", "coil",
                 List.of(new ItemStack(KuvaLichItems.KUVA.get(), 40)), List.of(), "minecraft:overworld", 0, 64, 0));
         CompoundTag ally = new CompoundTag();
         ally.putInt("gen", 1);
@@ -298,7 +365,7 @@ public final class EphemeraTests {
 
     private static void checkAll(GameTestHelper h, ServerPlayer p, String when) {
         RequiemCard card = card(p);
-        h.assertTrue(card.hasLich() && "poison".equals(card.getLichEphemera()) && card.isLichEphemeraRolled(),
+        h.assertTrue(card.hasLich() && EphemeraType.roll(515L, 1.0D).equals(card.getLichEphemera()) && card.isLichEphemeraRolled(),
                 when + "：卡上的幻纹应当在");
         h.assertTrue(PlayerLedger.getInbox(p).stream().mapToInt(ItemStack::getCount).sum() == 200, when + "：收件箱");
         Finale f = PlayerLedger.getFinale(p);

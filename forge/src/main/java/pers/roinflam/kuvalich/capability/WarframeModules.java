@@ -37,6 +37,8 @@ public class WarframeModules {
     private ItemStack six;
     private ItemStack seven;
     private ItemStack eight;
+    /** 幻纹格；颜色、渐变、大小这些外观参数都在物品自己的 NBT 里 */
+    private ItemStack ephemera;
 
     /**
      * 数据版本号（脏标记）
@@ -62,6 +64,7 @@ public class WarframeModules {
         this.six = ItemStack.EMPTY;
         this.seven = ItemStack.EMPTY;
         this.eight = ItemStack.EMPTY;
+        this.ephemera = ItemStack.EMPTY;
     }
 
     // ==================== 版本号 / Version ====================
@@ -159,6 +162,18 @@ public class WarframeModules {
         this.eight = newStack;
     }
 
+    public ItemStack getEphemera() { return ephemera; }
+
+    /**
+     * 调用方一律传拷贝进来，界面那边的格子和这里不能是同一个对象。
+     * 原地改了这件的 NBT 不会让版本号变，要改外观得改完拷贝一份再调这个
+     */
+    public void setEphemera(ItemStack ephemera) {
+        ItemStack newStack = ephemera != null ? ephemera : ItemStack.EMPTY;
+        if (isChanged(this.ephemera, newStack)) { markDirty(); }
+        this.ephemera = newStack;
+    }
+
     /**
      * 克隆数据
      * Clone data
@@ -178,6 +193,7 @@ public class WarframeModules {
         this.setSix(warframeModules.getSix());
         this.setSeven(warframeModules.getSeven());
         this.setEight(warframeModules.getEight());
+        this.setEphemera(warframeModules.getEphemera().copy());
 
         markDirty();
     }
@@ -199,6 +215,7 @@ public class WarframeModules {
         nbt.put("six", getSix().save(new CompoundTag()));
         nbt.put("seven", getSeven().save(new CompoundTag()));
         nbt.put("eight", getEight().save(new CompoundTag()));
+        nbt.put("ephemera", getEphemera().save(new CompoundTag()));
 
         return nbt;
     }
@@ -222,6 +239,8 @@ public class WarframeModules {
         this.six = ItemStack.of(nbt.getCompound("six"));
         this.seven = ItemStack.of(nbt.getCompound("seven"));
         this.eight = ItemStack.of(nbt.getCompound("eight"));
+        // 老档没有这个键：getCompound 给空 tag，读出来是空
+        this.ephemera = ItemStack.of(nbt.getCompound("ephemera"));
 
         markDirty();
     }

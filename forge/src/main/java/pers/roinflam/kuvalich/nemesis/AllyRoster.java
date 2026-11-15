@@ -47,6 +47,12 @@ public final class AllyRoster {
         return tag;
     }
 
+    /** 条目里的幻纹款式；款式表里查不到的按不带 */
+    public static String ephemeraOf(CompoundTag entry) {
+        String id = entry.getString(EPHEMERA);
+        return pers.roinflam.kuvalich.ephemera.EphemeraType.byId(id) == null ? "" : id;
+    }
+
     /** 再追加一只时会被挤掉的那只的名字；不会挤掉返回空串 */
     public static String wouldRelease(Player player) {
         List<CompoundTag> allies = PlayerLedger.getAllies(player);

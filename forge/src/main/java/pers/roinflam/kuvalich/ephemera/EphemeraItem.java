@@ -24,6 +24,7 @@ import java.util.List;
 public class EphemeraItem extends Item {
 
     public static final String TAG_TYPE = "Ephemera";
+    public static final String TAG_ELEMENT = "Element";
     public static final String TAG_ORIGIN = "Origin";
     public static final String TAG_COLOR1 = "Color1";
     public static final String TAG_COLOR2 = "Color2";
@@ -47,10 +48,11 @@ public class EphemeraItem extends Item {
         super(properties.stacksTo(1));
     }
 
-    public static ItemStack create(EphemeraType type, String origin) {
+    public static ItemStack create(EphemeraType type, String element, String origin) {
         ItemStack stack = new ItemStack(KuvaLichItems.EPHEMERA.get());
         CompoundTag tag = stack.getOrCreateTag();
         tag.putString(TAG_TYPE, type.id());
+        tag.putString(TAG_ELEMENT, EphemeraType.normalizeElement(element));
         if (origin != null && !origin.isEmpty()) {
             tag.putString(TAG_ORIGIN, origin);
         }
@@ -63,6 +65,12 @@ public class EphemeraItem extends Item {
     public static EphemeraType getType(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         return tag == null ? null : EphemeraType.byId(tag.getString(TAG_TYPE));
+    }
+
+    /** 缺键或不认识的元素按默认元素 */
+    public static String getElement(ItemStack stack) {
+        CompoundTag tag = stack.getTag();
+        return EphemeraType.normalizeElement(tag == null ? null : tag.getString(TAG_ELEMENT));
     }
 
     public static String getOrigin(ItemStack stack) {
@@ -130,8 +138,7 @@ public class EphemeraItem extends Item {
         if (tag != null && tag.contains(key, Tag.TAG_ANY_NUMERIC)) {
             return clampColor(tag.getInt(key));
         }
-        EphemeraType type = getType(stack);
-        return type == null ? KuvaPalette.LICH : type.defaultColor();
+        return getType(stack) == null ? KuvaPalette.LICH : EphemeraType.defaultColor(getElement(stack));
     }
 
     /** 只留 RGB 三个字节；太暗的按比例提亮到 {@link #MIN_BRIGHTNESS}，色相不变 */
@@ -174,9 +181,13 @@ public class EphemeraItem extends Item {
                     .withStyle(s -> s.withColor(muted)));
             return lines;
         }
+        String element = getElement(stack);
+        TextColor elementColor = TextColor.fromRgb(EphemeraType.defaultColor(element));
         lines.add(Component.translatable("item.kuvalich.ephemera.style",
-                        Component.translatable("kuvaweapon.type." + type.element())
-                                .withStyle(s -> s.withColor(TextColor.fromRgb(type.defaultColor()))))
+                        Component.translatable(type.nameKey()).withStyle(s -> s.withColor(elementColor)))
+                .withStyle(s -> s.withColor(muted)));
+        lines.add(Component.translatable("item.kuvalich.ephemera.element",
+                        Component.translatable("kuvaweapon.type." + element).withStyle(s -> s.withColor(elementColor)))
                 .withStyle(s -> s.withColor(muted)));
         String origin = getOrigin(stack);
         if (!origin.isEmpty()) {

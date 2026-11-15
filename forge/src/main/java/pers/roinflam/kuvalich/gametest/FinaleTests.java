@@ -78,7 +78,7 @@ public final class FinaleTests {
     }
 
     private static Finale sample(int gen) {
-        return new Finale(gen, 7L, "Vesk Arru", 3, 0, 20, "fire", "fire",
+        return new Finale(gen, 7L, "Vesk Arru", 3, 0, 20, "fire", "wing",
                 List.of(new ItemStack(KuvaLichItems.KUVA.get(), 30)), List.of(new ItemStack(Items.DIAMOND, 2)),
                 "minecraft:overworld", 0, 64, 0);
     }
@@ -110,6 +110,8 @@ public final class FinaleTests {
             }
         }
         h.assertTrue("Vesk Arru".equals(EphemeraItem.getOrigin(eph)), "幻纹应当写着源自哪只");
+        h.assertTrue(EphemeraItem.getType(eph) == pers.roinflam.kuvalich.ephemera.EphemeraType.WING
+                && "fire".equals(EphemeraItem.getElement(eph)), "幻纹的款式照账、元素照武器元素");
 
         h.assertTrue(!FinaleSettlement.resolveNow(p, 5, FinaleSettlement.Choice.VANQUISH), "第二次落定应当什么都不做");
         h.assertTrue(p.getInventory().countItem(KuvaLichItems.KUVA.get()) == 30 && card.getMinimumLevelWeapon() == min

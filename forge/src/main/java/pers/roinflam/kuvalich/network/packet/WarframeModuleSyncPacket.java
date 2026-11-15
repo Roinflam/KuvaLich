@@ -58,6 +58,8 @@ public class WarframeModuleSyncPacket {
     private final int[] killStacks;
     /** 武器类叠层数量，顺序与 {@link KillStackManager#WEAPON_STACK_TYPES} 一致 */
     private final int[] weaponStacks;
+    /** 幻纹格（第 9 项），紧跟在 8 个模组后面编码 */
+    private final ItemStack ephemera;
 
     // ==================== 服务端状态追踪 ====================
 
@@ -87,9 +89,18 @@ public class WarframeModuleSyncPacket {
      * @param weaponStacks 武器类叠层数量（顺序与 {@link KillStackManager#WEAPON_STACK_TYPES} 一致）
      */
     public WarframeModuleSyncPacket(ItemStack[] modules, int[] killStacks, int[] weaponStacks) {
+        this(modules, killStacks, weaponStacks, ItemStack.EMPTY);
+    }
+
+    public WarframeModuleSyncPacket(ItemStack[] modules, int[] killStacks, int[] weaponStacks, ItemStack ephemera) {
         this.modules = modules;
         this.killStacks = killStacks;
         this.weaponStacks = weaponStacks != null ? weaponStacks : new int[KillStackManager.WEAPON_STACK_TYPES.length];
+        this.ephemera = ephemera != null ? ephemera : ItemStack.EMPTY;
+    }
+
+    public ItemStack ephemera() {
+        return ephemera;
     }
 
     // ==================== 编解码 ====================
@@ -101,6 +112,7 @@ public class WarframeModuleSyncPacket {
         for (int i = 0; i < MODULE_SLOT_COUNT; i++) {
             buf.writeItem(pkt.modules[i] != null ? pkt.modules[i] : ItemStack.EMPTY);
         }
+        buf.writeItem(pkt.ephemera);
         int stackTypeCount = WarframeModuleHandler.WARFRAME_STACK_TYPES.length;
         buf.writeVarInt(stackTypeCount);
         for (int i = 0; i < stackTypeCount; i++) {
@@ -123,6 +135,7 @@ public class WarframeModuleSyncPacket {
         for (int i = 0; i < MODULE_SLOT_COUNT; i++) {
             modules[i] = buf.readItem();
         }
+        ItemStack ephemera = buf.readItem();
         int stackTypeCount = buf.readVarInt();
         // 防御性限制：叠层类型数量必须在合理范围内，避免恶意包造成巨量分配
         if (stackTypeCount < 0 || stackTypeCount > 256) {
@@ -142,7 +155,7 @@ public class WarframeModuleSyncPacket {
         for (int i = 0; i < weaponTypeCount; i++) {
             weaponStacks[i] = buf.readVarInt();
         }
-        return new WarframeModuleSyncPacket(modules, killStacks, weaponStacks);
+        return new WarframeModuleSyncPacket(modules, killStacks, weaponStacks, ephemera);
     }
 
     /**
@@ -168,6 +181,7 @@ public class WarframeModuleSyncPacket {
         }
         // 交给 Handler 管理客户端缓存
         WarframeModuleHandler.onClientSyncReceived(validModules, pkt.killStacks);
+        WarframeModuleHandler.onClientEphemeraReceived(pkt.ephemera.copy());
 
         // 武器类叠层镜像：本地玩家 UUID 只能在客户端取，本方法已由 DistExecutor 限定在客户端执行
         net.minecraft.client.player.LocalPlayer localPlayer = net.minecraft.client.Minecraft.getInstance().player;
@@ -194,7 +208,7 @@ public class WarframeModuleSyncPacket {
         int[] weaponStacks = KillStackManager.collectWeaponStacks(player);
         KuvaLich.network.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new WarframeModuleSyncPacket(modules, stacks, weaponStacks)
+                new WarframeModuleSyncPacket(modules, stacks, weaponStacks, collectServerEphemera(player))
         );
         SERVER_STATE.put(player.getUUID(), new int[]{getModuleVersion(player), Arrays.hashCode(stacks),
                 Arrays.hashCode(weaponStacks)});
@@ -227,7 +241,7 @@ public class WarframeModuleSyncPacket {
         ItemStack[] modules = collectServerModules(player);
         KuvaLich.network.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new WarframeModuleSyncPacket(modules, stacks, weaponStacks)
+                new WarframeModuleSyncPacket(modules, stacks, weaponStacks, collectServerEphemera(player))
         );
         SERVER_STATE.put(player.getUUID(), new int[]{version, stackHash, weaponHash});
         return true;
@@ -275,6 +289,11 @@ public class WarframeModuleSyncPacket {
         result[7] = safe(wm.getEight());
 
         return result;
+    }
+
+    private static ItemStack collectServerEphemera(ServerPlayer player) {
+        WarframeModules wm = player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).orElse(null);
+        return wm == null ? ItemStack.EMPTY : safe(wm.getEphemera());
     }
 
     /**

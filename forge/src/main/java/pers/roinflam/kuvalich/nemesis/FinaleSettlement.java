@@ -117,7 +117,7 @@ public final class FinaleSettlement {
         if (!f.ephemera().isEmpty()) {
             EphemeraType type = EphemeraType.byId(f.ephemera());
             if (type != null) {
-                give.add(EphemeraItem.create(type, f.name()));
+                give.add(EphemeraItem.create(type, EphemeraType.elementFor(f.seed(), f.weaponType()), f.name()));
             } else {
                 LogUtil.error("终结账里的幻纹款式 " + f.ephemera() + " 已不存在，这一件不发：" + p.getGameProfile().getName());
             }

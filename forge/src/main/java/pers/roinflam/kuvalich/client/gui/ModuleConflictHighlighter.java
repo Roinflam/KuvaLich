@@ -165,8 +165,8 @@ public class ModuleConflictHighlighter {
             if (menuIndex < 9) { return; }
             triggerWeaponFlash(weaponMenu, clickedItem);
         } else if (menu instanceof RequiemWarframeTableMenu warframeMenu) {
-            // 战甲军械库：模组槽0~7，玩家背包从索引8开始
-            if (menuIndex < 8) { return; }
+            // 战甲军械库：模组槽0~7，玩家背包 8~43，44 是幻纹格
+            if (menuIndex < 8 || menuIndex == RequiemWarframeTableMenu.EPHEMERA_SLOT) { return; }
             triggerWarframeFlash(warframeMenu, clickedItem);
         }
     }

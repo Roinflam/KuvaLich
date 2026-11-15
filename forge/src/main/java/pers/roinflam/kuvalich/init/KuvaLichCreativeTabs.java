@@ -62,7 +62,8 @@ public class KuvaLichCreativeTabs {
                         output.accept(KuvaLichItems.ENDO.get());
                         for (pers.roinflam.kuvalich.ephemera.EphemeraType type
                                 : pers.roinflam.kuvalich.ephemera.EphemeraType.all()) {
-                            output.accept(pers.roinflam.kuvalich.ephemera.EphemeraItem.create(type, ""));
+                            output.accept(pers.roinflam.kuvalich.ephemera.EphemeraItem.create(type,
+                                    pers.roinflam.kuvalich.ephemera.EphemeraType.DEFAULT_ELEMENT, ""));
                         }
 
                         // ========== 赤毒武器 / Kuva Weapons ==========

@@ -258,6 +258,11 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         return Component.empty();
     }
 
+    /** 模组格以外还要盯放进 / 拿走的格子（菜单槽位下标） */
+    protected int[] extraTracked() {
+        return new int[0];
+    }
+
     /** 悬停没解锁的格子时的说明 */
     protected List<Component> lockTip(int i) {
         return List.of();
@@ -298,13 +303,17 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
             circuitLen[i] = circuit[i] == null ? null : cumulative(circuit[i]);
         }
         // 武器排在最前：带着模组的武器放上台时，同一帧的几件按这个顺序错开出场，先上武器、再一张张亮卡
-        int[] ids = new int[weaponSlot >= 0 ? MODULES + 1 : MODULES];
+        int[] extra = extraTracked();
+        int[] ids = new int[(weaponSlot >= 0 ? MODULES + 1 : MODULES) + extra.length];
         int k = 0;
         if (weaponSlot >= 0) {
             ids[k++] = weaponSlot;
         }
         for (int i = 0; i < MODULES; i++) {
             ids[k++] = i;
+        }
+        for (int id : extra) {
+            ids[k++] = id;
         }
         track(ids);
         if (weaponSlot >= 0 && (width != pathW || height != pathH)) {
@@ -607,6 +616,52 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
     }
 
     /**
+     * 模组格以外的单张卡（幻纹格这类），样子和空 / 装着的模组卡一样，只是没有等级刻度。
+     * (x, y) 是卡心，物品图标要摆在 (x - 8, y - 10)，和模组卡一致
+     *
+     * @param slot 菜单槽位下标，用来取放不进去时的抖动
+     */
+    protected void drawSingleCard(GuiGraphics g, int x, int y, int slot, ItemStack st, int col, boolean hv, float e) {
+        if (e <= 0.0F) {
+            return;
+        }
+        boolean has = !st.isEmpty();
+        long rj = age(Ev.REJECT, slot);
+        int dx = rj < 300 ? Math.round(Mth.sin(rj / 22.0F) * 3.0F * (1.0F - rj / 300.0F)) : 0;
+        float lineW = GuiShapes.pixels(g, lw());
+        int n = cardShapeAt(x, y, dx);
+        float x0 = x - CELL + dx;
+        float x1 = x + CELL + dx;
+        float y0 = y - CELL_HH;
+
+        GuiShapes.begin(g);
+        GuiShapes.convexFill(g, pts, n, GuiShapes.argb(INK, 0.78F * e));
+        if (has) {
+            GuiShapes.convexFill(g, pts, n, GuiShapes.argb(col, 0.1F * e));
+        }
+        if (hv) {
+            GuiShapes.convexFill(g, pts, n, GuiShapes.argb(FxPalette.KUVA_PALE, 0.08F));
+        }
+        GuiShapes.polyline(g, pts, n, true, lineW, GuiShapes.argb(col, (has ? 0.6F : hv ? 0.5F : 0.2F) * e));
+        float dy = y + 10.0F;
+        if (has) {
+            fill(g, x0 + CHAMFER + 1, y0, x1 - 1, y0 + 1, col, 0.9F * e);
+            GuiShapes.diamondFill(g, x + dx, dy, 2.0F, 2.5F, GuiShapes.argb(col, 0.85F * e));
+        } else {
+            GuiShapes.diamondOutline(g, x + dx, dy, 2.0F, 2.5F, lineW, GuiShapes.argb(FxPalette.KUVA_PALE, 0.25F * e));
+        }
+        GuiShapes.end();
+        if (rj < 300) {
+            int c = GuiShapes.argb(FxPalette.KUVA, 0.5F * (1.0F - rj / 300.0F));
+            additive(g, () -> GuiShapes.convexFill(g, pts, cardShapeAt(x, y, 0), c));
+        }
+        if (hv) {
+            int c = GuiShapes.argb(col, 0.18F);
+            additive(g, () -> GuiShapes.frame(g, x - CELL - 1, y - CELL_HH - 1, x + CELL + 1, y + CELL_HH + 1, lw(), c));
+        }
+    }
+
+    /**
      * 卡底的等级刻度，一级一颗（满级不超过 5 级时每颗宽一倍）；满级超过 10 级的改成一根按比例填的条。
      * 刚装上时从左往右一颗颗亮起来；打开界面时本来就装着的直接是亮的
      */
@@ -665,12 +720,16 @@ public abstract class ArmoryPageScreen<M extends AbstractContainerMenu> extends 
         GuiShapes.additive(g, false);
     }
 
-    /** 卡形的 6 个点写进 {@link #pts}，返回点数 */
     private int cardShape(int i, int dx) {
-        float x0 = modX[i] - CELL + dx;
-        float x1 = modX[i] + CELL + dx;
-        float y0 = modY[i] - CELL_HH;
-        float y1 = modY[i] + CELL_HH;
+        return cardShapeAt(modX[i], modY[i], dx);
+    }
+
+    /** 卡形的 6 个点写进 {@link #pts}，返回点数 */
+    private int cardShapeAt(int x, int y, int dx) {
+        float x0 = x - CELL + dx;
+        float x1 = x + CELL + dx;
+        float y0 = y - CELL_HH;
+        float y1 = y + CELL_HH;
         float[] p = pts;
         p[0] = x0 + CHAMFER;
         p[1] = y0;

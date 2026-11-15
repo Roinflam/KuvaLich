@@ -117,7 +117,7 @@ public final class LichArchiveService {
             int gen = a.getInt(AllyRoster.GENERATION);
             out.add(new LichArchivePacket.Ally(a.getString(AllyRoster.NAME), gen, a.getInt(AllyRoster.RANK),
                     (int) a.getLong(AllyRoster.SEED), a.getInt(AllyRoster.WEAPON), a.getString(AllyRoster.WEAPON_TYPE),
-                    a.getString(AllyRoster.EPHEMERA), gen == activeGen, gen == presentGen));
+                    AllyRoster.ephemeraOf(a), gen == activeGen, gen == presentGen));
         }
         return out;
     }

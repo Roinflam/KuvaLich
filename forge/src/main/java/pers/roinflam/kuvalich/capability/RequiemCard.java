@@ -628,9 +628,10 @@ public class RequiemCard {
         return lichWeaponType;
     }
 
-    /** 幻纹款式 id，空 = 不带 */
+    /** 幻纹款式（造型）id，空 = 不带；元素不存，照武器元素取 */
     public String getLichEphemera() {
-        return lichEphemera;
+        // 款式表里查不到的（改版前的开发档）按不带
+        return pers.roinflam.kuvalich.ephemera.EphemeraType.byId(lichEphemera) == null ? "" : lichEphemera;
     }
 
     public boolean isLichEphemeraRolled() {
@@ -648,7 +649,7 @@ public class RequiemCard {
         if (!hasLich()) {
             return;
         }
-        this.lichEphemera = pers.roinflam.kuvalich.ephemera.EphemeraType.roll(lichSeed, lichWeaponType, chance);
+        this.lichEphemera = pers.roinflam.kuvalich.ephemera.EphemeraType.roll(lichSeed, chance);
         this.lichEphemeraRolled = true;
     }
 

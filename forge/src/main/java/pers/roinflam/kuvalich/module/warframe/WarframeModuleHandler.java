@@ -198,6 +198,18 @@ public class WarframeModuleHandler {
         clientSyncedModules = Collections.emptyList();
         clientSyncedKillStacks = new int[WARFRAME_STACK_TYPES.length];
         clientBaseAttrCache = null;
+        clientSyncedEphemera = ItemStack.EMPTY;
+    }
+
+    /** 本人幻纹格里的那件（客户端，同步包更新；不参与属性计算） */
+    private static volatile ItemStack clientSyncedEphemera = ItemStack.EMPTY;
+
+    public static void onClientEphemeraReceived(ItemStack ephemera) {
+        clientSyncedEphemera = ephemera != null ? ephemera : ItemStack.EMPTY;
+    }
+
+    public static ItemStack getClientEphemera() {
+        return clientSyncedEphemera;
     }
 
     // ==================== 属性获取（双端透明）====================

@@ -36,6 +36,14 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
 
     public ItemStackHandler moduleHandler = null;
 
+    /** 槽位表：0~7 模组格，8~43 背包（先快捷栏后主背包），44 幻纹格 */
+    public static final int INV_START = 8;
+    public static final int INV_END = 44;
+    public static final int EPHEMERA_SLOT = 44;
+
+    /** 单格、不覆写 onContentsChanged：打开时往里装东西不会触发写回，写回只走 {@link EphemeraSlot} */
+    public final ItemStackHandler ephemeraHandler = new ItemStackHandler(1);
+
     public RequiemWarframeTableMenu(int windowId, Inventory playerInventory, Level level, BlockPos pos) {
         super(KuvaLichMenuTypes.REQUIEM_WARFRAME_TABLE.get(), windowId);
 
@@ -64,6 +72,38 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
                 this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 64 + row * 18));
             }
         }
+
+        // 追加在最后，背包那 36 格的序号不动；界面会重新摆位置
+        this.addSlot(new EphemeraSlot(this, 8, 12));
+        if (!level.isClientSide) {
+            loadEphemeraFromCapability(playerInventory.player);
+        }
+    }
+
+    private void loadEphemeraFromCapability(Player player) {
+        try {
+            player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).ifPresent(wm ->
+                    ephemeraHandler.setStackInSlot(0, wm.getEphemera().copy()));
+        } catch (Exception e) { LogUtil.error("加载幻纹格时发生错误", e); }
+    }
+
+    boolean isClientSide() {
+        return level.isClientSide;
+    }
+
+    /** 幻纹格写回玩家能力，写的是拷贝；客户端什么都不做 */
+    void writeBackEphemera() {
+        if (level.isClientSide) {
+            return;
+        }
+        try {
+            player.getCapability(CapabilityRegistryHandler.WARFRAME_MODULES).ifPresent(wm ->
+                    wm.setEphemera(ephemeraHandler.getStackInSlot(0).copy()));
+        } catch (Exception e) { LogUtil.error("幻纹格写回时发生错误", e); }
+    }
+
+    void returnToPlayer(ItemStack stack) {
+        InventoryUtil.giveOrDrop(player, stack);
     }
 
     private void loadModulesFromCapability(Player player) {
@@ -91,15 +131,24 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
         ItemStack slotStack = slot.getItem();
         itemstack = slotStack.copy();
 
-        if (index < 8) {
+        if (index < INV_START) {
             LogUtil.debug("从战甲模组槽位" + index + "转移到背包: " + slotStack.getHoverName().getString());
-            if (!this.moveItemStackTo(slotStack, 8, 44, true)) {
+            if (!this.moveItemStackTo(slotStack, INV_START, INV_END, true)) {
                 LogUtil.debug("背包已满，无法转移");
                 return ItemStack.EMPTY;
             }
             LogUtil.debug("战甲模组转移成功，已触发同步");
+        } else if (index == EPHEMERA_SLOT) {
+            if (!this.moveItemStackTo(slotStack, INV_START, INV_END, true)) {
+                return ItemStack.EMPTY;
+            }
         } else {
-            if (itemstack.getItem() instanceof AbstractWarframeModule) {
+            if (EphemeraSlot.accepts(itemstack)) {
+                // 幻纹格有东西就不动，不替换
+                if (!this.moveItemStackTo(slotStack, EPHEMERA_SLOT, EPHEMERA_SLOT + 1, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (itemstack.getItem() instanceof AbstractWarframeModule) {
                 boolean success = false;
                 for (int i = 0; i < 8; i++) {
                     if (this.moveItemStackTo(slotStack, i, i + 1, false)) {
@@ -129,6 +178,7 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
         super.removed(player);
         if (!level.isClientSide) {
             saveModulesToCapability(player);
+            writeBackEphemera();
         }
     }
 

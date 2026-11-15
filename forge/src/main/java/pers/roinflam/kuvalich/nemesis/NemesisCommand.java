@@ -78,6 +78,8 @@ public final class NemesisCommand {
     private static final SuggestionProvider<CommandSourceStack> EPHEMERA_TYPES = (ctx, b) ->
             SharedSuggestionProvider.suggest(pers.roinflam.kuvalich.ephemera.EphemeraType.all().stream()
                     .map(pers.roinflam.kuvalich.ephemera.EphemeraType::id), b);
+    private static final SuggestionProvider<CommandSourceStack> EPHEMERA_ELEMENTS = (ctx, b) ->
+            SharedSuggestionProvider.suggest(pers.roinflam.kuvalich.utils.KuvaWeaponUtil.LICH_ELEMENTS, b);
 
     private NemesisCommand() {
     }
@@ -161,11 +163,15 @@ public final class NemesisCommand {
                         .executes(ctx -> thrallDue(ctx, IntegerArgumentType.getInteger(ctx, "seconds"))))));
 
         LiteralArgumentBuilder<CommandSourceStack> ephemera = Commands.literal("ephemera");
+        // give <玩家> <款式> [元素] [来历]：不写元素按默认元素
         ephemera.then(Commands.literal("give").then(target()
                 .then(Commands.argument("type", StringArgumentType.word()).suggests(EPHEMERA_TYPES)
-                        .executes(ctx -> ephemeraGive(ctx, ""))
-                        .then(Commands.argument("origin", StringArgumentType.greedyString())
-                                .executes(ctx -> ephemeraGive(ctx, StringArgumentType.getString(ctx, "origin")))))));
+                        .executes(ctx -> ephemeraGive(ctx, null, ""))
+                        .then(Commands.argument("element", StringArgumentType.word()).suggests(EPHEMERA_ELEMENTS)
+                                .executes(ctx -> ephemeraGive(ctx, StringArgumentType.getString(ctx, "element"), ""))
+                                .then(Commands.argument("origin", StringArgumentType.greedyString())
+                                        .executes(ctx -> ephemeraGive(ctx, StringArgumentType.getString(ctx, "element"),
+                                                StringArgumentType.getString(ctx, "origin"))))))));
         // roll：按种子和当前概率重掷现役玄骸的幻纹；带款式（或 none）就直接指定
         ephemera.then(Commands.literal("roll").then(target()
                 .executes(ctx -> ephemeraRoll(ctx, null))
@@ -677,16 +683,21 @@ public final class NemesisCommand {
         return sb.toString();
     }
 
-    private static int ephemeraGive(CommandContext<CommandSourceStack> ctx, String origin) throws CommandSyntaxException {
+    private static int ephemeraGive(CommandContext<CommandSourceStack> ctx, @Nullable String element, String origin)
+            throws CommandSyntaxException {
         ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
         String id = StringArgumentType.getString(ctx, "type");
         pers.roinflam.kuvalich.ephemera.EphemeraType type = pers.roinflam.kuvalich.ephemera.EphemeraType.byId(id);
         if (type == null) {
             return fail(ctx, "unknown ephemera: " + id);
         }
+        if (element != null && !pers.roinflam.kuvalich.ephemera.EphemeraType.isElement(element)) {
+            return fail(ctx, "unknown element: " + element);
+        }
+        String el = pers.roinflam.kuvalich.ephemera.EphemeraType.normalizeElement(element);
         pers.roinflam.kuvalich.utils.InventoryUtil.giveOrDrop(p,
-                pers.roinflam.kuvalich.ephemera.EphemeraItem.create(type, origin.strip()));
-        return ok(ctx, "gave ephemera " + id + " to " + p.getGameProfile().getName());
+                pers.roinflam.kuvalich.ephemera.EphemeraItem.create(type, el, origin.strip()));
+        return ok(ctx, "gave ephemera " + id + " (" + el + ") to " + p.getGameProfile().getName());
     }
 
     private static int ephemeraRoll(CommandContext<CommandSourceStack> ctx, @Nullable String id)
