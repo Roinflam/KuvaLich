@@ -209,6 +209,28 @@ public final class ArchiveRosterTests {
         h.succeed();
     }
 
+    /** 没改动名册的指令不回档案，免得绕开档案请求自己的限频 */
+    @GameTest(template = "empty", batch = BATCH)
+    public static void noArchiveForUselessCommand(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        giveRoster(p, entry(4, "Teshu Mak"), entry(7, "Ozzen Varn"));
+        PlayerLedger.setActiveAlly(p, 7);
+        AllyCommandPacket.resetRateLimit();
+        long t = 2_000_000L;
+        int before = AllyCommandPacket.archivesSentForTest();
+        h.assertTrue(AllyCommandPacket.receive(p, AllyCommandPacket.SET_ACTIVE, 7, t) == AllyCommandPacket.Result.UNCHANGED
+                && AllyCommandPacket.receive(p, AllyCommandPacket.SET_ACTIVE, 55, t + 1) == AllyCommandPacket.Result.NOT_IN_ROSTER
+                && AllyCommandPacket.receive(p, AllyCommandPacket.RELEASE, 55, t + 2) == AllyCommandPacket.Result.NOT_IN_ROSTER
+                && AllyCommandPacket.receive(p, 9, 4, t + 3) == AllyCommandPacket.Result.BAD_ACTION, "四个无效指令的结果");
+        h.assertTrue(AllyCommandPacket.archivesSentForTest() == before, "无效指令不回档案");
+        h.assertTrue(AllyCommandPacket.receive(p, AllyCommandPacket.SET_ACTIVE, 4, t + 4) == AllyCommandPacket.Result.OK
+                && AllyCommandPacket.archivesSentForTest() == before + 1, "改了出战回一份");
+        h.assertTrue(AllyCommandPacket.receive(p, AllyCommandPacket.RELEASE, 7, t + 1000L) == AllyCommandPacket.Result.OK
+                && AllyCommandPacket.archivesSentForTest() == before + 2, "遣散成功回一份");
+        AllyCommandPacket.resetRateLimit();
+        h.succeed();
+    }
+
     @AfterBatch(batch = BATCH)
     public static void afterBatch(ServerLevel level) {
         KuvaTestKit.afterBatch(level);

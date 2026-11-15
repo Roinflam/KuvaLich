@@ -20,7 +20,7 @@ import java.util.function.Supplier;
  * 档案里对盟友名册的操作（客户端 → 服务器）：设为出战、遣散，带名册里的代数。
  *
  * <p>只能动发送者自己的名册，代数不在名册里就不做事。遣散的二次确认在客户端做，服务端收到就遣散。
- * 每人每秒最多收 {@link #MAX_PER_SECOND} 个，多出来的直接丢掉；处理完回一份新的档案，界面跟着刷新。</p>
+ * 每人每秒最多收 {@link #MAX_PER_SECOND} 个，多出来的直接丢掉；名册真改了才回一份新的档案，界面跟着刷新。</p>
  */
 public class AllyCommandPacket {
 
@@ -33,6 +33,7 @@ public class AllyCommandPacket {
 
     /** 玩家 → {窗口开始的时刻, 窗口里收了几个}。只在服务端主线程读写 */
     private static final Map<UUID, long[]> WINDOWS = new HashMap<>();
+    private static int archivesSent;
 
     public enum Result {
         OK,
@@ -70,13 +71,17 @@ public class AllyCommandPacket {
         ctx.setPacketHandled(true);
     }
 
-    /** 限频之后执行，执行了就回一份档案 */
+    /** 限频之后执行，名册真改了才回一份档案 */
     public static Result receive(ServerPlayer player, int action, int generation, long nowMs) {
         if (!allow(player.getUUID(), nowMs)) {
             return Result.RATE_LIMITED;
         }
         Result r = apply(player, action, generation);
-        LichArchiveService.handleRequest(player);
+        // 档案请求包有自己的 500 ms 限频，这里不改状态也回档案的话，乱填代数就能绕开它逼服务端每秒组好几份
+        if (r == Result.OK) {
+            archivesSent++;
+            LichArchiveService.handleRequest(player);
+        }
         return r;
     }
 
@@ -135,6 +140,11 @@ public class AllyCommandPacket {
     /** 测试用：清掉限频记录 */
     public static void resetRateLimit() {
         WINDOWS.clear();
+    }
+
+    /** 测试用：回过几次档案 */
+    public static int archivesSentForTest() {
+        return archivesSent;
     }
 
     public static void send(int action, int generation) {
