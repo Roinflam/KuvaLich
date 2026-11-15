@@ -153,6 +153,11 @@ public final class MercySoundCues {
                         1.0F, i, true));
             }
         }
+        if (r == Result.FAIL && v != MercyVariant.LICH_A) {
+            // 另四套判错那刀前后叠着落地、揪抓声或台词，录下来还是顶到 0 dBFS，再收 2 dB；正面直刺那刀前后是空的，不动
+            out.replaceAll(c -> c.stab() == last - 1 ? new Cue(c.layer(), c.ms(), c.vol() * 0.8F, c.pitch(), c.stab(),
+                    c.impact()) : c);
+        }
         if (r == Result.FAIL) {
             out.add(new Cue(Layer.BREAKFREE, b.fill(last) + b.failBreakFree, 1.0F, 1.0F, -1, false));
         } else if (r == Result.ADVANCE) {
