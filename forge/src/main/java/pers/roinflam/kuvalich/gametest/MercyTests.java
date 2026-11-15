@@ -211,7 +211,10 @@ public final class MercyTests {
         h.succeed();
     }
 
-    /** 正面直刺「短—长」、背后锁颈「长—短」、贴身上挑「连珠」，玄骸的 hit1 / hit2 片段长度跟刀间隔走（动画文件是脚本生成的，改表忘了重新生成就会对不上） */
+    /**
+     * 正面直刺「短—长」、背后锁颈「长—短」、贴身上挑「连珠」、翻滚绕背「长—更长」、踏背下刺「慢—慢」；
+     * 玄骸的 hit1 / hit2 片段长度跟刀间隔走（动画文件是脚本生成的，改表忘了重新生成就会对不上）
+     */
     @GameTest(template = "empty")
     public static void lichHitClipsFollowBeats(GameTestHelper h) {
         MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
@@ -236,8 +239,11 @@ public final class MercyTests {
         int d1 = bd.stab(1) - bd.stab(0), d2 = bd.stab(2) - bd.stab(1);
         h.assertTrue(d1 > gap1 + 100 && d2 > d1 + 200 && d2 > gap2,
                 "翻滚绕背应当两次都长、第三刀前留够翻滚：" + d1 + " / " + d2);
-        int[][] gaps = {{gap1, gap2}, {b1, b2}, {c1, c2}, {d1, d2}};
-        String[] keys = {"a", "b", "c", "d"};
+        MercyBeats.Lich be = MercyBeats.lich(MercyVariant.LICH_E);
+        int e1 = be.stab(1) - be.stab(0), e2 = be.stab(2) - be.stab(1);
+        h.assertTrue(e1 == e2 && e1 > c1 + 150, "踏背下刺应当两次等距、比连珠慢一拍：" + e1 + " / " + e2);
+        int[][] gaps = {{gap1, gap2}, {b1, b2}, {c1, c2}, {d1, d2}, {e1, e2}};
+        String[] keys = {"a", "b", "c", "d", "e"};
         for (int v = 0; v < keys.length; v++) {
             for (int k = 1; k <= 2; k++) {
                 String name = "mercy.lich." + keys[v] + ".hit" + k;

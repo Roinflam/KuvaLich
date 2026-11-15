@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
  * 里从上一段的末值冲到这一段，顿帧时照样推过去。段内各通道按 {@link MercyCurve.Keys} 的单调三次走，
  * 每段最后一帧放在切点之后，切的那一刻镜头还在动。</p>
  *
- * <p>只有排过轨迹的套路有这一层（现在是正面直刺、背后锁颈、贴身上挑、翻滚绕背），别的套路照旧是固定机位。</p>
+ * <p>只有排过轨迹的套路有这一层（玄骸五套都排了），奴仆几套照旧是固定机位。</p>
  */
 public final class MercyCameraPath {
 
@@ -61,6 +61,7 @@ public final class MercyCameraPath {
         PATHS[MercyVariant.LICH_B.ordinal()] = lichB();
         PATHS[MercyVariant.LICH_C.ordinal()] = lichC();
         PATHS[MercyVariant.LICH_D.ordinal()] = lichD();
+        PATHS[MercyVariant.LICH_E.ordinal()] = lichE();
     }
 
     private MercyCameraPath() {
@@ -189,6 +190,42 @@ public final class MercyCameraPath {
                         k(s3 + 250, 0.20F, -27.5F, 0.22F, 1.5F, 0.3F),
                         k(s3 + 1000, 0.0F, -22.0F, 0.30F, 0.0F, 0.3F),
                         k(end + 300, -0.05F, -20.0F, 0.32F, 0.0F, 0.3F))
+        };
+    }
+
+    /**
+     * 踏背下刺，本套机位在正侧面、低。第一刀往它背后那一侧绕一点、推近，看刀扎进后腰；处决者往下一蹲时开始拉开升高，
+     * 前空翻上背那一下整个人都在画里。第二刀硬切到它正面那一侧的高处往下看，刀从头顶扎进后颈，画面歪 2°；拔刀化光时
+     * 拉开，让红光从它背上闪到正面这一路都在画里；第三刀刺入猛推，再往正面绕，看刀捅进胸口，之后随处决者蹬开空翻退出来
+     */
+    private static Seg[] lichE() {
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_E);
+        int in = b.cutIn;
+        int s1 = b.stab(0);
+        int s2 = b.stab(1);
+        int s3 = b.stab(2);
+        int end = b.closeup;
+        return new Seg[]{
+                seg(in, false,
+                        k(in, 0.02F, 8.0F, -0.05F, 0.0F, 0.45F),
+                        k(s1 - 120, 0.16F, 10.0F, -0.12F, 0.0F, 0.45F),
+                        k(s1 + 300, 0.18F, 11.0F, -0.12F, 0.0F, 0.45F),
+                        k(s1 + 460, 0.12F, 8.0F, -0.05F, 0.0F, 0.45F),
+                        k(s1 + 760, -0.10F, 2.0F, 0.40F, 0.0F, 0.45F),
+                        k(s2 - 180, -0.06F, 0.0F, 0.45F, 0.0F, 0.45F),
+                        k(s2 + 200, -0.05F, 0.0F, 0.46F, 0.0F, 0.45F)),
+                seg(s2, false,
+                        k(s2, 0.20F, -32.0F, 0.85F, 2.0F, 0.3F),
+                        k(s2 + 300, 0.22F, -31.0F, 0.86F, 2.0F, 0.3F),
+                        k(s2 + 460, 0.10F, -28.0F, 0.75F, 0.8F, 0.3F),
+                        k(s2 + 800, -0.10F, -36.0F, 0.45F, 0.0F, 0.3F),
+                        k(s3 - 80, -0.06F, -40.0F, 0.30F, 0.0F, 0.3F),
+                        k(s3 + 200, -0.07F, -40.5F, 0.29F, 0.0F, 0.3F)),
+                seg(s3, true,
+                        k(s3, 0.22F, -52.0F, 0.05F, 1.5F, 0.3F),
+                        k(s3 + 250, 0.20F, -51.5F, 0.07F, 1.5F, 0.3F),
+                        k(s3 + 1000, -0.05F, -44.0F, 0.30F, 0.0F, 0.3F),
+                        k(end + 300, -0.10F, -42.0F, 0.32F, 0.0F, 0.3F))
         };
     }
 
