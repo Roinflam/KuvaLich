@@ -21,6 +21,7 @@ import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
@@ -173,6 +174,38 @@ public final class ChoiceTests {
                 h.assertTrue(LichDirector.getLich(p).isEmpty(), "导演那边的引用清掉");
                 waitUntil(h, () -> !MercyServer.hasActiveExec(p.getUUID()), 80, "这一场走完", () -> {
                     h.assertTrue(ownedWeapons(p) == 0 && owned(p, KuvaLichItems.LICH_RELIQUARY.get()) == 0, "走完也没有奖励");
+                    h.succeed();
+                });
+            });
+        });
+    }
+
+    /**
+     * 感化收尾「背身而去」的服务端节拍：它在化雾那一拍才离场（化雾演完正好移除），处决者在整段收尾演完才解锁，
+     * 账只在选的那一刻落一次
+     */
+    @GameTest(template = "empty", batch = MAIN, timeoutTicks = 500)
+    public static void convertOutroLeavesAndUnlocksOnBeat(GameTestHelper h) {
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
+        int leave = b.convertLeaveTick - b.choiceOpenTick, end = b.convertEndTick - b.choiceOpenTick;
+        long[] chose = new long[1];
+        execute(h, 0, null, (p, card, lich) -> {
+            MercyServer.handleChoice(p, MercyChoicePacket.CONVERT);
+            chose[0] = h.getTick();
+            h.assertTrue(!PlayerLedger.hasFinale(p) && PlayerLedger.getAllies(p).size() == 1, "选了当场落定");
+            h.runAfterDelay(leave - 3, () -> {
+                h.assertTrue(lich.isAlive() && !lich.isRemoved(), "化雾之前它还跪在原地");
+                h.assertTrue(MercyServer.hasActiveExec(p.getUUID()) && MercyServer.isBusy(p), "收尾没演完，处决者还锁着");
+            });
+            waitUntil(h, lich::isRemoved, leave + KuvaMasterEntity.DEPART_TICKS + 4, "化雾演完移除", () -> {
+                long at = h.getTick() - chose[0];
+                h.assertTrue(at >= leave + KuvaMasterEntity.DEPART_TICKS - 2, "移除早了：选后 " + at + " tick");
+                h.assertTrue(MercyServer.hasActiveExec(p.getUUID()), "它走了人还在收尾里");
+                waitUntil(h, () -> !MercyServer.hasActiveExec(p.getUUID()), end + 4, "收尾演完这一场结束", () -> {
+                    long un = h.getTick() - chose[0];
+                    h.assertTrue(un >= end - 2 && un <= end + 3, "收尾结束时刻不对：选后 " + un + " tick，应是 " + end);
+                    h.assertTrue(PlayerLedger.getAllies(p).size() == 1, "名册只多一条");
+                    h.assertTrue(owned(p, Items.DIAMOND) == 5, "没收的只还一次");
                     h.succeed();
                 });
             });

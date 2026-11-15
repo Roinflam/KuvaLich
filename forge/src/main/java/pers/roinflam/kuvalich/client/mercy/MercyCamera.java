@@ -97,6 +97,8 @@ public final class MercyCamera {
         CLOSEUP,
         /** 成功：膝盖高度第三人称 */
         THIRD,
+        /** 感化收尾：双人侧面，跟着走开的人绕（{@link MercyConvertCam}） */
+        CONVERT,
         /** 失败、挣开站起：宽镜头 */
         WIDE
     }
@@ -166,6 +168,7 @@ public final class MercyCamera {
             new Rig(false, false, 5.03D, 1.58D, 2.55D, 0.7D, 0.5D, 1.4D, 60.0F),
             new Rig(false, false, 0.55D, -2.75D, 1.2D, 0.5D, 0.0D, 1.7D, 55.0F),
             new Rig(true, true, 0.6D, -1.8D, 0.55D, -0.65D, 0.0D, 1.55D, 70.0F),
+            null,
             null
     };
 
@@ -264,8 +267,11 @@ public final class MercyCamera {
      */
     public static boolean hidesTargetWeapon(int entityId) {
         MercyClient.Exec e = MercyClient.local();
-        if (e != null && e.targetId == entityId && !e.handedBack && shotAt(e, e.elapsed()) == Shot.CLOSEUP) {
-            return true;
+        if (e != null && e.targetId == entityId && !e.handedBack) {
+            Shot s = shotAt(e, e.elapsed());
+            if (s == Shot.CLOSEUP || s == Shot.CONVERT) {
+                return true;
+            }
         }
         // 断膝三方和折翼按目标查，旁观者看到的也一样
         MercyClient.Exec f = MercyClient.byTarget(entityId);
@@ -289,6 +295,10 @@ public final class MercyCamera {
         if (s == Shot.GAME) {
             return s;
         }
+        if (s == Shot.CONVERT && !pose(e, s).ok) {
+            // 侧面哪一档都放不下：留在跪地特写里看完
+            s = Shot.CLOSEUP;
+        }
         return pose(e, s).ok ? s : Shot.GAME;
     }
 
@@ -308,8 +318,8 @@ public final class MercyCamera {
         Shot own = own(plan.variant());
         return switch (MercyTimeline.outcome(plan)) {
             case SUCCESS -> t < b.closeup ? own : t < b.third ? Shot.CLOSEUP : Shot.THIRD;
-            // 感化不切第三人称，特写一直到交还
-            case CONVERT -> t < b.closeup ? own : Shot.CLOSEUP;
+            // 感化不切第三人称：拔刀还在特写里，后跃时切双人侧面
+            case CONVERT -> t < b.closeup ? own : t < b.convertCut ? Shot.CLOSEUP : Shot.CONVERT;
             case ADVANCE, FAIL -> t < MercyTimeline.wideFromMs(plan) ? own : Shot.WIDE;
             case THRALL -> Shot.GAME;
         };
@@ -344,6 +354,9 @@ public final class MercyCamera {
      * 还不行就允许被方块挡、放到交点往回 0.2 格（离注视点不到 0.8 格的不要），再按同样的顺序试一遍；都不行退回玩家镜头
      */
     private static ShotPose fit(MercyClient.Exec e, Shot s) {
+        if (s == Shot.CONVERT) {
+            return MercyConvertCam.fit(e);
+        }
         for (int pass = 0; pass < 2; pass++) {
             for (int i = 0; i < 2; i++) {
                 int side = i == 0 ? e.side : -e.side;
@@ -918,6 +931,10 @@ public final class MercyCamera {
         boolean moving = e.shots.motion != MercyCameraPath.Motion.STATIC;
         if (moving && s == own(e.variant)) {
             ShotPose q = ownMoved(e, s, t, e.rawElapsed(), true);
+            pos = q.pos();
+            look = q.look();
+        } else if (s == Shot.CONVERT) {
+            ShotPose q = MercyConvertCam.at(e, t);
             pos = q.pos();
             look = q.look();
         }

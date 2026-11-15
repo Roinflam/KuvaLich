@@ -46,9 +46,21 @@ public final class MercyBeats {
     private static final int RETURN_LIGHT = 5060;
     /** 交还控制；服务端同一刻发解密界面的完成提示 */
     private static final int SUCCESS_END = 5560;
-    /** 感化后段（相对第三刀，和上面同一个钟，挂起的时长不算）：起身化雾，服务端同一刻开始离场；交还，同一刻解锁、投递 */
-    private static final int CONVERT_LEAVE = CLOSEUP + 1200;
-    private static final int CONVERT_END = CLOSEUP + 2200;
+    /**
+     * 感化后段「背身而去」（相对第三刀，和上面同一个钟，挂起的时长不算，所以写成 CLOSEUP + 选定后多久）：
+     * 拔刀、蹬地后跃、切双人侧面、落地、刀弹回腕里；转身走开（转身落脚和后三步）、它右拳按胸、他回头、它垂首、化雾；
+     * 服务端在化雾快散完时让它离场（离场后 8 tick 移除，正好散完）；交还，同一刻解锁、投递。
+     * 时刻照选定的候选 conv2v6 整体晚 200 ms（前面多了拔刀和后跃），和 build_mercy_anim.py 的 CONVERT_MS 对着
+     */
+    private static final int CONVERT_YANK = 120, CONVERT_HOP = 200, CONVERT_CUT = 330, CONVERT_LAND = 470,
+            CONVERT_SNAP = 620, CONVERT_PIVOT = 920, CONVERT_LOOK = 2800, CONVERT_FIST = 2360, CONVERT_BOW = 3100,
+            CONVERT_MIST = 3500;
+    /** 转身那一步和后面三步落地，相对 CONVERT_PIVOT */
+    private static final int[] CONVERT_STEPS = {400, 860, 1320, 1660};
+    private static final int CONVERT_LEAVE = CLOSEUP + 4250;
+    private static final int CONVERT_END = CLOSEUP + 5100;
+    /** 化雾演多久（客户端从 convertMist 起放）；离场 tick + 8 tick 移除要落在它散完那一刻 */
+    public static final int CONVERT_MIST_MS = 1150;
 
     // 界面，相对第三格填满
     /** 格下小点出现 */
@@ -198,6 +210,10 @@ public final class MercyBeats {
         /** 选择窗口开（先等于跪地特写） */
         public final int choiceOpen;
         public final int convertLeave, convertEnd;
+        /** 感化收尾各拍（同一个钟），见 {@code CONVERT_*} */
+        public final int convertYank, convertHop, convertCut, convertLand, convertSnap, convertPivot, convertLook,
+                convertFist, convertBow, convertMist;
+        private final int[] convertSteps;
         public final int hudDots, hudDotSlash;
         /** 踏背下刺的化光、现身；别的套路是 −1 */
         public final int blink, appear;
@@ -240,6 +256,21 @@ public final class MercyBeats {
             choiceOpen = closeup;
             convertLeave = s3 + CONVERT_LEAVE;
             convertEnd = s3 + CONVERT_END;
+            int c = closeup;
+            convertYank = c + CONVERT_YANK;
+            convertHop = c + CONVERT_HOP;
+            convertCut = c + CONVERT_CUT;
+            convertLand = c + CONVERT_LAND;
+            convertSnap = c + CONVERT_SNAP;
+            convertPivot = c + CONVERT_PIVOT;
+            convertLook = c + CONVERT_LOOK;
+            convertFist = c + CONVERT_FIST;
+            convertBow = c + CONVERT_BOW;
+            convertMist = c + CONVERT_MIST;
+            convertSteps = new int[CONVERT_STEPS.length];
+            for (int i = 0; i < convertSteps.length; i++) {
+                convertSteps[i] = convertPivot + CONVERT_STEPS[i];
+            }
             hudSuccessFade = s3 + HUD_SUCCESS_FADE;
             third = s3 + THIRD;
             drawOut = s3 + DRAW_OUT;
@@ -364,6 +395,15 @@ public final class MercyBeats {
         /** 第 {@code i} 刀（从 0 起）刺入 */
         public int stab(int i) {
             return stab[i];
+        }
+
+        /** 感化收尾走开时第 {@code i} 步（0 = 转身那一步）落地 */
+        public int convertStep(int i) {
+            return convertSteps[i];
+        }
+
+        public int convertStepCount() {
+            return convertSteps.length;
         }
 
         /** 第 {@code k} 格（1~3）填满发光 */

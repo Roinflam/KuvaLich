@@ -76,8 +76,8 @@ public final class MercyTimeline {
 
     /** 冻帧跳到某一刻时，往前这么多毫秒以内的一次性阶段补放一遍（截图时看得到刚放的火花） */
     private static final int SEEK_REPLAY_MS = 250;
-    /** 感化：起身以后刀再留多久才缩完 */
-    private static final int CONVERT_BLADE_MS = 300;
+    /** 感化：刀往下一甩以后多久缩完（弹回腕里） */
+    private static final int CONVERT_BLADE_MS = 80;
     /** 感化：归还光点比交还早多少（服务端交还那一刻投递） */
     private static final int CONVERT_RETURN_LEAD_MS = 300;
 
@@ -253,8 +253,8 @@ public final class MercyTimeline {
             end = lich(p).successEnd;
         }
         if (outcome(p) == Outcome.CONVERT) {
-            // 感化：起身那一刻刀跟着抽出来缩掉，不等交还
-            end = lich(p).convertLeave + CONVERT_BLADE_MS;
+            // 感化：后跃落地、刀往下一甩就弹回腕里，不等交还
+            end = lich(p).convertSnap + CONVERT_BLADE_MS;
         }
         if (p.variant().thrall) {
             // 奴仆收势时就先缩回，免得推开以后刀还亮着
@@ -364,7 +364,15 @@ public final class MercyTimeline {
                 }
             });
             if (oc == Outcome.CONVERT) {
-                // 感化的后段是从挂起点换上来的：起身化雾由服务端的离场包演，这里只管还东西和放开混音
+                // 感化的后段是从挂起点换上来的。化雾在本地起（比离场包的那团慢），服务端的离场包随后到、被挡掉
+                tl.at(b.convertYank, x -> {
+                    Entity t = x.target();
+                    if (t != null) {
+                        RequiemFx.bladeSpark(t, 3, true);
+                        KuvaGlow.boost(x.targetId, 1.4F, 250);
+                    }
+                });
+                tl.at(b.convertMist, x -> LichFx.convertMist(x.target()));
                 if (p.returnsItems()) {
                     tl.at(b.convertEnd - CONVERT_RETURN_LEAD_MS, MercyTimeline::returnLight);
                 }

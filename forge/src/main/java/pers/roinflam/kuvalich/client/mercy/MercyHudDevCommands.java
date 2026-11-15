@@ -52,7 +52,8 @@ import java.lang.reflect.Field;
  *       {@code none} = 没有资格人；{@code /kuvafxc mercydown clear} 恢复。看倒地提示、试处决键用；</li>
  *   <li>{@code /kuvafxc mercychoice <open|ephemera|full|disabled|judging|off>}：摆一组假的感化 / 消灭选择牌（10 秒倒计时，
  *       {@code ephemera} 带上方的幻纹那一行，{@code full} 再加名册已满那一行，{@code judging} 是 full 倒计时走完的样子），
- *       按住左右移动键看进度，不发包。</li>
+ *       按住左右移动键看进度，不发包；</li>
+ *   <li>{@code /kuvafxc mercypick <convert|vanquish|off>}：之后每场真处决开窗时都当作按住这一边，照常发包（录像用）。</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)
@@ -94,6 +95,9 @@ public final class MercyHudDevCommands {
                 .then(Commands.literal("mercychoice")
                         .then(Commands.argument("mode", StringArgumentType.word())
                                 .executes(ctx -> choice(ctx.getSource(), StringArgumentType.getString(ctx, "mode")))))
+                .then(Commands.literal("mercypick")
+                        .then(Commands.argument("pick", StringArgumentType.word())
+                                .executes(ctx -> pick(ctx.getSource(), StringArgumentType.getString(ctx, "pick")))))
                 .then(Commands.literal("banner")
                         .then(Commands.literal("off").executes(ctx -> {
                             RankUpBanner.clear();
@@ -156,6 +160,20 @@ public final class MercyHudDevCommands {
             }
         }
         src.sendSuccess(() -> Component.literal("mercychoice " + mode), false);
+        return 1;
+    }
+
+    private static int pick(CommandSourceStack src, String pick) {
+        switch (pick) {
+            case "convert" -> MercyChoiceHud.setAutoPick(true);
+            case "vanquish" -> MercyChoiceHud.setAutoPick(false);
+            case "off" -> MercyChoiceHud.setAutoPick(null);
+            default -> {
+                src.sendFailure(Component.literal("mercypick <convert|vanquish|off>"));
+                return 0;
+            }
+        }
+        src.sendSuccess(() -> Component.literal("mercypick " + pick), false);
         return 1;
     }
 

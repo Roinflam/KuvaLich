@@ -1149,6 +1149,8 @@ public final class MercyServer {
         int first = base + 2;
         if (convert) {
             sayAs(lich, LichLine.CONVERTED, e.executor);
+            // 感化收尾里处决者后跃、转身走开是真走（客户端照整身轨道挪，挑过地形，离站位不超过 3.6 格），这段不再按站位拉人
+            e.roaming = true;
             int end = Math.max(first, b.convertEndTick + shift);
             e.add(Math.max(first, b.convertLeaveTick + shift), StepKind.CONVERT_LEAVE, () -> convertLeave(e, lich));
             e.add(end, StepKind.PLAYER, () -> announce(e));

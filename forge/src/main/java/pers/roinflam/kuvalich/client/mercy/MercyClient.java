@@ -36,6 +36,7 @@ import pers.roinflam.kuvalich.client.sound.KuvaMixer;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.mercy.MercyAnimSelector;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
+import pers.roinflam.kuvalich.mercy.MercyCameraPath;
 import pers.roinflam.kuvalich.mercy.MercyHitstop;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyState;
@@ -143,6 +144,11 @@ public final class MercyClient {
         final int holdMs;
         /** 本地钟走到挂起点的那一刻；小于 0 = 还没走到 */
         long holdSince = -1L;
+        /** 选了感化以后按地形挑的走法 */
+        MercyPose.ConvertRoom convertRoom = MercyPose.ConvertRoom.FULL;
+        /** 感化收尾机位查遮挡后定下的：放在哪一侧（1 本侧、−1 镜像）、按哪一档走 */
+        int convertCamMirror = 1;
+        MercyCameraPath.Motion convertCamMotion = MercyCameraPath.Motion.STATIC;
         @Nullable
         final FxTimeline hero;
 
@@ -232,7 +238,8 @@ public final class MercyClient {
             endMs = MercyTimeline.endMs(plan, shortOutro);
             timeline = MercyTimeline.build(plan);
             timeline.skipTo(t);
-            pose = MercyPose.track(plan, shortOutro, bodyScale, poseSeed());
+            convertRoom = pickConvertRoom(this);
+            pose = MercyPose.track(plan, shortOutro, bodyScale, poseSeed(), convertRoom);
         }
 
         /** 本地最多挂起多久：处决者按开窗包的剩余时间，旁观者没有包，按配置能设的最长时限 */
@@ -585,6 +592,8 @@ public final class MercyClient {
         if (e.easeDone) {
             if (e.variant.relocates() && t < e.handbackMs) {
                 roam(e, p, t);
+            } else if (MercyTimeline.outcome(e.plan) == MercyTimeline.Outcome.CONVERT && t < e.handbackMs) {
+                roamConvert(e, p, t);
             }
             return;
         }
@@ -620,6 +629,46 @@ public final class MercyClient {
         float pitch = Mth.clamp((float) (Mth.atan2(-d.y, along) * Mth.RAD_TO_DEG), -89.0F, 89.0F);
         place(p, ROAM.x, ROAM.y, ROAM.z, yaw, pitch);
         p.resetFallDistance();
+    }
+
+    /** 感化收尾：后跃、转身走开都是真走（服务端这段不拉人），交还时人就在走到的地方；落地蹲那一下不往地里沉 */
+    private static void roamConvert(Exec e, LocalPlayer p, long t) {
+        if (t < MercyTimeline.lich(e.plan).closeup || !MercyPose.body(e, t, ROAM)) {
+            return;
+        }
+        place(p, ROAM.x, Math.max(ROAM.y, e.pe.y), ROAM.z, ROAM.yaw, 0.0F);
+        p.resetFallDistance();
+    }
+
+    /** 绕目标转的角度依次试（先照原样往后走，再往两边偏），每个角度先走满、再走半程；后跃先跃满、再跃一半 */
+    private static final float[] CONVERT_BEARINGS = {0.0F, 35.0F, -35.0F, 70.0F, -70.0F, 110.0F, -110.0F};
+    private static final float[] CONVERT_WALKS = {1.0F, 0.55F};
+    private static final float[] CONVERT_HOPS = {1.0F, 0.5F};
+    /** 服务端离站位 4 格就当处决者跑了，留点余量 */
+    private static final double CONVERT_REACH = 3.6D;
+
+    /**
+     * 选了感化：整条后跃、走开的路线上处决者的身子不碰方块、脚下有地、离站位不超过 {@value #CONVERT_REACH} 格的第一种走法。
+     * 旁观者也照同一个世界挑，挑出来一样；都放不下就原地收刀转身
+     */
+    private static MercyPose.ConvertRoom pickConvertRoom(Exec e) {
+        ClientLevel level = Minecraft.getInstance().level;
+        Entity who = e.executor();
+        if (level == null || who == null) {
+            return MercyPose.ConvertRoom.FULL;
+        }
+        for (float hop : CONVERT_HOPS) {
+            for (float bearing : CONVERT_BEARINGS) {
+                for (float walk : CONVERT_WALKS) {
+                    MercyPose.ConvertRoom room = new MercyPose.ConvertRoom(bearing, hop, walk);
+                    MercyPose.Track tr = MercyPose.track(e.plan, e.shortOutro, e.bodyScale, e.poseSeed(), room);
+                    if (MercyPose.convertFits(e, tr, level, who, CONVERT_REACH)) {
+                        return room;
+                    }
+                }
+            }
+        }
+        return new MercyPose.ConvertRoom(0.0F, 0.0F, 0.0F);
     }
 
     private static void place(LocalPlayer p, double x, double y, double z, float yaw, float pitch) {

@@ -89,6 +89,13 @@ public final class MercyChoiceHud {
         dev = null;
     }
 
+    /** 开发命令：真处决开窗后当作一直按住这一边（录像不发按键用），{@code null} 撤掉 */
+    private static int autoPick = NONE;
+
+    static void setAutoPick(@Nullable Boolean convert) {
+        autoPick = convert == null ? NONE : convert ? CONVERT : VANQUISH;
+    }
+
     /** 这一帧要画的东西；不画返回 null */
     private record View(int targetId, boolean allowConvert, String releaseName, float remaining, boolean timed,
                         @Nullable EphemeraType ephemera) {
@@ -172,6 +179,9 @@ public final class MercyChoiceHud {
         boolean left = down(window, mc.options.keyLeft) || mouseDown(window, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         boolean right = down(window, mc.options.keyRight) || mouseDown(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
         int want = left == right ? NONE : left ? CONVERT : VANQUISH;
+        if (want == NONE && autoPick != NONE && dev == null && v.timed) {
+            want = autoPick;
+        }
         if (want == CONVERT && !v.allowConvert) {
             want = NONE;
         }

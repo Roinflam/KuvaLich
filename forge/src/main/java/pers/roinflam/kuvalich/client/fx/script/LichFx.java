@@ -28,6 +28,7 @@ import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
+import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.network.packet.KuvaFxPacket;
 import pers.roinflam.kuvalich.utils.LogUtil;
 
@@ -246,6 +247,22 @@ public final class LichFx {
                         .spin(RANDOM.nextBoolean() ? 0.03F : -0.03F).spawn();
             }
         });
+    }
+
+    /**
+     * 感化收尾的化雾：和离场同一种雾，只是慢（1.15 秒）、雾多一倍。处决时间轴在化雾那一拍起它；
+     * 服务端随后的离场包到的时候这只还在散，会被 {@link #play} 挡掉，不会再淡一次
+     */
+    public static void convertMist(Entity e) {
+        if (e == null) {
+            return;
+        }
+        Spec s = spec(Kind.DEPART, e);
+        s.fadeMs = MercyBeats.CONVERT_MIST_MS;
+        s.mist = 30;
+        s.motes = 8;
+        s.tier = FxTier.S;
+        play(e, s);
     }
 
     private static void departSound(Vec3 c, double d) {

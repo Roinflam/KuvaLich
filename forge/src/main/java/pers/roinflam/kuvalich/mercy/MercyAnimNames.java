@@ -30,6 +30,8 @@ public final class MercyAnimNames {
     public static final String LICH_KNEEL = "mercy.lich.kneel";
     /** 成功后瘫倒，末帧保持 */
     public static final String LICH_SLUMP = "mercy.lich.slump";
+    /** 选了感化：拔刀时一挺，伏低喘，抬头、撑直上身、右拳按胸目送，垂首，化雾时还在播 */
+    public static final String LICH_CONVERT = "mercy.lich.convert";
 
     // ==================== 奴仆 ====================
 

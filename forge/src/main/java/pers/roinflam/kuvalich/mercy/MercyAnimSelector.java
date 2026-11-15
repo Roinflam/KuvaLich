@@ -113,6 +113,9 @@ public final class MercyAnimSelector {
     private static final RawAnimation L_C_GRAB = hold(MercyAnimNames.LICH_C_GRAB);
     private static final RawAnimation L_KNEEL = RawAnimation.begin().thenLoop(MercyAnimNames.LICH_KNEEL);
     private static final RawAnimation L_SLUMP = hold(MercyAnimNames.LICH_SLUMP);
+    private static final RawAnimation L_CONVERT = hold(MercyAnimNames.LICH_CONVERT);
+    /** 从跪地循环切进感化收尾淡多少 tick：选定那一刻循环停在哪一拍都有可能 */
+    private static final int CONVERT_BLEND_TICKS = 3;
     private static final RawAnimation L_BREAKFREE = hold(MercyAnimNames.LICH_BREAKFREE);
     private static final RawAnimation L_BREAKFREE_GRAB = hold(LICH_BREAKFREE_GRAB);
     private static final RawAnimation L_BREAKFREE_C0 = hold(LICH_C_BREAKFREE_RAISED);
@@ -183,6 +186,7 @@ public final class MercyAnimSelector {
         SHOW.add(L_C_GRAB);
         SHOW.add(L_KNEEL);
         SHOW.add(L_SLUMP);
+        SHOW.add(L_CONVERT);
         SHOW.add(L_BREAKFREE);
         SHOW.add(L_BREAKFREE_GRAB);
         SHOW.add(L_BREAKFREE_C0);
@@ -207,6 +211,8 @@ public final class MercyAnimSelector {
             }
         }
 
+        // 感化后服务端让它离场，接着把这一段演完（化雾就在这一段里）
+        BREAKFREE_FROM.put(L_CONVERT, L_CONVERT);
         BREAKFREE_FROM.put(L_ENTER, L_BREAKFREE);
         BREAKFREE_FROM.put(L_DOWNED, L_BREAKFREE);
         BREAKFREE_FROM.put(L_GRAB, L_BREAKFREE_GRAB);
@@ -273,11 +279,16 @@ public final class MercyAnimSelector {
             return SHOW.contains(current) ? current : thrall ? T_DOWNED : L_DOWNED;
         }
 
-        return executing(planBits.applyAsInt(entity), thrall, t);
+        return executing(planBits.applyAsInt(entity), thrall, t, entity.getMercyChoice() == AbstractKuva.CHOICE_CONVERT);
     }
 
     /** 处决演到 {@code t} 毫秒时该放哪一段（只看计划位和时刻） */
     public static RawAnimation executing(int bits, boolean thrall, long t) {
+        return executing(bits, thrall, t, false);
+    }
+
+    /** @param convert 选择窗口里选了感化（实体同步数据，不在计划位里） */
+    public static RawAnimation executing(int bits, boolean thrall, long t, boolean convert) {
         int variantId = (bits >> 4) & 0xF;
         if (thrall) {
             int i = variantId - MercyVariant.THRALL_1.id;
@@ -289,6 +300,10 @@ public final class MercyAnimSelector {
         int prefix = Math.min((bits >> 2) & 3, stabs);
 
         if (prefix >= stabs && stabs >= 3) {
+            // 感化的后段是从挂起点（= 跪地特写）接着走的
+            if (convert && t >= b.closeup) {
+                return L_CONVERT;
+            }
             if (t >= b.drawOut) {
                 return L_SLUMP;
             }
@@ -354,6 +369,9 @@ public final class MercyAnimSelector {
 
     /** 切进这一段时控制器淡多少 tick：只有从倒地循环站起来那一段淡，别的切片段不插值（首帧对得上） */
     public static int blendTicks(RawAnimation animation) {
+        if (animation == L_CONVERT) {
+            return CONVERT_BLEND_TICKS;
+        }
         return animation == L_RISE_DOWN ? RISE_BLEND_TICKS : 0;
     }
 

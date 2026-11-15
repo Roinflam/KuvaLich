@@ -189,7 +189,27 @@ public final class MercySoundCues {
             }
             out.add(new Cue(f.layer, b.stab(f.anchor) + f.offset, foleyVol(f.layer, false), 1.0F, -1, false));
         }
+        if (r == Result.CONVERT) {
+            convertCues(b, out);
+        }
         return sorted(out);
+    }
+
+    /**
+     * 感化收尾：拔刀、蹬地后跃、落地、刀弹回腕里，转身那一步和后面三步的脚步（收脚那一下轻），它右拳按到胸口，
+     * 化雾时再来一声尾音（同一个钟体余响，压低、放慢）
+     */
+    private static void convertCues(MercyBeats.Lich b, List<Cue> out) {
+        out.add(new Cue(Layer.GRAB, b.convertYank, 0.85F, 0.9F, -1, false));
+        out.add(new Cue(Layer.LEAP, b.convertHop, 0.8F, 1.0F, -1, false));
+        out.add(new Cue(Layer.LAND, b.convertLand, 0.9F, 1.0F, -1, false));
+        out.add(new Cue(Layer.GRAB, b.convertSnap, 0.4F, 1.3F, -1, false));
+        int n = b.convertStepCount();
+        for (int i = 0; i < n; i++) {
+            out.add(new Cue(Layer.LAND, b.convertStep(i), i == n - 1 ? 0.3F : 0.42F, 1.15F, -1, false));
+        }
+        out.add(new Cue(Layer.GRAB, b.convertFist, 0.5F, 0.8F, -1, false));
+        out.add(new Cue(Layer.TAIL, b.convertMist, 0.6F, 0.9F, -1, false));
     }
 
     private static float foleyVol(Layer l, boolean thrall) {

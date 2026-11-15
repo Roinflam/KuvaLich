@@ -4,8 +4,11 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -20,6 +23,7 @@ import pers.roinflam.kuvalich.mercy.MercyVariant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -145,6 +149,9 @@ public final class MercyPose {
         /** 迈步那层：叠在两条腿上的摆角；没有为 null */
         @Nullable
         private MercyCurve.Keys feet;
+        /** 感化收尾里头看向目标的权重（走开时朝前、回头时转过去）；别的场次为 null，一直看着 */
+        @Nullable
+        private MercyCurve.Keys lookW;
         /** 这一场抖动的幅度和相位（按场次种子） */
         private float shakeAmp = 1.0F, phaseA, phaseB;
         private long headT = Long.MIN_VALUE;
@@ -1623,6 +1630,213 @@ public final class MercyPose {
         return b;
     }
 
+    // ==================== 感化收尾「背身而去」 ====================
+
+    /**
+     * 感化收尾往哪走：{@code bearing} = 整段绕目标转多少度（0 是照原样从站位往后跃、背对它走开），{@code hop} = 后跃跃出
+     * 几成，{@code walk} = 走开那几步走出几成。客户端按地形挑（选完感化时查，见 {@code MercyClient}），整身轨道和机位都按它摆
+     */
+    record ConvertRoom(float bearing, float hop, float walk) {
+        static final ConvertRoom FULL = new ConvertRoom(0.0F, 1.0F, 1.0F);
+    }
+
+    /**
+     * 候选里人站的位置（目标坐标：x 它左手边、z 它前方，格）和朝向（0 朝 +z）。后跃落在候选开场的站位，
+     * 之后重心压左脚、以左脚为轴转过身，右脚落在前方，接着三步走开（候选里这一段是匀速的）
+     */
+    private static final float CV_X0 = 0.28F, CV_Z0 = 2.70F, CV_FACE0 = 174.1F;
+    private static final float CV_SHIFT_X = 0.265F, CV_SHIFT_Z = 2.551F;
+    private static final float CV_TURN_X = 0.001F, CV_TURN_Z = 2.794F, CV_FACE1 = 368.0F;
+    private static final float CV_END_X = -0.172F, CV_END_Z = 4.032F;
+    /** 回头时髋跟着转多少（上身再拧 30°、头转到 75°） */
+    private static final float CV_LOOK_HIP = 20.0F;
+
+    /** 候选坐标里的一点按这一场的走法挪过去，写成整身一行（相对站位） */
+    private static Move cvAt(MercyVariant v, ConvertRoom room, float x, float z, float face, boolean afterTurn) {
+        if (afterTurn) {
+            x = CV_TURN_X + (x - CV_TURN_X) * room.walk();
+            z = CV_TURN_Z + (z - CV_TURN_Z) * room.walk();
+        }
+        // 后跃不跃满：整条往目标那边收
+        z -= (1.0F - room.hop()) * (CV_Z0 - v.standDist);
+        double ang = Math.toDegrees(Math.atan2(x, z));
+        double r = Math.sqrt(x * x + z * z);
+        // 面向目标时的朝向（候选的写法：0 朝 +z、往 −x 转是正）；转身要转过 180°，「转」不折回 ±180，免得插值往回绕
+        double toward = 180.0D - ang;
+        return m().ang((float) ang + room.bearing()).dist((float) r - v.standDist).yaw(face - (float) toward)
+                .up(0).flip(0).roll(0);
+    }
+
+    /**
+     * 整身：拔刀那一下往后一扯，蹲下蹬地往后跃开（身子后仰、离地 0.4 格），落在候选的站位上蹲住；
+     * 之后重心压到左脚、绕左脚转过身、三步走开、停住，回头时髋跟着转过来一点，雾散了再转回去。走开是真走，本地处决者
+     * 跟着整身轨道挪，到交还时人就在走到的地方
+     */
+    private static void convertBody(List<Key> b, MercyVariant v, MercyBeats.Lich lb, ConvertRoom room) {
+        Move land = cvAt(v, room, CV_X0, CV_Z0, CV_FACE0, false);
+        float landDist = land.v[B_DIST];
+        float landAng = land.v[B_ANG];
+        b.add(k(lb.convertYank, CURVE, m().dist(0.05F)));
+        b.add(k(lb.convertHop, ANTIC, m().dist(0.1F).up(-0.08F)));
+        b.add(k(lb.convertHop + 110, CURVE, m().ang(landAng * 0.35F).dist(landDist * 0.45F).up(0.42F).flip(-14)));
+        b.add(k(lb.convertLand - 50, CURVE, m().ang(landAng * 0.9F).dist(landDist * 0.92F).up(0.14F).flip(-5)));
+        b.add(k(lb.convertLand, IN, land.up(-0.09F)));
+        b.add(k(lb.convertLand + 130, CURVE, m().up(0)));
+        b.add(k(lb.convertPivot - 160, CURVE, cvAt(v, room, CV_X0, CV_Z0, CV_FACE0, false)));
+        b.add(k(lb.convertPivot, CURVE, cvAt(v, room, CV_SHIFT_X, CV_SHIFT_Z, CV_FACE0, false)));
+        // 绕左脚转：转到后半段身子往新的前方挪
+        int turnEnd = lb.convertStep(0);
+        for (int i = 1; i <= 4; i++) {
+            float u = i / 4.0F;
+            float e = u * u * (3.0F - 2.0F * u);
+            float x = CV_SHIFT_X + (CV_TURN_X - CV_SHIFT_X) * e;
+            float z = CV_SHIFT_Z + (CV_TURN_Z - CV_SHIFT_Z) * e * e;
+            b.add(k(lb.convertPivot + (turnEnd - lb.convertPivot) * i / 4, CURVE,
+                    cvAt(v, room, x, z, CV_FACE0 + (CV_FACE1 - CV_FACE0) * e, false)));
+        }
+        // 匀速走开，最后半步收住
+        int n = lb.convertStepCount();
+        int stop = lb.convertStep(n - 2) + 120;
+        for (int i = 1; i < n; i++) {
+            boolean lastStep = i == n - 1;
+            int t = lastStep ? stop : lb.convertStep(i);
+            float u = (t - turnEnd) / (float) (stop - turnEnd);
+            b.add(k(t, lastStep ? DECEL : CURVE, cvAt(v, room, CV_TURN_X + (CV_END_X - CV_TURN_X) * u,
+                    CV_TURN_Z + (CV_END_Z - CV_TURN_Z) * u, CV_FACE1, true)));
+        }
+        Move end = cvAt(v, room, CV_END_X, CV_END_Z, CV_FACE1, true);
+        b.add(k(lb.convertLook, CURVE, end));
+        b.add(k(lb.convertLook + 340, CURVE, m().yaw(end.v[B_YAW] + CV_LOOK_HIP)));
+        b.add(k(lb.convertMist + 900, CURVE, m()));
+        b.add(k(lb.convertMist + 1340, CURVE, m().yaw(end.v[B_YAW])));
+    }
+
+    /** 一只脚迈出去：先往后提、过髋下、往前送，落地。腿模型不会弯，摆角照候选的大腿角减一半膝角 */
+    private static void cvSwing(List<Key> out, boolean right, int t0, int t1, float to) {
+        int d = t1 - t0;
+        float fwd = to > 0.0F ? to + 8.0F : 10.0F;
+        out.add(k(t0 + d / 5, CURVE, right ? p().legs(-34, NA) : p().legs(NA, -34)));
+        out.add(k(t0 + d * 2 / 5, CURVE, right ? p().legs(-6, NA) : p().legs(NA, -6)));
+        out.add(k(t0 + d * 7 / 10, CURVE, right ? p().legs(fwd, NA) : p().legs(NA, fwd)));
+        out.add(k(t1, IN, right ? p().legs(to, NA) : p().legs(NA, to)));
+    }
+
+    /**
+     * 上身：特写那一刻刀插在它胸口。往前一送、猛地拔出来（左手推它的肩借力），蹲下蹬地往后跃，空中收腿，落地蹲住；
+     * 前臂往上一抬、往下一甩，刀弹回腕里。重心压左脚、转身、三步走开（手脚交替摆，肩反着拧），收脚停住、膝软一下；
+     * 停稳后回头看它，上身往那边拧 30°，雾散了再转回去
+     */
+    private static void convertPose(List<Key> out, MercyBeats.Lich lb) {
+        out.add(k(lb.convertYank - 70, ANTIC, p().tw(16).ln(4).sq(0.2F).r(84, 12, 0).pull(-1).l(118, -4, 0)));
+        out.add(k(lb.convertYank, OUT, p().tw(-26).ln(-12).sq(0.15F).sh(-1).r(36, -42, -12).aim(0).pull(4)
+                .l(100, 12, 0).legs(-6, 8).hd(-8, 0)));
+        out.add(k(lb.convertHop, ANTIC, p().tw(-18).ln(16).sq(0.65F).sh(0).r(48, -52, 18).pull(2).l(64, -10, 0)
+                .legs(-20, 26).hd(2, 0)));
+        out.add(k(lb.convertHop + 110, OUT, p().tw(-6).ln(-16).sq(0).sh(-1).r(72, -62, 30).pull(0).l(84, -40, 0)
+                .legs(34, 52).hd(-10, 0)));
+        out.add(k(lb.convertLand - 40, CURVE, p().tw(-8).ln(4).sq(0.2F).r(60, -56, 26).l(60, -30, 0).legs(14, 24)
+                .hd(-2, 0)));
+        out.add(k(lb.convertLand, IN, p().tw(-10).ln(22).sq(0.8F).sh(0).r(40, -50, 20).l(40, -20, 0).legs(-24, 30)
+                .hd(4, 0)));
+        // 收刀：前臂往上一抬，往下一甩
+        out.add(k(lb.convertSnap - 120, CURVE, p().tw(-8).ln(12).sq(0.45F).r(78, -30, 0).l(30, -18, 0).legs(-12, 16)
+                .hd(2, 0)));
+        out.add(k(lb.convertSnap + 60, OUT, p().tw(-4).ln(6).sq(0.15F).r(-8, -42, 6).legs(-6, 8).hd(0, 0)));
+        out.add(k(lb.convertSnap + 150, CURVE, p().ln(5).sq(0).r(14, -30, 0).l(22, -15, 0).legs(-2, 2)));
+        // 重心压到左脚：右腿往后伸直，上身直起来
+        int pivot = lb.convertPivot;
+        out.add(k(pivot - 160, CURVE, p().tw(-2).ln(4).l(26, -18, 0)));
+        out.add(k(pivot, CURVE, p().tw(0).ln(3).legs(-22, 0).l(12, -12, 0)));
+        // 转身：右脚绕过来落在前方（第一步），肩先往右多拧一点
+        int d = lb.convertStep(0) - pivot;
+        out.add(k(pivot + d / 5, CURVE, p().legs(-34, NA).tw(6)));
+        out.add(k(pivot + d * 2 / 5, CURVE, p().legs(-6, NA).tw(10).l(26, -12, 0).r(-14, -30, 0)));
+        out.add(k(pivot + d * 7 / 10, CURVE, p().legs(29, NA).tw(2)));
+        out.add(k(lb.convertStep(0), IN, p().legs(21, 0).tw(-5)));
+        // 走：支撑的那条腿从身前转到身后，迈的那条照 cvSwing；手和对侧的腿一起往前
+        boolean right = false;
+        int n = lb.convertStepCount();
+        for (int i = 1; i < n; i++) {
+            int t0 = lb.convertStep(i - 1), t1 = lb.convertStep(i);
+            boolean lastStep = i == n - 1;
+            float other = lastStep ? 0.0F : -21.0F;
+            // 迈的那条腿 t0 时在身后（上一步落地时的支撑腿），支撑腿从身前（刚落地）往后转
+            cvSwing(out, right, t0, t1, lastStep ? 0.0F : 21.0F);
+            int mid = (t0 + t1) / 2;
+            Row r = right ? p().legs(NA, (21.0F + other) * 0.5F) : p().legs((21.0F + other) * 0.5F, NA);
+            if (!lastStep) {
+                r = right ? r.l(26, -12, 0).r(-14, -30, 0).tw(-5) : r.l(-12, -12, 0).r(22, -30, 0).tw(5);
+            }
+            out.add(k(mid, CURVE, r));
+            out.add(k(t1 + 1, CURVE, right ? p().legs(NA, other) : p().legs(other, NA)));
+            right = !right;
+        }
+        // 停住：两手垂回身侧，膝软一下再站直
+        int stop = lb.convertStep(n - 1);
+        out.add(k(stop + 40, CURVE, p().tw(0).ln(3).sq(0).l(10, -10, 0).r(8, -30, 0).legs(0, 0).hd(2, 0)));
+        out.add(k(stop + 150, IN, p().sq(0.28F).ln(6)));
+        out.add(k(stop + 330, CURVE, p().sq(0).ln(2).hd(0, 0)));
+        // 回头
+        out.add(k(lb.convertLook, CURVE, p().tw(0)));
+        out.add(k(lb.convertLook + 320, CURVE, p().tw(-30).hd(4, 0).sh(-0.3F)));
+        out.add(k(lb.convertMist + 900, CURVE, p().tw(-30).hd(4, 0)));
+        out.add(k(lb.convertMist + 1340, CURVE, p().tw(-2).hd(0, 0).sh(0)));
+        out.add(k(lb.convertEnd, CURVE, p().tw(0)));
+    }
+
+    private static final Body FIT = new Body();
+
+    /**
+     * 这条感化收尾的路线放不放得下：每 40 ms 一点，处决者的站立碰撞箱不碰方块、离站位水平不超过 {@code reach} 格，
+     * 落地以后脚下有地。只换一下 {@code e.pose} 来取整身位置，查完换回去
+     */
+    static boolean convertFits(MercyClient.Exec e, Track tr, Level level, Entity who, double reach) {
+        MercyBeats.Lich lb = MercyBeats.lich(e.variant);
+        Track saved = e.pose;
+        e.pose = tr;
+        try {
+            EntityDimensions d = who.getDimensions(net.minecraft.world.entity.Pose.STANDING);
+            for (int t = lb.closeup; t < e.handbackMs; t += 40) {
+                if (!body(e, t, FIT)) {
+                    continue;
+                }
+                double dx = FIT.x - e.pe.x, dz = FIT.z - e.pe.z;
+                if (dx * dx + dz * dz > reach * reach) {
+                    return false;
+                }
+                double y = Math.max(FIT.y, e.pe.y);
+                if (!level.noCollision(who, d.makeBoundingBox(FIT.x, y + 0.02D, FIT.z).deflate(0.04D))) {
+                    return false;
+                }
+                if (t >= lb.convertLand && FIT.y - e.pe.y < 0.05D && level.noCollision(who,
+                        new AABB(FIT.x - 0.2D, y - 0.4D, FIT.z - 0.2D, FIT.x + 0.2D, y - 0.02D, FIT.z + 0.2D))) {
+                    return false;
+                }
+            }
+            return true;
+        } finally {
+            e.pose = saved;
+        }
+    }
+
+    /** 头看向目标的权重：转身时先转开，走路时朝前，停稳以后回头，雾散了再转回去 */
+    private static MercyCurve.Keys convertLook(MercyBeats.Lich lb) {
+        int[][] rows = {{0, 100}, {lb.convertPivot - 40, 100}, {lb.convertPivot + 260, 0}, {lb.convertLook, 0},
+                {lb.convertLook + 260, 100}, {lb.convertMist + 900, 100}, {lb.convertMist + 1260, 0}};
+        int n = rows.length;
+        int[] t = new int[n];
+        int[] start = new int[n];
+        int[] mode = new int[n];
+        float[][] v = new float[n][1];
+        for (int i = 0; i < n; i++) {
+            t[i] = rows[i][0];
+            start[i] = -1;
+            mode[i] = SINE;
+            v[i][0] = rows[i][1] / 100.0F;
+        }
+        return new MercyCurve.Keys(t, start, mode, v);
+    }
+
     /**
      * 奴仆前三套的脚下：都不到 0.25 格，只压重心。出刀前往后让一点，刺入送过去，拧刀时稍往回松，推开 / 蹬开那一下
      * 往后坐过头 0.05 格再站回站位
@@ -1792,6 +2006,11 @@ public final class MercyPose {
 
     /** @param seed 这一场的种子，只管抖动的幅度和相位 */
     static Track track(MercyPlan.Plan p, boolean shortOutro, float scale, int seed) {
+        return track(p, shortOutro, scale, seed, ConvertRoom.FULL);
+    }
+
+    /** @param room 感化收尾往哪走（只有感化用） */
+    static Track track(MercyPlan.Plan p, boolean shortOutro, float scale, int seed, ConvertRoom room) {
         MercyTimeline.Outcome oc = MercyTimeline.outcome(p);
         MercyVariant v = p.variant();
         List<Key> table = tableOf(v);
@@ -1812,6 +2031,12 @@ public final class MercyPose {
                 // 特写和收尾按站位摆，切镜头那一刻人回到站位，到交还都不再动
                 body.addAll(moves);
                 body.add(k(lb.closeup, SNAP, still()));
+                if (convert) {
+                    List<Key> cb = new ArrayList<>();
+                    convertBody(cb, v, lb, room);
+                    cb.sort(Comparator.comparingInt(Key::t));
+                    body.addAll(cb);
+                }
                 body.add(k(MercyTimeline.handbackMs(p, shortOutro), SINE, m()));
                 // 切跪地特写那一刻直接摆成刀扎进去、刃身露一截（特写里要拍到这只手和刀）；特写里刀慢慢往里再送一点
                 Row closeup = closeup(v);
@@ -1820,9 +2045,14 @@ public final class MercyPose {
                 pressed.v[R_RAISE] += 2.0F;
                 pressed.v[TWIST] += 2.0F;
                 pressed.v[L_RAISE] -= 2.0F;
-                if (shortOutro || convert) {
-                    // 特写完直接交还：保持到切镜那一刻（感化是起身化雾那一刻），再 400 ms 回 0（刀跟着抽出来）
-                    int from = convert ? lb.convertLeave : lb.third;
+                if (convert) {
+                    List<Key> cp = new ArrayList<>();
+                    convertPose(cp, lb);
+                    cp.sort(Comparator.comparingInt(Key::t));
+                    out.addAll(cp);
+                } else if (shortOutro) {
+                    // 特写完直接交还：保持到切镜那一刻，再 400 ms 回 0（刀跟着抽出来）
+                    int from = lb.third;
                     out.add(k(from - 1, SINE, pressed));
                     out.add(k(from + 400, from, SINE, zero()));
                 } else {
@@ -1951,6 +2181,9 @@ public final class MercyPose {
             tr.altFrom = lb.stab(0) + 400;
             tr.altTo = lb.stab(1) + 300;
             tr.tail = ANCHOR_H3;
+        }
+        if (oc == MercyTimeline.Outcome.CONVERT) {
+            tr.lookW = convertLook(MercyBeats.lich(v));
         }
         if (v == MercyVariant.LICH_E) {
             tr.alt = ANCHOR_E;
@@ -2344,6 +2577,9 @@ public final class MercyPose {
         float lookPitch = (float) (-Mth.atan2(dy, Math.sqrt(dx * dx + ddz * ddz)) * RAD_TO_DEG);
         float yaw = Mth.wrapDegrees(lookYaw - (moved ? BODY.yaw : entity.yBodyRot));
         float look = moved ? Mth.clamp(Mth.cos(BODY.flip * DEG), 0.0F, 1.0F) : 1.0F;
+        if (tr.lookW != null) {
+            look *= Mth.clamp(tr.lookW.sample(0, t), 0.0F, 1.0F);
+        }
         float headYaw = Mth.clamp(yaw, -75.0F, 75.0F) * look;
         float headPitch = lookPitch * look;
         if (tr.v2) {

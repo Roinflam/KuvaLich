@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
+import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercySoundCues;
 import pers.roinflam.kuvalich.mercy.MercySoundCues.Cue;
@@ -85,12 +86,61 @@ public final class MercySoundTests {
             h.assertTrue(q.startMs() >= prev, c + "：时刻表没排好序");
             prev = q.startMs();
         }
-        if (r != Result.SUCCESS) {
+        if (r != Result.SUCCESS && r != Result.CONVERT) {
             // 后空翻、落地只在成功收尾时有
             int s3 = b.stab(2);
             h.assertTrue(cues.stream().noneMatch(q -> q.stab() < 0 && q.layer() != Layer.BREAKFREE && q.ms() > s3),
                     c + "：第三刀之后不该有动作声");
         }
+        if (r == Result.CONVERT) {
+            // 感化从跪地特写接着演，成功收尾那套动作声不该混进来
+            int s3 = b.stab(2);
+            h.assertTrue(cues.stream().noneMatch(q -> q.stab() < 0 && q.ms() > s3 && q.ms() < b.closeup),
+                    c + "：第三刀到跪地特写之间不该有动作声");
+        }
+    }
+
+    /**
+     * 感化收尾的节拍：拔刀、后跃、落地、刀弹回、转身、几步、回头、拳按胸口、化雾、离场、收尾依次排开；
+     * 服务端离场后移除那一拍正好是化雾演完；各个动作声都落在 MercyBeats 的时刻上
+     */
+    @GameTest(template = "empty")
+    public static void convertOutroFollowsBeats(GameTestHelper h) {
+        for (MercyVariant v : MercyVariant.values()) {
+            if (v.thrall) {
+                continue;
+            }
+            MercyBeats.Lich b = MercyBeats.lich(v);
+            String c = v + " 感化";
+            int[] order = {b.closeup, b.convertYank, b.convertHop, b.convertCut, b.convertLand, b.convertSnap,
+                    b.convertPivot};
+            for (int i = 1; i < order.length; i++) {
+                h.assertTrue(order[i - 1] < order[i], c + "：第 " + i + " 拍没排在前一拍之后");
+            }
+            int prev = b.convertPivot;
+            for (int i = 0; i < b.convertStepCount(); i++) {
+                h.assertTrue(b.convertStep(i) > prev, c + "：第 " + (i + 1) + " 步没排好");
+                prev = b.convertStep(i);
+            }
+            h.assertTrue(prev < b.convertLook && b.convertFist < b.convertBow && b.convertBow < b.convertMist
+                    && b.convertLook < b.convertMist && b.convertMist < b.convertLeave && b.convertLeave < b.convertEnd,
+                    c + "：回头 / 拳按胸口 / 垂首 / 化雾 / 离场 / 收尾的先后不对");
+            int removed = (b.convertLeaveTick + KuvaMasterEntity.DEPART_TICKS) * 50;
+            int faded = b.convertMist + MercyBeats.CONVERT_MIST_MS;
+            h.assertTrue(Math.abs(removed - faded) <= 100, c + "：离场移除 " + removed + " ms 和化雾演完 " + faded + " ms 对不上");
+            List<Cue> cues = MercySoundCues.cues(v, Result.CONVERT, 3);
+            int[] at = {b.convertYank, b.convertHop, b.convertLand, b.convertSnap, b.convertFist, b.convertMist};
+            for (int ms : at) {
+                h.assertTrue(cues.stream().anyMatch(q -> q.stab() < 0 && q.ms() == ms), c + "：" + ms + " ms 缺动作声");
+            }
+            for (int i = 0; i < b.convertStepCount(); i++) {
+                int ms = b.convertStep(i);
+                h.assertTrue(cues.stream().anyMatch(q -> q.layer() == Layer.LAND && q.ms() == ms), c + "：第 " + (i + 1) + " 步缺脚步声");
+            }
+            h.assertTrue(MercySoundCues.cues(v, Result.SUCCESS, 3).stream().noneMatch(q -> q.ms() == b.convertMist
+                    && q.layer() == Layer.TAIL && q.stab() < 0), v + "：成功收尾不该带感化的化雾声");
+        }
+        h.succeed();
     }
 
     private static boolean has(List<Cue> cues, Layer l, int stab, int ms) {

@@ -52,6 +52,7 @@ public final class MercyBeatsDump {
                 plan(out, v.name() + " " + LICH_NAMES[i], p, false);
                 if (success) {
                     plan(out, v.name() + " " + LICH_NAMES[i] + " short", p, true);
+                    plan(out, v.name() + " convert", p.withConvert(), false);
                 }
             }
         }
@@ -101,7 +102,8 @@ public final class MercyBeatsDump {
                 .append(" banner ").append(banner)
                 .append('\n');
         for (int t = 0; t <= end + STEP_MS; t += STEP_MS) {
-            RawAnimation clip = MercyAnimSelector.executing(bits, p.variant().thrall, t);
+            RawAnimation clip = MercyAnimSelector.executing(bits, p.variant().thrall, t,
+                    MercyTimeline.outcome(p) == MercyTimeline.Outcome.CONVERT);
             out.append(t)
                     .append(" shot ").append(MercyCamera.plannedShot(p, handback, t))
                     .append(" face ").append(MercyClient.facingAt(p, t))
