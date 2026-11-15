@@ -269,7 +269,42 @@
               "{lang:key.kuvalich.lich_archive}",
               "The panel you open from the {lang:block.kuvalich.requiem_gate}: your Lich's name, rank, rage and your last 5 judgements",
               "[[requiem/lich_archive|More]]"
-            ]
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "Convert",
+                "Sparing a Lich at the end: no weapon or rewards, but it joins your ally roster",
+                "[[enemies/lich_convert|More]]"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "Ally",
+                "A converted Lich that comes to help when you are in trouble",
+                "[[enemies/lich_allies|More]]"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "!cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "Ally",
+                "A converted Lich, kept in your ally roster",
+                "[[enemies/lich_allies|More]]"
+              ]
+            }
           ]
         },
         {
@@ -374,7 +409,17 @@
                 "Yellow hearts from Warframe mods; hits take them first, and they refill on their own",
                 "[[warframe/shield|More]]"
               ]
-            }
+            },
+            [
+              "Ephemera",
+              "A cosmetic light effect from a Lich, shown once placed in the Ephemera Slot; no stats",
+              "[[warframe/ephemera|More]]"
+            ],
+            [
+              "Pending",
+              "Where rewards wait before being added to your inventory",
+              "[[requiem/pending_items|More]]"
+            ]
           ]
         },
         {
@@ -834,10 +879,23 @@
                 "Not an attempt; you only get decryption progress, and it will still come back later"
               ]
             },
-            [
-              "3 cards, right order",
-              "<g>Decryption succeeds</g>: it is finished for good, the rewards described in the next chapter drop, and the round resets"
-            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "3 cards, right order",
+                "<g>Decryption succeeds</g> and the round resets. You then decide whether to [[enemies/lich_convert|convert or vanquish]] it: vanquish for the rewards described in the next chapter, convert to make it an ally"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "cells": [
+                "3 cards, right order",
+                "<g>Decryption succeeds</g>: it is finished for good, you receive the rewards described in the next chapter, and the round resets"
+              ]
+            },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
@@ -1096,6 +1154,13 @@
                 "<t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> chance for 1; keep it, and once your next Lich is born, right-click to summon it"
               ]
             },
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "{item:kuvalich:ephemera}",
+                "1, if the Lich carries one. Place it in the Ephemera Slot of the Warframe Arsenal to show it"
+              ]
+            },
             [
               "Unbroken Requiem cards",
               "Stay in the Requiem Gate; each card lasts 3 successes"
@@ -1114,7 +1179,7 @@
         },
         {
           "type": "p",
-          "text": "Rewards <w>drop where the Lich fell</w>. Pick up every last one, and quickly."
+          "text": "Rewards never drop on the ground. They go to <hl>Pending</hl> first and are then added to your inventory. If it is full, make room, see [[requiem/pending_items]]."
         },
         {
           "type": "h",
@@ -2327,6 +2392,67 @@
               "cells": [
                 "Chance a pickup is confiscated (once you have a Lich)",
                 "{cfg:kuva_lich.confiscationChance|pctv}, at most {cfg:kuva_lich.maxConfiscatedItems} stacks per round"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "Chance a new Lich carries an Ephemera",
+                "{cfg:kuva_lich.lichEphemeraChance|pct}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "Time to choose Convert or Vanquish",
+                "{cfg:kuva_lich.convertChoiceSeconds} s"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "Ally roster size",
+                "{cfg:kuva_lich.allyRosterSize}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "Ally assistance",
+                "Below {cfg:kuva_lich.allyTriggerHealthRatio|pct} health, {cfg:kuva_lich.allyAssistChance|pct} chance"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "Longest ally stay",
+                "{cfg:kuva_lich.allyMaxStaySeconds} s"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled",
+                "cfg:kuva_lich.allyCooldownMinutes>0"
+              ],
+              "cells": [
+                "Ally cooldown after a visit",
+                "{cfg:kuva_lich.allyCooldownMinutes} min"
               ]
             }
           ]

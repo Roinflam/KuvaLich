@@ -748,6 +748,10 @@
             "Get within <t>{cfg:kuva_lich.mercyReach}</t> blocks and look at it; when “{lang:kuvalich.mercy.prompt.lich}” appears, press the {lang:key.kuvalich.mercy} key (default <t>X</t>; at that moment X counts only as Mercy and won't also trigger anything else bound to it)",
             "You cannot be hurt during the execution and cannot do anything else. The 1st down takes <t>1</t> stab checking card 1 only, the 2nd takes <t>2</t> checking the first two, and the 3rd takes <t>3</t>; stabs always check from position 1 on and stop at the first wrong one",
             "If every stab is right on the 1st or 2nd execution, it breaks loose and stands with the next segment full, and the fight goes on; only three right stabs on the 3rd end it",
+            {
+              "if": "cfg:kuva_lich.convertEnabled",
+              "text": "When all three stabs of the 3rd execution are right, it halts at the final moment and you decide whether to <hl>convert</hl> or <hl>vanquish</hl> it, see [[enemies/lich_convert]]"
+            },
             "If you do not act within <t>{cfg:kuva_lich.mercyDownedSeconds}</t> seconds of it going down, the segment refills and it stands to fight on; after <t>3</t> unexecuted downs in a row it escapes, leaving nothing",
             "Damage such as <t>/kill</t> or falling into the void kills it outright without downing it; the encounter is void and gives nothing"
           ]
@@ -771,6 +775,13 @@
           ],
           "title": "Before the first stab",
           "text": "If an execution is interrupted before the first stab lands, it is void and the Lich stays down where it was, its downed timer still running; once the first stab has landed, an interruption settles the result on the spot."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "title": "Camera and shake",
+          "text": "When you execute a Lich, every stab lands with a brief hit-stop and camera shake, and the camera pushes in and circles. Your own client settings can turn the hit-stop off, weaken or disable the shake, and reduce the camera motion or lock it to fixed angles. This affects only you."
         },
         {
           "type": "h",
@@ -814,10 +825,23 @@
                 "No judgement: it dissolves and leaves, and you get decryption progress, <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t> a Thrall's"
               ]
             },
-            [
-              "3 cards, <g>all in the right order</g>",
-              "<g>Decryption succeeds</g>: it is ended, you get the rewards below, and a new round starts"
-            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "3 cards, <g>all in the right order</g>",
+                "<g>Decryption succeeds</g> and a new round starts. You decide whether to [[enemies/lich_convert|convert or vanquish]] it: vanquish to claim the rewards below, convert to make it an ally"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "cells": [
+                "3 cards, <g>all in the right order</g>",
+                "<g>Decryption succeeds</g>: it is ended, you get the rewards below, and a new round starts"
+              ]
+            },
             [
               "3 cards, <b>any wrong</b>",
               "<b>Decryption fails</b>: it breaks free and escapes, [[enemies/kuva_escalation|Lich rank]] +1, and you still gain progress"
@@ -874,13 +898,20 @@
               ]
             },
             {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "{item:kuvalich:ephemera}",
+                "1, if this Lich carries one, see [[warframe/ephemera]]"
+              ]
+            },
+            {
               "if": [
                 "cfg:kuva_lich.confiscationChance",
                 "cfg:kuva_lich.maxConfiscatedItems"
               ],
               "cells": [
                 "Confiscated items",
-                "All dropped back, see [[requiem/confiscation]]"
+                "All returned, see [[requiem/confiscation]]"
               ]
             },
             [
@@ -903,8 +934,9 @@
         },
         {
           "type": "tip",
-          "style": "warn",
-          "text": "<w>Don't finish it next to lava or the void</w>. Every reward drops where the Lich fell."
+          "style": "info",
+          "title": "Rewards never hit the ground",
+          "text": "Rewards from the finish go to [[requiem/pending_items|Pending]] first and are then added to your inventory. Whatever does not fit is added once space frees up."
         },
         {
           "type": "tip",
@@ -948,7 +980,287 @@
             },
             "It is never saved: if its chunk unloads or the world closes, it simply leaves and the encounter ends as usual",
             "Liches never spawn naturally, and spawners cannot produce them",
-            "Rewards are spawned straight onto the ground, so the “{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}” stat on Warframe mods does not boost them"
+            "Rewards go straight to Pending instead of being dropped, so the “{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}” stat on Warframe mods does not affect them"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lich_convert",
+      "title": "Convert or Vanquish",
+      "icon": "minecraft:totem_of_undying",
+      "summary": "The final choice and what each yields",
+      "if": [
+        "cfg:kuva_lich.mercyEnabled",
+        "cfg:kuva_lich.convertEnabled"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Spare it or destroy it. The choice is yours, Tenno. Once all three stabs of the 3rd execution land true, the execution halts at the final moment and two cards appear in the middle of the screen: “{lang:gui.kuvalich.mercy_choice.convert}” on the left and “{lang:gui.kuvalich.mercy_choice.vanquish}” on the right."
+        },
+        {
+          "type": "h",
+          "text": "Making the choice"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "All three stabs of the 3rd execution land true. The execution halts and the two cards appear, with a thin line above them showing the time left.",
+            "Hold the Strafe Left key (default <t>A</t>) or the left mouse button to choose “{lang:gui.kuvalich.mercy_choice.convert}”. Hold the Strafe Right key (default <t>D</t>) or the right mouse button to choose “{lang:gui.kuvalich.mercy_choice.vanquish}”. The cards show your current key bindings.",
+            "The choice takes effect after holding for about <t>0.6</t> seconds. Holding both sides at once does not count.",
+            "If no choice is made within <t>{cfg:kuva_lich.convertChoiceSeconds}</t> seconds, it counts as “{lang:gui.kuvalich.mercy_choice.vanquish}”. Once the time runs out, the cards read “{lang:gui.kuvalich.mercy_choice.judging}”."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "What each choice yields"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Item",
+            "{lang:gui.kuvalich.mercy_choice.convert}",
+            "{lang:gui.kuvalich.mercy_choice.vanquish}"
+          ],
+          "widths": [
+            3,
+            4,
+            4
+          ],
+          "rows": [
+            [
+              "Kuva weapon and rewards",
+              "<b>Forfeited</b>",
+              "<g>All claimed</g>, see [[enemies/kuva_master]]"
+            ],
+            [
+              "Weapon level range",
+              "Unchanged",
+              "Raised as usual"
+            ],
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "Ephemera",
+                "Claimed",
+                "Claimed"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance",
+                "cfg:kuva_lich.maxConfiscatedItems"
+              ],
+              "cells": [
+                "Confiscated items",
+                "All returned",
+                "All returned"
+              ]
+            },
+            [
+              "Requiem cards",
+              "1 durability each",
+              "1 durability each"
+            ],
+            [
+              "The round",
+              "Clues and progress cleared, Lich rank back to 1, a new round begins",
+              "Clues and progress cleared, Lich rank back to 1, a new round begins"
+            ],
+            {
+              "if": "cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "This Lich",
+                "Joins the <hl>ally roster</hl> and comes to your aid later",
+                "Gone for good"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "This Lich",
+                "Joins the <hl>ally roster</hl>",
+                "Gone for good"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "The choice only decides the rewards",
+          "text": "By the time the cards appear, the round has already been settled and the card durability spent. Logging out, dying or leaving the world during the choice counts as “{lang:gui.kuvalich.mercy_choice.vanquish}”, and the rewards go to [[requiem/pending_items|Pending]] as usual."
+        },
+        {
+          "type": "h",
+          "text": "After a conversion"
+        },
+        {
+          "type": "list",
+          "items": [
+            "It speaks its conversion line in place of last words, and a notice says it has been converted and added to the ally roster.",
+            "In the [[requiem/lich_archive]], the record of your previous Lich reads “Last: name · Converted”.",
+            "The roster holds up to <t>{cfg:kuva_lich.allyRosterSize}</t> allies. When it is full, the “{lang:gui.kuvalich.mercy_choice.convert}” card gains a line naming the ally that will make way.",
+            "The one that makes way is the earliest converted. The deployed ally goes last, only once it is the sole remaining choice.",
+            "Your next Lich is born only after you finish another [[enemies/kuva_larvling|Kuva Larvling]], as usual.",
+            "How allies fight and how to manage them: see [[enemies/lich_allies]]."
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "There is no undo",
+          "text": "A choice cannot be taken back once it takes effect. A released ally cannot be recovered either."
+        }
+      ]
+    },
+    {
+      "id": "lich_allies",
+      "title": "Allies",
+      "icon": "kuvalich:kuva_shildeg",
+      "summary": "When allies come to help, and the roster",
+      "if": [
+        "cfg:kuva_lich.mercyEnabled",
+        "cfg:kuva_lich.convertEnabled"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Every Lich you convert is entered in your <hl>ally roster</hl>, Tenno. The old nemesis now answers to you, with the same abilities it had when it was converted."
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "When an ally comes to your aid"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "After a non-player creature hits you, if your health is below <t>{cfg:kuva_lich.allyTriggerHealthRatio|pct}</t> of its maximum, a roll is made at <t>{cfg:kuva_lich.allyAssistChance|pct}</t>.",
+            "Each drop below the threshold allows only one roll. Another roll is possible once your health rises above it again or <t>30</t> seconds pass.",
+            "After a failed roll, the next one needs at least <t>{cfg:kuva_lich.allyRetrySeconds}</t> seconds and another hit.",
+            {
+              "if": "cfg:kuva_lich.allyCooldownMinutes>0",
+              "text": "After an ally has come, none comes again for <t>{cfg:kuva_lich.allyCooldownMinutes}</t> minutes. Logging out does not reset this."
+            },
+            "The ally that comes is the one marked as deployed in the roster. If none is deployed, the most recently converted one comes."
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "When no ally comes"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "The roster is empty",
+            "Peaceful difficulty, or Creative or Spectator mode",
+            "You are performing an execution",
+            {
+              "if": "cfg:kuva_lich.allyCooldownMinutes>0",
+              "text": "The cooldown from the last visit is still running"
+            },
+            "Your dimension is outside the range Liches hunt in",
+            "One of your allies is already with you",
+            "There are already <t>2</t> allies within <t>48</t> blocks, counting every player's",
+            {
+              "if": "cfg:kuva_lich.allyMaxActive>0",
+              "text": "<t>{cfg:kuva_lich.allyMaxActive}</t> allies are already present across all players"
+            },
+            "Less than <t>60</t> seconds have passed since you joined"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "What it does while present"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "It first attacks whatever just hit you, then the target you are attacking, then any visible hostile creature within <t>16</t> blocks. It does not chase targets more than <t>24</t> blocks from you.",
+            "It attacks hostile creatures only. It never goes after Creepers on its own, and never attacks players, pets or other players' allies.",
+            "Your own Lich and ownerless Liches are valid targets for it. It leaves other players' Liches alone.",
+            "Kuva Larvlings and Kuva Thralls it knocks down count as knocked down by you, so the right to execute them is yours, the same rule as for pets.",
+            "While you perform an execution, it stands by.",
+            "Hostile creatures attack it as usual. Attacks from you, other players and pets cannot hurt it.",
+            "Its nameplate marks it as an ally, and other players can also see whose ally it is.",
+            "It speaks in the comm window when it arrives, defeats an enemy, is downed and withdraws."
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "When it withdraws"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "After <t>{cfg:kuva_lich.allyMaxStaySeconds}</t> seconds on the field",
+            "When you have not fought for <t>15</t> seconds and it has no target",
+            "When enemies down it. Being downed only makes it withdraw, and it stays on the roster",
+            "When you log out, die, change dimension or move more than <t>48</t> blocks away",
+            "When it is released or leaves the roster"
+          ]
+        },
+        {
+          "type": "kv",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "rows": [
+            [
+              "Health",
+              "Its stats from the moment it was converted, multiplied by <t>{cfg:kuva_lich.allyHealthScale|x}</t>"
+            ],
+            [
+              "Damage",
+              "Its stats from the moment it was converted, multiplied by <t>{cfg:kuva_lich.allyDamageScale|x}</t>"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "The ally roster"
+        },
+        {
+          "type": "p",
+          "text": "The roster lives in the [[requiem/lich_archive]] and holds up to <t>{cfg:kuva_lich.allyRosterSize}</t> allies. When the profile's left column has room, the roster appears there as a dossier card. Otherwise, the right end of the title row shows “Roster n/max”. Click it to open the roster panel."
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "Each row",
+              "Name, “No. N · Lv M”, weapon and element"
+            ],
+            [
+              "Deploy",
+              "Click a row to mark it “{lang:kuvalich.archive.roster.active}”"
+            ],
+            {
+              "if": "cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "Fighting now",
+                "The ally on the field is marked “{lang:kuvalich.archive.roster.present}”"
+              ]
+            },
+            [
+              "Release",
+              "Click the release button at the end of the row, then click again within <t>3</t> seconds to confirm. A released ally leaves the roster <b>for good</b>"
+            ],
+            [
+              "Roster full",
+              "Converting another Lich makes the earliest converted ally leave; the deployed ally is the last to go"
+            ],
+            [
+              "No allies",
+              "The roster reads “{lang:kuvalich.archive.roster.none}”"
+            ]
           ]
         }
       ]

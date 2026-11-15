@@ -152,14 +152,14 @@
               "if": "cfg:kuva_lich.thrallSquadResumeDelaySeconds!=0",
               "cells": [
                 "多久一隊",
-                "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸剛誕生、你剛上線時從頭計時；在它們不來的地方計時停著，回來後至少再等 <t>{cfg:kuva_lich.thrallSquadResumeDelaySeconds}</t> 秒"
+                "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 隻；玄骸剛誕生、你剛上線時從頭計時；在它們不來的地方計時停著，回來後至少再等 <t>{cfg:kuva_lich.thrallSquadResumeDelaySeconds}</t> 秒"
               ]
             },
             {
               "if": "cfg:kuva_lich.thrallSquadResumeDelaySeconds==0",
               "cells": [
                 "多久一隊",
-                "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 只；玄骸剛誕生、你剛上線時從頭計時；在它們不來的地方計時停著，回來後接著往下數"
+                "每 <t>{cfg:kuva_lich.thrallSquadIntervalMinSeconds}~{cfg:kuva_lich.thrallSquadIntervalMaxSeconds}</t> 秒一隊，一隊 <t>{cfg:kuva_lich.thrallSquadSizeMin}~{cfg:kuva_lich.thrallSquadSizeMax}</t> 隻；玄骸剛誕生、你剛上線時從頭計時；在它們不來的地方計時停著，回來後接著往下數"
               ]
             },
             [
@@ -168,13 +168,13 @@
             ],
             [
               "上限",
-              "你身邊 <t>{cfg:kuva_lich.thrallSquadRadius}</t> 格內已經有 <t>{cfg:kuva_lich.thrallSquadMaxNearby}</t> 只奴僕時這一隊不來，快夠數時少來幾隻"
+              "你身邊 <t>{cfg:kuva_lich.thrallSquadRadius}</t> 格內已經有 <t>{cfg:kuva_lich.thrallSquadMaxNearby}</t> 隻奴僕時這一隊不來，快夠數時少來幾隻"
             ],
             {
               "if": "cfg:kuva_lich.thrallSquadMaxPerHour!=0",
               "cells": [
                 "每小時",
-                "一小時內最多來 <t>{cfg:kuva_lich.thrallSquadMaxPerHour}</t> 只，滿了要等最早那一隊過去一小時；幾個人站在一起只按一個節奏來，這一隊每個人都算上"
+                "一小時內最多來 <t>{cfg:kuva_lich.thrallSquadMaxPerHour}</t> 隻，滿了要等最早那一隊過去一小時；幾個人站在一起只按一個節奏來，這一隊每個人都算上"
               ]
             },
             {
@@ -748,6 +748,10 @@
             "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格內、看著它，出現「{lang:kuvalich.mercy.prompt.lich}」時按{lang:key.kuvalich.mercy}鍵（預設 <t>X</t>；這時按 X 只算處決，不會同時觸發同鍵的別的按鍵）",
             "處決時你不會受傷，也不能做別的事。第 1 次倒地捅 <t>1</t> 刀、只核對第 1 張卡，第 2 次捅 <t>2</t> 刀、核對前 2 張，第 3 次捅 <t>3</t> 刀；都從第 1 位起逐張核對，刺錯一張就停",
             "前 1 次或前 2 次處決刀刀都對時，它掙開你站起來，下一段血回滿，接著打；第 3 次三刀全對才終結它",
+            {
+              "if": "cfg:kuva_lich.convertEnabled",
+              "text": "第 3 次三刀全對時，處決停在最後一刻，由你決定<hl>感化</hl>還是<hl>消滅</hl>，見[[enemies/lich_convert]]"
+            },
             "倒地 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒內你沒動手，這一段血回滿，它站起來接著打；連著 <t>3</t> 次沒處決，它就逃走，什麼都不給",
             "被 <t>/kill</t> 或掉進虛空這類傷害直接打死時不倒地，這次遭遇作廢，什麼都不給"
           ]
@@ -771,6 +775,13 @@
           ],
           "title": "第一刀之前",
           "text": "處決在第一刀落下之前被打斷，這次處決作廢，它照舊倒在原地，倒地計時接著走；第一刀落下之後再被打斷，結果當場就算。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "title": "鏡頭與震動",
+          "text": "處決玄骸時，每一刀刺入都有短暫的頓幀和鏡頭震動，鏡頭還會推拉、環繞。在你自己的用戶端設定裡，可以關閉頓幀，減弱或關閉震動，並把鏡頭運動改為減弱或固定機位，只影響你自己。"
         },
         {
           "type": "h",
@@ -814,10 +825,23 @@
                 "不判定，它消散離開，你拿到解密進度，數量是奴僕的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"
               ]
             },
-            [
-              "放滿 3 張，<g>順序全對</g>",
-              "<g>解密成功</g>，它被終結，你拿到下面的獎勵並開始新一輪"
-            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "放滿 3 張，<g>順序全對</g>",
+                "<g>解密成功</g>，開始新一輪。你決定[[enemies/lich_convert|感化還是消滅]]它：消滅拿到下面的獎勵，感化則收為盟友"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "cells": [
+                "放滿 3 張，<g>順序全對</g>",
+                "<g>解密成功</g>，它被終結，你拿到下面的獎勵並開始新一輪"
+              ]
+            },
             [
               "放滿 3 張，<b>有錯</b>",
               "<b>解密失敗</b>，它掙脫逃走，[[enemies/kuva_escalation|玄骸等級]] +1，照常拿到進度"
@@ -874,13 +898,20 @@
               ]
             },
             {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "{item:kuvalich:ephemera}",
+                "這隻玄骸帶著幻紋時得到 1 件，見[[warframe/ephemera]]"
+              ]
+            },
+            {
               "if": [
                 "cfg:kuva_lich.confiscationChance",
                 "cfg:kuva_lich.maxConfiscatedItems"
               ],
               "cells": [
                 "被沒收的物品",
-                "全部掉回來，見[[requiem/confiscation]]"
+                "全部歸還，見[[requiem/confiscation]]"
               ]
             },
             [
@@ -903,8 +934,9 @@
         },
         {
           "type": "tip",
-          "style": "warn",
-          "text": "<w>別在岩漿和虛空旁邊收尾</w>，所有獎勵都掉在它倒下的地方。"
+          "style": "info",
+          "title": "獎勵不掉在地上",
+          "text": "終結後的獎勵先記入[[requiem/pending_items|待領取]]，再自動放進你的背包。背包放不下的部分，騰出空位後自動補上。"
         },
         {
           "type": "tip",
@@ -948,7 +980,287 @@
             },
             "它不進存檔：區塊卸載或關服時它直接離開，這次遭遇照常結束",
             "玄骸不會自然生成，刷怪籠也刷不出來",
-            "獎勵直接生成在地上，戰甲模組上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」詞條對它們無效"
+            "獎勵直接記入待領取、不經過掉落，戰甲模組上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」詞條對它們無效"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lich_convert",
+      "title": "感化與消滅",
+      "icon": "minecraft:totem_of_undying",
+      "summary": "終結玄骸時的選擇，以及各自的得失",
+      "if": [
+        "cfg:kuva_lich.mercyEnabled",
+        "cfg:kuva_lich.convertEnabled"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "饒它一命還是將它消滅，由你決定，Tenno。第 3 次處決的三刀全部刺對之後，處決停在最後一刻，螢幕中央亮出兩塊牌：左邊是「{lang:gui.kuvalich.mercy_choice.convert}」，右邊是「{lang:gui.kuvalich.mercy_choice.vanquish}」。"
+        },
+        {
+          "type": "h",
+          "text": "怎麼選"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "第 3 次處決的三刀全部刺對，處決停住，兩塊牌出現，牌上方的細線顯示剩餘時間。",
+            "按住左移鍵（預設 <t>A</t>）或滑鼠左鍵，選擇「{lang:gui.kuvalich.mercy_choice.convert}」。按住右移鍵（預設 <t>D</t>）或滑鼠右鍵，選擇「{lang:gui.kuvalich.mercy_choice.vanquish}」。牌上寫明當前繫結的按鍵。",
+            "按住約 <t>0.6</t> 秒後選擇生效。兩邊同時按住不算選擇。",
+            "<t>{cfg:kuva_lich.convertChoiceSeconds}</t> 秒內沒有作出選擇，按「{lang:gui.kuvalich.mercy_choice.vanquish}」處理。時間走完後，牌上顯示「{lang:gui.kuvalich.mercy_choice.judging}」。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "兩種選擇各得到什麼"
+        },
+        {
+          "type": "table",
+          "header": [
+            "項目",
+            "{lang:gui.kuvalich.mercy_choice.convert}",
+            "{lang:gui.kuvalich.mercy_choice.vanquish}"
+          ],
+          "widths": [
+            3,
+            4,
+            4
+          ],
+          "rows": [
+            [
+              "赤毒武器與獎勵",
+              "<b>不取</b>",
+              "<g>全部取得</g>，見[[enemies/kuva_master]]"
+            ],
+            [
+              "武器等級範圍",
+              "不提高",
+              "上下限照常提高"
+            ],
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "幻紋",
+                "取得",
+                "取得"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance",
+                "cfg:kuva_lich.maxConfiscatedItems"
+              ],
+              "cells": [
+                "被沒收的物品",
+                "全部歸還",
+                "全部歸還"
+              ]
+            },
+            [
+              "安魂卡",
+              "各扣 1 點耐久",
+              "各扣 1 點耐久"
+            ],
+            [
+              "這一輪",
+              "線索與進度清空，玄骸等級回到 1 級，開始新一輪",
+              "線索與進度清空，玄骸等級回到 1 級，開始新一輪"
+            ],
+            {
+              "if": "cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "這隻玄骸",
+                "加入<hl>盟友名冊</hl>，日後前來助戰",
+                "徹底消散"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "這隻玄骸",
+                "加入<hl>盟友名冊</hl>",
+                "徹底消散"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "選擇只決定獎勵的去留",
+          "text": "兩塊牌出現時，這一輪已經結算完畢，卡的耐久已經扣除。選擇期間下線、死亡或離開所在世界，一律按「{lang:gui.kuvalich.mercy_choice.vanquish}」處理，獎勵照常記入[[requiem/pending_items|待領取]]。"
+        },
+        {
+          "type": "h",
+          "text": "感化之後"
+        },
+        {
+          "type": "list",
+          "items": [
+            "它說出感化時的台詞，取代遺言，螢幕上提示它已被感化、加入盟友名冊。",
+            "[[requiem/lich_archive]]裡，上一隻的記錄寫作「上一隻：名字 · 已感化」。",
+            "名冊最多容納 <t>{cfg:kuva_lich.allyRosterSize}</t> 隻。名冊已滿時，「{lang:gui.kuvalich.mercy_choice.convert}」牌下多出一行，寫明哪一隻將讓出位置。",
+            "讓出位置的是最早感化的那隻。設為出戰的那隻排在最後，名冊裡只剩它時才輪到它。",
+            "下一隻玄骸照常要再了結一隻[[enemies/kuva_larvling|赤毒幼體]]才會誕生。",
+            "盟友怎麼助戰、怎麼管理，見[[enemies/lich_allies]]。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "選定後不能更改",
+          "text": "選擇生效後無法反悔。從名冊遣散的盟友也無法恢復。"
+        }
+      ]
+    },
+    {
+      "id": "lich_allies",
+      "title": "盟友",
+      "icon": "kuvalich:kuva_shildeg",
+      "summary": "感化的玄骸何時前來助戰、名冊怎麼管理",
+      "if": [
+        "cfg:kuva_lich.mercyEnabled",
+        "cfg:kuva_lich.convertEnabled"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "被你感化的玄骸記在<hl>盟友名冊</hl>上，Tenno。昔日的宿敵如今聽你調遣，它的能力與被感化時相同。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "什麼時候前來助戰"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "你被玩家以外的生物擊中後，生命低於上限的 <t>{cfg:kuva_lich.allyTriggerHealthRatio|pct}</t> 時，按 <t>{cfg:kuva_lich.allyAssistChance|pct}</t> 的機率判定一次。",
+            "每跌破一次只判定一次。生命回到該比例以上，或過了 <t>30</t> 秒，才會再次判定。",
+            "判定沒有成功時，至少再等 <t>{cfg:kuva_lich.allyRetrySeconds}</t> 秒，並且要再次被擊中，才會重新判定。",
+            {
+              "if": "cfg:kuva_lich.allyCooldownMinutes>0",
+              "text": "盟友來過一次之後，<t>{cfg:kuva_lich.allyCooldownMinutes}</t> 分鐘內不會再來。下線不會重置這段時間。"
+            },
+            "前來的是名冊裡設為出戰的那隻。沒有設過時，前來的是最近感化的那隻。"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "不會前來的情況"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "名冊是空的",
+            "和平難度，或處於創造、旁觀模式",
+            "正在處決",
+            {
+              "if": "cfg:kuva_lich.allyCooldownMinutes>0",
+              "text": "上一次助戰後的冷卻還沒有結束"
+            },
+            "你所在的維度不在玄骸的狩獵範圍內",
+            "你身邊已經有一隻盟友",
+            "附近 <t>48</t> 格內已有 <t>2</t> 隻盟友，所有玩家的盟友都計算在內",
+            {
+              "if": "cfg:kuva_lich.allyMaxActive>0",
+              "text": "同時在場的盟友已達 <t>{cfg:kuva_lich.allyMaxActive}</t> 隻，所有玩家合計"
+            },
+            "進入遊戲還不滿 <t>60</t> 秒"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "在場時做什麼"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "優先攻擊剛剛打過你的敵人，其次是你正在攻擊的目標，再次是身邊 <t>16</t> 格內看得見的敵對生物。離你超過 <t>24</t> 格的目標不追。",
+            "只打敵對生物，不主動攻擊苦力怕，也不攻擊玩家、寵物和別人的盟友。",
+            "你自己的玄骸和無主的玄骸也在它的攻擊範圍內，別人的玄骸它不會去碰。",
+            "它打倒的赤毒幼體和赤毒奴僕，按你親手打倒計算，處決資格歸你，與寵物打倒的規則相同。",
+            "你處決期間，它在原地待命。",
+            "敵對生物照常會攻擊它。你和其他玩家的攻擊、寵物的攻擊都傷不到它。",
+            "頭頂名牌標明它是盟友，其他玩家還能看到它屬於誰。",
+            "到場、擊敗敵人、被擊倒和退去時，它會在通訊窗裡說話。"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "什麼時候退去"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "在場滿 <t>{cfg:kuva_lich.allyMaxStaySeconds}</t> 秒",
+            "你 <t>15</t> 秒沒有交戰，並且它也沒有目標",
+            "被敵人擊倒。被擊倒只是退去，它仍留在名冊上",
+            "你下線、死亡、換維度，或離它超過 <t>48</t> 格",
+            "它被遣散或離開名冊"
+          ]
+        },
+        {
+          "type": "kv",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "rows": [
+            [
+              "生命",
+              "按它被感化時的面板計算，再乘 <t>{cfg:kuva_lich.allyHealthScale|x}</t>"
+            ],
+            [
+              "傷害",
+              "按它被感化時的面板計算，再乘 <t>{cfg:kuva_lich.allyDamageScale|x}</t>"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "盟友名冊"
+        },
+        {
+          "type": "p",
+          "text": "名冊在[[requiem/lich_archive]]裡，最多容納 <t>{cfg:kuva_lich.allyRosterSize}</t> 隻。檔案左列放得下時，名冊以卷宗卡的形式列在左列。放不下時，標題行右端顯示「盟友名冊 n/上限」，單擊開啟名冊面板。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "每一行",
+              "名字、「第 N 隻 · 等級 M」、武器與元素"
+            ],
+            [
+              "設為出戰",
+              "單擊一行，它標為「{lang:kuvalich.archive.roster.active}」"
+            ],
+            {
+              "if": "cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "正在助戰",
+                "在場的那隻標有「{lang:kuvalich.archive.roster.present}」"
+              ]
+            },
+            [
+              "遣散",
+              "單擊行尾的遣散鍵，<t>3</t> 秒內再單擊一次確認。遣散後它離開名冊，<b>無法恢復</b>"
+            ],
+            [
+              "名冊已滿",
+              "再感化一隻時，最早感化的那隻離開名冊，設為出戰的那隻最後才讓出"
+            ],
+            [
+              "尚無盟友",
+              "名冊顯示「{lang:kuvalich.archive.roster.none}」"
+            ]
           ]
         }
       ]

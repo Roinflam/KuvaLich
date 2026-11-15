@@ -313,6 +313,13 @@
               "怒氣條和當前檔位，從低到高依次是{lang:kuvalich.lich.rage.0}、{lang:kuvalich.lich.rage.1}、{lang:kuvalich.lich.rage.2}、{lang:kuvalich.lich.rage.3}、{lang:kuvalich.lich.rage.4}；滑鼠移上去能看到哪些事在讓它更怒"
             ],
             {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "幻紋",
+                "這隻玄骸帶着幻紋時寫明「幻紋：款式名」，終結它時會得到這件幻紋，見[[warframe/ephemera]]"
+              ]
+            },
+            {
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "屬性",
@@ -374,6 +381,20 @@
             [
               "已揭示的密語",
               "和滅骸之扉裏同樣的三枚符號，<w>排列不代表正確順序</w>"
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "盟友名冊",
+                "感化過的玄骸都在這裏，可以設為出戰或遣散，見[[enemies/lich_allies]]"
+              ]
+            },
+            [
+              "待領取",
+              "右下角的「待領取 N 件」表示還沒有放進背包的物品，見[[requiem/pending_items]]"
             ]
           ]
         },
@@ -772,9 +793,9 @@
         },
         {
           "type": "tip",
-          "style": "warn",
-          "title": "獎勵掉在它倒下的地方",
-          "text": "收尾時<w>避開巖漿、虛空和深水</w>，獎勵都掉在玄骸倒下的位置。"
+          "style": "info",
+          "title": "獎勵直接放進背包",
+          "text": "終結後的獎勵先記入[[requiem/pending_items|待領取]]，再自動放進背包，不會掉在地上。"
         },
         {
           "type": "h",
@@ -1029,12 +1050,78 @@
         },
         {
           "type": "p",
-          "text": "解密成功、終結它的時候，沒收的東西會<g>一件不少</g>地掉在<em>它倒下的位置</em>，聊天欄也會提示，這時本輪已經結束，撿回來不會再被沒收。"
+          "text": "解密成功、終結它的時候，沒收的東西會<g>一件不少</g>地歸還，屏幕上提示「被沒收的 N 件物品已歸還」。這時本輪已經結束，拿回來的東西不會再被沒收。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "歸還的物品先記入[[requiem/pending_items|待領取]]，再自動放進背包，不會掉在地上。背包放不下的部分，騰出空位後自動補上。"
+        }
+      ]
+    },
+    {
+      "id": "pending_items",
+      "title": "待領取",
+      "icon": "minecraft:barrel",
+      "summary": "終結所得的物品怎樣放進背包",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "終結玄骸所得的物品不會掉在地上，Tenno。它們先記入<hl>待領取</hl>，再自動放進你的背包。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "赤毒武器與解密成功的各項獎勵",
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "text": "玄骸帶着的幻紋"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance",
+                "cfg:kuva_lich.maxConfiscatedItems"
+              ],
+              "text": "解密成功時歸還的沒收物品"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "什麼時候放進背包"
+        },
+        {
+          "type": "list",
+          "items": [
+            "背包有空位時，每秒自動放入一次。",
+            "放不下的部分留在待領取裏，騰出空位後自動補上，不會掉在地上。",
+            "背包已滿時，屏幕上提示「背包已滿，其餘 N 件物品待領取，騰出空位後自動放入」，同一提示每 <t>60</t> 秒最多出現一次。",
+            "進入遊戲後約 <t>10</t> 秒內不放入。",
+            "打開箱子、工作台這類容器界面時暫不放入，關閉後繼續。自己的背包界面不受影響。",
+            "死亡狀態和旁觀模式下暫不放入。",
+            "待領取的物品記在你身上，死亡、下線、切換維度都不會丟失，也沒有數量上限。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "查看與立即領取"
+        },
+        {
+          "type": "list",
+          "items": [
+            "[[requiem/lich_archive]]右下角的「待領取 N 件」顯示還有多少件沒有放進背包。",
+            "輸入 <t>/kuvalich inbox</t> 立即領取一次，會報告放入了多少件、還剩多少件待領取。"
+          ]
         },
         {
           "type": "tip",
           "style": "warn",
-          "text": "它們是普通的掉落物，放久了會消失，碰上巖漿會燒掉，儘快撿回來。"
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.oullDropChance>0"
+          ],
+          "title": "Oull 不經過待領取",
+          "text": "處決失敗時可能得到的 Oull 直接放進背包，背包已滿時掉在腳下。"
         }
       ]
     },

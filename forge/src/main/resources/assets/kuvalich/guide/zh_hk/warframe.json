@@ -81,7 +81,8 @@
             "放下後右鍵打開，上面兩排共 <t>8</t> 格就是你的戰甲模組槽。",
             "把模組拖進空格，或者在背包裏 <t>Shift + 左鍵</t> 點它，它會自動放進第一個能放的格子，這裏只收戰甲模組。",
             "放進去<g>立刻生效</g>，取出來立刻失效，不用關界面。",
-            "按 <t>Tab</t> 打開戰甲模組的[[modules/module_codex|模組圖鑑]]。"
+            "按 <t>Tab</t> 打開戰甲模組的[[modules/module_codex|模組圖鑑]]。",
+            "界面裏另有一格「{lang:kuvalich.warframe_table.ephemera_slot}」，只收幻紋，見[[warframe/ephemera]]。"
           ]
         },
         {
@@ -110,6 +111,211 @@
           "style": "warn",
           "title": "挖回來要鑽石鎬",
           "text": "用<em>鑽石鎬或更好的鎬</em>挖，軍械庫才拿得回來，用別的工具會直接挖沒。它的硬度是黑曜石的兩倍，挖起來很慢。"
+        }
+      ]
+    },
+    {
+      "id": "ephemera",
+      "title": "幻紋",
+      "icon": "kuvalich:ephemera",
+      "summary": "終結玄骸所得的光效，裝進幻紋格顯示",
+      "items": [
+        "kuvalich:ephemera"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>幻紋</hl>是環繞在身上的一層光效，只改變外觀，不影響任何屬性。它取自你終結的玄骸，Tenno，裝上之後，周圍的人都看得見。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.lichEphemeraChance>0",
+          "text": "怎麼得到"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.lichEphemeraChance>0",
+          "items": [
+            "每隻新誕生的玄骸有 <t>{cfg:kuva_lich.lichEphemeraChance|pct}</t> 的概率帶着一件幻紋，誕生時就已定下。",
+            {
+              "if": "cfg:kuva_lich.lichEphemeraBackfill",
+              "text": "幻紋出現之前誕生的玄骸，在你進入遊戲時按同樣的概率補定一次。"
+            },
+            "帶着幻紋的玄骸，[[requiem/lich_archive]]裏寫明「幻紋：款式名」，它自己身上也顯示這件幻紋。",
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "text": "終結它時，無論[[enemies/lich_convert|感化]]還是消滅，都會得到這件幻紋。它先記入[[requiem/pending_items|待領取]]，再自動放進背包。"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "text": "終結它時會得到這件幻紋。它先記入[[requiem/pending_items|待領取]]，再自動放進背包。"
+            },
+            "解密失敗或它逃走時，不會得到幻紋。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "六種款式"
+        },
+        {
+          "type": "table",
+          "header": [
+            "款式",
+            "樣子"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.name.surge}",
+              "{lang:kuvalich.ephemera.desc.surge}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.orbit}",
+              "{lang:kuvalich.ephemera.desc.orbit}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.plume}",
+              "{lang:kuvalich.ephemera.desc.plume}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.wing}",
+              "{lang:kuvalich.ephemera.desc.wing}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.coil}",
+              "{lang:kuvalich.ephemera.desc.coil}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.vortex}",
+              "{lang:kuvalich.ephemera.desc.vortex}"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "款式決定形狀。元素隨玄骸武器的元素而定，決定預設配色。所有款式站立時幅度較小，奔跑、跳躍、揮擊和受擊時隨動作展開。"
+        },
+        {
+          "type": "h",
+          "text": "裝上與取下"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "打開{item:kuvalich:requiem_warframe_table}，找到「{lang:kuvalich.warframe_table.ephemera_slot}」。",
+            "把幻紋放進去即完成裝配。幻紋格只接受幻紋。",
+            "要換下時，把它從格子裏取出。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "幻紋格和戰甲模組一樣記在你本人身上，不需要穿戴護甲，死亡後照樣保留，見[[warframe/warframe_table]]。"
+        },
+        {
+          "type": "h",
+          "text": "調整外觀"
+        },
+        {
+          "type": "p",
+          "text": "格子裏有幻紋時，單擊幻紋格旁的「{lang:kuvalich.ephemera.tune.button}」按鈕，打開調色面板。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.tune.color}",
+              "分{lang:kuvalich.ephemera.tune.primary}和{lang:kuvalich.ephemera.tune.secondary}，各用色相、飽和度、明度三條滑塊調整，也可以直接輸入色碼"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.presets}",
+              "七種元素色和「{lang:kuvalich.ephemera.tune.preset.kuva}」，單擊即可套用"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient}",
+              "四種方式，見下表"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.scale}",
+              "<t>0.5×</t> ~ <t>2×</t>"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.height}",
+              "<t>-0.5</t> ~ <t>+0.5</t>"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.reset}",
+              "全部恢復為這件幻紋的預設外觀"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "{lang:kuvalich.ephemera.tune.gradient}",
+            "效果"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.0}",
+              "{lang:kuvalich.ephemera.tune.gradient.0.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.1}",
+              "{lang:kuvalich.ephemera.tune.gradient.1.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.2}",
+              "{lang:kuvalich.ephemera.tune.gradient.2.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.3}",
+              "{lang:kuvalich.ephemera.tune.gradient.3.desc}"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "調整結果記在物品上",
+          "text": "調整的結果記在這件幻紋上。取出再放回，或者交給別人，外觀都保持不變。調整過的幻紋，物品提示裏多一行「{lang:item.kuvalich.ephemera.tuned}」。"
+        },
+        {
+          "type": "h",
+          "text": "顯示"
+        },
+        {
+          "type": "list",
+          "items": [
+            "裝上之後，你和周圍的玩家都能看到。",
+            "其他玩家離你超過 <t>24</t> 格時，看到的是精簡的效果。",
+            "第一人稱視角下，環身與頭頂的部分不顯示，以免遮擋視線。",
+            "潛行時幻紋變淡，隱身時不顯示。",
+            "在你自己的客户端設定裏，可以選擇全部顯示、一律精簡、只顯示自己的或關閉，也能限制同時顯示的數量和距離，只影響你自己。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "物品提示"
+        },
+        {
+          "type": "list",
+          "items": [
+            "款式與元素",
+            "源自哪隻玄骸。創造模式物品欄裏拿到的沒有這一行",
+            "配色：主色與副色兩個色塊",
+            "調整過的多一行「{lang:item.kuvalich.ephemera.tuned}」",
+            "最後一行是這一款的外觀描述"
+          ]
         }
       ]
     },

@@ -784,6 +784,10 @@
             "走到它 <t>{cfg:kuva_lich.mercyReach}</t> 格内、看着它，出现「{lang:kuvalich.mercy.prompt.lich}」时按{lang:key.kuvalich.mercy}键（默认 <t>X</t>；这时按 X 只算处决，不会同时触发同键的别的按键）",
             "处决时你不会受伤，也不能做别的事。第 1 次倒地捅 <t>1</t> 刀、只核对第 1 张卡，第 2 次捅 <t>2</t> 刀、核对前 2 张，第 3 次捅 <t>3</t> 刀；都从第 1 位起逐张核对，刺错一张就停",
             "前 1 次或前 2 次处决刀刀都对时，它挣开你站起来，下一段血回满，接着打；第 3 次三刀全对才终结它",
+            {
+              "if": "cfg:kuva_lich.convertEnabled",
+              "text": "第 3 次三刀全对时，处决停在最后一刻，由你决定<hl>感化</hl>还是<hl>消灭</hl>，见[[enemies/lich_convert]]"
+            },
             "倒地 <t>{cfg:kuva_lich.mercyDownedSeconds}</t> 秒内你没动手，这一段血回满，它站起来接着打；连着 <t>3</t> 次没处决，它就逃走，什么都不给",
             "被 <t>/kill</t> 或掉进虚空这类伤害直接打死时不倒地，这次遭遇作废，什么都不给"
           ]
@@ -807,6 +811,13 @@
           ],
           "title": "第一刀之前",
           "text": "处决在第一刀落下之前被打断，这次处决作废，它照旧倒在原地，倒地计时接着走；第一刀落下之后再被打断，结果当场就算。"
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "title": "镜头与震动",
+          "text": "处决玄骸时，每一刀刺入都有短暂的顿帧和镜头震动，镜头还会推拉、环绕。在你自己的客户端设置里，可以关闭顿帧，减弱或关闭震动，并把镜头运动改为减弱或固定机位，只影响你自己。"
         },
         {
           "type": "h",
@@ -850,10 +861,23 @@
                 "不判定，它消散离开，你拿到解密进度，数量是奴仆的 <t>{cfg:kuva_lich.masterPotionMultiplier|x}</t>"
               ]
             },
-            [
-              "放满 3 张，<g>顺序全对</g>",
-              "<g>解密成功</g>，它被终结，你拿到下面的奖励并开始新一轮"
-            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "放满 3 张，<g>顺序全对</g>",
+                "<g>解密成功</g>，开始新一轮。你决定[[enemies/lich_convert|感化还是消灭]]它：消灭拿到下面的奖励，感化则收为盟友"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "cells": [
+                "放满 3 张，<g>顺序全对</g>",
+                "<g>解密成功</g>，它被终结，你拿到下面的奖励并开始新一轮"
+              ]
+            },
             [
               "放满 3 张，<b>有错</b>",
               "<b>解密失败</b>，它挣脱逃走，[[enemies/kuva_escalation|玄骸等级]] +1，照常拿到进度"
@@ -910,13 +934,20 @@
               ]
             },
             {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "{item:kuvalich:ephemera}",
+                "这只玄骸带着幻纹时得到 1 件，见[[warframe/ephemera]]"
+              ]
+            },
+            {
               "if": [
                 "cfg:kuva_lich.confiscationChance",
                 "cfg:kuva_lich.maxConfiscatedItems"
               ],
               "cells": [
                 "被没收的物品",
-                "全部掉回来，见[[requiem/confiscation]]"
+                "全部归还，见[[requiem/confiscation]]"
               ]
             },
             [
@@ -939,8 +970,9 @@
         },
         {
           "type": "tip",
-          "style": "warn",
-          "text": "<w>别在岩浆和虚空旁边收尾</w>，所有奖励都掉在它倒下的地方。"
+          "style": "info",
+          "title": "奖励不掉在地上",
+          "text": "终结后的奖励先记入[[requiem/pending_items|待领取]]，再自动放进你的背包。背包放不下的部分，腾出空位后自动补上。"
         },
         {
           "type": "tip",
@@ -984,7 +1016,7 @@
             },
             "它不进存档：区块卸载或关服时它直接离开，这次遭遇照常结束",
             "玄骸不会自然生成，刷怪笼也刷不出来",
-            "奖励直接生成在地上，战甲模组上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」词条对它们无效"
+            "奖励直接记入待领取、不经过掉落，战甲模组上的「{lang:kuvaweapon.warframe_attribute_type.itemDropMultiplier}」词条对它们无效"
           ]
         }
       ],
@@ -1016,7 +1048,319 @@
         "nemesis/LichPersona.java — 性格由玄骸种子的低 32 位算出，活泼 / 理性两种，各有一整套台词；LichComms.send、LichArchiveScreen.planTalk 按它取键；lichVariedTraits 开着时 nemesis/LichTraits 按性格定面板偏向，关着时只管台词",
         "entity/KuvaMasterEntity.java:465 isSegmented — 有主、非演示、开着怜悯之击时血条分 SEGMENTS=3 段；segmentFloor / segmentCeil；base/entity/AbstractKuva.java reachedSegmentFloor 打到这一段的底就倒地，tickDowned 倒地时这一段血随计时回到顶；:480 mercyStabs = 打空的段数 + 1",
         "mercy/MercyServer.java:711 buildPlan — 第 k 次处决捅 k 刀、只验前 k 张，空格算错；:926 settleAdvance 验的几刀全对且不到第三刀：清零没人处决的次数、记一行尝试，不扣卡不给进度；:941 rise → KuvaMasterEntity.java:501 advanceSegment 进下一段、血到下一段顶、护盾回满",
-        "entity/KuvaMasterEntity.java:529 shieldCap = 最大生命 × lichShieldRatio（无主 / 演示为 0），护盾就是吸收值；:570 actuallyHurt 挨打后等 lichShieldDelaySeconds 秒，这一下后护盾为 0 时 × lichShieldBrokenDelayMultiplier；:583 tickShield 能打时每秒回上限的 lichShieldRegenPercent%；module/weapon/WeaponCombatHandler.java:871 磁力：目标有吸收值时伤害提高"
+        "entity/KuvaMasterEntity.java:529 shieldCap = 最大生命 × lichShieldRatio（无主 / 演示为 0），护盾就是吸收值；:570 actuallyHurt 挨打后等 lichShieldDelaySeconds 秒，这一下后护盾为 0 时 × lichShieldBrokenDelayMultiplier；:583 tickShield 能打时每秒回上限的 lichShieldRegenPercent%；module/weapon/WeaponCombatHandler.java:871 磁力：目标有吸收值时伤害提高",
+        "mercy/MercyServer.java:596 — convertEnabled 开着时第 3 次处决三刀全对开选择窗口（详见 enemies/lich_convert）",
+        "client/mercy/MercyClient.java:185、client/mercy/MercyCamera.java:751,980、mercy/MercyCameraPath.java:18,52 — 客户端 [effects] mercy_hitstop（只对玄骸）、mercy_shake（0~2，0 = 关）、mercy_camera_motion（FULL / REDUCED / STATIC）；config/EffectsDisplayConfig.java，客户端 toml",
+        "nemesis/FinaleSettlement.java resolve — 11-15 起终结奖励（含没收归还、幻纹）一律记入收件箱再由 nemesis/Inbox 放进背包，不再生成在它倒下的位置；所以奖励不经过 LivingDrops，itemDropMultiplier 照旧不影响",
+        "nemesis/FinaleSettlement.java:104-122 — 带幻纹的玄骸终结时造出幻纹物品"
+      ]
+    },
+    {
+      "id": "lich_convert",
+      "title": "感化与消灭",
+      "icon": "minecraft:totem_of_undying",
+      "summary": "终结玄骸时的选择，以及各自的得失",
+      "if": [
+        "cfg:kuva_lich.mercyEnabled",
+        "cfg:kuva_lich.convertEnabled"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "饶它一命还是将它消灭，由你决定，Tenno。第 3 次处决的三刀全部刺对之后，处决停在最后一刻，屏幕中央亮出两块牌：左边是「{lang:gui.kuvalich.mercy_choice.convert}」，右边是「{lang:gui.kuvalich.mercy_choice.vanquish}」。"
+        },
+        {
+          "type": "h",
+          "text": "怎么选"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "第 3 次处决的三刀全部刺对，处决停住，两块牌出现，牌上方的细线显示剩余时间。",
+            "按住左移键（默认 <t>A</t>）或鼠标左键，选择「{lang:gui.kuvalich.mercy_choice.convert}」。按住右移键（默认 <t>D</t>）或鼠标右键，选择「{lang:gui.kuvalich.mercy_choice.vanquish}」。牌上写明当前绑定的按键。",
+            "按住约 <t>0.6</t> 秒后选择生效。两边同时按住不算选择。",
+            "<t>{cfg:kuva_lich.convertChoiceSeconds}</t> 秒内没有作出选择，按「{lang:gui.kuvalich.mercy_choice.vanquish}」处理。时间走完后，牌上显示「{lang:gui.kuvalich.mercy_choice.judging}」。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "两种选择各得到什么"
+        },
+        {
+          "type": "table",
+          "header": [
+            "项目",
+            "{lang:gui.kuvalich.mercy_choice.convert}",
+            "{lang:gui.kuvalich.mercy_choice.vanquish}"
+          ],
+          "widths": [
+            3,
+            4,
+            4
+          ],
+          "rows": [
+            [
+              "赤毒武器与奖励",
+              "<b>不取</b>",
+              "<g>全部取得</g>，见[[enemies/kuva_master]]"
+            ],
+            [
+              "武器等级范围",
+              "不提高",
+              "上下限照常提高"
+            ],
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "幻纹",
+                "取得",
+                "取得"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance",
+                "cfg:kuva_lich.maxConfiscatedItems"
+              ],
+              "cells": [
+                "被没收的物品",
+                "全部归还",
+                "全部归还"
+              ]
+            },
+            [
+              "安魂卡",
+              "各扣 1 点耐久",
+              "各扣 1 点耐久"
+            ],
+            [
+              "这一轮",
+              "线索与进度清空，玄骸等级回到 1 级，开始新一轮",
+              "线索与进度清空，玄骸等级回到 1 级，开始新一轮"
+            ],
+            {
+              "if": "cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "这只玄骸",
+                "加入<hl>盟友名册</hl>，日后前来助战",
+                "彻底消散"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "这只玄骸",
+                "加入<hl>盟友名册</hl>",
+                "彻底消散"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "选择只决定奖励的去留",
+          "text": "两块牌出现时，这一轮已经结算完毕，卡的耐久已经扣除。选择期间下线、死亡或离开所在世界，一律按「{lang:gui.kuvalich.mercy_choice.vanquish}」处理，奖励照常记入[[requiem/pending_items|待领取]]。"
+        },
+        {
+          "type": "h",
+          "text": "感化之后"
+        },
+        {
+          "type": "list",
+          "items": [
+            "它说出感化时的台词，取代遗言，屏幕上提示它已被感化、加入盟友名册。",
+            "[[requiem/lich_archive]]里，上一只的记录写作「上一只：名字 · 已感化」。",
+            "名册最多容纳 <t>{cfg:kuva_lich.allyRosterSize}</t> 只。名册已满时，「{lang:gui.kuvalich.mercy_choice.convert}」牌下多出一行，写明哪一只将让出位置。",
+            "让出位置的是最早感化的那只。设为出战的那只排在最后，名册里只剩它时才轮到它。",
+            "下一只玄骸照常要再了结一只[[enemies/kuva_larvling|赤毒幼体]]才会诞生。",
+            "盟友怎么助战、怎么管理，见[[enemies/lich_allies]]。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "title": "选定后不能更改",
+          "text": "选择生效后无法反悔。从名册遣散的盟友也无法恢复。"
+        }
+      ],
+      "_src": [
+        "mercy/MercyServer.java:596 — 只有有主玄骸、plan.success()（mercy/MercyPlan.java:67：stabs≥3 且前缀全对，分段玄骸 stabs = lichPhase+1，即第 3 次处决三刀全对）才开选择窗口；奴仆、幼体没有",
+        "mercy/MercyServer.java:596,1059-1075 — convertEnabled 在处决开始时为假则不开窗、直接按消灭（整个条目挂 convertEnabled）；mercyEnabled 关时 entity/KuvaMasterEntity.java:1240-1265 directSuccess 固定 Choice.VANQUISH，没有选择（整个条目挂 mercyEnabled）",
+        "client/mercy/MercyChoiceHud.java:45 HOLD_MS=600；:131-170 keyLeft / 鼠标左键 = 感化，keyRight / 鼠标右键 = 消灭，两边同时按等于没按；牌上「按住 %s」读玩家自己的绑定（gui.kuvalich.mercy_choice.hold）",
+        "mercy/MercyServer.java:143,1159-1180 — 时限 convertChoiceSeconds，过时再给 CHOICE_GRACE_TICKS=10 宽限后按消灭；client/mercy/MercyChoiceHud.java:300 倒计时走完显示 gui.kuvalich.mercy_choice.judging",
+        "nemesis/FinaleSettlement.java:125-180 — 感化不发 f.drops()（赤毒武器、玄骸之遗、裂罅碎块、赤毒、高级模组、通牒），等级范围不提高（newMin/newMax=-1）；没收归还与幻纹两边都发；entity/KuvaMasterEntity.java:1345-1424 computeAndApplySuccess 在开窗前就扣卡耐久（wearPlacedCards）、清空线索与进度、kuvaLevel 清零、开始新一轮",
+        "mercy/MercyServer.java:1416-1480,1523-1580 — 已定案后下线、死亡、换维度、传送、旁观、目标消失一律快进，窗口按消灭落定",
+        "lang message.kuvalich.convert.done「%s 已被感化，加入盟友名册」（PlayerFeedback.chat，默认显示为提示条）；感化台词 kuvalich.comm.lich.<性格>.converted.1~5 取代遗言；kuvalich.archive.history.converted「上一只：%s · 已感化」",
+        "nemesis/AllyRoster.java:62-120 — 超过 allyRosterSize 时挤掉最早感化且非出战的一只，出战的最后才挤；client/mercy/MercyChoiceHud.java:287 + gui.kuvalich.mercy_choice.release 牌下多一行",
+        "nemesis/AllyRoster.release — 遣散后条目删除，无法恢复（kuvalich.archive.roster.release.hint）"
+      ]
+    },
+    {
+      "id": "lich_allies",
+      "title": "盟友",
+      "icon": "kuvalich:kuva_shildeg",
+      "summary": "感化的玄骸何时前来助战、名册怎么管理",
+      "if": [
+        "cfg:kuva_lich.mercyEnabled",
+        "cfg:kuva_lich.convertEnabled"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "被你感化的玄骸记在<hl>盟友名册</hl>上，Tenno。昔日的宿敌如今听你调遣，它的能力与被感化时相同。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "什么时候前来助战"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "你被玩家以外的生物击中后，生命低于上限的 <t>{cfg:kuva_lich.allyTriggerHealthRatio|pct}</t> 时，按 <t>{cfg:kuva_lich.allyAssistChance|pct}</t> 的概率判定一次。",
+            "每跌破一次只判定一次。生命回到该比例以上，或过了 <t>30</t> 秒，才会再次判定。",
+            "判定没有成功时，至少再等 <t>{cfg:kuva_lich.allyRetrySeconds}</t> 秒，并且要再次被击中，才会重新判定。",
+            {
+              "if": "cfg:kuva_lich.allyCooldownMinutes>0",
+              "text": "盟友来过一次之后，<t>{cfg:kuva_lich.allyCooldownMinutes}</t> 分钟内不会再来。下线不会重置这段时间。"
+            },
+            "前来的是名册里设为出战的那只。没有设过时，前来的是最近感化的那只。"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "不会前来的情况"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "名册是空的",
+            "和平难度，或处于创造、旁观模式",
+            "正在处决",
+            {
+              "if": "cfg:kuva_lich.allyCooldownMinutes>0",
+              "text": "上一次助战后的冷却还没有结束"
+            },
+            "你所在的维度不在玄骸的狩猎范围内",
+            "你身边已经有一只盟友",
+            "附近 <t>48</t> 格内已有 <t>2</t> 只盟友，所有玩家的盟友都计算在内",
+            {
+              "if": "cfg:kuva_lich.allyMaxActive>0",
+              "text": "同时在场的盟友已达 <t>{cfg:kuva_lich.allyMaxActive}</t> 只，所有玩家合计"
+            },
+            "进入游戏还不满 <t>60</t> 秒"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "在场时做什么"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "优先攻击刚刚打过你的敌人，其次是你正在攻击的目标，再次是身边 <t>16</t> 格内看得见的敌对生物。离你超过 <t>24</t> 格的目标不追。",
+            "只打敌对生物，不主动攻击苦力怕，也不攻击玩家、宠物和别人的盟友。",
+            "你自己的玄骸和无主的玄骸也在它的攻击范围内，别人的玄骸它不会去碰。",
+            "它打倒的赤毒幼体和赤毒奴仆，按你亲手打倒计算，处决资格归你，与宠物打倒的规则相同。",
+            "你处决期间，它在原地待命。",
+            "敌对生物照常会攻击它。你和其他玩家的攻击、宠物的攻击都伤不到它。",
+            "头顶名牌标明它是盟友，其他玩家还能看到它属于谁。",
+            "到场、击败敌人、被击倒和退去时，它会在通讯窗里说话。"
+          ]
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "text": "什么时候退去"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "items": [
+            "在场满 <t>{cfg:kuva_lich.allyMaxStaySeconds}</t> 秒",
+            "你 <t>15</t> 秒没有交战，并且它也没有目标",
+            "被敌人击倒。被击倒只是退去，它仍留在名册上",
+            "你下线、死亡、换维度，或离它超过 <t>48</t> 格",
+            "它被遣散或离开名册"
+          ]
+        },
+        {
+          "type": "kv",
+          "if": "cfg:kuva_lich.allyEnabled",
+          "rows": [
+            [
+              "生命",
+              "按它被感化时的面板计算，再乘 <t>{cfg:kuva_lich.allyHealthScale|x}</t>"
+            ],
+            [
+              "伤害",
+              "按它被感化时的面板计算，再乘 <t>{cfg:kuva_lich.allyDamageScale|x}</t>"
+            ]
+          ]
+        },
+        {
+          "type": "h",
+          "text": "盟友名册"
+        },
+        {
+          "type": "p",
+          "text": "名册在[[requiem/lich_archive]]里，最多容纳 <t>{cfg:kuva_lich.allyRosterSize}</t> 只。档案左列放得下时，名册以卷宗卡的形式列在左列。放不下时，标题行右端显示「盟友名册 n/上限」，单击打开名册面板。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "每一行",
+              "名字、「第 N 只 · 等级 M」、武器与元素"
+            ],
+            [
+              "设为出战",
+              "单击一行，它标为「{lang:kuvalich.archive.roster.active}」"
+            ],
+            {
+              "if": "cfg:kuva_lich.allyEnabled",
+              "cells": [
+                "正在助战",
+                "在场的那只标有「{lang:kuvalich.archive.roster.present}」"
+              ]
+            },
+            [
+              "遣散",
+              "单击行尾的遣散键，<t>3</t> 秒内再单击一次确认。遣散后它离开名册，<b>无法恢复</b>"
+            ],
+            [
+              "名册已满",
+              "再感化一只时，最早感化的那只离开名册，设为出战的那只最后才让出"
+            ],
+            [
+              "尚无盟友",
+              "名册显示「{lang:kuvalich.archive.roster.none}」"
+            ]
+          ]
+        }
+      ],
+      "_src": [
+        "整个条目挂 mercyEnabled + convertEnabled：盟友只能由感化得来（entity/KuvaMasterEntity.java computeAndApplySuccess + nemesis/FinaleSettlement.java 感化分支 → AllyRoster 追加）；助战各块再挂 allyEnabled（nemesis/AllyDirector.java:169 blocker 第一项 disabled）",
+        "nemesis/AllyDirector.java:264-285 — LivingDamageEvent 只记一笔：攻击者是 LivingEntity、不是玩家、不是盟友；:330-350 tick 末尾判：血量 < 上限 × allyTriggerHealthRatio，按 allyAssistChance 掷",
+        "nemesis/AllyDirector.java:360-370,416-430 — 判过即关上膛，REARM_TICKS=600（30 秒）后或血量回到阈值以上（每秒巡检）重新上膛；没成功 retryUntil = now + allyRetrySeconds×20，下次要已上膛且过了 retryUntil，还要再被打一下",
+        "nemesis/AllyDirector.java:243-246 — 现身成功写冷却 now + allyCooldownMinutes×1200，存 PlayerLedger.allyCooldownUntil，下线不清",
+        "nemesis/AllyDirector.java:169-225 blocker — disabled、roster（空）、peaceful、creative（创造 / 旁观）、busy（死亡或 MercyServer.isBusy 处决中）、cooldown、dimension（lichHuntDimensions）、present（自己已有一只）、server_cap（allyMaxActive，0 不限）、crowded（同世界 48 格内 ≥2 只，计所有人的）、login（登录 60 秒内）",
+        "nemesis/AllyDirector.java:108-122 entryToSummon — 设为出战且仍在名册就用它，否则取名册最后一条（最近感化的）",
+        "entity/AllyGoals.java:39-130 — isFoe 要求 Enemy，排除玩家、苦力怕、有主宠物、任何盟友、演示目标、处决状态非 NONE 的；别人的专属玄骸不碰，无主玄骸和主人自己的玄骸照打；目标顺序：5 秒内打主人的（ENGAGE_MEMORY=100）→ 主人最近打的 → 自己的 lastHurtByMob → SEEK_RANGE=16（竖直 ±6）内有视线的最近一只；目标须在主人 24 格内（LEASH）",
+        "nemesis/AllyDirector.java:456-465 onChangeTarget — 非 Enemy、有主宠物、别的盟友选盟友为目标时取消；entity/KuvaMasterEntity.java hurt — 挡掉玩家一侧（玩家及其投射物、有主宠物、盟友）的伤害",
+        "mercy/MercyServer.java:493-510 hitterOf — 盟友（同宠物经 OwnableEntity）造成的倒地算主人，处决资格归主人",
+        "nemesis/AllyDirector.java:360-410,436-470 — 停留 allyMaxStaySeconds 到时退去；IDLE_LEAVE_TICKS=300：主人 15 秒没交手且盟友没目标；被击倒 onAllyKnockedOut 退去（ALLY_DOWNED），血量留 1、不死、不离开名册；主人下线 / 换维度 / 死亡 / 离开 RANGE=48 格 / 已不在名册时静默退去；主人处决时待命",
+        "entity/KuvaMasterEntity.java:530-560 setupAlly — applyTraits(LichTraits.current(seed, rank))（名册条目存的种子与感化时的等级）后 MAX_HEALTH × allyHealthScale、ATTACK_DAMAGE × allyDamageScale（MULTIPLY_TOTAL）",
+        "client/lich/LichNameplates.java:247 — kuvalich.nameplate.ally「%s · 盟友」，别人看第二行 kuvalich.nameplate.ally.other「%s 的盟友」",
+        "nemesis/LichLine.java:47-55 — ALLY_ARRIVE / ALLY_KILL（击杀后概率 0.3）/ ALLY_DOWNED / ALLY_LEAVE 走通讯窗，默认不回显到聊天栏",
+        "client/lich/ArchiveDossier.java:321,340-372 — rosterFitsLeft：放得下画卷宗卡 kuvalich.archive.roster，放不下标题行右端 kuvalich.archive.roster.entry「盟友名册 %s/%s」；:886-900,955-1050 每行名字、kuvalich.archive.roster.meta、武器与元素；单击行设为出战（.roster.active / .roster.present）；遣散小键 CONFIRM_MS=3000 内再点一次；空名册 .roster.none",
+        "network/packet/AllyCommandPacket.java:62-100 — 设为出战 / 遣散只认发送者自己名册；遣散后在场的立即退去"
       ]
     },
     {

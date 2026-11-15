@@ -269,7 +269,42 @@
               "{lang:key.kuvalich.lich_archive}",
               "從{lang:block.kuvalich.requiem_gate}裏打開的面板，能看到你那隻玄骸的名字、等級、怒氣和最近 5 次判定的記錄",
               "[[requiem/lich_archive|詳情]]"
-            ]
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "感化",
+                "終結玄骸時饒它一命，它不給武器與獎勵，加入你的盟友名冊",
+                "[[enemies/lich_convert|詳情]]"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "盟友",
+                "被感化的玄骸，你陷入苦戰時會前來助戰",
+                "[[enemies/lich_allies|詳情]]"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "!cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "盟友",
+                "被感化的玄骸，記在你的盟友名冊上",
+                "[[enemies/lich_allies|詳情]]"
+              ]
+            }
           ]
         },
         {
@@ -374,7 +409,17 @@
                 "戰甲模組給的黃心，捱打時先扣它，之後會自行回滿",
                 "[[warframe/shield|詳情]]"
               ]
-            }
+            },
+            [
+              "幻紋",
+              "取自玄骸的外觀光效，裝進戰甲軍械庫的幻紋格後顯示，不影響屬性",
+              "[[warframe/ephemera|詳情]]"
+            ],
+            [
+              "待領取",
+              "終結所得的物品先記在這裏，再自動放進背包",
+              "[[requiem/pending_items|詳情]]"
+            ]
           ]
         },
         {
@@ -834,10 +879,23 @@
                 "不算挑戰，只獲得解密進度；之後它照樣會再來"
               ]
             },
-            [
-              "放滿，順序全對",
-              "<g>解密成功</g>：它被徹底終結，掉落下一章講的獎勵，這一輪清零"
-            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "放滿，順序全對",
+                "<g>解密成功</g>，這一輪清零。你再決定[[enemies/lich_convert|感化還是消滅]]它：消滅領取下一章講的獎勵，感化則收為盟友"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "cells": [
+                "放滿，順序全對",
+                "<g>解密成功</g>：它被徹底終結，領取下一章講的獎勵，這一輪清零"
+              ]
+            },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
@@ -1052,7 +1110,7 @@
         },
         {
           "type": "p",
-          "text": "<em>任務目標</em>：撿齊解密成功的獎勵，認識你的第一把赤毒武器，再用{item:kuvalich:lich_reliquary}造出{item:kuvalich:requiem_evolve}。玄骸之遺每輪只掉一個，Tenno，用在哪裏先想清楚。"
+          "text": "<em>任務目標</em>：領齊解密成功的獎勵，認識你的第一把赤毒武器，再用{item:kuvalich:lich_reliquary}造出{item:kuvalich:requiem_evolve}。玄骸之遺每輪只掉一個，Tenno，用在哪裏先想清楚。"
         },
         {
           "type": "h",
@@ -1096,6 +1154,13 @@
                 "有 <t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> 概率掉 1 個，留着，下一隻玄骸誕生後右鍵召它來"
               ]
             },
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "{item:kuvalich:ephemera}",
+                "玄骸帶着幻紋時得到 1 件，裝進戰甲軍械庫的幻紋格顯示"
+              ]
+            },
             [
               "沒用壞的安魂卡",
               "留在滅骸之扉上接着用，每張卡能撐過 3 次成功"
@@ -1114,7 +1179,7 @@
         },
         {
           "type": "p",
-          "text": "獎勵都<w>掉在玄骸倒下的地方</w>，儘快一件不落地撿回來。"
+          "text": "獎勵不會掉在地上：它們先記入<hl>待領取</hl>，再自動放進你的背包。背包滿了就先騰出空位，見[[requiem/pending_items]]。"
         },
         {
           "type": "h",
@@ -2327,6 +2392,67 @@
               "cells": [
                 "有玄骸時撿東西被沒收的概率",
                 "{cfg:kuva_lich.confiscationChance|pctv}，每輪最多 {cfg:kuva_lich.maxConfiscatedItems} 組"
+              ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "新玄骸帶幻紋的概率",
+                "{cfg:kuva_lich.lichEphemeraChance|pct}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "感化或消滅的選擇時限",
+                "{cfg:kuva_lich.convertChoiceSeconds} 秒"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "盟友名冊上限",
+                "{cfg:kuva_lich.allyRosterSize} 只"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "盟友前來助戰",
+                "生命低於 {cfg:kuva_lich.allyTriggerHealthRatio|pct} 時，{cfg:kuva_lich.allyAssistChance|pct} 概率"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "盟友最長停留",
+                "{cfg:kuva_lich.allyMaxStaySeconds} 秒"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled",
+                "cfg:kuva_lich.allyCooldownMinutes>0"
+              ],
+              "cells": [
+                "盟友來過後的冷卻",
+                "{cfg:kuva_lich.allyCooldownMinutes} 分鐘"
               ]
             }
           ]

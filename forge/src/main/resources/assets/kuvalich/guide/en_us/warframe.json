@@ -81,7 +81,8 @@
             "Place it and right-click. The two top rows, <t>8</t> slots in total, are your Warframe mod slots.",
             "Drag a mod into an empty slot, or <t>Shift + left-click</t> it in your inventory to send it to the first slot that accepts it. Only Warframe mods fit here.",
             "A mod <g>takes effect the moment it goes in</g> and stops the moment it comes out, without closing the screen.",
-            "Press <t>Tab</t> to open the Warframe side of the [[modules/module_codex|Mod Codex]]."
+            "Press <t>Tab</t> to open the Warframe side of the [[modules/module_codex|Mod Codex]].",
+            "The screen also has an “{lang:kuvalich.warframe_table.ephemera_slot}” that holds only an Ephemera, see [[warframe/ephemera]]."
           ]
         },
         {
@@ -110,6 +111,211 @@
           "style": "warn",
           "title": "Mine it with diamond",
           "text": "You need a <em>diamond pickaxe or better</em> to get the Arsenal back; any other tool destroys it with no drop. It is twice as hard as obsidian, so it takes a while."
+        }
+      ]
+    },
+    {
+      "id": "ephemera",
+      "title": "Ephemera",
+      "icon": "kuvalich:ephemera",
+      "summary": "Cosmetic light effects won from Liches",
+      "items": [
+        "kuvalich:ephemera"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>Ephemera</hl> is a layer of light that surrounds you. It changes only your appearance and affects no stats. It comes from the Liches you finish, Tenno, and once equipped, everyone around you can see it."
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.lichEphemeraChance>0",
+          "text": "How to get one"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.lichEphemeraChance>0",
+          "items": [
+            "Each newly born Lich has a <t>{cfg:kuva_lich.lichEphemeraChance|pct}</t> chance to carry an Ephemera, decided at birth.",
+            {
+              "if": "cfg:kuva_lich.lichEphemeraBackfill",
+              "text": "A Lich born before Ephemera existed gets the same roll once, when you join the game."
+            },
+            "A Lich carrying one shows “Ephemera: style” in the [[requiem/lich_archive]], and wears it on its own body.",
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "text": "When you finish it, you get its Ephemera whether you [[enemies/lich_convert|convert]] or vanquish it. It goes to [[requiem/pending_items|Pending]] first and is then added to your inventory."
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "text": "When you finish it, you get its Ephemera. It goes to [[requiem/pending_items|Pending]] first and is then added to your inventory."
+            },
+            "A failed decryption or an escape yields no Ephemera."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "The six styles"
+        },
+        {
+          "type": "table",
+          "header": [
+            "Style",
+            "Look"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.name.surge}",
+              "{lang:kuvalich.ephemera.desc.surge}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.orbit}",
+              "{lang:kuvalich.ephemera.desc.orbit}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.plume}",
+              "{lang:kuvalich.ephemera.desc.plume}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.wing}",
+              "{lang:kuvalich.ephemera.desc.wing}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.coil}",
+              "{lang:kuvalich.ephemera.desc.coil}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.vortex}",
+              "{lang:kuvalich.ephemera.desc.vortex}"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "The style decides the shape. The element follows the Lich's weapon element and sets the default colors. Every style stays subdued while standing and unfolds with running, jumping, swinging and taking hits."
+        },
+        {
+          "type": "h",
+          "text": "Equipping and removing"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Open the {item:kuvalich:requiem_warframe_table} and find the “{lang:kuvalich.warframe_table.ephemera_slot}”.",
+            "Place the Ephemera in it to equip it. The slot accepts nothing else.",
+            "To unequip it, take it out of the slot."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Like Warframe mods, the slot belongs to you rather than the block. It needs no armor and stays after death, see [[warframe/warframe_table]]."
+        },
+        {
+          "type": "h",
+          "text": "Adjusting the appearance"
+        },
+        {
+          "type": "p",
+          "text": "With an Ephemera in the slot, click the “{lang:kuvalich.ephemera.tune.button}” button beside it to open the color panel."
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.tune.color}",
+              "{lang:kuvalich.ephemera.tune.primary} and {lang:kuvalich.ephemera.tune.secondary}, each set with hue, saturation and value sliders or typed in as a hex code"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.presets}",
+              "The seven element colors plus “{lang:kuvalich.ephemera.tune.preset.kuva}”; click one to apply it"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient}",
+              "Four modes, see below"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.scale}",
+              "<t>0.5×</t> to <t>2×</t>"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.height}",
+              "<t>-0.5</t> to <t>+0.5</t>"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.reset}",
+              "Restores the Ephemera's default look"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "{lang:kuvalich.ephemera.tune.gradient}",
+            "Effect"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.0}",
+              "{lang:kuvalich.ephemera.tune.gradient.0.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.1}",
+              "{lang:kuvalich.ephemera.tune.gradient.1.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.2}",
+              "{lang:kuvalich.ephemera.tune.gradient.2.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.3}",
+              "{lang:kuvalich.ephemera.tune.gradient.3.desc}"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "Adjustments stay with the item",
+          "text": "Adjustments are stored on the Ephemera itself. Taking it out and putting it back, or handing it to someone else, keeps the look. An adjusted Ephemera shows an extra “{lang:item.kuvalich.ephemera.tuned}” line in its tooltip."
+        },
+        {
+          "type": "h",
+          "text": "Display"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Once equipped, you and the players around you can see it.",
+            "Beyond <t>24</t> blocks, other players see a reduced version.",
+            "In first person, the parts around the body and above the head are hidden so they do not block the view.",
+            "It dims while sneaking and is hidden while invisible.",
+            "Your own client settings can show all of them, reduce all of them, show only your own or turn them off, and can limit how many are shown and how far away. This affects only you."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Tooltip"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Style and element",
+            "Which Lich it came from. Ones taken from the Creative inventory have no such line",
+            "Colors: two swatches for the primary and secondary color",
+            "An extra “{lang:item.kuvalich.ephemera.tuned}” line once adjusted",
+            "A description of the style as the last line"
+          ]
         }
       ]
     },

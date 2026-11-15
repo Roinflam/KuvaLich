@@ -81,7 +81,8 @@
             "放下后右键打开，上面两排共 <t>8</t> 格就是你的战甲模组槽。",
             "把模组拖进空格，或者在背包里 <t>Shift + 左键</t> 点它，它会自动放进第一个能放的格子，这里只收战甲模组。",
             "放进去<g>立刻生效</g>，取出来立刻失效，不用关界面。",
-            "按 <t>Tab</t> 打开战甲模组的[[modules/module_codex|模组图鉴]]。"
+            "按 <t>Tab</t> 打开战甲模组的[[modules/module_codex|模组图鉴]]。",
+            "界面里另有一格「{lang:kuvalich.warframe_table.ephemera_slot}」，只收幻纹，见[[warframe/ephemera]]。"
           ]
         },
         {
@@ -138,7 +139,229 @@
         "init/KuvaLichBlocks.java:149-155 — requiresCorrectToolForDrops，strength(100, 2000)（黑曜石硬度 50）",
         "resources data/minecraft/tags/blocks/needs_diamond_tool.json、mineable/pickaxe.json — 含 requiem_warframe_table",
         "block/RequiemWarframeTableBlock.java:79-82 — 破坏时掉落自身",
-        "wf 小知识：原作设定（战甲是玩家操控的生物机械战斗装甲、军械库在飞船上），不是本模组机制"
+        "wf 小知识：原作设定（战甲是玩家操控的生物机械战斗装甲、军械库在飞船上），不是本模组机制",
+        "world/inventory/EphemeraSlot.java — 军械库里的幻纹格（菜单序号 44），只收幻纹"
+      ]
+    },
+    {
+      "id": "ephemera",
+      "title": "幻纹",
+      "icon": "kuvalich:ephemera",
+      "summary": "终结玄骸所得的光效，装进幻纹格显示",
+      "items": [
+        "kuvalich:ephemera"
+      ],
+      "blocks": [
+        {
+          "type": "p",
+          "text": "<hl>幻纹</hl>是环绕在身上的一层光效，只改变外观，不影响任何属性。它取自你终结的玄骸，Tenno，装上之后，周围的人都看得见。"
+        },
+        {
+          "type": "h",
+          "if": "cfg:kuva_lich.lichEphemeraChance>0",
+          "text": "怎么得到"
+        },
+        {
+          "type": "list",
+          "if": "cfg:kuva_lich.lichEphemeraChance>0",
+          "items": [
+            "每只新诞生的玄骸有 <t>{cfg:kuva_lich.lichEphemeraChance|pct}</t> 的概率带着一件幻纹，诞生时就已定下。",
+            {
+              "if": "cfg:kuva_lich.lichEphemeraBackfill",
+              "text": "幻纹出现之前诞生的玄骸，在你进入游戏时按同样的概率补定一次。"
+            },
+            "带着幻纹的玄骸，[[requiem/lich_archive]]里写明「幻纹：款式名」，它自己身上也显示这件幻纹。",
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "text": "终结它时，无论[[enemies/lich_convert|感化]]还是消灭，都会得到这件幻纹。它先记入[[requiem/pending_items|待领取]]，再自动放进背包。"
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "text": "终结它时会得到这件幻纹。它先记入[[requiem/pending_items|待领取]]，再自动放进背包。"
+            },
+            "解密失败或它逃走时，不会得到幻纹。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "六种款式"
+        },
+        {
+          "type": "table",
+          "header": [
+            "款式",
+            "样子"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.name.surge}",
+              "{lang:kuvalich.ephemera.desc.surge}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.orbit}",
+              "{lang:kuvalich.ephemera.desc.orbit}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.plume}",
+              "{lang:kuvalich.ephemera.desc.plume}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.wing}",
+              "{lang:kuvalich.ephemera.desc.wing}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.coil}",
+              "{lang:kuvalich.ephemera.desc.coil}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.vortex}",
+              "{lang:kuvalich.ephemera.desc.vortex}"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "款式决定形状。元素随玄骸武器的元素而定，决定默认配色。所有款式站立时幅度较小，奔跑、跳跃、挥击和受击时随动作展开。"
+        },
+        {
+          "type": "h",
+          "text": "装上与取下"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "打开{item:kuvalich:requiem_warframe_table}，找到「{lang:kuvalich.warframe_table.ephemera_slot}」。",
+            "把幻纹放进去即完成装配。幻纹格只接受幻纹。",
+            "要换下时，把它从格子里取出。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "幻纹格和战甲模组一样记在你本人身上，不需要穿戴护甲，死亡后照样保留，见[[warframe/warframe_table]]。"
+        },
+        {
+          "type": "h",
+          "text": "调整外观"
+        },
+        {
+          "type": "p",
+          "text": "格子里有幻纹时，单击幻纹格旁的「{lang:kuvalich.ephemera.tune.button}」按钮，打开调色面板。"
+        },
+        {
+          "type": "kv",
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.tune.color}",
+              "分{lang:kuvalich.ephemera.tune.primary}和{lang:kuvalich.ephemera.tune.secondary}，各用色相、饱和度、明度三条滑块调整，也可以直接输入色值"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.presets}",
+              "七种元素色和「{lang:kuvalich.ephemera.tune.preset.kuva}」，单击即可套用"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient}",
+              "四种方式，见下表"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.scale}",
+              "<t>0.5×</t> ~ <t>2×</t>"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.height}",
+              "<t>-0.5</t> ~ <t>+0.5</t>"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.reset}",
+              "全部恢复为这件幻纹的默认外观"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "header": [
+            "{lang:kuvalich.ephemera.tune.gradient}",
+            "效果"
+          ],
+          "widths": [
+            2,
+            5
+          ],
+          "rows": [
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.0}",
+              "{lang:kuvalich.ephemera.tune.gradient.0.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.1}",
+              "{lang:kuvalich.ephemera.tune.gradient.1.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.2}",
+              "{lang:kuvalich.ephemera.tune.gradient.2.desc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.tune.gradient.3}",
+              "{lang:kuvalich.ephemera.tune.gradient.3.desc}"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "title": "调整结果记在物品上",
+          "text": "调整的结果记在这件幻纹上。取出再放回，或者交给别人，外观都保持不变。调整过的幻纹，物品提示里多一行「{lang:item.kuvalich.ephemera.tuned}」。"
+        },
+        {
+          "type": "h",
+          "text": "显示"
+        },
+        {
+          "type": "list",
+          "items": [
+            "装上之后，你和周围的玩家都能看到。",
+            "其他玩家离你超过 <t>24</t> 格时，看到的是精简的效果。",
+            "第一人称视角下，环身与头顶的部分不显示，以免遮挡视线。",
+            "潜行时幻纹变淡，隐身时不显示。",
+            "在你自己的客户端设置里，可以选择全部显示、一律精简、只显示自己的或关闭，也能限制同时显示的数量和距离，只影响你自己。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "物品提示"
+        },
+        {
+          "type": "list",
+          "items": [
+            "款式与元素",
+            "源自哪只玄骸。创造模式物品栏里拿到的没有这一行",
+            "配色：主色与副色两个色块",
+            "调整过的多一行「{lang:item.kuvalich.ephemera.tuned}」",
+            "最后一行是这一款的外观描述"
+          ]
+        }
+      ],
+      "_src": [
+        "ephemera/EphemeraItem.java — 物品 kuvalich:ephemera（item.kuvalich.ephemera「幻纹」），只是外观，没有属性修饰；stacksTo(1)",
+        "capability/RequiemCard.java:648-670,739 + nemesis/LichProfile.java:92-102 ephemeraRolls(seed, chance) — 诞生时按种子以 lichEphemeraChance 掷；nemesis/LichDirector.java:481 登录 / 绑定 / 定案时 ensureEphemeraRolled 补定，同一概率同一种子；lichEphemeraBackfill 关时只置已掷、一律不带",
+        "client/lich/LichArchiveScreen.java + lang kuvalich.archive.ephemera「幻纹：%s」/ .tooltip；entity/KuvaMasterEntity.java:501,540 玄骸 / 盟友身上按款式 + 元素默认色（EphemeraLook.ofDefault）显示",
+        "nemesis/FinaleSettlement.java:104-122 — 终结时（感化、消灭、怜悯之击关着时的直接判定成功）造出物品记入收件箱；解密失败、逃走、被别的东西打死不给",
+        "ephemera/EphemeraType.java — 6 款 surge / orbit / plume / wing / coil / vortex，名字键 kuvalich.ephemera.name.<款>、描述键 kuvalich.ephemera.desc.<款>；元素取卡上定的武器元素，决定默认配色（client/ephemera/FxMotion.java:80 的 kind 只有缠流读）",
+        "client/ephemera/EphemeraRenderer.java:112-240 — 站立时流动幅度 idle=0.4，起跑 / 落地 / 挥砍 / 受击由 FxMotion 的 just* 标记触发爆发；潜行降低透明度；隐身、旁观、死亡不画",
+        "world/inventory/EphemeraSlot.java mayPlace 只收 EphemeraItem；world/inventory/RequiemWarframeTableMenu.java:42-111 菜单序号 44；lang kuvalich.warframe_table.ephemera_slot「幻纹格」、.only_ephemera「仅可装配幻纹」",
+        "capability/WarframeModules.java:165-243 — 幻纹存在玩家的 WARFRAME_MODULES 能力（ephemera 字段），不绑战甲物品、不要求穿着，copyFrom 死亡后保留",
+        "client/gui/screens/inventory/RequiemWarframeTableScreen.java:80-140 — 幻纹格有有效幻纹时「调整外观」按钮可点；client/gui/screens/inventory/EphemeraTunePanel.java:55-83,326-370 — 主色 / 副色，色相 0~360、饱和度、明度滑条，色值 #RRGGBB；预设 8 格 = 七种元素色 + 赤毒；渐变关闭 / 纵向 / 径向 / 流动；大小 0.50~2.00；高度 -0.50~+0.50；恢复默认、完成",
+        "ephemera/EphemeraItem.java:36-160 — 颜色 / 渐变 / 大小 / 高度写在物品 NBT（Color1/Color2/Gradient/Scale/YOffset），和默认相同的删掉；:216-243 提示框：款式、元素、源自（创造栏的没有）、配色两色块、外观已调整、最后一行斜体描述",
+        "ephemera/EphemeraSync.java:34-124 — 每 5 tick 比较，变了发 EphemeraStatePacket 给本人和所有追踪者；StartTracking 补发",
+        "client/ephemera/EphemeraRenderer.java REDUCED_BEYOND=24 — ALL 档下别人超过 24 格按精简档画；client/ephemera/EphemeraAnchor.java:20-23 第一人称只画 FEET / BACK，不画 BODY / HEAD",
+        "config/EffectsDisplayConfig.java:42-47,244-254 — 客户端 [effects] ephemera（ALL / REDUCED / SELF / OFF）、ephemera_max_visible（默认 12）、ephemera_distance（默认 32）；只在客户端 toml，不进快照",
+        "init/KuvaLichCreativeTabs.java:56-62 — 创造栏 6 款各一件，元素 fire，无「源自」"
       ]
     },
     {

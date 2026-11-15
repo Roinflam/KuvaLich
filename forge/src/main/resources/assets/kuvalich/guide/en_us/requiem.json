@@ -313,6 +313,13 @@
               "The rage bar and its current tier, from low to high: {lang:kuvalich.lich.rage.0}, {lang:kuvalich.lich.rage.1}, {lang:kuvalich.lich.rage.2}, {lang:kuvalich.lich.rage.3}, {lang:kuvalich.lich.rage.4}. Hover to see what is feeding its rage"
             ],
             {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "Ephemera",
+                "If this Lich carries an Ephemera, it reads “Ephemera: style”; finishing the Lich gives it to you, see [[warframe/ephemera]]"
+              ]
+            },
+            {
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "Stats",
@@ -374,6 +381,20 @@
             [
               "Revealed Murmurs",
               "The same three symbols as in the Requiem Gate; <w>their arrangement does not tell you the correct order</w>"
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "Ally roster",
+                "Every Lich you have converted, ready to deploy or release, see [[enemies/lich_allies]]"
+              ]
+            },
+            [
+              "Pending",
+              "“Pending: N” at the bottom right counts items not yet added to your inventory, see [[requiem/pending_items]]"
             ]
           ]
         },
@@ -772,9 +793,9 @@
         },
         {
           "type": "tip",
-          "style": "warn",
-          "title": "Rewards drop where it falls",
-          "text": "<w>Don't finish it near lava, the void or deep water</w>. Every reward drops where the Lich falls."
+          "style": "info",
+          "title": "Rewards go into your inventory",
+          "text": "Rewards from the finish go to [[requiem/pending_items|Pending]] first and are then added to your inventory. Nothing drops on the ground."
         },
         {
           "type": "h",
@@ -1029,12 +1050,78 @@
         },
         {
           "type": "p",
-          "text": "When a successful decryption ends your Lich, <g>every last</g> confiscated item drops at <em>the spot where it fell</em>, and chat tells you so. The round is over by then, so picking them up is safe."
+          "text": "When a successful decryption ends your Lich, <g>every last</g> confiscated item comes back, and a notice says how many were returned. The round is over by then, so they cannot be taken again."
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "text": "Returned items go to [[requiem/pending_items|Pending]] first and are then added to your inventory, never dropped. Whatever does not fit is added once space frees up."
+        }
+      ]
+    },
+    {
+      "id": "pending_items",
+      "title": "Pending",
+      "icon": "minecraft:barrel",
+      "summary": "How your rewards reach your inventory",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "What you win from a Lich never drops on the ground, Tenno. It goes to <hl>Pending</hl> first and is then added to your inventory automatically."
+        },
+        {
+          "type": "list",
+          "items": [
+            "The Kuva weapon and every other decryption reward",
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "text": "The Ephemera the Lich carried"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance",
+                "cfg:kuva_lich.maxConfiscatedItems"
+              ],
+              "text": "Confiscated items returned on a successful decryption"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "When items are added"
+        },
+        {
+          "type": "list",
+          "items": [
+            "While there is space, items are added once per second.",
+            "Whatever does not fit stays pending and is added once space frees up. Nothing is dropped.",
+            "When the inventory is full, a notice reads “Inventory full. N items are pending and will be added once space is free”, at most once every <t>60</t> seconds.",
+            "Nothing is added for about <t>10</t> seconds after joining.",
+            "Nothing is added while a container such as a chest or crafting table is open; it resumes once closed. Your own inventory screen does not count.",
+            "Nothing is added while dead or in Spectator mode.",
+            "Pending items are kept on you. Death, logging out and changing dimension do not lose them, and there is no limit on how many."
+          ]
+        },
+        {
+          "type": "h",
+          "text": "Checking and collecting"
+        },
+        {
+          "type": "list",
+          "items": [
+            "“Pending: N” at the bottom right of the [[requiem/lich_archive]] shows how many items have not been added yet.",
+            "Type <t>/kuvalich inbox</t> to collect right away. It reports how many items were added and how many are still pending."
+          ]
         },
         {
           "type": "tip",
           "style": "warn",
-          "text": "They are ordinary dropped items; they despawn if left too long and burn in lava. Pick them up quickly."
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.oullDropChance>0"
+          ],
+          "title": "Oull does not go through Pending",
+          "text": "An Oull you may get from a failed execution goes straight into your inventory, and drops at your feet if it is full."
         }
       ]
     },

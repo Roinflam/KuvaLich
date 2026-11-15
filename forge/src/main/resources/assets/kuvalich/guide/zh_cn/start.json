@@ -286,7 +286,42 @@
               "{lang:key.kuvalich.lich_archive}",
               "从{lang:block.kuvalich.requiem_gate}里打开的面板，能看到你那只玄骸的名字、等级、怒气和最近 5 次判定的记录",
               "[[requiem/lich_archive|详情]]"
-            ]
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "感化",
+                "终结玄骸时饶它一命，它不给武器与奖励，加入你的盟友名册",
+                "[[enemies/lich_convert|详情]]"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "盟友",
+                "被感化的玄骸，你陷入苦战时会前来助战",
+                "[[enemies/lich_allies|详情]]"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "!cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "盟友",
+                "被感化的玄骸，记在你的盟友名册上",
+                "[[enemies/lich_allies|详情]]"
+              ]
+            }
           ]
         },
         {
@@ -391,7 +426,17 @@
                 "战甲模组给的黄心，挨打时先扣它，之后会自行回满",
                 "[[warframe/shield|详情]]"
               ]
-            }
+            },
+            [
+              "幻纹",
+              "取自玄骸的外观光效，装进战甲军械库的幻纹格后显示，不影响属性",
+              "[[warframe/ephemera|详情]]"
+            ],
+            [
+              "待领取",
+              "终结所得的物品先记在这里，再自动放进背包",
+              "[[requiem/pending_items|详情]]"
+            ]
           ]
         },
         {
@@ -917,10 +962,23 @@
                 "不算挑战，只获得解密进度；之后它照样会再来"
               ]
             },
-            [
-              "放满，顺序全对",
-              "<g>解密成功</g>：它被彻底终结，掉落下一章讲的奖励，这一轮清零"
-            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "放满，顺序全对",
+                "<g>解密成功</g>，这一轮清零。你再决定[[enemies/lich_convert|感化还是消灭]]它：消灭领取下一章讲的奖励，感化则收为盟友"
+              ]
+            },
+            {
+              "if": "!cfg:kuva_lich.mercyEnabled||!cfg:kuva_lich.convertEnabled",
+              "cells": [
+                "放满，顺序全对",
+                "<g>解密成功</g>：它被彻底终结，领取下一章讲的奖励，这一轮清零"
+              ]
+            },
             {
               "if": "cfg:kuva_lich.mercyEnabled",
               "cells": [
@@ -1150,7 +1208,8 @@
         "client/KuvaKeyMappings.java:39-40 — 处决键 X；client/mercy/MercyKeyContext.java — 只在小牌亮着或处决中激活；client/mercy/MercyPrompt.java claimMercyKeyboard / claimMercyMouse — 按下那一瞬间清掉同键别的映射这一下，按住时清到松开；原版 key.loadToolbarActivator 默认也是 X（UNIVERSAL，控制设置里照样标红）",
         "entity/KuvaMasterEntity.java:772-775 onKilled — 无主玄骸（刷怪蛋、命令）不判定、不给进度；:353 shouldEnterDowned = isOwned，不倒地；:798-800 shouldDropLoot 只给有主的",
         "nemesis/NemesisCommand.java:82-86 — 模组自己的 lich summon 指令走 LichDirector.summonNow，召来的是主人那只；陷阱框只说刷怪蛋和原版 /summon",
-        "entity/KuvaMasterEntity.java:465 isSegmented / :480 mercyStabs；mercy/MercyServer.java:711 buildPlan — 第 k 次处决捅 k 刀、验前 k 张；:941 rise → advanceSegment 下一段满血站起"
+        "entity/KuvaMasterEntity.java:465 isSegmented / :480 mercyStabs；mercy/MercyServer.java:711 buildPlan — 第 k 次处决捅 k 刀、验前 k 张；:941 rise → advanceSegment 下一段满血站起",
+        "mercy/MercyServer.java:596 — convertEnabled 开着时三刀全对后选择感化 / 消灭（enemies/lich_convert）"
       ]
     },
     {
@@ -1166,7 +1225,7 @@
         },
         {
           "type": "p",
-          "text": "<em>任务目标</em>：捡齐解密成功的奖励，认识你的第一把赤毒武器，再用{item:kuvalich:lich_reliquary}造出{item:kuvalich:requiem_evolve}。玄骸之遗每轮只掉一个，Tenno，用在哪里先想清楚。"
+          "text": "<em>任务目标</em>：领齐解密成功的奖励，认识你的第一把赤毒武器，再用{item:kuvalich:lich_reliquary}造出{item:kuvalich:requiem_evolve}。玄骸之遗每轮只掉一个，Tenno，用在哪里先想清楚。"
         },
         {
           "type": "h",
@@ -1210,6 +1269,13 @@
                 "有 <t>{cfg:kuva_lich.requiemUltimatumDropChance|pctv}</t> 概率掉 1 个，留着，下一只玄骸诞生后右键召它来"
               ]
             },
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "{item:kuvalich:ephemera}",
+                "玄骸带着幻纹时得到 1 件，装进战甲军械库的幻纹格显示"
+              ]
+            },
             [
               "没用坏的安魂卡",
               "留在灭骸之扉上接着用，每张卡能撑过 3 次成功"
@@ -1228,7 +1294,7 @@
         },
         {
           "type": "p",
-          "text": "奖励都<w>掉在玄骸倒下的地方</w>，尽快一件不落地捡回来。"
+          "text": "奖励不会掉在地上：它们先记入<hl>待领取</hl>，再自动放进你的背包。背包满了就先腾出空位，见[[requiem/pending_items]]。"
         },
         {
           "type": "h",
@@ -1363,7 +1429,8 @@
         "capability/RequiemCard.java:90-98 构造函数 — 武器等级区间初值 baseMinimumLevel ~ max(baseMinimumLevel, baseMaximumLevel)；entity/KuvaMasterEntity.java:1019-1023 — 第一把按这个区间 KuvaWeaponUtil.getItem(min,max)；:1139 upgradeWeaponLevelCap — 每次成功提高区间（晚于生成武器）",
         "data/kuvalich/recipes/requiem_gate/recast/evolve/weapon_table/warframe_table.json — 合成链逐级消耗上一级方块；全套累计 5 个玄骸之遗",
         "init/KuvaLichBlocks.java:77-154 + data/minecraft/tags/blocks/needs_diamond_tool.json — 五个功能方块 requiresCorrectToolForDrops + 钻石级",
-        "world/inventory/RequiemEvolveMenu.java:201-237 — 安魂之融承担开光、融合、塑形、裂罅循环等"
+        "world/inventory/RequiemEvolveMenu.java:201-237 — 安魂之融承担开光、融合、塑形、裂罅循环等",
+        "nemesis/FinaleSettlement.java resolve + nemesis/Inbox — 奖励记入收件箱再放进背包；带幻纹的玄骸另给幻纹"
       ]
     },
     {
@@ -2585,6 +2652,67 @@
                 "有玄骸时捡东西被没收的概率",
                 "{cfg:kuva_lich.confiscationChance|pctv}，每轮最多 {cfg:kuva_lich.maxConfiscatedItems} 组"
               ]
+            },
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "新玄骸带幻纹的概率",
+                "{cfg:kuva_lich.lichEphemeraChance|pct}"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "感化或消灭的选择时限",
+                "{cfg:kuva_lich.convertChoiceSeconds} 秒"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "盟友名册上限",
+                "{cfg:kuva_lich.allyRosterSize} 只"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "盟友前来助战",
+                "生命低于 {cfg:kuva_lich.allyTriggerHealthRatio|pct} 时，{cfg:kuva_lich.allyAssistChance|pct} 概率"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled"
+              ],
+              "cells": [
+                "盟友最长停留",
+                "{cfg:kuva_lich.allyMaxStaySeconds} 秒"
+              ]
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled",
+                "cfg:kuva_lich.allyEnabled",
+                "cfg:kuva_lich.allyCooldownMinutes>0"
+              ],
+              "cells": [
+                "盟友来过后的冷却",
+                "{cfg:kuva_lich.allyCooldownMinutes} 分钟"
+              ]
             }
           ]
         },
@@ -2838,7 +2966,8 @@
         "compat/tacz/TaczGunEnhanceUtil.java:68-75 — taczGunEnhancePercent 小数（pct）",
         "mercy/MercyServer.java:381-407 enterDowned — 倒地 mercyDownedSeconds × 20 tick；mercy/MercyRules.java:57 reach — 处决距离 mercyReach 格；两行带 if mercyEnabled",
         "nemesis/LichDirector.java:458-466 — 只靠在线时间每秒 +1/(lichRageOnlineMinutes × 60)，0 = 不涨（if >0）；:1168-1170 cooldownTicks — 每次遭遇结束后 lichCooldownMinutes 分钟内不会再来（安魂通牒无视冷却，那是召唤不是来找）",
-        "config/ModConfig.java — larvlingIntervalMin/MaxMinutes、larvlingDownedSeconds、thrallSquadIntervalMin/MaxSeconds、thrallSquadSizeMin/Max、thrallSquadRadius、thrallSquadMaxNearby、thrallProgressShareRange、lichShieldRatio / lichShieldDelaySeconds / lichShieldRegenPercent"
+        "config/ModConfig.java — larvlingIntervalMin/MaxMinutes、larvlingDownedSeconds、thrallSquadIntervalMin/MaxSeconds、thrallSquadSizeMin/Max、thrallSquadRadius、thrallSquadMaxNearby、thrallProgressShareRange、lichShieldRatio / lichShieldDelaySeconds / lichShieldRegenPercent",
+        "config/ModConfig.java kuva_lich 节 — lichEphemeraChance、convertChoiceSeconds、allyRosterSize、allyTriggerHealthRatio、allyAssistChance、allyMaxStaySeconds、allyCooldownMinutes"
       ]
     }
   ]

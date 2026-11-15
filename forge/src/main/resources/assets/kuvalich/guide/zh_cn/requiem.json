@@ -347,6 +347,13 @@
               "怒气条和当前档位，从低到高依次是{lang:kuvalich.lich.rage.0}、{lang:kuvalich.lich.rage.1}、{lang:kuvalich.lich.rage.2}、{lang:kuvalich.lich.rage.3}、{lang:kuvalich.lich.rage.4}；鼠标移上去能看到哪些事在让它更怒"
             ],
             {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "cells": [
+                "幻纹",
+                "这只玄骸带着幻纹时写明「幻纹：款式名」，终结它时会得到这件幻纹，见[[warframe/ephemera]]"
+              ]
+            },
+            {
               "if": "cfg:kuva_lich.battleBoost>0",
               "cells": [
                 "属性",
@@ -408,6 +415,20 @@
             [
               "已揭示的密语",
               "和灭骸之扉里同样的三枚符号，<w>排列不代表正确顺序</w>"
+            ],
+            {
+              "if": [
+                "cfg:kuva_lich.mercyEnabled",
+                "cfg:kuva_lich.convertEnabled"
+              ],
+              "cells": [
+                "盟友名册",
+                "感化过的玄骸都在这里，可以设为出战或遣散，见[[enemies/lich_allies]]"
+              ]
+            },
+            [
+              "待领取",
+              "右下角的「待领取 N 件」表示还没有放进背包的物品，见[[requiem/pending_items]]"
             ]
           ]
         },
@@ -465,7 +486,8 @@
         "nemesis/RageTier.java — 怒气五档：冷漠 0 / 恼怒 0.12 / 气得冒烟 0.5 / 狂怒 0.8 / 暴怒 0.96，只影响显示和嘲讽，不影响强度",
         "nemesis/LichDirector.java:203-205 — 每点进度 lichRagePerProgressPoint；揭示新线索 lichRagePerClueRevealed（三条都算）；:213-221 onThrallExecuted 处决奴仆 lichRagePerThrallExecution（怜悯之击关掉时由奴仆被玩家杀死触发）；:458-465 在线时间按 lichRageOnlineMinutes 分钟涨满；:1201 rageCanRise — 只在狩猎中 / 冷却中涨，在场、正在来时不涨",
         "nemesis/LichDirector.java endEncounter — 每次遭遇结束怒气清零、进冷却",
-        "lang kuvalich.archive.* / kuvalich.lich.rage.* — 档案各栏的叫法"
+        "lang kuvalich.archive.* / kuvalich.lich.rage.* — 档案各栏的叫法",
+        "client/lich/LichArchiveScreen.java — kuvalich.archive.ephemera「幻纹：%s」（玄骸带幻纹时）；client/lich/ArchiveDossier.java 盟友名册（kuvalich.archive.roster / .roster.entry）；:1013-1025 右下 kuvalich.archive.inbox「待领取 %s 件」"
       ]
     },
     {
@@ -840,9 +862,9 @@
         },
         {
           "type": "tip",
-          "style": "warn",
-          "title": "奖励掉在它倒下的地方",
-          "text": "收尾时<w>避开岩浆、虚空和深水</w>，奖励都掉在玄骸倒下的位置。"
+          "style": "info",
+          "title": "奖励直接放进背包",
+          "text": "终结后的奖励先记入[[requiem/pending_items|待领取]]，再自动放进背包，不会掉在地上。"
         },
         {
           "type": "h",
@@ -885,7 +907,8 @@
         "modules 分类 module_rarity — Prime 与裂罅是最高两档；warframe 分类 warframe_table — 「战甲」指玩家本人",
         "network/packet/RequiemGateFillPacket.java — 校验创造模式 + 当前菜单为灭骸之扉；答案未生成则忽略，旧卡退回背包",
         "world/inventory/RequiemGateMenu.java:445 CardSlot.mayPlace — 同一种卡（Oull 也一样）同时只能装一张；:473 returnDuplicateCards 打开时把存档里重复的退还，背包满了掉在脚下",
-        "mercy/MercyServer.java:711 buildPlan — 第 k 次处决只验前 k 张，第三次全对才成功"
+        "mercy/MercyServer.java:711 buildPlan — 第 k 次处决只验前 k 张，第三次全对才成功",
+        "nemesis/FinaleSettlement.java resolve + nemesis/Inbox — 终结奖励记入收件箱再放进背包，不掉地上"
       ]
     },
     {
@@ -1133,12 +1156,12 @@
         },
         {
           "type": "p",
-          "text": "解密成功、终结它的时候，没收的东西会<g>一件不少</g>地掉在<em>它倒下的位置</em>，聊天栏也会提示，这时本轮已经结束，捡回来不会再被没收。"
+          "text": "解密成功、终结它的时候，没收的东西会<g>一件不少</g>地归还，屏幕上提示「被没收的 N 件物品已归还」。这时本轮已经结束，拿回来的东西不会再被没收。"
         },
         {
           "type": "tip",
-          "style": "warn",
-          "text": "它们是普通的掉落物，放久了会消失，碰上岩浆会烧掉，尽快捡回来。"
+          "style": "info",
+          "text": "归还的物品先记入[[requiem/pending_items|待领取]]，再自动放进背包，不会掉在地上。背包放不下的部分，腾出空位后自动补上。"
         }
       ],
       "_src": [
@@ -1151,7 +1174,82 @@
         "event/ConfiscationHandler.java:76 — 复制整个 ItemEntity 的物品堆，取消拾取并 discard；动作栏 message.kuvalich.confiscation.stolen（谁拿走了什么）；玄骸的嘲讽通讯限流，没收类 30 秒一句（:31）",
         "capability/RequiemCard.java:379 reset() 不清没收列表；失败分支不碰列表；CapabilityRegistryHandler 死亡 / 换维度深拷贝",
         "client/lich/LichArchiveScreen.java:824-831 — 档案左栏列出被没收的物品",
-        "entity/KuvaMasterEntity.java:979 computeAndApplySuccess — 成功时 clearAndGetConfiscatedItems，发 message.kuvalich.confiscation.return，全部生成在它倒下的位置；之后 reset()，不再没收"
+        "entity/KuvaMasterEntity.java computeAndApplySuccess + nemesis/FinaleSettlement.java:76 — 成功时 clearAndGetConfiscatedItems 并入终结结算，记入收件箱后由 nemesis/Inbox 放进背包（不掉地上）；提示 message.kuvalich.confiscation.return「被没收的 %s 件物品已归还」（%s 是堆数）；之后 reset()，不再没收"
+      ]
+    },
+    {
+      "id": "pending_items",
+      "title": "待领取",
+      "icon": "minecraft:barrel",
+      "summary": "终结所得的物品怎样放进背包",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "终结玄骸所得的物品不会掉在地上，Tenno。它们先记入<hl>待领取</hl>，再自动放进你的背包。"
+        },
+        {
+          "type": "list",
+          "items": [
+            "赤毒武器与解密成功的各项奖励",
+            {
+              "if": "cfg:kuva_lich.lichEphemeraChance>0",
+              "text": "玄骸带着的幻纹"
+            },
+            {
+              "if": [
+                "cfg:kuva_lich.confiscationChance",
+                "cfg:kuva_lich.maxConfiscatedItems"
+              ],
+              "text": "解密成功时归还的没收物品"
+            }
+          ]
+        },
+        {
+          "type": "h",
+          "text": "什么时候放进背包"
+        },
+        {
+          "type": "list",
+          "items": [
+            "背包有空位时，每秒自动放入一次。",
+            "放不下的部分留在待领取里，腾出空位后自动补上，不会掉在地上。",
+            "背包已满时，屏幕上提示「背包已满，其余 N 件物品待领取，腾出空位后自动放入」，同一提示每 <t>60</t> 秒最多出现一次。",
+            "进入游戏后约 <t>10</t> 秒内不放入。",
+            "打开箱子、工作台这类容器界面时暂不放入，关闭后继续。自己的背包界面不受影响。",
+            "死亡状态和旁观模式下暂不放入。",
+            "待领取的物品记在你身上，死亡、下线、切换维度都不会丢失，也没有数量上限。"
+          ]
+        },
+        {
+          "type": "h",
+          "text": "查看与立即领取"
+        },
+        {
+          "type": "list",
+          "items": [
+            "[[requiem/lich_archive]]右下角的「待领取 N 件」显示还有多少件没有放进背包。",
+            "输入 <t>/kuvalich inbox</t> 立即领取一次，会报告放入了多少件、还剩多少件待领取。"
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "warn",
+          "if": [
+            "cfg:kuva_lich.mercyEnabled",
+            "cfg:kuva_lich.oullDropChance>0"
+          ],
+          "title": "Oull 不经过待领取",
+          "text": "处决失败时可能得到的 Oull 直接放进背包，背包已满时掉在脚下。"
+        }
+      ],
+      "_src": [
+        "nemesis/FinaleSettlement.java resolve → PlayerLedger.settleFinale — 终结奖励（消灭时掉落 + 没收归还 + 幻纹，感化时只有后两样）记入收件箱，再由 nemesis/Inbox 放进背包，放不下的留着，不掉地上",
+        "nemesis/Inbox.java:70-132 — patrol 每 20 tick 一次，落定、重生时各一次，命令时一次；放不下且确实尝试过投递时发 message.kuvalich.inbox.full，FULL_NOTICE_TICKS=1200（60 秒）一次",
+        "nemesis/Inbox.java:24,53-62 — LOGIN_DELAY_TICKS=200（10 秒，从 LichDirector.onLogin 起算）；canReceive 要求 containerMenu == inventoryMenu（开着容器就等，自己背包不算）、没死、不是旁观、没断线",
+        "nemesis/PlayerLedger.java:14-17,153-176 — 存在 PlayerPersisted/kuvalich/inbox，随玩家数据存盘，死亡 / 换维度复制，没有条数上限",
+        "nemesis/NemesisCommand.java:184-222 — /kuvalich inbox 不要权限，回复 inbox.empty / waiting / loginDelay / done / full / partial",
+        "client/lich/LichArchiveScreen.java:1013-1025 — 档案右下 kuvalich.archive.inbox「待领取 %s 件」+ .tooltip",
+        "mercy/MercyServer.java:1196-1205 — 失败时的 Oull 走 InventoryUtil.giveOrDrop，背包满掉在脚下，不经过收件箱"
       ]
     },
     {
