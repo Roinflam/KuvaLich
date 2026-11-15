@@ -22,13 +22,14 @@ import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 /**
  * 军械库里调幻纹外观的那块面板：两色（色相 / 饱和度 / 明度 + 色值 + 预设）、渐变方式、大小、高度、恢复默认。
  * 拖动时只在本地变（人像上的预览和世界里自己身上的那份一起变），松手、点选时才发包；发包间隔不低于
- * {@link #SEND_INTERVAL_MS}，服务端每秒收 4 个，按这个间隔发不会被丢。
+ * {@link #SEND_INTERVAL_MS}，并且按服务端的限频攒着，没发出去的最后一次等到能发时补上，关界面时一定发出去。
  */
 @OnlyIn(Dist.CLIENT)
 final class EphemeraTunePanel {
@@ -50,6 +51,17 @@ final class EphemeraTunePanel {
     /** 一行里字的上沿：字形高 7（汉字 8），行高 11 时上下各空 2 */
     private static final int TEXT_DY = 2;
     private static final long SEND_INTERVAL_MS = 300L;
+    // 服务端每人每秒只收 MAX_PER_SECOND 个，多的丢掉。平时最多用到预算减一，留一个给关界面时补发的最后一下；
+    // 窗口比一秒宽一点扛网络抖动。放静态的，关了马上再开是新面板
+
+    private static final int SEND_BUDGET = EphemeraTunePacket.MAX_PER_SECOND;
+    private static final long SEND_WINDOW_MS = 1200L;
+    private static final long[] SENT = new long[SEND_BUDGET];
+    private static int sentNext;
+
+    static {
+        Arrays.fill(SENT, Long.MIN_VALUE / 4);
+    }
     private static final float MIN_V = EphemeraItem.MIN_BRIGHTNESS / 255.0F;
 
     private static final int R_TARGET = 0;
@@ -234,15 +246,27 @@ final class EphemeraTunePanel {
 
     /** force：界面要关了，等不到下一个间隔 */
     void flush(long now, boolean force) {
-        if (!pending || (!force && now - lastSendMs < SEND_INTERVAL_MS)) {
+        if (!pending || (!force && (now - lastSendMs < SEND_INTERVAL_MS || sentWithin(now) >= SEND_BUDGET - 1))) {
             return;
         }
         pending = false;
         lastSendMs = now;
+        SENT[sentNext] = now;
+        sentNext = (sentNext + 1) % SENT.length;
         EphemeraTunePacket.send(pendingReset ? EphemeraTunePacket.reset(containerId)
                 : new EphemeraTunePacket(containerId, EphemeraTunePacket.SET, colors[0], colors[1], gradient, scale,
                 yOffset));
         pendingReset = false;
+    }
+
+    private static int sentWithin(long now) {
+        int n = 0;
+        for (long t : SENT) {
+            if (now - t < SEND_WINDOW_MS) {
+                n++;
+            }
+        }
+        return n;
     }
 
     EphemeraLook look() {

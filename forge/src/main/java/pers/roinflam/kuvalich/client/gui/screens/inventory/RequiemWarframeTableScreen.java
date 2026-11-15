@@ -205,6 +205,8 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
     /** 还没发出去的那次赶在关菜单的包之前发，晚了服务端那边菜单已经关了 */
     @Override
     public void onClose() {
+        // 滑条拖到一半按 Esc 的那一下也算数
+        tune.close();
         tune.flush(Util.getMillis(), true);
         super.onClose();
     }
