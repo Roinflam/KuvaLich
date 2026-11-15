@@ -276,7 +276,7 @@ public final class LichNameplates {
         ps.translate(0.0F, anchor, 0.0F);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
         ps.scale(-LICH_SCALE, -LICH_SCALE, LICH_SCALE);
-        shadowedLine(ps, buffer, font, p.line1, -w1 * 0.5F, y1, ally ? FxPalette.TECH_PALE : FxPalette.KUVA_PALE,
+        shadowedLine(ps, buffer, font, p.line1, -w1 * 0.5F, y1, ally ? FxPalette.ALLY : FxPalette.KUVA_PALE,
                 0.95F * a, Font.DisplayMode.NORMAL);
         if (!p.line2.isEmpty()) {
             ps.pushPose();

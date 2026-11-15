@@ -47,6 +47,9 @@ public final class FxPalette {
     public static final int TECH_PALE = 0xBFF6FF;
     public static final int TECH_DEEP = 0x0E5A66;
 
+    /** 友军绿：盟友的名牌 */
+    public static final int ALLY = 0x7DFF9A;
+
     /** 密语金：解密进度、奖励 */
     public static final int MURMUR = 0xFFE8A0;
     /** 强调金：满级、死亡抵抗 */
