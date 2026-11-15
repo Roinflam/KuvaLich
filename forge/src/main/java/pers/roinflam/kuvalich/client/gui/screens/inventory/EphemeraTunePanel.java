@@ -415,9 +415,27 @@ final class EphemeraTunePanel {
         return i == 0 ? tx + chipW : cx1;
     }
 
-    /** 渐变四格平分控件区，宽度差的那一格像素按四舍五入分，左右两头和别的行对齐 */
+    /**
+     * 渐变四格先各给够自己的字，剩下的平分（平分时英文 Vertical 会被截成 Verti…）；字太宽放不下就退回平分。
+     * 左右两头和别的行对齐
+     */
     private int segX0(int i) {
-        return tx + Math.round(i * (cx1 - tx + SEG_GAP) / 4.0F);
+        int avail = cx1 - tx + SEG_GAP;
+        float[] need = new float[4];
+        float sum = 0.0F;
+        for (int k = 0; k < 4; k++) {
+            need[k] = screen.textW(tr(K + "gradient." + k), 0.0F) + 4 + SEG_GAP;
+            sum += need[k];
+        }
+        if (sum > avail) {
+            return tx + Math.round(i * avail / 4.0F);
+        }
+        float extra = (avail - sum) / 4.0F;
+        float at = 0.0F;
+        for (int k = 0; k < i; k++) {
+            at += need[k] + extra;
+        }
+        return tx + Math.round(at);
     }
 
     private int segX1(int i) {
