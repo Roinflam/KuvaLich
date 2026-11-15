@@ -1096,7 +1096,7 @@
             "While there is space, items are added once per second.",
             "Whatever does not fit stays pending and is added once space frees up. Nothing is dropped.",
             "When the inventory is full, a notice reads “Inventory full. N items are pending and will be added once space is free”, at most once every <t>60</t> seconds.",
-            "Nothing is added for about <t>10</t> seconds after joining.",
+            "Nothing is added for about <t>10</t> seconds after joining. If nothing can be added at that point because a screen is open or you are dead, a notice reads “N items are pending and will be added to the inventory later”.",
             "Nothing is added while a container such as a chest or crafting table is open; it resumes once closed. Your own inventory screen does not count.",
             "Nothing is added while dead or in Spectator mode.",
             "Pending items are kept on you. Death, logging out and changing dimension do not lose them, and there is no limit on how many."

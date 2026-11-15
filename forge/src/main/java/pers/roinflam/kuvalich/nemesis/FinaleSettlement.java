@@ -264,9 +264,7 @@ public final class FinaleSettlement {
                 resolveNow(p, f.generation(), c);
             }
         }
-        if (PlayerLedger.hasInbox(p)) {
-            Inbox.deliver(p, true);
-        }
+        Inbox.patrol(p);
     }
 
     @SubscribeEvent

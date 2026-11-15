@@ -27,6 +27,7 @@ import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
 import pers.roinflam.kuvalich.client.lich.ClientLichState;
+import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
@@ -49,8 +50,9 @@ import java.lang.reflect.Field;
  *   <li>{@code /kuvafxc mercydown [own|other|none] [秒]}：把准星指着的（或者最近的）赤毒实体在本客户端上摆成倒地
  *       （只改本地的同步数据，服务端不知道），{@code own} = 自己能处决、{@code other} = 资格人写成它自己、
  *       {@code none} = 没有资格人；{@code /kuvafxc mercydown clear} 恢复。看倒地提示、试处决键用；</li>
- *   <li>{@code /kuvafxc mercychoice <open|full|disabled|judging|off>}：摆一组假的感化 / 消灭选择牌（10 秒倒计时，
- *       {@code full} 带名册已满那一行，{@code judging} 直接是倒计时走完的样子），按住左右移动键看进度，不发包。</li>
+ *   <li>{@code /kuvafxc mercychoice <open|ephemera|full|disabled|judging|off>}：摆一组假的感化 / 消灭选择牌（10 秒倒计时，
+ *       {@code ephemera} 带上方的幻纹那一行，{@code full} 再加名册已满那一行，{@code judging} 是 full 倒计时走完的样子），
+ *       按住左右移动键看进度，不发包。</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)
@@ -139,16 +141,17 @@ public final class MercyHudDevCommands {
                                         .executes(ctx -> hud(ctx, play, true)))));
     }
 
-    /** {@code open / full / disabled / judging / off}：本地摆一组假的选择牌（不发包），量位置、试按住进度用 */
+    /** {@code open / ephemera / full / disabled / judging / off}：本地摆一组假的选择牌（不发包），量位置、试按住进度用 */
     private static int choice(CommandSourceStack src, String mode) {
         switch (mode) {
             case "off" -> MercyChoiceHud.clearDev();
-            case "open" -> MercyChoiceHud.setDev(true, "", false);
-            case "full" -> MercyChoiceHud.setDev(true, "Vor Tekalu", false);
-            case "disabled" -> MercyChoiceHud.setDev(false, "", false);
-            case "judging" -> MercyChoiceHud.setDev(true, "Vor Tekalu", true);
+            case "open" -> MercyChoiceHud.setDev(true, "", false, null);
+            case "ephemera" -> MercyChoiceHud.setDev(true, "", false, EphemeraType.PLUME);
+            case "full" -> MercyChoiceHud.setDev(true, "Vor Tekalu", false, EphemeraType.PLUME);
+            case "disabled" -> MercyChoiceHud.setDev(false, "", false, null);
+            case "judging" -> MercyChoiceHud.setDev(true, "Vor Tekalu", true, EphemeraType.PLUME);
             default -> {
-                src.sendFailure(Component.literal("mercychoice <open|full|disabled|judging|off>"));
+                src.sendFailure(Component.literal("mercychoice <open|ephemera|full|disabled|judging|off>"));
                 return 0;
             }
         }

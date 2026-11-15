@@ -1,7 +1,11 @@
 package pers.roinflam.kuvalich.mercy;
 
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
@@ -37,6 +41,25 @@ public final class MercyRules {
             return true;
         }
         return !(e instanceof KuvaSlaveEntity) || ModConfig.KUVA_LICH.mercyThralls.get();
+    }
+
+    /**
+     * 怜悯之击关着时被打死的奴仆、幼体算给谁：玩家本人，或者宠物、召唤物、盟友的主人（主人要在线）。
+     * 和处决资格认的是同一批人，只是这里不看「最近打过它的玩家」
+     */
+    @Nullable
+    public static Player creditedKiller(DamageSource source) {
+        Entity e = source.getEntity();
+        if (e instanceof Player p) {
+            return p;
+        }
+        if (e instanceof OwnableEntity pet && pet.getOwner() instanceof Player owner) {
+            return owner;
+        }
+        if (e instanceof KuvaMasterEntity ally && ally.isAlly()) {
+            return ally.getAllyOwnerPlayer();
+        }
+        return null;
     }
 
     /**

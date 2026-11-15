@@ -36,7 +36,9 @@ import pers.roinflam.kuvalich.fx.FxId;
 import pers.roinflam.kuvalich.fx.KuvaFx;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.mercy.MercyServer;
+import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.ArrayList;
@@ -69,6 +71,10 @@ public final class AllyDirector {
     public static final int STUCK_LEAVE_SECONDS = 10;
     /** 打死敌人后说一句的概率；台词本身是低优先级，刚有过通讯就被限流丢掉 */
     private static final float KILL_LINE_CHANCE = 0.3F;
+
+    static final String NOTICE_ARRIVE = "message.kuvalich.ally.arrive";
+    static final String NOTICE_WITHDRAW = "message.kuvalich.ally.withdraw";
+    static final String NOTICE_DOWNED = "message.kuvalich.ally.downed";
 
     private static final Map<UUID, Present> PRESENT = new HashMap<>();
     private static final Map<UUID, Trigger> TRIGGERS = new HashMap<>();
@@ -255,6 +261,7 @@ public final class AllyDirector {
             PlayerLedger.setAllyCooldownUntil(p, now + ModConfig.KUVA_LICH.allyCooldownMinutes.get() * 1200L);
         }
         KuvaFx.near(level, at, 64.0D, FxId.LICH_ARRIVE, ally, 0, 0);
+        PlayerFeedback.chat(p, KuvaPalette.SUCCESS, NOTICE_ARRIVE, ally.getLichName());
         LichComms.say(p, LichLine.ALLY_ARRIVE, ally);
         LogUtil.debug("盟友现身：" + p.getGameProfile().getName() + " 的 " + ally.getLichName() + " @ " + at);
         return "";
@@ -279,14 +286,25 @@ public final class AllyDirector {
 
     // ==================== 离场 ====================
 
-    /** 化雾退去，不死、不掉东西。{@code line} 为 null 不说话 */
+    /** 化雾退去，不死、不掉东西。{@code line} 为 null 不说话；退去和被击倒的台词带一句给主人的提示 */
     public static void depart(KuvaMasterEntity ally, @Nullable LichLine line) {
+        depart(ally, line, line == LichLine.ALLY_DOWNED ? NOTICE_DOWNED
+                : line == LichLine.ALLY_LEAVE ? NOTICE_WITHDRAW : null);
+    }
+
+    private static void depart(KuvaMasterEntity ally, @Nullable LichLine line, @Nullable String notice) {
         if (ally.isRemoved() || !ally.isAlive() || ally.isDeparting()) {
             return;
         }
         ServerPlayer owner = ally.getAllyOwnerPlayer();
-        if (line != null && owner != null && !owner.hasDisconnected()) {
-            LichComms.say(owner, line, ally);
+        if (owner != null && !owner.hasDisconnected()) {
+            if (notice != null) {
+                PlayerFeedback.chat(owner, NOTICE_DOWNED.equals(notice) ? KuvaPalette.WARN : KuvaPalette.INFO, notice,
+                        ally.getLichName());
+            }
+            if (line != null) {
+                LichComms.say(owner, line, ally);
+            }
         }
         ally.departNow(KuvaMasterEntity.NATURAL_LEAVE_FX);
     }
@@ -399,7 +417,7 @@ public final class AllyDirector {
             boolean shouldMove = ally.getTarget() != null || owner.distanceToSqr(ally) > 36.0D;
             if (!standby && !ally.isAppearing() && shouldMove && pos.distanceToSqr(pr.lastPos) < 0.25D) {
                 if (++pr.stuckSeconds >= STUCK_LEAVE_SECONDS) {
-                    depart(ally, null);
+                    depart(ally, null, NOTICE_WITHDRAW);
                     continue;
                 }
             } else {

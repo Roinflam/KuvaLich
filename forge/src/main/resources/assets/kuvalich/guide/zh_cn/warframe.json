@@ -228,7 +228,7 @@
         },
         {
           "type": "p",
-          "text": "款式决定形状。元素随玄骸武器的元素而定，决定默认配色。所有款式站立时幅度较小，奔跑、跳跃、挥击和受击时随动作展开。"
+          "text": "款式决定形状。元素随玄骸武器的元素而定，决定默认配色。{lang:kuvaweapon.type.fire}、{lang:kuvaweapon.type.ice}、{lang:kuvaweapon.type.electricity}三种元素还会改变每一款的动态：{lang:kuvaweapon.type.fire}更猛烈，带有火星和烟；{lang:kuvaweapon.type.ice}流动放缓，凝出冰晶向下飘落；{lang:kuvaweapon.type.electricity}忽明忽暗，迸出电弧。其余元素只改变配色。所有款式站立时幅度较小，奔跑、跳跃、挥击和受击时随动作展开。"
         },
         {
           "type": "h",
@@ -352,7 +352,7 @@
         "capability/RequiemCard.java:648-670,739 + nemesis/LichProfile.java:92-102 ephemeraRolls(seed, chance) — 诞生时按种子以 lichEphemeraChance 掷；nemesis/LichDirector.java:481 登录 / 绑定 / 定案时 ensureEphemeraRolled 补定，同一概率同一种子；lichEphemeraBackfill 关时只置已掷、一律不带",
         "client/lich/LichArchiveScreen.java + lang kuvalich.archive.ephemera「幻纹：%s」/ .tooltip；entity/KuvaMasterEntity.java:501,540 玄骸 / 盟友身上按款式 + 元素默认色（EphemeraLook.ofDefault）显示",
         "nemesis/FinaleSettlement.java:104-122 — 终结时（感化、消灭、怜悯之击关着时的直接判定成功）造出物品记入收件箱；解密失败、逃走、被别的东西打死不给",
-        "ephemera/EphemeraType.java — 6 款 surge / orbit / plume / wing / coil / vortex，名字键 kuvalich.ephemera.name.<款>、描述键 kuvalich.ephemera.desc.<款>；元素取卡上定的武器元素，决定默认配色（client/ephemera/FxMotion.java:80 的 kind 只有缠流读）",
+        "ephemera/EphemeraType.java — 6 款 surge / orbit / plume / wing / coil / vortex，名字键 kuvalich.ephemera.name.<款>、描述键 kuvalich.ephemera.desc.<款>；元素取卡上定的武器元素，决定默认配色；client/ephemera/FxMotion.java:80 把火 / 冰 / 电记成 kind 1 / 2 / 3、其余为 0，六款 *Style.java 都按 kind 换流速、贴图和粒子（火星与烟、冰晶与下沉的雾、电弧与闪烁）",
         "client/ephemera/EphemeraRenderer.java:112-240 — 站立时流动幅度 idle=0.4，起跑 / 落地 / 挥砍 / 受击由 FxMotion 的 just* 标记触发爆发；潜行降低透明度；隐身、旁观、死亡不画",
         "world/inventory/EphemeraSlot.java mayPlace 只收 EphemeraItem；world/inventory/RequiemWarframeTableMenu.java:42-111 菜单序号 44；lang kuvalich.warframe_table.ephemera_slot「幻纹格」、.only_ephemera「仅可装配幻纹」",
         "capability/WarframeModules.java:165-243 — 幻纹存在玩家的 WARFRAME_MODULES 能力（ephemera 字段），不绑战甲物品、不要求穿着，copyFrom 死亡后保留",

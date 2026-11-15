@@ -26,9 +26,11 @@ import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
 import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.AllyGoals;
+import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.entity.KuvaSlaveEntity;
 import pers.roinflam.kuvalich.init.KuvaLichEntities;
+import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.nemesis.AllyDirector;
 import pers.roinflam.kuvalich.nemesis.AllyRoster;
@@ -55,6 +57,7 @@ public final class AllyTests {
     private static final String CAP = "kl_ally_cap";
     private static final String ROSTER = "kl_ally_roster";
     private static final String HUNT = "kl_ally_hunt";
+    private static final String CREDIT = "kl_ally_credit";
 
     /** 新玩家进服后 60 tick 不吃非绕过无敌的伤害，挨打的测试等它过去 */
     private static final int T0 = 62;
@@ -481,6 +484,54 @@ public final class AllyTests {
 
     // ==================== 收尾 ====================
 
+    /** 怜悯之击关着：盟友直接打死的幼体、奴仆算给主人，和玩家亲手打死一样，只算一份 */
+    @GameTest(template = "empty", batch = CREDIT, timeoutTicks = 120)
+    public static void mercyOffKillsCreditOwner(GameTestHelper h) {
+        ServerPlayer p = allyPlayer(h);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.mercyEnabled, false);
+        KuvaTestKit.override(ModConfig.KUVA_LICH.slaveKuvaDropChance, 100);
+        RequiemCard card = p.getCapability(CapabilityRegistryHandler.REQUIEM_CARD).orElseThrow(IllegalStateException::new);
+        h.assertTrue(!card.hasLich(), "前提：主人还没有玄骸");
+        KuvaMasterEntity ally = summoned(h, p, "Hask Oron");
+        h.runAfterDelay(KuvaMasterEntity.APPEAR_GRACE_TICKS + 2, () -> {
+            Vec3 at = p.position().add(2.0D, 0.0D, 2.0D);
+            KuvaLarvlingEntity larvling = KuvaLichEntities.KUVA_LARVLING.get().create(h.getLevel());
+            h.assertTrue(larvling != null, "应当能造出幼体");
+            larvling.setup(null, 0x5EED_0042L);
+            larvling.moveTo(at.x, at.y, at.z, 0.0F, 0.0F);
+            larvling.setNoAi(true);
+            h.assertTrue(h.getLevel().addFreshEntity(larvling), "幼体应当加得进世界");
+            larvling.setHealth(1.0F);
+            larvling.hurt(ally.damageSources().mobAttack(ally), 20.0F);
+            h.assertTrue(!larvling.isAlive() && larvling.getMercyState() == MercyState.NONE, "关着时幼体应当直接死");
+            h.assertTrue(card.hasLich(), "盟友打死的幼体应当给主人诞生玄骸");
+
+            card.setDecryptionProgress(0);
+            int stage = card.getUnlockedCardStatus();
+            AABB area = new AABB(p.blockPosition()).inflate(12.0D);
+            for (ItemEntity e : h.getLevel().getEntitiesOfClass(ItemEntity.class, area)) {
+                e.discard();
+            }
+            KuvaSlaveEntity thrall = KuvaLichEntities.KUVA_SLAVE.get().create(h.getLevel());
+            h.assertTrue(thrall != null, "应当能造出奴仆");
+            thrall.moveTo(at.x, at.y, at.z - 4.0D, 0.0F, 0.0F);
+            thrall.setNoAi(true);
+            h.assertTrue(h.getLevel().addFreshEntity(thrall), "奴仆应当加得进世界");
+            thrall.setHealth(1.0F);
+            thrall.hurt(ally.damageSources().mobAttack(ally), 20.0F);
+            h.assertTrue(!thrall.isAlive() && thrall.getMercyState() == MercyState.NONE, "关着时奴仆应当直接死");
+            int got = card.getDecryptionProgress();
+            int min = ModConfig.KUVA_LICH.minDecryptionProgress.get();
+            int max = ModConfig.KUVA_LICH.maxDecryptionProgress.get();
+            h.assertTrue(card.getUnlockedCardStatus() == stage, "这一下不该跨阶段（测试前提）");
+            h.assertTrue(got >= min && got <= max, "主人分到一份进度，应当在 [" + min + ", " + max + "]，实际 " + got);
+            long kuva = h.getLevel().getEntitiesOfClass(ItemEntity.class, area,
+                    e -> e.getItem().is(KuvaLichItems.KUVA.get())).size();
+            h.assertTrue(kuva == 1, "赤毒只掉一份：" + kuva);
+            h.succeed();
+        });
+    }
+
     @AfterBatch(batch = SPAWN)
     public static void afterSpawn(ServerLevel level) {
         KuvaTestKit.afterBatch(level);
@@ -528,6 +579,11 @@ public final class AllyTests {
 
     @AfterBatch(batch = HUNT)
     public static void afterHunt(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
+    }
+
+    @AfterBatch(batch = CREDIT)
+    public static void afterCredit(ServerLevel level) {
         KuvaTestKit.afterBatch(level);
     }
 }

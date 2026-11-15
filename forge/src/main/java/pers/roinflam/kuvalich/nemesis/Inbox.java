@@ -9,7 +9,9 @@ import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -26,17 +28,21 @@ public final class Inbox {
 
     private static final Map<UUID, Integer> LOGIN_AT = new HashMap<>();
     private static final Map<UUID, Integer> LAST_FULL_NOTICE = new HashMap<>();
+    /** 登录后还没到第一次自动投递的人。登录那一刻不提示：等那一次投完、还剩东西才说 */
+    private static final Set<UUID> LOGIN_NOTICE = new HashSet<>();
 
     private Inbox() {
     }
 
     static void onLogin(ServerPlayer player) {
         LOGIN_AT.put(player.getUUID(), player.server.getTickCount());
+        LOGIN_NOTICE.add(player.getUUID());
     }
 
     static void onLogout(ServerPlayer player) {
         LOGIN_AT.remove(player.getUUID());
         LAST_FULL_NOTICE.remove(player.getUUID());
+        LOGIN_NOTICE.remove(player.getUUID());
     }
 
     /** 测试用：当作已经登录很久 */
@@ -47,6 +53,7 @@ public final class Inbox {
     static void clearAll() {
         LOGIN_AT.clear();
         LAST_FULL_NOTICE.clear();
+        LOGIN_NOTICE.clear();
     }
 
     /** 现在能不能往这个人背包里放：活着、不是旁观、没开着别的容器界面 */
@@ -59,6 +66,28 @@ public final class Inbox {
     public static boolean inLoginDelay(ServerPlayer player) {
         Integer at = LOGIN_AT.get(player.getUUID());
         return at != null && player.server.getTickCount() - at < LOGIN_DELAY_TICKS;
+    }
+
+    /**
+     * 巡检那一下。登录后第一次投递时箱里有东西又放不进（死着、开着界面）就提示一句；
+     * 放进去一部分、背包满了的，由 {@link #deliver} 那句「背包已满」提示，不另说
+     *
+     * @return 发了登录那句提示
+     */
+    public static boolean patrol(ServerPlayer player) {
+        if (inLoginDelay(player)) {
+            return false;
+        }
+        boolean first = LOGIN_NOTICE.remove(player.getUUID());
+        if (!PlayerLedger.hasInbox(player)) {
+            return false;
+        }
+        if (first && !canReceive(player)) {
+            PlayerFeedback.chat(player, KuvaPalette.INFO, "message.kuvalich.inbox.login", PlayerLedger.inboxCount(player));
+            return true;
+        }
+        deliver(player, true);
+        return false;
     }
 
     /**

@@ -162,6 +162,26 @@ public final class FinaleTests {
     }
 
     @GameTest(template = "empty", batch = LEDGER)
+    public static void loginNoticeAfterFirstDelivery(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 12)));
+        LichDirector.onLogin(p);
+        h.assertTrue(!Inbox.patrol(p) && inboxTotal(p) == 12, "登录 10 秒内不投，也不提示");
+        Inbox.skipLoginDelay(p);
+        h.assertTrue(!Inbox.patrol(p) && !PlayerLedger.hasInbox(p), "第一次投递放得进去：直接放完，不提示");
+
+        PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 5)));
+        LichDirector.onLogin(p);
+        Inbox.skipLoginDelay(p);
+        p.containerMenu = ChestMenu.threeRows(99, p.getInventory());
+        h.assertTrue(Inbox.patrol(p) && inboxTotal(p) == 5, "第一次投递放不进去：提示一次，东西留着");
+        h.assertTrue(!Inbox.patrol(p), "登录提示只发一次");
+        p.containerMenu = p.inventoryMenu;
+        h.assertTrue(!Inbox.patrol(p) && !PlayerLedger.hasInbox(p), "关了界面照常放进背包");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = LEDGER)
     public static void loginWaitAppliesToCommandToo(GameTestHelper h) {
         ServerPlayer p = KuvaTestKit.player(h);
         PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 12)));

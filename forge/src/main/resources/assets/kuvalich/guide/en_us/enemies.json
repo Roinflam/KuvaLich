@@ -1190,7 +1190,7 @@
             "While you perform an execution, it stands by.",
             "Hostile creatures attack it as usual. Attacks from you, other players and pets cannot hurt it.",
             "Its nameplate marks it as an ally, and other players can also see whose ally it is.",
-            "It speaks in the comm window when it arrives, defeats an enemy, is downed and withdraws."
+            "It speaks in the comm window when it arrives, defeats an enemy, is downed and withdraws. A notice also appears on screen when it comes to your aid, withdraws or is downed."
           ]
         },
         {

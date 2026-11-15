@@ -188,7 +188,7 @@ public class KuvaSlaveEntity extends AbstractKuva {
      * 确实死了（服务端，原版死亡流程已经走完、没被别的模组取消）。
      *
      * <p>怜悯之击开着时只有处决走完的那次死亡给东西；{@code /kill}、虚空、摔死、被别的怪打死这类绕过倒地的死亡什么都不给。
-     * 关着时照旧：被玩家打死就给。演示用的奴仆一律不给。</p>
+     * 关着时被玩家、他的宠物或盟友打死就给，算在主人头上。演示用的奴仆一律不给。</p>
      *
      * <p>给什么：处决者（击杀者）有玄骸就加怒气、掉落归他；解密进度给 {@code thrallProgressShareRange} 格内所有有玄骸的人
      * （击杀者有玄骸时不管多远都算他一份），同样多。没有玄骸的人拿不到进度——玄骸只能从幼体诞生。</p>
@@ -199,7 +199,7 @@ public class KuvaSlaveEntity extends AbstractKuva {
     @Override
     protected void onKilled(DamageSource source) {
         boolean reward = (isMercyFinishing() || !MercyRules.enabledFor(this)) && !isDemo();
-        Player player = source.getEntity() instanceof Player p ? p : null;
+        Player player = MercyRules.creditedKiller(source);
         List<ServerPlayer> sharers = reward && player != null ? progressRecipients(player) : List.of();
         Player stream = streamTarget(player, sharers);
         int b = (stream != null ? DEATH_GAVE_PROGRESS : 0) | (isMercyFinishing() ? DEATH_AFTER_MERCY : 0);
@@ -284,7 +284,7 @@ public class KuvaSlaveEntity extends AbstractKuva {
     /** 没有别的路发过死亡包时的默认那个（什么都没给） */
     @Override
     protected void sendDeathFx(DamageSource source) {
-        sendThrallDeath(source.getEntity() instanceof Player p ? p : null, 0);
+        sendThrallDeath(MercyRules.creditedKiller(source), 0);
     }
 
     private void sendThrallDeath(@Nullable Player killer, int b) {

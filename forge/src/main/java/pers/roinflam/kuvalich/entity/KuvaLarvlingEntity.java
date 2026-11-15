@@ -255,14 +255,14 @@ public class KuvaLarvlingEntity extends KuvaSlaveEntity {
     // ==================== 死亡 ====================
 
     /**
-     * 确实死了：处决走完的那一下（怜悯之击关着时是被玩家打死）才诞生玄骸，给处决的人；
+     * 确实死了：处决走完的那一下（怜悯之击关着时是被玩家或他的宠物、盟友打死）才诞生玄骸，给处决的人；
      * 他这时已经有玄骸了（倒地以后又从别处得了一只）就什么都不给。
      * 别的死法（/kill、虚空、摔死、被怪打死）什么都没有
      */
     @Override
     protected void onKilled(DamageSource source) {
         boolean finishing = isMercyFinishing() || !MercyRules.enabledFor(this);
-        Player killer = source.getEntity() instanceof Player p ? p : null;
+        Player killer = MercyRules.creditedKiller(source);
         if (this.level() instanceof ServerLevel serverLevel) {
             KuvaFx.near(serverLevel, chest(), DEATH_FX_RANGE, FxId.THRALL_DEATH, this,
                     killer == null ? 0 : killer.getId() + 1, isMercyFinishing() ? DEATH_AFTER_MERCY : 0);

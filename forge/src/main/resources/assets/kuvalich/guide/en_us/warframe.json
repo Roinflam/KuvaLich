@@ -199,7 +199,7 @@
         },
         {
           "type": "p",
-          "text": "The style decides the shape. The element follows the Lich's weapon element and sets the default colors. Every style stays subdued while standing and unfolds with running, jumping, swinging and taking hits."
+          "text": "The style decides the shape. The element follows the Lich's weapon element and sets the default colors. {lang:kuvaweapon.type.fire}, {lang:kuvaweapon.type.ice} and {lang:kuvaweapon.type.electricity} also change how every style moves: {lang:kuvaweapon.type.fire} burns fiercer with sparks and smoke, {lang:kuvaweapon.type.ice} flows slower and sheds falling ice crystals, and {lang:kuvaweapon.type.electricity} flickers and throws off arcs. Other elements only change the colors. Every style stays subdued while standing and unfolds with running, jumping, swinging and taking hits."
         },
         {
           "type": "h",

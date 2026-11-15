@@ -8,6 +8,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
@@ -23,6 +24,9 @@ import pers.roinflam.kuvalich.client.fx.FxCurve;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
+import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
+import pers.roinflam.kuvalich.ephemera.EphemeraLook;
+import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.network.packet.MercyChoiceOpenPacket;
 import pers.roinflam.kuvalich.network.packet.MercyChoicePacket;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -69,14 +73,15 @@ public final class MercyChoiceHud {
     private static Dev dev;
 
     /** 开发命令摆的假牌：{@code judging} = 倒计时已走完 */
-    private record Dev(boolean allowConvert, String releaseName, boolean judging, long startMs, int totalTicks) {
+    private record Dev(boolean allowConvert, String releaseName, boolean judging, long startMs, int totalTicks,
+                       @Nullable EphemeraType ephemera) {
     }
 
     private MercyChoiceHud() {
     }
 
-    static void setDev(boolean allowConvert, String releaseName, boolean judging) {
-        dev = new Dev(allowConvert, releaseName, judging, KuvaFxDirector.clockMs(), 200);
+    static void setDev(boolean allowConvert, String releaseName, boolean judging, @Nullable EphemeraType ephemera) {
+        dev = new Dev(allowConvert, releaseName, judging, KuvaFxDirector.clockMs(), 200, ephemera);
         reset(Integer.MIN_VALUE);
     }
 
@@ -85,7 +90,8 @@ public final class MercyChoiceHud {
     }
 
     /** 这一帧要画的东西；不画返回 null */
-    private record View(int targetId, boolean allowConvert, String releaseName, float remaining, boolean timed) {
+    private record View(int targetId, boolean allowConvert, String releaseName, float remaining, boolean timed,
+                        @Nullable EphemeraType ephemera) {
     }
 
     @Nullable
@@ -99,24 +105,36 @@ public final class MercyChoiceHud {
                 dev = null;
                 return null;
             }
-            return new View(Integer.MIN_VALUE, d.allowConvert, d.releaseName, Math.max(0.0F, left) / total, true);
+            return new View(Integer.MIN_VALUE, d.allowConvert, d.releaseName, Math.max(0.0F, left) / total, true,
+                    d.ephemera);
         }
         int id = MercyClient.choiceTargetId();
         if (id < 0) {
             return null;
         }
+        Minecraft mc = Minecraft.getInstance();
+        EphemeraType ephemera = ephemeraOf(mc, id);
         MercyChoiceOpenPacket open = MercyChoiceClient.forEntity(id);
         if (open == null) {
-            return new View(id, true, "", 1.0F, false);
+            return new View(id, true, "", 1.0F, false, ephemera);
         }
-        Minecraft mc = Minecraft.getInstance();
         float passed = 0.0F;
         if (mc.level != null) {
             passed = mc.level.getGameTime() - MercyChoiceClient.receivedAtTick() + (mc.isPaused() ? 0.0F : partialTick);
         }
         float total = Math.max(1, open.remainingTicks);
         float left = Math.max(0.0F, total - passed) / total;
-        return new View(id, open.allowConvert, open.releaseName, left, true);
+        return new View(id, open.allowConvert, open.releaseName, left, true, ephemera);
+    }
+
+    /** 感化、消灭都发卡上那件幻纹，玄骸身上同步的外观就是它，不用另外下发 */
+    @Nullable
+    private static EphemeraType ephemeraOf(Minecraft mc, int id) {
+        if (mc.level == null || !(mc.level.getEntity(id) instanceof KuvaMasterEntity lich)) {
+            return null;
+        }
+        EphemeraLook look = lich.getEphemeraLook();
+        return look.isNone() ? null : look.styleType();
     }
 
     private static void reset(int target) {
@@ -295,10 +313,23 @@ public final class MercyChoiceHud {
                 centered(g, font, line, rx0, rx1, y, p, GuiShapes.argb(FxPalette.BONE, 0.9F * alpha));
                 y += lineH;
             }
+            // 「等待裁决」的底块上沿是 jy - 2p，幻纹那行再往上空 3p，两样同时出现也不叠
+            int jy = timerY + lw / 2 - 4 * p;
+            if (v.ephemera != null) {
+                Component name = Component.translatable(v.ephemera.nameKey())
+                        .withStyle(Style.EMPTY.withColor(FxPalette.ACCENT));
+                List<FormattedCharSequence> lines = font.split(
+                        Component.translatable("gui.kuvalich.mercy_choice.ephemera", name), Math.max(1, (rx1 - lx0) / p));
+                int ey = jy - 2 * p - 3 * p - lines.size() * 10 * p + 2 * p;
+                for (FormattedCharSequence line : lines) {
+                    centered(g, font, line, lx0, rx1, ey, p, GuiShapes.argb(FxPalette.TEXT_MID, alpha));
+                    ey += 10 * p;
+                }
+            }
             if (v.timed && v.remaining <= 0.0F) {
                 // 倒计时走完：等服务端的结果，字的竖直中线压在细线上
                 FormattedCharSequence judging = Component.translatable("gui.kuvalich.mercy_choice.judging").getVisualOrderText();
-                int jw = font.width(judging) * p, jy = timerY + lw / 2 - 4 * p, jpad = 3 * p;
+                int jw = font.width(judging) * p, jpad = 3 * p;
                 int jx0 = mid - jw / 2 - jpad, jx1 = jx0 + jw + jpad * 2;
                 GuiShapes.begin(g);
                 GuiShapes.rect(g, jx0, jy - p * 2, jx1, jy + 8 * p + p * 2, GuiShapes.argb(FxPalette.INK, 0.62F * alpha));
