@@ -4,6 +4,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
+import pers.roinflam.kuvalich.mercy.MercyCameraPath;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
@@ -57,6 +58,7 @@ public final class EffectsDisplayConfig {
     private static ForgeConfigSpec.BooleanValue lichNameplates;
     private static ForgeConfigSpec.BooleanValue archiveIntro;
     private static ForgeConfigSpec.BooleanValue mercyCamera;
+    private static ForgeConfigSpec.EnumValue<MercyCameraPath.Motion> mercyCameraMotion;
     private static ForgeConfigSpec.BooleanValue thrallThirdPerson;
     private static ForgeConfigSpec.BooleanValue thrallPushIn;
     private static ForgeConfigSpec.BooleanValue mercyShortOutro;
@@ -86,6 +88,7 @@ public final class EffectsDisplayConfig {
     private static volatile boolean cachedLichNameplates = true;
     private static volatile boolean cachedArchiveIntro = true;
     private static volatile boolean cachedMercyCamera = true;
+    private static volatile MercyCameraPath.Motion cachedMercyCameraMotion = MercyCameraPath.Motion.FULL;
     private static volatile boolean cachedThrallThirdPerson = false;
     private static volatile boolean cachedThrallPushIn = false;
     private static volatile boolean cachedMercyShortOutro = false;
@@ -184,6 +187,10 @@ public final class EffectsDisplayConfig {
                         "Cinematic camera when you execute a Kuva Lich. When off, the execution plays in third person from your own view",
                         "处决玄骸时用电影镜头；关掉后在自己的第三人称背后视角里演完（界面、声音照常）")
                 .define("mercy_camera", true);
+        mercyCameraMotion = builder.comment(
+                        "Camera movement of the cinematic camera when executing a Kuva Lich. FULL: the camera pushes in, orbits and follows the executor; REDUCED: push-in and pull-back only, with half-strength shake; STATIC: fixed shots with hard cuts",
+                        "处决玄骸时电影镜头的运动方式：FULL 推拉、环绕并跟随处决者；REDUCED 仅保留推拉，震动减半；STATIC 固定机位，直接切换")
+                .defineEnum("mercy_camera_motion", MercyCameraPath.Motion.FULL);
         thrallThirdPerson = builder.comment(
                         "Switch to third person while executing a Thrall",
                         "处决奴仆时切到第三人称背后视角")
@@ -319,6 +326,11 @@ public final class EffectsDisplayConfig {
         return cachedMercyCamera;
     }
 
+    /** 处决电影镜头的运动方式 */
+    public static MercyCameraPath.Motion mercyCameraMotion() {
+        return cachedMercyCameraMotion;
+    }
+
     /** 处决奴仆时切第三人称 */
     public static boolean thrallThirdPerson() {
         return cachedThrallThirdPerson;
@@ -381,6 +393,7 @@ public final class EffectsDisplayConfig {
             cachedLichNameplates = lichNameplates.get();
             cachedArchiveIntro = archiveIntro.get();
             cachedMercyCamera = mercyCamera.get();
+            cachedMercyCameraMotion = mercyCameraMotion.get();
             cachedThrallThirdPerson = thrallThirdPerson.get();
             cachedThrallPushIn = thrallPushIn.get();
             cachedMercyShortOutro = mercyShortOutro.get();

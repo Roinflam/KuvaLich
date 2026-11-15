@@ -623,11 +623,13 @@ public final class MercyCoreTests {
             setCards(card, prefix);
             p.getInventory().clearContent();
             lich.forceDowned(p);
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             AABB area = new AABB(lich.blockPosition()).inflate(12.0D);
             clearItems(h, area);
-            // 第 k 格判错（tick 17 / 34 / 53），聊天和掉落在那一格 + 60
-            int give = new int[]{17, 34, 53}[prefix] + 60;
+            // 判错那一格填满之后 failChatTicks 给；各套填格时刻不同，钉在正面直刺上按节拍表取
+            MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
+            int give = b.fillTick(prefix + 1) + b.failChatTicks;
             h.runAfterDelay(give - 1, () -> h.assertTrue(oullCount(p) == 0, "收尾之前还不该给"));
             h.runAfterDelay(give + 1, () -> {
                 int got = oullCount(p);

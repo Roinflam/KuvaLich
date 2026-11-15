@@ -4,6 +4,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import pers.roinflam.kuvalich.mercy.MercyAnimSelector;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
+import pers.roinflam.kuvalich.mercy.MercyCameraPath;
 import pers.roinflam.kuvalich.mercy.MercyHitstop;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
@@ -14,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * 把每套处决每个结果按 10 ms 步长导成文本：时间轴各阶段、关键时刻、机位、目标朝向、玄骸片段、界面透明度、
@@ -111,6 +113,26 @@ public final class MercyBeatsDump {
                     .append(" hud ").append(p.variant().thrall ? "- -"
                             : MercyHud.groupAlpha(p, t, true) + " " + MercyHud.groupAlpha(p, t, false))
                     .append('\n');
+        }
+        if (!p.variant().thrall && MercyCameraPath.has(p.variant())) {
+            // 镜头轨迹（真实钟 = 演出钟，不算顿帧）；静态档没有这一层，上面的 shot 列就是它
+            int last = MercyTimeline.lastStab(p);
+            float[] m = new float[MercyCameraPath.CHANNELS];
+            for (MercyCameraPath.Motion mo : new MercyCameraPath.Motion[]{MercyCameraPath.Motion.FULL,
+                    MercyCameraPath.Motion.REDUCED}) {
+                out.append("camera ").append(mo).append('\n');
+                for (int t = 0; t <= end; t += STEP_MS) {
+                    MercyCamera.Shot shot = MercyCamera.plannedShot(p, handback, t);
+                    if (shot.ordinal() < MercyCamera.Shot.A.ordinal() || shot.ordinal() > MercyCamera.Shot.E.ordinal()
+                            || !MercyCameraPath.sample(p.variant(), last, mo, t, t, m)) {
+                        continue;
+                    }
+                    out.append(t).append(" seg ").append(MercyCameraPath.segment(p.variant(), last, t))
+                            .append(String.format(Locale.ROOT, " dolly %.3f orbit %.2f rise %.3f roll %.2f follow %.2f",
+                                    m[0], m[1], m[2], m[3], m[4]))
+                            .append('\n');
+                }
+            }
         }
         out.append("pose\n");
         MercyPose.dump(p, shortOutro, 1.0F, STEP_MS, out);

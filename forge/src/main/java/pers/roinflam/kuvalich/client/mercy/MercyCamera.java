@@ -6,6 +6,7 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -27,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
+import pers.roinflam.kuvalich.mercy.MercyCameraPath;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -35,7 +37,7 @@ import pers.roinflam.kuvalich.utils.Reference;
  * 处决运镜：只对本地处决者、只在玄骸处决、只在 {@code mercy_camera} 开着时接管相机
  *
  * <p>机位都在处决开始那一刻按世界帧算好（{@code Pl} 目标脚底、{@code Pe} 处决者站位、{@code F} 从目标指向处决者、
- * {@code S = Y × F}、{@code U} 向上），每个机位第一次切进去时做一次遮挡检测，之后整段固定、不逐帧算，免得镜头抖。
+ * {@code S = Y × F}、{@code U} 向上），每个机位第一次切进去时做一次遮挡检测，之后机位本身不再逐帧算，免得镜头抖。
  * 镜头在 {@code +S} 一侧朝 {@code −S} 看时 {@code +F} 在画面左边，所以三套机位都是处决者在左、目标在中 / 右；
  * 成功收尾的跪地特写和第三人称都放在 {@code −S} 一侧，处决者在右，两个镜头之间不越轴。</p>
  *
@@ -50,6 +52,11 @@ import pers.roinflam.kuvalich.utils.Reference;
  *
  * <p>失败和「挣开站起」（这次验的几刀全对、还没到第三刀）在玄骸挣开之后都切宽镜头，看它和被推开的处决者：
  * 失败在判错那一格 + 2000 ms 切、看它化雾；挣开站起在最后那一格 + 1200 ms 切、看它站起来，2300 ms 交还。</p>
+ *
+ * <p>{@code mercy_camera_motion} 不是静态档时，排过轨迹的套路在本套机位上叠 {@link MercyCameraPath} 的推拉、绕、升降、
+ * 滚转，注视点跟着处决者的整身位移走；轨迹各段的两头和中点切进来时查一遍遮挡，有一处过不了整段退回固定机位。
+ * 从玩家视角进机位改成 250 ms 推出去，失败和挣开站起切宽镜头改成 350 ms 移过去（中点查过才这样走，否则照旧硬切）；
+ * 刀点上的切换、换到另一侧的特写和第三人称照旧硬切。静态档和没有这一层时逐帧一样。</p>
  *
  * <p>{@code mercy_camera} 关着时不接管位置，开始时切到原版第三人称背后视角、交还时切回；界面、压混音、声音照常。
  * 奴仆处决不切镜头，{@code thrall_third_person} 开着时同样整段切第三人称背后视角。</p>
@@ -92,6 +99,8 @@ public final class MercyCamera {
     private static final float SHAKE_RAD_PER_MS = 2.1F / 50.0F;
     private static final int FOV_IN_MS = 60;
     private static final int FOV_OUT_MS = 220;
+    /** 注视点跟处决者的指数逼近时间常数 */
+    private static final double FOLLOW_TAU_MS = 110.0D;
 
     /** 一个机位：位置、注视点、FOV；{@code ok} 为假时这一段退回玩家镜头 */
     record ShotPose(Vec3 pos, Vec3 look, float fov, boolean ok) {
@@ -176,6 +185,16 @@ public final class MercyCamera {
         double targetHeight = REF_HEIGHT;
         double targetWidth = 1.75D;
         final ShotPose[] poses = new ShotPose[SHOTS.length];
+        /** 开始那一刻的 mercy_camera_motion */
+        MercyCameraPath.Motion motion = MercyCameraPath.Motion.STATIC;
+        /** 轨迹、进机位、切宽镜头的遮挡：0 还没查，1 能走，-1 退回硬切 / 固定机位 */
+        byte pathState, entryState, wideState;
+        /** 注视点跟人的偏移（已经平滑过），和它上一次更新时的真实钟、轨迹段 */
+        double fx, fy, fz;
+        long followRaw = -1L;
+        int followSeg = -1;
+        /** 这一帧轨迹给的滚转 */
+        float roll;
     }
 
     // 这一帧给 Mixin 的结果（只在渲染线程用，不分配）
@@ -234,19 +253,23 @@ public final class MercyCamera {
         if (t < b.cutIn || t >= handbackMs) {
             return Shot.GAME;
         }
-        Shot own = switch (plan.variant().camera) {
-            case 1 -> Shot.B;
-            case 2 -> Shot.C;
-            case 3 -> Shot.D;
-            case 4 -> Shot.E;
-            default -> Shot.A;
-        };
+        Shot own = own(plan.variant());
         return switch (MercyTimeline.outcome(plan)) {
             case SUCCESS -> t < b.closeup ? own : t < b.third ? Shot.CLOSEUP : Shot.THIRD;
             // 感化不切第三人称，特写一直到交还
             case CONVERT -> t < b.closeup ? own : Shot.CLOSEUP;
             case ADVANCE, FAIL -> t < MercyTimeline.wideFromMs(plan) ? own : Shot.WIDE;
             case THRALL -> Shot.GAME;
+        };
+    }
+
+    private static Shot own(MercyVariant v) {
+        return switch (v.camera) {
+            case 1 -> Shot.B;
+            case 2 -> Shot.C;
+            case 3 -> Shot.D;
+            case 4 -> Shot.E;
+            default -> Shot.A;
         };
     }
 
@@ -445,11 +468,194 @@ public final class MercyCamera {
         return p1.add(d1.scale(s)).distanceTo(p2.add(d2.scale(t)));
     }
 
+    // ==================== 轨迹、跟人、过渡 ====================
+
+    private static final float[] MOVE = new float[MercyCameraPath.CHANNELS];
+    private static final MercyPose.Body BODY = new MercyPose.Body();
+
+    /** 本套机位在这一场里交给下一个镜头的时刻 */
+    private static int windowEnd(MercyClient.Exec e) {
+        return switch (MercyTimeline.outcome(e.plan)) {
+            case SUCCESS, CONVERT -> MercyBeats.lich(e.variant).closeup;
+            case ADVANCE, FAIL -> MercyTimeline.wideFromMs(e.plan);
+            case THRALL -> e.handbackMs;
+        };
+    }
+
+    /** 在固定机位上叠推拉、绕、升降（注视点不动） */
+    private static ShotPose moved(MercyClient.Exec e, ShotPose base, float[] m) {
+        Vec3 look = base.look();
+        Vec3 pos = base.pos();
+        if (m[MercyCameraPath.ORBIT] != 0.0F) {
+            int side = pos.subtract(look).dot(e.s) >= 0.0D ? 1 : -1;
+            pos = swing(e, pos, look, side, -m[MercyCameraPath.ORBIT]);
+        }
+        if (m[MercyCameraPath.RISE] != 0.0F) {
+            pos = pos.add(0.0D, m[MercyCameraPath.RISE] * e.shots.unit, 0.0D);
+        }
+        if (m[MercyCameraPath.DOLLY] != 0.0F) {
+            pos = look.add(pos.subtract(look).scale(1.0D - m[MercyCameraPath.DOLLY]));
+        }
+        return new ShotPose(pos, look, base.fov(), true);
+    }
+
+    /** 轨迹各段两头和中点都过得了遮挡检测才走轨迹，第一次用到时查 */
+    private static boolean pathOk(MercyClient.Exec e, Shot s, ShotPose base, int lastStab) {
+        ShotCache c = e.shots;
+        if (c.pathState == 0) {
+            c.pathState = 1;
+            for (int ms : MercyCameraPath.checkTimes(e.variant, lastStab, windowEnd(e))) {
+                if (!MercyCameraPath.sample(e.variant, lastStab, c.motion, ms, ms + 10_000L, MOVE)) {
+                    break;
+                }
+                ShotPose q = moved(e, base, MOVE);
+                if (check(e, s, q.pos(), q.look(), q.fov(), false) == null) {
+                    c.pathState = -1;
+                    break;
+                }
+            }
+        }
+        return c.pathState > 0;
+    }
+
+    /**
+     * 本套机位此刻的位置和注视点：排过轨迹的叠上轨迹和跟人。{@code live} 时顺带更新跟人的平滑和这一帧的滚转；
+     * 不更新时注视点用上一次的跟人偏移（切宽镜头时从这里起步，不跳）
+     */
+    private static ShotPose ownMoved(MercyClient.Exec e, Shot s, long t, long raw, boolean live) {
+        ShotPose base = pose(e, s);
+        int last = MercyTimeline.lastStab(e.plan);
+        if (!pathOk(e, s, base, last)
+                || !MercyCameraPath.sample(e.variant, last, e.shots.motion, t, raw, MOVE)) {
+            return base;
+        }
+        ShotPose q = moved(e, base, MOVE);
+        if (live) {
+            e.shots.roll = MOVE[MercyCameraPath.ROLL];
+            follow(e, t, raw, MOVE[MercyCameraPath.FOLLOW], MercyCameraPath.segment(e.variant, last, t));
+        }
+        return new ShotPose(q.pos(), q.look().add(e.shots.fx, e.shots.fy, e.shots.fz), q.fov(), true);
+    }
+
+    /**
+     * 注视点跟处决者的整身位移（上步、蹬开），上下只跟一半；按真实钟指数逼近，和帧率无关。切到下一段时直接对齐
+     */
+    private static void follow(MercyClient.Exec e, long t, long raw, float w, int seg) {
+        double tx = 0.0D, ty = 0.0D, tz = 0.0D;
+        if (w > 0.0F && e.pose != null && MercyPose.body(e, t, BODY)) {
+            double k = w * BODY.blend;
+            tx = (BODY.x - e.pe.x) * k;
+            ty = (BODY.y - e.pe.y) * k * 0.5D;
+            tz = (BODY.z - e.pe.z) * k;
+        }
+        ShotCache c = e.shots;
+        if (c.followSeg != seg || c.followRaw < 0L || raw < c.followRaw) {
+            c.fx = tx;
+            c.fy = ty;
+            c.fz = tz;
+        } else {
+            double a = 1.0D - Math.exp(-(raw - c.followRaw) / FOLLOW_TAU_MS);
+            c.fx += (tx - c.fx) * a;
+            c.fy += (ty - c.fy) * a;
+            c.fz += (tz - c.fz) * a;
+        }
+        c.followRaw = raw;
+        c.followSeg = seg;
+    }
+
+    /** 从玩家视角推出去进机位走到几成（已缓动）；不在这一段是 −1 */
+    private static float entryProgress(MercyClient.Exec e, long t) {
+        long since = t - MercyBeats.lich(e.variant).cutIn;
+        if (since < 0L || since >= MercyCameraPath.ENTRY_MS) {
+            return -1.0F;
+        }
+        return outCubic(since / (float) MercyCameraPath.ENTRY_MS);
+    }
+
+    /** 眼睛到机位之间、半路到注视点之间没有方块才推出去，否则照旧硬切 */
+    private static boolean entryOk(MercyClient.Exec e, Vec3 eye, Vec3 pos, Vec3 look) {
+        ShotCache c = e.shots;
+        if (c.entryState == 0) {
+            c.entryState = 1;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level != null && mc.player != null) {
+                Vec3 mid = eye.lerp(pos, 0.5D);
+                if (blocked(mc, eye, pos) || blocked(mc, look, mid)) {
+                    c.entryState = -1;
+                }
+            }
+        }
+        return c.entryState > 0;
+    }
+
+    private static boolean blocked(Minecraft mc, Vec3 a, Vec3 b) {
+        return mc.level.clip(new ClipContext(a, b, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, mc.player))
+                .getType() != HitResult.Type.MISS;
+    }
+
+    /** 切宽镜头的过渡走到几成（已缓动）；不在这一段是 −1 */
+    private static float wideProgress(MercyClient.Exec e, long t) {
+        int from = MercyTimeline.wideFromMs(e.plan);
+        long since = t - from;
+        if (from < 0 || since < 0L || since >= MercyCameraPath.WIDE_BLEND_MS) {
+            return -1.0F;
+        }
+        return sine(since / (float) MercyCameraPath.WIDE_BLEND_MS);
+    }
+
+    /** 切宽镜头前最后一刻本套机位的样子；本套机位没用上（退回了玩家镜头）时是 null */
+    @Nullable
+    private static ShotPose wideFrom(MercyClient.Exec e) {
+        Shot o = own(e.variant);
+        if (!pose(e, o).ok()) {
+            return null;
+        }
+        long t = MercyTimeline.wideFromMs(e.plan) - 1L;
+        return ownMoved(e, o, t, t + 10_000L, false);
+    }
+
+    /** 过渡的中点过得了遮挡检测才移过去 */
+    private static boolean wideOk(MercyClient.Exec e, ShotPose from, Vec3 pos, Vec3 look) {
+        ShotCache c = e.shots;
+        if (c.wideState == 0) {
+            c.wideState = check(e, Shot.WIDE, from.pos().lerp(pos, 0.5D), from.look().lerp(look, 0.5D), 70.0F,
+                    false) != null ? (byte) 1 : (byte) -1;
+        }
+        return c.wideState > 0;
+    }
+
+    /** 机位的 FOV；进机位、切宽镜头的过渡里从上一个镜头的 FOV 渐变过来 */
+    private static float shotFov(MercyClient.Exec e, Shot s, long t, float gameFov) {
+        float fov = pose(e, s).fov;
+        if (e.shots.motion == MercyCameraPath.Motion.STATIC) {
+            return fov;
+        }
+        if (s == own(e.variant)) {
+            float x = entryProgress(e, t);
+            if (x >= 0.0F && e.shots.entryState >= 0) {
+                return Mth.lerp(x, gameFov, fov);
+            }
+        } else if (s == Shot.WIDE) {
+            float x = wideProgress(e, t);
+            ShotPose o = pose(e, own(e.variant));
+            if (x >= 0.0F && e.shots.wideState >= 0 && o.ok()) {
+                return Mth.lerp(x, o.fov(), fov);
+            }
+        }
+        return fov;
+    }
+
+    private static float shakeScale(MercyClient.Exec e) {
+        float k = EffectsDisplayConfig.mercyShake();
+        return e.shots.motion == MercyCameraPath.Motion.REDUCED ? k * MercyCameraPath.REDUCED_SHAKE : k;
+    }
+
     // ==================== 视角类型 ====================
 
     /** 处决开始：不接管时（关了电影镜头、奴仆第三人称选项）当场切原版第三人称背后视角 */
     static void onBegin(MercyClient.Exec e) {
         e.shots.cameraOn = EffectsDisplayConfig.mercyCamera();
+        e.shots.motion = EffectsDisplayConfig.mercyCameraMotion();
         Entity t = e.target();
         if (t != null) {
             EntityDimensions d = t.getType().getDimensions();
@@ -523,16 +729,24 @@ public final class MercyCamera {
             outPitch = MercyClient.pitchOf(n);
             return true;
         }
+        e.shots.roll = 0.0F;
         long t = e.elapsed();
         Shot s = shotAt(e, t);
         if (s == Shot.GAME) {
             return false;
         }
         ShotPose p = pose(e, s);
-        Vec3 dir = p.look.subtract(p.pos);
+        Vec3 pos = p.pos;
+        Vec3 look = p.look;
+        boolean moving = e.shots.motion != MercyCameraPath.Motion.STATIC;
+        if (moving && s == own(e.variant)) {
+            ShotPose q = ownMoved(e, s, t, e.rawElapsed(), true);
+            pos = q.pos();
+            look = q.look();
+        }
+        Vec3 dir = look.subtract(pos);
         double len = dir.length();
         Vec3 n = len > 1.0E-4D ? dir.scale(1.0D / len) : new Vec3(0.0D, 0.0D, 1.0D);
-        Vec3 pos = p.pos;
         if (s == Shot.CLOSEUP) {
             // 整段沿视线往前推 0.08 格
             MercyBeats.Lich b = MercyBeats.lich(e.variant);
@@ -542,6 +756,45 @@ public final class MercyCamera {
             // 沿视线反方向匀速后拉 0.2 格 / 秒
             long since = t - MercyTimeline.wideFromMs(e.plan);
             pos = pos.subtract(n.scale(0.2D * Math.max(0L, since) / 1000.0D));
+        }
+        if (moving) {
+            float x = -1.0F;
+            Vec3 fromPos = null, fromLook = null;
+            if (s == own(e.variant)) {
+                x = entryProgress(e, t);
+                if (x >= 0.0F) {
+                    LocalPlayer pl = Minecraft.getInstance().player;
+                    float pt = Minecraft.getInstance().getFrameTime();
+                    fromPos = pl != null ? pl.getEyePosition(pt) : pos;
+                    Vec3 view = pl != null ? pl.getViewVector(pt) : n;
+                    fromLook = fromPos.add(view.scale(look.distanceTo(fromPos)));
+                    if (entryOk(e, fromPos, pos, look)) {
+                        e.shots.roll *= x;
+                    } else {
+                        x = -1.0F;
+                    }
+                }
+            } else if (s == Shot.WIDE) {
+                x = wideProgress(e, t);
+                if (x >= 0.0F) {
+                    ShotPose from = wideFrom(e);
+                    if (from != null && wideOk(e, from, pos, look)) {
+                        fromPos = from.pos();
+                        fromLook = from.look();
+                    } else {
+                        x = -1.0F;
+                    }
+                }
+            }
+            if (x >= 0.0F && fromPos != null) {
+                pos = fromPos.lerp(pos, x);
+                look = fromLook.lerp(look, x);
+                dir = look.subtract(pos);
+                len = dir.length();
+                if (len > 1.0E-4D) {
+                    n = dir.scale(1.0D / len);
+                }
+            }
         }
         if (EffectsDisplayConfig.screenEffects()) {
             pos = pos.add(shakeOffset(e, e.rawElapsed()));
@@ -616,7 +869,7 @@ public final class MercyCamera {
      * 普通 0.06 格、出结果那一刀 × 1.6，乘 mercy_shake
      */
     private static Vec3 shakeOffset(MercyClient.Exec e, long raw) {
-        float k = EffectsDisplayConfig.mercyShake();
+        float k = shakeScale(e);
         if (k <= 0.0F) {
             return Vec3.ZERO;
         }
@@ -682,7 +935,7 @@ public final class MercyCamera {
         long raw = e.rawElapsed();
         Shot s = shotAt(e, t);
         if (s != Shot.GAME) {
-            event.setFOV(pose(e, s).fov * fovKick(e, raw));
+            event.setFOV(shotFov(e, s, t, (float) event.getFOV()) * fovKick(e, raw));
         } else if (e.variant.thrall) {
             if (EffectsDisplayConfig.thrallPushIn()) {
                 event.setFOV(event.getFOV() * thrallPush(e, t));
@@ -695,16 +948,24 @@ public final class MercyCamera {
     @SubscribeEvent
     public static void onComputeAngles(ViewportEvent.ComputeCameraAngles event) {
         MercyClient.Exec e = MercyClient.local();
-        if (e == null || e.handedBack || !EffectsDisplayConfig.screenEffects()
+        if (e == null || e.handedBack
                 || event.getCamera() != Minecraft.getInstance().gameRenderer.getMainCamera()) {
             return;
         }
         long t = e.elapsed();
-        long raw = e.rawElapsed();
         Shot s = shotAt(e, t);
+        // 轨迹的滚转是构图，不归屏幕特效开关管
+        float roll = s != Shot.GAME ? e.shots.roll : 0.0F;
+        if (!EffectsDisplayConfig.screenEffects()) {
+            if (roll != 0.0F) {
+                event.setRoll(event.getRoll() + roll);
+            }
+            return;
+        }
+        long raw = e.rawElapsed();
         int[] stabs = stabTimes(e);
-        float k = EffectsDisplayConfig.mercyShake();
-        float yaw = 0.0F, pitch = 0.0F, roll = 0.0F;
+        float k = shakeScale(e);
+        float yaw = 0.0F, pitch = 0.0F;
         boolean firstPerson = Minecraft.getInstance().options.getCameraType().isFirstPerson();
         for (int i = 0; i < stabs.length; i++) {
             long d = raw - stabs[i];
