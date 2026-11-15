@@ -785,6 +785,100 @@
         },
         {
           "type": "h",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "Execution routines"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "Each Lich execution plays one of the eight routines below, drawn at random, and the same player never draws the same routine twice in a row. The 1st and 2nd executions play only as many stabs as they take, then it breaks loose and stands. If a stab is wrong, it tears free after that stab and throws the executor off."
+        },
+        {
+          "type": "table",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "header": [
+            "Routine",
+            "Moves"
+          ],
+          "widths": [
+            2,
+            7
+          ],
+          "rows": [
+            [
+              "Head-on Thrust",
+              "Squared up in front of it, all three stabs go into the chest. The third is raised overhead and held before it drives down."
+            ],
+            [
+              "Neck Lock",
+              "It faces away. The first stab goes into the lower back. The second comes with an arm locked around its neck, and after a full turn on the spot, a hand on its shoulder braces the third."
+            ],
+            [
+              "Rising Stab",
+              "Pressed in close, every stab drives upward from below, at the fastest pace of all. After the third, a kick off its body turns into a backflip."
+            ],
+            [
+              "Roll Around",
+              "The first two stabs land from the front. After the second, a roll half around its body ends behind it, and a hand on its shoulder braces the third."
+            ],
+            [
+              "Back Vault",
+              "It faces away. The first stab goes into the lower back. A front flip lands on its bent back for a downward stab into the nape. Before the third, the executor becomes a streak of red light, reappears in front of it, stabs into the chest and kicks off into a backflip."
+            ],
+            [
+              "Broken Wing",
+              "Starts at its front right. Catching its swinging right wrist, the executor swings on that arm around to its back right and stabs into the rear of the right flank. Wrenching the arm forces its face to the ground for a downward stab into the lower back. A step off its lower back launches a leap to its right side, and the third stab drives up under the arm."
+            ],
+            [
+              "Kneebreaker",
+              "It lunges up and slams down a claw. The executor slides past its right side and stabs the back of its knee from behind on the right. A hand on its lower back vaults over it sideways to the back left for a level stab into the back. A forward roll under its arm ends at its front right, where it seizes the blade hand. Pressing its claw down, the executor drives the third stab into the chest."
+            ],
+            [
+              "Three Passes",
+              "Starts at its front left. A low skim under its left claw stabs into the left flank. A leap onto its back and a kick off into a backflip land behind it for a downward stab into the back. A spinning leap over its head lands at its front right for the third stab into the heart."
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "The routines below need enough room around it and are left out of the draw where the ground does not allow them. Head-on Thrust, Neck Lock and Rising Stab work anywhere."
+        },
+        {
+          "type": "kv",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "rows": [
+            [
+              "Roll Around",
+              "Open space on at least one side to get around behind it"
+            ],
+            [
+              "Back Vault",
+              "<t>4</t> blocks of headroom above it and footing within about <t>3</t> blocks in front of it"
+            ],
+            [
+              "Broken Wing",
+              "Open space within about <t>3</t> blocks on its right and <t>4</t> blocks of headroom above it"
+            ],
+            [
+              "Kneebreaker",
+              "Open space within about <t>2</t> blocks on its right and behind it, and <t>4</t> blocks of headroom above it"
+            ],
+            [
+              "Three Passes",
+              "Open space within about <t>2</t> blocks on its left, behind it and at its front right, and <t>4</t> blocks of headroom above it"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "title": "Player model mods",
+          "text": "With a mod that replaces the player model, such as Yes Steve Model, the executor is shown with the standard player model during an execution, so the moves, the Parazon and the movement display correctly. The original model returns once control is handed back. This applies to every execution, including those of other players. The <t>mercy_vanilla_model</t> option in the [effects] section of the client settings file controls this and is on by default. When it is off, the executor keeps the replaced model, which does not show the execution moves. The option affects only the display on this client."
+        },
+        {
+          "type": "h",
           "if": "!cfg:kuva_lich.mercyEnabled",
           "text": "Judged on the kill"
         },
@@ -1091,6 +1185,21 @@
           "style": "info",
           "title": "The choice only decides the rewards",
           "text": "By the time the cards appear, the round has already been settled and the card durability spent. Logging out, dying or leaving the world during the choice counts as “{lang:gui.kuvalich.mercy_choice.vanquish}”, and the rewards go to [[requiem/pending_items|Pending]] as usual."
+        },
+        {
+          "type": "h",
+          "text": "How a conversion ends"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Once conversion is chosen, the executor pulls the blade from its chest, leaps back and retracts the Parazon on landing.",
+            "The executor then turns away from it, walks off, stops and looks back.",
+            "After the executor lands, it bows its head and presses its right fist to its chest, then dissolves into Kuva mist.",
+            "Control returns about <t>5.1</t> seconds after the choice. The executor stays where the walk ended and does not return to the execution spot.",
+            "The leap and the walk avoid blocks and drops, and end no more than <t>3.6</t> blocks from the execution spot. With too little room the walk takes another direction or fewer steps, and with no room at all the executor sheathes the blade and turns on the spot.",
+            "The camera cuts to a side view of both during the leap, circles behind it as the executor walks away, and settles behind and to one side for the look back."
+          ]
         },
         {
           "type": "h",

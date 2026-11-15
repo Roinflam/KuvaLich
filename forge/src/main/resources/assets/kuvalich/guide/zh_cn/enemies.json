@@ -821,6 +821,100 @@
         },
         {
           "type": "h",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "处决的套路"
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "每次处决玄骸，从下面八套动作中随机抽取一套，同一名玩家不会连续两次抽到同一套。第 1、2 次处决只演到对应的刀数，随后它挣开站起。某一刀刺错时，它在刺错的那一刀之后挣脱，把处决者甩开。"
+        },
+        {
+          "type": "table",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "header": [
+            "套路",
+            "动作"
+          ],
+          "widths": [
+            2,
+            7
+          ],
+          "rows": [
+            [
+              "正面直刺",
+              "正对它站定，三刀都刺入胸口。第三刀先举过头顶蓄力，再向下扎入。"
+            ],
+            [
+              "背后锁颈",
+              "它背对处决者。第一刀刺入后腰，随后勒住它的脖子刺第二刀，原地转身一圈后按住它的肩刺第三刀。"
+            ],
+            [
+              "贴身上挑",
+              "贴进它怀里，三刀都由下往上挑入，节奏最快。第三刀之后蹬开它后空翻。"
+            ],
+            [
+              "翻滚绕背",
+              "前两刀在正面。第二刀拔出后贴着它翻滚半圈到身后，按住它的肩刺第三刀。"
+            ],
+            [
+              "踏背下刺",
+              "它背对处决者。第一刀刺入后腰，随后前空翻落到它弯下的后背上，向下刺入后颈。第三刀之前，处决者化作一道红光闪到它正面，刺入胸口后蹬开它后空翻。"
+            ],
+            [
+              "折翼",
+              "开场站在它右前方。攥住它挥来的右手腕，借它的手臂荡到它右后方，从右肋后侧刺入第一刀。随后拧着手臂把它压到脸贴地面，向下刺入后腰。最后踩着后腰跃起，落到它右手边，从腋下向上刺入第三刀。"
+            ],
+            [
+              "断膝三方",
+              "它扑起挥爪砸下，处决者滑铲擦过它右侧，在右后方刺入膝窝。随后按住它的后腰从背上侧翻到左后方，平刺后心。最后前滚从它臂下钻到右前方，持刀的手被它攥住，压下它的爪子后把第三刀送进胸口。"
+            ],
+            [
+              "三掠",
+              "开场站在它左前方。贴地平飞从它左爪下掠过，刺入左肋。随后扑上后背、蹬开后空翻，落在它背后向下刺入后背。最后腾空旋身越过它的头顶，落到右前方刺入心口。"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "text": "下面几套需要周围留有足够的空间，地形不满足时，本次处决不参与抽取。正面直刺、背后锁颈、贴身上挑在任何地方都能抽到。"
+        },
+        {
+          "type": "kv",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "rows": [
+            [
+              "翻滚绕背",
+              "它左右两侧至少有一侧空着，能绕到它身后"
+            ],
+            [
+              "踏背下刺",
+              "它头顶有 <t>4</t> 格高的空间，正面约 <t>3</t> 格内有落脚处"
+            ],
+            [
+              "折翼",
+              "它右手边约 <t>3</t> 格内空着，头顶有 <t>4</t> 格高的空间"
+            ],
+            [
+              "断膝三方",
+              "它右手边和身后约 <t>2</t> 格内空着，头顶有 <t>4</t> 格高的空间"
+            ],
+            [
+              "三掠",
+              "它左手边、身后和右前方约 <t>2</t> 格内空着，头顶有 <t>4</t> 格高的空间"
+            ]
+          ]
+        },
+        {
+          "type": "tip",
+          "style": "info",
+          "if": "cfg:kuva_lich.mercyEnabled",
+          "title": "改玩家模型的模组",
+          "text": "装有 Yes Steve Model 等替换玩家模型的模组时，处决期间处决者改用原版玩家模型显示，处决动作、灭骸之刃和位移才能正常呈现。交还操作后恢复原有模型。自己和其他玩家的处决都这样显示。客户端设置文件 [effects] 一节中的 <t>mercy_vanilla_model</t> 控制是否换用原版模型，默认开启。关闭后处决者保持原有模型，处决动作不会在该模型上呈现。该设置只影响本机的显示。"
+        },
+        {
+          "type": "h",
           "if": "!cfg:kuva_lich.mercyEnabled",
           "text": "击杀时判定"
         },
@@ -1051,6 +1145,11 @@
         "entity/KuvaMasterEntity.java:529 shieldCap = 最大生命 × lichShieldRatio（无主 / 演示为 0），护盾就是吸收值；:570 actuallyHurt 挨打后等 lichShieldDelaySeconds 秒，这一下后护盾为 0 时 × lichShieldBrokenDelayMultiplier；:583 tickShield 能打时每秒回上限的 lichShieldRegenPercent%；module/weapon/WeaponCombatHandler.java:871 磁力：目标有吸收值时伤害提高",
         "mercy/MercyServer.java:596 — convertEnabled 开着时第 3 次处决三刀全对开选择窗口（详见 enemies/lich_convert）",
         "client/mercy/MercyClient.java:185、client/mercy/MercyCamera.java:751,980、mercy/MercyCameraPath.java:18,52 — 客户端 [effects] mercy_hitstop（只对玄骸）、mercy_shake（0~2，0 = 关）、mercy_camera_motion（FULL / REDUCED / STATIC）；config/EffectsDisplayConfig.java，客户端 toml",
+        "mercy/MercyServer.java:632 pickVariant — 同类（玄骸 / 奴仆）里排除这名玩家上一次的套路、fits() 通过的均匀随机；mercy/MercyVariant.java:16-30 玄骸八套 LICH_A～LICH_H；mercy/MercyServer.java:711 buildPlan 第 k 次处决捅 k 刀，挣开 / 判错都由 client/mercy/MercyPose.java thrown() 甩开",
+        "client/mercy/MercyPose.java:413（正面直刺）、472（背后锁颈）、534（贴身上挑）、593（翻滚绕背）、656（踏背下刺）、721（折翼）、795（断膝三方）、885（三掠）各套 Track 注释；刀口 :380-400 ANCHOR_F1～H3；mercy/MercyVariant.java:26,30 折翼 faceTurn -28（处决者在它右前方）、三掠 +30（左前方）",
+        "mercy/MercyServer.java:653 fits — 翻滚绕背 orbits()：:719 orbitSide 左右各查一条半圈（半径 standDist + ORBIT_MARGIN_LICH 0.8 = 2.05，45°～180° 蹲姿），两边都挡不选；踏背下刺 vaultsOver()：:708 vaultClear 背上 VAULT_BACK_UP 1.75 处蹲姿（顶到 3.25）、正面 1.45 / 2.95 格能站；A / B / C 不查，总有得选",
+        "mercy/MercyServer.java:670-688 ROOM（角度从站位往 Y×F 即它左手边为正）— 折翼五处全在右手边（最远 2.6 格，-123° 0.35 格离地 1.4 站姿，顶到 3.2）；断膝三方九处右手边 + 身后（最远 1.56，-180° 离地 1.67 蹲姿，顶到 3.17）；三掠十一处左手边、身后、头顶、右前方（254° 离地 2.44 蹲姿，顶到 3.94）；离地的点连头顶一起查，三格净高时三套都不选",
+        "client/mercy/MercyBodyRender.java:48-61 onRenderPreFirst — mercy_vanilla_model 开着、MercyClient.byExecutor 有这一场（本人和旁观者都算，奴仆处决也算）且 elapsed < handbackMs 时最先一层取消 Pre，:64 LOW 撤销取消让原版渲染器照画；交还后回原模型；config/EffectsDisplayConfig.java:233 [effects] mercy_vanilla_model 默认 true，只在客户端 toml",
         "nemesis/FinaleSettlement.java resolve — 11-15 起终结奖励（含没收归还、幻纹）一律记入收件箱再由 nemesis/Inbox 放进背包，不再生成在它倒下的位置；所以奖励不经过 LivingDrops，itemDropMultiplier 照旧不影响",
         "nemesis/FinaleSettlement.java:104-122 — 带幻纹的玄骸终结时造出幻纹物品"
       ]
@@ -1164,6 +1263,21 @@
         },
         {
           "type": "h",
+          "text": "感化的收尾"
+        },
+        {
+          "type": "list",
+          "items": [
+            "选定感化后，处决者把刀从它胸口拔出，向后跃开，落地后收回灭骸之刃。",
+            "随后处决者转身背对它走开，停步后回头看它。",
+            "它在处决者落地后垂下头，右拳按在胸口，随后化作赤毒雾散去。",
+            "从选定到交还操作约 <t>5.1</t> 秒。交还时处决者留在走到的位置，不回到处决时的站位。",
+            "后跃和走开的路线避开方块和悬空处，终点离处决时的站位不超过 <t>3.6</t> 格。空间不够时改走别的方向或少走几步，实在放不下就原地收刀转身。",
+            "镜头在后跃时切到两人侧面，处决者走开时绕到它身后，回头时停在侧后方。"
+          ]
+        },
+        {
+          "type": "h",
           "text": "感化之后"
         },
         {
@@ -1193,7 +1307,10 @@
         "mercy/MercyServer.java:1416-1480,1523-1580 — 已定案后下线、死亡、换维度、传送、旁观、目标消失一律快进，窗口按消灭落定",
         "lang message.kuvalich.convert.done「%s 已被感化，加入盟友名册」（PlayerFeedback.chat，默认显示为提示条）；感化台词 kuvalich.comm.lich.<性格>.converted.1~5 取代遗言；kuvalich.archive.history.converted「上一只：%s · 已感化」",
         "nemesis/AllyRoster.java:62-120 — 超过 allyRosterSize 时挤掉最早感化且非出战的一只，出战的最后才挤；client/mercy/MercyChoiceHud.java:287 + gui.kuvalich.mercy_choice.release 牌下多一行",
-        "nemesis/AllyRoster.release — 遣散后条目删除，无法恢复（kuvalich.archive.roster.release.hint）"
+        "nemesis/AllyRoster.release — 遣散后条目删除，无法恢复（kuvalich.archive.roster.release.hint）",
+        "mercy/MercyBeats.java:55-61 — 感化后段相对跪地特写（选择窗口在这一刻开，挂起不计）：拔刀 120、蹬地后跃 200、切双人侧面 330、落地 470、刀弹回 620、转身 920、拳按胸 2360、回头 2800、垂首 3100、化雾 3500（演 CONVERT_MIST_MS 1150）、离场 4250、交还 CONVERT_END 5100；client/mercy/MercyTimeline.java:188 handbackMs 感化取 convertEnd，不受 mercy_short_outro 影响",
+        "client/mercy/MercyClient.java:655-682 pickConvertRoom — 依次试绕它转 0 / ±35 / ±70 / ±110 度、后跃和走开各跃满或收一半，路线不碰方块、脚下有地、离站位不超过 CONVERT_REACH 3.6 格；都不行 ConvertRoom(0,0,0) 原地收刀转身；mercy/MercyServer.java:1153 感化分支 roaming = true，服务端不再按站位拉人，交还时人在走到的地方",
+        "client/mercy/MercyConvertCam.java:13-20 — 双人侧面机位：后跃半空切入，开头在两人侧面，走开时绕到它身后，回头时停在侧后方；减弱档只推拉、静态档固定机位，遮挡时镜像或退回跪地特写"
       ]
     },
     {
