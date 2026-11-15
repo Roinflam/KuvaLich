@@ -135,7 +135,11 @@ public final class PlayerLedger {
 
     // 原样接在后面，不把已有条目读出来再写回：读不出来的（比如所属模组暂时卸了）会在重写时丢掉
     public static void addToInbox(Player player, Collection<ItemStack> items) {
-        ListTag add = writeItems(items);
+        appendToInbox(player, writeItems(items));
+    }
+
+    /** 接上已经序列化好的条目（{@link #writeItems} 的结果）。只动 NBT，不跑物品代码 */
+    public static void appendToInbox(Player player, ListTag add) {
         if (add.isEmpty()) {
             return;
         }

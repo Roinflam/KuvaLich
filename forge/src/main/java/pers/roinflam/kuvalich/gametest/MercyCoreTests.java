@@ -1,6 +1,7 @@
 package pers.roinflam.kuvalich.gametest;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
@@ -544,7 +546,63 @@ public final class MercyCoreTests {
         h.assertTrue(p.containerMenu == p.inventoryMenu, "下线时应当先关掉安魂界面");
         h.assertTrue(p.getInventory().countItem(KuvaLichItems.KUVA_SHILDEG.get()) == 1, "军械库里的武器应当退回背包");
         h.assertTrue(p.getInventory().countItem(KuvaLichItems.getRequiemCard(3)) == 1, "光标上的卡应当放回背包，不是扔在地上");
+        h.assertTrue(!PlayerLedger.hasInbox(p), "背包有空位时不进待领取");
         h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = CORE)
+    public static void logoutFullInventoryMenuSlotsToInbox(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        fillWithDirt(p);
+        RequiemWeaponTableMenu menu = new RequiemWeaponTableMenu(1, p.getInventory(), h.getLevel(), p.blockPosition());
+        menu.weaponHandler.setStackInSlot(0, new ItemStack(KuvaLichItems.KUVA_SHILDEG.get()));
+        menu.setCarried(new ItemStack(KuvaLichItems.getRequiemCard(3)));
+        p.containerMenu = menu;
+        RequiemMenuLogoutGuard.beforeRemove(p);
+
+        List<ItemEntity> dropped = h.getLevel().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(4.0D),
+                e -> !e.getItem().is(Items.DIRT));
+        dropped.forEach(ItemEntity::discard);
+        h.assertTrue(dropped.isEmpty(), "背包满时掉线，槽位和光标上的都不扔地上：" + dropped.size());
+        h.assertTrue(p.containerMenu == p.inventoryMenu && menu.getCarried().isEmpty()
+                && menu.weaponHandler.getStackInSlot(0).isEmpty(), "界面关了，光标和槽位都空");
+        h.assertTrue(inboxCount(p, KuvaLichItems.KUVA_SHILDEG.get()) == 1 && inboxCount(p, KuvaLichItems.getRequiemCard(3)) == 1
+                && PlayerLedger.inboxCount(p) == 2, "武器和卡各一件进待领取：" + PlayerLedger.getInbox(p));
+        h.assertTrue(p.getInventory().countItem(Items.DIRT) == 37 * 64, "背包原样");
+
+        ServerPlayer again = new ServerPlayer(h.getLevel().getServer(), h.getLevel(), p.getGameProfile());
+        again.load(p.saveWithoutId(new CompoundTag()));
+        h.assertTrue(PlayerLedger.inboxCount(again) == 2, "存盘读回后待领取里还在");
+
+        // 平常关界面不受影响：背包满照旧扔在脚下，不进待领取
+        ServerPlayer q = KuvaTestKit.player(h);
+        fillWithDirt(q);
+        RequiemWeaponTableMenu qm = new RequiemWeaponTableMenu(2, q.getInventory(), h.getLevel(), q.blockPosition());
+        qm.weaponHandler.setStackInSlot(0, new ItemStack(KuvaLichItems.KUVA_SHILDEG.get()));
+        q.containerMenu = qm;
+        q.doCloseContainer();
+        List<ItemEntity> qDropped = h.getLevel().getEntitiesOfClass(ItemEntity.class, q.getBoundingBox().inflate(4.0D),
+                e -> e.getItem().is(KuvaLichItems.KUVA_SHILDEG.get()));
+        qDropped.forEach(ItemEntity::discard);
+        h.assertTrue(qDropped.size() == 1 && !PlayerLedger.hasInbox(q), "平常关界面照旧扔脚下：" + qDropped.size());
+        h.succeed();
+    }
+
+    private static void fillWithDirt(ServerPlayer p) {
+        for (int i = 0; i < 36; i++) {
+            p.getInventory().setItem(i, new ItemStack(Items.DIRT, 64));
+        }
+        p.getInventory().offhand.set(0, new ItemStack(Items.DIRT, 64));
+    }
+
+    private static int inboxCount(ServerPlayer p, net.minecraft.world.item.Item item) {
+        int n = 0;
+        for (ItemStack s : PlayerLedger.getInbox(p)) {
+            if (s.is(item)) {
+                n += s.getCount();
+            }
+        }
+        return n;
     }
 
     // ==================== Oull：和两张对的卡一起击败玄骸，扣一次 ====================

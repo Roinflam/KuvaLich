@@ -3,6 +3,7 @@ package pers.roinflam.kuvalich.utils;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import pers.roinflam.kuvalich.world.inventory.RequiemMenuLogoutGuard;
 
 /**
  * 背包空间判断
@@ -81,6 +82,10 @@ public final class InventoryUtil {
      */
     public static boolean giveOrDrop(Player player, ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
+            return true;
+        }
+        // 下线时安魂界面退回的东西：放不下的进待领取，人不在场，扔地上就没了
+        if (RequiemMenuLogoutGuard.stowIfClosingOnLogout(player, stack)) {
             return true;
         }
         // 死了的玩家背包已经掉过一遍、重生时（没开死亡不掉落）也不会抄过去，塞进去就没了：和原版

@@ -1088,7 +1088,7 @@
         },
         {
           "type": "p",
-          "text": "Likewise, if you go offline while holding an item you picked up in the Requiem Gate, Requiem Recast, Requiem Forge or either Arsenal, whatever does not fit in your inventory goes to Pending and is added to your inventory the next time you join."
+          "text": "Likewise, if you go offline with the Requiem Gate, Requiem Recast, Requiem Forge or either Arsenal open, anything you were holding and anything the screen returns to your inventory that does not fit goes to Pending and is added to your inventory the next time you join."
         },
         {
           "type": "h",

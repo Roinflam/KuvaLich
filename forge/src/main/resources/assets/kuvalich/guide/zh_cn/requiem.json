@@ -1206,7 +1206,7 @@
         },
         {
           "type": "p",
-          "text": "此外，在灭骸之扉、安魂之铸、安魂之融或两座军械库的界面中拿起物品、尚未放下时下线，背包放不下的部分同样记入待领取，下次进入游戏后放入背包。"
+          "text": "此外，开着灭骸之扉、安魂之铸、安魂之融或两座军械库的界面下线时，手上拿着的物品和界面要退回背包的物品，背包放不下的部分同样记入待领取，下次进入游戏后放入背包。"
         },
         {
           "type": "h",
@@ -1254,7 +1254,7 @@
         "nemesis/NemesisCommand.java:184-222 — /kuvalich inbox 不要权限，回复 inbox.empty / waiting / loginDelay / done / full / partial",
         "client/lich/LichArchiveScreen.java:1013-1025 — 档案右下 kuvalich.archive.inbox「待领取 %s 件」+ .tooltip",
         "mercy/MercyServer.java:1196-1205 — 失败时的 Oull 走 InventoryUtil.giveOrDrop，背包满掉在脚下，不经过收件箱",
-        "world/inventory/RequiemMenuLogoutGuard.java returnCarriedAndClose — 五个安魂界面（isRequiemMenu）下线时光标上的东西先放回背包，放不下的 PlayerLedger.addToInbox 并当场存盘；死亡、跨维度不走收件箱"
+        "world/inventory/RequiemMenuLogoutGuard.java returnCarriedAndClose — 五个安魂界面（isRequiemMenu）下线时光标上的东西、关界面时经 InventoryUtil.giveOrDrop 退回的槽位物品先放回背包，放不下的进收件箱并当场存盘；死亡、跨维度、平常关界面不走收件箱"
       ]
     },
     {
