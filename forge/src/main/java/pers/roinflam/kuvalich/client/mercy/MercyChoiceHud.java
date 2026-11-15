@@ -390,9 +390,11 @@ public final class MercyChoiceHud {
         event.registerAboveAll(OVERLAY_ID.getPath(), MercyChoiceHud::render);
     }
 
+    // 别改回 Ticker：正式环境的事件总线按「包名.__类简单名_方法名_事件名」生成监听器类，
+    // 和 MercyHud.Ticker 同名时后注册的拿到先注册的那个类，两边只有一个在跑（正式 jar 里是这边不跑，选择键全读不到）
     @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
-    public static final class Ticker {
-        private Ticker() {
+    public static final class ChoiceTicker {
+        private ChoiceTicker() {
         }
 
         @SubscribeEvent
