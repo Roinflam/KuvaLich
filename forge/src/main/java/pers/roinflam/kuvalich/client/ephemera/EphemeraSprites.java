@@ -35,14 +35,17 @@ public final class EphemeraSprites {
     public static final int HAZE = 26;
     public static final int VEIL = 27;
     public static final int SLASHBAND = 28;
-    public static final int COUNT = 29;
+    public static final int PLUME = 29;
+    public static final int RUNE = 30;
+    public static final int SHEATH = 31;
+    public static final int COUNT = 32;
 
     private EphemeraSprites() {
     }
 
     /** 横向半张一个周期（滚动纹理取 [x, x + 0.5] 这一段无缝），u 可以按 0.5 整段平移 */
     public static boolean periodic(int id) {
-        return id == FLOW_0 || id == FLOW_1 || id == FLOW_2 || id == VEIL || id == BAND || id == HAZE;
+        return id == FLOW_0 || id == FLOW_1 || id == FLOW_2 || id == VEIL || id == BAND || id == HAZE || id == PLUME || id == SHEATH;
     }
 
     // 往里缩半个像素，线性过滤不会采到隔壁格
@@ -134,6 +137,10 @@ public final class EphemeraSprites {
             crystal(alpha);
             return;
         }
+        if (id == PLUME) {
+            plume(alpha);
+            return;
+        }
         int n = CELL;
         for (int j = 0; j < n; j++) {
             for (int i = 0; i < n; i++) {
@@ -208,6 +215,25 @@ public final class EphemeraSprites {
                         double st2 = 0.5 + 0.5 * Math.sin(ph * 5 - v * 9 + Math.cos(ph * 2) * 2);
                         double edge = Math.min(1, Math.min(v / 0.12, (1 - v) / 0.12));
                         a = Math.min(1, (0.55 + 0.45 * st * st + 0.3 * st2 * st2 * st2) * Math.max(0, edge));
+                    }
+                    case RUNE -> {
+                        // 足印：两圈细环加三道短刻，描边外带一层柔光
+                        double x = u - 0.5, y = v - 0.5, rr = Math.hypot(x, y);
+                        double d1 = Math.abs(rr - 0.32), d2 = Math.abs(rr - 0.2), d3 = 1;
+                        for (int k = 0; k < 3; k++) {
+                            double ang = k * Math.PI * 2 / 3 - Math.PI / 2, cx = Math.cos(ang), cy = Math.sin(ang);
+                            d3 = Math.min(d3, segDist(x, y, cx * 0.36, cy * 0.36, cx * 0.46, cy * 0.46));
+                        }
+                        double line = Math.max(Math.max(cl((0.025 - d1) * n + 0.5), cl((0.015 - d2) * n + 0.5)), cl((0.025 - d3) * n + 0.5));
+                        double glow = Math.max(gauss(Math.max(0, Math.min(d1, d3) - 0.025), 0.03), gauss(Math.max(0, d2 - 0.015), 0.03));
+                        a = 1 - (1 - line) * (1 - 0.45 * glow);
+                    }
+                    case SHEATH -> {
+                        // 斜着卷的条纹，横竖都是半张一个周期
+                        double T = Math.PI * 2, U = u * 2, Y = v * 2;
+                        double a1 = 0.5 + 0.5 * Math.sin(T * (3 * U + Y) + 1.3 * Math.sin(T * (2 * U - Y)));
+                        double a2 = 0.5 + 0.5 * Math.sin(T * (7 * U + 2 * Y) + 0.8 * Math.sin(T * (U + Y)));
+                        a = Math.min(1, 0.18 + 0.62 * a1 * a1 + 0.3 * a2 * a2 * a2);
                     }
                     case SLASHBAND -> {
                         double hard = Math.min(1, (v - 0.08) / 0.05), soft = Math.pow(Math.max(0, 1 - v), 1.6);
@@ -291,6 +317,48 @@ public final class EphemeraSprites {
         double dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
         double t = l2 < 1e-9 ? 0 : cl(((px - ax) * dx + (py - ay) * dy) / l2);
         return Math.hypot(px - ax - dx * t, py - ay - dy * t);
+    }
+
+    /** 羽枝：中间一根轴，两侧斜着往翎尖扫的二次曲线，按 128 像素的格子写的坐标；16 像素一根、粗细交替，横向半张一个周期 */
+    private static void plume(float[] alpha) {
+        int n = CELL, segs = 10;
+        double mid = n / 2.0;
+        double[] cx = new double[segs + 1], cy = new double[segs + 1];
+        for (int k = -4; k < 12; k++) {
+            double x0 = k * 16 + 4, lw = (k & 1) != 0 ? 3 : 5;
+            for (int sg = -1; sg <= 1; sg += 2) {
+                for (int s = 0; s <= segs; s++) {
+                    double t = (double) s / segs, it = 1 - t;
+                    cx[s] = it * it * x0 + 2 * it * t * (x0 + 6) + t * t * (x0 + 34);
+                    cy[s] = it * it * mid + 2 * it * t * (mid + sg * 32) + t * t * (mid + sg * 56);
+                }
+                double gx = 34, gy = sg * 56, g2 = gx * gx + gy * gy;
+                int i0 = Math.max(0, (int) x0 - 4), i1 = Math.min(n - 1, (int) x0 + 40);
+                for (int j = 0; j < n; j++) {
+                    for (int i = i0; i <= i1; i++) {
+                        double px = i + 0.5, py = j + 0.5, best = 1e9;
+                        for (int s = 1; s <= segs; s++) {
+                            best = Math.min(best, segDist(px, py, cx[s - 1], cy[s - 1], cx[s], cy[s]));
+                        }
+                        double cov = cl(lw / 2 - best + 0.5);
+                        if (cov <= 0) {
+                            continue;
+                        }
+                        double f = cl(((px - x0) * gx + (py - mid) * gy) / g2);
+                        double ga = f < 0.6 ? 0.95 - 0.55 * f / 0.6 : 0.4 * (1 - (f - 0.6) / 0.4);
+                        int o = j * n + i;
+                        alpha[o] = clamp(1 - (1 - alpha[o]) * (1 - cov * ga));
+                    }
+                }
+            }
+        }
+        for (int j = 0; j < n; j++) {
+            double py = j + 0.5, b = cl(1 - Math.abs(py - mid) / 10);
+            for (int i = 0; i < n; i++) {
+                int o = j * n + i;
+                alpha[o] = clamp(1 - (1 - alpha[o]) * (1 - b));
+            }
+        }
     }
 
     /** 晶体：硬边多边形，斜向渐变，白描边 + 中线 */

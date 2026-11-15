@@ -12,11 +12,13 @@ import pers.roinflam.kuvalich.client.ephemera.EphemeraStaging;
 import pers.roinflam.kuvalich.client.ephemera.EphemeraStyle;
 import pers.roinflam.kuvalich.client.ephemera.EphemeraStyles;
 import pers.roinflam.kuvalich.client.ephemera.EphemeraTier;
+import pers.roinflam.kuvalich.client.ephemera.CoilStyle;
 import pers.roinflam.kuvalich.client.ephemera.OrbitStyle;
 import pers.roinflam.kuvalich.client.ephemera.PlumeStyle;
 import pers.roinflam.kuvalich.client.ephemera.SurgeStyle;
+import pers.roinflam.kuvalich.client.ephemera.VortexStyle;
+import pers.roinflam.kuvalich.client.ephemera.WingStyle;
 import pers.roinflam.kuvalich.ephemera.EphemeraLook;
-import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -231,13 +233,16 @@ public final class EphemeraStyleTests {
         return r;
     }
 
-    private static final String[] TYPES = {"surge", "orbit", "plume"};
+    private static final String[] TYPES = {"surge", "orbit", "plume", "wing", "coil", "vortex"};
 
     private static Supplier<EphemeraStyle> fresh(String type) {
         return switch (type) {
             case "surge" -> SurgeStyle::new;
             case "orbit" -> OrbitStyle::new;
-            default -> PlumeStyle::new;
+            case "plume" -> PlumeStyle::new;
+            case "wing" -> WingStyle::new;
+            case "coil" -> CoilStyle::new;
+            default -> VortexStyle::new;
         };
     }
 
@@ -246,9 +251,7 @@ public final class EphemeraStyleTests {
         for (String type : TYPES) {
             h.assertTrue(EphemeraStyles.of(type) != EphemeraStyles.PLACEHOLDER, type + " 应走正式画法");
         }
-        for (EphemeraType other : new EphemeraType[]{EphemeraType.WING, EphemeraType.COIL, EphemeraType.VORTEX}) {
-            h.assertTrue(EphemeraStyles.of(other.id()) == EphemeraStyles.PLACEHOLDER, other.id() + " 还没写画法，应走占位");
-        }
+        h.assertTrue(EphemeraStyles.of("no_such_style") == EphemeraStyles.PLACEHOLDER, "查不到的款式应走占位");
         StringBuilder log = new StringBuilder("幻纹四边形（收敛档，整段脚本最大值，完整 / 精简，底座）：");
         for (String type : TYPES) {
             for (String el : new String[]{"fire", "ice", "electricity", "impact"}) {
@@ -287,13 +290,26 @@ public final class EphemeraStyleTests {
             h.assertTrue(ice.sprites[EphemeraSprites.CRYSTAL], type + " 冰冻应长出冰晶");
             h.assertTrue(zap.sprites[EphemeraSprites.CRACK_0] || zap.sprites[EphemeraSprites.CRACK_1], type + " 电击应有电弧");
             h.assertTrue(!fire.sprites[EphemeraSprites.CRACK_0] && !fire.sprites[EphemeraSprites.CRACK_1], type + " 火焰不该有电弧");
-            if (type.equals("surge")) {
-                h.assertTrue(fire.sprites[EphemeraSprites.TONGUE] && !ice.sprites[EphemeraSprites.TONGUE], "踏涌：火是光舌、冰换成冰晶");
-            } else {
-                h.assertTrue(fire.sprites[EphemeraSprites.FLAME_0] || fire.sprites[EphemeraSprites.FLAME_0 + 1], type + " 火焰应带火舌");
+            switch (type) {
+                case "surge" -> h.assertTrue(fire.sprites[EphemeraSprites.TONGUE] && !ice.sprites[EphemeraSprites.TONGUE], "踏涌：火是光舌、冰换成冰晶");
+                case "orbit", "plume" -> h.assertTrue(fire.sprites[EphemeraSprites.FLAME_0] || fire.sprites[EphemeraSprites.FLAME_0 + 1], type + " 火焰应带火舌");
+                case "wing", "coil" -> h.assertTrue(smoke(fire) && !fire.sprites[EphemeraSprites.CRYSTAL], type + " 火焰应冒烟、不带冰晶");
+                default -> {
+                    h.assertTrue(ice.sprites[EphemeraSprites.FLOW_2] && !fire.sprites[EphemeraSprites.FLOW_2], "踏涡：冰的旋臂换成冰纹");
+                    h.assertTrue(fire.sprites[EphemeraSprites.SHEATH] && fire.sprites[EphemeraSprites.RUNE], "踏涡：应有涡幕和足印");
+                }
             }
         }
         h.succeed();
+    }
+
+    private static boolean smoke(Result r) {
+        for (int k = 0; k < 4; k++) {
+            if (r.sprites[EphemeraSprites.SMOKE_0 + k]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @GameTest(template = "empty", batch = BATCH, timeoutTicks = 200)

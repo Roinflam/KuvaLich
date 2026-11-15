@@ -18,6 +18,9 @@ public final class EphemeraStyles {
         register(EphemeraType.SURGE, new SurgeStyle());
         register(EphemeraType.ORBIT, new OrbitStyle());
         register(EphemeraType.PLUME, new PlumeStyle());
+        register(EphemeraType.WING, new WingStyle());
+        register(EphemeraType.COIL, new CoilStyle());
+        register(EphemeraType.VORTEX, new VortexStyle());
     }
 
     private EphemeraStyles() {
