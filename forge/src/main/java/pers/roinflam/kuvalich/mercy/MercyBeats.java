@@ -128,6 +128,10 @@ public final class MercyBeats {
         // 折翼 250 ms 就蹬地荡起来，开场一下就切进机位：画出来的人站在 2 格外，第一人称的眼睛却在 1.25 格的真实站位上，
         // 正好在它挥过来的右臂里，留着第一人称只会糊一屏肩甲
         lich(MercyVariant.LICH_F, stabs(910, 2490, 3810), fills(950, 2490, 3810), gaps(1450, 1250), 0);
+        // 断膝三方「短—长」，第二段将近两倍：第一刀拔出（+260）、往右一沉（110）、越背侧翻（540）、单膝缓冲到蓄好（170）、
+        //    蓄（70）；第二刀拔出（+240）、扑出去前滚（630）、被攥住手腕僵住（310）、跟上半步（510）、蓄（490）、
+        //    先进一半顿住（200）。110 ms 就蹬地滑铲，切镜放到 80
+        lich(MercyVariant.LICH_G, stabs(1140, 2360, 4740), fills(1180, 2360, 4740), gaps(1150, 2250), 80);
 
         // 落地：绕到身后的两套整身轨道走到头的时刻，服务端这之后才把站位换过去
         //      套路                     刺入  落地
@@ -253,7 +257,8 @@ public final class MercyBeats {
                 fillTick[i] = roundTicks(fill[i]);
             }
             settleTick = fillTick[0];
-            stabCommTick = STAB_COMM_TICK;
+            // 断膝三方第一格在 24 tick 才填满，通讯往后推到它之后；别的套路定案都不晚于 20，照旧
+            stabCommTick = Math.max(STAB_COMM_TICK, settleTick + 1);
             closeupTurnTick = roundTicks(closeup);
             successDeathTick = roundTicks(death);
             successRewardTick = roundTicks(returnLight);

@@ -24,6 +24,8 @@ public enum MercyVariant {
     LICH_E(4, false, "e", 1.10F, Facing.AWAY, 4, -1),
     /** 玄骸：折翼，攥住它挥过来的手腕荡到它右后方，拧着胳膊捅两刀，踩着后腰窜到它右侧，从腋下往上送第三刀 */
     LICH_F(5, false, "f", 1.25F, Facing.TOWARD, 5, -1, -28.0F),
+    /** 玄骸：断膝三方，滑铲到它右后方捅膝窝，按住后腰从背上侧翻过去捅后心，前滚从臂下钻到它右前方，被攥住手腕后两段送进胸口 */
+    LICH_G(6, false, "g", 1.25F, Facing.TOWARD, 6, -1),
     /** 奴仆：抓肩直刺 */
     THRALL_1(8, true, "t1", 1.00F, Facing.TOWARD, -1, 2200),
     /** 奴仆：锁喉背刺 */

@@ -674,6 +674,11 @@ public final class MercyServer {
         // 落到它右手边
         ROOM.put(MercyVariant.LICH_F, new double[][]{{-50, 2.6, 0.85, 1}, {-95, 2.2, 0.6, 1}, {-127, 1.56, 0, 0},
                 {-123, 0.35, 1.4, 0}, {-90, 1.66, 0, 0}});
+        // 断膝三方：滑铲擦过它右手边、右后方第一刀的站位、越背侧翻升起和最高处（团着身在它后背上方，顶上要三格出头）、
+        // 左后方落地；前滚绕过它身后、钻到右前方的半路、第三刀的站位
+        ROOM.put(MercyVariant.LICH_G, new double[][]{{-60, 1.46, 0, 1}, {-100, 1.49, 0, 1}, {-127, 0.9, 0, 0},
+                {-110, 0.45, 1.3, 1}, {-180, 0.1, 1.67, 1}, {144, 0.63, 0, 0}, {-178, 0.64, 0, 1},
+                {-120, 1.23, 0, 1}, {-79, 1.56, 0, 0}});
     }
 
     private static boolean roomClear(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {

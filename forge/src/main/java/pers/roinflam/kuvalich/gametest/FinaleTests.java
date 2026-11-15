@@ -27,6 +27,7 @@ import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.ephemera.EphemeraItem;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.mercy.MercyServer;
+import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.nemesis.Finale;
 import pers.roinflam.kuvalich.nemesis.FinaleSettlement;
 import pers.roinflam.kuvalich.nemesis.Inbox;
@@ -522,6 +523,8 @@ public final class FinaleTests {
         h.runAfterDelay(2, () -> {
             MercyCoreTests.setCards(card, 3);
             lich.forceDowned(p);
+            // 下面按正面直刺的定案 tick 等 20；断膝三方要到 24
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             h.runAfterDelay(20, () -> {
                 h.assertTrue(PlayerLedger.hasFinale(p) && !card.hasLich(), "tick 17 已定案、账上有一条");

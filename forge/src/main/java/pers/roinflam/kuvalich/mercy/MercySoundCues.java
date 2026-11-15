@@ -87,6 +87,10 @@ public final class MercySoundCues {
         foley(MercyVariant.LICH_F, f(Layer.GRAB, 0, -700, 1, false), f(Layer.LEAP, 0, -660, 1, false),
                 f(Layer.LAND, 0, -240, 1, false), f(Layer.GRAB, 0, 820, 2, false), f(Layer.LEAP, 1, 330, 3, false),
                 f(Layer.LEAP, 1, 440, 3, false), f(Layer.LAND, 1, 800, 3, false));
+        // 断膝三方：蹬地滑铲、刹住踩实；按住后腰、蹬地侧翻、落地；扑出去前滚、滚完起身、被攥住手腕
+        foley(MercyVariant.LICH_G, f(Layer.LEAP, 0, -930, 1, false), f(Layer.LAND, 0, -360, 1, false),
+                f(Layer.GRAB, 0, 440, 2, false), f(Layer.LEAP, 0, 470, 2, false), f(Layer.LAND, 0, 910, 2, false),
+                f(Layer.LEAP, 1, 440, 3, false), f(Layer.LAND, 1, 740, 3, false), f(Layer.GRAB, 1, 940, 3, false));
         // 奴仆：抓肩直刺 揪肩、拽直、拔刀推开
         foley(MercyVariant.THRALL_1, f(Layer.GRAB, 0, -620, 1, false), f(Layer.GRAB, 0, -340, 1, false),
                 f(Layer.GRAB, 0, 540, 1, false));

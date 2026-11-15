@@ -63,6 +63,7 @@ public final class MercyCameraPath {
         PATHS[MercyVariant.LICH_D.ordinal()] = lichD();
         PATHS[MercyVariant.LICH_E.ordinal()] = lichE();
         PATHS[MercyVariant.LICH_F.ordinal()] = lichF();
+        PATHS[MercyVariant.LICH_G.ordinal()] = lichG();
     }
 
     private MercyCameraPath() {
@@ -266,6 +267,44 @@ public final class MercyCameraPath {
                         k(s3 + 250, 0.25F, 10.5F, 1.82F, 1.5F, 0.4F),
                         k(s3 + 1000, 0.04F, 7.0F, 1.3F, 0.0F, 0.4F),
                         k(end + 300, 0.0F, 6.0F, 1.1F, 0.0F, 0.4F))
+        };
+    }
+
+    /**
+     * 断膝三方，本套机位在它身后偏左。滑铲那一段从它左后方看（再往左绕 40°），刹住时绕回来，第一刀从它身后看刀扎进膝窝；
+     * 一拔刀就往它右后方绕、升起来，侧翻那一圈差不多正对镜头；第二刀刺入猛推，从它右后方看刀平着进后心，画面歪 1.5°；
+     * 前滚时转回正后方、降下来看滚的侧面，攥腕那段再升一点；第三刀刺入猛推，之后跟着它侧倒慢慢退出来。
+     * 前后一共只绕九十度，每秒不过 75°（候选第二刀在 −227，这边收到 −215，再往后绕就超速）
+     */
+    private static Seg[] lichG() {
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_G);
+        int in = b.cutIn;
+        int s1 = b.stab(0);
+        int s2 = b.stab(1);
+        int s3 = b.stab(2);
+        int end = b.closeup;
+        return new Seg[]{
+                seg(in, false,
+                        k(in, 0.0F, 39.0F, 0.0F, 0.0F, 0.4F),
+                        k(s1 - 740, 0.02F, 41.0F, 0.0F, 0.0F, 0.4F),
+                        k(s1 - 60, 0.05F, 7.0F, 0.0F, 0.0F, 0.4F),
+                        k(s1 + 20, 0.08F, 7.0F, 0.0F, 0.0F, 0.4F),
+                        k(s1 + 620, 0.04F, -24.0F, 0.45F, 0.0F, 0.4F),
+                        k(s2 - 60, 0.10F, -50.0F, 0.1F, 0.0F, 0.4F),
+                        k(s2 + 200, 0.11F, -50.0F, 0.1F, 0.0F, 0.4F)),
+                seg(s2, true,
+                        k(s2, 0.24F, -50.0F, 0.1F, 1.5F, 0.4F),
+                        k(s2 + 220, 0.22F, -50.0F, 0.1F, 1.5F, 0.4F),
+                        k(s2 + 800, 0.02F, -23.0F, 0.0F, 0.0F, 0.4F),
+                        k(s2 + 1180, 0.04F, -15.0F, 0.2F, 0.0F, 0.4F),
+                        k(s3 - 650, 0.08F, -11.0F, 0.25F, 0.0F, 0.4F),
+                        k(s3 - 140, 0.12F, -11.0F, 0.25F, 0.0F, 0.4F),
+                        k(s3 + 200, 0.12F, -11.0F, 0.25F, 0.0F, 0.4F)),
+                seg(s3, true,
+                        k(s3, 0.30F, -11.0F, 0.25F, 1.5F, 0.4F),
+                        k(s3 + 250, 0.28F, -11.0F, 0.25F, 1.5F, 0.4F),
+                        k(s3 + 1000, 0.06F, -9.0F, 0.3F, 0.0F, 0.4F),
+                        k(end + 300, 0.0F, -8.0F, 0.3F, 0.0F, 0.4F))
         };
     }
 

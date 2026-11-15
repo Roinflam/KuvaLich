@@ -25,7 +25,8 @@ public final class MercyCameraPathTests {
     private static final MercyVariant D = MercyVariant.LICH_D;
     private static final MercyVariant E = MercyVariant.LICH_E;
     private static final MercyVariant F = MercyVariant.LICH_F;
-    private static final MercyVariant[] PLANNED = {A, B, C, D, E, F};
+    private static final MercyVariant G = MercyVariant.LICH_G;
+    private static final MercyVariant[] PLANNED = {A, B, C, D, E, F, G};
 
     private MercyCameraPathTests() {
     }
@@ -270,6 +271,35 @@ public final class MercyCameraPathTests {
         h.assertTrue(cock[o] < lift[o] - 10.0F && cock[r] < lift[r] - 0.5F, "第三刀前应当绕回来压低：" + cock[o] + " / " + cock[r]);
         h.assertTrue(third[d] - cock[d] > 0.05F, "第三刀刺入应当猛推：" + third[d]);
         h.assertTrue(MercyCameraPath.lookDrop(F) == 0.0F, "折翼不挪注视点");
+        h.succeed();
+    }
+
+    /**
+     * 断膝三方：滑铲时在左边多绕一截，第一刀前绕回来；一拔刀就往它右后方绕、侧翻最高处升起来；第二刀刺入猛推、带一点滚；
+     * 前滚时转回正后方、降下来；第三刀刺入再猛推
+     */
+    @GameTest(template = "empty")
+    public static void lichGThreeFramings(GameTestHelper h) {
+        MercyBeats.Lich b = MercyBeats.lich(G);
+        int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
+        int d = MercyCameraPath.DOLLY, o = MercyCameraPath.ORBIT, r = MercyCameraPath.RISE;
+        int roll = MercyCameraPath.ROLL;
+        float[] slide = at(G, 3, Motion.FULL, s1 - 620);
+        float[] first = at(G, 3, Motion.FULL, s1);
+        float[] vault = at(G, 3, Motion.FULL, s1 + 620);
+        float[] beforeCut = at(G, 3, Motion.FULL, s2 - 1);
+        float[] second = at(G, 3, Motion.FULL, s2);
+        float[] rolled = at(G, 3, Motion.FULL, s2 + 800);
+        float[] cock = at(G, 3, Motion.FULL, s3 - 1);
+        float[] third = at(G, 3, Motion.FULL, s3);
+        h.assertTrue(slide[o] > 30.0F && first[o] < slide[o] - 25.0F, "滑铲时应当多绕、第一刀前绕回来：" + slide[o] + " / " + first[o]);
+        h.assertTrue(vault[o] < first[o] - 20.0F && vault[r] > 0.3F, "侧翻时应当往它右后方绕、升起来：" + vault[o] + " / " + vault[r]);
+        h.assertTrue(beforeCut[o] < vault[o] - 20.0F, "第二刀前应当绕到它右后方：" + beforeCut[o]);
+        h.assertTrue(second[d] - beforeCut[d] > 0.05F && second[roll] > 1.0F,
+                "第二刀刺入应当猛推、带一点滚：" + second[d] + " / " + second[roll]);
+        h.assertTrue(rolled[o] > second[o] + 25.0F && rolled[r] < 0.1F, "前滚时应当转回正后方、降下来：" + rolled[o] + " / " + rolled[r]);
+        h.assertTrue(third[d] - cock[d] > 0.05F, "第三刀刺入应当猛推：" + third[d]);
+        h.assertTrue(MercyCameraPath.lookDrop(G) == 0.0F, "断膝三方不挪注视点");
         h.succeed();
     }
 

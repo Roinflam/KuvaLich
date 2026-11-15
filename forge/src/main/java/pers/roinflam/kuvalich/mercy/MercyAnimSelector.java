@@ -118,9 +118,9 @@ public final class MercyAnimSelector {
     private static final RawAnimation L_BREAKFREE_C0 = hold(LICH_C_BREAKFREE_RAISED);
 
     private static final MercyVariant[] LICH_VARIANTS = {MercyVariant.LICH_A, MercyVariant.LICH_B, MercyVariant.LICH_C,
-            MercyVariant.LICH_D, MercyVariant.LICH_E, MercyVariant.LICH_F};
+            MercyVariant.LICH_D, MercyVariant.LICH_E, MercyVariant.LICH_F, MercyVariant.LICH_G};
     /** 起手有自己一段被抓的套路（片段 {@code mercy.lich.<套路>.grab}，挣脱接 {@code <套路>.breakfree0}）；贴身上挑另算 */
-    private static final Set<MercyVariant> OWN_GRAB = EnumSet.of(MercyVariant.LICH_F);
+    private static final Set<MercyVariant> OWN_GRAB = EnumSet.of(MercyVariant.LICH_F, MercyVariant.LICH_G);
     private static final MercyVariant[] THRALL_VARIANTS = {MercyVariant.THRALL_1, MercyVariant.THRALL_2,
             MercyVariant.THRALL_3, MercyVariant.THRALL_4, MercyVariant.THRALL_5};
     private static final int LICH_N = LICH_VARIANTS.length;

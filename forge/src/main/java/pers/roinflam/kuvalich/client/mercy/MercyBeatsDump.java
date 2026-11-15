@@ -123,7 +123,7 @@ public final class MercyBeatsDump {
                 out.append("camera ").append(mo).append('\n');
                 for (int t = 0; t <= end; t += STEP_MS) {
                     MercyCamera.Shot shot = MercyCamera.plannedShot(p, handback, t);
-                    if (shot.ordinal() < MercyCamera.Shot.A.ordinal() || shot.ordinal() > MercyCamera.Shot.F.ordinal()
+                    if (shot.ordinal() < MercyCamera.Shot.A.ordinal() || shot.ordinal() > MercyCamera.Shot.G.ordinal()
                             || !MercyCameraPath.sample(p.variant(), last, mo, t, t, m)) {
                         continue;
                     }

@@ -265,6 +265,40 @@ public final class MercyTests {
         h.succeed();
     }
 
+    /**
+     * 断膝三方「短—长」：第一刀后越背侧翻，第二段要装下前滚、攥腕僵持、跟半步和两段送，将近第一段两倍；
+     * 开场滑铲那一段玄骸自己有一段 grab，长到第一刀；hit1 / hit2 片段长度跟刀间隔走
+     */
+    @GameTest(template = "empty")
+    public static void lichGClipsFollowBeats(GameTestHelper h) {
+        com.google.gson.JsonObject anims;
+        try (java.io.InputStream in = MercyTests.class.getResourceAsStream(
+                "/assets/" + Reference.MOD_ID + "/animations/kuva_mercy.animation.json")) {
+            h.assertTrue(in != null, "找不到 kuva_mercy.animation.json");
+            anims = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in,
+                    java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonObject("animations");
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_G);
+        int g1 = b.stab(1) - b.stab(0), g2 = b.stab(2) - b.stab(1);
+        h.assertTrue(g2 > g1 * 3 / 2 && g1 > 1000, "断膝三方应当第二段比第一段长得多：" + g1 + " / " + g2);
+        h.assertTrue(b.cutIn < 110, "断膝三方 110 ms 蹬地滑铲，切镜要在那之前：" + b.cutIn);
+        int gg = Math.round(anims.getAsJsonObject("mercy.lich.g.grab").get("animation_length").getAsFloat() * 1000.0F);
+        h.assertTrue(Math.abs(gg - b.stab(0)) <= 1, "mercy.lich.g.grab 长 " + gg + " ms，第一刀在 " + b.stab(0) + " ms");
+        int[] gaps = {g1, g2};
+        for (int k = 1; k <= 2; k++) {
+            String name = "mercy.lich.g.hit" + k;
+            h.assertTrue(anims.has(name), "缺片段 " + name);
+            int len = Math.round(anims.getAsJsonObject(name).get("animation_length").getAsFloat() * 1000.0F);
+            h.assertTrue(Math.abs(len - gaps[k - 1]) <= 1, name + " 长 " + len + " ms，刀间隔是 " + gaps[k - 1] + " ms");
+        }
+        for (String c : new String[]{"hit3", "hit3f", "breakfree0", "breakfree1", "breakfree2", "breakfree3"}) {
+            h.assertTrue(anims.has("mercy.lich.g." + c), "缺片段 mercy.lich.g." + c);
+        }
+        h.succeed();
+    }
+
     private static void near(GameTestHelper h, String what, int ticks, int ms) {
         int d = ticks * MercyBeats.TICK_MS - ms;
         h.assertTrue(Math.abs(d) <= MercyBeats.TICK_MS / 2, what + "：服务端 " + ticks + " tick，客户端 " + ms + " ms");
