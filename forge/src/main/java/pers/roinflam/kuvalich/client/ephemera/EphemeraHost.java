@@ -53,6 +53,11 @@ public interface EphemeraHost {
 
     boolean onGround();
 
+    /** 脚下地面的高度；着地时就是脚底，腾空时往下找几格，找不到给 NaN */
+    default double groundY() {
+        return onGround() ? y() : Double.NaN;
+    }
+
     boolean riding();
 
     /** 挥砍动画进度 0~1，没在挥是 0 */

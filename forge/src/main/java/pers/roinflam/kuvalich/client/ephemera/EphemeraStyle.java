@@ -11,4 +11,9 @@ public interface EphemeraStyle {
 
     /** 缩放为 1 时往包围盒外最远铺开几格，视锥裁剪按它放大包围盒（粒子、拖尾都要算进去） */
     float extent();
+
+    /** 画完以后由渲染器按物品上的渐变方式统一换顶点色（画法里只用主色） */
+    default boolean postGradient() {
+        return false;
+    }
 }

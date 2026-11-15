@@ -32,7 +32,8 @@ import java.util.List;
  *   <li>{@code /kuvafxc ephemera self [款式] [元素]}：自己挂上（服务端下一次同步会盖掉）；</li>
  *   <li>{@code /kuvafxc ephemera clear}：清空整张表；</li>
  *   <li>{@code /kuvafxc ephemera stats [reset]}：最近 120 帧的渲染耗时、画了几个、几个四边形；</li>
- *   <li>{@code /kuvafxc ephemera view first|back|front}：切视角（截图用）。</li>
+ *   <li>{@code /kuvafxc ephemera view first|back|front}：切视角（截图用）；</li>
+ *   <li>{@code /kuvafxc ephemera tier calm|full}：临时切到全开档对比，calm 回默认。</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)
@@ -69,6 +70,9 @@ public final class EphemeraDevCommands {
                     ctx.getSource().sendSuccess(() -> Component.literal("ephemera table cleared"), false);
                     return 1;
                 }))
+                .then(Commands.literal("tier")
+                        .then(Commands.literal("calm").executes(ctx -> tier(ctx, null)))
+                        .then(Commands.literal("full").executes(ctx -> tier(ctx, EphemeraTier.FULL_OPEN))))
                 .then(Commands.literal("view")
                         .then(Commands.literal("first").executes(ctx -> view(ctx, CameraType.FIRST_PERSON)))
                         .then(Commands.literal("back").executes(ctx -> view(ctx, CameraType.THIRD_PERSON_BACK)))
@@ -84,6 +88,12 @@ public final class EphemeraDevCommands {
                             ctx.getSource().sendSuccess(() -> Component.literal("ephemera stats reset"), false);
                             return 1;
                         })))));
+    }
+
+    private static int tier(CommandContext<CommandSourceStack> ctx, EphemeraTier tier) {
+        EphemeraRenderer.tierOverride = tier;
+        ctx.getSource().sendSuccess(() -> Component.literal("ephemera tier " + (tier == null ? "calm" : "full")), false);
+        return 1;
     }
 
     private static int view(CommandContext<CommandSourceStack> ctx, CameraType type) {

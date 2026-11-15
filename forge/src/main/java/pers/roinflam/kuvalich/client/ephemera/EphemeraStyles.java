@@ -14,6 +14,12 @@ public final class EphemeraStyles {
 
     private static final Map<String, EphemeraStyle> BY_ID = new HashMap<>();
 
+    static {
+        register(EphemeraType.SURGE, new SurgeStyle());
+        register(EphemeraType.ORBIT, new OrbitStyle());
+        register(EphemeraType.PLUME, new PlumeStyle());
+    }
+
     private EphemeraStyles() {
     }
 

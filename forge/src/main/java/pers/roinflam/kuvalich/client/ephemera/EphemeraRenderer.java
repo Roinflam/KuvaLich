@@ -5,6 +5,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.platform.NativeImage;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.client.Camera;
@@ -12,7 +14,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -50,6 +55,8 @@ import java.util.Arrays;
 public final class EphemeraRenderer {
 
     private static final float NEAR_FADE = 1.2F;
+    // 第三人称镜头离人 4 格，跑起来甩在身后的拖尾、羽翼的尾迹会直扫到镜头跟前铺满半屏，离镜头这么近的一律淡掉
+    private static final float NEAR_FADE_THIRD = 2.5F;
     private static final float SNEAK_ALPHA = 0.3F;
     /** 太久没画到的状态丢掉 */
     private static final long STALE_MS = 3000L;
@@ -79,6 +86,16 @@ public final class EphemeraRenderer {
     private static RenderType typeAdd;
     private static RenderType typeTranslucent;
 
+    private static final ResourceLocation ATLAS = new ResourceLocation(Reference.MOD_ID, "ephemera_atlas");
+    private static boolean atlasReady;
+    private static int[] sortIdx = new int[256];
+    private static float[] sortKey = new float[256];
+    private static float[] sortP = new float[256 * 12];
+    private static int[] sortC = new int[256 * 4];
+    private static float[] sortU = new float[256 * 8];
+    /** 开发命令临时切到全开档对比用；null = 照默认收敛档 */
+    static EphemeraTier tierOverride;
+
     private EphemeraRenderer() {
     }
 
@@ -99,6 +116,7 @@ public final class EphemeraRenderer {
             lastQuads = 0;
             return;
         }
+        ensureAtlas(mc);
         long t0 = System.nanoTime();
         Camera camera = event.getCamera();
         Vec3 cam = camera.getPosition();
@@ -165,10 +183,10 @@ public final class EphemeraRenderer {
         d.upY = up.y();
         d.upZ = up.z();
         d.timeMs = now;
-        d.tier = EphemeraTier.CONVERGED;
+        d.tier = tierOverride != null ? tierOverride : EphemeraTier.CONVERGED;
         d.emitScale = EffectsDisplayConfig.intensity().budgetScale;
         float daylight = (mc.level.getSkyDarken(pt) - 0.2F) / 0.8F;
-        boolean additive = EffectsDisplayConfig.additiveGlow() && KuvaParticleShaders.geometry() != null;
+        boolean additive = EffectsDisplayConfig.additiveGlow() && KuvaParticleShaders.additive() != null;
 
         STAGING.clearFrame();
         STAGING.additiveAllowed = additive;
@@ -194,12 +212,16 @@ public final class EphemeraRenderer {
             d.firstPersonSelf = self && firstPerson;
             BlockPos at = le.blockPosition();
             d.glowAlpha = EphemeraTier.glowAlpha(daylight, mc.level.getBiome(at).value().coldEnoughToSnow(at));
-            STAGING.nearFade = d.firstPersonSelf ? NEAR_FADE : 0.0F;
+            STAGING.nearFade = d.firstPersonSelf ? NEAR_FADE : NEAR_FADE_THIRD;
             float dist = (float) Math.sqrt(candDist[idx]);
             float farFade = Math.min(1.0F, Math.max(0.0F, ((float) maxDist - dist) / 4.0F));
             STAGING.alphaMul = farFade * (le.isCrouching() ? SNEAK_ALPHA : 1.0F);
             try {
                 inst.style.draw(inst, host, d);
+                if (inst.style.postGradient()) {
+                    STAGING.gradePending(look.gradient(), look.color1(), look.color2(), (float) (host.x() - cam.x),
+                            (float) (host.z() - cam.z), (now % 600_000L) / 1000.0F);
+                }
             } catch (RuntimeException ex) {
                 STAGING.discardPending();
                 if (!failedOnce) {
@@ -235,6 +257,7 @@ public final class EphemeraRenderer {
         mv.setIdentity();
         RenderSystem.applyModelViewMatrix();
         try {
+            sortBackToFront(trans);
             flush(buffers, typeTranslucent(), trans, m);
             if (additive) {
                 flush(buffers, typeAdd(), add, m);
@@ -253,13 +276,74 @@ public final class EphemeraRenderer {
         VertexConsumer vc = buffers.getBuffer(type);
         float[] p = l.positions();
         int[] c = l.colors();
+        float[] uv = l.uvs();
         for (int v = 0, verts = quads * 4; v < verts; v++) {
             int argb = c[v];
             vc.vertex(m, p[v * 3], p[v * 3 + 1], p[v * 3 + 2])
+                    .uv(uv[v * 2], uv[v * 2 + 1])
                     .color((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, argb >>> 24)
+                    .uv2(0xF000F0)
                     .endVertex();
         }
         buffers.endBatch(type);
+    }
+
+    /** 半透明那批按四边形中心离相机由远到近重排（坐标已经减过相机），近处的暗托底不会被远处的盖住 */
+    private static void sortBackToFront(EphemeraStaging.Layer l) {
+        int n = l.quads();
+        if (n < 2) {
+            return;
+        }
+        if (sortIdx.length < n) {
+            sortIdx = new int[n * 2];
+            sortKey = new float[n * 2];
+        }
+        float[] p = l.positions();
+        for (int i = 0; i < n; i++) {
+            int o = i * 12;
+            float x = p[o] + p[o + 3] + p[o + 6] + p[o + 9], y = p[o + 1] + p[o + 4] + p[o + 7] + p[o + 10];
+            float z = p[o + 2] + p[o + 5] + p[o + 8] + p[o + 11];
+            sortIdx[i] = i;
+            sortKey[i] = x * x + y * y + z * z;
+        }
+        final float[] key = sortKey;
+        IntArrays.quickSort(sortIdx, 0, n, (a, b) -> Float.compare(key[b], key[a]));
+        if (sortP.length < n * 12) {
+            sortP = new float[n * 24];
+            sortC = new int[n * 8];
+            sortU = new float[n * 16];
+        }
+        float[] np = sortP;
+        int[] nc = sortC;
+        float[] nu = sortU;
+        int[] c = l.colors();
+        float[] uv = l.uvs();
+        for (int k = 0; k < n; k++) {
+            int i = sortIdx[k];
+            System.arraycopy(p, i * 12, np, k * 12, 12);
+            System.arraycopy(c, i * 4, nc, k * 4, 4);
+            System.arraycopy(uv, i * 8, nu, k * 8, 8);
+        }
+        System.arraycopy(np, 0, p, 0, n * 12);
+        System.arraycopy(nc, 0, c, 0, n * 4);
+        System.arraycopy(nu, 0, uv, 0, n * 8);
+    }
+
+    private static void ensureAtlas(Minecraft mc) {
+        if (atlasReady) {
+            return;
+        }
+        atlasReady = true;
+        int[] px = EphemeraSprites.generate();
+        NativeImage img = new NativeImage(EphemeraSprites.ATLAS, EphemeraSprites.ATLAS, false);
+        for (int y = 0; y < EphemeraSprites.ATLAS; y++) {
+            for (int x = 0; x < EphemeraSprites.ATLAS; x++) {
+                int c = px[y * EphemeraSprites.ATLAS + x];
+                // NativeImage 按 ABGR 存
+                img.setPixelRGBA(x, y, (c & 0xFF00FF00) | ((c & 0xFF) << 16) | ((c >> 16) & 0xFF));
+            }
+        }
+        mc.getTextureManager().register(ATLAS, new DynamicTexture(img));
     }
 
     private static void grow() {
@@ -357,21 +441,30 @@ public final class EphemeraRenderer {
         }
 
         static RenderType createAdditive() {
-            return RenderType.create("kuvalich_ephemera_add", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS,
+            return RenderType.create("kuvalich_ephemera_add", DefaultVertexFormat.PARTICLE, VertexFormat.Mode.QUADS,
                     8192, false, false,
                     CompositeState.builder()
-                            .setShaderState(new ShaderStateShard(KuvaParticleShaders::geometry))
+                            .setShaderState(new ShaderStateShard(() -> orParticle(KuvaParticleShaders.additive())))
+                            .setTextureState(new TextureStateShard(ATLAS, true, false))
+                            .setLightmapState(LIGHTMAP)
                             .setTransparencyState(LIGHTNING_TRANSPARENCY)
                             .setWriteMaskState(COLOR_WRITE)
                             .setCullState(NO_CULL)
                             .createCompositeState(false));
         }
 
+        /** 自己的着色器没建成（资源出错、光影包接管）时退回原版粒子着色器，低透明度的边会被切掉，但不至于画不出来 */
+        private static ShaderInstance orParticle(ShaderInstance s) {
+            return s != null ? s : GameRenderer.getParticleShader();
+        }
+
         static RenderType createTranslucent() {
-            return RenderType.create("kuvalich_ephemera_translucent", DefaultVertexFormat.POSITION_COLOR,
+            return RenderType.create("kuvalich_ephemera_translucent", DefaultVertexFormat.PARTICLE,
                     VertexFormat.Mode.QUADS, 8192, false, false,
                     CompositeState.builder()
-                            .setShaderState(new ShaderStateShard(GameRenderer::getPositionColorShader))
+                            .setShaderState(new ShaderStateShard(() -> orParticle(KuvaParticleShaders.soft())))
+                            .setTextureState(new TextureStateShard(ATLAS, true, false))
+                            .setLightmapState(LIGHTMAP)
                             .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                             .setWriteMaskState(COLOR_WRITE)
                             .setCullState(NO_CULL)

@@ -1,7 +1,11 @@
 package pers.roinflam.kuvalich.client.ephemera;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /** 把一个活物包成宿主；渲染器每帧复用同一个，绑到哪只就读哪只 */
 public final class EntityHost implements EphemeraHost {
@@ -10,6 +14,7 @@ public final class EntityHost implements EphemeraHost {
     private float pt;
     private boolean self;
     private double x, y, z;
+    private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
     public EntityHost bind(LivingEntity entity, float partialTick, boolean isSelf) {
         this.e = entity;
@@ -85,6 +90,27 @@ public final class EntityHost implements EphemeraHost {
     @Override
     public boolean onGround() {
         return e.onGround();
+    }
+
+    @Override
+    public double groundY() {
+        if (e.onGround()) {
+            return y;
+        }
+        // 只看脚底那一列方块，6 格以内没有能站的就当悬空
+        Level level = e.level();
+        int top = Mth.floor(y);
+        for (int dy = 0; dy <= 6; dy++) {
+            cursor.set(Mth.floor(x), top - dy, Mth.floor(z));
+            VoxelShape shape = level.getBlockState(cursor).getCollisionShape(level, cursor);
+            if (!shape.isEmpty()) {
+                double h = cursor.getY() + shape.max(Direction.Axis.Y);
+                if (h <= y + 1.0E-3D) {
+                    return h;
+                }
+            }
+        }
+        return Double.NaN;
     }
 
     @Override
