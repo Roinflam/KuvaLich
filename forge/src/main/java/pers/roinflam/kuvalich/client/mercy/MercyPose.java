@@ -881,11 +881,12 @@ public final class MercyPose {
     // ==================== 整身轨道 ====================
 
     /**
-     * 踏背下刺：蹲在它后背上的位置（它弯着腰，后背最高处在身体中心往前约 0.4 格、离地 1.8 格上下）；
+     * 踏背下刺：蹲在它后背上的位置。它折着腰，肩胛那一块在身体中心往前约 0.85 格、离地 1.6 格，再往后背就塌下去了
+     * （中心往前 0.4 格只有 1.4 格高，站在那儿脚底下悬空）；
      * 闪到正面后的站距：人现身之前它已经直起身跪着（同正面直刺第二刀，往后挫了半格），出刀那一下离它中心
      * 1.0 格：它跪着时大腿往前伸，再近手臂会插进大腿里
      */
-    private static final float E_BACK_DIST = -1.5F, E_BACK_UP = 1.75F, E_FRONT_DIST = 0.3F;
+    private static final float E_BACK_DIST = -1.95F, E_BACK_UP = 1.62F, E_FRONT_DIST = 0.3F;
 
     /** 蹬开目标往后空翻一圈，落在站位外 {@code land} 格（上半身是贴身上挑、踏背下刺第三刀后那几帧） */
     private static void hop(List<Key> b, int s, float near, float base, float land) {
@@ -1015,7 +1016,7 @@ public final class MercyPose {
 
     /**
      * 踏背下刺新写法的脚下：第一刀只压重心，拔刀后往下蹲 0.16 格，蹬地往前上方窜、前空翻一圈（320 ms，最高离地
-     * {@code E_BACK_UP + 0.75}），落在它后背上往下一沉卸力。化光那段人不画，趁这时候挪到正面、翻转归零。
+     * {@code E_BACK_UP + 0.65}），落在它后背上往下一沉卸力。化光那段人不画，趁这时候挪到正面、翻转归零。
      * 空翻这几帧都用 CURVE，挨着别的模式的帧速度按 0 接，翻到一半会停一下
      */
     private static List<Key> bodyE2(MercyBeats.Lich beats) {
@@ -1027,7 +1028,7 @@ public final class MercyPose {
         b.add(k(s1 + 380, CURVE, m().dist(-0.02F).up(0).flip(0)));
         b.add(k(s1 + 460, CURVE, m().dist(0.04F).up(-0.16F)));
         b.add(k(s1 + 540, CURVE, m().dist(-0.3F).up(0.35F).flip(20)));
-        b.add(k(s1 + 700, CURVE, m().dist(-0.95F).up(E_BACK_UP + 0.75F).flip(190)));
+        b.add(k(s1 + 700, CURVE, m().dist(-1.2F).up(E_BACK_UP + 0.65F).flip(190)));
         b.add(k(s2 - 240, CURVE, m().dist(E_BACK_DIST).up(E_BACK_UP).flip(360)));
         b.add(k(s2 - 180, CURVE, m().up(E_BACK_UP - 0.12F)));
         b.add(k(s2 - 70, CURVE, m().up(E_BACK_UP + 0.02F)));

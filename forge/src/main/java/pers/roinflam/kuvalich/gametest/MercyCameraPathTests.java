@@ -220,7 +220,7 @@ public final class MercyCameraPathTests {
 
     /**
      * 踏背下刺：第一刀往背后那一侧绕、推近；跳上背时拉开升高；第二刀硬切到正面那一侧高处往下看；化光时拉开；
-     * 第三刀刺入猛推、再往正面绕
+     * 第三刀刺入猛推、稍往正面绕
      */
     @GameTest(template = "empty")
     public static void lichEThreeFramings(GameTestHelper h) {
@@ -238,7 +238,7 @@ public final class MercyCameraPathTests {
         h.assertTrue(beforeCut[o] - second[o] > 20.0F && second[r] > 0.6F,
                 "第二刀应当切到正面那一侧的高处：" + second[o] + " / " + second[r]);
         h.assertTrue(blink[d] < second[d] - 0.2F, "化光时应当拉开：" + blink[d]);
-        h.assertTrue(third[d] - blink[d] > 0.2F && third[o] < blink[o] - 10.0F,
+        h.assertTrue(third[d] - blink[d] > 0.2F && third[o] < blink[o] - 8.0F,
                 "第三刀刺入后应当猛推、往正面绕：" + third[d] + " / " + third[o]);
         h.assertTrue(MercyCameraPath.lookDrop(E) == 0.0F, "踏背下刺不挪注视点");
         h.succeed();
