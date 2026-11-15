@@ -254,8 +254,6 @@ public final class MercyChoiceHud {
         int innerGap = Math.max(2, p * 3);
         int ch = padV + titleH + innerGap + hintH + padV;
         int y0 = Math.round(ph * CARD_TOP);
-        int lx0 = mid - gapHalf - cw, lx1 = mid - gapHalf;
-        int rx0 = mid + gapHalf, rx1 = mid + gapHalf + cw;
 
         String keyL = mc().options.keyLeft.getTranslatedKeyMessage().getString();
         String keyR = mc().options.keyRight.getTranslatedKeyMessage().getString();
@@ -263,6 +261,20 @@ public final class MercyChoiceHud {
         String mouseR = Component.translatable("key.mouse.right").getString();
         Component hintL = Component.translatable("gui.kuvalich.mercy_choice.hold", keyL + " / " + mouseL);
         Component hintR = Component.translatable("gui.kuvalich.mercy_choice.hold", keyR + " / " + mouseR);
+
+        // 窗口矮时字号不跟着缩（汉字至少 2 倍），按窗高算的牌宽会装不下按键提示，说明里的词也会被拆到下一行。
+        // 牌宽至少放下标题、按键提示和说明最长的一行，两边各留 4p，最宽到屏宽的 3 成
+        int need = Math.max(font.width(convertTitle), font.width(vanquishTitle)) * pt;
+        need = Math.max(need, Math.max(font.width(hintL), font.width(hintR)) * p);
+        String descL = Component.translatable(v.allowConvert
+                ? "gui.kuvalich.mercy_choice.convert.desc" : "gui.kuvalich.mercy_choice.disabled").getString();
+        String descR = Component.translatable("gui.kuvalich.mercy_choice.vanquish.desc").getString();
+        for (String line : (descL + "\n" + descR).split("\n")) {
+            need = Math.max(need, font.width(line) * p);
+        }
+        cw = Math.max(cw, Math.min(need + 8 * p, Math.round(pw * 0.3F)));
+        int lx0 = mid - gapHalf - cw, lx1 = mid - gapHalf;
+        int rx0 = mid + gapHalf, rx1 = mid + gapHalf + cw;
 
         g.pose().pushPose();
         g.pose().scale(1.0F / gs, 1.0F / gs, 1.0F);
