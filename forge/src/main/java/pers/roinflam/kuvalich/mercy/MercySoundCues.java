@@ -144,11 +144,13 @@ public final class MercySoundCues {
             Layer stab = heavy ? Layer.STAB_FINAL : (n == 1 ? Layer.STAB_1 : Layer.STAB_2);
             float k = heavy ? 1.0F : (n == 1 ? 0.0F : 0.5F);
             out.add(new Cue(Layer.SWING, s, lerp(0.7F, 1.0F, k), heavy ? 0.94F : 1.0F, i, false));
-            out.add(new Cue(stab, s, n == 1 && !result ? 0.6F : 0.85F, 1.0F, i, true));
-            out.add(new Cue(Layer.PIERCE, s, lerp(0.7F, 0.95F, k), 1.0F, i, true));
-            out.add(new Cue(Layer.THUD, s, lerp(0.6F, 1.0F, k), heavy ? 0.88F : 1.0F, i, true));
+            // 出结果那一刀四五层同时起，录下来判错那刀碰到过 0 dBFS，重的这几层整体收 2～3 dB
+            out.add(new Cue(stab, s, n == 1 && !result ? 0.6F : (heavy ? 0.7F : 0.85F), 1.0F, i, true));
+            out.add(new Cue(Layer.PIERCE, s, heavy ? 0.78F : lerp(0.7F, 0.95F, k), 1.0F, i, true));
+            out.add(new Cue(Layer.THUD, s, heavy ? 0.85F : lerp(0.6F, 1.0F, k), heavy ? 0.88F : 1.0F, i, true));
             if (heavy) {
-                out.add(new Cue(r == Result.FAIL ? Layer.TAIL_WRONG : Layer.TAIL, s, 0.9F, 1.0F, i, true));
+                out.add(new Cue(r == Result.FAIL ? Layer.TAIL_WRONG : Layer.TAIL, s, r == Result.FAIL ? 0.6F : 0.75F,
+                        1.0F, i, true));
             }
         }
         if (r == Result.FAIL) {
