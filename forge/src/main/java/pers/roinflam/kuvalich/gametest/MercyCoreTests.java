@@ -588,6 +588,41 @@ public final class MercyCoreTests {
         h.succeed();
     }
 
+    // 当场存盘要读盘上的文件才测得到，内存里序列化一遍再读回不算
+    @GameTest(template = "empty", batch = CORE)
+    public static void logoutInboxReachesDisk(GameTestHelper h) {
+        MinecraftServer server = h.getLevel().getServer();
+        ServerPlayer p = KuvaTestKit.player(h);
+        fillWithDirt(p);
+        RequiemWeaponTableMenu menu = new RequiemWeaponTableMenu(1, p.getInventory(), h.getLevel(), p.blockPosition());
+        menu.weaponHandler.setStackInSlot(0, new ItemStack(KuvaLichItems.KUVA_SHILDEG.get()));
+        p.containerMenu = menu;
+        RequiemMenuLogoutGuard.beforeRemove(p);
+        h.assertTrue(inboxOnDisk(server, p) == 1, "进了待领取应当当场存盘：" + inboxOnDisk(server, p));
+
+        // 走一遍真的移除流程
+        ServerPlayer q = KuvaTestKit.player(h);
+        fillWithDirt(q);
+        RequiemWeaponTableMenu qm = new RequiemWeaponTableMenu(2, q.getInventory(), h.getLevel(), q.blockPosition());
+        qm.weaponHandler.setStackInSlot(0, new ItemStack(KuvaLichItems.KUVA_SHILDEG.get()));
+        qm.setCarried(new ItemStack(KuvaLichItems.getRequiemCard(3)));
+        q.containerMenu = qm;
+        AABB around = q.getBoundingBox().inflate(4.0D);
+        server.getPlayerList().remove(q);
+        List<ItemEntity> dropped = h.getLevel().getEntitiesOfClass(ItemEntity.class, around, e -> !e.getItem().is(Items.DIRT));
+        dropped.forEach(ItemEntity::discard);
+        h.assertTrue(dropped.isEmpty(), "真下线时槽位和光标上的也不扔地上：" + dropped.size());
+        h.assertTrue(PlayerLedger.inboxCount(q) == 2 && inboxOnDisk(server, q) == 2,
+                "武器和卡都在待领取里，盘上也是：" + PlayerLedger.inboxCount(q) + " / " + inboxOnDisk(server, q));
+        h.succeed();
+    }
+
+    private static int inboxOnDisk(MinecraftServer server, ServerPlayer p) {
+        ServerPlayer again = new ServerPlayer(server, p.serverLevel(), p.getGameProfile());
+        server.getPlayerList().load(again);
+        return PlayerLedger.inboxCount(again);
+    }
+
     private static void fillWithDirt(ServerPlayer p) {
         for (int i = 0; i < 36; i++) {
             p.getInventory().setItem(i, new ItemStack(Items.DIRT, 64));

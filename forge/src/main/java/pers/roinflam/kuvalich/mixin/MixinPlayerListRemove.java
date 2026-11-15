@@ -20,8 +20,11 @@ public abstract class MixinPlayerListRemove {
         // 这里抛出去整个移除就断了，人会一直挂在在线名单里
         try {
             RequiemMenuLogoutGuard.beforeRemove(player);
-        } catch (RuntimeException | LinkageError e) {
-            LogUtil.error("下线前关闭 " + player.getGameProfile().getName() + " 的安魂界面出错", e);
+        } catch (Throwable t) {
+            if (t instanceof VirtualMachineError vm) {
+                throw vm;
+            }
+            LogUtil.error("下线前关闭 " + player.getGameProfile().getName() + " 的安魂界面出错", t);
         }
     }
 }

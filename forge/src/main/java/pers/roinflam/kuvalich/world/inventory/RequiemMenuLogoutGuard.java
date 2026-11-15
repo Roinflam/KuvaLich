@@ -109,33 +109,39 @@ public final class RequiemMenuLogoutGuard {
 
     private static void returnCarriedAndClose(ServerPlayer player) {
         boolean alive = player.isAlive();
-        inboxedOnLogout = false;
-        ItemStack carried = player.containerMenu.getCarried();
-        if (!carried.isEmpty()) {
-            player.containerMenu.setCarried(ItemStack.EMPTY);
-            if (alive) {
-                stowOrInbox(player, carried);
-            } else {
-                InventoryUtil.giveOrDrop(player, carried);
-            }
-        }
+        // 关界面途中别的模组可能当场让另一个人下线，两个标记都要能嵌套
         ServerPlayer outer = closingOnLogout;
-        closingOnLogout = alive ? player : null;
+        boolean outerInboxed = inboxedOnLogout;
+        inboxedOnLogout = false;
         try {
+            ItemStack carried = player.containerMenu.getCarried();
+            if (!carried.isEmpty()) {
+                if (!alive) {
+                    player.containerMenu.setCarried(ItemStack.EMPTY);
+                    InventoryUtil.giveOrDrop(player, carried);
+                } else if (stowOrInbox(player, carried)) {
+                    // 安置好了才清光标：没安置成的留在光标上，后面关界面时还会扔出来，不至于凭空没了
+                    player.containerMenu.setCarried(ItemStack.EMPTY);
+                }
+            }
+            closingOnLogout = alive ? player : null;
             player.doCloseContainer();
         } finally {
+            boolean inboxed = inboxedOnLogout;
             closingOnLogout = outer;
-        }
-        if (inboxedOnLogout) {
-            inboxedOnLogout = false;
-            FinaleSettlement.saveNow(player);
+            inboxedOnLogout = outerInboxed;
+            if (inboxed) {
+                FinaleSettlement.saveNow(player);
+            }
         }
     }
 
     /**
-     * 先叠同种、再放空格，剩下的进待领取：人已经走了，扔在地上没人捡，过几分钟就消失。处理完 {@code stack} 是空的
+     * 先叠同种、再放空格，剩下的进待领取：人已经走了，扔在地上没人捡，过几分钟就消失。
+     *
+     * @return 东西有了去处（背包、待领取或地上）；false 是连扔都扔不出去，还在 {@code stack} 里
      */
-    private static void stowOrInbox(ServerPlayer player, ItemStack stack) {
+    private static boolean stowOrInbox(ServerPlayer player, ItemStack stack) {
         Inventory inv = player.getInventory();
         try {
             while (!stack.isEmpty()) {
@@ -166,21 +172,27 @@ public final class RequiemMenuLogoutGuard {
         }
         inv.setChanged();
         if (stack.isEmpty()) {
-            return;
+            return true;
         }
         // 序列化会跑到物品自己的代码，可能抛；先做完再写待领取，写进去之后就不会再走扔地上那条，不会两边各一份
         ListTag tags;
         try {
             tags = PlayerLedger.writeItems(List.of(stack));
-        } catch (RuntimeException e) {
-            LogUtil.error("下线时 " + player.getGameProfile().getName() + " 的 " + stack + " 写不进待领取，改为扔在原地", e);
-            player.drop(stack.copy(), false);
-            stack.setCount(0);
-            return;
+        } catch (RuntimeException | LinkageError e) {
+            LogUtil.error("下线时 " + player.getGameProfile().getName() + " 的物品写不进待领取，改为扔在原地", e);
+            try {
+                // 扔原件：序列化都抛了，拷一份多半也抛
+                player.drop(stack, false);
+                return true;
+            } catch (RuntimeException | LinkageError e2) {
+                LogUtil.error("下线时 " + player.getGameProfile().getName() + " 的物品也扔不出去", e2);
+                return false;
+            }
         }
         PlayerLedger.appendToInbox(player, tags);
         stack.setCount(0);
         inboxedOnLogout = true;
+        return true;
     }
 
     static boolean isRequiemMenu(AbstractContainerMenu menu) {
