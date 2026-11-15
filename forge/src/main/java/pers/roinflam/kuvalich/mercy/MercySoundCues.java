@@ -3,8 +3,10 @@ package pers.roinflam.kuvalich.mercy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 处决声音叠层的时刻表。每一刀 = 挥刀（刀风 + 衣甲）+ 原有的刀声 + 刺入（肉 + 金属）+ 低频闷响，出结果那一刀加尾音；
@@ -119,6 +121,10 @@ public final class MercySoundCues {
         return new Foley(l, anchor, offset, need, successOnly);
     }
 
+    /** 判错那刀各层再收 2 dB 的几套；后加的套路录音时是按不收调的音量，别加进来 */
+    private static final Set<MercyVariant> FAIL_QUIETER = EnumSet.of(MercyVariant.LICH_B, MercyVariant.LICH_C,
+            MercyVariant.LICH_D, MercyVariant.LICH_E);
+
     private static void foley(MercyVariant v, Foley... f) {
         FOLEY.put(v, List.of(f));
     }
@@ -166,8 +172,8 @@ public final class MercySoundCues {
                         1.0F, i, true));
             }
         }
-        if (r == Result.FAIL && v != MercyVariant.LICH_A) {
-            // 另四套判错那刀前后叠着落地、揪抓声或台词，录下来还是顶到 0 dBFS，再收 2 dB；正面直刺那刀前后是空的，不动
+        if (r == Result.FAIL && FAIL_QUIETER.contains(v)) {
+            // 这四套判错那刀前后叠着落地、揪抓声或台词，录下来还是顶到 0 dBFS，再收 2 dB；正面直刺那刀前后是空的，不动
             out.replaceAll(c -> c.stab() == last - 1 ? new Cue(c.layer(), c.ms(), c.vol() * 0.8F, c.pitch(), c.stab(),
                     c.impact()) : c);
         }
