@@ -253,16 +253,24 @@ public final class MercyCamera {
 
     /**
      * 跪地特写这一段不画目标手里的武器：特写只能放在目标持武器的那一侧（另一侧被它搭在膝上的胳膊挡着），
-     * 各把武器长短不一，长柄的会横在镜头前、占掉小半个画面。切镜头的那一下看不出少了东西，第三人称收尾时照常画
+     * 各把武器长短不一，长柄的会横在镜头前、占掉小半个画面。切镜头的那一下看不出少了东西，第三人称收尾时照常画。
+     * 断膝三方整场都不画：它攥腕、侧倒时右手一直贴着处决者，刀会横穿过他的身子；特写本来就藏着，接着藏到交还
      */
     public static boolean hidesTargetWeapon(int entityId) {
         MercyClient.Exec e = MercyClient.local();
         if (e != null && e.targetId == entityId && !e.handedBack && shotAt(e, e.elapsed()) == Shot.CLOSEUP) {
             return true;
         }
-        // 折翼整场攥着它拿武器的那只手腕，武器跟着胳膊甩会横穿处决者；判错、挣开藏到切宽镜头，成功藏到交还（旁观者也一样）
+        // 断膝三方和折翼按目标查，旁观者看到的也一样
         MercyClient.Exec f = MercyClient.byTarget(entityId);
-        if (f == null || f.variant != MercyVariant.LICH_F || f.handedBack) {
+        if (f == null || f.handedBack) {
+            return false;
+        }
+        if (f.variant == MercyVariant.LICH_G) {
+            return true;
+        }
+        // 折翼整场攥着它拿武器的那只手腕，武器跟着胳膊甩会横穿处决者；判错、挣开藏到切宽镜头，成功藏到交还
+        if (f.variant != MercyVariant.LICH_F) {
             return false;
         }
         MercyTimeline.Outcome oc = MercyTimeline.outcome(f.plan);

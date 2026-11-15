@@ -535,6 +535,8 @@ public final class MercyTests {
         h.runAfterDelay(2, () -> {
             setCards(card, 3);
             lich.forceDowned(p);
+            // 按正面直刺的定案 tick 等 20；断膝三方要到 24
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             AABB area = settleArea(lich, p);
             clearItems(h, area);
@@ -569,6 +571,8 @@ public final class MercyTests {
             int progress = card.getDecryptionProgress();
             int stage = card.getUnlockedCardStatus();
             lich.forceDowned(p);
+            // 按正面直刺的定案 tick 等 20；断膝三方要到 24
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             h.runAfterDelay(20, () -> {
                 h.assertTrue(lich.getMercyState() == MercyState.EXECUTING, "tick 20 还在处决中");
@@ -901,6 +905,8 @@ public final class MercyTests {
         h.runAfterDelay(2, () -> {
             setCards(card, 3);
             lich.forceDowned(p);
+            // 按正面直刺的定案 tick 等 20；断膝三方要到 24
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             AABB area = settleArea(lich, p);
             clearItems(h, area);
