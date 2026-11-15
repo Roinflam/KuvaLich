@@ -458,8 +458,10 @@ public final class MercyPose {
                 k(s2 + 400, CURVE, p().tw(28).ln(23).sq(0.2F).r(NA, NA, -48).hd(6, -5)),
                 k(s2 + 500, CURVE, p().tw(25).ln(21).r(NA, NA, -36)),
                 k(s2 + 580, IN, p().tw(-14).ln(8).sq(0.15F).sh(0.5F).r(100, -18, 0).aim(0.3F).pull(3).reach(4).hd(-2, 0)),
-                // 第三刀：甩上头顶，顶在那儿再往后拉，猛扎下去
-                k(s3 - 280, OVER, p().tw(-32).ln(1).sq(0.3F).sh(-1).r(152, -12, 0).aim(0).pull(1).hd(-6, 0)),
+                // 第三刀：甩上头顶，顶在那儿再往后拧紧一点，猛扎下去。第二、三刀间隔改长以后甩上去和顶住分成两帧，
+                // 不然一个 OVER 拖 400 多毫秒，甩的那一下就软了
+                k(s3 - 420, OVER, p().tw(-28).ln(2).sq(0.25F).sh(-0.8F).r(148, -11, 0).aim(0).pull(1).hd(-5, 0)),
+                k(s3 - 280, CURVE, p().tw(-33).ln(1).sq(0.32F).sh(-1.1F).r(155, -12, 0).aim(0).pull(1.6F).hd(-6, 0)),
                 k(s3, ANTIC, p().tw(26).ln(30).sq(0.15F).sh(4).r(80, 8, 0).aim(1).pull(-1).reach(7).legs(-26, 28)
                         .hd(8, 0)),
                 k(s3 + 90, CURVE, p().tw(30).ln(33).sq(0.3F).sh(4.5F).hd(10, 0))));
@@ -867,6 +869,8 @@ public final class MercyPose {
         b.add(k(s2 - 20, DECEL, m().dist(-0.3F).up(-0.04F)));
         b.add(k(s2, CURVE, m().dist(-0.34F).up(-0.06F)));
         b.add(k(s2 + 400, CURVE, m().dist(-0.33F).up(-0.03F)));
+        // 刀举过头顶时重心往后、人往上提一点，扎下去再一起压
+        b.add(k(s3 - 300, CURVE, m().dist(-0.28F).up(0.015F)));
         b.add(k(s3 - 120, CURVE, m().dist(-0.29F).up(0)));
         b.add(k(s3, IN, m().dist(-0.45F).up(-0.06F)));
         b.add(k(s3 + 90, CURVE, m().dist(-0.5F)));

@@ -47,6 +47,7 @@ import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
 import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.mercy.MercyState;
+import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.PlayerLedger;
 import pers.roinflam.kuvalich.nemesis.LichTraits;
@@ -313,27 +314,31 @@ public final class MercyCoreTests {
         bornByProgress(p, card);
         KuvaMasterEntity lich = summonFront(h, p);
         p.setGameMode(GameType.CREATIVE);
+        // 各套第三刀时刻不同，死亡 / 发奖的 tick 按套路从节拍表取；钉在正面直刺上
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
+        int death = b.successDeathTick, reward = b.successRewardTick;
         h.runAfterDelay(2, () -> {
             setCards(card, 3);
             lich.forceDowned(p);
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             AABB area = new AABB(lich.blockPosition()).inflate(12.0D);
             clearItems(h, area);
-            h.runAfterDelay(150, () -> {
-                h.assertTrue(lich.isAlive(), "tick 150 还活着");
-                h.assertTrue(itemsIn(h, area) == 0, "tick 150 还不该有掉落物：" + itemNames(h, area));
-                h.assertTrue(reliquaries(p) == 0 && PlayerLedger.hasFinale(p), "tick 150 奖励还在账上、没发");
+            h.runAfterDelay(death - 1, () -> {
+                h.assertTrue(lich.isAlive(), "tick " + (death - 1) + " 还活着");
+                h.assertTrue(itemsIn(h, area) == 0, "死之前还不该有掉落物：" + itemNames(h, area));
+                h.assertTrue(reliquaries(p) == 0 && PlayerLedger.hasFinale(p), "死之前奖励还在账上、没发");
             });
-            h.runAfterDelay(151, () -> {
-                h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()), "tick 151 应当死了（走原版死亡流程）");
-                h.assertTrue(MercyServer.isBusy(p), "tick 151 处决者还锁着");
+            h.runAfterDelay(death, () -> {
+                h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()), "tick " + death + " 应当死了（走原版死亡流程）");
+                h.assertTrue(MercyServer.isBusy(p), "tick " + death + " 处决者还锁着");
             });
-            h.runAfterDelay(155, () -> {
-                h.assertTrue(reliquaries(p) == 1 && !PlayerLedger.hasFinale(p), "tick 155 奖励应当落定、进了背包");
+            h.runAfterDelay(reward, () -> {
+                h.assertTrue(reliquaries(p) == 1 && !PlayerLedger.hasFinale(p), "tick " + reward + " 奖励应当落定、进了背包");
                 h.assertTrue(itemsIn(h, area) == 0, "奖励不该掉在地上：" + itemNames(h, area));
             });
-            h.runAfterDelay(180, () -> h.assertTrue(!lich.isRemoved(), "死后 32 tick 内实体还在（留给消散演出）"));
-            h.runAfterDelay(185, () -> {
+            h.runAfterDelay(death + 29, () -> h.assertTrue(!lich.isRemoved(), "死后 32 tick 内实体还在（留给消散演出）"));
+            h.runAfterDelay(death + 34, () -> {
                 h.assertTrue(lich.isRemoved(), "死后 32 tick 应当已经移除");
                 h.succeed();
             });

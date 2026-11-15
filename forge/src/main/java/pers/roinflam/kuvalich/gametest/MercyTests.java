@@ -211,6 +211,31 @@ public final class MercyTests {
         h.succeed();
     }
 
+    /** 正面直刺「短—长」，玄骸的 hit1 / hit2 片段长度跟刀间隔走（动画文件是脚本生成的，改表忘了重新生成就会对不上） */
+    @GameTest(template = "empty")
+    public static void lichAHitClipsFollowBeats(GameTestHelper h) {
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
+        int gap1 = b.stab(1) - b.stab(0), gap2 = b.stab(2) - b.stab(1);
+        h.assertTrue(gap1 < gap2, "正面直刺应当第二刀紧跟、第三刀前留蓄力：" + gap1 + " / " + gap2);
+        com.google.gson.JsonObject anims;
+        try (java.io.InputStream in = MercyTests.class.getResourceAsStream(
+                "/assets/" + Reference.MOD_ID + "/animations/kuva_mercy.animation.json")) {
+            h.assertTrue(in != null, "找不到 kuva_mercy.animation.json");
+            anims = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in,
+                    java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonObject("animations");
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+        int[] gaps = {gap1, gap2};
+        for (int k = 1; k <= 2; k++) {
+            String name = "mercy.lich.a.hit" + k;
+            h.assertTrue(anims.has(name), "缺片段 " + name);
+            int len = Math.round(anims.getAsJsonObject(name).get("animation_length").getAsFloat() * 1000.0F);
+            h.assertTrue(Math.abs(len - gaps[k - 1]) <= 1, name + " 长 " + len + " ms，刀间隔是 " + gaps[k - 1] + " ms");
+        }
+        h.succeed();
+    }
+
     private static void near(GameTestHelper h, String what, int ticks, int ms) {
         int d = ticks * MercyBeats.TICK_MS - ms;
         h.assertTrue(Math.abs(d) <= MercyBeats.TICK_MS / 2, what + "：服务端 " + ticks + " tick，客户端 " + ms + " ms");
