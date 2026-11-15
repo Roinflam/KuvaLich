@@ -5,7 +5,9 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -19,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.event.TickEvent;
@@ -55,7 +58,8 @@ import pers.roinflam.kuvalich.utils.Reference;
  *
  * <p>{@code mercy_camera_motion} 不是静态档时，排过轨迹的套路在本套机位上叠 {@link MercyCameraPath} 的推拉、绕、升降、
  * 滚转，注视点跟着处决者的整身位移走；轨迹各段的两头和中点切进来时查一遍遮挡，有一处过不了整段退回固定机位。
- * 从玩家视角进机位改成 250 ms 推出去，失败和挣开站起切宽镜头改成 350 ms 移过去（中点查过才这样走，否则照旧硬切）；
+ * 从玩家视角进机位改成 250 ms 推出去（排过轨迹的套路是 300 ms 绕注视点的弧线），失败和挣开站起切宽镜头改成 350 ms
+ * 移过去（路上被方块挡住时照旧硬切）；
  * 刀点上的切换、换到另一侧的特写和第三人称照旧硬切。静态档和没有这一层时逐帧一样。</p>
  *
  * <p>{@code mercy_camera} 关着时不接管位置，开始时切到原版第三人称背后视角、交还时切回；界面、压混音、声音照常。
@@ -169,6 +173,10 @@ public final class MercyCamera {
     private static final double SIGHT_SKIP = 0.3D;
     /** 镜头离目标中轴至少这么远（按目标宽度的倍数）：再近就钻进它张开的胳膊、盔甲里了 */
     private static final double TARGET_CLEAR = 0.75D;
+    /** 弧线进机位时起点的注视点至少在眼前多远 */
+    private static final double ENTRY_LOOK_REACH = 3.0D;
+    /** 进机位时镜头离处决者头的球心不到这么远就不画他的头（不然满屏是从里面看的脸） */
+    private static final double ENTRY_HIDE_HEAD = EXEC_HEAD_R + 0.15D;
     /** 挡住时绕注视点往外侧转的角度，依次试 */
     private static final double[] SWING_DEG = {0.0D, 15.0D, 30.0D, 45.0D, 60.0D};
 
@@ -200,6 +208,12 @@ public final class MercyCamera {
     // 这一帧给 Mixin 的结果（只在渲染线程用，不分配）
     private static double outX, outY, outZ;
     private static float outYaw, outPitch;
+    /** 这一帧在走弧线进机位 */
+    private static boolean arcEntryFrame;
+    /** 这一帧藏了处决者的头，画完放回去 */
+    @Nullable
+    private static PlayerModel<AbstractClientPlayer> hiddenHead;
+    private static boolean hatWasVisible;
 
     /**
      * 开发命令 {@code /kuvafxc mercyorbit} 摆的固定机位：绕目标转的角度（0 = 处决者那一侧，90 = 侧面）、离目标多远、
@@ -367,21 +381,38 @@ public final class MercyCamera {
                 }
             }
         }
-        if (!clearOfBodies(e, pos, look)) {
+        if (!clearOfBodies(e, pos, look, executorAt(e, s))) {
             return null;
         }
         return s != Shot.THIRD || executorInView(e, pos) ? new ShotPose(pos, look, fov, true) : null;
     }
 
     /**
-     * 镜头不在目标身体范围里，视线（去掉贴着注视点的一小段）不穿过处决者的头和身子。
-     * 处决者按站位算（整场锁在那里），头往目标那边探出一点（各套路出刀时都前倾）
+     * 查视线时处决者站在哪。宽镜头那时他已经被推开了，注视点就在两人中间、离原站位不到 0.2 格，
+     * 按原站位查视线必定穿过他的身子，宽镜头永远放不下。静态档照旧按原站位（要和改之前一样）
      */
-    private static boolean clearOfBodies(MercyClient.Exec e, Vec3 pos, Vec3 look) {
-        double dx = pos.x - e.pl.x;
-        double dz = pos.z - e.pl.z;
-        double clear = TARGET_CLEAR * e.shots.targetWidth;
-        if (dx * dx + dz * dz < clear * clear && pos.y < e.pl.y + e.shots.targetHeight + 0.3D) {
+    private static Vec3 executorAt(MercyClient.Exec e, Shot s) {
+        if (s == Shot.WIDE && e.shots.motion != MercyCameraPath.Motion.STATIC) {
+            return e.pe.add(e.f.scale(MercyTimeline.pushDistance(e.plan)));
+        }
+        return e.pe;
+    }
+
+    private static boolean clearOfTarget(MercyClient.Exec e, Vec3 pos) {
+        return MercyCameraPath.outsideColumn(pos, e.pl, TARGET_CLEAR * e.shots.targetWidth,
+                e.pl.y + e.shots.targetHeight + 0.3D);
+    }
+
+    private static Vec3 executorHead(Vec3 pe, MercyClient.Exec e) {
+        return pe.add(e.f.scale(EXEC_HEAD_F)).add(0.0D, EXEC_HEAD_U, 0.0D);
+    }
+
+    /**
+     * 镜头不在目标身体范围里，视线（去掉贴着注视点的一小段）不穿过处决者的头和身子。
+     * 处决者一般按站位算（整场锁在那里），头往目标那边探出一点（各套路出刀时都前倾）
+     */
+    private static boolean clearOfBodies(MercyClient.Exec e, Vec3 pos, Vec3 look, Vec3 pe) {
+        if (!clearOfTarget(e, pos)) {
             return false;
         }
         Vec3 dir = pos.subtract(look);
@@ -390,12 +421,11 @@ public final class MercyCamera {
             return false;
         }
         Vec3 from = look.add(dir.scale(SIGHT_SKIP / len));
-        Vec3 head = e.pe.add(e.f.scale(EXEC_HEAD_F)).add(0.0D, EXEC_HEAD_U, 0.0D);
-        if (segmentPointDistance(from, pos, head) < EXEC_HEAD_R) {
+        if (segmentPointDistance(from, pos, executorHead(pe, e)) < EXEC_HEAD_R) {
             return false;
         }
-        return segmentSegmentDistance(from, pos, e.pe.add(0.0D, EXEC_BODY_LO, 0.0D),
-                e.pe.add(0.0D, EXEC_BODY_HI, 0.0D)) >= EXEC_BODY_R;
+        return segmentSegmentDistance(from, pos, pe.add(0.0D, EXEC_BODY_LO, 0.0D),
+                pe.add(0.0D, EXEC_BODY_HI, 0.0D)) >= EXEC_BODY_R;
     }
 
     /**
@@ -566,22 +596,53 @@ public final class MercyCamera {
     /** 从玩家视角推出去进机位走到几成（已缓动）；不在这一段是 −1 */
     private static float entryProgress(MercyClient.Exec e, long t) {
         long since = t - MercyBeats.lich(e.variant).cutIn;
-        if (since < 0L || since >= MercyCameraPath.ENTRY_MS) {
+        boolean arc = entryArc(e);
+        int ms = arc ? MercyCameraPath.ENTRY_ARC_MS : MercyCameraPath.ENTRY_MS;
+        if (since < 0L || since >= ms) {
             return -1.0F;
         }
-        return outCubic(since / (float) MercyCameraPath.ENTRY_MS);
+        return arc ? MercyCameraPath.entryEase(since / (float) ms) : outCubic(since / (float) ms);
     }
 
-    /** 眼睛到机位之间、半路到注视点之间没有方块才推出去，否则照旧硬切 */
-    private static boolean entryOk(MercyClient.Exec e, Vec3 eye, Vec3 pos, Vec3 look) {
+    /** 排过轨迹的套路进机位绕注视点走弧线；别的套路还是直线推出去（等它们排轨迹时一起换） */
+    private static boolean entryArc(MercyClient.Exec e) {
+        return MercyCameraPath.has(e.variant);
+    }
+
+    /**
+     * 路上没有方块才推出去，否则照旧硬切。弧线逐段查方块，离开处决者的头以后各点都要在目标身体范围外；
+     * 直线只查眼睛到机位、半路到注视点
+     */
+    private static boolean entryOk(MercyClient.Exec e, Vec3 eye, Vec3 eyeLook, Vec3 pos, Vec3 look) {
         ShotCache c = e.shots;
         if (c.entryState == 0) {
             c.entryState = 1;
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null && mc.player != null) {
-                Vec3 mid = eye.lerp(pos, 0.5D);
-                if (blocked(mc, eye, pos) || blocked(mc, look, mid)) {
+                if (entryArc(e) && pos.subtract(look).dot(e.s) < 0.0D) {
+                    // 机位换到了目标右手边（贴墙时），弧线要从它举着的武器里穿过去；武器长短各异查不了，照旧硬切
                     c.entryState = -1;
+                } else if (entryArc(e)) {
+                    Vec3 prev = eye;
+                    for (int i = 1; i <= MercyCameraPath.ENTRY_SAMPLES && c.entryState > 0; i++) {
+                        float x = i / (float) MercyCameraPath.ENTRY_SAMPLES;
+                        Vec3 p = MercyCameraPath.entryArc(eye, eyeLook, pos, look, x);
+                        if (blocked(mc, prev, p) || (i == MercyCameraPath.ENTRY_SAMPLES / 2
+                                && blocked(mc, eyeLook.lerp(look, x), p))) {
+                            c.entryState = -1;
+                        }
+                        prev = p;
+                    }
+                    if (c.entryState > 0 && !MercyCameraPath.entryClear(eye, eyeLook, pos, look,
+                            executorHead(e.pe, e), EXEC_HEAD_R, e.pl, TARGET_CLEAR * e.shots.targetWidth,
+                            e.pl.y + e.shots.targetHeight + 0.3D)) {
+                        c.entryState = -1;
+                    }
+                } else {
+                    Vec3 mid = eye.lerp(pos, 0.5D);
+                    if (blocked(mc, eye, pos) || blocked(mc, look, mid)) {
+                        c.entryState = -1;
+                    }
                 }
             }
         }
@@ -614,12 +675,26 @@ public final class MercyCamera {
         return ownMoved(e, o, t, t + 10_000L, false);
     }
 
-    /** 过渡的中点过得了遮挡检测才移过去 */
+    /**
+     * 镜头走的那条线上没有方块、半路的视线没被方块挡、路上几点都不在目标身子里才移过去，否则照旧硬切。
+     * 不查处决者：过渡时他已经被推开，注视点正从两人中间往他那边移，按哪个站位查都会误判
+     */
     private static boolean wideOk(MercyClient.Exec e, ShotPose from, Vec3 pos, Vec3 look) {
         ShotCache c = e.shots;
         if (c.wideState == 0) {
-            c.wideState = check(e, Shot.WIDE, from.pos().lerp(pos, 0.5D), from.look().lerp(look, 0.5D), 70.0F,
-                    false) != null ? (byte) 1 : (byte) -1;
+            c.wideState = 1;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level != null && mc.player != null) {
+                Vec3 mid = from.pos().lerp(pos, 0.5D);
+                if (blocked(mc, from.pos(), pos) || blocked(mc, from.look().lerp(look, 0.5D), mid)) {
+                    c.wideState = -1;
+                }
+            }
+            for (int i = 1; i < 4 && c.wideState > 0; i++) {
+                if (!clearOfTarget(e, from.pos().lerp(pos, i / 4.0D))) {
+                    c.wideState = -1;
+                }
+            }
         }
         return c.wideState > 0;
     }
@@ -699,10 +774,41 @@ public final class MercyCamera {
         if (event.phase != TickEvent.Phase.START) {
             return;
         }
+        showHead();
         MercyClient.Exec e = MercyClient.local();
         if (e != null && !e.handedBack && !e.shots.switched && takesOver(e)
                 && shotAt(e, e.elapsed()) != Shot.GAME) {
             switchToThird(e);
+        }
+    }
+
+    /** 弧线进机位刚起步那几帧镜头还在处决者头里，不画他的头和帽子层 */
+    @SubscribeEvent
+    public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
+        showHead();
+        MercyClient.Exec e = MercyClient.local();
+        if (!arcEntryFrame || e == null || event.getEntity() != Minecraft.getInstance().player
+                || executorHead(e.pe, e).distanceToSqr(outX, outY, outZ) >= ENTRY_HIDE_HEAD * ENTRY_HIDE_HEAD) {
+            return;
+        }
+        PlayerModel<AbstractClientPlayer> m = event.getRenderer().getModel();
+        hatWasVisible = m.hat.visible;
+        m.head.visible = false;
+        m.hat.visible = false;
+        hiddenHead = m;
+    }
+
+    @SubscribeEvent
+    public static void onRenderPlayerPost(RenderPlayerEvent.Post event) {
+        showHead();
+    }
+
+    /** Pre 被别处取消时没有 Post，下一次渲染前也放回去 */
+    private static void showHead() {
+        if (hiddenHead != null) {
+            hiddenHead.head.visible = true;
+            hiddenHead.hat.visible = hatWasVisible;
+            hiddenHead = null;
         }
     }
 
@@ -713,7 +819,11 @@ public final class MercyCamera {
      */
     public static boolean override(Camera camera) {
         MercyClient.Exec e = MercyClient.local();
-        if (e == null || camera != Minecraft.getInstance().gameRenderer.getMainCamera()) {
+        if (camera != Minecraft.getInstance().gameRenderer.getMainCamera()) {
+            return false;
+        }
+        arcEntryFrame = false;
+        if (e == null) {
             return false;
         }
         if (devOrbitDist > 0.0F) {
@@ -767,8 +877,13 @@ public final class MercyCamera {
                     float pt = Minecraft.getInstance().getFrameTime();
                     fromPos = pl != null ? pl.getEyePosition(pt) : pos;
                     Vec3 view = pl != null ? pl.getViewVector(pt) : n;
-                    fromLook = fromPos.add(view.scale(look.distanceTo(fromPos)));
-                    if (entryOk(e, fromPos, pos, look)) {
+                    double reach = look.distanceTo(fromPos);
+                    if (entryArc(e)) {
+                        // 弧线绕注视点转，起点的注视点放远一点，镜头起步时往侧面走得快，早点离开处决者自己的头
+                        reach = Math.max(reach, ENTRY_LOOK_REACH);
+                    }
+                    fromLook = fromPos.add(view.scale(reach));
+                    if (entryOk(e, fromPos, fromLook, pos, look)) {
                         e.shots.roll *= x;
                     } else {
                         x = -1.0F;
@@ -787,7 +902,8 @@ public final class MercyCamera {
                 }
             }
             if (x >= 0.0F && fromPos != null) {
-                pos = fromPos.lerp(pos, x);
+                arcEntryFrame = s != Shot.WIDE && entryArc(e);
+                pos = arcEntryFrame ? MercyCameraPath.entryArc(fromPos, fromLook, pos, look, x) : fromPos.lerp(pos, x);
                 look = fromLook.lerp(look, x);
                 dir = look.subtract(pos);
                 len = dir.length();

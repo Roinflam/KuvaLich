@@ -2,6 +2,8 @@ package pers.roinflam.kuvalich.gametest;
 
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
@@ -56,7 +58,7 @@ public final class MercyCameraPathTests {
     }
 
     /**
-     * 三刀三种景别：第一刀中近景；第二刀那一刻硬切推近、往处决者那边绕；拔刀后拉开升高；第三刀刺入后比蓄力时近得多
+     * 三刀三种景别：第一刀中近景；第二刀那一刻硬切推近、绕到斜后方压低；拔刀后拉开升高；第三刀刺入后比蓄力时近得多
      */
     @GameTest(template = "empty")
     public static void lichAThreeFramings(GameTestHelper h) {
@@ -70,8 +72,9 @@ public final class MercyCameraPathTests {
         int d = MercyCameraPath.DOLLY;
         h.assertTrue(Math.abs(first[d]) < 0.08F, "第一刀应当是中近景，推拉不大：" + first[d]);
         h.assertTrue(second[d] - beforeCut[d] > 0.1F, "第二刀那一刻应当硬切推近：" + beforeCut[d] + " → " + second[d]);
-        h.assertTrue(second[MercyCameraPath.ORBIT] - beforeCut[MercyCameraPath.ORBIT] > 4.0F,
-                "第二刀应当往处决者那边绕：" + second[MercyCameraPath.ORBIT]);
+        h.assertTrue(beforeCut[MercyCameraPath.ORBIT] - second[MercyCameraPath.ORBIT] > 20.0F,
+                "第二刀应当切到玄骸斜后方，看刀尖透背：" + second[MercyCameraPath.ORBIT]);
+        h.assertTrue(second[MercyCameraPath.RISE] < -0.4F, "第二刀应当是低机位往上拍：" + second[MercyCameraPath.RISE]);
         h.assertTrue(windup[d] < second[d] - 0.15F, "第三刀蓄力时应当拉开：" + windup[d]);
         h.assertTrue(windup[MercyCameraPath.RISE] > 0.1F, "蓄力时镜头应当升高，拍到举过头顶的刀");
         h.assertTrue(third[d] - windup[d] > 0.2F, "第三刀刺入后应当猛推近：" + windup[d] + " → " + third[d]);
@@ -100,7 +103,8 @@ public final class MercyCameraPathTests {
     public static void lichAContinuousBetweenCuts(GameTestHelper h) {
         MercyBeats.Lich b = MercyBeats.lich(A);
         int s2 = b.stab(1), s3 = b.stab(2);
-        float[] limit = {0.003F, 0.05F, 0.003F, 0.02F, 0.001F};
+        // 绕的上限 80°/秒：第二、三刀之间要从斜后方绕回侧面
+        float[] limit = {0.003F, 0.08F, 0.003F, 0.02F, 0.001F};
         float[] prev = at(3, Motion.FULL, b.cutIn);
         for (long t = b.cutIn + 1; t < b.closeup; t++) {
             float[] cur = at(3, Motion.FULL, t);
@@ -152,6 +156,60 @@ public final class MercyCameraPathTests {
             }
             h.assertTrue(MercyCameraPath.segment(A, 1, t) == 0, "第一刀出结果时不该切到第二刀的机位");
         }
+        h.succeed();
+    }
+
+    // 正面直刺进机位时的样子（目标脚底在原点，处决者在 +X 1.25 格，侧面机位在 +Z），取自录像里的相机轨迹；
+    // 起点的注视点在眼前 3 格（客户端的 ENTRY_LOOK_REACH）
+    private static final Vec3 EYE = new Vec3(1.25D, 1.62D, 0.0D);
+    private static final Vec3 EYE_LOOK = new Vec3(-1.72D, 1.29D, 0.0D);
+    private static final Vec3 SIDE = new Vec3(0.46D, 1.64D, 2.92D);
+    private static final Vec3 SIDE_LOOK = new Vec3(0.51D, 1.74D, 0.0D);
+    private static final Vec3 HEAD = new Vec3(1.05D, 1.7D, 0.0D);
+
+    private static double heading(float x) {
+        Vec3 p = MercyCameraPath.entryArc(EYE, EYE_LOOK, SIDE, SIDE_LOOK, x);
+        Vec3 l = EYE_LOOK.lerp(SIDE_LOOK, x);
+        return Math.toDegrees(Math.atan2(l.z - p.z, l.x - p.x));
+    }
+
+    /** 进机位的弧线两头对得上，朝向起步慢慢转开，60 帧下哪一帧都不甩 */
+    @GameTest(template = "empty")
+    public static void entryArcEasesTheTurn(GameTestHelper h) {
+        h.assertTrue(MercyCameraPath.entryArc(EYE, EYE_LOOK, SIDE, SIDE_LOOK, 0.0F).distanceTo(EYE) < 1e-6D, "弧线应当从眼睛起步");
+        h.assertTrue(MercyCameraPath.entryArc(EYE, EYE_LOOK, SIDE, SIDE_LOOK, 1.0F).distanceTo(SIDE) < 1e-6D, "弧线应当落在机位上");
+        double frame = 1000.0D / 60.0D;
+        int frames = (int) Math.ceil(MercyCameraPath.ENTRY_ARC_MS / frame);
+        double prev = heading(0.0F);
+        double total = 0.0D;
+        for (int i = 1; i <= frames; i++) {
+            float x = MercyCameraPath.entryEase((float) (i * frame / MercyCameraPath.ENTRY_ARC_MS));
+            double cur = heading(x);
+            double d = Math.abs(Mth.wrapDegrees(cur - prev));
+            h.assertTrue(i > 1 || d < 3.0D, "第一帧只该转一点：" + d);
+            h.assertTrue(d < 12.0D, "第 " + i + " 帧转了 " + d + "°");
+            total += d;
+            prev = cur;
+        }
+        h.assertTrue(total > 80.0D && total < 100.0D, "一共应当转到侧面：" + total);
+        h.succeed();
+    }
+
+    /** 弧线离开处决者的头以后不进目标的身子；同样两头走直线会横穿目标（原来的穿模） */
+    @GameTest(template = "empty")
+    public static void entryArcStaysClearOfTarget(GameTestHelper h) {
+        double r = 0.75D * 1.75D;
+        double top = 3.7D;
+        h.assertTrue(MercyCameraPath.entryClear(EYE, EYE_LOOK, SIDE, SIDE_LOOK, HEAD, 0.42D, Vec3.ZERO, r, top),
+                "弧线应当绕开目标");
+        boolean straightHits = false;
+        for (int i = 1; i < MercyCameraPath.ENTRY_SAMPLES; i++) {
+            Vec3 p = EYE.lerp(SIDE, i / (double) MercyCameraPath.ENTRY_SAMPLES);
+            straightHits |= p.distanceTo(HEAD) > 0.42D && !MercyCameraPath.outsideColumn(p, Vec3.ZERO, r, top);
+        }
+        h.assertTrue(straightHits, "直线应当穿过目标的身子（这条测试的几何没摆对）");
+        h.assertFalse(MercyCameraPath.entryClear(EYE, EYE_LOOK, SIDE, SIDE_LOOK, HEAD, 0.42D, Vec3.ZERO, 2.0D, top),
+                "目标再宽一些时弧线也过不去，应当查出来");
         h.succeed();
     }
 

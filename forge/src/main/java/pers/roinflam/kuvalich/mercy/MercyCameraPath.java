@@ -1,5 +1,7 @@
 package pers.roinflam.kuvalich.mercy;
 
+import net.minecraft.world.phys.Vec3;
+
 /**
  * 处决机位上随时间走的那一层：在本套机位（遮挡检测过的静态位置）上叠推拉、绕、升降、滚转和跟人的比例。
  * 纯数学，客户端的 {@code MercyCamera} 用，GameTest 也能直接测。
@@ -36,6 +38,10 @@ public final class MercyCameraPath {
 
     /** 从玩家视角推出去进机位 */
     public static final int ENTRY_MS = 250;
+    /** 排过轨迹的套路进机位走弧线，转角大（侧面机位要转将近 90°），给长一点 */
+    public static final int ENTRY_ARC_MS = 300;
+    /** 弧线上查遮挡、查身体间隙的点数 */
+    public static final int ENTRY_SAMPLES = 12;
     /** 失败、挣开站起切宽镜头的过渡 */
     public static final int WIDE_BLEND_MS = 350;
     /** 刺入那一下的猛推 */
@@ -58,8 +64,9 @@ public final class MercyCameraPath {
     }
 
     /**
-     * 正面直刺：第一刀侧面中近景、慢慢往里蹭；第二刀切近两成、压低一点往处决者那边绕 10°、画面歪 2°；
-     * 拔刀之后边拉开边升，把举过头顶的刀和抬头看刀的玄骸都放进来；第三刀刺入猛推，之后随处决者蹬开慢慢退出来
+     * 正面直刺：第一刀侧面中近景、慢慢往里蹭；第二刀切到同一侧的斜后方低机位往上拍，看刀尖从玄骸背后透出来，画面歪 1.5°；
+     * 拔刀之后边绕回侧面边拉开升高，把举过头顶的刀和抬头看刀的玄骸都放进来；第三刀刺入猛推，之后随处决者蹬开慢慢退出来。
+     * 第二刀不能从侧面拍：两人贴在一起，刀口在两个身子中间，玄骸往前蜷时它的左肩甲和左臂正好挡在前面，往处决者那边绕多少都挡
      */
     private static Seg[] lichA() {
         MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
@@ -72,9 +79,9 @@ public final class MercyCameraPath {
                         k(in, -0.03F, 0.0F, 0.0F, 0.0F, 0.45F),
                         k(s2 + 400, 0.06F, 4.0F, 0.0F, 0.0F, 0.45F)),
                 seg(s2, false,
-                        k(s2, 0.20F, 10.0F, -0.12F, -2.0F, 0.45F),
-                        k(s2 + 580, 0.24F, 11.5F, -0.12F, -2.0F, 0.45F),
-                        k(s3 - 300, 0.04F, 8.0F, 0.10F, -0.5F, 0.45F),
+                        k(s2, 0.20F, -25.0F, -0.65F, -1.5F, 0.45F),
+                        k(s2 + 400, 0.23F, -23.0F, -0.62F, -1.5F, 0.45F),
+                        k(s3 - 240, 0.02F, 2.0F, 0.10F, -0.3F, 0.45F),
                         k(s3 - 40, -0.04F, 7.0F, 0.16F, 0.0F, 0.45F),
                         k(s3 + 200, -0.06F, 6.8F, 0.17F, 0.0F, 0.45F)),
                 seg(s3, true,
@@ -164,6 +171,59 @@ public final class MercyCameraPath {
             out[RISE] = 0.0F;
             out[ROLL] = 0.0F;
             out[FOLLOW] = 0.0F;
+        }
+        return true;
+    }
+
+    /** 进机位的缓动：两头都慢。起步不能快，注视点离眼睛不到一格，镜头稍一横移朝向就转一大截 */
+    public static float entryEase(float u) {
+        float x = Math.max(0.0F, Math.min(1.0F, u));
+        return (float) (0.5D - 0.5D * Math.cos(Math.PI * x));
+    }
+
+    /**
+     * 进机位弧线上 {@code x}（0~1，已缓动）处的镜头位置：注视点从 {@code fromLook} 直线移到 {@code toLook}，
+     * 镜头相对注视点的偏移按水平角、水平半径、高差分别插值，绕着注视点转过去。
+     * 走直线的话从处决者眼睛到侧面机位正好横穿目标的肩甲和头冠
+     */
+    public static Vec3 entryArc(Vec3 fromPos, Vec3 fromLook, Vec3 toPos, Vec3 toLook, float x) {
+        Vec3 a = fromPos.subtract(fromLook);
+        Vec3 b = toPos.subtract(toLook);
+        double ra = Math.sqrt(a.x * a.x + a.z * a.z);
+        double rb = Math.sqrt(b.x * b.x + b.z * b.z);
+        double ab = Math.atan2(b.z, b.x);
+        double aa = ra < 1.0E-3D ? ab : Math.atan2(a.z, a.x);
+        double d = ab - aa;
+        while (d > Math.PI) {
+            d -= 2.0D * Math.PI;
+        }
+        while (d < -Math.PI) {
+            d += 2.0D * Math.PI;
+        }
+        double ang = aa + d * x;
+        double r = ra + (rb - ra) * x;
+        Vec3 look = fromLook.lerp(toLook, x);
+        return new Vec3(look.x + Math.cos(ang) * r, look.y + a.y + (b.y - a.y) * x, look.z + Math.sin(ang) * r);
+    }
+
+    /** 点在竖直圆柱（轴过 {@code foot}、半径 {@code r}、顶到 {@code top}，底不限）外面 */
+    public static boolean outsideColumn(Vec3 p, Vec3 foot, double r, double top) {
+        double dx = p.x - foot.x;
+        double dz = p.z - foot.z;
+        return dx * dx + dz * dz >= r * r || p.y >= top;
+    }
+
+    /**
+     * 进机位弧线上的各点：离开处决者的头（球心 {@code head}、半径 {@code headR}）以后都要在目标的身体圆柱外面。
+     * 起步那几点本来就在处决者眼睛里，离目标不到一格半，不算
+     */
+    public static boolean entryClear(Vec3 fromPos, Vec3 fromLook, Vec3 toPos, Vec3 toLook, Vec3 head, double headR,
+                                     Vec3 foot, double r, double top) {
+        for (int i = 1; i <= ENTRY_SAMPLES; i++) {
+            Vec3 p = entryArc(fromPos, fromLook, toPos, toLook, i / (float) ENTRY_SAMPLES);
+            if (p.distanceTo(head) > headR && !outsideColumn(p, foot, r, top)) {
+                return false;
+            }
         }
         return true;
     }
