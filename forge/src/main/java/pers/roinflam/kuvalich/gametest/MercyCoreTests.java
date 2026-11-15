@@ -209,6 +209,8 @@ public final class MercyCoreTests {
             int weaponLevel = card.getLichWeaponLevel();
             String weaponType = card.getLichWeaponType();
             lich.forceDowned(p);
+            // 下面按正面直刺的定案 tick（17）查；折翼第一刀晚，要到 19
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             String err = MercyServer.executeNow(p, lich);
             h.assertTrue(err == null, "应当能开始处决：" + err);
             MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
@@ -375,6 +377,7 @@ public final class MercyCoreTests {
             int level = card.getKuvaLevel();
             int attempts = card.getAttempts().length;
             lich.forceDowned(p);
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
             h.assertTrue(plan.stabs() == 3 && plan.prefix() == 0, "没装卡也照三刀判、第一刀错：刀数 " + plan.stabs()
@@ -419,6 +422,7 @@ public final class MercyCoreTests {
             h.assertTrue(card.correctPrefixLength() == 2, "两对一空：前缀应当是 2，实际 " + card.correctPrefixLength());
             int level = card.getKuvaLevel();
             lich.forceDowned(p);
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
             h.assertTrue(plan.stabs() == 3 && plan.prefix() == 2 && plan.cardIds()[2] == -1,
@@ -654,6 +658,7 @@ public final class MercyCoreTests {
             card.setTwoCard(new ItemStack(KuvaLichItems.OULL_CARD.get()));
             p.getInventory().clearContent();
             lich.forceDowned(p);
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
             MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
             h.assertTrue(plan.prefix() == 3 && plan.cardIds()[1] == OULL.ID, "计划位：成功、第二格是 Oull");
@@ -1385,6 +1390,48 @@ public final class MercyCoreTests {
                     .append('@').append(e.blockPosition().toShortString()).append("/age").append(e.getAge());
         }
         return sb.toString();
+    }
+
+    /**
+     * 折翼荡身、踏背都在目标右手边那一侧：空地上能选；头顶只有两格高、右手边贴墙都不选，左手边贴墙照选。
+     * 正面直刺哪里都能演
+     */
+    @GameTest(template = "empty")
+    public static void lichFNeedsRoomOnItsRight(GameTestHelper h) {
+        clearAround(h);
+        BlockPos c = KuvaTestKit.center(h);
+        ServerPlayer p = KuvaTestKit.player(h);
+        ServerLevel level = h.getLevel();
+        Vec3 pl = h.absoluteVec(new Vec3(c.getX() + 0.5D, 0.0D, c.getZ() + 0.5D));
+        // 目标朝 +X 站着，右手边是 +Z
+        Vec3 f = new Vec3(1.0D, 0.0D, 0.0D);
+        MercyVariant v = MercyVariant.LICH_F;
+        h.assertTrue(MercyServer.fits(level, p, pl, f, v), "空地上应当能选折翼");
+        for (int x = c.getX() - 5; x <= c.getX() + 5; x++) {
+            for (int z = c.getZ() - 5; z <= c.getZ() + 5; z++) {
+                h.setBlock(new BlockPos(x, 2, z), Blocks.STONE);
+            }
+        }
+        h.assertFalse(MercyServer.fits(level, p, pl, f, v), "头顶两格时不该选折翼");
+        h.assertTrue(MercyServer.fits(level, p, pl, f, MercyVariant.LICH_A), "头顶两格时正面直刺照样能选");
+        for (int x = c.getX() - 5; x <= c.getX() + 5; x++) {
+            for (int z = c.getZ() - 5; z <= c.getZ() + 5; z++) {
+                h.setBlock(new BlockPos(x, 2, z), Blocks.AIR);
+            }
+        }
+        for (int x = c.getX() - 5; x <= c.getX() + 5; x++) {
+            for (int y = 0; y <= 4; y++) {
+                h.setBlock(new BlockPos(x, y, c.getZ() - 2), Blocks.STONE);
+            }
+        }
+        h.assertTrue(MercyServer.fits(level, p, pl, f, v), "左手边贴墙时折翼照样能选");
+        for (int x = c.getX() - 5; x <= c.getX() + 5; x++) {
+            for (int y = 0; y <= 4; y++) {
+                h.setBlock(new BlockPos(x, y, c.getZ() + 2), Blocks.STONE);
+            }
+        }
+        h.assertFalse(MercyServer.fits(level, p, pl, f, v), "右手边贴墙时不该选折翼");
+        h.succeed();
     }
 
     private static void assertHeight(GameTestHelper h, AbstractKuva e, float expected) {

@@ -271,6 +271,9 @@ public final class MercyClient {
         float targetYaw(long t) {
             MercyVariant.Facing facing = facingAt(plan, t);
             float turn = turnProgress(t);
+            if (turn > 0.0F && variant.faceTurn != 0.0F) {
+                return yawOf(f) + variant.faceTurn * (1.0F - turn);
+            }
             if (turn > 0.0F) {
                 // 背对处决者的套路挣开站起：一边站起来一边转半圈面向他
                 float away = yawOf(f.scale(-1.0D));
@@ -282,7 +285,7 @@ public final class MercyClient {
                 // 侧身朝 −S：处决者在它左手边（和服务端 facingYaw 一致）
                 case SIDE -> s.scale(-1.0D);
             };
-            return yawOf(dir);
+            return yawOf(dir) + faceTurnAt(plan, t);
         }
 
         /** 背对处决者的套路挣开站起时转身转到几成（0~1，easeInOutSine）；别的情况恒为 0 */
@@ -302,10 +305,19 @@ public final class MercyClient {
         return variant.facing;
     }
 
-    /** 背对处决者的套路挣开站起时转身转到几成（0~1，easeInOutSine）；别的情况恒为 0 */
+    /** 偏开一个角度的套路成功切特写以后转正 */
+    static float faceTurnAt(MercyPlan.Plan plan, long t) {
+        MercyVariant variant = plan.variant();
+        if (variant.faceTurn == 0.0F || plan.success() && t >= MercyTimeline.lich(plan).closeup) {
+            return 0.0F;
+        }
+        return variant.faceTurn;
+    }
+
+    /** 不正对处决者的套路挣开站起时转身转到几成（0~1，easeInOutSine）；别的情况恒为 0 */
     static float turnProgress(MercyPlan.Plan plan, long t) {
         MercyVariant variant = plan.variant();
-        if (variant.thrall || variant.facing != MercyVariant.Facing.AWAY
+        if (variant.thrall || !variant.turnsToFace()
                 || MercyTimeline.outcome(plan) != MercyTimeline.Outcome.ADVANCE) {
             return 0.0F;
         }

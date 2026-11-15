@@ -596,7 +596,7 @@ public final class MercyServer {
         Vec3 pe = standPosition(level, player, pl, f, variant.standDist);
         boolean choiceWindow = target instanceof KuvaMasterEntity && plan.success() && convertEnabled();
         Exec e = new Exec(target, player, plan, variant, pl, f, pe, choiceWindow);
-        e.targetYaw = facingYaw(f, variant.facing);
+        e.targetYaw = facingYaw(f, variant.facing) + variant.faceTurn;
         if (variant.relocates()) {
             e.roaming = true;
             e.landing = landingPosition(level, player, pl, f, pe, variant);
@@ -650,14 +650,48 @@ public final class MercyServer {
      * 这一套在这里摆得开：绕背要有一边走得通，落到身后的要身后站得下，翻到正面的要头顶蹲得下人、正面和蹬开后的落点站得下。
      * 基础套路哪里都能演，所以总有得选
      */
-    private static boolean fits(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
+    public static boolean fits(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
         if (v.orbits() && orbitSide(level, player, pl, f, v) == 0) {
             return false;
         }
         if (v.vaultsOver() && !vaultClear(level, player, pl, f, v)) {
             return false;
         }
+        if (!roomClear(level, player, pl, f, v)) {
+            return false;
+        }
         return !v.relocates() || standable(level, player, behind(level, player, pl, f, v));
+    }
+
+    /**
+     * 新三套整身轨道路过的几处：{角度, 离目标多远, 离地多高, 1 = 蹲着的身量 / 0 = 站着}。角度和客户端整身轨道的「绕」一样，
+     * 从站位往 {@code Y × F} 那边量；离地高的那几处连头顶一起查，低顶时不选这一套
+     */
+    private static final Map<MercyVariant, double[][]> ROOM = new EnumMap<>(MercyVariant.class);
+
+    static {
+        // 折翼：荡身最外、荡到它右后方的半路（身子甩平、离地 0.6～0.9 格）、右后方落脚、踩着后腰窜起最高（在它头顶）、
+        // 落到它右手边
+        ROOM.put(MercyVariant.LICH_F, new double[][]{{-50, 2.6, 0.85, 1}, {-95, 2.2, 0.6, 1}, {-127, 1.56, 0, 0},
+                {-123, 0.35, 1.4, 0}, {-90, 1.66, 0, 0}});
+    }
+
+    private static boolean roomClear(ServerLevel level, ServerPlayer player, Vec3 pl, Vec3 f, MercyVariant v) {
+        double[][] pts = ROOM.get(v);
+        if (pts == null) {
+            return true;
+        }
+        Vec3 s = new Vec3(f.z, 0.0D, -f.x);
+        for (double[] p : pts) {
+            double a = Math.toRadians(p[0]);
+            Vec3 at = pl.add(f.scale(Math.cos(a) * p[1])).add(s.scale(Math.sin(a) * p[1]));
+            at = p[2] > 0.0D ? new Vec3(at.x, pl.y + p[2], at.z) : snapToGround(level, player, at);
+            Pose pose = p[3] > 0.5D ? Pose.CROUCHING : Pose.STANDING;
+            if (!level.noCollision(player, player.getDimensions(pose).makeBoundingBox(at))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** 踏背下刺：蹲在它后背上（离地约 1.75 格）、闪到它正面、再蹬开往外落 1.5 格，三处都要空着 */
@@ -873,8 +907,8 @@ public final class MercyServer {
             e.add(b.stabCommTick, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
             e.add(g + b.advanceRiseTicks, StepKind.PUSH, () -> e.pushLeft = (int) Math.round(ADVANCE_PUSH_DISTANCE / PUSH_STEP));
             e.add(g + b.advanceRiseTicks, StepKind.RISE, () -> rise(e, lich));
-            if (e.variant.facing == MercyVariant.Facing.AWAY) {
-                // 背对处决者的套路：客户端在挣开后边站边转过来，这边转完再跟上，免得交还时又拧回去
+            if (e.variant.turnsToFace()) {
+                // 不正对处决者的套路：客户端在挣开后边站边转过来，这边转完再跟上，免得交还时又拧回去
                 e.add(g + b.advanceTurnTicks, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
             }
             e.add(g + b.advanceStandTicks, StepKind.UNLOCK, () -> unlock(e));
@@ -883,7 +917,7 @@ public final class MercyServer {
         if (!e.failure()) {
             e.add(b.settleTick, StepKind.SETTLE, () -> settleSuccess(e, lich));
             e.add(b.stabCommTick, StepKind.COMM, () -> sayAs(lich, LichLine.STAB, e.executor));
-            if (e.variant.facing == MercyVariant.Facing.AWAY) {
+            if (e.variant.turnsToFace()) {
                 e.add(b.closeupTurnTick, StepKind.TURN, () -> e.targetYaw = facingYaw(e.f, MercyVariant.Facing.TOWARD));
             }
             if (e.choiceWindow) {

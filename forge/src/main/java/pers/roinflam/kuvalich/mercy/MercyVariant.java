@@ -22,6 +22,8 @@ public enum MercyVariant {
     LICH_D(3, false, "d", 1.25F, Facing.TOWARD, 3, -1),
     /** 玄骸：踏背下刺，背后捅一刀，跳上后背往后颈扎一刀，化作一道红光闪到正面捅第三刀，蹬开后空翻 */
     LICH_E(4, false, "e", 1.10F, Facing.AWAY, 4, -1),
+    /** 玄骸：折翼，攥住它挥过来的手腕荡到它右后方，拧着胳膊捅两刀，踩着后腰窜到它右侧，从腋下往上送第三刀 */
+    LICH_F(5, false, "f", 1.25F, Facing.TOWARD, 5, -1, -28.0F),
     /** 奴仆：抓肩直刺 */
     THRALL_1(8, true, "t1", 1.00F, Facing.TOWARD, -1, 2200),
     /** 奴仆：锁喉背刺 */
@@ -51,17 +53,27 @@ public enum MercyVariant {
     /** 计划位里的编号 */
     public final int id;
     public final boolean thrall;
-    /** 动画片段名里用的后缀：玄骸 a / b / c，奴仆 t1 / t2 / t3 */
+    /** 动画片段名里用的后缀：玄骸 a～f，奴仆 t1～t5 */
     public final String animKey;
     /** 处决者离目标多远（沿处决者到目标的水平方向，格） */
     public final float standDist;
     public final Facing facing;
-    /** 三刀机位编号：0 = A 侧面中近景、1 = B 过肩近景、2 = C 贴身仰拍、3 = D 侧面远一点、4 = E 低机位仰拍；奴仆不切镜头为 -1 */
+    /** 三刀机位编号：0 = A 侧面中近景、1 = B 过肩近景、2 = C 贴身仰拍、3 = D 侧面远一点、4 = E 低机位仰拍、5 = F 它右前方偏低；奴仆不切镜头为 -1 */
     public final int camera;
     /** 整条时间轴的长度，玄骸取决于结果所以为 -1 */
     public final int totalMs;
+    /**
+     * 面向处决者的套路里，目标再偏开多少度：处决者落在它正前方往右手边（负）或左手边（正）这么多度的地方。
+     * 成功切特写、挣开站起时转正
+     */
+    public final float faceTurn;
 
     MercyVariant(int id, boolean thrall, String animKey, float standDist, Facing facing, int camera, int totalMs) {
+        this(id, thrall, animKey, standDist, facing, camera, totalMs, 0.0F);
+    }
+
+    MercyVariant(int id, boolean thrall, String animKey, float standDist, Facing facing, int camera, int totalMs,
+                 float faceTurn) {
         this.id = id;
         this.thrall = thrall;
         this.animKey = animKey;
@@ -69,6 +81,7 @@ public enum MercyVariant {
         this.facing = facing;
         this.camera = camera;
         this.totalMs = totalMs;
+        this.faceTurn = faceTurn;
     }
 
     /** 每一刀刺入的时刻（副本）。玄骸三个，奴仆一个 */
@@ -97,6 +110,11 @@ public enum MercyVariant {
     /** 跳到目标上方、最后落到它正面（离站位最远的那一侧），头顶和正面都得空着 */
     public boolean vaultsOver() {
         return this == LICH_E;
+    }
+
+    /** 开场不正对处决者（背对、侧身或偏开一个角度），成功切特写、挣开站起时要转过来 */
+    public boolean turnsToFace() {
+        return facing == Facing.AWAY || faceTurn != 0.0F;
     }
 
     /** 按编号取；不认识的编号返回 {@code null} */

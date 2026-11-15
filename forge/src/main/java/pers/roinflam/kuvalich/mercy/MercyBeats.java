@@ -115,12 +115,16 @@ public final class MercyBeats {
         //    压低（80）、翻滚半圈（450）、落地拧身（190）、按住肩蓄力（170）加起来 1270，留点余量是 1300，再短翻滚就挤成小跳
         // 踏背下刺「慢—慢」：拔刀（+380）、往下蹲（80）、蹬地（80）、前空翻上背（320）、落背压住（60）、举刀蓄（180）；
         //    第二刀拔刀（+380）、化光（+470）、闪过去（380）、现身后蓄力（250）。两次都是 1100，下限 1050
+        // 折翼「长—长」：第一刀拔出（+260）、攥着手腕拧两步把它压到脸贴地（560）、拧到底（620）、蓄（70）；
+        //    第二刀拔出（+240）、沉下去踩上后腰窜到它右侧（830）、蓄（70）、先进一半顿住（240）。第一刀前的荡身在 0~770 里
         //    套路                    刺入                     填满                     刀间隔下限
         lich(MercyVariant.LICH_A, stabs(790, 1650, 2900), fills(830, 1650, 2900), gaps(850, 1150));
         lich(MercyVariant.LICH_B, stabs(790, 1940, 2810), fills(830, 1940, 2810), gaps(1050, 850));
         lich(MercyVariant.LICH_C, stabs(790, 1660, 2530), fills(830, 1660, 2530), gaps(850, 850));
         lich(MercyVariant.LICH_D, stabs(790, 1790, 3140), fills(830, 1790, 3140), gaps(950, 1300));
         lich(MercyVariant.LICH_E, stabs(790, 1890, 2990), fills(830, 1890, 2990), gaps(1050, 1050));
+        // 折翼 250 ms 就蹬地荡起来（蹬地声 130 起播），切镜提前到 120，免得荡身前半段落在第一人称里
+        lich(MercyVariant.LICH_F, stabs(910, 2490, 3810), fills(950, 2490, 3810), gaps(1450, 1250), 120);
 
         // 落地：绕到身后的两套整身轨道走到头的时刻，服务端这之后才把站位换过去
         //      套路                     刺入  落地
@@ -211,13 +215,13 @@ public final class MercyBeats {
         /** 挣开：推人和起身同一拍；转身向上取整，落在客户端转完之后，免得交还时又拧回去 */
         public final int advanceRiseTicks, advanceTurnTicks, advanceStandTicks;
 
-        private Lich(MercyVariant variant, int[] stab, int[] fill, int[] minGap) {
+        private Lich(MercyVariant variant, int[] stab, int[] fill, int[] minGap, int cutIn) {
             this.variant = variant;
             this.stab = stab;
             this.fill = fill;
             this.minGap = minGap;
             int s3 = stab[2];
-            cutIn = CUT_IN;
+            this.cutIn = cutIn;
             verdict = s3 + VERDICT;
             lastSpark = s3 + LAST_SPARK;
             commDismiss = s3 + COMM_DISMISS;
@@ -411,7 +415,11 @@ public final class MercyBeats {
     }
 
     private static void lich(MercyVariant v, int[] stab, int[] fill, int[] minGap) {
-        LICH.put(v, new Lich(v, stab, fill, minGap));
+        lich(v, stab, fill, minGap, CUT_IN);
+    }
+
+    private static void lich(MercyVariant v, int[] stab, int[] fill, int[] minGap, int cutIn) {
+        LICH.put(v, new Lich(v, stab, fill, minGap, cutIn));
     }
 
     private static void thrall(MercyVariant v, int stab, int land) {

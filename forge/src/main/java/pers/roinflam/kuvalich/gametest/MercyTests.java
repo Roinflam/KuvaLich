@@ -104,7 +104,6 @@ public final class MercyTests {
     private static final String ISO_COMMANDS = "kl_mercy_iso_commandsSmoke";
 
     /** 定案的那一 tick；五套玄骸的节拍现在一样，按正面直刺取 */
-    private static final int SETTLE = MercyBeats.lich(MercyVariant.LICH_A).settleTick;
     /** 奴仆处决：处决者解锁的那一 tick（几套都一样） */
     private static final int THRALL_UNLOCK = MercyBeats.thrall(MercyVariant.THRALL_1).unlockTick;
     /** 第二刀判错的失败：第二格亮的那一 tick 之后给进度 */
@@ -216,7 +215,7 @@ public final class MercyTests {
     }
 
     /**
-     * 正面直刺「短—长」、背后锁颈「长—短」、贴身上挑「连珠」、翻滚绕背「长—更长」、踏背下刺「慢—慢」；
+     * 正面直刺「短—长」、背后锁颈「长—短」、贴身上挑「连珠」、翻滚绕背「长—更长」、踏背下刺「慢—慢」、折翼「长—长」（第二段稍短）；
      * 玄骸的 hit1 / hit2 片段长度跟刀间隔走（动画文件是脚本生成的，改表忘了重新生成就会对不上）
      */
     @GameTest(template = "empty")
@@ -246,8 +245,14 @@ public final class MercyTests {
         MercyBeats.Lich be = MercyBeats.lich(MercyVariant.LICH_E);
         int e1 = be.stab(1) - be.stab(0), e2 = be.stab(2) - be.stab(1);
         h.assertTrue(e1 == e2 && e1 > c1 + 150, "踏背下刺应当两次等距、比连珠慢一拍：" + e1 + " / " + e2);
-        int[][] gaps = {{gap1, gap2}, {b1, b2}, {c1, c2}, {d1, d2}, {e1, e2}};
-        String[] keys = {"a", "b", "c", "d", "e"};
+        MercyBeats.Lich bf = MercyBeats.lich(MercyVariant.LICH_F);
+        int f1 = bf.stab(1) - bf.stab(0), f2 = bf.stab(2) - bf.stab(1);
+        h.assertTrue(f1 > f2 + 150 && f2 > 1000, "折翼应当拧得久一些、第三刀前留够踏背：" + f1 + " / " + f2);
+        // 折翼开场荡身那一段玄骸单独有一段 grab，长到第一刀
+        int fg = Math.round(anims.getAsJsonObject("mercy.lich.f.grab").get("animation_length").getAsFloat() * 1000.0F);
+        h.assertTrue(Math.abs(fg - bf.stab(0)) <= 1, "mercy.lich.f.grab 长 " + fg + " ms，第一刀在 " + bf.stab(0) + " ms");
+        int[][] gaps = {{gap1, gap2}, {b1, b2}, {c1, c2}, {d1, d2}, {e1, e2}, {f1, f2}};
+        String[] keys = {"a", "b", "c", "d", "e", "f"};
         for (int v = 0; v < keys.length; v++) {
             for (int k = 1; k <= 2; k++) {
                 String name = "mercy.lich." + keys[v] + ".hit" + k;
@@ -902,7 +907,7 @@ public final class MercyTests {
         MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
         h.assertTrue(plan.demo() && plan.stabs() == 3 && plan.prefix() == 1,
                 "计划应当是演示、三刀、第二刀错：演示 " + plan.demo() + "，刀数 " + plan.stabs() + "，前缀 " + plan.prefix());
-        h.runAfterDelay(SETTLE + 1, () -> before.assertSame(h, card, "演示定案后"));
+        h.runAfterDelay(MercyBeats.lich(plan.variant()).settleTick + 1, () -> before.assertSame(h, card, "演示定案后"));
         h.runAfterDelay(FAIL2_PROGRESS_TICK + 6, () -> {
             before.assertSame(h, card, "演示演完后");
             h.assertTrue(lich.isRemoved(), "演示玄骸判错后应当逃走、移除");

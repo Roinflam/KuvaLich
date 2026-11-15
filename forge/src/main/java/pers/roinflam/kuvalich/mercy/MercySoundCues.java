@@ -83,6 +83,10 @@ public final class MercySoundCues {
         // 踏背下刺：第一刀后蹬地前空翻、落在背上，第三刀后蹬开后空翻（化光、现身有自己的声音）
         foley(MercyVariant.LICH_E, f(Layer.LEAP, 0, 540, 2, false), f(Layer.LAND, 1, -240, 2, false),
                 f(Layer.LEAP, 2, 260, 3, true));
+        // 折翼：扣腕、蹬地荡起来、落地；拧到底按着它拍地；第二刀后蹬地、踩上后腰窜起、落到它右手边
+        foley(MercyVariant.LICH_F, f(Layer.GRAB, 0, -700, 1, false), f(Layer.LEAP, 0, -660, 1, false),
+                f(Layer.LAND, 0, -240, 1, false), f(Layer.GRAB, 0, 820, 2, false), f(Layer.LEAP, 1, 330, 3, false),
+                f(Layer.LEAP, 1, 440, 3, false), f(Layer.LAND, 1, 800, 3, false));
         // 奴仆：抓肩直刺 揪肩、拽直、拔刀推开
         foley(MercyVariant.THRALL_1, f(Layer.GRAB, 0, -620, 1, false), f(Layer.GRAB, 0, -340, 1, false),
                 f(Layer.GRAB, 0, 540, 1, false));

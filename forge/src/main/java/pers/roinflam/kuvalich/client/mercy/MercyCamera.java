@@ -87,6 +87,8 @@ public final class MercyCamera {
         D,
         /** 踏背：低机位仰拍 */
         E,
+        /** 折翼：它右前方偏低，荡身、拧、踏背腾起都在它右手边 */
+        F,
         /** 成功：跪地特写 */
         CLOSEUP,
         /** 成功：膝盖高度第三人称 */
@@ -129,6 +131,9 @@ public final class MercyCamera {
      *       放在另一侧翻滚全被目标挡住；</li>
      *   <li>E 踏背：正侧面、离目标 3.3 格，注视点在目标身体中心稍高处。处决者先在它背后、再蹲到它背上、最后闪到它正面，
      *       三处连同背上那一下的高度都在画里；</li>
+     *   <li>F 折翼：在 {@code −S} 一侧、目标右前方离它 5 格的低机位。目标偏开站，处决者先在它右前方，荡到它右后方、
+     *       再窜到它右手边，三处都在这一侧；机位放在 {@code +S} 一侧开场就被它挡住。注视点在目标往处决者站位挪 0.5 格，
+     *       轨迹的跟人把它带到两人中间；</li>
      *   <li>跪地特写：正侧面（{@code −S} 一侧，目标的右手边、处决者的左手边），在两人中间、离中轴约 3 格，腰的高度略往上看：
      *       跪着的目标和处决者都是侧身入画，处决者的头、两条胳膊和扎进目标身体的刀连成一个人。
      *       原先机位偏到处决者身后，只拍得到他的后脑勺和从目标肩甲两边伸出来的两只手，看着像拼了两个人；
@@ -146,6 +151,7 @@ public final class MercyCamera {
             new Rig(false, false, 1.9D, 1.9D, 0.85D, 0.3D, 0.0D, 2.5D, 74.0F),
             new Rig(false, false, 0.2D, 3.8D, 1.35D, 0.0D, 0.0D, 1.45D, 64.0F),
             new Rig(false, false, -0.15D, 3.3D, 1.5D, -0.15D, 0.0D, 1.8D, 68.0F),
+            new Rig(false, false, 4.4D, -2.95D, 2.05D, 0.5D, 0.0D, 1.2D, 62.0F),
             new Rig(false, false, 0.55D, -2.75D, 1.2D, 0.5D, 0.0D, 1.7D, 55.0F),
             new Rig(true, true, 0.6D, -1.8D, 0.55D, -0.65D, 0.0D, 1.55D, 70.0F),
             null
@@ -285,6 +291,7 @@ public final class MercyCamera {
             case 2 -> Shot.C;
             case 3 -> Shot.D;
             case 4 -> Shot.E;
+            case 5 -> Shot.F;
             default -> Shot.A;
         };
     }

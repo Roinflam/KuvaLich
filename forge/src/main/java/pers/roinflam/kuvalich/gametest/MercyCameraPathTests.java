@@ -24,7 +24,8 @@ public final class MercyCameraPathTests {
     private static final MercyVariant C = MercyVariant.LICH_C;
     private static final MercyVariant D = MercyVariant.LICH_D;
     private static final MercyVariant E = MercyVariant.LICH_E;
-    private static final MercyVariant[] PLANNED = {A, B, C, D, E};
+    private static final MercyVariant F = MercyVariant.LICH_F;
+    private static final MercyVariant[] PLANNED = {A, B, C, D, E, F};
 
     private MercyCameraPathTests() {
     }
@@ -50,7 +51,7 @@ public final class MercyCameraPathTests {
         return at(v, last, m, t, t + 10_000L);
     }
 
-    /** 静态档一律没有这一层；玄骸五套都排了轨迹，奴仆几套各档都没有 */
+    /** 静态档一律没有这一层；玄骸六套都排了轨迹，奴仆几套各档都没有 */
     @GameTest(template = "empty")
     public static void staticAndUnplannedHaveNoPath(GameTestHelper h) {
         float[] out = new float[MercyCameraPath.CHANNELS];
@@ -241,6 +242,34 @@ public final class MercyCameraPathTests {
         h.assertTrue(third[d] - blink[d] > 0.2F && third[o] < blink[o] - 8.0F,
                 "第三刀刺入后应当猛推、往正面绕：" + third[d] + " / " + third[o]);
         h.assertTrue(MercyCameraPath.lookDrop(E) == 0.0F, "踏背下刺不挪注视点");
+        h.succeed();
+    }
+
+    /**
+     * 折翼：第一刀贴着侧面、几乎不绕；拧的那一段跟着往它背后绕、升高；第二刀刺入猛推、带一点滚；把它提起来时
+     * 升到最高；第三刀前绕回来压低，刺入再猛推
+     */
+    @GameTest(template = "empty")
+    public static void lichFThreeFramings(GameTestHelper h) {
+        MercyBeats.Lich b = MercyBeats.lich(F);
+        int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
+        int d = MercyCameraPath.DOLLY, o = MercyCameraPath.ORBIT, r = MercyCameraPath.RISE;
+        int roll = MercyCameraPath.ROLL;
+        float[] first = at(F, 3, Motion.FULL, s1 + 100);
+        float[] twist = at(F, 3, Motion.FULL, s1 + 790);
+        float[] beforeCut = at(F, 3, Motion.FULL, s2 - 1);
+        float[] second = at(F, 3, Motion.FULL, s2);
+        float[] lift = at(F, 3, Motion.FULL, s2 + 640);
+        float[] cock = at(F, 3, Motion.FULL, s3 - 1);
+        float[] third = at(F, 3, Motion.FULL, s3);
+        h.assertTrue(Math.abs(first[o]) < 3.0F && first[d] > 0.05F, "第一刀应当贴着侧面推近：" + first[d] + " / " + first[o]);
+        h.assertTrue(twist[o] > 15.0F && twist[r] > 0.8F, "拧的时候应当往背后绕、升高：" + twist[o] + " / " + twist[r]);
+        h.assertTrue(second[d] - beforeCut[d] > 0.05F && second[roll] > 1.0F,
+                "第二刀刺入应当猛推、带一点滚：" + second[d] + " / " + second[roll]);
+        h.assertTrue(lift[r] > second[r] + 0.3F, "提起来时应当升到最高：" + lift[r]);
+        h.assertTrue(cock[o] < lift[o] - 10.0F && cock[r] < lift[r] - 0.5F, "第三刀前应当绕回来压低：" + cock[o] + " / " + cock[r]);
+        h.assertTrue(third[d] - cock[d] > 0.05F, "第三刀刺入应当猛推：" + third[d]);
+        h.assertTrue(MercyCameraPath.lookDrop(F) == 0.0F, "折翼不挪注视点");
         h.succeed();
     }
 

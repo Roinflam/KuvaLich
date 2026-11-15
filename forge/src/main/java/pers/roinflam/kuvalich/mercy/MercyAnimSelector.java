@@ -7,6 +7,7 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -117,13 +118,17 @@ public final class MercyAnimSelector {
     private static final RawAnimation L_BREAKFREE_C0 = hold(LICH_C_BREAKFREE_RAISED);
 
     private static final MercyVariant[] LICH_VARIANTS = {MercyVariant.LICH_A, MercyVariant.LICH_B, MercyVariant.LICH_C,
-            MercyVariant.LICH_D, MercyVariant.LICH_E};
+            MercyVariant.LICH_D, MercyVariant.LICH_E, MercyVariant.LICH_F};
+    /** 起手有自己一段被抓的套路（片段 {@code mercy.lich.<套路>.grab}，挣脱接 {@code <套路>.breakfree0}）；贴身上挑另算 */
+    private static final Set<MercyVariant> OWN_GRAB = EnumSet.of(MercyVariant.LICH_F);
     private static final MercyVariant[] THRALL_VARIANTS = {MercyVariant.THRALL_1, MercyVariant.THRALL_2,
             MercyVariant.THRALL_3, MercyVariant.THRALL_4, MercyVariant.THRALL_5};
     private static final int LICH_N = LICH_VARIANTS.length;
     private static final int THRALL_N = THRALL_VARIANTS.length;
 
-    /** [套路 a/b/c/d/e][第几刀 0~2] */
+    /** [套路] 起手被抓 */
+    private static final RawAnimation[] L_GRAB_OF = new RawAnimation[LICH_N];
+    /** [套路 a~f][第几刀 0~2] */
     private static final RawAnimation[][] L_HIT = new RawAnimation[LICH_N][3];
     /** [套路] 判错在第三刀用的第三刀 */
     private static final RawAnimation[] L_HIT3_HELD = new RawAnimation[LICH_N];
@@ -150,6 +155,15 @@ public final class MercyAnimSelector {
     static {
         for (int v = 0; v < LICH_N; v++) {
             MercyVariant variant = LICH_VARIANTS[v];
+            L_GRAB_OF[v] = variant == MercyVariant.LICH_C ? L_C_GRAB : L_GRAB;
+            if (OWN_GRAB.contains(variant)) {
+                L_GRAB_OF[v] = hold("mercy.lich." + variant.animKey + ".grab");
+                RawAnimation free = hold("mercy.lich." + variant.animKey + ".breakfree0");
+                SHOW.add(L_GRAB_OF[v]);
+                SHOW.add(free);
+                BREAKFREE_FROM.put(L_GRAB_OF[v], free);
+                BREAKFREE_FROM.put(free, free);
+            }
             for (int k = 0; k < 3; k++) {
                 L_HIT[v][k] = hold(MercyAnimNames.lichHit(variant, k + 1));
                 L_BREAKFREE_AT[v][k] = hold("mercy.lich." + variant.animKey + ".breakfree" + (k + 1));
@@ -332,9 +346,9 @@ public final class MercyAnimSelector {
         return animation == L_RISE_DOWN ? RISE_BLEND_TICKS : 0;
     }
 
-    /** 起手被抓住的片段：贴身上挑、踏背各有一段，别的共用 */
+    /** 起手被抓住的片段：贴身上挑、折翼各有一段，别的共用 */
     private static RawAnimation grab(int v) {
-        return v == 2 ? L_C_GRAB : L_GRAB;
+        return L_GRAB_OF[v];
     }
 
     /** 倒地：刚倒下时先播倒下去那一下（播完自己接倒地循环），倒稳了只播循环 */
