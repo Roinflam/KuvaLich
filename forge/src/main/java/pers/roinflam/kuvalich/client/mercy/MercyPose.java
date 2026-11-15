@@ -76,8 +76,7 @@ public final class MercyPose {
     /** 整身偏移在开头和结尾怎么和真实位置接上：这么多毫秒内渐变 */
     private static final int BODY_BLEND_MS = 200;
 
-    private static final int SINE = MercyCurve.SINE, OUT = MercyCurve.OUT, SNAP = MercyCurve.SNAP, IN = MercyCurve.IN,
-            BACK = MercyCurve.BACK;
+    private static final int SINE = MercyCurve.SINE, OUT = MercyCurve.OUT, SNAP = MercyCurve.SNAP, IN = MercyCurve.IN;
     // 新写法（正面直刺）才用的几种，见 MercyCurve
     private static final int CURVE = MercyCurve.CURVE, ANTIC = MercyCurve.ANTIC, OVER = MercyCurve.OVER,
             DECEL = MercyCurve.DECEL;
@@ -138,9 +137,11 @@ public final class MercyPose {
         private final int strainFrom, strainTo;
         /** 过了这一刻不再覆盖（交还后让原版的走路摆臂接手） */
         private final int endT;
-        /** 按新写法排的（现在是正面直刺、背后锁颈、贴身上挑）：曲线、错峰、迈步、头的滞后、和原版混合都只对它生效，别的套路逐帧照旧 */
+        /** 按新写法排的（现在十套都是）：曲线、错峰、迈步、头的滞后、和原版混合都只对它生效 */
         private boolean v2;
         private MercyCurve.Keys curve, bodyCurve;
+        @Nullable
+        private MercyCurve.Keys fpCurveR, fpCurveL;
         /** 迈步那层：叠在两条腿上的摆角；没有为 null */
         @Nullable
         private MercyCurve.Keys feet;
@@ -711,7 +712,7 @@ public final class MercyPose {
                 .legs(0, 20).hd(0, 0);
     }
 
-    // ==================== 奴仆三套 ====================
+    // ==================== 奴仆五套 ====================
 
     private static final Anchors ANCHOR_T1 = new Anchors(4, 3, -10, 0, 6, -11);
     private static final Anchors ANCHOR_T2 = new Anchors(-2, 4, -9, 0, 7, -10);
@@ -738,129 +739,154 @@ public final class MercyPose {
                 a.sx * scale, 24.0F - scale * (24.0F - a.sy), center + scale * (a.sz - center));
     }
 
-    /** 抓肩直刺：揪着肩把它拽直，往下捅进胸口、拧刀，拔刀的同时一把推开 */
+    /** 收刀后站定：刀垂在身侧，喘一口（奴仆几套交还前那一下） */
+    private static Row settled() {
+        return p().tw(0).ln(4).sq(0).sh(0).r(18, -30, 0).aim(0).pull(0).l(20, -15, 0).grip(0).reach(0).legs(-3, 3)
+                .hd(0, 0);
+    }
+
+    /**
+     * 抓肩直刺，「拽—刺—长拧」：一把揪住肩往回拽直（OVER 带一下），刀往后一收猛捅进胸口，拧刀拧满 480 ms，
+     * 拔刀越拔越快、左手顺势一把推开
+     */
     private static List<Key> thrall1() {
         int s = MercyVariant.THRALL_1.stabMs(0);
         return List.of(
-                k(0, SINE, start()),
-                k(110, SINE, gather()),
-                k(300, BACK, p().tw(-8).ln(19).sq(0.1F).sh(1.5F).r(30, -30, 0).l(72, 20, 0).grip(1).legs(-14, 16)
+                k(0, CURVE, start()),
+                k(110, CURVE, gather()),
+                k(280, OVER, p().tw(-8).ln(17).sq(0.1F).sh(1.5F).r(30, -30, 0).l(72, 20, 0).grip(1).legs(-14, 16)
                         .hd(4, 0)),
-                k(350, SINE, p().ln(18)),
+                k(380, CURVE, p().tw(-7).ln(15).sh(1.1F).hd(3, 0)),
                 // 揪着肩把它拽直
-                k(560, SINE, p().tw(-12).ln(12).sq(0).sh(0.6F).r(40, -34, -10).reach(-2).hd(2, 0)),
-                k(s - 140, SINE, p().tw(-26).ln(12).sq(0.15F).sh(0).r(62, -8, -22).aim(0.6F).pull(3.5F)),
-                k(s - 115, SINE, p().tw(-29).sq(0.2F).sh(-0.3F).r(62, -10, -26).pull(4.5F)),
-                k(s, OUT, p().tw(16).ln(22).sq(0.1F).sh(2.5F).r(62, 5, 0).aim(1).pull(-1.5F).legs(-18, 20).hd(6, 0)),
-                k(s + 80, SINE, p().tw(20).ln(24).sh(3).hd(8, 0)),
-                k(s + 280, SINE, p().tw(22).sq(0.2F).r(NA, NA, 42).hd(6, 3)),
-                k(1350, SINE, p().tw(20).ln(23).r(NA, NA, 36)),
+                k(560, OVER, p().tw(-12).ln(12).sq(0).sh(0.6F).r(40, -34, -10).reach(-2).hd(2, 0)),
+                k(s - 200, CURVE, p().tw(-21).ln(11).sq(0.1F).sh(0.2F).r(56, -8, -18).aim(0.6F).pull(3.2F).hd(1, -2)),
+                k(s - 90, CURVE, p().tw(-29).ln(10).sq(0.2F).sh(-0.4F).r(62, -10, -26).pull(4.6F).legs(-16, 18)),
+                k(s, ANTIC, p().tw(16).ln(22).sq(0.1F).sh(2.5F).r(62, 5, 0).aim(1).pull(-1.5F).legs(-18, 20).hd(6, 0)),
+                k(s + 80, CURVE, p().tw(20).ln(24).sh(3).hd(8, 0)),
+                k(s + 240, CURVE, p().tw(22).ln(23).sq(0.2F).r(NA, NA, 42).hd(6, 3)),
+                k(s + 380, CURVE, p().tw(21).ln(23).sq(0.18F).r(NA, NA, 47).hd(6, 4)),
+                k(1380, CURVE, p().tw(20).ln(22).r(NA, NA, 36)),
                 // 拔刀、左手一把推开
                 k(1440, IN, p().tw(-18).ln(6).sq(0).sh(1).r(50, -30, -10).aim(0.3F).pull(3).l(96, 15, 0).grip(0)
                         .hd(-2, 0)),
-                k(1560, SINE, p().tw(-20).ln(4).sh(1.4F).l(92, 10, 0)),
-                k(1760, OUT, p().tw(-8).ln(6).sh(0.5F).r(22, -60, 30).aim(0).pull(0).l(40, -8, 0).legs(-8, 8)
-                        .hd(2, 0)),
-                k(2000, SINE, p().tw(0).ln(4).sq(0).sh(0).r(18, -30, 0).l(20, -15, 0).legs(-3, 3).hd(0, 0)),
-                k(MercyBeats.thrall(MercyVariant.THRALL_1).end, SINE, zero()));
+                k(1540, OVER, p().tw(-21).ln(4).sh(1.5F).l(94, 10, 0)),
+                k(1760, OUT, flick().tw(-8).ln(6).legs(-8, 8)),
+                k(2000, CURVE, settled()),
+                k(MercyBeats.thrall(MercyVariant.THRALL_1).end, CURVE, zero()));
     }
 
-    /** 锁喉背刺：左臂从后面勒住脖子往后拽，刀捅进后背，松手的同时一脚蹬出去 */
+    /**
+     * 锁喉背刺，「勒—憋—快刺—踹」：左臂从后面勒住脖子往后拽，憋住 300 ms 不动，刀只收 150 ms 就捅进后背，
+     * 拧一下就松手提膝，一脚蹬出去
+     */
     private static List<Key> thrall2() {
         int s = MercyVariant.THRALL_2.stabMs(0);
         return List.of(
-                k(0, SINE, start()),
-                k(110, SINE, gather()),
-                k(320, BACK, p().tw(-6).ln(16).sq(0.1F).sh(1.5F).r(28, -30, 0).l(86, 40, 0).grip(1).legs(-12, 14)
+                k(0, CURVE, start()),
+                k(110, CURVE, gather()),
+                k(300, OVER, p().tw(-6).ln(16).sq(0.1F).sh(1.5F).r(28, -30, 0).l(86, 40, 0).grip(1).legs(-12, 14)
                         .hd(4, 0)),
-                k(400, SINE, p().ln(14)),
-                // 往后勒
-                k(620, SINE, p().tw(-10).ln(7).sq(0.1F).sh(0.4F).reach(-2).hd(0, 4)),
-                k(s - 140, SINE, p().tw(-24).ln(10).sq(0.15F).r(58, -8, -20).aim(0.6F).pull(3.5F)),
-                k(s - 115, SINE, p().tw(-28).sq(0.2F).r(58, -10, -26).pull(4.5F)),
-                k(s, OUT, p().tw(16).ln(20).sq(0.1F).sh(2).r(58, 5, 0).aim(1).pull(-1.5F).reach(0).legs(-16, 18)
+                k(400, CURVE, p().ln(14).sh(1.0F)),
+                // 往后勒，憋住
+                k(620, OVER, p().tw(-10).ln(7).sq(0.1F).sh(0.4F).reach(-2).hd(0, 4)),
+                k(s - 150, CURVE, p().tw(-13).ln(6).sq(0.12F).sh(0.2F).r(40, -24, -12).hd(0, 5)),
+                k(s - 60, CURVE, p().tw(-28).ln(9).sq(0.2F).r(58, -10, -26).aim(0.6F).pull(4.6F)),
+                k(s, ANTIC, p().tw(16).ln(20).sq(0.1F).sh(2).r(58, 5, 0).aim(1).pull(-1.5F).reach(0).legs(-16, 18)
                         .hd(6, 0)),
-                k(s + 80, SINE, p().tw(20).ln(22).sh(2.5F).hd(8, 0)),
-                k(s + 280, SINE, p().tw(22).sq(0.2F).r(NA, NA, 42).hd(6, 3)),
-                k(1380, SINE, p().tw(20).r(NA, NA, 36)),
+                k(s + 80, CURVE, p().tw(20).ln(22).sh(2.5F).hd(8, 0)),
+                k(s + 240, CURVE, p().tw(22).sq(0.2F).r(NA, NA, 42).hd(6, 3)),
+                k(1380, CURVE, p().tw(20).r(NA, NA, 36)),
                 // 松手、提膝，一脚蹬出去
                 k(1450, IN, p().tw(-6).ln(-4).sq(0).sh(0).r(40, -30, -10).aim(0).pull(1).l(40, -10, 0).grip(0)
-                        .legs(65, -4)
-                        .hd(0, 0)),
-                k(1530, OUT, p().tw(-4).ln(-8).sh(1.5F).legs(52, -8)),
-                k(1700, SINE, p().tw(-2).ln(4).sh(0.5F).legs(8, 0)),
-                k(1850, OUT, p().tw(-10).ln(6).r(22, -60, 30).pull(0).l(30, -15, 0).legs(-6, 6).hd(2, 0)),
-                k(2050, SINE, p().tw(0).ln(4).sh(0).r(18, -30, 0).l(20, -15, 0).legs(-3, 3).hd(0, 0)),
-                k(MercyBeats.thrall(MercyVariant.THRALL_2).end, SINE, zero()));
+                        .legs(65, -4).hd(0, 0)),
+                k(1530, OVER, p().tw(-4).ln(-8).sh(1.5F).legs(52, -8)),
+                k(1700, CURVE, p().tw(-2).ln(4).sh(0.5F).legs(8, 0)),
+                k(1850, OUT, flick().tw(-10).ln(6).sh(0).l(30, -15, 0).legs(-6, 6)),
+                k(2050, CURVE, settled()),
+                k(MercyBeats.thrall(MercyVariant.THRALL_2).end, CURVE, zero()));
     }
 
-    /** 压颈下刺：左手按住后颈往下压，刀举过头一下扎进去、压着拧，抽刀时横着把它推翻 */
+    /**
+     * 压颈下刺，「压—再压—甩上头—砸」：左手按住后颈压下去，它往上顶时再压一下，刀甩过头顶顶住 120 ms，
+     * 一下砸进后颈、压着拧，抽刀时横着把它推翻
+     */
     private static List<Key> thrall3() {
         int s = MercyVariant.THRALL_3.stabMs(0);
         return List.of(
-                k(0, SINE, start()),
-                k(110, SINE, gather()),
-                k(320, BACK, p().tw(-4).ln(22).sq(0.15F).sh(1.5F).r(32, -30, 0).l(60, 20, 0).grip(1).legs(-12, 14)
+                k(0, CURVE, start()),
+                k(110, CURVE, gather()),
+                k(300, OVER, p().tw(-4).ln(22).sq(0.15F).sh(1.5F).r(32, -30, 0).l(60, 20, 0).grip(1).legs(-12, 14)
                         .hd(6, 0)),
-                k(400, SINE, p().ln(21)),
-                // 往下压
-                k(620, SINE, p().ln(24).sq(0.28F).reach(1).hd(8, 0)),
-                // 刀举过头
-                k(s - 140, SINE, p().tw(-12).ln(6).sq(0).sh(0.6F).r(165, -8, 0).hd(-6, 0)),
-                k(s - 115, SINE, p().ln(4).r(170, -8, 0)),
-                k(s, OUT, p().tw(12).ln(30).sq(0.42F).sh(2.5F).r(40, 5, 0).aim(1).legs(-16, 18).hd(10, 0)),
-                k(s + 80, SINE, p().ln(33).sq(0.48F).hd(12, 0)),
-                k(s + 260, SINE, p().tw(14).r(NA, NA, 36).hd(10, 3)),
-                k(1440, SINE, p().tw(12).r(NA, NA, 30)),
+                k(400, CURVE, p().ln(21)),
+                // 它往上顶，再压一下
+                k(600, CURVE, p().ln(19).sq(0.2F).hd(5, 0)),
+                k(680, OVER, p().ln(25).sq(0.3F).reach(1).hd(8, 0)),
+                // 刀甩过头
+                k(s - 260, OVER, p().tw(-10).ln(8).sq(0.05F).sh(0.6F).r(160, -8, 0).hd(-5, 0)),
+                k(s - 120, CURVE, p().tw(-13).ln(4).sq(0).sh(0.4F).r(170, -8, 0).hd(-7, 0)),
+                k(s, ANTIC, p().tw(12).ln(30).sq(0.42F).sh(2.5F).r(40, 5, 0).aim(1).legs(-16, 18).hd(10, 0)),
+                k(s + 80, CURVE, p().ln(33).sq(0.48F).hd(12, 0)),
+                k(s + 260, CURVE, p().tw(14).r(NA, NA, 36).hd(10, 3)),
+                k(1440, CURVE, p().tw(12).r(NA, NA, 30)),
                 // 抽刀、横着一推
-                k(1530, OUT, p().tw(-16).ln(14).sq(0.1F).sh(1.6F).r(55, -30, -10).aim(0).l(82, -12, 0).grip(0)
+                k(1530, IN, p().tw(-16).ln(14).sq(0.1F).sh(1.6F).r(55, -30, -10).aim(0).l(82, -12, 0).grip(0)
                         .hd(2, 0)),
-                k(1660, SINE, p().tw(-18).ln(10).sh(1.8F).l(74, -24, 0)),
-                k(1850, OUT, p().tw(-10).ln(6).sq(0).sh(0.5F).r(22, -60, 30).l(30, -15, 0).legs(-6, 6).hd(2, 0)),
-                k(2050, SINE, p().tw(0).ln(4).sh(0).r(18, -30, 0).l(20, -15, 0).legs(-3, 3).hd(0, 0)),
-                k(MercyBeats.thrall(MercyVariant.THRALL_3).end, SINE, zero()));
+                k(1640, OVER, p().tw(-19).ln(10).sh(1.9F).l(76, -26, 0)),
+                k(1850, OUT, flick().tw(-10).ln(6).sh(0.5F).l(30, -15, 0).legs(-6, 6)),
+                k(2050, CURVE, settled()),
+                k(MercyBeats.thrall(MercyVariant.THRALL_3).end, CURVE, zero()));
     }
 
-    /** 穿胸绕背：揪住肩一刀捅穿，不拧刀，抽出来就势翻滚到它身后，它往前栽倒 */
+    /**
+     * 穿胸绕背，「揪—快刺—抽刀就滚」：揪住肩一刀捅穿、不拧，拔刀的同时压低蹬出去，抱成一团沿着它滚半圈，
+     * 落在身后往下一沉卸力；滚的这几帧都用 CURVE，挨着别的模式的帧速度按 0 接，滚到一半会停一下
+     */
     private static List<Key> thrall4() {
         int s = MercyVariant.THRALL_4.stabMs(0);
         return List.of(
-                k(0, SINE, start()),
-                k(110, SINE, gather()),
-                k(280, BACK, p().tw(-8).ln(19).sq(0.1F).sh(1.5F).r(30, -30, 0).l(72, 20, 0).grip(1).legs(-14, 16)
+                k(0, CURVE, start()),
+                k(110, CURVE, gather()),
+                k(270, OVER, p().tw(-8).ln(19).sq(0.1F).sh(1.5F).r(30, -30, 0).l(72, 20, 0).grip(1).legs(-14, 16)
                         .hd(4, 0)),
-                k(s - 140, SINE, p().tw(-26).ln(12).sq(0.15F).sh(0).r(62, -8, -22).aim(0.6F).pull(3.5F).hd(2, 0)),
-                k(s - 115, SINE, p().tw(-29).sq(0.2F).sh(-0.3F).r(62, -10, -26).pull(4.5F)),
-                k(s, OUT, p().tw(18).ln(24).sq(0.1F).sh(3).r(62, 5, 0).aim(1).pull(-1.5F).legs(-20, 22).hd(6, 0)),
-                k(s + 80, SINE, p().tw(22).ln(26).sh(3.4F).hd(8, 0)),
+                k(370, CURVE, p().ln(17).sh(1.1F).hd(3, 0)),
+                k(s - 200, CURVE, p().tw(-22).ln(12).sq(0.12F).sh(0.2F).r(58, -8, -18).aim(0.6F).pull(3.3F).hd(2, -2)),
+                k(s - 90, CURVE, p().tw(-29).ln(11).sq(0.2F).sh(-0.3F).r(62, -10, -26).pull(4.6F).legs(-16, 18)),
+                k(s, ANTIC, p().tw(18).ln(24).sq(0.1F).sh(3).r(62, 5, 0).aim(1).pull(-1.5F).legs(-20, 22).hd(6, 0)),
+                k(s + 80, CURVE, p().tw(22).ln(26).sh(3.4F).hd(8, 0)),
                 k(s + 190, IN, p().tw(-28).ln(10).sq(0.25F).sh(0.6F).r(66, -52, 0).aim(0).pull(2).l(92, -10, 0).grip(0)
                         .legs(-14, 18).hd(0, 0)),
-                k(s + 270, SINE, p().tw(-10).ln(26).sq(0.85F).sh(0).r(44, -30, 0).pull(0).l(40, 0, 0).legs(14, -10)
+                k(s + 270, CURVE, p().tw(-10).ln(26).sq(0.85F).sh(0).r(44, -30, 0).pull(0).l(40, 0, 0).legs(14, -10)
                         .hd(6, 0)),
-                k(s + 360, OUT, tucked()),
-                k(s + 620, SINE, tucked()),
-                k(s + 760, OUT, landed()),
+                k(s + 360, CURVE, tucked()),
+                k(s + 620, CURVE, tucked()),
+                k(s + 760, IN, landed()),
+                k(s + 850, CURVE, landed().ln(32).hd(7, 0)),
                 k(1800, OUT, flick()),
-                k(2050, SINE, p().tw(0).ln(4).sq(0).sh(0).r(18, -30, 0).l(20, -15, 0).legs(-3, 3).hd(0, 0)),
-                k(MercyBeats.thrall(MercyVariant.THRALL_4).end, SINE, zero()));
+                k(2050, CURVE, settled()),
+                k(MercyBeats.thrall(MercyVariant.THRALL_4).end, CURVE, zero()));
     }
 
-    /** 飞跃下刺：往后一坐蹬地跃起，从它头顶往前翻，倒着的时候手臂正好朝下，一刀扎进后颈，落在身后转回来 */
+    /**
+     * 飞跃下刺，「蹲—跃—倒挂扎」：往下一蹲蓄力，蹬地两臂往上甩跃起，从它头顶往前翻，倒着的时候刀往回一收再扎进后颈，
+     * 抱团翻过去落在身后，往下一沉卸力，再转回来看着它倒下
+     */
     private static List<Key> thrall5() {
         int s = MercyVariant.THRALL_5.stabMs(0);
         return List.of(
-                k(0, SINE, start()),
-                k(120, SINE, p().tw(-6).ln(14).sq(0.7F).sh(-0.5F).r(20, -40, 0).l(20, -30, 0).legs(-10, 12).hd(4, 0)),
-                k(280, OUT, p().tw(0).ln(4).sq(0).sh(0).r(112, -20, 0).l(60, -20, 0).legs(-22, 32).hd(-8, 0)),
-                k(560, SINE, p().ln(30).sq(0.8F).r(165, -10, 0).l(100, -10, 0).legs(50, 70).hd(8, 0)),
-                k(s - 60, SINE, p().ln(22).sq(0.5F).r(150, -12, 0).pull(2).l(84, -20, 0).legs(34, 54)),
-                k(s, OUT, p().tw(8).ln(16).sq(0.3F).r(178, 0, 0).pull(-2).legs(22, 44).hd(-6, 0)),
-                k(s + 240, SINE, tucked()),
-                k(s + 480, SINE, landed()),
-                k(1560, SINE, p().tw(0).ln(26).sq(0.9F).r(50, -30, 0).l(30, -20, 0).legs(-14, 22).hd(2, 0)),
+                k(0, CURVE, start()),
+                k(120, CURVE, p().tw(-6).ln(14).sq(0.7F).sh(-0.5F).r(20, -40, 0).l(20, -30, 0).legs(-10, 12).hd(4, 0)),
+                k(280, OVER, p().tw(0).ln(4).sq(0).sh(0).r(112, -20, 0).l(60, -20, 0).legs(-22, 32).hd(-8, 0)),
+                k(560, CURVE, p().ln(30).sq(0.8F).r(165, -10, 0).l(100, -10, 0).legs(50, 70).hd(8, 0)),
+                k(s - 80, CURVE, p().ln(22).sq(0.5F).r(150, -12, 0).pull(2).l(84, -20, 0).legs(34, 54)),
+                k(s, ANTIC, p().tw(8).ln(16).sq(0.3F).r(178, 0, 0).pull(-2).legs(22, 44).hd(-6, 0)),
+                k(s + 80, CURVE, p().ln(18).hd(-4, 0)),
+                k(s + 240, CURVE, tucked()),
+                k(s + 480, IN, landed()),
+                k(s + 570, CURVE, landed().ln(32).hd(7, 0)),
+                k(1560, CURVE, p().tw(0).ln(26).sq(0.9F).r(50, -30, 0).l(30, -20, 0).legs(-14, 22).hd(2, 0)),
                 k(1800, OUT, flick()),
-                k(2050, SINE, p().tw(0).ln(4).sq(0).sh(0).r(18, -30, 0).l(20, -15, 0).legs(-3, 3).hd(0, 0)),
-                k(MercyBeats.thrall(MercyVariant.THRALL_5).end, SINE, zero()));
+                k(2050, CURVE, settled()),
+                k(MercyBeats.thrall(MercyVariant.THRALL_5).end, CURVE, zero()));
     }
 
     private static List<Key> tableOf(MercyVariant v) {
@@ -1045,30 +1071,40 @@ public final class MercyPose {
         return b;
     }
 
+    /**
+     * 奴仆前三套的脚下：都不到 0.25 格，只压重心。出刀前往后让一点，刺入送过去，拧刀时稍往回松，推开 / 蹬开那一下
+     * 往后坐过头 0.05 格再站回站位
+     */
     private static List<Key> bodyThrall(int s, float reach, int back) {
         List<Key> b = startedBody();
-        b.add(k(s - 115, SINE, m().dist(0.1F).up(-0.02F)));
-        b.add(k(s, OUT, m().dist(-reach).up(-0.05F)));
-        b.add(k(s + 80, SINE, m().dist(-reach - 0.04F)));
-        b.add(k(back - 120, SINE, m().up(-0.03F)));
-        b.add(k(back, IN, m().dist(0).up(0)));
+        b.add(k(s - 90, CURVE, m().dist(0.06F).up(-0.01F)));
+        b.add(k(s, ANTIC, m().dist(-reach).up(-0.05F)));
+        b.add(k(s + 80, CURVE, m().dist(-reach - 0.04F)));
+        b.add(k(s + 300, CURVE, m().dist(-reach - 0.02F).up(-0.03F)));
+        b.add(k(back - 120, CURVE, m().dist(-reach + 0.03F).up(-0.03F)));
+        b.add(k(back, IN, m().dist(0.05F).up(0)));
+        b.add(k(back + 220, CURVE, m().dist(0)));
         return b;
     }
 
-    /** 穿胸绕背：捅进去、抽出来，沿着它翻滚半圈，落在身后 */
+    /**
+     * 穿胸绕背：捅进去，拔刀时压低 0.08 格蹬出去，贴着它翻滚半圈（最高离地 0.3 格），落在身后。
+     * 翻滚这几帧都用 CURVE；最后一帧就是落地，服务端在这之后才把站位换过去，时刻别动
+     */
     private static List<Key> bodyT4() {
         int s = MercyVariant.THRALL_4.stabMs(0);
         List<Key> b = startedBody();
-        b.add(k(s - 115, SINE, m().dist(0.1F)));
-        b.add(k(s, OUT, m().dist(-0.22F).up(-0.05F)));
-        b.add(k(s + 80, SINE, m().dist(-0.26F)));
-        b.add(k(s + 190, SINE, m().dist(-0.12F).up(0)));
-        b.add(k(s + 270, SINE, m().ang(10).dist(0).yaw(35)));
-        b.add(k(s + 360, OUT, m().ang(42).dist(0.2F).up(0.2F).yaw(80).flip(45)));
-        b.add(k(s + 620, SINE, m().ang(138).dist(0.2F).up(0.2F).flip(310)));
-        b.add(k(s + 740, OUT, m().ang(174).dist(0.06F).up(0).yaw(30).flip(360)));
-        // 走到身后就是落地：服务端在这之后才把站位换过去
-        b.add(k(MercyBeats.thrall(MercyVariant.THRALL_4).land, SINE, m().ang(180).dist(0).yaw(0)));
+        b.add(k(s - 90, CURVE, m().dist(0.06F).up(-0.01F)));
+        b.add(k(s, ANTIC, m().dist(-0.22F).up(-0.05F)));
+        b.add(k(s + 80, CURVE, m().dist(-0.26F)));
+        // 拔刀时人先往后让：它被带着往前一栽，人不让开第一人称会贴到它脸上
+        b.add(k(s + 190, CURVE, m().ang(0).dist(0.02F).up(0).yaw(0).flip(0)));
+        b.add(k(s + 270, CURVE, m().ang(10).dist(0.1F).up(-0.08F).yaw(35)));
+        b.add(k(s + 360, CURVE, m().ang(42).dist(0.2F).up(0.22F).yaw(80).flip(45)));
+        b.add(k(s + 500, CURVE, m().ang(95).dist(0.24F).up(0.3F).flip(180)));
+        b.add(k(s + 620, CURVE, m().ang(138).dist(0.2F).up(0.18F).flip(310)));
+        b.add(k(s + 740, CURVE, m().ang(174).dist(0.06F).up(-0.04F).yaw(30).flip(360)));
+        b.add(k(MercyBeats.thrall(MercyVariant.THRALL_4).land, CURVE, m().ang(180).dist(0).up(0).yaw(0)));
         return b;
     }
 
@@ -1082,14 +1118,16 @@ public final class MercyPose {
         float across = -MercyVariant.THRALL_5.standDist;
         float h = scale + (1.0F - scale) * T5_TIP_DROP / T5_APEX;
         List<Key> b = startedBody();
-        b.add(k(120, SINE, m().dist(0.15F)));
-        b.add(k(280, OUT, m().dist(across * 0.24F).up(0.55F * h).flip(30)));
-        b.add(k(560, SINE, m().dist(across * 0.5F).up(1.85F * h).flip(130)));
+        // 起跳前往下一蹲；空中这几帧都用 CURVE，翻到一半不停
+        b.add(k(120, CURVE, m().dist(0.15F).up(-0.06F)));
+        b.add(k(280, CURVE, m().dist(across * 0.24F).up(0.55F * h).flip(30)));
+        b.add(k(560, CURVE, m().dist(across * 0.5F).up(1.85F * h).flip(130)));
         // 正好翻到头朝下，手臂朝下对着它的后颈（它面向处决者，后颈在中轴偏处决者这一侧）
-        b.add(k(800, SINE, m().dist(across * 0.72F).up(T5_APEX * h).flip(190)));
-        b.add(k(1040, SINE, m().dist(across * 1.3F).up(1.6F * h).flip(268)));
+        b.add(k(800, CURVE, m().dist(across * 0.72F).up(T5_APEX * h).flip(190)));
+        b.add(k(1040, CURVE, m().dist(across * 1.3F).up(1.6F * h).flip(268)));
         b.add(k(1280, IN, m().dist(across * 1.92F).up(0).flip(360)));
-        b.add(k(1340, OUT, m().dist(across * 2.0F)));
+        b.add(k(1340, DECEL, m().dist(across * 2.0F).up(-0.05F)));
+        b.add(k(1380, CURVE, m().up(0)));
         b.add(k(MercyBeats.thrall(MercyVariant.THRALL_5).land, 1380, OUT, m().yaw(180)));
         return b;
     }
@@ -1278,36 +1316,36 @@ public final class MercyPose {
                 body.add(k(MercyBeats.thrall(v).end, SINE, m()));
             }
         }
-        boolean v2 = !v.thrall;
-        if (v2) {
-            // 不再回零硬交：最后一帧停在前一帧的姿势上，交还前那 250 ms 由 apply 和原版姿态混过去
-            out.set(out.size() - 1, k(out.get(out.size() - 1).t, CURVE, p()));
-        }
+        // 不再回零硬交：最后一帧停在前一帧的姿势上，交还前那 250 ms 由 apply 和原版姿态混过去
+        out.set(out.size() - 1, k(out.get(out.size() - 1).t, CURVE, p()));
         Key[] keys = resolve(out);
         Key[][] fp = v.thrall ? thrallFirstPerson(v) : lichFirstPerson(p, stabs);
         Anchors anchors = v.thrall ? scaled(anchorsOf(v), v, scale) : anchorsOf(v);
         Key[] bodyKeys = resolve(body);
         Track tr = new Track(keys, resolve(Arrays.asList(fp[0])), resolve(Arrays.asList(fp[1])), bodyKeys, stabs,
                 weight, anchors, strainFrom, strainTo);
-        if (v2) {
-            tr.v2 = true;
-            tr.curve = curveOf(keys, N);
-            tr.bodyCurve = curveOf(bodyKeys, BN);
-            if (v == MercyVariant.LICH_A && stabs.length >= 2) {
-                tr.feet = curveOf(resolve(stepA2(stabs[1])), N);
-            } else if (v == MercyVariant.LICH_B && stabs.length >= 3) {
-                tr.feet = curveOf(resolve(stepB2(stabs[1], stabs[2])), N);
-            } else if ((v == MercyVariant.LICH_C || v == MercyVariant.LICH_D) && stabs.length >= 3) {
-                tr.feet = curveOf(resolve(stepC2(stabs[1], stabs[2])), N);
-            } else if ((v == MercyVariant.LICH_C || v == MercyVariant.LICH_D) && stabs.length == 2) {
-                // 第三刀那一步落在挣开的时候，只留第二刀的
-                tr.feet = curveOf(resolve(stepA2(stabs[1])), N);
-            }
-            int h = seed * 0x9E3779B1;
-            tr.shakeAmp = 0.8F + 0.45F * ((h >>> 8) & 0xFF) / 255.0F;
-            tr.phaseA = ((h >>> 16) & 0xFF) / 255.0F * (float) (Math.PI * 2.0D);
-            tr.phaseB = ((h >>> 24) & 0xFF) / 255.0F * (float) (Math.PI * 2.0D);
+        tr.v2 = true;
+        tr.curve = curveOf(keys, N);
+        tr.bodyCurve = curveOf(bodyKeys, BN);
+        if (v.thrall) {
+            // 奴仆场全程第一人称，两只手也走新曲线；玄骸的第一人称 400 ms 就切走，照旧
+            tr.fpCurveR = curveOf(tr.fpRight, FN);
+            tr.fpCurveL = curveOf(tr.fpLeft, FN);
         }
+        if (v == MercyVariant.LICH_A && stabs.length >= 2) {
+            tr.feet = curveOf(resolve(stepA2(stabs[1])), N);
+        } else if (v == MercyVariant.LICH_B && stabs.length >= 3) {
+            tr.feet = curveOf(resolve(stepB2(stabs[1], stabs[2])), N);
+        } else if ((v == MercyVariant.LICH_C || v == MercyVariant.LICH_D) && stabs.length >= 3) {
+            tr.feet = curveOf(resolve(stepC2(stabs[1], stabs[2])), N);
+        } else if ((v == MercyVariant.LICH_C || v == MercyVariant.LICH_D) && stabs.length == 2) {
+            // 第三刀那一步落在挣开的时候，只留第二刀的
+            tr.feet = curveOf(resolve(stepA2(stabs[1])), N);
+        }
+        int h = seed * 0x9E3779B1;
+        tr.shakeAmp = 0.8F + 0.45F * ((h >>> 8) & 0xFF) / 255.0F;
+        tr.phaseA = ((h >>> 16) & 0xFF) / 255.0F * (float) (Math.PI * 2.0D);
+        tr.phaseB = ((h >>> 24) & 0xFF) / 255.0F * (float) (Math.PI * 2.0D);
         if (v == MercyVariant.LICH_E) {
             tr.alt = ANCHOR_E;
             MercyBeats.Lich lb = MercyBeats.lich(v);
@@ -1328,8 +1366,8 @@ public final class MercyPose {
         float[] b = new float[BN];
         for (int t = 0; t <= end; t += step) {
             pose(tr, t, v);
-            sample(tr.fpRight, t, fr);
-            sample(tr.fpLeft, t, fl);
+            sampleFp(tr, true, t, fr);
+            sampleFp(tr, false, t, fl);
             sampleBody(tr, t, b);
             out.append(t).append(" P");
             for (float x : v) {
@@ -1844,85 +1882,93 @@ public final class MercyPose {
         return new Key[]{f(0, SINE, sx, -0.95F, 0.40F, 0, 0)};
     }
 
-    /** 奴仆三套的第一人称（处决默认就是第一人称看） */
+    /** 奴仆五套的第一人称（处决默认就是第一人称看） */
     private static Key[][] thrallFirstPerson(MercyVariant v) {
         int s = v.stabMs(0);
         List<Key> r = new ArrayList<>(Arrays.asList(fpStart(true)));
         List<Key> l = new ArrayList<>(Arrays.asList(fpStart(false)));
         switch (v) {
             case THRALL_2 -> {
-                // 左臂横过来勒住脖子，往后拽；刀从右边收回来，往下捅进后背
-                l.add(f(300, OUT, 0.00F, -0.36F, 0.80F, -10, 0));
-                l.add(f(400, SINE, 0.04F, -0.34F, 0.74F, -12, 0));
-                l.add(f(650, SINE, 0.06F, -0.30F, 0.62F, -14, 0));
-                l.add(f(s, SINE, 0.05F, -0.32F, 0.66F, -12, 0));
-                l.add(f(1400, SINE, 0.05F, -0.33F, 0.66F, -12, 0));
-                l.add(f(1520, OUT, -0.40F, -0.70F, 0.70F, 0, 0));
-                l.add(f(1750, SINE, -0.55F, -0.88F, 0.50F, 0, 0));
-                r.add(f(400, SINE, 0.45F, -0.52F, 0.55F, 0, -10));
-                r.add(f(s - 140, SINE, 0.55F, -0.48F, 0.36F, -6, -25));
-                r.add(f(s - 115, SINE, 0.57F, -0.47F, 0.33F, -8, -28));
-                r.add(f(s, OUT, 0.16F, -0.50F, 0.96F, 20, 0));
-                stabFollow(r, s, 0.14F, -0.52F, 1.02F, 22, 1400);
+                // 左臂横过来勒住脖子，往后拽、憋住；刀只收一下就往下捅进后背
+                l.add(f(300, OVER, 0.00F, -0.37F, 0.80F, -10, 0));
+                l.add(f(400, CURVE, 0.04F, -0.35F, 0.74F, -12, 0));
+                l.add(f(620, OVER, 0.06F, -0.32F, 0.62F, -14, 0));
+                l.add(f(s - 150, CURVE, 0.06F, -0.33F, 0.63F, -14, 0));
+                l.add(f(s, CURVE, 0.05F, -0.34F, 0.66F, -12, 0));
+                l.add(f(1400, CURVE, 0.05F, -0.35F, 0.66F, -12, 0));
+                l.add(f(1520, OVER, -0.40F, -0.70F, 0.70F, 0, 0));
+                l.add(f(1750, CURVE, -0.55F, -0.88F, 0.50F, 0, 0));
+                r.add(f(400, CURVE, 0.45F, -0.52F, 0.55F, 0, -10));
+                r.add(f(s - 150, CURVE, 0.55F, -0.48F, 0.36F, -6, -25));
+                r.add(f(s - 60, CURVE, 0.57F, -0.47F, 0.33F, -8, -28));
+                // 刀口要落在画面里它的后背上，不往下扎到快捷栏后面去
+                r.add(f(s, ANTIC, 0.18F, -0.31F, 0.98F, 5, 0));
+                stabFollow(r, s, 0.16F, -0.33F, 1.03F, 7, 1400);
                 r.add(f(1490, IN, 0.45F, -0.45F, 0.48F, -4, 10));
             }
             case THRALL_4 -> {
                 // 揪住肩一刀捅穿，抽出来就翻滚：两只手都收到画面外，落地再抬起来
-                l.add(f(280, OUT, -0.20F, -0.30F, 0.92F, 0, 0));
-                l.add(f(s, SINE, -0.16F, -0.26F, 0.70F, 6, 0));
-                l.add(f(s + 190, SINE, -0.14F, -0.24F, 0.92F, 0, 0));
+                l.add(f(270, OVER, -0.20F, -0.30F, 0.92F, 0, 0));
+                l.add(f(s, CURVE, -0.16F, -0.26F, 0.70F, 6, 0));
+                l.add(f(s + 190, CURVE, -0.14F, -0.24F, 0.92F, 0, 0));
                 l.add(f(s + 340, IN, -0.55F, -0.95F, 0.45F, 0, 0));
-                r.add(f(350, OUT, 0.42F, -0.50F, 0.58F, 0, -10));
-                r.add(f(s - 140, SINE, 0.50F, -0.46F, 0.40F, -8, -25));
-                r.add(f(s - 115, SINE, 0.53F, -0.45F, 0.36F, -10, -28));
-                r.add(f(s, OUT, 0.13F, -0.40F, 1.00F, 12, 0));
-                r.add(f(s + 80, SINE, 0.11F, -0.42F, 1.06F, 14, 5));
+                r.add(f(350, OVER, 0.42F, -0.50F, 0.58F, 0, -10));
+                r.add(f(s - 200, CURVE, 0.48F, -0.47F, 0.42F, -6, -22));
+                r.add(f(s - 90, CURVE, 0.53F, -0.45F, 0.36F, -10, -28));
+                r.add(f(s, ANTIC, 0.13F, -0.40F, 1.00F, 12, 0));
+                r.add(f(s + 80, CURVE, 0.11F, -0.42F, 1.06F, 14, 5));
                 r.add(f(s + 190, IN, 0.42F, -0.42F, 0.50F, -4, 10));
                 r.add(f(s + 340, IN, 0.62F, -0.95F, 0.40F, 0, 0));
-                r.add(f(s + 700, SINE, 0.62F, -0.95F, 0.40F, 0, 0));
+                r.add(f(s + 700, CURVE, 0.62F, -0.95F, 0.40F, 0, 0));
             }
             case THRALL_5 -> {
-                // 跃起时两手张开，头顶上往下看着它，一刀扎下去；落地前收走
-                l.add(f(280, OUT, -0.45F, -0.55F, 0.70F, 0, 0));
-                l.add(f(s, SINE, -0.40F, -0.60F, 0.70F, 0, 0));
-                l.add(f(1200, SINE, -0.55F, -0.95F, 0.45F, 0, 0));
-                r.add(f(280, OUT, 0.45F, -0.50F, 0.55F, 0, -10));
-                r.add(f(s - 140, SINE, 0.38F, 0.05F, 0.45F, -10, 0));
-                r.add(f(s - 115, SINE, 0.37F, 0.10F, 0.42F, -14, 0));
-                r.add(f(s, OUT, 0.12F, -0.58F, 0.82F, 60, 0));
-                stabFollow(r, s, 0.12F, -0.62F, 0.84F, 62, s + 180);
+                // 跃起时两手张开，头顶上往下看着它，刀往回一收再扎下去；落地前收走
+                l.add(f(280, OVER, -0.45F, -0.55F, 0.70F, 0, 0));
+                l.add(f(s, CURVE, -0.40F, -0.60F, 0.70F, 0, 0));
+                l.add(f(1200, CURVE, -0.55F, -0.95F, 0.45F, 0, 0));
+                r.add(f(280, OVER, 0.45F, -0.50F, 0.55F, 0, -10));
+                r.add(f(s - 200, CURVE, 0.50F, 0.08F, 0.64F, -16, 0));
+                r.add(f(s - 80, CURVE, 0.50F, 0.17F, 0.62F, -22, 0));
+                // 人在它头顶上往下看，拳头停在画面右下、刃尖朝它扎。刃尖下俯别超过 30 度左右：前臂是绕拳头转的，
+                // 俯得太狠胳膊肘那头会翘起来糊在镜头右上角
+                r.add(f(s, ANTIC, 0.20F, -0.48F, 0.86F, 30, 0));
+                r.add(f(s + 80, CURVE, 0.20F, -0.51F, 0.88F, 32, 5));
+                r.add(f(s + 180, CURVE, 0.21F, -0.52F, 0.86F, 32, 25));
                 r.add(f(s + 340, IN, 0.40F, -0.35F, 0.55F, -10, 0));
             }
             case THRALL_3 -> {
-                // 左手按住后颈往下压；刀举过头，一下扎下去、压着拧，抽刀时左手横着推
-                l.add(f(300, OUT, -0.22F, -0.52F, 0.84F, 35, 0));
-                l.add(f(400, SINE, -0.22F, -0.55F, 0.80F, 38, 0));
-                l.add(f(700, SINE, -0.22F, -0.60F, 0.80F, 42, 0));
-                l.add(f(s, SINE, -0.22F, -0.63F, 0.80F, 45, 0));
-                l.add(f(1450, SINE, -0.22F, -0.62F, 0.80F, 45, 0));
-                l.add(f(1560, OUT, 0.05F, -0.50F, 1.10F, 20, 0));
-                l.add(f(1780, SINE, -0.45F, -0.85F, 0.65F, 0, 0));
-                r.add(f(400, SINE, 0.45F, -0.55F, 0.55F, 0, -10));
-                r.add(f(s - 140, SINE, 0.38F, 0.05F, 0.45F, -10, 0));
-                r.add(f(s - 115, SINE, 0.37F, 0.10F, 0.42F, -14, 0));
-                r.add(f(s, OUT, 0.12F, -0.58F, 0.82F, 60, 0));
-                stabFollow(r, s, 0.12F, -0.62F, 0.84F, 62, 1450);
+                // 左手按住后颈往下压，它往上顶时再压一下；刀甩过头顶住，一下砸下去、压着拧，抽刀时左手横着推
+                l.add(f(300, OVER, -0.22F, -0.52F, 0.84F, 35, 0));
+                l.add(f(400, CURVE, -0.22F, -0.55F, 0.80F, 38, 0));
+                l.add(f(600, CURVE, -0.22F, -0.51F, 0.82F, 33, 0));
+                l.add(f(680, OVER, -0.22F, -0.61F, 0.80F, 43, 0));
+                l.add(f(s, CURVE, -0.22F, -0.63F, 0.80F, 45, 0));
+                l.add(f(1450, CURVE, -0.22F, -0.62F, 0.80F, 45, 0));
+                l.add(f(1560, OVER, 0.05F, -0.50F, 1.10F, 20, 0));
+                l.add(f(1780, CURVE, -0.45F, -0.85F, 0.65F, 0, 0));
+                r.add(f(400, CURVE, 0.45F, -0.55F, 0.55F, 0, -10));
+                // 举过头时拳头出到画面右上角外面一点，不贴着镜头占半个画面
+                r.add(f(s - 260, OVER, 0.50F, 0.10F, 0.64F, -16, 0));
+                r.add(f(s - 120, CURVE, 0.50F, 0.17F, 0.62F, -22, 0));
+                // 砸下去时拳头停在画面右下，刃尖往前下扎进它的后颈，胳膊不横在画面中间挡住刀口
+                r.add(f(s, ANTIC, 0.14F, -0.40F, 0.78F, 32, 0));
+                stabFollow(r, s, 0.13F, -0.43F, 0.81F, 34, 1450);
                 r.add(f(1530, IN, 0.40F, -0.35F, 0.55F, -10, 0));
             }
             default -> {
-                // 揪住肩往回拽，把它往刀上送；拔刀的同时一把推开
-                l.add(f(280, OUT, -0.20F, -0.30F, 0.92F, 0, 0));
-                l.add(f(350, SINE, -0.18F, -0.32F, 0.86F, 10, 0));
-                l.add(f(600, SINE, -0.17F, -0.24F, 0.76F, 6, 0));
-                l.add(f(s, SINE, -0.16F, -0.26F, 0.70F, 6, 0));
-                l.add(f(1350, SINE, -0.16F, -0.27F, 0.71F, 6, 0));
-                l.add(f(1450, OUT, -0.10F, -0.22F, 1.18F, -5, 0));
-                l.add(f(1700, SINE, -0.45F, -0.75F, 0.70F, 0, 0));
-                r.add(f(350, OUT, 0.42F, -0.50F, 0.58F, 0, -10));
-                r.add(f(s - 140, SINE, 0.50F, -0.46F, 0.40F, -8, -25));
-                r.add(f(s - 115, SINE, 0.53F, -0.45F, 0.36F, -10, -28));
-                r.add(f(s, OUT, 0.13F, -0.40F, 1.00F, 12, 0));
-                stabFollow(r, s, 0.11F, -0.42F, 1.06F, 14, 1350);
+                // 揪住肩往回拽，把它往刀上送；拧满一阵，拔刀的同时一把推开
+                l.add(f(270, OVER, -0.20F, -0.30F, 0.92F, 0, 0));
+                l.add(f(370, CURVE, -0.18F, -0.32F, 0.86F, 10, 0));
+                l.add(f(560, OVER, -0.17F, -0.25F, 0.74F, 6, 0));
+                l.add(f(s, CURVE, -0.16F, -0.27F, 0.70F, 6, 0));
+                l.add(f(1380, CURVE, -0.16F, -0.28F, 0.71F, 6, 0));
+                l.add(f(1450, OVER, -0.10F, -0.22F, 1.18F, -5, 0));
+                l.add(f(1700, CURVE, -0.45F, -0.75F, 0.70F, 0, 0));
+                r.add(f(350, OVER, 0.42F, -0.50F, 0.58F, 0, -10));
+                r.add(f(s - 200, CURVE, 0.48F, -0.47F, 0.42F, -6, -22));
+                r.add(f(s - 90, CURVE, 0.53F, -0.45F, 0.36F, -10, -28));
+                r.add(f(s, ANTIC, 0.13F, -0.40F, 1.00F, 12, 0));
+                stabFollow(r, s, 0.11F, -0.42F, 1.06F, 14, 1380);
                 r.add(f(1440, IN, 0.42F, -0.42F, 0.50F, -4, 10));
             }
         }
@@ -1984,13 +2030,13 @@ public final class MercyPose {
     /** 第一人称：算右臂（{@code right}）或左臂此刻的位置 */
     static void firstPerson(MercyClient.Exec e, long t, boolean right, Arm out) {
         Track tr = e.pose;
-        sample(right ? tr.fpRight : tr.fpLeft, t, FP);
+        sampleFp(tr, right, t, FP);
         float x = FP[FX], y = FP[FY], z = FP[FZ], pitch = FP[FPITCH], roll = FP[FROLL];
         for (int i = 0; i < tr.stabs.length; i++) {
             long dt = t - tr.stabs[i];
             float w = tr.weight[i];
             float j = jolt(dt);
-            float tm = tremor(dt);
+            float tm = tr.fpCurveR != null ? tremor2(tr, dt) : tremor(dt);
             if (right) {
                 // 刺中：拳头往里多送一下再被顶回来；拧刀时手上抖
                 z += 0.05F * w * j;
@@ -2021,6 +2067,20 @@ public final class MercyPose {
         out.z = z;
         out.pitchDown = pitch;
         out.roll = roll;
+    }
+
+    /** 第一人称一只手这一刻的表值；新曲线下刃尖的俯仰晚拳头 15 ms、拧晚 25 ms，和第三人称的手腕一样 */
+    private static void sampleFp(Track tr, boolean right, long t, float[] dst) {
+        MercyCurve.Keys c = right ? tr.fpCurveR : tr.fpCurveL;
+        if (c == null) {
+            sample(right ? tr.fpRight : tr.fpLeft, t, dst);
+            return;
+        }
+        dst[FX] = c.sample(FX, t);
+        dst[FY] = c.sample(FY, t);
+        dst[FZ] = c.sample(FZ, t);
+        dst[FPITCH] = c.sample(FPITCH, t - 15);
+        dst[FROLL] = c.sample(FROLL, t - 25);
     }
 
     private static float sineEase(float u) {
