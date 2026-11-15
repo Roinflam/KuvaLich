@@ -215,7 +215,7 @@ public final class FinaleSettlement {
         return live != null ? live : player;
     }
 
-    private static void saveNow(ServerPlayer player) {
+    public static void saveNow(ServerPlayer player) {
         try {
             ((PlayerListSaveInvoker) player.server.getPlayerList()).kuvalich$save(player);
         } catch (RuntimeException | LinkageError e) {

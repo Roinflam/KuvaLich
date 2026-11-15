@@ -1,6 +1,7 @@
 package pers.roinflam.kuvalich.world.inventory;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.EntityTravelToDimensionEvent;
@@ -9,8 +10,13 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import pers.roinflam.kuvalich.nemesis.FinaleSettlement;
+import pers.roinflam.kuvalich.nemesis.PlayerLedger;
 import pers.roinflam.kuvalich.utils.InventoryUtil;
+import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
+
+import java.util.List;
 
 /**
  * 下线时先关掉安魂系列的界面，再让原版存档
@@ -21,7 +27,11 @@ import pers.roinflam.kuvalich.utils.Reference;
  * {@code PlayerLoggedOutEvent} 在 remove 一开头、存档之前发，这里先关一次，关闭时交还的东西就进了存档；
  * 之后原版看到界面已经关了，不会再关第二次。</p>
  *
- * <p>手上拿着（光标上）的东西原版下线时扔在地上（它那时已经认为玩家断线了），这里先放回背包，放不下才扔。</p>
+ * <p>手上拿着（光标上）的东西原版下线时扔在地上（它那时已经认为玩家断线了），这里先放回背包，
+ * 放不下的进待领取、当场存盘，重登后再往背包里放。死亡、跨维度时人还在场，放不下照旧扔在脚下。</p>
+ *
+ * <p>下线这一步还要从 {@code PlayerList.remove} 一开头调一次（{@code MixinPlayerListRemove}）：
+ * Tenet 在发登出事件之前就把开着的界面的光标放回背包、放不下的扔在脚下，等到事件里光标已经空了。</p>
  *
  * <p>开着战甲军械库时死亡、跨维度同理：原版先把玩家标成已移除再关界面，关界面时看到玩家不在世界里就把光标上的扔出去，
  * 死在岩浆、虚空里幻纹就没了。这两条路在事件里先放回背包再关界面；死亡时放回背包以后跟着背包走
@@ -69,13 +79,73 @@ public final class RequiemMenuLogoutGuard {
         }
     }
 
+    /** {@code PlayerList.remove} 一开头调（{@code MixinPlayerListRemove}），见类注释 */
+    public static void beforeRemove(ServerPlayer player) {
+        if (isRequiemMenu(player.containerMenu)) {
+            returnCarriedAndClose(player);
+        }
+    }
+
     private static void returnCarriedAndClose(ServerPlayer player) {
         ItemStack carried = player.containerMenu.getCarried();
+        boolean inboxed = false;
         if (!carried.isEmpty()) {
             player.containerMenu.setCarried(ItemStack.EMPTY);
-            InventoryUtil.giveOrDrop(player, carried);
+            if (player.isAlive()) {
+                inboxed = stowOrInbox(player, carried);
+            } else {
+                InventoryUtil.giveOrDrop(player, carried);
+            }
         }
         player.doCloseContainer();
+        if (inboxed) {
+            FinaleSettlement.saveNow(player);
+        }
+    }
+
+    /**
+     * 先叠同种、再放空格，剩下的进待领取：人已经走了，扔在地上没人捡，过几分钟就消失。
+     *
+     * @return 有东西进了待领取
+     */
+    private static boolean stowOrInbox(ServerPlayer player, ItemStack stack) {
+        Inventory inv = player.getInventory();
+        try {
+            while (!stack.isEmpty()) {
+                int slot = inv.getSlotWithRemainingSpace(stack);
+                if (slot < 0) {
+                    slot = inv.getFreeSlot();
+                }
+                if (slot < 0) {
+                    break;
+                }
+                ItemStack there = inv.getItem(slot);
+                int room = there.isEmpty() ? Math.min(stack.getMaxStackSize(), inv.getMaxStackSize())
+                        : Math.min(there.getMaxStackSize(), inv.getMaxStackSize()) - there.getCount();
+                if (room <= 0) {
+                    break;
+                }
+                // 自己放，不走 Inventory.add：创造模式下它会把放不进的抹掉
+                ItemStack part = stack.split(room);
+                if (there.isEmpty()) {
+                    inv.setItem(slot, part);
+                } else {
+                    there.grow(part.getCount());
+                }
+            }
+            inv.setChanged();
+            if (stack.isEmpty()) {
+                return false;
+            }
+            PlayerLedger.addToInbox(player, List.of(stack));
+            return true;
+        } catch (RuntimeException e) {
+            LogUtil.error("下线时把 " + player.getGameProfile().getName() + " 光标上的 " + stack + " 放进待领取出错，改为扔在原地", e);
+            if (!stack.isEmpty()) {
+                player.drop(stack, false);
+            }
+            return false;
+        }
     }
 
     static boolean isRequiemMenu(AbstractContainerMenu menu) {

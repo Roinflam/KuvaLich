@@ -28,6 +28,7 @@ import pers.roinflam.kuvalich.capability.WarframeModules;
 import pers.roinflam.kuvalich.ephemera.EphemeraItem;
 import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.nemesis.PlayerLedger;
 import pers.roinflam.kuvalich.network.packet.WarframeModuleSyncPacket;
 import pers.roinflam.kuvalich.utils.Reference;
 import pers.roinflam.kuvalich.world.inventory.RequiemMenuLogoutGuard;
@@ -456,6 +457,69 @@ public final class EphemeraSlotTests {
         ServerPlayer again = relog(h, p);
         h.assertTrue(ItemStack.matches(wm(again).getEphemera(), e1)
                 && again.getInventory().countItem(KuvaLichItems.EPHEMERA.get()) == 1, "重进后两件都在");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = BATCH)
+    public static void logoutFullInventoryCarriedToInbox(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        ItemStack e1 = eph(EphemeraType.SURGE, "fire");
+        wm(p).setEphemera(e1.copy());
+        for (int i = 0; i < 36; i++) {
+            p.getInventory().setItem(i, new ItemStack(Items.DIRT, 64));
+        }
+        p.getInventory().offhand.set(0, new ItemStack(Items.DIRT, 64));
+        RequiemWarframeTableMenu menu = open(p);
+        menu.clicked(EPH, 0, ClickType.PICKUP, p);
+        h.assertTrue(ItemStack.matches(menu.getCarried(), e1), "拿到光标上");
+        RequiemMenuLogoutGuard.closeRequiemMenuBeforeSave(new PlayerEvent.PlayerLoggedOutEvent(p));
+
+        List<ItemEntity> dropped = p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(4.0D),
+                e -> e.getItem().is(KuvaLichItems.EPHEMERA.get()));
+        dropped.forEach(ItemEntity::discard);
+        h.assertTrue(dropped.isEmpty(), "背包满时掉线不扔地上：" + dropped.size());
+        h.assertTrue(menu.getCarried().isEmpty() && p.containerMenu == p.inventoryMenu, "光标清空、界面关了");
+        List<ItemStack> inbox = PlayerLedger.getInbox(p);
+        h.assertTrue(inbox.size() == 1 && ItemStack.matches(inbox.get(0), e1), "进了待领取，只有一件：" + inbox);
+        h.assertTrue(wm(p).getEphemera().isEmpty() && p.getInventory().countItem(KuvaLichItems.EPHEMERA.get()) == 0,
+                "格里和背包里都没有，不会多出一件");
+
+        ServerPlayer again = relog(h, p);
+        List<ItemStack> after = PlayerLedger.getInbox(again);
+        h.assertTrue(after.size() == 1 && ItemStack.matches(after.get(0), e1), "存盘读回后待领取里还在");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = BATCH)
+    public static void logoutPartlyFitsSplitsToInbox(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        for (int i = 0; i < 36; i++) {
+            p.getInventory().setItem(i, new ItemStack(Items.DIRT, 64));
+        }
+        p.getInventory().offhand.set(0, new ItemStack(Items.DIRT, 64));
+        p.getInventory().setItem(5, new ItemStack(Items.DIAMOND, 50));
+        RequiemWarframeTableMenu menu = open(p);
+        // 光标上不是幻纹也一样处理
+        menu.setCarried(new ItemStack(Items.DIAMOND, 40));
+        // 走 PlayerList.remove 开头那个入口
+        RequiemMenuLogoutGuard.beforeRemove(p);
+
+        List<ItemEntity> dropped = p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(4.0D),
+                e -> e.getItem().is(Items.DIAMOND));
+        dropped.forEach(ItemEntity::discard);
+        int inInv = p.getInventory().countItem(Items.DIAMOND);
+        int inInbox = PlayerLedger.inboxCount(p);
+        h.assertTrue(dropped.isEmpty(), "地上没有：" + dropped.size());
+        h.assertTrue(menu.getCarried().isEmpty() && p.containerMenu == p.inventoryMenu, "光标清空、界面关了");
+        h.assertTrue(inInv == 64 && inInbox == 26, "补满那一格 14 颗、其余 26 颗进待领取：背包 " + inInv + "，待领取 " + inInbox);
+
+        // 背包有空位：照旧全回背包，待领取不变
+        ServerPlayer q = KuvaTestKit.player(h);
+        RequiemWarframeTableMenu qm = open(q);
+        qm.setCarried(new ItemStack(Items.DIAMOND, 40));
+        RequiemMenuLogoutGuard.closeRequiemMenuBeforeSave(new PlayerEvent.PlayerLoggedOutEvent(q));
+        h.assertTrue(q.getInventory().countItem(Items.DIAMOND) == 40 && !PlayerLedger.hasInbox(q)
+                && qm.getCarried().isEmpty(), "有空位时全回背包，待领取不变");
         h.succeed();
     }
 
