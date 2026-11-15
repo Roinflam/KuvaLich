@@ -619,8 +619,9 @@ public final class MercyCamera {
             c.entryState = 1;
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null && mc.player != null) {
-                if (entryArc(e) && pos.subtract(look).dot(e.s) < 0.0D) {
-                    // 机位换到了目标右手边（贴墙时），弧线要从它举着的武器里穿过去；武器长短各异查不了，照旧硬切
+                if (entryArc(e) && e.variant.facing == MercyVariant.Facing.TOWARD && pos.subtract(look).dot(e.s) < 0.0D) {
+                    // 面对面的套路机位换到了目标右手边（贴墙时），弧线要从它举着的武器里穿过去；武器长短各异查不了，照旧硬切。
+                    // 背对的套路机位在处决者身后，碰不到它的武器
                     c.entryState = -1;
                 } else if (entryArc(e)) {
                     Vec3 prev = eye;

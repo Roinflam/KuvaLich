@@ -20,33 +20,45 @@ import pers.roinflam.kuvalich.utils.Reference;
 public final class MercyCameraPathTests {
 
     private static final MercyVariant A = MercyVariant.LICH_A;
+    private static final MercyVariant B = MercyVariant.LICH_B;
+    private static final MercyVariant[] PLANNED = {A, B};
 
     private MercyCameraPathTests() {
     }
 
-    private static float[] at(int last, Motion m, long t, long raw) {
+    private static float[] at(MercyVariant v, int last, Motion m, long t, long raw) {
         float[] out = new float[MercyCameraPath.CHANNELS];
-        if (!MercyCameraPath.sample(A, last, m, t, raw, out)) {
-            throw new AssertionError("正面直刺在 " + m + " 档应当有轨迹");
+        if (!MercyCameraPath.sample(v, last, m, t, raw, out)) {
+            throw new AssertionError(v + " 在 " + m + " 档应当有轨迹");
         }
         return out;
     }
 
-    /** 不等顿帧：真实钟远远在前，刺入的猛推已经推完 */
-    private static float[] at(int last, Motion m, long t) {
-        return at(last, m, t, t + 10_000L);
+    private static float[] at(int last, Motion m, long t, long raw) {
+        return at(A, last, m, t, raw);
     }
 
-    /** 静态档一律没有这一层；没排轨迹的套路（现在除了正面直刺都是）各档都没有 */
+    /** 不等顿帧：真实钟远远在前，刺入的猛推已经推完 */
+    private static float[] at(int last, Motion m, long t) {
+        return at(A, last, m, t, t + 10_000L);
+    }
+
+    private static float[] at(MercyVariant v, int last, Motion m, long t) {
+        return at(v, last, m, t, t + 10_000L);
+    }
+
+    /** 静态档一律没有这一层；没排轨迹的套路（现在除了正面直刺、背后锁颈都是）各档都没有 */
     @GameTest(template = "empty")
     public static void staticAndUnplannedHaveNoPath(GameTestHelper h) {
         float[] out = new float[MercyCameraPath.CHANNELS];
-        for (long t = 0; t < 9000; t += 25) {
-            h.assertFalse(MercyCameraPath.sample(A, 3, Motion.STATIC, t, t, out), "静态档不该有轨迹：" + t);
+        for (MercyVariant v : PLANNED) {
+            for (long t = 0; t < 9000; t += 25) {
+                h.assertFalse(MercyCameraPath.sample(v, 3, Motion.STATIC, t, t, out), v + " 静态档不该有轨迹：" + t);
+            }
+            h.assertTrue(MercyCameraPath.has(v), v + " 应当排了轨迹");
         }
-        h.assertTrue(MercyCameraPath.has(A), "正面直刺应当排了轨迹");
         for (MercyVariant v : MercyVariant.values()) {
-            if (v == A) {
+            if (v == A || v == B) {
                 continue;
             }
             h.assertFalse(MercyCameraPath.has(v), v + " 还没排轨迹");
@@ -101,20 +113,49 @@ public final class MercyCameraPathTests {
     /** 除了第二刀的硬切和第三刀的猛推，各通道逐毫秒连续（不跳、不抖） */
     @GameTest(template = "empty")
     public static void lichAContinuousBetweenCuts(GameTestHelper h) {
-        MercyBeats.Lich b = MercyBeats.lich(A);
-        int s2 = b.stab(1), s3 = b.stab(2);
-        // 绕的上限 80°/秒：第二、三刀之间要从斜后方绕回侧面
+        // 绕的上限 80°/秒：第二、三刀之间要从斜后方绕回来
         float[] limit = {0.003F, 0.08F, 0.003F, 0.02F, 0.001F};
-        float[] prev = at(3, Motion.FULL, b.cutIn);
-        for (long t = b.cutIn + 1; t < b.closeup; t++) {
-            float[] cur = at(3, Motion.FULL, t);
-            if (t != s2 && t != s3) {
-                for (int c = 0; c < MercyCameraPath.CHANNELS; c++) {
-                    h.assertTrue(Math.abs(cur[c] - prev[c]) <= limit[c],
-                            t + " ms 第 " + c + " 通道一毫秒变了 " + (cur[c] - prev[c]));
+        for (MercyVariant v : PLANNED) {
+            MercyBeats.Lich b = MercyBeats.lich(v);
+            int s2 = b.stab(1), s3 = b.stab(2);
+            float[] prev = at(v, 3, Motion.FULL, b.cutIn);
+            for (long t = b.cutIn + 1; t < b.closeup; t++) {
+                float[] cur = at(v, 3, Motion.FULL, t);
+                if (t != s2 && t != s3) {
+                    for (int c = 0; c < MercyCameraPath.CHANNELS; c++) {
+                        h.assertTrue(Math.abs(cur[c] - prev[c]) <= limit[c],
+                                v + " " + t + " ms 第 " + c + " 通道一毫秒变了 " + (cur[c] - prev[c]));
+                    }
                 }
+                prev = cur;
             }
-            prev = cur;
+        }
+        h.succeed();
+    }
+
+    /**
+     * 背后锁颈：第一刀过肩、推拉不大，勒脖子那一段慢慢往里蹭；第二刀硬切到斜后方压低；拔刀转圈时拉开升回去；
+     * 第三刀刺入猛推
+     */
+    @GameTest(template = "empty")
+    public static void lichBThreeFramings(GameTestHelper h) {
+        MercyBeats.Lich b = MercyBeats.lich(B);
+        int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
+        int d = MercyCameraPath.DOLLY, o = MercyCameraPath.ORBIT, r = MercyCameraPath.RISE;
+        float[] first = at(B, 3, Motion.FULL, s1);
+        float[] beforeCut = at(B, 3, Motion.FULL, s2 - 1);
+        float[] second = at(B, 3, Motion.FULL, s2);
+        float[] windup = at(B, 3, Motion.FULL, s3 - 60);
+        float[] third = at(B, 3, Motion.FULL, s3 + 100);
+        h.assertTrue(Math.abs(first[d]) < 0.08F, "第一刀应当是过肩原样，推拉不大：" + first[d]);
+        h.assertTrue(beforeCut[d] - first[d] > 0.06F, "勒脖子那一段应当慢慢推近：" + first[d] + " → " + beforeCut[d]);
+        h.assertTrue(beforeCut[o] - second[o] > 20.0F, "第二刀应当切到斜后方：" + beforeCut[o] + " → " + second[o]);
+        h.assertTrue(second[r] < -0.4F, "第二刀应当压低：" + second[r]);
+        h.assertTrue(windup[d] < second[d] - 0.15F, "转圈时应当拉开：" + windup[d]);
+        h.assertTrue(windup[r] > 0.0F && windup[o] > second[o] + 10.0F, "转圈时应当升回过肩：" + windup[r] + " / " + windup[o]);
+        h.assertTrue(third[d] - windup[d] > 0.2F, "第三刀刺入后应当猛推近：" + windup[d] + " → " + third[d]);
+        for (long t = b.cutIn; t < b.closeup; t += 5) {
+            h.assertTrue(at(B, 3, Motion.FULL, t)[o] <= 0.0F, "过肩机位不该往处决者背后绕：" + t);
         }
         h.succeed();
     }
@@ -122,13 +163,16 @@ public final class MercyCameraPathTests {
     /** 减弱档只留推拉，和完整档的推拉一样；不绕、不升降、不滚、不跟人 */
     @GameTest(template = "empty")
     public static void reducedKeepsDollyOnly(GameTestHelper h) {
-        MercyBeats.Lich b = MercyBeats.lich(A);
-        for (long t = b.cutIn; t < b.closeup; t += 7) {
-            float[] full = at(3, Motion.FULL, t);
-            float[] red = at(3, Motion.REDUCED, t);
-            h.assertTrue(full[MercyCameraPath.DOLLY] == red[MercyCameraPath.DOLLY], t + " ms 减弱档的推拉应当和完整档一样");
-            for (int c = MercyCameraPath.ORBIT; c < MercyCameraPath.CHANNELS; c++) {
-                h.assertTrue(red[c] == 0.0F, t + " ms 减弱档第 " + c + " 通道应当是 0");
+        for (MercyVariant v : PLANNED) {
+            MercyBeats.Lich b = MercyBeats.lich(v);
+            for (long t = b.cutIn; t < b.closeup; t += 7) {
+                float[] full = at(v, 3, Motion.FULL, t);
+                float[] red = at(v, 3, Motion.REDUCED, t);
+                h.assertTrue(full[MercyCameraPath.DOLLY] == red[MercyCameraPath.DOLLY],
+                        v + " " + t + " ms 减弱档的推拉应当和完整档一样");
+                for (int c = MercyCameraPath.ORBIT; c < MercyCameraPath.CHANNELS; c++) {
+                    h.assertTrue(red[c] == 0.0F, v + " " + t + " ms 减弱档第 " + c + " 通道应当是 0");
+                }
             }
         }
         h.succeed();
@@ -137,24 +181,26 @@ public final class MercyCameraPathTests {
     /** 不到三刀就出结果的：最后一刀之后再走一小段就停，后面那一刀的切镜、蓄力拉开、猛推都不出现 */
     @GameTest(template = "empty")
     public static void earlyOutcomeHoldsPath(GameTestHelper h) {
-        MercyBeats.Lich b = MercyBeats.lich(A);
-        int s1 = b.stab(0), s2 = b.stab(1);
-        float[] hold2 = at(2, Motion.FULL, s2 + MercyCameraPath.HOLD_AFTER_LAST_MS);
-        float[] hold1 = at(1, Motion.FULL, s1 + MercyCameraPath.HOLD_AFTER_LAST_MS);
-        for (long t = s1; t < 6000; t += 13) {
-            if (t >= s2 + MercyCameraPath.HOLD_AFTER_LAST_MS) {
-                float[] cur = at(2, Motion.FULL, t, t);
-                for (int c = 0; c < MercyCameraPath.CHANNELS; c++) {
-                    h.assertTrue(cur[c] == hold2[c], "第二刀出结果时 " + t + " ms 应当停住");
+        for (MercyVariant v : PLANNED) {
+            MercyBeats.Lich b = MercyBeats.lich(v);
+            int s1 = b.stab(0), s2 = b.stab(1);
+            float[] hold2 = at(v, 2, Motion.FULL, s2 + MercyCameraPath.HOLD_AFTER_LAST_MS);
+            float[] hold1 = at(v, 1, Motion.FULL, s1 + MercyCameraPath.HOLD_AFTER_LAST_MS);
+            for (long t = s1; t < 6000; t += 13) {
+                if (t >= s2 + MercyCameraPath.HOLD_AFTER_LAST_MS) {
+                    float[] cur = at(v, 2, Motion.FULL, t, t);
+                    for (int c = 0; c < MercyCameraPath.CHANNELS; c++) {
+                        h.assertTrue(cur[c] == hold2[c], v + " 第二刀出结果时 " + t + " ms 应当停住");
+                    }
                 }
-            }
-            if (t >= s1 + MercyCameraPath.HOLD_AFTER_LAST_MS) {
-                float[] cur = at(1, Motion.FULL, t, t);
-                for (int c = 0; c < MercyCameraPath.CHANNELS; c++) {
-                    h.assertTrue(cur[c] == hold1[c], "第一刀出结果时 " + t + " ms 应当停住");
+                if (t >= s1 + MercyCameraPath.HOLD_AFTER_LAST_MS) {
+                    float[] cur = at(v, 1, Motion.FULL, t, t);
+                    for (int c = 0; c < MercyCameraPath.CHANNELS; c++) {
+                        h.assertTrue(cur[c] == hold1[c], v + " 第一刀出结果时 " + t + " ms 应当停住");
+                    }
                 }
+                h.assertTrue(MercyCameraPath.segment(v, 1, t) == 0, v + " 第一刀出结果时不该切到第二刀的机位");
             }
-            h.assertTrue(MercyCameraPath.segment(A, 1, t) == 0, "第一刀出结果时不该切到第二刀的机位");
         }
         h.succeed();
     }

@@ -211,9 +211,9 @@ public final class MercyTests {
         h.succeed();
     }
 
-    /** 正面直刺「短—长」，玄骸的 hit1 / hit2 片段长度跟刀间隔走（动画文件是脚本生成的，改表忘了重新生成就会对不上） */
+    /** 正面直刺「短—长」、背后锁颈「长—短」，玄骸的 hit1 / hit2 片段长度跟刀间隔走（动画文件是脚本生成的，改表忘了重新生成就会对不上） */
     @GameTest(template = "empty")
-    public static void lichAHitClipsFollowBeats(GameTestHelper h) {
+    public static void lichHitClipsFollowBeats(GameTestHelper h) {
         MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
         int gap1 = b.stab(1) - b.stab(0), gap2 = b.stab(2) - b.stab(1);
         h.assertTrue(gap1 < gap2, "正面直刺应当第二刀紧跟、第三刀前留蓄力：" + gap1 + " / " + gap2);
@@ -226,12 +226,19 @@ public final class MercyTests {
         } catch (java.io.IOException e) {
             throw new IllegalStateException(e);
         }
-        int[] gaps = {gap1, gap2};
-        for (int k = 1; k <= 2; k++) {
-            String name = "mercy.lich.a.hit" + k;
-            h.assertTrue(anims.has(name), "缺片段 " + name);
-            int len = Math.round(anims.getAsJsonObject(name).get("animation_length").getAsFloat() * 1000.0F);
-            h.assertTrue(Math.abs(len - gaps[k - 1]) <= 1, name + " 长 " + len + " ms，刀间隔是 " + gaps[k - 1] + " ms");
+        MercyBeats.Lich bb = MercyBeats.lich(MercyVariant.LICH_B);
+        int b1 = bb.stab(1) - bb.stab(0), b2 = bb.stab(2) - bb.stab(1);
+        h.assertTrue(b1 > b2, "背后锁颈应当第一刀后勒住憋一下、后两刀连着：" + b1 + " / " + b2);
+        int[][] gaps = {{gap1, gap2}, {b1, b2}};
+        String[] keys = {"a", "b"};
+        for (int v = 0; v < keys.length; v++) {
+            for (int k = 1; k <= 2; k++) {
+                String name = "mercy.lich." + keys[v] + ".hit" + k;
+                h.assertTrue(anims.has(name), "缺片段 " + name);
+                int len = Math.round(anims.getAsJsonObject(name).get("animation_length").getAsFloat() * 1000.0F);
+                h.assertTrue(Math.abs(len - gaps[v][k - 1]) <= 1,
+                        name + " 长 " + len + " ms，刀间隔是 " + gaps[v][k - 1] + " ms");
+            }
         }
         h.succeed();
     }

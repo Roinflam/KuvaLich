@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
  * 里从上一段的末值冲到这一段，顿帧时照样推过去。段内各通道按 {@link MercyCurve.Keys} 的单调三次走，
  * 每段最后一帧放在切点之后，切的那一刻镜头还在动。</p>
  *
- * <p>只有排过轨迹的套路有这一层（现在是正面直刺），别的套路照旧是固定机位。</p>
+ * <p>只有排过轨迹的套路有这一层（现在是正面直刺、背后锁颈），别的套路照旧是固定机位。</p>
  */
 public final class MercyCameraPath {
 
@@ -58,6 +58,7 @@ public final class MercyCameraPath {
 
     static {
         PATHS[MercyVariant.LICH_A.ordinal()] = lichA();
+        PATHS[MercyVariant.LICH_B.ordinal()] = lichB();
     }
 
     private MercyCameraPath() {
@@ -89,6 +90,37 @@ public final class MercyCameraPath {
                         k(s3 + 250, 0.20F, 5.8F, 0.03F, 0.0F, 0.45F),
                         k(s3 + 1000, -0.02F, 4.0F, 0.08F, 0.0F, 0.45F),
                         k(end + 300, -0.07F, 3.0F, 0.09F, 0.0F, 0.45F))
+        };
+    }
+
+    /**
+     * 背后锁颈，本套机位是处决者右肩后上方的过肩镜头。原样拍第一刀，刀口在处决者的头后面，所以整段先往侧面绕 20 多度、
+     * 升高 0.2 格，从他头的右上方看下去；勒着脖子憋那一下慢慢往里蹭。第二刀硬切到侧面压低，看它被扳到后面的头和背心那一刀，
+     * 画面歪 2°；拔刀转圈时边拉开边升回去，让整圈都在画里；第三刀刺入猛推，之后跟着它往前扑倒慢慢退出来。
+     * 绕的方向是负的：过肩机位在处决者身后，往处决者那一侧绕就绕到他背后被他自己挡住
+     */
+    private static Seg[] lichB() {
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_B);
+        int in = b.cutIn;
+        int s1 = b.stab(0);
+        int s2 = b.stab(1);
+        int s3 = b.stab(2);
+        int end = b.closeup;
+        return new Seg[]{
+                seg(in, false,
+                        k(in, -0.04F, -22.0F, 0.22F, 0.0F, 0.45F),
+                        k(s1 + 300, 0.03F, -25.0F, 0.25F, 0.0F, 0.45F),
+                        k(s2 + 200, 0.13F, -31.0F, 0.20F, 0.0F, 0.45F)),
+                seg(s2, false,
+                        k(s2, 0.14F, -56.0F, -0.50F, -2.0F, 0.45F),
+                        k(s2 + 300, 0.18F, -55.0F, -0.47F, -2.0F, 0.45F),
+                        k(s3 - 60, -0.05F, -32.0F, 0.22F, 0.0F, 0.45F),
+                        k(s3 + 200, -0.07F, -31.0F, 0.23F, 0.0F, 0.45F)),
+                seg(s3, true,
+                        k(s3, 0.20F, -30.0F, 0.18F, 0.0F, 0.45F),
+                        k(s3 + 250, 0.18F, -29.5F, 0.20F, 0.0F, 0.45F),
+                        k(s3 + 1000, -0.04F, -24.0F, 0.30F, 0.0F, 0.45F),
+                        k(end + 300, -0.08F, -22.0F, 0.32F, 0.0F, 0.45F))
         };
     }
 

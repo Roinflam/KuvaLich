@@ -138,7 +138,7 @@ public final class MercyPose {
         private final int strainFrom, strainTo;
         /** 过了这一刻不再覆盖（交还后让原版的走路摆臂接手） */
         private final int endT;
-        /** 按新写法排的（现在只有正面直刺）：曲线、错峰、迈步、头的滞后、和原版混合都只对它生效，别的套路逐帧照旧 */
+        /** 按新写法排的（现在是正面直刺、背后锁颈）：曲线、错峰、迈步、头的滞后、和原版混合都只对它生效，别的套路逐帧照旧 */
         private boolean v2;
         private MercyCurve.Keys curve, bodyCurve;
         /** 迈步那层：叠在两条腿上的摆角；没有为 null */
@@ -527,6 +527,69 @@ public final class MercyPose {
                 k(s3 + 1250, SINE, ready())));
     }
 
+    /**
+     * 背后锁颈按新写法排，节奏「长—短」：第一刀捅进后腰，拔出来以后整个人往后坐、左臂把它的脖子往上勒，憋住 400 来毫秒；
+     * 第二刀扳着它的头捅，拧得短、拔得快，拔刀时松开脖子，原地拧身转一圈，转回来左手按住它的肩膀借势捅第三刀。
+     * 踏背下刺的第一刀还复用旧的 {@link #lichB}，那张表别动
+     */
+    private static List<Key> lichB2(MercyBeats.Lich b) {
+        int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
+        List<Key> t = new ArrayList<>(List.of(
+                k(0, CURVE, start()),
+                k(130, CURVE, gather()),
+                k(310, OVER, p().tw(-8).ln(16).sq(0.1F).sh(1.5F).r(30, -30, 0).l(118, 15, 0).grip(1)
+                        .legs(-14, 16).hd(2, 0)),
+                k(420, CURVE, p().tw(-6).ln(12).sq(0.05F).sh(0.6F).hd(0, 0)),
+                k(s1 - 220, CURVE, p().tw(-22).ln(11).sq(0.15F).sh(-0.3F).r(78, -10, -20).aim(0.6F).pull(3.5F).hd(0, 3)),
+                k(s1 - 90, CURVE, p().tw(-28).ln(9).sq(0.2F).sh(-0.5F).r(78, -12, -25).pull(4.5F).legs(-16, 18)),
+                k(s1, ANTIC, p().tw(14).ln(18).sq(0.05F).sh(2).r(82, 4, 0).aim(1).pull(-1.5F).legs(-18, 18).hd(4, 0)),
+                k(s1 + 80, CURVE, p().tw(18).ln(20).sh(2.6F).hd(6, 0)),
+                k(s1 + 240, CURVE, p().tw(20).ln(19).sq(0.15F).r(NA, NA, 40).hd(4, 3)),
+                k(s1 + 380, CURVE, p().tw(18).ln(18).sq(0.1F).r(NA, NA, 32)),
+                k(s1 + 520, IN, p().tw(-16).ln(10).sq(0.1F).sh(0.3F).r(76, -14, -12).aim(0.5F).pull(3.6F).hd(0, 0)),
+                // 勒：往后一坐，左臂往上往回收，刀横在它腰后不动
+                k(s1 + 640, OVER, p().tw(-10).ln(-4).sq(0.3F).sh(-1.3F).r(72, -18, -14).aim(0.4F).pull(3).l(128, 12, 0)
+                        .reach(-3).legs(-20, 22).hd(-6, 0)),
+                k(s1 + 820, CURVE, p().tw(-12).ln(-6).sq(0.34F).sh(-1.6F).l(131, 12, 0).reach(-3.6F).hd(-7, 2)),
+                k(s2 - 240, CURVE, p().tw(-15).ln(-5).sq(0.34F).sh(-1.6F).r(76, -14, -22).aim(0.6F).pull(4).l(132, 12, 0)
+                        .reach(-4).hd(-6, 3)),
+                k(s2 - 110, CURVE, p().tw(-30).ln(4).sq(0.25F).sh(-0.6F).r(78, -14, -25).aim(0.7F).pull(4.6F).reach(-3)
+                        .hd(-2, 0)),
+                k(s2, ANTIC, p().tw(18).ln(20).sq(0.05F).sh(2.2F).r(86, 5, 0).aim(1).pull(-2).l(124, 14, 0).reach(-2)
+                        .legs(-20, 22).hd(4, 0)),
+                k(s2 + 80, CURVE, p().tw(22).ln(22).sh(2.8F).hd(6, -2)),
+                k(s2 + 200, CURVE, p().tw(25).ln(21).sq(0.15F).r(NA, NA, -44).hd(5, -3)),
+                k(s2 + 300, CURVE, p().tw(23).ln(20).r(NA, NA, -36)),
+                // 拔刀同时松开脖子，刀顺着拔出来的方向甩到身侧，带着整个人转起来
+                k(s2 + 380, IN, p().tw(-20).ln(8).sq(0.15F).sh(0.3F).r(60, -46, -10).aim(0).pull(2.5F).l(70, -10, 0)
+                        .grip(0).reach(0).hd(0, 0)),
+                k(s3 - 200, OVER, p().tw(-36).ln(9).sq(0.3F).sh(-0.6F).r(52, -64, -25).pull(1).l(46, -20, 0).hd(-2, 0)),
+                k(s3 - 60, CURVE, p().tw(-38).ln(12).sq(0.3F).sh(-0.4F).r(50, -66, -28).l(100, 10, 0).grip(1).hd(0, 0)),
+                k(s3, ANTIC, p().tw(28).ln(32).sq(0.1F).sh(4.5F).r(90, 8, 0).aim(1).pull(-1.5F).reach(5).l(112, 10, 0)
+                        .legs(-26, 30).hd(8, 0)),
+                k(s3 + 90, CURVE, p().tw(32).ln(33).sq(0.25F).sh(5).hd(10, 0))));
+        // 它往前扑倒：松手，跟着往前压
+        t.add(k(s3 + 280, CURVE, p().tw(20).ln(34).sq(0.35F).sh(5).r(60, 6, 0).aim(0).pull(0).l(60, 5, 0).grip(0)
+                .legs(-24, 30).hd(14, 0)));
+        t.add(k(s3 + 600, CURVE, p().tw(8).ln(16).sq(0.15F).sh(2).r(42, -10, 0).l(28, 0, 0).legs(-14, 14).hd(4, 0)));
+        t.add(k(s3 + 900, OUT, flick()));
+        t.add(k(s3 + 1250, CURVE, ready()));
+        return t;
+    }
+
+    /** 背后锁颈的步子：转圈时右腿离地带一下，转回来左脚往前落一步踩实再扎第三刀；只叠在腿上 */
+    private static List<Key> stepB2(int s2, int s3) {
+        return List.of(
+                k(0, CURVE, p().legs(0, 0)),
+                k(s2 + 420, CURVE, p().legs(0, 0)),
+                k(s2 + 560, CURVE, p().legs(-16, 6)),
+                k(s3 - 240, CURVE, p().legs(0, 0)),
+                k(s3 - 160, CURVE, p().legs(0, 0)),
+                k(s3 - 90, CURVE, p().legs(-6, 20)),
+                k(s3 - 20, IN, p().legs(0, 0)),
+                k(s3 + 200, CURVE, p().legs(0, 0)));
+    }
+
     /** 贴身上挑：矮身冲进怀里、左掌顶住胸口；每一刀从低处起身往上挑，第三刀整个人顶起来 */
     private static List<Key> lichC(MercyBeats.Lich b) {
         int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
@@ -810,7 +873,7 @@ public final class MercyPose {
     private static List<Key> tableOf(MercyVariant v) {
         return switch (v) {
             case LICH_A -> lichA2(MercyBeats.lich(v));
-            case LICH_B -> lichB(MercyBeats.lich(v));
+            case LICH_B -> lichB2(MercyBeats.lich(v));
             case LICH_C -> lichCFull(MercyBeats.lich(v));
             case LICH_D -> lichD(MercyBeats.lich(v));
             case LICH_E -> lichE(MercyBeats.lich(v));
@@ -878,17 +941,31 @@ public final class MercyPose {
         return b;
     }
 
-    private static List<Key> bodyB(MercyBeats.Lich beats) {
+    /**
+     * 背后锁颈新写法的脚下：前两刀都不到 0.25 格，只压重心；勒脖子时往后坐 0.1 格。原地转一圈（转速两头慢中间快，
+     * 转回来正好赶上出刀），落脚那一步送 0.4 格扎第三刀，它往前扑倒再跟半步不到
+     */
+    private static List<Key> bodyB2(MercyBeats.Lich beats) {
         int s1 = beats.stab(0), s2 = beats.stab(1), s3 = beats.stab(2);
         List<Key> b = startedBody();
-        lunge(b, s1, 0.2F);
-        lunge(b, s2, 0.3F);
-        b.add(k(s2 + 640, SINE, m().dist(0.1F)));
-        b.add(k(s3 - 40, s2 + 640, IN, m().dist(-0.1F).yaw(-360)));
-        b.add(k(s3, OUT, m().dist(-0.5F).up(-0.06F)));
-        b.add(k(s3 + 90, SINE, m().dist(-0.55F)));
-        b.add(k(s3 + 280, SINE, m().dist(-0.7F).up(0)));
-        b.add(k(s3 + 600, SINE, m().dist(-0.45F)));
+        b.add(k(s1 - 90, CURVE, m().dist(0.04F).up(-0.01F)));
+        b.add(k(s1, ANTIC, m().dist(-0.1F).up(-0.06F)));
+        b.add(k(s1 + 300, CURVE, m().dist(-0.08F).up(-0.03F)));
+        b.add(k(s1 + 520, CURVE, m().dist(0.0F).up(0)));
+        b.add(k(s1 + 700, CURVE, m().dist(0.1F).up(0.01F)));
+        b.add(k(s2 - 240, CURVE, m().dist(0.12F).up(0)));
+        b.add(k(s2 - 110, CURVE, m().dist(0.1F).up(-0.01F)));
+        b.add(k(s2, ANTIC, m().dist(-0.12F).up(-0.05F)));
+        b.add(k(s2 + 300, CURVE, m().dist(-0.08F).up(-0.02F)));
+        b.add(k(s2 + 400, CURVE, m().dist(-0.05F).up(0).yaw(0)));
+        b.add(k(s2 + 520, CURVE, m().dist(-0.04F).yaw(-70)));
+        b.add(k(s3 - 160, CURVE, m().dist(-0.06F).yaw(-290)));
+        // 这几帧都用 CURVE：挨着别的模式的帧速度按 0 接，转到一半会停一下
+        b.add(k(s3 - 20, CURVE, m().dist(-0.4F).up(-0.04F).yaw(-360)));
+        b.add(k(s3, CURVE, m().dist(-0.45F).up(-0.06F)));
+        b.add(k(s3 + 90, CURVE, m().dist(-0.5F)));
+        b.add(k(s3 + 280, CURVE, m().dist(-0.62F).up(0)));
+        b.add(k(s3 + 600, CURVE, m().dist(-0.5F)));
         return b;
     }
 
@@ -1005,7 +1082,7 @@ public final class MercyPose {
     private static List<Key> bodyOf(MercyVariant v, float scale) {
         return switch (v) {
             case LICH_A -> bodyA2(MercyBeats.lich(v));
-            case LICH_B -> bodyB(MercyBeats.lich(v));
+            case LICH_B -> bodyB2(MercyBeats.lich(v));
             case LICH_C -> bodyC(MercyBeats.lich(v));
             case LICH_D -> bodyD(MercyBeats.lich(v));
             case LICH_E -> bodyE(MercyBeats.lich(v));
@@ -1185,7 +1262,7 @@ public final class MercyPose {
                 body.add(k(MercyBeats.thrall(v).end, SINE, m()));
             }
         }
-        boolean v2 = v == MercyVariant.LICH_A;
+        boolean v2 = v == MercyVariant.LICH_A || v == MercyVariant.LICH_B;
         if (v2) {
             // 不再回零硬交：最后一帧停在前一帧的姿势上，交还前那 250 ms 由 apply 和原版姿态混过去
             out.set(out.size() - 1, k(out.get(out.size() - 1).t, CURVE, p()));
@@ -1200,8 +1277,10 @@ public final class MercyPose {
             tr.v2 = true;
             tr.curve = curveOf(keys, N);
             tr.bodyCurve = curveOf(bodyKeys, BN);
-            if (stabs.length >= 2) {
+            if (v == MercyVariant.LICH_A && stabs.length >= 2) {
                 tr.feet = curveOf(resolve(stepA2(stabs[1])), N);
+            } else if (v == MercyVariant.LICH_B && stabs.length >= 3) {
+                tr.feet = curveOf(resolve(stepB2(stabs[1], stabs[2])), N);
             }
             int h = seed * 0x9E3779B1;
             tr.shakeAmp = 0.8F + 0.45F * ((h >>> 8) & 0xFF) / 255.0F;
