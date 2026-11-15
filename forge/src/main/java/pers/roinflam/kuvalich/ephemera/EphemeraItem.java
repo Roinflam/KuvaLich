@@ -244,6 +244,7 @@ public class EphemeraItem extends Item {
         if (isTuned(stack)) {
             lines.add(Component.translatable("item.kuvalich.ephemera.tuned").withStyle(s -> s.withColor(muted)));
         }
+        lines.add(Component.translatable(type.descKey()).withStyle(s -> s.withColor(muted).withItalic(true)));
         return lines;
     }
 

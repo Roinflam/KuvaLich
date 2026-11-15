@@ -50,6 +50,10 @@ public final class EphemeraType {
         return "kuvalich.ephemera.name." + id;
     }
 
+    public String descKey() {
+        return "kuvalich.ephemera.desc." + id;
+    }
+
     @Nullable
     public static EphemeraType byId(@Nullable String id) {
         return id == null || id.isEmpty() ? null : BY_ID.get(id);

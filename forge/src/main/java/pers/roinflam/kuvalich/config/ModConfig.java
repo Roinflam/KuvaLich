@@ -1421,29 +1421,29 @@ public final class ModConfig {
             lichEphemeraChance = builder
                     .comment("Chance that a newly born personal Lich carries an Ephemera. Decided once at birth from the Lich's seed;")
                     .comment("changing this value does not affect Liches that already exist")
-                    .comment("新诞生的专属玄骸带幻纹的概率。诞生时按种子定下，之后不再重算；改这一项不影响已经存在的玄骸")
+                    .comment("新诞生的专属玄骸携带幻纹的概率。诞生时按种子确定，修改后不影响已有的玄骸")
                     .defineInRange("lichEphemeraChance", 0.2, 0.0, 1.0);
 
             lichEphemeraBackfill = builder
                     .comment("Personal Liches born before Ephemera existed roll once (same seed, same result) when their owner logs in;")
                     .comment("off = such Liches never carry an Ephemera")
-                    .comment("幻纹加入之前就已诞生的专属玄骸，在主人登录时补掷一次（同一种子结果相同）；关闭后这些玄骸一律不带幻纹")
+                    .comment("幻纹加入之前诞生的专属玄骸，在主人登录时按种子补定一次，同一种子结果相同。关闭后这些玄骸一律不带幻纹")
                     .define("lichEphemeraBackfill", true);
 
             convertEnabled = builder
                     .comment("When a Lich is finished off by Mercy, the player chooses between Convert (it becomes an ally, no weapon or rewards) and Vanquish;")
                     .comment("off = always Vanquish. Changing it during an open choice does not affect that execution")
-                    .comment("用怜悯之击终结玄骸时，可以在「感化」（收为盟友，不得武器和奖励）与「消灭」之间选择；关闭后一律消灭。选择进行中修改不影响这一次")
+                    .comment("用怜悯之击终结玄骸时，可在「感化」与「消灭」之间选择。感化的玄骸加入盟友名册，不获得其武器与奖励。关闭后一律消灭，修改不影响正在进行的选择")
                     .define("convertEnabled", true);
 
             convertChoiceSeconds = builder
                     .comment("Seconds the player has to choose; when time runs out the Lich is vanquished")
-                    .comment("选择的时限（秒），到时未选按消灭处理")
+                    .comment("在感化与消灭之间作出选择的时限（秒），时限届满仍未选择的按消灭处理")
                     .defineInRange("convertChoiceSeconds", 10, 3, 30);
 
             allyRosterSize = builder
                     .comment("How many converted Liches the ally roster keeps; when full, converting another releases the earliest one")
-                    .comment("盟友名册最多容纳几只感化的玄骸；已满时再感化，最早感化的那只离去")
+                    .comment("盟友名册最多容纳的感化玄骸数量。名册已满时再次感化，最早感化的一只离开名册")
                     .defineInRange("allyRosterSize", 3, 1, 8);
 
             allyEnabled = builder
@@ -1457,18 +1457,19 @@ public final class ModConfig {
                     .defineInRange("allyAssistChance", 0.25D, 0.0D, 1.0D);
 
             allyTriggerHealthRatio = builder
-                    .comment("Health ratio below which a hit from a living non-player attacker can call an ally")
-                    .comment("主人被非玩家的生物打到血量低于此比例时，掷一次盟友助战")
+                    .comment("Health ratio below which a hit from a living non-player attacker rolls for an ally. One roll per drop;")
+                    .comment("rolls again after health recovers above the ratio or after 30 seconds")
+                    .comment("主人被非玩家的生物攻击后血量低于此比例时，判定一次盟友助战。每跌破一次只判定一次，血量回升到此比例以上或经过 30 秒后才再次判定")
                     .defineInRange("allyTriggerHealthRatio", 0.3D, 0.05D, 0.95D);
 
             allyRetrySeconds = builder
                     .comment("Seconds before another roll after a roll that did not bring an ally")
-                    .comment("掷骰未中后，隔多少秒才再掷")
+                    .comment("盟友助战判定未成功后，再次判定前的间隔秒数")
                     .defineInRange("allyRetrySeconds", 30, 1, 600);
 
             allyCooldownMinutes = builder
                     .comment("Minutes after an ally appears before one can appear again for the same player; saved with the player")
-                    .comment("盟友来过之后，同一名玩家多少分钟内不再来；随玩家数据保存，重新登录不会清除")
+                    .comment("盟友前来助战后，同一名玩家在多少分钟内不再触发。冷却随玩家数据保存，重新登录不会清除")
                     .defineInRange("allyCooldownMinutes", 10, 0, 1440);
 
             allyMaxStaySeconds = builder
@@ -1478,12 +1479,12 @@ public final class ModConfig {
 
             allyMaxActive = builder
                     .comment("Maximum number of allies present across the whole server; 0 = no limit")
-                    .comment("全服同时在场的盟友上限；0 = 不限")
+                    .comment("全服同时在场的盟友数量上限，0 = 不限")
                     .defineInRange("allyMaxActive", 6, 0, 1000);
 
             allyHealthScale = builder
-                    .comment("Multiplier on an ally's maximum health (its stats are those it had when converted)")
-                    .comment("盟友最大生命的倍率（基础面板为它被感化时的那一套）")
+                    .comment("Multiplier on an ally's maximum health. Base stats are those it had when converted")
+                    .comment("盟友最大生命的倍率，基础值取其被感化时的面板")
                     .defineInRange("allyHealthScale", 1.0D, 0.05D, 100.0D);
 
             allyDamageScale = builder

@@ -41,6 +41,7 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.fx.FxId;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.nemesis.EncounterEnd;
 import pers.roinflam.kuvalich.nemesis.LichArchiveService;
 import pers.roinflam.kuvalich.nemesis.LichComms;
@@ -416,6 +417,9 @@ public final class NemesisExtraTests {
                         h.assertTrue(json.has(key), lang + " 缺台词键 " + key);
                     }
                 }
+            }
+            for (EphemeraType type : EphemeraType.all()) {
+                h.assertTrue(json.has(type.nameKey()) && json.has(type.descKey()), lang + " 缺幻纹 " + type.id() + " 的名字或描述");
             }
         }
         // 两种性格大致各占一半

@@ -233,8 +233,9 @@ public final class EphemeraTests {
         ItemStack stack = EphemeraItem.create(EphemeraType.ORBIT, "radiation", "Vesk Arru");
         EphemeraItem.setColors(stack, 0xAA3300, 0x22CCFF);
         List<Component> lines = EphemeraItem.tooltipLines(stack);
-        h.assertTrue(lines.size() == 5, "款式、元素、来历、配色四行，调过颜色再加一行：" + lines.size());
+        h.assertTrue(lines.size() == 6, "款式、元素、来历、配色、描述五行，调过颜色再加一行：" + lines.size());
         translatable(h, lines.get(4), "item.kuvalich.ephemera.tuned");
+        translatable(h, lines.get(5), "kuvalich.ephemera.desc.orbit");
         TextColor radiation = TextColor.fromRgb(KuvaPalette.element("radiation"));
 
         TranslatableContents style = translatable(h, lines.get(0), "item.kuvalich.ephemera.style");
@@ -257,7 +258,7 @@ public final class EphemeraTests {
         swatch(h, (Component) colors.getArgs()[1], 0x22CCFF);
 
         List<Component> noOrigin = EphemeraItem.tooltipLines(EphemeraItem.create(EphemeraType.SURGE, "fire", ""));
-        h.assertTrue(noOrigin.size() == 3, "没有来历（创造栏）就不写源自那行");
+        h.assertTrue(noOrigin.size() == 4, "没有来历（创造栏）就不写源自那行");
         List<Component> unknown = EphemeraItem.tooltipLines(new ItemStack(KuvaLichItems.EPHEMERA.get()));
         h.assertTrue(unknown.size() == 1, "款式认不出时只写一行");
         h.succeed();
