@@ -20,7 +20,9 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -52,6 +54,7 @@ import pers.roinflam.kuvalich.nemesis.EncounterEnd;
 import pers.roinflam.kuvalich.nemesis.LichDirector;
 import pers.roinflam.kuvalich.nemesis.PlayerLedger;
 import pers.roinflam.kuvalich.nemesis.SummonMode;
+import pers.roinflam.kuvalich.utils.InventoryUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.Collections;
@@ -79,6 +82,7 @@ import java.util.UUID;
 public final class MercyTests {
 
     private static final String MORE = "kl_mercy_more";
+    private static final String ISO_TOSS = "kl_mercy_iso_lockedToss";
     private static final String ISO_KILL = "kl_mercy_iso_killBypasses";
     private static final String ISO_WILD = "kl_mercy_iso_wildLichDies";
     private static final String ISO_OWNER = "kl_mercy_iso_onlyOwnerExecutes";
@@ -949,6 +953,58 @@ public final class MercyTests {
             r2.discard();
             h.succeed();
         });
+    }
+
+    /** 处决锁定中背包满着往身上发东西：不再递归扔物到栈溢出，放不下的落地，背包和地上加起来等于原数 */
+    @GameTest(template = "empty", batch = ISO_TOSS, timeoutTicks = 100)
+    public static void lockedFullInventoryGiveDrops(GameTestHelper h) {
+        BlockPos c = KuvaTestKit.center(h);
+        loadTestChunks(h);
+        openArena(h, c.getX() - 2, c.getX() + 2, c.getZ() - 2, c.getZ() + 2);
+        ServerPlayer p = KuvaTestKit.player(h);
+        KuvaSlaveEntity thrall = spawnThrall(h, p.position().add(1.0D, 0.0D, 1.5D));
+        thrall.forceDowned(p);
+        h.assertTrue(MercyServer.executeNow(p, thrall) == null && MercyServer.isBusy(p), "应当进入处决锁定");
+        Inventory inv = p.getInventory();
+        for (int i = 0; i < inv.items.size(); i++) {
+            inv.setItem(i, new ItemStack(Items.DIRT, 64));
+        }
+        inv.offhand.set(0, new ItemStack(Items.DIRT, 64));
+        inv.setItem(7, new ItemStack(Items.ARROW, 50));
+        AABB around = p.getBoundingBox().inflate(8.0D);
+        h.getLevel().getEntitiesOfClass(ItemEntity.class, around).forEach(ItemEntity::discard);
+        try {
+            InventoryUtil.giveOrDrop(p, new ItemStack(Items.DIAMOND, 5));
+            p.drop(new ItemStack(Items.ARROW, 30), false);
+            InventoryUtil.giveOrDrop(p, new ItemStack(Items.ARROW, 7));
+        } catch (StackOverflowError e) {
+            MercyServer.onExecutorGone(p, MercyServer.Gone.LOGOUT);
+            thrall.discard();
+            h.fail("锁定中往满背包发东西栈溢出");
+            return;
+        }
+        int groundDiamond = 0;
+        int groundArrow = 0;
+        for (ItemEntity it : h.getLevel().getEntitiesOfClass(ItemEntity.class, around)) {
+            if (it.getItem().is(Items.DIAMOND)) {
+                groundDiamond += it.getItem().getCount();
+            } else if (it.getItem().is(Items.ARROW)) {
+                groundArrow += it.getItem().getCount();
+            }
+            it.discard();
+        }
+        int invArrow = inv.countItem(Items.ARROW);
+        MercyServer.onExecutorGone(p, MercyServer.Gone.LOGOUT);
+        thrall.discard();
+        h.assertTrue(groundDiamond == 5 && inv.countItem(Items.DIAMOND) == 0, "背包满：钻石 5 个全在地上，实际 " + groundDiamond);
+        h.assertTrue(invArrow == 64 && groundArrow == 23,
+                "箭：背包那格凑满 64，地上 16 + 7，实际背包 " + invArrow + "、地上 " + groundArrow);
+        h.succeed();
+    }
+
+    @AfterBatch(batch = ISO_TOSS)
+    public static void afterToss(ServerLevel level) {
+        KuvaTestKit.afterBatch(level);
     }
 
     /** 存成 NBT 再读进一只新的（去掉 UUID，免得和原来那只撞），放到 {@code at} */

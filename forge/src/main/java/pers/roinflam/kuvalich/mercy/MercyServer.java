@@ -11,6 +11,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -1591,7 +1592,10 @@ public final class MercyServer {
         }
     }
 
-    /** 处决中扔东西：取消，物品放回背包（取消扔出时物品已经从背包里拿走了） */
+    /**
+     * 处决中扔东西：放得回背包的放回去（扔出时物品已经从背包里拿走了），放不下的照常扔出。
+     * 这里不能再调 {@code player.drop}：它又发一次扔物事件，背包满着就自己调自己直到栈溢出。
+     */
     @SubscribeEvent
     public static void onItemToss(ItemTossEvent event) {
         Player p = event.getPlayer();
@@ -1599,11 +1603,48 @@ public final class MercyServer {
             return;
         }
         ItemEntity item = event.getEntity();
-        ItemStack stack = item.getItem().copy();
-        event.setCanceled(true);
-        if (!p.getInventory().add(stack)) {
-            p.drop(stack, false);
+        ItemStack stack = item.getItem();
+        int total = stack.getCount();
+        int kept = putBack(p.getInventory(), stack);
+        if (kept <= 0) {
+            return;
         }
+        p.getInventory().setChanged();
+        if (kept >= total) {
+            event.setCanceled(true);
+        } else {
+            item.setItem(stack.copyWithCount(total - kept));
+        }
+    }
+
+    /**
+     * 按格放进背包，返回放进去的件数，不改 {@code stack}。不用 {@code Inventory.add}：创造模式下放不下的部分会被它清零
+     */
+    private static int putBack(Inventory inv, ItemStack stack) {
+        int kept = 0;
+        while (kept < stack.getCount()) {
+            int slot = inv.getSlotWithRemainingSpace(stack);
+            if (slot < 0) {
+                slot = inv.getFreeSlot();
+            }
+            if (slot < 0) {
+                break;
+            }
+            ItemStack there = inv.getItem(slot);
+            int room = there.isEmpty() ? Math.min(stack.getMaxStackSize(), inv.getMaxStackSize())
+                    : Math.min(there.getMaxStackSize(), inv.getMaxStackSize()) - there.getCount();
+            int n = Math.min(room, stack.getCount() - kept);
+            if (n <= 0) {
+                break;
+            }
+            if (there.isEmpty()) {
+                inv.setItem(slot, stack.copyWithCount(n));
+            } else {
+                there.grow(n);
+            }
+            kept += n;
+        }
+        return kept;
     }
 
     @SubscribeEvent
@@ -1661,6 +1702,8 @@ public final class MercyServer {
                 continue;
             }
             finish(e);
+            // 先解锁再补发，补发的东西走平时的给物品路径，不经过处决中的扔物拦截
+            unlock(e);
             try {
                 if (e.awaiting) {
                     choose(e, false);
