@@ -636,11 +636,22 @@ public final class MercyClient {
         if (t < MercyTimeline.lich(e.plan).closeup || !MercyPose.body(e, t, ROAM)) {
             return;
         }
-        place(p, ROAM.x, Math.max(ROAM.y, e.pe.y), ROAM.z, ROAM.yaw, 0.0F);
+        double y = Math.max(ROAM.y, e.pe.y);
+        place(p, ROAM.x, y, ROAM.z, ROAM.yaw, 0.0F);
+        if (!MercyCamera.takesOver(e)) {
+            // 关了电影镜头时是原版第三人称：视线照转身走开的方向，镜头会甩到它那边、扎进它身子里；
+            // 视线一直对着它，身子照轨道转，镜头就留在外侧、从前面看人走开
+            Vec3 d = e.anchor().subtract(ROAM.x, y + p.getEyeHeight(), ROAM.z);
+            float look = yawOf(d);
+            p.setYRot(look);
+            p.yRotO = look;
+            p.setXRot(Mth.clamp(pitchOf(d), -30.0F, 30.0F));
+            p.xRotO = p.getXRot();
+        }
         p.resetFallDistance();
     }
 
-    /** 绕目标转的角度依次试（先照原样往后走，再往两边偏），每个角度先走满、再走半程；后跃先跃满、再跃一半 */
+    /** 绕目标转的角度依次试（先照原样往后走，再往两边偏）；宁可偏开走满，也不冲着墙走半程；后跃先跃满、再跃一半 */
     private static final float[] CONVERT_BEARINGS = {0.0F, 35.0F, -35.0F, 70.0F, -70.0F, 110.0F, -110.0F};
     private static final float[] CONVERT_WALKS = {1.0F, 0.55F};
     private static final float[] CONVERT_HOPS = {1.0F, 0.5F};
@@ -658,8 +669,8 @@ public final class MercyClient {
             return MercyPose.ConvertRoom.FULL;
         }
         for (float hop : CONVERT_HOPS) {
-            for (float bearing : CONVERT_BEARINGS) {
-                for (float walk : CONVERT_WALKS) {
+            for (float walk : CONVERT_WALKS) {
+                for (float bearing : CONVERT_BEARINGS) {
                     MercyPose.ConvertRoom room = new MercyPose.ConvertRoom(bearing, hop, walk);
                     MercyPose.Track tr = MercyPose.track(e.plan, e.shortOutro, e.bodyScale, e.poseSeed(), room);
                     if (MercyPose.convertFits(e, tr, level, who, CONVERT_REACH)) {
