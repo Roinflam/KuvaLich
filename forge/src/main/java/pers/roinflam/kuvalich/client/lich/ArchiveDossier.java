@@ -344,8 +344,9 @@ final class ArchiveDossier {
         int tw = text(title, tx, top, u, FxPalette.TEXT_MID, a);
         int lineEnd = l1;
         if (rosterEntry != null) {
-            // 名册在左列放不下：标题行右端放一个入口，右边对齐左列右边线，细线让到它左边 4 字像素
-            String full = rosterLegend(rosterEntry);
+            // 名册在左列放不下：标题行右端放一个入口，右边对齐左列右边线，细线让到它左边 4 字像素。
+            // 不用卡名那种全角括号：全角右括号的字形右半边是空的，右对齐时看着差半个字
+            String full = I18n.get("kuvalich.archive.roster.entry", rosterEntry.roster().size(), rosterEntry.rosterCap());
             int room = l1 - (tx + tw + 12 * u) - 10 * u;
             String s = fit(full, Math.max(1, room / u));
             int sw = 10 * u + inkW(s) * u;
@@ -451,8 +452,17 @@ final class ArchiveDossier {
             }
         } else if (known && data != null) {
             if (hasHistory(data)) {
-                text(fit(I18n.get(historyKey(data.lastFate()), LichArchiveScreen.upper(data.lastName())), (l1 - l0) / u),
-                        l0, y, u, FxPalette.ASH, a);
+                // 放不下时截名字，结局那几个字留着
+                String key = historyKey(data.lastFate());
+                String last = LichArchiveScreen.upper(data.lastName());
+                String full = I18n.get(key, last);
+                int maxW = (l1 - l0) / u;
+                String s = inkW(full) <= maxW ? full
+                        : I18n.get(key, fit(last, Math.max(1, maxW - inkW(I18n.get(key, "")) - 1)));
+                text(fit(s, maxW), l0, y, u, FxPalette.ASH, a);
+                if (s != full && in(l0, y, l1 - l0, 8 * u)) {
+                    hoverLines = List.of(Component.literal(full));
+                }
             }
             if (rosterInline) {
                 rosterCard(l0, unbornRosterY(data), l1 - l0, data, a);
@@ -888,6 +898,17 @@ final class ArchiveDossier {
         int kx = x + w - 7 * u;
         int textR = kx - 4 * u;
         int avail = textR - textX;
+        // 后面那段排成一列：名字列宽取最长的名字，放不下就把名字列压窄（名字截断），压到不足三个字宽就不写后面那段
+        int nameMax = 0;
+        int metaMax = 0;
+        for (int i = 0; i < shown && i < roster.size(); i++) {
+            LichArchivePacket.Ally al = roster.get(i);
+            nameMax = Math.max(nameMax, inkW(LichArchiveScreen.upper(al.name())) * u);
+            metaMax = Math.max(metaMax, inkW(I18n.get("kuvalich.archive.roster.meta", al.generation(), al.rank())) * u);
+        }
+        int nameCap = avail - metaMax - 6 * u;
+        boolean withMeta = nameCap >= 24 * u;
+        int nameCol = withMeta ? Math.min(nameMax, nameCap) : avail;
         for (int i = 0; i < shown && i < roster.size(); i++) {
             LichArchivePacket.Ally al = roster.get(i);
             int ry = y + i * 12 * u;
@@ -915,14 +936,12 @@ final class ArchiveDossier {
                 text(s, textX, vmid(ry, 8 * u, textH(s) * u), u, FxPalette.KUVA, a);
             } else {
                 String meta = I18n.get("kuvalich.archive.roster.meta", al.generation(), al.rank());
-                int metaW = inkW(meta) * u;
-                boolean withMeta = avail - metaW - 4 * u >= 24 * u;
-                String nm = fit(name, (withMeta ? avail - metaW - 4 * u : avail) / u);
+                String nm = fit(name, nameCol / u);
                 // 名字和后面那段同一条基线：按两段里高的那段竖直居中
                 int ty = vmid(ry, 8 * u, Math.max(textH(nm), withMeta ? textH(meta) : 0) * u);
-                int nw = text(nm, textX, ty, u, al.active() ? FxPalette.BONE : FxPalette.TEXT_MID, a);
+                text(nm, textX, ty, u, al.active() ? FxPalette.BONE : FxPalette.TEXT_MID, a);
                 if (withMeta) {
-                    text(meta, textX + nw + 4 * u, ty, u, FxPalette.ASH, a);
+                    text(meta, textX + nameCol + 6 * u, ty, u, FxPalette.ASH, a);
                 }
             }
             boolean hotKey = overRel || confirming;
@@ -969,7 +988,7 @@ final class ArchiveDossier {
         }
         lines.add(al.active()
                 ? Component.translatable("kuvalich.archive.roster.active").withStyle(ChatFormatting.GOLD)
-                : Component.translatable("kuvalich.archive.roster.select").withStyle(ChatFormatting.DARK_GRAY));
+                : Component.translatable("kuvalich.archive.roster.select").withStyle(ChatFormatting.GRAY));
         return lines;
     }
 
@@ -1083,14 +1102,17 @@ final class ArchiveDossier {
             int footH = foot != null ? 12 * u : 0;
 
             String legend = rosterLegend(data);
-            int need = 0;
+            int nameMax = 0;
+            int metaMax = 0;
+            int confirmMax = 0;
             for (int i = 0; i < n; i++) {
                 LichArchivePacket.Ally al = roster.get(i);
-                String meta = I18n.get("kuvalich.archive.roster.meta", al.generation(), al.rank());
-                need = Math.max(need, (inkW(LichArchiveScreen.upper(al.name())) + inkW(meta) + 4) * u);
-                need = Math.max(need, inkW(I18n.get("kuvalich.archive.roster.confirm",
-                        LichArchiveScreen.upper(al.name()))) * u);
+                String name = LichArchiveScreen.upper(al.name());
+                nameMax = Math.max(nameMax, inkW(name));
+                metaMax = Math.max(metaMax, inkW(I18n.get("kuvalich.archive.roster.meta", al.generation(), al.rank())));
+                confirmMax = Math.max(confirmMax, inkW(I18n.get("kuvalich.archive.roster.confirm", name)));
             }
+            int need = Math.max(nameMax + 6 + metaMax, confirmMax) * u;
             int rowNeed = n == 0 ? inkW(I18n.get("kuvalich.archive.roster.none")) * u : 20 * u + need + 11 * u;
             int footInk = foot != null ? inkW(foot) * u : 0;
             int w = Math.min(maxW, Math.max(rowNeed + 12 * u, Math.max(inkW(legend) * u + 27 * u,

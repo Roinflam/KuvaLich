@@ -2018,6 +2018,7 @@
   "kuvalich.archive.status.paused": "已暫停",
   "kuvalich.archive.history.vanquished": "上一隻：%s · 已終結",
   "kuvalich.archive.history.reset": "上一隻：%s · 已解除",
+  "kuvalich.archive.roster.entry": "盟友名冊 %s/%s",
   "kuvalich.archive.history.converted": "上一隻：%s · 已感化",
   "kuvalich.archive.ephemera": "幻紋：%s",
   "kuvalich.archive.ephemera.tooltip": "終結這隻玄骸時，無論感化還是消滅，都會得到這件幻紋",
