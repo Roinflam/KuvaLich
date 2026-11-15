@@ -236,7 +236,7 @@
   "message.kuvalich.inbox.full": "背包已满，其余 %s 件物品待领取，腾出空位后自动放入",
   "message.kuvalich.inbox.empty": "没有待领取的物品",
   "message.kuvalich.inbox.waiting": "尚有 %s 件物品待领取，关闭当前界面后自动放入背包",
-  "message.kuvalich.inbox.loginDelay": "尚有 %s 件物品待领取，进入游戏约 10 秒后自动放入背包",
+  "message.kuvalich.inbox.loginDelay": "尚有 %s 件物品待领取，进入游戏约 %s 秒后自动放入背包",
   "message.kuvalich.inbox.done": "%s 件物品已全部放入背包",
   "message.kuvalich.inbox.login": "有 %s 件物品待领取，稍后放入背包",
   "message.kuvalich.convert.done": "%s 已被感化，加入盟友名册",

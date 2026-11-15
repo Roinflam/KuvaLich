@@ -867,7 +867,7 @@
   "message.kuvalich.inbox.full": "Inventory full. %s items are pending and will be added once space is free",
   "message.kuvalich.inbox.empty": "No items are pending",
   "message.kuvalich.inbox.waiting": "%s items are pending and will be added once the current screen is closed",
-  "message.kuvalich.inbox.loginDelay": "%s items are pending and will be added about 10 seconds after joining",
+  "message.kuvalich.inbox.loginDelay": "%s items are pending and will be added about %s seconds after joining",
   "message.kuvalich.inbox.done": "All %s items have been added to the inventory",
   "message.kuvalich.inbox.login": "%s items are pending and will be added to the inventory later",
   "message.kuvalich.convert.done": "%s has been converted and added to the ally roster",

@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
@@ -24,8 +25,6 @@ import java.util.UUID;
  */
 public final class Inbox {
 
-    /** 登录后多久才第一次投（tick）：跨服同步背包的插件会在登录后整份覆盖背包，刚投进去的会被盖掉 */
-    static final int LOGIN_DELAY_TICKS = 200;
     private static final int FULL_NOTICE_TICKS = 1200;
 
     private static final Map<UUID, Integer> LOGIN_AT = new HashMap<>();
@@ -85,7 +84,8 @@ public final class Inbox {
 
     public static boolean inLoginDelay(ServerPlayer player) {
         Integer at = LOGIN_AT.get(player.getUUID());
-        return at != null && player.server.getTickCount() - at < LOGIN_DELAY_TICKS;
+        // 跨服同步背包的插件会在登录后整份覆盖背包，刚投进去的会被盖掉
+        return at != null && player.server.getTickCount() - at < ModConfig.KUVA_LICH.inboxLoginDelayTicks.get();
     }
 
     /**

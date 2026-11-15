@@ -207,7 +207,8 @@ public final class NemesisCommand {
             return 0;
         }
         if (Inbox.inLoginDelay(p)) {
-            PlayerFeedback.chat(p, KuvaPalette.WARN, "message.kuvalich.inbox.loginDelay", PlayerLedger.inboxCount(p));
+            PlayerFeedback.chat(p, KuvaPalette.WARN, "message.kuvalich.inbox.loginDelay", PlayerLedger.inboxCount(p),
+                    (ModConfig.KUVA_LICH.inboxLoginDelayTicks.get() + 19) / 20);
             return 0;
         }
         int moved = Inbox.deliver(p, false);

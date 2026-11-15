@@ -65,6 +65,7 @@ public final class ModConfig {
         // ===== 物品没收系统 / Confiscation System =====
         public final ForgeConfigSpec.DoubleValue confiscationChance;
         public final ForgeConfigSpec.IntValue maxConfiscatedItems;
+        public final ForgeConfigSpec.IntValue inboxLoginDelayTicks;
         public final ForgeConfigSpec.DoubleValue requiemUltimatumDropChance;
 
         // ===== 解密进度系统 / Decryption Progress =====
@@ -389,6 +390,13 @@ public final class ModConfig {
                     .comment("0 = disable confiscation regardless of chance")
                     .comment("0 = 无论概率如何都禁用没收")
                     .defineInRange("maxConfiscatedItems", 128, 0, 1024);
+
+            inboxLoginDelayTicks = builder
+                    .comment("Ticks after login before pending items (finale rewards, returned confiscations) are first placed into the inventory (20 ticks = 1 second)")
+                    .comment("Raise this if the server runs a plugin that restores player inventories some time after login, so delivered items are not overwritten")
+                    .comment("玩家登录后，待领取物品（终结奖励、归还的没收物品）首次放入背包前的等待时间（tick，20 tick 为 1 秒）")
+                    .comment("服务器装有在登录后一段时间才恢复玩家背包的插件时，可调大此值，避免放入的物品被恢复的背包覆盖")
+                    .defineInRange("inboxLoginDelayTicks", 200, 20, 6000);
 
             requiemUltimatumDropChance = builder
                     .comment("Requiem Ultimatum drop chance after successful decryption (%)")
