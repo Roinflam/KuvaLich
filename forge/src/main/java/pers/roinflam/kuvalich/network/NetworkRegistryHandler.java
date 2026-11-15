@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
+import pers.roinflam.kuvalich.network.packet.AllyCommandPacket;
 import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
 import pers.roinflam.kuvalich.network.packet.CodexInstallModulePacket;
 import pers.roinflam.kuvalich.network.packet.CodexActionResultPacket;
@@ -81,7 +82,9 @@ public class NetworkRegistryHandler {
      *         旧客户端解码时按 54 截断，多出来的物品会被当成后面的字段读，整包错位，所以提版本
      * "17-dev"：开发中的版本，发布时改回正式的号。处决、感化这一批会给实体加同步数据，开发中途的 jar 混用时
      *         数据序号会错位而握手照过，用单独的串让握手直接拦下。
-     *         这一段新增：AbstractKuva 的 DATA_MERCY_CHOICE、计划位 bit 31、MercyChoicePacket、MercyChoiceOpenPacket
+     *         这一段新增：AbstractKuva 的 DATA_MERCY_CHOICE、计划位 bit 31、MercyChoicePacket、MercyChoiceOpenPacket；
+     *         KuvaMasterEntity 的 ALLY_OF；LichStatePacket 末尾的幻纹款式（档案包里嵌着的那份跟着变），
+     *         LichArchivePacket 末尾的盟友名册、名册上限、待领取件数，lastFate 多一个值 3（感化）；AllyCommandPacket
      */
     private static final String PROTOCOL_VERSION = "17-dev";
 
@@ -320,6 +323,16 @@ public class NetworkRegistryHandler {
                 MercyChoiceOpenPacket::decode,
                 MercyChoiceOpenPacket::handle,
                 TO_CLIENT
+        );
+
+        // 档案里设为出战 / 遣散盟友（客户端 → 服务器，动作 + 代数）
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                AllyCommandPacket.class,
+                AllyCommandPacket::encode,
+                AllyCommandPacket::decode,
+                AllyCommandPacket::handle,
+                TO_SERVER
         );
     }
 

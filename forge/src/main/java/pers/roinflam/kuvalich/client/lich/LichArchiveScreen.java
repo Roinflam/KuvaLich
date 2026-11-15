@@ -42,6 +42,7 @@ import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.nemesis.LichTraits;
 import pers.roinflam.kuvalich.nemesis.RageTier;
+import pers.roinflam.kuvalich.network.packet.AllyCommandPacket;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
 import pers.roinflam.kuvalich.utils.Reference;
@@ -126,8 +127,9 @@ public class LichArchiveScreen extends Screen {
     /** 每只玄骸（按种子）上次在档案里说话的时刻（真实时钟），只在内存里 */
     private static final Map<Integer, Long> TALKED = new HashMap<>();
 
+    /** 调试用的假档案；名册的操作直接改它（不连服务端） */
     @Nullable
-    private final LichArchivePacket.Data demo;
+    private LichArchivePacket.Data demo;
 
     private long openClock;
     private boolean quick;
@@ -187,6 +189,35 @@ public class LichArchiveScreen extends Screen {
     public LichArchiveScreen(@Nullable LichArchivePacket.Data demo) {
         super(Component.translatable("kuvalich.archive.title"));
         this.demo = demo;
+        dossier.rosterActions = (action, gen) -> {
+            if (this.demo != null) {
+                this.demo = demoCommand(this.demo, action, gen);
+            } else {
+                AllyCommandPacket.send(action, gen);
+            }
+        };
+    }
+
+    /** 假档案上照服务端的规矩改名册：设为出战；遣散后出战的回到最新感化的那只 */
+    private static LichArchivePacket.Data demoCommand(LichArchivePacket.Data d, int action, int gen) {
+        List<LichArchivePacket.Ally> in = d.roster();
+        List<LichArchivePacket.Ally> out = new ArrayList<>(in.size());
+        boolean releasedActive = false;
+        for (LichArchivePacket.Ally al : in) {
+            if (action == AllyCommandPacket.RELEASE && al.generation() == gen) {
+                releasedActive = al.active();
+                continue;
+            }
+            boolean active = action == AllyCommandPacket.SET_ACTIVE ? al.generation() == gen : al.active();
+            out.add(new LichArchivePacket.Ally(al.name(), al.generation(), al.rank(), al.seed(), al.weapon(),
+                    al.element(), al.ephemera(), active, al.present()));
+        }
+        if (releasedActive && !out.isEmpty()) {
+            LichArchivePacket.Ally last = out.remove(out.size() - 1);
+            out.add(new LichArchivePacket.Ally(last.name(), last.generation(), last.rank(), last.seed(), last.weapon(),
+                    last.element(), last.ephemera(), true, false));
+        }
+        return d.withRoster(out, d.rosterCap(), d.inboxCount());
     }
 
     @Override
@@ -246,6 +277,11 @@ public class LichArchiveScreen extends Screen {
             click();
             return true;
         }
+        if (dossier.rosterOpen && (keyCode == GLFW.GLFW_KEY_ESCAPE || KuvaKeyMappings.ARCHIVE.matches(keyCode, scanCode))) {
+            dossier.closeRoster();
+            click();
+            return true;
+        }
         if (KuvaKeyMappings.ARCHIVE.matches(keyCode, scanCode)) {
             onClose();
             return true;
@@ -262,7 +298,17 @@ public class LichArchiveScreen extends Screen {
             }
             return true;
         }
+        if (dossier.rosterOpen) {
+            if (dossier.rosterPanelClick(mx, my, button)) {
+                click();
+            }
+            return true;
+        }
         if (button == 0 && dossier.clickTaken(mx, my)) {
+            click();
+            return true;
+        }
+        if (button == 0 && dossier.clickRoster(mx, my)) {
             click();
             return true;
         }
@@ -336,7 +382,8 @@ public class LichArchiveScreen extends Screen {
             if (s != stateSource) {
                 stateSource = s;
                 stateView = new LichStatePacket(s.state(), s.waitReason(), s.name(), s.seed(), s.weapon(), s.rank(),
-                        s.ragePermille(), s.tier(), s.clues(), s.cooldownSec(), s.generation(), s.paused());
+                        s.ragePermille(), s.tier(), s.clues(), s.cooldownSec(), s.generation(), s.paused(),
+                        s.ephemera());
             }
             return stateView;
         }
@@ -395,7 +442,7 @@ public class LichArchiveScreen extends Screen {
         // 「查看全部」开着时底下的档案不响应悬停：鼠标挪到窗口外面再画
         int pmx = mx;
         int pmy = my;
-        if (dossier.takenOpen) {
+        if (dossier.takenOpen || dossier.rosterOpen) {
             mx = -10000;
             my = -10000;
         }
@@ -451,8 +498,8 @@ public class LichArchiveScreen extends Screen {
             takeHover();
         }
 
-        // ---- 关闭提示 ----
-        drawStatus(g, f, w, h, eFrame);
+        // ---- 关闭提示、待领取 ----
+        drawStatus(g, f, mx, my, rx0, h, data, eFrame);
 
         // ---- 字幕 ----
         if (!small) {
@@ -474,6 +521,16 @@ public class LichArchiveScreen extends Screen {
             mx = pmx;
             my = pmy;
             dossier.drawTakenPanel(g, f, mx, my, data);
+            takeHover();
+            g.flush();
+        } else if (dossier.rosterOpen) {
+            RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
+            hoverLines = null;
+            hoverStack = ItemStack.EMPTY;
+            hoverSlim = false;
+            mx = pmx;
+            my = pmy;
+            dossier.drawRosterPanel(g, f, mx, my, data);
             takeHover();
             g.flush();
         }
@@ -939,14 +996,34 @@ public class LichArchiveScreen extends Screen {
 
     // ---------- 关闭提示 ----------
 
-    /** 右下角的关闭提示；状态行、上一只的结局都在左栏名字那一块里（{@link ArchiveDossier}） */
-    private void drawStatus(GuiGraphics g, Font f, int w, int h, float a) {
+    /**
+     * 右下角的关闭提示，右栏左边同一行写待领取的件数（有才写，放不下就截断）；
+     * 状态行、上一只的结局都在左栏名字那一块里（{@link ArchiveDossier}）
+     */
+    private void drawStatus(GuiGraphics g, Font f, int mx, int my, float x0, int h,
+                            @Nullable LichArchivePacket.Data data, float a) {
         if (a <= 0.01F) {
             return;
         }
         float tsS = tsOf(h, 0.016F);
+        float y = closeHintTop(h);
         String close = I18n.get("kuvalich.archive.close", KuvaKeyMappings.ARCHIVE.getTranslatedKeyMessage().getString());
-        text(g, f, close, w * 0.930F, closeHintTop(h), tsS, FxPalette.ASH, a, 0.0F, 1);
+        float closeR = width * 0.930F;
+        float closeW = text(g, f, close, closeR, y, tsS, FxPalette.ASH, a, 0.0F, 1);
+        if (data == null || data.inboxCount() <= 0) {
+            return;
+        }
+        String full = I18n.get("kuvalich.archive.inbox", data.inboxCount());
+        int room = (int) ((closeR - x0 - closeW) / tsS) - 8;
+        if (room <= f.width("…")) {
+            return;
+        }
+        String s = f.width(full) <= room ? full : f.plainSubstrByWidth(full, room - f.width("…")) + "…";
+        float sw = text(g, f, s, x0, y, tsS, FxPalette.ACCENT, a, 0.0F, -1);
+        if (inRect(mx, my, x0, y, x0 + sw, y + 9.0F * tsS)) {
+            hoverLines = List.of(Component.literal(full),
+                    Component.translatable("kuvalich.archive.inbox.tooltip").withStyle(ChatFormatting.GRAY));
+        }
     }
 
     /** 关闭提示的字顶（界面坐标） */

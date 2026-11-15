@@ -1204,7 +1204,7 @@ public final class LichDirector {
                 card.getLichName(), (int) card.getLichSeed(), card.getLichWeapon(),
                 card.hasLich() ? card.getLichRank() : 0, Math.round(card.getLichRage() * 1000.0F),
                 card.hasLich() ? card.getRageTier() : 0, card.getUnlockedCardStatus(), cooldownSec,
-                card.getLichGeneration(), card.isLichPaused());
+                card.getLichGeneration(), card.isLichPaused(), card.hasLich() ? card.getLichEphemera() : "");
     }
 
     /** 和上次发出去的比：状态、名字、等级、档位、线索、冷却开始 / 结束变了，或怒气变化够大，就记一笔要推 */
@@ -1218,6 +1218,7 @@ public final class LichDirector {
         if (cur.state != last.state || cur.waitReason != last.waitReason || !cur.name.equals(last.name)
                 || cur.rank != last.rank || cur.tier != last.tier || cur.clues != last.clues
                 || cur.generation != last.generation || cur.paused != last.paused || cur.weapon != last.weapon
+                || !cur.ephemera.equals(last.ephemera)
                 || (cur.cooldownSec > 0) != (last.cooldownSec > 0)
                 || Math.abs(cur.ragePermille - last.ragePermille) >= RAGE_PUSH_STEP) {
             h.dirty = true;

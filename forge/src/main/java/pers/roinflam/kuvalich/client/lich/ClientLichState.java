@@ -33,7 +33,8 @@ public final class ClientLichState {
      * @param cooldownSec  冷却还剩几秒，0 = 没在冷却
      */
     public record State(LichState state, WaitReason waitReason, String name, int seed, int weapon, int rank,
-                        int ragePermille, int tier, int clues, int cooldownSec, int generation, boolean paused) {
+                        int ragePermille, int tier, int clues, int cooldownSec, int generation, boolean paused,
+                        String ephemera) {
 
         /** 有没有玄骸 */
         public boolean hasLich() {
@@ -80,7 +81,7 @@ public final class ClientLichState {
 
     private static State fromPacket(LichStatePacket p) {
         return new State(p.state, p.waitReason, p.name == null ? "" : p.name, p.seed, p.weapon, p.rank,
-                p.ragePermille, p.tier, p.clues, p.cooldownSec, p.generation, p.paused);
+                p.ragePermille, p.tier, p.clues, p.cooldownSec, p.generation, p.paused, p.ephemera);
     }
 
     /** 离开世界（退出、换服）时清空，免得下一个世界里短暂显示上一个世界的玄骸 */

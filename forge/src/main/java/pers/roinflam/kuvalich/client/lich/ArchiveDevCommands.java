@@ -30,6 +30,7 @@ import pers.roinflam.kuvalich.nemesis.WaitReason;
 import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
 import java.util.ArrayList;
@@ -75,6 +76,13 @@ public final class ArchiveDevCommands {
     /** 满的那份假档案里被拿走的东西有几件、总数写几（件数 -1 = 默认那份） */
     private static int demoTaken = -1;
     private static int demoTakenTotal;
+    /** 假档案的名册几只、上限、待领取件数、上一只的结局、当前玄骸的幻纹、名字用不用长的 */
+    private static int demoAllies = 2;
+    private static int demoRosterCap = 3;
+    private static int demoInbox = 0;
+    private static int demoFate = 1;
+    private static String demoEphemera = "";
+    private static boolean demoLong;
 
     private static LichArchivePacket.Data pending;
     private static boolean pendingOpen;
@@ -122,6 +130,36 @@ public final class ArchiveDevCommands {
                                                 .executes(ctx -> demoTaken(ctx.getSource(),
                                                         IntegerArgumentType.getInteger(ctx, "count"),
                                                         IntegerArgumentType.getInteger(ctx, "total"))))))
+                        .then(Commands.literal("demoroster")
+                                .then(Commands.argument("count", IntegerArgumentType.integer(0, LichArchivePacket.MAX_ALLIES))
+                                        .executes(ctx -> demoRoster(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "count"), -1))
+                                        .then(Commands.argument("cap", IntegerArgumentType.integer(1, LichArchivePacket.MAX_ALLIES))
+                                                .executes(ctx -> demoRoster(ctx.getSource(),
+                                                        IntegerArgumentType.getInteger(ctx, "count"),
+                                                        IntegerArgumentType.getInteger(ctx, "cap"))))))
+                        .then(Commands.literal("demoinbox")
+                                .then(Commands.argument("count", IntegerArgumentType.integer(0)).executes(ctx -> {
+                                    demoInbox = IntegerArgumentType.getInteger(ctx, "count");
+                                    ctx.getSource().sendSuccess(() -> Component.literal("demo inbox " + demoInbox), false);
+                                    return 1;
+                                })))
+                        .then(Commands.literal("demofate")
+                                .then(Commands.argument("fate", IntegerArgumentType.integer(0, 3)).executes(ctx -> {
+                                    demoFate = IntegerArgumentType.getInteger(ctx, "fate");
+                                    ctx.getSource().sendSuccess(() -> Component.literal("demo fate " + demoFate), false);
+                                    return 1;
+                                })))
+                        .then(Commands.literal("demoephemera")
+                                .then(Commands.argument("id", StringArgumentType.word()).executes(ctx -> {
+                                    String id = StringArgumentType.getString(ctx, "id");
+                                    demoEphemera = "none".equals(id) ? "" : id;
+                                    ctx.getSource().sendSuccess(() -> Component.literal("demo ephemera "
+                                            + (demoEphemera.isEmpty() ? "none" : demoEphemera)), false);
+                                    return 1;
+                                })))
+                        .then(Commands.literal("demolong")
+                                .then(Commands.literal("on").executes(ctx -> demoLong(ctx.getSource(), true)))
+                                .then(Commands.literal("off").executes(ctx -> demoLong(ctx.getSource(), false))))
                         .then(Commands.literal("bardemo")
                                 .then(Commands.literal("on").executes(ctx -> barDemo(ctx.getSource(), true)))
                                 .then(Commands.literal("off").executes(ctx -> barDemo(ctx.getSource(), false)))
@@ -307,6 +345,41 @@ public final class ArchiveDevCommands {
         return 1;
     }
 
+    private static int demoRoster(CommandSourceStack src, int count, int cap) {
+        demoAllies = count;
+        if (cap > 0) {
+            demoRosterCap = cap;
+        }
+        src.sendSuccess(() -> Component.literal("demo roster " + demoAllies + " / " + demoRosterCap), false);
+        return 1;
+    }
+
+    private static int demoLong(CommandSourceStack src, boolean on) {
+        demoLong = on;
+        src.sendSuccess(() -> Component.literal("demo long names " + (on ? "on" : "off")), false);
+        return 1;
+    }
+
+    private static final String[] ALLY_NAMES = {"Varokk Ruhl", "Teshu Mak", "Ozzen Varn", "Kril Dathe", "Juun Oskar",
+            "Mavek Thol", "Ryzz Okan", "Dagu Brek"};
+    private static final String[] ALLY_LONG_NAMES = {"Vorrakthuun Ekmarravoss", "Ozzumbrathe Kelvaruun",
+            "Thrakkalvoss Mordegrun", "Ekzarruthe Vonnamalk", "Gruvennakht Ossomarr", "Melkorrath Druuvenak",
+            "Krovathuun Zellamorr", "Duurmekzar Vothallen"};
+
+    /** 名册假数据：第一只（最早感化）是出战的那只、正在场上，第二只带幻纹 */
+    private static List<LichArchivePacket.Ally> demoRoster() {
+        List<LichArchivePacket.Ally> out = new ArrayList<>();
+        String[] names = demoLong ? ALLY_LONG_NAMES : ALLY_NAMES;
+        List<String> elements = KuvaWeaponUtil.LICH_ELEMENTS;
+        int weapons = KuvaLichItems.KUVA_WEAPONS.size();
+        for (int i = 0; i < demoAllies; i++) {
+            String element = elements.isEmpty() ? "" : elements.get(i % elements.size());
+            out.add(new LichArchivePacket.Ally(names[i % names.length], 2 + i * 3, 3 + (i * 2) % 6, 0x5EED0000 + i * 977,
+                    weapons == 0 ? -1 : (i * 5) % weapons, element, i == 1 ? element : "", i == 0, i == 0));
+        }
+        return out;
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !pendingOpen) {
@@ -328,7 +401,7 @@ public final class ArchiveDevCommands {
         int cooldown = state == LichState.COOLDOWN ? 7 * 60 + 20 : 0;
         WaitReason wait = WaitReason.NONE;
         LichStatePacket st = new LichStatePacket(state, wait, "Drokag Tuzz", 0x5EED1234, weapon, 7, 620, 2, 2,
-                cooldown, 3, false);
+                cooldown, 3, false, demoEphemera);
         ItemStack weaponStack = weapon >= 0 ? new ItemStack(KuvaLichItems.KUVA_WEAPONS.get(weapon)) : ItemStack.EMPTY;
         int[] attempts = {
                 RequiemCard.packAttempt(new int[]{3, 6, 1}, new byte[]{1, 2, 0}, true),
@@ -372,7 +445,7 @@ public final class ArchiveDevCommands {
                 new LichArchivePacket.Card[]{
                         new LichArchivePacket.Card(3, 1, 3), new LichArchivePacket.Card(6, 0, 3),
                         new LichArchivePacket.Card(1, 2, 3)},
-                attempts, takenTotal, taken, "", 0);
+                attempts, takenTotal, taken, "", 0).withRoster(demoRoster(), demoRosterCap, demoInbox);
     }
 
     private static LichArchivePacket.Data emptyDemo() {
@@ -382,6 +455,7 @@ public final class ArchiveDevCommands {
                 0, 2, 6, new int[]{-1, -1, -1},
                 new LichArchivePacket.Card[]{new LichArchivePacket.Card(5, 0, 3), LichArchivePacket.Card.EMPTY,
                         LichArchivePacket.Card.EMPTY},
-                new int[0], 0, List.of(), "Varokk Ruhl", 1);
+                new int[0], 0, List.of(), demoFate == 0 ? "" : demoLong ? ALLY_LONG_NAMES[0] : "Varokk Ruhl", demoFate)
+                .withRoster(demoRoster(), demoRosterCap, demoInbox);
     }
 }

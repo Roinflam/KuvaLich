@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.nemesis;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -13,6 +14,7 @@ import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.network.packet.LichArchivePacket;
 import pers.roinflam.kuvalich.network.packet.LichStatePacket;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -95,7 +97,29 @@ public final class LichArchiveService {
                 card.getUnlockedCardStatus(), card.getDecryptionProgress(), card.getPointsRequired(),
                 riddles, cards, card.getAttempts(),
                 card.getConfiscatedItemCount(), confiscated,
-                last == null ? "" : last.name(), last == null ? 0 : last.fate());
+                last == null ? "" : last.name(), last == null ? 0 : last.fate(),
+                roster(player), AllyRoster.capacity(), PlayerLedger.inboxCount(player));
+    }
+
+    static List<LichArchivePacket.Ally> roster(ServerPlayer player) {
+        List<CompoundTag> allies = PlayerLedger.getAllies(player);
+        if (allies.isEmpty()) {
+            return List.of();
+        }
+        CompoundTag next = AllyDirector.entryToSummon(player);
+        int activeGen = next == null ? -1 : next.getInt(AllyRoster.GENERATION);
+        KuvaMasterEntity present = AllyDirector.presentOf(player.getUUID());
+        int presentGen = present == null || present.isDeparting() ? -1 : present.getAllyGeneration();
+        int n = Math.min(LichArchivePacket.MAX_ALLIES, allies.size());
+        List<LichArchivePacket.Ally> out = new ArrayList<>(n);
+        // 超出包的上限时留最新的那几只
+        for (CompoundTag a : allies.subList(allies.size() - n, allies.size())) {
+            int gen = a.getInt(AllyRoster.GENERATION);
+            out.add(new LichArchivePacket.Ally(a.getString(AllyRoster.NAME), gen, a.getInt(AllyRoster.RANK),
+                    (int) a.getLong(AllyRoster.SEED), a.getInt(AllyRoster.WEAPON), a.getString(AllyRoster.WEAPON_TYPE),
+                    a.getString(AllyRoster.EPHEMERA), gen == activeGen, gen == presentGen));
+        }
+        return out;
     }
 
     /**
@@ -133,7 +157,8 @@ public final class LichArchiveService {
         int cooldownSec = left > 0 ? (int) Math.min(Integer.MAX_VALUE, (left + 19) / 20) : 0;
         return new LichStatePacket(state, wait, card.getLichName(), (int) card.getLichSeed(), card.getLichWeapon(),
                 card.getLichRank(), Math.round(card.getLichRage() * 1000.0F), card.getRageTier(),
-                card.getUnlockedCardStatus(), cooldownSec, card.getLichGeneration(), card.isLichPaused());
+                card.getUnlockedCardStatus(), cooldownSec, card.getLichGeneration(), card.isLichPaused(),
+                card.getLichEphemera());
     }
 
     private static LichArchivePacket.Card slot(ItemStack stack) {

@@ -33,12 +33,14 @@ import java.util.function.Supplier;
  *  VarInt  cooldownSec   冷却还剩几秒，0 = 没在冷却
  *  VarInt  generation    这是第几只
  *  boolean paused        被管理命令暂停
+ *  String  ephemera      这只带的幻纹款式 id，≤ 32，不带为空
  * </pre>
  */
 public class LichStatePacket {
 
     /** 名字的长度上限 */
     public static final int MAX_NAME = 24;
+    public static final int MAX_EPHEMERA = 32;
 
     /** 没有玄骸时的状态 */
     public static final LichStatePacket EMPTY = new LichStatePacket(LichState.UNBORN, WaitReason.NONE, "",
@@ -58,9 +60,19 @@ public class LichStatePacket {
     public final int cooldownSec;
     public final int generation;
     public final boolean paused;
+    /** 幻纹款式 id，空 = 不带 */
+    public final String ephemera;
 
     public LichStatePacket(LichState state, WaitReason waitReason, String name, int seed, int weapon, int rank,
                            int ragePermille, int tier, int clues, int cooldownSec, int generation, boolean paused) {
+        this(state, waitReason, name, seed, weapon, rank, ragePermille, tier, clues, cooldownSec, generation,
+                paused, "");
+    }
+
+    public LichStatePacket(LichState state, WaitReason waitReason, String name, int seed, int weapon, int rank,
+                           int ragePermille, int tier, int clues, int cooldownSec, int generation, boolean paused,
+                           String ephemera) {
+        this.ephemera = ephemera == null ? "" : ephemera;
         this.state = state;
         this.waitReason = waitReason;
         this.name = name;
@@ -90,6 +102,7 @@ public class LichStatePacket {
         buf.writeVarInt(Math.max(0, msg.cooldownSec));
         buf.writeVarInt(Math.max(0, msg.generation));
         buf.writeBoolean(msg.paused);
+        buf.writeUtf(msg.ephemera.length() > MAX_EPHEMERA ? "" : msg.ephemera, MAX_EPHEMERA);
     }
 
     public static LichStatePacket decode(FriendlyByteBuf buf) {
@@ -105,8 +118,9 @@ public class LichStatePacket {
         int cooldownSec = buf.readVarInt();
         int generation = buf.readVarInt();
         boolean paused = buf.readBoolean();
+        String ephemera = buf.readUtf(MAX_EPHEMERA);
         return new LichStatePacket(state, wait, name, seed, weapon, rank, rage, tier, clues, cooldownSec,
-                generation, paused);
+                generation, paused, ephemera);
     }
 
     public static void handle(LichStatePacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {

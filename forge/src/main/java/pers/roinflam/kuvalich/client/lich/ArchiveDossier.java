@@ -2,6 +2,7 @@ package pers.roinflam.kuvalich.client.lich;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -16,6 +17,9 @@ import org.jetbrains.annotations.Nullable;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
 import pers.roinflam.kuvalich.client.larvling.LarvlingTag;
+import pers.roinflam.kuvalich.ephemera.EphemeraType;
+import pers.roinflam.kuvalich.init.KuvaLichItems;
+import pers.roinflam.kuvalich.network.packet.AllyCommandPacket;
 import pers.roinflam.kuvalich.nemesis.LichPersona;
 import pers.roinflam.kuvalich.nemesis.LichState;
 import pers.roinflam.kuvalich.nemesis.LichTraits;
@@ -34,7 +38,8 @@ import java.util.Locale;
  * 玄骸档案的左列「宿敌卷宗」：左上一枚台阶菱形等级徽记，右边压着名字、第几只 · 性格、状态三行；
  * 下面怒气五段条，再往下一叠卷宗卡（武器、体质、弱点 · 抗性、能力、交战），卡名压在上框线上，像档案袋的标签。
  * 「被它拿走的东西」也做成同样的卡，画在右列最下面（{@link #drawTaken}）：左列在 360 字像素高的版面
- * （1080p 缩放 3、720p 缩放 2）里五张卡已经排满，再加一张会顶出屏幕底边。
+ * （1080p 缩放 3、720p 缩放 2）里五张卡已经排满，再加一张会顶出屏幕底边。盟友名册同理：版面高、放得下时
+ * 排在左列最后，放不下就在标题行右端留一个入口，点开居中的名册面板（{@link #drawRosterPanel}）。
  *
  * <p>全部按物理像素画：姿态缩成 1 / 界面缩放，坐标和尺寸都是整数。字号 {@link #u} = 1 字像素占几个物理像素，
  * 跟着界面缩放走，但版面至少要 360 字像素高（1080p 缩放 4 也按 3 画），最小 2（汉字的 16 点阵才不丢笔画）；
@@ -116,7 +121,19 @@ final class ArchiveDossier {
     private static final int C_AFFINITY = 2;
     private static final int C_ABILITY = 3;
     private static final int C_FIGHT = 4;
-    private static final int CARD_KINDS = 5;
+    /** 盟友名册：左列放得下时排在交战后面，放不下就收成标题行右端的入口，点开面板 */
+    private static final int C_ROSTER = 5;
+    private static final int CARD_KINDS = 6;
+
+    private static final Glyph ACTIVE = glyph("#......", "###....", "#####..", "#######", "#####..", "###....", "#......");
+    private static final Glyph EPHEMERA = glyph("...#...", "...#...", "..###..", "###.###", "..###..", "...#...", "...#...");
+    /** 遣散要在这么久之内再点一次 */
+    private static final long CONFIRM_MS = 3000L;
+
+    /** 名册里的操作交给界面去发（调试假数据时界面自己改假数据） */
+    interface RosterActions {
+        void command(int action, int generation);
+    }
 
     // ==================== 这一帧的版面（物理像素） ====================
 
@@ -179,6 +196,38 @@ final class ArchiveDossier {
     private int maxScroll;
     private boolean barDrag;
 
+    // ---- 盟友名册（物理像素，每帧重算） ----
+    @Nullable
+    RosterActions rosterActions;
+    /** 这一帧名册排在左列里（否则标题行右端是入口） */
+    private boolean rosterInline;
+    private int rowCount;
+    private final int[] rowX = new int[LichArchivePacket.MAX_ALLIES];
+    private final int[] rowY = new int[LichArchivePacket.MAX_ALLIES];
+    private final int[] rowW = new int[LichArchivePacket.MAX_ALLIES];
+    private final int[] rowGen = new int[LichArchivePacket.MAX_ALLIES];
+    private final boolean[] rowActive = new boolean[LichArchivePacket.MAX_ALLIES];
+    /** 行尾遣散键的左上角，键是 {@link #hitS} 见方 */
+    private final int[] relX = new int[LichArchivePacket.MAX_ALLIES];
+    private final int[] relY = new int[LichArchivePacket.MAX_ALLIES];
+    private int hitS;
+    private int entryX;
+    private int entryY;
+    private int entryW;
+    private int entryH;
+    /** 等着第二次点击确认遣散的那一代，-1 = 没有 */
+    private int confirmGen = -1;
+    private long confirmUntil;
+    boolean rosterOpen;
+    private long rosterOpenMs;
+    private int rpX;
+    private int rpY;
+    private int rpW;
+    private int rpH;
+    private int rcX;
+    private int rcY;
+    private int rcS;
+
     /** 这一次调用里鼠标停在哪：提示行、或者一件物品（物品优先） */
     @Nullable
     List<Component> hoverLines;
@@ -208,6 +257,9 @@ final class ArchiveDossier {
     @Nullable
     private int[] wElemMask;
     private int wLines;
+    /** 「幻纹：款名」，不带为空 */
+    private String wEphemera = "";
+    private int wEphemeraRgb;
     private final String[] vitalValue = new String[VITALS];
     private final String[] vitalCap = new String[VITALS];
     private final String[] multText = new String[LichTraits.CATEGORIES];
@@ -237,7 +289,9 @@ final class ArchiveDossier {
         lw = GuiShapes.lineWidthPx();
         moreW = 0;
         legW = 0;
-        top = Math.max(10 * u, snap(screenH * 0.035F));
+        rowCount = 0;
+        entryW = 0;
+        top =Math.max(10 * u, snap(screenH * 0.035F));
         bottom = screenH - top;
         if (small) {
             l0 = Math.round(screenW * 0.04F);
@@ -264,8 +318,15 @@ final class ArchiveDossier {
                   @Nullable LichArchivePacket.Data data, long now, float aFrame, float aBody) {
         begin(graphics, f, mx, my, data);
         try {
+            rosterInline = known && data != null && rosterFitsLeft(lich, data);
+            if (rosterInline) {
+                rosterOpen = false;
+            }
+            if (Util.getMillis() > confirmUntil) {
+                confirmGen = -1;
+            }
             if (aFrame > 0.01F) {
-                drawTitle(aFrame);
+                drawTitle(aFrame, known && !rosterInline ? data : null);
             }
             if (aBody > 0.01F) {
                 drawBody(st, lich, known, data, now, aBody);
@@ -276,12 +337,37 @@ final class ArchiveDossier {
     }
 
     /** 标题：一颗小菱形、「玄骸档案」，后面一条细线拖到左列右边 */
-    private void drawTitle(float a) {
+    private void drawTitle(float a, @Nullable LichArchivePacket.Data rosterEntry) {
         diamond(l0, top + u, 3, FxPalette.KUVA, -1, a);
         String title = I18n.get("kuvalich.archive.title");
         int tx = l0 + 9 * u;
         int tw = text(title, tx, top, u, FxPalette.TEXT_MID, a);
-        hline(tx + tw + 4 * u, l1, top + 4 * u, FxPalette.KUVA_PALE, 0.3F * a);
+        int lineEnd = l1;
+        if (rosterEntry != null) {
+            // 名册在左列放不下：标题行右端放一个入口，右边对齐左列右边线，细线让到它左边 4 字像素
+            String full = rosterLegend(rosterEntry);
+            int room = l1 - (tx + tw + 12 * u) - 10 * u;
+            String s = fit(full, Math.max(1, room / u));
+            int sw = 10 * u + inkW(s) * u;
+            int ex = l1 - sw;
+            boolean hot = in(ex - 2 * u, top - 2 * u, sw + 4 * u, 12 * u);
+            int rgb = hot ? FxPalette.KUVA : FxPalette.TEXT_MID;
+            glyphLine(ACTIVE, hot ? FxPalette.KUVA : FxPalette.KUVA_PALE, s, rgb, ex, top, 8 * u, a);
+            if (a >= 0.5F) {
+                entryX = ex - 2 * u;
+                entryY = top - 2 * u;
+                entryW = sw + 4 * u;
+                entryH = 12 * u;
+            }
+            if (hot) {
+                hoverLines = List.of(Component.literal(full),
+                        Component.translatable("kuvalich.archive.roster.open").withStyle(ChatFormatting.GRAY));
+            }
+            lineEnd = ex - 4 * u;
+        }
+        if (lineEnd > tx + tw + 4 * u) {
+            hline(tx + tw + 4 * u, lineEnd, top + 4 * u, FxPalette.KUVA_PALE, 0.3F * a);
+        }
     }
 
     private void drawBody(LichStatePacket st, boolean lich, boolean known, @Nullable LichArchivePacket.Data data,
@@ -363,11 +449,49 @@ final class ArchiveDossier {
                 ensureTexts(data);
                 drawCards(data, y, a);
             }
-        } else if (known && data != null && !data.lastName().isEmpty() && data.lastFate() > 0) {
-            String key = data.lastFate() == 2 ? "kuvalich.archive.history.reset" : "kuvalich.archive.history.vanquished";
-            text(fit(I18n.get(key, LichArchiveScreen.upper(data.lastName())), (l1 - l0) / u), l0, y, u,
-                    FxPalette.ASH, a);
+        } else if (known && data != null) {
+            if (hasHistory(data)) {
+                text(fit(I18n.get(historyKey(data.lastFate()), LichArchiveScreen.upper(data.lastName())), (l1 - l0) / u),
+                        l0, y, u, FxPalette.ASH, a);
+            }
+            if (rosterInline) {
+                rosterCard(l0, unbornRosterY(data), l1 - l0, data, a);
+            }
         }
+    }
+
+    private static boolean hasHistory(LichArchivePacket.Data d) {
+        return !d.lastName().isEmpty() && d.lastFate() > 0;
+    }
+
+    private static String historyKey(int fate) {
+        return switch (fate) {
+            case 2 -> "kuvalich.archive.history.reset";
+            case 3 -> "kuvalich.archive.history.converted";
+            default -> "kuvalich.archive.history.vanquished";
+        };
+    }
+
+    /** 名册卡顶边：没有玄骸时在「上一只」那行下面空 8 字像素，没有那行就从那行的位置起 */
+    private int unbornRosterY(LichArchivePacket.Data d) {
+        int y = top + 14 * u + 36 * u + 6 * u;
+        return hasHistory(d) ? y + 16 * u : y;
+    }
+
+    /** 名册在左列放不放得下：有玄骸时五张卡按最小间距排完还放得下名册卡，没有玄骸时「上一只」下面放得下 */
+    private boolean rosterFitsLeft(boolean lich, LichArchivePacket.Data d) {
+        int h = rosterCardH(d);
+        if (!lich) {
+            return unbornRosterY(d) + h <= bottom;
+        }
+        int y = top + 14 * u + 36 * u + 6 * u + 22 * u;
+        int n = 0;
+        kinds[n++] = C_WEAPON;
+        kinds[n++] = C_VITAL;
+        kinds[n++] = C_AFFINITY;
+        kinds[n++] = C_ABILITY;
+        kinds[n++] = C_FIGHT;
+        return cardsHeight(d, n) + h + n * 4 * u <= bottom - y;
     }
 
     /** 台阶菱形徽记（外接 2n × 2n 字像素）+ 往里缩 3 格的内圈；数字 1~2 位用两倍字，3 位起一倍，按字墨宽居中 */
@@ -446,6 +570,9 @@ final class ArchiveDossier {
         kinds[n++] = C_AFFINITY;
         kinds[n++] = C_ABILITY;
         kinds[n++] = C_FIGHT;
+        if (rosterInline) {
+            kinds[n++] = C_ROSTER;
+        }
         int avail = bottom - y;
         int total = cardsHeight(d, n);
         while (n > 1 && total + (n - 1) * 4 * u > avail) {
@@ -462,7 +589,8 @@ final class ArchiveDossier {
                 case C_VITAL -> vitalCard(l0, yy, colW, a);
                 case C_AFFINITY -> affinityCard(l0, yy, colW, d, a);
                 case C_ABILITY -> abilityCard(l0, yy, colW, d, a);
-                default -> fightCard(l0, yy, colW, a);
+                case C_FIGHT -> fightCard(l0, yy, colW, a);
+                default -> rosterCard(l0, yy, colW, d, a);
             }
             yy += cardHeight(d, kind) + gap;
         }
@@ -478,13 +606,23 @@ final class ArchiveDossier {
 
     /** 卡的外框高：压在上框线上的卡名 4、上框线到内容 7、内容、底边 5（字像素） */
     private int cardHeight(LichArchivePacket.Data d, int kind) {
-        return 16 * u + switch (kind) {
-            case C_WEAPON -> 32 * u + 2 * u;
-            case C_VITAL -> 20 * u;
-            case C_AFFINITY -> 18 * u;
-            case C_ABILITY -> abilityRowH(d) + extraH();
-            default -> fightN * 8 * u + Math.max(0, fightN - 1) * 4 * u;
+        return switch (kind) {
+            case C_WEAPON -> 16 * u + weaponContentH();
+            case C_VITAL -> 16 * u + 20 * u;
+            case C_AFFINITY -> 16 * u + 18 * u;
+            case C_ABILITY -> 16 * u + abilityRowH(d) + extraH();
+            case C_FIGHT -> 16 * u + fightN * 8 * u + Math.max(0, fightN - 1) * 4 * u;
+            default -> rosterCardH(d);
         };
+    }
+
+    /** 武器卡的内容高：图标格 34 字像素，右边的字多到四行（带幻纹）时按字撑高 */
+    private int weaponContentH() {
+        return Math.max(34 * u, 8 * u + (weaponRows() - 1) * 11 * u);
+    }
+
+    private int weaponRows() {
+        return wLines + (wLines > 0 && !wEphemera.isEmpty() ? 1 : 0);
     }
 
     private int abilityRowH(LichArchivePacket.Data d) {
@@ -545,17 +683,20 @@ final class ArchiveDossier {
     private void weaponCard(int x, int y, int w, LichArchivePacket.Data d, float a) {
         int icon = 32 * u;
         int box = icon + 2 * u;
-        cardFrame(x, y, w, box, a, legWeapon, FxPalette.ASH, null, 0, null, 0);
-        rect(cx, cy, box, box, FxPalette.KUVA_MIST, 0.55F * a);
-        frame(cx, cy, box, box, FxPalette.KUVA_PALE, 0.35F * a);
+        int ch = weaponContentH();
+        cardFrame(x, y, w, ch, a, legWeapon, FxPalette.ASH, null, 0, null, 0);
+        int by = vmid(cy, ch, box);
+        rect(cx, by, box, box, FxPalette.KUVA_MIST, 0.55F * a);
+        frame(cx, by, box, box, FxPalette.KUVA_PALE, 0.35F * a);
         ItemStack stack = d.weaponStack();
         if (stack.isEmpty()) {
             return;
         }
         int tx = cx + box + 6 * u;
         int tw = cx + cw - tx;
-        int bh = 8 * u + (wLines - 1) * 11 * u;
-        int ty = vmid(cy, box, bh);
+        int rows = weaponRows();
+        int bh = 8 * u + (rows - 1) * 11 * u;
+        int ty = vmid(cy, ch, bh);
         String nm = fit(wName, tw / u);
         text(nm, tx, ty, u, FxPalette.BONE, a);
         if (wLines >= 2) {
@@ -564,8 +705,17 @@ final class ArchiveDossier {
         if (wLines >= 3 && wElemMask != null) {
             glyphLine(wElemMask, wElemRgb, fit(wElemName, (tw - 10 * u) / u), wElemRgb, tx, ty + 22 * u, 8 * u, a);
         }
-        item(stack, cx + u, cy + u, icon, false, a);
-        if (in(cx, cy, box, box)) {
+        if (rows > wLines) {
+            int ey = ty + wLines * 11 * u;
+            String es = fit(wEphemera, (tw - 10 * u) / u);
+            glyphLine(EPHEMERA, wEphemeraRgb, es, wEphemeraRgb, tx, ey, 8 * u, a);
+            if (in(tx, ey, tw, 8 * u)) {
+                hoverLines = List.of(Component.literal(wEphemera),
+                        Component.translatable("kuvalich.archive.ephemera.tooltip").withStyle(ChatFormatting.GRAY));
+            }
+        }
+        item(stack, cx + u, by + u, icon, false, a);
+        if (in(cx, by, box, box)) {
             hoverLines = wTip != null ? List.of(Component.literal(wName), Component.literal(wTip))
                     : List.of(Component.literal(wName));
         } else if (nm != wName && in(tx, ty, tw, 8 * u)) {
@@ -688,6 +838,299 @@ final class ArchiveDossier {
             if (s != fightText[i] && in(cx, ry, cw, 8 * u)) {
                 hoverLines = List.of(Component.literal(fightText[i]));
             }
+        }
+    }
+
+    // ==================== 盟友名册 ====================
+
+    private String rosterLegend(LichArchivePacket.Data d) {
+        return I18n.get("kuvalich.archive.roster", d.roster().size(), d.rosterCap());
+    }
+
+    /** 每只一行 8 字像素、行距 12，和交战卡同一个排法；没有盟友时一行说明 */
+    private int rosterContentH(int n) {
+        return n <= 0 ? 8 * u : n * 8 * u + (n - 1) * 4 * u;
+    }
+
+    private int rosterCardH(LichArchivePacket.Data d) {
+        return 16 * u + rosterContentH(Math.min(LichArchivePacket.MAX_ALLIES, d.roster().size()));
+    }
+
+    private void rosterCard(int x, int y, int w, LichArchivePacket.Data d, float a) {
+        String full = rosterLegend(d);
+        String leg = fit(full, Math.max(1, (w - 12 * u) / u));
+        int n = Math.min(LichArchivePacket.MAX_ALLIES, d.roster().size());
+        cardFrame(x, y, w, rosterContentH(n), a, leg, FxPalette.ASH, null, 0, null, 0);
+        if (leg != full && in(cx, y, inkW(leg) * u, 8 * u)) {
+            hoverLines = List.of(Component.literal(full));
+        }
+        rosterRows(cx, cy, cw, d.roster(), n, a);
+    }
+
+    /**
+     * 名册的行：出战标记、元素图形、名字（出战的亮一些）、「第几只 · 等级」，行尾一个遣散键。
+     * 名字和后面那段放不下时先截名字，名字剩不到三个字宽就不写后面那段；点了遣散键那一行换成确认的话
+     */
+    private void rosterRows(int x, int y, int w, List<LichArchivePacket.Ally> roster, int shown, float a) {
+        if (roster.isEmpty()) {
+            String none = I18n.get("kuvalich.archive.roster.none");
+            String s = fit(none, w / u);
+            text(s, x, y, u, FxPalette.TEXT_MID, 0.7F * a);
+            if (in(x, y, w, 8 * u)) {
+                hoverLines = List.of(Component.literal(none),
+                        Component.translatable("kuvalich.archive.roster.none.tooltip").withStyle(ChatFormatting.GRAY));
+            }
+            return;
+        }
+        hitS = 11 * u;
+        int glyphX = x + 10 * u;
+        int textX = glyphX + 10 * u;
+        int kx = x + w - 7 * u;
+        int textR = kx - 4 * u;
+        int avail = textR - textX;
+        for (int i = 0; i < shown && i < roster.size(); i++) {
+            LichArchivePacket.Ally al = roster.get(i);
+            int ry = y + i * 12 * u;
+            int ky = vmid(ry, 8 * u, 7 * u);
+            boolean confirming = confirmGen == al.generation();
+            boolean overRel = in(kx - 2 * u, ky - 2 * u, hitS, hitS);
+            boolean overRow = !overRel && in(x - 2 * u, ry - 2 * u, kx - 2 * u - (x - 2 * u), 12 * u);
+            if (overRow || overRel) {
+                rect(x - 2 * u, ry - 2 * u, w + 4 * u, 12 * u, FxPalette.KUVA_MIST, (overRel ? 0.5F : 0.35F) * a);
+            }
+            if (al.active()) {
+                glyph(ACTIVE, x, ky, FxPalette.KUVA, a);
+            }
+            String el = al.element();
+            int[] mask = el.isEmpty() ? null : LarvlingTag.elementGlyph(el);
+            int elRgb = el.isEmpty() ? FxPalette.ASH : KuvaPalette.element(el);
+            if (mask != null) {
+                glyph(mask, 7, glyphX, ky, elRgb, a);
+            } else {
+                glyph(UNBORN, glyphX, ky, FxPalette.ASH, a);
+            }
+            String name = LichArchiveScreen.upper(al.name());
+            if (confirming) {
+                String s = fit(I18n.get("kuvalich.archive.roster.confirm", name), avail / u);
+                text(s, textX, vmid(ry, 8 * u, textH(s) * u), u, FxPalette.KUVA, a);
+            } else {
+                String meta = I18n.get("kuvalich.archive.roster.meta", al.generation(), al.rank());
+                int metaW = inkW(meta) * u;
+                boolean withMeta = avail - metaW - 4 * u >= 24 * u;
+                String nm = fit(name, (withMeta ? avail - metaW - 4 * u : avail) / u);
+                // 名字和后面那段同一条基线：按两段里高的那段竖直居中
+                int ty = vmid(ry, 8 * u, Math.max(textH(nm), withMeta ? textH(meta) : 0) * u);
+                int nw = text(nm, textX, ty, u, al.active() ? FxPalette.BONE : FxPalette.TEXT_MID, a);
+                if (withMeta) {
+                    text(meta, textX + nw + 4 * u, ty, u, FxPalette.ASH, a);
+                }
+            }
+            boolean hotKey = overRel || confirming;
+            glyph(CLOSE, kx, ky, hotKey ? FxPalette.KUVA : FxPalette.ASH, (hotKey ? 1.0F : 0.7F) * a);
+
+            if (a >= 0.5F && rowCount < rowX.length) {
+                rowX[rowCount] = x - 2 * u;
+                rowY[rowCount] = ry - 2 * u;
+                rowW[rowCount] = kx - 2 * u - (x - 2 * u);
+                rowGen[rowCount] = al.generation();
+                rowActive[rowCount] = al.active();
+                relX[rowCount] = kx - 2 * u;
+                relY[rowCount] = ky - 2 * u;
+                rowCount++;
+            }
+            if (overRel) {
+                hoverLines = confirming
+                        ? List.of(Component.translatable("kuvalich.archive.roster.release.confirm", name))
+                        : List.of(Component.translatable("kuvalich.archive.roster.release", name),
+                        Component.translatable("kuvalich.archive.roster.release.hint").withStyle(ChatFormatting.GRAY));
+            } else if (overRow) {
+                hoverLines = allyTooltip(al, name);
+            }
+        }
+    }
+
+    private static List<Component> allyTooltip(LichArchivePacket.Ally al, String name) {
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.literal(name));
+        lines.add(Component.translatable("kuvalich.archive.roster.meta", al.generation(), al.rank())
+                .withStyle(ChatFormatting.GRAY));
+        if (al.weapon() >= 0 && al.weapon() < KuvaLichItems.KUVA_WEAPONS.size()) {
+            String weapon = new ItemStack(KuvaLichItems.KUVA_WEAPONS.get(al.weapon())).getHoverName().getString();
+            String el = al.element();
+            lines.add(Component.literal(el.isEmpty() ? weapon : weapon + " · " + I18n.get("kuvaweapon.type." + el))
+                    .withStyle(ChatFormatting.GRAY));
+        }
+        if (!al.ephemera().isEmpty()) {
+            lines.add(Component.translatable("kuvalich.archive.ephemera", ephemeraName(al.ephemera()))
+                    .withStyle(ChatFormatting.GRAY));
+        }
+        if (al.present()) {
+            lines.add(Component.translatable("kuvalich.archive.roster.present").withStyle(ChatFormatting.AQUA));
+        }
+        lines.add(al.active()
+                ? Component.translatable("kuvalich.archive.roster.active").withStyle(ChatFormatting.GOLD)
+                : Component.translatable("kuvalich.archive.roster.select").withStyle(ChatFormatting.DARK_GRAY));
+        return lines;
+    }
+
+    /** 幻纹款名；款式表还没有名字的按元素名顶上 */
+    static String ephemeraName(String id) {
+        String key = "kuvalich.ephemera.name." + id;
+        if (I18n.exists(key)) {
+            return I18n.get(key);
+        }
+        EphemeraType t = EphemeraType.byId(id);
+        return t != null ? I18n.get("kuvaweapon.type." + t.element()) : id;
+    }
+
+    private static int ephemeraRgb(String id) {
+        EphemeraType t = EphemeraType.byId(id);
+        return t != null ? t.defaultColor() : FxPalette.ACCENT;
+    }
+
+    /** 鼠标（界面坐标）落在名册入口或名册的行上就处理，返回处理了没有 */
+    boolean clickRoster(double mx, double my) {
+        int px = phys(mx);
+        int py = phys(my);
+        if (entryW > 0 && inRect(px, py, entryX, entryY, entryW, entryH)) {
+            rosterOpen = true;
+            rosterOpenMs = Util.getMillis();
+            confirmGen = -1;
+            rpW = 0;
+            return true;
+        }
+        return rowClick(px, py);
+    }
+
+    /** 点行设为出战（已经是出战的不发）；点遣散键先进确认，确认期内再点一次才遣散；点别处取消确认 */
+    private boolean rowClick(int px, int py) {
+        long now = Util.getMillis();
+        for (int i = 0; i < rowCount; i++) {
+            if (inRect(px, py, relX[i], relY[i], hitS, hitS)) {
+                if (confirmGen == rowGen[i] && now <= confirmUntil) {
+                    confirmGen = -1;
+                    command(AllyCommandPacket.RELEASE, rowGen[i]);
+                } else {
+                    confirmGen = rowGen[i];
+                    confirmUntil = now + CONFIRM_MS;
+                }
+                return true;
+            }
+            if (inRect(px, py, rowX[i], rowY[i], rowW[i], 12 * u)) {
+                confirmGen = -1;
+                if (!rowActive[i]) {
+                    command(AllyCommandPacket.SET_ACTIVE, rowGen[i]);
+                }
+                return true;
+            }
+        }
+        confirmGen = -1;
+        return false;
+    }
+
+    private void command(int action, int generation) {
+        if (rosterActions != null) {
+            rosterActions.command(action, generation);
+        }
+    }
+
+    void closeRoster() {
+        rosterOpen = false;
+        rpW = 0;
+        confirmGen = -1;
+    }
+
+    /** 名册面板开着时的点击：关闭键或面板外面关上，面板里落到行上照常处理；都由面板吃掉 */
+    boolean rosterPanelClick(double mx, double my, int button) {
+        if (rpW <= 0) {
+            return false;
+        }
+        int px = phys(mx);
+        int py = phys(my);
+        if (button == 0 && inRect(px, py, rcX, rcY, rcS, rcS) || !inRect(px, py, rpX, rpY, rpW, rpH)) {
+            closeRoster();
+            return true;
+        }
+        return button == 0 && rowClick(px, py);
+    }
+
+    /**
+     * 名册面板：左列放不下名册时从标题行的入口打开。和「查看全部」同一个样子：压暗、正中一张卷宗卡、右上关闭键；
+     * 宽度按最长的一行（名字 + 后面那段）定，不超出窗口；窗口矮到行放不下时少排几行，底下写还有几只
+     */
+    void drawRosterPanel(GuiGraphics graphics, Font f, int mx, int my, @Nullable LichArchivePacket.Data data) {
+        if (!rosterOpen) {
+            return;
+        }
+        if (data == null) {
+            closeRoster();
+            return;
+        }
+        begin(graphics, f, mx, my, data);
+        try {
+            if (Util.getMillis() > confirmUntil) {
+                confirmGen = -1;
+            }
+            float a = Mth.clamp((Util.getMillis() - rosterOpenMs) / (float) PANEL_FADE_MS, 0.0F, 1.0F);
+            List<LichArchivePacket.Ally> roster = data.roster();
+            int n = Math.min(LichArchivePacket.MAX_ALLIES, roster.size());
+            int margin = 16 * u;
+            int maxW = screenW - 2 * margin;
+            // n 行的卡高 16 + 12n - 4 字像素；放不下全部时再让出底下那行字的 12
+            int room = screenH - 2 * margin - 12 * u;
+            int shown = n <= Math.max(1, room / (12 * u)) ? n : Math.max(1, (room - 12 * u) / (12 * u));
+            String foot = shown < n ? I18n.get("kuvalich.archive.roster.omitted", n - shown) : null;
+            int footH = foot != null ? 12 * u : 0;
+
+            String legend = rosterLegend(data);
+            int need = 0;
+            for (int i = 0; i < n; i++) {
+                LichArchivePacket.Ally al = roster.get(i);
+                String meta = I18n.get("kuvalich.archive.roster.meta", al.generation(), al.rank());
+                need = Math.max(need, (inkW(LichArchiveScreen.upper(al.name())) + inkW(meta) + 4) * u);
+                need = Math.max(need, inkW(I18n.get("kuvalich.archive.roster.confirm",
+                        LichArchiveScreen.upper(al.name()))) * u);
+            }
+            int rowNeed = n == 0 ? inkW(I18n.get("kuvalich.archive.roster.none")) * u : 20 * u + need + 11 * u;
+            int footInk = foot != null ? inkW(foot) * u : 0;
+            int w = Math.min(maxW, Math.max(rowNeed + 12 * u, Math.max(inkW(legend) * u + 27 * u,
+                    Math.max(footInk + 12 * u, 140 * u))));
+            if (((screenW - w) & 1) != 0 && w < maxW) {
+                w++;
+            }
+            int contentH = rosterContentH(shown);
+            int h = 16 * u + contentH + footH;
+            int x = hmid(0, screenW, w);
+            int y = vmid(0, screenH, h - 4 * u) - 4 * u;
+            rpX = x;
+            rpY = y;
+            rpW = w;
+            rpH = h;
+
+            rect(0, 0, screenW, screenH, 0x000000, 0.6F * a);
+            rect(x, y + 4 * u, w, h - 4 * u, FxPalette.INK, 0.94F * a);
+            String leg = fit(legend, Math.max(1, (w - 27 * u) / u));
+            cardFrame(x, y, w, contentH + footH, a, leg, FxPalette.ASH, null, 0, null, 0, 7 * u);
+
+            int kx = x + w - 13 * u;
+            int ky = vmid(y, 8 * u, 7 * u);
+            rcS = 11 * u;
+            rcX = kx - 2 * u;
+            rcY = ky - 2 * u;
+            boolean overClose = in(rcX, rcY, rcS, rcS);
+            glyph(CLOSE, kx, ky, overClose ? FxPalette.KUVA : FxPalette.ASH, a);
+            if (overClose) {
+                hoverLines = List.of(Component.translatable("kuvalich.archive.confiscated.close"));
+            }
+
+            int ry0 = cy;
+            rosterRows(cx, ry0, cw, roster, shown, a);
+            if (foot != null) {
+                String fs = fit(foot, cw / u);
+                text(fs, hmid(cx, cw, inkW(fs) * u), ry0 + contentH + 4 * u, u, FxPalette.TEXT_MID, 0.8F * a);
+            }
+        } finally {
+            finish();
         }
     }
 
@@ -1098,6 +1541,10 @@ final class ArchiveDossier {
                 wLevel = wTip;
             }
         }
+
+        String eph = d.state().ephemera;
+        wEphemera = eph.isEmpty() ? "" : I18n.get("kuvalich.archive.ephemera", ephemeraName(eph));
+        wEphemeraRgb = ephemeraRgb(eph);
 
         LichArchivePacket.Stats st = d.stats();
         vitalValue[0] = st.health() > 0 ? Integer.toString(st.health()) : "—";

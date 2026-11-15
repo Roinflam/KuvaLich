@@ -48,7 +48,45 @@ public class LichArchivePacket {
     private static final int BARE_ITEM_BYTES = 8;
     /** 处决记录最多留几条（卡里最多存 5 条，这里留余量） */
     public static final int MAX_ATTEMPTS = 16;
+    /** 名册上限配置最大 8；读档、改配置不截，留点余量 */
+    public static final int MAX_ALLIES = 16;
     private static final int MAX_ID_LEN = 128;
+    private static final int MAX_TYPE_LEN = 32;
+
+    /**
+     * 名册里的一只盟友
+     *
+     * @param seed    种子低 32 位
+     * @param weapon  武器下标，-1 = 没有
+     * @param element 武器元素，空 = 没定
+     * @param active  下次前来助战的就是它
+     * @param present 此刻正在场上
+     */
+    public record Ally(String name, int generation, int rank, int seed, int weapon, String element, String ephemera,
+                       boolean active, boolean present) {
+        void write(FriendlyByteBuf buf) {
+            buf.writeUtf(cut(name, LichStatePacket.MAX_NAME), LichStatePacket.MAX_NAME);
+            buf.writeVarInt(Math.max(0, generation));
+            buf.writeVarInt(Math.max(0, rank));
+            buf.writeInt(seed);
+            buf.writeVarInt(Math.max(0, weapon + 1));
+            buf.writeUtf(cut(element, MAX_TYPE_LEN), MAX_TYPE_LEN);
+            buf.writeUtf(cut(ephemera, MAX_TYPE_LEN), MAX_TYPE_LEN);
+            buf.writeByte((active ? 1 : 0) | (present ? 2 : 0));
+        }
+
+        static Ally read(FriendlyByteBuf buf) {
+            String name = buf.readUtf(LichStatePacket.MAX_NAME);
+            int gen = buf.readVarInt();
+            int rank = buf.readVarInt();
+            int seed = buf.readInt();
+            int weapon = buf.readVarInt() - 1;
+            String element = buf.readUtf(MAX_TYPE_LEN);
+            String ephemera = buf.readUtf(MAX_TYPE_LEN);
+            int flags = buf.readByte();
+            return new Ally(name, gen, rank, seed, weapon, element, ephemera, (flags & 1) != 0, (flags & 2) != 0);
+        }
+    }
 
     /** 一张安魂卡：卡 id（-1 = 没放）、已用次数、总次数 */
     public record Card(int id, int damage, int maxDamage) {
@@ -123,7 +161,10 @@ public class LichArchivePacket {
      * @param confiscated      被没收的物品，按没收先后（编码时按字节预算可能少写后面几件，见类注释）
      * @param confiscatedSlim  {@code confiscated} 里哪几件（按下标）去掉过 NBT，只剩物品种类和数量
      * @param lastName         上一只玄骸的名字，没有为空
-     * @param lastFate         上一只的结局：0 无 / 1 终结 / 2 管理命令解除
+     * @param lastFate         上一只的结局：0 无 / 1 终结 / 2 管理命令解除 / 3 感化
+     * @param roster           盟友名册，最早感化的在前
+     * @param rosterCap        名册上限（配置）
+     * @param inboxCount       待领取的物品件数
      */
     public record Data(LichStatePacket state, String birthBiome, String birthDim,
                        ItemStack weaponStack, int weaponLvMin, int weaponLvMax,
@@ -132,9 +173,25 @@ public class LichArchivePacket {
                        int stage, int progress, int threshold,
                        int[] riddles, Card[] cards, int[] attempts,
                        int confiscatedCount, List<ItemStack> confiscated, BitSet confiscatedSlim,
-                       String lastName, int lastFate) {
+                       String lastName, int lastFate,
+                       List<Ally> roster, int rosterCap, int inboxCount) {
 
         /** 服务端组数据时用：哪几件要去掉 NBT 由编码时决定 */
+        public Data(LichStatePacket state, String birthBiome, String birthDim,
+                    ItemStack weaponStack, int weaponLvMin, int weaponLvMax,
+                    Stats stats, int dealtPct, int takenPct,
+                    int rageSources, int encounters,
+                    int stage, int progress, int threshold,
+                    int[] riddles, Card[] cards, int[] attempts,
+                    int confiscatedCount, List<ItemStack> confiscated,
+                    String lastName, int lastFate,
+                    List<Ally> roster, int rosterCap, int inboxCount) {
+            this(state, birthBiome, birthDim, weaponStack, weaponLvMin, weaponLvMax, stats, dealtPct, takenPct,
+                    rageSources, encounters, stage, progress, threshold, riddles, cards, attempts,
+                    confiscatedCount, confiscated, new BitSet(), lastName, lastFate, roster, rosterCap, inboxCount);
+        }
+
+        /** 同上，名册空、上限 3、没有待领取（开发命令和测试用） */
         public Data(LichStatePacket state, String birthBiome, String birthDim,
                     ItemStack weaponStack, int weaponLvMin, int weaponLvMax,
                     Stats stats, int dealtPct, int takenPct,
@@ -145,7 +202,19 @@ public class LichArchivePacket {
                     String lastName, int lastFate) {
             this(state, birthBiome, birthDim, weaponStack, weaponLvMin, weaponLvMax, stats, dealtPct, takenPct,
                     rageSources, encounters, stage, progress, threshold, riddles, cards, attempts,
-                    confiscatedCount, confiscated, new BitSet(), lastName, lastFate);
+                    confiscatedCount, confiscated, new BitSet(), lastName, lastFate, List.of(), 3, 0);
+        }
+
+        public Data withRoster(List<Ally> roster, int rosterCap, int inboxCount) {
+            return new Data(state, birthBiome, birthDim, weaponStack, weaponLvMin, weaponLvMax, stats, dealtPct,
+                    takenPct, rageSources, encounters, stage, progress, threshold, riddles, cards, attempts,
+                    confiscatedCount, confiscated, confiscatedSlim, lastName, lastFate, roster, rosterCap, inboxCount);
+        }
+
+        public Data withHistory(String lastName, int lastFate) {
+            return new Data(state, birthBiome, birthDim, weaponStack, weaponLvMin, weaponLvMax, stats, dealtPct,
+                    takenPct, rageSources, encounters, stage, progress, threshold, riddles, cards, attempts,
+                    confiscatedCount, confiscated, confiscatedSlim, lastName, lastFate, roster, rosterCap, inboxCount);
         }
     }
 
@@ -196,6 +265,14 @@ public class LichArchivePacket {
         writeConfiscated(d.confiscated(), d.confiscatedSlim(), buf);
         buf.writeUtf(cut(d.lastName(), LichStatePacket.MAX_NAME), LichStatePacket.MAX_NAME);
         buf.writeByte(d.lastFate());
+        List<Ally> roster = d.roster() == null ? List.of() : d.roster();
+        int allyCount = Math.min(MAX_ALLIES, roster.size());
+        buf.writeVarInt(allyCount);
+        for (int i = 0; i < allyCount; i++) {
+            roster.get(i).write(buf);
+        }
+        buf.writeVarInt(Math.max(0, d.rosterCap()));
+        buf.writeVarInt(Math.max(0, d.inboxCount()));
     }
 
     public static LichArchivePacket decode(FriendlyByteBuf buf) {
@@ -238,10 +315,17 @@ public class LichArchivePacket {
         }
         String lastName = buf.readUtf(LichStatePacket.MAX_NAME);
         int lastFate = buf.readByte();
+        int allyCount = Math.min(MAX_ALLIES, Math.max(0, buf.readVarInt()));
+        List<Ally> roster = new ArrayList<>(allyCount);
+        for (int i = 0; i < allyCount; i++) {
+            roster.add(Ally.read(buf));
+        }
+        int rosterCap = buf.readVarInt();
+        int inboxCount = buf.readVarInt();
         return new LichArchivePacket(new Data(state, birthBiome, birthDim, weaponStack, weaponLvMin, weaponLvMax,
                 stats, dealtPct, takenPct, rageSources, encounters,
                 stage, progress, threshold, riddles, cards, attempts, confiscatedCount, confiscated, slim,
-                lastName, lastFate));
+                lastName, lastFate, List.copyOf(roster), rosterCap, inboxCount));
     }
 
     public static void handle(LichArchivePacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
