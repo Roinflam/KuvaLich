@@ -9,6 +9,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.Item;
@@ -178,6 +179,43 @@ public final class FinaleTests {
         h.assertTrue(!Inbox.patrol(p), "登录提示只发一次");
         p.containerMenu = p.inventoryMenu;
         h.assertTrue(!Inbox.patrol(p) && !PlayerLedger.hasInbox(p), "关了界面照常放进背包");
+        h.succeed();
+    }
+
+    /** 背包满着、什么都没变时巡检不再解析整箱；腾出格子、收件箱进新东西后照常投 */
+    @GameTest(template = "empty", batch = LEDGER)
+    public static void fullInventorySkipsRescan(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        Inventory inv = p.getInventory();
+        for (int i = 0; i < inv.items.size(); i++) {
+            inv.setItem(i, new ItemStack(Items.DIRT, 64));
+        }
+        inv.offhand.set(0, new ItemStack(Items.DIRT, 64));
+        PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 40), new ItemStack(Items.DIAMOND, 3)));
+
+        int s = Inbox.scansForTest();
+        Inbox.patrol(p);
+        h.assertTrue(Inbox.scansForTest() == s + 1 && inboxTotal(p) == 43, "背包满：解析一次，东西都留着");
+        Inbox.patrol(p);
+        h.assertTrue(Inbox.scansForTest() == s + 1 && inboxTotal(p) == 43, "背包没变：第二次巡检不解析");
+
+        // 直接改堆叠，和吃掉、Q 扔一样不经过 setChanged
+        inv.items.get(5).shrink(64);
+        Inbox.patrol(p);
+        h.assertTrue(Inbox.scansForTest() == s + 2 && inv.items.get(5).is(KuvaLichItems.KUVA.get())
+                        && inv.items.get(5).getCount() == 40 && inboxTotal(p) == 3,
+                "腾出一格：下一次巡检照常放进去，钻石没地方放留着");
+        Inbox.patrol(p);
+        Inbox.patrol(p);
+        h.assertTrue(Inbox.scansForTest() == s + 3 && inboxTotal(p) == 3, "又满了：解析一次后跳过");
+
+        PlayerLedger.addToInbox(p, List.of(new ItemStack(KuvaLichItems.KUVA.get(), 10)));
+        Inbox.patrol(p);
+        h.assertTrue(Inbox.scansForTest() == s + 4 && inv.items.get(5).getCount() == 50 && inboxTotal(p) == 3,
+                "收件箱进了能叠上的新东西：照常尝试、叠进去");
+        h.assertTrue(owned(p, KuvaLichItems.KUVA.get()) == 50 && owned(p, Items.DIAMOND) == 3
+                        && h.getLevel().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(4.0D)).isEmpty(),
+                "总数不变、没掉地上");
         h.succeed();
     }
 

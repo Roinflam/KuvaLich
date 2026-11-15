@@ -130,6 +130,7 @@ public final class PlayerLedger {
             root.put(INBOX, writeItems(split));
         }
         write(player, root);
+        Inbox.inboxGrew(player);
     }
 
     // 原样接在后面，不把已有条目读出来再写回：读不出来的（比如所属模组暂时卸了）会在重写时丢掉
@@ -143,6 +144,7 @@ public final class PlayerLedger {
         inbox.addAll(add);
         root.put(INBOX, inbox);
         write(player, root);
+        Inbox.inboxGrew(player);
     }
 
     public static boolean hasInbox(Player player) {
@@ -193,6 +195,7 @@ public final class PlayerLedger {
         }
         root.remove(FINALE);
         write(player, root);
+        Inbox.inboxGrew(player);
     }
 
     // ==================== 盟友名册（条目格式由盟友那一批定，这里只原样存取） ====================

@@ -4,6 +4,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
@@ -30,6 +32,11 @@ public final class Inbox {
     private static final Map<UUID, Integer> LAST_FULL_NOTICE = new HashMap<>();
     /** 登录后还没到第一次自动投递的人。登录那一刻不提示：等那一次投完、还剩东西才说 */
     private static final Set<UUID> LOGIN_NOTICE = new HashSet<>();
+    /** 上一次一件都没放进去时背包的样子。背包和收件箱都没动过，巡检就不再整箱解析 */
+    private static final Map<UUID, Stuck> STUCK = new HashMap<>();
+    /** 连着跳过这么多次巡检就照常试一次，兜住指纹没看出来的变化（比如格子里的物品原地改了 NBT） */
+    private static final int MAX_SKIPS = 30;
+    private static int scans;
 
     private Inbox() {
     }
@@ -37,12 +44,24 @@ public final class Inbox {
     static void onLogin(ServerPlayer player) {
         LOGIN_AT.put(player.getUUID(), player.server.getTickCount());
         LOGIN_NOTICE.add(player.getUUID());
+        STUCK.remove(player.getUUID());
     }
 
     static void onLogout(ServerPlayer player) {
         LOGIN_AT.remove(player.getUUID());
         LAST_FULL_NOTICE.remove(player.getUUID());
         LOGIN_NOTICE.remove(player.getUUID());
+        STUCK.remove(player.getUUID());
+    }
+
+    /** 收件箱进了新东西：上次放不下的结论作废 */
+    static void inboxGrew(Player player) {
+        STUCK.remove(player.getUUID());
+    }
+
+    /** 测试用：真正解析收件箱的次数 */
+    public static int scansForTest() {
+        return scans;
     }
 
     /** 测试用：当作已经登录很久 */
@@ -54,6 +73,7 @@ public final class Inbox {
         LOGIN_AT.clear();
         LAST_FULL_NOTICE.clear();
         LOGIN_NOTICE.clear();
+        STUCK.clear();
     }
 
     /** 现在能不能往这个人背包里放：活着、不是旁观、没开着别的容器界面 */
@@ -86,7 +106,7 @@ public final class Inbox {
             PlayerFeedback.chat(player, KuvaPalette.INFO, "message.kuvalich.inbox.login", PlayerLedger.inboxCount(player));
             return true;
         }
-        deliver(player, true);
+        deliver(player, true, true);
         return false;
     }
 
@@ -97,12 +117,27 @@ public final class Inbox {
      * @return 这次放进背包的件数
      */
     public static int deliver(ServerPlayer player, boolean notify) {
+        return deliver(player, notify, false);
+    }
+
+    /** @param maySkip 上次一件没放进去、之后背包和收件箱都没变，就不再解析 */
+    private static int deliver(ServerPlayer player, boolean notify, boolean maySkip) {
         if (!PlayerLedger.hasInbox(player) || !canReceive(player) || inLoginDelay(player)) {
             return 0;
         }
         Inventory inv = player.getInventory();
+        Stuck stuck = STUCK.get(player.getUUID());
+        if (maySkip && stuck != null && stuck.skipped < MAX_SKIPS && stuck.sameAs(inv)) {
+            stuck.skipped++;
+            if (notify) {
+                noticeFull(player, stuck.left);
+            }
+            return 0;
+        }
+        scans++;
         ListTag list = PlayerLedger.inboxTag(player);
         int moved = 0;
+        int remaining = 0;
         for (int i = 0; i < list.size(); i++) {
             ItemStack stack = ItemStack.of(list.getCompound(i));
             if (stack.isEmpty()) {
@@ -147,19 +182,74 @@ public final class Inbox {
                 PlayerLedger.putInboxTag(player, list);
                 stack = rest;
             }
+            remaining += stack.getCount();
         }
         if (moved > 0) {
             inv.setChanged();
+            STUCK.remove(player.getUUID());
+        } else {
+            STUCK.put(player.getUUID(), new Stuck(inv, remaining));
         }
-        int left = notify ? PlayerLedger.inboxCount(player) : 0;
-        if (left > 0) {
-            int now = player.server.getTickCount();
-            Integer last = LAST_FULL_NOTICE.get(player.getUUID());
-            if (last == null || now - last >= FULL_NOTICE_TICKS) {
-                LAST_FULL_NOTICE.put(player.getUUID(), now);
-                PlayerFeedback.chat(player, KuvaPalette.WARN, "message.kuvalich.inbox.full", left);
-            }
+        if (notify) {
+            noticeFull(player, remaining);
         }
         return moved;
+    }
+
+    private static void noticeFull(ServerPlayer player, int left) {
+        if (left <= 0) {
+            return;
+        }
+        int now = player.server.getTickCount();
+        Integer last = LAST_FULL_NOTICE.get(player.getUUID());
+        if (last == null || now - last >= FULL_NOTICE_TICKS) {
+            LAST_FULL_NOTICE.put(player.getUUID(), now);
+            PlayerFeedback.chat(player, KuvaPalette.WARN, "message.kuvalich.inbox.full", left);
+        }
+    }
+
+    /**
+     * 背包的指纹：主背包 36 格加副手（投递只往这些格子放）每格的物品和数量，再加 {@code getTimesChanged()}。
+     * 光看计数不够：吃东西、Q 扔、放方块这些在服务端直接改堆叠，不走 {@code setChanged}
+     */
+    private static final class Stuck {
+        final Inventory inv;
+        final int changes;
+        final Item[] items;
+        final int[] counts;
+        final int left;
+        int skipped;
+
+        Stuck(Inventory inv, int left) {
+            this.inv = inv;
+            this.changes = inv.getTimesChanged();
+            this.left = left;
+            int n = inv.items.size() + inv.offhand.size();
+            items = new Item[n];
+            counts = new int[n];
+            for (int i = 0; i < n; i++) {
+                ItemStack s = slot(inv, i);
+                items[i] = s.isEmpty() ? null : s.getItem();
+                counts[i] = s.isEmpty() ? 0 : s.getCount();
+            }
+        }
+
+        boolean sameAs(Inventory now) {
+            // 重生后背包是新对象
+            if (now != inv || now.getTimesChanged() != changes || now.items.size() + now.offhand.size() != items.length) {
+                return false;
+            }
+            for (int i = 0; i < items.length; i++) {
+                ItemStack s = slot(now, i);
+                if (s.isEmpty() ? items[i] != null : s.getItem() != items[i] || s.getCount() != counts[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static ItemStack slot(Inventory inv, int i) {
+            return i < inv.items.size() ? inv.items.get(i) : inv.offhand.get(i - inv.items.size());
+        }
     }
 }
