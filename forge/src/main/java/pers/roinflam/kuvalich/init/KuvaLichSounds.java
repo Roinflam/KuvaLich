@@ -167,6 +167,16 @@ public final class KuvaLichSounds {
     public static final RegistryObject<SoundEvent> MERCY_ESCAPE = reg("mercy.escape");
     /** 怜悯之击成功的裁决（只给处决者） */
     public static final RegistryObject<SoundEvent> MERCY_VERDICT = reg("mercy.verdict");
+    // 处决每一刀的叠层（时刻表在 mercy/MercySoundCues）
+    public static final RegistryObject<SoundEvent> MERCY_SWING = reg("mercy.swing");
+    public static final RegistryObject<SoundEvent> MERCY_PIERCE = reg("mercy.pierce");
+    public static final RegistryObject<SoundEvent> MERCY_THUD = reg("mercy.thud");
+    public static final RegistryObject<SoundEvent> MERCY_TAIL = reg("mercy.tail");
+    public static final RegistryObject<SoundEvent> MERCY_TAIL_WRONG = reg("mercy.tail.wrong");
+    public static final RegistryObject<SoundEvent> MERCY_BREAKFREE = reg("mercy.breakfree");
+    public static final RegistryObject<SoundEvent> MERCY_GRAB = reg("mercy.grab");
+    public static final RegistryObject<SoundEvent> MERCY_LEAP = reg("mercy.leap");
+    public static final RegistryObject<SoundEvent> MERCY_LAND = reg("mercy.land");
     /** 玄骸升级横幅 */
     public static final RegistryObject<SoundEvent> UI_BANNER_RANKUP = reg("ui.banner.rankup");
     /** 玄骸通讯的嘟囔，一个音节放一次，12 个文件 */

@@ -71,6 +71,16 @@ public final class KuvaMixer {
     /** 增益变化小于这个就不再刷新在播的声音 */
     private static final float REFRESH_EPS = 1.0E-3F;
 
+    private static final String HITSTOP_KEY = "mercy.hitstop";
+    /** 顿帧时环境声压多少；特写那次 −12 dB 在刀捅完之后才压，和它不重叠 */
+    private static final float HITSTOP_WORLD_DB = -8.0F;
+    /** 顿帧时处决自己的其它声音（挥刀尾巴、上一刀的余音）压到这个倍数，约 −6 dB */
+    private static final float HITSTOP_SELF_GAIN = 0.5F;
+    private static final int HITSTOP_MIN_MS = 60;
+    private static final int HITSTOP_RELEASE_MS = 150;
+    private static int dipGroup = -1;
+    private static long dipUntil;
+
     private static final Map<KuvaSoundInstance, float[]> CURRENT = new WeakHashMap<>();
     private static final Int2LongOpenHashMap DUCKED = new Int2LongOpenHashMap();
 
@@ -184,6 +194,44 @@ public final class KuvaMixer {
         d.releasing = true;
     }
 
+    /**
+     * 处决顿帧：环境声在全局压混上再压一档，处决自己的其它声音也压低；这一刀刺入那几层（{@code group} 相同的）照原音量。
+     * 当场刷新一次在播的声音：顿帧只有几十毫秒，等下一个 tick 就过去了
+     */
+    public static void hitstop(int group, int holdMs) {
+        if (!EffectsDisplayConfig.screenEffects()) {
+            return;
+        }
+        long now = KuvaFxDirector.clockMs();
+        dipGroup = group;
+        // 声音每 tick 才重算一次音量，比一个 tick 还短的停顿可能一次都压不上
+        dipUntil = now + Math.max(holdMs, HITSTOP_MIN_MS);
+        duck(HITSTOP_KEY, HITSTOP_WORLD_DB, 0);
+        refreshNow();
+    }
+
+    /** 处决自己的声音在顿帧里的倍数 */
+    private static float hitstopDip(SoundInstance sound) {
+        if (dipGroup < 0 || !(sound instanceof KuvaSoundInstance k) || k.hitstopGroup() == dipGroup) {
+            return 1.0F;
+        }
+        long r = KuvaFxDirector.clockMs() - dipUntil;
+        if (r < 0L) {
+            return HITSTOP_SELF_GAIN;
+        }
+        if (r >= HITSTOP_RELEASE_MS) {
+            return 1.0F;
+        }
+        return HITSTOP_SELF_GAIN + (1.0F - HITSTOP_SELF_GAIN) * (r / (float) HITSTOP_RELEASE_MS);
+    }
+
+    private static void refreshNow() {
+        Minecraft mc = Minecraft.getInstance();
+        globalGain = computeGlobal();
+        appliedGain = globalGain;
+        mc.getSoundManager().updateSourceVolume(SoundSource.HOSTILE, mc.options.getSoundSourceVolume(SoundSource.HOSTILE));
+    }
+
     /** 调试：接下来 {@code n} 个客户端 tick 里，每 tick 把第一次被混音器改动的音量前后值打进日志 */
     public static void traceNext(int n) {
         traceLeft = Math.max(0, n);
@@ -239,8 +287,12 @@ public final class KuvaMixer {
         ResourceLocation loc = sound.getLocation();
         boolean ours = Reference.MOD_ID.equals(loc.getNamespace());
         float g = 1.0F;
-        if (globalGain < 1.0F && !(ours && isExempt(loc.getPath()))) {
+        boolean exempt = ours && isExempt(loc.getPath());
+        if (globalGain < 1.0F && !exempt) {
             g = globalGain;
+        }
+        if (exempt && dipGroup >= 0) {
+            g *= hitstopDip(sound);
         }
         if (ours && !(sound instanceof KuvaSoundInstance) && !sound.isRelative()) {
             double x = sound.getX(), y = sound.getY(), z = sound.getZ();
@@ -325,8 +377,20 @@ public final class KuvaMixer {
             DUCKS.clear();
             DUCKED.clear();
         }
+        boolean dipping = false;
+        if (dipGroup >= 0) {
+            long r = KuvaFxDirector.clockMs() - dipUntil;
+            if (r >= 0L && find(HITSTOP_KEY) != null && !find(HITSTOP_KEY).releasing) {
+                release(HITSTOP_KEY, HITSTOP_RELEASE_MS);
+            }
+            if (r >= HITSTOP_RELEASE_MS || mc.level == null) {
+                dipGroup = -1;
+            }
+            // 收尾那一 tick 也要刷，不然最后一档压低会留在在播的声音上
+            dipping = true;
+        }
         globalGain = computeGlobal();
-        if (Math.abs(globalGain - appliedGain) > REFRESH_EPS || (globalGain == 1.0F && appliedGain != 1.0F)) {
+        if (dipping || Math.abs(globalGain - appliedGain) > REFRESH_EPS || (globalGain == 1.0F && appliedGain != 1.0F)) {
             appliedGain = globalGain;
             // 对主音量以外的类别，原版会把所有在播的声音按各自的类别重算一遍音量，传哪个类别、什么值都只是触发
             mc.getSoundManager().updateSourceVolume(SoundSource.HOSTILE, mc.options.getSoundSourceVolume(SoundSource.HOSTILE));

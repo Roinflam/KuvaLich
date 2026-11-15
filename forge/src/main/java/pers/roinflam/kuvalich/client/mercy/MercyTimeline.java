@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.client.mercy;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -17,6 +18,7 @@ import pers.roinflam.kuvalich.client.fx.KuvaScreenFx;
 import pers.roinflam.kuvalich.client.fx.script.LichFx;
 import pers.roinflam.kuvalich.client.fx.script.RequiemFx;
 import pers.roinflam.kuvalich.client.sound.KuvaMixer;
+import pers.roinflam.kuvalich.client.sound.KuvaSoundInstance;
 import pers.roinflam.kuvalich.client.sound.KuvaSoundPlayer;
 import pers.roinflam.kuvalich.comm.CommSpeaker;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
@@ -24,11 +26,16 @@ import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.mercy.MercyBeats;
 import pers.roinflam.kuvalich.mercy.MercyPlan;
+import pers.roinflam.kuvalich.mercy.MercySoundCues;
 import pers.roinflam.kuvalich.mercy.MercyVariant;
 import pers.roinflam.kuvalich.utils.LogUtil;
+import pers.roinflam.kuvalich.utils.Reference;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -88,7 +95,7 @@ public final class MercyTimeline {
         CONVERT
     }
 
-    private record Stage(int ms, Consumer<MercyClient.Exec> action) {
+    private record Stage(int ms, Consumer<MercyClient.Exec> action, boolean sound) {
     }
 
     private final List<Stage> stages = new ArrayList<>();
@@ -277,18 +284,15 @@ public final class MercyTimeline {
         // 0：倒地低鸣收掉（处决开始）
         tl.at(0, x -> MercyFx.stopLoop(x.targetId, 150));
 
+        scheduleSounds(tl, p);
+
         if (oc == Outcome.THRALL) {
             int stab = p.variant().stabMs(0);
             tl.at(stab, x -> {
                 Entity t = x.target();
-                if (t == null) {
-                    return;
+                if (t != null) {
+                    RequiemFx.bladeSpark(t, 1, false);
                 }
-                if (KuvaSoundPlayer.gate("mercy.thrall." + x.targetId, 300)) {
-                    world(t instanceof KuvaLarvlingEntity ? KuvaLichSounds.MERCY_LARVLING.get() : KuvaLichSounds.MERCY_THRALL.get(),
-                            chest(t), 0.9F, KuvaSoundPlayer.jitter(1.0F, 0.04F));
-                }
-                RequiemFx.bladeSpark(t, 1, false);
             });
             return tl.done();
         }
@@ -305,18 +309,16 @@ public final class MercyTimeline {
         int last = lastStab(p);
         for (int i = 0; i < last; i++) {
             final int n = i + 1;
+            final int idx = i;
             final boolean result = n == last;
-            // 定生死的那一刀（成功第三刀、判错那一刀）用重的那一声；挣开站起的最后一刀还是普通的一刀，只是放足音量
-            final boolean heavy = result && oc != Outcome.ADVANCE;
-            final float vol = (n == 1 && !result) ? 0.7F : 1.0F;
             tl.at(stab[i], x -> {
+                if (x.cinematic && x.hitstop != null && idx < x.hitstop.length) {
+                    KuvaMixer.hitstop(hitstopGroup(x, idx), x.hitstop[idx]);
+                }
                 Entity t = x.target();
                 if (t == null) {
                     return;
                 }
-                SoundEvent ev = heavy ? KuvaLichSounds.MERCY_STAB_FINAL.get()
-                        : (n == 1 ? KuvaLichSounds.MERCY_STAB_1.get() : KuvaLichSounds.MERCY_STAB_2.get());
-                world(ev, chest(t), vol, KuvaSoundPlayer.jitter(1.0F, 0.02F));
                 RequiemFx.bladeSpark(t, n, false);
                 MercyImpactFx.stab(x, n, result);
             });
@@ -401,7 +403,7 @@ public final class MercyTimeline {
         }
 
         if (oc == Outcome.ADVANCE) {
-            // 挣开站起（g = 最后那一格填满的时刻）：低吼、刀被挣出来那一下的火花；不化雾，它站起来接着打
+            // 挣开站起（g = 最后那一格填满的时刻）：低吼、刀被挣出来那一下的火花（声音在叠层表里）；不化雾，它站起来接着打
             int g = b.fill(last);
             tl.at(g + b.advanceGrowl, x -> {
                 Entity t = x.target();
@@ -452,18 +454,23 @@ public final class MercyTimeline {
 
     /** 各阶段的时刻（排好序），对比节拍用 */
     int[] stageTimes() {
-        int[] out = new int[stages.size()];
-        for (int i = 0; i < out.length; i++) {
-            out[i] = stages.get(i).ms;
-        }
-        return out;
+        // 叠层声音的时刻另有 MercySoundCues 的表，不混进节拍导出
+        return stages.stream().filter(s -> !s.sound).mapToInt(Stage::ms).toArray();
     }
 
     private MercyTimeline at(int ms, Consumer<MercyClient.Exec> action) {
-        if (!stages.isEmpty() && stages.get(stages.size() - 1).ms > ms) {
+        return add(new Stage(ms, action, false));
+    }
+
+    private MercyTimeline sound(int ms, Consumer<MercyClient.Exec> action) {
+        return add(new Stage(ms, action, true));
+    }
+
+    private MercyTimeline add(Stage s) {
+        if (!stages.isEmpty() && stages.get(stages.size() - 1).ms > s.ms) {
             sorted = false;
         }
-        stages.add(new Stage(ms, action));
+        stages.add(s);
         return this;
     }
 
@@ -542,6 +549,54 @@ public final class MercyTimeline {
     static Vec3 chest(Entity t) {
         double h = t instanceof AbstractKuva k ? k.mercyChestHeight() : t.getBbHeight() * 0.62D;
         return t.position().add(0.0D, h, 0.0D);
+    }
+
+    private static void scheduleSounds(MercyTimeline tl, MercyPlan.Plan p) {
+        MercySoundCues.Result r = switch (outcome(p)) {
+            case SUCCESS -> MercySoundCues.Result.SUCCESS;
+            case CONVERT -> MercySoundCues.Result.CONVERT;
+            case FAIL -> MercySoundCues.Result.FAIL;
+            case ADVANCE -> MercySoundCues.Result.ADVANCE;
+            case THRALL -> MercySoundCues.Result.THRALL;
+        };
+        for (MercySoundCues.Cue c : MercySoundCues.cues(p.variant(), r, lastStab(p))) {
+            tl.sound(Math.max(0, c.startMs()), x -> layer(x, c));
+        }
+    }
+
+    /**
+     * 处决者本人听的不定位（镜头绕着走也不会左右乱飘），别人听的定位在刀口、随距离衰减
+     */
+    private static void layer(MercyClient.Exec x, MercySoundCues.Cue c) {
+        Entity t = x.target();
+        if (t == null) {
+            return;
+        }
+        if (c.layer() == MercySoundCues.Layer.THRALL && !KuvaSoundPlayer.gate("mercy.thrall." + x.targetId, 300)) {
+            return;
+        }
+        SoundEvent ev = layerEvent(c.layer(), t);
+        float pitch = KuvaSoundPlayer.jitter(c.pitch(), 0.02F);
+        KuvaSoundInstance s = x.local ? KuvaSoundPlayer.self(ev, SoundSource.HOSTILE, c.vol(), pitch)
+                : KuvaSoundPlayer.at(ev, SoundSource.HOSTILE, chest(t), c.vol(), pitch);
+        if (c.impact() && c.stab() >= 0) {
+            s.hitstopGroup(hitstopGroup(x, c.stab()));
+        }
+        KuvaSoundPlayer.play(s.tier(FxTier.S));
+    }
+
+    private static int hitstopGroup(MercyClient.Exec x, int stab) {
+        return (System.identityHashCode(x) & 0x0FFFFFFF) * 4 + stab;
+    }
+
+    private static final Map<MercySoundCues.Layer, SoundEvent> LAYER_EVENTS = new EnumMap<>(MercySoundCues.Layer.class);
+
+    private static SoundEvent layerEvent(MercySoundCues.Layer l, Entity t) {
+        if (l == MercySoundCues.Layer.THRALL && t instanceof KuvaLarvlingEntity) {
+            return KuvaLichSounds.MERCY_LARVLING.get();
+        }
+        return LAYER_EVENTS.computeIfAbsent(l, k -> ForgeRegistries.SOUND_EVENTS.getValue(
+                new ResourceLocation(Reference.MOD_ID, k.id)));
     }
 
     /** 定位在 {@code pos} 的世界声，S 档（不被主角压制压低） */

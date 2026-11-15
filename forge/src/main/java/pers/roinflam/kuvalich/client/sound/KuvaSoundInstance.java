@@ -49,6 +49,7 @@ public class KuvaSoundInstance extends AbstractTickableSoundInstance {
     private int fadeInTicks;
     /** 指定嘟囔文件的下标（从 1 起）；0 = 照 sounds.json 抽 */
     private int variantIndex;
+    private int hitstopGroup = -1;
 
     /**
      * @param volume 基础音量
@@ -94,6 +95,16 @@ public class KuvaSoundInstance extends AbstractTickableSoundInstance {
 
     public FxTier tier() {
         return tier;
+    }
+
+    /** 处决里属于第几刀刺入那一下（顿帧压混时同一刀的这几层不压）；−1 = 不属于 */
+    public KuvaSoundInstance hitstopGroup(int group) {
+        this.hitstopGroup = group;
+        return this;
+    }
+
+    public int hitstopGroup() {
+        return hitstopGroup;
     }
 
     /** 定位（世界声） */

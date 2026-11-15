@@ -56,6 +56,14 @@ public final class KuvaSoundPlayer {
         return KuvaSoundInstance.create(ev, src, vol, pitch).position(p);
     }
 
+    /**
+     * 本人听的演出声：不定位、走 {@code src} 的音量分类（不像 {@link #ui} 那样走 MASTER）。
+     * 处决时镜头绕着走，定位声会跟着机位左右乱飘，处决者自己听的用它
+     */
+    public static KuvaSoundInstance self(SoundEvent ev, SoundSource src, float vol, float pitch) {
+        return KuvaSoundInstance.create(ev, src, vol, pitch).relativeToListener();
+    }
+
     /** 世界声：定位在 {@code p}，但不随距离衰减 */
     public static KuvaSoundInstance atFixed(SoundEvent ev, SoundSource src, Vec3 p, float vol, float pitch) {
         return KuvaSoundInstance.create(ev, src, vol, pitch).position(p).noAttenuation();

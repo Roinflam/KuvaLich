@@ -69,6 +69,14 @@ public final class SigilDevCommands {
                                     return toggleSigils(ctx.getSource(), true);
                                 }))))
                 .then(Commands.literal("duck")
+                        .then(Commands.literal("hitstop")
+                                .then(Commands.argument("ms", IntegerArgumentType.integer(0, 1000)).executes(ctx -> {
+                                    int ms = IntegerArgumentType.getInteger(ctx, "ms");
+                                    KuvaMixer.hitstop(Integer.MAX_VALUE, ms);
+                                    KuvaMixer.traceNext(30);
+                                    ctx.getSource().sendSuccess(() -> Component.literal("mixer hitstop " + ms + " ms"), false);
+                                    return 1;
+                                })))
                         .then(Commands.literal("release")
                                 .then(Commands.argument("ms", IntegerArgumentType.integer(0, 10000)).executes(ctx -> {
                                     int ms = IntegerArgumentType.getInteger(ctx, "ms");

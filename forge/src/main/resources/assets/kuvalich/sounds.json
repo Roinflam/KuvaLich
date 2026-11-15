@@ -893,6 +893,143 @@
       "kuvalich:mercy/verdict/1"
     ]
   },
+  "mercy.swing": {
+    "subtitle": "subtitles.kuvalich.mercy.swing",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/swing/1",
+        "attenuation_distance": 24,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/layer/swing/2",
+        "attenuation_distance": 24,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/layer/swing/3",
+        "attenuation_distance": 24,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.pierce": {
+    "subtitle": "subtitles.kuvalich.mercy.stab",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/pierce/1",
+        "attenuation_distance": 24,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/layer/pierce/2",
+        "attenuation_distance": 24,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/layer/pierce/3",
+        "attenuation_distance": 24,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.thud": {
+    "subtitle": "subtitles.kuvalich.mercy.stab",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/thud/1",
+        "attenuation_distance": 32,
+        "preload": true
+      },
+      {
+        "name": "kuvalich:mercy/layer/thud/2",
+        "attenuation_distance": 32,
+        "preload": true
+      }
+    ]
+  },
+  "mercy.tail": {
+    "subtitle": "subtitles.kuvalich.mercy.tail",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/tail/1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "kuvalich:mercy/layer/tail/2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "mercy.tail.wrong": {
+    "subtitle": "subtitles.kuvalich.mercy.tail.wrong",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/wrong/1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "kuvalich:mercy/layer/wrong/2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "mercy.breakfree": {
+    "subtitle": "subtitles.kuvalich.mercy.breakfree",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/breakfree/1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "kuvalich:mercy/layer/breakfree/2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mercy.grab": {
+    "subtitle": "subtitles.kuvalich.mercy.grab",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/grab/1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "kuvalich:mercy/layer/grab/2",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "kuvalich:mercy/layer/grab/3",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "mercy.leap": {
+    "subtitle": "subtitles.kuvalich.mercy.leap",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/leap/1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "kuvalich:mercy/layer/leap/2",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "mercy.land": {
+    "subtitle": "subtitles.kuvalich.mercy.land",
+    "sounds": [
+      {
+        "name": "kuvalich:mercy/layer/land/1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "kuvalich:mercy/layer/land/2",
+        "attenuation_distance": 16
+      }
+    ]
+  },
   "ui.banner.rankup": {
     "sounds": [
       "kuvalich:ui/banner/rankup/1"
