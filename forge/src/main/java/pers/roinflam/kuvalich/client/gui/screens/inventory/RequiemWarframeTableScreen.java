@@ -298,8 +298,12 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         GuiShapes.end();
         drawEphemeraCard(g, mx, my, t);
         float bodyH = p != null ? p.getBbHeight() : 1.8F;
+        float bodyW = p != null ? p.getBbWidth() : 0.6F;
         if (preview) {
-            tune.drawFigureFx(g, lcx, feetY, figScale, bodyH, now, false);
+            // 光翼、涡幕会铺出左栏，按左栏裁掉
+            clip(g, lx0, 0, lx1, height);
+            tune.drawFigureFx(g, lcx, feetY, figScale, bodyW, bodyH, now, false);
+            unclip(g);
         } else {
             // 底座上一颗光点绕着走（拖一小截尾巴）
             float orbit = (now % 3200L) / 3200.0F * Mth.TWO_PI;
@@ -334,7 +338,9 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
             // 前半圈和光点压在人像上面：人像画在 z 50 上下几十格
             g.pose().pushPose();
             g.pose().translate(0.0F, 0.0F, 150.0F);
-            tune.drawFigureFx(g, lcx, feetY, figScale, bodyH, now, true);
+            clip(g, lx0, 0, lx1, height);
+            tune.drawFigureFx(g, lcx, feetY, figScale, bodyW, bodyH, now, true);
+            unclip(g);
             g.pose().popPose();
         }
 

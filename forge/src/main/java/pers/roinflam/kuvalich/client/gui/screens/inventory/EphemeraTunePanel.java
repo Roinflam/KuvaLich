@@ -17,6 +17,7 @@ import pers.roinflam.kuvalich.ephemera.EphemeraLook;
 import pers.roinflam.kuvalich.ephemera.EphemeraStateTable;
 import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.network.packet.EphemeraTunePacket;
+import pers.roinflam.kuvalich.client.ephemera.EphemeraPreview;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
@@ -74,7 +75,8 @@ final class EphemeraTunePanel {
         PRESETS = new int[els.size() + 1];
         PRESET_KEYS = new String[els.size() + 1];
         for (int i = 0; i < els.size(); i++) {
-            PRESETS[i] = EphemeraType.defaultColor(els.get(i));
+            // 磁力（0x7A8CFF）和电击（0x8296FF）的元素色几乎一样，色块并排分不出来；磁力的色块换成深一档的钴蓝
+            PRESETS[i] = els.get(i).equals("magnetic") ? 0x3F66FF : EphemeraType.defaultColor(els.get(i));
             PRESET_KEYS[i] = "kuvaweapon.type." + els.get(i);
         }
         PRESETS[els.size()] = KuvaPalette.LICH;
@@ -675,80 +677,18 @@ final class EphemeraTunePanel {
 
     // ==================== 人像上的预览 ====================
 
-    /** 和渲染器同一套渐变取法：v 从下到上、r 从内到外 */
-    static int colorAt(EphemeraLook look, float v, float r, long now) {
-        float t = switch (look.gradient()) {
-            case EphemeraItem.GRADIENT_VERTICAL -> v;
-            case EphemeraItem.GRADIENT_RADIAL -> r;
-            case EphemeraItem.GRADIENT_FLOW -> 0.5F + 0.5F * Mth.sin((now % 3000L) / 3000.0F * Mth.TWO_PI + v * Mth.PI);
-            default -> 0.0F;
-        };
-        t = Mth.clamp(t, 0.0F, 1.0F);
-        int a = look.color1();
-        int b = look.color2();
-        int rr = Math.round(Mth.lerp(t, (a >> 16) & 0xFF, (b >> 16) & 0xFF));
-        int gg = Math.round(Mth.lerp(t, (a >> 8) & 0xFF, (b >> 8) & 0xFF));
-        int bb = Math.round(Mth.lerp(t, a & 0xFF, b & 0xFF));
-        return (rr << 16) | (gg << 8) | bb;
-    }
-
     /**
-     * 人像脚下的环、环上三颗光核、往上飘的光点，按面板上的值画。人像是立体的：环的后半圈在人像之前画、
-     * 前半圈和光点在之后画（调用方抬高 z），看着环绕在脚踝外面
+     * 人像脚下按面板上的值画格里那款的真画法（站着不动的样子）。人像是立体的：front 为假时算这一帧并画人像后面那半，
+     * 人像画完再以 front 为真画前面那半（调用方抬高 z）
      *
      * @param unit 人像一格多少界面像素（就是人像的倍数）
      */
-    void drawFigureFx(GuiGraphics g, float cx, float feetY, float unit, float bodyH, long now, boolean front) {
-        EphemeraLook look = look();
-        float rx = unit * 0.42F * look.scale();
-        float ry = rx * 0.24F;
-        float cy = feetY + 1 - look.yOffset() * unit;
-        float lineW = GuiShapes.pixels(g, ArchivePageScreen.lw());
-        int n = 48;
-        GuiShapes.additive(g, true);
-        GuiShapes.begin(g);
-        for (int ring = 0; ring < 2; ring++) {
-            float k = ring == 0 ? 0.72F : 1.0F;
-            int col = colorAt(look, 0.0F, ring == 0 ? 0.0F : 1.0F, now);
-            for (int i = 0; i < n; i++) {
-                float a0 = i * Mth.TWO_PI / n;
-                float a1 = (i + 1) * Mth.TWO_PI / n;
-                if ((Mth.sin((a0 + a1) * 0.5F) >= 0.0F) != front) {
-                    continue;
-                }
-                float px0 = cx + rx * k * Mth.cos(a0);
-                float py0 = cy + ry * k * Mth.sin(a0);
-                float px1 = cx + rx * k * Mth.cos(a1);
-                float py1 = cy + ry * k * Mth.sin(a1);
-                GuiShapes.hairline(g, px0, py0, px1, py1, lineW * 3.0F, GuiShapes.argb(col, 0.22F));
-                GuiShapes.hairline(g, px0, py0, px1, py1, lineW, GuiShapes.argb(col, 0.9F));
-            }
-        }
-        float spin = (now % 3200L) / 3200.0F * Mth.TWO_PI;
-        int coreCol = colorAt(look, 0.1F, 1.0F, now);
-        for (int c = 0; c < 3; c++) {
-            float a = spin + c * Mth.TWO_PI / 3.0F;
-            if ((Mth.sin(a) >= 0.0F) != front) {
-                continue;
-            }
-            float ox = cx + rx * Mth.cos(a);
-            float oy = cy + ry * Mth.sin(a);
-            GuiShapes.diamondFill(g, ox, oy, 1.5F, 2.0F, GuiShapes.argb(coreCol, 0.95F));
-        }
+    void drawFigureFx(GuiGraphics g, float cx, float feetY, float unit, float bodyW, float bodyH, long now, boolean front) {
         if (front) {
-            float rise = bodyH * unit * look.scale();
-            for (int m = 0; m < 7; m++) {
-                float u = ((now + m * 377L) % 2600L) / 2600.0F;
-                float a = m * 1.9F + u * 1.4F;
-                float ox = cx + rx * 0.8F * Mth.cos(a);
-                float oy = cy + ry * 0.8F * Mth.sin(a) - u * rise;
-                float s = 1.0F + 0.6F * (1.0F - u);
-                int col = colorAt(look, u, 0.5F, now);
-                GuiShapes.block(g, ox - s, oy - s, ox + s, oy + s, GuiShapes.argb(col, 0.85F * Mth.sin(u * Mth.PI)));
-            }
+            EphemeraPreview.drawFront(g, cx, feetY, unit);
+        } else {
+            EphemeraPreview.drawBack(g, look(), cx, feetY, unit, bodyW, bodyH, now);
         }
-        GuiShapes.end();
-        GuiShapes.additive(g, false);
     }
 
     // ==================== 小工具 ====================

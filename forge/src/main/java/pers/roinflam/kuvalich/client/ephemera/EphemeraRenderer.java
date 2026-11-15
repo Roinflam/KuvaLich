@@ -329,6 +329,11 @@ public final class EphemeraRenderer {
         System.arraycopy(nu, 0, uv, 0, n * 8);
     }
 
+    static ResourceLocation atlas(Minecraft mc) {
+        ensureAtlas(mc);
+        return ATLAS;
+    }
+
     private static void ensureAtlas(Minecraft mc) {
         if (atlasReady) {
             return;

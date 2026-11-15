@@ -133,6 +133,9 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
         int C = m.color, deep = mul(C, 0.13F), body = mul(C, 0.5F), hot = mix(C, WHITE, 0.5F);
         int kind = m.kind;
         boolean zap = kind == 3;
+        // 电击的默认色偏紫、亮度低，白天灰底上暗托底一压就发闷：按天光把暗托底减淡、主色托底提一点，夜里不动
+        float zapDay = zap ? (d.glowAlpha >= EphemeraTier.GLOW_SNOW - 1.0E-3F ? 1
+                : EphemeraFx.clamp((d.glowAlpha - EphemeraTier.GLOW_NIGHT) / (EphemeraTier.GLOW_DAY - EphemeraTier.GLOW_NIGHT), 0, 1)) : 0;
         Params P = Params.of(kind);
         int NSEG = lite ? 5 : NSEG_FULL;
         nseg = NSEG;
@@ -246,15 +249,15 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
                 mid.add(cx, cy, cz, spread * 1.3F + H * 0.24F * (1 - 0.5F * f) + H * 0.08F, volAl(f));
             }
             if (!lite) {
-                pen.s(HAZE).alphaBlend().rgb(deep).ribbon(rib.scaled(mid, 1.3F, 0.62F * (sneak ? 0.7F : 1)), EphemeraPen.FACE_CAM, 0, 1);
+                pen.s(HAZE).alphaBlend().rgb(deep).ribbon(rib.scaled(mid, 1.3F, 0.62F * (sneak ? 0.7F : 1) * (1 - 0.6F * zapDay)), EphemeraPen.FACE_CAM, 0, 1);
             }
-            pen.s(HAZE).alphaBlend().rgb(body).ribbon(rib.scaled(mid, 0.85F, 0.48F * flick), EphemeraPen.FACE_CAM, 0, 1);
+            pen.s(HAZE).alphaBlend().rgb(zapDay > 0 ? mix(body, C, 0.6F * zapDay) : body).ribbon(rib.scaled(mid, 0.85F, 0.48F * flick), EphemeraPen.FACE_CAM, 0, 1);
             pen.s(HAZE).rgb(C).ribbon(rib.scaled(mid, 0.7F, 0.5F * intensity * flick * (calm ? 0.55F : 1)), EphemeraPen.FACE_CAM, 0, 1);
         }
 
         // 相邻两片光羽之间张一层翼膜
         float vu0 = zap ? s.zapK * 0.5F : mod05(-t * Math.max(P.flow, 0.15F) * 0.4F);
-        float memA = (zap ? 0.45F : 0.9F) * intensity * flick * (calm ? 0.7F : 1);
+        float memA = (zap ? 0.45F + 0.3F * zapDay : 0.9F) * intensity * flick * (calm ? 0.7F : 1);
         for (int i = 0; i < 2; i++) {
             for (int k = 0; k < 2; k++) {
                 EphemeraPen.Ribbon fa = feathers[i * 3 + k], fb = feathers[i * 3 + k + 1];
