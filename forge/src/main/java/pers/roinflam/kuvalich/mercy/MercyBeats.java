@@ -111,10 +111,11 @@ public final class MercyBeats {
         // 正面直刺「短—长」：第三刀前要拔刀（+580）、甩上头顶（150）、顶住（140）、蓄力（280），所以第二个下限是 1150
         // 背后锁颈「长—短」：第一刀拔出来（+520）以后往后勒住它的脖子憋一下（400），再蓄第二刀（130），所以第一个下限是 1050；
         //    第二、三刀之间只有拔刀松手（+380）和原地转一圈（430），连着捅
+        // 贴身上挑「连珠」：两次都贴着下限，拔刀（+380）落回低位、蹲住（290）、蓄（90）就挑下一刀
         //    套路                    刺入                     填满                     刀间隔下限
         lich(MercyVariant.LICH_A, stabs(790, 1650, 2900), fills(830, 1650, 2900), gaps(850, 1150));
         lich(MercyVariant.LICH_B, stabs(790, 1940, 2810), fills(830, 1940, 2810), gaps(1050, 850));
-        lich(MercyVariant.LICH_C, stabs(790, 1680, 2670), fills(830, 1680, 2670), gaps(850, 850));
+        lich(MercyVariant.LICH_C, stabs(790, 1660, 2530), fills(830, 1660, 2530), gaps(850, 850));
         lich(MercyVariant.LICH_D, stabs(790, 1680, 2670), fills(830, 1680, 2670), gaps(850, 850));
         lich(MercyVariant.LICH_E, stabs(790, 1680, 2670), fills(830, 1680, 2670), gaps(850, 990));
 

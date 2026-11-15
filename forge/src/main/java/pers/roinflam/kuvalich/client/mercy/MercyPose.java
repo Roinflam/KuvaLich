@@ -138,7 +138,7 @@ public final class MercyPose {
         private final int strainFrom, strainTo;
         /** 过了这一刻不再覆盖（交还后让原版的走路摆臂接手） */
         private final int endT;
-        /** 按新写法排的（现在是正面直刺、背后锁颈）：曲线、错峰、迈步、头的滞后、和原版混合都只对它生效，别的套路逐帧照旧 */
+        /** 按新写法排的（现在是正面直刺、背后锁颈、贴身上挑）：曲线、错峰、迈步、头的滞后、和原版混合都只对它生效，别的套路逐帧照旧 */
         private boolean v2;
         private MercyCurve.Keys curve, bodyCurve;
         /** 迈步那层：叠在两条腿上的摆角；没有为 null */
@@ -590,41 +590,63 @@ public final class MercyPose {
                 k(s3 + 200, CURVE, p().legs(0, 0)));
     }
 
-    /** 贴身上挑：矮身冲进怀里、左掌顶住胸口；每一刀从低处起身往上挑，第三刀整个人顶起来 */
-    private static List<Key> lichC(MercyBeats.Lich b) {
+    /**
+     * 贴身上挑按新写法排，节奏「连珠」：三刀间隔都贴着下限。每刀蹲低、刀尖朝上蓄 90 ms，整个人往上弹着挑进去，拧两下，
+     * 拔刀顺势落回低位接着蓄下一刀；第三刀前压到最低憋一下，整个人顶起来，借着它往上一窜蹬开后空翻
+     */
+    private static List<Key> lichC2(MercyBeats.Lich b) {
         int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
-        return new ArrayList<>(List.of(
-                k(0, SINE, start()),
-                k(130, SINE, p().tw(-4).ln(12).sq(0.45F).sh(-0.3F).r(22, -35, 0).l(40, 10, 0).legs(-6, 8).hd(2, 0)),
-                k(310, BACK, p().tw(-6).ln(26).sq(1).sh(2.2F).r(14, -30, 0).l(95, 15, 0).grip(1).legs(-18, 18)
-                        .hd(-4, 0)),
-                k(420, SINE, p().ln(27).sh(1.8F).hd(-5, 0)),
-                k(s1 - 200, SINE, p().tw(-18).ln(30).sq(1).sh(1.2F).r(8, -35, -15).hd(-6, 0)),
-                k(s1 - 115, SINE, p().tw(-20).ln(32).r(4, -38, -20)),
-                k(s1, OUT, p().tw(12).ln(14).sq(0.55F).sh(3).r(140, 6, 0).aim(1).legs(-20, 22).hd(-10, 0)),
-                k(s1 + 80, SINE, p().tw(14).ln(12).sq(0.5F).sh(3.4F).hd(-12, 0)),
-                k(s1 + 300, SINE, p().tw(16).ln(13).sq(0.55F).r(NA, NA, 40).hd(-10, 3)),
-                k(s1 + 460, SINE, p().tw(14).ln(14).sq(0.6F).r(NA, NA, 32)),
-                // 拔出来，又矮下去
-                k(s1 + 620, IN, p().tw(-16).ln(28).sq(1).sh(1.6F).r(10, -32, -10).aim(0).hd(-6, 0)),
-                k(s2 - 115, SINE, p().tw(-22).ln(31).sq(1).sh(1.2F).r(4, -38, -18)),
-                k(s2, OUT, p().tw(16).ln(10).sq(0.5F).sh(3.4F).r(146, 6, 0).aim(1).reach(1).legs(-22, 24).hd(-12, 0)),
-                k(s2 + 80, SINE, p().tw(18).ln(9).sq(0.45F).sh(3.8F).hd(-14, 0)),
-                k(s2 + 300, SINE, p().tw(20).ln(10).sq(0.5F).r(NA, NA, -40).hd(-12, -3)),
-                k(s2 + 460, SINE, p().tw(18).ln(11).sq(0.55F).r(NA, NA, -34)),
-                k(s2 + 620, IN, p().tw(-18).ln(30).sq(1).sh(1.4F).r(6, -34, -10).aim(0).reach(2).hd(-6, 0)),
-                // 压到最低
-                k(s3 - 115, SINE, p().tw(-26).ln(35).sq(1).sh(0.6F).r(-5, -40, -20).hd(-8, 0)),
-                // 整个人顶起来
-                k(s3, OUT, p().tw(20).ln(2).sq(0.15F).sh(4).r(155, 6, 0).aim(1).reach(3).legs(-26, 30).hd(-16, 0)),
-                k(s3 + 90, SINE, p().tw(22).ln(-2).sq(0).sh(4.5F).hd(-18, 0))));
+        List<Key> t = new ArrayList<>(List.of(
+                k(0, CURVE, start()),
+                k(130, CURVE, p().tw(-4).ln(14).sq(0.5F).sh(-0.3F).r(22, -35, 0).l(40, 10, 0).legs(-8, 10).hd(2, 0)),
+                // 冲进怀里，左掌根顶住胸口
+                k(310, OVER, p().tw(-6).ln(27).sq(1).sh(2.4F).r(14, -30, 0).l(98, 15, 0).grip(1).legs(-18, 18).hd(-4, 0)),
+                k(420, CURVE, p().ln(26).sh(1.8F).l(95, 15, 0).hd(-5, 0)),
+                k(s1 - 200, CURVE, p().tw(-16).ln(30).sq(1).sh(1.2F).r(10, -34, -14).pull(1).hd(-6, 0)),
+                k(s1 - 90, CURVE, p().tw(-22).ln(33).sq(1).sh(0.8F).r(2, -40, -22).pull(1.6F).legs(-20, 20).hd(-7, 0)),
+                k(s1, ANTIC, p().tw(12).ln(14).sq(0.55F).sh(3).r(140, 6, 0).aim(1).pull(-1).legs(-20, 22).hd(-10, 0)),
+                k(s1 + 80, CURVE, p().tw(15).ln(11).sq(0.45F).sh(3.5F).hd(-13, 0)),
+                k(s1 + 200, CURVE, p().tw(16).ln(12).sq(0.5F).r(NA, NA, 40).hd(-11, 3)),
+                k(s1 + 300, CURVE, p().tw(15).ln(13).sq(0.55F).r(NA, NA, 32)),
+                // 拔出来顺势落回去，刀尖还朝上
+                k(s1 + 380, IN, p().tw(-14).ln(27).sq(0.95F).sh(1.6F).r(14, -32, -10).aim(0).pull(0.8F).hd(-6, 0)),
+                k(s2 - 200, CURVE, p().tw(-18).ln(31).sq(1).sh(1.2F).r(6, -36, -16).pull(1.2F)),
+                k(s2 - 90, CURVE, p().tw(-24).ln(34).sq(1).sh(0.8F).r(0, -40, -22).pull(1.8F).hd(-7, 0)),
+                k(s2, ANTIC, p().tw(16).ln(10).sq(0.45F).sh(3.6F).r(146, 6, 0).aim(1).pull(-1.2F).reach(1).legs(-22, 24)
+                        .hd(-12, 0)),
+                k(s2 + 80, CURVE, p().tw(19).ln(7).sq(0.4F).sh(4).hd(-15, 0)),
+                k(s2 + 200, CURVE, p().tw(20).ln(9).sq(0.45F).r(NA, NA, -40).hd(-13, -3)),
+                k(s2 + 300, CURVE, p().tw(19).ln(10).sq(0.5F).r(NA, NA, -34)),
+                k(s2 + 380, IN, p().tw(-16).ln(29).sq(1).sh(1.4F).r(8, -34, -10).aim(0).pull(0.8F).reach(2).hd(-6, 0)),
+                // 压到最低憋住，左手往下按着它的胸口借力
+                k(s3 - 200, OVER, p().tw(-28).ln(37).sq(1).sh(0.4F).r(-8, -42, -24).pull(2.2F).l(84, 12, 0).hd(-9, 0)),
+                k(s3 - 80, CURVE, p().tw(-27).ln(36).sq(1).sh(0.5F).r(-6, -41, -22).pull(2.4F).l(86, 12, 0).hd(-8, 0)),
+                k(s3, ANTIC, p().tw(20).ln(2).sq(0.15F).sh(4).r(155, 6, 0).aim(1).pull(-1.5F).reach(3).l(108, 15, 0)
+                        .legs(-26, 30).hd(-16, 0)),
+                k(s3 + 90, CURVE, p().tw(23).ln(-3).sq(0).sh(4.6F).hd(-19, 0))));
+        t.add(k(s3 + 170, CURVE, p().tw(10).ln(22).sq(0.7F).sh(1).r(70, 6, 0).aim(0.3F).pull(0).l(60, 10, 0).grip(0)
+                .reach(0).legs(34, 58).hd(0, 0)));
+        t.add(k(s3 + 260, OVER, p().tw(0).ln(-26).sq(0).sh(0).r(125, -18, 0).aim(0).l(125, -18, 0).legs(70, 78)
+                .hd(-14, 0)));
+        t.add(k(s3 + 520, CURVE, tucked()));
+        t.add(k(s3 + 700, IN, landed()));
+        t.add(k(s3 + 790, CURVE, landed().ln(32).hd(7, 0)));
+        t.add(k(s3 + 980, OUT, flick()));
+        t.add(k(s3 + 1250, CURVE, ready()));
+        return t;
     }
 
-    private static List<Key> lichCFull(MercyBeats.Lich b) {
-        int s3 = b.stab(2);
-        List<Key> table = lichC(b);
-        table.addAll(kickOff(s3));
-        return table;
+    /** 贴身上挑的步子：第二、三刀各往前送一步（前腿刺入前 160 ms 抬、前 20 ms 落）；只叠在腿上 */
+    private static List<Key> stepC2(int s2, int s3) {
+        return List.of(
+                k(0, CURVE, p().legs(0, 0)),
+                k(s2 - 160, CURVE, p().legs(0, 0)),
+                k(s2 - 90, CURVE, p().legs(-6, 18)),
+                k(s2 - 20, IN, p().legs(0, 0)),
+                k(s3 - 160, CURVE, p().legs(0, 0)),
+                k(s3 - 90, CURVE, p().legs(-8, 22)),
+                k(s3 - 20, IN, p().legs(0, 0)),
+                k(s3 + 120, CURVE, p().legs(0, 0)));
     }
 
     /** 翻滚绕背：前两刀和正面直刺一样；第二刀顺势撕出来，扑出去翻滚到它身后，反手从背后捅第三刀 */
@@ -874,7 +896,7 @@ public final class MercyPose {
         return switch (v) {
             case LICH_A -> lichA2(MercyBeats.lich(v));
             case LICH_B -> lichB2(MercyBeats.lich(v));
-            case LICH_C -> lichCFull(MercyBeats.lich(v));
+            case LICH_C -> lichC2(MercyBeats.lich(v));
             case LICH_D -> lichD(MercyBeats.lich(v));
             case LICH_E -> lichE(MercyBeats.lich(v));
             case THRALL_1 -> thrall1();
@@ -969,13 +991,26 @@ public final class MercyPose {
         return b;
     }
 
-    private static List<Key> bodyC(MercyBeats.Lich beats) {
+    /**
+     * 贴身上挑新写法的脚下：第一刀只往上弹不挪人；第二刀送一步 0.26 格；第三刀前压到最低，刺入送一步再往上顶 0.3 格，
+     * 接着蹬着它往上一窜后空翻
+     */
+    private static List<Key> bodyC2(MercyBeats.Lich beats) {
         int s1 = beats.stab(0), s2 = beats.stab(1), s3 = beats.stab(2);
         List<Key> b = startedBody();
-        lunge(b, s1, 0.2F);
-        lunge(b, s2, 0.28F);
-        b.add(k(s3 - 115, SINE, m().dist(-0.05F).up(-0.1F)));
-        b.add(k(s3, OUT, m().dist(-0.4F).up(0.3F)));
+        b.add(k(s1 - 90, CURVE, m().dist(0.04F).up(-0.08F)));
+        b.add(k(s1, ANTIC, m().dist(-0.12F).up(0.04F)));
+        b.add(k(s1 + 300, CURVE, m().dist(-0.1F).up(0.02F)));
+        b.add(k(s1 + 380, CURVE, m().dist(-0.02F).up(-0.06F)));
+        b.add(k(s2 - 200, CURVE, m().dist(0.04F).up(-0.1F)));
+        b.add(k(s2 - 90, CURVE, m().dist(0.06F).up(-0.1F)));
+        b.add(k(s2, ANTIC, m().dist(-0.2F).up(0.08F)));
+        b.add(k(s2 + 300, CURVE, m().dist(-0.18F).up(0.05F)));
+        b.add(k(s2 + 380, CURVE, m().dist(-0.1F).up(-0.06F)));
+        b.add(k(s3 - 200, CURVE, m().dist(-0.05F).up(-0.14F)));
+        b.add(k(s3 - 80, CURVE, m().dist(-0.06F).up(-0.13F)));
+        b.add(k(s3, ANTIC, m().dist(-0.4F).up(0.3F)));
+        b.add(k(s3 + 90, CURVE, m().dist(-0.42F).up(0.34F)));
         hop(b, s3, -0.35F, 0.9F, 1.5F);
         return b;
     }
@@ -1083,7 +1118,7 @@ public final class MercyPose {
         return switch (v) {
             case LICH_A -> bodyA2(MercyBeats.lich(v));
             case LICH_B -> bodyB2(MercyBeats.lich(v));
-            case LICH_C -> bodyC(MercyBeats.lich(v));
+            case LICH_C -> bodyC2(MercyBeats.lich(v));
             case LICH_D -> bodyD(MercyBeats.lich(v));
             case LICH_E -> bodyE(MercyBeats.lich(v));
             case THRALL_1 -> bodyThrall(v.stabMs(0), 0.2F, 1440);
@@ -1262,7 +1297,7 @@ public final class MercyPose {
                 body.add(k(MercyBeats.thrall(v).end, SINE, m()));
             }
         }
-        boolean v2 = v == MercyVariant.LICH_A || v == MercyVariant.LICH_B;
+        boolean v2 = v == MercyVariant.LICH_A || v == MercyVariant.LICH_B || v == MercyVariant.LICH_C;
         if (v2) {
             // 不再回零硬交：最后一帧停在前一帧的姿势上，交还前那 250 ms 由 apply 和原版姿态混过去
             out.set(out.size() - 1, k(out.get(out.size() - 1).t, CURVE, p()));
@@ -1281,6 +1316,11 @@ public final class MercyPose {
                 tr.feet = curveOf(resolve(stepA2(stabs[1])), N);
             } else if (v == MercyVariant.LICH_B && stabs.length >= 3) {
                 tr.feet = curveOf(resolve(stepB2(stabs[1], stabs[2])), N);
+            } else if (v == MercyVariant.LICH_C && stabs.length >= 3) {
+                tr.feet = curveOf(resolve(stepC2(stabs[1], stabs[2])), N);
+            } else if (v == MercyVariant.LICH_C && stabs.length == 2) {
+                // 第三刀那一步落在挣开的时候，只留第二刀的
+                tr.feet = curveOf(resolve(stepA2(stabs[1])), N);
             }
             int h = seed * 0x9E3779B1;
             tr.shakeAmp = 0.8F + 0.45F * ((h >>> 8) & 0xFF) / 255.0F;

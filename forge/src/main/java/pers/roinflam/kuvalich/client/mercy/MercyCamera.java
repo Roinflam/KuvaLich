@@ -155,6 +155,8 @@ public final class MercyCamera {
     private static final double REF_HEIGHT = 3.4D;
     /** 处决者（按玩家身材）：头的球心离脚底多高、往目标那边探出多少、半径；身子是脚底到肩的一根粗杆 */
     private static final double EXEC_HEAD_U = 1.7D;
+    /** 判错、挣开时拉开多少（推拉比例） */
+    private static final float ESCAPE_PULL = 0.3F;
     private static final double EXEC_HEAD_F = -0.2D;
     private static final double EXEC_HEAD_R = 0.42D;
     private static final double EXEC_BODY_LO = 0.1D;
@@ -196,7 +198,7 @@ public final class MercyCamera {
         /** 开始那一刻的 mercy_camera_motion */
         MercyCameraPath.Motion motion = MercyCameraPath.Motion.STATIC;
         /** 轨迹、进机位、切宽镜头的遮挡：0 还没查，1 能走，-1 退回硬切 / 固定机位 */
-        byte pathState, entryState, wideState;
+        byte pathState, entryState, wideState, escapeState;
         /** 注视点跟人的偏移（已经平滑过），和它上一次更新时的真实钟、轨迹段 */
         double fx, fy, fz;
         long followRaw = -1L;
@@ -512,9 +514,9 @@ public final class MercyCamera {
         };
     }
 
-    /** 在固定机位上叠推拉、绕、升降（注视点不动） */
+    /** 在固定机位上叠推拉、绕、升降；注视点只按套路挪一个定值，不随时间动 */
     private static ShotPose moved(MercyClient.Exec e, ShotPose base, float[] m) {
-        Vec3 look = base.look();
+        Vec3 look = base.look().add(0.0D, -MercyCameraPath.lookDrop(e.variant) * e.shots.unit, 0.0D);
         Vec3 pos = base.pos();
         if (m[MercyCameraPath.ORBIT] != 0.0F) {
             int side = pos.subtract(look).dot(e.s) >= 0.0D ? 1 : -1;
@@ -559,12 +561,36 @@ public final class MercyCamera {
                 || !MercyCameraPath.sample(e.variant, last, e.shots.motion, t, raw, MOVE)) {
             return base;
         }
+        MOVE[MercyCameraPath.DOLLY] -= escapePull(e, s, base, t);
         ShotPose q = moved(e, base, MOVE);
         if (live) {
             e.shots.roll = MOVE[MercyCameraPath.ROLL];
             follow(e, t, raw, MOVE[MercyCameraPath.FOLLOW], MercyCameraPath.segment(e.variant, last, t));
         }
         return new ShotPose(q.pos(), q.look().add(e.shots.fx, e.shots.fy, e.shots.fz), q.fov(), true);
+    }
+
+    /**
+     * 判错、挣开时玄骸从蹲着一下站起来，近景装不下它，头出画、身子贴着镜头；从挣开到切宽镜头之间慢慢拉开。
+     * 拉到头的位置先查一次遮挡，过不了就不拉
+     */
+    private static float escapePull(MercyClient.Exec e, Shot s, ShotPose base, long t) {
+        int from = MercyTimeline.breakFreeMs(e.plan);
+        if (from < 0 || t <= from) {
+            return 0.0F;
+        }
+        if (e.shots.escapeState == 0) {
+            float d = MOVE[MercyCameraPath.DOLLY];
+            MOVE[MercyCameraPath.DOLLY] = d - ESCAPE_PULL;
+            ShotPose far = moved(e, base, MOVE);
+            MOVE[MercyCameraPath.DOLLY] = d;
+            e.shots.escapeState = (byte) (check(e, s, far.pos(), far.look(), far.fov(), false) != null ? 1 : -1);
+        }
+        if (e.shots.escapeState < 0) {
+            return 0.0F;
+        }
+        float x = Mth.clamp((t - from) / (float) (MercyTimeline.wideFromMs(e.plan) - from), 0.0F, 1.0F);
+        return ESCAPE_PULL * x * x * (3.0F - 2.0F * x);
     }
 
     /**

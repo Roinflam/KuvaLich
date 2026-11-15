@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
  * 里从上一段的末值冲到这一段，顿帧时照样推过去。段内各通道按 {@link MercyCurve.Keys} 的单调三次走，
  * 每段最后一帧放在切点之后，切的那一刻镜头还在动。</p>
  *
- * <p>只有排过轨迹的套路有这一层（现在是正面直刺、背后锁颈），别的套路照旧是固定机位。</p>
+ * <p>只有排过轨迹的套路有这一层（现在是正面直刺、背后锁颈、贴身上挑），别的套路照旧是固定机位。</p>
  */
 public final class MercyCameraPath {
 
@@ -59,6 +59,7 @@ public final class MercyCameraPath {
     static {
         PATHS[MercyVariant.LICH_A.ordinal()] = lichA();
         PATHS[MercyVariant.LICH_B.ordinal()] = lichB();
+        PATHS[MercyVariant.LICH_C.ordinal()] = lichC();
     }
 
     private MercyCameraPath() {
@@ -122,6 +123,46 @@ public final class MercyCameraPath {
                         k(s3 + 1000, -0.04F, -24.0F, 0.30F, 0.0F, 0.45F),
                         k(end + 300, -0.08F, -22.0F, 0.32F, 0.0F, 0.45F))
         };
+    }
+
+    /**
+     * 贴身上挑，本套机位是斜前方低机位往上看。原机位的注视点在站直的玄骸头顶，这一套它半蹲着、刀口在肚子上，
+     * 刀口落在画面下沿被提示条盖住，所以排轨迹时注视点往下挪（挪到正中又被处决准星盖住） {@link #LOOK_DROP_C}。第一刀往侧面绕 20 多度（不绕的话
+     * 注视点挪低以后视线擦着处决者的头）、慢慢往里蹭；第二刀硬切到正侧面、稍抬一点，从它垂下来的胳膊底下看刀从两个身子中间
+     * 挑进去，画面歪 2°；拔刀以后边退边压低，第三刀前它趴在处决者肩上、处决者压到最低那一下从下往上看；第三刀刺入猛推，
+     * 之后跟着处决者往上一窜、后空翻，边拉开边升高
+     */
+    private static Seg[] lichC() {
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_C);
+        int in = b.cutIn;
+        int s1 = b.stab(0);
+        int s2 = b.stab(1);
+        int s3 = b.stab(2);
+        int end = b.closeup;
+        return new Seg[]{
+                seg(in, false,
+                        k(in, -0.02F, -20.0F, 0.0F, 0.0F, 0.45F),
+                        k(s1 + 300, 0.04F, -22.0F, 0.05F, 0.0F, 0.45F),
+                        k(s2 + 200, 0.09F, -24.0F, 0.08F, 0.0F, 0.45F)),
+                seg(s2, false,
+                        k(s2, 0.14F, -46.0F, 0.12F, 2.0F, 0.45F),
+                        k(s2 + 300, 0.17F, -45.0F, 0.10F, 2.0F, 0.45F),
+                        k(s3 - 80, -0.05F, -32.0F, -0.10F, 0.0F, 0.45F),
+                        k(s3 + 200, -0.06F, -31.5F, -0.11F, 0.0F, 0.45F)),
+                seg(s3, true,
+                        k(s3, 0.22F, -24.0F, -0.15F, 0.0F, 0.45F),
+                        k(s3 + 200, 0.20F, -23.5F, -0.12F, 0.0F, 0.45F),
+                        k(s3 + 700, -0.10F, -22.0F, 0.25F, 0.0F, 0.45F),
+                        k(end + 300, -0.15F, -22.0F, 0.30F, 0.0F, 0.45F))
+        };
+    }
+
+    /** 贴身上挑的注视点往下挪多少（格，按目标身高缩放） */
+    public static final float LOOK_DROP_C = 0.45F;
+
+    /** 注视点往下挪多少；只在走轨迹时用，静态档和没排轨迹的套路照旧 */
+    public static float lookDrop(MercyVariant v) {
+        return v == MercyVariant.LICH_C ? LOOK_DROP_C : 0.0F;
     }
 
     private static float[] k(int t, float dolly, float orbit, float rise, float roll, float follow) {

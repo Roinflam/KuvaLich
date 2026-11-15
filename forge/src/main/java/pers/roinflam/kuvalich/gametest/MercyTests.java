@@ -211,7 +211,7 @@ public final class MercyTests {
         h.succeed();
     }
 
-    /** 正面直刺「短—长」、背后锁颈「长—短」，玄骸的 hit1 / hit2 片段长度跟刀间隔走（动画文件是脚本生成的，改表忘了重新生成就会对不上） */
+    /** 正面直刺「短—长」、背后锁颈「长—短」、贴身上挑「连珠」，玄骸的 hit1 / hit2 片段长度跟刀间隔走（动画文件是脚本生成的，改表忘了重新生成就会对不上） */
     @GameTest(template = "empty")
     public static void lichHitClipsFollowBeats(GameTestHelper h) {
         MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
@@ -229,8 +229,11 @@ public final class MercyTests {
         MercyBeats.Lich bb = MercyBeats.lich(MercyVariant.LICH_B);
         int b1 = bb.stab(1) - bb.stab(0), b2 = bb.stab(2) - bb.stab(1);
         h.assertTrue(b1 > b2, "背后锁颈应当第一刀后勒住憋一下、后两刀连着：" + b1 + " / " + b2);
-        int[][] gaps = {{gap1, gap2}, {b1, b2}};
-        String[] keys = {"a", "b"};
+        MercyBeats.Lich bc = MercyBeats.lich(MercyVariant.LICH_C);
+        int c1 = bc.stab(1) - bc.stab(0), c2 = bc.stab(2) - bc.stab(1);
+        h.assertTrue(c1 == c2 && c1 < Math.min(gap1, b2) + 20, "贴身上挑应当三刀等距连着挑：" + c1 + " / " + c2);
+        int[][] gaps = {{gap1, gap2}, {b1, b2}, {c1, c2}};
+        String[] keys = {"a", "b", "c"};
         for (int v = 0; v < keys.length; v++) {
             for (int k = 1; k <= 2; k++) {
                 String name = "mercy.lich." + keys[v] + ".hit" + k;

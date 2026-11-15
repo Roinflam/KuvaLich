@@ -278,19 +278,25 @@ public final class MercyCoreTests {
             int progress = card.getDecryptionProgress();
             int stage = card.getUnlockedCardStatus();
             lich.forceDowned(p);
+            // 各套路第二格的时刻不一样，随机到哪套就差几个 tick，钉住一套、时刻从表里取
+            MercyServer.setNextVariant(p, MercyVariant.LICH_A);
             h.assertTrue(MercyServer.executeNow(p, lich) == null, "应当能开始处决");
+            MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
+            int g = b.fillTick(2);
+            int leave = g + b.failLeaveTicks, remove = g + b.failRemoveTicks, award = g + b.failProgressTicks;
             AABB area = new AABB(lich.blockPosition()).inflate(12.0D);
             clearItems(h, area);
-            h.runAfterDelay(81, () -> h.assertTrue(lich.getMercyState() != MercyState.LEAVING, "tick 81 还不该离场"));
-            h.runAfterDelay(82, () -> h.assertTrue(lich.getMercyState() == MercyState.LEAVING,
-                    "tick 82 应当进入离场，实际 " + lich.getMercyState()));
-            h.runAfterDelay(91, () -> h.assertTrue(!lich.isRemoved(), "tick 91 还不该移除"));
-            h.runAfterDelay(92, () -> h.assertTrue(lich.isRemoved(), "tick 92 应当已经移除"));
-            h.runAfterDelay(103, () -> h.assertTrue(card.getDecryptionProgress() == progress
-                    && card.getUnlockedCardStatus() == stage, "tick 103 还不该给进度"));
-            h.runAfterDelay(104, () -> {
+            h.runAfterDelay(leave - 1, () -> h.assertTrue(lich.getMercyState() != MercyState.LEAVING,
+                    "tick " + (leave - 1) + " 还不该离场"));
+            h.runAfterDelay(leave, () -> h.assertTrue(lich.getMercyState() == MercyState.LEAVING,
+                    "tick " + leave + " 应当进入离场，实际 " + lich.getMercyState()));
+            h.runAfterDelay(remove - 1, () -> h.assertTrue(!lich.isRemoved(), "tick " + (remove - 1) + " 还不该移除"));
+            h.runAfterDelay(remove, () -> h.assertTrue(lich.isRemoved(), "tick " + remove + " 应当已经移除"));
+            h.runAfterDelay(award - 1, () -> h.assertTrue(card.getDecryptionProgress() == progress
+                    && card.getUnlockedCardStatus() == stage, "tick " + (award - 1) + " 还不该给进度"));
+            h.runAfterDelay(award, () -> {
                 h.assertTrue(card.getDecryptionProgress() != progress || card.getUnlockedCardStatus() != stage,
-                        "tick 104 应当给了解密进度");
+                        "tick " + award + " 应当给了解密进度");
                 h.assertTrue(itemsIn(h, area) == 0, "失败全程不应当有掉落物：" + itemNames(h, area));
                 h.assertTrue(!DIED.contains(lich.getUUID()), "失败不应当触发死亡事件");
                 h.assertTrue(!MercyServer.isBusy(p), "处决者应当已经解锁、过了无敌余量");
