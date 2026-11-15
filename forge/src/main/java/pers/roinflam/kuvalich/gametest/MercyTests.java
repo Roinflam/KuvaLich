@@ -955,6 +955,8 @@ public final class MercyTests {
         h.assertTrue(lich != null && lich.getMercyState() == MercyState.DOWNED, "面前应当有一只倒地的演示玄骸");
         aimAt(p, lich);
         h.assertTrue(run(p, "kuvalich mercy outcome fail2") == 1, "outcome fail2 应当成功");
+        // 下面按正面直刺第二格的时刻等解锁；折翼、断膝三方判错二要晚七八百毫秒才交还
+        MercyServer.setNextVariant(p, MercyVariant.LICH_A);
         h.assertTrue(run(p, "kuvalich mercy exec") == 1, "exec 应当成功");
         MercyPlan.Plan plan = MercyPlan.decode(lich.getMercyPlan());
         h.assertTrue(plan.demo() && plan.stabs() == 3 && plan.prefix() == 1,
