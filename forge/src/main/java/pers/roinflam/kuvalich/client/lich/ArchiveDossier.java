@@ -939,7 +939,7 @@ final class ArchiveDossier {
                 String nm = fit(name, nameCol / u);
                 // 名字和后面那段同一条基线：按两段里高的那段竖直居中
                 int ty = vmid(ry, 8 * u, Math.max(textH(nm), withMeta ? textH(meta) : 0) * u);
-                text(nm, textX, ty, u, al.active() ? FxPalette.BONE : FxPalette.TEXT_MID, a);
+                text(nm, textX, ty, u, al.active() ? FxPalette.ALLY : FxPalette.ALLY_DIM, a);
                 if (withMeta) {
                     text(meta, textX + nameCol + 6 * u, ty, u, FxPalette.ASH, a);
                 }

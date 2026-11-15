@@ -261,7 +261,7 @@ public final class AllyDirector {
             PlayerLedger.setAllyCooldownUntil(p, now + ModConfig.KUVA_LICH.allyCooldownMinutes.get() * 1200L);
         }
         KuvaFx.near(level, at, 64.0D, FxId.LICH_ARRIVE, ally, 0, 0);
-        PlayerFeedback.chat(p, KuvaPalette.SUCCESS, NOTICE_ARRIVE, ally.getLichName());
+        PlayerFeedback.chat(p, KuvaPalette.SUCCESS, NOTICE_ARRIVE, PlayerFeedback.allyName(ally.getLichName()));
         LichComms.say(p, LichLine.ALLY_ARRIVE, ally);
         LogUtil.debug("盟友现身：" + p.getGameProfile().getName() + " 的 " + ally.getLichName() + " @ " + at);
         return "";
@@ -300,7 +300,7 @@ public final class AllyDirector {
         if (owner != null && !owner.hasDisconnected()) {
             if (notice != null) {
                 PlayerFeedback.chat(owner, NOTICE_DOWNED.equals(notice) ? KuvaPalette.WARN : KuvaPalette.INFO, notice,
-                        ally.getLichName());
+                        PlayerFeedback.allyName(ally.getLichName()));
             }
             if (line != null) {
                 LichComms.say(owner, line, ally);

@@ -44,6 +44,9 @@ public final class KuvaPalette {
     /** 好事：解密成功、等级上限提升、被没收的物品还回来了 */
     public static final int SUCCESS = 0x7FE08A;
 
+    /** 友军：盟友的名字，名牌、提示、名册都用它 */
+    public static final int ALLY = 0x7DFF9A;
+
     /** 坏事：解密失败、谜语还没有答案 */
     public static final int DANGER = 0xFF7B7B;
 

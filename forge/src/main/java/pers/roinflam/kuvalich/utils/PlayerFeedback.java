@@ -156,6 +156,15 @@ public final class PlayerFeedback {
         MutableComponent component = (raw instanceof Component)
                 ? ((Component) raw).copy()
                 : Component.literal(String.valueOf(raw));
+        // 盟友的名字不跟着这句提示的高亮色走，在哪都是友军绿
+        TextColor own = component.getStyle().getColor();
+        if (own != null && own.getValue() == KuvaPalette.ALLY) {
+            return component;
+        }
         return component.withStyle(style -> style.withColor(TextColor.fromRgb(rgb)));
+    }
+
+    public static MutableComponent allyName(String name) {
+        return Component.literal(name).withStyle(style -> style.withColor(TextColor.fromRgb(KuvaPalette.ALLY)));
     }
 }

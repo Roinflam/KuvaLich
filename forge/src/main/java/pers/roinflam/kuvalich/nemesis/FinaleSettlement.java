@@ -82,10 +82,10 @@ public final class FinaleSettlement {
                         PlayerFeedback.chat(p, KuvaPalette.SUCCESS, "message.kuvalich.maximumLevelWeapon", newMaxLevel);
                     }
                     if (!converted.isEmpty()) {
-                        PlayerFeedback.chat(p, KuvaPalette.SUCCESS, "message.kuvalich.convert.done", converted);
+                        PlayerFeedback.chat(p, KuvaPalette.SUCCESS, "message.kuvalich.convert.done", PlayerFeedback.allyName(converted));
                     }
                     if (!released.isEmpty()) {
-                        PlayerFeedback.chat(p, KuvaPalette.ACCENT, "message.kuvalich.convert.released", released);
+                        PlayerFeedback.chat(p, KuvaPalette.ACCENT, "message.kuvalich.convert.released", PlayerFeedback.allyName(released));
                     }
                 } catch (RuntimeException e) {
                     LogUtil.error("终结落定后发聊天出错", e);

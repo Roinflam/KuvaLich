@@ -10,6 +10,7 @@ import pers.roinflam.kuvalich.KuvaLich;
 import pers.roinflam.kuvalich.nemesis.AllyRoster;
 import pers.roinflam.kuvalich.nemesis.LichArchiveService;
 import pers.roinflam.kuvalich.nemesis.PlayerLedger;
+import pers.roinflam.kuvalich.utils.PlayerFeedback;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -98,14 +99,14 @@ public class AllyCommandPacket {
             if (!AllyRoster.release(player, generation)) {
                 return Result.NOT_IN_ROSTER;
             }
-            player.displayClientMessage(Component.translatable("message.kuvalich.ally.released", name), true);
+            player.displayClientMessage(Component.translatable("message.kuvalich.ally.released", PlayerFeedback.allyName(name)), true);
             return Result.OK;
         }
         if (PlayerLedger.getActiveAlly(player) == generation) {
             return Result.UNCHANGED;
         }
         PlayerLedger.setActiveAlly(player, generation);
-        player.displayClientMessage(Component.translatable("message.kuvalich.ally.active", name), true);
+        player.displayClientMessage(Component.translatable("message.kuvalich.ally.active", PlayerFeedback.allyName(name)), true);
         return Result.OK;
     }
 
