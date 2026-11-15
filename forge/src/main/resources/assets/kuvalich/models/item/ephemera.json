@@ -2,5 +2,13 @@
   "parent": "item/generated",
   "textures": {
     "layer0": "kuvalich:item/requiem_gem"
-  }
+  },
+  "overrides": [
+    { "predicate": { "kuvalich:ephemera_style": 0.1 }, "model": "kuvalich:item/ephemera_surge" },
+    { "predicate": { "kuvalich:ephemera_style": 0.2 }, "model": "kuvalich:item/ephemera_orbit" },
+    { "predicate": { "kuvalich:ephemera_style": 0.3 }, "model": "kuvalich:item/ephemera_plume" },
+    { "predicate": { "kuvalich:ephemera_style": 0.4 }, "model": "kuvalich:item/ephemera_wing" },
+    { "predicate": { "kuvalich:ephemera_style": 0.5 }, "model": "kuvalich:item/ephemera_coil" },
+    { "predicate": { "kuvalich:ephemera_style": 0.6 }, "model": "kuvalich:item/ephemera_vortex" }
+  ]
 }
