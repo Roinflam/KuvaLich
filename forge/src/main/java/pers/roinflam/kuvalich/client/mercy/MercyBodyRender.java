@@ -10,6 +10,9 @@ import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.Nullable;
+import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
+import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
 /**
@@ -29,13 +32,43 @@ public final class MercyBodyRender {
 
     private static final MercyPose.Body BODY = new MercyPose.Body();
     private static boolean pushed;
+    /** 这一次 Pre 是被 {@link #onRenderPreFirst} 先取消掉的 */
+    @Nullable
+    private static RenderPlayerEvent.Pre forced;
+    private static boolean warned;
 
     private MercyBodyRender() {
     }
 
-    /** 排在最后：别的模组取消这次渲染时就不进来，矩阵不会留下没弹的一层 */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    /**
+     * 处决期间换回原版模型：改玩家模型的模组（Yes Steve Model 这类）在默认优先级的 Pre 里取消事件、自己画。
+     * 这里抢在前面取消，它那个不收已取消事件的监听就被跳过，到 {@link #onRenderPre} 再把取消撤掉，原版渲染器照常往下画。
+     * 不能反过来在事件里自己调原版渲染器：那会再发一次 Pre，又被它接走
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onRenderPreFirst(RenderPlayerEvent.Pre event) {
+        forced = null;
+        if (!EffectsDisplayConfig.mercyVanillaModel()) {
+            return;
+        }
+        MercyClient.Exec e = MercyClient.byExecutor(event.getEntity().getId());
+        // 到交还为止：判错时记录还要留几秒，那时人已经能走动了，得回到它自己的模型
+        if (e == null || e.elapsed() >= e.handbackMs) {
+            return;
+        }
+        event.setCanceled(true);
+        forced = event;
+    }
+
+    /** 撤销和挪位放在同一个监听里，中间不留别人插手的空档 */
+    @SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = true)
     public static void onRenderPre(RenderPlayerEvent.Pre event) {
+        if (event == forced) {
+            event.setCanceled(false);
+        }
+        if (event.isCanceled()) {
+            return;
+        }
         Player player = event.getEntity();
         MercyClient.Exec e = MercyClient.byExecutor(player.getId());
         if (e == null || !MercyPose.body(e, e.elapsed(), BODY)) {
@@ -44,6 +77,7 @@ public final class MercyBodyRender {
         // 化作红光闪过去的那一下：整个人连同手里的刀都不画（影子在站位上，本来就不跟着动）
         if (BODY.hidden) {
             event.setCanceled(true);
+            forced = null;
             return;
         }
         float pt = event.getPartialTick();
@@ -63,6 +97,28 @@ public final class MercyBodyRender {
             ps.translate(0.0F, -PIVOT, 0.0F);
         }
         ps.mulPose(Axis.YP.rotationDegrees(bodyYaw - 180.0F));
+    }
+
+    /**
+     * 挪位之后又有人取消了这次渲染：Post 不会来，这里把矩阵弹回去。
+     * 放行过的又被取消，说明有别的东西换了接管方式，处决期间会是它的模型站着不动，提示一次
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
+    public static void onRenderPreLast(RenderPlayerEvent.Pre event) {
+        RenderPlayerEvent.Pre mine = forced;
+        forced = null;
+        if (!event.isCanceled()) {
+            return;
+        }
+        if (pushed) {
+            pushed = false;
+            event.getPoseStack().popPose();
+        }
+        if (event == mine && !warned) {
+            warned = true;
+            LogUtil.warn("处决期间换回原版玩家模型没有生效：玩家 " + event.getEntity().getName().getString()
+                    + " 的渲染在放行后又被取消，可能是改玩家模型的模组换了接管方式");
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

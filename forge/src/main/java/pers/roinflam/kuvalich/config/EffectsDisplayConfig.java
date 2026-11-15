@@ -75,6 +75,7 @@ public final class EffectsDisplayConfig {
     private static ForgeConfigSpec.BooleanValue mercyShortOutro;
     private static ForgeConfigSpec.BooleanValue mercyHitstop;
     private static ForgeConfigSpec.DoubleValue mercyShake;
+    private static ForgeConfigSpec.BooleanValue mercyVanillaModel;
     private static ForgeConfigSpec.BooleanValue mercyRankupSound;
     private static ForgeConfigSpec.BooleanValue kuvaStateFx;
     private static ForgeConfigSpec.BooleanValue hudNotices;
@@ -108,6 +109,7 @@ public final class EffectsDisplayConfig {
     private static volatile boolean cachedMercyShortOutro = false;
     private static volatile boolean cachedMercyHitstop = true;
     private static volatile float cachedMercyShake = 1.0F;
+    private static volatile boolean cachedMercyVanillaModel = true;
     private static volatile boolean cachedMercyRankupSound = false;
     private static volatile boolean cachedKuvaStateFx = true;
     private static volatile boolean cachedHudNotices = true;
@@ -228,6 +230,10 @@ public final class EffectsDisplayConfig {
                         "Strength of camera shake and zoom impact on each stab during a Mercy. 0 turns them off, 2 doubles the shake",
                         "怜悯之击每一刀刺入时镜头震动和推近冲击的强度；0 为关闭，2 为震动加倍")
                 .defineInRange("mercy_shake", 1.0D, 0.0D, 2.0D);
+        mercyVanillaModel = builder.comment(
+                        "While a player performs a Mercy, display that player (yourself or others) with the standard player model so that the execution animation, wrist blade and movement are shown. Only takes effect when Yes Steve Model is installed. When off, Yes Steve Model keeps displaying its own model, on which the execution animation is not shown",
+                        "处决期间以原版玩家模型显示处决者（包括自己和其他玩家），使处决动作、腕刃和位移正常呈现。仅在安装 Yes Steve Model 时生效；关闭后由 Yes Steve Model 继续显示其自身模型，处决动作不会在该模型上呈现")
+                .define("mercy_vanilla_model", true);
         mercyRankupSound = builder.comment(
                         "Play the rank-up sound when the Lich rank-up banner appears",
                         "玄骸升级横幅出现时放升级音")
@@ -385,6 +391,11 @@ public final class EffectsDisplayConfig {
         return cachedMercyShake;
     }
 
+    /** 处决期间把处决者换回原版玩家模型（只对改玩家模型的模组有影响） */
+    public static boolean mercyVanillaModel() {
+        return cachedMercyVanillaModel;
+    }
+
     /** 升级横幅出现时放一声低音 */
     public static boolean mercyRankupSound() {
         return cachedMercyRankupSound;
@@ -440,6 +451,7 @@ public final class EffectsDisplayConfig {
             cachedMercyShortOutro = mercyShortOutro.get();
             cachedMercyHitstop = mercyHitstop.get();
             cachedMercyShake = mercyShake.get().floatValue();
+            cachedMercyVanillaModel = mercyVanillaModel.get();
             cachedMercyRankupSound = mercyRankupSound.get();
             cachedKuvaStateFx = kuvaStateFx.get();
             cachedHudNotices = hudNotices.get();

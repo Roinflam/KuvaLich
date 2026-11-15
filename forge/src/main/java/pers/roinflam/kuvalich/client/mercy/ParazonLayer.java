@@ -234,17 +234,18 @@ public class ParazonLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<
             if (!drawsFirstPerson(e, t)) {
                 return;
             }
-            event.setCanceled(true);
-            if (event.getHand() != InteractionHand.MAIN_HAND) {
-                return;
-            }
             Minecraft mc = Minecraft.getInstance();
             AbstractClientPlayer player = mc.player;
-            if (player == null || player.isInvisible()) {
+            if (player == null) {
                 return;
             }
+            // 拿不到原版玩家渲染器就画不了手，这时别取消，原来的手照常画
             EntityRenderer<? super AbstractClientPlayer> r = mc.getEntityRenderDispatcher().getRenderer(player);
             if (!(r instanceof PlayerRenderer renderer)) {
+                return;
+            }
+            event.setCanceled(true);
+            if (event.getHand() != InteractionHand.MAIN_HAND || player.isInvisible()) {
                 return;
             }
             boolean slim = "slim".equals(player.getModelName());
