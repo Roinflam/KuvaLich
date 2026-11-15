@@ -290,6 +290,35 @@ public final class FinaleTests {
         h.succeed();
     }
 
+    /** 落定一直抛的旧账：管理命令能看到、能在修好后重跑，失败时账原样留着；普通玩家用不了 */
+    @GameTest(template = "empty", batch = FAULT)
+    public static void ledgerCommandsRetryStuckFinale(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        String name = p.getGameProfile().getName();
+        PlayerLedger.setFinale(p, sample(8));
+        net.minecraft.commands.CommandSourceStack op = p.server.createCommandSourceStack().withSuppressedOutput();
+        net.minecraft.commands.Commands cmds = p.server.getCommands();
+        h.assertTrue(cmds.performPrefixedCommand(p.createCommandSourceStack(), "kuvalich ledger show " + name) == 0,
+                "普通玩家用不了");
+        h.assertTrue(cmds.performPrefixedCommand(op, "kuvalich ledger show " + name) == 1, "管理员能查看");
+        FinaleSettlement.faultBeforeCommit = () -> {
+            throw new IllegalStateException("测试注入");
+        };
+        int failed;
+        try {
+            failed = cmds.performPrefixedCommand(op, "kuvalich ledger settle " + name);
+        } finally {
+            FinaleSettlement.faultBeforeCommit = null;
+        }
+        h.assertTrue(failed == 0 && PlayerLedger.hasFinale(p) && !PlayerLedger.hasInbox(p)
+                && p.getInventory().countItem(KuvaLichItems.KUVA.get()) == 0, "落定抛了：命令报失败，账原样留着");
+        h.assertTrue(cmds.performPrefixedCommand(op, "kuvalich ledger settle " + name) == 1 && !PlayerLedger.hasFinale(p)
+                && p.getInventory().countItem(KuvaLichItems.KUVA.get()) == 30, "修好后重跑：落定、东西到手");
+        h.assertTrue(cmds.performPrefixedCommand(op, "kuvalich ledger settle " + name) == 0
+                && p.getInventory().countItem(KuvaLichItems.KUVA.get()) == 30, "没有账了：不做事、不多发");
+        h.succeed();
+    }
+
     @AfterBatch(batch = FAULT)
     public static void afterFault(ServerLevel level) {
         FinaleSettlement.faultBeforeCommit = null;

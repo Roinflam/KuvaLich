@@ -31,8 +31,10 @@ import pers.roinflam.kuvalich.config.ModConfig;
 import pers.roinflam.kuvalich.entity.KuvaLarvlingEntity;
 import pers.roinflam.kuvalich.entity.KuvaMasterEntity;
 import pers.roinflam.kuvalich.fx.ServerFxQueue;
+import pers.roinflam.kuvalich.mercy.MercyServer;
 import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
+import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.PlayerFeedback;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -178,6 +180,11 @@ public final class NemesisCommand {
                 .then(Commands.argument("type", StringArgumentType.word()).suggests(EPHEMERA_TYPES)
                         .executes(ctx -> ephemeraRoll(ctx, StringArgumentType.getString(ctx, "type"))))));
 
+        // 查看 / 重跑终结账。不提供删账：账里记着要给玩家的东西，删了就没了
+        LiteralArgumentBuilder<CommandSourceStack> ledger = Commands.literal("ledger");
+        ledger.then(Commands.literal("show").then(target().executes(NemesisCommand::ledgerShow)));
+        ledger.then(Commands.literal("settle").then(target().executes(NemesisCommand::ledgerSettle)));
+
         LiteralArgumentBuilder<CommandSourceStack> director = Commands.literal("director");
         director.then(target().executes(NemesisCommand::director));
 
@@ -188,6 +195,7 @@ public final class NemesisCommand {
                 .then(thrall.requires(NemesisCommand::admin))
                 .then(ephemera.requires(NemesisCommand::admin))
                 .then(director.requires(NemesisCommand::admin))
+                .then(ledger.requires(NemesisCommand::admin))
                 .then(Commands.literal("inbox").executes(NemesisCommand::inbox)));
     }
 
@@ -719,6 +727,53 @@ public final class NemesisCommand {
         }
         String now = card.getLichEphemera();
         return ok(ctx, card.getLichName() + " ephemera: " + (now.isEmpty() ? "none" : now));
+    }
+
+    private static int ledgerShow(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        String name = p.getGameProfile().getName();
+        Finale f;
+        int inbox;
+        try {
+            f = PlayerLedger.getFinale(p);
+            inbox = PlayerLedger.inboxCount(p);
+        } catch (RuntimeException e) {
+            return fail(ctx, "cannot read the ledger of " + name + ": " + e);
+        }
+        String finale = f == null ? "no pending finale"
+                : "pending finale: generation " + f.generation() + " " + f.name()
+                + ", " + f.drops().size() + " drop stacks, " + f.returns().size() + " returned stacks"
+                + (f.ephemera().isEmpty() ? "" : ", ephemera " + f.ephemera())
+                + ", settles as " + (FinaleSettlement.pendingChoice(p) == FinaleSettlement.Choice.CONVERT ? "convert" : "vanquish")
+                + (MercyServer.hasActiveExec(p.getUUID()) ? ", execution in progress" : "");
+        return ok(ctx, name + ": " + finale + "; inbox " + inbox + " items");
+    }
+
+    /** 对卡住的账重跑一次落定。落定会抛的多半是数据或配置的问题，异常原样报出来，改好再跑 */
+    private static int ledgerSettle(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer p = EntityArgument.getPlayer(ctx, "player");
+        String name = p.getGameProfile().getName();
+        Finale f = PlayerLedger.getFinale(p);
+        if (f == null) {
+            return fail(ctx, name + " has no pending finale");
+        }
+        // 处决还在走（比如选择窗口开着）时由那一场自己落定，这里插进去会和它抢
+        if (MercyServer.hasActiveExec(p.getUUID())) {
+            return fail(ctx, name + " is in an execution; try again after it ends");
+        }
+        FinaleSettlement.Choice choice = FinaleSettlement.pendingChoice(p);
+        String as = choice == FinaleSettlement.Choice.CONVERT ? "convert" : "vanquish";
+        try {
+            FinaleSettlement.resolveNow(p, f.generation(), choice);
+        } catch (RuntimeException e) {
+            LogUtil.error("管理命令重跑 " + name + " 的终结账出错", e);
+            return fail(ctx, "settling generation " + f.generation() + " of " + name + " as " + as + " failed: " + e);
+        }
+        if (PlayerLedger.hasFinale(p)) {
+            return fail(ctx, "the finale of " + name + " is still pending");
+        }
+        return ok(ctx, "settled generation " + f.generation() + " " + f.name() + " of " + name + " as " + as
+                + "; inbox " + PlayerLedger.inboxCount(p) + " items");
     }
 
     private static int ok(CommandContext<CommandSourceStack> ctx, String detail) {
