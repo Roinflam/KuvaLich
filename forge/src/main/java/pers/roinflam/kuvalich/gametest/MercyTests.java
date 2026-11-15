@@ -975,7 +975,8 @@ public final class MercyTests {
         h.getLevel().getEntitiesOfClass(ItemEntity.class, around).forEach(ItemEntity::discard);
         try {
             InventoryUtil.giveOrDrop(p, new ItemStack(Items.DIAMOND, 5));
-            p.drop(new ItemStack(Items.ARROW, 30), false);
+            // 第二个参数 true = 记下是谁扔的，和按 Q、界面里往外扔一样
+            p.drop(new ItemStack(Items.ARROW, 30), true);
             InventoryUtil.giveOrDrop(p, new ItemStack(Items.ARROW, 7));
         } catch (StackOverflowError e) {
             MercyServer.onExecutorGone(p, MercyServer.Gone.LOGOUT);
@@ -999,6 +1000,32 @@ public final class MercyTests {
         h.assertTrue(groundDiamond == 5 && inv.countItem(Items.DIAMOND) == 0, "背包满：钻石 5 个全在地上，实际 " + groundDiamond);
         h.assertTrue(invArrow == 64 && groundArrow == 23,
                 "箭：背包那格凑满 64，地上 16 + 7，实际背包 " + invArrow + "、地上 " + groundArrow);
+        h.succeed();
+    }
+
+    /** 处决锁定中被 /give：原版先放进背包再扔一个假掉落物，不能把假的那件也收进背包 */
+    @GameTest(template = "empty", batch = ISO_TOSS, timeoutTicks = 100)
+    public static void lockedGiveCommandNoExtra(GameTestHelper h) {
+        BlockPos c = KuvaTestKit.center(h);
+        loadTestChunks(h);
+        openArena(h, c.getX() - 2, c.getX() + 2, c.getZ() - 2, c.getZ() + 2);
+        ServerPlayer p = KuvaTestKit.player(h);
+        KuvaSlaveEntity thrall = spawnThrall(h, p.position().add(1.0D, 0.0D, 1.5D));
+        thrall.forceDowned(p);
+        h.assertTrue(MercyServer.executeNow(p, thrall) == null && MercyServer.isBusy(p), "应当进入处决锁定");
+        Inventory inv = p.getInventory();
+        inv.clearContent();
+        MinecraftServer server = h.getLevel().getServer();
+        CommandSourceStack source = server.createCommandSourceStack().withSuppressedOutput().withPermission(4);
+        String name = p.getGameProfile().getName();
+        int ran = server.getCommands().performPrefixedCommand(source, "give " + name + " minecraft:diamond 1")
+                + server.getCommands().performPrefixedCommand(source, "give " + name + " minecraft:diamond_sword 1");
+        int diamond = inv.countItem(Items.DIAMOND);
+        int sword = inv.countItem(Items.DIAMOND_SWORD);
+        MercyServer.onExecutorGone(p, MercyServer.Gone.LOGOUT);
+        thrall.discard();
+        h.assertTrue(ran == 2, "两条 give 都应执行成功，实际 " + ran);
+        h.assertTrue(diamond == 1 && sword == 1, "各发 1 件，背包里实际钻石 " + diamond + "、钻石剑 " + sword);
         h.succeed();
     }
 

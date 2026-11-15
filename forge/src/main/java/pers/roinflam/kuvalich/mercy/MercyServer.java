@@ -1595,6 +1595,8 @@ public final class MercyServer {
     /**
      * 处决中扔东西：放得回背包的放回去（扔出时物品已经从背包里拿走了），放不下的照常扔出。
      * 这里不能再调 {@code player.drop}：它又发一次扔物事件，背包满着就自己调自己直到栈溢出。
+     * 只管玩家自己扔的（Q、界面里往外扔，扔出的物品记着是谁扔的）。/give 和任务奖励这类「发东西」
+     * 先把整份放进背包、再扔一个只播拾取动画的假掉落物，也走扔物事件，把它放回背包就多出一件。
      */
     @SubscribeEvent
     public static void onItemToss(ItemTossEvent event) {
@@ -1603,6 +1605,9 @@ public final class MercyServer {
             return;
         }
         ItemEntity item = event.getEntity();
+        if (item.getOwner() != p) {
+            return;
+        }
         ItemStack stack = item.getItem();
         int total = stack.getCount();
         int kept = putBack(p.getInventory(), stack);
