@@ -265,7 +265,7 @@ public abstract class ArchivePageScreen<M extends AbstractContainerMenu> extends
     }
 
     /** 窗口界面坐标换成画布坐标 */
-    private double toCanvas(double v) {
+    protected double toCanvas(double v) {
         return canvas == 1.0F ? v : v / canvas;
     }
 

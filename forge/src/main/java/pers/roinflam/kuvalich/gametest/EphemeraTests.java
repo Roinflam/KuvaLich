@@ -233,7 +233,8 @@ public final class EphemeraTests {
         ItemStack stack = EphemeraItem.create(EphemeraType.ORBIT, "radiation", "Vesk Arru");
         EphemeraItem.setColors(stack, 0xAA3300, 0x22CCFF);
         List<Component> lines = EphemeraItem.tooltipLines(stack);
-        h.assertTrue(lines.size() == 4, "款式、元素、来历、配色四行：" + lines.size());
+        h.assertTrue(lines.size() == 5, "款式、元素、来历、配色四行，调过颜色再加一行：" + lines.size());
+        translatable(h, lines.get(4), "item.kuvalich.ephemera.tuned");
         TextColor radiation = TextColor.fromRgb(KuvaPalette.element("radiation"));
 
         TranslatableContents style = translatable(h, lines.get(0), "item.kuvalich.ephemera.style");

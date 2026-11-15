@@ -1,6 +1,9 @@
 package pers.roinflam.kuvalich.client.gui.screens.inventory;
 
 import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.Util;
+import org.lwjgl.opengl.GL11;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -55,6 +58,20 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
     /** 人像渲染出过错就不再画了，免得每帧刷一遍异常 */
     private boolean figureFailed;
 
+    /** 幻纹卡下面的「调整外观」按钮，11×11，左边和卡对齐 */
+    private static final int TUNE_GAP = 3;
+    private static final int TUNE_H = 11;
+    /** 面板压在物品图标（约 150～250）和手上那件之上 */
+    private static final float PANEL_Z = 450.0F;
+    private static final int HIDDEN = -10000;
+    private final EphemeraTunePanel tune = new EphemeraTunePanel(this);
+    private int tuneY;
+    /** 面板开着时底下按鼠标在屏幕外画（不出悬停），人像的眼睛还跟着真鼠标 */
+    private int figMx;
+    private int figMy;
+    /** 面板吃掉的那次按下，对应的拖动和松开也别落到底下的格子上 */
+    private boolean swallowRelease;
+
     public RequiemWarframeTableScreen(RequiemWarframeTableMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, -1, false);
     }
@@ -72,6 +89,19 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         ephY = feetY - Math.round(figScale * 1.64F);
         // 图标在卡里的位置和模组卡一样
         place(menu.getSlot(RequiemWarframeTableMenu.EPHEMERA_SLOT), ephX - 8, ephY - 10);
+        tuneY = ephY + CELL_HH + TUNE_GAP;
+        tune.layout(this.font, width, height, sepL);
+    }
+
+    private boolean tuneable() {
+        ItemStack st = menu.getSlot(RequiemWarframeTableMenu.EPHEMERA_SLOT).getItem();
+        return st.getItem() instanceof EphemeraItem && EphemeraItem.getType(st) != null;
+    }
+
+    private void openTune() {
+        if (tuneable()) {
+            tune.open(menu.getSlot(RequiemWarframeTableMenu.EPHEMERA_SLOT).getItem(), menu.containerId);
+        }
     }
 
     @Override
@@ -88,7 +118,13 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
     /** 空的幻纹格悬停时说明这一格是做什么的；有东西时原版照常出物品说明 */
     @Override
     protected void renderPage(GuiGraphics g, int mx, int my, float partialTick) {
-        super.renderPage(g, mx, my, partialTick);
+        if (tune.isOpen() && !tuneable()) {
+            tune.close();
+        }
+        boolean panel = tune.isOpen();
+        figMx = mx;
+        figMy = my;
+        super.renderPage(g, panel ? HIDDEN : mx, panel ? HIDDEN : my, partialTick);
         Slot hs = this.hoveredSlot;
         if (hs != null && hs.index == RequiemWarframeTableMenu.EPHEMERA_SLOT && !hs.hasItem()
                 && menu.getCarried().isEmpty()) {
@@ -97,6 +133,80 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
                     Component.translatable("kuvalich.warframe_table.ephemera_slot.desc").withStyle(ChatFormatting.GRAY)),
                     mx, my);
         }
+        tune.flush(Util.getMillis(), false);
+        if (panel) {
+            g.pose().pushPose();
+            g.pose().translate(0.0F, 0.0F, PANEL_Z);
+            // 人像、物品图标写过深度，清掉以后面板整块压在上面
+            RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
+            tune.render(g, mx, my, partialTick);
+            g.flush();
+            g.pose().popPose();
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (tune.isOpen()) {
+            swallowRelease = true;
+            return tune.mouseClicked(toCanvas(mx), toCanvas(my), button);
+        }
+        return super.mouseClicked(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        if (tune.isOpen()) {
+            return tune.mouseDragged(toCanvas(mx));
+        }
+        return swallowRelease || super.mouseDragged(mx, my, button, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(double mx, double my, int button) {
+        if (tune.isOpen()) {
+            swallowRelease = false;
+            return tune.mouseReleased(toCanvas(mx));
+        }
+        if (swallowRelease) {
+            swallowRelease = false;
+            return true;
+        }
+        return super.mouseReleased(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double delta) {
+        return tune.isOpen() || super.mouseScrolled(mx, my, delta);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (tune.isOpen()) {
+            return tune.keyPressed(keyCode, scanCode, modifiers);
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char c, int modifiers) {
+        if (tune.isOpen()) {
+            return tune.charTyped(c, modifiers);
+        }
+        return super.charTyped(c, modifiers);
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        tune.tick();
+    }
+
+    /** 还没发出去的那次赶在关菜单的包之前发，晚了服务端那边菜单已经关了 */
+    @Override
+    public void onClose() {
+        tune.flush(Util.getMillis(), true);
+        super.onClose();
     }
 
     /**
@@ -168,9 +278,12 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         int c = GuiShapes.argb(FxPalette.KUVA_PALE, 0.35F * eT);
         GuiShapes.hlineFade(g, lcx - 30, lcx, feetY + 1, lw(), c & 0x00FFFFFF, c);
         GuiShapes.hlineFade(g, lcx, lcx + 30, feetY + 1, lw(), c, c & 0x00FFFFFF);
-        // 底座椭圆、人像到节点的虚线、节点
-        ellipse(g, lcx, feetY + 1, 24.0F, 5.0F, lineW, GuiShapes.argb(FxPalette.KUVA_PALE, 0.22F * eT));
-        ellipse(g, lcx, feetY + 1, 18.0F, 3.5F, lineW, GuiShapes.argb(FxPalette.KUVA, 0.18F * eT));
+        // 底座椭圆、人像到节点的虚线、节点；调外观时底座换成按面板上的值画的预览
+        boolean preview = tune.isOpen();
+        if (!preview) {
+            ellipse(g, lcx, feetY + 1, 24.0F, 5.0F, lineW, GuiShapes.argb(FxPalette.KUVA_PALE, 0.22F * eT));
+            ellipse(g, lcx, feetY + 1, 18.0F, 3.5F, lineW, GuiShapes.argb(FxPalette.KUVA, 0.18F * eT));
+        }
         int dash = GuiShapes.argb(FxPalette.KUVA_PALE, 0.18F * eT);
         float beamX0 = lcx + figScale * 0.4F;
         for (float x = beamX0; x < nodeX - 4; x += 4.0F) {
@@ -184,36 +297,54 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         }
         GuiShapes.end();
         drawEphemeraCard(g, mx, my, t);
-        // 底座上一颗光点绕着走（拖一小截尾巴）
-        float orbit = (now % 3200L) / 3200.0F * Mth.TWO_PI;
-        GuiShapes.additive(g, true);
-        GuiShapes.begin(g);
-        for (int k = 0; k < 5; k++) {
-            float a = orbit - k * 0.12F;
-            float ox = lcx + 24.0F * Mth.cos(a);
-            float oy = feetY + 1 + 5.0F * Mth.sin(a);
-            float s = k == 0 ? 1.0F : 0.5F;
-            fill(g, ox - s, oy - s, ox + s, oy + s, k == 0 ? FxPalette.KUVA_PALE : FxPalette.KUVA,
-                    (k == 0 ? 0.9F : 0.5F - k * 0.09F) * eT);
+        float bodyH = p != null ? p.getBbHeight() : 1.8F;
+        if (preview) {
+            tune.drawFigureFx(g, lcx, feetY, figScale, bodyH, now, false);
+        } else {
+            // 底座上一颗光点绕着走（拖一小截尾巴）
+            float orbit = (now % 3200L) / 3200.0F * Mth.TWO_PI;
+            GuiShapes.additive(g, true);
+            GuiShapes.begin(g);
+            for (int k = 0; k < 5; k++) {
+                float a = orbit - k * 0.12F;
+                float ox = lcx + 24.0F * Mth.cos(a);
+                float oy = feetY + 1 + 5.0F * Mth.sin(a);
+                float s = k == 0 ? 1.0F : 0.5F;
+                fill(g, ox - s, oy - s, ox + s, oy + s, k == 0 ? FxPalette.KUVA_PALE : FxPalette.KUVA,
+                        (k == 0 ? 0.9F : 0.5F - k * 0.09F) * eT);
+            }
+            GuiShapes.end();
+            GuiShapes.additive(g, false);
         }
-        GuiShapes.end();
-        GuiShapes.additive(g, false);
 
         float eS = phase(t, T_TEXT_IN, T_TEXT_DONE);
+        int fmx = preview ? figMx : mx;
+        int fmy = preview ? figMy : my;
         if (p != null && eS > 0.0F && !figureFailed) {
             // 开场：从脚往头扫出来（扫描线在 drawLeftOverlay 里，要压在人像上面）
             if (eS < 1.0F) {
                 clip(g, lx0 - 8, scanY(top, eS), lx1 + 8, feetY + 3);
-                drawFigure(g, p, mx, my);
+                drawFigure(g, p, fmx, fmy);
                 unclip(g);
             } else {
-                drawFigure(g, p, mx, my);
+                drawFigure(g, p, fmx, fmy);
             }
+        }
+        if (preview) {
+            // 前半圈和光点压在人像上面：人像画在 z 50 上下几十格
+            g.pose().pushPose();
+            g.pose().translate(0.0F, 0.0F, 150.0F);
+            tune.drawFigureFx(g, lcx, feetY, figScale, bodyH, now, true);
+            g.pose().popPose();
         }
 
         int ty = feetY + 6;
         if (p != null) {
+            // 预览环调大、调低以后会盖到名字上，名字抬到环的前面
+            g.pose().pushPose();
+            g.pose().translate(0.0F, 0.0F, preview ? 200.0F : 0.0F);
             textC(g, fit(p.getName().getString(), lx1 - lx0), lcx, ty, FxPalette.BONE, 0.9F * eT);
+            g.pose().popPose();
         }
         ty += 14;
         for (String line : wrapEven(Component.translatable("kuvalich.warframe_table.on_body").getString(), lx1 - lx0)) {
@@ -258,6 +389,40 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         // 排在八张模组卡后面出场
         float e = phase(t, 600 + 50 * MODULES, 900 + 50 * MODULES);
         drawSingleCard(g, ephX, ephY, RequiemWarframeTableMenu.EPHEMERA_SLOT, st, col, hv, e);
+        if (e > 0.0F && tuneable()) {
+            drawTuneButton(g, mx, my, col, e);
+        }
+    }
+
+    /**
+     * 卡下面贴左边线的方形小按钮，画三道调节滑杆的图标，滑块用这件幻纹的主色。
+     * 不做成和卡一样宽：这个高度正好是人像拿东西的那只手，宽了会被手里的物品压住
+     */
+    private void drawTuneButton(GuiGraphics g, int mx, int my, int col, float e) {
+        int x0 = ephX - CELL;
+        int x1 = x0 + TUNE_H;
+        int y0 = tuneY;
+        int y1 = tuneY + TUNE_H;
+        boolean active = tune.isOpen();
+        boolean hv = mx >= x0 && mx < x1 && my >= y0 && my < y1 && menu.getCarried().isEmpty();
+        GuiShapes.begin(g);
+        fill(g, x0, y0, x1, y1, INK, 0.78F * e);
+        if (hv || active) {
+            fill(g, x0, y0, x1, y1, FxPalette.KUVA_PALE, 0.08F * e);
+        }
+        frame(g, x0, y0, x1, y1, col, (active ? 0.7F : hv ? 0.55F : 0.3F) * e);
+        int line = hv || active ? FxPalette.BONE : FxPalette.ASH;
+        // 三道线在 y0+3、+5、+7，滑块各高 3：图标占 (2,2)～(9,9)，在 11×11 的按钮里正好居中
+        int[] knob = {3, 6, 4};
+        for (int k = 0; k < 3; k++) {
+            int ly = y0 + 3 + 2 * k;
+            fill(g, x0 + 2, ly, x0 + 9, ly + 1, line, 0.8F * e);
+            fill(g, x0 + knob[k], ly - 1, x0 + knob[k] + 2, ly + 2, col, e);
+        }
+        GuiShapes.end();
+        hot(x0, y0, x1, y1, () -> List.of(Component.translatable("kuvalich.ephemera.tune.button"),
+                Component.translatable("kuvalich.ephemera.tune.button.desc").withStyle(ChatFormatting.GRAY)),
+                this::openTune);
     }
 
     private int figureTop(LocalPlayer p) {

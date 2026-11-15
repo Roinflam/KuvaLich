@@ -133,6 +133,50 @@ public class EphemeraItem extends Item {
         }
     }
 
+    /**
+     * 调整面板的一次提交：每项先夹到范围内，和缺省值相同的那项把键删掉，只留真正调过的。
+     * 所以调回默认的物品和没调过的一模一样，能叠的比较、提示框里「已调整」那行都按这个判断
+     */
+    public static void applyLook(ItemStack stack, int color1, int color2, int gradient, float scale, float yOffset) {
+        int def = EphemeraType.defaultColor(getElement(stack));
+        CompoundTag tag = stack.getOrCreateTag();
+        putOrRemove(tag, TAG_COLOR1, clampColor(color1), def);
+        putOrRemove(tag, TAG_COLOR2, clampColor(color2), def);
+        putOrRemove(tag, TAG_GRADIENT, clampGradient(gradient), GRADIENT_OFF);
+        float s = quantize(clampScale(scale));
+        if (s == 1.0F) {
+            tag.remove(TAG_SCALE);
+        } else {
+            tag.putFloat(TAG_SCALE, s);
+        }
+        float y = quantize(clampYOffset(yOffset));
+        if (y == 0.0F) {
+            tag.remove(TAG_Y_OFFSET);
+        } else {
+            tag.putFloat(TAG_Y_OFFSET, y);
+        }
+    }
+
+    private static void putOrRemove(CompoundTag tag, String key, int value, int def) {
+        if (value == def) {
+            tag.remove(key);
+        } else {
+            tag.putInt(key, value);
+        }
+    }
+
+    /** 大小、高度只留两位小数：滑条拖出来的浮点尾巴不进存盘，也免得 0.99999 和 1 算两种外观 */
+    public static float quantize(float v) {
+        return Math.round(v * 100.0F) / 100.0F;
+    }
+
+    /** 颜色、渐变、大小、高度里有调过的 */
+    public static boolean isTuned(ItemStack stack) {
+        CompoundTag tag = stack.getTag();
+        return tag != null && (tag.contains(TAG_COLOR1) || tag.contains(TAG_COLOR2) || tag.contains(TAG_GRADIENT)
+                || tag.contains(TAG_SCALE) || tag.contains(TAG_Y_OFFSET));
+    }
+
     private static int readColor(ItemStack stack, String key) {
         CompoundTag tag = stack.getTag();
         if (tag != null && tag.contains(key, Tag.TAG_ANY_NUMERIC)) {
@@ -197,6 +241,9 @@ public class EphemeraItem extends Item {
         }
         lines.add(Component.translatable("item.kuvalich.ephemera.colors", swatch(getColor1(stack)), swatch(getColor2(stack)))
                 .withStyle(s -> s.withColor(muted)));
+        if (isTuned(stack)) {
+            lines.add(Component.translatable("item.kuvalich.ephemera.tuned").withStyle(s -> s.withColor(muted)));
+        }
         return lines;
     }
 

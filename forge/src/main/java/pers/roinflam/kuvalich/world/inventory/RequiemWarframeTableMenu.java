@@ -102,6 +102,15 @@ public class RequiemWarframeTableMenu extends AbstractContainerMenu {
         } catch (Exception e) { LogUtil.error("幻纹格写回时发生错误", e); }
     }
 
+    /**
+     * 调整面板改完的那件换进幻纹格并当场写回。不能等关界面再存：死亡、跨维度那两条路上关界面时能力已经失效，
+     * 那次写回什么都不做
+     */
+    public void replaceEphemera(ItemStack stack) {
+        ephemeraHandler.setStackInSlot(0, stack);
+        writeBackEphemera();
+    }
+
     void returnToPlayer(ItemStack stack) {
         InventoryUtil.giveOrDrop(player, stack);
     }
