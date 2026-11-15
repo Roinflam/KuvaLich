@@ -23,6 +23,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.TargetGoal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
@@ -48,6 +49,8 @@ import pers.roinflam.kuvalich.init.KuvaLichEntities;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.init.KuvaLichSounds;
 import pers.roinflam.kuvalich.base.item.AbstractRequiemCard;
+import pers.roinflam.kuvalich.nemesis.AllyDirector;
+import pers.roinflam.kuvalich.nemesis.AllyRoster;
 import pers.roinflam.kuvalich.nemesis.EncounterEnd;
 import pers.roinflam.kuvalich.nemesis.LichComms;
 import pers.roinflam.kuvalich.nemesis.Finale;
@@ -122,6 +125,9 @@ public class KuvaMasterEntity extends AbstractKuva {
     /** 打空了几段血（0~2），Boss 条认出倒地时正在回满的是哪一段 */
     private static final EntityDataAccessor<Byte> LICH_PHASE =
             SynchedEntityData.defineId(KuvaMasterEntity.class, EntityDataSerializers.BYTE);
+    /** 感化后作为盟友现身时，帮的是哪个玩家。和 OWNER 互斥：盟友不走有主那一套 */
+    private static final EntityDataAccessor<Optional<UUID>> ALLY_OF =
+            SynchedEntityData.defineId(KuvaMasterEntity.class, EntityDataSerializers.OPTIONAL_UUID);
 
     // ==================== 回血参数（已砍半） ====================
 
@@ -207,6 +213,8 @@ public class KuvaMasterEntity extends AbstractKuva {
     private static final UUID TRAIT_KNOCKBACK_ID = UUID.fromString("9e6c2a4d-1b58-4d7e-a3f9-6b2d8e1c5f64");
     private static final UUID TRAIT_SPEED_ID = UUID.fromString("4a9f7e1c-6d32-4b8a-9c5e-3f7b2d6a1e75");
     private static final String TRAIT_MODIFIER_NAME = "kuvalich:lich_traits";
+    private static final UUID ALLY_HEALTH_ID = UUID.fromString("5d2b8e14-7a3c-4f91-b6e0-8c4a1f2d9e37");
+    private static final UUID ALLY_ATTACK_ID = UUID.fromString("e81c4a6f-2d95-4b3e-a7f1-3b6d0c9e5a48");
 
     /** 有主玄骸的追踪距离加成：64 + 32 = 96 */
     private static final UUID NEMESIS_FOLLOW_ID = UUID.fromString("6c1d7f0e-3b52-4b7a-9a43-2f5e8d1c0b96");
@@ -231,6 +239,7 @@ public class KuvaMasterEntity extends AbstractKuva {
     private boolean wildTagLoaded;
     /** 三刀成功的结算已经在定案那一刻做过：死的时候不再按直接击杀判一次 */
     private boolean mercySuccessApplied;
+    private int allyGeneration = -1;
 
     // ==================== 分段血条与护盾 ====================
 
@@ -292,6 +301,7 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.entityData.define(SHIELD, 0.0F);
         this.entityData.define(SHIELD_MAX, 0.0F);
         this.entityData.define(LICH_PHASE, (byte) 0);
+        this.entityData.define(ALLY_OF, Optional.empty());
     }
 
     // ==================== 专属玄骸：主人与身份 ====================
@@ -305,6 +315,34 @@ public class KuvaMasterEntity extends AbstractKuva {
     /** 是不是某个玩家专属的玄骸 */
     public boolean isOwned() {
         return this.entityData.get(OWNER).isPresent();
+    }
+
+    public boolean isAlly() {
+        return this.entityData.get(ALLY_OF).isPresent();
+    }
+
+    @Nullable
+    public UUID getAllyOwnerUUID() {
+        return this.entityData.get(ALLY_OF).orElse(null);
+    }
+
+    public boolean isAllyOf(Player player) {
+        UUID owner = getAllyOwnerUUID();
+        return owner != null && owner.equals(player.getUUID());
+    }
+
+    @Nullable
+    public ServerPlayer getAllyOwnerPlayer() {
+        UUID owner = getAllyOwnerUUID();
+        if (owner == null || !(this.level() instanceof ServerLevel serverLevel)) {
+            return null;
+        }
+        return serverLevel.getServer().getPlayerList().getPlayer(owner);
+    }
+
+    /** 盟友对应名册里的哪一代；不是盟友为 -1。只在服务端 */
+    public int getAllyGeneration() {
+        return this.allyGeneration;
     }
 
     /** 是不是无主的野生玄骸 */
@@ -460,6 +498,37 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.setAbsorptionAmount(shieldCap());
     }
 
+    /**
+     * 按名册条目设成某个玩家的盟友（服务端，只由 {@link pers.roinflam.kuvalich.nemesis.AllyDirector} 在加进世界之前调）。
+     * ALLY_OF 必须在 addFreshEntity 之前设好，否则进世界时会被当成野生的拦掉或标成野生
+     */
+    public void setupAlly(ServerPlayer owner, CompoundTag entry, double healthScale, double damageScale) {
+        long seed = entry.getLong(AllyRoster.SEED);
+        int rank = Math.max(1, entry.getInt(AllyRoster.RANK));
+        this.entityData.set(ALLY_OF, Optional.of(owner.getUUID()));
+        this.entityData.set(OWNER_NAME, owner.getGameProfile().getName());
+        this.entityData.set(LICH_NAME, entry.getString(AllyRoster.NAME));
+        this.entityData.set(LICH_RANK, rank);
+        this.entityData.set(LICH_SEED, (int) seed);
+        this.entityData.set(LICH_WEAPON, entry.getInt(AllyRoster.WEAPON));
+        this.entityData.set(WILD, false);
+        this.allyGeneration = entry.getInt(AllyRoster.GENERATION);
+        this.lichSeedFull = seed;
+        applyTraits(LichTraits.current(seed, rank));
+        setTraitModifier(Attributes.MAX_HEALTH, ALLY_HEALTH_ID, healthScale - 1.0D,
+                AttributeModifier.Operation.MULTIPLY_TOTAL);
+        setTraitModifier(Attributes.ATTACK_DAMAGE, ALLY_ATTACK_ID, damageScale - 1.0D,
+                AttributeModifier.Operation.MULTIPLY_TOTAL);
+        this.setHealth(this.getMaxHealth());
+        this.setPersistenceRequired();
+        this.markAlerted();
+
+        this.targetSelector.removeAllGoals(goal -> true);
+        this.targetSelector.addGoal(0, new AllyGoals.Target(this));
+        this.goalSelector.removeAllGoals(goal -> goal instanceof RandomStrollGoal);
+        this.goalSelector.addGoal(2, new AllyGoals.Follow(this));
+    }
+
     // ==================== 分段血条 ====================
 
     /** 有主的真玄骸（开着怜悯之击）血条分三段；无主的、演示用的照旧打到 0 才倒地 */
@@ -575,6 +644,12 @@ public class KuvaMasterEntity extends AbstractKuva {
     @Override
     protected void actuallyHurt(@NotNull DamageSource source, float amount) {
         super.actuallyHurt(source, amount);
+        if (!this.level().isClientSide && isAlly() && this.getHealth() <= 0.0F && !isHardDeath(source)) {
+            // 盟友被打倒是退去，不死、不倒地；血量留 1，原版 hurt 就不会接着调 die
+            this.setHealth(1.0F);
+            AllyDirector.onAllyKnockedOut(this);
+            return;
+        }
         if (this.level().isClientSide || shieldCap() <= 0.0F) {
             return;
         }
@@ -965,10 +1040,12 @@ public class KuvaMasterEntity extends AbstractKuva {
     private int attackNearbyEntities(float damage, Entity excludeEntity) {
         double radius = this.traits != null ? this.traits.quakeRadius() : AOE_RADIUS;
         AABB aabb = this.getBoundingBox().inflate(radius);
+        // 盟友在主人身边出手，震荡只扫敌对生物，不然主人、队友、宠物、村民都会挨，而玩家又打不动它
         List<LivingEntity> nearbyEntities = this.level().getEntitiesOfClass(
                 LivingEntity.class,
                 aabb,
-                entity -> !(entity instanceof AbstractKuva) && !entity.equals(excludeEntity)
+                isAlly() ? entity -> !entity.equals(excludeEntity) && AllyGoals.isFoe(this, entity)
+                        : entity -> !(entity instanceof AbstractKuva) && !entity.equals(excludeEntity)
         );
 
         int hit = 0;
@@ -1561,11 +1638,43 @@ public class KuvaMasterEntity extends AbstractKuva {
         if ((this.appearGraceTicks > 0 || this.departTicks >= 0) && !isHardDeath(source)) {
             return false;
         }
+        // 盟友不吃玩家这一边的伤害：不被误伤，也不卷进 PVP
+        if (isAlly() && !isHardDeath(source) && AllyGoals.fromPlayerSide(source)) {
+            return false;
+        }
         return super.hurt(source, amount);
     }
 
     @Override
+    public void die(@NotNull DamageSource source) {
+        // 兜底别的模组先写血量再调 die 的路线：盟友照样只是退去。/kill 和真掉出世界照常死，名册不受影响
+        if (!this.level().isClientSide && isAlly() && !isHardDeath(source) && !this.isRemoved()) {
+            if (this.getHealth() <= 0.0F) {
+                this.setHealth(1.0F);
+            }
+            AllyDirector.onAllyKnockedOut(this);
+            return;
+        }
+        super.die(source);
+    }
+
+    @Override
+    public boolean shouldDropExperience() {
+        return !isAlly() && super.shouldDropExperience();
+    }
+
+    @Override
+    public boolean isPreventingPlayerRest(@NotNull Player player) {
+        return !isAlly() && super.isPreventingPlayerRest(player);
+    }
+
+    @Override
     public void tick() {
+        if (!this.level().isClientSide && isAlly() && !this.dead && this.getHealth() <= 0.0F && !this.isRemoved()) {
+            // 血量被直接写成 0、没走 hurt / die 的：同样当成被打倒
+            this.setHealth(1.0F);
+            AllyDirector.onAllyKnockedOut(this);
+        }
         super.tick();
         if (this.level().isClientSide || this.isRemoved()) {
             return;
@@ -1608,6 +1717,9 @@ public class KuvaMasterEntity extends AbstractKuva {
                 && this.tickCount % 20 == 0) {
             refocusOnOwner();
         }
+        if (!this.level().isClientSide && isAlly() && this.departTicks < 0 && this.tickCount % 5 == 0) {
+            AllyGoals.standDownIfNeeded(this);
+        }
     }
 
     /**
@@ -1641,6 +1753,9 @@ public class KuvaMasterEntity extends AbstractKuva {
         if (!this.level().isClientSide && isOwned()) {
             LichDirector.onLichRemoved(this, this.getRemovalReason());
         }
+        if (!this.level().isClientSide && isAlly()) {
+            AllyDirector.onAllyRemoved(this);
+        }
     }
 
     /**
@@ -1649,19 +1764,19 @@ public class KuvaMasterEntity extends AbstractKuva {
      */
     @Override
     public boolean shouldBeSaved() {
-        return !isOwned() && this.departTicks < 0 && super.shouldBeSaved();
+        return !isOwned() && !isAlly() && this.departTicks < 0 && super.shouldBeSaved();
     }
 
-    /** 有主的不走传送门 */
+    /** 有主的、盟友不走传送门 */
     @Override
     public boolean canChangeDimensions() {
-        return !isOwned() && super.canChangeDimensions();
+        return !isOwned() && !isAlly() && super.canChangeDimensions();
     }
 
     /** 有主的叫它自己的名字：原版死亡消息「被 Drokag Tuzz 杀死了」就自动换成名字 */
     @Override
     public @NotNull Component getName() {
-        if (isOwned()) {
+        if (isOwned() || isAlly()) {
             String name = getLichName();
             if (!name.isEmpty()) {
                 return Component.literal(name);

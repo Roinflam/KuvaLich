@@ -253,6 +253,15 @@ public class ClothConfigScreen {
         lichCategory.addEntry(bool(entryBuilder, "convertEnabled", k.convertEnabled, true));
         lichCategory.addEntry(intIn(entryBuilder, "convertChoiceSeconds", k.convertChoiceSeconds, 10, 3, 30));
         lichCategory.addEntry(intIn(entryBuilder, "allyRosterSize", k.allyRosterSize, 3, 1, 8));
+        lichCategory.addEntry(bool(entryBuilder, "allyEnabled", k.allyEnabled, true));
+        lichCategory.addEntry(dblIn(entryBuilder, "allyAssistChance", k.allyAssistChance, 0.25, 0.0, 1.0));
+        lichCategory.addEntry(dblIn(entryBuilder, "allyTriggerHealthRatio", k.allyTriggerHealthRatio, 0.3, 0.05, 0.95));
+        lichCategory.addEntry(intIn(entryBuilder, "allyRetrySeconds", k.allyRetrySeconds, 30, 1, 600));
+        lichCategory.addEntry(intIn(entryBuilder, "allyCooldownMinutes", k.allyCooldownMinutes, 10, 0, 1440));
+        lichCategory.addEntry(intIn(entryBuilder, "allyMaxStaySeconds", k.allyMaxStaySeconds, 120, 10, 3600));
+        lichCategory.addEntry(intIn(entryBuilder, "allyMaxActive", k.allyMaxActive, 6, 0, 1000));
+        lichCategory.addEntry(dblIn(entryBuilder, "allyHealthScale", k.allyHealthScale, 1.0, 0.05, 100.0));
+        lichCategory.addEntry(dblIn(entryBuilder, "allyDamageScale", k.allyDamageScale, 1.0, 0.0, 100.0));
 
         // ═══════════════════════════════════════════════════════════════
         // 伤害系统

@@ -85,9 +85,29 @@ public final class AllyRoster {
                 active = -1;
                 PlayerLedger.setActiveAlly(player, -1);
             }
+            AllyDirector.onReleased(player.getUUID(), gone.getInt(GENERATION));
         }
         PlayerLedger.setAllies(player, allies);
         return released;
+    }
+
+    /**
+     * 遣散：删掉这一代，正在场上就马上退去；出战的指向它就改回默认（最新感化的那只）。
+     * 被挤出名册走的也是同样的处理（见 {@link #add}）
+     *
+     * @return 名册里原来有这一代
+     */
+    public static boolean release(Player player, int generation) {
+        List<CompoundTag> allies = PlayerLedger.getAllies(player);
+        if (!allies.removeIf(a -> a.getInt(GENERATION) == generation)) {
+            return false;
+        }
+        PlayerLedger.setAllies(player, allies);
+        if (PlayerLedger.getActiveAlly(player) == generation) {
+            PlayerLedger.setActiveAlly(player, -1);
+        }
+        AllyDirector.onReleased(player.getUUID(), generation);
+        return true;
     }
 
     // 名册按感化先后排，最早的在前；出战的那只放到最后才挤

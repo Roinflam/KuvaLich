@@ -739,12 +739,15 @@ public final class MercyCoreTests {
                                 + KillStackManager.getStacks(p, StackType.BASE_DAMAGE));
                 AABB area = new AABB(lich.blockPosition()).minmax(new AABB(p.blockPosition())).inflate(6.0D);
                 clearItems(h, area);
+                // 死亡 / 发奖的 tick 按套路从节拍表取，钉在正面直刺上（随机到别的套路时写死的 tick 对不上）
+                MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_A);
+                MercyServer.setNextVariant(p, MercyVariant.LICH_A);
                 h.assertTrue(MercyServer.executeNow(p, lich) == null, "之后应当照常能开始处决");
                 h.runAfterDelay(20, () -> h.assertTrue(!card.hasLich(), "tick 17 应当已经定案、这一轮结束"));
-                h.runAfterDelay(151, () -> h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()),
-                        "tick 151 应当处决致死（走原版死亡流程）"));
-                h.runAfterDelay(155, () -> {
-                    h.assertTrue(reliquaries(p) == 1, "tick 155 应当收到安魂成功的奖励");
+                h.runAfterDelay(b.successDeathTick + 1, () -> h.assertTrue(!lich.isAlive() && DIED.contains(lich.getUUID()),
+                        "tick " + (b.successDeathTick + 1) + " 应当处决致死（走原版死亡流程）"));
+                h.runAfterDelay(b.successRewardTick + 2, () -> {
+                    h.assertTrue(reliquaries(p) == 1, "tick " + (b.successRewardTick + 2) + " 应当收到安魂成功的奖励");
                     h.succeed();
                 });
             });

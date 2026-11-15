@@ -224,14 +224,15 @@ public final class LichNameplates {
 
     private static boolean renderLich(KuvaMasterEntity lich, PoseStack ps, MultiBufferSource buffer, double dist,
                                       float fade, long now, Minecraft mc, LocalPlayer player, float height) {
-        if (!lich.isOwned() || dist > LICH_RANGE) {
+        boolean ally = lich.isAlly();
+        if (!lich.isOwned() && !ally || dist > LICH_RANGE) {
             return false;
         }
         Plate p = plateOf(lich.getId(), now);
         if (!lineOfSight(p, player, lich, now)) {
             return false;
         }
-        boolean mine = lich.isOwner(player) && !ArchiveDevCommands.forceOtherView;
+        boolean mine = (ally ? lich.isAllyOf(player) : lich.isOwner(player)) && !ArchiveDevCommands.forceOtherView;
         String name = lich.getLichName();
         String owner = mine ? "" : lich.getOwnerName();
         String lang = mc.options.languageCode;
@@ -239,9 +240,16 @@ public final class LichNameplates {
             p.source = name;
             p.source2 = owner;
             p.lang = lang;
-            p.line1 = name.isEmpty() ? Component.translatable("entity.kuvalich.kuva_master").getString()
+            String upper = name.isEmpty() ? Component.translatable("entity.kuvalich.kuva_master").getString()
                     : name.toUpperCase(java.util.Locale.ROOT);
-            p.line2 = mine ? "" : ownerLine(p.line1, owner);
+            if (ally) {
+                // 「名字 · 盟友」；别人的盟友第二行写是谁的
+                p.line1 = Component.translatable("kuvalich.nameplate.ally", upper).getString();
+                p.line2 = mine ? "" : Component.translatable("kuvalich.nameplate.ally.other", owner).getString();
+            } else {
+                p.line1 = upper;
+                p.line2 = mine ? "" : ownerLine(p.line1, owner);
+            }
         }
         float a = fade;
         if (dist > LICH_FADE_FROM) {
@@ -268,7 +276,8 @@ public final class LichNameplates {
         ps.translate(0.0F, anchor, 0.0F);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
         ps.scale(-LICH_SCALE, -LICH_SCALE, LICH_SCALE);
-        shadowedLine(ps, buffer, font, p.line1, -w1 * 0.5F, y1, FxPalette.KUVA_PALE, 0.95F * a, Font.DisplayMode.NORMAL);
+        shadowedLine(ps, buffer, font, p.line1, -w1 * 0.5F, y1, ally ? FxPalette.TECH_PALE : FxPalette.KUVA_PALE,
+                0.95F * a, Font.DisplayMode.NORMAL);
         if (!p.line2.isEmpty()) {
             ps.pushPose();
             ps.translate(0.0F, y1 + 10.0F, 0.0F);
@@ -653,11 +662,12 @@ public final class LichNameplates {
             return 0.0D;
         }
         if (e instanceof KuvaMasterEntity lich) {
-            if (!lich.isOwned()) {
+            if (!lich.isOwned() && !lich.isAlly()) {
                 return 0.0D;
             }
             // 别人的玄骸多一行「某某的玄骸」，整块往上挪一行
-            boolean mine = lich.isOwner(player) && !ArchiveDevCommands.forceOtherView;
+            boolean mine = (lich.isAlly() ? lich.isAllyOf(player) : lich.isOwner(player))
+                    && !ArchiveDevCommands.forceOtherView;
             return ABOVE_HEAD + (mine ? 0.0F : 9.0F * LICH_SCALE);
         }
         // 幼体倒地后名牌不画（换成屏幕标注）

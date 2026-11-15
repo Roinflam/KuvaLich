@@ -42,7 +42,17 @@ public enum LichLine {
     /** 怒气很高时的随机嘲讽 */
     IDLE_FURIOUS(false, "idle_furious", 3, false, Priority.LOW),
     /** 打开档案时的一句（客户端本地抽，服务端不发） */
-    ARCHIVE(false, "archive", 4, false, Priority.LOW);
+    ARCHIVE(false, "archive", 4, false, Priority.LOW),
+    /** 被感化的那一刻，取代遗言 */
+    CONVERTED(false, "converted", 2, true, Priority.HIGH),
+    /** 作为盟友前来助战 */
+    ALLY_ARRIVE(false, "ally_arrive", 2, false, Priority.HIGH),
+    /** 盟友打死敌人后偶尔一句 */
+    ALLY_KILL(false, "ally_kill", 2, false, Priority.LOW),
+    /** 盟友被击倒、退去 */
+    ALLY_DOWNED(false, "ally_downed", 2, false, Priority.MID),
+    /** 盟友停留到时、主人脱战后退去 */
+    ALLY_LEAVE(false, "ally_leave", 2, false, Priority.MID);
 
     /** 台词的轻重：服务端限流时，低优先级的在刚有过通讯后会被丢掉 */
     public enum Priority {

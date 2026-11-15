@@ -275,7 +275,8 @@ public final class NemesisExtraTests {
             h.assertTrue((LichComms.flagsFor(line) & KuvaComm.CHAT_COPY) == 0, "「不回显」时 " + line + " 不应当进聊天栏");
         }
         KuvaTestKit.override(ModConfig.KUVA_LICH.lichCommChatEcho, ModConfig.KuvaLichConfig.LichCommEcho.IMPORTANT);
-        LichLine[] important = {LichLine.BIRTH, LichLine.FAIL, LichLine.VANQUISHED, LichLine.KILLED_YOU, LichLine.YOU_DIED};
+        LichLine[] important = {LichLine.BIRTH, LichLine.FAIL, LichLine.VANQUISHED, LichLine.KILLED_YOU, LichLine.YOU_DIED,
+                LichLine.CONVERTED};
         for (LichLine line : LichLine.values()) {
             boolean expect = false;
             for (LichLine i : important) {

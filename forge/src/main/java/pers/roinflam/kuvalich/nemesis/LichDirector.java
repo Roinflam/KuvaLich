@@ -762,6 +762,10 @@ public final class LichDirector {
         for (RequiemCard.HistoryEntry entry : card.getHistory()) {
             taken.add(entry.name().toLowerCase(Locale.ROOT));
         }
+        // 历史有条数上限，名册里的盟友可能早被挤出历史
+        for (net.minecraft.nbt.CompoundTag ally : PlayerLedger.getAllies(player)) {
+            taken.add(ally.getString(AllyRoster.NAME).toLowerCase(Locale.ROOT));
+        }
         return taken;
     }
 

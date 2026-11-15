@@ -303,6 +303,15 @@ public final class ModConfig {
         public final ForgeConfigSpec.BooleanValue convertEnabled;
         public final ForgeConfigSpec.IntValue convertChoiceSeconds;
         public final ForgeConfigSpec.IntValue allyRosterSize;
+        public final ForgeConfigSpec.BooleanValue allyEnabled;
+        public final ForgeConfigSpec.DoubleValue allyAssistChance;
+        public final ForgeConfigSpec.DoubleValue allyTriggerHealthRatio;
+        public final ForgeConfigSpec.IntValue allyRetrySeconds;
+        public final ForgeConfigSpec.IntValue allyCooldownMinutes;
+        public final ForgeConfigSpec.IntValue allyMaxStaySeconds;
+        public final ForgeConfigSpec.IntValue allyMaxActive;
+        public final ForgeConfigSpec.DoubleValue allyHealthScale;
+        public final ForgeConfigSpec.DoubleValue allyDamageScale;
 
         // ===== 赤毒幼体 / Kuva Larvling =====
         public final ForgeConfigSpec.BooleanValue larvlingEnabled;
@@ -1436,6 +1445,51 @@ public final class ModConfig {
                     .comment("How many converted Liches the ally roster keeps; when full, converting another releases the earliest one")
                     .comment("盟友名册最多容纳几只感化的玄骸；已满时再感化，最早感化的那只离去")
                     .defineInRange("allyRosterSize", 3, 1, 8);
+
+            allyEnabled = builder
+                    .comment("Converted Liches may appear as allies when their owner is in danger")
+                    .comment("感化过的玄骸在主人危急时作为盟友前来助战")
+                    .define("allyEnabled", true);
+
+            allyAssistChance = builder
+                    .comment("Chance that an ally appears each time the owner's health drops below the trigger ratio")
+                    .comment("主人血量跌破触发比例时，盟友前来助战的概率")
+                    .defineInRange("allyAssistChance", 0.25D, 0.0D, 1.0D);
+
+            allyTriggerHealthRatio = builder
+                    .comment("Health ratio below which a hit from a living non-player attacker can call an ally")
+                    .comment("主人被非玩家的生物打到血量低于此比例时，掷一次盟友助战")
+                    .defineInRange("allyTriggerHealthRatio", 0.3D, 0.05D, 0.95D);
+
+            allyRetrySeconds = builder
+                    .comment("Seconds before another roll after a roll that did not bring an ally")
+                    .comment("掷骰未中后，隔多少秒才再掷")
+                    .defineInRange("allyRetrySeconds", 30, 1, 600);
+
+            allyCooldownMinutes = builder
+                    .comment("Minutes after an ally appears before one can appear again for the same player; saved with the player")
+                    .comment("盟友来过之后，同一名玩家多少分钟内不再来；随玩家数据保存，重新登录不会清除")
+                    .defineInRange("allyCooldownMinutes", 10, 0, 1440);
+
+            allyMaxStaySeconds = builder
+                    .comment("Longest time in seconds an ally stays before withdrawing")
+                    .comment("盟友最多停留多少秒后退去")
+                    .defineInRange("allyMaxStaySeconds", 120, 10, 3600);
+
+            allyMaxActive = builder
+                    .comment("Maximum number of allies present across the whole server; 0 = no limit")
+                    .comment("全服同时在场的盟友上限；0 = 不限")
+                    .defineInRange("allyMaxActive", 6, 0, 1000);
+
+            allyHealthScale = builder
+                    .comment("Multiplier on an ally's maximum health (its stats are those it had when converted)")
+                    .comment("盟友最大生命的倍率（基础面板为它被感化时的那一套）")
+                    .defineInRange("allyHealthScale", 1.0D, 0.05D, 100.0D);
+
+            allyDamageScale = builder
+                    .comment("Multiplier on an ally's attack damage")
+                    .comment("盟友攻击伤害的倍率")
+                    .defineInRange("allyDamageScale", 1.0D, 0.0D, 100.0D);
 
             builder.comment("")
                     .comment("═══ Kuva Larvling / 赤毒幼体 ═══")

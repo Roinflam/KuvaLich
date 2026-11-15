@@ -488,7 +488,7 @@ public final class MercyServer {
         return target instanceof KuvaLarvlingEntity larvling ? larvling.pickClaimant(hitter) : hitter;
     }
 
-    /** 这一下算谁打的：玩家本人、宠物 / 召唤物的主人、最近 5 秒打过它的玩家，都不是返回 null */
+    /** 这一下算谁打的：玩家本人、宠物 / 召唤物 / 盟友的主人、最近 5 秒打过它的玩家，都不是返回 null */
     @Nullable
     private static UUID hitterOf(AbstractKuva target, DamageSource source) {
         Entity e = source.getEntity();
@@ -497,6 +497,9 @@ public final class MercyServer {
         }
         if (e instanceof OwnableEntity pet && pet.getOwner() instanceof Player owner) {
             return owner.getUUID();
+        }
+        if (e instanceof KuvaMasterEntity ally && ally.isAlly()) {
+            return ally.getAllyOwnerUUID();
         }
         Player recent = target.recentPlayerAttacker();
         return recent == null ? null : recent.getUUID();
@@ -1100,6 +1103,7 @@ public final class MercyServer {
         int shift = base - b.choiceOpenTick;
         int first = base + 2;
         if (convert) {
+            sayAs(lich, LichLine.CONVERTED, e.executor);
             int end = Math.max(first, b.convertEndTick + shift);
             e.add(Math.max(first, b.convertLeaveTick + shift), StepKind.CONVERT_LEAVE, () -> convertLeave(e, lich));
             e.add(end, StepKind.PLAYER, () -> announce(e));

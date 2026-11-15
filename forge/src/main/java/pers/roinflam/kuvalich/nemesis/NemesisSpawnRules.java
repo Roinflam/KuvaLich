@@ -79,8 +79,8 @@ public final class NemesisSpawnRules {
         if (event.getLevel().isClientSide() || !(event.getEntity() instanceof KuvaMasterEntity lich)) {
             return;
         }
-        if (lich.isDemo() || lich.isOwned()) {
-            // 演示目标另有自己的上下文；主人只可能是玄骸导演在加进世界之前绑的
+        if (lich.isDemo() || lich.isOwned() || lich.isAlly()) {
+            // 演示目标另有自己的上下文；主人、盟友只可能是导演在加进世界之前设好的
             return;
         }
         if (event.loadedFromDisk()) {
