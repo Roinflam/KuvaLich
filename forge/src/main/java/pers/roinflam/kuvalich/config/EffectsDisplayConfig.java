@@ -38,6 +38,17 @@ public final class EffectsDisplayConfig {
         }
     }
 
+    /** 幻纹画给谁看 */
+    public enum EphemeraMode {
+        /** 全部照常 */
+        ALL,
+        /** 所有人都按精简档画 */
+        REDUCED,
+        /** 只画自己的 */
+        SELF,
+        OFF
+    }
+
     private static ForgeConfigSpec.EnumValue<Intensity> intensity;
     private static ForgeConfigSpec.BooleanValue additiveGlow;
     private static ForgeConfigSpec.BooleanValue screenEffects;
@@ -67,6 +78,9 @@ public final class EffectsDisplayConfig {
     private static ForgeConfigSpec.BooleanValue mercyRankupSound;
     private static ForgeConfigSpec.BooleanValue kuvaStateFx;
     private static ForgeConfigSpec.BooleanValue hudNotices;
+    private static ForgeConfigSpec.EnumValue<EphemeraMode> ephemera;
+    private static ForgeConfigSpec.IntValue ephemeraMaxVisible;
+    private static ForgeConfigSpec.IntValue ephemeraDistance;
 
     private static volatile Intensity cachedIntensity = Intensity.FULL;
     private static volatile boolean cachedAdditiveGlow = true;
@@ -97,6 +111,9 @@ public final class EffectsDisplayConfig {
     private static volatile boolean cachedMercyRankupSound = false;
     private static volatile boolean cachedKuvaStateFx = true;
     private static volatile boolean cachedHudNotices = true;
+    private static volatile EphemeraMode cachedEphemera = EphemeraMode.ALL;
+    private static volatile int cachedEphemeraMaxVisible = 12;
+    private static volatile int cachedEphemeraDistance = 32;
 
     private EffectsDisplayConfig() {
     }
@@ -223,6 +240,18 @@ public final class EffectsDisplayConfig {
                         "Show this mod's messages (Ultimatum, Mercy, Death Resistance, confiscation, rewards...) as notice bars above the hotbar. When off, they go to the action bar and chat as before",
                         "本模组的提示（安魂通牒、处决、死亡抵抗、没收、奖励等）显示成物品栏上方的提示条；关掉后照旧进动作栏和聊天栏")
                 .define("hud_notices", true);
+        ephemera = builder.comment(
+                        "Ephemera on players, Liches and allies: ALL / REDUCED (everyone in the light version) / SELF (only your own) / OFF",
+                        "玩家、玄骸、盟友身上的幻纹：ALL 全部 / REDUCED 一律精简 / SELF 只显示自己的 / OFF 关闭")
+                .defineEnum("ephemera", EphemeraMode.ALL);
+        ephemeraMaxVisible = builder.comment(
+                        "At most this many Ephemera are drawn at once, nearest first; your own always comes first",
+                        "同时最多显示几个幻纹，按距离由近到远，自己的优先")
+                .defineInRange("ephemera_max_visible", 12, 1, 64);
+        ephemeraDistance = builder.comment(
+                        "Ephemera farther than this many blocks are not drawn",
+                        "超过这个距离（格）的幻纹不显示")
+                .defineInRange("ephemera_distance", 32, 16, 64);
         builder.pop();
     }
 
@@ -371,6 +400,18 @@ public final class EffectsDisplayConfig {
         return cachedHudNotices;
     }
 
+    public static EphemeraMode ephemera() {
+        return cachedEphemera;
+    }
+
+    public static int ephemeraMaxVisible() {
+        return cachedEphemeraMaxVisible;
+    }
+
+    public static int ephemeraDistance() {
+        return cachedEphemeraDistance;
+    }
+
     private static void refresh(ModConfigEvent event) {
         if (intensity != null && event.getConfig().getSpec() == TooltipConfig.CLIENT_CONFIG) {
             cachedIntensity = intensity.get();
@@ -402,6 +443,9 @@ public final class EffectsDisplayConfig {
             cachedMercyRankupSound = mercyRankupSound.get();
             cachedKuvaStateFx = kuvaStateFx.get();
             cachedHudNotices = hudNotices.get();
+            cachedEphemera = ephemera.get();
+            cachedEphemeraMaxVisible = ephemeraMaxVisible.get();
+            cachedEphemeraDistance = ephemeraDistance.get();
         }
     }
 

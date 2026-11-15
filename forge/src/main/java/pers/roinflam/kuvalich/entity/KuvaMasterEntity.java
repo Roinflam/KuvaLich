@@ -38,6 +38,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import pers.roinflam.kuvalich.ephemera.EphemeraLook;
+import pers.roinflam.kuvalich.ephemera.EphemeraStateTable;
+import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.capability.CapabilityRegistryHandler;
 import pers.roinflam.kuvalich.capability.RequiemCard;
@@ -128,6 +131,9 @@ public class KuvaMasterEntity extends AbstractKuva {
     /** 感化后作为盟友现身时，帮的是哪个玩家。和 OWNER 互斥：盟友不走有主那一套 */
     private static final EntityDataAccessor<Optional<UUID>> ALLY_OF =
             SynchedEntityData.defineId(KuvaMasterEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    /** 带着的幻纹（款式、元素、颜色），空 = 不带。有主的从卡上读，盟友从名册条目读；野生的不带 */
+    private static final EntityDataAccessor<CompoundTag> LICH_EPHEMERA =
+            SynchedEntityData.defineId(KuvaMasterEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
     // ==================== 回血参数（已砍半） ====================
 
@@ -302,6 +308,23 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.entityData.define(SHIELD_MAX, 0.0F);
         this.entityData.define(LICH_PHASE, (byte) 0);
         this.entityData.define(ALLY_OF, Optional.empty());
+        this.entityData.define(LICH_EPHEMERA, new CompoundTag());
+    }
+
+    public EphemeraLook getEphemeraLook() {
+        return EphemeraLook.fromTag(this.entityData.get(LICH_EPHEMERA));
+    }
+
+    private void setEphemeraLook(EphemeraLook look) {
+        this.entityData.set(LICH_EPHEMERA, look.toTag());
+    }
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (LICH_EPHEMERA.equals(key) && this.level().isClientSide()) {
+            EphemeraStateTable.CLIENT.put(this.getId(), getEphemeraLook());
+        }
     }
 
     // ==================== 专属玄骸：主人与身份 ====================
@@ -475,6 +498,8 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.entityData.set(LICH_SEED, (int) card.getLichSeed());
         this.entityData.set(LICH_WEAPON, card.getLichWeapon());
         this.entityData.set(WILD, false);
+        setEphemeraLook(EphemeraLook.ofDefault(card.getLichEphemera(),
+                EphemeraType.elementFor(card.getLichSeed(), card.getLichWeaponType())));
         this.lichSeedFull = card.getLichSeed();
         applyTraits(LichTraits.current(this.lichSeedFull, card.getLichRank()));
         this.setPersistenceRequired();
@@ -512,6 +537,8 @@ public class KuvaMasterEntity extends AbstractKuva {
         this.entityData.set(LICH_SEED, (int) seed);
         this.entityData.set(LICH_WEAPON, entry.getInt(AllyRoster.WEAPON));
         this.entityData.set(WILD, false);
+        setEphemeraLook(EphemeraLook.ofDefault(AllyRoster.ephemeraOf(entry),
+                EphemeraType.elementFor(seed, entry.getString(AllyRoster.WEAPON_TYPE))));
         this.allyGeneration = entry.getInt(AllyRoster.GENERATION);
         this.lichSeedFull = seed;
         applyTraits(LichTraits.current(seed, rank));

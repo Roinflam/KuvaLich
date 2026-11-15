@@ -43,6 +43,10 @@ public final class ClientPacketHandlers {
         NoticeHud.accept(msg);
     }
 
+    public static void onEphemeraState(pers.roinflam.kuvalich.network.packet.EphemeraStatePacket msg) {
+        pers.roinflam.kuvalich.ephemera.EphemeraStateTable.CLIENT.put(msg.entityId, msg.look);
+    }
+
     /** 玄骸状态到了 */
     public static void onLichState(LichStatePacket msg) {
         ClientLichState.accept(msg);

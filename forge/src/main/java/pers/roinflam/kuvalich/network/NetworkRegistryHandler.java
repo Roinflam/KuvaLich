@@ -6,6 +6,7 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import pers.roinflam.kuvalich.network.packet.AllyCommandPacket;
 import pers.roinflam.kuvalich.network.packet.CodexGiveItemPacket;
+import pers.roinflam.kuvalich.network.packet.EphemeraStatePacket;
 import pers.roinflam.kuvalich.network.packet.CodexInstallModulePacket;
 import pers.roinflam.kuvalich.network.packet.CodexActionResultPacket;
 import pers.roinflam.kuvalich.network.packet.DamagePacket;
@@ -84,7 +85,8 @@ public class NetworkRegistryHandler {
      *         数据序号会错位而握手照过，用单独的串让握手直接拦下。
      *         这一段新增：AbstractKuva 的 DATA_MERCY_CHOICE、计划位 bit 31、MercyChoicePacket、MercyChoiceOpenPacket；
      *         KuvaMasterEntity 的 ALLY_OF；LichStatePacket 末尾的幻纹款式（档案包里嵌着的那份跟着变），
-     *         LichArchivePacket 末尾的盟友名册、名册上限、待领取件数，lastFate 多一个值 3（感化）；AllyCommandPacket
+     *         LichArchivePacket 末尾的盟友名册、名册上限、待领取件数，lastFate 多一个值 3（感化）；AllyCommandPacket；
+     *         WarframeModuleSyncPacket 第 9 件（幻纹格）；EphemeraStatePacket；KuvaMasterEntity 的 LICH_EPHEMERA
      */
     private static final String PROTOCOL_VERSION = "17-dev";
 
@@ -333,6 +335,16 @@ public class NetworkRegistryHandler {
                 AllyCommandPacket::decode,
                 AllyCommandPacket::handle,
                 TO_SERVER
+        );
+
+        // 谁带着什么幻纹（服务器 → 本人和追踪者）
+        INSTANCE.registerMessage(
+                nextMessageId(),
+                EphemeraStatePacket.class,
+                EphemeraStatePacket::encode,
+                EphemeraStatePacket::decode,
+                EphemeraStatePacket::handle,
+                TO_CLIENT
         );
     }
 

@@ -11,9 +11,15 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.EntityTravelToDimensionEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -24,6 +30,7 @@ import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.init.KuvaLichItems;
 import pers.roinflam.kuvalich.network.packet.WarframeModuleSyncPacket;
 import pers.roinflam.kuvalich.utils.Reference;
+import pers.roinflam.kuvalich.world.inventory.RequiemMenuLogoutGuard;
 import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
 
 import java.util.List;
@@ -298,7 +305,14 @@ public final class EphemeraSlotTests {
                     menu.clicked(EPH, 0, ClickType.QUICK_MOVE, p);
                     menu.clicked(menuIndexOf(menu, p, slotOfEphemera(p)), 0, ClickType.QUICK_MOVE, p);
                 }
-                case 3 -> menu.clicked(EPH, 0, ClickType.PICKUP_ALL, p);
+                case 3 -> {
+                    // 光标拿着幻纹双击空出来的幻纹格：一件堆叠上限 1，什么都收不到，放回去
+                    menu.clicked(EPH, 0, ClickType.PICKUP, p);
+                    menu.clicked(EPH, 0, ClickType.PICKUP_ALL, p);
+                    h.assertTrue(menu.getCarried().getCount() == 1 && ItemStack.matches(menu.getCarried(), e1),
+                            "双击后光标上还是那一件");
+                    menu.clicked(EPH, 0, ClickType.PICKUP, p);
+                }
                 default -> {
                 }
             }
@@ -311,6 +325,104 @@ public final class EphemeraSlotTests {
         }
         h.assertTrue(EphemeraItem.getColor1(m.getEphemera()) == 0x22CCFF, "调过的颜色没丢");
         h.assertTrue(p.getInventory().countItem(KuvaLichItems.WARFRAME_COMMON_MODULE.get()) == 0, "背包里没多出模组");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = BATCH)
+    public static void swapToEmptyHotbarAndOffhand(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        ItemStack e1 = eph(EphemeraType.VORTEX, "electricity");
+        wm(p).setEphemera(e1.copy());
+        p.getInventory().setItem(5, ItemStack.EMPTY);
+        p.getInventory().offhand.set(0, ItemStack.EMPTY);
+        RequiemWarframeTableMenu menu = open(p);
+
+        menu.clicked(EPH, 5, ClickType.SWAP, p);
+        h.assertTrue(wm(p).getEphemera().isEmpty() && ItemStack.matches(p.getInventory().getItem(5), e1),
+                "数字键换到空快捷栏格");
+        inSync(h, menu, p, "数字键换出");
+        menu.clicked(EPH, 5, ClickType.SWAP, p);
+        h.assertTrue(ItemStack.matches(wm(p).getEphemera(), e1) && p.getInventory().getItem(5).isEmpty(), "数字键换回来");
+
+        // F：副手（按钮 40）
+        menu.clicked(EPH, Inventory.SLOT_OFFHAND, ClickType.SWAP, p);
+        h.assertTrue(wm(p).getEphemera().isEmpty() && ItemStack.matches(p.getOffhandItem(), e1), "F 换到副手");
+        inSync(h, menu, p, "F 换出");
+        menu.clicked(EPH, Inventory.SLOT_OFFHAND, ClickType.SWAP, p);
+        h.assertTrue(ItemStack.matches(wm(p).getEphemera(), e1) && p.getOffhandItem().isEmpty(), "F 换回来");
+
+        p.getInventory().offhand.set(0, new ItemStack(Items.DIAMOND, 3));
+        menu.clicked(EPH, Inventory.SLOT_OFFHAND, ClickType.SWAP, p);
+        h.assertTrue(ItemStack.matches(wm(p).getEphemera(), e1) && p.getOffhandItem().getCount() == 3,
+                "副手拿着别的东西换不进来");
+        h.assertTrue(total(p) == 1, "一件不多一件不少：" + total(p));
+        close(p);
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = BATCH)
+    public static void carriedFullInventoryOnClose(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        ItemStack e1 = eph(EphemeraType.SURGE, "poison");
+        wm(p).setEphemera(e1.copy());
+        for (int i = 0; i < 36; i++) {
+            p.getInventory().setItem(i, new ItemStack(Items.DIRT, 64));
+        }
+        p.getInventory().offhand.set(0, new ItemStack(Items.DIRT, 64));
+        RequiemWarframeTableMenu menu = open(p);
+        menu.clicked(EPH, 0, ClickType.PICKUP, p);
+        close(p);
+        List<ItemEntity> dropped = p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(4.0D),
+                e -> e.getItem().is(KuvaLichItems.EPHEMERA.get()));
+        h.assertTrue(wm(p).getEphemera().isEmpty() && dropped.size() == 1 && ItemStack.matches(dropped.get(0).getItem(), e1),
+                "背包满时光标上那件掉在脚下（原版），只有一件：" + dropped.size());
+        dropped.forEach(ItemEntity::discard);
+        h.succeed();
+    }
+
+    @GameTest(template = "empty", batch = BATCH)
+    public static void carriedSurvivesDeathAndTravel(GameTestHelper h) {
+        ServerPlayer p = KuvaTestKit.player(h);
+        ItemStack e1 = eph(EphemeraType.WING, "ice");
+        wm(p).setEphemera(e1.copy());
+        RequiemWarframeTableMenu menu = open(p);
+        menu.clicked(EPH, 0, ClickType.PICKUP, p);
+        h.assertTrue(ItemStack.matches(menu.getCarried(), e1) && wm(p).getEphemera().isEmpty(), "拿到光标上");
+
+        LivingDeathEvent cancelled = new LivingDeathEvent(p, p.damageSources().generic());
+        cancelled.setCanceled(true);
+        RequiemMenuLogoutGuard.closeArmoryBeforeDeath(cancelled);
+        h.assertTrue(p.containerMenu == menu && ItemStack.matches(menu.getCarried(), e1), "死亡被别的模组取消就不动");
+
+        // 真死一次（死亡不掉落，看光标上那件是不是进了背包而不是掉在地上）
+        MinecraftServer server = h.getLevel().getServer();
+        GameRules.BooleanValue keep = h.getLevel().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY);
+        boolean wasKeep = keep.get();
+        keep.set(true, server);
+        try {
+            p.setHealth(0.0F);
+            p.die(p.damageSources().generic());
+        } finally {
+            keep.set(wasKeep, server);
+        }
+        List<ItemEntity> onGround = p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(4.0D),
+                e -> e.getItem().is(KuvaLichItems.EPHEMERA.get()));
+        h.assertTrue(onGround.isEmpty(), "死亡时光标上那件不掉地上：" + onGround.size());
+        h.assertTrue(p.containerMenu == p.inventoryMenu && p.getInventory().countItem(KuvaLichItems.EPHEMERA.get()) == 1,
+                "死亡前先关界面、放回背包");
+
+        ServerPlayer q = KuvaTestKit.player(h);
+        ItemStack e2 = eph(EphemeraType.COIL, "fire");
+        wm(q).setEphemera(e2.copy());
+        RequiemWarframeTableMenu qm = open(q);
+        qm.clicked(EPH, 0, ClickType.PICKUP, q);
+        EntityTravelToDimensionEvent stay = new EntityTravelToDimensionEvent(q, Level.NETHER);
+        stay.setCanceled(true);
+        RequiemMenuLogoutGuard.closeArmoryBeforeTravel(stay);
+        h.assertTrue(q.containerMenu == qm, "传送被取消就不动");
+        MinecraftForge.EVENT_BUS.post(new EntityTravelToDimensionEvent(q, Level.NETHER));
+        h.assertTrue(q.containerMenu == q.inventoryMenu && q.getInventory().countItem(KuvaLichItems.EPHEMERA.get()) == 1
+                && wm(q).getEphemera().isEmpty(), "跨维度前先关界面、放回背包");
         h.succeed();
     }
 
