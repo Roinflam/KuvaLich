@@ -559,12 +559,13 @@ public class LichArchiveScreen extends Screen {
 
     /**
      * 字号按窗高取比例；窗口小时（如 1280×720）每个字体单位不到 2 个物理像素，汉字的 16 点阵会丢笔画，
-     * 这时往上补到 2 个像素，但最多放大到 1.35 倍，免得更小的窗口排版挤爆
+     * 这时一律补到 2 个像素。原先最多只放大 1.35 倍，960×540、854×480 缩放 2 时停在 1.3～1.7 像素，
+     * 汉字缺笔画认不出来；放不下的由各处自己截断或让位
      */
     private static float tsOf(int h, float frac) {
         float ts = SpacedText.round8(h * frac / 7.0F, 0.5F);
         float crisp = (float) (2.0D / Minecraft.getInstance().getWindow().getGuiScale());
-        return ts < crisp ? Math.min(crisp, ts * 1.35F) : ts;
+        return Math.max(ts, crisp);
     }
 
     /** 墨烟铺满全屏，按高度缩放、每秒往左飘 0.01 屏宽；贴图四边无缝，靠重复铺开 */
@@ -576,7 +577,7 @@ public class LichArchiveScreen extends Screen {
 
     private void drawStage(GuiGraphics g, int w, int h, long now, long t, LichStatePacket st, boolean lich,
                            float eFrame, float eBody, float pt, float lw) {
-        float cx = w * 0.5F;
+        float cx = stageCx(w, h);
         float feet = h * 0.80F;
         // 背光
         if (eFrame > 0.004F) {
@@ -636,6 +637,17 @@ public class LichArchiveScreen extends Screen {
             }
         }
         GuiShapes.end();
+    }
+
+    /**
+     * 模型、背光、字幕的中线。854×480、960×540 这类小窗口左列宽到四成多，模型持武器的一侧会盖住名册行尾的遣散叉，
+     * 这时往右让到不压左列，右边不越过分栏线。0.55 / 0.32 是模型连武器向左、向右伸出的宽度占模型高度的比例（1080p 截图量的）
+     */
+    private float stageCx(int w, int h) {
+        float body = Math.round(h * 0.58F);
+        float need = dossier.leftEdgeGui() + 0.55F * body + 4.0F;
+        float max = w * 0.75F - 0.32F * body;
+        return Math.max(w * 0.5F, Math.min(need, max));
     }
 
     /** 模型此刻朝向：拖动中跟手；松手后 1.5 s 缓回默认朝向；其余时间在默认朝向附近慢摆 */
@@ -780,33 +792,33 @@ public class LichArchiveScreen extends Screen {
         }
 
         // 当前安魂卡
-        text(g, f, I18n.get("kuvalich.archive.cards"), x0, h * 0.085F, tsS, FxPalette.ASH, a, 0.0F, -1);
+        textFit(g, f, I18n.get("kuvalich.archive.cards"), x0, h * 0.085F, tsS, FxPalette.ASH, a, span);
         float cardY = Math.max(h * 0.140F, h * 0.085F + 9.0F * tsS + sigil * 0.5F + Math.max(2.0F, sigil * 0.3F));
         if (data == null) {
-            text(g, f, unknown(), x0, cardY - 3.5F * tsS, tsS, FxPalette.ASH, a, 0.0F, -1);
+            textFit(g, f, unknown(), x0, cardY - 3.5F * tsS, tsS, FxPalette.ASH, a, span);
         } else if (allEmpty(data.cards())) {
-            text(g, f, I18n.get("kuvalich.archive.cards.none"), x0, cardY - 3.5F * tsS, tsS, FxPalette.TEXT_MID,
-                    0.7F * a, 0.0F, -1);
+            textFit(g, f, I18n.get("kuvalich.archive.cards.none"), x0, cardY - 3.5F * tsS, tsS, FxPalette.TEXT_MID,
+                    0.7F * a, span);
         } else {
             drawCards(g, mx, my, col, cardY, w, h, data.cards(), sigil, a, lw);
         }
 
         // 处决记录：第一行从标题底下排起，符号放大（小窗口）时跟着往下让，不压标题
         float attemptsY = h * 0.215F;
-        text(g, f, I18n.get("kuvalich.archive.attempts"), x0, attemptsY, tsS, FxPalette.ASH, a, 0.0F, -1);
+        textFit(g, f, I18n.get("kuvalich.archive.attempts"), x0, attemptsY, tsS, FxPalette.ASH, a, span);
         float rowY0 = attemptsY + 9.0F * tsS + sigil * 0.5F + Math.max(2.0F, sigil * 0.3F);
         if (data == null) {
-            text(g, f, unknown(), x0, rowY0 - 3.5F * tsS, tsS, FxPalette.ASH, a, 0.0F, -1);
+            textFit(g, f, unknown(), x0, rowY0 - 3.5F * tsS, tsS, FxPalette.ASH, a, span);
         } else if (data.attempts().length == 0) {
-            text(g, f, I18n.get("kuvalich.archive.attempts.none"), x0, rowY0 - 3.5F * tsS, tsS,
-                    FxPalette.TEXT_MID, 0.7F * a, 0.0F, -1);
+            textFit(g, f, I18n.get("kuvalich.archive.attempts.none"), x0, rowY0 - 3.5F * tsS, tsS,
+                    FxPalette.TEXT_MID, 0.7F * a, span);
         } else {
             drawAttempts(g, f, mx, my, x0, x1, col, h, rowY0, data.attempts(), sigil, a, tsS, lw);
         }
 
         // 已揭示的密语
         float my0 = h * 0.642F;
-        text(g, f, I18n.get("kuvalich.archive.murmurs"), x0, my0, tsS, FxPalette.ASH, a, 0.0F, -1);
+        textFit(g, f, I18n.get("kuvalich.archive.murmurs"), x0, my0, tsS, FxPalette.ASH, a, span);
         GuiShapes.begin(g);
         float hlY = my0 + 9.0F * tsS + 1.0F;
         GuiShapes.hairline(g, x0, hlY, x0 + Math.min(span, w * 0.15F), hlY, lw,
@@ -997,7 +1009,7 @@ public class LichArchiveScreen extends Screen {
     // ---------- 关闭提示 ----------
 
     /**
-     * 右下角的关闭提示，右栏左边同一行写待领取的件数（有才写，放不下就截断）；
+     * 右下角的关闭提示，右栏左边同一行写待领取的件数（有才写）；
      * 状态行、上一只的结局都在左栏名字那一块里（{@link ArchiveDossier}）
      */
     private void drawStatus(GuiGraphics g, Font f, int mx, int my, float x0, int h,
@@ -1013,14 +1025,27 @@ public class LichArchiveScreen extends Screen {
         if (data == null || data.inboxCount() <= 0) {
             return;
         }
+        // 截断会把件数截掉。原位放不下就贴着关闭提示往左让，左栏右边线挡住了再退成只写件数
         String full = I18n.get("kuvalich.archive.inbox", data.inboxCount());
-        int room = (int) ((closeR - x0 - closeW) / tsS) - 8;
-        if (room <= f.width("…")) {
-            return;
+        float gapS = 8.0F * tsS;
+        float right = closeR - closeW - gapS;
+        float fullW = f.width(full) * tsS;
+        String s = full;
+        float x = x0;
+        if (x0 + fullW > right) {
+            float leftLimit = dossier.leftEdgeGui() + gapS;
+            if (right - fullW >= leftLimit) {
+                x = right - fullW;
+            } else {
+                s = String.valueOf(data.inboxCount());
+                x = Math.min(x0, right - f.width(s) * tsS);
+                if (x < leftLimit) {
+                    return;
+                }
+            }
         }
-        String s = f.width(full) <= room ? full : f.plainSubstrByWidth(full, room - f.width("…")) + "…";
-        float sw = text(g, f, s, x0, y, tsS, FxPalette.ACCENT, a, 0.0F, -1);
-        if (inRect(mx, my, x0, y, x0 + sw, y + 9.0F * tsS)) {
+        float sw = text(g, f, s, x, y, tsS, FxPalette.ACCENT, a, 0.0F, -1);
+        if (inRect(mx, my, x, y, x + sw, y + 9.0F * tsS)) {
             hoverLines = List.of(Component.literal(full),
                     Component.translatable("kuvalich.archive.inbox.tooltip").withStyle(ChatFormatting.GRAY));
         }
@@ -1077,12 +1102,14 @@ public class LichArchiveScreen extends Screen {
         }
         float ts = tsOf(h, 0.018F);
         if (subtitleLines == null) {
-            // 最宽 0.4 屏宽，也不碰到左栏的右边线（中线两边对称，各留 8 字像素）
+            // 最宽 0.4 屏宽，也不碰到左栏的右边线和中右分栏线（中线两边对称，各留 8 字像素）
             float gs = (float) Minecraft.getInstance().getWindow().getGuiScale();
-            float room = 2.0F * (w * 0.5F - dossier.leftEdgeGui()) - 16.0F * dossier.u / gs;
+            float cx = stageCx(w, h);
+            float room = 2.0F * Math.min(cx - dossier.leftEdgeGui(), w * 0.75F - cx) - 16.0F * dossier.u / gs;
             int maxW = Math.max(40, Math.round(Math.min(w * 0.40F, room) / ts));
             List<FormattedCharSequence> lines = CommText.wrap(f, pendingRaw, maxW, st.name);
-            subtitleLines = lines.size() > 2 ? new ArrayList<>(lines.subList(0, 2)) : lines;
+            // 小窗口一行只放得下八九个字，两行会把一句话截掉后半
+            subtitleLines = lines.size() > 3 ? new ArrayList<>(lines.subList(0, 3)) : lines;
             subtitleWidth = 0;
             for (FormattedCharSequence l : subtitleLines) {
                 subtitleWidth = Math.max(subtitleWidth, f.width(l));
@@ -1098,7 +1125,8 @@ public class LichArchiveScreen extends Screen {
         float progress = CommText.progressFor(now - subtitleStartClock, wipeMs);
         float lineH = 10.0F;
         float blockW = subtitleWidth * ts;
-        float x = w * 0.5F - blockW * 0.5F;
+        float cx = stageCx(w, h);
+        float x = cx - blockW * 0.5F;
         float y = h * 0.835F - subtitleLines.size() * lineH * ts * 0.5F;
         PoseStack ps = g.pose();
         ps.pushPose();
@@ -1107,9 +1135,9 @@ public class LichArchiveScreen extends Screen {
         CommText.drawWipe(g, f, subtitleLines, 0, 0, Math.round(lineH), GuiShapes.argb(CommText.SUBTITLE_RGB, alpha),
                 progress);
         ps.popPose();
-        // 字幕上方的全大写名牌，和字幕同一条中线居中
+        // 字幕上方的全大写名牌，和字幕同一条中线居中；小窗口字号补大后名牌比 0.022 屏高还高，按字高往上让
         float tsS = tsOf(h, 0.016F);
-        text(g, f, upper(st.name), w * 0.5F, y - h * 0.022F, tsS, FxPalette.KUVA, alpha, 1.0F, 0);
+        text(g, f, upper(st.name), cx, y - Math.max(h * 0.022F, 9.5F * tsS), tsS, FxPalette.KUVA, alpha, 1.0F, 0);
     }
 
     // ==================== 小工具 ====================
@@ -1132,6 +1160,13 @@ public class LichArchiveScreen extends Screen {
         SpacedText.draw(g, f, s, 0.0F, 0.0F, spacing, GuiShapes.argb(rgb, alpha), false);
         ps.popPose();
         return tw;
+    }
+
+    /** 右栏的标题和空状态只有一行，小窗口字号补到 2 像素后英文会伸出分栏，放不下就只把这一行缩到刚好放下 */
+    private float textFit(GuiGraphics g, Font f, String s, float x, float y, float scale, int rgb, float alpha,
+                          float maxW) {
+        float tw = f.width(s) * scale;
+        return text(g, f, s, x, y, tw > maxW ? scale * maxW / tw : scale, rgb, alpha, 0.0F, -1);
     }
 
     private void hover(Component line) {
