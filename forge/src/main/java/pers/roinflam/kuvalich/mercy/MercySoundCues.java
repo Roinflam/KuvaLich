@@ -91,6 +91,11 @@ public final class MercySoundCues {
         foley(MercyVariant.LICH_G, f(Layer.LEAP, 0, -930, 1, false), f(Layer.LAND, 0, -360, 1, false),
                 f(Layer.GRAB, 0, 440, 2, false), f(Layer.LEAP, 0, 470, 2, false), f(Layer.LAND, 0, 910, 2, false),
                 f(Layer.LEAP, 1, 440, 3, false), f(Layer.LAND, 1, 740, 3, false), f(Layer.GRAB, 1, 940, 3, false));
+        // 三掠：一掠蹬地、落地；二掠蹬地、踩上后背、蹬开、落地；三掠蹬地、落地；收势小跳
+        foley(MercyVariant.LICH_H, f(Layer.LEAP, 0, -600, 1, false), f(Layer.LAND, 0, -260, 1, false),
+                f(Layer.LEAP, 1, -690, 2, false), f(Layer.GRAB, 1, -550, 2, false), f(Layer.LEAP, 1, -500, 2, false),
+                f(Layer.LAND, 1, -240, 2, false), f(Layer.LEAP, 2, -800, 3, false), f(Layer.LAND, 2, -350, 3, false),
+                f(Layer.LEAP, 2, 360, 3, true), f(Layer.LAND, 2, 530, 3, true));
         // 奴仆：抓肩直刺 揪肩、拽直、拔刀推开
         foley(MercyVariant.THRALL_1, f(Layer.GRAB, 0, -620, 1, false), f(Layer.GRAB, 0, -340, 1, false),
                 f(Layer.GRAB, 0, 540, 1, false));

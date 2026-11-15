@@ -384,6 +384,13 @@ public final class MercyPose {
     private static final Anchors ANCHOR_G1 = new Anchors(4, 4, -12, -2, 6, -16);
     private static final Anchors ANCHOR_G2 = new Anchors(4, 2, -12, -3, 2, -15);
     private static final Anchors ANCHOR_G3 = new Anchors(-1, 8, -12, -6, 0, -15);
+    /**
+     * 三掠三刀，左手都不抓它：第一刀落在它左手边平着捅左肋；第二刀站在它背后，顺着折下去的后背往下扎；
+     * 第三刀在它右前方，它直起身扑过来，刀往心口平着送、稍往上
+     */
+    private static final Anchors ANCHOR_H1 = new Anchors(5, 2, -10, 0, 2, -13);
+    private static final Anchors ANCHOR_H2 = new Anchors(6, 10, -9, 0, 12, -11);
+    private static final Anchors ANCHOR_H3 = new Anchors(5, -2, -10, 0, -3, -13);
 
     /** 蹲着落地、一只手撑开（翻滚和空翻的收势） */
     private static Row landed() {
@@ -868,6 +875,92 @@ public final class MercyPose {
     }
 
     /**
+     * 三掠按新写法排，换位都在整身轨道里（见 {@link #bodyH2}），这里只管身上：一掠蹬出去时刀手甩在身后、左手往前探，
+     * 两腿一前一后拖着，落地深蹲就是第一刀的蓄；二掠右腿抬起来踩它后腰，蹬开后团身后空翻，落地弓步举刀往下扎后背；
+     * 三掠腾空时两腿剪开、左手扬起，落地弓步，第三刀先进一半顿住、再一下送到底；拔刀后原地小跳转身背对它，甩刀
+     */
+    private static List<Key> lichH2(MercyBeats.Lich b) {
+        int s1 = b.stab(0), s2 = b.stab(1), s3 = b.stab(2);
+        List<Key> t = new ArrayList<>(List.of(
+                k(0, CURVE, start()),
+                // 压低、往下一沉，蹬出去
+                k(s1 - 680, CURVE, p().tw(-10).ln(14).sq(0.5F).sh(-0.6F).r(-40, -14, -4).aim(0).pull(0).l(44, 10, 0)
+                        .legs(-34, 40).hd(-10, 0)),
+                k(s1 - 600, OVER, p().tw(0).ln(10).sq(0.2F).sh(0).r(-58, -10, -14).l(62, 10, 0).legs(-40, 52).hd(-14, 0)),
+                // 贴地平飞：刀手甩在身后，左手往前探，左腿收在前面、右腿拖在后面，抬头盯着它
+                k(s1 - 520, CURVE, p().tw(-4).ln(0).sq(0).r(-62, -10, -26).l(72, 8, 0).legs(-30, 70).hd(-34, 0)),
+                k(s1 - 340, CURVE, p().tw(-2).r(-60, -36, -70).l(70, 2, 0).legs(-28, 74).hd(-34, 0)),
+                k(s1 - 270, CURVE, p().tw(0).ln(6).sq(0.4F).r(-40, -52, -80).l(24, 0, 0).legs(-10, 60).hd(-12, 0)),
+                // 左脚落地钉住、深蹲，起来就是蓄
+                k(s1 - 220, IN, p().tw(-14).ln(16).sq(0.85F).sh(-0.3F).r(40, -50, -30).l(40, 4, 0).legs(-38, 50)
+                        .hd(0, 0)),
+                k(s1 - 140, CURVE, p().tw(-24).ln(10).sq(0.55F).sh(-0.6F).r(80, -8, -20).aim(0.7F).pull(4.6F)
+                        .l(64, 6, 0).legs(-36, 44).hd(0, -2)),
+                k(s1 - 70, CURVE, p().tw(-28).ln(8).sq(0.5F).sh(-0.7F).r(80, -8, -22).aim(0.75F).pull(5).hd(-1, -2)),
+                k(s1, ANTIC, p().tw(18).ln(16).sq(0.45F).sh(2.5F).r(85, 5, 0).aim(1).pull(-1.5F).l(36, -10, 0)
+                        .legs(-38, 48).hd(3, 0)),
+                k(s1 + 80, CURVE, p().tw(21).ln(18).sh(3).hd(5, 2)),
+                k(s1 + 170, CURVE, p().tw(22).ln(17).r(NA, NA, 30).hd(4, 3)),
+                k(s1 + 210, IN, p().tw(-10).ln(6).sq(0.35F).sh(0.3F).r(60, -30, -10).aim(0.3F).pull(3).l(30, -30, 0)
+                        .hd(0, -2)),
+                // 停一拍
+                k(s1 + 330, CURVE, p().tw(-6).ln(4).sq(0.3F).sh(0).r(30, -20, 10).aim(0).pull(0).l(48, 0, 0)
+                        .legs(-30, 40).hd(0, 0)),
+                // 二掠：沉下去、蹬地扑起来，右腿抬起来踩它后腰
+                k(s2 - 760, CURVE, p().tw(-4).ln(12).sq(0.7F).r(10, -20, 20).l(52, 14, 0).legs(-30, 50).hd(-4, 0)),
+                k(s2 - 690, OVER, p().tw(0).ln(0).sq(0.2F).r(-12, -20, 44).l(98, 28, 0).legs(16, 14).hd(-5, 0)),
+                k(s2 - 610, CURVE, p().sq(0).r(-10, -20, 54).l(110, 30, 0).legs(88, -12).hd(-4, 0)),
+                k(s2 - 550, IN, p().ln(-8).r(0, 6, 60).l(-24, 24, 0).legs(100, -14).hd(-2, 0)),
+                // 蹬开，团身后空翻
+                k(s2 - 500, CURVE, p().ln(0).r(18, 40, 66).l(-26, 14, 0).legs(76, 38).hd(14, 0)),
+                k(s2 - 460, CURVE, p().ln(10).r(22, 56, 70).l(-34, 4, 0).legs(92, 94).hd(20, 0)),
+                k(s2 - 360, CURVE, p().r(6, 8, 76).l(52, -6, 0).legs(94, 98).hd(20, 0)),
+                k(s2 - 310, CURVE, p().ln(6).sq(0.3F).r(0, -8, 78).l(50, -8, 0).legs(22, 80).hd(6, 0)),
+                // 落地弓步，刀举起来往下扎
+                k(s2 - 260, IN, p().tw(-8).ln(14).sq(0.8F).sh(-0.3F).r(30, -10, 40).l(50, -10, 0).legs(-24, 58)
+                        .hd(4, 0)),
+                k(s2 - 140, CURVE, p().tw(-18).ln(8).sq(0.5F).sh(-0.5F).r(122, -10, 0).aim(0.5F).pull(2).l(36, -10, 0)
+                        .legs(-38, 60).hd(4, 0)),
+                k(s2 - 70, CURVE, p().tw(-20).ln(6).sq(0.52F).sh(-0.6F).r(132, -8, 0).pull(2.5F).hd(2, 0)),
+                k(s2, ANTIC, p().tw(12).ln(30).sq(0.55F).sh(1.8F).r(96, 4, 0).aim(1).pull(-1.5F).hd(14, 0)),
+                k(s2 + 80, CURVE, p().tw(14).ln(33).hd(16, 0)),
+                k(s2 + 160, CURVE, p().tw(15).ln(32).r(NA, NA, 30).hd(15, 2)),
+                k(s2 + 180, IN, p().tw(-8).ln(14).sq(0.5F).sh(0.3F).r(100, -14, 0).aim(0).pull(1).hd(-4, 0)),
+                // 三掠：沉下去、一蹬腾空，侧躺着转一圈半，两腿剪开、左手扬起
+                k(s2 + 230, CURVE, p().tw(-4).ln(16).sq(0.85F).sh(0).r(20, 30, 40).pull(0).l(10, -10, 0).legs(-35, 72)
+                        .hd(-6, 0)),
+                k(s2 + 290, OVER, p().tw(0).ln(0).sq(0.1F).r(4, 14, 24).l(40, -20, 0).legs(14, 48).hd(-10, 0)),
+                k(s2 + 340, CURVE, p().sq(0).r(40, 20, 10).l(124, -44, 0).legs(40, 2).hd(-14, 0)),
+                k(s2 + 390, CURVE, p().r(44, 60, 0).l(94, -50, 0).legs(40, -24).hd(-2, 0)),
+                k(s2 + 490, CURVE, p().r(8, 10, -22).l(70, -40, 0).legs(40, -24).hd(0, 0)),
+                k(s2 + 590, CURVE, p().r(-8, -16, -38).l(62, -18, 0).legs(10, 30).hd(0, 0)),
+                k(s2 + 650, CURVE, p().ln(6).sq(0.3F).r(-10, -20, -50).l(60, 4, 0).legs(-18, 66).hd(0, 0)),
+                // 落在它右前方，弓步，刀收到肋侧
+                k(s3 - 350, IN, p().tw(-10).ln(14).sq(0.85F).sh(-0.3F).r(50, -40, -40).l(66, 8, 0).legs(-28, 56)
+                        .hd(2, 0)),
+                k(s3 - 280, CURVE, p().tw(-26).ln(10).sq(0.5F).sh(-0.6F).r(80, -10, -22).aim(0.7F).pull(4.6F)
+                        .l(70, 10, 0).legs(-33, 48).hd(0, -2)),
+                k(s3 - 220, CURVE, p().tw(-30).ln(9).sq(0.5F).sh(-0.7F).r(80, -12, -24).aim(0.75F).pull(5).hd(-1, -2)),
+                // 先进一半顿住，再一下送到底
+                k(s3 - 150, ANTIC, p().tw(2).ln(12).sq(0.45F).sh(1.2F).r(84, 0, 0).aim(1).pull(1.5F).hd(2, 0)),
+                k(s3 - 80, CURVE, p().tw(4).ln(13).sh(1.3F).pull(1.2F).hd(3, 0)),
+                k(s3, OUT, p().tw(26).ln(20).sq(0.4F).sh(3.8F).r(88, 8, 0).aim(1).pull(-2).reach(3).l(48, -12, 0)
+                        .legs(-34, 50).hd(6, 0)),
+                k(s3 + 90, CURVE, p().tw(29).ln(22).sh(4.1F).hd(8, 0)),
+                k(s3 + 230, CURVE, p().tw(28).ln(21).r(NA, NA, 30).hd(7, 3))));
+        // 拔刀，刀垂到身侧，小跳转身背对它，落地甩刀
+        t.add(k(s3 + 270, IN, p().tw(-10).ln(6).sq(0.3F).sh(0).r(60, -40, -20).aim(0.2F).pull(2.5F).l(30, -24, 0)
+                .reach(0).hd(0, 0)));
+        t.add(k(s3 + 330, CURVE, p().tw(-4).ln(4).sq(0.5F).r(28, -40, -10).aim(0).pull(0).l(30, -12, 0).legs(-20, 40)
+                .hd(-2, 0)));
+        t.add(k(s3 + 420, CURVE, p().ln(0).sq(0).r(-14, -10, 0).l(30, -10, 0).legs(8, 38).hd(-2, 0)));
+        t.add(k(s3 + 530, IN, p().ln(4).sq(0.4F).r(10, -20, 4).legs(-12, 14).hd(0, 0)));
+        t.add(k(s3 + 670, OUT, flick()));
+        t.add(k(s3 + 1000, CURVE, ready()));
+        return t;
+    }
+
+    /**
      * 跪地特写这一段：刀刚扎进去、刃身还有一截露在外面。拿 {@link #plunged} 拍特写，拳头已经贴到（站得近的套路是埋进）
      * 目标身上，刀整根在它身体里，镜头里只剩刀柄和手。这里上身往后仰、肩往前送，胳膊抬平、稍往里收，拳头停在
      * 目标身前，刃身从拳头一路斜着扎进它腹部，从特写那一侧看得见。处决者站得越近（A 1.25、B 1.10、C 0.95 格），
@@ -1076,6 +1169,7 @@ public final class MercyPose {
             case LICH_E -> lichE2(MercyBeats.lich(v));
             case LICH_F -> lichF2(MercyBeats.lich(v));
             case LICH_G -> lichG2(MercyBeats.lich(v));
+            case LICH_H -> lichH2(MercyBeats.lich(v));
             case THRALL_1 -> thrall1();
             case THRALL_2 -> thrall2();
             case THRALL_3 -> thrall3();
@@ -1410,6 +1504,125 @@ public final class MercyPose {
         return b;
     }
 
+    /** 三掠开场站在它左前方，比站位远这么多（候选的起手站位 (1.19, 2.08)） */
+    private static final float H_START_DIST = 1.19F;
+
+    /**
+     * 三掠的整身轨道照候选的整身路线取（10 ms 一点的路线里挑帧，空中转身那段 10 ms 一帧，别的 20 ms）。
+     * 角度都是展开的：越顶时绕着它转、又在空中转一圈半，「转」到落地是 730°，之后判错 / 挣开甩回去要从这里接
+     */
+    private static List<Key> bodyH2(MercyBeats.Lich beats) {
+        int s1 = beats.stab(0), s2 = beats.stab(1), s3 = beats.stab(2);
+        List<Key> b = new ArrayList<>();
+        b.add(k(0, SINE, still().dist(H_START_DIST)));
+        // 蹬之前往后坐一下
+        b.add(k(s1 - 680, CURVE, m().ang(-0.59F).dist(1.21F).up(-0.03F).yaw(-0.36F).flip(0).roll(0)));
+        b.add(k(s1 - 640, CURVE, m().ang(-0.77F).dist(1.23F).up(-0.05F).yaw(-0.55F).flip(0).roll(0)));
+        b.add(k(s1 - 600, CURVE, m().ang(-0.45F).dist(1.2F).up(-0.06F).yaw(-0.22F).flip(0).roll(0)));
+        // 一掠：往前趴 58°、离地 0.14 格平飞，从它左爪底下擦过它左侧，左脚落地绕着脚拧过来
+        b.add(k(s1 - 580, CURVE, m().ang(-2.52F).dist(1.16F).up(-0.03F).yaw(-2.24F).flip(40.81F).roll(0)));
+        b.add(k(s1 - 560, CURVE, m().ang(-2.11F).dist(1.1F).up(0.01F).yaw(-1.51F).flip(55.85F).roll(0)));
+        b.add(k(s1 - 540, CURVE, m().ang(0.6F).dist(1.01F).up(0.05F).yaw(1.97F).flip(58).roll(0)));
+        b.add(k(s1 - 520, CURVE, m().ang(4.22F).dist(0.89F).up(0.08F).yaw(6.87F).flip(58).roll(0)));
+        b.add(k(s1 - 500, CURVE, m().ang(8.91F).dist(0.76F).up(0.1F).yaw(13.34F).flip(58).roll(0)));
+        b.add(k(s1 - 480, CURVE, m().ang(14.94F).dist(0.61F).up(0.12F).yaw(21.55F).flip(58).roll(0)));
+        b.add(k(s1 - 460, CURVE, m().ang(21.88F).dist(0.47F).up(0.13F).yaw(30.97F).flip(58).roll(0)));
+        b.add(k(s1 - 440, CURVE, m().ang(29.36F).dist(0.35F).up(0.14F).yaw(41.05F).flip(58).roll(0)));
+        b.add(k(s1 - 420, CURVE, m().ang(37.26F).dist(0.27F).up(0.14F).yaw(51.51F).flip(58).roll(0)));
+        b.add(k(s1 - 400, CURVE, m().ang(45.39F).dist(0.21F).up(0.14F).yaw(61.98F).flip(58).roll(0)));
+        b.add(k(s1 - 380, CURVE, m().ang(53.45F).dist(0.17F).up(0.13F).yaw(72.04F).flip(58).roll(0)));
+        b.add(k(s1 - 360, CURVE, m().ang(61.17F).dist(0.16F).up(0.12F).yaw(81.29F).flip(58).roll(0)));
+        b.add(k(s1 - 340, CURVE, m().ang(68.27F).dist(0.17F).up(0.1F).yaw(89.41F).flip(58).roll(0)));
+        b.add(k(s1 - 320, CURVE, m().ang(74.57F).dist(0.19F).up(0.07F).yaw(96.24F).flip(58).roll(0)));
+        b.add(k(s1 - 300, CURVE, m().ang(79.98F).dist(0.22F).up(0.04F).yaw(101.81F).flip(58).roll(0)));
+        b.add(k(s1 - 280, CURVE, m().ang(84.44F).dist(0.26F).up(0.01F).yaw(104.8F).flip(32.67F).roll(0)));
+        b.add(k(s1 - 260, CURVE, m().ang(87.95F).dist(0.29F).up(-0.03F).yaw(84.52F).flip(23.33F).roll(0)));
+        b.add(k(s1 - 240, CURVE, m().ang(87.19F).dist(0.19F).up(0.01F).yaw(42.47F).flip(22).roll(0)));
+        b.add(k(s1 - 220, CURVE, m().ang(86).dist(0.18F).up(-0.04F).yaw(17.48F).flip(5.5F).roll(0)));
+        b.add(k(s1 - 200, CURVE, m().ang(85.94F).dist(0.18F).up(-0.08F).yaw(15.94F).flip(0).roll(0)));
+        // 二掠：扑到它背后，右脚踩上后腰（往后仰 44°），蹬开往后弹，后空翻一圈落在它正后方
+        b.add(k(s1 + 440, CURVE, m().ang(85.91F).dist(0.18F).up(-0.07F).yaw(15.91F).flip(0).roll(0)));
+        b.add(k(s1 + 460, CURVE, m().ang(85.69F).dist(0.2F).up(-0.05F).yaw(15.69F).flip(0).roll(0)));
+        b.add(k(s1 + 480, CURVE, m().ang(85.42F).dist(0.22F).up(-0.03F).yaw(15.42F).flip(0).roll(0)));
+        b.add(k(s1 + 500, CURVE, m().ang(84.63F).dist(0.3F).up(0.05F).yaw(14.63F).flip(0).roll(0)));
+        b.add(k(s1 + 520, CURVE, m().ang(82.33F).dist(0.57F).up(0.23F).yaw(8.74F).flip(-19.9F).roll(0)));
+        b.add(k(s1 + 540, CURVE, m().ang(94.56F).dist(0.37F).up(0.42F).yaw(4.02F).flip(-32.66F).roll(0)));
+        b.add(k(s1 + 560, CURVE, m().ang(105.45F).dist(0.17F).up(0.59F).yaw(-11.33F).flip(-39.87F).roll(0)));
+        b.add(k(s1 + 580, CURVE, m().ang(114.51F).dist(-0.03F).up(0.73F).yaw(-25.18F).flip(-43.11F).roll(0)));
+        b.add(k(s2 - 590, CURVE, m().ang(122.66F).dist(-0.23F).up(0.86F).yaw(-26.82F).flip(-43.97F).roll(0)));
+        b.add(k(s2 - 570, CURVE, m().ang(130.34F).dist(-0.39F).up(0.97F).yaw(-19.66F).flip(-44.75F).roll(0)));
+        b.add(k(s2 - 550, CURVE, m().ang(136.13F).dist(-0.47F).up(1.05F).yaw(-13.87F).flip(-46.25F).roll(0)));
+        b.add(k(s2 - 530, CURVE, m().ang(138.79F).dist(-0.42F).up(1.12F).yaw(-11.21F).flip(-47.75F).roll(0)));
+        b.add(k(s2 - 510, CURVE, m().ang(142.56F).dist(-0.18F).up(1.17F).yaw(-7.44F).flip(-49.25F).roll(0)));
+        b.add(k(s2 - 490, CURVE, m().ang(145.05F).dist(0.07F).up(1.2F).yaw(-4.96F).flip(-53.24F).roll(0)));
+        b.add(k(s2 - 470, CURVE, m().ang(147.02F).dist(0).up(1.21F).yaw(-3.19F).flip(-98.17F).roll(0)));
+        b.add(k(s2 - 450, CURVE, m().ang(149.04F).dist(-0.06F).up(1.21F).yaw(-1.77F).flip(-138.56F).roll(0)));
+        b.add(k(s2 - 430, CURVE, m().ang(151.06F).dist(-0.12F).up(1.18F).yaw(-0.82F).flip(-178.94F).roll(0)));
+        b.add(k(s2 - 410, CURVE, m().ang(153.05F).dist(-0.17F).up(1.13F).yaw(-0.28F).flip(-217.81F).roll(0)));
+        b.add(k(s2 - 390, CURVE, m().ang(154.98F).dist(-0.22F).up(1.06F).yaw(-0.02F).flip(-256.4F).roll(0)));
+        b.add(k(s2 - 370, CURVE, m().ang(156.83F).dist(-0.26F).up(0.98F).yaw(0.16F).flip(-295).roll(0)));
+        b.add(k(s2 - 350, CURVE, m().ang(158.56F).dist(-0.3F).up(0.87F).yaw(0.44F).flip(-331.32F).roll(0)));
+        b.add(k(s2 - 330, CURVE, m().ang(160.13F).dist(-0.32F).up(0.75F).yaw(0.94F).flip(-343.67F).roll(0)));
+        b.add(k(s2 - 310, CURVE, m().ang(161.49F).dist(-0.35F).up(0.6F).yaw(1.69F).flip(-346.77F).roll(0)));
+        b.add(k(s2 - 290, CURVE, m().ang(162.61F).dist(-0.36F).up(0.44F).yaw(2.61F).flip(-355.18F).roll(0)));
+        b.add(k(s2 - 270, CURVE, m().ang(163.43F).dist(-0.38F).up(0.25F).yaw(3.43F).flip(-358.96F).roll(0)));
+        b.add(k(s2 - 250, CURVE, m().ang(163.93F).dist(-0.38F).up(0.05F).yaw(3.93F).flip(-359.96F).roll(0)));
+        b.add(k(s2 - 230, CURVE, m().ang(164.04F).dist(-0.38F).up(-0.06F).yaw(4.04F).flip(-360).roll(0)));
+        // 三掠：一蹬腾空 2.4 格，侧躺 64° 转一圈半，从它头顶越过去落到它右前方
+        b.add(k(s2 + 230, CURVE, m().ang(163.94F).dist(-0.36F).up(-0.07F).yaw(3.94F).flip(-360).roll(0)));
+        b.add(k(s2 + 250, CURVE, m().ang(163.83F).dist(-0.33F).up(-0.05F).yaw(3.83F).flip(-360).roll(0)));
+        b.add(k(s2 + 270, CURVE, m().ang(163.85F).dist(-0.34F).up(-0.06F).yaw(3.85F).flip(-360).roll(0)));
+        b.add(k(s2 + 290, CURVE, m().ang(163.6F).dist(-0.28F).up(0.37F).yaw(3.6F).flip(-347.33F).roll(0)));
+        b.add(k(s2 + 310, CURVE, m().ang(165.42F).dist(-0.24F).up(0.76F).yaw(6.45F).flip(-342.67F).roll(21.12F)));
+        b.add(k(s2 + 330, CURVE, m().ang(165.19F).dist(-0.26F).up(1.1F).yaw(14.15F).flip(-342).roll(48.38F)));
+        b.add(k(s2 + 350, CURVE, m().ang(167.58F).dist(-0.33F).up(1.41F).yaw(17.74F).flip(-342.08F).roll(60.62F)));
+        b.add(k(s2 + 370, CURVE, m().ang(176.55F).dist(-0.44F).up(1.67F).yaw(30.48F).flip(-342.32F).roll(63.88F)));
+        b.add(k(s2 + 380, CURVE, m().ang(182.43F).dist(-0.51F).up(1.79F).yaw(41.29F).flip(-342.5F).roll(64)));
+        b.add(k(s2 + 390, CURVE, m().ang(171.95F).dist(-0.7F).up(1.9F).yaw(38.42F).flip(-342.71F).roll(64)));
+        b.add(k(s2 + 400, CURVE, m().ang(175.4F).dist(-0.91F).up(2).yaw(52.43F).flip(-342.96F).roll(64)));
+        b.add(k(s2 + 410, CURVE, m().ang(195.23F).dist(-0.99F).up(2.09F).yaw(85.96F).flip(-343.24F).roll(64)));
+        b.add(k(s2 + 420, CURVE, m().ang(229.27F).dist(-1.02F).up(2.17F).yaw(136.87F).flip(-343.55F).roll(64)));
+        b.add(k(s2 + 430, CURVE, m().ang(259.87F).dist(-0.94F).up(2.23F).yaw(187.48F).flip(-343.89F).roll(64)));
+        b.add(k(s2 + 440, CURVE, m().ang(272.9F).dist(-0.77F).up(2.29F).yaw(223.5F).flip(-344.25F).roll(64)));
+        b.add(k(s2 + 450, CURVE, m().ang(274.8F).dist(-0.59F).up(2.34F).yaw(251.14F).flip(-344.63F).roll(64)));
+        b.add(k(s2 + 460, CURVE, m().ang(271.77F).dist(-0.41F).up(2.38F).yaw(276.31F).flip(-345.03F).roll(64)));
+        b.add(k(s2 + 470, CURVE, m().ang(266.46F).dist(-0.28F).up(2.41F).yaw(301.29F).flip(-345.44F).roll(64)));
+        b.add(k(s2 + 480, CURVE, m().ang(260.27F).dist(-0.2F).up(2.43F).yaw(327.06F).flip(-345.86F).roll(64)));
+        b.add(k(s2 + 490, CURVE, m().ang(254.28F).dist(-0.21F).up(2.44F).yaw(354.26F).flip(-346.29F).roll(64)));
+        b.add(k(s2 + 500, CURVE, m().ang(250.21F).dist(-0.28F).up(2.44F).yaw(384.12F).flip(-346.71F).roll(64)));
+        b.add(k(s2 + 510, CURVE, m().ang(250.28F).dist(-0.4F).up(2.43F).yaw(418.38F).flip(-347.14F).roll(64)));
+        b.add(k(s2 + 520, CURVE, m().ang(257.18F).dist(-0.51F).up(2.41F).yaw(459.2F).flip(-347.56F).roll(64)));
+        b.add(k(s2 + 530, CURVE, m().ang(269.87F).dist(-0.55F).up(2.38F).yaw(505.08F).flip(-347.97F).roll(64)));
+        b.add(k(s3 - 530, CURVE, m().ang(281.75F).dist(-0.47F).up(2.34F).yaw(548.92F).flip(-348.37F).roll(64)));
+        b.add(k(s3 - 520, CURVE, m().ang(287.86F).dist(-0.32F).up(2.29F).yaw(585.32F).flip(-348.75F).roll(64)));
+        b.add(k(s3 - 510, CURVE, m().ang(288.82F).dist(-0.17F).up(2.23F).yaw(614.48F).flip(-349.11F).roll(64)));
+        b.add(k(s3 - 500, CURVE, m().ang(287.45F).dist(-0.04F).up(2.16F).yaw(638.85F).flip(-349.45F).roll(64)));
+        b.add(k(s3 - 490, CURVE, m().ang(285.34F).dist(0.05F).up(2.08F).yaw(659.73F).flip(-349.76F).roll(64)));
+        b.add(k(s3 - 480, CURVE, m().ang(283.26F).dist(0.11F).up(1.99F).yaw(677.65F).flip(-350.04F).roll(64)));
+        b.add(k(s3 - 460, CURVE, m().ang(280.67F).dist(0.17F).up(1.79F).yaw(705.64F).flip(-350.5F).roll(56.51F)));
+        b.add(k(s3 - 440, CURVE, m().ang(279.6F).dist(0.2F).up(1.54F).yaw(722.74F).flip(-350.82F).roll(37.56F)));
+        b.add(k(s3 - 420, CURVE, m().ang(280.43F).dist(0.22F).up(1.25F).yaw(731.21F).flip(-350.98F).roll(16)));
+        b.add(k(s3 - 400, CURVE, m().ang(282.01F).dist(0.24F).up(0.93F).yaw(734.01F).flip(-354.79F).roll(1.93F)));
+        b.add(k(s3 - 380, CURVE, m().ang(283.04F).dist(0.24F).up(0.56F).yaw(735.04F).flip(-358.88F).roll(0)));
+        b.add(k(s3 - 360, CURVE, m().ang(280.99F).dist(0.14F).up(0.15F).yaw(732.99F).flip(-359.96F).roll(0)));
+        b.add(k(s3 - 340, CURVE, m().ang(278.85F).dist(0.2F).up(-0.06F).yaw(730.85F).flip(-360).roll(0)));
+        b.add(k(s3 - 320, CURVE, m().ang(278.85F).dist(0.2F).up(-0.08F).yaw(730.85F).flip(-360).roll(0)));
+        // 收势：原地小跳转身 180° 背对它
+        b.add(k(s3 + 320, CURVE, m().ang(278.83F).dist(0.2F).up(-0.06F).yaw(730.83F).flip(-360).roll(0)));
+        b.add(k(s3 + 340, CURVE, m().ang(278.25F).dist(0.28F).up(0.01F).yaw(730.25F).flip(-360).roll(0)));
+        b.add(k(s3 + 360, CURVE, m().ang(278.08F).dist(0.31F).up(-0.04F).yaw(730.08F).flip(-360).roll(0)));
+        b.add(k(s3 + 380, CURVE, m().ang(277.81F).dist(0.35F).up(0.09F).yaw(729.81F).flip(-360).roll(0)));
+        b.add(k(s3 + 400, CURVE, m().ang(277.9F).dist(0.35F).up(0.15F).yaw(728.99F).flip(-360).roll(0)));
+        b.add(k(s3 + 420, CURVE, m().ang(278.09F).dist(0.37F).up(0.18F).yaw(711.46F).flip(-360).roll(0)));
+        b.add(k(s3 + 440, CURVE, m().ang(278.25F).dist(0.4F).up(0.2F).yaw(667.86F).flip(-360).roll(0)));
+        b.add(k(s3 + 460, CURVE, m().ang(278.38F).dist(0.42F).up(0.2F).yaw(612.77F).flip(-360).roll(0)));
+        b.add(k(s3 + 480, CURVE, m().ang(278.49F).dist(0.44F).up(0.18F).yaw(569.12F).flip(-360).roll(0)));
+        b.add(k(s3 + 500, CURVE, m().ang(278.57F).dist(0.45F).up(0.15F).yaw(551.49F).flip(-360).roll(0)));
+        b.add(k(s3 + 520, CURVE, m().ang(278.65F).dist(0.46F).up(0.09F).yaw(550.65F).flip(-360).roll(0)));
+        b.add(k(s3 + 540, CURVE, m().ang(278.68F).dist(0.45F).up(0.06F).yaw(550.68F).flip(-360).roll(0)));
+        return b;
+    }
+
     /**
      * 奴仆前三套的脚下：都不到 0.25 格，只压重心。出刀前往后让一点，刺入送过去，拧刀时稍往回松，推开 / 蹬开那一下
      * 往后坐过头 0.05 格再站回站位
@@ -1480,6 +1693,7 @@ public final class MercyPose {
             case LICH_E -> bodyE2(MercyBeats.lich(v));
             case LICH_F -> bodyF2(MercyBeats.lich(v));
             case LICH_G -> bodyG2(MercyBeats.lich(v));
+            case LICH_H -> bodyH2(MercyBeats.lich(v));
             case THRALL_1 -> bodyThrall(v.stabMs(0), 0.2F, 1440);
             case THRALL_2 -> bodyThrall(v.stabMs(0), 0.18F, 1500);
             case THRALL_3 -> bodyThrall(v.stabMs(0), 0.12F, 1530);
@@ -1516,6 +1730,19 @@ public final class MercyPose {
             float a1 = lastK == 2 ? -360.0F : 0.0F;
             body.add(k(t0 + 180, OUT, m().ang(a).dist(lastK == 3 ? 1.0F : 1.1F).up(0.85F).yaw(-35).flip(flip0 - 170)));
             body.add(k(t0 + 460, IN, m().ang(a1).dist(push).up(0).yaw(0).flip(flip0 - 360)));
+        } else if (v == MercyVariant.LICH_H) {
+            // 一掠后在它左手边、二掠后在它背后（后空翻过，翻是 −360）、三掠后在它右前方（绕过 280°、转过 730°，翻也是 −360）：
+            // 都被它一甩，往后空翻一圈落回站位外。背后那一下从它左手边绕回来，不从它身子里穿过去
+            if (lastK == 1) {
+                body.add(k(t0 + 180, OUT, m().ang(45).dist(0.9F).up(0.85F).yaw(10).flip(-170)));
+                body.add(k(t0 + 460, IN, m().ang(0).dist(push).up(0).yaw(0).flip(-360)));
+            } else if (lastK == 2) {
+                body.add(k(t0 + 200, OUT, m().ang(95).dist(0.8F).up(1.0F).yaw(0).flip(-530)));
+                body.add(k(t0 + 480, IN, m().ang(0).dist(push).up(0).yaw(0).flip(-720)));
+            } else {
+                body.add(k(t0 + 180, OUT, m().ang(320).dist(0.9F).up(0.85F).yaw(725).flip(-530)));
+                body.add(k(t0 + 460, IN, m().ang(360).dist(push).up(0).yaw(720).flip(-720)));
+            }
         } else if (v == MercyVariant.LICH_D && lastK == 3) {
             // 从它背后往镜头另一侧甩回去（ang 走 180 → 360），走镜头这一侧会擦着镜头飞过去
             body.add(k(t0 + 200, OUT, m().ang(265).dist(0.6F).up(1.1F).yaw(-170).flip(150)));
@@ -1543,6 +1770,7 @@ public final class MercyPose {
             case LICH_E -> ANCHOR_B;
             case LICH_F -> ANCHOR_F1;
             case LICH_G -> ANCHOR_G1;
+            case LICH_H -> ANCHOR_H1;
             case THRALL_1, THRALL_4 -> ANCHOR_T1;
             case THRALL_2 -> ANCHOR_T2;
             case THRALL_3 -> ANCHOR_T3;
@@ -1716,6 +1944,13 @@ public final class MercyPose {
             tr.altFrom = lb.stab(0) + 300;
             tr.altTo = lb.stab(1) + 300;
             tr.tail = ANCHOR_G3;
+        }
+        if (v == MercyVariant.LICH_H) {
+            MercyBeats.Lich lb = MercyBeats.lich(v);
+            tr.alt = ANCHOR_H2;
+            tr.altFrom = lb.stab(0) + 400;
+            tr.altTo = lb.stab(1) + 300;
+            tr.tail = ANCHOR_H3;
         }
         if (v == MercyVariant.LICH_E) {
             tr.alt = ANCHOR_E;

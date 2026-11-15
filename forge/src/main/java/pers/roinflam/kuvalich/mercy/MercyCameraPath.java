@@ -64,6 +64,7 @@ public final class MercyCameraPath {
         PATHS[MercyVariant.LICH_E.ordinal()] = lichE();
         PATHS[MercyVariant.LICH_F.ordinal()] = lichF();
         PATHS[MercyVariant.LICH_G.ordinal()] = lichG();
+        PATHS[MercyVariant.LICH_H.ordinal()] = lichH();
     }
 
     private MercyCameraPath() {
@@ -305,6 +306,43 @@ public final class MercyCameraPath {
                         k(s3 + 250, 0.34F, -11.0F, 0.25F, 1.5F, 0.4F),
                         k(s3 + 1000, 0.12F, -9.0F, 0.3F, 0.0F, 0.4F),
                         k(end + 300, 0.0F, -8.0F, 0.3F, 0.0F, 0.4F))
+        };
+    }
+
+    /**
+     * 三掠，本套机位在它左前方、比注视点高。一掠贴地平飞时边推近边升高，第一刀刺入再往里送一点；之后往它侧面绕、
+     * 升到最高，从上往下看他扑上后背、后空翻落地，第二刀扎进折下去的后背时猛推、画面歪 1.5°；腾空越顶那一段边退边降、
+     * 往回绕，第三刀刺入猛推、往反方向歪；它僵站、仰面倒下时绕到它正面、压低、拉开。三段之间只在刺入时猛推
+     */
+    private static Seg[] lichH() {
+        MercyBeats.Lich b = MercyBeats.lich(MercyVariant.LICH_H);
+        int in = b.cutIn;
+        int s1 = b.stab(0);
+        int s2 = b.stab(1);
+        int s3 = b.stab(2);
+        int end = b.closeup;
+        return new Seg[]{
+                seg(in, false,
+                        k(in, 0.0F, 0.0F, 0.0F, 0.0F, 0.45F),
+                        k(s1 - 260, 0.03F, 0.0F, 0.45F, 0.0F, 0.45F),
+                        k(s1 - 100, 0.10F, -1.0F, 0.8F, 0.0F, 0.45F),
+                        k(s1 - 40, 0.11F, -2.0F, 0.9F, 0.0F, 0.45F),
+                        k(s1 + 60, 0.17F, -5.0F, 1.1F, 0.0F, 0.45F),
+                        k(s1 + 400, 0.15F, -16.0F, 1.45F, 0.0F, 0.45F),
+                        k(s2 - 140, 0.18F, -30.0F, 1.9F, 0.0F, 0.45F),
+                        k(s2 + 200, 0.185F, -30.5F, 1.92F, 0.0F, 0.45F)),
+                seg(s2, true,
+                        k(s2, 0.27F, -30.0F, 1.92F, -1.5F, 0.45F),
+                        k(s2 + 220, 0.25F, -29.5F, 1.94F, -1.5F, 0.45F),
+                        k(s2 + 560, 0.19F, -22.0F, 1.7F, -0.3F, 0.45F),
+                        k(s3 - 150, 0.13F, -10.0F, 1.3F, 0.0F, 0.45F),
+                        k(s3 + 200, 0.125F, -9.0F, 1.25F, 0.0F, 0.45F)),
+                seg(s3, true,
+                        k(s3, 0.23F, -10.0F, 1.3F, 1.5F, 0.45F),
+                        k(s3 + 250, 0.21F, -9.5F, 1.25F, 1.5F, 0.45F),
+                        k(s3 + 600, 0.10F, -2.0F, 0.75F, 0.0F, 0.45F),
+                        k(s3 + 950, -0.04F, 12.0F, 0.17F, 0.0F, 0.45F),
+                        k(end + 300, -0.10F, 18.0F, -0.26F, 0.0F, 0.45F))
         };
     }
 

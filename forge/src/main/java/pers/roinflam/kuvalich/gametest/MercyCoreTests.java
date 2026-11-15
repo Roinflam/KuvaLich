@@ -1477,6 +1477,43 @@ public final class MercyCoreTests {
         h.succeed();
     }
 
+    /**
+     * 三掠一掠从它左手边掠过，三掠腾空越顶要离地 2.4 格：空地上能选；头顶只有三格高、左手边贴墙都不选。
+     * 正面直刺哪里都能演
+     */
+    @GameTest(template = "empty")
+    public static void lichHNeedsRoomOnItsLeftAndOverhead(GameTestHelper h) {
+        clearAround(h);
+        BlockPos c = KuvaTestKit.center(h);
+        ServerPlayer p = KuvaTestKit.player(h);
+        ServerLevel level = h.getLevel();
+        Vec3 pl = h.absoluteVec(new Vec3(c.getX() + 0.5D, 0.0D, c.getZ() + 0.5D));
+        // 目标朝 +X 站着，左手边是 −Z
+        Vec3 f = new Vec3(1.0D, 0.0D, 0.0D);
+        MercyVariant v = MercyVariant.LICH_H;
+        h.assertTrue(MercyServer.fits(level, p, pl, f, v), "空地上应当能选三掠");
+        for (int x = c.getX() - 5; x <= c.getX() + 5; x++) {
+            for (int z = c.getZ() - 5; z <= c.getZ() + 5; z++) {
+                h.setBlock(new BlockPos(x, 3, z), Blocks.STONE);
+            }
+        }
+        h.assertFalse(MercyServer.fits(level, p, pl, f, v), "头顶三格时不该选三掠");
+        h.assertTrue(MercyServer.fits(level, p, pl, f, MercyVariant.LICH_A), "头顶三格时正面直刺照样能选");
+        for (int x = c.getX() - 5; x <= c.getX() + 5; x++) {
+            for (int z = c.getZ() - 5; z <= c.getZ() + 5; z++) {
+                h.setBlock(new BlockPos(x, 3, z), Blocks.AIR);
+            }
+        }
+        h.assertTrue(MercyServer.fits(level, p, pl, f, v), "拆掉顶以后应当又能选三掠");
+        for (int x = c.getX() - 5; x <= c.getX() + 5; x++) {
+            for (int y = 0; y <= 4; y++) {
+                h.setBlock(new BlockPos(x, y, c.getZ() - 2), Blocks.STONE);
+            }
+        }
+        h.assertFalse(MercyServer.fits(level, p, pl, f, v), "左手边贴墙时不该选三掠");
+        h.succeed();
+    }
+
     private static void assertHeight(GameTestHelper h, AbstractKuva e, float expected) {
         h.assertTrue(Math.abs(e.getBbHeight() - expected) < 0.01F,
                 e.getType().getDescriptionId() + " 倒地碰撞箱高应当是 " + expected + "，实际 " + e.getBbHeight());

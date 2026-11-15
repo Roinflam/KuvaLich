@@ -262,6 +262,18 @@ public final class MercyTests {
                         name + " 长 " + len + " ms，刀间隔是 " + gaps[v][k - 1] + " ms");
             }
         }
+        // 三掠「长—长」，第二段稍短；开场一掠那一段玄骸也有自己的 grab
+        MercyBeats.Lich bh = MercyBeats.lich(MercyVariant.LICH_H);
+        int[] hGaps = {bh.stab(1) - bh.stab(0), bh.stab(2) - bh.stab(1)};
+        h.assertTrue(hGaps[0] > hGaps[1] + 60 && hGaps[1] > 1000, "三掠应当两段都长、第二段稍短：" + hGaps[0] + " / " + hGaps[1]);
+        int hg = Math.round(anims.getAsJsonObject("mercy.lich.h.grab").get("animation_length").getAsFloat() * 1000.0F);
+        h.assertTrue(Math.abs(hg - bh.stab(0)) <= 1, "mercy.lich.h.grab 长 " + hg + " ms，第一刀在 " + bh.stab(0) + " ms");
+        for (int k = 1; k <= 2; k++) {
+            String name = "mercy.lich.h.hit" + k;
+            h.assertTrue(anims.has(name), "缺片段 " + name);
+            int len = Math.round(anims.getAsJsonObject(name).get("animation_length").getAsFloat() * 1000.0F);
+            h.assertTrue(Math.abs(len - hGaps[k - 1]) <= 1, name + " 长 " + len + " ms，刀间隔是 " + hGaps[k - 1] + " ms");
+        }
         h.succeed();
     }
 

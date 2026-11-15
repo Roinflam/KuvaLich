@@ -118,9 +118,10 @@ public final class MercyAnimSelector {
     private static final RawAnimation L_BREAKFREE_C0 = hold(LICH_C_BREAKFREE_RAISED);
 
     private static final MercyVariant[] LICH_VARIANTS = {MercyVariant.LICH_A, MercyVariant.LICH_B, MercyVariant.LICH_C,
-            MercyVariant.LICH_D, MercyVariant.LICH_E, MercyVariant.LICH_F, MercyVariant.LICH_G};
+            MercyVariant.LICH_D, MercyVariant.LICH_E, MercyVariant.LICH_F, MercyVariant.LICH_G,
+            MercyVariant.LICH_H};
     /** 起手有自己一段被抓的套路（片段 {@code mercy.lich.<套路>.grab}，挣脱接 {@code <套路>.breakfree0}）；贴身上挑另算 */
-    private static final Set<MercyVariant> OWN_GRAB = EnumSet.of(MercyVariant.LICH_F, MercyVariant.LICH_G);
+    private static final Set<MercyVariant> OWN_GRAB = EnumSet.of(MercyVariant.LICH_F, MercyVariant.LICH_G, MercyVariant.LICH_H);
     private static final MercyVariant[] THRALL_VARIANTS = {MercyVariant.THRALL_1, MercyVariant.THRALL_2,
             MercyVariant.THRALL_3, MercyVariant.THRALL_4, MercyVariant.THRALL_5};
     private static final int LICH_N = LICH_VARIANTS.length;
@@ -282,7 +283,7 @@ public final class MercyAnimSelector {
             int i = variantId - MercyVariant.THRALL_1.id;
             return T_EXECUTE[i >= 0 && i < THRALL_N ? i : 0];
         }
-        int v = variantId >= 0 && variantId < LICH_N ? variantId : 0;
+        int v = lichIndex(variantId);
         MercyBeats.Lich b = MercyBeats.lich(LICH_VARIANTS[v]);
         int stabs = stabsOf(bits);
         int prefix = Math.min((bits >> 2) & 3, stabs);
@@ -317,6 +318,16 @@ public final class MercyAnimSelector {
         return grab(v);
     }
 
+    /** 计划位里的编号在上面那张表里排第几；编号不一定连号，不能直接当下标。不认识的按正面直刺 */
+    private static int lichIndex(int variantId) {
+        for (int i = 0; i < LICH_N; i++) {
+            if (LICH_VARIANTS[i].id == variantId) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
     /** 计划位里的刀数（0 按 3 读，和 {@link MercyPlan#decode} 一致） */
     private static int stabsOf(int bits) {
         int stabs = bits & 3;
@@ -338,7 +349,7 @@ public final class MercyAnimSelector {
             return L_RISE_DOWN;
         }
         int variantId = (bits >> 4) & 0xF;
-        return L_RISE_AT[variantId >= 0 && variantId < LICH_N ? variantId : 0][stabs - 1];
+        return L_RISE_AT[lichIndex(variantId)][stabs - 1];
     }
 
     /** 切进这一段时控制器淡多少 tick：只有从倒地循环站起来那一段淡，别的切片段不插值（首帧对得上） */
