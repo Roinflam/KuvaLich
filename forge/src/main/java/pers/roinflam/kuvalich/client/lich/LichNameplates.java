@@ -200,7 +200,9 @@ public final class LichNameplates {
         }
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || mc.options.hideGui || MercyClient.isCinematic() || entity.isInvisibleTo(player)) {
+        // 奴仆处决是第一人称，飞跃下刺时镜头就在它头顶，名牌会糊满整屏
+        if (player == null || mc.options.hideGui || MercyClient.isCinematic()
+                || MercyClient.isLocalTarget(entity.getId()) || entity.isInvisibleTo(player)) {
             return false;
         }
         float fade = LichRenderState.alpha(entity, partialTick);

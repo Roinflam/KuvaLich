@@ -364,6 +364,12 @@ public final class MercyClient {
         return e.target() instanceof AbstractKuva k && k.getMercyChoice() == AbstractKuva.CHOICE_WAITING ? e.targetId : -1;
     }
 
+    /** 这个实体是本地玩家正在处决（还没交还）的目标 */
+    public static boolean isLocalTarget(int entityId) {
+        Exec e = localExec;
+        return e != null && e.targetId == entityId && e.elapsed() < e.handbackMs;
+    }
+
     /** 本地玩家是一场玄骸处决的处决者、演出还没交还 */
     public static boolean isCinematic() {
         Exec e = localExec;
