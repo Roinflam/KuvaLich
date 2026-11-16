@@ -88,12 +88,11 @@ public class NetworkRegistryHandler {
      *         KuvaMasterEntity 的 ALLY_OF；LichStatePacket 末尾的幻纹款式（档案包里嵌着的那份跟着变），
      *         LichArchivePacket 末尾的盟友名册、名册上限、待领取件数，lastFate 多一个值 3（感化）；AllyCommandPacket；
      *         WarframeModuleSyncPacket 第 9 件（幻纹格）；EphemeraStatePacket；KuvaMasterEntity 的 LICH_EPHEMERA；EphemeraTunePacket
-     * "18-dev"：开发中的版本，发布时改回正式的 18。开发中途的 jar 和 17 的 jar 握手照过，但服务端会抽到新的套路编号
-     *         5～7（计划位格式没变），17 的客户端不认识，感化收尾服务端也不再把人拉回站位，演出和服务端的时间表对不上，
-     *         所以用单独的串让握手直接拦下。
-     *         这一段新增：玄骸套路 LICH_F / G / H（计划位编号 5～7）、感化收尾的服务端离场 / 交还 tick；封包和同步数据没改
+     * "18"：玄骸处决加了 LICH_F / G / H 三套（计划位编号 5～7，计划位格式没变），17 的客户端不认识这几个编号；
+     *         感化收尾服务端不再把人拉回站位，离场和交还的 tick 也变了，17 的客户端演出和服务端的时间表对不上。
+     *         封包字节格式和实体同步数据都没改，握手管不到这两处，所以提版本
      */
-    private static final String PROTOCOL_VERSION = "18-dev";
+    private static final String PROTOCOL_VERSION = "18";
 
     /** 消息ID计数器 / Message ID counter */
     private static int messageId = 0;
