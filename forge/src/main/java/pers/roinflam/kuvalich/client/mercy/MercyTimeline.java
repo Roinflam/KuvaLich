@@ -300,7 +300,9 @@ public final class MercyTimeline {
         // 400：硬切进机位、刀模伸出、抽刀声和手前一道短光
         MercyBeats.Lich b = lich(p);
         tl.at(b.cutIn, x -> {
-            world(KuvaLichSounds.MERCY_DRAW.get(), x.handPos(), 1.0F, 1.0F);
+            // 通讯低语（素材峰值都在 0.57 左右，音量 0.8）随时可能和它撞上：抽刀声 1.0 时录到满幅，0.8 仍有 -0.1 dBFS。
+            // 0.55 时两样峰值直接相加约 -1.3 dBFS
+            world(KuvaLichSounds.MERCY_DRAW.get(), x.handPos(), 0.55F, 1.0F);
             drawFlare(x);
         });
 
