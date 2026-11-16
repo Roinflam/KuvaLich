@@ -354,6 +354,18 @@ public final class MercyCameraPath {
         return v == MercyVariant.LICH_C ? LOOK_DROP_C : 0.0F;
     }
 
+    /** 折翼完整档注视点往镜头那一侧横挪多少（格，按目标身高缩放） */
+    public static final float LOOK_SIDE_F = 0.6F;
+
+    /**
+     * 完整档注视点往镜头那一侧横挪多少。折翼第二刀前绕到它正面，镜头、处决者站位、注视点几乎排成一条线，
+     * 视线擦过处决者的头（离头心 0.13 格），整条轨迹过不了遮挡检测、退回固定机位；挪 0.6 格后每个检查点离头都有 0.12 格以上。
+     * 减弱档不绕、静态档不走轨迹，都放得下，不挪
+     */
+    public static float lookSide(MercyVariant v) {
+        return v == MercyVariant.LICH_F ? LOOK_SIDE_F : 0.0F;
+    }
+
     /**
      * 减弱档整段固定的绕角，不随时间变。贴身上挑的注视点挪低了，不绕时视线离处决者头心 0.39 格（头按 0.42 算），
      * 遮挡检测整段不过、退回固定机位，推拉也跟着没了；固定绕到轨迹起点的 -20° 就放得下

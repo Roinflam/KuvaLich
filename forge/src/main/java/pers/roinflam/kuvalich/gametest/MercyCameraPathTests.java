@@ -271,7 +271,9 @@ public final class MercyCameraPathTests {
         h.assertTrue(lift[r] > second[r] + 0.3F, "提起来时应当升到最高：" + lift[r]);
         h.assertTrue(cock[o] < lift[o] - 10.0F && cock[r] < lift[r] - 0.5F, "第三刀前应当绕回来压低：" + cock[o] + " / " + cock[r]);
         h.assertTrue(third[d] - cock[d] > 0.05F, "第三刀刺入应当猛推：" + third[d]);
-        h.assertTrue(MercyCameraPath.lookDrop(F) == 0.0F, "折翼不挪注视点");
+        h.assertTrue(MercyCameraPath.lookDrop(F) == 0.0F, "折翼不往下挪注视点");
+        h.assertTrue(MercyCameraPath.lookSide(F) > 0.0F && MercyCameraPath.lookSide(H) == 0.0F
+                && MercyCameraPath.lookSide(C) == 0.0F, "只有折翼完整档横挪注视点");
         h.succeed();
     }
 

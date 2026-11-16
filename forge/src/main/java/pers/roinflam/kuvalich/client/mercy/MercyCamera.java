@@ -570,6 +570,11 @@ public final class MercyCamera {
     private static ShotPose moved(MercyClient.Exec e, ShotPose base, float[] m) {
         Vec3 look = base.look().add(0.0D, -MercyCameraPath.lookDrop(e.variant) * e.shots.unit, 0.0D);
         Vec3 pos = base.pos();
+        float shift = MercyCameraPath.lookSide(e.variant);
+        if (shift != 0.0F && e.shots.motion == MercyCameraPath.Motion.FULL) {
+            double side = pos.subtract(look).dot(e.s) >= 0.0D ? 1.0D : -1.0D;
+            look = look.add(e.s.scale(side * shift * e.shots.unit));
+        }
         if (m[MercyCameraPath.ORBIT] != 0.0F) {
             int side = pos.subtract(look).dot(e.s) >= 0.0D ? 1 : -1;
             pos = swing(e, pos, look, side, -m[MercyCameraPath.ORBIT]);
