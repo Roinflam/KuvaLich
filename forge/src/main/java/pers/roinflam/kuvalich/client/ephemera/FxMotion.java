@@ -9,6 +9,11 @@ public final class FxMotion {
     public static final double NEVER = -1.0E9D;
     /** 隔这么久没画（或体型变了）就当新的一份，各款把自己的拖尾、粒子清掉重来 */
     private static final long GAP_MS = 250L;
+    /** 一帧挪了这么多格就当瞬移；鞘翅加烟花一 tick 也就 3 格出头 */
+    private static final double TELEPORT = 8.0D;
+    /** 原地跳一下约 0.6 秒、1.25 格；腾空超过这么久或离起跳的地面这么高，就不算「跳一下」了 */
+    private static final float AIR_FOLLOW_S = 1.0F;
+    private static final float AIR_FOLLOW_H = 2.5F;
 
     /** 这份状态建起来以后过了几秒 */
     public double t;
@@ -20,9 +25,12 @@ public final class FxMotion {
     public int color;
 
     public double x, y, z;
-    /** 脚下地面的高度（腾空时往下找，找不到就是脚底） */
+    /** 贴地层的基准高度：着地是脚底，跳一下时留在起跳那层地面，飞行、泡水、爬梯、骑乘时跟着脚走 */
     public double groundY;
+    /** 脚离贴地层基准多高；挂到脚下时是 0 */
     public float heightAboveGround;
+    /** 贴地层挂到脚下的程度 0~1：0 = 留在地上，1 = 跟着脚走（飞行、水里、爬梯、骑乘） */
+    public float attach;
     /** 身高、身宽、整体缩放（1 = 原版玩家） */
     public float H, W, sc;
     public boolean sneak;
@@ -52,6 +60,10 @@ public final class FxMotion {
     private double airSince = NEVER;
     private double lastFast = NEVER;
     private double stopArmed = NEVER;
+    private double lastX, lastZ, lastFeet = Double.NaN;
+    private double takeoff = Double.NaN;
+    private double groundSmooth, groundBase;
+    private float airTime;
 
     public FxMotion(long nowMs) {
         this.bornMs = nowMs;
@@ -87,16 +99,27 @@ public final class FxMotion {
         x = h.x();
         z = h.z();
         y = h.y() + inst.look.yOffset();
-        double g = h.groundY();
-        groundY = (Double.isNaN(g) ? h.y() : Math.min(g, h.y())) + inst.look.yOffset();
-        heightAboveGround = (float) Math.max(0.0D, y - groundY);
+        double vy0 = h.vehicleY();
+        double feet = h.riding() && !Double.isNaN(vy0) ? vy0 : h.y();
+        boolean ground = h.onGround();
+        if (!gap && !Double.isNaN(lastFeet) && Math.abs(feet - lastFeet) + Math.abs(x - lastX) + Math.abs(z - lastZ) > TELEPORT) {
+            // 传送、换维度：当新的一份，免得拖尾、弹簧从老地方一路扫过来
+            gap = true;
+            fresh = true;
+            dt = 1.0F / 60.0F;
+        }
+        lastX = x;
+        lastZ = z;
+        lastFeet = feet;
+        updateGround(h, feet, ground, gap);
+        groundY = groundBase + inst.look.yOffset();
+        heightAboveGround = (float) Math.max(0.0D, feet - groundBase);
         float yaw = h.bodyYaw() * ((float) Math.PI / 180.0F);
         fwdX = -(float) Math.sin(yaw);
         fwdZ = (float) Math.cos(yaw);
         rightX = -fwdZ;
         rightZ = fwdX;
 
-        boolean ground = h.onGround();
         float rawX = (float) h.vx() * 20.0F, rawZ = (float) h.vz() * 20.0F, rawY = (float) h.vy() * 20.0F;
         if (gap) {
             velX = rawX;
@@ -183,7 +206,7 @@ public final class FxMotion {
         EphemeraTier tier = d.tier;
         calm = tier != EphemeraTier.FULL_OPEN;
         if (calm) {
-            act = EphemeraFx.clamp(Math.max(Math.max(speed / 5.6F, onGround ? 0.0F : 1.0F),
+            act = EphemeraFx.clamp(Math.max(Math.max(speed / 5.6F, onGround ? 0.0F : 1.0F - attach),
                     Math.max(Math.max(EphemeraFx.env0(since(tLand), 0, 0.1F, 0.5F), EphemeraFx.env0(since(tSwing), 0, 0.3F, 0.45F)),
                             EphemeraFx.env0(since(tHurt), 0, 0.5F, 0.45F))), 0, 1);
             idle = tier.idle;
@@ -202,6 +225,48 @@ public final class FxMotion {
     }
 
     private boolean wasSprint;
+
+    /**
+     * 贴地层的基准。跳一下、下个台阶照旧留在地上：腾空时取起跳那层地面，脚落到它下面就跟着脚，
+     * 往下找到更高的地面（跳上方块）就抬上去。创造飞行、泡在水里、爬梯、骑乘、趴着、腾空太久或离地太高时整个挂到脚下，
+     * 两种之间按 {@link #attach} 渐变，基准本身的跳变也抹平，不许一帧跳过去。
+     */
+    private void updateGround(EphemeraHost h, double feet, boolean ground, boolean gap) {
+        EphemeraHost.Pose pose = h.pose();
+        boolean lying = pose == EphemeraHost.Pose.SWIM || pose == EphemeraHost.Pose.FLY || pose == EphemeraHost.Pose.SLEEP;
+        double target;
+        if (ground || h.riding()) {
+            target = feet;
+            takeoff = feet;
+            airTime = 0.0F;
+        } else {
+            double found = h.groundY();
+            if (gap || Double.isNaN(takeoff)) {
+                takeoff = Double.isNaN(found) ? feet : Math.min(found, feet);
+                airTime = 0.0F;
+            }
+            airTime += dt;
+            target = Math.min(takeoff, feet);
+            if (!Double.isNaN(found) && found > target && found <= feet) {
+                target = found;
+            }
+        }
+        boolean follow = h.riding() || h.flying() || h.inFluid() || h.climbing() || lying
+                || (!ground && (airTime > AIR_FOLLOW_S || feet - target > AIR_FOLLOW_H * Math.max(sc, 0.25F)));
+        if (gap) {
+            groundSmooth = target;
+            attach = follow ? 1.0F : 0.0F;
+        } else {
+            if (target > groundSmooth && ground) {
+                groundSmooth = target;
+            } else {
+                groundSmooth += (target - groundSmooth) * (1.0F - (float) Math.exp(-dt * 25.0F));
+            }
+            attach += ((follow ? 1.0F : 0.0F) - attach) * (1.0F - (float) Math.exp(-dt * 8.0F));
+        }
+        groundSmooth = Math.min(groundSmooth, feet);
+        groundBase = groundSmooth + (feet - groundSmooth) * attach;
+    }
 
     private boolean sprintEdge() {
         return !wasSprint;

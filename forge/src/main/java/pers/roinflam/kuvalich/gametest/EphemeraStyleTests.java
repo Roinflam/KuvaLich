@@ -12,6 +12,7 @@ import pers.roinflam.kuvalich.client.ephemera.EphemeraStaging;
 import pers.roinflam.kuvalich.client.ephemera.EphemeraStyle;
 import pers.roinflam.kuvalich.client.ephemera.EphemeraStyles;
 import pers.roinflam.kuvalich.client.ephemera.EphemeraTier;
+import pers.roinflam.kuvalich.client.ephemera.FxMotion;
 import pers.roinflam.kuvalich.client.ephemera.CoilStyle;
 import pers.roinflam.kuvalich.client.ephemera.OrbitStyle;
 import pers.roinflam.kuvalich.client.ephemera.PlumeStyle;
@@ -40,7 +41,7 @@ public final class EphemeraStyleTests {
     }
 
     /** 照原型的自动演示排的动作：0 站、2 走、4.5 疾跑、6.8 跳、8.3 / 8.75 挥砍、9.7 急停、11.2 受击、12.4 潜行 */
-    static final class ScriptHost implements EphemeraHost {
+    static class ScriptHost implements EphemeraHost {
         final float w, h;
         double x, y = 64, z, px, py = 64, pz;
         boolean ground = true;
@@ -320,6 +321,102 @@ public final class EphemeraStyleTests {
             float ratio = two.firstQuadWidth / one.firstQuadWidth;
             h.assertTrue(one.firstQuadWidth > 0 && Math.abs(ratio - 2) < 0.05F, type + " 两倍包围盒应两倍大：" + ratio);
         }
+        h.succeed();
+    }
+
+    /** 贴地层的基准：跳一下、跳过沟留在起跳那层地面上；创造飞行、泡水时跟着脚走；中间不许一帧跳过去；瞬移当新的一份 */
+    @GameTest(template = "empty", batch = BATCH, timeoutTicks = 200)
+    public static void groundLayerFollowsFeetWhenAirborne(GameTestHelper h) {
+        final class Host extends ScriptHost {
+            boolean fly, wet;
+            double found = 64;
+
+            Host() {
+                super(0.6F, 1.8F);
+            }
+
+            @Override
+            public double groundY() {
+                return ground ? y : found;
+            }
+
+            @Override
+            public boolean flying() {
+                return fly;
+            }
+
+            @Override
+            public boolean inFluid() {
+                return wet;
+            }
+        }
+        Host host = new Host();
+        EphemeraDraw d = new EphemeraDraw(new EphemeraStaging());
+        d.tier = EphemeraTier.CONVERGED;
+        d.emitScale = 1;
+        EphemeraLook look = EphemeraLook.ofDefault("surge", "fire");
+        EphemeraInstance inst = new EphemeraInstance(1, look, EphemeraStyles.of("surge"));
+        FxMotion m = new FxMotion(0L);
+        double[] last = {Double.NaN};
+        int[] frame = {0};
+        Runnable step = () -> {
+            frame[0]++;
+            d.timeMs = Math.round(frame[0] * 1000 / FPS);
+            m.update(inst, host, d);
+            if (!Double.isNaN(last[0]) && !m.fresh) {
+                h.assertTrue(Math.abs(m.groundY - last[0]) < 0.6, "贴地层一帧跳了 " + (m.groundY - last[0]) + " 格，第 " + frame[0] + " 帧");
+            }
+            last[0] = m.groundY;
+        };
+        for (int i = 0; i < 10; i++) {
+            step.run();
+        }
+        h.assertTrue(Math.abs(m.groundY - 64) < 1.0E-6, "站着时贴地层应在脚底");
+        // 跳过一条两格深的沟：脚底下找到的地面比起跳处低
+        host.ground = false;
+        host.found = 62;
+        for (int i = 0; i < 16; i++) {
+            float tt = i / FPS;
+            host.y = 64 + 8.4 * tt - 16 * tt * tt;
+            step.run();
+            h.assertTrue(Math.abs(m.groundY - 64) < 0.05, "跳过沟时贴地层应留在起跳处：" + m.groundY);
+        }
+        host.y = 64;
+        host.ground = true;
+        host.found = 64;
+        for (int i = 0; i < 10; i++) {
+            step.run();
+        }
+        // 创造飞行升到 6 格高悬停
+        host.ground = false;
+        host.fly = true;
+        for (int i = 0; i < 60; i++) {
+            host.y = Math.min(70, 64 + i * 0.2);
+            step.run();
+        }
+        h.assertTrue(Math.abs(m.groundY - host.y) < 0.02 && m.attach > 0.98F, "飞行时贴地层应挂到脚下：" + m.groundY + " / " + host.y);
+        // 落回地面再下水，浮在水面上，水底在 4 格以下
+        while (host.y > 64) {
+            host.y = Math.max(64, host.y - 0.25);
+            step.run();
+        }
+        host.fly = false;
+        host.ground = true;
+        for (int i = 0; i < 30; i++) {
+            step.run();
+        }
+        h.assertTrue(m.attach < 0.02F, "落地后贴地层应回到地上：" + m.attach);
+        host.ground = false;
+        host.wet = true;
+        host.found = Double.NaN;
+        for (int i = 0; i < 45; i++) {
+            host.y = 64 - Math.min(1, i * 0.05);
+            step.run();
+        }
+        h.assertTrue(Math.abs(m.groundY - host.y) < 0.02, "泡在水里时贴地层应挂到脚下：" + m.groundY + " / " + host.y);
+        host.x += 120;
+        step.run();
+        h.assertTrue(m.fresh, "瞬移以后应当新的一份");
         h.succeed();
     }
 }

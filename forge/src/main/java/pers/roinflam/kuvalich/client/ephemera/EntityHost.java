@@ -1,20 +1,23 @@
 package pers.roinflam.kuvalich.client.ephemera;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /** 把一个活物包成宿主；渲染器每帧复用同一个，绑到哪只就读哪只 */
 public final class EntityHost implements EphemeraHost {
 
+    /** 腾空时往下找地面的深度（格）。更深的坑由 FxMotion 当悬空处理，贴地层跟着脚走 */
+    private static final double GROUND_PROBE = 4.0D;
+
     private LivingEntity e;
     private float pt;
     private boolean self;
     private double x, y, z;
-    private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
     public EntityHost bind(LivingEntity entity, float partialTick, boolean isSelf) {
         this.e = entity;
@@ -87,9 +90,10 @@ public final class EntityHost implements EphemeraHost {
         };
     }
 
+    /** 骑乘时看坐骑着没着地：人坐在鞍上永远是腾空的 */
     @Override
     public boolean onGround() {
-        return e.onGround();
+        return e.isPassenger() ? e.getRootVehicle().onGround() : e.onGround();
     }
 
     @Override
@@ -97,25 +101,46 @@ public final class EntityHost implements EphemeraHost {
         if (e.onGround()) {
             return y;
         }
-        // 只看脚底那一列方块，6 格以内没有能站的就当悬空
-        Level level = e.level();
-        int top = Mth.floor(y);
-        for (int dy = 0; dy <= 6; dy++) {
-            cursor.set(Mth.floor(x), top - dy, Mth.floor(z));
-            VoxelShape shape = level.getBlockState(cursor).getCollisionShape(level, cursor);
-            if (!shape.isEmpty()) {
-                double h = cursor.getY() + shape.max(Direction.Axis.Y);
-                if (h <= y + 1.0E-3D) {
-                    return h;
-                }
+        // 按脚底整块包围盒往下找：站在两格之间、半砖、栅栏、地毯上，或者脚底这一列刚好是坑时，只看中心一列会判错
+        double hw = Math.max(0.05D, e.getBbWidth() * 0.5D - 1.0E-3D);
+        AABB probe = new AABB(x - hw, y - GROUND_PROBE, z - hw, x + hw, y + 0.01D, z + hw);
+        double best = Double.NaN;
+        for (VoxelShape shape : e.level().getBlockCollisions(e, probe)) {
+            double top = shape.max(Direction.Axis.Y);
+            if (top <= y + 1.0E-3D && (Double.isNaN(best) || top > best)) {
+                best = top;
             }
         }
-        return Double.NaN;
+        return best;
     }
 
     @Override
     public boolean riding() {
         return e.isPassenger();
+    }
+
+    @Override
+    public boolean flying() {
+        return e instanceof Player p && p.getAbilities().flying;
+    }
+
+    @Override
+    public boolean inFluid() {
+        return e.isInWater() || e.isInLava();
+    }
+
+    @Override
+    public boolean climbing() {
+        return e.onClimbable();
+    }
+
+    @Override
+    public double vehicleY() {
+        if (!e.isPassenger()) {
+            return Double.NaN;
+        }
+        Entity v = e.getRootVehicle();
+        return Mth.lerp(pt, v.yOld, v.getY());
     }
 
     @Override

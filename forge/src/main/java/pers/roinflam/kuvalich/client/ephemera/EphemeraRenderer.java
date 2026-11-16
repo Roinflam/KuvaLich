@@ -207,8 +207,10 @@ public final class EphemeraRenderer {
             EphemeraHost host = HOST.bind(le, pt, self);
             inst.update(host, now, d.tier);
             inst.lastDrawnMs = now;
-            // 倒地、处决、起身、消散时模型不在站着的位置上，挂点对不上，先收起来
-            float shown = inst.fade(!(le instanceof AbstractKuva kuva && kuva.getMercyState() != MercyState.NONE));
+            // 倒地、处决、起身、消散时模型不在站着的位置上，挂点对不上，先收起来；
+            // 趴着的姿态（冲刺游泳、爬行、鞘翅、激流、睡觉）同理，各款的层都是按站立的身高竖着排的
+            float shown = inst.fade(!(le instanceof AbstractKuva kuva && kuva.getMercyState() != MercyState.NONE)
+                    && !lying(le));
             if (shown <= 0.0F) {
                 continue;
             }
@@ -248,6 +250,13 @@ public final class EphemeraRenderer {
         lastQuads = kept;
         lastDropped = dropped;
         record(System.nanoTime() - t0);
+    }
+
+    private static boolean lying(LivingEntity le) {
+        return switch (le.getPose()) {
+            case SWIMMING, FALL_FLYING, SPIN_ATTACK, SLEEPING, DYING -> true;
+            default -> false;
+        };
     }
 
     private static void submit(PoseStack poseStack, Minecraft mc, boolean additive) {

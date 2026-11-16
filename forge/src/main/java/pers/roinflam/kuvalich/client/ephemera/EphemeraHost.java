@@ -53,12 +53,32 @@ public interface EphemeraHost {
 
     boolean onGround();
 
-    /** 脚下地面的高度；着地时就是脚底，腾空时往下找几格，找不到给 NaN */
+    /** 脚下地面的高度；着地时就是脚底，腾空时按脚底整块往下找几格，找不到给 NaN */
     default double groundY() {
         return onGround() ? y() : Double.NaN;
     }
 
     boolean riding();
+
+    /** 创造飞行 */
+    default boolean flying() {
+        return false;
+    }
+
+    /** 泡在水或岩浆里 */
+    default boolean inFluid() {
+        return false;
+    }
+
+    /** 扒在梯子、藤蔓上 */
+    default boolean climbing() {
+        return false;
+    }
+
+    /** 骑乘时最底下那只坐骑的脚底高度（已插值）；没骑是 NaN */
+    default double vehicleY() {
+        return Double.NaN;
+    }
 
     /** 挥砍动画进度 0~1，没在挥是 0 */
     float swing();
