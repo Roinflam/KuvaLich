@@ -892,6 +892,36 @@ public final class MercyCamera {
         }
     }
 
+    /**
+     * 飞跃下刺的第一人称：原版镜头在正立的眼睛上，翻到头朝下扎它后颈时比画出来的头高一格半，刀进去时视角还悬在半空，
+     * 落地前才降下来。这里把眼睛跟着整身翻转转到画出来的头上（绕 {@link MercyBodyRender#PIVOT} 转），视线重新对准它。
+     * 穿胸绕背那套翻的是贴地的滚，眼睛跟着滚到地上反而晃，不动
+     */
+    private static boolean flippedEye(MercyClient.Exec e, Camera camera, long t) {
+        if (e.variant != MercyVariant.THRALL_5 || camera.isDetached() || !MercyPose.body(e, t, BODY)
+                || BODY.flip == 0.0F) {
+            return false;
+        }
+        LocalPlayer pl = Minecraft.getInstance().player;
+        if (pl == null) {
+            return false;
+        }
+        double a = pl.getEyeHeight() - MercyBodyRender.PIVOT;
+        float f = BODY.flip * BODY.blend * Mth.DEG_TO_RAD;
+        float yaw = camera.getYRot();
+        double r = yaw * Mth.DEG_TO_RAD;
+        double fwd = a * Mth.sin(f);
+        Vec3 eye = camera.getPosition().add(-Math.sin(r) * fwd, a * (Mth.cos(f) - 1.0D), Math.cos(r) * fwd);
+        Vec3 d = e.anchor().subtract(eye);
+        double along = -Math.sin(r) * d.x + Math.cos(r) * d.z;
+        outX = eye.x;
+        outY = eye.y;
+        outZ = eye.z;
+        outYaw = yaw;
+        outPitch = Mth.clamp((float) (Mth.atan2(-d.y, along) * Mth.RAD_TO_DEG), -89.0F, 89.0F);
+        return true;
+    }
+
     // ==================== 给 Mixin 的入口 ====================
 
     /**
@@ -923,7 +953,7 @@ public final class MercyCamera {
         long t = e.elapsed();
         Shot s = shotAt(e, t);
         if (s == Shot.GAME) {
-            return false;
+            return flippedEye(e, camera, t);
         }
         ShotPose p = pose(e, s);
         Vec3 pos = p.pos;

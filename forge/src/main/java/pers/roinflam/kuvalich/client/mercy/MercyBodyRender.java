@@ -28,7 +28,7 @@ import pers.roinflam.kuvalich.utils.Reference;
 public final class MercyBodyRender {
 
     /** 翻转绕的点离脚底多高（格） */
-    private static final float PIVOT = 0.85F;
+    static final float PIVOT = 0.85F;
 
     private static final MercyPose.Body BODY = new MercyPose.Body();
     private static boolean pushed;
