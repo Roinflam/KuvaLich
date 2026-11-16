@@ -333,7 +333,7 @@ public final class MercyCameraPathTests {
         h.succeed();
     }
 
-    /** 减弱档只留推拉，和完整档的推拉一样；不绕、不升降、不滚、不跟人 */
+    /** 减弱档只留推拉，和完整档的推拉一样；绕角整段固定（多数是 0）、不升降、不滚、不跟人 */
     @GameTest(template = "empty")
     public static void reducedKeepsDollyOnly(GameTestHelper h) {
         for (MercyVariant v : PLANNED) {
@@ -343,7 +343,9 @@ public final class MercyCameraPathTests {
                 float[] red = at(v, 3, Motion.REDUCED, t);
                 h.assertTrue(full[MercyCameraPath.DOLLY] == red[MercyCameraPath.DOLLY],
                         v + " " + t + " ms 减弱档的推拉应当和完整档一样");
-                for (int c = MercyCameraPath.ORBIT; c < MercyCameraPath.CHANNELS; c++) {
+                h.assertTrue(red[MercyCameraPath.ORBIT] == MercyCameraPath.reducedOrbit(v),
+                        v + " " + t + " ms 减弱档的绕角应当整段固定");
+                for (int c = MercyCameraPath.RISE; c < MercyCameraPath.CHANNELS; c++) {
                     h.assertTrue(red[c] == 0.0F, v + " " + t + " ms 减弱档第 " + c + " 通道应当是 0");
                 }
             }

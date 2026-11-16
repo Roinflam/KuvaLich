@@ -18,7 +18,7 @@ public final class MercyCameraPath {
     public enum Motion {
         /** 轨迹、跟人、进机位和切宽镜头的过渡都有 */
         FULL,
-        /** 只留推拉和过渡，不绕、不升降、不滚、不跟人，震动减半 */
+        /** 只留推拉和过渡，不绕（个别套路整段固定偏一个角度，见 {@link #reducedOrbit}）、不升降、不滚、不跟人，震动减半 */
         REDUCED,
         /** 固定机位、硬切，和没有这一层时一样 */
         STATIC
@@ -354,6 +354,14 @@ public final class MercyCameraPath {
         return v == MercyVariant.LICH_C ? LOOK_DROP_C : 0.0F;
     }
 
+    /**
+     * 减弱档整段固定的绕角，不随时间变。贴身上挑的注视点挪低了，不绕时视线离处决者头心 0.39 格（头按 0.42 算），
+     * 遮挡检测整段不过、退回固定机位，推拉也跟着没了；固定绕到轨迹起点的 -20° 就放得下
+     */
+    public static float reducedOrbit(MercyVariant v) {
+        return v == MercyVariant.LICH_C ? -20.0F : 0.0F;
+    }
+
     private static float[] k(int t, float dolly, float orbit, float rise, float roll, float follow) {
         return new float[]{t, dolly, orbit, rise, roll, follow};
     }
@@ -429,7 +437,7 @@ public final class MercyCameraPath {
             out[c] = val;
         }
         if (m == Motion.REDUCED) {
-            out[ORBIT] = 0.0F;
+            out[ORBIT] = reducedOrbit(v);
             out[RISE] = 0.0F;
             out[ROLL] = 0.0F;
             out[FOLLOW] = 0.0F;
