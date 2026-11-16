@@ -17,7 +17,6 @@ import pers.roinflam.kuvalich.ephemera.EphemeraLook;
 import pers.roinflam.kuvalich.ephemera.EphemeraStateTable;
 import pers.roinflam.kuvalich.ephemera.EphemeraType;
 import pers.roinflam.kuvalich.network.packet.EphemeraTunePacket;
-import pers.roinflam.kuvalich.client.ephemera.EphemeraPreview;
 import pers.roinflam.kuvalich.utils.KuvaPalette;
 import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 
@@ -715,22 +714,6 @@ final class EphemeraTunePanel {
         int kx = tx + Math.round(Mth.clamp(sliderU(row), 0.0F, 1.0F) * (TRACK_W - 1));
         ArchivePageScreen.fill(g, Math.min(dx, kx), ry + 4, Math.max(dx, kx) + 1, ry + 7, colors[0], 0.75F);
         ArchivePageScreen.fill(g, dx, ry + 2, dx + 1, ry + 9, FxPalette.ASH, 0.7F);
-    }
-
-    // ==================== 人像上的预览 ====================
-
-    /**
-     * 人像脚下按面板上的值画格里那款的真画法（站着不动的样子）。人像是立体的：front 为假时算这一帧并画人像后面那半，
-     * 人像画完再以 front 为真画前面那半（调用方抬高 z）
-     *
-     * @param unit 人像一格多少界面像素（就是人像的倍数）
-     */
-    void drawFigureFx(GuiGraphics g, float cx, float feetY, float unit, float bodyW, float bodyH, long now, boolean front) {
-        if (front) {
-            EphemeraPreview.drawFront(g, cx, feetY, unit);
-        } else {
-            EphemeraPreview.drawBack(g, look(), cx, feetY, unit, bodyW, bodyH, now);
-        }
     }
 
     // ==================== 小工具 ====================

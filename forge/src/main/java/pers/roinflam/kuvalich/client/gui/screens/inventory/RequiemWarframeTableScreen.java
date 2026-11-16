@@ -18,9 +18,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import pers.roinflam.kuvalich.base.item.AbstractWarframeModule;
+import pers.roinflam.kuvalich.client.ephemera.EphemeraPreview;
 import pers.roinflam.kuvalich.client.fx.FxPalette;
 import pers.roinflam.kuvalich.client.gui.requiem.GuiShapes;
 import pers.roinflam.kuvalich.ephemera.EphemeraItem;
+import pers.roinflam.kuvalich.ephemera.EphemeraLook;
 import pers.roinflam.kuvalich.module.ModulePlacementValidator;
 import pers.roinflam.kuvalich.world.inventory.RequiemWarframeTableMenu;
 
@@ -280,8 +282,12 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
         int c = GuiShapes.argb(FxPalette.KUVA_PALE, 0.35F * eT);
         GuiShapes.hlineFade(g, lcx - 30, lcx, feetY + 1, lw(), c & 0x00FFFFFF, c);
         GuiShapes.hlineFade(g, lcx, lcx + 30, feetY + 1, lw(), c, c & 0x00FFFFFF);
-        // 底座椭圆、人像到节点的虚线、节点；调外观时底座换成按面板上的值画的预览
-        boolean preview = tune.isOpen();
+        // 底座椭圆、人像到节点的虚线、节点；格里放着幻纹时底座换成它的预览，调外观时按面板上的值画。
+        // 开场人像还没扫出来时先不画，免得幻纹比人先到
+        float eS = phase(t, T_TEXT_IN, T_TEXT_DONE);
+        EphemeraLook fx = tune.isOpen() ? tune.look()
+                : tuneable() && eS >= 1.0F ? EphemeraLook.of(menu.getSlot(RequiemWarframeTableMenu.EPHEMERA_SLOT).getItem()) : null;
+        boolean preview = fx != null;
         if (!preview) {
             ellipse(g, lcx, feetY + 1, 24.0F, 5.0F, lineW, GuiShapes.argb(FxPalette.KUVA_PALE, 0.22F * eT));
             ellipse(g, lcx, feetY + 1, 18.0F, 3.5F, lineW, GuiShapes.argb(FxPalette.KUVA, 0.18F * eT));
@@ -298,13 +304,15 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
             GuiShapes.hairline(g, x, ephY, Math.min(x + 2.0F, beamX1), ephY, lineW, dash);
         }
         GuiShapes.end();
-        drawEphemeraCard(g, mx, my, t);
+        if (!preview) {
+            drawEphemeraCard(g, mx, my, t);
+        }
         float bodyH = p != null ? p.getBbHeight() : 1.8F;
         float bodyW = p != null ? p.getBbWidth() : 0.6F;
         if (preview) {
-            // 光翼、涡幕会铺出左栏，按左栏裁掉
-            clip(g, lx0, 0, lx1, height);
-            tune.drawFigureFx(g, lcx, feetY, figScale, bodyW, bodyH, now, false);
+            // 光翼、涡幕会铺出左栏，按左栏裁掉；上沿裁到标题线下面，翎尖不压标题字
+            clip(g, lx0, hairY + 1, lx1, height);
+            EphemeraPreview.drawBack(g, fx, lcx, feetY, figScale, bodyW, bodyH, now);
             unclip(g);
         } else {
             // 底座上一颗光点绕着走（拖一小截尾巴）
@@ -323,7 +331,6 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
             GuiShapes.additive(g, false);
         }
 
-        float eS = phase(t, T_TEXT_IN, T_TEXT_DONE);
         int fmx = preview ? figMx : mx;
         int fmy = preview ? figMy : my;
         if (p != null && eS > 0.0F && !figureFailed) {
@@ -340,9 +347,12 @@ public class RequiemWarframeTableScreen extends ArmoryPageScreen<RequiemWarframe
             // 前半圈和光点压在人像上面：人像画在 z 50 上下几十格
             g.pose().pushPose();
             g.pose().translate(0.0F, 0.0F, 150.0F);
-            clip(g, lx0, 0, lx1, height);
-            tune.drawFigureFx(g, lcx, feetY, figScale, bodyW, bodyH, now, true);
+            clip(g, lx0, hairY + 1, lx1, height);
+            EphemeraPreview.drawFront(g, lcx, feetY, figScale);
             unclip(g);
+            // 预览调大以后会铺到幻纹格和调节按钮上，格子抬到预览前面画，不然被盖住
+            g.pose().translate(0.0F, 0.0F, 50.0F);
+            drawEphemeraCard(g, mx, my, t);
             g.pose().popPose();
         }
 
