@@ -740,6 +740,12 @@ public final class LichFx {
         return d != null && KuvaFxDirector.clockMs() - d.startMs() < DISSOLVE_MEMORY_MS;
     }
 
+    /** 这只实体在演处决成功收尾的消散、模型还没淡完 */
+    public static boolean inRequiemDissolve(int entityId) {
+        Dissolving d = DISSOLVING.get(entityId);
+        return d != null && d.kind() == Kind.REQUIEM && KuvaFxDirector.clockMs() - d.startMs() < d.endMs();
+    }
+
     /** 忘掉这只实体的消散记录，恢复显形和正常发光（开发命令演完复原用） */
     public static void forgetDissolve(int entityId) {
         DISSOLVING.remove(entityId);

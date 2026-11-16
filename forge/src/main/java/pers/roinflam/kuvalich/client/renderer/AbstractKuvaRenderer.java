@@ -2,6 +2,8 @@ package pers.roinflam.kuvalich.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -67,6 +69,8 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
     /** 死亡兜底淡出：从第几 tick 开始、到第几 tick 淡完（正常情况下消散演出早就接手了） */
     private static final float STUCK_DEATH_FADE_FROM = 40.0F;
     private static final float STUCK_DEATH_FADE_TO = 56.0F;
+    /** 站位最远 1.25 格、玄骸半宽 0.875，交还时眼睛离包围盒约 0.4 格，留点余量 */
+    private static final double UP_CLOSE = 0.6D;
 
     /** 这一帧本体的透明度、元素染色（−1 = 没有）、晶化程度，render 开头算好，后面各处读 */
     protected float frameAlpha = 1.0F;
@@ -157,10 +161,25 @@ public abstract class AbstractKuvaRenderer<T extends AbstractKuva> extends GeoEn
         return a;
     }
 
+    /**
+     * 处决成功交还第一人称时，处决者还站在它收尾时两臂环着他的位置上，它的晶化碎裂还要演半秒多，镜头整个裹在它的模型里，
+     * 满屏是红的。这段消散里第一人称镜头离它的包围盒不到 {@link #UP_CLOSE} 格就不画本体；第三人称、旁观者照常看得到
+     */
+    private static boolean upCloseDissolve(AbstractKuva entity) {
+        if (!LichFx.inRequiemDissolve(entity.getId())) {
+            return false;
+        }
+        Camera cam = Minecraft.getInstance().gameRenderer.getMainCamera();
+        return !cam.isDetached() && entity.getBoundingBox().inflate(UP_CLOSE).contains(cam.getPosition());
+    }
+
     @Override
     public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight) {
         this.frameAlpha = bodyAlpha(entity, partialTick);
+        if (this.frameAlpha > 0.003F && entity.getId() >= 0 && upCloseDissolve(entity)) {
+            this.frameAlpha = 0.0F;
+        }
         this.frameTint = ElementTint.tintRgb(entity);
         this.frameCrystal = LichFx.crystallize(entity, partialTick);
         // 实体坐标只带相机的转动和平移、没有缩放，矩阵第二列就是世界朝上的方向
