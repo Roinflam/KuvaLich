@@ -33,6 +33,10 @@ public final class EphemeraInstance {
     /** 最近一次被画到的时刻，渲染器据此丢掉长期没画的 */
     public long lastDrawnMs;
 
+    private static final float SHOW_SECONDS = 0.35F;
+    private float shown = 1.0F;
+    private boolean shownReady;
+
     private long lastMs = -1L;
     private boolean lastGround = true;
     private boolean wasMoving;
@@ -70,6 +74,19 @@ public final class EphemeraInstance {
 
         particles.step(dt);
         trail.age(nowMs);
+    }
+
+    /** 收起 / 亮回来，返回这一帧的透明度；头一帧直接到位，不演过渡。要在 {@link #update} 之后调 */
+    public float fade(boolean visible) {
+        float target = visible ? 1.0F : 0.0F;
+        if (!shownReady) {
+            shownReady = true;
+            shown = target;
+        } else if (shown != target) {
+            float step = dt / SHOW_SECONDS;
+            shown = visible ? Math.min(1.0F, shown + step) : Math.max(0.0F, shown - step);
+        }
+        return shown;
     }
 
     /** 这一帧该发几个粒子：rate = 每秒几个 */

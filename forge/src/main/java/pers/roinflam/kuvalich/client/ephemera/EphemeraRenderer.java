@@ -32,11 +32,13 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import pers.roinflam.kuvalich.base.entity.AbstractKuva;
 import pers.roinflam.kuvalich.client.fx.KuvaFxDirector;
 import pers.roinflam.kuvalich.client.fx.KuvaParticleShaders;
 import pers.roinflam.kuvalich.config.EffectsDisplayConfig;
 import pers.roinflam.kuvalich.ephemera.EphemeraLook;
 import pers.roinflam.kuvalich.ephemera.EphemeraStateTable;
+import pers.roinflam.kuvalich.mercy.MercyState;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -205,6 +207,11 @@ public final class EphemeraRenderer {
             EphemeraHost host = HOST.bind(le, pt, self);
             inst.update(host, now, d.tier);
             inst.lastDrawnMs = now;
+            // 倒地、处决、起身、消散时模型不在站着的位置上，挂点对不上，先收起来
+            float shown = inst.fade(!(le instanceof AbstractKuva kuva && kuva.getMercyState() != MercyState.NONE));
+            if (shown <= 0.0F) {
+                continue;
+            }
 
             d.look = look;
             d.full = mode != EffectsDisplayConfig.EphemeraMode.REDUCED
@@ -215,7 +222,7 @@ public final class EphemeraRenderer {
             STAGING.nearFade = d.firstPersonSelf ? NEAR_FADE : NEAR_FADE_THIRD;
             float dist = (float) Math.sqrt(candDist[idx]);
             float farFade = Math.min(1.0F, Math.max(0.0F, ((float) maxDist - dist) / 4.0F));
-            STAGING.alphaMul = farFade * (le.isCrouching() ? SNEAK_ALPHA : 1.0F);
+            STAGING.alphaMul = farFade * shown * (le.isCrouching() ? SNEAK_ALPHA : 1.0F);
             try {
                 inst.style.draw(inst, host, d);
                 if (inst.style.postGradient()) {
