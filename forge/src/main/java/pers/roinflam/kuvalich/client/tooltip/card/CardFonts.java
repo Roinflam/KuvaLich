@@ -101,12 +101,12 @@ final class CardFonts {
     }
 
     /**
-     * 卡字体有没有加载上。「国」在 40 号常规体下应接近 40 像素宽，粗体子集不含汉字，用「W」量；
-     * 退回原版字体时只有 8 到 9 像素。
+     * 卡字体有没有加载上：两套子集都带 ASCII，「W」在 40 号下约 35 像素宽，退回原版字体时只有 6 到 8 像素。
+     * 别拿汉字量，子集只收语言文件里卡用到的字，换个字就可能不在里面。
      */
     static boolean available() {
         Font font = Minecraft.getInstance().font;
-        float r = font.getSplitter().stringWidth(Component.literal("国").withStyle(REGULAR[MAX_SIZE]));
+        float r = font.getSplitter().stringWidth(Component.literal("W").withStyle(REGULAR[MAX_SIZE]));
         float b = font.getSplitter().stringWidth(Component.literal("W").withStyle(BOLD[MAX_SIZE]));
         return r >= 28 && b >= 20;
     }
