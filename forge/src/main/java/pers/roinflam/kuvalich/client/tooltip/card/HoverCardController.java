@@ -34,15 +34,13 @@ import java.util.List;
 /**
  * 模组卡悬停展开：鼠标停在容器界面格子里的模组卡上时，图标原地展开成整张卡。
  *
- * <p>卡按格子坐标锚定，不跟鼠标；展开后鼠标在卡的范围内不收，此间界面渲染拿到的鼠标坐标换成原格子中心
- * （{@code MixinContainerScreenHoverCard}），被卡盖住的格子不响应悬停。不是容器界面（JEI 列表、配方页等）、
- * 不是模组卡、配置关掉时都不介入，照旧走悬浮面板。</p>
+ * <p>卡按格子坐标锚定，不跟鼠标；鼠标离开这个格子就收，卡只是画在上面，旁边的格子照常悬停、照常点。
+ * 不是容器界面（JEI 列表、配方页等）、不是模组卡、配置关掉时都不介入，照旧走悬浮面板。</p>
  */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class HoverCardController {
 
-    private static final int NULL_GRACE_MS = 70;
     private static final float TILT_TAU_MS = 90;
     /** 透视距离：4 个卡宽 */
     private static final float PERSP = 4;
@@ -98,11 +96,7 @@ public final class HoverCardController {
     private static AbstractContainerScreen<?> screen;
     private static Card cur;
     private static final List<Card> closing = new ArrayList<>();
-    private static long nullAt;
     private static long lastFrame;
-    private static final boolean[] swallowRelease = new boolean[8];
-    private static boolean remap;
-    private static int remapX, remapY;
     private static Boolean fontsOk;
     private static long fontsCheckedAt;
     /** 画卡出过异常就不再展开，退回悬浮面板，免得每帧崩一次 */
@@ -115,14 +109,6 @@ public final class HoverCardController {
     }
 
     // ---------------------------------------------------------------- 给 Mixin 用
-
-    public static int mouseX(AbstractContainerScreen<?> s, int x) {
-        return remap && s == screen ? remapX : x;
-    }
-
-    public static int mouseY(AbstractContainerScreen<?> s, int y) {
-        return remap && s == screen ? remapY : y;
-    }
 
     /** 展开中、收起中的卡所在的格子不画物品，卡自己在原处画同一张图标 */
     public static boolean hidesSlot(AbstractContainerScreen<?> s, Slot slot) {
@@ -149,8 +135,6 @@ public final class HoverCardController {
     private static void clear() {
         cur = null;
         closing.clear();
-        nullAt = 0;
-        remap = false;
         screen = null;
     }
 
@@ -169,11 +153,9 @@ public final class HoverCardController {
             clear();
             screen = acs;
         }
-        remap = false;
         if (!acs.getMenu().getCarried().isEmpty()) {
             cur = null;
             closing.clear();
-            nullAt = 0;
             return;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -193,52 +175,34 @@ public final class HoverCardController {
             }
         }
 
-        if (cur != null && (overSlot(acs, cur.slot, mx, my) || inCard(acs, cur, mx, my))) {
-            nullAt = 0;
-        } else {
-            Slot hot = slotAt(acs, mx, my);
-            if (hot != null) {
-                nullAt = 0;
-                if (cur == null || cur.slot != hot) {
-                    if (cur != null) {
-                        cur.close(now);
-                        closing.add(cur);
-                        cur = null;
-                    }
-                    Card back = null;
-                    for (Card c : closing) {
-                        if (c.slot == hot) {
-                            back = c;
-                            break;
-                        }
-                    }
-                    if (back != null) {
-                        closing.remove(back);
-                        back.reopen(now);
-                        cur = back;
-                    } else {
-                        CardModel model = CardModel.of(hot.getItem());
-                        if (model != null) {
-                            cur = new Card(hot, hot.getItem(), model, now);
-                        }
-                    }
-                }
-            } else if (cur != null) {
-                if (nullAt == 0) {
-                    nullAt = now;
-                } else if (now - nullAt > NULL_GRACE_MS) {
-                    cur.close(now);
-                    closing.add(cur);
-                    cur = null;
-                    nullAt = 0;
-                }
+        if (cur != null && overSlot(acs, cur.slot, mx, my)) {
+            return;
+        }
+        if (cur != null) {
+            cur.close(now);
+            closing.add(cur);
+            cur = null;
+        }
+        Slot hot = slotAt(acs, mx, my);
+        if (hot == null) {
+            return;
+        }
+        Card back = null;
+        for (Card c : closing) {
+            if (c.slot == hot) {
+                back = c;
+                break;
             }
         }
-
-        if (cur != null && !overSlot(acs, cur.slot, mx, my)) {
-            remap = true;
-            remapX = acs.getGuiLeft() + cur.slot.x + 8;
-            remapY = acs.getGuiTop() + cur.slot.y + 8;
+        if (back != null) {
+            closing.remove(back);
+            back.reopen(now);
+            cur = back;
+        } else {
+            CardModel model = CardModel.of(hot.getItem());
+            if (model != null) {
+                cur = new Card(hot, hot.getItem(), model, now);
+            }
         }
     }
 
@@ -314,46 +278,7 @@ public final class HoverCardController {
         return ht + hb + 6 > sh ? sh / 2 : CardState.clamp(cy, 3 + ht, sh - 3 - hb);
     }
 
-    private static boolean inCard(AbstractContainerScreen<?> s, Card c, double mx, double my) {
-        CardLayout l = layout(c);
-        float fs = l.ps / l.gs;
-        float cx = finalCenter(s, c, l, true), cy = finalCenter(s, c, l, false);
-        return mx >= cx - 52 * fs - 2 && mx <= cx + 52 * fs + 2
-                && my >= cy - (l.hf / 2 + 3) * fs - 2 && my <= cy + (l.hf / 2 + 6) * fs + 2;
-    }
-
-    // ---------------------------------------------------------------- 点击
-
-    /** 卡开着时，在原格子以外的卡面上按下：卡收起，这一下不算点击（连同松开） */
-    @SubscribeEvent
-    public static void onHoverCardMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
-        if (cur == null || event.getScreen() != screen || screen == null) {
-            return;
-        }
-        double mx = event.getMouseX(), my = event.getMouseY();
-        if (overSlot(screen, cur.slot, mx, my) || !inCard(screen, cur, mx, my)) {
-            return;
-        }
-        long now = Util.getMillis();
-        cur.close(now);
-        closing.add(cur);
-        cur = null;
-        remap = false;
-        int b = event.getButton();
-        if (b >= 0 && b < swallowRelease.length) {
-            swallowRelease[b] = true;
-        }
-        event.setCanceled(true);
-    }
-
-    @SubscribeEvent
-    public static void onHoverCardMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
-        int b = event.getButton();
-        if (b >= 0 && b < swallowRelease.length && swallowRelease[b]) {
-            swallowRelease[b] = false;
-            event.setCanceled(true);
-        }
-    }
+    // ---------------------------------------------------------------- 面板与状态
 
     @SubscribeEvent
     public static void onHoverCardTooltip(RenderTooltipEvent.Pre event) {
@@ -369,13 +294,11 @@ public final class HoverCardController {
     @SubscribeEvent
     public static void onHoverCardScreenOpening(ScreenEvent.Opening event) {
         clear();
-        java.util.Arrays.fill(swallowRelease, false);
     }
 
     @SubscribeEvent
     public static void onHoverCardScreenClosing(ScreenEvent.Closing event) {
         clear();
-        java.util.Arrays.fill(swallowRelease, false);
     }
 
     @SubscribeEvent
@@ -425,15 +348,14 @@ public final class HoverCardController {
         if (!c.opening && p <= 0) {
             return;
         }
-        float fs = l.ps / l.gs;
         float fcx = finalCenter(s, c, l, true), fcy = finalCenter(s, c, l, false);
 
-        // 倾斜输入：鼠标相对卡中心，按半宽半高归一，指数缓动；收起的卡缓回 0
+        // 倾斜输入：鼠标相对格子中心，按格子半宽半高（8）归一，指数缓动；收起的卡缓回 0
         float k = 1 - (float) Math.exp(-dt / TILT_TAU_MS);
         float wantX = 0, wantY = 0;
         if (c.opening && HoverCardConfig.tilt()) {
-            wantX = CardState.clamp((float) ((mx - fcx) / (50 * fs)), -1, 1);
-            wantY = CardState.clamp((float) ((my - fcy) / (l.hf / 2 * fs)), -1, 1);
+            wantX = CardState.clamp((float) ((mx - (s.getGuiLeft() + c.slot.x + 8)) / 8), -1, 1);
+            wantY = CardState.clamp((float) ((my - (s.getGuiTop() + c.slot.y + 8)) / 8), -1, 1);
         }
         c.tiltX += (wantX - c.tiltX) * k;
         c.tiltY += (wantY - c.tiltY) * k;
