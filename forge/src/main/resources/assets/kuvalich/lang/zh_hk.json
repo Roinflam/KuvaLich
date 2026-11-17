@@ -2324,5 +2324,11 @@
   "kuvalich.mercy.banner.rank_up": "升級",
   "commands.kuvalich.mercy.ok": "憐憫之擊：%s",
   "commands.kuvalich.mercy.fail": "憐憫之擊：%s",
-  "subtitles.kuvalich.entity.lich.adapt.full": "玄骸適應了這種傷害"
+  "subtitles.kuvalich.entity.lich.adapt.full": "玄骸適應了這種傷害",
+  "kuvalich.hover_card.type.weapon": "武器",
+  "kuvalich.hover_card.type.warframe": "戰甲",
+  "kuvalich.hover_card.type.veiled": "未揭示",
+  "kuvalich.hover_card.veiled_hint.1": "主手持握時按右鍵，",
+  "kuvalich.hover_card.veiled_hint.2": "即可揭示此模組。",
+  "kuvalich.hover_card.veiled_hint.short": "主手持握時按右鍵揭示"
 }

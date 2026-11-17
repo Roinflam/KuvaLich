@@ -2324,5 +2324,11 @@
   "kuvalich.mercy.banner.rank_up": "RANK UP",
   "commands.kuvalich.mercy.ok": "Mercy: %s",
   "commands.kuvalich.mercy.fail": "Mercy: %s",
-  "subtitles.kuvalich.entity.lich.adapt.full": "Kuva Lich adapts"
+  "subtitles.kuvalich.entity.lich.adapt.full": "Kuva Lich adapts",
+  "kuvalich.hover_card.type.weapon": "Weapon",
+  "kuvalich.hover_card.type.warframe": "Warframe",
+  "kuvalich.hover_card.type.veiled": "Veiled",
+  "kuvalich.hover_card.veiled_hint.1": "Hold in the main hand and",
+  "kuvalich.hover_card.veiled_hint.2": "right-click to reveal it.",
+  "kuvalich.hover_card.veiled_hint.short": "Right-click in the main hand to reveal"
 }

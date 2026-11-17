@@ -30,6 +30,7 @@ public final class TooltipConfig {
         PANEL = new PanelConfig(builder);
         GuideDisplayConfig.define(builder);
         EffectsDisplayConfig.define(builder);
+        HoverCardConfig.define(builder);
         CLIENT_CONFIG = builder.build();
     }
 
