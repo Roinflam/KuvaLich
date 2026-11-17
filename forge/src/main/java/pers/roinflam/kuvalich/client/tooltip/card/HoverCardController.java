@@ -127,6 +127,7 @@ public final class HoverCardController {
     }
 
     static void onResourcesReloaded() {
+        HoverCardArt.clearCache();
         fontsOk = null;
         broken = false;
         clear();

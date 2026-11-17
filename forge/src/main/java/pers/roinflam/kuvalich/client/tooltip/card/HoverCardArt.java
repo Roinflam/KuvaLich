@@ -1,5 +1,6 @@
 package pers.roinflam.kuvalich.client.tooltip.card;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import pers.roinflam.kuvalich.utils.Reference;
 
@@ -15,6 +16,7 @@ public final class HoverCardArt {
 
     private static final Map<String, String> THEMES = new HashMap<>();
     private static final Map<String, ResourceLocation> TEXTURES = new HashMap<>();
+    private static final Map<String, String> CARD_ART = new HashMap<>();
 
     static {
         // 武器模组
@@ -115,6 +117,22 @@ public final class HoverCardArt {
             default:
                 return "execute";
         }
+    }
+
+    /** 这张卡自己的封面 art/card/<卡 id>.png，资源里没有返回 null（再按词条主题取图） */
+    static String cardArt(String cardId) {
+        if (cardId == null || !ResourceLocation.isValidPath(cardId)) {
+            return null;
+        }
+        String theme = CARD_ART.computeIfAbsent(cardId, id -> {
+            String t = "card/" + id;
+            return Minecraft.getInstance().getResourceManager().getResource(texture(t)).isPresent() ? t : "";
+        });
+        return theme.isEmpty() ? null : theme;
+    }
+
+    static void clearCache() {
+        CARD_ART.clear();
     }
 
     static ResourceLocation texture(String theme) {

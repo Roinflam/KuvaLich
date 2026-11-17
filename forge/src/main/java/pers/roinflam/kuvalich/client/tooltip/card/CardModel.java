@@ -30,6 +30,8 @@ import java.util.Map;
 final class CardModel {
 
     private static final String ARCHON_KEY_PREFIX = "kuvaweapon.warframe_module.executioner_";
+    private static final String WEAPON_KEY_PREFIX = "kuvaweapon.item_module.";
+    private static final String WARFRAME_KEY_PREFIX = "kuvaweapon.warframe_module.";
 
     record Attr(String value, String name, boolean negative) {
     }
@@ -130,12 +132,30 @@ final class CardModel {
                 }
             }
         }
-        if (themes.isEmpty()) {
+        String own = riven || veiled ? null : HoverCardArt.cardArt(cardId(hover));
+        if (own != null) {
+            themes.clear();
+            themes.add(own);
+        } else if (themes.isEmpty()) {
             themes.add(HoverCardArt.defaultTheme(tier));
         } else if (!riven && themes.size() > 1) {
             themes.subList(1, themes.size()).clear();
         }
         return new CardModel(tier, warframe, rarity, veiled, name, attrs, riven, trend, cycle, level, themes);
+    }
+
+    // 卡 id 取名字的语言键末段，不能用 kuvalich_modules.type：Prime / 执刑官版和普通版的 type 是同一个
+    private static String cardId(Component hover) {
+        if (hover.getContents() instanceof TranslatableContents tc) {
+            String key = tc.getKey();
+            if (key.startsWith(WEAPON_KEY_PREFIX)) {
+                return key.substring(WEAPON_KEY_PREFIX.length());
+            }
+            if (key.startsWith(WARFRAME_KEY_PREFIX)) {
+                return key.substring(WARFRAME_KEY_PREFIX.length());
+            }
+        }
+        return null;
     }
 
     /** 和物品自带 tooltip 的数值写法一致（AbstractWeaponModule / AbstractWarframeModule） */
