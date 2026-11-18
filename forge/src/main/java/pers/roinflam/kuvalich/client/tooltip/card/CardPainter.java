@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import org.joml.Matrix4f;
+import pers.roinflam.kuvalich.config.HoverCardConfig;
 
 import java.util.List;
 
@@ -43,7 +44,10 @@ final class CardPainter {
     private static final int[] SCRATCH_C = new int[4];
     private static final int[] SCRATCH_RAMP = new int[4];
 
+    private static final int MAX_CANVAS = 4096;
+
     private static TextureTarget target;
+    private static int ss = 1;
     private static GuiGraphics graphics;
     private static final Matrix4f PROJ = new Matrix4f();
 
@@ -71,9 +75,18 @@ final class CardPainter {
         }
     }
 
+    /**
+     * 这次画布放大了几倍。倾斜开着时卡几乎总是带角度贴到屏幕上，一比一的画布重采样后字会发虚，
+     * 所以按两倍画、贴的时候缩回去；不倾斜时一比一最锐利，不放大。
+     */
+    static int ss() {
+        return ss;
+    }
+
     static void paint(CardLayout l, CardState st, long now, long hoverStart) {
         Minecraft mc = Minecraft.getInstance();
-        ensureTarget(l.cw, l.ch);
+        ss = HoverCardConfig.tilt() && Math.max(l.cw, l.ch) * 2 <= MAX_CANVAS ? 2 : 1;
+        ensureTarget(l.cw * ss, l.ch * ss);
         if (graphics == null) {
             graphics = new GuiGraphics(mc, mc.renderBuffers().bufferSource());
         }
@@ -89,6 +102,7 @@ final class CardPainter {
         PoseStack mv = RenderSystem.getModelViewStack();
         mv.pushPose();
         mv.setIdentity();
+        mv.scale(ss, ss, 1);
         RenderSystem.applyModelViewMatrix();
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
@@ -97,9 +111,11 @@ final class CardPainter {
         try {
             CardDraw.ox = l.ox;
             CardDraw.oy = l.oy;
+            CardFonts.ss = ss;
             draw(l, st, now, hoverStart);
             CardDraw.flush();
         } finally {
+            CardFonts.ss = 1;
             RenderSystem.disableScissor();
             mv.popPose();
             RenderSystem.applyModelViewMatrix();
@@ -221,7 +237,7 @@ final class CardPainter {
         CardDraw.flush();
         int top = Math.round(l.oy + y0);
         int bot = Math.round(l.oy + y1);
-        RenderSystem.enableScissor(l.ox, target.height - bot, l.wp, Math.max(0, bot - top));
+        RenderSystem.enableScissor(l.ox * ss, target.height - bot * ss, l.wp * ss, Math.max(0, bot - top) * ss);
     }
 
     // ---------------------------------------------------------------- 卡面图
@@ -547,15 +563,17 @@ final class CardPainter {
         }
         int tc = CardLayout.mix(t.name, 0xFFFFFF, 0.2F);
         CardFonts.Run txt = l.pillText;
-        int boxTop = Math.round(top + (h - l.fP) / 2.0F);
+        // 条里的字和点差半像素时都往上偏
+        int boxTop = top + (h - l.fP) / 2;
         int tx = Math.round((wp - txt.width) / 2.0F);
         CardModel m = l.model;
-        if (!m.riven) {
+        // 没揭示的裂罅卡还没有倾向和循环次数，条里只放字
+        if (!m.riven || m.veiled) {
             textAt(l, txt, tx, boxTop, tc, a);
             return;
         }
         int ds = ps >= 1 ? 3 : 2, dp = ds + 2, dx0 = x0 + e + 1, dEnd = dx0 + 4 * dp + ds;
-        int dy = Math.round(mid - ds / 2.0F);
+        int dy = top + (h - ds) / 2;
         for (int i = 0; i < 5; i++) {
             if (i < m.trend) {
                 CardDraw.rect(dx0 + i * dp, dy, dx0 + i * dp + ds, dy + ds, tc, a);

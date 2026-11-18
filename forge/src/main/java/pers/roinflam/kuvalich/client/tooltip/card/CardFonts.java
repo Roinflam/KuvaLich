@@ -21,6 +21,9 @@ final class CardFonts {
     static final int MIN_SIZE = 9;
     static final int MAX_SIZE = 40;
 
+    /** 画布相对屏幕的放大倍数，CardPainter 每次画之前设 */
+    static int ss = 1;
+
     private static final Style[] REGULAR = new Style[MAX_SIZE + 1];
     private static final Style[] BOLD = new Style[MAX_SIZE + 1];
 
@@ -43,6 +46,8 @@ final class CardFonts {
         final boolean bold;
         final boolean fallback;
         final FormattedCharSequence seq;
+        /** 两倍字号的同一行字，画布放大两倍时用；字号太大或太小、没有对应字形时为 null */
+        final FormattedCharSequence hiSeq;
         /** 实际用的字体字号与放大倍数 */
         final float scale;
         final int width;
@@ -56,19 +61,23 @@ final class CardFonts {
             if (fallback) {
                 this.scale = Math.max(1, Math.round(f / 9.0F));
                 this.seq = Component.literal(text).getVisualOrderText();
+                this.hiSeq = null;
                 this.width = Math.round(font.getSplitter().stringWidth(text) * scale);
             } else {
                 int af = Math.min(f, MAX_SIZE);
                 this.scale = f / (float) af;
                 Component c = Component.literal(text).withStyle(style(af, bold));
                 this.seq = c.getVisualOrderText();
+                // 宽度仍按一倍字号量，排版和不放大时一样
+                this.hiSeq = f >= MIN_SIZE && f * 2 <= MAX_SIZE
+                        ? Component.literal(text).withStyle(style(f * 2, bold)).getVisualOrderText() : null;
                 this.width = (int) Math.ceil(font.getSplitter().stringWidth(c) * scale);
             }
         }
 
         /**
-         * 画在字盒顶 {@code boxTop}（物理像素），字盒高 f。
-         * 「国」字墨迹在盒内上下居中：基线在盒顶下 0.8575 f；MC 的 ttf 字形基线在绘制 y 下 1.16 f。
+         * 画在字盒顶 {@code boxTop}（物理像素），字盒高 f，汉字墨迹在盒内上下居中。
+         * MC 的 ttf 字形墨迹中线在绘制 y 下 0.73 × 字形字号 − 3，这 3 像素不随字号变，缩放着画时要跟着乘。
          */
         void draw(GuiGraphics g, int x, int boxTop, int rgb, float alpha) {
             if (alpha < 0.02F) {
@@ -77,13 +86,21 @@ final class CardFonts {
             int a = Math.max(4, Math.min(255, Math.round(alpha * 255)));
             int color = (a << 24) | (rgb & 0xFFFFFF);
             Font font = Minecraft.getInstance().font;
+            boolean hi = ss == 2 && hiSeq != null;
             float y;
             if (fallback) {
                 y = boxTop + Math.round((f - 7 * scale) / 2.0F);
             } else {
-                y = Math.round(boxTop + Math.round(0.8575F * f) - 1.16F * f);
+                // 差半像素时往上偏
+                y = Math.round(boxTop + (f - 1) / 2.0F - 0.73F * f + 3 * (hi ? 0.5F : scale) - 0.01F);
             }
-            if (scale == 1.0F) {
+            if (hi) {
+                g.pose().pushPose();
+                g.pose().translate(x, y, 0);
+                g.pose().scale(0.5F, 0.5F, 1);
+                g.drawString(font, hiSeq, 0, 0, color, false);
+                g.pose().popPose();
+            } else if (scale == 1.0F) {
                 g.drawString(font, seq, x, (int) y, color, false);
             } else {
                 g.pose().pushPose();

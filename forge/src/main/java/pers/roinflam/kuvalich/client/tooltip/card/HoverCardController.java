@@ -23,6 +23,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
 import pers.roinflam.kuvalich.base.item.AbstractModule;
 import pers.roinflam.kuvalich.config.HoverCardConfig;
@@ -413,15 +414,20 @@ public final class HoverCardController {
         }
 
         int tex = tgt.getColorTextureId();
+        int ss = CardPainter.ss();
         RenderSystem.bindTexture(tex);
         if (flat) {
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            // 两倍画布对齐整像素缩一半，线性采样正好是 2×2 取平均
+            int f = ss == 1 ? GL11.GL_NEAREST : GL11.GL_LINEAR;
+            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, f);
+            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, f);
         } else {
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         }
+        // 展开完时两倍画布按一半大小贴，不偏置会落到缩小一级的那层，等于白放大
+        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, flat || ss == 1 ? 0.0F : -1.0F);
 
         RenderSystem.enableScissor(sx0, win.getHeight() - sy1, sx1 - sx0, sy1 - sy0);
         RenderSystem.disableDepthTest();
@@ -445,7 +451,7 @@ public final class HoverCardController {
             float tw = tgt.width, th = tgt.height;
             CardDraw.textureId(tex);
             CardDraw.blit((0 - ax) * q, (0 - ay) * q, (l.cw - ax) * q, (l.ch - ay) * q,
-                    0, 1, l.cw / tw, 1 - l.ch / th, 0xFFFFFF, 1);
+                    0, 1, l.cw * ss / tw, 1 - l.ch * ss / th, 0xFFFFFF, 1);
             CardDraw.flush();
         } finally {
             mv.popPose();
