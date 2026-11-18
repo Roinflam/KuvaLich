@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 /**
  * 画卡用的几样最基本的东西：纯色 / 渐变四边形、贴图四边形、几种混合方式。顶点坐标统一加上 (ox, oy)。
@@ -54,6 +55,14 @@ final class CardDraw {
                 GlStateManager.SourceFactor.ZERO, GlStateManager.DestFactor.ONE);
     }
 
+    /** dst + dst × src：只把已经亮的地方再提亮，暗处不动；alpha 不动 */
+    static void blendMulAdd() {
+        flush();
+        RenderSystem.enableBlend();
+        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.DST_COLOR, GlStateManager.DestFactor.ONE,
+                GlStateManager.SourceFactor.ZERO, GlStateManager.DestFactor.ONE);
+    }
+
     static void blendPremultiplied() {
         flush();
         RenderSystem.enableBlend();
@@ -78,6 +87,13 @@ final class CardDraw {
         flush();
         CardTextures.bind(tex, smooth);
         beginTex();
+    }
+
+    /** 平铺用：超出 0～1 的贴图坐标重复 */
+    static void textureRepeat(ResourceLocation tex) {
+        texture(tex, true);
+        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
     }
 
     /** 已经绑好的贴图（离屏画布自己的颜色贴图） */
@@ -219,6 +235,17 @@ final class CardDraw {
         tv(x0, y1, u0, v1, rgb, aBot);
         tv(x1, y1, u1, v1, rgb, aBot);
         tv(x1, y0, u1, v0, rgb, aTop);
+    }
+
+    /** 上下两端颜色不同（给 blendMulAdd 用，那里起作用的是颜色不是 alpha） */
+    static void blitC(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, int rgbTop, int rgbBot) {
+        if (batch != TEX || x1 <= x0 || y1 <= y0) {
+            return;
+        }
+        tv(x0, y0, u0, v0, rgbTop, 1);
+        tv(x0, y1, u0, v1, rgbBot, 1);
+        tv(x1, y1, u1, v1, rgbBot, 1);
+        tv(x1, y0, u1, v0, rgbTop, 1);
     }
 
     /** 整张贴图放进一个方框 */

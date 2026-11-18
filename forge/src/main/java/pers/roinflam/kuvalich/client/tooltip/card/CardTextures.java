@@ -37,6 +37,9 @@ final class CardTextures {
     static final ResourceLocation MOTE = rl("mote.png");
     static final ResourceLocation STAR = rl("star.png");
     static final ResourceLocation CYCLE = rl("cycle.png");
+    static final ResourceLocation VEIL_VIGNETTE = rl("veil/vignette.png");
+    static final ResourceLocation VEIL_LATTICE = rl("veil/lattice.png");
+    static final ResourceLocation VEIL_SPARK = rl("veil/spark.png");
 
     /** 小卡一档边框：横向伸出 ex，上框、底托各自的纵向偏移和贴图大小 */
     record Compact(int ex, int topOy, int botOy, int tw, int th, int bw, int bh) {
@@ -79,8 +82,8 @@ final class CardTextures {
         return cached("frame/" + t.id + (thin ? "/l_thin_bot.png" : "/l_full_bot.png"));
     }
 
-    static ResourceLocation veil(CardTier t) {
-        return cached("veil/" + t.veilId() + ".png");
+    static ResourceLocation veil(CardTier t, String layer) {
+        return cached("veil/" + t.veilId() + "/" + layer + ".png");
     }
 
     static ResourceLocation iconRing(CardModel m) {

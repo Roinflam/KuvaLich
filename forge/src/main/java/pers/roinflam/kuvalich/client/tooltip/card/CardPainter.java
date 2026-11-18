@@ -26,10 +26,6 @@ final class CardPainter {
     private static final int ROT_MS = 2500;
     private static final int XFADE_MS = 400;
 
-    private static final float[][] MOTES = {
-            {0.10F, 0.72F, 1}, {0.905F, 0.77F, 0.9F}, {0.90F, 0.93F, 0.7F}, {0.17F, 0.95F, 0.75F},
-            {0.85F, 0.27F, 0.6F}, {0.13F, 0.34F, 0.55F}, {0.72F, 0.9F, 0.45F}};
-
     private static final float[] HAZE_STOPS = {0, 0.12F, 0.34F, 0.64F, 1};
     private static final float[] HAZE_A = {1, 0.74F, 0.36F, 0.10F, 0};
 
@@ -243,7 +239,7 @@ final class CardPainter {
     // ---------------------------------------------------------------- 卡面图
 
     /** 卡面图按渐隐分的三段：0、artEnd-20、artEnd-10、artEnd */
-    private static float band(float artEnd, int i) {
+    static float band(float artEnd, int i) {
         switch (i) {
             case 0:
                 return 0;
@@ -256,7 +252,7 @@ final class CardPainter {
         }
     }
 
-    private static float artFade(float yUnits, float artEnd) {
+    static float artFade(float yUnits, float artEnd) {
         float d = artEnd - yUnits;
         if (d >= FADE) {
             return 1;
@@ -269,12 +265,8 @@ final class CardPainter {
 
     private static void drawArt(CardLayout l, CardState st, long now, long hoverStart) {
         CardModel m = l.model;
-        float ps = l.ps;
-        float boxW = W * ps, boxH = l.artEnd * ps;
         if (m.veiled) {
-            CardDraw.texture(CardTextures.veil(m.tier), true);
-            artCover(l, 400, 320, 1, 0, 0, 1);
-            drawMotes(l, now, boxW, boxH);
+            CardVeil.draw(l, st, now);
             return;
         }
         List<String> themes = m.themes;
@@ -315,30 +307,6 @@ final class CardPainter {
             CardDraw.blitV(0, ya * ps, boxW, yb * ps, u0, va, u0 + uw, vb, 0xFFFFFF,
                     alpha * artFade(ya, l.artEnd), alpha * artFade(yb, l.artEnd));
         }
-    }
-
-    private static void drawMotes(CardLayout l, long now, float w, float h) {
-        CardTier t = l.model.tier;
-        float m = Math.min(w, 1.35F * h);
-        float fadeFrom = (l.artEnd - FADE) * l.ps;
-        CardDraw.blendAdd();
-        CardDraw.texture(CardTextures.MOTE, true);
-        for (int i = 0; i < MOTES.length; i++) {
-            float[] mo = MOTES[i];
-            float cx = mo[0] * w, cy = mo[1] * h;
-            float tw = 0.6F + 0.4F * (float) Math.sin(now / 430.0 + 2.1 * i);
-            float r = Math.max(3.5F, m * 0.09F * mo[2]);
-            float fade = cy > fadeFrom ? artFade(cy / l.ps, l.artEnd) : 1;
-            CardDraw.blitAll(cx - r, cy - r, cx + r, cy + r, t.mote, tw * fade);
-        }
-        for (int i = 0; i < MOTES.length; i++) {
-            float[] mo = MOTES[i];
-            float cx = mo[0] * w, cy = mo[1] * h;
-            float d = Math.max(0.8F, m * 0.011F * mo[2]) * 1.6F;
-            float fade = cy > fadeFrom ? artFade(cy / l.ps, l.artEnd) : 1;
-            CardDraw.blitAll(cx - d, cy - d, cx + d, cy + d, 0xFFFFFF, fade);
-        }
-        CardDraw.blendNormal();
     }
 
     /** 光雾：卡面图左右和上沿三条滤色叠加的品质色，向内渐隐 */
