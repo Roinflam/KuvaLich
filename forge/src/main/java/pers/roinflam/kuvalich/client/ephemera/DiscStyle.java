@@ -192,8 +192,10 @@ public final class DiscStyle extends ProtoStyle<DiscStyle.St> {
         double vX = m.velX, vY = m.velY, vZ = m.velZ;
         for (int si = 0; si < 2; si++) {
             int sg = si == 0 ? -1 : 1;
-            float swing = sg > 0 ? swE : 0;
-            float swingPos = fp ? 0 : swing;
+            // 第一人称时右盘跟着估计的腕点甩到镜头跟前，挥砍那一下不放大、不转正，先藏起来
+            float swing = sg > 0 && !fp ? swE : 0;
+            float swingPos = swing;
+            float fpFade = fp && sg > 0 ? HaloStyle.fpSwingHide(m) : 1;
             BodyPoints.Pt wr = sg > 0 ? m.pts.wristR : m.pts.wristL;
             float R0 = 0.25F * H * sneak;
             R = R0 * (1 + 0.32F * swing * Bk + 0.05F * bt + 0.025F * breath * amp + 0.08F * jumpE + 0.06F * hurtE);
@@ -238,7 +240,7 @@ public final class DiscStyle extends ProtoStyle<DiscStyle.St> {
             double lqX = dvX - tcX * along, lqY = dvY - tcY * along, lqZ = dvZ - tcZ * along;
             float lat = (float) Math.sqrt(lqX * lqX + lqY * lqY + lqZ * lqZ);
             float occ = clamp((float) along / (0.5F * W), 0, 1) * clamp(1 - (lat - 0.35F * W) / (R * 1.1F), 0, 1);
-            float fK = 1 - 0.65F * occ;
+            float fK = (1 - 0.65F * occ) * fpFade;
 
             // 盘面朝外偏前，各自慢慢晃；跑起来上沿往后倒，挥砍时转成正对前方
             float wob = (float) Math.sin(t * 0.7F + sg * 2) * 0.12F, wob2 = (float) Math.sin(t * 0.53F + sg) * 0.1F;
@@ -277,7 +279,7 @@ public final class DiscStyle extends ProtoStyle<DiscStyle.St> {
                 rot = (float) Math.floor(rot / 0.06F) * 0.06F;
             }
             float glitch = hurtE > 0.05F && hash(qh * 11 + sg) < 0.45F * hurtE ? 0.3F : 1;
-            float AA = A * glitch * (1 + 0.6F * swing);
+            float AA = A * glitch * (1 + 0.6F * swing) * fpFade;
             dcX[si] = cx;
             dcY[si] = cy;
             dcZ[si] = cz;
@@ -292,6 +294,9 @@ public final class DiscStyle extends ProtoStyle<DiscStyle.St> {
 
             // 残影：记下最近 0.3 秒的盘，跑起来身后拖几张
             pushHist(s, si, t);
+            if (fpFade <= 0.01F) {
+                continue;
+            }
             if (run > 0.05F || air) {
                 int nG = lite ? 1 : 3;
                 float k = Math.max(run, air ? 0.6F : 0);

@@ -235,9 +235,10 @@ public final class HaloStyle extends ProtoStyle<HaloStyle.St> {
             w.e2x = ex / el1;
             w.e2y = ey / el1;
             w.e2z = ez / el1;
-            w.swK = side == 1 ? swE : 0;
+            // 第一人称时右腕估计点挥砍会甩到镜头跟前，放大的环能糊住半个屏幕，所以不放大、挥砍那一下先藏起来
+            w.swK = side == 1 && !fp ? swE : 0;
             w.r = W * 0.48F * (1 + 0.5F * w.swK * Bk + 0.05F * breath * amp + 0.15F * hurtE);
-            w.aw = A * (1 + 0.6F * w.swK);
+            w.aw = A * (1 + 0.6F * w.swK) * (fp && side == 1 ? fpSwingHide(m) : 1);
             w.rot = T * 1.3F * side + s.kick;
             s.tr[k].push(w.x, w.y, w.z, m.t);
             for (int i = 0; i < Math.min(2, NWA); i++) {
@@ -354,6 +355,9 @@ public final class HaloStyle extends ProtoStyle<HaloStyle.St> {
 
         // ---- 腕环主体：柔光、沿前臂的光柱、铭文环、两侧刻度盘 ----
         for (Wrist w : wrists) {
+            if (w.aw <= 0.01F) {
+                continue;
+            }
             pen.s(SOFT).rgb(C).a((0.2F + 0.3F * w.swK) * w.aw).billboard(w.x, w.y, w.z, w.r * 3.6F, w.r * 3.6F);
             // 手臂竖着时环是平躺的，平视只剩一条线，靠这道光柱撑住
             pen.s(SOFT).rgb(C).a(0.22F * w.aw).beam(w.x - w.ux * 0.2F * sc, w.y - w.uy * 0.2F * sc, w.z - w.uz * 0.2F * sc,
@@ -400,7 +404,7 @@ public final class HaloStyle extends ProtoStyle<HaloStyle.St> {
         for (int k = 0; k < 2; k++) {
             Wrist w = wrists[k];
             int side = k == 0 ? -1 : 1;
-            for (int i = 0; i < NWA; i++) {
+            for (int i = 0; i < NWA && w.aw > 0.01F; i++) {
                 if (!room(cost)) {
                     break;
                 }
@@ -424,6 +428,9 @@ public final class HaloStyle extends ProtoStyle<HaloStyle.St> {
             }
         }
         for (Wrist w : wrists) {
+            if (w.aw <= 0.01F) {
+                continue;
+            }
             if (lite) {
                 if (room(8)) {
                     wristBand(w, C);
@@ -568,6 +575,11 @@ public final class HaloStyle extends ProtoStyle<HaloStyle.St> {
         }
     }
 
+    /** 第一人称挥砍时手臂估计点会扫过镜头前，这只手的东西先藏 0.3 秒（原版挥臂 6 tick），再用 0.15 秒淡回来 */
+    static float fpSwingHide(FxMotion m) {
+        return Math.min(1, Math.max(0, (m.since(m.tSwing) - 0.3F) / 0.15F));
+    }
+
     /** 腕环外面一圈正对镜头的柔光带 */
     private void wristBand(Wrist w, int C) {
         rib.clear();
@@ -577,10 +589,10 @@ public final class HaloStyle extends ProtoStyle<HaloStyle.St> {
 
     /** 手的拖光：跑、挥砍时甩出一道铭文光弧 */
     private void wristTrail(St s, int k, float tk, FxMotion m, int C, int hot) {
-        if (tk <= 0.02F) {
+        Wrist w = wrists[k];
+        if (tk <= 0.02F || w.aw <= 0.01F) {
             return;
         }
-        Wrist w = wrists[k];
         final float ww = w.r * (1 + 1.6F * w.swK), aw = w.aw, kk = tk;
         int cat = pen.cat;
         pen.cat = EphemeraStaging.TRAIL;
