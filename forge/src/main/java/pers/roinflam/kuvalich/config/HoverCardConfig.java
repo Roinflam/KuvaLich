@@ -19,7 +19,7 @@ public final class HoverCardConfig {
     private static ForgeConfigSpec.BooleanValue tilt;
 
     private static volatile boolean cachedEnabled = true;
-    private static volatile int cachedSizePercent = 33;
+    private static volatile int cachedSizePercent = 38;
     private static volatile boolean cachedTilt = true;
 
     private HoverCardConfig() {
@@ -31,11 +31,12 @@ public final class HoverCardConfig {
                         "When the pointer rests on a module in an inventory slot, the icon unfolds into a full card in place. When off, the regular tooltip panel is shown instead",
                         "鼠标停在物品栏格子里的模组上时，图标原地展开为完整的模组卡。关闭后改为显示常规悬浮面板")
                 .define("enabled", true);
-        // 旧键 sizePercent 默认 45，已经写进各客户端的文件；换键名才能让所有人落到新默认 33，旧键读配置时会被清掉
+        // 各客户端文件里已经写着旧默认值（sizePercent 45、cardSizePercent 33），只改默认值不生效；
+        // 换键名才能让所有人落到新默认 38，旧键读配置时会被清掉
         sizePercent = builder.comment(
                         "Size of the unfolded card in percent. At small sizes the card width snaps to the nearest step that has a matching frame",
                         "展开后卡片的大小（百分比）。较小的尺寸会就近取到有对应边框的宽度")
-                .defineInRange("cardSizePercent", 33, 33, 100);
+                .defineInRange("cardScalePercent", 38, 33, 100);
         tilt = builder.comment(
                         "Tilt the unfolded card toward the pointer",
                         "展开后的卡片随鼠标位置倾斜")
