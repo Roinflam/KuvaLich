@@ -242,6 +242,7 @@ public final class HoverCardController {
     private static CardLayout layout(Card c) {
         Minecraft mc = Minecraft.getInstance();
         int gs = (int) mc.getWindow().getGuiScale();
+        int base = mc.getWindow().calculateScale(0, mc.isEnforceUnicode());
         int size = HoverCardConfig.sizePercent();
         // 资源重载途中量到的可能还是旧字体，没加载上的过一会儿再量一次
         long now = Util.getMillis();
@@ -250,8 +251,8 @@ public final class HoverCardController {
             fontsCheckedAt = now;
         }
         boolean fallback = !fontsOk;
-        if (c.layout == null || !c.layout.matches(gs, size, fallback)) {
-            c.layout = new CardLayout(c.model, gs, size, fallback);
+        if (c.layout == null || !c.layout.matches(gs, base, size, fallback)) {
+            c.layout = new CardLayout(c.model, gs, base, size, fallback);
         }
         return c.layout;
     }

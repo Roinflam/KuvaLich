@@ -42,6 +42,7 @@ final class CardLayout {
 
     final CardModel model;
     final int gs;
+    final int base;
     final int sizePercent;
     final boolean fallbackFont;
     final int wp;
@@ -62,14 +63,16 @@ final class CardLayout {
     /** 离屏画布大小和卡左上角在画布里的位置 */
     final int cw, ch, ox, oy;
 
-    CardLayout(CardModel model, int gs, int sizePercent, boolean fallbackFont) {
+    CardLayout(CardModel model, int gs, int base, int sizePercent, boolean fallbackFont) {
         this.model = model;
         this.gs = gs;
+        this.base = base;
         this.sizePercent = sizePercent;
         this.fallbackFont = fallbackFont;
         CardTier t = model.tier;
 
-        float raw = gs * sizePercent / 100.0F * FLOAT_S;
+        // 卡宽按窗口自动缩放时的倍数算，不跟玩家选的界面缩放走，缩放调小的人看到的卡也一样大；gs 只管坐标换算
+        float raw = base * sizePercent / 100.0F * FLOAT_S;
         int w = 2 * Math.round(100 * raw / 2);
         boolean small = w < COMPACT_LIMIT;
         if (small) {
@@ -194,8 +197,8 @@ final class CardLayout {
         oy = Math.round((t.et + 8) * ps);
     }
 
-    boolean matches(int gs, int sizePercent, boolean fallbackFont) {
-        return this.gs == gs && this.sizePercent == sizePercent && this.fallbackFont == fallbackFont;
+    boolean matches(int gs, int base, int sizePercent, boolean fallbackFont) {
+        return this.gs == gs && this.base == base && this.sizePercent == sizePercent && this.fallbackFont == fallbackFont;
     }
 
     private static String joinHint(String a, String b) {
