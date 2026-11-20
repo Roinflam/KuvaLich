@@ -1,14 +1,29 @@
 package pers.roinflam.kuvalich.client.ephemera;
 
+import pers.roinflam.kuvalich.utils.LogUtil;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 幻纹用的柔光贴图：开游戏时现算一张 1024 的图集（格子 128，白色 + 透明度，个别带亮度），不带图片资源。
+ * 幻纹用的贴图：开游戏时拼一张 2048 的图集（格子 128）。前 {@link #COUNT} 格是现算的柔光图（白色 + 透明度，个别带亮度），
+ * 后面是 {@link #file} 登记的 PNG（原型里用 canvas 画的，由 docs-local/ephemera-proto3/tools/export_sprites.py 导出）。
  * 画法里只认这里的编号，顶点色乘上去就是最终颜色。不引用客户端类，GameTest 能直接调。
  */
 public final class EphemeraSprites {
 
-    public static final int ATLAS = 1024;
+    public static final int ATLAS = 2048;
     public static final int CELL = 128;
     private static final int PER_ROW = ATLAS / CELL;
+    public static final int MAX_CELLS = PER_ROW * PER_ROW;
+
+    // 必须排在下面那些 file(...) 常量前面，类初始化按书写顺序走
+    private static final List<String> FILES = new ArrayList<>();
+    private static final List<Boolean> FILE_PERIODIC = new ArrayList<>();
 
     public static final int WHITE = 0;
     public static final int SOFT = 1;
@@ -40,11 +55,67 @@ public final class EphemeraSprites {
     public static final int SHEATH = 31;
     public static final int COUNT = 32;
 
+    // 原型 sprites.js 里那批共用贴图（textures/ephemera/common）
+    public static final int GLOW = file("common/glow");
+    public static final int RING = file("common/ring");
+    public static final int HEX_0 = file("common/hex_0");
+    public static final int HEX_1 = file("common/hex_1");
+    public static final int MIST_0 = file("common/mist_0");
+    public static final int MIST_1 = file("common/mist_1");
+    public static final int MIST_2 = file("common/mist_2");
+    public static final int MIST_3 = file("common/mist_3");
+    public static final int MOTE = file("common/mote");
+    public static final int SPARK = file("common/spark");
+    public static final int SHARD_0 = file("common/shard_0");
+    public static final int SHARD_1 = file("common/shard_1");
+    public static final int SHARD_2 = file("common/shard_2");
+    public static final int SHARD_3 = file("common/shard_3");
+    public static final int DROP = file("common/drop");
+    public static final int SPLAT_0 = file("common/splat_0");
+    public static final int SPLAT_1 = file("common/splat_1");
+    public static final int SPLAT_2 = file("common/splat_2");
+    public static final int SPLAT_3 = file("common/splat_3");
+    public static final int BUBBLE_0 = file("common/bubble_0");
+    public static final int BUBBLE_1 = file("common/bubble_1");
+    public static final int BUBBLE_2 = file("common/bubble_2");
+    public static final int BUBBLE_3 = file("common/bubble_3");
+
+    /**
+     * 登记一张 PNG 贴图，path 相对 assets/kuvalich/textures/ephemera/、不带扩展名（如 "halo/glyph"），返回编号。
+     * 只能在类初始化时调（各款画法的 static final 字段），图集拼好以后再登记的那格是空的。
+     */
+    public static synchronized int file(String path) {
+        return file(path, false);
+    }
+
+    /** periodic：横向半张一个周期，滚动时 u 可以按 0.5 整段平移（同 {@link #periodic}） */
+    public static synchronized int file(String path, boolean periodic) {
+        int i = FILES.indexOf(path);
+        if (i < 0) {
+            if (COUNT + FILES.size() >= MAX_CELLS) {
+                throw new IllegalStateException("幻纹图集满了：" + path);
+            }
+            FILES.add(path);
+            FILE_PERIODIC.add(periodic);
+            i = FILES.size() - 1;
+        }
+        return COUNT + i;
+    }
+
+    /** 已经用掉的格数（现算的加 PNG 的） */
+    public static synchronized int used() {
+        return COUNT + FILES.size();
+    }
+
     private EphemeraSprites() {
     }
 
     /** 横向半张一个周期（滚动纹理取 [x, x + 0.5] 这一段无缝），u 可以按 0.5 整段平移 */
     public static boolean periodic(int id) {
+        if (id >= COUNT) {
+            int i = id - COUNT;
+            return i < FILE_PERIODIC.size() && FILE_PERIODIC.get(i);
+        }
         return id == FLOW_0 || id == FLOW_1 || id == FLOW_2 || id == VEIL || id == BAND || id == HAZE || id == PLUME || id == SHEATH;
     }
 
@@ -67,6 +138,8 @@ public final class EphemeraSprites {
 
     /** 整张图集，ARGB，行优先 */
     public static int[] generate() {
+        // 各款画法的贴图常量在类初始化时登记，先把款式表拉起来
+        EphemeraStyles.of("");
         int[] px = new int[ATLAS * ATLAS];
         float[] lum = new float[CELL * CELL];
         float[] alpha = new float[CELL * CELL];
@@ -82,6 +155,30 @@ public final class EphemeraSprites {
                     int l = Math.round(clamp(lum[k]) * 255.0F);
                     px[(oy + j) * ATLAS + ox + i] = (a << 24) | (l << 16) | (l << 8) | l;
                 }
+            }
+        }
+        List<String> files;
+        synchronized (EphemeraSprites.class) {
+            files = new ArrayList<>(FILES);
+        }
+        for (int i = 0; i < files.size(); i++) {
+            int id = COUNT + i;
+            int ox = (id % PER_ROW) * CELL, oy = (id / PER_ROW) * CELL;
+            String res = "/assets/kuvalich/textures/ephemera/" + files.get(i) + ".png";
+            try (InputStream in = EphemeraSprites.class.getResourceAsStream(res)) {
+                BufferedImage img = in == null ? null : ImageIO.read(in);
+                if (img == null) {
+                    LogUtil.warn("幻纹贴图缺失：" + res);
+                    continue;
+                }
+                int w = img.getWidth(), h = img.getHeight();
+                for (int j = 0; j < CELL; j++) {
+                    for (int k = 0; k < CELL; k++) {
+                        px[(oy + j) * ATLAS + ox + k] = img.getRGB(k * w / CELL, j * h / CELL);
+                    }
+                }
+            } catch (IOException e) {
+                LogUtil.warn("幻纹贴图读不了：" + res + " " + e);
             }
         }
         return px;

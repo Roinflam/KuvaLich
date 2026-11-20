@@ -51,12 +51,22 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
         int twSide = 1;
         float ph;
         boolean ready;
+        final ElementMotif fx = new ElementMotif();
+        final ElementMotif.Sites sites = new ElementMotif.Sites();
     }
 
     private final EphemeraPen.Ribbon rib = new EphemeraPen.Ribbon(32);
     private final EphemeraPen.Ribbon rib2 = new EphemeraPen.Ribbon(32);
     private final FxTrail.Sample sample = new FxTrail.Sample();
     private final float[] dir = new float[3];
+
+    // 母题的凸起一根要十几个面片，先攒着，等别的都画完再按剩下的预算放：池沿和刀波优先，沿路的最后
+    private static final int QCAP = 48;
+    private final double[] qx = new double[QCAP], qy = new double[QCAP], qz = new double[QCAP];
+    private final float[] qdx = new float[QCAP], qdy = new float[QCAP], qdz = new float[QCAP];
+    private final float[] qlen = new float[QCAP], qw = new float[QCAP], qa = new float[QCAP];
+    private final int[] qseed = new int[QCAP], qpri = new int[QCAP];
+    private int qn;
 
     // 这一帧的量
     private FxMotion m;
@@ -81,6 +91,7 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
     @Override
     protected void reset(St s, FxMotion mo) {
         s.ready = false;
+        s.fx.reset();
     }
 
     private void init(St s, FxMotion mo, int nt) {
@@ -121,6 +132,16 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
         lite = mo.lite;
         calm = mo.calm;
         kind = mo.kind;
+        // 毒、冲击、磁、辐射的光舌、粒子、池面和爆发走元素母题；火、冰、电照原来的画法
+        boolean ek = kind == 0;
+        ElementMotif em = s.fx;
+        int from = 0, baseFrom = 0;
+        if (ek) {
+            em.begin(pen, mo);
+            qn = 0;
+            from = d.out.pending();
+            baseFrom = mo.lite ? d.out.pending(EphemeraStaging.BASE) : 0;
+        }
         H = mo.H;
         W = mo.W;
         sc = mo.sc;
@@ -192,7 +213,7 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
             pen.s(SOFT).rgb(C).a(0.2F * base).billboard(cx, gy + 0.22 * H, cz, R * 2.4F, 0.6F * H);
         }
         int N = lite ? 16 : 22;
-        float rot = t * (kind == 2 ? 0.25F : 0.9F);
+        float rot = ek ? mo.clock() * 0.9F : t * (kind == 2 ? 0.25F : 0.9F);
         ring(N, rot, true, R * 0.75F, 0.04F, BAND, false, deep, 0.85F, 0.2F, 0.8F);
         ring(N, rot, true, R * 0.62F, 0.045F, kind == 2 ? FLOW_1 : FLOW_0, true, C, base, scroll, scroll + 1);
         if (!lite) {
@@ -220,6 +241,9 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
                 pen.s((j + t2) % 2 != 0 ? CRACK_0 : CRACK_1).rgb(j % 2 != 0 ? hot : C).a((0.6F + 0.4F * hash(tick * 19 + j)) * gb)
                         .flat(cx + Math.cos(a) * len * 0.5, gy + 0.056, cz + Math.sin(a) * len * 0.5, len, len * 0.42F, -a);
             }
+        }
+        if (ek) {
+            em.ground(cx, gy, cz, R * 0.75F, 0.9F * base);
         }
 
         // ---------- 立起来的片：光舌 / 冰晶 ----------
@@ -273,7 +297,14 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
                 float n1 = noise(t * f + i * 7.3F, 3), n2 = noise(t * f * 0.7F + i * 3.1F, 8) - 0.5F;
                 float h = Hb * sl.k * (0.5F + 0.95F * n1) * (1 + 1.4F * bump + (1.5F * landE + 0.8F * hurtOut) * B);
                 float ko = h * (0.12F + 0.5F * hurtOut), kt = h * (0.18F + 0.3F * n2);
-                tongueAt(bx, by, bz, h, ox * ko + tx * kt + windX * h, windY * h, oz * ko + tz * kt + windZ * h, base, i, 1);
+                if (ek) {
+                    float hh = Math.max(h, 1.0E-3F);
+                    float lx = (ox * ko + tx * kt) / hh + windX, ly = 1 + windY, lz = (oz * ko + tz * kt) / hh + windZ;
+                    float ll = (float) Math.sqrt(lx * lx + ly * ly + lz * lz);
+                    queue(0, bx, by, bz, lx / ll, ly / ll, lz / ll, h * 0.85F, h * 0.32F, i, base);
+                } else {
+                    tongueAt(bx, by, bz, h, ox * ko + tx * kt + windX * h, windY * h, oz * ko + tz * kt + windZ * h, base, i, 1);
+                }
             }
         }
 
@@ -411,6 +442,8 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
                     EphemeraFx.randDir(dir);
                     bolt(w.x, w.y, w.z, w.x + dir[0] * 0.2F * sc, w.y + Hb * 1.2F * w.k + dir[1] * 0.2F * sc, w.z + dir[2] * 0.2F * sc, 1 - k);
                 }
+            } else if (ek) {
+                queue(1, w.x, w.y, w.z, 0, 1, 0, Hb * w.k * 0.8F * (1 - k * k), Hb * 0.3F, (int) w.seed, 1 - k * k);
             } else {
                 float lean = 0.08F * Hb * (float) Math.sin(t * 7 + w.seed);
                 tongueAt(w.x, w.y, w.z, Hb * w.k * (0.6F + 0.6F * noise(t * 5 + w.seed, 2)) * (1 - k * k), mo.rightX * lean, 0, mo.rightZ * lean,
@@ -426,10 +459,22 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
         s.acc += dt * rate;
         int nRise = (int) Math.floor(s.acc);
         s.acc -= nRise;
-        rise(P, nRise, 1);
+        if (ek) {
+            ElementMotif.Sites sites = s.sites.clear();
+            for (int k = 0; k < 8; k++) {
+                float a = k / 8.0F * TAU + t * 0.3F;
+                float ox = (float) Math.cos(a), oz = (float) Math.sin(a), nl = (float) Math.sqrt(1 + 0.09F);
+                sites.add(cx + ox * R * 0.9F, gy + 0.08 + (k % 2) * 0.3F * H, cz + oz * R * 0.9F, ox / nl, 0.3F / nl, oz / nl);
+            }
+            em.motes(sites, 26 * (calm ? 0.5F + 0.5F * act : 1), sc);
+            em.events(gx, gy, gz, R * 1.1F);
+            em.bursts();
+        } else {
+            rise(P, nRise, 1);
+        }
 
         // 涌动开头：一圈往外扩，池里多冒一把
-        if (s.ph > ph) {
+        if (s.ph > ph && !ek) {
             addDecal(cx, gy, cz, 0.7F, R * 0.8F, Math.min(LIM, R * 2.1F) * 2, 0, 0, 0, SOFTRING, true, false, 0.8F);
             rise(P, lite ? 4 : 16, 1.5F);
         }
@@ -546,6 +591,9 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
                 float h = 0.75F * H * ev * (0.8F + 0.4F * hash(k * 7 + mo.swingCount)) * (calm ? 0.6F : 1);
                 if (kind == 3) {
                     bolt(bx, by, bz, bx + dx * 0.15F * h, by + h, bz + dz * 0.15F * h, ev);
+                } else if (ek) {
+                    float ll = (float) Math.sqrt(1 + 0.09F * (dx * dx + dz * dz));
+                    queue(0, bx, by, bz, dx * 0.3F / ll, 1 / ll, dz * 0.3F / ll, h, h * 0.3F, k + 40, Math.min(1, ev * 1.5F));
                 } else {
                     tongueAt(bx, by, bz, h, dx * h * 0.3F, 0, dz * h * 0.3F, Math.min(1, ev * 1.5F), k, 1);
                 }
@@ -606,10 +654,55 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
                 p.vz[i] += (float) (dz * pull + vZ * 1.2F * dtt);
             }
         });
+        if (ek) {
+            pen.cat = EphemeraStaging.BASE;
+            flushAccents(em, d.out, from, baseFrom, P.count());
+        }
         pen.cat = EphemeraStaging.PARTICLE;
         P.draw(pen, mo.size, 1, Float.NaN);
         m = null;
         st = null;
+    }
+
+    private void queue(int pri, double x, double y, double z, float dx, float dy, float dz, float len, float w, int seed, float a) {
+        if (qn == QCAP || a <= 0.01F) {
+            return;
+        }
+        qx[qn] = x;
+        qy[qn] = y;
+        qz[qn] = z;
+        qdx[qn] = dx;
+        qdy[qn] = dy;
+        qdz[qn] = dz;
+        qlen[qn] = len;
+        qw[qn] = w;
+        qseed[qn] = seed;
+        qa[qn] = a;
+        qpri[qn] = pri;
+        qn++;
+    }
+
+    /** 精简档只看底座够不够 150；完整档给还没画的粒子留出位置，总数不过 600 */
+    private void flushAccents(ElementMotif em, EphemeraStaging out, int from, int baseFrom, int particles) {
+        int cost = switch (m.el) {
+            case FxMotion.POISON -> 13;
+            case FxMotion.MAGNETIC -> lite ? 8 : 16;
+            case FxMotion.RADIATION -> 6;
+            default -> 3;
+        };
+        int used = lite ? out.pending(EphemeraStaging.BASE) - baseFrom : out.pending() - from;
+        int cap = lite ? EphemeraTier.CAP_REDUCED : EphemeraTier.CAP_FULL - particles - 8;
+        for (int p = 0; p < 2; p++) {
+            for (int i = 0; i < qn; i++) {
+                if (qpri[i] != p || used + cost > cap) {
+                    continue;
+                }
+                int before = out.pending();
+                em.accent(qx[i], qy[i], qz[i], qdx[i], qdy[i], qdz[i], qlen[i], qw[i], qseed[i], qa[i]);
+                used += out.pending() - before;
+            }
+        }
+        qn = 0;
     }
 
     private static float head(float x) {

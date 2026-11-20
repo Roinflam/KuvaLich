@@ -25,9 +25,22 @@ public final class FxMotion {
     public float dt;
     public boolean fresh = true;
     public boolean lite;
-    /** 0 其他、1 火、2 冰、3 电 */
+    public static final int FIRE = 1, ICE = 2, ELECTRIC = 3, POISON = 4, IMPACT = 5, MAGNETIC = 6, RADIATION = 7;
+    /** 冲击的拍子（秒） */
+    public static final float BEAT = 0.85F;
+
+    /** 0 其他、1 火、2 冰、3 电；现有 6 款按它分三套动法，毒素 / 冲击 / 磁力 / 辐射都是 0 */
     public int kind;
+    /** 七种元素，见 {@link #FIRE} 那一组；元素母题和新款按它分 */
+    public int el;
     public int color;
+    /** 头后、颈、肩、手、背心这几个估计点，每帧跟着更新 */
+    public final BodyPoints pts = new BodyPoints();
+    /** 挥砍动画进度 0~1、受击后过了多久 0~1（刚挨打是 0，没挨打也是 0） */
+    public float swingP, hurtP;
+    /** 原版摆臂：limbSwing × 0.6662 和 limbSwingAmount；arms = false 时宿主不是原版人形模型，手腕退回包围盒估计点 */
+    public float limbPhase, limbAmp;
+    public boolean arms;
 
     public double x, y, z;
     /** 贴地层的基准高度：着地是脚底，跳一下时留在起跳那层地面，飞行、泡水、爬梯、骑乘时跟着脚走 */
@@ -44,6 +57,8 @@ public final class FxMotion {
     public float velX, velY, velZ, speed;
     /** 模型这一 tick 实际的移动速度（格/秒），没抹平；弹簧的阻尼按它算，起步、急停才不慢半拍 */
     public float trackX, trackY, trackZ;
+    /** 转身的角速度（弧度/秒，抹平过），符号同原型 s.turn：朝向角 heading = −yaw */
+    public float turn;
     public boolean onGround = true;
     public float landSpeed;
     public double walkDist;
@@ -97,12 +112,16 @@ public final class FxMotion {
         lastScale = sc;
         lite = !d.full;
         color = inst.look.color1();
-        kind = switch (inst.look.element()) {
-            case "fire" -> 1;
-            case "ice" -> 2;
-            case "electricity" -> 3;
-            default -> 0;
+        el = switch (inst.look.element()) {
+            case "fire" -> FIRE;
+            case "ice" -> ICE;
+            case "electricity" -> ELECTRIC;
+            case "poison" -> POISON;
+            case "magnetic" -> MAGNETIC;
+            case "radiation" -> RADIATION;
+            default -> IMPACT;
         };
+        kind = el <= ELECTRIC ? el : 0;
 
         x = h.x();
         z = h.z();
@@ -129,6 +148,15 @@ public final class FxMotion {
         fwdZ = (float) Math.cos(yaw);
         rightX = -fwdZ;
         rightZ = fwdX;
+        if (gap || Float.isNaN(lastYaw)) {
+            turn = 0;
+        } else {
+            float dy = lastYaw - yaw;
+            dy -= (float) (Math.PI * 2) * Math.round(dy / (Math.PI * 2));
+            float raw = dt > 1.0E-4F ? dy / dt : 0;
+            turn += (raw - turn) * (1.0F - (float) Math.exp(-dt * 18.0F));
+        }
+        lastYaw = yaw;
 
         // 瞬移那一帧的位移差不是速度
         float rawX = jumped ? 0.0F : (float) h.vx() * 20.0F, rawZ = jumped ? 0.0F : (float) h.vz() * 20.0F,
@@ -217,6 +245,18 @@ public final class FxMotion {
         onGround = ground;
         lastSwing = h.swing();
         lastHurt = h.hurt();
+        swingP = lastSwing;
+        hurtP = lastHurt > 0 ? 1 - lastHurt : 0;
+        float ls = h.limbSwing();
+        arms = h.humanoidArms() && !Float.isNaN(ls);
+        if (arms) {
+            limbPhase = ls * 0.6662F;
+            limbAmp = h.limbSwingAmount();
+        } else {
+            limbPhase = (float) walkPhase;
+            limbAmp = onGround ? Math.min(1, speed / 4.3F) * (speed > 4.9F ? 1.15F : 0.95F) * 0.9F : 0.3F;
+        }
+        pts.update(this);
 
         EphemeraTier tier = d.tier;
         calm = tier != EphemeraTier.FULL_OPEN;
@@ -240,6 +280,7 @@ public final class FxMotion {
     }
 
     private boolean wasSprint;
+    private float lastYaw = Float.NaN;
 
     /**
      * 贴地层的基准。跳一下、下个台阶照旧留在地上：腾空时取起跳那层地面，脚落到它下面就换到下面找到的地面，
@@ -305,6 +346,46 @@ public final class FxMotion {
         tRunStart = tStop = tJump = tLand = tSwing = tHurt = NEVER;
         lastFast = stopArmed = airSince = NEVER;
         lastGround = true;
+    }
+
+    /** 各款自己的流动时间：冰放慢、电按 60 ms 一格跳、毒和磁慢一点，火、冲击、辐射照常 */
+    public float clock() {
+        float sp = switch (el) {
+            case ICE -> 0.45F;
+            case ELECTRIC -> 1.3F;
+            case POISON -> 0.6F;
+            case MAGNETIC -> 0.8F;
+            default -> 1.0F;
+        };
+        float c = (float) t * sp;
+        return el == ELECTRIC ? (float) Math.floor(c / 0.06F) * 0.06F : c;
+    }
+
+    /** 冲击的震拍 0~1：打拍那一下最大，0.25 秒内落下去；别的元素是 0 */
+    public float beat(float off) {
+        if (el != IMPACT) {
+            return 0;
+        }
+        float ph = (float) (((t + off) % BEAT + BEAT) % BEAT) / BEAT;
+        float k = 1 - Math.min(1, ph / 0.3F);
+        return k * k;
+    }
+
+    /** 辐射的明灭：按 80 ms 一格掷，大多是 1，偶尔暗到 0.25 或闪到 1.6；别的元素是 1 */
+    public float blink(int seed) {
+        if (el != RADIATION) {
+            return 1;
+        }
+        float hsh = EphemeraFx.hash((int) Math.floor(t / 0.08D) * 31 + seed * 7);
+        return hsh < 0.12F ? 0.25F : hsh > 0.9F ? 1.6F : 1;
+    }
+
+    /** 电击的通断：按 50 ms 一格掷，两成时间是 0.2；别的元素是 1 */
+    public float flick(int seed) {
+        if (el != ELECTRIC) {
+            return 1;
+        }
+        return EphemeraFx.hash((int) Math.floor(t / 0.05D) * 13 + seed * 5) > 0.22F ? 1 : 0.2F;
     }
 
     /** 收敛档的事件包络整体压短；循环用的呼吸节律走 {@link EphemeraFx#env0}，不压 */

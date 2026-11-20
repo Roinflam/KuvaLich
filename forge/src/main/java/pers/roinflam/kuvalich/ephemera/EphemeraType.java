@@ -29,6 +29,18 @@ public final class EphemeraType {
     public static final EphemeraType WING = register("wing");
     public static final EphemeraType COIL = register("coil");
     public static final EphemeraType VORTEX = register("vortex");
+    public static final EphemeraType HALO = register("halo");
+    public static final EphemeraType PLACARD = register("placard");
+    public static final EphemeraType TORQUE = register("torque");
+    public static final EphemeraType HORN = register("horn");
+    public static final EphemeraType DISC = register("disc");
+    public static final EphemeraType CRYSTAL = register("crystal");
+    public static final EphemeraType SCREEN = register("screen");
+    public static final EphemeraType TAILS = register("tails");
+    public static final EphemeraType HOOK = register("hook");
+    public static final EphemeraType THORN = register("thorn");
+    public static final EphemeraType HELIX = register("helix");
+    public static final EphemeraType VINE = register("vine");
 
     private final String id;
 

@@ -18,6 +18,7 @@ public final class EntityHost implements EphemeraHost {
     private float pt;
     private boolean self;
     private double x, y, z;
+    private boolean humanoid;
 
     public EntityHost bind(LivingEntity entity, float partialTick, boolean isSelf) {
         this.e = entity;
@@ -26,6 +27,13 @@ public final class EntityHost implements EphemeraHost {
         this.x = Mth.lerp(partialTick, entity.xOld, entity.getX());
         this.y = Mth.lerp(partialTick, entity.yOld, entity.getY());
         this.z = Mth.lerp(partialTick, entity.zOld, entity.getZ());
+        this.humanoid = false;
+        return this;
+    }
+
+    /** 渲染器判断过这只画的是原版人形模型时再调；手腕挂点才按原版摆臂公式算 */
+    public EntityHost humanoid(boolean v) {
+        this.humanoid = v;
         return this;
     }
 
@@ -141,6 +149,21 @@ public final class EntityHost implements EphemeraHost {
         }
         Entity v = e.getRootVehicle();
         return Mth.lerp(pt, v.yOld, v.getY());
+    }
+
+    @Override
+    public float limbSwing() {
+        return e.walkAnimation.position(pt);
+    }
+
+    @Override
+    public float limbSwingAmount() {
+        return Math.min(1.0F, e.walkAnimation.speed(pt));
+    }
+
+    @Override
+    public boolean humanoidArms() {
+        return humanoid;
     }
 
     @Override

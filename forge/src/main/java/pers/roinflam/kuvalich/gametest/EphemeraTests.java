@@ -90,14 +90,14 @@ public final class EphemeraTests {
         loaded.endLichRound(RequiemCard.FATE_VANQUISHED);
         h.assertTrue(loaded.getLichEphemera().isEmpty() && !loaded.isLichEphemeraRolled(), "结束一轮应当清掉幻纹");
 
-        h.assertTrue(EphemeraType.all().size() == 6, "首批六款造型");
+        h.assertTrue(EphemeraType.all().size() == 18, "十八款造型");
         h.succeed();
     }
 
     @GameTest(template = "empty", batch = BATCH)
     public static void typeTableAndElements(GameTestHelper h) {
         List<String> ids = EphemeraType.all().stream().map(EphemeraType::id).toList();
-        h.assertTrue(ids.equals(List.of("surge", "orbit", "plume", "wing", "coil", "vortex")), "款式表的顺序和 id：" + ids);
+        h.assertTrue(ids.equals(List.of("surge", "orbit", "plume", "wing", "coil", "vortex", "halo", "placard", "torque", "horn", "disc", "crystal", "screen", "tails", "hook", "thorn", "helix", "vine")), "款式表的顺序和 id：" + ids);
         for (EphemeraType t : EphemeraType.all()) {
             h.assertTrue(EphemeraType.byId(t.id()) == t, "按 id 查得回：" + t.id());
         }

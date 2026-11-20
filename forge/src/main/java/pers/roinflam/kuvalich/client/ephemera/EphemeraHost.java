@@ -80,6 +80,21 @@ public interface EphemeraHost {
         return Double.NaN;
     }
 
+    /** 原版走路动画的相位（limbSwing，已插值）；不知道是 NaN */
+    default float limbSwing() {
+        return Float.NaN;
+    }
+
+    /** 原版走路动画的幅度（limbSwingAmount，已插值） */
+    default float limbSwingAmount() {
+        return 0;
+    }
+
+    /** 画出来的是原版人形模型（手臂按原版公式摆）；换了模型的、玄骸这类自己做动画的是 false */
+    default boolean humanoidArms() {
+        return false;
+    }
+
     /** 挥砍动画进度 0~1，没在挥是 0 */
     float swing();
 

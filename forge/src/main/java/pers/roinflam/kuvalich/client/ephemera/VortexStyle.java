@@ -50,6 +50,7 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
         final int[] bSpr = new int[BOLTS];
         final boolean[] bOn = new boolean[BOLTS];
         int nb;
+        final ElementMotif fx = new ElementMotif();
     }
 
     private final EphemeraPen.Ribbon rib = new EphemeraPen.Ribbon(16);
@@ -57,6 +58,7 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
     private final FxTrail.Sample sample = new FxTrail.Sample();
     private final double[][] rx = new double[NV_MAX + 1][NC_MAX + 1], ry = new double[NV_MAX + 1][NC_MAX + 1], rz = new double[NV_MAX + 1][NC_MAX + 1];
     private final float[] dir = new float[3];
+    private final ElementMotif.Sites sites = new ElementMotif.Sites();
 
     @Override
     public float extent() {
@@ -71,6 +73,7 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
     @Override
     protected void reset(St s, FxMotion m) {
         s.ready = false;
+        s.fx.reset();
     }
 
     private void init(St s, FxMotion m) {
@@ -109,7 +112,10 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
         float fwdX = m.fwdX, fwdZ = m.fwdZ, rightX = m.rightX, rightZ = m.rightZ;
         int C = m.color, deep = mul(C, 0.14F), body = mul(C, 0.5F), mid = mul(C, 0.32F), hot = mix(C, WHITE, 0.45F);
         int kind = m.kind;
-        boolean zap = kind == 3, ice = kind == 2, fire = kind == 1;
+        boolean zap = kind == 3, ice = kind == 2, fire = kind == 1, ek = kind == 0;
+        ElementMotif fx = s.fx;
+        fx.begin(pen, m);
+        int from = d.out.pending();
         Params P = Params.of(kind);
         float Bk = m.burst, act = m.act;
         boolean fp = d.firstPersonSelf, sneak = m.sneak;
@@ -155,6 +161,24 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
         pen.s(SOFT).alphaBlend().rgb(body).a(0.5F * lift).flat(Gx, Gy - 0.008, Gz, Rg * 2.3F, Rg * 2.3F);
         pen.s(SOFT).rgb(C).a(0.2F * inten * lift).flat(Gx, Gy, Gz, Rg * 2, Rg * 2);
         pen.s(SOFTRING).rgb(C).a(0.6F * inten * lift).flat(Gx, Gy + 0.005, Gz, Rg * 2.3F, Rg * 2.3F, spinA * 0.5F);
+        if (ek) {
+            fx.ground(Gx, gy, Gz, Rg * 0.5F, Math.min(1, inten) * lift);
+            // 爆发先画，涡幕和升流上的凸起按剩下的余量让
+            pen.cat = EphemeraStaging.PARTICLE;
+            fx.events(Gx, gy, Gz, Rg * 1.2F);
+            fx.bursts();
+            pen.cat = EphemeraStaging.BASE;
+            sites.clear();
+            for (int k = 0; k < 8; k++) {
+                // 第一人称只留脚边那圈，腰上冒的会糊在镜头前
+                if (fp && k % 2 != 0) {
+                    continue;
+                }
+                float a = k * TAU / 8 + spinA * 0.6F, ca = (float) Math.cos(a), sa = (float) Math.sin(a);
+                float rr = Rg * 0.6F, hy = H * (k % 2 == 0 ? 0.08F : 0.45F) * (sneak ? 0.6F : 1);
+                sites.add(Gx + ca * rr, gy + hy, Gz + sa * rr, ca * 0.96F, 0.28F, sa * 0.96F);
+            }
+        }
 
         // 旋臂：平躺的丝带，螺旋往外甩
         int NS = lite ? 6 : 10;
@@ -323,6 +347,21 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
                     wallQuad(k, j);
                 }
             }
+            if (ek) {
+                // 涡幕顶上是淡出去的，顶沿取在还看得清的六成高处
+                float fe = 0.62F, re = r0 + (r1 - r0) * (float) Math.pow(fe, 0.8);
+                int ne = lite ? 2 : 7;
+                for (int j = 0; j < ne; j++) {
+                    if (!lite && d.out.pending() - from > 380) {
+                        break;
+                    }
+                    float ang = spinA * 0.6F + (j + 0.5F) * TAU / ne, ca = (float) Math.cos(ang), sa = (float) Math.sin(ang);
+                    double x = bpx + ca * re + leanX * fe * fe * 2.2F, y = bpy + 0.03 + fe * wallH, z = bpz + sa * re + leanZ * fe * fe * 2.2F;
+                    float oy = m.el == FxMotion.POISON ? -1.4F : m.el == FxMotion.RADIATION ? 0.9F : 0.35F, l = (float) Math.sqrt(1 + oy * oy);
+                    float w = W * 0.2F * (calm ? 0.85F : 1);
+                    fx.accent(x, y, z, ca / l, oy / l, sa / l, w * (m.el == FxMotion.POISON ? 2.2F : 3), w, j * 7 + 3, Math.min(1, wallA * 1.3F));
+                }
+            }
 
             // 柱身的整体光：竖直的宽光条
             {
@@ -369,6 +408,16 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
                     }
                     pen.s(zap ? CRACK_0 : ice ? FLOW_2 : FLOW_0).rgb(C).ribbon(rib.scaled(pts, zap ? 1.8F : 1.7F, 0.8F * inten), EphemeraPen.FACE_CAM, u0, u0 + 0.5F);
                     pen.s(zap ? CRACK_1 : STREAK).rgb(hot).ribbon(rib.scaled(pts, zap ? 0.9F : 0.3F, 0.85F * inten), EphemeraPen.FACE_CAM, 0, 1);
+                    if (ek && (!lite || j == 0) && (lite || d.out.pending() - from < 420)) {
+                        // 升流的头在 0.75 处还亮，再往上就淡没了，凸起从这里接出去
+                        int a = Math.round(0.75F * n), b = Math.min(n, a + 1);
+                        double tx = pts.x[b] - pts.x[a], ty = pts.y[b] - pts.y[a] + H * 0.08F, tz = pts.z[b] - pts.z[a], tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+                        if (tl > 1.0E-5) {
+                            float w = W * 0.26F * (calm ? 0.85F : 1);
+                            fx.accent(pts.x[a], pts.y[a], pts.z[a], tx / tl, ty / tl, tz / tl, H * 0.24F * (calm ? 0.8F : 1), w, 60 + j, 0.85F * Math.min(1, inten));
+                            sites.add(pts.x[a], pts.y[a], pts.z[a], (float) (tx / tl), (float) (ty / tl), (float) (tz / tl));
+                        }
+                    }
                 }
             }
 
@@ -483,7 +532,7 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
                         .size(H * 0.4F, H * 0.65F).sprite(SOFT).rgb(C).a(0.13F).drag(0.6F).fade(0.25F, 0.6F).data(1).spawn();
             }
         }
-        s.acc[1] += dt * (lite ? 6 : 16) * rate;
+        s.acc[1] += dt * (lite ? 6 : 16) * rate * (ek ? 0 : 1);
         while (s.acc[1] >= 1) {
             s.acc[1] -= 1;
             if (ice) {
@@ -499,7 +548,7 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
                         .data(1).spawn();
             }
         }
-        s.acc[2] += dt * (lite ? 3 : 8) * rate;
+        s.acc[2] += dt * (lite ? 3 : 8) * rate * (ek ? 0 : 1);
         while (s.acc[2] >= 1) {
             s.acc[2] -= 1;
             ring(Rg, 0.2F, 0.9F, bpx, bpy, bpz, 0, H * 0.4F);
@@ -514,6 +563,10 @@ public final class VortexStyle extends ProtoStyle<VortexStyle.St> {
                 s.spark.spec().pos(ringX, ringY, ringZ).vel(inX + (rnd() - 0.5F) * sc, riseV * 1.8F, inZ + (rnd() - 0.5F) * sc).life(0.55F)
                         .size(H * 0.022F).sprite(EphemeraSprites.WHITE).rgb(hot).stretch(0.05F).drag(1).spawn();
             }
+        }
+
+        if (ek) {
+            fx.motes(sites, 24 * rate, sc);
         }
 
         if (m.justLand) {

@@ -4,11 +4,23 @@
     "layer0": "kuvalich:item/requiem_gem"
   },
   "overrides": [
-    { "predicate": { "kuvalich:ephemera_style": 0.1 }, "model": "kuvalich:item/ephemera_surge" },
-    { "predicate": { "kuvalich:ephemera_style": 0.2 }, "model": "kuvalich:item/ephemera_orbit" },
-    { "predicate": { "kuvalich:ephemera_style": 0.3 }, "model": "kuvalich:item/ephemera_plume" },
-    { "predicate": { "kuvalich:ephemera_style": 0.4 }, "model": "kuvalich:item/ephemera_wing" },
-    { "predicate": { "kuvalich:ephemera_style": 0.5 }, "model": "kuvalich:item/ephemera_coil" },
-    { "predicate": { "kuvalich:ephemera_style": 0.6 }, "model": "kuvalich:item/ephemera_vortex" }
+    { "predicate": { "kuvalich:ephemera_style": 0.05 }, "model": "kuvalich:item/ephemera_surge" },
+    { "predicate": { "kuvalich:ephemera_style": 0.1 }, "model": "kuvalich:item/ephemera_orbit" },
+    { "predicate": { "kuvalich:ephemera_style": 0.15 }, "model": "kuvalich:item/ephemera_plume" },
+    { "predicate": { "kuvalich:ephemera_style": 0.2 }, "model": "kuvalich:item/ephemera_wing" },
+    { "predicate": { "kuvalich:ephemera_style": 0.25 }, "model": "kuvalich:item/ephemera_coil" },
+    { "predicate": { "kuvalich:ephemera_style": 0.3 }, "model": "kuvalich:item/ephemera_vortex" },
+    { "predicate": { "kuvalich:ephemera_style": 0.35 }, "model": "kuvalich:item/ephemera_halo" },
+    { "predicate": { "kuvalich:ephemera_style": 0.4 }, "model": "kuvalich:item/ephemera_placard" },
+    { "predicate": { "kuvalich:ephemera_style": 0.45 }, "model": "kuvalich:item/ephemera_torque" },
+    { "predicate": { "kuvalich:ephemera_style": 0.5 }, "model": "kuvalich:item/ephemera_horn" },
+    { "predicate": { "kuvalich:ephemera_style": 0.55 }, "model": "kuvalich:item/ephemera_disc" },
+    { "predicate": { "kuvalich:ephemera_style": 0.6 }, "model": "kuvalich:item/ephemera_crystal" },
+    { "predicate": { "kuvalich:ephemera_style": 0.65 }, "model": "kuvalich:item/ephemera_screen" },
+    { "predicate": { "kuvalich:ephemera_style": 0.7 }, "model": "kuvalich:item/ephemera_tails" },
+    { "predicate": { "kuvalich:ephemera_style": 0.75 }, "model": "kuvalich:item/ephemera_hook" },
+    { "predicate": { "kuvalich:ephemera_style": 0.8 }, "model": "kuvalich:item/ephemera_thorn" },
+    { "predicate": { "kuvalich:ephemera_style": 0.85 }, "model": "kuvalich:item/ephemera_helix" },
+    { "predicate": { "kuvalich:ephemera_style": 0.9 }, "model": "kuvalich:item/ephemera_vine" }
   ]
 }

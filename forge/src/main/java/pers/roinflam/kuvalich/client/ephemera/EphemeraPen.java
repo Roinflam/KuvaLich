@@ -15,6 +15,8 @@ public final class EphemeraPen {
     private EphemeraStaging out;
     private double cx, cy, cz;
     public float rightX, rightY, rightZ, upX, upY, upZ;
+    /** 镜头朝前（= 上 × 右），原型的 d.cam.fwd */
+    public float fwdX, fwdY, fwdZ;
 
     public int cat = EphemeraStaging.BASE;
     public float glow = 1.0F;
@@ -47,6 +49,9 @@ public final class EphemeraPen {
         upX = draw.upX;
         upY = draw.upY;
         upZ = draw.upZ;
+        fwdX = upY * rightZ - upZ * rightY;
+        fwdY = upZ * rightX - upX * rightZ;
+        fwdZ = upX * rightY - upY * rightX;
         base = baseRgb;
         glow = glowAlpha;
         cat = EphemeraStaging.BASE;
@@ -63,6 +68,23 @@ public final class EphemeraPen {
 
     public double camZ() {
         return cz;
+    }
+
+    /** 笔刷现在的设置（拆成多段画的工具要一段段重设笔刷时读） */
+    public int sprite() {
+        return sprite;
+    }
+
+    public int rgbNow() {
+        return rgb;
+    }
+
+    public float alpha() {
+        return a;
+    }
+
+    public boolean additive() {
+        return add;
     }
 
     private void reset() {

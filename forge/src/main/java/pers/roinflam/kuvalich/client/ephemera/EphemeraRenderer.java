@@ -17,6 +17,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraftforge.fml.ModList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -213,7 +216,7 @@ public final class EphemeraRenderer {
                 inst = new EphemeraInstance(le.getId(), look, EphemeraStyles.of(look.type()));
                 INSTANCES.put(le.getId(), inst);
             }
-            EphemeraHost host = HOST.bind(le, pt, self);
+            EphemeraHost host = HOST.bind(le, pt, self).humanoid(humanoidArms(mc, le));
             inst.update(host, now, d.tier);
             inst.lastDrawnMs = now;
             // 倒地、处决、起身、消散时模型不在站着的位置上，挂点对不上，先收起来；
@@ -267,6 +270,20 @@ public final class EphemeraRenderer {
         lastQuads = kept;
         lastDropped = dropped;
         record(System.nanoTime() - t0);
+    }
+
+    private static Boolean ysm;
+
+    /** 原版人形模型才按原版摆臂公式估手腕；YSM 这类换模型的、玄骸自己的动画一律退回包围盒估计点 */
+    private static boolean humanoidArms(Minecraft mc, LivingEntity le) {
+        if (ysm == null) {
+            ysm = ModList.get().isLoaded("yes_steve_model");
+        }
+        if (ysm) {
+            return false;
+        }
+        return mc.getEntityRenderDispatcher().getRenderer(le) instanceof LivingEntityRenderer<?, ?> r
+                && r.getModel() instanceof HumanoidModel<?>;
     }
 
     private static boolean lying(LivingEntity le) {

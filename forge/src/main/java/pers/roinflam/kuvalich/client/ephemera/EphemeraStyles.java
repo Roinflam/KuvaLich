@@ -21,6 +21,18 @@ public final class EphemeraStyles {
         register(EphemeraType.WING, new WingStyle());
         register(EphemeraType.COIL, new CoilStyle());
         register(EphemeraType.VORTEX, new VortexStyle());
+        register(EphemeraType.TORQUE, new TorqueStyle());
+        register(EphemeraType.HORN, new HornStyle());
+        register(EphemeraType.HALO, new HaloStyle());
+        register(EphemeraType.PLACARD, new PlacardStyle());
+        register(EphemeraType.DISC, new DiscStyle());
+        register(EphemeraType.TAILS, new TailsStyle());
+        register(EphemeraType.SCREEN, new ScreenStyle());
+        register(EphemeraType.CRYSTAL, new CrystalStyle());
+        register(EphemeraType.HOOK, new HookStyle());
+        register(EphemeraType.HELIX, new HelixStyle());
+        register(EphemeraType.THORN, new ThornStyle());
+        register(EphemeraType.VINE, new VineStyle());
     }
 
     private EphemeraStyles() {

@@ -158,48 +158,132 @@
         },
         {
           "type": "h",
-          "text": "六種款式"
+          "text": "十八種款式"
         },
         {
           "type": "table",
           "header": [
             "款式",
+            "部位",
             "樣子"
           ],
           "widths": [
+            2,
             2,
             5
           ],
           "rows": [
             [
-              "{lang:kuvalich.ephemera.name.surge}",
-              "{lang:kuvalich.ephemera.desc.surge}"
+              "{lang:kuvalich.ephemera.name.halo}",
+              "頭後",
+              "{lang:kuvalich.ephemera.desc.halo}"
             ],
             [
-              "{lang:kuvalich.ephemera.name.orbit}",
-              "{lang:kuvalich.ephemera.desc.orbit}"
+              "{lang:kuvalich.ephemera.name.placard}",
+              "頭後",
+              "{lang:kuvalich.ephemera.desc.placard}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.torque}",
+              "頭後",
+              "{lang:kuvalich.ephemera.desc.torque}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.horn}",
+              "肩臂",
+              "{lang:kuvalich.ephemera.desc.horn}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.disc}",
+              "肩臂",
+              "{lang:kuvalich.ephemera.desc.disc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.crystal}",
+              "肩臂",
+              "{lang:kuvalich.ephemera.desc.crystal}"
             ],
             [
               "{lang:kuvalich.ephemera.name.plume}",
+              "背後",
               "{lang:kuvalich.ephemera.desc.plume}"
             ],
             [
               "{lang:kuvalich.ephemera.name.wing}",
+              "背後",
               "{lang:kuvalich.ephemera.desc.wing}"
             ],
             [
+              "{lang:kuvalich.ephemera.name.screen}",
+              "背後",
+              "{lang:kuvalich.ephemera.desc.screen}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.tails}",
+              "背後",
+              "{lang:kuvalich.ephemera.desc.tails}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.hook}",
+              "背後",
+              "{lang:kuvalich.ephemera.desc.hook}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.orbit}",
+              "環身",
+              "{lang:kuvalich.ephemera.desc.orbit}"
+            ],
+            [
               "{lang:kuvalich.ephemera.name.coil}",
+              "環身",
               "{lang:kuvalich.ephemera.desc.coil}"
             ],
             [
+              "{lang:kuvalich.ephemera.name.thorn}",
+              "環身",
+              "{lang:kuvalich.ephemera.desc.thorn}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.helix}",
+              "環身",
+              "{lang:kuvalich.ephemera.desc.helix}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.vine}",
+              "環身",
+              "{lang:kuvalich.ephemera.desc.vine}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.surge}",
+              "足下",
+              "{lang:kuvalich.ephemera.desc.surge}"
+            ],
+            [
               "{lang:kuvalich.ephemera.name.vortex}",
+              "足下",
               "{lang:kuvalich.ephemera.desc.vortex}"
             ]
           ]
         },
         {
           "type": "p",
-          "text": "款式決定形狀。元素隨玄骸武器的元素而定，決定預設配色。{lang:kuvaweapon.type.fire}、{lang:kuvaweapon.type.ice}、{lang:kuvaweapon.type.electricity}三種元素還會改變每一款的動態：{lang:kuvaweapon.type.fire}更猛烈，帶有火星和煙；{lang:kuvaweapon.type.ice}流動放緩，凝出冰晶向下飄落；{lang:kuvaweapon.type.electricity}忽明忽暗，迸出電弧。其餘元素只改變配色。所有款式站立時幅度較小，奔跑、跳躍、揮擊和受擊時隨動作展開。"
+          "text": "款式決定形狀。元素隨玄骸武器的元素而定，決定預設配色和形態。同一款式在七種元素下形態各不相同："
+        },
+        {
+          "type": "list",
+          "items": [
+            "{lang:kuvaweapon.type.fire}：竄出上尖下寬的火舌，飄起餘燼。",
+            "{lang:kuvaweapon.type.ice}：凝成硬邊稜晶，動作放緩，冰片緩緩飄落。",
+            "{lang:kuvaweapon.type.electricity}：迸出折線電弧，明滅跳變，濺起火花。",
+            "{lang:kuvaweapon.type.poison}：垂下黏流，末端凝成液滴滴落，地面積起毒液。",
+            "{lang:kuvaweapon.type.impact}：隨節拍向外震出光條和衝擊環，崩出碎塊。",
+            "{lang:kuvaweapon.type.magnetic}：繞出閉合的磁力弧，細屑盤旋著向內吸聚。",
+            "{lang:kuvaweapon.type.radiation}：向外放射長短不一的細線，時暗時閃，地面浮現六邊形光斑。"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "所有款式站立時幅度較小，奔跑、跳躍、揮擊和受擊時隨動作展開。"
         },
         {
           "type": "h",

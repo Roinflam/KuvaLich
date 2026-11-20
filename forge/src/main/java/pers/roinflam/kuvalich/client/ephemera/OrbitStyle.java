@@ -29,9 +29,12 @@ public final class OrbitStyle extends ProtoStyle<OrbitStyle.St> {
         float offX, offY, offZ;
         float zapT, zapK;
         float acc0, acc1;
+        final ElementMotif fx = new ElementMotif();
+        final ElementMotif.Sites sites = new ElementMotif.Sites();
     }
 
     private final EphemeraPen.Ribbon rib = new EphemeraPen.Ribbon(32);
+    private final EphemeraPen.Ribbon tail = new EphemeraPen.Ribbon(8);
     private final FxTrail.Sample[] samples = new FxTrail.Sample[6];
     private final double[] hx = new double[5], hy = new double[5], hz = new double[5];
     private final float[] dir = new float[3];
@@ -58,6 +61,7 @@ public final class OrbitStyle extends ProtoStyle<OrbitStyle.St> {
     @Override
     protected void reset(St s, FxMotion m) {
         s.ready = false;
+        s.fx.reset();
     }
 
     private void init(St s, FxMotion m) {
@@ -121,6 +125,13 @@ public final class OrbitStyle extends ProtoStyle<OrbitStyle.St> {
         int C = m.color, deep = mul(C, 0.14F), body = mul(C, 0.42F), hot = mix(C, WHITE, 0.55F);
         int kind = m.kind;
         boolean zap = kind == 3;
+        // 毒、冲击、磁、辐射：光核换形、光迹尾端和散落物走元素母题；火、冰、电照原来的画法
+        boolean ek = kind == 0;
+        ElementMotif em = s.fx;
+        int from = d.out.pending();
+        if (ek) {
+            em.begin(pen, m);
+        }
         FxParamsOrbit P = FxParamsOrbit.of(kind);
         int N = lite ? 4 : 5;
         float B = m.burst, act = m.act, ib = calm ? m.idle : 1;
@@ -265,6 +276,8 @@ public final class OrbitStyle extends ProtoStyle<OrbitStyle.St> {
                         pen.s(i % 2 != 0 ? FLAME_0 : FLAME_0 + 1).rgb(C).a(0.6F * inten).billboard(px, py + sz * 0.15, pz, sz * 0.55F, sz * 0.9F, rot);
                     }
                     pen.s(SOFTCORE).rgb(hot).a(inten).billboard(px, py, pz, sz * 0.9F, sz * 0.9F);
+                } else if (ek) {
+                    core(m, em, i, px, py, pz, sz, inten, lite);
                 } else {
                     pen.s(SOFTCORE).rgb(hot).a(inten).billboard(px, py, pz, sz, sz);
                     if (!lite || zap) {
@@ -327,6 +340,18 @@ public final class OrbitStyle extends ProtoStyle<OrbitStyle.St> {
                     pen.s(STREAK);
                     tdraw(pts, (q, k) -> wd * 0.45F * (float) Math.pow(1 - q, 0.9), (q, k) -> fInten * (float) Math.pow(1 - q, 1.4),
                             (q, k) -> mix(hot, C, q), 0.5F, 1);
+                    if (ek) {
+                        // 光迹后半段长出这一元素的凸起；给后面的粒子留位置，总数不过 600
+                        int lo = lite ? 3 : 5, hi = lite ? 4 : 8;
+                        int room = EphemeraTier.CAP_FULL - 12 - em.particles() - s.shed.count() - (d.out.pending() - from);
+                        if (hi < pts.n && room >= (lite ? 1 : 2) * edgeCost(m.el, lite)) {
+                            tail.clear();
+                            for (int k = lo; k <= hi; k++) {
+                                tail.add(pts.x[k], pts.y[k], pts.z[k], 0, 1);
+                            }
+                            em.edge(tail, wd * 0.35F, 0.75F * inten, i * 7 + 3);
+                        }
+                    }
                 }
             }
             pen.cat = EphemeraStaging.BASE;
@@ -385,8 +410,24 @@ public final class OrbitStyle extends ProtoStyle<OrbitStyle.St> {
         // 散落物：每颗光核沿途掉东西；第一人称看自己时不撒，光核本来就没画
         FxParticles shed = s.shed, dust = s.dust;
         float vX = m.velX, vY = m.velY, vZ = m.velZ;
+        if (!fp && ek) {
+            // 每颗光核往外冒这一元素的东西，顶替原来的散落物和星尘
+            ElementMotif.Sites sites = s.sites.clear();
+            for (int i = 0; i < N; i++) {
+                float ox = (float) (hx[i] - ccx), oy = (float) (hy[i] - ccy), oz = (float) (hz[i] - ccz);
+                float ol = (float) Math.sqrt(ox * ox + oy * oy + oz * oz);
+                if (ol < 1.0E-4F) {
+                    ox = 0;
+                    oy = 1;
+                    oz = 0;
+                    ol = 1;
+                }
+                sites.add(hx[i], hy[i], hz[i], ox / ol, oy / ol, oz / ol);
+            }
+            em.motes(sites, 34 * (sneak ? 0.45F : 1) * (1 + 2 * flash) * (calm ? m.amp : 1), sc);
+        }
         if (!fp) {
-            s.acc0 += dt * (lite ? 10 : 40) * (sneak ? 0.4F : 1) * (1 + flash * 3) * (calm ? m.amp : 1);
+            s.acc0 += ek ? 0 : dt * (lite ? 10 : 40) * (sneak ? 0.4F : 1) * (1 + flash * 3) * (calm ? m.amp : 1);
             while (s.acc0 >= 1) {
                 s.acc0 -= 1;
                 int h = (int) (rnd() * N);
@@ -408,7 +449,7 @@ public final class OrbitStyle extends ProtoStyle<OrbitStyle.St> {
                 }
             }
             // 身周的星尘：轨道壳上慢慢漂，一闪一闪
-            s.acc1 += dt * (lite ? 6 : 26) * (sneak ? 0.5F : 1) * (calm ? 0.6F : 1);
+            s.acc1 += ek ? 0 : dt * (lite ? 6 : 26) * (sneak ? 0.5F : 1) * (calm ? 0.6F : 1);
             while (s.acc1 >= 1) {
                 s.acc1 -= 1;
                 EphemeraFx.randDir(dir);
@@ -445,6 +486,56 @@ public final class OrbitStyle extends ProtoStyle<OrbitStyle.St> {
         pen.cat = EphemeraStaging.PARTICLE;
         shed.draw(pen, m.size, inten, Float.NaN);
         dust.draw(pen, m.size, 1, t);
+    }
+
+    /** 光核按元素换形：毒是垂着的一滴，冲击是按拍子鼓出去的圈，磁是两颗对转的小核，辐射是明灭的星芒 */
+    private void core(FxMotion m, ElementMotif em, int i, double px, double py, double pz, float sz, float inten, boolean lite) {
+        float t = (float) m.t;
+        switch (m.el) {
+            case FxMotion.POISON -> {
+                float wob = 0.08F * (float) Math.sin(m.clock() * 5 + i * 1.9F);
+                pen.s(DROP).rgb(em.pale).a(0.95F * inten).billboard(px, py, pz, sz * 0.72F * (1 + wob), sz * 1.05F * (1 - wob));
+                pen.s(SOFTCORE).rgb(em.hot).a(0.8F * inten).billboard(px, py - sz * 0.14F, pz, sz * 0.5F, sz * 0.5F);
+            }
+            case FxMotion.IMPACT -> {
+                float b = m.beat(i * 0.04F);
+                pen.s(SOFTCORE).rgb(em.hot).a(inten).billboard(px, py, pz, sz * (0.75F + 0.35F * b), sz * (0.75F + 0.35F * b));
+                pen.s(RING).rgb(em.pale).a((0.45F + 0.55F * b) * inten).billboard(px, py, pz, sz * (1.0F + 0.45F * b), sz * (1.0F + 0.45F * b));
+                if (b > 0.05F && !lite) {
+                    float w = sz * (1.3F + 2.2F * (1 - b));
+                    pen.s(SHOCK).rgb(em.hot).a(0.85F * b * inten).billboard(px, py, pz, w, w);
+                }
+            }
+            case FxMotion.MAGNETIC -> {
+                float ang = m.clock() * 6 * (i % 2 != 0 ? -1 : 1) + i * 1.3F;
+                float cs = (float) Math.cos(ang) * sz * 0.42F, sn = (float) Math.sin(ang) * sz * 0.42F;
+                double ox = pen.rightX * cs + pen.upX * sn, oy = pen.rightY * cs + pen.upY * sn, oz = pen.rightZ * cs + pen.upZ * sn;
+                pen.s(SOFTRING).rgb(em.C).a(0.5F * inten).billboard(px, py, pz, sz * 1.15F, sz * 1.15F);
+                pen.s(SOFTCORE).rgb(em.hot).a(inten).billboard(px + ox, py + oy, pz + oz, sz * 0.5F, sz * 0.5F);
+                pen.s(SOFTCORE).rgb(em.hot).a(inten).billboard(px - ox, py - oy, pz - oz, sz * 0.5F, sz * 0.5F);
+            }
+            default -> {
+                float bl = m.blink(i);
+                pen.s(SOFTCORE).rgb(em.hot).a(Math.min(1, bl) * inten).billboard(px, py, pz, sz * 0.55F, sz * 0.55F);
+                pen.s(FLARE).rgb(em.hot).a(Math.min(1, bl) * inten).billboard(px, py, pz, sz * 1.5F * (0.75F + 0.25F * bl), sz * 1.5F * (0.75F + 0.25F * bl), 0.785F);
+                if (!lite) {
+                    pen.s(HEX_0).rgb(em.C).a(0.45F * Math.min(1, bl) * inten).billboard(px, py, pz, sz * 1.2F, sz * 1.2F, t * 0.5F + i);
+                }
+                if (bl > 1.2F) {
+                    pen.s(FLARE).rgb(WHITE).a(0.9F * inten).billboard(px, py, pz, sz * 2.4F, sz * 2.4F);
+                }
+            }
+        }
+    }
+
+    /** 母题一根凸起大约几个面片 */
+    private static int edgeCost(int el, boolean lite) {
+        return switch (el) {
+            case FxMotion.POISON -> 13;
+            case FxMotion.MAGNETIC -> lite ? 8 : 16;
+            case FxMotion.RADIATION -> 6;
+            default -> 3;
+        };
     }
 
     private static float wakeAl(float q, float lk) {

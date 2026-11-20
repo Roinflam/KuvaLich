@@ -29,6 +29,7 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
         final FxTrail[] sheet = new FxTrail[2];
         float burstT, nextBurst, acc, accF, accM, zapT, zapK;
         int seenBlast = -1;
+        final ElementMotif motif = new ElementMotif();
     }
 
     private record Params(float curl, float amp, float om, float flow, float life, int glow, int core) {
@@ -53,6 +54,10 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
     private final EphemeraPen.Ribbon rib = new EphemeraPen.Ribbon(32);
     private final FxTrail.Sample sample = new FxTrail.Sample();
     private final float[] dir = new float[3];
+    private final ElementMotif.Sites sites = new ElementMotif.Sites();
+    private final double[] tailX = new double[2], tailY = new double[2], tailZ = new double[2];
+    private final float[] tailD = new float[6], tailW = new float[2], tailA = new float[2];
+    private int tailN;
     private boolean calm;
     private float trailW, trailA;
     private int nseg;
@@ -79,6 +84,7 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
     @Override
     protected void reset(St s, FxMotion m) {
         s.ready = false;
+        s.motif.reset();
     }
 
     private void init(St s, FxMotion m) {
@@ -133,6 +139,10 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
         int C = m.color, deep = mul(C, 0.13F), body = mul(C, 0.5F), hot = mix(C, WHITE, 0.5F);
         int kind = m.kind;
         boolean zap = kind == 3;
+        // 毒、冲击、磁、辐射：翼缘、翼尖拖尾的末端、背心冒的、受击那下交给元素母题
+        boolean ek = kind == 0;
+        ElementMotif motif = s.motif;
+        motif.begin(pen, m);
         // 电击的默认色偏紫、亮度低，白天灰底上暗托底一压就发闷：按天光把暗托底减淡、主色托底提一点，夜里不动
         float zapDay = zap ? (d.glowAlpha >= EphemeraTier.GLOW_SNOW - 1.0E-3F ? 1
                 : EphemeraFx.clamp((d.glowAlpha - EphemeraTier.GLOW_NIGHT) / (EphemeraTier.GLOW_DAY - EphemeraTier.GLOW_NIGHT), 0, 1)) : 0;
@@ -292,6 +302,44 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
             }
         }
 
+        // 翼缘：最上一片光羽外侧长一排母题凸起，朝向取翼面内「离开中间那片羽」的一侧，镜头转到前面也不会往里长
+        // 受击那下的爆发（磁一次近百个面片）放完之前让出来，翼缘先不长
+        if (ek && m.since(m.tHurt) >= m.burstTime + 0.1F) {
+            float ew = H * 0.06F, ea = Math.min(1, 0.9F * intensity) * (calm ? 0.8F : 1);
+            int q0 = lite ? NSEG - 2 : 4;
+            for (int i = 0; i < 2; i++) {
+                EphemeraPen.Ribbon fe = feathers[i * 3], fm = feathers[i * 3 + 1];
+                for (int q = q0; q < NSEG; q += 3) {
+                    double tx = fe.x[q + 1] - fe.x[q - 1], ty = fe.y[q + 1] - fe.y[q - 1], tz = fe.z[q + 1] - fe.z[q - 1];
+                    double tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+                    if (tl < 1.0E-6) {
+                        continue;
+                    }
+                    tx /= tl;
+                    ty /= tl;
+                    tz /= tl;
+                    double ox = fe.x[q] - fm.x[q], oy = fe.y[q] - fm.y[q], oz = fe.z[q] - fm.z[q];
+                    double dp = ox * tx + oy * ty + oz * tz;
+                    ox -= tx * dp;
+                    oy -= ty * dp;
+                    oz -= tz * dp;
+                    double ol = Math.sqrt(ox * ox + oy * oy + oz * oz);
+                    if (ol < 1.0E-6) {
+                        ox = 0;
+                        oy = 1;
+                        oz = 0;
+                    } else {
+                        ox /= ol;
+                        oy /= ol;
+                        oz /= ol;
+                    }
+                    float len = ew * (m.el == FxMotion.POISON ? 2.2F : 3);
+                    motif.accent(fe.x[q], fe.y[q], fe.z[q], ox, oy, oz, len, ew, i * 17 + q,
+                            ea * (m.el == FxMotion.MAGNETIC ? 0.6F : 1));
+                }
+            }
+        }
+
         // 冰：光羽上长出晶片
         if (kind == 2) {
             for (int fi = 0; fi < 6; fi++) {
@@ -348,6 +396,10 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
             s.tips[n].push(fe.x[NSEG], fe.y[NSEG], fe.z[NSEG], t);
         }
         int tSeg = lite ? 7 : 12;
+        // 粒子最后画、没法半截停，拖尾末端的母题按池里现有的数先给粒子留出来
+        tailN = 0;
+        int reserve = (lite ? EphemeraTier.CAP_REDUCED : EphemeraTier.CAP_FULL) - s.shards.count() - s.plume.count() - s.fx.count()
+                - s.motes.count() - motif.particles() - 40;
         if (!fp) {
             for (int n = 0; n < s.tips.length; n++) {
                 FxTrail tr = s.tips[n];
@@ -372,6 +424,23 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
                 pen.s(zap ? CRACK_1 : FLOW_0);
                 tdraw(tr, tSeg, (q, i) -> wd * (zap ? 2 : 1.3F) * (float) Math.pow(1 - q, 0.8) * (0.25F + 0.75F * smooth(q / 0.2F)),
                         (q, i) -> 0.9F * fI * flick * (1 - q) * lk, (q, i) -> mix(hot, C, Math.min(1, q * 2.5F)), u0, u0 + 0.5F);
+                // 拖尾末端顺着尾巴往后长一截母题；先记下，挥砍、爆发画完再看剩下的预算
+                if (ek && n < 2 && sample.n >= 3) {
+                    int j = Math.max(1, Math.min(sample.n - 2, Math.round((sample.n - 1) * 0.6F)));
+                    double tx = sample.x[j + 1] - sample.x[j - 1], ty = sample.y[j + 1] - sample.y[j - 1], tz = sample.z[j + 1] - sample.z[j - 1];
+                    double tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+                    if (tl > 1.0E-6) {
+                        int c = tailN++;
+                        tailX[c] = sample.x[j];
+                        tailY[c] = sample.y[j];
+                        tailZ[c] = sample.z[j];
+                        tailD[c * 3] = (float) (tx / tl);
+                        tailD[c * 3 + 1] = (float) (ty / tl);
+                        tailD[c * 3 + 2] = (float) (tz / tl);
+                        tailW[c] = wd * 1.2F;
+                        tailA[c] = Math.min(1, 2 * (1 - sample.s[j])) * lk * Math.min(1, intensity);
+                    }
+                }
             }
         }
         pen.cat = EphemeraStaging.BASE;
@@ -417,8 +486,10 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
             pen.s(SHOCK).rgb(C).a(Math.min(1, eLand * 1.2F)).flat(m.x, g + 0.01, m.z, r * 2, r * 2);
         }
 
-        // 受击炸开：背后一圈冲击环 + 一团闪光
-        if (blast > 0.01F && !fp) {
+        // 受击炸开：背后一圈冲击环 + 一团闪光；毒、冲击、磁、辐射换成母题的爆发（炸开那一刻放）
+        if (ek) {
+            motif.bursts();
+        } else if (blast > 0.01F && !fp) {
             float k = smooth((hk / m.burstTime - 0.08F) / 0.4F), r = H * (0.4F + 0.8F * k * Bk) * (calm ? 0.8F : 1);
             pen.s(SOFT).alphaBlend().rgb(deep).a(0.4F * blast).billboard(bx, by, bz, r * 1.1F, r * 1.1F);
             pen.s(SHOCK).rgb(hot).a(blast).billboard(bx, by, bz, r, r);
@@ -426,8 +497,15 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
             pen.s(zap ? FLARE : SOFTCORE).rgb(WHITE).a(blast).billboard(bx, by, bz, w, w, zap ? s.zapK * 6 : 0);
         }
 
+        pen.cat = EphemeraStaging.TRAIL;
+        for (int c = 0; c < tailN && d.out.pending() + 16 <= reserve; c++) {
+            motif.accent(tailX[c], tailY[c], tailZ[c], tailD[c * 3], tailD[c * 3 + 1], tailD[c * 3 + 2], tailW[c] * 3, tailW[c], 60 + c, tailA[c]);
+        }
+        pen.cat = EphemeraStaging.BASE;
+
         float vX = m.velX, vY = m.velY, vZ = m.velZ;
-        float rate = (lite ? 10 : 40) * (sneak ? 0.4F : 1) * (1 + 1.5F * eB + spd * 0.6F);
+        // 毒、冲击、磁、辐射另有母题从背心冒，这层泛光点少冒一些
+        float rate = (lite ? 10 : 40) * (ek ? 0.6F : 1) * (sneak ? 0.4F : 1) * (1 + 1.5F * eB + spd * 0.6F);
         s.acc += dt * rate;
         while (s.acc >= 1) {
             s.acc -= 1;
@@ -445,7 +523,7 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
             s.plume.spec().pos(ptX, ptY, ptZ).vel(vX * 0.3F, (kind == 2 ? -0.25F : kind == 1 ? 0.5F : 0.1F) * sc, vZ * 0.3F).life(0.7F)
                     .size(H * 0.3F, H * 0.6F).sprite(SOFT).rgb(C).a(0.2F).fade(0.3F, 0.6F).spawn();
         }
-        s.accF += dt * (lite ? 8 : 32) * (sneak ? 0.4F : 1) * (1 + eB);
+        s.accF += ek ? 0 : dt * (lite ? 8 : 32) * (sneak ? 0.4F : 1) * (1 + eB);
         while (s.accF >= 1) {
             s.accF -= 1;
             pick();
@@ -484,6 +562,9 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
         // 受击的羽片在炸开那一刻（收拢之后）甩出去
         if (hk >= 0.08F && hk < 0.08F + dt * 1.5F && s.seenBlast != m.nHurt) {
             s.seenBlast = m.nHurt;
+            if (ek) {
+                motif.fire(m.x, gy, m.z, W * 1.6F, 0.9F);
+            }
             int n = lite ? 10 : 36;
             for (int j = 0; j < n; j++) {
                 EphemeraPen.Ribbon fe = feathers[j % 6];
@@ -528,6 +609,20 @@ public final class PlumeStyle extends ProtoStyle<PlumeStyle.St> {
         s.plume.draw(pen, m.size, intensity, Float.NaN);
         s.fx.draw(pen, m.size, 1, Float.NaN);
         s.motes.draw(pen, m.size, intensity, Float.NaN);
+        if (ek) {
+            sites.clear();
+            sites.add(bx - fwdX * W * 0.15F, by, bz - fwdZ * W * 0.15F, -fwdX, 0, -fwdZ);
+            for (int i = 0; i < 2; i++) {
+                EphemeraPen.Ribbon fe = feathers[i * 3 + 1];
+                for (int q = NSEG / 2; q <= NSEG; q += NSEG - NSEG / 2) {
+                    double ox = fe.x[q] - bx, oy = fe.y[q] - by, oz = fe.z[q] - bz, ol = Math.sqrt(ox * ox + oy * oy + oz * oz);
+                    if (ol > 1.0E-6) {
+                        sites.add(fe.x[q], fe.y[q], fe.z[q], (float) (ox / ol), (float) (oy / ol), (float) (oz / ol));
+                    }
+                }
+            }
+            motif.motes(sites, 13 * (sneak ? 0.4F : 1) * (1 + eB) * (calm ? 0.5F + 0.5F * act : 1), sc);
+        }
     }
 
     private double ptX, ptY, ptZ;

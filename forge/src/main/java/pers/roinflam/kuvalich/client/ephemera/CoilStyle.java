@@ -19,7 +19,7 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
 
     private static final int NS_MAX = 5, NODES_MAX = 10, DECALS_MAX = 10;
     private static final float[] SHED = {10, 16, 10, 10};
-    private static final float[] SHED_ALL = {22, 28, 20, 26};
+    private static final float[] SHED_ALL = {0, 28, 20, 26};
 
     public static final class St extends ProtoStyle.State {
         boolean ready, lite;
@@ -41,6 +41,7 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
         final int[] dspr = new int[DECALS_MAX];
         final boolean[] dhot = new boolean[DECALS_MAX];
         int nd;
+        final ElementMotif fx = new ElementMotif();
     }
 
     private final EphemeraPen.Ribbon rib = new EphemeraPen.Ribbon(24);
@@ -49,6 +50,9 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
     private final FxTrail.Sample sample6 = new FxTrail.Sample();
     private final float[] rd = new float[24];
     private final float[] dir = new float[3];
+    private final ElementMotif.Sites sites = new ElementMotif.Sites();
+    private EphemeraStaging out;
+    private int from, el;
 
     @Override
     public float extent() {
@@ -63,6 +67,7 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
     @Override
     protected void reset(St s, FxMotion m) {
         s.ready = false;
+        s.fx.reset();
     }
 
     private static int strands(FxMotion m) {
@@ -165,6 +170,11 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
             init(s, m);
         }
         int kind = m.kind;
+        s.fx.begin(pen, m);
+        boolean ek = kind == 0;
+        out = d.out;
+        from = out.pending();
+        el = m.el;
         if (s.kind != kind) {
             s.kind = kind;
             for (FxTrail tr : s.tr) {
@@ -245,7 +255,17 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
                     .billboard(cx, cy + 0.5F * H, cz, R0 * ((calm ? 2.0F : 2.6F) + 1.2F * burst), H * ((calm ? 1.0F : 1.2F) + 0.3F * burst));
         }
         float disc = R0 * (calm ? 1.9F : 2.4F);
-        pen.s(SOFTCORE).rgb(C).a(0.3F * base * (calm ? 0.7F : 1)).flat(m.x, gy + 0.035, m.z, disc, disc);
+        if (ek) {
+            s.fx.ground(m.x, gy, m.z, disc * 0.5F, base * (calm ? 0.75F : 1));
+            // 爆发先画，后面股上的凸起按剩下的余量让
+            pen.cat = EphemeraStaging.PARTICLE;
+            s.fx.events(m.x, gy, m.z, R0 * 1.6F);
+            s.fx.bursts();
+            pen.cat = EphemeraStaging.BASE;
+            sites.clear();
+        } else {
+            pen.s(SOFTCORE).rgb(C).a(0.3F * base * (calm ? 0.7F : 1)).flat(m.x, gy + 0.035, m.z, disc, disc);
+        }
 
         // 跑起来身后裹一层宽而淡的光鞘，跟着盘旋中心走，转弯时自己带弧
         float sheath = smooth(clamp((m.speed / 5.6F - 0.25F) / 0.6F, 0, 1)) * (1 - 0.5F * fold);
@@ -344,6 +364,17 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
                     drawFlow(s, i, f, SAW, swung, swingW, hx, hy, hz, thick, wHead, base, scroll, tex, env, kind, C, hot, pale, deep, H, sc, fold, r1, t);
                 }
             }
+            if (ek) {
+                double ox2 = hx - cx, oz2 = hz - cz, ol = Math.max(1.0E-6, Math.sqrt(ox2 * ox2 + oz2 * oz2));
+                sites.add(hx, hy, hz, (float) (ox2 / ol), 0, (float) (oz2 / ol));
+                FxTrail trm = s.tr[i];
+                if (trm.points() > 6) {
+                    int pi = Math.min(trm.points() - 1, 5);
+                    double px = trm.x(pi), pz = trm.z(pi), qx = px - cx, qz = pz - cz, ql = Math.max(1.0E-6, Math.sqrt(qx * qx + qz * qz));
+                    sites.add(px, trm.y(pi), pz, (float) (qx / ql), 0, (float) (qz / ql));
+                }
+                continue;
+            }
 
             // 沿途抖落
             float rate = SHED[kind] * (lite ? 0.25F : 1) * env * (1 - 0.5F * fold);
@@ -386,6 +417,10 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
             }
         }
 
+        if (ek && !fp) {
+            s.fx.motes(sites, (28 + 24 * r1) * (1 - 0.5F * fold) * (calm ? 0.5F + 0.5F * act : 1), sc);
+        }
+
         // 抖落的频率按「每股每秒」算太稀，这里再按总量补一遍
         s.acc += dt * SHED_ALL[kind] * (lite ? 0.25F : 1) * (1 - 0.5F * fold) * (calm ? 0.5F + 0.5F * act : 1);
         while (s.acc >= 1) {
@@ -417,7 +452,7 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
         }
 
         // 跑动时各股身后留下大团的淡烟，把几道流线之间填起来
-        if (run > 0.3F) {
+        if (run > 0.3F && !ek) {
             s.acc2 += dt * (lite ? 4 : 22) * r1 * (calm ? 0.5F : 1);
             while (s.acc2 >= 1) {
                 s.acc2 -= 1;
@@ -659,11 +694,14 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
                 rib.add(body.x[k], body.y[k], body.z[k], body.w[k] * 1.05F, Math.min(1, body.a[k]));
             }
             pen.s(BAND).alphaBlend().rgb(deep).ribbon(rib, EphemeraPen.FACE_CAM, 0.2F, 0.8F);
+            if (kind == 0) {
+                motifEdge(s, i, n, wHead * thick);
+            }
             // 带子上挂一幅幕：火往上飘，其余往下垂
             float us = 0.5F * ((t * 0.35F) % 1);
             int vs = lite ? 2 : 1;
             float span = 3.9F * sc;
-            for (int k = 0; k + 1 < n; k += vs) {
+            for (int k = 0; k + 1 < n && kind != 0; k += vs) {
                 int b = Math.min(k + vs, n - 1);
                 float aA = body.a[k], aB = body.a[b];
                 if (aA <= 0.01F && aB <= 0.01F) {
@@ -700,6 +738,37 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
                 float a = (float) Math.pow(1 - x, 0.8) * envAt(f, SAW, swung, swingW, sample6.age[k], x) * base, sz = wHead * (0.55F - 0.3F * x);
                 pen.s(CRYSTAL).rgb(mix(C, WHITE, 0.4F)).a(0.9F * a).billboard(sample6.x[k], sample6.y[k], sample6.z[k], sz * 0.55F, sz * 1.3F, i + k * 1.3F);
             }
+        }
+    }
+
+    // 光流外缘交给元素母题：沿带子取几点往外长一截。方向按离盘旋轴往外算，不用切线 × 视线，
+    // 股是绕着人转的，切线方向一圈下来会翻面，那样有一半时间往身体里长
+    private static final float[] EDGE_AT = {0.1F, 0.28F, 0.48F}, EDGE_AT_LITE = {0.22F};
+
+    private void motifEdge(St s, int strand, int n, float wHead) {
+        float[] at = lite ? EDGE_AT_LITE : EDGE_AT;
+        for (int j = 0; j < at.length; j++) {
+            // 磁力一根就要十几个面片，挥砍时爆发也在画，按这一帧已经写了多少让
+            if (!lite && out.pending() - from > (j == 0 ? 350 : 310)) {
+                return;
+            }
+            int k = Math.min(n - 1, Math.round(at[j] * (n - 1)));
+            float a = body.a[k];
+            if (a <= 0.02F) {
+                continue;
+            }
+            double px = body.x[k], py = body.y[k], pz = body.z[k];
+            double ox = px - s.cx, oz = pz - s.cz, ol = Math.sqrt(ox * ox + oz * oz);
+            if (ol < 1.0E-4) {
+                continue;
+            }
+            ox /= ol;
+            oz /= ol;
+            boolean poison = el == FxMotion.POISON;
+            double oy = poison ? -1.6 : el == FxMotion.RADIATION ? 0.5 : 0.25;
+            double l = Math.sqrt(ox * ox + oy * oy + oz * oz);
+            float w = wHead * (0.32F - 0.12F * j / at.length);
+            s.fx.accent(px, py, pz, ox / l, oy / l, oz / l, w * (poison ? 2.2F : 3), w, strand * 13 + j * 5, a * (calm ? 0.85F : 1));
         }
     }
 

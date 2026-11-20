@@ -25,7 +25,11 @@ public final class EphemeraIconSetup {
     // 序号写死在这里和 models/item/ephemera.json 的 overrides 里，往款式表加款时两边一起补
     private static final List<EphemeraType> ORDER = List.of(
             EphemeraType.SURGE, EphemeraType.ORBIT, EphemeraType.PLUME,
-            EphemeraType.WING, EphemeraType.COIL, EphemeraType.VORTEX);
+            EphemeraType.WING, EphemeraType.COIL, EphemeraType.VORTEX,
+            EphemeraType.HALO, EphemeraType.PLACARD, EphemeraType.TORQUE,
+            EphemeraType.HORN, EphemeraType.DISC, EphemeraType.CRYSTAL,
+            EphemeraType.SCREEN, EphemeraType.TAILS, EphemeraType.HOOK,
+            EphemeraType.THORN, EphemeraType.HELIX, EphemeraType.VINE);
 
     // 乘法染色到不了比主色更亮的颜色，所以亮芯单放一层，染成主色往白里混一半的颜色；贴图脚本按同一个比例出预览
     private static final float HOT_MIX = 0.5F;
@@ -35,12 +39,12 @@ public final class EphemeraIconSetup {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        // 属性值会被夹到 0~1，所以第 n 款返回 n/10
+        // 属性值会被夹到 0~1，所以第 n 款返回 n/20，最多 20 款；再加款要连 json 的刻度一起改
         event.enqueueWork(() -> ItemProperties.register(KuvaLichItems.EPHEMERA.get(), STYLE_PROPERTY,
                 (stack, level, entity, seed) -> {
                     EphemeraType type = EphemeraItem.getType(stack);
                     int index = type == null ? -1 : ORDER.indexOf(type);
-                    return index < 0 ? 0.0F : (index + 1) / 10.0F;
+                    return index < 0 ? 0.0F : (index + 1) / 20.0F;
                 }));
     }
 

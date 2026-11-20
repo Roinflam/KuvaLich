@@ -158,48 +158,132 @@
         },
         {
           "type": "h",
-          "text": "The six styles"
+          "text": "The eighteen styles"
         },
         {
           "type": "table",
           "header": [
             "Style",
+            "Position",
             "Look"
           ],
           "widths": [
+            2,
             2,
             5
           ],
           "rows": [
             [
-              "{lang:kuvalich.ephemera.name.surge}",
-              "{lang:kuvalich.ephemera.desc.surge}"
+              "{lang:kuvalich.ephemera.name.halo}",
+              "Behind the head",
+              "{lang:kuvalich.ephemera.desc.halo}"
             ],
             [
-              "{lang:kuvalich.ephemera.name.orbit}",
-              "{lang:kuvalich.ephemera.desc.orbit}"
+              "{lang:kuvalich.ephemera.name.placard}",
+              "Behind the head",
+              "{lang:kuvalich.ephemera.desc.placard}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.torque}",
+              "Behind the head",
+              "{lang:kuvalich.ephemera.desc.torque}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.horn}",
+              "Shoulders and arms",
+              "{lang:kuvalich.ephemera.desc.horn}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.disc}",
+              "Shoulders and arms",
+              "{lang:kuvalich.ephemera.desc.disc}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.crystal}",
+              "Shoulders and arms",
+              "{lang:kuvalich.ephemera.desc.crystal}"
             ],
             [
               "{lang:kuvalich.ephemera.name.plume}",
+              "Back",
               "{lang:kuvalich.ephemera.desc.plume}"
             ],
             [
               "{lang:kuvalich.ephemera.name.wing}",
+              "Back",
               "{lang:kuvalich.ephemera.desc.wing}"
             ],
             [
+              "{lang:kuvalich.ephemera.name.screen}",
+              "Back",
+              "{lang:kuvalich.ephemera.desc.screen}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.tails}",
+              "Back",
+              "{lang:kuvalich.ephemera.desc.tails}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.hook}",
+              "Back",
+              "{lang:kuvalich.ephemera.desc.hook}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.orbit}",
+              "Around the body",
+              "{lang:kuvalich.ephemera.desc.orbit}"
+            ],
+            [
               "{lang:kuvalich.ephemera.name.coil}",
+              "Around the body",
               "{lang:kuvalich.ephemera.desc.coil}"
             ],
             [
+              "{lang:kuvalich.ephemera.name.thorn}",
+              "Around the body",
+              "{lang:kuvalich.ephemera.desc.thorn}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.helix}",
+              "Around the body",
+              "{lang:kuvalich.ephemera.desc.helix}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.vine}",
+              "Around the body",
+              "{lang:kuvalich.ephemera.desc.vine}"
+            ],
+            [
+              "{lang:kuvalich.ephemera.name.surge}",
+              "Underfoot",
+              "{lang:kuvalich.ephemera.desc.surge}"
+            ],
+            [
               "{lang:kuvalich.ephemera.name.vortex}",
+              "Underfoot",
               "{lang:kuvalich.ephemera.desc.vortex}"
             ]
           ]
         },
         {
           "type": "p",
-          "text": "The style decides the shape. The element follows the Lich's weapon element and sets the default colors. {lang:kuvaweapon.type.fire}, {lang:kuvaweapon.type.ice} and {lang:kuvaweapon.type.electricity} also change how every style moves: {lang:kuvaweapon.type.fire} burns fiercer with sparks and smoke, {lang:kuvaweapon.type.ice} flows slower and sheds falling ice crystals, and {lang:kuvaweapon.type.electricity} flickers and throws off arcs. Other elements only change the colors. Every style stays subdued while standing and unfolds with running, jumping, swinging and taking hits."
+          "text": "The style decides the shape. The element follows the Lich's weapon element and sets both the default colors and the form. The same style takes a different form under each of the seven elements:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "{lang:kuvaweapon.type.fire}: tongues of flame, wide at the base and pointed at the tip, with rising embers.",
+            "{lang:kuvaweapon.type.ice}: hard-edged crystals, slower motion and slowly falling ice flakes.",
+            "{lang:kuvaweapon.type.electricity}: jagged arcs that flicker on and off and throw sparks.",
+            "{lang:kuvaweapon.type.poison}: drooping strands that end in falling drops and pool on the ground.",
+            "{lang:kuvaweapon.type.impact}: light bars and shock rings that pulse outward on a beat and shed debris.",
+            "{lang:kuvaweapon.type.magnetic}: closed field arcs with fine particles spiraling inward.",
+            "{lang:kuvaweapon.type.radiation}: thin rays of uneven length that dim and flare, with hexagonal patches on the ground."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Every style stays subdued while standing and unfolds with running, jumping, swinging and taking hits."
         },
         {
           "type": "h",

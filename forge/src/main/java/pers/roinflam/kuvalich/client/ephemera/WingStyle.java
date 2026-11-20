@@ -33,6 +33,7 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
         FxParticles pt;
         FxTrail[] tips;
         float fold, air, acc, ph, landPw = 1;
+        final ElementMotif motif = new ElementMotif();
     }
 
     private final EphemeraPen.Ribbon rib = new EphemeraPen.Ribbon(KMAX + 1);
@@ -40,6 +41,7 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
     private final double[][] qx = new double[CHMAX][KMAX], qy = new double[CHMAX][KMAX], qz = new double[CHMAX][KMAX];
     private final float[][] qw = new float[CHMAX][KMAX], qa = new float[CHMAX][KMAX];
     private final float[] dir = new float[3];
+    private final ElementMotif.Sites sites = new ElementMotif.Sites();
 
     @Override
     public float extent() {
@@ -54,6 +56,7 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
     @Override
     protected void reset(St s, FxMotion m) {
         s.ready = false;
+        s.motif.reset();
     }
 
     private void init(St s, FxMotion m) {
@@ -78,7 +81,7 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
     // 帧内常用量，shed / pick 要用
     private St st;
     private FxMotion mo;
-    private int kind, C, hot;
+    private int kind, C, hot, extraMotes;
     private float sc, bvX, bvZ;
 
     @Override
@@ -93,6 +96,11 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
         float H = m.H, W = m.W;
         sc = m.sc;
         kind = m.kind;
+        // 毒、冲击、磁、辐射：翎尖和抖落交给元素母题
+        boolean ek = kind == 0;
+        ElementMotif motif = s.motif;
+        motif.begin(pen, m);
+        extraMotes = 0;
         C = m.color;
         hot = mix(C, WHITE, 0.62F);
         int pale = mix(C, WHITE, 0.3F), deep = mul(C, 0.2F);
@@ -282,6 +290,24 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
             }
         }
 
+        // 翎尖：顺着翎的走向再长一截母题，亮波走到翎尖时跟着亮一下
+        if (ek && !fp) {
+            float bumpTip = (float) Math.exp(-Math.pow((1 - wave) / 0.16F, 2));
+            float ta = Math.min(1, base * (0.75F + 0.6F * bumpTip));
+            for (int ci = 0; ci < NCH; ci++) {
+                // 最下那根翎短、贴着腰，省下来给磁、毒那种一根十几个面片的
+                if (ci % NF > (lite ? 0 : 2)) {
+                    continue;
+                }
+                double tx = qx[ci][K - 1] - qx[ci][K - 2], ty = qy[ci][K - 1] - qy[ci][K - 2], tz = qz[ci][K - 1] - qz[ci][K - 2];
+                double tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+                if (tl < 1.0E-6) {
+                    continue;
+                }
+                motif.accent(qx[ci][K - 1], qy[ci][K - 1], qz[ci][K - 1], tx / tl, ty / tl, tz / tl, wF, wF * 0.4F, ci, ta);
+            }
+        }
+
         // 翎和翎之间的膜，把一根根光带连成一扇
         if (!fp) {
             for (int ci = 0; ci + 1 < NCH; ci++) {
@@ -361,7 +387,7 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
         if (kind == 3) {
             rate *= noise(t * 3.1F, 5) > 0.45F ? 1.8F : 0.15F;
         }
-        s.acc += dt * rate;
+        s.acc += ek ? 0 : dt * rate;
         while (s.acc >= 1) {
             s.acc -= 1;
             int ci = (int) (rnd() * NCH), i = 2 + (int) (rnd() * (K - 2));
@@ -467,6 +493,22 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
             pen.s(FLARE).rgb(WHITE).a(0.8F * hurtE).billboard(bkx, bky, bkz, g, g);
         }
 
+        if (ek) {
+            sites.clear();
+            for (int ci = 0; ci < NCH; ci++) {
+                for (int i = K / 2; i < K; i += K - 1 - K / 2) {
+                    double tx = s.px[ci][Math.min(K - 1, i + 1)] - s.px[ci][i - 1], ty = s.py[ci][Math.min(K - 1, i + 1)] - s.py[ci][i - 1],
+                            tz = s.pz[ci][Math.min(K - 1, i + 1)] - s.pz[ci][i - 1];
+                    double tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+                    if (tl > 1.0E-6) {
+                        sites.add(s.px[ci][i], s.py[ci][i], s.pz[ci][i], (float) (tx / tl), (float) (ty / tl), (float) (tz / tl));
+                    }
+                }
+            }
+            // 亮波、急停、受击时一次抖落的几把，折成这一帧的发射率；精简档母题自己会再乘 0.35，这里先把本款的 0.2 除掉
+            float dtm = Math.min(dt, 1 / 30.0F), lk = lite ? 0.2F : 1;
+            motif.motes(sites, rate * 0.7F / lk + (dtm > 0 ? extraMotes / lk / dtm : 0), sc);
+        }
         P.step(dt, null);
         pen.cat = EphemeraStaging.PARTICLE;
         P.draw(pen, m.size, 1, Float.NaN);
@@ -507,6 +549,10 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
     }
 
     private void shed(int ci, int i, float boost) {
+        if (kind == 0) {
+            extraMotes++;
+            return;
+        }
         St s = st;
         FxMotion m = mo;
         EphemeraFx.randDir(dir);

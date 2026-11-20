@@ -13,16 +13,13 @@ import pers.roinflam.kuvalich.client.ephemera.EphemeraStyle;
 import pers.roinflam.kuvalich.client.ephemera.EphemeraStyles;
 import pers.roinflam.kuvalich.client.ephemera.EphemeraTier;
 import pers.roinflam.kuvalich.client.ephemera.FxMotion;
-import pers.roinflam.kuvalich.client.ephemera.CoilStyle;
-import pers.roinflam.kuvalich.client.ephemera.OrbitStyle;
-import pers.roinflam.kuvalich.client.ephemera.PlumeStyle;
-import pers.roinflam.kuvalich.client.ephemera.SurgeStyle;
-import pers.roinflam.kuvalich.client.ephemera.VortexStyle;
-import pers.roinflam.kuvalich.client.ephemera.WingStyle;
 import pers.roinflam.kuvalich.ephemera.EphemeraLook;
+import pers.roinflam.kuvalich.ephemera.EphemeraType;
+import pers.roinflam.kuvalich.utils.KuvaWeaponUtil;
 import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.utils.Reference;
 
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -170,7 +167,7 @@ public final class EphemeraStyleTests {
 
     static final class Result {
         int maxTotal, maxBase, sumTotal;
-        final boolean[] sprites = new boolean[EphemeraSprites.COUNT];
+        final boolean[] sprites = new boolean[EphemeraSprites.MAX_CELLS];
         float firstQuadWidth = -1;
     }
 
@@ -214,7 +211,7 @@ public final class EphemeraStyleTests {
                     float u = (uv[q * 8] + uv[q * 8 + 4]) * 0.5F, v = (uv[q * 8 + 1] + uv[q * 8 + 5]) * 0.5F;
                     int cell = (int) (u * (EphemeraSprites.ATLAS / EphemeraSprites.CELL))
                             + (int) (v * (EphemeraSprites.ATLAS / EphemeraSprites.CELL)) * (EphemeraSprites.ATLAS / EphemeraSprites.CELL);
-                    if (cell >= 0 && cell < EphemeraSprites.COUNT) {
+                    if (cell >= 0 && cell < EphemeraSprites.MAX_CELLS) {
                         r.sprites[cell] = true;
                     }
                 }
@@ -235,16 +232,21 @@ public final class EphemeraStyleTests {
         return r;
     }
 
-    private static final String[] TYPES = {"surge", "orbit", "plume", "wing", "coil", "vortex"};
+    private static final String[] TYPES = EphemeraType.all().stream().map(EphemeraType::id).toArray(String[]::new);
+    private static final Set<String> OLD_SIX = Set.of("surge", "orbit", "plume", "wing", "coil", "vortex");
+    private static final String[] ELEMENTS = KuvaWeaponUtil.LICH_ELEMENTS.toArray(String[]::new);
 
+    // 每次跑新建一份，画法对象里有逐帧复用的临时量，不能和登记的那份共用
     private static Supplier<EphemeraStyle> fresh(String type) {
-        return switch (type) {
-            case "surge" -> SurgeStyle::new;
-            case "orbit" -> OrbitStyle::new;
-            case "plume" -> PlumeStyle::new;
-            case "wing" -> WingStyle::new;
-            case "coil" -> CoilStyle::new;
-            default -> VortexStyle::new;
+        Class<? extends EphemeraStyle> c = EphemeraStyles.of(type).getClass();
+        return () -> {
+            try {
+                var ctor = c.getDeclaredConstructor();
+                ctor.setAccessible(true);
+                return ctor.newInstance();
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(type, e);
+            }
         };
     }
 
@@ -256,7 +258,7 @@ public final class EphemeraStyleTests {
         h.assertTrue(EphemeraStyles.of("no_such_style") == EphemeraStyles.PLACEHOLDER, "查不到的款式应走占位");
         StringBuilder log = new StringBuilder("幻纹四边形（收敛档，整段脚本最大值，完整 / 精简，底座）：");
         for (String type : TYPES) {
-            for (String el : new String[]{"fire", "ice", "electricity", "impact"}) {
+            for (String el : ELEMENTS) {
                 Result full = run(fresh(type).get(), type, el, true, EphemeraTier.CONVERGED, 0.6F, 1.8F);
                 Result lite = run(fresh(type).get(), type, el, false, EphemeraTier.CONVERGED, 0.6F, 1.8F);
                 log.append(' ').append(type).append('/').append(el).append(' ').append(full.maxTotal).append('/')
@@ -290,8 +292,17 @@ public final class EphemeraStyleTests {
             Result ice = run(fresh(type).get(), type, "ice", true, EphemeraTier.CONVERGED, 0.6F, 1.8F);
             Result zap = run(fresh(type).get(), type, "electricity", true, EphemeraTier.CONVERGED, 0.6F, 1.8F);
             h.assertTrue(ice.sprites[EphemeraSprites.CRYSTAL], type + " 冰冻应长出冰晶");
-            h.assertTrue(zap.sprites[EphemeraSprites.CRACK_0] || zap.sprites[EphemeraSprites.CRACK_1], type + " 电击应有电弧");
             h.assertTrue(!fire.sprites[EphemeraSprites.CRACK_0] && !fire.sprites[EphemeraSprites.CRACK_1], type + " 火焰不该有电弧");
+            if (!OLD_SIX.contains(type)) {
+                // 新款的电走母题的折线丝带，不用电弧贴图；按母题各元素的招牌贴图核
+                Result tox = run(fresh(type).get(), type, "poison", true, EphemeraTier.CONVERGED, 0.6F, 1.8F);
+                Result rad = run(fresh(type).get(), type, "radiation", true, EphemeraTier.CONVERGED, 0.6F, 1.8F);
+                h.assertTrue(fire.sprites[EphemeraSprites.FLAME_0] || fire.sprites[EphemeraSprites.FLAME_0 + 1], type + " 火焰应带火舌");
+                h.assertTrue(tox.sprites[EphemeraSprites.DROP], type + " 毒素应有液滴");
+                h.assertTrue(rad.sprites[EphemeraSprites.HEX_0], type + " 辐射应有六边形光斑");
+                continue;
+            }
+            h.assertTrue(zap.sprites[EphemeraSprites.CRACK_0] || zap.sprites[EphemeraSprites.CRACK_1], type + " 电击应有电弧");
             switch (type) {
                 case "surge" -> h.assertTrue(fire.sprites[EphemeraSprites.TONGUE] && !ice.sprites[EphemeraSprites.TONGUE], "踏涌：火是光舌、冰换成冰晶");
                 case "orbit", "plume" -> h.assertTrue(fire.sprites[EphemeraSprites.FLAME_0] || fire.sprites[EphemeraSprites.FLAME_0 + 1], type + " 火焰应带火舌");
