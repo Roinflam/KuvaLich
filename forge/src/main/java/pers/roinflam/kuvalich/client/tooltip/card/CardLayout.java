@@ -90,7 +90,9 @@ final class CardLayout {
         int maxP = wp - 2 * pad;
         boolean fb = fallbackFont;
 
-        List<String> nameLines = CardFonts.wrapEven(model.name, maxP, fN, false, fb);
+        // 改过名的卡可能带卡字体里没有的字，单个字退回原版字体会小成一个点，卡名整个换原版字
+        boolean fbName = fb || !CardFonts.covers(model.name);
+        List<String> nameLines = CardFonts.wrapEven(model.name, maxP, fN, false, fbName);
         int nameH = nameLines.size() * lhN;
         int gapN = Math.max(1, Math.round(0.15F * fA));
 
@@ -151,7 +153,7 @@ final class CardLayout {
         this.artEnd = top / ps + 3;
 
         for (int i = 0; i < nameLines.size(); i++) {
-            CardFonts.Run r = new CardFonts.Run(nameLines.get(i), fN, false, fb);
+            CardFonts.Run r = new CardFonts.Run(nameLines.get(i), fN, false, fbName);
             int bt = top + i * lhN + (lhN - fN) / 2;
             lines.add(new Line(r, Math.round((wp - r.width) / 2.0F), bt, t.name, true, bt / ps));
         }

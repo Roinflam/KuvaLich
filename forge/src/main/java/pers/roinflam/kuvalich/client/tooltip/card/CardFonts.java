@@ -128,6 +128,16 @@ final class CardFonts {
         return r >= 28 && b >= 20;
     }
 
+    /** 这串字是不是都在卡字体里：缺的字退回原版字体，40 号下量出来和不带字体时一样宽 */
+    static boolean covers(String text) {
+        Font font = Minecraft.getInstance().font;
+        return text.codePoints().allMatch(cp -> {
+            String s = Character.toString(cp);
+            float w = font.getSplitter().stringWidth(Component.literal(s).withStyle(REGULAR[MAX_SIZE]));
+            return Math.abs(w - font.getSplitter().stringWidth(s)) > 0.01F;
+        });
+    }
+
     static int width(String text, int f, boolean bold, boolean fallback) {
         Font font = Minecraft.getInstance().font;
         if (fallback) {
