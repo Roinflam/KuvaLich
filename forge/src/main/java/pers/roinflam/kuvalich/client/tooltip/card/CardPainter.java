@@ -371,9 +371,6 @@ final class CardPainter {
             if (ln.name) {
                 ln.run.draw(g, ln.x + 1, ln.boxTop + 1, 0x000000, 0.6F * k);
                 ln.run.draw(g, ln.x, ln.boxTop, ln.color, k);
-            } else if (ln.value != null) {
-                ln.value.draw(g, ln.x, ln.boxTop, ln.valueColor, k);
-                ln.run.draw(g, ln.x + ln.value.width, ln.boxTop, ln.color, k);
             } else {
                 ln.run.draw(g, ln.x, ln.boxTop, ln.color, k);
             }

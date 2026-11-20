@@ -16,25 +16,21 @@ final class CardLayout {
     static final float FLOAT_S = 1.1F;
     static final int COMPACT_LIMIT = 154;
 
-    /** 一行文字：位置、颜色，以及开头单独上色的数值 */
+    /** 一行文字：位置和颜色 */
     static final class Line {
         final CardFonts.Run run;
-        final CardFonts.Run value;
         final int x;
         final int boxTop;
         final int color;
-        final int valueColor;
         final boolean name;
         /** 行顶，单位，用来算被底托盖住前的淡出 */
         final float yUnits;
 
-        Line(CardFonts.Run run, CardFonts.Run value, int x, int boxTop, int color, int valueColor, boolean name, float yUnits) {
+        Line(CardFonts.Run run, int x, int boxTop, int color, boolean name, float yUnits) {
             this.run = run;
-            this.value = value;
             this.x = x;
             this.boxTop = boxTop;
             this.color = color;
-            this.valueColor = valueColor;
             this.name = name;
             this.yUnits = yUnits;
         }
@@ -99,7 +95,7 @@ final class CardLayout {
         int gapN = Math.max(1, Math.round(0.15F * fA));
 
         // 正文：先排好行，算出总高，等卡高定了再定位
-        List<String[]> body = new ArrayList<>();
+        List<String> body = new ArrayList<>();
         List<Integer> bodyOff = new ArrayList<>();
         int off = 0;
         if (model.veiled) {
@@ -117,7 +113,7 @@ final class CardLayout {
                 }
             }
             for (String s : hint) {
-                body.add(new String[]{s, null});
+                body.add(s);
                 bodyOff.add(off);
                 off += lhA;
             }
@@ -134,12 +130,8 @@ final class CardLayout {
                 if (i > 0) {
                     off += gap;
                 }
-                CardModel.Attr a = model.attrs.get(i);
-                List<String> ls = wrapped.get(i);
-                for (int j = 0; j < ls.size(); j++) {
-                    String s = ls.get(j);
-                    String val = j == 0 && s.startsWith(a.value()) ? a.value() : null;
-                    body.add(new String[]{s, val, a.negative() ? "-" : "+"});
+                for (String s : wrapped.get(i)) {
+                    body.add(s);
                     bodyOff.add(off);
                     off += lhA;
                 }
@@ -161,28 +153,15 @@ final class CardLayout {
         for (int i = 0; i < nameLines.size(); i++) {
             CardFonts.Run r = new CardFonts.Run(nameLines.get(i), fN, false, fb);
             int bt = top + i * lhN + (lhN - fN) / 2;
-            lines.add(new Line(r, null, Math.round((wp - r.width) / 2.0F), bt, t.name, 0, true, bt / ps));
+            lines.add(new Line(r, Math.round((wp - r.width) / 2.0F), bt, t.name, true, bt / ps));
         }
         int bodyTop = top + nameH + gapN;
-        int hintColor = mix(t.name, 0x8A93A3, 0.4F);
+        // 词条整行一个颜色，数值不单独上色
+        int bodyColor = model.veiled ? mix(t.name, 0x8A93A3, 0.4F) : t.textColor();
         for (int i = 0; i < body.size(); i++) {
-            String[] b = body.get(i);
-            CardFonts.Run r = new CardFonts.Run(b[0], fA, false, fb);
+            CardFonts.Run r = new CardFonts.Run(body.get(i), fA, false, fb);
             int bt = bodyTop + bodyOff.get(i) + (lhA - fA) / 2;
-            int x = Math.round((wp - r.width) / 2.0F);
-            if (model.veiled) {
-                lines.add(new Line(r, null, x, bt, hintColor, 0, false, bt / ps));
-                continue;
-            }
-            CardFonts.Run v = null;
-            if (b[1] != null) {
-                v = new CardFonts.Run(b[1], fA, false, fb);
-                // 数值之后的部分接着数值画，整行宽度按整串量，避免两段分开量出来的取整误差把行挤偏
-                String rest = b[0].substring(b[1].length());
-                r = new CardFonts.Run(rest, fA, false, fb);
-            }
-            int vc = "-".equals(b[2]) ? 0xFF7B7B : t.valueColor();
-            lines.add(new Line(r, v, x, bt, t.textColor(), vc, false, bt / ps));
+            lines.add(new Line(r, Math.round((wp - r.width) / 2.0F), bt, bodyColor, false, bt / ps));
         }
 
         String pill = model.veiled ? "kuvalich.hover_card.type.veiled"

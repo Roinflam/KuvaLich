@@ -54,12 +54,7 @@ enum CardTier {
     static final int ARCHON_GOLD = 0xf4cc72;
     static final int ARCHON_GOLD2 = 0x9c6c22;
     static final int ARCHON_TXT = 0xD9C592;
-    static final int ARCHON_VAL = 0xFFE9B4;
     static final int ARCHON_PIP = 0xFFE8A0;
-
-    int valueColor() {
-        return this == ARCHON ? ARCHON_VAL : 0xF2F4F8;
-    }
 
     int textColor() {
         return this == ARCHON ? ARCHON_TXT : 0xC2C8D2;
