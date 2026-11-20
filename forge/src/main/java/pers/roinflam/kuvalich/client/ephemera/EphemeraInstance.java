@@ -32,6 +32,9 @@ public final class EphemeraInstance {
     public float dt;
     /** 最近一次被画到的时刻，渲染器据此丢掉长期没画的 */
     public long lastDrawnMs;
+    /** 上次查群系时站的那一格；换了格才重查会不会积雪。初值是世界里取不到的坐标 */
+    long snowCell = Long.MIN_VALUE;
+    boolean snowy;
 
     private static final float SHOW_SECONDS = 0.35F;
     private float shown = 1.0F;

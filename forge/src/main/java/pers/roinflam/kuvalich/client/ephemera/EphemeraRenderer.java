@@ -92,9 +92,6 @@ public final class EphemeraRenderer {
     private static boolean atlasReady;
     private static int[] sortIdx = new int[256];
     private static float[] sortKey = new float[256];
-    private static float[] sortP = new float[256 * 12];
-    private static int[] sortC = new int[256 * 4];
-    private static float[] sortU = new float[256 * 8];
     /** 开发命令临时切到全开档对比用；null = 照默认收敛档 */
     static EphemeraTier tierOverride;
 
@@ -220,7 +217,12 @@ public final class EphemeraRenderer {
                     && (self || candDist[idx] <= EphemeraTier.REDUCED_BEYOND * EphemeraTier.REDUCED_BEYOND);
             d.firstPersonSelf = self && firstPerson;
             BlockPos at = le.blockPosition();
-            d.glowAlpha = EphemeraTier.glowAlpha(daylight, mc.level.getBiome(at).value().coldEnoughToSnow(at));
+            long cell = at.asLong();
+            if (inst.snowCell != cell) {
+                inst.snowCell = cell;
+                inst.snowy = mc.level.getBiome(at).value().coldEnoughToSnow(at);
+            }
+            d.glowAlpha = EphemeraTier.glowAlpha(daylight, inst.snowy);
             STAGING.nearFade = d.firstPersonSelf ? NEAR_FADE : NEAR_FADE_THIRD;
             float dist = (float) Math.sqrt(candDist[idx]);
             float farFade = Math.min(1.0F, Math.max(0.0F, ((float) maxDist - dist) / 4.0F));
@@ -273,10 +275,9 @@ public final class EphemeraRenderer {
         mv.setIdentity();
         RenderSystem.applyModelViewMatrix();
         try {
-            sortBackToFront(trans);
-            flush(buffers, typeTranslucent(), trans, m);
+            flush(buffers, typeTranslucent(), trans, m, backToFront(trans));
             if (additive) {
-                flush(buffers, typeAdd(), add, m);
+                flush(buffers, typeAdd(), add, m, null);
             }
         } finally {
             mv.popPose();
@@ -284,7 +285,9 @@ public final class EphemeraRenderer {
         }
     }
 
-    private static void flush(MultiBufferSource.BufferSource buffers, RenderType type, EphemeraStaging.Layer l, Matrix4f m) {
+    /** order 不是 null 时按它给的面片顺序写，否则照批里的顺序 */
+    private static void flush(MultiBufferSource.BufferSource buffers, RenderType type, EphemeraStaging.Layer l, Matrix4f m,
+                              int[] order) {
         int quads = l.quads();
         if (quads == 0) {
             return;
@@ -293,22 +296,28 @@ public final class EphemeraRenderer {
         float[] p = l.positions();
         int[] c = l.colors();
         float[] uv = l.uvs();
-        for (int v = 0, verts = quads * 4; v < verts; v++) {
-            int argb = c[v];
-            vc.vertex(m, p[v * 3], p[v * 3 + 1], p[v * 3 + 2])
-                    .uv(uv[v * 2], uv[v * 2 + 1])
-                    .color((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, argb >>> 24)
-                    .uv2(0xF000F0)
-                    .endVertex();
+        for (int k = 0; k < quads; k++) {
+            int first = (order != null ? order[k] : k) * 4;
+            for (int v = first; v < first + 4; v++) {
+                int argb = c[v];
+                vc.vertex(m, p[v * 3], p[v * 3 + 1], p[v * 3 + 2])
+                        .uv(uv[v * 2], uv[v * 2 + 1])
+                        .color((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, argb >>> 24)
+                        .uv2(0xF000F0)
+                        .endVertex();
+            }
         }
         buffers.endBatch(type);
     }
 
-    /** 半透明那批按四边形中心离相机由远到近重排（坐标已经减过相机），近处的暗托底不会被远处的盖住 */
-    private static void sortBackToFront(EphemeraStaging.Layer l) {
+    /**
+     * 半透明那批按四边形中心离相机由远到近的面片顺序（坐标已经减过相机），近处的暗托底不会被远处的盖住。
+     * 只排序号、不动批里的数据；不用排时返回 null
+     */
+    private static int[] backToFront(EphemeraStaging.Layer l) {
         int n = l.quads();
         if (n < 2) {
-            return;
+            return null;
         }
         if (sortIdx.length < n) {
             sortIdx = new int[n * 2];
@@ -324,25 +333,7 @@ public final class EphemeraRenderer {
         }
         final float[] key = sortKey;
         IntArrays.quickSort(sortIdx, 0, n, (a, b) -> Float.compare(key[b], key[a]));
-        if (sortP.length < n * 12) {
-            sortP = new float[n * 24];
-            sortC = new int[n * 8];
-            sortU = new float[n * 16];
-        }
-        float[] np = sortP;
-        int[] nc = sortC;
-        float[] nu = sortU;
-        int[] c = l.colors();
-        float[] uv = l.uvs();
-        for (int k = 0; k < n; k++) {
-            int i = sortIdx[k];
-            System.arraycopy(p, i * 12, np, k * 12, 12);
-            System.arraycopy(c, i * 4, nc, k * 4, 4);
-            System.arraycopy(uv, i * 8, nu, k * 8, 8);
-        }
-        System.arraycopy(np, 0, p, 0, n * 12);
-        System.arraycopy(nc, 0, c, 0, n * 4);
-        System.arraycopy(nu, 0, uv, 0, n * 8);
+        return sortIdx;
     }
 
     static ResourceLocation atlas(Minecraft mc) {

@@ -13,6 +13,7 @@ public final class FxMotion {
     private static final double TELEPORT = 8.0D;
     /** 原地跳一下约 0.6 秒、1.25 格；腾空超过这么久或离起跳的地面这么高，就不算「跳一下」了 */
     private static final float AIR_FOLLOW_S = 1.0F;
+    private static final double PROBE_S = 0.05D;
     private static final float AIR_FOLLOW_H = 2.5F;
 
     /** 这份状态建起来以后过了几秒 */
@@ -63,6 +64,7 @@ public final class FxMotion {
     private double lastX, lastZ, lastFeet = Double.NaN;
     private double takeoff = Double.NaN;
     private double groundSmooth, groundBase;
+    private double probed = Double.NaN, probedAt = NEVER;
     private float airTime;
 
     public FxMotion(long nowMs) {
@@ -239,8 +241,14 @@ public final class FxMotion {
             target = feet;
             takeoff = feet;
             airTime = 0.0F;
+            probedAt = NEVER;
         } else {
-            double found = h.groundY();
+            // 往下扫方块碰撞不便宜，脚下的地面一个 tick 里也变不了，腾空时隔一个 tick 查一次
+            if (gap || t - probedAt >= PROBE_S) {
+                probed = h.groundY();
+                probedAt = t;
+            }
+            double found = probed;
             if (gap || Double.isNaN(takeoff)) {
                 takeoff = Double.isNaN(found) ? feet : Math.min(found, feet);
                 airTime = 0.0F;
