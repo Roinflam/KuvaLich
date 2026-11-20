@@ -16,6 +16,8 @@ public final class EphemeraDraw {
     /** 相机的右、上（世界坐标的单位向量），朝向相机的面片用 */
     public float rightX, rightY, rightZ, upX, upY, upZ;
     public long timeMs;
+    /** 跟随用的钟（秒）：客户端 tick 数 + partialTick，和模型插值同一个钟，拖尾、弹簧按它走才不会和人错开 */
+    public double time;
 
     public EphemeraLook look = EphemeraLook.NONE;
     public boolean full = true;

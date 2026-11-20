@@ -99,7 +99,7 @@ public final class EntityHost implements EphemeraHost {
     @Override
     public double groundY() {
         if (e.onGround()) {
-            return y;
+            return e.getY();
         }
         // 按脚底整块包围盒往下找：站在两格之间、半砖、栅栏、地毯上，或者脚底这一列刚好是坑时，只看中心一列会判错
         double hw = Math.max(0.05D, e.getBbWidth() * 0.5D - 1.0E-3D);

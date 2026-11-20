@@ -26,6 +26,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -94,8 +95,18 @@ public final class EphemeraRenderer {
     private static float[] sortKey = new float[256];
     /** 开发命令临时切到全开档对比用；null = 照默认收敛档 */
     static EphemeraTier tierOverride;
+    /** 世界真走过的客户端 tick 数，暂停时不涨；加上 partialTick 就是实体插值用的那个时间 */
+    private static long modelTicks;
 
     private EphemeraRenderer() {
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (event.phase == TickEvent.Phase.END && mc.level != null && !mc.isPaused()) {
+            modelTicks++;
+        }
     }
 
     @SubscribeEvent
@@ -182,6 +193,7 @@ public final class EphemeraRenderer {
         d.upY = up.y();
         d.upZ = up.z();
         d.timeMs = now;
+        d.time = (modelTicks + pt) * 0.05D;
         d.tier = tierOverride != null ? tierOverride : EphemeraTier.CONVERGED;
         d.emitScale = EffectsDisplayConfig.intensity().budgetScale;
         float daylight = (mc.level.getSkyDarken(pt) - 0.2F) / 0.8F;
@@ -229,6 +241,9 @@ public final class EphemeraRenderer {
             STAGING.alphaMul = farFade * shown * (le.isCrouching() ? SNEAK_ALPHA : 1.0F);
             try {
                 inst.style.draw(inst, host, d);
+                if (EphemeraTrace.on && self) {
+                    EphemeraTrace.record(inst, host, le, pt, now);
+                }
                 if (inst.style.postGradient()) {
                     STAGING.gradePending(look.gradient(), look.color1(), look.color2(), (float) (host.x() - cam.x),
                             (float) (host.z() - cam.z), (now % 600_000L) / 1000.0F);

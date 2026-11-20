@@ -83,9 +83,9 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
         s.cx = m.x;
         s.cy = m.y;
         s.cz = m.z;
-        s.cvx = m.velX;
-        s.cvy = m.velY;
-        s.cvz = m.velZ;
+        s.cvx = m.trackX;
+        s.cvy = m.trackY;
+        s.cvz = m.trackZ;
         s.th = s.vp = s.sp = 0;
         float life = trailLife(m.kind, m.lite);
         s.tr = new FxTrail[s.ns];
@@ -207,9 +207,9 @@ public final class CoilStyle extends ProtoStyle<CoilStyle.St> {
         }
         {
             float w0 = 15, z = 0.45F, wy = 22;
-            s.cvx += (float) (((m.x - s.cx) * w0 * w0 - (s.cvx - m.velX) * 2 * z * w0) * dt);
-            s.cvz += (float) (((m.z - s.cz) * w0 * w0 - (s.cvz - m.velZ) * 2 * z * w0) * dt);
-            s.cvy += (float) (((m.y - s.cy) * wy * wy - (s.cvy - m.velY) * 2 * 0.8F * wy) * dt);
+            s.cvx += (float) (((m.x - s.cx) * w0 * w0 - (s.cvx - m.trackX) * 2 * z * w0) * dt);
+            s.cvz += (float) (((m.z - s.cz) * w0 * w0 - (s.cvz - m.trackZ) * 2 * z * w0) * dt);
+            s.cvy += (float) (((m.y - s.cy) * wy * wy - (s.cvy - m.trackY) * 2 * 0.8F * wy) * dt);
             s.cx += s.cvx * dt;
             s.cy += s.cvy * dt;
             s.cz += s.cvz * dt;

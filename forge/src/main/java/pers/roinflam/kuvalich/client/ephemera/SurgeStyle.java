@@ -162,8 +162,8 @@ public final class SurgeStyle extends ProtoStyle<SurgeStyle.St> {
         }
         {
             float w0 = 17, zt = 0.5F;
-            s.cvx += (float) (((gx - s.cx) * w0 * w0 - (s.cvx - mo.velX) * 2 * zt * w0) * dt);
-            s.cvz += (float) (((gz - s.cz) * w0 * w0 - (s.cvz - mo.velZ) * 2 * zt * w0) * dt);
+            s.cvx += (float) (((gx - s.cx) * w0 * w0 - (s.cvx - mo.trackX) * 2 * zt * w0) * dt);
+            s.cvz += (float) (((gz - s.cz) * w0 * w0 - (s.cvz - mo.trackZ) * 2 * zt * w0) * dt);
             s.cx += s.cvx * dt;
             s.cz += s.cvz * dt;
             double ox = s.cx - gx, oz = s.cz - gz, l = Math.sqrt(ox * ox + oz * oz), mx = 0.7 * sc;

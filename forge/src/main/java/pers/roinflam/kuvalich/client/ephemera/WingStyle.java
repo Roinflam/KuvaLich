@@ -130,7 +130,7 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
         float wf = FLUT[kind], bend = BEND[kind] * (1 - 0.7F * Math.min(1, run)), stiff = kind == 2 ? 1.5F : 1;
         float Lb = 0.7F * H + 0.9F * W;
         double top = m.y + H + 1.1F * sc, floorY = gy + 0.06;
-        float vX = m.velX, vY = m.velY, vZ = m.velZ;
+        float vX = m.trackX, vY = m.trackY, vZ = m.trackZ;
         float r1 = Math.min(1, run);
 
         // 翎是一串带弹簧的节点：每节朝「静止造型 + 迎面风」的方向追，阻尼只算相对身体的速度，
@@ -166,7 +166,7 @@ public final class WingStyle extends ProtoStyle<WingStyle.St> {
                 float sdX = -Rx * sa + bvX * ca, sdZ = -Rz * sa + bvZ * ca;
                 float f1 = amp * tt * (float) Math.sin(t * wf - i * 0.8F + j * 1.7F + side);
                 float f2 = amp * tt * (float) Math.sin(t * wf * 0.63F - i * 0.6F + j * 2.3F);
-                float dx = hX * ce + bvX * 1.1F * run * tt + sdX * f2, dy = se + f1 - vY * 0.05F * tt, dz = hZ * ce + bvZ * 1.1F * run * tt + sdZ * f2;
+                float dx = hX * ce + bvX * 1.1F * run * tt + sdX * f2, dy = se + f1 - m.velY * 0.05F * tt, dz = hZ * ce + bvZ * 1.1F * run * tt + sdZ * f2;
                 float dl = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
                 if (dl < 1.0E-6F) {
                     dl = 1;

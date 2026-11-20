@@ -36,7 +36,7 @@ public abstract class ProtoStyle<S extends ProtoStyle.State> implements Ephemera
         } else {
             st = newState();
             st.owner = this;
-            st.m = new FxMotion(d.timeMs);
+            st.m = new FxMotion(d.time);
             inst.styleState = st;
         }
         FxMotion m = st.m;

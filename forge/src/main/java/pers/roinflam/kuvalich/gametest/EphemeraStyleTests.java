@@ -194,6 +194,7 @@ public final class EphemeraStyleTests {
             float t = f / FPS;
             host.step(t, 1 / FPS);
             d.timeMs = 100_000L + Math.round(t * 1000);
+            d.time = d.timeMs / 1000.0D;
             d.camX = host.x;
             d.camY = host.y + 1.5;
             d.camZ = host.z - 4;
@@ -329,7 +330,7 @@ public final class EphemeraStyleTests {
     public static void groundLayerFollowsFeetWhenAirborne(GameTestHelper h) {
         final class Host extends ScriptHost {
             boolean fly, wet;
-            double found = 64;
+            double found = 64, floor = 64;
 
             Host() {
                 super(0.6F, 1.8F);
@@ -337,7 +338,7 @@ public final class EphemeraStyleTests {
 
             @Override
             public double groundY() {
-                return ground ? y : found;
+                return ground ? floor : found;
             }
 
             @Override
@@ -362,6 +363,7 @@ public final class EphemeraStyleTests {
         Runnable step = () -> {
             frame[0]++;
             d.timeMs = Math.round(frame[0] * 1000 / FPS);
+            d.time = d.timeMs / 1000.0D;
             m.update(inst, host, d);
             if (!Double.isNaN(last[0]) && !m.fresh) {
                 h.assertTrue(Math.abs(m.groundY - last[0]) < 0.6, "贴地层一帧跳了 " + (m.groundY - last[0]) + " 格，第 " + frame[0] + " 帧");
@@ -381,9 +383,38 @@ public final class EphemeraStyleTests {
             step.run();
             h.assertTrue(Math.abs(m.groundY - 64) < 0.05, "跳过沟时贴地层应留在起跳处：" + m.groundY);
         }
-        host.y = 64;
+        // 落地那个 tick 已经着地，插值出来的脚还在半空往下落
         host.ground = true;
         host.found = 64;
+        for (double feet : new double[]{64.3, 64.15, 64}) {
+            host.y = feet;
+            step.run();
+            h.assertTrue(Math.abs(m.groundY - 64) < 1.0E-6, "落地时贴地层不该跟着半空的脚抬起来：" + m.groundY + " / " + feet);
+        }
+        for (int i = 0; i < 10; i++) {
+            step.run();
+        }
+        // 从一格高的台子上走下去：贴地层直接落到下面的地面，不跟着脚一路往下滑
+        host.ground = false;
+        host.found = 63;
+        for (int i = 1; i <= 3; i++) {
+            float tt = i / FPS;
+            host.y = 64 - 16 * tt * tt;
+            step.run();
+        }
+        h.assertTrue(m.groundY < 63.2 && host.y > 63.8, "走下台子 0.1 秒贴地层应已落到下面：" + m.groundY + " / " + host.y);
+        host.y = 63;
+        host.ground = true;
+        host.floor = 63;
+        for (int i = 0; i < 10; i++) {
+            step.run();
+        }
+        h.assertTrue(Math.abs(m.groundY - 63) < 1.0E-6, "落到下面以后贴地层应在脚底：" + m.groundY);
+        host.y = 64;
+        host.floor = 64;
+        host.found = 64;
+        host.x += 20;
+        step.run();
         for (int i = 0; i < 10; i++) {
             step.run();
         }

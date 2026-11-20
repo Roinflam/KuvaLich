@@ -77,6 +77,27 @@ public final class EphemeraDevCommands {
                         .then(Commands.literal("first").executes(ctx -> view(ctx, CameraType.FIRST_PERSON)))
                         .then(Commands.literal("back").executes(ctx -> view(ctx, CameraType.THIRD_PERSON_BACK)))
                         .then(Commands.literal("front").executes(ctx -> view(ctx, CameraType.THIRD_PERSON_FRONT))))
+                .then(Commands.literal("trace")
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .then(Commands.argument("frames", IntegerArgumentType.integer(1, 100000))
+                                        .executes(ctx -> {
+                                            String p = EphemeraTrace.start(StringArgumentType.getString(ctx, "name"),
+                                                    IntegerArgumentType.getInteger(ctx, "frames"));
+                                            ctx.getSource().sendSuccess(() -> Component.literal("trace " + p), false);
+                                            return 1;
+                                        }))))
+                .then(Commands.literal("fps")
+                        .then(Commands.argument("limit", IntegerArgumentType.integer(10, 260))
+                                .executes(ctx -> {
+                                    int lim = IntegerArgumentType.getInteger(ctx, "limit");
+                                    Minecraft mc = Minecraft.getInstance();
+                                    mc.options.enableVsync().set(false);
+                                    mc.getWindow().updateVsync(false);
+                                    mc.options.framerateLimit().set(lim);
+                                    mc.getWindow().setFramerateLimit(lim);
+                                    ctx.getSource().sendSuccess(() -> Component.literal("fps limit " + lim), false);
+                                    return 1;
+                                })))
                 .then(Commands.literal("stats")
                         .executes(ctx -> {
                             String s = EphemeraRenderer.stats();

@@ -77,6 +77,7 @@ public final class EphemeraPreview {
         DRAW.upY = COS_P;
         DRAW.upZ = SIN_P;
         DRAW.timeMs = now;
+        DRAW.time = now / 1000.0D;
         STAGING.clearFrame();
         STAGING.additiveAllowed = true;
         STAGING.nearFade = 0;
