@@ -31,7 +31,7 @@ final class CardState {
         float tx0 = Math.max(0.36F, S0 / size + 0.1F);
         txt = smooth(tx0, tx0 + 0.3F, rel);
         pillA = smooth(tx0 + 0.06F, tx0 + 0.39F, rel);
-        frameA = smooth(0.3F, 0.8F, p);
+        frameA = smooth(0.15F, 0.55F, p);
         shadow = smooth(0.2F, 1, e);
         zoom = 1.05F + 0.07F * e;
         float tk = tilt ? smooth(0.45F, 1, p) : 0;

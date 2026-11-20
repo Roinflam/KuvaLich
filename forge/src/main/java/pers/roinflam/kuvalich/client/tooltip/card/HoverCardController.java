@@ -513,7 +513,7 @@ public final class HoverCardController {
                 CardDraw.texture(CardTextures.iconCore(c.model), false);
                 CardDraw.blitAll(L, y0, L + N, y0 + N, 0xFFFFFF, pa);
             }
-            float ra = 1 - CardState.smooth(0.6F, 1, st.p);
+            float ra = 1 - CardState.smooth(0.1F, 0.4F, st.p);
             if (ra > 0.003F) {
                 int c1 = Math.round(22 * q), c2 = n - c1, cw = c2 - c1, r1 = Math.round(30 * q), bh = n - r1;
                 int gL = Math.round((L + R - cw) / 2.0F), xR = R - c1, yB = B - bh;
