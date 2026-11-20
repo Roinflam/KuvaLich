@@ -284,13 +284,14 @@ public final class HoverCardController {
 
     @SubscribeEvent
     public static void onHoverCardTooltip(RenderTooltipEvent.Pre event) {
-        if (screen == null || event.getItemStack().isEmpty()) {
-            return;
-        }
-        ItemStack st = event.getItemStack();
-        if (cur != null && cur.slot.getItem() == st) {
+        if (hidesTooltip(event.getItemStack())) {
             event.setCanceled(true);
         }
+    }
+
+    /** 这件物品的卡正展开着，悬浮提示不画 */
+    public static boolean hidesTooltip(ItemStack st) {
+        return screen != null && cur != null && st != null && !st.isEmpty() && cur.slot.getItem() == st;
     }
 
     @SubscribeEvent

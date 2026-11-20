@@ -17,6 +17,7 @@
     "client.MixinCameraMercy",
     "client.MixinMouseHandlerMercy",
     "client.MixinContainerScreenHoverCard",
+    "client.MixinGuiGraphicsHoverCard",
     "client.SlotPositionAccessor"
   ],
   "server": [
