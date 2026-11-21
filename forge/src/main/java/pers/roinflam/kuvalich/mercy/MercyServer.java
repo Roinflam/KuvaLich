@@ -1728,6 +1728,19 @@ public final class MercyServer {
         }
     }
 
+    /**
+     * 处决收尾那一下必须真死。莱特兰「不死」词条这类复活会取消死亡事件并回满血，目标就一直站着：
+     * 处决者视角回不来、进度也不加。这里最后一个处理，撤掉取消、血量压回 0，原版死亡流程照常走完
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
+    public static void onFinishingBlowCanceled(LivingDeathEvent event) {
+        if (event.isCanceled() && event.getEntity() instanceof AbstractKuva target
+                && !target.level().isClientSide && target.isMercyFinishing()) {
+            event.setCanceled(false);
+            target.setHealth(0.0F);
+        }
+    }
+
     /** 目标被别的东西直接移除（别的模组 discard、区块卸载）当中断；处决者离开世界同理 */
     @SubscribeEvent
     public static void onLeaveLevel(EntityLeaveLevelEvent event) {
