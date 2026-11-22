@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://cdn.modrinth.com/data/cached_images/c284f82387151b2190257bbaa771060a756dd4f8.jpg" alt="Kuva Lich" width="800">
+<img src="https://cdn.modrinth.com/data/cached_images/8d80b27eba8abc8de863605bab1b35b2f957f462.jpg" alt="Kuva Lich" width="800">
 
 # Kuva Lich | 赤毒玄骸
 
@@ -18,77 +18,64 @@
 <details open>
 <summary><h2>English</h2></summary>
 
-**Kuva Lich** is a combat and progression mod for Minecraft 1.20.1 Forge, modeled on the Kuva Lich system of *Warframe*. Every player raises a personal Lich, a named nemesis with its own weapon, personality and rank, and can only finish it by working out the right order of three Requiem cards. A successful hunt yields Kuva weapons, Prime and Riven mods, and the Lich itself can be converted into an ally. Mods are upgrade cards that fit any weapon: vanilla swords and bows, TACZ guns, and weapons from any other mod.
-
-### Versions
+**Kuva Lich** is a combat and progression mod for Minecraft 1.20.1 and 1.12.2 Forge, modeled on the Kuva Lich system of *Warframe*. Every player raises a personal Lich and can only finish it by placing three Requiem cards in the right order. Mods fit any weapon: vanilla swords and bows, TACZ guns and weapons from other mods.
 
 | Minecraft | Loader / Java | Install on | Dependencies |
 |---|---|---|---|
 | 1.20.1 | Forge 47.x, Java 17 | Client and server | None (GeckoLib and Cloth Config API are bundled) |
+| 1.12.2 | Forge 14.23.x, Java 8 | Client and server | None |
 
-TACZ and Curios are optional. Without them, the gun stats and the Curios slot bonuses simply do not appear.
+The existing 1.12.2 releases remain available for download, and the new content described here will be brought to that version in later updates. All cards and screenshots on this page are from the 1.20.1 version.
 
-### The hunt
+On 1.20.1, TACZ and Curios are optional. Without them, the gun stats and the Curios slot bonuses simply do not appear.
 
-A round of play runs from mining to the final execution:
+### Mod cards
 
-- **Mine:** break Requiem Ore with a *Requiem Destroyed* pickaxe to collect Requiem cards, mods and materials.
-- **Nemesis:** while a player has no Lich, a Kuva Larvling appears nearby from time to time. Once knocked down, it reveals the weapon, level and element its Lich will carry. Executing it gives birth to that Lich.
-- **Farm:** Kuva Thralls arrive in squads. Each Thrall executed adds decryption progress in three stages, and every full stage reveals one card of the answer.
-- **Set the cards:** place three of the eight Requiem cards in the Requiem Gate in the order believed to be correct.
-- **Confront:** the Lich comes on its own when its rage is full and announces itself over the comm window first. Its health has three segments; each time one empties it goes down, and the *Mercy* key (default `X`) checks the first one, two and then three cards. A wrong card lets it escape and raises its rank, which makes it tougher.
+Hovering a mod in an inventory unfolds it into a full card. Frames come in six tiers, and each of the 498 cards has its own cover image staged in game.
 
-Each Lich is either Jovial or Logical. The personality decides how it talks and how it fights: Jovial Liches hit hard and grow fiercer as the fight drags on, while Logical ones are tough and adapt quickly. Weaknesses, resistances and ability tiers differ from Lich to Lich. A failed execution can also yield an **Oull**, the wildcard Requiem card.
+![Six card tiers](https://cdn.modrinth.com/data/cached_images/e792c9264b1eee06c306257925f1a387a63692f5.jpg)
+*Bronze, Silver, Gold, Prime, Riven and Executioner*
 
-![Lich Profile: rank, personality, rage, weapon, weaknesses and the execution record](https://cdn.modrinth.com/data/cached_images/11a4975b769415f7e55999e07cae771132029efb_0.webp)
-*Lich Profile: rank, personality, rage, weapon, weaknesses and the execution record*
+### Veiled mods
 
-The **Lich Profile** opens from the Requiem Gate (default `K`) and shows everything about the current Lich: rank, personality, rage meter, weapon and element, health and armor, weaknesses and resistances, the cards in the Gate and the last five executions.
+Dropped mods start veiled and are revealed with a right-click in the main hand. Riven stats are fully random and can be rerolled with Kuva at the Requiem Forge.
 
-### Mercy kills, Convert or Vanquish
+![Veiled mod cards](https://cdn.modrinth.com/data/cached_images/63f8ed5781641f2ecbdfff92874b0a9815bad754.jpg)
 
-Every Lich execution draws one of **eight finishers**, and the same player never gets the same one twice in a row. Larger finishers are only drawn where the terrain leaves enough room. Hit-stop, camera shake and camera motion can be reduced or turned off in the client settings. With Yes Steve Model or a similar player model mod installed, the executor is shown with the vanilla model for the duration of the finisher.
+### Warframe mods
 
-![A Mercy finisher on a Kuva Lich](https://cdn.modrinth.com/data/cached_images/8d41b0594819bf16f5e2be9155eb873c08663964.jpg)
-*A Mercy finisher on a Kuva Lich*
+Warframe mods go on the player through the Requiem Warframe Arsenal. No armor is needed.
 
-When all three cards are right, the final execution pauses and offers two choices:
+![Warframe mod cards](https://cdn.modrinth.com/data/cached_images/82b47ef6ee41f76cbfc06de20c1b92f5692c6f5c.jpg)
 
-- **Vanquish:** claim the Kuva weapon, a Lich Reliquary, Kuva, Riven Slivers and a guaranteed Prime or Riven mod.
-- **Convert:** give up the rewards and add the Lich to the ally roster (3 slots by default). When the player is low on health, the active ally may join the fight, attack the enemies around them and leave after a while.
+### Weapon panel
 
-Rewards never drop on the ground. They go to the **Pending** list first and move into the inventory as soon as there is room; `/kuvalich inbox` claims them at once.
+Any item that receives a base panel at the Requiem Forge accepts weapon mods. The tooltip panel lists the final stats, kill stacks, element combinations and installed mods.
+
+![Weapon tooltip panels](https://cdn.modrinth.com/data/cached_images/b694207f55c7d5c31e92aeda560bba0973cedaa4.png)
+*Left: Kuva Shildeg with eight mods. Right: a diamond sword with three.*
+
+### A personal Lich
+
+While a player has no Lich, a Kuva Larvling appears from time to time. Executing it gives birth to a Lich with its own name, weapon, element, personality and rank. The Lich Profile (default `K`) shows everything about it.
+
+![Lich Profile](https://cdn.modrinth.com/data/cached_images/f2e61d3bcbe847419ed2ff6eb0001499c1d4f7cb.jpg)
+
+### Mercy
+
+A Lich has three health segments. Each time one empties it goes down, and the Mercy key (default `X`) checks the next Requiem card. Eight finishers are drawn at random, never the same one twice in a row for the same player.
+
+![A Mercy finisher](https://cdn.modrinth.com/data/cached_images/7fb42b8ce6bd5c1170521fe8690c571a31e1eb60.jpg)
+
+### Convert or Vanquish
+
+When all three cards are right, the final execution pauses: vanquish the Lich for its rewards, or convert it into an ally.
 
 ### Ephemera
 
-A Lich has a 20% chance to carry an **Ephemera**, a cosmetic effect worn around the body. Finishing that Lich, whether by converting or vanquishing it, grants the Ephemera. There are **18 styles** around the head, shoulders, back, body and feet, and each takes a different form under each of the seven elements: tongues of fire, ice prisms, electric arcs, dripping toxin, impact rings, magnetic arcs or radiation lines. Ephemera go into the Warframe Arsenal and have no effect on stats. The tuning panel changes the primary and secondary colors, gradient, size and height.
+A Lich has a 20% chance to carry an Ephemera, granted when the Lich is finished. There are 18 styles, each with a different form under each of the seven elements. Ephemera are cosmetic only.
 
-![Six of the eighteen Ephemera styles](https://cdn.modrinth.com/data/cached_images/d1e093e744b82193f8b0555c5791a569499d7127.jpg)
-*Six of the eighteen Ephemera styles*
-
-### Mods and weapons
-
-- **Weapon and Warframe mods:** weapon mods go on weapons in the Requiem Weapon Arsenal; Warframe mods go on the player in the Requiem Warframe Arsenal, with no armor needed.
-- **Five rarities:** Bronze, Silver and Gold drop from ore and Thralls; Prime and Riven come from successful hunts. The Prime tier includes the Galvanized and Executioner series, which grow with kill stacks.
-- **Rivens:** fully random stats with a disposition of one to five dots, revealed with a right-click and rerolled with Kuva at the Requiem Forge.
-- **Any weapon:** consecrate an item at the Requiem Forge to give it a random base panel; from then on it takes weapon mods. Forma rerolls the panel.
-- **13 Kuva weapons:** melee weapons with their own passives, each with a random level and innate element.
-- **Combat:** critical hits, 14 damage types with combined elements and status effects, kill stacks, bane and damage numbers.
-- **Mod Codex:** press `Tab` in either Arsenal to browse every mod card, with search.
-
-Hovering a mod card in an inventory screen unfolds it into a full card in the style of *Warframe*, with a frame for each rarity and a cover image. All 498 mod cards have their own cover, staged and captured in game. Size and tilt are set in the `[hover_card]` section of `kuvalich-tooltip.toml`.
-
-![Some of the 498 mod card covers](https://cdn.modrinth.com/data/cached_images/6db7ad962e8e2a57c14e871b9ab1a262d1f7d56a_0.webp)
-*Some of the 498 mod card covers*
-
-### TACZ and Curios
-
-- **TACZ:** consecrated guns take weapon mods, and gun-only stats such as multishot, fire rate, reload speed, magazine size and burst radius take real effect.
-- **Curios:** a consecrated trinket worn in a Curios slot lends its weapon mods to the main-hand weapon at a reduced rate.
-
-### Field Guide
-
-Every player receives the **Kuva Lich Field Guide** on first join. It covers the whole mod in ten sections, from the first pickaxe to the endgame, and its numbers follow the server configuration. Holding `Ctrl` over an item looks it up in the guide. The guide is available in English, Simplified Chinese and Traditional Chinese.
+![Ephemera](https://cdn.modrinth.com/data/cached_images/c06f51b5156e8f34663cd8c30f26c7d5eb412b74.jpg)
 
 ### For server owners and modpack makers
 
@@ -158,69 +145,66 @@ Everything else (Forge, Architectury, GeckoLib, Curios, MixinExtras and so on) i
 <details>
 <summary><h2>中文</h2></summary>
 
-**赤毒玄骸**是 Minecraft 1.20.1 Forge 的战斗养成模组，玩法仿照《星际战甲》的赤毒玄骸系统。每名玩家拥有一只专属的玄骸，玄骸有自己的名字、武器、性格和等级，只有按正确顺序摆好三张安魂卡并依次处决，才能将其终结。讨伐成功可获得赤毒武器、Prime 模组和裂罅模组，也可以选择感化玄骸，使其成为盟友。本模组中的「模组」指强化卡，可安装在任何武器上，包括原版的剑和弓、TACZ 的枪械以及其他模组的武器。
+**赤毒玄骸**是 Minecraft 1.20.1 与 1.12.2 Forge 的战斗与成长模组，按《星际战甲》的赤毒玄骸系统制作。每名玩家会培养出一只专属玄骸，只有按正确顺序摆好三张安魂卡并依次处决，才能将其终结。模组卡可以装在任何武器上，包括原版武器、TACZ 枪械和其他模组的武器。
 
-### 运行需求
-
-| Minecraft | 加载器与 Java | 安装位置 | 前置模组 |
+| Minecraft | 加载器 / Java | 安装位置 | 前置 |
 |---|---|---|---|
-| 1.20.1 | Forge 47.x，Java 17 | 客户端和服务端 | 无（GeckoLib 和 Cloth Config API 已内置） |
+| 1.20.1 | Forge 47.x，Java 17 | 客户端和服务端 | 无（已内置 GeckoLib 与 Cloth Config API） |
+| 1.12.2 | Forge 14.23.x，Java 8 | 客户端和服务端 | 无 |
 
-TACZ 和 Curios 为可选联动，未安装时对应的枪械词条和饰品栏加成不会出现。
+1.12.2 版仍可下载，本页介绍的新内容将在后续更新中同步到该版本；页面中的卡片和截图均来自 1.20.1 版。
 
-### 讨伐流程
+1.20.1 版中，TACZ 和 Curios 为可选联动，未安装时不显示枪械词条和饰品栏加成。
 
-- **挖矿**：使用附有「灭骸」的镐挖掘安魂矿石，获得安魂卡、模组和材料；
-- **宿敌**：玩家没有玄骸时，赤毒幼体会不时出现在附近。幼体被打倒后显示将来那只玄骸的武器、等级和元素，处决幼体后玄骸随之诞生；
-- **积攒进度**：赤毒奴仆成队出现，处决奴仆可积攒解密进度。进度分三段，每积满一段揭示一张答案卡；
-- **摆卡**：从八种安魂卡中选出三张，按推测的顺序放入灭骸之扉；
-- **讨伐**：玄骸怒气满后自行找上门，现身前先在通讯窗中发话。玄骸的生命分为三段，每打空一段倒地一次，按怜悯之击键（默认 `X`）处决，三次处决依次核对前一、二、三张卡。卡序有误时玄骸挣脱逃走，玄骸等级提升一级。
+### 模组卡
 
-玄骸的性格分为活泼和理性两种，决定其说话方式和战斗方式：活泼的玄骸攻击高、生命低，战斗越久越凶；理性的玄骸生命和护甲高，适应得快。每只玄骸的弱点、抗性和各项能力档位也各不相同。处决失败时有几率获得 **Oull**，即可替代任意安魂卡的万能卡。
+鼠标停在模组卡上，图标原地展开成完整的卡。边框分青铜、白银、黄金、Prime、裂罅、执刑官六档，498 张卡各有一张游戏内摆拍的卡面。
 
-玄骸档案在灭骸之扉中打开（默认 `K`），显示当前玄骸的等级、性格、怒气、武器与元素、生命与护甲、弱点与抗性、灭骸之扉中的安魂卡和最近五次处决记录。
+![六档模组卡](https://cdn.modrinth.com/data/cached_images/6b7ef38f59eb63a618337ce2d0555d16b059b088.jpg)
+*青铜、白银、黄金、Prime、裂罅、执刑官*
 
-![玄骸档案](https://cdn.modrinth.com/data/cached_images/7448286b5f6f2223e8ed394a493acd149c2d9cbd_0.webp)
+### 未揭示的模组
 
-### 怜悯之击与感化
+掉落的模组卡起初没有揭示，主手持握时按右键即可揭示。裂罅模组揭示后词条完全随机，可在安魂之融中用赤毒重洗。
 
-每次处决玄骸时，从**八套处决动作**中随机抽取一套，同一名玩家不会连续两次抽到同一套；其中五套需要周围留有足够空间。处决时的顿帧、镜头震动和镜头运动可在客户端设置中减弱或关闭。装有 Yes Steve Model 等替换玩家模型的模组时，处决期间处决者改用原版玩家模型显示。
+![未揭示的模组卡](https://cdn.modrinth.com/data/cached_images/9082aac334f01c59e510363767d4749671519622.jpg)
 
-第三次处决的三刀全部正确时，处决停在最后一刻，由玩家选择：
+### 战甲模组
 
-- **消灭**：取得赤毒武器、玄骸之遗、赤毒、裂罅碎块，以及必出一张的 Prime 或裂罅模组；
-- **感化**：放弃上述奖励，玄骸加入盟友名册（默认容纳 3 只）。玩家生命较低时，设为出战的盟友有几率前来助战，攻击周围的敌对生物，一段时间后退去。
+战甲模组装在玩家身上，放进安魂之战甲军械库即可生效，不需要穿盔甲。
 
-讨伐所得的物品不会掉在地上，而是先记入待领取，背包有空位时自动放入；输入 `/kuvalich inbox` 可立即领取。
+![战甲模组卡](https://cdn.modrinth.com/data/cached_images/ff8d4f510acb2399230d14f2dc2f469b8c897f17.jpg)
+
+### 武器面板
+
+任何物品在安魂之融中获得基础面板后，都可以安装武器模组。悬浮面板列出最终数值、击杀叠层、元素组合和已装模组。
+
+![武器悬浮面板](https://cdn.modrinth.com/data/cached_images/4f587ce050a8859f4e6b860e2392f04a811441ae.png)
+*左：赤毒希尔德，装满八张模组；右：装了三张模组的钻石剑*
+
+### 专属玄骸
+
+玩家没有玄骸时，赤毒幼体会不时出现。处决幼体后诞生一只专属玄骸，带有名字、武器、元素、性格和等级。玄骸档案（默认 `K`）显示它的全部情报。
+
+![玄骸档案](https://cdn.modrinth.com/data/cached_images/7bcecb77d890467a560823328c1510a16159fbde.jpg)
+
+### 怜悯之击
+
+玄骸血条分三段，每段打空时倒地，按怜悯之击（默认 `X`）依次验证安魂卡。处决共有八套动作，同一名玩家不会连续抽到同一套。
+
+![怜悯之击](https://cdn.modrinth.com/data/cached_images/7fb42b8ce6bd5c1170521fe8690c571a31e1eb60.jpg)
+
+### 感化或消灭
+
+三张安魂卡全部正确时，最后一次处决会停下来，由玩家选择消灭玄骸领取奖励，或将其感化为盟友。
+
+![感化或消灭](https://cdn.modrinth.com/data/cached_images/59626026649b29ef2ba15bdfebd1c39fa343c3de.jpg)
 
 ### 幻纹
 
-每只玄骸有 20% 的几率带有**幻纹**，无论感化还是消灭，终结该玄骸时都会获得。幻纹是环绕在身上的光效，只改变外观，不影响属性，装在安魂之战甲军械库的幻纹格中。共 **18 种款式**，分布在头后、肩臂、背后、环身和足下；同一款式在火焰、冰冻、电击、毒素、冲击、磁力、辐射七种元素下形态各不相同。调整外观面板可修改主色与副色、渐变方式、大小和高度。
+每只玄骸有 20% 的几率带有幻纹，终结它即可获得。幻纹共 18 款，在七种元素下各有不同形态，只改变外观。
 
-![十八种幻纹中的六种](https://cdn.modrinth.com/data/cached_images/d1e093e744b82193f8b0555c5791a569499d7127.jpg)
-
-### 模组与武器
-
-- **武器模组与战甲模组**：武器模组在安魂之武器军械库中安装到武器上，战甲模组在安魂之战甲军械库中安装到玩家本人身上，无需穿戴护甲；
-- **五档品质**：青铜、白银、黄金来自安魂矿石和赤毒奴仆，Prime 和裂罅来自讨伐成功的奖励；Prime 一档另含镀层和执刑官两个系列，随击杀叠层增强；
-- **裂罅模组**：词条完全随机，倾向为一至五点，右键揭示后可在安魂之融中消耗赤毒循环；
-- **任何武器**：任何物品在安魂之融中用裂罅碎块开光后获得随机基础面板，此后即可安装武器模组；塑形块可重洗面板；
-- **赤毒武器**：共 13 把近战武器，各有被动效果，等级和元素随机；
-- **战斗系统**：暴击、14 种伤害类型与复合元素、异常状态、击杀叠层、克制和伤害数字；
-- **模组图鉴**：在两座军械库中按 `Tab` 打开，可搜索并查看全部模组卡面。
-
-在物品栏界面中将鼠标悬停在模组卡上，模组卡会展开为《星际战甲》样式的完整卡面，边框按品质区分。全部 498 张模组卡均有专属封面，由游戏内实景摆拍制作。卡面大小和倾斜效果在 `kuvalich-tooltip.toml` 的 `[hover_card]` 一节中设置。
-
-![部分模组卡封面](https://cdn.modrinth.com/data/cached_images/6db7ad962e8e2a57c14e871b9ab1a262d1f7d56a_0.webp)
-
-### 联动
-
-- **TACZ**：开光后的枪械可以安装武器模组，多重射击、射速、装填速度、弹匣容量和爆炸半径等枪械专属词条实际生效；
-- **Curios**：开光后的饰品佩戴在饰品栏中时，将其上的武器模组按一定比例加给主手武器。
-
-### 冒险指南
-
-玩家首次进入游戏时获得一本「赤毒玄骸 冒险指南」。指南共十个分类，从第一把镐讲到后期玩法，其中的数值随服务端配置变化。物品提示框出现时按住 `Ctrl`，可直接翻到指南中对应的篇目。指南提供简体中文、繁体中文和英文。
+![幻纹](https://cdn.modrinth.com/data/cached_images/c06f51b5156e8f34663cd8c30f26c7d5eb412b74.jpg)
 
 ### 服主与整合包作者
 
