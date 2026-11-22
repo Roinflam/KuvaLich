@@ -33,7 +33,7 @@ On 1.20.1, TACZ and Curios are optional. Without them, the gun stats and the Cur
 
 Hovering a mod in an inventory unfolds it into a full card. Frames come in six tiers, and each of the 498 cards has its own cover image staged in game.
 
-![Six card tiers](https://cdn.modrinth.com/data/cached_images/e792c9264b1eee06c306257925f1a387a63692f5.jpg)
+![Six card tiers](https://cdn.modrinth.com/data/cached_images/22269b5944527443e2ea7fe3ded873373698d4bd.jpg)
 *Bronze, Silver, Gold, Prime, Riven and Executioner*
 
 ### Veiled mods
@@ -160,7 +160,7 @@ Everything else (Forge, Architectury, GeckoLib, Curios, MixinExtras and so on) i
 
 鼠标停在模组卡上，图标原地展开成完整的卡。边框分青铜、白银、黄金、Prime、裂罅、执刑官六档，498 张卡各有一张游戏内摆拍的卡面。
 
-![六档模组卡](https://cdn.modrinth.com/data/cached_images/6b7ef38f59eb63a618337ce2d0555d16b059b088.jpg)
+![六档模组卡](https://cdn.modrinth.com/data/cached_images/34aa2dcabfcc6e30fd81e66f514f5b53756d9d56.jpg)
 *青铜、白银、黄金、Prime、裂罅、执刑官*
 
 ### 未揭示的模组
