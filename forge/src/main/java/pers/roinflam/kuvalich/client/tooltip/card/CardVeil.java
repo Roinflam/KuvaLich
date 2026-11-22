@@ -2,7 +2,7 @@ package pers.roinflam.kuvalich.client.tooltip.card;
 
 /**
  * 未揭示卡面：底色 + 六层图案按倾斜角各自错开（纵深），再叠全息格纹、暗角、光点和星屑闪点。
- * 贴图由 docs-local/hover-card/impl/www/export_veil_layers.html 从原型导出，图案改了要重新导出。
+ * 贴图从网页原型导出，图案改了要重新导出。
  */
 final class CardVeil {
 

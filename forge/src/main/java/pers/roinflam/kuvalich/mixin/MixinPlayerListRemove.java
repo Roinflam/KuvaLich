@@ -10,7 +10,7 @@ import pers.roinflam.kuvalich.utils.LogUtil;
 import pers.roinflam.kuvalich.world.inventory.RequiemMenuLogoutGuard;
 
 /**
- * 下线时赶在 Tenet 收光标之前处理安魂界面，见 {@link RequiemMenuLogoutGuard}。Mojmap 名，由 Mixin 重映射
+ * 下线时赶在部分混合端服务端收光标之前处理安魂界面，见 {@link RequiemMenuLogoutGuard}。Mojmap 名，由 Mixin 重映射
  */
 @Mixin(PlayerList.class)
 public abstract class MixinPlayerListRemove {

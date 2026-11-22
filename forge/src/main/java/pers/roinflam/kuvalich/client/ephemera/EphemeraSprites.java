@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * 幻纹用的贴图：开游戏时拼一张 2048 的图集（格子 128）。前 {@link #COUNT} 格是现算的柔光图（白色 + 透明度，个别带亮度），
- * 后面是 {@link #file} 登记的 PNG（原型里用 canvas 画的，由 docs-local/ephemera-proto3/tools/export_sprites.py 导出）。
+ * 后面是 {@link #file} 登记的 PNG（网页原型里用 canvas 画好再导出的）。
  * 画法里只认这里的编号，顶点色乘上去就是最终颜色。不引用客户端类，GameTest 能直接调。
  */
 public final class EphemeraSprites {
