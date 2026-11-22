@@ -537,7 +537,10 @@ final class CardPainter {
             textAt(l, txt, tx, boxTop, tc, a);
             return;
         }
-        int ds = ps >= 1 ? 3 : 2, dp = ds + 2, dx0 = x0 + e + 1, dEnd = dx0 + 4 * dp + ds;
+        // 点、图标和间距跟卡一起放大，1080p 默认大小（ps 约 2）时还是 3 像素的点、7 像素的图标
+        int ds = ps < 1 ? 2 : Math.max(3, Math.round(1.5F * ps));
+        int gap = Math.max(2, Math.round(ps)), sp = Math.max(3, Math.round(1.5F * ps));
+        int dp = ds + gap, dx0 = x0 + e + 1, dEnd = dx0 + 4 * dp + ds;
         int dy = top + (h - ds) / 2;
         for (int i = 0; i < 5; i++) {
             if (i < m.trend) {
@@ -549,15 +552,15 @@ final class CardPainter {
         int right = x0 + pw - e - 1;
         if (l.cycleText != null) {
             int c0 = right - l.cycleText.width;
-            right = c0 - 3;
+            right = c0 - sp;
             textAt(l, l.cycleText, c0, boxTop, tc, a);
-            float r = 3.5F, ix = c0 - 4 - r;
-            if (ix - r - 3 >= dEnd) {
+            float r = Math.max(7, Math.round(3.5F * ps)) / 2.0F, ix = c0 - sp - 1 - r;
+            if (ix - r - sp >= dEnd) {
                 CardDraw.texture(CardTextures.CYCLE, true);
                 CardDraw.blitAll(ix - r, mid - r, ix + r, mid + r, tc, a);
             }
         }
-        if (tx >= dEnd + 3 && tx + txt.width <= right - 1) {
+        if (tx >= dEnd + sp && tx + txt.width <= right - 1) {
             textAt(l, txt, tx, boxTop, tc, a);
         }
     }
