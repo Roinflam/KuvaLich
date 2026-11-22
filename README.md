@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://cdn.modrinth.com/data/cached_images/8d80b27eba8abc8de863605bab1b35b2f957f462.jpg" alt="Kuva Lich" width="800">
+<img src="https://cdn.modrinth.com/data/cached_images/1cd701917b3f414b4d367cfe209cd7d9a4eb42dc.jpg" alt="Kuva Lich" width="800">
 
 # Kuva Lich | 赤毒玄骸
 
