@@ -58,8 +58,9 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
     private static final float TRI_SIZE = 20.0F;
     private static final float SOCKET_SIGIL = 22.0F;
     private static final float DETAIL_SIGIL = 20.0F;
-    /** 自己的事件 id：揭示第 k 枚是 REVEAL + k，三张放齐是 COMPLETE */
+    /** 自己的事件 id：三角里第 k 格揭示是 REVEAL + k，第 k 段解开是 STAGE + k，三张放齐是 COMPLETE */
     private static final int EV_REVEAL = 100;
+    private static final int EV_STAGE = 110;
     private static final int EV_COMPLETE = 200;
 
     /** 循环底噪的音量和淡入、淡出 */
@@ -73,6 +74,7 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
     private final int[] riddleBuffer = new int[3];
     /** 上一帧的谜语三格，揭示时比出来；−2 = 还没读过 */
     private final int[] lastRiddles = {-2, -2, -2};
+    private int lastLevel = -2;
     /** 谜语卡的物品缓存（悬停时显示卡的说明），只在卡 id 变了时重建 */
     private final ItemStack[] riddleCards = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
     private final int[] riddleCardIds = {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
@@ -202,6 +204,14 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             }
             lastRiddles[k] = rd[k];
         }
+        int lv = menu.getLevel();
+        // 刚打开时同步数据还在路上，阶段会从 0 跳到真实值，这一下不算「刚解开」
+        if (lastLevel != -2 && t > 500) {
+            for (int k = Math.max(lastLevel, 0); k < Math.min(lv, 3); k++) {
+                event(Ev.CUSTOM, EV_STAGE + k, ItemStack.EMPTY, 0L);
+            }
+        }
+        lastLevel = lv;
 
         drawLeft(g, now, t, eF, eT, rd);
 
@@ -296,15 +306,14 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
         for (int k = 0; k < 3; k++) {
             int y = ly + 15 + k * rowSp;
             int by = y + 11;
-            boolean done = k < level || rd[k] >= 0;
-            boolean active = !done && k == level;
+            // 密语是随机落进三格之一的（RequiemCard#addCard），格号和段号没有对应关系，
+            // 段的状态只看阶段数；行里也不画密语符号，按段配符号等于把答案顺序告诉玩家
+            boolean done = k < level;
+            boolean active = k == level;
             float eb = quick ? eT : easeOut(seg(t, 700 + 110 * k, 1300 + 110 * k));
             text(g, stageName(k), lx0, y, done || active ? FxPalette.BONE : FxPalette.ASH, (done || active ? 0.9F : 0.5F) * eT);
-            long rv = age(Ev.CUSTOM, EV_REVEAL + k);
+            long rv = age(Ev.CUSTOM, EV_STAGE + k);
             if (done) {
-                if (rd[k] >= 0) {
-                    RequiemSigils.draw(g, rd[k], lx0 + 36, y + 4, 8.0F, GuiShapes.argb(FxPalette.KUVA_PALE, 0.85F * eT), 0);
-                }
                 // 刚揭示时「已揭示」逐字打出
                 String v = Component.translatable("kuvalich.gate.revealed").getString();
                 int n = rv < 400 ? (int) Math.min(v.length(), rv / 90) : v.length();
@@ -602,12 +611,8 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
     private List<Component> stageTip(int k) {
         List<Component> out = new ArrayList<>();
         int level = menu.getLevel();
-        int rd = riddleBuffer[k];
-        if (k < level || rd >= 0) {
+        if (k < level) {
             out.add(line(stageName(k) + " · " + Component.translatable("kuvalich.gate.revealed").getString(), FxPalette.BONE));
-            if (rd >= 0 && !riddleCards[k].isEmpty()) {
-                out.add(tip("kuvalich.gate.tip.murmur_of", KuvaPalette.MUTED, riddleCards[k].getHoverName()));
-            }
         } else if (k == level) {
             out.add(line(stageName(k) + " · " + menu.getSchedule() + " / " + threshold(k), FxPalette.BONE));
             out.add(tip("kuvalich.gate.tip.stage_hint", KuvaPalette.MUTED));
@@ -628,7 +633,8 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             return out;
         }
         String state = Component.translatable("kuvalich.gate.tip.unrevealed").getString();
-        if (k == menu.getLevel()) {
+        // 正在解的是第一个空格（和三角里涨液面的那一枚同一个），不是格号等于阶段的那格
+        if (menu.getLevel() < 3 && k == firstUnrevealed()) {
             out.add(line(state + " · " + menu.getSchedule() + " / " + threshold(k), FxPalette.BONE));
         } else {
             out.add(line(state + " · " + Component.translatable("kuvalich.gate.tip.waiting").getString(), FxPalette.ASH));
@@ -655,6 +661,15 @@ public class RequiemGateScreen extends ArchivePageScreen<RequiemGateMenu> {
             }
         }
         return riddleBuffer;
+    }
+
+    private int firstUnrevealed() {
+        for (int i = 0; i < 3; i++) {
+            if (riddleBuffer[i] < 0) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private int filledCount() {
